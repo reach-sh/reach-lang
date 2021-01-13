@@ -186,37 +186,25 @@ kgq_e ctxt mv = \case
   DLE_PartSet _ _ arg ->
     kgq_a_all ctxt arg
 
-kgq_m :: (KCtxt -> a -> IO ()) -> KCtxt -> LLCommon a -> IO ()
-kgq_m iter ctxt = \case
-  LL_Return {} -> mempty
-  LL_Let _ mdv de k ->
-    kgq_e ctxt mdv de
-      >> iter ctxt k
-  LL_ArrayMap _ ans x a (LLBlock _ _ f r) k ->
+kgq_m :: KCtxt -> LLCommon -> IO ()
+kgq_m ctxt = \case
+  DL_Nop _ -> mempty
+  DL_Let _ mdv de -> kgq_e ctxt mdv de
+  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) ->
     kgq_a_only ctxt a x
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-      >> iter ctxt k
-  LL_ArrayReduce _ ans x z b a (LLBlock _ _ f r) k ->
+  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> kgq_a_only ctxt a x
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-      >> iter ctxt k
-  LL_Var _ _dv k ->
-    iter ctxt k
-  LL_Set _ dv da k ->
-    kgq_a_only ctxt dv da
-      >> iter ctxt k
-  LL_LocalIf _ ca t f k ->
-    kgq_l ctxt' t
-      >> kgq_l ctxt' f
-      >> iter ctxt k
+  DL_Var {} -> mempty
+  DL_Set _ dv da -> kgq_a_only ctxt dv da
+  DL_LocalIf _ ca t f -> kgq_l ctxt' t >> kgq_l ctxt' f
     where
       ctxt' = ctxt_add_back ctxt ca
-  LL_LocalSwitch _ ov csm k ->
-    mapM_ cm1 csm
-      >> iter ctxt k
+  DL_LocalSwitch _ ov csm -> mapM_ cm1 csm
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
@@ -224,9 +212,10 @@ kgq_m iter ctxt = \case
         kgq_a_onlym ctxt mov' oa
           >> kgq_l ctxt' l
 
-kgq_l :: KCtxt -> LLLocal -> IO ()
+kgq_l :: KCtxt -> LLTail -> IO ()
 kgq_l ctxt = \case
-  LLL_Com m -> kgq_m kgq_l ctxt m
+  DT_Return _ -> mempty
+  DT_Com m k -> kgq_m ctxt m >> kgq_l ctxt k
 
 kgq_asn :: KCtxt -> DLAssignment -> IO ()
 kgq_asn ctxt (DLAssignment m) = mapM_ (uncurry (kgq_a_only ctxt)) $ M.toList m
@@ -236,7 +225,7 @@ kgq_asn_def ctxt (DLAssignment m) = mapM_ (kgq_a_all ctxt . DLA_Var) $ M.keys m
 
 kgq_n :: KCtxt -> LLConsensus -> IO ()
 kgq_n ctxt = \case
-  LLC_Com m -> kgq_m kgq_n ctxt m
+  LLC_Com m k -> kgq_m ctxt m >> kgq_n ctxt k
   LLC_If _ ca t f ->
     ctxtNewScope ctxt' (kgq_n ctxt' t)
       >> ctxtNewScope ctxt' (kgq_n ctxt' f)
@@ -253,7 +242,7 @@ kgq_n ctxt = \case
             >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k ->
     kgq_s ctxt k
-  LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
+  LLC_While _ asn _ (DLinBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn
       >> kgq_asn ctxt asn
       >> kgq_l ctxt cond_l
@@ -269,7 +258,7 @@ kgq_n ctxt = \case
 
 kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
-  LLS_Com m -> kgq_m kgq_s ctxt m
+  LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
   LLS_Stop {} -> mempty
   LLS_Only _at who loc k ->
     kgq_l (ctxt_restrict ctxt who) loc

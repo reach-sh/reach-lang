@@ -15,28 +15,16 @@ data PLLetCat
 instance Semigroup PLLetCat where
   _ <> _ = PL_Many
 
-data PLCommon a
-  = PL_Return SrcLoc
-  | PL_Let SrcLoc PLLetCat DLVar DLExpr a
-  | PL_ArrayMap SrcLoc DLVar DLArg DLVar PLBlock a
-  | PL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar PLBlock a
-  | PL_Eff SrcLoc DLExpr a
-  | PL_Var SrcLoc DLVar a
-  | PL_Set SrcLoc DLVar DLArg a
-  | PL_LocalIf SrcLoc DLArg PLTail PLTail a
-  | PL_LocalSwitch SrcLoc DLVar (SwitchCases PLTail) a
+data PLVar
+  = PV_Eff
+  | PV_Let PLLetCat DLVar
   deriving (Eq, Show)
-
-data PLTail
-  = PLTail (PLCommon PLTail)
-  deriving (Eq, Show)
-
-data PLBlock
-  = PLBlock SrcLoc PLTail DLArg
-  deriving (Eq, Show)
+type PLCommon = DLinStmt PLVar
+type PLTail = DLinTail PLVar
+type PLBlock = DLinBlock PLVar
 
 data ETail
-  = ET_Com (PLCommon ETail)
+  = ET_Com PLCommon ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
@@ -73,7 +61,7 @@ data EPProg
   deriving (Eq, Show)
 
 data CTail
-  = CT_Com (PLCommon CTail)
+  = CT_Com PLCommon CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_From SrcLoc (Maybe [DLVar])

@@ -1,1 +1,1 @@
-reachc: error: ./no-commit.rsh:2:30:application: Invalid operation. `program termination` cannot be used in context: consensus step, must be in [step]
+reachc: error: ./no-commit.rsh:compileDApp: Invalid operation. `exit` cannot be used in context: consensus step, must be in [step]

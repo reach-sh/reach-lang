@@ -104,32 +104,32 @@ expandFromFVMap (DLAssignment updatem) = do
   let updatem' = M.union (M.fromList $ fvm'l) updatem
   return $ DLAssignment updatem'
 
-lin_com :: String -> (SrcLoc -> DLStmts -> App a) -> (LLCommon a -> a) -> DLStmt -> DLStmts -> App a
+lin_com :: String -> (SrcLoc -> DLStmts -> App a) -> (LLCommon -> a -> a) -> DLStmt -> DLStmts -> App a
 lin_com who back mkk s ks =
   case s of
     DLS_FluidSet at fv da ->
       fluidSet fv (at, da) $ back at ks
     DLS_FluidRef at dv fv -> do
       (at', da) <- fluidRef fv
-      mkk <$> (LL_Let at (Just dv) (DLE_Arg at' da) <$> back at ks)
-    DLS_Let at mdv de -> mkk <$> (LL_Let at mdv de <$> back at ks)
+      mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back at ks
+    DLS_Let at mdv de -> mkk <$> (pure $ DL_Let at mdv de) <*> back at ks
     DLS_ArrayMap at ans x a f ->
-      mkk <$> (LL_ArrayMap at ans x a <$> f' <*> back at ks)
+      mkk <$> (DL_ArrayMap at ans x a <$> f') <*> back at ks
       where
         f' = lin_block at f
     DLS_ArrayReduce at ans x z b a f ->
-      mkk <$> (LL_ArrayReduce at ans x z b a <$> f' <*> back at ks)
+      mkk <$> (DL_ArrayReduce at ans x z b a <$> f') <*> back at ks
       where
         f' = lin_block at f
     DLS_If at ca _ ts fs
       | isLocal s ->
-        mkk <$> (LL_LocalIf at ca <$> t' <*> f' <*> back at ks)
+        mkk <$> (DL_LocalIf at ca <$> t' <*> f') <*> back at ks
       where
         t' = lin_local_rets at ts
         f' = lin_local_rets at fs
     DLS_Switch at dv _ cm
       | isLocal s ->
-        mkk <$> (LL_LocalSwitch at dv <$> cm' <*> back at ks)
+        mkk <$> (DL_LocalSwitch at dv <$> cm') <*> back at ks
       where
         cm' = mapM cm1 cm
         cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
@@ -152,13 +152,13 @@ lin_com who back mkk s ks =
                     _ ->
                       impossible $ "no cons"
             Right da ->
-              (mkk . LL_Set at dv da) <$> back at ks
+              mkk <$> (pure $ DL_Set at dv da) <*> back at ks
     DLS_Prompt at (Left ret) ss ->
       withReturn ret Nothing $
         back at (ss <> ks)
     DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
       withReturn ret (Just (dv, retms)) $
-        (mkk . LL_Var at dv) <$> back at (ss <> ks)
+        mkk <$> (pure $ DL_Var at dv) <*> back at (ss <> ks)
     DLS_If {} -> bad
     DLS_Switch {} -> bad
     DLS_Stop {} -> bad
@@ -170,22 +170,21 @@ lin_com who back mkk s ks =
   where
     bad = impossible $ who <> " cannot " <> conNameOf s <> " at " <> show (srclocOf s)
 
-lin_local_rets :: SrcLoc -> DLStmts -> App LLLocal
+lin_local_rets :: SrcLoc -> DLStmts -> App LLTail
 lin_local_rets at Seq.Empty =
-  return $ LLL_Com $ LL_Return at
+  return $ DT_Return at
 lin_local_rets _ (s Seq.:<| ks) =
-  lin_com "local" lin_local_rets LLL_Com s ks
+  lin_com "local" lin_local_rets DT_Com s ks
 
-lin_local :: SrcLoc -> DLStmts -> App LLLocal
+lin_local :: SrcLoc -> DLStmts -> App LLTail
 lin_local at ks = setRetsToEmpty $ lin_local_rets at ks
 
 lin_block :: SrcLoc -> DLBlock -> App LLBlock
 lin_block _at (DLBlock at fs l a) =
-  LLBlock at fs <$> lin_local at l <*> pure a
+  DLinBlock at fs <$> lin_local at l <*> pure a
 
 lin_con :: (DLStmts -> App LLStep) -> SrcLoc -> DLStmts -> App LLConsensus
-lin_con _ at Seq.Empty =
-  return $ LLC_Com $ LL_Return at
+lin_con _ _ Seq.Empty = impossible $ "empty consensus"
 lin_con back at_top (s Seq.:<| ks) =
   case s of
     DLS_If at ca _ ts fs

@@ -682,37 +682,38 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
                 s = smtTypeSort ctxt ovt
         udef_m = ov'p_m <> pathAddUnbound ctxt at mov' (O_SwitchCase vn)
 
-smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
-smt_m iter ctxt m =
-  case m of
-    LL_Return {} -> mempty
-    LL_Let at mdv de k -> smt_e ctxt at mdv de <> iter ctxt k
-    LL_Var at dv k -> var_m <> iter ctxt k
+smt_m :: SMTCtxt -> LLCommon -> SMTComp
+smt_m ctxt = \case
+    DL_Nop _ -> mempty
+    DL_Let at mdv de -> smt_e ctxt at mdv de
+    DL_Var at dv -> var_m
       where
         var_m =
           pathAddUnbound ctxt at (Just dv) O_Var
-    LL_ArrayMap {} ->
+    DL_ArrayMap {} ->
       --- FIXME: It might be possible to do this in Z3 by generating a function
       impossible "array_map"
-    LL_ArrayReduce {} ->
+    DL_ArrayReduce {} ->
       --- NOTE: I don't think this is possible
       impossible "array_reduce"
-    LL_Set at dv va k -> set_m <> iter ctxt k
+    DL_Set at dv va -> set_m
       where
         set_m =
           smtAssertCtxt ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
-    LL_LocalIf at ca t f k ->
-      smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
+    DL_LocalIf at ca t f ->
+      smt_l ctxt_t t <> smt_l ctxt_f f
       where
         ctxt_f = ctxt {ctxt_path_constraint = (smtNot ca_se) : pc}
         ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
         pc = ctxt_path_constraint ctxt
         ca_se = smt_a ctxt at ca
-    LL_LocalSwitch at ov csm k ->
-      smtSwitch SM_Local ctxt at ov csm smt_l <> iter ctxt k
+    DL_LocalSwitch at ov csm ->
+      smtSwitch SM_Local ctxt at ov csm smt_l
 
-smt_l :: SMTCtxt -> LLLocal -> SMTComp
-smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
+smt_l :: SMTCtxt -> LLTail -> SMTComp
+smt_l ctxt = \case
+  DT_Return _ -> mempty
+  DT_Com m k -> smt_m ctxt m <> smt_l ctxt k
 
 data BlockMode
   = B_Assume Bool
@@ -722,7 +723,7 @@ data BlockMode
 smt_block :: SMTCtxt -> BlockMode -> LLBlock -> SMTComp
 smt_block ctxt bm b = before_m <> after_m
   where
-    LLBlock at f l da = b
+    DLinBlock at f l da = b
     before_m = smt_l ctxt l
     da' = smt_a ctxt at da
     after_m =
@@ -736,27 +737,26 @@ smt_block ctxt bm b = before_m <> after_m
         B_None ->
           mempty
 
-gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
-gatherDefinedVars_m m =
-  case m of
-    LL_Return {} -> mempty
-    LL_Let _ mdv _ k ->
-      maybe mempty S.singleton mdv <> gatherDefinedVars_l k
-    LL_ArrayMap {} -> impossible "array_map"
-    LL_ArrayReduce {} -> impossible "array_reduce"
-    LL_Var _ dv k -> S.singleton dv <> gatherDefinedVars_l k
-    LL_Set _ _ _ k -> gatherDefinedVars_l k
-    LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
-    LL_LocalSwitch _ _ csm k ->
-      mconcatMap cm1 (M.toList csm) <> gatherDefinedVars_l k
+gatherDefinedVars_m :: LLCommon -> S.Set DLVar
+gatherDefinedVars_m = \case
+    DL_Nop _ -> mempty
+    DL_Let _ mdv _ -> maybe mempty S.singleton mdv
+    DL_ArrayMap {} -> impossible "array_map"
+    DL_ArrayReduce {} -> impossible "array_reduce"
+    DL_Var _ dv-> S.singleton dv
+    DL_Set {} -> mempty
+    DL_LocalIf _ _ t f -> gatherDefinedVars_l t <> gatherDefinedVars_l f
+    DL_LocalSwitch _ _ csm -> mconcatMap cm1 (M.toList csm)
       where
         cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
 
-gatherDefinedVars_l :: LLLocal -> S.Set DLVar
-gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
+gatherDefinedVars_l :: LLTail -> S.Set DLVar
+gatherDefinedVars_l = \case
+  DT_Return _ -> mempty
+  DT_Com c k -> gatherDefinedVars_m c <> gatherDefinedVars_l k
 
 gatherDefinedVars :: LLBlock -> S.Set DLVar
-gatherDefinedVars (LLBlock _ _ l _) = gatherDefinedVars_l l
+gatherDefinedVars (DLinBlock _ _ l _) = gatherDefinedVars_l l
 
 smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp
 smt_asn ctxt vars_are_primed asn = smt_block ctxt' B_Prove inv
@@ -784,7 +784,7 @@ smt_asn_def ctxt at asn = mapM_ def1 $ M.keys asnm
 smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
   case n of
-    LLC_Com m -> smt_m smt_n ctxt m
+    LLC_Com m k -> smt_m ctxt m <> smt_n ctxt k
     LLC_If at ca t f ->
       mapM_ ((ctxtNewScope ctxt) . go) [(True, t), (False, f)]
       where
@@ -825,7 +825,7 @@ smt_n ctxt n =
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
-    LLS_Com m -> smt_m smt_s ctxt m
+    LLS_Com m k -> smt_m ctxt m <> smt_s ctxt k
     LLS_Stop _at -> mempty
     LLS_Only _at who loc k ->
       loc_m <> smt_s ctxt k

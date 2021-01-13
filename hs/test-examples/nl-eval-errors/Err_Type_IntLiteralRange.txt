@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Checked 8 theorems; No failures!
-reachc: error: reach standard library:application: TypeError: int literal out of range: -1 not in [0,18446744073709551615]
+reachc: error: reach standard library:application: TypeError: int literal out of range: -1 not in [0,115792089237316195423570985008687907853269984665640564039457584007913129639935]

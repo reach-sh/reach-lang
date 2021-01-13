@@ -300,35 +300,31 @@ instance Pretty DLProg where
       <> pretty dli
       <> render_dls ds
 
---- Linear language
-instance Pretty a => Pretty (LLCommon a) where
+--- DLin language
+instance Pretty a => Pretty (DLinStmt a) where
   pretty = \case
-    LL_Return _at -> mempty
-    LL_Let _at Nothing de k ->
-      pretty de <> semi <> hardline <> pretty k
-    LL_Let _at (Just dv) de k ->
-      "const" <+> pretty dv <+> "=" <+> pretty de <> semi
-        <> hardline
-        <> pretty k
-    LL_ArrayMap _ ans x a f k ->
-      prettyMap ans x a f <> hardline <> pretty k
-    LL_ArrayReduce _ ans x z b a f k ->
-      prettyReduce ans x z b a f <> hardline <> pretty k
-    LL_Var _at dv k ->
-      "let" <+> pretty dv <> semi <> hardline <> pretty k
-    LL_Set _at dv da k ->
-      pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-    LL_LocalIf _at ca t f k ->
-      prettyIfp ca t f <> hardline <> pretty k
-    LL_LocalSwitch _at ov csm k ->
-      prettySwitch ov csm <> hardline <> pretty k
+    DL_Nop _ -> mempty
+    DL_Let _at x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
+    DL_ArrayMap _ ans x a f -> prettyMap ans x a f
+    DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+    DL_Var _at dv -> "let" <+> pretty dv <> semi
+    DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
+    DL_LocalIf _at ca t f -> prettyIfp ca t f
+    DL_LocalSwitch _at ov csm -> prettySwitch ov csm
 
-instance Pretty LLLocal where
-  pretty (LLL_Com x) = pretty x
+instance Pretty a => Pretty (DLinTail a) where
+  pretty = \case
+    DT_Return _at -> mempty
+    DT_Com x k -> pretty x <> hardline <> pretty k
 
+instance Pretty a => Pretty (DLinBlock a) where
+  pretty (DLinBlock _ _ ts ta) =
+    (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
+
+--- Linear language
 instance Pretty LLConsensus where
   pretty = \case
-    LLC_Com x -> pretty x
+    LLC_Com x k -> pretty x <> hardline <> pretty k
     LLC_If _at ca t f -> prettyIfp ca t f
     LLC_Switch _at ov csm -> prettySwitch ov csm
     LLC_FromConsensus _at _ret_at k ->
@@ -340,13 +336,9 @@ instance Pretty LLConsensus where
     LLC_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
 
-instance Pretty LLBlock where
-  pretty (LLBlock _ _ ts ta) =
-    (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
-
 instance Pretty LLStep where
   pretty = \case
-    LLS_Com x -> pretty x
+    LLS_Com x k -> pretty x <> hardline <> pretty k
     LLS_Stop _at -> prettyStop
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
@@ -368,35 +360,15 @@ instance Pretty PLLetCat where
   pretty PL_Many = "*"
   pretty PL_Once = "!"
 
-instance Pretty a => Pretty (PLCommon a) where
+instance Pretty PLVar where
   pretty = \case
-    PL_Return _at -> mempty
-    PL_Let _at lc dv de k ->
-      "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
-        <> hardline
-        <> pretty k
-    PL_ArrayMap _ ans x a f k ->
-      prettyMap ans x a f <> hardline <> pretty k
-    PL_ArrayReduce _ ans x z b a f k ->
-      prettyReduce ans x z b a f <> hardline <> pretty k
-    PL_Eff _ de k ->
-      "eff" <+> pretty de <> semi <> hardline <> pretty k
-    PL_Var _at dv k ->
-      "let" <+> pretty dv <> semi <> hardline <> pretty k
-    PL_Set _at dv da k ->
-      pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-    PL_LocalIf _at ca t f k ->
-      prettyIfp ca t f <> hardline <> pretty k
-    PL_LocalSwitch _ ov csm k ->
-      prettySwitch ov csm <> hardline <> pretty k
-
-instance Pretty PLTail where
-  pretty (PLTail x) = pretty x
+    PV_Eff -> "eff"
+    PV_Let lc x -> pretty x <> pretty lc
 
 instance Pretty ETail where
   pretty e =
     case e of
-      ET_Com c -> pretty c
+      ET_Com c k -> pretty c <> hardline <> pretty k
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
@@ -431,11 +403,6 @@ instance Pretty ETail where
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
-
-instance Pretty PLBlock where
-  pretty (PLBlock _ pltail dlarg) = pform "begin" body
-    where
-      body = pretty pltail <+> pretty dlarg
 
 instance Pretty EPProg where
   pretty (EPProg _ ie et) =
@@ -490,7 +457,7 @@ instance Pretty a => Pretty (CInterval a) where
       go = brackets . render_das
 
 instance Pretty CTail where
-  pretty (CT_Com e) = pretty e
+  pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
   pretty (CT_From _ mvars) =

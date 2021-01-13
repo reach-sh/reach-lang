@@ -94,24 +94,25 @@ instance CollectsTypes DLAssignment where
 instance CollectsTypes DLInit where
   cts (DLInit ctimem) = cts ctimem
 
-instance CollectsTypes a => CollectsTypes (LLCommon a) where
-  cts (LL_Return _) = mempty
-  cts (LL_Let _ v e k) = cts v <> cts e <> cts k
-  cts (LL_ArrayMap _ ans x a f k) = cts ans <> cts x <> cts a <> cts f <> cts k
-  cts (LL_ArrayReduce _ ans x z b a f k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts k
-  cts (LL_Var _ v k) = cts v <> cts k
-  cts (LL_Set _ v a k) = cts v <> cts a <> cts k
-  cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k
-  cts (LL_LocalSwitch _ v csm k) = cts v <> cts csm <> cts k
+instance CollectsTypes a => CollectsTypes (DLinStmt a) where
+  cts (DL_Nop _) = mempty
+  cts (DL_Let _ v e) = cts v <> cts e
+  cts (DL_ArrayMap _ ans x a f) = cts ans <> cts x <> cts a <> cts f
+  cts (DL_ArrayReduce _ ans x z b a f) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f
+  cts (DL_Var _ v) = cts v
+  cts (DL_Set _ v a) = cts v <> cts a
+  cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
+  cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
 
-instance CollectsTypes LLLocal where
-  cts (LLL_Com a) = cts a
+instance CollectsTypes a => CollectsTypes (DLinTail a) where
+  cts (DT_Return _) = mempty
+  cts (DT_Com a k) = cts a <> cts k
 
-instance CollectsTypes LLBlock where
-  cts (LLBlock _ _ k a) = cts k <> cts a
+instance CollectsTypes a => CollectsTypes (DLinBlock a) where
+  cts (DLinBlock _ _ k a) = cts k <> cts a
 
 instance CollectsTypes LLConsensus where
-  cts (LLC_Com k) = cts k
+  cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
   cts (LLC_Switch _ v csm) = cts v <> cts csm
   cts (LLC_FromConsensus _ _ k) = cts k
@@ -120,7 +121,7 @@ instance CollectsTypes LLConsensus where
   cts (LLC_Only _ _ l s) = cts l <> cts s
 
 instance CollectsTypes LLStep where
-  cts (LLS_Com k) = cts k
+  cts (LLS_Com m k) = cts m <> cts k
   cts (LLS_Stop _) = mempty
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
@@ -128,25 +129,12 @@ instance CollectsTypes LLStep where
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps dli s) = cts ps <> cts dli <> cts s
 
-instance CollectsTypes a => CollectsTypes (PLCommon a) where
-  cts (PL_Return _) = mempty
-  cts (PL_Let _ _ dv de k) = cts dv <> cts de <> cts k
-  cts (PL_ArrayMap _ ans x a f k) = cts ans <> cts x <> cts a <> cts f <> cts k
-  cts (PL_ArrayReduce _ ans x z b a f k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts k
-  cts (PL_Eff _ de k) = cts de <> cts k
-  cts (PL_Var _ dv k) = cts dv <> cts k
-  cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k
-  cts (PL_LocalIf _ ca t f k) = cts ca <> cts t <> cts f <> cts k
-  cts (PL_LocalSwitch _ v csm k) = cts v <> cts csm <> cts k
-
-instance CollectsTypes PLTail where
-  cts (PLTail m) = cts m
-
-instance CollectsTypes PLBlock where
-  cts (PLBlock _ t a) = cts t <> cts a
+instance CollectsTypes PLVar where
+  cts (PV_Eff) = mempty
+  cts (PV_Let _ x) = cts x
 
 instance CollectsTypes CTail where
-  cts (CT_Com m) = cts m
+  cts (CT_Com m k) = cts m <> cts k
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
   cts (CT_From _ msvs) = cts msvs

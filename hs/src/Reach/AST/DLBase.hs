@@ -197,3 +197,24 @@ assignment_vars (DLAssignment m) = M.keys m
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
   M.Map SLVar (Maybe DLVar, a)
+
+data DLinStmt a
+  = DL_Nop SrcLoc
+  | DL_Let SrcLoc a DLExpr
+  | DL_ArrayMap SrcLoc DLVar DLArg DLVar (DLinBlock a)
+  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar (DLinBlock a)
+  | DL_Var SrcLoc DLVar
+  | DL_Set SrcLoc DLVar DLArg
+  | DL_LocalIf SrcLoc DLArg (DLinTail a) (DLinTail a)
+  | DL_LocalSwitch SrcLoc DLVar (SwitchCases (DLinTail a))
+  deriving (Eq, Show)
+
+data DLinTail a
+  = DT_Return SrcLoc
+  | DT_Com (DLinStmt a) (DLinTail a)
+  deriving (Eq, Show)
+
+data DLinBlock a
+  = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
+  deriving (Eq, Show)
+

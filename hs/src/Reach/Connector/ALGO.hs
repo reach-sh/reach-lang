@@ -763,19 +763,19 @@ doSwitch ck at dv csm = do
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
   label end_lab
 
-cm :: (App () -> a -> App ()) -> App () -> PLCommon a -> App ()
-cm ck km = \case
-  PL_Return {} ->
-    km
-  PL_Let _ PL_Once dv de k ->
-    store_let dv False (ce de) $ ck km k
-  PL_Let _ PL_Many dv de k ->
+cm :: App () -> PLCommon -> App ()
+cm km = \case
+  DL_Nop _ -> return ()
+  DL_Let _ PV_Eff de -> ce de >> km
+  DL_Let _ (PV_Let PL_Once dv) de ->
+    store_let dv False (ce de) km
+  DL_Let _ (PV_Let PL_Many dv) de ->
     salloc $ \loc -> do
       let loct = texty loc
       ce de
       code "store" [loct]
-      store_let dv True (code "load" [loct]) $ ck km k
-  PL_ArrayMap at ansv aa lv (PLBlock _ body ra) k -> do
+      store_let dv True (code "load" [loct]) km
+  DL_ArrayMap at ansv aa lv (DLinBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
     check_concat_len anssz
@@ -791,8 +791,8 @@ cm ck km = \case
             cp (ca ra) body
         op "concat"
         code "store" [texty ansl]
-      store_let ansv True (code "load" [texty ansl]) $ ck km k
-  PL_ArrayReduce at ansv aa za av lv (PLBlock _ body ra) k -> do
+      store_let ansv True (code "load" [texty ansl]) km
+  DL_ArrayReduce at ansv aa za av lv (DLinBlock _ _ body ra) -> do
     let (_, xlen) = typeArray aa
     salloc $ \ansl -> do
       ca za
@@ -805,19 +805,18 @@ cm ck km = \case
             store_let lv True (code "load" [texty lvl]) $ do
               cp (ca ra) body
           code "store" [texty ansl]
-        store_let ansv True (code "load" [texty ansl]) $ ck km k
-  PL_Eff _ de k -> ce de >> ck km k
-  PL_Var _ dv k ->
+        store_let ansv True (code "load" [texty ansl]) km
+  DL_Var _ dv ->
     salloc $ \loc -> do
       store_var dv loc $
         store_let dv True (code "load" [texty loc]) $
-          ck km k
-  PL_Set _ dv da k -> do
+          km
+  DL_Set _ dv da -> do
     loc <- lookup_var dv
     ca da
     code "store" [texty loc]
-    ck km k
-  PL_LocalIf _ a tp fp k -> do
+    km
+  DL_LocalIf _ a tp fp -> do
     ca a
     false_lab <- freshLabel
     join_lab <- freshLabel
@@ -827,17 +826,19 @@ cm ck km = \case
     label false_lab
     cp (return ()) fp
     label join_lab
-    ck km k
-  PL_LocalSwitch at dv csm k -> do
+    km
+  DL_LocalSwitch at dv csm -> do
     doSwitch (cp (return ())) at dv csm
-    ck km k
+    km
 
 cp :: App () -> PLTail -> App ()
-cp km (PLTail m) = cm cp km m
+cp km = \case
+  DT_Return _ -> km
+  DT_Com m k -> cm (cp km k) m
 
 ct :: CTail -> App ()
 ct = \case
-  CT_Com m -> cm (\_ -> ct) (return ()) m
+  CT_Com m k -> cm (ct k) m
   CT_If _ a tt ft -> do
     ca a
     false_lab <- freshLabel
@@ -863,7 +864,7 @@ ct = \case
                   return $ (store_lets, t_')
                   where
                     t_' =
-                      CT_Com $ PL_Let at PL_Many v (DLE_Arg at a) t_
+                      CT_Com (DL_Let at (PV_Let PL_Many v) (DLE_Arg at a)) t_
                 PL_Once -> do
                   sm <- argSmall a
                   cad <- freeze $ ca a

@@ -20,7 +20,7 @@ type App s = ReaderT (Env s) (ST s)
 
 type AppT s a = a -> App s a
 
-type Lifts = Seq.Seq (SrcLoc, DLVar, DLExpr)
+type Lifts = Seq.Seq LLCommon
 
 type Renaming = Either DLVar DLArg
 
@@ -49,6 +49,9 @@ allocIdx = do
   Env {..} <- ask
   lift $ incSTCounter eCounter
 
+addLifts :: (LLCommon -> a -> a) -> Lifts -> a -> a
+addLifts mkk ls k = foldr mkk k ls
+
 collectLifts :: App s a -> App s (Lifts, a)
 collectLifts m = do
   Env {..} <- ask
@@ -57,14 +60,22 @@ collectLifts m = do
   lifts <- lift $ readSTRef newLifts
   return $ (lifts, res)
 
-liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App s ()
-liftLet at v e = do
+liftCommon :: HasCallStack => LLCommon -> App s ()
+liftCommon m = do
   Env {..} <- ask
   case emLifts of
     Just r ->
-      lift $ modifySTRef r (flip (Seq.|>) (at, v, e))
+      lift $ modifySTRef r (flip (Seq.|>) m)
     Nothing ->
       impossible "no lifts"
+
+liftLocal :: HasCallStack => LLTail -> App s ()
+liftLocal = \case
+  DT_Return _ -> return ()
+  DT_Com m k -> liftCommon m >> liftLocal k
+
+liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App s ()
+liftLet at v e = liftCommon (DL_Let at (Just v) e)
 
 liftExpr :: HasCallStack => SrcLoc -> SLType -> DLExpr -> App s DLArg
 liftExpr at t e = do
@@ -78,12 +89,6 @@ liftArray at ty as = do
   let a_ty = T_Array ty $ fromIntegral $ length as
   na <- liftExpr at a_ty $ DLE_LArg at $ DLLA_Array ty as
   return $ DLE_Arg at na
-
-addLifts :: (LLCommon a -> a) -> LLCommon a -> Lifts -> a
-addLifts mkk k = \case
-  Seq.Empty -> mkk k
-  (at, v, e) Seq.:<| more ->
-    mkk $ LL_Let at (Just v) e $ addLifts mkk k more
 
 freshRenaming :: App s a -> App s a
 freshRenaming m = do
@@ -217,85 +222,67 @@ ul_mdv_rn = \case
   Nothing -> pure Nothing
   Just v -> pure Just <*> ul_v_rn v
 
-llReplace :: (LLCommon a -> a) -> LLCommon a -> LLCommon LLLocal -> LLCommon a
-llReplace mkk nk = \case
-  LL_Return {} -> nk
-  LL_Let at mdv e k -> LL_Let at mdv e $ iter k
-  LL_ArrayMap at ans x a f k -> LL_ArrayMap at ans x a f $ iter k
-  LL_ArrayReduce at ans x z b a f k -> LL_ArrayReduce at ans x z b a f $ iter k
-  LL_Var at x k -> LL_Var at x $ iter k
-  LL_Set at x v k -> LL_Set at x v $ iter k
-  LL_LocalIf at c t f k -> LL_LocalIf at c t f $ iter k
-  LL_LocalSwitch at ov csm k -> LL_LocalSwitch at ov csm $ iter k
-  where
-    iter = mkk . llReplace' mkk nk
+ul_m_ :: (LLCommon -> a -> a) -> (a -> App s a) -> LLCommon -> a -> App s a
+ul_m_ mkk ul_k m k = do
+  (lifts, m') <- collectLifts $ ul_m m
+  let lifts' = lifts <> (return $ m')
+  k' <- ul_k k
+  return $ addLifts mkk lifts' k'
 
-llReplace' :: (LLCommon a -> a) -> LLCommon a -> LLLocal -> LLCommon a
-llReplace' mkk nk (LLL_Com m) = llReplace mkk nk m
-
-llSeqn :: (LLCommon a -> a) -> [LLLocal] -> LLCommon a -> LLCommon a
-llSeqn mkk fs k = foldr' (flip $ llReplace' mkk) k fs
-
-ul_m :: (LLCommon a -> a) -> AppT s a -> LLCommon a -> App s a
-ul_m mkk ul_k = \case
-  LL_Return at -> (pure $ mkk $ LL_Return at)
-  LL_Let at mdv e k -> do
-    (lifts, e') <- collectLifts $ ul_e e
-    m' <- (pure $ LL_Let at) <*> ul_mdv_rn mdv <*> (pure e') <*> ul_k k
-    return $ addLifts mkk m' lifts
-  LL_Var at v k ->
-    (pure mkk) <*> ((pure $ LL_Var at) <*> ul_v_rn v <*> ul_k k)
-  LL_Set at v a k ->
-    (pure mkk) <*> ((pure $ LL_Set at) <*> ul_v v <*> ul_a a <*> ul_k k)
-  LL_LocalIf at c t f k ->
-    (pure mkk) <*> ((pure $ LL_LocalIf at) <*> ul_a c <*> ul_l t <*> ul_l f <*> ul_k k)
-  LL_LocalSwitch at ov csm k ->
-    mkk <$> (LL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm <*> ul_k k)
+ul_m :: LLCommon -> App s LLCommon
+ul_m = \case
+  DL_Nop at ->
+    return $ DL_Nop at
+  DL_Let at mdv e -> do
+    DL_Let at <$> ul_mdv_rn mdv <*> ul_e e
+  DL_Var at v ->
+    DL_Var at <$> ul_v_rn v
+  DL_Set at v a ->
+    DL_Set at <$> ul_v v <*> ul_a a
+  DL_LocalIf at c t f ->
+    DL_LocalIf at <$> ul_a c <*> ul_l t <*> ul_l f
+  DL_LocalSwitch at ov csm ->
+    DL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm
     where
       cm1 (mov', l) = (,) <$> (ul_mv_rn mov') <*> ul_l l
-  LL_ArrayMap at ans x0 a (LLBlock _ _ f r) k -> do
+  DL_ArrayMap at ans x0 a (DLinBlock _ _ f r) -> do
     recordUnroll
     x <- ul_a x0
-    (xlifts, (_, x')) <- collectLifts $ ul_explode at x
+    (_, x') <- ul_explode at x
     let r_ty = argTypeOf r
     let f' a_a = freshRenaming $ do
           ul_v_rna a a_a
-          (pure (,)) <*> ul_l f <*> ul_a r
-    (lifts, (fs, r')) <- collectLifts $ liftM unzip $ mapM f' x'
+          liftLocal =<< ul_l f
+          ul_a r
+    r' <- mapM f' x'
     ans' <- ul_v_rn ans
-    k' <- ul_k k
-    let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_LArg at $ DLLA_Array r_ty r') k')
-    return $ addLifts mkk m' (xlifts <> lifts)
-  LL_ArrayReduce at ans x0 z b a (LLBlock _ _ f r) k -> do
+    return $ DL_Let at (Just ans') (DLE_LArg at $ DLLA_Array r_ty r')
+  DL_ArrayReduce at ans x0 z b a (DLinBlock _ _ f r) -> do
     recordUnroll
     x <- ul_a x0
-    (xlifts, (_, x')) <- collectLifts $ ul_explode at x
+    (_, x') <- ul_explode at x
     z' <- ul_a z
-    let f' (fs, b_a) a_a = freshRenaming $ do
+    let f' b_a a_a = freshRenaming $ do
           ul_v_rna b b_a
           ul_v_rna a a_a
-          (flifts, f_body') <- collectLifts $ ul_l f
-          r' <- ul_a r
-          let LLL_Com f_body'm = f_body'
-          let f_body'' = addLifts LLL_Com f_body'm flifts
-          return $ (fs Seq.|> f_body'', r')
-    (fs, r') <- foldlM f' (mempty, z') x'
+          liftLocal =<< ul_l f
+          ul_a r
+    r' <- foldlM f' z' x'
     ans' <- ul_v_rn ans
-    k' <- ul_k k
-    let m' = llSeqn mkk (toList fs) (LL_Let at (Just ans') (DLE_Arg at r') k')
-    return $ addLifts mkk m' xlifts
+    return $ DL_Let at (Just ans') (DLE_Arg at r')
 
-ul_l :: AppT s LLLocal
+ul_l :: AppT s LLTail
 ul_l = \case
-  LLL_Com m -> ul_m LLL_Com ul_l m
+  DT_Return at -> return $ DT_Return at
+  DT_Com m k -> ul_m_ DT_Com ul_l m k
 
 ul_bl :: AppT s LLBlock
-ul_bl (LLBlock at fs b a) =
-  (pure $ LLBlock at fs) <*> ul_l b <*> ul_a a
+ul_bl (DLinBlock at fs b a) =
+  (pure $ DLinBlock at fs) <*> ul_l b <*> ul_a a
 
 ul_n :: AppT s LLConsensus
 ul_n = \case
-  LLC_Com m -> ul_m LLC_Com ul_n m
+  LLC_Com m k -> ul_m_ LLC_Com ul_n m k
   LLC_If at c t f ->
     (pure $ LLC_If at) <*> ul_a c <*> ul_n t <*> ul_n f
   LLC_Switch at ov csm ->
@@ -322,7 +309,7 @@ ul_send (p, (isClass, args, amta, whena)) =
 
 ul_s :: AppT s LLStep
 ul_s = \case
-  LLS_Com m -> ul_m LLS_Com ul_s m
+  LLS_Com m k -> ul_m_ LLS_Com ul_s m k
   LLS_Stop at ->
     (pure $ LLS_Stop at)
   LLS_Only at p l s ->

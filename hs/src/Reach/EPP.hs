@@ -119,175 +119,105 @@ pall st x = pmap st (\_ -> x)
 data ProResS = ProResS SLPartETs (ProRes_ Bool)
   deriving (Eq, Show)
 
-type MDone res = (SrcLoc -> res)
-
-type MBack a res = (Counts -> (forall c. c -> PLCommon c) -> a -> res)
-
-type MLookCommon = forall d lookres. ((Counts -> UndefdVars -> PLCommon d -> lookres) -> (Counts -> UndefdVars -> d -> lookres) -> Counts -> UndefdVars -> d -> lookres)
-
---- FIXME Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
-epp_m
-  :: MDone res
-  -> MBack a res
-  -> (a -> res)
-  -> (a -> MLookCommon -> res)
-  -> LLCommon a
-  -> res
-epp_m done _back skip look c =
-  case c of
-    LL_Return at -> done at
-    LL_Let at mdv de k ->
-      case de of
-        DLE_Claim _ _ CT_Assert _ _ -> skip k
-        DLE_Claim _ _ CT_Possible _ _ -> skip k
-        DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip k
-        _ ->
-          look
-            k
-            (\back' skip' k_cs k_udvs k' ->
-               let maybe_skip vs =
-                     case isPure de of
-                       True -> skip' (k_cs' vs) k_udvs k'
-                       False -> back' (cs' vs) k_udvs (PL_Eff at de k')
-                   cs' vs = counts de <> k_cs' vs
-                   k_cs' vs = count_rms vs k_cs
-                in case mdv of
-                     Nothing -> maybe_skip []
-                     Just dv ->
-                       case get_count dv k_cs of
-                         Count Nothing -> maybe_skip [dv]
-                         Count (Just lc) ->
-                           back' (cs' [dv]) k_udvs (PL_Let at lc dv de k'))
-    LL_ArrayMap at ans x a (LLBlock fat _ f r) k ->
-      look
-        k
-        (\back' skip' k_cs k_udvs k' ->
-           case get_count ans k_cs of
-             Count Nothing -> skip' k_cs k_udvs k'
-             Count (Just _) ->
-               --- Note: Maybe use LetCat for fusing?
-               back' cs' udvs' (PL_ArrayMap at ans x a (PLBlock fat f' r) k')
-               where
-                 cs' = (counts x <> f_cs' <> k_cs')
-                 udvs' = f_udvs <> k_udvs
-                 k_cs' = count_rms [ans] k_cs
-                 f_cs' = count_rms [a] f_cs
-                 --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-                 fk_cs' = k_cs' <> (counts r <> counts r)
-                 ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l f fk_cs')
-    LL_ArrayReduce at ans x z b a (LLBlock fat _ f r) k ->
-      look
-        k
-        (\back' skip' k_cs k_udvs k' ->
-           case get_count ans k_cs of
-             Count Nothing -> skip' k_cs k_udvs k'
-             Count (Just _) ->
-               --- Note: Maybe use LetCat for fusing?
-               back' cs' udvs' (PL_ArrayReduce at ans x z b a (PLBlock fat f' r) k')
-               where
-                 cs' = (counts x <> counts z <> f_cs' <> k_cs')
-                 udvs' = k_udvs <> f_udvs
-                 k_cs' = count_rms [ans] k_cs
-                 f_cs' = count_rms [b, a] f_cs
-                 --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-                 fk_cs' = k_cs' <> (counts r <> counts r)
-                 ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l f fk_cs')
-    LL_Var at dv k ->
-      look
-        k
-        (\back' _skip' k_cs k_udvs k' ->
-           let cs' = count_rms [dv] k_cs
-               udvs' = S.delete dv k_udvs
-            in back' cs' udvs' (PL_Var at dv k'))
-    LL_Set at dv da k ->
-      look
-        k
-        (\back' _skip' k_cs k_udvs k' ->
-           let cs' = counts da <> count_rms [dv] k_cs
-               udvs' = S.insert dv k_udvs
-            in back' cs' udvs' (PL_Set at dv da k'))
-    LL_LocalIf at ca t f k ->
-      look
-        k
-        (\back' _skip' k_cs k_udvs k' ->
-           let cs' = counts ca <> t'_cs <> f'_cs
-               ProResL (ProRes_ t'_cs (t_udvs, t')) = epp_l t k_cs
-               ProResL (ProRes_ f'_cs (f_udvs, f')) = epp_l f k_cs
-               udvs' = t_udvs <> f_udvs <> k_udvs
-            in back' cs' udvs' $ PL_LocalIf at ca t' f' k')
-    LL_LocalSwitch at ov csm k ->
-      look
-        k
-        (\back' _skip' k_cs k_udvs k' ->
-           let cm1 (mov', l) = (l'_cs', (l'_udvs, (mov', l')))
-                 where
-                   ProResL (ProRes_ l'_cs (l'_udvs, l')) = epp_l l k_cs
-                   l'_cs' = count_rms (maybeToList mov') l'_cs
-               csm'0 = M.map cm1 csm
-               csm' = M.map (snd . snd) csm'0
-               c_udvs = mconcatMap (fst . snd) $ M.elems csm'0
-               udvs' = c_udvs <> k_udvs
-               cs' = counts ov <> (mconcatMap fst $ M.elems csm'0)
-            in back' cs' udvs' $ PL_LocalSwitch at ov csm' k')
-
-epp_l :: LLLocal -> Counts -> ProResL
-epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
+epp_m :: Counts -> UndefdVars -> LLCommon -> ProRes_ (UndefdVars, PLCommon)
+epp_m k_cs k_udvs = \case
+  DL_Nop at -> skip at
+  DL_Let at mdv de ->
+    case de of
+      DLE_Claim _ _ CT_Assert _ _ -> skip at
+      DLE_Claim _ _ CT_Possible _ _ -> skip at
+      DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip at
+      _ ->
+        case mdv of
+          Nothing -> maybe_skip []
+          Just dv ->
+            case get_count dv k_cs of
+              Count Nothing -> maybe_skip [dv]
+              Count (Just lc) ->
+                ProRes_ (cs' [dv]) (k_udvs, (DL_Let at (PV_Let lc dv) de))
+    where
+      maybe_skip vs =
+        case isPure de of
+          True -> ProRes_ (k_cs' vs) (k_udvs, DL_Nop at)
+          False -> ProRes_ (cs' vs) (k_udvs, (DL_Let at PV_Eff de))
+      cs' vs = counts de <> k_cs' vs
+      k_cs' vs = count_rms vs k_cs
+  DL_ArrayMap at ans x a (DLinBlock fat _ f r) ->
+    case get_count ans k_cs of
+      Count Nothing -> skip at
+      Count (Just _) ->
+        --- Note: Maybe use LetCat for fusing?
+        ProRes_ cs' (udvs', (DL_ArrayMap at ans x a (DLinBlock fat mempty f' r)))
+    where
+      cs' = (counts x <> f_cs' <> k_cs')
+      udvs' = f_udvs <> k_udvs
+      k_cs' = count_rms [ans] k_cs
+      f_cs' = count_rms [a] f_cs
+      --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+      fk_cs' = k_cs' <> (counts r <> counts r)
+      ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l fk_cs' f
+  DL_ArrayReduce at ans x z b a (DLinBlock fat _ f r) ->
+    case get_count ans k_cs of
+      Count Nothing -> skip at
+      Count (Just _) ->
+        --- Note: Maybe use LetCat for fusing?
+        ProRes_ cs' (udvs', (DL_ArrayReduce at ans x z b a (DLinBlock fat mempty f' r)))
+    where
+      cs' = (counts x <> counts z <> f_cs' <> k_cs')
+      udvs' = k_udvs <> f_udvs
+      k_cs' = count_rms [ans] k_cs
+      f_cs' = count_rms [b, a] f_cs
+      --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+      fk_cs' = k_cs' <> (counts r <> counts r)
+      ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l fk_cs' f
+  DL_Var at dv ->
+    let cs' = count_rms [dv] k_cs
+        udvs' = S.delete dv k_udvs
+    in ProRes_ cs' (udvs', (DL_Var at dv))
+  DL_Set at dv da ->
+    let cs' = counts da <> count_rms [dv] k_cs
+        udvs' = S.insert dv k_udvs
+    in ProRes_ cs' (udvs', (DL_Set at dv da))
+  DL_LocalIf at ca t f ->
+    let cs' = counts ca <> t'_cs <> f'_cs
+        ProResL (ProRes_ t'_cs (t_udvs, t')) = epp_l k_cs t
+        ProResL (ProRes_ f'_cs (f_udvs, f')) = epp_l k_cs f
+        udvs' = t_udvs <> f_udvs <> k_udvs
+    in ProRes_ cs' (udvs', DL_LocalIf at ca t' f')
+  DL_LocalSwitch at ov csm ->
+    let cm1 (mov', l) = (l'_cs', (l'_udvs, (mov', l')))
+          where
+            ProResL (ProRes_ l'_cs (l'_udvs, l')) = epp_l k_cs l
+            l'_cs' = count_rms (maybeToList mov') l'_cs
+        csm'0 = M.map cm1 csm
+        csm' = M.map (snd . snd) csm'0
+        c_udvs = mconcatMap (fst . snd) $ M.elems csm'0
+        udvs' = c_udvs <> k_udvs
+        cs' = counts ov <> (mconcatMap fst $ M.elems csm'0)
+    in ProRes_ cs' (udvs', DL_LocalSwitch at ov csm')
   where
-    done :: MDone ProResL
-    done rat =
-      ProResL (ProRes_ ok_cs (mempty, PLTail $ PL_Return rat))
-    back :: MBack LLLocal ProResL
-    back cs' mkpl k = ProResL $ ProRes_ (cs' <> k_cs) (k_udvs, PLTail (mkpl k'))
+    skip at = ProRes_ k_cs (k_udvs, DL_Nop at)
+
+epp_l :: Counts -> LLTail -> ProResL
+epp_l ok_cs = \case
+  DT_Return at ->
+    ProResL (ProRes_ ok_cs (mempty, DT_Return at))
+  DT_Com c k ->
+    ProResL (ProRes_ cs'' (udvs'', DT_Com c' k'))
       where
-        ProResL (ProRes_ k_cs (k_udvs, k')) = skip k
-    skip k = epp_l k ok_cs
-    look :: LLLocal -> MLookCommon -> ProResL
-    look k common = ProResL $ common back' skip' k_cs k_udvs k'
-      where
-        ProResL (ProRes_ k_cs (k_udvs, k')) = skip k
-        skip' k_cs' k_udvs' k'' = ProRes_ k_cs' (k_udvs', k'')
-        back' k_cs' k_udvs' k'' = ProRes_ k_cs' (k_udvs', PLTail k'')
+        ProRes_ cs'' (udvs'', c') = epp_m cs' udvs' c
+        ProResL (ProRes_ cs' (udvs', k')) = epp_l ok_cs k
 
-extend_locals :: Counts -> (forall c. c -> PLCommon c) -> SLPartETs -> SLPartETs
-extend_locals cs' mkpl p_prts_s = M.map add p_prts_s
+extend_locals_look :: LLCommon -> SLPartETs -> SLPartETs
+extend_locals_look c p_prts_s = M.map add p_prts_s
   where
-    add :: ProRes_ ETail -> ProRes_ ETail
-    add (ProRes_ p_cs p_et) =
-      ProRes_ (cs' <> p_cs) (ET_Com $ mkpl p_et)
+    add (ProRes_ cs_k k) = ProRes_ cs' (ET_Com c' k)
+      where ProRes_ cs' (_, c') = epp_m cs_k mempty c
 
-extend_locals_look :: MLookCommon -> SLPartETs -> SLPartETs
-extend_locals_look common p_prts_s = M.map add p_prts_s
-  where
-    add (ProRes_ p_cs p_et) =
-      common back' skip' p_cs mempty p_et
-      where
-        skip' x _ y = ProRes_ x y
-        back' p_cs' _ p_ct' = ProRes_ p_cs' $ ET_Com $ p_ct'
-
-plReplace :: (PLCommon a -> a) -> a -> PLCommon PLTail -> a
-plReplace mkk nk = \case
-  PL_Return {} -> nk
-  PL_Let a b c d k ->
-    mkk $ PL_Let a b c d $ iter k
-  PL_ArrayMap a b c d e k ->
-    mkk $ PL_ArrayMap a b c d e $ iter k
-  PL_ArrayReduce a b c d e f g k ->
-    mkk $ PL_ArrayReduce a b c d e f g $ iter k
-  PL_Eff a b k ->
-    mkk $ PL_Eff a b $ iter k
-  PL_Var a b k ->
-    mkk $ PL_Var a b $ iter k
-  PL_Set a b c k ->
-    mkk $ PL_Set a b c $ iter k
-  PL_LocalIf a b c d k ->
-    mkk $ PL_LocalIf a b c d $ iter k
-  PL_LocalSwitch a b c k ->
-    mkk $ PL_LocalSwitch a b c $ iter k
-  where
-    iter = pltReplace mkk nk
-
-pltReplace :: (PLCommon a -> a) -> a -> PLTail -> a
-pltReplace mkk nk (PLTail m) = plReplace mkk nk m
+pltReplace :: (PLCommon -> a -> a) -> a -> PLTail -> a
+pltReplace mkk nk = \case
+  DT_Return _ -> nk
+  DT_Com c pt -> mkk c $ pltReplace mkk nk pt
 
 var_addlc :: Counts -> DLVar -> (PLLetCat, DLVar)
 var_addlc cs v = (lc, v)
@@ -298,30 +228,12 @@ var_addlc cs v = (lc, v)
         Count (Just x) -> x
 
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
-epp_n st n =
-  case n of
-    LLC_Com c -> epp_m done back skip look c
-      where
-        done :: MDone (ST s ProResC)
-        done rat =
-          return $ ProResC (pall st (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty (mempty, CT_Com $ PL_Return rat))
-        back :: MBack LLConsensus (ST s ProResC)
-        back cs' mkpl k = do
-          ProResC p_prts_s (ProRes_ cs_k (udvs_k, ct_k)) <- skip k
-          let p_prts_s' = extend_locals cs' mkpl p_prts_s
-          let cs_k' = cs' <> cs_k
-          let ct_k' = CT_Com $ mkpl ct_k
-          return $ ProResC p_prts_s' (ProRes_ cs_k' (udvs_k, ct_k'))
-        skip k = epp_n st k
-        look :: LLConsensus -> MLookCommon -> (ST s ProResC)
-        look k common = do
-          ProResC p_prts_s (ProRes_ cs_k (udvs_k, ct_k)) <- skip k
-          let cr' = common back' skip' cs_k udvs_k ct_k
-                where
-                  skip' x y z = ProRes_ x (y, z)
-                  back' cs_k' udvs_k' ct_k' = ProRes_ cs_k' (udvs_k', CT_Com $ ct_k')
-          let p_prts_s' = extend_locals_look common p_prts_s
-          return $ ProResC p_prts_s' cr'
+epp_n st = \case
+    LLC_Com c k -> do
+      ProResC p_prts_s (ProRes_ cs_k (udvs_k, k')) <- epp_n st k
+      let ProRes_ cs_k' (udvs_k', c') = epp_m cs_k udvs_k c
+      let p_prts_s' = extend_locals_look c p_prts_s
+      return $ ProResC p_prts_s' (ProRes_ cs_k' (udvs_k', CT_Com c' k'))
     LLC_If at ca t f -> do
       ProResC p_prts_t (ProRes_ cs_t (udvs_t, ct_t)) <- epp_n st t
       ProResC p_prts_f (ProRes_ cs_f (udvs_f, ct_f)) <- epp_n st f
@@ -374,7 +286,7 @@ epp_n st n =
       let st_k = st {pst_prev_handler = loop_num}
       ProResC p_prts_k (ProRes_ cs_k (udvs_k, ct_k)) <- epp_n st_k k
       let loop_vars = assignment_vars asn
-      let LLBlock cond_at _ cond_l cond_da = cond
+      let DLinBlock cond_at _ cond_l cond_da = cond
       let st_body0 = st_k {pst_loop_num = Just loop_num}
 
       --- This might be insane
@@ -392,7 +304,7 @@ epp_n st n =
         ProResC p_prts_body_ (ProRes_ cs_body (udvs_body_, ct_body_)) <-
           epp_n st_body body
         let post_cond_cs = counts cond_da <> cs_body <> cs_k
-        let ProResL (ProRes_ cs_cond (cond_udvs, pt_cond_)) = epp_l cond_l post_cond_cs
+        let ProResL (ProRes_ cs_cond (cond_udvs, pt_cond_)) = epp_l post_cond_cs cond_l
         let udvs' = cond_udvs <> udvs_body_
         let loop_svs_ = counts_nzs $ count_rms loop_vars $ cs_cond
         return $ (loop_svs_, (p_prts_body_, udvs', ct_body_, pt_cond_))
@@ -410,7 +322,7 @@ epp_n st n =
               ProRes_ p_cs_k t_k = p_prts_k M.! p
               ProRes_ p_cs_body t_body = p_prts_body M.! p
               cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)
-              t_p = ET_While at asn (PLBlock cond_at pt_cond cond_da) t_body t_k
+              t_p = ET_While at asn (DLinBlock cond_at mempty pt_cond cond_da) t_body t_k
       let p_prts' = pmap st mkp
       let udvs' = udvs_k <> udvs_body
       return $ ProResC p_prts' (ProRes_ cons_cs' (udvs', ct'))
@@ -427,53 +339,32 @@ epp_n st n =
     LLC_Only at who body_l k_n -> do
       ProResC p_prts_k (ProRes_ cs_k (udvs_k, prchs_k)) <- epp_n st k_n
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-      let ProResL (ProRes_ who_body_cs (who_body_udvs, who_body_lt)) = epp_l body_l who_k_cs
+      let ProResL (ProRes_ who_body_cs (who_body_udvs, who_body_lt)) = epp_l who_k_cs body_l
       let who_prt_only =
             ProRes_ who_body_cs $ ET_ConsensusOnly at who_body_lt who_k_et
       let p_prts = M.insert who who_prt_only p_prts_k
       let udvs' = udvs_k <> who_body_udvs
       return $ ProResC p_prts (ProRes_ cs_k (udvs', prchs_k))
 
-epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
-epp_s st s =
-  case s of
-    LLS_Com c ->
-      epp_m done back skip look c
-      where
-        done :: MDone (ST s ProResS)
-        done rat =
-          return $
-            ProResS
-              (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat))
-              (ProRes_ mempty False)
-        back :: MBack LLStep (ST s ProResS)
-        back cs' mkpl k = do
-          ProResS p_prts_s (ProRes_ cs_k morech) <- skip k
-          let p_prts_s' = extend_locals cs' mkpl p_prts_s
-          let cs_k' = cs' <> cs_k
-          return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
-        skip k = epp_s st' k
-        look :: LLStep -> MLookCommon -> (ST s ProResS)
-        look k common = do
-          ProResS p_prts_s (ProRes_ cs_k morech) <- skip k
-          let ProRes_ cs_k' () = common back' skip' cs_k mempty ()
-                where
-                  skip' x _ y = ProRes_ x y
-                  back' x _ _ = ProRes_ x ()
-          let p_prts_s' = extend_locals_look common p_prts_s
-          return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
-        st' =
-          case c of
-            (LL_Let _ _ (DLE_Wait _ amt) _) ->
-              st {pst_interval = interval_add_from (pst_interval st) amt}
-            _ -> st
+epp_s :: ProSt s -> LLStep -> ST s ProResS
+epp_s st = \case
+    LLS_Com c k -> do
+      let st' =
+            case c of
+              (DL_Let _ _ (DLE_Wait _ amt)) ->
+                st {pst_interval = interval_add_from (pst_interval st) amt}
+              _ -> st
+      ProResS p_prts_s (ProRes_ cs_k morech) <- epp_s st' k
+      let ProRes_ cs_k' _ = epp_m cs_k mempty c
+      let p_prts_s' = extend_locals_look c p_prts_s
+      return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
     LLS_Stop at -> do
       let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
       return $ ProResS p_prts_s $ ProRes_ mempty False
     LLS_Only _at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-      let ProResL (ProRes_ who_body_cs (_, who_body_lt)) = epp_l body_l who_k_cs
+      let ProResL (ProRes_ who_body_cs (_, who_body_lt)) = epp_l who_k_cs body_l
       let who_prt_only =
             ProRes_ who_body_cs $ pltReplace ET_Com who_k_et who_body_lt
       let p_prts = M.insert who who_prt_only p_prts_k
@@ -515,7 +406,7 @@ epp_s st s =
               }
       ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <-
         epp_n st_cons cons
-      let add_udv_def uk udv = CT_Com $ PL_Var at udv uk
+      let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
       let ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
       let (fs_uses, fs_defns) = (mempty, [fromv])
       let msg_and_defns = (msg <> [amt_dv, timev] <> fs_defns)

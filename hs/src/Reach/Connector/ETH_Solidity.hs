@@ -400,9 +400,9 @@ solHashStateCheck :: SolCtxt -> Int -> Doc
 solHashStateCheck _ctxt prev =
   solHash [(solNum prev), "_a.svs"]
 
-data SolTailRes a = SolTailRes (SolCtxt) (Doc)
+data SolTailRes = SolTailRes SolCtxt Doc
 
-instance Semigroup (SolTailRes a) where
+instance Semigroup SolTailRes where
   (SolTailRes ctxt_x xp) <> (SolTailRes ctxt_y yp) = SolTailRes (ctxt_x <> ctxt_y) (xp <> hardline <> yp)
 
 arraySize :: DLArg -> Integer
@@ -411,7 +411,7 @@ arraySize a =
     T_Array _ sz -> sz
     _ -> impossible "arraySize"
 
-solSwitch :: (SolCtxt -> k -> SolTailRes a) -> SolCtxt -> SrcLoc -> DLVar -> SwitchCases k -> SolTailRes a
+solSwitch :: (SolCtxt -> k -> SolTailRes) -> SolCtxt -> SrcLoc -> DLVar -> SwitchCases k -> SolTailRes
 solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscList csm
   where
     t = solType ctxt $ argTypeOf (DLA_Var ov)
@@ -424,13 +424,16 @@ solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscLis
           Nothing -> emptyDoc
         SolTailRes _ body' = iter ctxt body
 
-solCom :: (SolCtxt -> k -> SolTailRes a) -> SolCtxt -> PLCommon k -> SolTailRes a
-solCom iter ctxt = \case
-  PL_Return _ -> SolTailRes ctxt emptyDoc
-  PL_Let _ _ dv (DLE_LArg _ la) k -> SolTailRes ctxt la_p <> iter ctxt k
+solCom :: SolCtxt -> PLCommon -> SolTailRes
+solCom ctxt = \case
+  DL_Nop _ ->
+    SolTailRes ctxt mempty
+  DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) ->
+    SolTailRes ctxt la_p
     where
       la_p = solLargeArg ctxt dv la
-  PL_Let _ _ dv (DLE_ArrayConcat _ x y) k -> SolTailRes ctxt concat_p <> iter ctxt k
+  DL_Let _ (PV_Let _ dv) (DLE_ArrayConcat _ x y) ->
+    SolTailRes ctxt concat_p
     where
       concat_p = vsep [copy x 0, copy y (arraySize x)]
       copy src (off :: Integer) =
@@ -440,7 +443,8 @@ solCom iter ctxt = \case
                <+> solArrayRef (solArg ctxt src) "i" <> semi)
         where
           sz = arraySize src
-  PL_Let _ _ dv@(DLVar _ _ t _) (DLE_ArrayZip _ x y) k -> SolTailRes ctxt zip_p <> iter ctxt k
+  DL_Let _ (PV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) ->
+    SolTailRes ctxt zip_p
     where
       zip_p =
         "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++")
@@ -450,28 +454,32 @@ solCom iter ctxt = \case
       (xy_ty, xy_sz) = case t of
         T_Array a b -> (a, b)
         _ -> impossible "array_zip"
-  PL_Let _ PL_Once dv de k -> iter ctxt' k
+  DL_Let _ (PV_Let PL_Once dv) de ->
+    SolTailRes ctxt' mempty
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
       de' = parens $ solExpr ctxt emptyDoc de
-  PL_Let _ PL_Many dv de k -> SolTailRes ctxt dv_set <> iter ctxt k
+  DL_Let _ (PV_Let PL_Many dv) de ->
+    SolTailRes ctxt dv_set
     where
       dv_set = solSet (solMemVar dv) (solExpr ctxt emptyDoc de)
-  PL_Eff _ de k -> SolTailRes ctxt dv_run <> iter ctxt k
+  DL_Let _ PV_Eff de -> SolTailRes ctxt dv_run
     where
       dv_run = solExpr ctxt semi de
-  PL_Var _ _ k -> iter ctxt k
-  PL_Set _ dv da k -> SolTailRes ctxt dv_set <> iter ctxt k
+  DL_Var {} -> SolTailRes ctxt mempty
+  DL_Set _ dv da -> SolTailRes ctxt dv_set
     where
       dv_set = solSet (solMemVar dv) (solArg ctxt da)
-  PL_LocalIf _ ca t f k -> SolTailRes ctxt (solIf ca' t' f') <> iter ctxt k
+  DL_LocalIf _ ca t f ->
+    SolTailRes ctxt (solIf ca' t' f')
     where
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
-  PL_LocalSwitch at ov csm k -> solSwitch solPLTail ctxt at ov csm <> iter ctxt k
-  PL_ArrayMap _ ans x a (PLBlock _ f r) k ->
-    SolTailRes ctxt map_p <> iter ctxt k
+  DL_LocalSwitch at ov csm ->
+    solSwitch solPLTail ctxt at ov csm
+  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) ->
+    SolTailRes ctxt map_p
     where
       sz = arraySize x
       map_p =
@@ -485,8 +493,8 @@ solCom iter ctxt = \case
                    ])
           ]
       SolTailRes fctxt f' = solPLTail ctxt f
-  PL_ArrayReduce _ ans x z b a (PLBlock _ f r) k ->
-    SolTailRes ctxt reduce_p <> iter ctxt k
+  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
+    SolTailRes ctxt reduce_p
     where
       sz = arraySize x
       reduce_p =
@@ -503,12 +511,21 @@ solCom iter ctxt = \case
           ]
       SolTailRes fctxt f' = solPLTail ctxt f
 
-solPLTail :: SolCtxt -> PLTail -> SolTailRes a
-solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
+solCom_ :: (SolCtxt -> a -> SolTailRes) -> SolCtxt -> PLCommon -> a -> SolTailRes
+solCom_ iter ctxt m k = SolTailRes ctxt'' doc''
+  where
+    doc'' = m' <> k'
+    SolTailRes ctxt'' k' = iter ctxt' k
+    SolTailRes ctxt' m' = solCom ctxt m
 
-solCTail :: SolCtxt -> CTail -> SolTailRes a
+solPLTail :: SolCtxt -> PLTail -> SolTailRes
+solPLTail ctxt = \case
+  DT_Return _ -> SolTailRes ctxt emptyDoc
+  DT_Com m k -> solCom_ solPLTail ctxt m k
+
+solCTail :: SolCtxt -> CTail -> SolTailRes
 solCTail ctxt = \case
-  CT_Com m -> solCom solCTail ctxt m
+  CT_Com m k -> solCom_ solCTail ctxt m k
   CT_If _ ca t f -> SolTailRes ctxt' $ solIf (solArg ctxt ca) t' f'
     where
       SolTailRes ctxt'_t t' = solCTail ctxt t
@@ -553,10 +570,10 @@ solFrame ctxt i sim = if null fs then (emptyDoc, emptyDoc) else (frame_defp, fra
     mk_field dv@(DLVar _ _ t _) =
       ((solRawVar dv), (solType ctxt t))
 
-manyVars_m :: (a -> S.Set DLVar) -> PLCommon a -> S.Set DLVar
-manyVars_m iter = \case
-  PL_Return {} -> mempty
-  PL_Let _ lc dv de k -> mdv <> iter k
+manyVars_m :: PLCommon -> S.Set DLVar
+manyVars_m = \case
+  DL_Nop _ -> mempty
+  DL_Let _ (PV_Let lc dv) de -> mdv
     where
       lc' = case de of
         DLE_LArg {} -> PL_Many
@@ -566,29 +583,31 @@ manyVars_m iter = \case
       mdv = case lc' of
         PL_Once -> mempty
         PL_Many -> S.singleton dv
-  PL_Eff _ _ k -> iter k
-  PL_Var _ dv k -> S.insert dv $ iter k
-  PL_Set _ _ _ k -> iter k
-  PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
-  PL_LocalSwitch _ _ csm k -> (mconcatMap cm1 $ M.elems csm) <> iter k
+  DL_Let _ PV_Eff _ -> mempty
+  DL_Var _ dv -> S.singleton dv
+  DL_Set {} -> mempty
+  DL_LocalIf _ _ t f -> manyVars_p t <> manyVars_p f
+  DL_LocalSwitch _ _ csm -> (mconcatMap cm1 $ M.elems csm)
     where
       cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_p c
-  PL_ArrayMap _ ans _ a f k ->
-    s_inserts [ans, a] (manyVars_bl f <> iter k)
-  PL_ArrayReduce _ ans _ _ b a f k ->
-    s_inserts [ans, b, a] (manyVars_bl f <> iter k)
+  DL_ArrayMap _ ans _ a f ->
+    s_inserts [ans, a] (manyVars_bl f)
+  DL_ArrayReduce _ ans _ _ b a f ->
+    s_inserts [ans, b, a] (manyVars_bl f)
   where
     s_inserts l = S.union (S.fromList l)
 
 manyVars_p :: PLTail -> S.Set DLVar
-manyVars_p (PLTail m) = manyVars_m manyVars_p m
+manyVars_p = \case
+  DT_Return _ -> mempty
+  DT_Com m k -> manyVars_m m <> manyVars_p k
 
 manyVars_bl :: PLBlock -> S.Set DLVar
-manyVars_bl (PLBlock _ t _) = manyVars_p t
+manyVars_bl (DLinBlock _ _ t _) = manyVars_p t
 
 manyVars_c :: CTail -> S.Set DLVar
 manyVars_c = \case
-  CT_Com m -> manyVars_m manyVars_c m
+  CT_Com m k -> manyVars_m m <> manyVars_c k
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
   CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
     where

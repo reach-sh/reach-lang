@@ -58,29 +58,33 @@ instance Sanitize DLExpr where
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
 
-instance {-# OVERLAPPING #-} Sanitize a => Sanitize (PLCommon a) where
+instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinStmt a) where
   sani = \case
-    PL_Return _ -> PL_Return sb
-    PL_Let _ lc x e k -> PL_Let sb lc x (sani e) (sani k)
-    PL_ArrayMap _ a b c d e ->
-      PL_ArrayMap sb a (sani b) c (sani d) (sani e)
-    PL_ArrayReduce _ a b c d e f g ->
-      PL_ArrayReduce sb a (sani b) (sani c) d e (sani f) (sani g)
-    PL_Eff _ e k -> PL_Eff sb (sani e) (sani k)
-    PL_Var _ v k -> PL_Var sb v (sani k)
-    PL_Set _ v a k -> PL_Set sb v (sani a) (sani k)
-    PL_LocalIf _ a b c d -> PL_LocalIf sb (sani a) (sani b) (sani c) (sani d)
-    PL_LocalSwitch _ a b k -> PL_LocalSwitch sb a (sani b) (sani k)
+    DL_Nop _ -> DL_Nop sb
+    DL_Let _ x e -> DL_Let sb (sani x) (sani e)
+    DL_ArrayMap _ a b c d ->
+      DL_ArrayMap sb a (sani b) c (sani d)
+    DL_ArrayReduce _ a b c d e f ->
+      DL_ArrayReduce sb a (sani b) (sani c) d e (sani f)
+    DL_Var _ v -> DL_Var sb v
+    DL_Set _ v a -> DL_Set sb v (sani a)
+    DL_LocalIf _ a b c -> DL_LocalIf sb (sani a) (sani b) (sani c)
+    DL_LocalSwitch _ a b -> DL_LocalSwitch sb a (sani b)
 
-instance Sanitize PLTail where
-  sani (PLTail m) = PLTail (sani m)
+instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinTail a) where
+  sani = \case
+    DT_Return _ -> DT_Return sb
+    DT_Com c t -> DT_Com (sani c) (sani t)
 
-instance Sanitize PLBlock where
-  sani (PLBlock _ t a) = PLBlock sb (sani t) (sani a)
+instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinBlock a) where
+  sani (DLinBlock _ _ t a) = DLinBlock sb mempty (sani t) (sani a)
+
+instance Sanitize PLVar where
+  sani x = x
 
 instance Sanitize CTail where
   sani = \case
-    CT_Com m -> CT_Com (sani m)
+    CT_Com m k -> CT_Com (sani m) (sani k)
     CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)
     CT_Switch _ x b -> CT_Switch sb x (sani b)
     CT_From _ vs -> CT_From sb vs

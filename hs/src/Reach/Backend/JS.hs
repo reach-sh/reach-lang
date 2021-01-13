@@ -264,49 +264,37 @@ jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> 
           Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
           Nothing -> emptyDoc
 
-jsCom :: (JSCtxt -> k -> Doc) -> JSCtxt -> PLCommon k -> Doc
-jsCom iter ctxt = \case
-  PL_Return {} -> emptyDoc
-  PL_Let _ _ dv de k ->
-    "const" <+> jsVar dv <+> "=" <+> jsExpr ctxt de <> semi <> hardline
-      <> iter ctxt k
-  PL_Eff _ de k ->
-    jsExpr ctxt de <> semi <> hardline
-      <> iter ctxt k
-  PL_Var _ dv k ->
-    "let" <+> jsVar dv <> semi <> hardline
-      <> iter ctxt k
-  PL_Set _ dv da k ->
-    jsVar dv <+> "=" <+> jsArg da <> semi <> hardline
-      <> iter ctxt k
-  PL_LocalIf _ c t f k ->
-    vsep
-      [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
-      , iter ctxt k
-      ]
-  PL_LocalSwitch at ov csm k ->
-    vsep
-      [ jsEmitSwitch jsPLTail ctxt at ov csm
-      , iter ctxt k
-      ]
-  PL_ArrayMap _ ans x a (PLBlock _ f r) k ->
+jsCom :: JSCtxt -> PLCommon -> Doc
+jsCom ctxt = \case
+  DL_Nop _ -> mempty
+  DL_Let _ (PV_Let _ dv) de ->
+    "const" <+> jsVar dv <+> "=" <+> jsExpr ctxt de <> semi
+  DL_Let _ PV_Eff de ->
+    jsExpr ctxt de <> semi
+  DL_Var _ dv ->
+    "let" <+> jsVar dv <> semi
+  DL_Set _ dv da ->
+    jsVar dv <+> "=" <+> jsArg da <> semi
+  DL_LocalIf _ c t f ->
+    jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
+  DL_LocalSwitch at ov csm ->
+    jsEmitSwitch jsPLTail ctxt at ov csm
+  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
-      <> hardline
-      <> iter ctxt k
-  PL_ArrayReduce _ ans x z b a (PLBlock _ f r) k ->
+  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [(jsApply "" (map (jsArg . DLA_Var) [b, a]) <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r))), jsArg z]
-      <> hardline
-      <> iter ctxt k
 
 jsPLTail :: JSCtxt -> PLTail -> Doc
-jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
+jsPLTail ctxt = \case
+  DT_Return {} -> emptyDoc
+  DT_Com m k -> jsCom ctxt m <> hardline <> jsPLTail ctxt k
 
 jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
 jsBlock :: JSCtxt -> PLBlock -> Doc
-jsBlock ctxt (PLBlock _ t a) = jsNewScope body
+jsBlock ctxt (DLinBlock _ _ t a) = jsNewScope body
   where
     body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
 
@@ -340,7 +328,7 @@ jsFromSpec ctxt v =
 
 jsETail :: JSCtxt -> ETail -> Doc
 jsETail ctxt = \case
-  ET_Com m -> jsCom jsETail ctxt m
+  ET_Com m k -> jsCom ctxt m <> hardline <> jsETail ctxt k
   ET_Stop _ ->
     case ctxt_simulate ctxt of
       False -> "return" <> semi
