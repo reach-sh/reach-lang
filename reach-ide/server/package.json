@@ -2,14 +2,14 @@
 	"name": "reach-lsp-server",
 	"description": "Reach Language Server",
 	"version": "0.0.1",
-	"author": "Eric Lau",
+	"author": "Reach Platform, Inc.",
 	"license": "EPL-2.0",
 	"engines": {
 		"node": "*"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ericglau/reach-ide"
+		"url": "https://github.com/reach-sh/reach-ide"
 	},
 	"dependencies": {
 		"index-of-regex": "^1.0.0",

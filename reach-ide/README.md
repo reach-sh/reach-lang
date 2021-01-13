@@ -1,21 +1,22 @@
 # Reach IDE
 
-IDE support for the Reach DApp programming language.
+This extension provides IDE support for the Reach DApp programming language.
 
 This project implements a Reach language server and VS Code extension to help with writing Reach programs that can be deployed onto Ethereum and Algorand.
 
-![](images/screenshot.png)
+## Screenshot
+![screenshot](images/screenshot.png)
 
 ## Features
-
-- Auto setup of Reach compiler
-- Syntax support for Reach .rsh files
-- Live diagnostic highlighting for Reach compile errors without needing to save the file
+This extension will automatically download and set up the Reach compiler along with providing:
+- Syntax support for Reach programs (`.rsh` files)
+- Real time diagnostic highlighting for Reach compilation errors
 - Quick fixes with suggestions provided by Reach compiler
-- Hover documentation for all Reach statements
-- Snippet insertion for Reach template
-
-Right-click menu commands to interact with Reach and Ethereum:
-- Compile Reach program
-- Run Reach program
-- Update Reach compiler
+- Hover documentation for all Reach keywords
+- Snippet insertion for Reach templates
+- Buttons to compile and Run Reach programs
+- A Button to open the Reach documentation
+- Right-click menu commands to:
+	- Compile a program
+	- Run a program
+	- Update the compiler

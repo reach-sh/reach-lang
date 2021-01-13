@@ -1,13 +1,13 @@
 {
 	"name": "reach-ide-client",
 	"description": "Reach IDE",
-	"author": "Eric Lau",
+	"author": "Reach Platform, Inc.",
 	"license": "EPL-2.0",
 	"version": "0.0.1",
 	"publisher": "ericglau",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ericglau/reach-ide"
+		"url": "https://github.com/reach-sh/reach-ide"
 	},
 	"engines": {
 		"vscode": "^1.43.0"
