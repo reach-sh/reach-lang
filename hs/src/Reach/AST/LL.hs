@@ -8,8 +8,11 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 
 type LLVar = Maybe DLVar
+
 type LLCommon = DLinStmt LLVar
+
 type LLTail = DLinTail LLVar
+
 type LLBlock = DLinBlock LLVar
 
 data LLConsensus

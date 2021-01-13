@@ -11,8 +11,8 @@ import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
 import Reach.EPP
 import Reach.Eval
-import Reach.Linearize
 import Reach.LiftConsensus
+import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser
 import Reach.Pretty ()

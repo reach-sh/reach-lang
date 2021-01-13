@@ -3,8 +3,8 @@ module Reach.LiftConsensus (liftcon) where
 import Control.Monad.Reader
 import Data.IORef
 import Data.List.Extra
-import Data.Monoid
 import qualified Data.Map.Strict as M
+import Data.Monoid
 import qualified Data.Sequence as Seq
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -58,7 +58,7 @@ doLift m mk = do
 captureLifts :: App LLConsensus -> App LLConsensus
 captureLifts mc = do
   lr <- liftIO $ newIORef mempty
-  c <- local (\e -> e { eLifts = Just lr }) mc
+  c <- local (\e -> e {eLifts = Just lr}) mc
   ls <- liftIO $ readIORef lr
   return $ foldr LLC_Com c ls
 

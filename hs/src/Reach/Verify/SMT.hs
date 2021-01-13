@@ -684,31 +684,31 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
 
 smt_m :: SMTCtxt -> LLCommon -> SMTComp
 smt_m ctxt = \case
-    DL_Nop _ -> mempty
-    DL_Let at mdv de -> smt_e ctxt at mdv de
-    DL_Var at dv -> var_m
-      where
-        var_m =
-          pathAddUnbound ctxt at (Just dv) O_Var
-    DL_ArrayMap {} ->
-      --- FIXME: It might be possible to do this in Z3 by generating a function
-      impossible "array_map"
-    DL_ArrayReduce {} ->
-      --- NOTE: I don't think this is possible
-      impossible "array_reduce"
-    DL_Set at dv va -> set_m
-      where
-        set_m =
-          smtAssertCtxt ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
-    DL_LocalIf at ca t f ->
-      smt_l ctxt_t t <> smt_l ctxt_f f
-      where
-        ctxt_f = ctxt {ctxt_path_constraint = (smtNot ca_se) : pc}
-        ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
-        pc = ctxt_path_constraint ctxt
-        ca_se = smt_a ctxt at ca
-    DL_LocalSwitch at ov csm ->
-      smtSwitch SM_Local ctxt at ov csm smt_l
+  DL_Nop _ -> mempty
+  DL_Let at mdv de -> smt_e ctxt at mdv de
+  DL_Var at dv -> var_m
+    where
+      var_m =
+        pathAddUnbound ctxt at (Just dv) O_Var
+  DL_ArrayMap {} ->
+    --- FIXME: It might be possible to do this in Z3 by generating a function
+    impossible "array_map"
+  DL_ArrayReduce {} ->
+    --- NOTE: I don't think this is possible
+    impossible "array_reduce"
+  DL_Set at dv va -> set_m
+    where
+      set_m =
+        smtAssertCtxt ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
+  DL_LocalIf at ca t f ->
+    smt_l ctxt_t t <> smt_l ctxt_f f
+    where
+      ctxt_f = ctxt {ctxt_path_constraint = (smtNot ca_se) : pc}
+      ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
+      pc = ctxt_path_constraint ctxt
+      ca_se = smt_a ctxt at ca
+  DL_LocalSwitch at ov csm ->
+    smtSwitch SM_Local ctxt at ov csm smt_l
 
 smt_l :: SMTCtxt -> LLTail -> SMTComp
 smt_l ctxt = \case
@@ -739,16 +739,16 @@ smt_block ctxt bm b = before_m <> after_m
 
 gatherDefinedVars_m :: LLCommon -> S.Set DLVar
 gatherDefinedVars_m = \case
-    DL_Nop _ -> mempty
-    DL_Let _ mdv _ -> maybe mempty S.singleton mdv
-    DL_ArrayMap {} -> impossible "array_map"
-    DL_ArrayReduce {} -> impossible "array_reduce"
-    DL_Var _ dv-> S.singleton dv
-    DL_Set {} -> mempty
-    DL_LocalIf _ _ t f -> gatherDefinedVars_l t <> gatherDefinedVars_l f
-    DL_LocalSwitch _ _ csm -> mconcatMap cm1 (M.toList csm)
-      where
-        cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
+  DL_Nop _ -> mempty
+  DL_Let _ mdv _ -> maybe mempty S.singleton mdv
+  DL_ArrayMap {} -> impossible "array_map"
+  DL_ArrayReduce {} -> impossible "array_reduce"
+  DL_Var _ dv -> S.singleton dv
+  DL_Set {} -> mempty
+  DL_LocalIf _ _ t f -> gatherDefinedVars_l t <> gatherDefinedVars_l f
+  DL_LocalSwitch _ _ csm -> mconcatMap cm1 (M.toList csm)
+    where
+      cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
 
 gatherDefinedVars_l :: LLTail -> S.Set DLVar
 gatherDefinedVars_l = \case

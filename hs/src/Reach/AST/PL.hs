@@ -19,8 +19,11 @@ data PLVar
   = PV_Eff
   | PV_Let PLLetCat DLVar
   deriving (Eq, Show)
+
 type PLCommon = DLinStmt PLVar
+
 type PLTail = DLinTail PLVar
+
 type PLBlock = DLinBlock PLVar
 
 data ETail

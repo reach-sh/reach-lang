@@ -267,8 +267,9 @@ optimize (LLProg at opts ps dli s) = do
   let SLParts m = ps
   let psl = M.keys m
   env0 <- mkEnv0 psl
-  flip runReaderT env0 $ focusa $
-    LLProg at opts ps <$> opt_dli dli <*> opt_s s
+  flip runReaderT env0 $
+    focusa $
+      LLProg at opts ps <$> opt_dli dli <*> opt_s s
 
 -- This is a bit of a hack...
 
