@@ -11,6 +11,7 @@ export const main =
       A.publish()
       .timeout(lastConsensusTime() + 10, () => {
         exit(); });
+      commit();
 
       exit();
     });

@@ -23,8 +23,6 @@ type LLRets = M.Map Int LLRetRHS
 
 type App = ReaderT Env IO
 
-type AppT a = a -> App a
-
 data Env = Env
   { eCounterR :: IORef Int
   , eFVMm :: Maybe FVMap

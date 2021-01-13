@@ -236,7 +236,7 @@ opt_n = \case
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
-  Just (d, s) -> Just <$> (pure (,) <*> opt_a d <*> (newScope $ opt_s s))
+  Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt_a d) <*> (newScope $ opt_s s))
 
 opt_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
 opt_send (p, (isClass, args, amta, whena)) =
@@ -267,7 +267,7 @@ optimize (LLProg at opts ps dli s) = do
   let SLParts m = ps
   let psl = M.keys m
   env0 <- mkEnv0 psl
-  flip runReaderT env0 $
+  flip runReaderT env0 $ focusa $
     LLProg at opts ps <$> opt_dli dli <*> opt_s s
 
 -- This is a bit of a hack...

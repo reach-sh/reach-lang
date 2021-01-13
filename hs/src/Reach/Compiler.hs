@@ -12,6 +12,7 @@ import Reach.Connector.ETH_Solidity
 import Reach.EPP
 import Reach.Eval
 import Reach.Linearize
+import Reach.LiftConsensus
 import Reach.Optimize
 import Reach.Parser
 import Reach.Pretty ()
@@ -57,7 +58,9 @@ compile copts = do
         winterOut "dl" $ render $ pretty dl
         ll <- linearize dl
         winterOut "ll" $ render $ pretty ll
-        ol <- optimize ll
+        fl <- liftcon ll
+        winterOut "fl" $ render $ pretty fl
+        ol <- optimize fl
         winterOut "ol" $ render $ pretty ol
         let vconnectors =
               case dlo_verifyPerConnector of

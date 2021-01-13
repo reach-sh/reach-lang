@@ -21,6 +21,7 @@ import Reach.STCounter
 import Reach.Util
 
 -- import Debug.Trace
+-- import Reach.Texty
 
 data EPPError
   = Err_ContinueDomination
@@ -359,8 +360,9 @@ epp_s st = \case
       let p_prts_s' = extend_locals_look c p_prts_s
       return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
     LLS_Stop at -> do
-      let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
-      return $ ProResS p_prts_s $ ProRes_ mempty False
+      let cs = pst_forced_svs st
+      let p_prts_s = pall st (ProRes_ cs (ET_Stop at))
+      return $ ProResS p_prts_s $ ProRes_ cs False
     LLS_Only _at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who

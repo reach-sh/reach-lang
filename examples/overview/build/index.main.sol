@@ -81,7 +81,12 @@ contract ReachContract is Stdlib {
     
     require(true && true);
     require(true);
+    
     require((msg.value == uint256(0)));
+    
+    
+    
+    
     emit e1(_a);
     a1postsvs memory nsvs;
     nsvs.v11 = uint256(block.number);
@@ -103,7 +108,12 @@ contract ReachContract is Stdlib {
     
     require(true && true);
     require(true);
+    
     require((msg.value == _a.svs.v4));
+    
+    
+    
+    
     emit e2(_a);
     a2postsvs memory nsvs;
     nsvs.v4 = _a.svs.v4;
@@ -128,9 +138,22 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
+    
     require((_a.svs.v3 == payable(msg.sender)));
+    
     require((msg.value == uint256(0)));
+    
+    
+    
+    
+    
     _a.svs.v3.transfer(_a.svs.v4);
+    
+    
+    
+    
+    
+    
     emit e3(_a);
     current_state = 0x0;
     selfdestruct(payable(msg.sender));

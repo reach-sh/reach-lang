@@ -126,7 +126,6 @@ data EvalError
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   | Err_ParallelReduceIncomplete String
-  | Err_TimeMustBeSimple JSExpression
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -455,8 +454,6 @@ instance Show EvalError where
       "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
-    Err_TimeMustBeSimple _e ->
-      "time computations must be constants or identifiers known by consensus"
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -477,11 +474,6 @@ ensure_public ctxt at (lvl, v) =
 
 ensure_publics :: SLCtxt s -> SrcLoc -> [SLSVal] -> [SLVal]
 ensure_publics ctxt at svs = map (ensure_public ctxt at) svs
-
-ensure_simple_time :: SLCtxt s -> SrcLoc -> DLStmts -> JSExpression -> ST s ()
-ensure_simple_time ctxt at lifts e =
-  unless (mempty == lifts) $
-    expect_throw_ctx ctxt at $ Err_TimeMustBeSimple e
 
 lvlMeetR :: SecurityLevel -> SLComp s (SecurityLevel, a) -> SLComp s (SecurityLevel, a)
 lvlMeetR lvl m = do
@@ -1396,9 +1388,8 @@ evalForm ctxt at sco st f args =
       (delay_lifts', amt_da) <-
         compileCheckType ctxt st at T_UInt $ ensure_public ctxt at amt_sv
       let time_lifts = delay_lifts <> delay_lifts'
-      ensure_simple_time ctxt at time_lifts amt_e
       let wlifts = return $ DLS_Let at Nothing (DLE_Wait at amt_da)
-      return $ SLRes wlifts st $ public $ SLV_Null at "wait"
+      return $ SLRes (time_lifts <> wlifts) st $ public $ SLV_Null at "wait"
   where
     illegal_args n = expect_throw_ctx ctxt at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -2843,13 +2834,12 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
           compileCheckType ctxt st time_at T_UInt $
             ensure_public ctxt time_at delay_sv
         let mtime_lifts = delay_lifts <> delay_lifts'
-        ensure_simple_time ctxt time_at mtime_lifts delay_e
         SLRes time_lifts time_st time_cr <-
           evalStmt ctxt time_at sco st time_ss
         -- let delay_db = DLBlock time_at mempty mtime_lifts delay_da
         let mtime_merge (SLRes lifts_ st_ cr_) =
               SLRes
-                (lifts_)
+                (mtime_lifts <> lifts_)
                 (stMerge ctxt time_at time_st st_)
                 (combineStmtRes time_at Public time_st time_cr st_ cr_)
         return $ (mtime_merge, Just (delay_da, time_lifts))
