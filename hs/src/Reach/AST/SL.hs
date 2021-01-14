@@ -17,7 +17,7 @@ import Reach.Util
 
 infixr 9 -->
 
-(-->) :: [SLType] -> SLType -> SLType
+(-->) :: [DLType] -> DLType -> DLType
 dom --> rng = T_Fun dom rng
 
 type SLPartEnvs = M.Map SLPart SLEnv
@@ -31,14 +31,14 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
-  | SLV_Array SrcLoc SLType [SLVal]
+  | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
-  | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
+  | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
-  | SLV_Type SLType
+  | SLV_Type DLType
   | SLV_Connector T.Text
   | -- I really want to remove these two Maybes, but it is hard.
     -- The DLVar is needed so that inside of an `only`, we can read off the
@@ -174,7 +174,7 @@ instance Show SLKwd where
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
-primOpType :: PrimOp -> SLType
+primOpType :: PrimOp -> DLType
 primOpType SELF_ADDRESS = impossible "self address"
 primOpType ADD = [T_UInt, T_UInt] --> T_UInt
 primOpType SUB = [T_UInt, T_UInt] --> T_UInt
@@ -202,14 +202,14 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc SLPart String SLType
+  | SLPrim_interact SrcLoc SLPart String DLType
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Bytes
   | SLPrim_Data
-  | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
+  | SLPrim_Data_variant (M.Map SLVar DLType) SLVar DLType
   | SLPrim_data_match
   | SLPrim_Array
   | SLPrim_Array_iota

@@ -141,7 +141,7 @@ instance Show BindingOrigin where
 type SMTTypeInv = SExpr -> SExpr
 
 type SMTTypeMap =
-  M.Map SLType (String, SMTTypeInv)
+  M.Map DLType (String, SMTTypeInv)
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
@@ -198,26 +198,26 @@ smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
         True -> "p"
         False -> ""
 
-smtTypeSort :: SMTCtxt -> SLType -> String
+smtTypeSort :: SMTCtxt -> DLType -> String
 smtTypeSort ctxt t =
   case M.lookup t (ctxt_typem ctxt) of
     Just (s, _) -> s
     Nothing -> impossible $ "smtTypeSort " <> show t
 
-smtTypeInv :: SMTCtxt -> SLType -> SExpr -> IO ()
+smtTypeInv :: SMTCtxt -> DLType -> SExpr -> IO ()
 smtTypeInv ctxt t se =
   case M.lookup t (ctxt_typem ctxt) of
     Just (_, i) -> smtAssertCtxt ctxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
-smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
+smtDeclare_v :: SMTCtxt -> String -> DLType -> IO ()
 smtDeclare_v ctxt v t = do
   let smt = ctxt_smt ctxt
   let s = smtTypeSort ctxt t
   void $ SMT.declare smt v $ Atom s
   smtTypeInv ctxt t $ Atom v
 
-smtDeclare_v_memo :: SMTCtxt -> String -> SLType -> IO ()
+smtDeclare_v_memo :: SMTCtxt -> String -> DLType -> IO ()
 smtDeclare_v_memo ctxt v t = do
   let vds = ctxt_vars_defdrr ctxt
   vars_defd <- readIORefRef vds
@@ -267,7 +267,7 @@ smtPrimOp ctxt p dargs =
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 
-smtTypeByteConverter :: SMTCtxt -> SLType -> String
+smtTypeByteConverter :: SMTCtxt -> DLType -> String
 smtTypeByteConverter ctxt t = (smtTypeSort ctxt t) ++ "_toBytes"
 
 smtArgByteConverter :: SMTCtxt -> DLArg -> String
@@ -464,12 +464,12 @@ verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
         TClaim CT_Possible -> True
         _ -> False
 
-pathAddUnbound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
 pathAddUnbound_v ctxt mdv at_dv v t bo = do
   smtDeclare_v ctxt v t
   modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Nothing)
 
-pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> SExpr -> SMTComp
+pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SExpr -> SMTComp
 pathAddBound_v ctxt mdv at_dv v t bo se = do
   smtDeclare_v ctxt v t
   let smt = ctxt_smt ctxt
@@ -893,7 +893,7 @@ void $ SMT.assert smt $ smtApply "forall" [ List [ List [ x, an ], List [ y, an 
                                                           , smtNot (smtEq xb yb) ] ]
 -}
 
-_smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
+_smtDefineTypes :: Solver -> S.Set DLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
   tnr <- newIORef (0 :: Int)
   let none _ = smtAndAll []
@@ -907,7 +907,7 @@ _smtDefineTypes smt ts = do
          , (T_Address, ("Address", none))
          ])
   let base = impossible "default"
-  let bind_type :: SLType -> String -> IO SMTTypeInv
+  let bind_type :: DLType -> String -> IO SMTTypeInv
       bind_type t n =
         case t of
           T_Null -> base
@@ -982,7 +982,7 @@ _smtDefineTypes smt ts = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
                   smtAndAll $ map invarg args
             return inv
-      type_name :: SLType -> IO (String, SMTTypeInv)
+      type_name :: DLType -> IO (String, SMTTypeInv)
       type_name t = do
         tm <- readIORef tmr
         case M.lookup t tm of

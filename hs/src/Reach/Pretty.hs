@@ -33,7 +33,7 @@ instance Pretty SrcLoc where
 instance Pretty SLPart where
   pretty = viaShow
 
-instance Pretty SLType where
+instance Pretty DLType where
   pretty = viaShow
 
 instance Pretty SecurityLevel where

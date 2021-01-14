@@ -188,8 +188,8 @@ data SolCtxt = SolCtxt
   { ctxt_handler_num :: Int
   , ctxt_varm :: VarMap
   , ctxt_emit :: Doc
-  , ctxt_typei :: M.Map SLType Int
-  , ctxt_typem :: M.Map SLType Doc
+  , ctxt_typei :: M.Map DLType Int
+  , ctxt_typem :: M.Map DLType Doc
   , ctxt_plo :: PLOpts
   }
 
@@ -215,19 +215,19 @@ solVar ctxt v =
     Just x -> x
     Nothing -> impossible $ "unbound var " ++ show v
 
-solType :: SolCtxt -> SLType -> Doc
+solType :: SolCtxt -> DLType -> Doc
 solType ctxt t =
   case M.lookup t $ ctxt_typem ctxt of
     Nothing -> impossible "cannot map sol type"
     Just x -> x
 
-solTypeI :: SolCtxt -> SLType -> Int
+solTypeI :: SolCtxt -> DLType -> Int
 solTypeI ctxt t =
   case M.lookup t $ ctxt_typei ctxt of
     Nothing -> impossible "cannot map sol type"
     Just x -> x
 
-mustBeMem :: SLType -> Bool
+mustBeMem :: DLType -> Bool
 mustBeMem = \case
   T_Null -> False
   T_Bool -> False
@@ -752,7 +752,7 @@ solHandlersStructSVS ctxt csvs (CHandlers hs) =
     defd = S.singleton 0
     res0 = [solStructSVS ctxt 0 csvs True]
 
-_solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
+_solDefineType1 :: (DLType -> ST s (Doc)) -> Int -> Doc -> DLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
   T_Null -> base
   T_Bool -> base
@@ -803,7 +803,7 @@ _solDefineType1 getTypeName i name = \case
   where
     base = impossible "base"
 
-_solDefineType :: STCounter s -> STRef s (M.Map SLType Int) -> STRef s (M.Map SLType (Maybe (Doc, Doc))) -> SLType -> ST s (Doc)
+_solDefineType :: STCounter s -> STRef s (M.Map DLType Int) -> STRef s (M.Map DLType (Maybe (Doc, Doc))) -> DLType -> ST s (Doc)
 _solDefineType tcr timr tmr t = do
   tm <- readSTRef tmr
   case M.lookup t tm of
@@ -824,7 +824,7 @@ _solDefineType tcr timr tmr t = do
           modifySTRef tmr $ M.insert t $ Just (tr, def)
           return $ tr
 
-solDefineTypes :: S.Set SLType -> (M.Map SLType Int, M.Map SLType (Doc), Doc)
+solDefineTypes :: S.Set DLType -> (M.Map DLType Int, M.Map DLType (Doc), Doc)
 solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
   where
     base_typem =

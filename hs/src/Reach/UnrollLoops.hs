@@ -77,14 +77,14 @@ liftLocal = \case
 liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App s ()
 liftLet at v e = liftCommon (DL_Let at (Just v) e)
 
-liftExpr :: HasCallStack => SrcLoc -> SLType -> DLExpr -> App s DLArg
+liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App s DLArg
 liftExpr at t e = do
   idx <- allocIdx
   let v = DLVar at "ul" t idx
   liftLet at v e
   return $ DLA_Var v
 
-liftArray :: HasCallStack => SrcLoc -> SLType -> [DLArg] -> App s DLExpr
+liftArray :: HasCallStack => SrcLoc -> DLType -> [DLArg] -> App s DLExpr
 liftArray at ty as = do
   let a_ty = T_Array ty $ fromIntegral $ length as
   na <- liftExpr at a_ty $ DLE_LArg at $ DLLA_Array ty as
@@ -155,7 +155,7 @@ ul_a = \case
 ul_as :: AppT s [DLArg]
 ul_as = mapM ul_a
 
-ul_explode :: SrcLoc -> DLArg -> App s (SLType, [DLArg])
+ul_explode :: SrcLoc -> DLArg -> App s (DLType, [DLArg])
 ul_explode at a =
   case a of
     DLA_Var (DLVar _ _ (T_Array t sz) _) -> do_explode t sz

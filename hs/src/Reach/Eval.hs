@@ -46,12 +46,12 @@ data EvalError
   = Err_Apply_ArgCount SrcLoc Int Int
   | Err_Block_Assign JSAssignOp [JSStatement]
   | Err_Block_IllegalJS JSStatement
-  | Err_Block_NotNull SLType SLVal
+  | Err_Block_NotNull DLType SLVal
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
-  | Err_App_Interact_NotFirstOrder SLType
+  | Err_App_Interact_NotFirstOrder DLType
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
   | Err_App_InvalidInteract SLSVal
@@ -122,7 +122,7 @@ data EvalError
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
   | Err_ToConsensus_WhenNoTimeout
-  | Err_Fork_ResultNotObject SLType
+  | Err_Fork_ResultNotObject DLType
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   | Err_ParallelReduceIncomplete String
@@ -141,7 +141,7 @@ displaySlValType = \case
       Just (t, _) -> displayTy t
       Nothing -> "<" <> conNameOf sv <> ">"
 
-displayTy :: SLType -> String
+displayTy :: DLType -> String
 displayTy = \case
   T_Null -> "null"
   T_Bool -> "bool"
@@ -154,7 +154,7 @@ displayTy = \case
   T_Tuple _tys -> "tuple"
   T_Object _m -> "object" -- FIXME
   T_Data _m -> "data" -- FIXME
-  T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
+  T_Forall x ty {- SLVar DLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
   T_Type _ -> "type"
 
@@ -668,19 +668,19 @@ is_class ctxt who = S.member who $ ctxt_classes ctxt
 expect_throw_ctx :: HasCallStack => (Show a, ErrorMessageForJson a, ErrorSuggestions a) => SLCtxt s -> SrcLoc -> a -> b
 expect_throw_ctx ctxt = expect_throw (mcfs ctxt)
 
-typeOf_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
+typeOf_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLVal -> (DLType, DLArgExpr)
 typeOf_ctxt ctxt st = typeOf (tint ctxt st)
 
-checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> DLArgExpr
+checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> DLType -> SLVal -> DLArgExpr
 checkType_ctxt ctxt st = checkType (tint ctxt st)
 
-typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> DLType
 typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 
-typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
 
-checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
+checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> DLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert_ctxt ctxt st = checkAndConvert (tint ctxt st)
 
 ctxt_alloc :: SLCtxt s -> ST s Int
@@ -740,30 +740,30 @@ slvParticipant_part ctxt at = \case
   SLV_Participant _ x _ _ -> x
   x -> expect_throw_ctx ctxt at $ Err_NotParticipant x
 
-compileCheckAndConvert :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, SLType, [DLArg])
+compileCheckAndConvert :: SLCtxt s -> SLState -> SrcLoc -> DLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
 compileCheckAndConvert ctxt st at t argvs = do
   let (res, arges) = checkAndConvert_ctxt ctxt st at t argvs
   (lifts, args) <- compileArgExprs ctxt at arges
   return (lifts, res, args)
 
-compileTypeOf :: SLCtxt s -> SLState -> SrcLoc -> SLVal -> ST s (DLStmts, SLType, DLArg)
+compileTypeOf :: SLCtxt s -> SLState -> SrcLoc -> SLVal -> ST s (DLStmts, DLType, DLArg)
 compileTypeOf ctxt st at v = do
   let (t, dae) = typeOf_ctxt ctxt st at v
   (lifts, da) <- compileArgExpr ctxt at dae
   return (lifts, t, da)
 
-compileTypeOfs :: SLCtxt s -> SLState -> SrcLoc -> [SLVal] -> ST s (DLStmts, [SLType], [DLArg])
+compileTypeOfs :: SLCtxt s -> SLState -> SrcLoc -> [SLVal] -> ST s (DLStmts, [DLType], [DLArg])
 compileTypeOfs ctxt st at vs = do
   let (ts, daes) = unzip $ map (typeOf_ctxt ctxt st at) vs
   (lifts, das) <- compileArgExprs ctxt at daes
   return (lifts, ts, das)
 
-compileCheckType :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> ST s (DLStmts, DLArg)
+compileCheckType :: SLCtxt s -> SLState -> SrcLoc -> DLType -> SLVal -> ST s (DLStmts, DLArg)
 compileCheckType ctxt st at et v = do
   let ae = checkType_ctxt ctxt st at et v
   compileArgExpr ctxt at ae
 
-checkResType :: SLCtxt a -> SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
+checkResType :: SLCtxt a -> SrcLoc -> DLType -> SLComp a SLSVal -> SLComp a DLArg
 checkResType ctxt at et m = do
   SLRes lifts st (_lvl, v) <- m
   (lifts', a) <- compileCheckType ctxt st at et v
@@ -2665,7 +2665,7 @@ enforcePrivateUnderscore ctxt at = mapM_ enf . M.toList
           expect_throw_ctx ctxt at (Err_Eval_NotSecretIdent k)
       _ -> return ()
 
-doOnlyExpr :: SLCtxt s -> SrcLoc -> (SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLEnv, SLType, SLVal)
+doOnlyExpr :: SLCtxt s -> SrcLoc -> (SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLEnv, DLType, SLVal)
 doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
@@ -2939,7 +2939,7 @@ data CompiledForkCase = CompiledForkCase
   , cfc_only :: JSStatement
   }
 
-typeToExpr :: SLType -> JSExpression
+typeToExpr :: DLType -> JSExpression
 typeToExpr = \case
   T_Null -> var "Null"
   T_Bool -> var "Bool"
@@ -3246,7 +3246,7 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
   let lifts' = decl_lifts <> ae_lifts <> (return $ DLS_Continue at cont_das)
   return $ SLRes lifts' st_decl' ()
 
-evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
+evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> DLType -> ST s DLBlock
 evalPureExprToBlock ctxt at sco st klifts e rest = do
   let pure_st = st {st_mode = SLM_ConsensusPure}
   let fs = ctxt_stack ctxt

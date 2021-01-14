@@ -41,19 +41,19 @@ aarray = Aeson.Array . Vector.fromList
 sb :: SrcLoc
 sb = srcloc_builtin
 
-typeArray :: HasCallStack => DLArg -> (SLType, Integer)
+typeArray :: HasCallStack => DLArg -> (DLType, Integer)
 typeArray a =
   case argTypeOf a of
     T_Array t sz -> (t, sz)
     _ -> impossible $ "should be array"
 
-typeTupleTypes :: HasCallStack => DLArg -> [SLType]
+typeTupleTypes :: HasCallStack => DLArg -> [DLType]
 typeTupleTypes a =
   case argTypeOf a of
     T_Tuple ts -> ts
     _ -> impossible $ "should be tuple"
 
-typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, SLType)]
+typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, DLType)]
 typeObjectTypes a =
   case argTypeOf a of
     T_Object m -> M.toAscList m
@@ -67,7 +67,7 @@ udiv x y = z
     (q, d) = quotRem x y
     z = if d == 0 then q else q + 1
 
-typeSizeOf :: SLType -> Integer
+typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
   T_Null -> 0
   T_Bool -> 1
@@ -322,7 +322,7 @@ how_many_txns = do
   Env {..} <- ask
   liftIO $ readIORef eTxnsR
 
-ctobs :: SLType -> App ()
+ctobs :: DLType -> App ()
 ctobs = \case
   T_UInt -> op "itob"
   T_Bool -> code "itob" ["// bool"] >> code "substring" ["7", "8"]
@@ -339,7 +339,7 @@ ctobs = \case
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
 
-cfrombs :: SLType -> App ()
+cfrombs :: DLType -> App ()
 cfrombs = \case
   T_UInt -> op "btoi"
   T_Bool -> op "btoi"
@@ -462,7 +462,7 @@ csum_ = \case
 csum :: [DLArg] -> App ()
 csum = csum_ . map ca
 
-cconcatbs :: [(SLType, App ())] -> App ()
+cconcatbs :: [(DLType, App ())] -> App ()
 cconcatbs l = do
   check_concat_len totlen
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
@@ -478,7 +478,7 @@ check_concat_len totlen =
     True -> nop
     False -> bad $ "concat too big: 4096 < " <> texty totlen
 
-cdigest :: [(SLType, App ())] -> App ()
+cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
 
 csubstring :: SrcLoc -> Integer -> Integer -> App ()
@@ -491,7 +491,7 @@ csubstring at b c =
       cl $ DLL_Int sb c
       op "substring3"
 
-computeSubstring :: [SLType] -> Integer -> (SLType, Integer, Integer)
+computeSubstring :: [DLType] -> Integer -> (DLType, Integer, Integer)
 computeSubstring ts idx = (t, start, end)
   where
     szs = map typeSizeOf ts
@@ -984,7 +984,7 @@ txnFromContract0 = txnToContract + 1
 -- 3   : Fee amount
 -- 4   : Last round
 -- 5.. : Handler arguments
-stdArgTypes :: [SLType]
+stdArgTypes :: [DLType]
 stdArgTypes = [T_Digest, T_Digest, T_Bool, T_UInt, T_UInt]
 
 argPrevSt :: Word8

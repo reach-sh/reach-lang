@@ -31,10 +31,10 @@ import Reach.Util
 
 data TypeError
   = Err_Type_None SLVal
-  | Err_Type_NotApplicable SLType
+  | Err_Type_NotApplicable DLType
   | Err_TypeMeets_None
-  | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
-  | Err_Type_TooFewArguments [SLType]
+  | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, DLType) (SrcLoc, DLType)
+  | Err_Type_TooFewArguments [DLType]
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_IntLiteralRange Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
@@ -68,13 +68,13 @@ checkIntLiteral at rmin x rmax =
     True -> x
     False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
-typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either TypeError SLType
+typeEqual :: SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> Either TypeError DLType
 typeEqual top_at x@(_, xt) y@(_, yt) =
   case xt == yt of
     True -> Right xt
     False -> Left $ Err_TypeMeets_Mismatch top_at x y
 
-typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> DLType
 typeMeet _ _ (_, T_Bytes xz) (_, T_Bytes yz) =
   T_Bytes (max xz yz)
 typeMeet mcfs top_at x@(_, xt) y =
@@ -83,7 +83,7 @@ typeMeet mcfs top_at x@(_, xt) y =
     Right _ -> xt
     Left err -> expect_throw mcfs top_at err
 
-typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
 typeMeets mcfs top_at l =
   case l of
     [] ->
@@ -92,9 +92,9 @@ typeMeets mcfs top_at l =
     [x, y] -> typeMeet mcfs top_at x y
     x : more -> typeMeet mcfs top_at x $ (top_at, typeMeets mcfs top_at more)
 
-type TypeEnv s = M.Map SLVar (STRef s (Maybe SLType))
+type TypeEnv s = M.Map SLVar (STRef s (Maybe DLType))
 
-typeSubst :: SrcLoc -> TypeEnv s -> SLType -> ST s SLType
+typeSubst :: SrcLoc -> TypeEnv s -> DLType -> ST s DLType
 typeSubst at env ty =
   case ty of
     T_Fun doms rng -> do
@@ -127,7 +127,7 @@ typeSubst at env ty =
   where
     iter = typeSubst at env
 
-typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> a -> ST s a
+typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> DLType -> SLVal -> DLType -> a -> ST s a
 typeCheck_help mcfs at env ty val val_ty res =
   case (val_ty, ty) of
     (T_Var _, _) ->
@@ -147,25 +147,25 @@ typeCheck_help mcfs at env ty val val_ty res =
     (_, _) ->
       typeMeet mcfs at (at, val_ty) (at, ty) `seq` return res
 
-conTypeOf :: DLConstant -> SLType
+conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
   DLC_UInt_max -> T_UInt
 
-litTypeOf :: DLLiteral -> SLType
+litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
   DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
-argTypeOf :: DLArg -> SLType
+argTypeOf :: DLArg -> DLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
   DLA_Constant c -> conTypeOf c
   DLA_Literal c -> litTypeOf c
   DLA_Interact _ _ t -> t
 
-largeArgTypeOf :: DLLargeArg -> SLType
+largeArgTypeOf :: DLLargeArg -> DLType
 largeArgTypeOf = \case
   DLLA_Array sz as -> argExprTypeOf $ DLAE_Array sz $ map DLAE_Arg as
   DLLA_Tuple as -> argExprTypeOf $ DLAE_Tuple $ map DLAE_Arg as
@@ -174,12 +174,12 @@ largeArgTypeOf = \case
 
 data DLArgExpr
   = DLAE_Arg DLArg
-  | DLAE_Array SLType [DLArgExpr]
+  | DLAE_Array DLType [DLArgExpr]
   | DLAE_Tuple [DLArgExpr]
   | DLAE_Obj (M.Map SLVar DLArgExpr)
-  | DLAE_Data (M.Map SLVar SLType) String DLArgExpr
+  | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
 
-argExprTypeOf :: DLArgExpr -> SLType
+argExprTypeOf :: DLArgExpr -> DLType
 argExprTypeOf = \case
   DLAE_Arg a -> argTypeOf a
   DLAE_Array t as -> T_Array t $ fromIntegral (length as)
@@ -225,23 +225,23 @@ slToDL pdvs _at v =
     SLV_Form _ -> Nothing
     SLV_Kwd _ -> Nothing
 
-typeOfM :: HasCallStack => PDVS -> SrcLoc -> SLVal -> Maybe (SLType, DLArgExpr)
+typeOfM :: HasCallStack => PDVS -> SrcLoc -> SLVal -> Maybe (DLType, DLArgExpr)
 typeOfM pdvs at v = do
   dae <- slToDL pdvs at v
   return $ (argExprTypeOf dae, dae)
 
-typeOf :: HasCallStack => TINT -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
+typeOf :: HasCallStack => TINT -> SrcLoc -> SLVal -> (DLType, DLArgExpr)
 typeOf (mcfs, pdvs) at v =
   case typeOfM pdvs at v of
     Just x -> x
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
+typeCheck :: TINT -> SrcLoc -> TypeEnv s -> DLType -> SLVal -> ST s DLArgExpr
 typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_ty res
   where
     (val_ty, res) = typeOf tint at val
 
-typeChecks :: TINT -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks :: TINT -> SrcLoc -> TypeEnv s -> [DLType] -> [SLVal] -> ST s [DLArgExpr]
 typeChecks tint@(mcfs, _) at env ts vs =
   case (ts, vs) of
     ([], []) ->
@@ -255,7 +255,7 @@ typeChecks tint@(mcfs, _) at env ts vs =
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
+checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> DLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     T_Fun dom rng -> do
@@ -269,10 +269,10 @@ checkAndConvert_i tint@(mcfs, _) at env t args =
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: TINT -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
+checkAndConvert :: TINT -> SrcLoc -> DLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert tint at t args = runST $ checkAndConvert_i tint at mempty t args
 
-checkType :: TINT -> SrcLoc -> SLType -> SLVal -> DLArgExpr
+checkType :: TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr
 checkType tint@(mcfs, _) at et v =
   typeMeet mcfs at (at, et) (at, t) `seq` da
   where

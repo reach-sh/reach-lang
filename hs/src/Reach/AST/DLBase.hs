@@ -15,7 +15,7 @@ data DeployMode
   deriving (Eq, Generic, NFData, Show)
 
 newtype InteractEnv
-  = InteractEnv (M.Map SLVar SLType)
+  = InteractEnv (M.Map SLVar DLType)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
@@ -39,7 +39,7 @@ data DLLiteral
   | DLL_Bytes B.ByteString
   deriving (Eq, Generic, NFData, Show, Ord)
 
-data DLVar = DLVar SrcLoc String SLType Int
+data DLVar = DLVar SrcLoc String DLType Int
   deriving (Generic, NFData, Show, Ord)
 
 instance Eq DLVar where
@@ -53,14 +53,14 @@ dvdeletem = \case
   Nothing -> id
   Just x -> dvdelete x
 
-varType :: DLVar -> SLType
+varType :: DLVar -> DLType
 varType (DLVar _ _ t _) = t
 
 data DLArg
   = DLA_Var DLVar
   | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
-  | DLA_Interact SLPart String SLType
+  | DLA_Interact SLPart String DLType
   deriving (Eq, Ord, Generic, NFData, Show)
 
 data ClaimType
@@ -117,10 +117,10 @@ mkAnnot a = StmtAnnot {..}
     sa_local = isLocal a
 
 data DLLargeArg
-  = DLLA_Array SLType [DLArg]
+  = DLLA_Array DLType [DLArg]
   | DLLA_Tuple [DLArg]
   | DLLA_Obj (M.Map String DLArg)
-  | DLLA_Data (M.Map SLVar SLType) String DLArg
+  | DLLA_Data (M.Map SLVar DLType) String DLArg
   deriving (Eq, Ord, Generic, NFData, Show)
 
 data DLExpr
@@ -134,7 +134,7 @@ data DLExpr
   | DLE_ArrayZip SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
-  | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
+  | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String DLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
   | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
   | DLE_Transfer SrcLoc DLArg DLArg

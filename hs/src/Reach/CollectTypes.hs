@@ -9,7 +9,7 @@ import Reach.AST.PL
 import Reach.Type
 
 class CollectsTypes a where
-  cts :: a -> S.Set SLType
+  cts :: a -> S.Set DLType
 
 instance CollectsTypes Bool where
   cts _ = mempty
@@ -39,7 +39,7 @@ instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d, Co
 instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d, CollectsTypes e, CollectsTypes f) => CollectsTypes (a, b, c, d, e, f) where
   cts (x, y, z, a, b, c) = cts x <> cts y <> cts z <> cts a <> cts b <> cts c
 
-instance CollectsTypes SLType where
+instance CollectsTypes DLType where
   cts t =
     S.singleton t
       <> case t of

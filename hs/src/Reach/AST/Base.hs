@@ -166,29 +166,29 @@ instance Monoid SecurityLevel where
 --- Static Language
 type SLVar = String
 
-data SLType
+data DLType
   = T_Null
   | T_Bool
   | T_UInt
   | T_Bytes Integer
   | T_Digest
   | T_Address
-  | T_Fun [SLType] SLType
-  | T_Array SLType Integer
-  | T_Tuple [SLType]
-  | T_Object (M.Map SLVar SLType)
-  | T_Data (M.Map SLVar SLType)
-  | T_Forall SLVar SLType
+  | T_Fun [DLType] DLType
+  | T_Array DLType Integer
+  | T_Tuple [DLType]
+  | T_Object (M.Map SLVar DLType)
+  | T_Data (M.Map SLVar DLType)
+  | T_Forall SLVar DLType
   | T_Var SLVar
-  | T_Type SLType
+  | T_Type DLType
   deriving (Eq, Generic, NFData, Ord)
 
--- | Fold over SLType, doing something special on Fun
+-- | Fold over DLType, doing something special on Fun
 funFold
-  :: a -- ^ On no SLType inside
-  -> ([SLType] -> a) -- ^ On many SLType inside
-  -> ([SLType] -> SLType -> a) -- ^ On Fun
-  -> SLType -- ^ The type to fold over
+  :: a -- ^ On no DLType inside
+  -> ([DLType] -> a) -- ^ On many DLType inside
+  -> ([DLType] -> DLType -> a) -- ^ On Fun
+  -> DLType -- ^ The type to fold over
   -> a
 funFold z k fun = go
   where
@@ -210,7 +210,7 @@ funFold z k fun = go
 
 -- | True if the type is a Fun, or
 -- is a container/forall type with Fun somewhere inside
-hasFun :: SLType -> Bool
+hasFun :: DLType -> Bool
 hasFun = funFold z k fun
   where
     z = False
@@ -219,22 +219,22 @@ hasFun = funFold z k fun
 
 -- | True if all Function types within this type
 -- do not accept or return functions.
-isFirstOrder :: SLType -> Bool
+isFirstOrder :: DLType -> Bool
 isFirstOrder = funFold z k fun
   where
     z = True
     k = all isFirstOrder
     fun inTys outTy = not $ any hasFun $ outTy : inTys
 
-showTys :: [SLType] -> String
+showTys :: [DLType] -> String
 showTys = intercalate ", " . map show
 
-showTyMap :: M.Map SLVar SLType -> String
+showTyMap :: M.Map SLVar DLType -> String
 showTyMap = intercalate ", " . map showPair . M.toList
   where
     showPair (name, ty) = show name <> ": " <> show ty
 
-instance Show SLType where
+instance Show DLType where
   show T_Null = "Null"
   show T_Bool = "Bool"
   show T_UInt = "UInt"
@@ -280,7 +280,7 @@ data FluidVar
   | FV_lastConsensusTime
   deriving (Eq, Generic, NFData, Ord, Show, Bounded, Enum)
 
-fluidVarType :: FluidVar -> SLType
+fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
   FV_balance -> T_UInt
   FV_thisConsensusTime -> T_UInt

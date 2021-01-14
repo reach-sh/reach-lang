@@ -85,7 +85,7 @@ jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 --- don't create them ovre and over... or do something like the sol
 --- and smt backends and collect the set of types and define them all
 --- up front.
-jsContract :: SLType -> Doc
+jsContract :: DLType -> Doc
 jsContract = \case
   T_Null -> "stdlib.T_Null"
   T_Bool -> "stdlib.T_Bool"
@@ -102,7 +102,7 @@ jsContract = \case
   T_Var {} -> impossible "var dl"
   T_Type {} -> impossible "type dl"
 
-jsProtect :: Doc -> SLType -> Doc -> Doc
+jsProtect :: Doc -> DLType -> Doc -> Doc
 jsProtect ai how what =
   jsApply "stdlib.protect" $ [jsContract how, what, ai]
 
