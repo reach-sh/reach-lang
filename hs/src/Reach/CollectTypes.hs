@@ -49,14 +49,31 @@ instance CollectsTypes DLType where
         T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty
-        T_Fun dom rng -> cts dom <> cts rng
         T_Array e _ -> cts e
         T_Tuple elems -> cts elems
         T_Object m -> cts m
         T_Data m -> cts m
-        T_Forall _ t' -> cts t'
-        T_Var _ -> mempty
-        T_Type _ -> mempty
+
+instance CollectsTypes SLType where
+  cts t =
+    S.singleton (st2dt t)
+      <> case t of
+        ST_Null -> mempty
+        ST_Bool -> mempty
+        ST_UInt -> mempty
+        ST_Bytes _ -> mempty
+        ST_Digest -> mempty
+        ST_Address -> mempty
+        ST_Array e _ -> cts e
+        ST_Tuple elems -> cts elems
+        ST_Object m -> cts m
+        ST_Data m -> cts m
+        -- XXX st2dt above will explode before it hits any of these cases
+        -- Is there a better way to handle them so that it doesn't explode?
+        ST_Fun dom rng -> cts dom <> cts rng
+        ST_Forall _ t' -> cts t'
+        ST_Var _ -> mempty
+        ST_Type _ -> mempty
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m

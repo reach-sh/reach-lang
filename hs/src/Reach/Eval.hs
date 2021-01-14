@@ -51,7 +51,7 @@ data EvalError
   | Err_Block_While
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
-  | Err_App_Interact_NotFirstOrder DLType
+  | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
   | Err_App_InvalidInteract SLSVal
@@ -149,14 +149,14 @@ displayTy = \case
   T_Bytes sz -> "bytes[" <> show sz <> "]"
   T_Digest -> "digest"
   T_Address -> "address"
-  T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
   T_Array _ty _sz -> "array" -- <> displayTyList tys
   T_Tuple _tys -> "tuple"
   T_Object _m -> "object" -- FIXME
   T_Data _m -> "data" -- FIXME
-  T_Forall x ty {- SLVar DLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
-  T_Var x {- SLVar-} -> x
-  T_Type _ -> "type"
+  -- T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
+  -- T_Forall x ty {- SLVar DLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
+  -- T_Var x {- SLVar-} -> x
+  -- T_Type _ -> "type"
 
 displaySecurityLevel :: SecurityLevel -> String
 displaySecurityLevel Secret = "secret"
@@ -586,12 +586,12 @@ base_env =
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
     , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
-    , ("Digest", SLV_Type T_Digest)
-    , ("Null", SLV_Type T_Null)
-    , ("Bool", SLV_Type T_Bool)
-    , ("UInt", SLV_Type T_UInt)
+    , ("Digest", SLV_Type ST_Digest)
+    , ("Null", SLV_Type ST_Null)
+    , ("Bool", SLV_Type ST_Bool)
+    , ("UInt", SLV_Type ST_UInt)
     , ("Bytes", SLV_Prim SLPrim_Bytes)
-    , ("Address", SLV_Type T_Address)
+    , ("Address", SLV_Type ST_Address)
     , ("forall", SLV_Prim SLPrim_forall)
     , ("Data", SLV_Prim SLPrim_Data)
     , ("Array", SLV_Prim SLPrim_Array)
@@ -680,7 +680,7 @@ typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
 
-checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> DLType -> [SLVal] -> (DLType, [DLArgExpr])
+checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert_ctxt ctxt st = checkAndConvert (tint ctxt st)
 
 ctxt_alloc :: SLCtxt s -> ST s Int
@@ -740,7 +740,7 @@ slvParticipant_part ctxt at = \case
   SLV_Participant _ x _ _ -> x
   x -> expect_throw_ctx ctxt at $ Err_NotParticipant x
 
-compileCheckAndConvert :: SLCtxt s -> SLState -> SrcLoc -> DLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
+compileCheckAndConvert :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
 compileCheckAndConvert ctxt st at t argvs = do
   let (res, arges) = checkAndConvert_ctxt ctxt st at t argvs
   (lifts, args) <- compileArgExprs ctxt at arges
@@ -1073,8 +1073,8 @@ evalAsEnv ctx at obj =
       M.map (retV . sss_sls) env
     SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
-    SLV_Prim (SLPrim_interact _ who m it@(T_Object tm)) ->
-      retDLVar tm (DLA_Interact who m it) Secret
+    SLV_Prim (SLPrim_interact _ who m it@(ST_Object tm)) ->
+      retDLVar (M.map st2dt tm) (DLA_Interact who m (st2dt it)) Secret
     SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1131,7 +1131,7 @@ evalAsEnv ctx at obj =
       tupleValueEnv
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
       tupleValueEnv
-    SLV_Prim (SLPrim_interact _ _ _ (T_Tuple _)) ->
+    SLV_Prim (SLPrim_interact _ _ _ (ST_Tuple _)) ->
       tupleValueEnv
     SLV_Prim SLPrim_Tuple ->
       M.fromList
@@ -1142,7 +1142,7 @@ evalAsEnv ctx at obj =
       arrayValueEnv
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
       arrayValueEnv
-    SLV_Prim (SLPrim_interact _ _ _ (T_Array _ _)) ->
+    SLV_Prim (SLPrim_interact _ _ _ (ST_Array _ _)) ->
       arrayValueEnv
     SLV_Data {} ->
       M.fromList
@@ -1152,7 +1152,7 @@ evalAsEnv ctx at obj =
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
-    SLV_Prim (SLPrim_interact _ _ _ (T_Data _)) ->
+    SLV_Prim (SLPrim_interact _ _ _ (ST_Data _)) ->
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
@@ -1188,10 +1188,10 @@ evalAsEnv ctx at obj =
         , ("setIfUnset", retStdLib "Object_setIfUnset")
         , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
         ]
-    SLV_Type T_UInt ->
+    SLV_Type ST_UInt ->
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
-    SLV_Type (T_Data varm) ->
+    SLV_Type (ST_Data varm) ->
       M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm
     v ->
       expect_throw_ctx ctx at (Err_Eval_NotObject v)
@@ -1475,10 +1475,10 @@ evalPrimOp ctxt at _sco st p sargs =
       return (lifts, v)
     (/\) (SLV_Bool bAt False) _ = return (mempty, SLV_Bool bAt False)
     (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return (mempty, r)
-    (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) = return $ (mempty, r)
+    (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ ST_Bool)) = return $ (mempty, r)
     -- Flip args & process
     (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
-    (/\) l@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) r@SLV_Bool {} = r /\ l
+    (/\) l@(SLV_Prim (SLPrim_interact _ _ _ ST_Bool)) r@SLV_Bool {} = r /\ l
     -- Values not supported
     (/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
     polyEq args' =
@@ -1689,7 +1689,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Fun ->
       case map snd sargs of
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] ->
-          retV $ (lvl, SLV_Type $ T_Fun dom rng)
+          retV $ (lvl, SLV_Type $ ST_Fun dom rng)
           where
             dom = map expect_ty dom_arr
         _ -> illegal_args
@@ -1707,19 +1707,19 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_typeOf ->
       case map snd sargs of
         [(SLV_Type ty)] ->
-          retV $ (lvl, SLV_Type (T_Type ty))
-        [val] -> retV $ (lvl, SLV_Type ty)
+          retV $ (lvl, SLV_Type (ST_Type ty))
+        [val] -> retV $ (lvl, SLV_Type (dt2st ty))
           where
             (ty, _) = typeOf_ctxt ctxt st at val
         _ -> illegal_args
     SLPrim_Bytes ->
       case map snd sargs of
-        [(SLV_Int _ sz)] -> retV $ (lvl, SLV_Type $ T_Bytes sz)
+        [(SLV_Int _ sz)] -> retV $ (lvl, SLV_Type $ ST_Bytes sz)
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of
         [(SLV_Type ty), (SLV_Int _ sz)] ->
-          retV $ (lvl, SLV_Type $ T_Array ty sz)
+          retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
     SLPrim_tuple_length -> do
       let a = one_arg
@@ -1740,7 +1740,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Array_iota ->
       case map snd sargs of
         [SLV_Int _ sz] ->
-          retV $ (lvl, SLV_Array at T_UInt $ map (SLV_Int at) [0 .. (sz -1)])
+          retV $ (lvl, SLV_Array at ST_UInt $ map (SLV_Int at) [0 .. (sz -1)])
         _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
@@ -1750,14 +1750,14 @@ evalPrim ctxt at sco st p sargs =
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
               where
                 elem_vs_checked = map check1 elem_vs
-                check1 sv = checkType_ctxt ctxt st at elem_ty sv `seq` sv
+                check1 sv = checkType_ctxt ctxt st at (st2dt elem_ty) sv `seq` sv
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
     SLPrim_array_concat ->
       case map snd sargs of
         [SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs] ->
-          retV $ (lvl, SLV_Array at (typeMeet_ctxt ctxt at (x_at, x_ty) (y_at, y_ty)) $ x_vs ++ y_vs)
+          retV $ (lvl, SLV_Array at (dt2st (typeMeet_ctxt ctxt at (x_at, st2dt x_ty) (y_at, st2dt y_ty))) $ x_vs ++ y_vs)
         [x, y] -> do
           (x_lifts, xt, xa) <- compileTypeOf ctxt st at x
           (y_lifts, yt, ya) <- compileTypeOf ctxt st at y
@@ -1778,6 +1778,7 @@ evalPrim ctxt at sco st p sargs =
       (y_lifts, yt, y_da) <- compileTypeOf ctxt st at y
       let (y_ty, y_sz) = mustBeArray yt
       let ty' = T_Tuple [x_ty, y_ty]
+      let sty' = dt2st ty'
       unless (x_sz == y_sz) $ do
         expect_throw_ctx ctxt at $ Err_Zip_ArraysNotEqualLength x_sz y_sz
       let sz' = x_sz
@@ -1787,7 +1788,7 @@ evalPrim ctxt at sco st p sargs =
             (xlifts', x_vs) <- explodeTupleLike ctxt at "zip" x
             (ylifts', y_vs) <- explodeTupleLike ctxt at "zip" y
             let vs' = zipWith (\xe ye -> SLV_Tuple at [xe, ye]) x_vs y_vs
-            return $ SLRes (xlifts' <> ylifts') st (lvl, SLV_Array at ty' vs')
+            return $ SLRes (xlifts' <> ylifts') st (lvl, SLV_Array at sty' vs')
           False -> do
             let t = T_Array ty' sz'
             let mkdv = (DLVar at "array_zip" t)
@@ -1819,7 +1820,7 @@ evalPrim ctxt at sco st p sargs =
                         stMerge ctxt at f_st xv_st
                           `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
                 (lifts'', vs') <- foldM evalem (mempty, []) x_vs
-                return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
+                return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at (dt2st f_ty) vs')
               False -> do
                 let t = T_Array f_ty x_sz
                 (ans_dv, ans_dsv) <- make_dlvar at "array_map" t
@@ -1899,7 +1900,7 @@ evalPrim ctxt at sco st p sargs =
                         retV $ (lvl, arrv')
                         where
                           arrv' = SLV_Array at elem_ty arrvs'
-                          valv_checked = checkType_ctxt ctxt st at elem_ty valv `seq` valv
+                          valv_checked = checkType_ctxt ctxt st at (st2dt elem_ty) valv `seq` valv
                           arrvs' = take (idxi' - 1) arrvs ++ [valv_checked] ++ drop (idxi' + 1) arrvs
                       False ->
                         expect_throw_ctx ctxt at $ Err_Eval_RefOutOfBounds (length arrvs) idxi
@@ -1933,7 +1934,7 @@ evalPrim ctxt at sco st p sargs =
           (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at "array_set" t) de
           return $ SLRes lifts' st (lvl, SLV_DLVar dv)
     SLPrim_Tuple ->
-      retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
+      retV $ (lvl, SLV_Type $ ST_Tuple $ map expect_ty $ map snd sargs)
     SLPrim_tuple_set ->
       case map snd sargs of
         [tup, (SLV_Int _ idxi), val] -> do
@@ -1950,7 +1951,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Object ->
       case map snd sargs of
         [(SLV_Object _ _ objm)] ->
-          retV $ (lvl, SLV_Type $ T_Object $ M.map (expect_ty . sss_val) objm)
+          retV $ (lvl, SLV_Type $ ST_Object $ M.map (expect_ty . sss_val) objm)
         _ -> illegal_args
     SLPrim_Object_has ->
       case map snd sargs of
@@ -2044,7 +2045,7 @@ evalPrim ctxt at sco st p sargs =
       case sargs of
         [(olvl, one)] -> do
           let t = expect_ty one
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" t) (DLE_Impossible at $ "cannot inspect value from forall")
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" (st2dt t)) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [one]
@@ -2068,13 +2069,13 @@ evalPrim ctxt at sco st p sargs =
             [SLV_Object _ _ m] -> m
             _ -> illegal_args
       let varm = M.map (expect_ty . sss_val) argm
-      retV $ (lvl, SLV_Type $ T_Data varm)
+      retV $ (lvl, SLV_Type $ ST_Data varm)
     SLPrim_Data_variant t vn vt -> do
       let vv =
             case (vt, args) of
-              (T_Null, []) -> SLV_Null at "variant"
+              (ST_Null, []) -> SLV_Null at "variant"
               _ -> one_arg
-      let vv_da = checkType_ctxt ctxt st at vt vv
+      let vv_da = checkType_ctxt ctxt st at (st2dt vt) vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
     SLPrim_data_match -> do
       -- Expect two arguments to function
@@ -2951,14 +2952,14 @@ typeToExpr = \case
   T_Bytes i -> call "Bytes" [ie i]
   T_Digest -> var "Digest"
   T_Address -> var "Address"
-  T_Fun {} -> impossible $ "only on rt tys"
   T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts
   T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
-  T_Forall {} -> impossible $ "only on rt tys"
-  T_Var {} -> impossible $ "only on rt tys"
-  T_Type {} -> impossible $ "only on rt tys"
+  -- T_Fun {} -> impossible $ "only on rt tys"
+  -- T_Forall {} -> impossible $ "only on rt tys"
+  -- T_Var {} -> impossible $ "only on rt tys"
+  -- T_Type {} -> impossible $ "only on rt tys"
   where
     call f es = JSCallExpression (var f) a (toJSCL es) a
     var = JSIdentifier a
@@ -3494,8 +3495,9 @@ evalStmt ctxt at sco st ss =
             (dv, dv_lifts) <- case sv of
               SLV_DLVar dv -> return (dv, mempty)
               SLV_Prim (SLPrim_interact iAt p v t) ->
-                ctxt_lift_expr ctxt at (DLVar iAt v t) $
-                  (DLE_Arg iAt $ DLA_Interact p v t)
+                ctxt_lift_expr ctxt at (DLVar iAt v dt) $
+                  (DLE_Arg iAt $ DLA_Interact p v dt)
+                  where dt = st2dt t
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do

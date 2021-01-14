@@ -8,27 +8,27 @@ import Test.Hspec
 spec_isFirstOrder :: Spec
 spec_isFirstOrder = describe "isFirstOrder" $ do
   it "returns True when obvs" $ do
-    isFirstOrder T_UInt `shouldBe` True
-    isFirstOrder ([] --> T_Null) `shouldBe` True
-    isFirstOrder (T_Array T_Bool 3) `shouldBe` True
-    isFirstOrder (T_Tuple [T_Address]) `shouldBe` True
-    isFirstOrder (T_Object (M.fromList [("x", T_Bytes 16)]))
+    isFirstOrder ST_UInt `shouldBe` True
+    isFirstOrder ([] --> ST_Null) `shouldBe` True
+    isFirstOrder (ST_Array ST_Bool 3) `shouldBe` True
+    isFirstOrder (ST_Tuple [ST_Address]) `shouldBe` True
+    isFirstOrder (ST_Object (M.fromList [("x", ST_Bytes 16)]))
       `shouldBe` True
-    isFirstOrder (T_Forall "a" $ T_Var "a")
+    isFirstOrder (ST_Forall "a" $ ST_Var "a")
       `shouldBe` True
 
   it "returns False when obvs" $ do
-    isFirstOrder ([[] --> T_Null] --> T_Null)
+    isFirstOrder ([[] --> ST_Null] --> ST_Null)
       `shouldBe` False
-    isFirstOrder ([] --> [] --> T_Null)
+    isFirstOrder ([] --> [] --> ST_Null)
       `shouldBe` False
 
   it "returns True when less obvs" $ do
-    isFirstOrder (T_Object (M.fromList [("f", [] --> T_Null)]))
+    isFirstOrder (ST_Object (M.fromList [("f", [] --> ST_Null)]))
       `shouldBe` True
-    isFirstOrder (T_Forall "a" $ [] --> T_Var "a")
+    isFirstOrder (ST_Forall "a" $ [] --> ST_Var "a")
       `shouldBe` True
 
   it "returns False when less obvs" $ do
-    isFirstOrder ([] --> T_Array ([] --> T_Null) 3)
+    isFirstOrder ([] --> ST_Array ([] --> ST_Null) 3)
       `shouldBe` False

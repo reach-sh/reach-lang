@@ -235,14 +235,10 @@ mustBeMem = \case
   T_Bytes _ -> True
   T_Digest -> False
   T_Address -> False
-  T_Fun {} -> impossible "fun"
   T_Array {} -> True
   T_Tuple {} -> True
   T_Object {} -> True
   T_Data {} -> True
-  T_Forall {} -> impossible "forall"
-  T_Var {} -> impossible "var"
-  T_Type {} -> impossible "type"
 
 data ArgMode
   = AM_Call
@@ -760,9 +756,6 @@ _solDefineType1 getTypeName i name = \case
   T_Bytes _ -> base
   T_Digest -> base
   T_Address -> base
-  T_Fun {} -> impossible "fun in ct"
-  T_Forall {} -> impossible "forall in pl"
-  T_Var {} -> impossible "var in pl"
   T_Array t sz -> do
     tn <- getTypeName t
     let me = tn <> brackets (pretty sz)
@@ -799,7 +792,6 @@ _solDefineType1 getTypeName i name = \case
     let enump = solEnum enumn $ map (pretty . fst) $ M.toAscList tmn
     let structp = solStruct name $ ("which", enumn) : map (\(k, t) -> (pretty ("_" <> k), t)) (M.toAscList tmn)
     return $ (name, vsep [enump, structp])
-  T_Type {} -> impossible "type in pl"
   where
     base = impossible "base"
 

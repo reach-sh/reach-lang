@@ -15,7 +15,7 @@ data DeployMode
   deriving (Eq, Generic, NFData, Show)
 
 newtype InteractEnv
-  = InteractEnv (M.Map SLVar DLType)
+  = InteractEnv (M.Map SLVar SLType)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
