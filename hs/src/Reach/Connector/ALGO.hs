@@ -765,7 +765,7 @@ doSwitch ck at dv csm = do
 
 cm :: App () -> PLCommon -> App ()
 cm km = \case
-  DL_Nop _ -> return ()
+  DL_Nop _ -> km
   DL_Let _ PV_Eff de -> ce de >> km
   DL_Let _ (PV_Let PL_Once dv) de ->
     store_let dv False (ce de) km
