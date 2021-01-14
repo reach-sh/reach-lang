@@ -31,7 +31,7 @@ import Reach.Util
 
 data TypeError
   = Err_Type_None SLVal
-  | Err_Type_NotApplicable DLType
+  | Err_Type_NotApplicable SLType
   | Err_TypeMeets_None
   | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, DLType) (SrcLoc, DLType)
   | Err_Type_TooFewArguments [DLType]
@@ -92,25 +92,25 @@ typeMeets mcfs top_at l =
     [x, y] -> typeMeet mcfs top_at x y
     x : more -> typeMeet mcfs top_at x $ (top_at, typeMeets mcfs top_at more)
 
-type TypeEnv s = M.Map SLVar (STRef s (Maybe DLType))
+type TypeEnv s = M.Map SLVar (STRef s (Maybe SLType))
 
-typeSubst :: SrcLoc -> TypeEnv s -> DLType -> ST s DLType
+typeSubst :: SrcLoc -> TypeEnv s -> SLType -> ST s SLType
 typeSubst at env ty =
   case ty of
-    T_Fun doms rng -> do
+    ST_Fun doms rng -> do
       doms' <- mapM iter doms
       rng' <- typeSubst at env rng
-      return $ T_Fun doms' rng'
-    T_Array t sz -> do
+      return $ ST_Fun doms' rng'
+    ST_Array t sz -> do
       t' <- iter t
-      return $ T_Array t' sz
-    T_Tuple ts -> do
+      return $ ST_Array t' sz
+    ST_Tuple ts -> do
       ts' <- mapM iter ts
-      return $ T_Tuple ts'
-    T_Object oenv -> do
+      return $ ST_Tuple ts'
+    ST_Object oenv -> do
       oenv' <- mapM iter oenv
-      return $ T_Object oenv'
-    T_Var var ->
+      return $ ST_Object oenv'
+    ST_Var var ->
       case M.lookup var env of
         Nothing ->
           impossible $ "typeSubst: unbound type variable"
@@ -121,18 +121,19 @@ typeSubst at env ty =
               impossible $ "typeSubst: uninstantiated type variable"
             Just var_ty ->
               iter var_ty
-    T_Forall _ _ ->
+    ST_Forall _ _ ->
       impossible $ "typeSubst: forall in output"
     _ -> return ty
   where
     iter = typeSubst at env
 
-typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> DLType -> SLVal -> DLType -> a -> ST s a
+typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> DLType -> a -> ST s a
 typeCheck_help mcfs at env ty val val_ty res =
   case (val_ty, ty) of
-    (T_Var _, _) ->
-      impossible $ "typeCheck: value has type var: " ++ show val
-    (_, T_Var var) ->
+    -- XXX can't happen anymore
+    -- (ST_Var _, _) ->
+    --   impossible $ "typeCheck: value has type var: " ++ show val
+    (_, ST_Var var) ->
       case M.lookup var env of
         Nothing ->
           impossible $ "typeCheck: unbound type variable"
@@ -140,12 +141,12 @@ typeCheck_help mcfs at env ty val val_ty res =
           mvar_ty <- readSTRef var_ref
           case mvar_ty of
             Nothing -> do
-              writeSTRef var_ref (Just val_ty)
+              writeSTRef var_ref (Just $ dt2st val_ty)
               return res
             Just var_ty ->
               typeCheck_help mcfs at env var_ty val val_ty res
     (_, _) ->
-      typeMeet mcfs at (at, val_ty) (at, ty) `seq` return res
+      typeMeet mcfs at (at, val_ty) (at, (st2dt ty)) `seq` return res
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
@@ -196,7 +197,7 @@ slToDL pdvs _at v =
     SLV_Bytes _ bs -> return $ DLAE_Arg $ DLA_Literal $ DLL_Bytes bs
     SLV_Array at' t vs -> do
       ds <- mapM (slToDL pdvs at') vs
-      return $ DLAE_Array t ds
+      return $ DLAE_Array (st2dt t) ds
     SLV_Tuple at' vs -> do
       ds <- mapM (slToDL pdvs at') vs
       return $ DLAE_Tuple $ ds
@@ -205,7 +206,7 @@ slToDL pdvs _at v =
       return $ DLAE_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
     SLV_Data at' t vn sv ->
-      DLAE_Data t vn <$> slToDL pdvs at' sv
+      DLAE_Data (M.map st2dt t) vn <$> slToDL pdvs at' sv
     SLV_DLC c -> return $ DLAE_Arg $ DLA_Constant c
     SLV_DLVar dv -> return $ DLAE_Arg $ DLA_Var dv
     SLV_Type _ -> Nothing
@@ -217,10 +218,11 @@ slToDL pdvs _at v =
     SLV_RaceParticipant {} -> Nothing
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
-        T_Var {} -> Nothing
-        T_Forall {} -> Nothing
-        T_Fun {} -> Nothing
-        _ -> return $ DLAE_Arg $ DLA_Interact who m t
+        -- XXX can't happen anymore?
+        -- ST_Var {} -> Nothing
+        -- ST_Forall {} -> Nothing
+        -- ST_Fun {} -> Nothing
+        _ -> return $ DLAE_Arg $ DLA_Interact who m (st2dt t)
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
     SLV_Kwd _ -> Nothing
@@ -236,7 +238,7 @@ typeOf (mcfs, pdvs) at v =
     Just x -> x
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: TINT -> SrcLoc -> TypeEnv s -> DLType -> SLVal -> ST s DLArgExpr
+typeCheck :: TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
 typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_ty res
   where
     (val_ty, res) = typeOf tint at val
@@ -247,7 +249,7 @@ typeChecks tint@(mcfs, _) at env ts vs =
     ([], []) ->
       return []
     ((t : ts'), (v : vs')) -> do
-      d <- typeCheck tint at env t v
+      d <- typeCheck tint at env (dt2st t) v
       ds' <- typeChecks tint at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
@@ -255,21 +257,22 @@ typeChecks tint@(mcfs, _) at env ts vs =
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> DLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
+checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
-    T_Fun dom rng -> do
-      dargs <- typeChecks tint at env dom args
-      return (rng, dargs)
-    T_Forall var ft -> do
+    ST_Fun dom rng -> do
+      dargs <- typeChecks tint at env (map st2dt dom) args
+      return (st2dt rng, dargs)
+    ST_Forall var ft -> do
       var_ref <- newSTRef Nothing
       let env' = M.insert var var_ref env
-      (vrng, dargs) <- checkAndConvert_i tint at env' ft args
-      rng <- typeSubst at env' vrng
+      (rng, dargs) <- checkAndConvert_i tint at env' ft args
+      -- XXX happens prior to this point now?
+      -- rng <- typeSubst at env' vrng
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: TINT -> SrcLoc -> DLType -> [SLVal] -> (DLType, [DLArgExpr])
+checkAndConvert :: TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert tint at t args = runST $ checkAndConvert_i tint at mempty t args
 
 checkType :: TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr

@@ -17,8 +17,8 @@ import Reach.Util
 
 infixr 9 -->
 
-(-->) :: [DLType] -> DLType -> DLType
-dom --> rng = T_Fun dom rng
+(-->) :: [SLType] -> SLType -> SLType
+dom --> rng = ST_Fun dom rng
 
 type SLPartEnvs = M.Map SLPart SLEnv
 
@@ -31,14 +31,14 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
-  | SLV_Array SrcLoc DLType [SLVal]
+  | SLV_Array SrcLoc SLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
-  | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
+  | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
-  | SLV_Type DLType
+  | SLV_Type SLType
   | SLV_Connector T.Text
   | -- I really want to remove these two Maybes, but it is hard.
     -- The DLVar is needed so that inside of an `only`, we can read off the
@@ -174,26 +174,26 @@ instance Show SLKwd where
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
-primOpType :: PrimOp -> DLType
+primOpType :: PrimOp -> SLType
 primOpType SELF_ADDRESS = impossible "self address"
-primOpType ADD = [T_UInt, T_UInt] --> T_UInt
-primOpType SUB = [T_UInt, T_UInt] --> T_UInt
-primOpType MUL = [T_UInt, T_UInt] --> T_UInt
-primOpType DIV = [T_UInt, T_UInt] --> T_UInt
-primOpType MOD = [T_UInt, T_UInt] --> T_UInt
-primOpType PLT = [T_UInt, T_UInt] --> T_Bool
-primOpType PLE = [T_UInt, T_UInt] --> T_Bool
-primOpType PEQ = T_Forall "a" ([T_Var "a", T_Var "a"] --> T_Bool)
-primOpType PGE = [T_UInt, T_UInt] --> T_Bool
-primOpType PGT = [T_UInt, T_UInt] --> T_Bool
-primOpType IF_THEN_ELSE = T_Forall "b" (T_Forall "a" ([T_Var "b", T_Var "a", T_Var "a"] --> T_Var "a"))
-primOpType DIGEST_EQ = ([T_Digest, T_Digest] --> T_Bool)
-primOpType ADDRESS_EQ = ([T_Address, T_Address] --> T_Bool)
-primOpType LSH = [T_UInt, T_UInt] --> T_UInt
-primOpType RSH = [T_UInt, T_UInt] --> T_UInt
-primOpType BAND = [T_UInt, T_UInt] --> T_UInt
-primOpType BIOR = [T_UInt, T_UInt] --> T_UInt
-primOpType BXOR = [T_UInt, T_UInt] --> T_UInt
+primOpType ADD = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType SUB = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType MUL = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType DIV = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType MOD = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType PLT = [ST_UInt, ST_UInt] --> ST_Bool
+primOpType PLE = [ST_UInt, ST_UInt] --> ST_Bool
+primOpType PEQ = ST_Forall "a" ([ST_Var "a", ST_Var "a"] --> ST_Bool)
+primOpType PGE = [ST_UInt, ST_UInt] --> ST_Bool
+primOpType PGT = [ST_UInt, ST_UInt] --> ST_Bool
+primOpType IF_THEN_ELSE = ST_Forall "b" (ST_Forall "a" ([ST_Var "b", ST_Var "a", ST_Var "a"] --> ST_Var "a"))
+primOpType DIGEST_EQ = ([ST_Digest, ST_Digest] --> ST_Bool)
+primOpType ADDRESS_EQ = ([ST_Address, ST_Address] --> ST_Bool)
+primOpType LSH = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType RSH = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType BAND = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType BIOR = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType BXOR = [ST_UInt, ST_UInt] --> ST_UInt
 
 data SLPrimitive
   = SLPrim_makeEnum
@@ -202,14 +202,14 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc SLPart String DLType
+  | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Bytes
   | SLPrim_Data
-  | SLPrim_Data_variant (M.Map SLVar DLType) SLVar DLType
+  | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
   | SLPrim_data_match
   | SLPrim_Array
   | SLPrim_Array_iota

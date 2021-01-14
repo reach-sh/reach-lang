@@ -95,14 +95,10 @@ jsContract = \case
   T_Bytes sz -> jsApply "stdlib.T_Bytes" [jsCon $ DLL_Int sb sz]
   T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"
-  T_Fun {} -> impossible "fun dl"
   T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLL_Int sb sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
   T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
-  T_Forall {} -> impossible "forall dl"
-  T_Var {} -> impossible "var dl"
-  T_Type {} -> impossible "type dl"
 
 jsProtect :: Doc -> DLType -> Doc -> Doc
 jsProtect ai how what =

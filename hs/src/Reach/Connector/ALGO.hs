@@ -158,14 +158,10 @@ typeSizeOf = \case
   T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
-  T_Fun {} -> impossible $ "T_Fun"
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + (maximum $ map typeSizeOf $ M.elems m)
-  T_Forall {} -> impossible $ "T_Forall"
-  T_Var {} -> impossible $ "T_Var"
-  T_Type {} -> impossible $ "T_Type"
   where
     word = 8
 
@@ -436,14 +432,10 @@ ctobs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Fun {} -> impossible "fun"
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
   T_Data {} -> nop
-  T_Forall {} -> impossible "forall"
-  T_Var {} -> impossible "var"
-  T_Type {} -> impossible "type"
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
@@ -453,14 +445,10 @@ cfrombs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Fun {} -> impossible "fun"
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
   T_Data {} -> nop
-  T_Forall {} -> impossible "forall"
-  T_Var {} -> impossible "var"
-  T_Type {} -> impossible "type"
 
 tint :: SrcLoc -> Integer -> LT.Text
 tint at i = texty $ checkIntLiteralC at connect_algo i

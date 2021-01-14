@@ -173,44 +173,90 @@ data DLType
   | T_Bytes Integer
   | T_Digest
   | T_Address
-  | T_Fun [DLType] DLType
   | T_Array DLType Integer
   | T_Tuple [DLType]
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
-  | T_Forall SLVar DLType
-  | T_Var SLVar
-  | T_Type DLType
   deriving (Eq, Generic, NFData, Ord)
 
--- | Fold over DLType, doing something special on Fun
+data SLType
+  = ST_Null
+  | ST_Bool
+  | ST_UInt
+  | ST_Bytes Integer
+  | ST_Digest
+  | ST_Address
+  | ST_Array SLType Integer
+  | ST_Tuple [SLType]
+  | ST_Object (M.Map SLVar SLType)
+  | ST_Data (M.Map SLVar SLType)
+  | ST_Fun [SLType] SLType
+  | ST_Forall SLVar SLType
+  | ST_Var SLVar
+  | ST_Type SLType
+  deriving (Eq, Generic, NFData, Ord)
+
+-- XXX better error message for stuff like Array<Fun> or Array<Forall>
+-- that can't exist in DL-land
+st2dt :: SLType -> DLType
+st2dt = \case
+  ST_Null -> T_Null
+  ST_Bool -> T_Bool
+  ST_UInt -> T_UInt
+  ST_Bytes i -> T_Bytes i
+  ST_Digest -> T_Digest
+  ST_Address -> T_Address
+  ST_Array ty i -> T_Array (st2dt ty) i
+  ST_Tuple tys -> T_Tuple (map st2dt tys)
+  ST_Object tyMap -> T_Object (M.map st2dt tyMap)
+  ST_Data tyMap -> T_Data (M.map st2dt tyMap)
+  -- XXX
+  ST_Fun {} -> error "ST_Fun not a dt"
+  ST_Forall {} -> error "ST_Forall not a dt"
+  ST_Var {} -> error "ST_Var not a dt"
+  ST_Type {} -> error "ST_Type not a dt"
+
+dt2st :: DLType -> SLType
+dt2st = \case
+  T_Null -> ST_Null
+  T_Bool -> ST_Bool
+  T_UInt -> ST_UInt
+  T_Bytes i -> ST_Bytes i
+  T_Digest -> ST_Digest
+  T_Address -> ST_Address
+  T_Array ty i -> ST_Array (dt2st ty) i
+  T_Tuple tys -> ST_Tuple (map dt2st tys)
+  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
+  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
+
+-- | Fold over SLType, doing something special on Fun
 funFold
-  :: a -- ^ On no DLType inside
-  -> ([DLType] -> a) -- ^ On many DLType inside
-  -> ([DLType] -> DLType -> a) -- ^ On Fun
-  -> DLType -- ^ The type to fold over
+  :: a -- ^ On no Fun inside
+  -> ([SLType] -> a) -- ^ On many DLType inside
+  -> ([SLType] -> SLType -> a) -- ^ On Fun
+  -> SLType -- ^ The type to fold over
   -> a
 funFold z k fun = go
   where
     go = \case
-      T_Null -> z
-      T_Bool -> z
-      T_UInt -> z
-      T_Bytes _ -> z
-      T_Digest -> z
-      T_Address -> z
-      T_Fun inTys outTy -> fun inTys outTy
-      T_Array ty _ -> go ty
-      T_Tuple tys -> k tys
-      T_Object m -> k $ M.elems m
-      T_Data m -> k $ M.elems m
-      T_Forall _ ty -> go ty
-      T_Var _ -> z
-      T_Type _ -> z
+      ST_Null -> z
+      ST_Bool -> z
+      ST_UInt -> z
+      ST_Bytes _ -> z
+      ST_Digest -> z
+      ST_Address -> z
+      ST_Fun inTys outTy -> fun inTys outTy
+      ST_Array ty _ -> go ty
+      ST_Tuple tys -> k tys
+      ST_Object m -> k $ M.elems m
+      ST_Data m -> k $ M.elems m
+      ST_Forall _ ty -> go ty
+      ST_Var _ -> z
+      ST_Type _ -> z
 
 -- | True if the type is a Fun, or
 -- is a container/forall type with Fun somewhere inside
-hasFun :: DLType -> Bool
+hasFun :: SLType -> Bool
 hasFun = funFold z k fun
   where
     z = False
@@ -219,17 +265,17 @@ hasFun = funFold z k fun
 
 -- | True if all Function types within this type
 -- do not accept or return functions.
-isFirstOrder :: DLType -> Bool
+isFirstOrder :: SLType -> Bool
 isFirstOrder = funFold z k fun
   where
     z = True
     k = all isFirstOrder
     fun inTys outTy = not $ any hasFun $ outTy : inTys
 
-showTys :: [DLType] -> String
+showTys :: Show a => [a] -> String
 showTys = intercalate ", " . map show
 
-showTyMap :: M.Map SLVar DLType -> String
+showTyMap :: Show a => M.Map SLVar a -> String
 showTyMap = intercalate ", " . map showPair . M.toList
   where
     showPair (name, ty) = show name <> ": " <> show ty
@@ -241,14 +287,31 @@ instance Show DLType where
   show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
   show T_Digest = "Digest"
   show T_Address = "Address"
-  show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
   show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
   show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
   show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
   show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
-  show (T_Var x) = show x
-  show (T_Type ty) = "Type(" <> show ty <> ")"
+  -- show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+  -- show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
+  -- show (T_Var x) = show x
+  -- show (T_Type ty) = "Type(" <> show ty <> ")"
+
+instance Show SLType where
+  show ST_Null = "Null"
+  show ST_Bool = "Bool"
+  show ST_UInt = "UInt"
+  show (ST_Bytes sz) = "Bytes(" <> show sz <> ")"
+  show ST_Digest = "Digest"
+  show ST_Address = "Address"
+  show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
+  show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
+  show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+  show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
+  show (ST_Var x) = show x
+  show (ST_Type ty) = "Type(" <> show ty <> ")"
+
 
 type SLPart = B.ByteString
 
