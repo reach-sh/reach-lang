@@ -9,7 +9,7 @@ highlighting, build commands, key mappings, snippets, and more. The
 following plugins are availabe:
 
 @itemlist[
-@item{Visual Studio Code: @link["https://marketplace.visualstudio.com/items?itemName=ericglau.reach-ide"]{Reach IDE}}
+@item{Visual Studio Code: @link["https://marketplace.visualstudio.com/items?itemName=reachsh.reach-ide"]{Reach IDE}}
 @item{Atom: @link["https://atom.io/packages/language-reach"]{Reach Language Support}, @link["https://atom.io/packages/reach-ide"]{Reach IDE}}
 @item{Sublime Text: @link["https://github.com/chrisnevers/reach-ide-sublime"]{Reach IDE}}
 ]
