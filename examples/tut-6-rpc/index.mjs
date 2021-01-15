@@ -1,3 +1,4 @@
+import * as express from 'express';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
