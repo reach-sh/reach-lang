@@ -14,4 +14,4 @@ build: server/build/index.main.mjs
 
 .PHONY: run
 run: build
-	docker-compose -f "docker-compose.yml" run --rm reach-app-tut-6-rpc $(ARGS)
+	docker-compose -f "docker-compose.yml" up --remove-orphans reach-app-tut-6-rpc-server reach-app-tut-6-rpc
