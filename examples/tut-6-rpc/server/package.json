@@ -1,5 +1,5 @@
 {
-  "name": "@reach-sh/tut-6-rpc",
+  "name": "@reach-sh/tut-6-rpc-server",
   "type": "module",
   "dependencies": {
     "@reach-sh/stdlib": ">=0.1.2-rc.4 <0.1.2-rc.9999",

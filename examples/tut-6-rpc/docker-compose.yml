@@ -1,6 +1,6 @@
 version: '3.4'
-x-app-base: &app-base
-  image: reachsh/reach-app-tut-6-rpc:latest
+x-server-base: &server-base
+  image: reachsh/reach-app-tut-6-rpc-server:latest
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:0.1
@@ -22,50 +22,36 @@ services:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
       - POSTGRES_DB=pgdb
-  reach-app-tut-6-rpc-ETH-live:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-live
-      - ETH_NODE_URI
-      - ETH_NODE_NETWORK
-  reach-app-tut-6-rpc-ETH-test-dockerized-geth: &default-app
-    <<: *app-base
+  server-ETH: &default-server
+    <<: *server-base
     depends_on:
       - ethereum-devnet
     environment:
       - REACH_DEBUG
+      - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  reach-app-tut-6-rpc-ETH-test-embedded-ganache:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
-  reach-app-tut-6-rpc-FAKE-test-embedded-mock:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
-  reach-app-tut-6-rpc-ALGO-test-dockerized-algod-local:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
-      - ALGO_SERVER=http://host.docker.internal
-      - ALGO_PORT=4180
-      - ALGO_INDEXER_SERVER=http://host.docker.internal
-      - ALGO_INDEXER_PORT=8980
-  reach-app-tut-6-rpc-ALGO-test-dockerized-algod:
-    <<: *app-base
+  server-ALGO:
+    <<: *server-base
     depends_on:
       - algorand-devnet
     environment:
       - REACH_DEBUG
+      - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
       - ALGO_SERVER=http://algorand-devnet
       - ALGO_PORT=4180
       - ALGO_INDEXER_SERVER=http://algorand-devnet
       - ALGO_INDEXER_PORT=8980
-  reach-app-tut-6-rpc-: *default-app
-  reach-app-tut-6-rpc: *default-app
+  client-js: &client
+    image: reachsh/reach-app-tut-6-rpc-client-js:latest
+  client-py:
+    image: reachsh/reach-app-tut-6-rpc-client-py:latest
+  reach-app-tut-6-rpc:
+    <<: *client
+    depends_on:
+      - server-ETH
+    environment:
+      - REACH_DEBUG
+      - REACH_RPC_SERVER=http://server-ETH
+      - REACH_RPC_PORT=3000
