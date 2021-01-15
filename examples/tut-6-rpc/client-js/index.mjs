@@ -1,6 +1,19 @@
 // This is the Reach-supplied RPC library
+import waitPort from 'wait-port';
+import bent from 'bent';
+
+const rpc_server = process.env.REACH_RPC_SERVER;
+const rpc_port = process.env.REACH_RPC_PORT;
+const call = bent(`http://${rpc_server}:${rpc_port}`, `POST`, `json`, 200);
+
+const rpcReady = async () => {
+  await waitPort({host: rpc_server, port: parseInt(rpc_port)}); };
+
 const rpc = async (m, ...args) => {
-  console.log(`XXX RPC ${m} ${JSON.stringify(args)}`);
+  const lab = `RPC ${m} ${JSON.stringify(args)}`
+  console.log(`${lab}`);
+  const ans = await call(m, args);
+  console.log(`${lab} ==> ${JSON.stringify(ans)}`);
 };
 
 const rpcCallbacks = async (m, arg, cbacks) => {
@@ -31,6 +44,7 @@ const rpcCallbacks = async (m, arg, cbacks) => {
 // This is the thing a programmer would write
 (async () => {
   console.log(`I am the client`);
+  await rpcReady();
 
   const startingBalance = await rpc(`/stdlib/parseCurrency`, 10);
   const accAlice = await rpc(`/stdlib/newTestAccount`, startingBalance);
@@ -80,4 +94,5 @@ const rpcCallbacks = async (m, arg, cbacks) => {
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
+  await rpc(`/quit`);
 })();

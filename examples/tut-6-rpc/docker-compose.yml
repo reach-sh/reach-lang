@@ -55,5 +55,5 @@ services:
       - reach-app-tut-6-rpc-server
     environment:
       - REACH_DEBUG
-      - REACH_RPC_SERVER=http://reach-app-tut-6-rpc-server
+      - REACH_RPC_SERVER=reach-app-tut-6-rpc-server
       - REACH_RPC_PORT=3000

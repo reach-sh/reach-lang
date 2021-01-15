@@ -1,63 +1,71 @@
-import * as express from 'express';
+import express from 'express';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-console.log(`I am the server`);
-
 (async () => {
-  const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
+  const makeHandle = (container) => (val) => {
+    const id = container.length;
+    container[id] = val;
+    return id;
+  };
 
-  const fmt = (x) => stdlib.formatCurrency(x, 4);
-  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
-  const beforeAlice = await getBalance(accAlice);
-  const beforeBob = await getBalance(accBob);
+  const ACC = [];
+  const makeACC = makeHandle(ACC);
+  const CTC = [];
+  const makeCTC = makeHandle(CTC);
+  const real_stdlib = await loadStdlib();
+  const rpc_stdlib = {
+    ...real_stdlib
+  };
+  const rpc_acc = {
+    "attach": (async (id, ...args) =>
+      makeCTC(await ACC[id].attach(...args))),
+    "deploy": (async (id) =>
+      makeCTC(await ACC[id].deploy())),
+  };
+  const rpc_ctc = {
+    "getInfo": (async (id) =>
+      await CTC[id].getInfo()),
+  };
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  console.log(`I am the server`);
 
-  const HAND = ['Rock', 'Paper', 'Scissors'];
-  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
-  const Player = (Who) => ({
-    ...stdlib.hasRandom,
-    getHand: async () => { // <-- async now
-      const hand = Math.floor(Math.random() * 3);
-      console.log(`${Who} played ${HAND[hand]}`);
-      if ( Math.random() <= 0.01 ) {
-        for ( let i = 0; i < 10; i++ ) {
-          console.log(`  ${Who} takes their sweet time sending it back...`);
-          await stdlib.wait(1);
-        }
-      }
-      return hand;
-    },
-    seeOutcome: (outcome) => {
-      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
-    },
-    informTimeout: () => {
-      console.log(`${Who} observed a timeout`);
-    },
+  const app = express();
+
+  const makeRPC = (obj) => {
+    const router = express.Router();
+    for (const k in obj) {
+      router.post(`/${k}`, express.json, async (req, res) => {
+        const lab = `RPC ${k} ${JSON.stringify(args)}`;
+        console.log(`${lab}`);
+        const ans = await obj[k](...req.body);
+        console.log(`${lab} ==> ${JSON.stringify(ans)}`);
+        res.json(ans); });
+    }
+    return router;
+  };
+
+  const route_backend = express.Router();
+  for (const b in backend) {
+    route_backend.post(`/${b}`, express.json, async (req, res) => {
+      console.log(`XXX backend ${b}`);
+      res.json(false);
+    });
+  }
+
+  app.use((req, res, next) => {
+    console.log(`LOG ${req.url}`);
+    next(); });
+  app.use(`/stdlib`, makeRPC(rpc_stdlib));
+  app.use(`/acc`, makeRPC(rpc_acc));
+  app.use(`/ctc`, makeRPC(rpc_ctc));
+  app.use(`/backend`, route_backend);
+  app.post(`/quit`, (req, res) => {
+    res.json(true);
+    process.exit(0); });
+
+  app.listen(process.env.REACH_RPC_PORT, () => {
+    console.log(`I am alive`);
   });
-
-  await Promise.all([
-    backend.Alice(ctcAlice, {
-      ...Player('Alice'),
-      wager: stdlib.parseCurrency(5),
-    }),
-    backend.Bob(ctcBob, {
-      ...Player('Bob'),
-      acceptWager: (amt) => {
-        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
-      },
-    }),
-  ]);
-
-  const afterAlice = await getBalance(accAlice);
-  const afterBob = await getBalance(accBob);
-
-  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
-  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
 })();
