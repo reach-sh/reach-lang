@@ -37,8 +37,6 @@ import * as backend from './build/index.main.mjs';
       await CTC[id].getInfo()),
   };
 
-  console.log(`I am the server`);
-
   const app = express();
 
   const makeRPC = (olab, obj) => {
@@ -83,6 +81,7 @@ import * as backend from './build/index.main.mjs';
       const ans = await backend[b](ctc, io);
       console.log(`${lab} END ${JSON.stringify(ans)}`);
       const new_res = KONT[kid];
+      delete KONT[kid];
       console.log(`${lab} DONE`);
       new_res.json({t: `Done`, ans});
     });
@@ -112,7 +111,7 @@ import * as backend from './build/index.main.mjs';
   app.use(`/ctc`, makeRPC('ctc', rpc_ctc));
   app.use(`/backend`, route_backend);
   app.post(`/kont`, do_kont);
-  app.post(`/quit`, (req, res) => {
+  app.post(`/stop`, (req, res) => {
     res.json(true);
     process.exit(0); });
 
