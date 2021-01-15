@@ -81,7 +81,7 @@ import * as backend from './build/index.main.mjs';
       const ans = await backend[b](ctc, io);
       console.log(`${lab} END ${JSON.stringify(ans)}`);
       const new_res = KONT[kid];
-      delete KONT[kid];
+      KONT[kid] = null;
       console.log(`${lab} DONE`);
       new_res.json({t: `Done`, ans});
     });
