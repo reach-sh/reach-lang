@@ -25,9 +25,9 @@ import * as backend from './build/index.main.mjs';
   };
   const rpc_acc = {
     "attach": (async (id, ...args) =>
-      makeCTC(await ACC[id].attach(...args))),
+      makeCTC(await ACC[id].attach(backend, ...args))),
     "deploy": (async (id) =>
-      makeCTC(await ACC[id].deploy())),
+      makeCTC(await ACC[id].deploy(backend))),
   };
   const rpc_ctc = {
     "getInfo": (async (id) =>
