@@ -1,0 +1,16 @@
+apply-defaults==0.1.4
+attrs==20.3.0
+certifi==2020.12.5
+chardet==4.0.0
+click==7.1.2
+flake8==3.8.4
+idna==2.10
+jsonrpcclient==3.3.6
+jsonschema==3.2.0
+mccabe==0.6.1
+pycodestyle==2.6.0
+pyflakes==2.2.0
+pyrsistent==0.17.3
+requests==2.25.1
+six==1.15.0
+urllib3==1.26.2
