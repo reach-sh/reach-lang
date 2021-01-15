@@ -2,6 +2,8 @@ import * as express from 'express';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
+console.log(`I am the server`);
+
 (async () => {
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(10);
