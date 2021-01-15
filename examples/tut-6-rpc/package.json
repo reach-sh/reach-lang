@@ -2,7 +2,8 @@
   "name": "@reach-sh/tut-6-rpc",
   "type": "module",
   "dependencies": {
-    "@reach-sh/stdlib": ">=0.1.2-rc.4 <0.1.2-rc.9999"
+    "@reach-sh/stdlib": ">=0.1.2-rc.4 <0.1.2-rc.9999",
+    "express": "4.17.1"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
