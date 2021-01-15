@@ -14,6 +14,7 @@ const rpc = async (m, ...args) => {
   console.log(`${lab}`);
   const ans = await call(m, args);
   console.log(`${lab} ==> ${JSON.stringify(ans)}`);
+  return ans;
 };
 
 const rpcCallbacks = async (m, arg, cbacks) => {
