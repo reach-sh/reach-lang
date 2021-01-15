@@ -35,10 +35,11 @@ import * as backend from './build/index.main.mjs';
   const makeRPC = (obj) => {
     const router = express.Router();
     for (const k in obj) {
-      router.post(`/${k}`, express.json, async (req, res) => {
+      router.post(`/${k}`, async (req, res) => {
+        const args = req.body;
         const lab = `RPC ${k} ${JSON.stringify(args)}`;
         console.log(`${lab}`);
-        const ans = await obj[k](...req.body);
+        const ans = await obj[k](...args);
         console.log(`${lab} ==> ${JSON.stringify(ans)}`);
         res.json(ans); });
     }
@@ -47,7 +48,7 @@ import * as backend from './build/index.main.mjs';
 
   const route_backend = express.Router();
   for (const b in backend) {
-    route_backend.post(`/${b}`, express.json, async (req, res) => {
+    route_backend.post(`/${b}`, async (req, res) => {
       console.log(`XXX backend ${b}`);
       res.json(false);
     });
@@ -55,6 +56,10 @@ import * as backend from './build/index.main.mjs';
 
   app.use((req, res, next) => {
     console.log(`LOG ${req.url}`);
+    next(); });
+  app.use(express.json());
+  app.use((req, res, next) => {
+    console.log(`LOGb ${req.url} ${req.body}`);
     next(); });
   app.use(`/stdlib`, makeRPC(rpc_stdlib));
   app.use(`/acc`, makeRPC(rpc_acc));
