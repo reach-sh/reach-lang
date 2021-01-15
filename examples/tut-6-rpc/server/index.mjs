@@ -15,7 +15,13 @@ import * as backend from './build/index.main.mjs';
   const makeCTC = makeHandle(CTC);
   const real_stdlib = await loadStdlib();
   const rpc_stdlib = {
-    ...real_stdlib
+    ...real_stdlib,
+    "newTestAccount": (async (bal) =>
+      makeACC(await real_stdlib.newTestAccount(real_stdlib.bigNumberify(bal)))),
+    "balanceOf": (async (id) =>
+      await real_stdlib.balanceOf(ACC[id])),
+    "formatCurrency": (async (x, y) =>
+      await real_stdlib.formatCurrency(real_stdlib.bigNumberify(x), y)),
   };
   const rpc_acc = {
     "attach": (async (id, ...args) =>
