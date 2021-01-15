@@ -311,6 +311,46 @@ seVars se =
 set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
 
+depthGe :: Int -> SExpr -> Bool
+depthGe = aux
+  where
+    aux 0 _         = True
+    aux nc (List xs) = any (aux (nc - 1)) xs
+    aux _ (Atom _)  = False
+
+get :: M.Map String SExpr -> M.Map String (a, b, c, Maybe SExpr) -> SExpr -> (M.Map String SExpr, SExpr)
+get env bindings (Atom mi) =
+  -- Is variable going to be let-declared
+  case mi `M.lookup` env of
+    -- then use variable
+    Just _  -> (env, Atom mi)
+    Nothing ->
+      case mi `M.lookup` bindings of
+        Just (_, _, _, Just e) ->
+          -- Process expr first
+          let (env', e') = get env bindings e in
+          -- If its depth is > 2, store it as a var
+          if depthGe 3 e' then
+            let env'' = M.insert mi e' env' in
+            (env'', Atom mi)
+          -- If short expr, inline it
+          else
+            (env', e')
+        _ -> (env, Atom mi)
+get env bindings (List xs) =
+  let (env', xs') = foldr (\ x (accEnv, acc) ->
+        let (env'', x') = get accEnv bindings x in
+        (env'', x' : acc)) (env, []) xs
+  in
+  (env', List xs')
+
+subAllVars :: M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr) -> SExpr -> SExpr
+subAllVars bindings se =
+  let (env, acc) = get M.empty bindings se in
+  let assigns = map (\ (k, v) -> List [Atom k, v]) $ M.toList env in
+  List $ Atom "let*" : assigns <> [acc]
+
+
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
@@ -336,8 +376,9 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
       --- substitute everything that came from the program (the "context"
       --- below) and then just show the remaining variables found by the
       --- model.
+      bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
       putStrLn $ "  Theorem formalization:"
-      putStrLn $ "  " ++ (SMT.showsSExpr tse "")
+      putStrLn $ "  " ++ (SMT.ppSExpr (subAllVars bindingsm tse) "")
       putStrLn $ ""
       putStrLn $ "  This could be violated if..."
       let pm =
@@ -349,7 +390,6 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                 mempty
               Just (RD_Model m) -> do
                 parseModel m
-      bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
       let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO [String]
           show_vars shown q =
             case q of
