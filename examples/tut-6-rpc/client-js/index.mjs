@@ -55,7 +55,6 @@ const rpcCallbacks = async (m, arg, cbacks) => {
 
 // This is the thing a programmer would write
 (async () => {
-  console.log(`I am the client`);
   await rpcReady();
 
   const startingBalance = await rpc(`/stdlib/parseCurrency`, 10);
@@ -107,5 +106,5 @@ const rpcCallbacks = async (m, arg, cbacks) => {
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-  await rpc(`/quit`);
+  await rpc(`/stop`);
 })();
