@@ -29,12 +29,23 @@ const rpcCallbacks = async (m, arg, cbacks) => {
     }
   }
   return new Promise((resolve, reject) => (async () => {
-    var p = rpc(m, arg, vals, meths);
+    let p = rpc(m, arg, vals, meths);
     while (true) {
       try {
         const r = await p;
-        // XXX Look at r, if it is "callback", then call something in cbacks
-        return resolve(r);
+        switch ( r.t ) {
+          case 'Done': {
+            return resolve(r.ans);
+          }
+          case 'Kont': {
+            const { kid, m, args } = r;
+            const ans = await cbacks[m](...args);
+            p = rpc(`/kont`, kid, ans);
+            break;
+          }
+          default:
+            throw new Error(`Illegal callback return: ${JSON.stringify(r)}`);
+        }
       } catch (e) {
         return reject(e);
       }
@@ -44,7 +55,6 @@ const rpcCallbacks = async (m, arg, cbacks) => {
 
 // This is the thing a programmer would write
 (async () => {
-  console.log(`I am the client`);
   await rpcReady();
 
   const startingBalance = await rpc(`/stdlib/parseCurrency`, 10);
@@ -62,16 +72,17 @@ const rpcCallbacks = async (m, arg, cbacks) => {
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
   const Player = (Who) => ({
-    // XXX ...stdlib.hasRandom,
+    "stdlib.hasRandom": true,
     getHand: async () => {
       const hand = Math.floor(Math.random() * 3);
       console.log(`${Who} played ${HAND[hand]}`);
       return hand;
     },
-    seeOutcome: (outcome) => {
+    seeOutcome: async (outcomeBN) => {
+      const outcome = await rpc(`/stdlib/bigNumbertoNumber`, outcomeBN);
       console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
     },
-    informTimeout: () => {
+    informTimeout: async () => {
       console.log(`${Who} observed a timeout`);
     },
   });
@@ -83,8 +94,8 @@ const rpcCallbacks = async (m, arg, cbacks) => {
     }),
     rpcCallbacks(`/backend/Bob`, ctcBob, {
       ...Player('Bob'),
-      acceptWager: (amt) => {
-        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      acceptWager: async (amt) => {
+        console.log(`Bob accepts the wager of ${await fmt(amt)}.`);
       },
     }),
   ]);
@@ -95,5 +106,5 @@ const rpcCallbacks = async (m, arg, cbacks) => {
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-  await rpc(`/quit`);
+  await rpc(`/stop`);
 })();

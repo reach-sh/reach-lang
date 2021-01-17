@@ -9,8 +9,6 @@ const Swap = Object({
 });
 
 const Deposit = Object({
-  // XXX Feature: Need to access compile time arg
-  // of how many tokens will be in market
   amtIns: Array(UInt, N),
 });
 
@@ -136,7 +134,12 @@ export const main =
           .case(
             Admin,
             (() => ({
-              when: declassify(interact.shouldClosePool())
+              when: declassify(interact.shouldClosePool()),
+              // XXX Feature: Foreign to Reach interface spec
+              // This property is particularly for parallel_reduce stmts.
+              // But in general, publish can be made externally visible with:
+              //    A.publish(x).pay(x).exposeAs("foo");
+              exposeAs: "closePool", // Return void for now. Could return parallel reduce accumulator
             })),
             (() => {
               return [ false, pool, market ]; })
@@ -146,6 +149,7 @@ export const main =
             (() => ({
               msg: declassify(interact.getWithdrawal()),
               when: declassify(interact.wantsToWithdraw()),
+              exposeAs: "withdraw",
             })),
             (({ liquidity }) => {
               // Assert the Provider has the requested liquidity
@@ -179,6 +183,7 @@ export const main =
             (() => ({
               msg: declassify(interact.getDeposit()),
               when: alive && declassify(interact.wantsToDeposit()),
+              exposeAs: "deposit",
             })),
             // XXX Feature: allow PAY_EXPR to make multiple payments in different currencies
             (({ amtIns }) => Array.zip(tokens, amtIns))
@@ -221,6 +226,7 @@ export const main =
             (() => ({
               msg: declassify(interact.getTrade()),
               when: alive && declassify(interact.shouldMakeTrade()),
+              exposeAs: "swap",
             })),
             // Amt in has fees incorporated into it
             (({ amtIn, amtInTok }) => [ [ amtIn, amtInTok ] ]),
