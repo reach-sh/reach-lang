@@ -7,32 +7,22 @@ Verification failed:
   at ./assert_more_expr.rsh:11:13:application
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
-  Theorem formalization:
-  v10
+  // Violation witness
+  const v3 = 0;
+  //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:8:32:application
+  const v4 = 1;
+  //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:9:32:application
 
-  This could be violated if...
-    "v3" = 0
-      (from: v3)
-      (bound at: ./assert_more_expr.rsh:8:32:application)
-      (because: evaluating interact("A")."getX"())
-    "v4" = 1
-      (from: v4)
-      (bound at: ./assert_more_expr.rsh:9:32:application)
-      (because: evaluating interact("A")."getX"())
+  // Theorem formalization
+  assert((v3 + v4) == (v3 * 2));
 
-  In context...
-    "v10" = (= v9 v5 )
-      (from: v10)
-      (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating PEQ(v9, v5 ))
-    "v5" = (* v3 2 )
-      (from: v5)
-      (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating MUL(v3, 2 ))
-    "v9" = (+ v3 v4 )
-      (from: v9)
-      (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating ADD(v3, v4 ))
+  // In context
+  const v10 = (= v9 v5 );
+  //    ^ from evaluating PEQ(v9, v5 ) at ./assert_more_expr.rsh:application
+  const v5 = (* v3 2 );
+  //    ^ from evaluating MUL(v3, 2 ) at ./assert_more_expr.rsh:application
+  const v9 = (+ v3 v4 );
+  //    ^ from evaluating ADD(v3, v4 ) at ./assert_more_expr.rsh:application
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

@@ -7,59 +7,38 @@ Verification failed:
   msg: "balance assertion"
   at ./index-error.rsh:29:11:application
 
-  Theorem formalization:
-  v52
+  // Violation witness
+  const interact_Alice_request = 1;
+  //    ^ from interaction at ./index-error.rsh:4:12:application
 
-  This could be violated if...
-    "interact_Alice_request" = 1
-      (bound at: ./index-error.rsh:4:12:application)
-      (because: interaction)
+  // Theorem formalization
+  const v37 = ((0 + 0) + interact_Alice_request) + 0;
+  const v52 = 0 == (v37 - (interact_Alice_request - 1));
+  assert(v52);
 
-  In context...
-    "v52" = (= 0 v46 )
-      (from: v52)
-      (bound at: ./index-error.rsh:29:11:application)
-      (because: evaluating PEQ(0, v46 ))
-    "v46" = (- v37 v41 )
-      (from: v46)
-      (bound at: ./index-error.rsh:24:29:application)
-      (because: evaluating SUB(v37, v41 ))
-    "v37" = (+ v23 v31 )
-      (from: v37)
-      (bound at: ./index-error.rsh:23:9:dot)
-      (because: evaluating ADD(v23, v31 ))
-    "v41" = (- v4 1 )
-      (from: v41)
-      (bound at: ./index-error.rsh:application)
-      (because: evaluating SUB(v4, 1 ))
-    "v23" = (+ v10 v18 )
-      (from: v23)
-      (bound at: ./index-error.rsh:18:9:dot)
-      (because: evaluating ADD(v10, v18 ))
-    "v31" = 0
-      (from: v31)
-      (bound at: ./index-error.rsh:23:9:dot)
-      (because: an honest payment from "Alice" of 0)
-    "v4" = interact_Alice_request
-      (from: v4)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
-    "v10" = (+ v7 v5 )
-      (from: v10)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: evaluating ADD(v7, v5 ))
-    "v18" = v4
-      (from: v18)
-      (bound at: ./index-error.rsh:18:9:dot)
-      (because: an honest payment from "Bob" of v4)
-    "v5" = 0
-      (from: v5)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: an honest payment from "Alice" of 0)
-    "v7" = 0
-      (from: v7)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: evaluating 0)
+  // In context
+  const v52 = (= 0 v46 );
+  //    ^ from evaluating PEQ(0, v46 ) at ./index-error.rsh:29:11:application
+  const v46 = (- v37 v41 );
+  //    ^ from evaluating SUB(v37, v41 ) at ./index-error.rsh:24:29:application
+  const v37 = (+ v23 v31 );
+  //    ^ from evaluating ADD(v23, v31 ) at ./index-error.rsh:23:9:dot
+  const v41 = (- v4 1 );
+  //    ^ from evaluating SUB(v4, 1 ) at ./index-error.rsh:application
+  const v23 = (+ v10 v18 );
+  //    ^ from evaluating ADD(v10, v18 ) at ./index-error.rsh:18:9:dot
+  const v31 = 0;
+  //    ^ from an honest payment from "Alice" of 0 at ./index-error.rsh:23:9:dot
+  const v4 = interact_Alice_request;
+  //    ^ from an honest message from "Alice" of interact("Alice")."request"(UInt) at ./index-error.rsh:13:9:dot
+  const v10 = (+ v7 v5 );
+  //    ^ from evaluating ADD(v7, v5 ) at ./index-error.rsh:13:9:dot
+  const v18 = v4;
+  //    ^ from an honest payment from "Bob" of v4 at ./index-error.rsh:18:9:dot
+  const v5 = 0;
+  //    ^ from an honest payment from "Alice" of 0 at ./index-error.rsh:13:9:dot
+  const v7 = 0;
+  //    ^ from evaluating 0 at ./index-error.rsh:compileDApp
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
