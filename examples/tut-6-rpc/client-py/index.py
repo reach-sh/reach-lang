@@ -10,7 +10,10 @@ def log(t):
     print(t, flush=True)
 
 
-def mk_rpc(proto, host, port):
+def mk_rpc(proto='http',
+           host=os.environ['REACH_RPC_SERVER'],
+           port=os.environ['REACH_RPC_PORT']):
+
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         log(lab)
@@ -43,10 +46,8 @@ def mk_rpc(proto, host, port):
 def main():
     log('I am the client')
     sleep(3)  # TODO wait until server becomes available to fulfill requests
-    host = os.environ['REACH_RPC_SERVER']
-    port = os.environ['REACH_RPC_PORT']
 
-    rpc, rpc_callbacks = mk_rpc('http', host, port)
+    rpc, rpc_callbacks = mk_rpc()
 
     starting_balance = rpc('/stdlib/parseCurrency', 10)
     acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
