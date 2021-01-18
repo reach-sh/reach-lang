@@ -6,27 +6,42 @@ from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from time               import sleep
 
 
+def log(t):
+    print(t, flush=True)
+
+
 def mk_rpc(proto, host, port):
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
-        print(lab)
+        log(lab)
         ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
                             json=[*args])
-        print('%s ==> %s' % (lab, json.dumps(ans.json())))
+        log('%s ==> %s' % (lab, json.dumps(ans.json())))
         return ans.json()
 
     def rpc_callbacks(m, arg, cbacks):
         vals  = {k: v    for k, v in cbacks.items() if not callable(v)}
         meths = {k: True for k, v in cbacks.items() if     callable(v)}  # noqa
-        p = rpc(m, arg, vals, meths)
-        print(p)
-        return p
+        p     = rpc(m, arg, vals, meths)
+
+        while True:
+            if p['t'] == 'Done':
+                return p
+
+            elif p['t'] == 'Kont':
+                cback = cbacks[p['m']]
+                ans   = cback(*p['args'])
+                p     = rpc('/kont', p['kid'], ans)
+
+            else:
+                # TODO fix swallowed exceptions
+                raise Exception('Illegal callback return: %s' % json.dumps(p))
 
     return rpc, rpc_callbacks
 
 
 def main():
-    print('I am the client')
+    log('I am the client')
     sleep(3)  # TODO wait until server becomes available to fulfill requests
     host = os.environ['REACH_RPC_SERVER']
     port = os.environ['REACH_RPC_PORT']
@@ -50,16 +65,19 @@ def main():
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
 
     def getHand(who):
-        hand = random.randint(0, 2)
-        print('%s played %s' % (who, HAND[hand]))
+        hand = random.randint(0, 2)  # TODO better source of randomness(?)
+        log('%s played %s' % (who, HAND[hand]))
         return hand
 
-    acceptWager = lambda amt: print('Bob accepts the wager of %s' % fmt(amt))
+    acceptWager = lambda amt: log('Bob accepts the wager of %s' % fmt(amt))
 
-    player = lambda who: dict(
-        getHand=lambda: getHand(who),
-        informTimeout=lambda: print('%s observed a timeout' % who),
-        seeOutcome=lambda o: print('%s saw outcome %s' % (who, OUTCOME[o])))
+    player = lambda who: \
+        {'stdlib.hasRandom': True,
+         'getHand':       lambda:   getHand(who),
+         'informTimeout': lambda:   log('%s observed a timeout' % who),
+         'seeOutcome':    lambda n: log('%s saw outcome %s'
+            % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)])) # noqa
+         }
 
     play_alice = lambda: rpc_callbacks(
         '/backend/Alice',
@@ -69,9 +87,9 @@ def main():
     play_bob = lambda: rpc_callbacks(
         '/backend/Bob',
         ctc_bob,
-        dict(acceptWager=acceptWager), **player('Bob'))
+        dict(acceptWager=acceptWager, **player('Bob')))
 
-    with ThreadPoolExecutor(max_workers=2) as ex:
+    with ThreadPoolExecutor() as ex:
         t_alice = ex.submit(play_alice)
         t_bob   = ex.submit(play_bob)
 
@@ -80,10 +98,10 @@ def main():
     after_alice = get_balance(acc_alice)
     after_bob   = get_balance(acc_bob)
 
-    print('Alice went from %s to %s' % (before_alice, after_alice))
-    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+    log('Alice went from %s to %s' % (before_alice, after_alice))
+    log('  Bob went from %s to %s' % (before_bob,   after_bob))
 
-    rpc('/quit')
+    rpc('/stop')
 
 
 if __name__ == '__main__':
