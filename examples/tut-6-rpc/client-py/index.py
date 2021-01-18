@@ -2,8 +2,33 @@ import json
 import os
 import random
 import requests
+import socket
+import time
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
-from time               import sleep
+
+
+# https://gist.github.com/butla/2d9a4c0f35ea47b7452156c96a4e7b12
+def wait_for_port(port, host='localhost', timeout=5.0):
+    """Wait until a port starts accepting TCP connections.
+    Args:
+        port (int): Port number.
+        host (str): Host address on which the port should exist.
+        timeout (float): In seconds. How long to wait before raising errors.
+    Raises:
+        TimeoutError: The port isn't accepting connections after time specified
+        in `timeout`.
+    """
+    start_time = time.perf_counter()
+    while True:
+        try:
+            with socket.create_connection((host, port), timeout=timeout):
+                break
+        except OSError as ex:
+            time.sleep(0.01)
+            if time.perf_counter() - start_time >= timeout:
+                raise TimeoutError('Waited too long for the port {} '
+                                   'on host {} to start accepting connections.'
+                                   .format(port, host)) from ex
 
 
 def mk_rpc(proto='http',
@@ -11,6 +36,7 @@ def mk_rpc(proto='http',
            port=os.environ['REACH_RPC_PORT']):
 
     def rpc(m, *args):
+        wait_for_port(port, host)
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         print(lab)
         ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
@@ -41,7 +67,6 @@ def mk_rpc(proto='http',
 
 def main():
     print('I am the client')
-    sleep(3)  # TODO wait until server becomes available to fulfill requests
 
     rpc, rpc_callbacks = mk_rpc()
 
