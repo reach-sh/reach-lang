@@ -4,13 +4,15 @@ WORKDIR    /app
 
 # Install and cache `pip` dependencies
 RUN        python3.8 -m venv venv
-COPY       pip-deps.txt /app
 RUN        source /app/venv/bin/activate \
              && pip install --upgrade pip \
-             && pip install -r pip-deps.txt
+             && pip install certifi==2020.12.5 \
+                            chardet==4.0.0 \
+                            idna==2.10 \
+                            requests==2.25.1 \
+                            urllib3==1.26.2
 
-COPY       tox.ini index.py /app/
-RUN        /app/venv/bin/flake8 --config /app/tox.ini /app/index.py
+COPY       index.py /app/
 
 ENTRYPOINT ["/app/venv/bin/python"]
 CMD        ["index.py"]

@@ -21,7 +21,7 @@ def mk_rpc(proto, host, port):
 
     def rpc_callbacks(m, arg, cbacks):
         vals  = {k: v    for k, v in cbacks.items() if not callable(v)}
-        meths = {k: True for k, v in cbacks.items() if     callable(v)}  # noqa
+        meths = {k: True for k, v in cbacks.items() if     callable(v)}
         p     = rpc(m, arg, vals, meths)
 
         while True:
@@ -76,7 +76,7 @@ def main():
          'getHand':       lambda:   getHand(who),
          'informTimeout': lambda:   log('%s observed a timeout' % who),
          'seeOutcome':    lambda n: log('%s saw outcome %s'
-            % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)])) # noqa
+            % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
          }
 
     play_alice = lambda: rpc_callbacks(
