@@ -6,20 +6,16 @@ from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from time               import sleep
 
 
-def log(t):
-    print(t, flush=True)
-
-
 def mk_rpc(proto='http',
            host=os.environ['REACH_RPC_SERVER'],
            port=os.environ['REACH_RPC_PORT']):
 
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
-        log(lab)
+        print(lab)
         ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
                             json=[*args])
-        log('%s ==> %s' % (lab, json.dumps(ans.json())))
+        print('%s ==> %s' % (lab, json.dumps(ans.json())))
         return ans.json()
 
     def rpc_callbacks(m, arg, cbacks):
@@ -44,7 +40,7 @@ def mk_rpc(proto='http',
 
 
 def main():
-    log('I am the client')
+    print('I am the client')
     sleep(3)  # TODO wait until server becomes available to fulfill requests
 
     rpc, rpc_callbacks = mk_rpc()
@@ -67,16 +63,16 @@ def main():
 
     def getHand(who):
         hand = random.randint(0, 2)  # TODO better source of randomness(?)
-        log('%s played %s' % (who, HAND[hand]))
+        print('%s played %s' % (who, HAND[hand]))
         return hand
 
-    acceptWager = lambda amt: log('Bob accepts the wager of %s' % fmt(amt))
+    acceptWager = lambda amt: print('Bob accepts the wager of %s' % fmt(amt))
 
     player = lambda who: \
         {'stdlib.hasRandom': True,
          'getHand':       lambda:   getHand(who),
-         'informTimeout': lambda:   log('%s observed a timeout' % who),
-         'seeOutcome':    lambda n: log('%s saw outcome %s'
+         'informTimeout': lambda:   print('%s observed a timeout' % who),
+         'seeOutcome':    lambda n: print('%s saw outcome %s'
             % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
          }
 
@@ -99,8 +95,8 @@ def main():
     after_alice = get_balance(acc_alice)
     after_bob   = get_balance(acc_bob)
 
-    log('Alice went from %s to %s' % (before_alice, after_alice))
-    log('  Bob went from %s to %s' % (before_bob,   after_bob))
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
 
     rpc('/stop')
 
