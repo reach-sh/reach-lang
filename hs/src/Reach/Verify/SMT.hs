@@ -12,6 +12,7 @@ import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.List as List
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -31,6 +32,7 @@ import qualified SimpleSMT as SMT
 import System.Directory
 import System.Exit
 import System.IO
+import qualified Data.Char as Char
 
 --- SMT Helpers
 
@@ -312,11 +314,9 @@ set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
 
 depthGe :: Int -> SExpr -> Bool
-depthGe = aux
-  where
-    aux 0 _         = True
-    aux nc (List xs) = any (aux (nc - 1)) xs
-    aux _ (Atom _)  = False
+depthGe 0 _ = True
+depthGe n (List xs) = any (depthGe (n - 1)) xs
+depthGe _ (Atom _)  = False
 
 get :: M.Map String SExpr -> M.Map String (a, b, c, Maybe SExpr) -> SExpr -> (M.Map String SExpr, SExpr)
 get env bindings (Atom mi) =
@@ -344,12 +344,38 @@ get env bindings (List xs) =
   in
   (env', List xs')
 
-subAllVars :: M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr) -> SExpr -> SExpr
+subAllVars :: M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr) -> SExpr -> String
 subAllVars bindings se =
   let (env, acc) = get M.empty bindings se in
-  let assigns = map (\ (k, v) -> List [Atom k, v]) $ M.toList env in
-  List $ Atom "let*" : assigns <> [acc]
+  let assigns = M.toList env in
+  let assignStr = unlines $ map (\ (k, v) ->
+        "  const " <> k <> " = " <> displayAsJs False v <> ";") assigns in
+  assignStr <> "  assert(" <> displayAsJs False acc <> ");"
 
+displayAsJs :: Bool -> SExpr -> String
+displayAsJs nested s =
+  case s of
+  Atom i -> i
+  List [Atom "ite", i, t, e] ->
+    lparen <> r i <> " ? " <> r t <> " : " <> r e <> rparen
+  List (Atom w:rs)
+    | "cons" `List.isSuffixOf` w ->
+      "[" <> List.intercalate ", " (map r rs) <> "]"
+    | "elem" `List.isInfixOf` w ->
+      unwords (map r rs) <> "[" <> List.reverse (takeWhile Char.isDigit (List.reverse w)) <> "]"
+    | length rs > 1 -> -- binop
+      lparen <> List.intercalate (" " <> jsOp w <> " ") (map r rs) <> rparen
+    | otherwise -> -- application
+      w <> "(" <> List.intercalate ", " (map r rs) <> ")"
+  List xs -> lparen <> unwords (map r xs) <> rparen
+  where
+    lparen = if nested then "(" else ""
+    rparen = if nested then ")" else ""
+    r = displayAsJs True
+    jsOp "div" = "/"
+    jsOp "mod" = "%"
+    jsOp "="   = "=="
+    jsOp op    = op
 
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
@@ -377,10 +403,7 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
       --- below) and then just show the remaining variables found by the
       --- model.
       bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
-      putStrLn $ "  Theorem formalization:"
-      putStrLn $ "  " ++ (SMT.ppSExpr (subAllVars bindingsm tse) "")
-      putStrLn $ ""
-      putStrLn $ "  This could be violated if..."
+      putStrLn $ "  // Violation witness"
       let pm =
             case mrd of
               Nothing ->
@@ -399,16 +422,12 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                   case M.lookup v0 bindingsm of
                     Nothing ->
                       return $ (mempty, mempty)
-                    Just (mdv, at, bo, mvse) -> do
+                    Just (_, at, bo, mvse) -> do
                       let this se =
-                            [("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se ""))]
-                              ++ (case mdv of
-                                    Nothing -> mempty
-                                    Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
+                            [("  const " ++ v0 ++ " = " ++ (SMT.showsSExpr se "") ++ ";")]
                               ++ (map
                                     (redactAbsStr cwd)
-                                    [ ("      (bound at: " ++ show at ++ ")")
-                                    , ("      (because: " ++ show bo ++ ")")
+                                    [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)
                                     ])
                       case mvse of
                         Nothing ->
@@ -428,8 +447,11 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                 liftM (vc ++) $ show_vars shown' q''
       let tse_vars = seVars tse
       vctxt <- show_vars tse_vars $ set_to_seq $ tse_vars
+      putStrLn ""
+      putStrLn $ "  // Theorem formalization"
+      putStrLn $ subAllVars bindingsm tse
       putStrLn $ ""
-      putStrLn $ "  In context..."
+      putStrLn $ "  // In context"
       mapM_ putStrLn vctxt
 
 smtAddPathConstraints :: SMTCtxt -> SExpr -> SExpr
@@ -591,24 +613,24 @@ smt_e :: SMTCtxt -> SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv mdv de =
   case de of
     DLE_Arg at da ->
-      pathAddBound ctxt at_dv mdv bo $ smt_a ctxt at da
+      pathAddBound ctxt at mdv bo $ smt_a ctxt at da
     DLE_LArg at dla ->
-      pathAddBound ctxt at_dv mdv bo $ smt_la ctxt at dla
+      pathAddBound ctxt at mdv bo $ smt_la ctxt at dla
     DLE_Impossible _ _ ->
       pathAddUnbound ctxt at_dv mdv bo
     DLE_PrimOp at cp args -> do
       se <- smtPrimOp ctxt cp args args'
-      pathAddBound ctxt at_dv mdv bo se
+      pathAddBound ctxt at mdv bo se
       where
         args' = map (smt_a ctxt at) args
     DLE_ArrayRef at arr_da idx_da -> do
-      pathAddBound ctxt at_dv mdv bo se
+      pathAddBound ctxt at mdv bo se
       where
         se = smtApply "select" [arr_da', idx_da']
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
     DLE_ArraySet at arr_da idx_da val_da -> do
-      pathAddBound ctxt at_dv mdv bo se
+      pathAddBound ctxt at mdv bo se
       where
         se = smtApply "store" [arr_da', idx_da', val_da']
         arr_da' = smt_a ctxt at arr_da
@@ -621,21 +643,21 @@ smt_e ctxt at_dv mdv de =
       --- FIXME: This might be possible to do by using `map`
       impossible "array_zip"
     DLE_TupleRef at arr_da i ->
-      pathAddBound ctxt at_dv mdv bo se
+      pathAddBound ctxt at mdv bo se
       where
         se = smtApply (s ++ "_elem" ++ show i) [arr_da']
         s = smtTypeSort ctxt t
         t = argTypeOf arr_da
         arr_da' = smt_a ctxt at arr_da
     DLE_ObjectRef at obj_da f ->
-      pathAddBound ctxt at_dv mdv bo se
+      pathAddBound ctxt at mdv bo se
       where
         se = smtApply (s ++ "_" ++ f) [obj_da']
         s = smtTypeSort ctxt t
         t = argTypeOf obj_da
         obj_da' = smt_a ctxt at obj_da
-    DLE_Interact {} ->
-      pathAddUnbound ctxt at_dv mdv bo
+    DLE_Interact at _ _ _ _ _ ->
+      pathAddUnbound ctxt at mdv bo
     DLE_Digest at args ->
       pathAddBound ctxt at mdv bo se
       where
