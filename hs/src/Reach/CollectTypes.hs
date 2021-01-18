@@ -2,7 +2,6 @@ module Reach.CollectTypes (cts) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
@@ -54,26 +53,9 @@ instance CollectsTypes DLType where
         T_Object m -> cts m
         T_Data m -> cts m
 
-instance CollectsTypes SLType where
-  cts t =
-    S.singleton (st2dt t)
-      <> case t of
-        ST_Null -> mempty
-        ST_Bool -> mempty
-        ST_UInt -> mempty
-        ST_Bytes _ -> mempty
-        ST_Digest -> mempty
-        ST_Address -> mempty
-        ST_Array e _ -> cts e
-        ST_Tuple elems -> cts elems
-        ST_Object m -> cts m
-        ST_Data m -> cts m
-        -- XXX st2dt above will explode before it hits any of these cases
-        -- Is there a better way to handle them so that it doesn't explode?
-        ST_Fun dom rng -> cts dom <> cts rng
-        ST_Forall _ t' -> cts t'
-        ST_Var _ -> mempty
-        ST_Type _ -> mempty
+instance CollectsTypes IType where
+  cts (IT_Fun dom rng) = cts dom <> cts rng
+  cts (IT_Val v) = cts v
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m

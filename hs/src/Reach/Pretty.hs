@@ -37,6 +37,9 @@ instance Pretty SLPart where
 instance Pretty DLType where
   pretty = viaShow
 
+instance Pretty IType where
+  pretty = viaShow
+
 instance Pretty SLType where
   pretty = viaShow
 

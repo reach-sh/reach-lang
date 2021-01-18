@@ -3942,7 +3942,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           iom = case io of
             SLV_Object _ _ m -> m
             _ -> impossible $ "make_sps_entry io"
-          getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
+          getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = st2it t
           getType x = impossible $ "make_sps_entry getType " ++ show x
   let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
   let dli = DLInit ctimem

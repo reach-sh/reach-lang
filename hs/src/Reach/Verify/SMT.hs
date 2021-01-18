@@ -1206,12 +1206,12 @@ _verify_smt mc vst smt lp = do
   -- something reasonable, like 64-bit?
   let defineIE who (v, it) =
         case it of
-          -- ST_Fun {} -> mempty
-          _ ->
-            pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) it O_Interact
+          IT_Fun {} -> mempty
+          IT_Val itv ->
+            pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) itv O_Interact
   let definePIE (who, InteractEnv iem) = do
         pathAddUnbound_v ctxt Nothing at (smtAddress who) T_Address O_BuiltIn
-        mapM_ (defineIE who) $ M.toList $ M.map st2dt iem
+        mapM_ (defineIE who) $ M.toList iem
   mapM_ definePIE $ M.toList pies_m
   let smt_s_top mode = do
         putStrLn $ "  Verifying with mode = " ++ show mode

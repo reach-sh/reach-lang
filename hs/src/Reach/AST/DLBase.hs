@@ -14,8 +14,31 @@ data DeployMode
   | DM_firstMsg
   deriving (Eq, Generic, NFData, Show)
 
+-- DL types only describe data, and explicitly do not describe functions
+data DLType
+  = T_Null
+  | T_Bool
+  | T_UInt
+  | T_Bytes Integer
+  | T_Digest
+  | T_Address
+  | T_Array DLType Integer
+  | T_Tuple [DLType]
+  | T_Object (M.Map SLVar DLType)
+  | T_Data (M.Map SLVar DLType)
+  deriving (Eq, Generic, NFData, Ord)
+
+instance Show DLType where
+  show = show . dt2st
+
+-- Interact types can only be value types or first-order functions
+data IType
+  = IT_Val DLType
+  | IT_Fun [DLType] DLType
+  deriving (Eq, Generic, NFData, Show)
+
 newtype InteractEnv
-  = InteractEnv (M.Map SLVar SLType)
+  = InteractEnv (M.Map SLVar IType)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
@@ -44,6 +67,45 @@ data DLVar = DLVar SrcLoc String DLType Int
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
+
+-- XXX better error message for stuff like Array<Fun> or Array<Forall>
+-- that can't exist in DL-land
+st2dt :: SLType -> DLType
+st2dt = \case
+  ST_Null -> T_Null
+  ST_Bool -> T_Bool
+  ST_UInt -> T_UInt
+  ST_Bytes i -> T_Bytes i
+  ST_Digest -> T_Digest
+  ST_Address -> T_Address
+  ST_Array ty i -> T_Array (st2dt ty) i
+  ST_Tuple tys -> T_Tuple (map st2dt tys)
+  ST_Object tyMap -> T_Object (M.map st2dt tyMap)
+  ST_Data tyMap -> T_Data (M.map st2dt tyMap)
+  -- XXX consider using Maybe so that callers have to handle the error case
+  ST_Fun {} -> error "ST_Fun not a dt"
+  ST_Forall {} -> error "ST_Forall not a dt"
+  ST_Var {} -> error "ST_Var not a dt"
+  ST_Type {} -> error "ST_Type not a dt"
+
+dt2st :: DLType -> SLType
+dt2st = \case
+  T_Null -> ST_Null
+  T_Bool -> ST_Bool
+  T_UInt -> ST_UInt
+  T_Bytes i -> ST_Bytes i
+  T_Digest -> ST_Digest
+  T_Address -> ST_Address
+  T_Array ty i -> ST_Array (dt2st ty) i
+  T_Tuple tys -> ST_Tuple (map dt2st tys)
+  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
+  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
+
+-- XXX improve error messages
+st2it :: SLType -> IType
+st2it t = case t of
+  ST_Fun dom rng -> IT_Fun (map st2dt dom) (st2dt rng)
+  _ -> IT_Val (st2dt t)
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)
@@ -220,3 +282,18 @@ data DLinTail a
 data DLinBlock a
   = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
   deriving (Eq, Show)
+
+data FluidVar
+  = FV_balance
+  | FV_thisConsensusTime
+  | FV_lastConsensusTime
+  deriving (Eq, Generic, NFData, Ord, Show, Bounded, Enum)
+
+fluidVarType :: FluidVar -> DLType
+fluidVarType = \case
+  FV_balance -> T_UInt
+  FV_thisConsensusTime -> T_UInt
+  FV_lastConsensusTime -> T_UInt
+
+allFluidVars :: [FluidVar]
+allFluidVars = enumFrom minBound
