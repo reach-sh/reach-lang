@@ -166,19 +166,10 @@ instance Monoid SecurityLevel where
 --- Static Language
 type SLVar = String
 
-data DLType
-  = T_Null
-  | T_Bool
-  | T_UInt
-  | T_Bytes Integer
-  | T_Digest
-  | T_Address
-  | T_Array DLType Integer
-  | T_Tuple [DLType]
-  | T_Object (M.Map SLVar DLType)
-  | T_Data (M.Map SLVar DLType)
-  deriving (Eq, Generic, NFData, Ord)
-
+-- SL types are a superset of DL types.
+-- We copy/paste constructors instead of using `ST_Val DLType`
+--  because some things can exist in SL that do not exist in DL,
+--  such as an object whose fields are functions.
 data SLType
   = ST_Null
   | ST_Bool
@@ -195,39 +186,6 @@ data SLType
   | ST_Var SLVar
   | ST_Type SLType
   deriving (Eq, Generic, NFData, Ord)
-
--- XXX better error message for stuff like Array<Fun> or Array<Forall>
--- that can't exist in DL-land
-st2dt :: SLType -> DLType
-st2dt = \case
-  ST_Null -> T_Null
-  ST_Bool -> T_Bool
-  ST_UInt -> T_UInt
-  ST_Bytes i -> T_Bytes i
-  ST_Digest -> T_Digest
-  ST_Address -> T_Address
-  ST_Array ty i -> T_Array (st2dt ty) i
-  ST_Tuple tys -> T_Tuple (map st2dt tys)
-  ST_Object tyMap -> T_Object (M.map st2dt tyMap)
-  ST_Data tyMap -> T_Data (M.map st2dt tyMap)
-  -- XXX
-  ST_Fun {} -> error "ST_Fun not a dt"
-  ST_Forall {} -> error "ST_Forall not a dt"
-  ST_Var {} -> error "ST_Var not a dt"
-  ST_Type {} -> error "ST_Type not a dt"
-
-dt2st :: DLType -> SLType
-dt2st = \case
-  T_Null -> ST_Null
-  T_Bool -> ST_Bool
-  T_UInt -> ST_UInt
-  T_Bytes i -> ST_Bytes i
-  T_Digest -> ST_Digest
-  T_Address -> ST_Address
-  T_Array ty i -> ST_Array (dt2st ty) i
-  T_Tuple tys -> ST_Tuple (map dt2st tys)
-  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
-  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
 
 -- | Fold over SLType, doing something special on Fun
 funFold
@@ -280,22 +238,6 @@ showTyMap = intercalate ", " . map showPair . M.toList
   where
     showPair (name, ty) = show name <> ": " <> show ty
 
-instance Show DLType where
-  show T_Null = "Null"
-  show T_Bool = "Bool"
-  show T_UInt = "UInt"
-  show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
-  show T_Digest = "Digest"
-  show T_Address = "Address"
-  show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
-  show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  -- show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
-  -- show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
-  -- show (T_Var x) = show x
-  -- show (T_Type ty) = "Type(" <> show ty <> ")"
-
 instance Show SLType where
   show ST_Null = "Null"
   show ST_Bool = "Bool"
@@ -336,21 +278,6 @@ data PrimOp
   | BIOR
   | BXOR
   deriving (Eq, Generic, NFData, Ord, Show)
-
-data FluidVar
-  = FV_balance
-  | FV_thisConsensusTime
-  | FV_lastConsensusTime
-  deriving (Eq, Generic, NFData, Ord, Show, Bounded, Enum)
-
-fluidVarType :: FluidVar -> DLType
-fluidVarType = \case
-  FV_balance -> T_UInt
-  FV_thisConsensusTime -> T_UInt
-  FV_lastConsensusTime -> T_UInt
-
-allFluidVars :: [FluidVar]
-allFluidVars = enumFrom minBound
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
