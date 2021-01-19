@@ -7,6 +7,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
+import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 
 data DeployMode
@@ -31,11 +32,11 @@ data DLType
 instance Show DLType where
   show = show . dt2st
 
--- Interact types can only be value types or first-order functions
+-- Interact types can only be value types or first-order function types
 data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, NFData, Show)
 
 newtype InteractEnv
   = InteractEnv (M.Map SLVar IType)
@@ -70,7 +71,7 @@ instance Eq DLVar where
 
 -- XXX better error message for stuff like Array<Fun> or Array<Forall>
 -- that can't exist in DL-land
-st2dt :: SLType -> DLType
+st2dt :: HasCallStack => SLType -> DLType
 st2dt = \case
   ST_Null -> T_Null
   ST_Bool -> T_Bool
@@ -83,10 +84,10 @@ st2dt = \case
   ST_Object tyMap -> T_Object (M.map st2dt tyMap)
   ST_Data tyMap -> T_Data (M.map st2dt tyMap)
   -- XXX consider using Maybe so that callers have to handle the error case
-  ST_Fun {} -> error "ST_Fun not a dt"
-  ST_Forall {} -> error "ST_Forall not a dt"
-  ST_Var {} -> error "ST_Var not a dt"
-  ST_Type {} -> error "ST_Type not a dt"
+  t@(ST_Fun {}) -> error $ "ST_Fun not a dt: " <> show t
+  t@(ST_Forall {}) -> error $ "ST_Forall not a dt: " <> show t
+  t@(ST_Var {}) -> error $ "ST_Var not a dt: " <> show t
+  t@(ST_Type {}) -> error $ "ST_Type not a dt: " <> show t
 
 dt2st :: DLType -> SLType
 dt2st = \case

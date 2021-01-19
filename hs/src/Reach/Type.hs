@@ -15,6 +15,7 @@ module Reach.Type
   )
 where
 
+import Debug.Trace (traceM)
 import Control.Applicative
 import Control.Monad.ST
 import qualified Data.ByteString.Char8 as B
@@ -219,9 +220,9 @@ slToDL pdvs _at v =
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
         -- XXX can't happen anymore?
-        -- ST_Var {} -> Nothing
-        -- ST_Forall {} -> Nothing
-        -- ST_Fun {} -> Nothing
+        ST_Var {} -> Nothing
+        ST_Forall {} -> Nothing
+        ST_Fun {} -> Nothing
         _ -> return $ DLAE_Arg $ DLA_Interact who m (st2dt t)
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
@@ -238,12 +239,12 @@ typeOf (mcfs, pdvs) at v =
     Just x -> x
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
+typeCheck :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
 typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_ty res
   where
     (val_ty, res) = typeOf tint at val
 
-typeChecks :: TINT -> SrcLoc -> TypeEnv s -> [DLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> [DLType] -> [SLVal] -> ST s [DLArgExpr]
 typeChecks tint@(mcfs, _) at env ts vs =
   case (ts, vs) of
     ([], []) ->
@@ -257,10 +258,11 @@ typeChecks tint@(mcfs, _) at env ts vs =
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
+checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     ST_Fun dom rng -> do
+      traceM $ "XXX" <> show at
       dargs <- typeChecks tint at env (map st2dt dom) args
       return (st2dt rng, dargs)
     ST_Forall var ft -> do
@@ -272,10 +274,10 @@ checkAndConvert_i tint@(mcfs, _) at env t args =
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
+checkAndConvert :: HasCallStack => TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert tint at t args = runST $ checkAndConvert_i tint at mempty t args
 
-checkType :: TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr
+checkType :: HasCallStack => TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr
 checkType tint@(mcfs, _) at et v =
   typeMeet mcfs at (at, et) (at, t) `seq` da
   where
