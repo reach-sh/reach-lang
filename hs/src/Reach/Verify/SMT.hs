@@ -593,7 +593,7 @@ pathAddUnbound_v ctxt mdv at_dv v t bo = do
   smtDeclare_v ctxt v t
   modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Nothing, Nothing)
 
-pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
+pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
 pathAddBound_v ctxt mdv at_dv v t bo de se = do
   smtDeclare_v ctxt v t
   let smt = ctxt_smt ctxt
