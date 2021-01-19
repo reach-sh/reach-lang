@@ -9,19 +9,8 @@ Verification failed:
   // Violation witness
 
   // Theorem formalization
-  assert(classAddr1 == classAddr15);
+  require(v2 == v16);
 
-  // In context
-  const v28 = (= v5 v19 );
-  //    ^ from evaluating PEQ(v5, v19 ) at ./class_addr.rsh:application
-  const v19 = v16;
-  //    ^ from an honest message from "C" of v16 at ./class_addr.rsh:15:9:dot
-  const v5 = v2;
-  //    ^ from an honest message from "C" of v2 at ./class_addr.rsh:10:9:dot
-  const v16 = classAddr15;
-  //    ^ from evaluating SELF_ADDRESS(""C"", #t, 15 ) at ./class_addr.rsh:14:31:after expr stmt semicolon
-  const v2 = classAddr1;
-  //    ^ from evaluating SELF_ADDRESS(""C"", #t, 1 ) at ./class_addr.rsh:9:31:after expr stmt semicolon
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "C")
 Checked 8 theorems; 1 failures. :'(

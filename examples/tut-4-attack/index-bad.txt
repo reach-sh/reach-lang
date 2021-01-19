@@ -14,69 +14,11 @@ Verification failed:
   //    ^ from evaluating interact("Alice")."getHand"() at ./index-bad.rsh:20:50:application
 
   // Theorem formalization
-  const v34 = 4 - ((v3 + 1) % 3);
-  const v44 = ((v3 + v34) % 3) == 0;
-  const v46 = ((v3 + v34) % 3) == 1;
-  const v51 = v44 ? [0, 1] : (v46 ? [1, 1] : [2, 0]);
-  const v60 = ((0 + interact_Alice_wager) + interact_Alice_wager) - (v51[0] * interact_Alice_wager);
-  const v67 = v60 - (v51[1] * interact_Alice_wager);
-  assert(0 == v67);
-
-  // In context
-  const v76 = (= 0 v67 );
-  //    ^ from evaluating PEQ(0, v67 ) at ./index-bad.rsh:45:11:application
-  const v67 = (- v60 v61 );
-  //    ^ from evaluating SUB(v60, v61 ) at ./index-bad.rsh:40:32:application
-  const v60 = (- v30 v54 );
-  //    ^ from evaluating SUB(v30, v54 ) at ./index-bad.rsh:39:32:application
-  const v61 = (* v53 v5 );
-  //    ^ from evaluating MUL(v53, v5 ) at ./index-bad.rsh:application
-  const v30 = (+ v12 v25 );
-  //    ^ from evaluating ADD(v12, v25 ) at ./index-bad.rsh:28:9:dot
-  const v54 = (* v52 v5 );
-  //    ^ from evaluating MUL(v52, v5 ) at ./index-bad.rsh:application
   const v5 = interact_Alice_wager;
-  //    ^ from an honest message from "Alice" of interact("Alice")."wager"(UInt) at ./index-bad.rsh:21:9:dot
-  const v53 = (T2_elem1 v51 );
-  //    ^ from evaluating v51[1] at ./index-bad.rsh:34:13:array
-  const v12 = (+ v9 v7 );
-  //    ^ from evaluating ADD(v9, v7 ) at ./index-bad.rsh:21:9:dot
-  const v25 = v5;
-  //    ^ from an honest payment from "Bob" of v5 at ./index-bad.rsh:28:9:dot
-  const v52 = (T2_elem0 v51 );
-  //    ^ from evaluating v51[0] at ./index-bad.rsh:34:13:array
-  const v51 = (ite v44 v50 v49 );
-  //    ^ from evaluating IF_THEN_ELSE(v44, v50, v49 ) at ./index-bad.rsh:34:7:const
-  const v7 = interact_Alice_wager;
-  //    ^ from an honest payment from "Alice" of interact("Alice")."wager"(UInt) at ./index-bad.rsh:21:9:dot
-  const v9 = 0;
-  //    ^ from evaluating 0 at ./index-bad.rsh:compileDApp
-  const v44 = (= v38 0 );
-  //    ^ from evaluating PEQ(v38, 0 ) at ./index-bad.rsh:application
-  const v49 = (ite v46 v47 v48 );
-  //    ^ from evaluating IF_THEN_ELSE(v46, v47, v48 ) at ./index-bad.rsh:36:35:?: > false
-  const v50 = (T2_cons 0 1 );
-  //    ^ from evaluating [0, 1 ] at ./index-bad.rsh:34:7:const
-  const v38 = (mod v37 3 );
-  //    ^ from evaluating MOD(v37, 3 ) at ./index-bad.rsh:application
-  const v46 = (= v38 1 );
-  //    ^ from evaluating PEQ(v38, 1 ) at ./index-bad.rsh:application
-  const v47 = (T2_cons 1 1 );
-  //    ^ from evaluating [1, 1 ] at ./index-bad.rsh:36:35:?: > false
-  const v48 = (T2_cons 2 0 );
-  //    ^ from evaluating [2, 0 ] at ./index-bad.rsh:36:35:?: > false
-  const v37 = (+ v6 v34 );
-  //    ^ from evaluating ADD(v6, v34 ) at ./index-bad.rsh:application
-  const v34 = (- 4 v24 );
-  //    ^ from evaluating SUB(4, v24 ) at ./index-bad.rsh:application
-  const v6 = v3;
-  //    ^ from an honest message from "Alice" of v3 at ./index-bad.rsh:21:9:dot
-  const v24 = v22;
-  //    ^ from an honest message from "Bob" of v22 at ./index-bad.rsh:28:9:dot
-  const v22 = (mod v21 3 );
-  //    ^ from evaluating MOD(v21, 3 ) at ./index-bad.rsh:application
-  const v21 = (+ v6 1 );
-  //    ^ from evaluating ADD(v6, 1 ) at ./index-bad.rsh:application
+  const v38 = (v3 + (4 - v22)) % 3;
+  const v51 = (v38 == 0) ? [0, 1] : ((v38 == 1) ? [1, 1] : [2, 0]);
+  assert(0 == ((((0 + interact_Alice_wager) + v5) - (v51[0] * v5)) - (v51[1] * v5)));
+
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

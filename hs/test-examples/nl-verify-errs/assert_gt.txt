@@ -14,9 +14,6 @@ Verification failed:
   // Theorem formalization
   assert(v3 > 0);
 
-  // In context
-  const v4 = (> v3 0 );
-  //    ^ from evaluating PGT(v3, 0 ) at ./assert_gt.rsh:application
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

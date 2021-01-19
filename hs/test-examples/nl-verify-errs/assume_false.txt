@@ -12,7 +12,6 @@ Verification failed:
   // Theorem formalization
   assert(false);
 
-  // In context
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

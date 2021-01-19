@@ -10,11 +10,8 @@ Verification failed:
   // Violation witness
 
   // Theorem formalization
-  assert(v3 < 0);
+  possible(v3 < 0);
 
-  // In context
-  const v4 = (< v3 0 );
-  //    ^ from evaluating PLT(v3, 0 ) at ./impossible.rsh:application
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:
