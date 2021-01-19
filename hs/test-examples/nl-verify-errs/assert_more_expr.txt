@@ -16,13 +16,6 @@ Verification failed:
   // Theorem formalization
   assert((v3 + v4) == (v3 * 2));
 
-  // In context
-  const v10 = (= v9 v5 );
-  //    ^ from evaluating PEQ(v9, v5 ) at ./assert_more_expr.rsh:application
-  const v5 = (* v3 2 );
-  //    ^ from evaluating MUL(v3, 2 ) at ./assert_more_expr.rsh:application
-  const v9 = (+ v3 v4 );
-  //    ^ from evaluating ADD(v3, v4 ) at ./assert_more_expr.rsh:application
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

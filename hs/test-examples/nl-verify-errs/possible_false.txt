@@ -9,9 +9,8 @@ Verification failed:
   // Violation witness
 
   // Theorem formalization
-  assert(false);
+  possible(false);
 
-  // In context
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

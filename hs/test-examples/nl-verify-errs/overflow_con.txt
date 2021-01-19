@@ -14,15 +14,8 @@ Verification failed:
   //    ^ from evaluating interact("A")."get"() at ./overflow_con.rsh:9:40:application
 
   // Theorem formalization
-  assert(v3 <= (dlc_UInt_max - 1));
+  assert(v3 <= (UInt.max - 1));
 
-  // In context
-  const v17 = (<= v6 v16 );
-  //    ^ from evaluating PLE(v6, v16 ) at ./overflow_con.rsh:application
-  const v16 = (- dlc_UInt_max 1 );
-  //    ^ from evaluating SUB(UInt.max, 1 ) at ./overflow_con.rsh:application
-  const v6 = v3;
-  //    ^ from an honest message from "A" of v3 at ./overflow_con.rsh:12:7:dot
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
