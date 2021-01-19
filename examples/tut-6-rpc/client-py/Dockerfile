@@ -1,10 +1,11 @@
 FROM       python:3.8-alpine
-
 WORKDIR    /app
 
-# Install and cache `pip` dependencies
 RUN        python3.8 -m venv venv
-RUN        source /app/venv/bin/activate \
+
+# Always opt for newest `pip`; pin everything else
+# hadolint ignore=DL3013,SC1091
+RUN        . /app/venv/bin/activate \
              && pip install --upgrade pip \
              && pip install certifi==2020.12.5 \
                             chardet==4.0.0 \
