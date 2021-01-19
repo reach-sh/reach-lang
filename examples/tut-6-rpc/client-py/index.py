@@ -58,7 +58,6 @@ def mk_rpc(proto='http',
                 p     = rpc('/kont', p['kid'], ans)
 
             else:
-                # TODO fix swallowed exceptions
                 raise Exception('Illegal callback return: %s' % json.dumps(p))
 
     wait_for_port(port, host)
@@ -74,8 +73,11 @@ def main():
     acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
     acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
 
-    fmt          = lambda x: rpc('/stdlib/formatCurrency', x, 4)
-    get_balance  = lambda w: fmt(rpc('/stdlib/balanceOf', w))
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
 
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
@@ -86,30 +88,39 @@ def main():
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
 
-    def getHand(who):
-        hand = random.randint(0, 2)  # TODO better source of randomness(?)
-        print('%s played %s' % (who, HAND[hand]))
-        return hand
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
 
-    acceptWager = lambda amt: print('Bob accepts the wager of %s' % fmt(amt))
+        def informTimeout():
+            print('%s observed a timeout' % who)
 
-    player = lambda who: \
-        {'stdlib.hasRandom': True,
-         'getHand':       lambda:   getHand(who),
-         'informTimeout': lambda:   print('%s observed a timeout' % who),
-         'seeOutcome':    lambda n: print('%s saw outcome %s'
-            % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
-         }
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
 
-    play_alice = lambda: rpc_callbacks(
-        '/backend/Alice',
-        ctc_alice,
-        dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
 
-    play_bob = lambda: rpc_callbacks(
-        '/backend/Bob',
-        ctc_bob,
-        dict(acceptWager=acceptWager, **player('Bob')))
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
 
     alice = Thread(target=play_alice)
     bob   = Thread(target=play_bob)
