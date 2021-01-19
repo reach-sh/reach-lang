@@ -36,7 +36,6 @@ def mk_rpc(proto='http',
            port=os.environ['REACH_RPC_PORT']):
 
     def rpc(m, *args):
-        wait_for_port(port, host)
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         print(lab)
         ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
@@ -62,6 +61,7 @@ def mk_rpc(proto='http',
                 # TODO fix swallowed exceptions
                 raise Exception('Illegal callback return: %s' % json.dumps(p))
 
+    wait_for_port(port, host)
     return rpc, rpc_callbacks
 
 
