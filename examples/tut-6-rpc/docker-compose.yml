@@ -45,9 +45,9 @@ services:
       - ALGO_INDEXER_PORT=8980
   reach-app-tut-6-rpc-server:
     <<: *default-server
-  client-js: &client
+  client-js:
     image: reachsh/reach-app-tut-6-rpc-client-js:latest
-  client-py:
+  client-py: &client
     image: reachsh/reach-app-tut-6-rpc-client-py:latest
   reach-app-tut-6-rpc:
     <<: *client
