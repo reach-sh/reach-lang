@@ -4,7 +4,7 @@ import random
 import requests
 import socket
 import time
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from threading import Thread
 
 
 # https://gist.github.com/butla/2d9a4c0f35ea47b7452156c96a4e7b12
@@ -111,11 +111,14 @@ def main():
         ctc_bob,
         dict(acceptWager=acceptWager, **player('Bob')))
 
-    with ThreadPoolExecutor() as ex:
-        t_alice = ex.submit(play_alice)
-        t_bob   = ex.submit(play_bob)
+    alice = Thread(target=play_alice)
+    bob   = Thread(target=play_bob)
 
-        wait([t_alice, t_bob], return_when=ALL_COMPLETED)
+    alice.start()
+    bob.start()
+
+    alice.join()
+    bob.join()
 
     after_alice = get_balance(acc_alice)
     after_bob   = get_balance(acc_bob)
