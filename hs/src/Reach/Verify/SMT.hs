@@ -374,7 +374,7 @@ displayDLAsJs inlineCtxt nested d =
       case (o, sub a, sub b) of
         (ADD, "0", b')  -> b'
         (ADD, a', "0") -> a'
-        _ -> mparen $ unwords [sub a, ps o, sub b]
+        (_, a', b') -> mparen $ unwords [a', ps o, b']
     DLE_PrimOp _ o as     -> ps o <> args as
     DLE_ArrayRef _ x y    -> sub x <> bracket (sub y)
     DLE_ArraySet _ x y z  -> "Array.set" <> args [x, y, z]
@@ -403,9 +403,21 @@ displayDLAsJs inlineCtxt nested d =
         Just (Left s)   -> s
     sub e = ps e
 
+displaySexpAsJs :: Bool -> SExpr -> String
+displaySexpAsJs nested s =
+  case s of
+    Atom i -> i
+    List (Atom w:rs)
+      | "cons" `List.isSuffixOf` w ->
+        "[" <> List.intercalate ", " (map r rs) <> "]"
+    List xs -> lparen <> unwords (map r xs) <> rparen
+  where
+    lparen = if nested then "(" else ""
+    rparen = if nested then ")" else ""
+    r = displaySexpAsJs True
 
-subAllVars :: BindingEnv -> TheoremKind -> SExpr -> String
-subAllVars bindings tk (Atom ai) =
+subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> String
+subAllVars bindings tk pm (Atom ai) =
   case ai `M.lookup` bindings of
     Just (_, _, _, _, Just de) ->
           let env = dlvOccurs [] bindings de in
@@ -424,10 +436,12 @@ subAllVars bindings tk (Atom ai) =
                   Just (_, _, _, Just se, _) -> (i, Left se)  : acc
                   _ -> acc) [] assignVars in
           let assignStr = unlines $ map (\ (k, eds) ->
+                let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm in
                 "  const " <> k <> " = " <> case eds of
                   Right v -> toJs v
                   Left v  -> SMT.showsSExpr v ""
-                <> ";") assigns in
+                <> ";"
+                <> "\n        ^ would be " <>  kv) assigns in
           let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");" in
           assignStr <> assertStr
     -- Something like assert(false)
@@ -456,7 +470,7 @@ subAllVars bindings tk (Atom ai) =
         Just (_, _, _, Just se, _)  -> (v, Left $ SMT.showsSExpr se "")
         _                           -> (v, Left vid)
 
-subAllVars _ _ _ = impossible "subAllVars: expected Atom"
+subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
 
 
 --- FYI, the last version that had Dan's display code was
@@ -506,7 +520,7 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                       return $ mempty
                     Just (_, at, bo, mvse, _) -> do
                       let this se =
-                            [("  const " ++ v0 ++ " = " ++ (SMT.showsSExpr se "") ++ ";")]
+                            [("  const " ++ v0 ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
                               ++ (map
                                     (redactAbsStr cwd)
                                     [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)
@@ -531,7 +545,7 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
       show_vars tse_vars $ set_to_seq $ tse_vars
       putStrLn ""
       putStrLn $ "  // Theorem formalization"
-      putStrLn $ subAllVars bindingsm tk tse
+      putStrLn $ subAllVars bindingsm tk pm tse
       putStrLn ""
 
 smtAddPathConstraints :: SMTCtxt -> SExpr -> SExpr

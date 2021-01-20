@@ -664,7 +664,7 @@ When we run @exec{./reach compile @reachexlink["tut-4-attack/index-bad.rsh"]}, i
 @reachex[#:mode verbatim
          #:show-lines? #t "tut-4-attack/index-bad.txt"
          #:link #t
-         'only 4 20 ""]
+         'only 4 22 ""]
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
 
@@ -676,7 +676,7 @@ There's a lot of information in the compiler output that can help an experienced
 
 @item{Lines 10-14 describe the values that could cause the theorem to fail.}
 
-@item{Lines 16-19 outline the theorem that failed.}
+@item{Lines 16-21 outline the theorem that failed.}
 
 ]
 
