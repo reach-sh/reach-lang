@@ -664,15 +664,19 @@ When we run @exec{./reach compile @reachexlink["tut-4-attack/index-bad.rsh"]}, i
 @reachex[#:mode verbatim
          #:show-lines? #t "tut-4-attack/index-bad.txt"
          #:link #t
-         'only 4 12 ""]
+         'only 4 20 ""]
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
 
 @itemlist[
 
-@item{Line 6 says that this is an attempt to prove the theorem that the balance at the end of the program is zero, which means that no @tech{network tokens} are sealed in the @tech{contract} forever.}
+@item{Line 7 says that this is an attempt to prove the theorem that the balance at the end of the program is zero, which means that no @tech{network tokens} are sealed in the @tech{contract} forever.}
 
-@item{Line 7 says that this happens when the program exits on line 45, which directs the programmer to that path through the program.}
+@item{Line 8 says that this happens when the program exits on line 45, which directs the programmer to that path through the program.}
+
+@item{Lines 10-14 describe the values that could cause the theorem to fail.}
+
+@item{Lines 16-19 outline the theorem that failed.}
 
 ]
 

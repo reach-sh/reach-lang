@@ -167,7 +167,7 @@ It will print out a detailed error message showing the violation.
 
 @reachex[#:mode verbatim
          #:show-lines? #t "overview/index-error.txt"
-         'only 2 13 "// ..."]
+         'only 2 16 "// ..."]
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
 In this case, it reports that if Alice were to pass an @reachin{interact.request} over @reachin{1} at the start of the program on line 4, then the balance of the contract would not be provably @reachin{0} at the end of the program.

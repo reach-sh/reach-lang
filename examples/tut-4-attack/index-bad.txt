@@ -16,7 +16,7 @@ Verification failed:
   // Theorem formalization
   const v38 = (v3 + (4 - ((v3 + 1) % 3))) % 3;
   const v51 = (v38 == 0) ? [0, 1] : ((v38 == 1) ? [1, 1] : [2, 0]);
-  assert(0 == ((((0 + interact_Alice_wager) + interact_Alice_wager) - (v51[0] * interact_Alice_wager)) - (v51[1] * interact_Alice_wager)));
+  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v51[0] * interact_Alice_wager)) - (v51[1] * interact_Alice_wager)));
 
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:

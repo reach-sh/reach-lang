@@ -370,7 +370,11 @@ displayDLAsJs inlineCtxt nested d =
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
       mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
     DLE_PrimOp _ o [a]    -> mparen $ ps o <> sub a
-    DLE_PrimOp _ o [a, b] -> mparen $ unwords [sub a, ps o, sub b]
+    DLE_PrimOp _ o [a, b] ->
+      case (o, sub a, sub b) of
+        (ADD, "0", b')  -> b'
+        (ADD, a', "0") -> a'
+        _ -> mparen $ unwords [sub a, ps o, sub b]
     DLE_PrimOp _ o as     -> ps o <> args as
     DLE_ArrayRef _ x y    -> sub x <> bracket (sub y)
     DLE_ArraySet _ x y z  -> "Array.set" <> args [x, y, z]
