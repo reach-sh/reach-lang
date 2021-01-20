@@ -441,7 +441,7 @@ subAllVars bindings tk pm (Atom ai) =
                   Right v -> toJs v
                   Left v  -> SMT.showsSExpr v ""
                 <> ";"
-                <> "\n        ^ would be " <>  kv) assigns in
+                <> "\n  //    ^ would be " <>  kv) assigns in
           let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");" in
           assignStr <> assertStr
     -- Something like assert(false)
