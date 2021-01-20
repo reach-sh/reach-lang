@@ -20,7 +20,7 @@ Verification failed:
   //    ^ would be [0, 1]
   assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v51[0] * interact_Alice_wager)) - (v51[1] * interact_Alice_wager)));
 
-Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
