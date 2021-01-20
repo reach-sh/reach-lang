@@ -69,25 +69,22 @@ data DLVar = DLVar SrcLoc String DLType Int
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
 
--- XXX better error message for stuff like Array<Fun> or Array<Forall>
--- that can't exist in DL-land
-st2dt :: HasCallStack => SLType -> DLType
+st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
-  ST_Null -> T_Null
-  ST_Bool -> T_Bool
-  ST_UInt -> T_UInt
-  ST_Bytes i -> T_Bytes i
-  ST_Digest -> T_Digest
-  ST_Address -> T_Address
-  ST_Array ty i -> T_Array (st2dt ty) i
-  ST_Tuple tys -> T_Tuple (map st2dt tys)
-  ST_Object tyMap -> T_Object (M.map st2dt tyMap)
-  ST_Data tyMap -> T_Data (M.map st2dt tyMap)
-  -- XXX consider using Maybe so that callers have to handle the error case
-  t@(ST_Fun {}) -> error $ "ST_Fun not a dt: " <> show t
-  t@(ST_Forall {}) -> error $ "ST_Forall not a dt: " <> show t
-  t@(ST_Var {}) -> error $ "ST_Var not a dt: " <> show t
-  t@(ST_Type {}) -> error $ "ST_Type not a dt: " <> show t
+  ST_Null -> pure T_Null
+  ST_Bool -> pure T_Bool
+  ST_UInt -> pure T_UInt
+  ST_Bytes i -> pure $ T_Bytes i
+  ST_Digest -> pure T_Digest
+  ST_Address -> pure T_Address
+  ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
+  ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
+  ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
+  ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
+  ST_Fun {} -> Nothing
+  ST_Forall {} -> Nothing
+  ST_Var {} -> Nothing
+  ST_Type {} -> Nothing
 
 dt2st :: DLType -> SLType
 dt2st = \case
@@ -102,11 +99,10 @@ dt2st = \case
   T_Object tyMap -> ST_Object (M.map dt2st tyMap)
   T_Data tyMap -> ST_Data (M.map dt2st tyMap)
 
--- XXX improve error messages
-st2it :: SLType -> IType
+st2it :: SLType -> Maybe IType
 st2it t = case t of
-  ST_Fun dom rng -> IT_Fun (map st2dt dom) (st2dt rng)
-  _ -> IT_Val (st2dt t)
+  ST_Fun dom rng -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
+  _ -> IT_Val <$> st2dt t
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)

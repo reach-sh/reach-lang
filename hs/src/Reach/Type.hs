@@ -32,9 +32,10 @@ import Reach.Util
 
 data TypeError
   = Err_Type_None SLVal
+  | Err_Type_NotDT SLType
   | Err_Type_NotApplicable SLType
   | Err_TypeMeets_None
-  | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, DLType) (SrcLoc, DLType)
+  | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_IntLiteralRange Integer Integer Integer
@@ -43,6 +44,8 @@ data TypeError
 instance Show TypeError where
   show (Err_Type_None val) =
     "TypeError: Value cannot exist at runtime: " <> show (pretty val)
+  show (Err_Type_NotDT t) =
+    "TypeError: Value of this type cannot exist at runtime: " <> show (pretty t)
   show (Err_Type_NotApplicable ty) =
     "TypeError: NotApplicable. Cannot apply this like a function: " <> show ty
   show (Err_TypeMeets_None) =
@@ -69,22 +72,22 @@ checkIntLiteral at rmin x rmax =
     True -> x
     False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
-typeEqual :: SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> Either TypeError DLType
+typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either TypeError SLType
 typeEqual top_at x@(_, xt) y@(_, yt) =
   case xt == yt of
     True -> Right xt
     False -> Left $ Err_TypeMeets_Mismatch top_at x y
 
-typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> DLType
-typeMeet _ _ (_, T_Bytes xz) (_, T_Bytes yz) =
-  T_Bytes (max xz yz)
+typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet _ _ (_, ST_Bytes xz) (_, ST_Bytes yz) =
+  ST_Bytes (max xz yz)
 typeMeet mcfs top_at x@(_, xt) y =
   --- FIXME Find meet of objects
   case typeEqual top_at x y of
     Right _ -> xt
     Left err -> expect_throw mcfs top_at err
 
-typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
+typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets mcfs top_at l =
   case l of
     [] ->
@@ -128,12 +131,11 @@ typeSubst at env ty =
   where
     iter = typeSubst at env
 
-typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> DLType -> a -> ST s a
+typeCheck_help :: HasCallStack => MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> a -> ST s a
 typeCheck_help mcfs at env ty val val_ty res =
   case (val_ty, ty) of
-    -- XXX can't happen anymore
-    -- (ST_Var _, _) ->
-    --   impossible $ "typeCheck: value has type var: " ++ show val
+    (ST_Var _, _) ->
+      impossible $ "typeCheck: value has type var: " ++ show val
     (_, ST_Var var) ->
       case M.lookup var env of
         Nothing ->
@@ -143,12 +145,12 @@ typeCheck_help mcfs at env ty val val_ty res =
           case mvar_ty of
             Nothing -> do
               -- traceM $ "XXX typeCheck_help writeSTRef XXX " <> show at <> " XXX " <> show val_ty <> " XXX"
-              writeSTRef var_ref (Just $ dt2st val_ty)
+              writeSTRef var_ref (Just val_ty)
               return res
             Just var_ty ->
               typeCheck_help mcfs at env var_ty val val_ty res
     (_, _) ->
-      typeMeet mcfs at (at, val_ty) (at, (st2dt ty)) `seq` return res
+      typeMeet mcfs at (at, val_ty) (at, ty) `seq` return res
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
@@ -199,7 +201,8 @@ slToDL pdvs _at v =
     SLV_Bytes _ bs -> return $ DLAE_Arg $ DLA_Literal $ DLL_Bytes bs
     SLV_Array at' t vs -> do
       ds <- mapM (slToDL pdvs at') vs
-      return $ DLAE_Array (st2dt t) ds
+      dt <- st2dt t
+      return $ DLAE_Array dt ds
     SLV_Tuple at' vs -> do
       ds <- mapM (slToDL pdvs at') vs
       return $ DLAE_Tuple $ ds
@@ -207,8 +210,9 @@ slToDL pdvs _at v =
       denv <- mapM ((slToDL pdvs at') . sss_val) fenv
       return $ DLAE_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
-    SLV_Data at' t vn sv ->
-      DLAE_Data (M.map st2dt t) vn <$> slToDL pdvs at' sv
+    SLV_Data at' t vn sv -> do
+      dt <- traverse st2dt t
+      DLAE_Data dt vn <$> slToDL pdvs at' sv
     SLV_DLC c -> return $ DLAE_Arg $ DLA_Constant c
     SLV_DLVar dv -> return $ DLAE_Arg $ DLA_Var dv
     SLV_Type _ -> Nothing
@@ -218,13 +222,9 @@ slToDL pdvs _at v =
         Just dv -> return $ DLAE_Arg $ DLA_Var dv
         Nothing -> Nothing
     SLV_RaceParticipant {} -> Nothing
-    SLV_Prim (SLPrim_interact _ who m t) ->
-      case t of
-        ST_Var {} -> Nothing
-        ST_Forall {} -> Nothing
-        ST_Fun {} -> Nothing
-        ST_Type {} -> Nothing
-        _ -> return $ DLAE_Arg $ DLA_Interact who m (st2dt t)
+    SLV_Prim (SLPrim_interact _ who m t) -> do
+      dt <- st2dt t
+      return $ DLAE_Arg $ DLA_Interact who m dt
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
     SLV_Kwd _ -> Nothing
@@ -241,9 +241,10 @@ typeOf (mcfs, pdvs) at v =
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
 typeCheck :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
-typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_ty res
+typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val vty res
   where
     (val_ty, res) = typeOf tint at val
+    vty = dt2st val_ty
 
 typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
 typeChecks tint@(mcfs, _) at env ts vs =
@@ -275,12 +276,14 @@ checkAndConvert_i tint@(mcfs, _) at env t args =
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
 checkAndConvert :: HasCallStack => TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
-checkAndConvert tint at t args = runST $ do
+checkAndConvert tint@(mcfs, _) at t args = runST $ do
   (st, exprs) <- checkAndConvert_i tint at mempty t args
-  pure (st2dt st, exprs)
+  case st2dt st of
+    Just dt -> pure (dt, exprs)
+    Nothing -> expect_throw mcfs at $ Err_Type_NotDT st
 
-checkType :: HasCallStack => TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr
+checkType :: HasCallStack => TINT -> SrcLoc -> SLType -> SLVal -> DLArgExpr
 checkType tint@(mcfs, _) at et v =
-  typeMeet mcfs at (at, et) (at, t) `seq` da
+  typeMeet mcfs at (at, et) (at, dt2st t) `seq` da
   where
     (t, da) = typeOf tint at v

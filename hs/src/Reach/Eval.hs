@@ -671,14 +671,26 @@ expect_throw_ctx ctxt = expect_throw (mcfs ctxt)
 typeOf_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLVal -> (DLType, DLArgExpr)
 typeOf_ctxt ctxt st = typeOf (tint ctxt st)
 
-checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> DLType -> SLVal -> DLArgExpr
+checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> DLArgExpr
 checkType_ctxt ctxt st = checkType (tint ctxt st)
 
-typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, DLType) -> (SrcLoc, DLType) -> DLType
+typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 
-typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
+-- precondition: the SLTypes coming in are known to be DLTypes
+typeMeet_ctxt_dt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> DLType
+typeMeet_ctxt_dt ctxt at t1 t2 = case st2dt $ typeMeet_ctxt ctxt at t1 t2 of
+  Just dt -> dt
+  Nothing -> impossible "The type meet of two DLTypes must also be a DLType"
+
+typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
+
+-- precondition: the SLTypes coming in are known to be DLTypes
+typeMeets_ctxt_dt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> DLType
+typeMeets_ctxt_dt ctxt at tys = case st2dt $ typeMeets_ctxt ctxt at tys of
+  Just dt -> dt
+  Nothing -> impossible "The type meet of DLTypes must also be a DLType"
 
 checkAndConvert_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert_ctxt ctxt st = checkAndConvert (tint ctxt st)
@@ -758,12 +770,12 @@ compileTypeOfs ctxt st at vs = do
   (lifts, das) <- compileArgExprs ctxt at daes
   return (lifts, ts, das)
 
-compileCheckType :: SLCtxt s -> SLState -> SrcLoc -> DLType -> SLVal -> ST s (DLStmts, DLArg)
+compileCheckType :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> ST s (DLStmts, DLArg)
 compileCheckType ctxt st at et v = do
   let ae = checkType_ctxt ctxt st at et v
   compileArgExpr ctxt at ae
 
-checkResType :: SLCtxt a -> SrcLoc -> DLType -> SLComp a SLSVal -> SLComp a DLArg
+checkResType :: SLCtxt a -> SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
 checkResType ctxt at et m = do
   SLRes lifts st (_lvl, v) <- m
   (lifts', a) <- compileCheckType ctxt st at et v
@@ -1074,7 +1086,9 @@ evalAsEnv ctx at obj =
     SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
     SLV_Prim (SLPrim_interact _ who m it@(ST_Object tm)) ->
-      retDLVar (M.map st2dt tm) (DLA_Interact who m (st2dt it)) Secret
+      case (,) <$> traverse st2dt tm <*> st2dt it of
+        Just (tm', it') -> retDLVar tm' (DLA_Interact who m it') Secret
+        Nothing -> error "XXX get rid of this st2dt on SLPrim_interact"
     SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1390,7 +1404,7 @@ evalForm ctxt at sco st f args =
       let st_pure = st {st_mode = SLM_ConsensusPure}
       SLRes delay_lifts _ amt_sv <- evalExpr ctxt at sco st_pure amt_e
       (delay_lifts', amt_da) <-
-        compileCheckType ctxt st at T_UInt $ ensure_public ctxt at amt_sv
+        compileCheckType ctxt st at ST_UInt $ ensure_public ctxt at amt_sv
       let time_lifts = delay_lifts <> delay_lifts'
       let wlifts = return $ DLS_Let at Nothing (DLE_Wait at amt_da)
       return $ SLRes (time_lifts <> wlifts) st $ public $ SLV_Null at "wait"
@@ -1510,11 +1524,11 @@ evalPrimOp ctxt at _sco st p sargs = do
         -- If atleast one arg is dynamic
         [l, r] ->
           case (getType l, getType r) of
-            (T_Null, T_Null) -> retBool True
-            (T_UInt, T_UInt) -> make_var args'
-            (T_Digest, T_Digest) -> make_var args'
-            (T_Address, T_Address) -> make_var args'
-            (T_Bool, T_Bool) -> do
+            (ST_Null, ST_Null) -> retBool True
+            (ST_UInt, ST_UInt) -> make_var args'
+            (ST_Digest, ST_Digest) -> make_var args'
+            (ST_Address, ST_Address) -> make_var args'
+            (ST_Bool, ST_Bool) -> do
               SLRes lifts _ notR <-
                 evalPrimOp
                   ctxt
@@ -1542,7 +1556,7 @@ evalPrimOp ctxt at _sco st p sargs = do
       SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn [(lvl, x)]
       return (cmp_lifts, val)
     retBool v = return $ SLRes mempty st (lvl, SLV_Bool at v)
-    getType = fst . typeOf_ctxt ctxt st at
+    getType = dt2st . fst . typeOf_ctxt ctxt st at
     args = map snd sargs
     lvl = mconcat $ map fst sargs
     nn2b op =
@@ -1634,7 +1648,7 @@ doFluidRef ctxt at st fv = do
 
 doFluidSet :: SLCtxt s -> SLState -> SrcLoc -> FluidVar -> SLSVal -> ST s DLStmts
 doFluidSet ctxt st at fv ssv = do
-  (lifts, da) <- compileCheckType ctxt st at (fluidVarType fv) sv
+  (lifts, da) <- compileCheckType ctxt st at (dt2st $ fluidVarType fv) sv
   return $ lifts <> (return $ DLS_FluidSet at fv da)
   where
     sv = ensure_public ctxt at ssv
@@ -1751,21 +1765,22 @@ evalPrim ctxt at sco st p sargs =
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
               where
                 elem_vs_checked = map check1 elem_vs
-                check1 sv = checkType_ctxt ctxt st at (st2dt elem_ty) sv `seq` sv
+                check1 sv = checkType_ctxt ctxt st at elem_ty sv `seq` sv
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
     SLPrim_array_concat ->
       case map snd sargs of
         [SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs] ->
-          retV $ (lvl, SLV_Array at (dt2st (typeMeet_ctxt ctxt at (x_at, st2dt x_ty) (y_at, st2dt y_ty))) $ x_vs ++ y_vs)
+          retV $ (lvl, SLV_Array at (typeMeet_ctxt ctxt at (x_at, x_ty) (y_at, y_ty)) $ x_vs ++ y_vs)
         [x, y] -> do
           (x_lifts, xt, xa) <- compileTypeOf ctxt st at x
           (y_lifts, yt, ya) <- compileTypeOf ctxt st at y
           keepLifts (x_lifts <> y_lifts) $
             case (xt, yt) of
               (T_Array x_ty x_sz, T_Array y_ty y_sz) -> do
-                let t = (T_Array (typeMeet_ctxt ctxt at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
+                let meet_ty = typeMeet_ctxt_dt ctxt at (at, dt2st x_ty) (at, dt2st y_ty)
+                let t = T_Array meet_ty (x_sz + y_sz)
                 let mkdv = (DLVar at "array_concat" t)
                 let de = DLE_ArrayConcat at xa ya
                 (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
@@ -1867,7 +1882,7 @@ evalPrim ctxt at sco st p sargs =
                       --- version.
                       return $
                         stMerge ctxt at f_st xv_st
-                          `seq` checkType_ctxt ctxt st at f_ty xv_v'
+                          `seq` checkType_ctxt ctxt st at (dt2st f_ty) xv_v'
                           `seq` ((prev_lifts <> xv_lifts), xv_v')
                 (lifts'', z') <- foldM evalem (mempty, z) x_vs
                 return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
@@ -1901,14 +1916,14 @@ evalPrim ctxt at sco st p sargs =
                         retV $ (lvl, arrv')
                         where
                           arrv' = SLV_Array at elem_ty arrvs'
-                          valv_checked = checkType_ctxt ctxt st at (st2dt elem_ty) valv `seq` valv
+                          valv_checked = checkType_ctxt ctxt st at elem_ty valv `seq` valv
                           arrvs' = take (idxi' - 1) arrvs ++ [valv_checked] ++ drop (idxi' + 1) arrvs
                       False ->
                         expect_throw_ctx ctxt at $ Err_Eval_RefOutOfBounds (length arrvs) idxi
                   SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
                     case idxi < sz of
                       True -> do
-                        (lifts, valda) <- compileCheckType ctxt st at elem_ty valv
+                        (lifts, valda) <- compileCheckType ctxt st at (dt2st elem_ty) valv
                         keepLifts lifts $
                           doArrayBoundsCheck ctxt at sco st sz idxv $
                             retArrDV arr_ty $ DLE_ArraySet at (DLA_Var arrdv) idxda valda
@@ -1923,7 +1938,7 @@ evalPrim ctxt at sco st p sargs =
                 keepLifts arrv_lifts $
                   case arr_ty of
                     T_Array elem_ty sz -> do
-                      (lifts, valda) <- compileCheckType ctxt st at elem_ty valv
+                      (lifts, valda) <- compileCheckType ctxt st at (dt2st elem_ty) valv
                       keepLifts lifts $
                         doArrayBoundsCheck ctxt at sco st sz idxv $
                           retArrDV arr_ty $ DLE_ArraySet at arrda idxda valda
@@ -1993,7 +2008,7 @@ evalPrim ctxt at sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "digest" rng) (DLE_Digest at dargs)
       return $ SLRes (lifts' <> lifts) st $ (lvl, SLV_DLVar dv)
     SLPrim_claim ct -> do
-      let barg = compileCheckType ctxt st at T_Bool
+      let barg = compileCheckType ctxt st at ST_Bool
       let (dargm, mmsg) = case map snd sargs of
             [arg] ->
               (barg arg, Nothing)
@@ -2025,10 +2040,10 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_transfer_amt_to amt_sv -> do
       ensure_mode ctxt at st SLM_ConsensusStep "transfer"
-      (amt_lifts, amt_dla) <- compileCheckType ctxt st at T_UInt amt_sv
+      (amt_lifts, amt_dla) <- compileCheckType ctxt st at ST_UInt amt_sv
       tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
       SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
-      let convert = compileCheckType ctxt st at T_Address
+      let convert = compileCheckType ctxt st at ST_Address
       (who_lifts, who_dla) <-
         case map snd sargs of
           [one] -> convert one
@@ -2046,7 +2061,10 @@ evalPrim ctxt at sco st p sargs =
       case sargs of
         [(olvl, one)] -> do
           let t = expect_ty one
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" (st2dt t)) (DLE_Impossible at $ "cannot inspect value from forall")
+          let dt = case st2dt t of
+                Just dt' -> dt'
+                Nothing -> error "XXX forall doesn't handle this"
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" dt) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [one]
@@ -2059,7 +2077,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_part_set ->
       case map snd sargs of
         [(SLV_Participant _ who _ _), addr] -> do
-          (lifts, addr_da) <- compileCheckType ctxt st at T_Address addr
+          (lifts, addr_da) <- compileCheckType ctxt st at ST_Address addr
           keepLifts lifts $
             retV $ (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
@@ -2076,7 +2094,7 @@ evalPrim ctxt at sco st p sargs =
             case (vt, args) of
               (ST_Null, []) -> SLV_Null at "variant"
               _ -> one_arg
-      let vv_da = checkType_ctxt ctxt st at (st2dt vt) vv
+      let vv_da = checkType_ctxt ctxt st at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
     SLPrim_data_match -> do
       -- Expect two arguments to function
@@ -2213,10 +2231,10 @@ evalApplyVals ctxt at sco st rator randvs =
                           case rmi of
                             Nothing -> mempty
                             Just ri -> M.singleton ri (rlifts, rda)
-                    return $ (retsm, (r_at, rty))
+                    return $ (retsm, (r_at, dt2st rty))
               (retsms, tys) <- unzip <$> mapM go rs
               let retsm = mconcat retsms
-              let r_ty = typeMeets_ctxt ctxt body_at tys
+              let r_ty = typeMeets_ctxt_dt ctxt body_at tys
               let dv = DLVar body_at "clo app" r_ty ret
               let lifts' =
                     return $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
@@ -2424,10 +2442,10 @@ evalExpr ctxt at sco st e = do
                       let elifts' =
                             elifts <> dlifts
                               <> (return $ DLS_Return e_at' ret $ Right da)
-                      return $ (e_ty, elifts')
+                      return $ (dt2st e_ty, elifts')
                 (t_ty, tlifts') <- add_ret t_at' tlifts tv
                 (f_ty, flifts') <- add_ret f_at' flifts fv
-                let ty = typeMeet_ctxt ctxt at' (t_at', t_ty) (f_at', f_ty)
+                let ty = typeMeet_ctxt_dt ctxt at' (t_at', t_ty) (f_at', f_ty)
                 let ans_dv = DLVar at' "clo app" ty ret
                 let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right (ans_dv, mempty)) body_lifts
@@ -2802,12 +2820,12 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
         SLRes amt_lifts _ amt_sv <-
           evalExpr ctxt_l at sco st_lpure amt_e
         (amt_clifts, amt_da) <-
-          compileCheckType ctxt_l st at T_UInt $
+          compileCheckType ctxt_l st at ST_UInt $
             ensure_public ctxt_l at amt_sv
         SLRes when_lifts _ when_sv <-
           evalExpr ctxt_l at sco st_lpure when_e
         (when_clifts, when_da) <-
-          compileCheckType ctxt_l st at T_Bool $
+          compileCheckType ctxt_l st at ST_Bool $
             ensure_public ctxt_l at when_sv
         let send_lifts =
               return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts <> when_lifts <> when_clifts)
@@ -2816,7 +2834,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
   let mrepeat_dvs = all_just $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
-  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map (\(_, a, _, _) -> a) tc_send
+  let msg_ts = map (typeMeets_ctxt_dt ctxt at . map ((,) at) . map (dt2st . argTypeOf)) $ transpose $ M.elems $ M.map (\(_, a, _, _) -> a) tc_send
   -- Handle timeout
   let not_true_send = \case
         (_, (_, _, _, DLA_Literal (DLL_Bool True))) -> False
@@ -2837,7 +2855,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
         SLRes delay_lifts _ delay_sv <-
           evalExpr ctxt time_at sco st_pure delay_e
         (delay_lifts', delay_da) <-
-          compileCheckType ctxt st time_at T_UInt $
+          compileCheckType ctxt st time_at ST_UInt $
             ensure_public ctxt time_at delay_sv
         let mtime_lifts = delay_lifts <> delay_lifts'
         SLRes time_lifts time_st time_cr <-
@@ -3232,14 +3250,14 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
                 Nothing -> SLSSVal at Public $ SLV_DLVar dv
                 Just x -> x
               val = ensure_public ctxt at $ sss_sls sv
-              dae = checkType_ctxt ctxt st at et val
+              dae = checkType_ctxt ctxt st at (dt2st et) val
               DLVar _ _ et _ = dv
   (ae_lifts, cont_dam') <- compileArgExprMap ctxt at cont_daem
   let cont_das = DLAssignment cont_dam'
   let lifts' = decl_lifts <> ae_lifts <> (return $ DLS_Continue at cont_das)
   return $ SLRes lifts' st_decl' ()
 
-evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> DLType -> ST s DLBlock
+evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
 evalPureExprToBlock ctxt at sco st klifts e rest = do
   let pure_st = st {st_mode = SLM_ConsensusPure}
   let fs = ctxt_stack ctxt
@@ -3485,7 +3503,9 @@ evalStmt ctxt at sco st ss =
               SLV_Prim (SLPrim_interact iAt p v t) ->
                 ctxt_lift_expr ctxt at (DLVar iAt v dt) $
                   (DLE_Arg iAt $ DLA_Interact p v dt)
-                  where dt = st2dt t
+                  where dt = case st2dt t of
+                          Just dt_ -> dt_
+                          Nothing -> error "XXX Interact cannot have this kind of type (?)"
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
@@ -3543,8 +3563,8 @@ evalStmt ctxt at sco st ss =
             let (while_lhs, while_rhs) = destructDecls ctxt var_at while_decls
             (init_pre_lifts, init_post_lifts, init_vars, init_dl, st_var', sco_env') <-
               doWhileLikeInitEval ctxt var_at sco st while_lhs while_rhs
-            inv_b <- evalPureExprToBlock ctxt inv_at sco_env' st_var' init_post_lifts invariant_e T_Bool
-            cond_b <- evalPureExprToBlock ctxt cond_at sco_env' st_var' init_post_lifts while_cond T_Bool
+            inv_b <- evalPureExprToBlock ctxt inv_at sco_env' st_var' init_post_lifts invariant_e ST_Bool
+            cond_b <- evalPureExprToBlock ctxt cond_at sco_env' st_var' init_post_lifts while_cond ST_Bool
             let while_sco =
                   sco_env'
                     { sco_while_vars = Just init_vars
@@ -3938,8 +3958,11 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
       False ->
         return final
   let make_sps_entry (_p_at, _, pn, _iat, io) =
-        (pn, InteractEnv $ M.map getType iom)
+        (pn, ienv)
         where
+          ienv = InteractEnv $ case traverse getType iom of
+            Just ienv_ -> ienv_
+            Nothing -> error "XXX bad InteractEnv types"
           iom = case io of
             SLV_Object _ _ m -> m
             _ -> impossible $ "make_sps_entry io"

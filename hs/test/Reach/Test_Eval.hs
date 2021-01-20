@@ -65,6 +65,7 @@ spec_examples_cover_TypeError =
     exceptions =
       [ "Err_Type_Mismatch"
       , "Err_Type_None"
+      , "Err_Type_NotDT"
       , "Err_Type_NotApplicable"
       , "Err_TypeMeets_None"
       , "Err_TypeMeets_Mismatch"
