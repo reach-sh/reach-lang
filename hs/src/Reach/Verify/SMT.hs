@@ -359,6 +359,7 @@ dlvOccurs env bindings de =
 displayDLAsJs :: [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
 displayDLAsJs inlineCtxt nested d =
   case d of
+    DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
     DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
     DLE_LArg _ (DLLA_Tuple as)   -> bracket $ commaSep (map sub as)
@@ -407,16 +408,11 @@ subAllVars bindings tk (Atom ai) =
           let sortedEnv = List.group $ List.sort env in
           -- Get variable/values to inline. Inline a DLExpr if available,
           -- or fallback to s-exp Atom value
-          let inlineVars = List.foldr usedOnce [] sortedEnv in
-          let inlines = List.map (\ v ->
-                let vid = "v" <> show v in
-                case vid `M.lookup` bindings of
-                  Just (_, _, _, _, Just del) -> (v, Right del)
-                  Just (_, _, _, Just se, _)  -> (v, Left $ SMT.showsSExpr se "")
-                  _ -> (v, Left vid)) inlineVars in
+          let inlineVars = List.foldr canInline [] sortedEnv in
+          let inlines = map getInlineValue inlineVars in
           let toJs = displayDLAsJs inlines False in
           -- Get let assignments
-          let assignVars = List.foldr usedMany [] sortedEnv in
+          let assignVars = List.foldr canAssign [] sortedEnv in
           let assigns = List.foldr (\ x acc ->
                 let i = "v" <> show x in
                 case i `M.lookup` bindings of
@@ -433,10 +429,28 @@ subAllVars bindings tk (Atom ai) =
     -- Something like assert(false)
     _ -> "  " <> show (pretty tk) <> "(" <> ai <> ");"
   where
-    usedOnce [x] acc = x : acc
-    usedOnce _   acc = acc
-    usedMany (x:_:_) acc = x : acc
-    usedMany _       acc = acc
+    -- Variable can be inlined if it is used once or its value is a `DLArg`
+    canInline [x] acc = x : acc
+    canInline (x:_)  acc =
+      case ("v" <> show x) `M.lookup` bindings of
+        Just (_, _, _, _, Just (DLE_Arg _ _)) -> x : acc
+        _ -> acc
+    canInline _  acc = acc
+
+    -- Variable can be assigned if it is used many times and its value is not a `DLArg`
+    canAssign (x:_:_) acc =
+      case ("v" <> show x) `M.lookup` bindings of
+        Just (_, _, _, _, Just (DLE_Arg _ _)) -> acc
+        _ -> x : acc
+    canAssign _       acc = acc
+
+    getInlineValue :: Int -> (Int, Either String DLExpr)
+    getInlineValue v =
+      let vid = "v" <> show v in
+      case vid `M.lookup` bindings of
+        Just (_, _, _, _, Just del) -> (v, Right del)
+        Just (_, _, _, Just se, _)  -> (v, Left $ SMT.showsSExpr se "")
+        _                           -> (v, Left vid)
 
 subAllVars _ _ _ = impossible "subAllVars: expected Atom"
 
@@ -985,13 +999,13 @@ smt_s ctxt s =
             bind_from =
               case isClass of
                 True -> pathAddUnbound ctxt at (Just whov) (O_ClassJoin from)
-                False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
-            bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)
-            bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (smt_a ctxt at da)) msgvs msgas
-            maybe_pathAdd v bo_no bo_yes se =
+                False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
+            bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (Just $ DLE_Arg at amta) (smt_a ctxt at amta)
+            bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (Just $ DLE_Arg at da) (smt_a ctxt at da)) msgvs msgas
+            maybe_pathAdd v bo_no bo_yes mde se =
               case shouldSimulate ctxt from of
                 False -> pathAddUnbound ctxt at (Just v) bo_no
-                True -> pathAddBound ctxt at (Just v) bo_yes Nothing se
+                True -> pathAddBound ctxt at (Just v) bo_yes mde se
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do
