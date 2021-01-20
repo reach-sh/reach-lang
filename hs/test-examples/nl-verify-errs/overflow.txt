@@ -7,31 +7,15 @@ Verification failed:
   msg: "add overflow"
   at ./overflow.rsh:application
 
-  Theorem formalization:
-  v15
+  // Violation witness
+  const dlc_UInt_max = 1;
+  //    ^ from builtin at ./overflow.rsh:3:30:application
+  const v3 = 1;
+  //    ^ from evaluating interact("A")."get"() at ./overflow.rsh:9:40:application
 
-  This could be violated if...
-    "dlc_UInt_max" = 1
-      (bound at: ./overflow.rsh:3:30:application)
-      (because: builtin)
-    "v3" = 1
-      (from: v3)
-      (bound at: ./overflow.rsh:9:40:application)
-      (because: evaluating interact("A")."get"())
+  // Theorem formalization
+  assert(v3 <= (UInt.max - 1));
 
-  In context...
-    "v15" = (<= v5 v14 )
-      (from: v15)
-      (bound at: ./overflow.rsh:application)
-      (because: evaluating PLE(v5, v14 ))
-    "v14" = (- dlc_UInt_max 1 )
-      (from: v14)
-      (bound at: ./overflow.rsh:application)
-      (because: evaluating SUB(UInt.max, 1 ))
-    "v5" = v3
-      (from: v5)
-      (bound at: ./overflow.rsh:11:7:dot)
-      (because: an honest message from "A" of v3)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

@@ -6,32 +6,11 @@ Verification failed:
   of theorem TClaim CT_Require
   at ./class_addr.rsh:16:14:application
 
-  Theorem formalization:
-  v28
+  // Violation witness
 
-  This could be violated if...
+  // Theorem formalization
+  require(selfAddress(""C"", #t, 1) == selfAddress(""C"", #t, 15));
 
-  In context...
-    "v28" = (= v5 v19 )
-      (from: v28)
-      (bound at: ./class_addr.rsh:application)
-      (because: evaluating PEQ(v5, v19 ))
-    "v19" = v16
-      (from: v19)
-      (bound at: ./class_addr.rsh:15:9:dot)
-      (because: an honest message from "C" of v16)
-    "v5" = v2
-      (from: v5)
-      (bound at: ./class_addr.rsh:10:9:dot)
-      (because: an honest message from "C" of v2)
-    "v16" = classAddr15
-      (from: v16)
-      (bound at: ./class_addr.rsh:14:31:after expr stmt semicolon)
-      (because: evaluating SELF_ADDRESS(""C"", #t, 15 ))
-    "v2" = classAddr1
-      (from: v2)
-      (bound at: ./class_addr.rsh:9:31:after expr stmt semicolon)
-      (because: evaluating SELF_ADDRESS(""C"", #t, 1 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "C")
 Checked 8 theorems; 1 failures. :'(

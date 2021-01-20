@@ -6,12 +6,11 @@ Verification failed:
   of theorem TClaim CT_Possible
   at ./possible_false.rsh:5:13:application
 
-  Theorem formalization:
-  false
+  // Violation witness
 
-  This could be violated if...
+  // Theorem formalization
+  possible(false);
 
-  In context...
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

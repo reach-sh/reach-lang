@@ -7,127 +7,19 @@ Verification failed:
   msg: "balance assertion"
   at ./index-bad.rsh:45:11:application
 
-  Theorem formalization:
-  v76
+  // Violation witness
+  const interact_Alice_wager = 1;
+  //    ^ from interaction at ./index-bad.rsh:14:12:application
+  const v3 = 2;
+  //    ^ from evaluating interact("Alice")."getHand"() at ./index-bad.rsh:20:50:application
 
-  This could be violated if...
-    "interact_Alice_wager" = 1
-      (bound at: ./index-bad.rsh:14:12:application)
-      (because: interaction)
-    "v3" = 2
-      (from: v3)
-      (bound at: ./index-bad.rsh:20:50:application)
-      (because: evaluating interact("Alice")."getHand"())
+  // Theorem formalization
+  const v38 = (v3 + (4 - ((v3 + 1) % 3))) % 3;
+        ^ would be 0
+  const v51 = (v38 == 0) ? [0, 1] : ((v38 == 1) ? [1, 1] : [2, 0]);
+        ^ would be [0, 1]
+  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v51[0] * interact_Alice_wager)) - (v51[1] * interact_Alice_wager)));
 
-  In context...
-    "v76" = (= 0 v67 )
-      (from: v76)
-      (bound at: ./index-bad.rsh:45:11:application)
-      (because: evaluating PEQ(0, v67 ))
-    "v67" = (- v60 v61 )
-      (from: v67)
-      (bound at: ./index-bad.rsh:40:32:application)
-      (because: evaluating SUB(v60, v61 ))
-    "v60" = (- v30 v54 )
-      (from: v60)
-      (bound at: ./index-bad.rsh:39:32:application)
-      (because: evaluating SUB(v30, v54 ))
-    "v61" = (* v53 v5 )
-      (from: v61)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating MUL(v53, v5 ))
-    "v30" = (+ v12 v25 )
-      (from: v30)
-      (bound at: ./index-bad.rsh:28:9:dot)
-      (because: evaluating ADD(v12, v25 ))
-    "v54" = (* v52 v5 )
-      (from: v54)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating MUL(v52, v5 ))
-    "v5" = interact_Alice_wager
-      (from: v5)
-      (bound at: ./index-bad.rsh:21:9:dot)
-      (because: an honest message from "Alice" of interact("Alice")."wager"(UInt))
-    "v53" = (T2_elem1 v51 )
-      (from: v53)
-      (bound at: ./index-bad.rsh:34:13:array)
-      (because: evaluating v51[1])
-    "v12" = (+ v9 v7 )
-      (from: v12)
-      (bound at: ./index-bad.rsh:21:9:dot)
-      (because: evaluating ADD(v9, v7 ))
-    "v25" = v5
-      (from: v25)
-      (bound at: ./index-bad.rsh:28:9:dot)
-      (because: an honest payment from "Bob" of v5)
-    "v52" = (T2_elem0 v51 )
-      (from: v52)
-      (bound at: ./index-bad.rsh:34:13:array)
-      (because: evaluating v51[0])
-    "v51" = (ite v44 v50 v49 )
-      (from: v51)
-      (bound at: ./index-bad.rsh:34:7:const)
-      (because: evaluating IF_THEN_ELSE(v44, v50, v49 ))
-    "v7" = interact_Alice_wager
-      (from: v7)
-      (bound at: ./index-bad.rsh:21:9:dot)
-      (because: an honest payment from "Alice" of interact("Alice")."wager"(UInt))
-    "v9" = 0
-      (from: v9)
-      (bound at: ./index-bad.rsh:21:9:dot)
-      (because: evaluating 0)
-    "v44" = (= v38 0 )
-      (from: v44)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating PEQ(v38, 0 ))
-    "v49" = (ite v46 v47 v48 )
-      (from: v49)
-      (bound at: ./index-bad.rsh:36:35:?: > false)
-      (because: evaluating IF_THEN_ELSE(v46, v47, v48 ))
-    "v50" = (T2_cons 0 1 )
-      (from: v50)
-      (bound at: ./index-bad.rsh:34:7:const)
-      (because: evaluating [0, 1 ])
-    "v38" = (mod v37 3 )
-      (from: v38)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating MOD(v37, 3 ))
-    "v46" = (= v38 1 )
-      (from: v46)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating PEQ(v38, 1 ))
-    "v47" = (T2_cons 1 1 )
-      (from: v47)
-      (bound at: ./index-bad.rsh:36:35:?: > false)
-      (because: evaluating [1, 1 ])
-    "v48" = (T2_cons 2 0 )
-      (from: v48)
-      (bound at: ./index-bad.rsh:36:35:?: > false)
-      (because: evaluating [2, 0 ])
-    "v37" = (+ v6 v34 )
-      (from: v37)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating ADD(v6, v34 ))
-    "v34" = (- 4 v24 )
-      (from: v34)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating SUB(4, v24 ))
-    "v6" = v3
-      (from: v6)
-      (bound at: ./index-bad.rsh:21:9:dot)
-      (because: an honest message from "Alice" of v3)
-    "v24" = v22
-      (from: v24)
-      (bound at: ./index-bad.rsh:28:9:dot)
-      (because: an honest message from "Bob" of v22)
-    "v22" = (mod v21 3 )
-      (from: v22)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating MOD(v21, 3 ))
-    "v21" = (+ v6 1 )
-      (from: v21)
-      (bound at: ./index-bad.rsh:application)
-      (because: evaluating ADD(v6, 1 ))
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

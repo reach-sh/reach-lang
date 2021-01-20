@@ -7,12 +7,11 @@ Verification failed:
   at ./assume_false.rsh:7:13:application
   at ./assume_false.rsh:12:7:after expr stmt semicolon call to [unknown function] (defined at: ./assume_false.rsh:5:15:function exp)
 
-  Theorem formalization:
-  false
+  // Violation witness
 
-  This could be violated if...
+  // Theorem formalization
+  assert(false);
 
-  In context...
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

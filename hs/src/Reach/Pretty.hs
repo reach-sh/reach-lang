@@ -119,13 +119,38 @@ instance Pretty DLLargeArg where
     DLLA_Obj env -> render_obj env
     DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
 
+instance Pretty PrimOp where
+  pretty = \case
+    ADD -> "+"
+    SUB -> "-"
+    MUL -> "*"
+    DIV -> "/"
+    MOD -> "%"
+    PLT -> "<"
+    PLE -> "<="
+    PEQ -> "=="
+    PGE -> ">="
+    PGT -> ">"
+    IF_THEN_ELSE -> "ite"
+    DIGEST_EQ -> "=="
+    ADDRESS_EQ -> "=="
+    SELF_ADDRESS -> "selfAddress"
+    LSH -> "<<"
+    RSH -> ">>"
+    BAND -> "&"
+    BIOR -> "|"
+    BXOR -> "^"
+
 instance Pretty DLExpr where
   pretty e =
     case e of
       DLE_Arg _ a -> pretty a
       DLE_LArg _ a -> pretty a
       DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
-      DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
+      DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> pretty c <> " ? " <> pretty t <> " : " <> pretty el
+      DLE_PrimOp _ o [a] -> pretty o <> pretty a
+      DLE_PrimOp _ o [a, b] -> hsep [pretty a, pretty o, pretty b]
+      DLE_PrimOp _ o as -> pretty o <> parens (render_das as)
       DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
       DLE_ArraySet _ a i v -> "array_set" <> (parens $ render_das [a, i, v])
       DLE_ArrayConcat _ x y -> "array_concat" <> (parens $ render_das [x, y])
@@ -139,6 +164,14 @@ instance Pretty DLExpr where
         prettyTransfer who da
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
+
+instance Pretty ClaimType where
+  pretty = \case
+    CT_Assert -> "assert"
+    CT_Assume -> "assume"
+    CT_Require -> "require"
+    CT_Possible -> "possible"
+    CT_Unknowable p as -> "unknowable" <> parens (pretty p <> render_das as)
 
 render_sp :: SLPart -> Doc
 render_sp p = viaShow p

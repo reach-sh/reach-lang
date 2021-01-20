@@ -7,16 +7,11 @@ Verification failed:
   at ./impossible.rsh:8:15:application
   at ./impossible.rsh:9:7:after expr stmt semicolon call to [unknown function] (defined at: ./impossible.rsh:5:15:function exp)
 
-  Theorem formalization:
-  v4
+  // Violation witness
 
-  This could be violated if...
+  // Theorem formalization
+  possible(v3 < 0);
 
-  In context...
-    "v4" = (< v3 0 )
-      (from: v4)
-      (bound at: ./impossible.rsh:application)
-      (because: evaluating PLT(v3, 0 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:
