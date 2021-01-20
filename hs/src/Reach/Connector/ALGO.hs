@@ -1,7 +1,5 @@
 module Reach.Connector.ALGO (connect_algo) where
 
--- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ALGO.hs.dead
-
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64')
@@ -32,6 +30,8 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
+
+-- import Debug.Trace
 
 -- General tools that could be elsewhere
 
@@ -199,9 +199,19 @@ outputs ts = do
 freeze :: App a -> App (App a)
 freeze m = do
   eOutputR' <- liftIO $ newIORef mempty
-  ans <- local (\e -> e {eOutputR = eOutputR'}) m
+  sFailedR' <- liftIO $ newIORef False
+  Env {..} <- ask
+  let eShared' = eShared { sFailedR = sFailedR' }
+  ans <- local (\e -> e { eOutputR = eOutputR'
+                        , eShared = eShared' }) m
   ts <- liftIO $ readIORef eOutputR'
-  return $ outputs ts >> return ans
+  didFail <- liftIO $ readIORef sFailedR'
+  -- Something frozen is only bad if it is actually executed
+  let maybe_bad =
+        case didFail of
+          True -> bad_
+          False -> return ()
+  return $ maybe_bad >> outputs ts >> return ans
 
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
@@ -241,11 +251,15 @@ check_rekeyto = do
   code "global" ["ZeroAddress"]
   eq_or_fail
 
-bad :: LT.Text -> App ()
-bad lab = do
+bad_ :: App ()
+bad_ = do
   Env {..} <- ask
   let Shared {..} = eShared
   liftIO $ writeIORef sFailedR True
+
+bad :: LT.Text -> App ()
+bad lab = do
+  bad_
   output $ comment_ $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
@@ -391,6 +405,11 @@ argSmall = \case
   DLA_Constant {} -> return True
   DLA_Literal {} -> return True
   DLA_Interact {} -> impossible "consensus interact"
+
+exprSmall :: DLExpr -> App Bool
+exprSmall = \case
+  DLE_Arg _ a -> argSmall a
+  _ -> return False
 
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
@@ -767,14 +786,20 @@ cm :: App () -> PLCommon -> App ()
 cm km = \case
   DL_Nop _ -> km
   DL_Let _ PV_Eff de -> ce de >> km
-  DL_Let _ (PV_Let PL_Once dv) de ->
-    store_let dv False (ce de) km
-  DL_Let _ (PV_Let PL_Many dv) de ->
-    salloc $ \loc -> do
-      let loct = texty loc
-      ce de
-      code "store" [loct]
-      store_let dv True (code "load" [loct]) km
+  DL_Let _ (PV_Let PL_Once dv) de -> do
+    sm <- exprSmall de
+    store_let dv sm (ce de) km
+  DL_Let _ (PV_Let PL_Many dv) de -> do
+    sm <- exprSmall de
+    case sm of
+      True ->
+        store_let dv True (ce de) km
+      False ->
+        salloc $ \loc -> do
+          let loct = texty loc
+          ce de
+          code "store" [loct]
+          store_let dv True (code "load" [loct]) km
   DL_ArrayMap at ansv aa lv (DLinBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
@@ -858,30 +883,30 @@ ct = \case
                 Nothing -> impossible $ "no loop var"
                 Just (lc, _) -> lc
         --let llc _ = PL_Many
-        let wrap1_ (store_lets, t_) (v, a) =
+        let wrap1_ (store_lets, vs) (v, a) =
               case llc v of
                 PL_Many -> do
-                  return $ (store_lets, t_')
+                  return $ (store_lets, m : vs)
                   where
-                    t_' =
-                      CT_Com (DL_Let at (PV_Let PL_Many v) (DLE_Arg at a)) t_
+                    m = DL_Let at (PV_Let PL_Many v) (DLE_Arg at a)
                 PL_Once -> do
                   sm <- argSmall a
                   cad <- freeze $ ca a
                   let store_lets' = store_let v sm cad
-                  return $ (store_lets' . store_lets, t_)
-        let wrap1 (store_lets, t_) (v, a) =
-              case a == DLA_Var timev of
-                True -> do
-                  let store_lets' = local (\e -> e {emTimev = Just v})
-                  return $ (store_lets' . store_lets, t_)
-                False -> do
-                  wrap1_ (store_lets, t_) (v, a)
-        let wrap :: CTail -> App ((App a -> App a), CTail)
-            wrap t_0 = foldM wrap1 (id, t_0) (M.toList asnm)
-        (store_lets, t') <- wrap t
+                  return $ (store_lets' . store_lets, vs)
+        let wrap1 (store_lets, vs) (v, a) =
+              wrap1_ (store_lets' . store_lets, vs) (v, a)
+              where
+                store_lets' =
+                  case a == DLA_Var timev of
+                    True -> local (\e -> e {emTimev = Just v})
+                    False -> id
+        let wrap :: App ((App a -> App a), [PLCommon])
+            wrap = foldM wrap1 (id, []) (M.toList asnm)
+        (store_lets, vs) <- wrap
+        let t' = foldl (flip CT_Com) t vs
         store_lets $
-          local (\e -> e {eWhich = which}) $
+          local (\e -> e {eWhich = which}) $ do
             ct t'
       _ ->
         impossible "bad jump"
