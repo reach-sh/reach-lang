@@ -15,7 +15,7 @@ module Reach.Type
   )
 where
 
-import Debug.Trace (traceM)
+-- import Debug.Trace (traceM)
 import Control.Applicative
 import Control.Monad.ST
 import qualified Data.ByteString.Char8 as B
@@ -35,7 +35,7 @@ data TypeError
   | Err_Type_NotApplicable SLType
   | Err_TypeMeets_None
   | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, DLType) (SrcLoc, DLType)
-  | Err_Type_TooFewArguments [DLType]
+  | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_IntLiteralRange Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
@@ -142,6 +142,7 @@ typeCheck_help mcfs at env ty val val_ty res =
           mvar_ty <- readSTRef var_ref
           case mvar_ty of
             Nothing -> do
+              -- traceM $ "XXX typeCheck_help writeSTRef XXX " <> show at <> " XXX " <> show val_ty <> " XXX"
               writeSTRef var_ref (Just $ dt2st val_ty)
               return res
             Just var_ty ->
@@ -219,10 +220,10 @@ slToDL pdvs _at v =
     SLV_RaceParticipant {} -> Nothing
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
-        -- XXX can't happen anymore?
         ST_Var {} -> Nothing
         ST_Forall {} -> Nothing
         ST_Fun {} -> Nothing
+        ST_Type {} -> Nothing
         _ -> return $ DLAE_Arg $ DLA_Interact who m (st2dt t)
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
@@ -244,13 +245,13 @@ typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_t
   where
     (val_ty, res) = typeOf tint at val
 
-typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> [DLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
 typeChecks tint@(mcfs, _) at env ts vs =
   case (ts, vs) of
     ([], []) ->
       return []
     ((t : ts'), (v : vs')) -> do
-      d <- typeCheck tint at env (dt2st t) v
+      d <- typeCheck tint at env t v
       ds' <- typeChecks tint at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
@@ -258,24 +259,25 @@ typeChecks tint@(mcfs, _) at env ts vs =
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (DLType, [DLArgExpr])
+checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     ST_Fun dom rng -> do
-      traceM $ "XXX" <> show at
-      dargs <- typeChecks tint at env (map st2dt dom) args
-      return (st2dt rng, dargs)
+      -- traceM $ "XXX" <> show at
+      dargs <- typeChecks tint at env dom args
+      return (rng, dargs)
     ST_Forall var ft -> do
       var_ref <- newSTRef Nothing
       let env' = M.insert var var_ref env
-      (rng, dargs) <- checkAndConvert_i tint at env' ft args
-      -- XXX happens prior to this point now?
-      -- rng <- typeSubst at env' vrng
+      (vrng, dargs) <- checkAndConvert_i tint at env' ft args
+      rng <- typeSubst at env' vrng
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
 checkAndConvert :: HasCallStack => TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
-checkAndConvert tint at t args = runST $ checkAndConvert_i tint at mempty t args
+checkAndConvert tint at t args = runST $ do
+  (st, exprs) <- checkAndConvert_i tint at mempty t args
+  pure (st2dt st, exprs)
 
 checkType :: HasCallStack => TINT -> SrcLoc -> DLType -> SLVal -> DLArgExpr
 checkType tint@(mcfs, _) at et v =

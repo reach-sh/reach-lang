@@ -680,7 +680,7 @@ typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, DLType)] -> DLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
 
-checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
+checkAndConvert_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
 checkAndConvert_ctxt ctxt st = checkAndConvert (tint ctxt st)
 
 ctxt_alloc :: SLCtxt s -> ST s Int
@@ -740,7 +740,7 @@ slvParticipant_part ctxt at = \case
   SLV_Participant _ x _ _ -> x
   x -> expect_throw_ctx ctxt at $ Err_NotParticipant x
 
-compileCheckAndConvert :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
+compileCheckAndConvert :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
 compileCheckAndConvert ctxt st at t argvs = do
   let (res, arges) = checkAndConvert_ctxt ctxt st at t argvs
   (lifts, args) <- compileArgExprs ctxt at arges
@@ -1417,7 +1417,8 @@ evalForm ctxt at sco st f args =
         _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
-evalPrimOp ctxt at _sco st p sargs =
+evalPrimOp ctxt at _sco st p sargs = do
+  -- traceM $ "XXX " <> show at <> " XXX " <> show p
   case p of
     ADD -> nn2n (+)
     SUB -> nn2n (-)
