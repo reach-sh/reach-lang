@@ -1302,7 +1302,9 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
-@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, @tt{Array.replicate}, @tt{Array.all} & @tt{.all}, @tt{Array.any} & @tt{.any}, @tt{Array.or} & @tt{.or}, @tt{Array.and} & @tt{.and}, @tt{Array.includes} & @tt{.includes}, @tt{Array.indexOf} & @tt{.indexOf}, @tt{Array.findIndex} & @tt{.findIndex}, @tt{Array.count} & @tt{.count}, @tt{Array.min} & @tt{.min}, @tt{Array.max} & @tt{.max}, @tt{Array.sum} & @tt{.sum}, @tt{Array.product} & @tt{.product}, and @tt{Array.average} & @tt{.average} }
+@subsubsection{Array group operations}
+
+@subsubsub*section{@tt{Array.iota}}
 
 @(mint-define! '("iota"))
 @reach{
@@ -1311,6 +1313,8 @@ Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} eva
 @index{Array.iota} @reachin{Array.iota(len)} returns an array of length @reachin{len}, where each element is the same as its index.
 For example, @reachin{Array.iota(4)} returns @reachin{[0, 1, 2, 3]}.
 The given @reachin{len} must evaluate to an integer at compile-time.
+
+@subsubsub*section{@tt{Array.replicate} && @tt{.replicate}}
 
 @(mint-define! '("Array_replicate" "replicate"))
 @reach{
@@ -1321,6 +1325,8 @@ The given @reachin{len} must evaluate to an integer at compile-time.
 For example, @reachin{Array.replicate(4, "four")} returns @reachin{["four", "four", "four", "four"]}.
 The given @reachin{len} must evaluate to an integer at compile-time.
 
+@subsubsub*section{@tt{Array.concat} && @tt{.concat}}
+
 @(mint-define! '("concat"))
 @reach{
  Array.concat(x, y)
@@ -1328,6 +1334,8 @@ The given @reachin{len} must evaluate to an integer at compile-time.
 
 @index{Array.concat} @reachin{Array.concat(x, y)} concatenates the two arrays @reachin{x} and @reachin{y}.
 This may be abbreviated as @reachin{x.concat(y)}.
+
+@subsubsub*section{@tt{Array.empty}}
 
 @(mint-define! '("Array_empty" "empty"))
 @reach{
@@ -1338,6 +1346,8 @@ This may be abbreviated as @reachin{x.concat(y)}.
 It is the identity element of @reachin{Array.concat}.
 It may also be written @reachin{Array_empty}.
 
+@subsubsub*section{@tt{Array.zip} && @tt{.zip}}
+
 @(mint-define! '("zip"))
 @reach{
  Array.zip(x, y)
@@ -1345,6 +1355,8 @@ It may also be written @reachin{Array_empty}.
 
 @index{Array.zip} @reachin{Array.zip(x, y)} returns a new array the same size as @reachin{x} and @reachin{y} (which must be the same size) whose elements are tuples of the elements of @reachin{x} and @reachin{y}.
 This may be abbreviated as @reachin{x.zip(y)}.
+
+@subsubsub*section{@tt{Array.map} && @tt{.map}}
 
 @(mint-define! '("map"))
 @reach{
@@ -1358,6 +1370,8 @@ This may be abbreviated as @reachin{arr.map(f)}.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{f} argument.
 For example, @reachin{Array.iota(4).map(Array.iota(4), add)} returns @reachin{[0, 2, 4, 6]}.
 
+@subsubsub*section{@tt{Array.reduce} && @tt{.reduce}}
+
 @(mint-define! '("reduce"))
 @reach{
  Array.reduce(arr, z, f)
@@ -1370,7 +1384,9 @@ This may be abbreviated as @reachin{arr.reduce(z, f)}.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
 For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
 
-@(mint-define! '("Array_forEach") '("Array_forEach1") '("forEach"))
+@subsubsub*section{@tt{Array.forEach} && @tt{.forEach}}
+
+@(mint-define! '("forEach"))
 @reach{
  arr.forEach(f)
  Array.forEach(arr, f)
@@ -1380,6 +1396,8 @@ For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x
 @index{Array.forEach} @reachin{Array.forEach(arr, f)} iterates the function @reachin{f} over the elements of the array @reachin{arr}, discarding the result.
 This may be abbreviated as @reachin{arr.forEach(f)}.
 
+@subsubsub*section{@tt{Array.all} && @tt{.all}}
+
 @(mint-define! '("all"))
 @reach{
   Array.all(arr, f)
@@ -1387,6 +1405,8 @@ This may be abbreviated as @reachin{arr.forEach(f)}.
 
 @index{Array.all} @reachin{Array.all(arr, f)} determines whether the predicate, @tt{f}, is satisfied
 by every element of the array, @tt{arr}.
+
+@subsubsub*section{@tt{Array.any} && @tt{.any}}
 
 @(mint-define! '("any"))
 @reach{
@@ -1396,12 +1416,16 @@ by every element of the array, @tt{arr}.
 @index{Array.any} @reachin{Array.any(arr, f)} determines whether the predicate, @tt{f}, is satisfied
 by at least one element of the array, @tt{arr}.
 
+@subsubsub*section{@tt{Array.or} && @tt{.or}}
+
 @(mint-define! '("or"))
 @reach{
   Array.or(arr)
   arr.or() }
 
 @index{Array.or} @reachin{Array.or(arr)} returns the disjunction of an array of @reachin{Bool}s.
+
+@subsubsub*section{@tt{Array.and} && @tt{.and}}
 
 @(mint-define! '("and"))
 @reach{
@@ -1410,6 +1434,8 @@ by at least one element of the array, @tt{arr}.
 
 @index{Array.and} @reachin{Array.and(arr)} returns the conjunction of an array of @reachin{Bool}s.
 
+@subsubsub*section{@tt{Array.includes} && @tt{.includes}}
+
 @(mint-define! '("includes"))
 @reach{
   Array.includes(arr, x)
@@ -1417,6 +1443,8 @@ by at least one element of the array, @tt{arr}.
 
 @index{Array.includes} @reachin{Array.includes(arr, x)} determines whether the array includes
 the element, @tt{x}.
+
+@subsubsub*section{@tt{Array.indexOf} && @tt{.indexOf}}
 
 @(mint-define! '("indexOf"))
 @reach{
@@ -1427,6 +1455,8 @@ the element, @tt{x}.
 in the given array that is equal to @tt{x}. The return value is of type @reachin{Maybe(UInt)}. If
 the value is not present in the array, @reachin{None} is returned.
 
+@subsubsub*section{@tt{Array.findIndex} && @tt{.findIndex}}
+
 @(mint-define! '("findIndex"))
 @reach{
   Array.findIndex(arr, f)
@@ -1436,6 +1466,8 @@ the value is not present in the array, @reachin{None} is returned.
 in the given array that satisfies the predicate @tt{f}. The return value is of type @reachin{Maybe(UInt)}. If
 no value in the array satisfies the predicate, @reachin{None} is returned.
 
+@subsubsub*section{@tt{Array.count} && @tt{.count}}
+
 @(mint-define! '("count"))
 @reach{
   Array.count(arr, f)
@@ -1444,12 +1476,16 @@ no value in the array satisfies the predicate, @reachin{None} is returned.
 @index{Array.count} @reachin{Array.count(arr, f)} returns the number of elements in @tt{arr} that
 satisfy the predicate, @tt{f}.
 
+@subsubsub*section{@tt{Array.min} && @tt{.min}}
+
 @(mint-define! '("min"))
 @reach{
   Array.min(arr)
   arr.min() }
 
 @index{Array.min} @reachin{Array.min(arr)} returns the lowest number in an array of @tt{UInt}s.
+
+@subsubsub*section{@tt{Array.max} && @tt{.max}}
 
 @(mint-define! '("max"))
 @reach{
@@ -1458,6 +1494,8 @@ satisfy the predicate, @tt{f}.
 
 @index{Array.max} @reachin{Array.max(arr)} returns the largest number in an array of @tt{UInt}s.
 
+@subsubsub*section{@tt{Array.sum} && @tt{.sum}}
+
 @(mint-define! '("sum"))
 @reach{
   Array.sum(arr)
@@ -1465,12 +1503,16 @@ satisfy the predicate, @tt{f}.
 
 @index{Array.sum} @reachin{Array.sum(arr)} returns the sum of an array of @tt{UInt}s.
 
+@subsubsub*section{@tt{Array.product} && @tt{.product}}
+
 @(mint-define! '("product"))
 @reach{
   Array.product(arr)
   arr.product() }
 
 @index{Array.product} @reachin{Array.product(arr)} returns the product of an array of @tt{UInt}s.
+
+@subsubsub*section{@tt{Array.average} && @tt{.average}}
 
 @(mint-define! '("average"))
 @reach{
