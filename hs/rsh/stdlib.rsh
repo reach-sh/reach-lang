@@ -185,4 +185,14 @@ export const Array_count1 =
 export const compose =
   (f, g) => (v) => f(g(v));
 
+export const Array_average = (arr) =>
+  arr.sum() / arr.length;
 
+export const Array_average1 = (arr) => () =>
+  Array_average(arr);
+
+export const Array_product = (arr) =>
+  arr.reduce(1, (acc, x) => acc * x);
+
+export const Array_product1 = (arr) => () =>
+  Array_product(arr);

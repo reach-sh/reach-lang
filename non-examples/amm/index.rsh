@@ -10,6 +10,7 @@ const Swap = Object({
 
 const Deposit = Object({
   amtIns: Array(UInt, N),
+  ratios: Array(UInt, N),
 });
 
 const Withdraw = Object({
@@ -69,7 +70,6 @@ const swap = (amtIns, amtOuts, to, tokens, market) => {
   const balances = tokens.map(balanceOf);
 
   // Ensure the balances are at least as much as the reserves
-  // XXX: Stdlib Fn - Product of array
   assert(balances.product() >= reserves.product(), "K");
 
   // Update cumulative price if tracking
@@ -97,6 +97,19 @@ const updateMarket = (market, amtIns, amtOuts) => ({
     .map(([ tp, [ amtIn, amtOut ] ]) =>
       ({ balance: tp.balance + amtIn - amtOut })),
 });
+
+// Will ensure the deposit amounts and reserves satisfy the
+// ratio of tokens, given in terms of the first token.
+// E.g.
+//            reserves = [2 ETH, 100 ALGO, 4 BAL]
+//    amtIns (deposit) = [3 ETH, 150 ALGO, 6 BAL]
+//               ratio = [1, 50, 2]
+const satisfiesTokenRatio = (ratios, amts) => {
+  const reference = amts[0];
+  return Array.zip(ratios, amts)
+    .all(([ ratio, amt]) =>
+      reference * ratio == amt);
+};
 
 export const main =
   Reach.App(
@@ -187,12 +200,17 @@ export const main =
             })),
             // XXX Feature: allow PAY_EXPR to make multiple payments in different currencies
             (({ amtIns }) => Array.zip(tokens, amtIns))
-            (({ amtIns }) => {
+            (({ amtIns, ratios }) => {
 
               const startingReserves = getReserves(market);
 
-              assert(
-                amtIns.div() == startingReserves.div(),
+              assert(satisfiesTokenRatio(ratios, startingReserves),
+              "Starting reserves do not satisfy given token ratio.");
+
+              // XXX To be implemented: Balancer allows a single asset deposit.
+              // "Depositing a single asset A to a shared pool is equivalent to depositing all pool
+              // assets proportionally and then selling more of asset A to get back all the other tokens deposited."
+              assert(satisfiesTokenRatio(ratios, amtIns),
                 "Must deposit pair tokens proportional to the current price");
 
               const updatedMarket = updateMarket(market, amtIns, mtArr);
@@ -207,7 +225,6 @@ export const main =
               const minted = pool.totalSupply() == 0
                 // XXX Stdlib Fn: Square root
                 ? sqrt(amtIns.product())
-                // XXX Stdlib Fn: Average of int array
                 : Array.zip(startingReserves, amtIns)
                   .map(([ sIn, amtIn ]) => (amtIn / sIn) * pool.totalSupply())
                   .average();

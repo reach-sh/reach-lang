@@ -1302,7 +1302,7 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
-@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, @tt{Array.replicate}, @tt{Array.all} & @tt{.all}, @tt{Array.any} & @tt{.any}, @tt{Array.or} & @tt{.or}, @tt{Array.and} & @tt{.and}, @tt{Array.includes} & @tt{.includes}, @tt{Array.indexOf} & @tt{.indexOf}, @tt{Array.findIndex} & @tt{.findIndex}, @tt{Array.count} & @tt{.count}, @tt{Array.min} & @tt{.min}, @tt{Array.max} & @tt{.max}, and @tt{Array.sum} & @tt{.sum} }
+@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, @tt{Array.replicate}, @tt{Array.all} & @tt{.all}, @tt{Array.any} & @tt{.any}, @tt{Array.or} & @tt{.or}, @tt{Array.and} & @tt{.and}, @tt{Array.includes} & @tt{.includes}, @tt{Array.indexOf} & @tt{.indexOf}, @tt{Array.findIndex} & @tt{.findIndex}, @tt{Array.count} & @tt{.count}, @tt{Array.min} & @tt{.min}, @tt{Array.max} & @tt{.max}, @tt{Array.sum} & @tt{.sum}, @tt{Array.product} & @tt{.product}, and @tt{Array.average} & @tt{.average} }
 
 @(mint-define! '("iota"))
 @reach{
@@ -1464,6 +1464,21 @@ satisfy the predicate, @tt{f}.
   arr.sum() }
 
 @index{Array.sum} @reachin{Array.sum(arr)} returns the sum of an array of @tt{UInt}s.
+
+@(mint-define! '("product"))
+@reach{
+  Array.product(arr)
+  arr.product() }
+
+@index{Array.product} @reachin{Array.product(arr)} returns the product of an array of @tt{UInt}s.
+
+@(mint-define! '("average"))
+@reach{
+  Array.average(arr)
+  arr.average() }
+
+@index{Array.average} @reachin{Array.average(arr)} returns the mean of an array of @tt{UInt}s.
+
 
 @subsubsection[#:tag "ref-programs-objects"]{Objects}
 
