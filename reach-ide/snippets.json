@@ -9,10 +9,50 @@
 			"		{},",
 			"		[['A', {}]],",
 			"		(A) => {",
-			"",
+			"     $0",
 			"		});",
 			""
 		],
 		"description": "Simple Reach program"
+	},
+	"Only - Local Step": {
+		"prefix": "only",
+		"body": [
+			"${1:Participant}.only(() => ${0:LocalStep});"
+		],
+		"description": "Have a participant perform actions."
+	},
+	"Each - Local Step": {
+		"prefix": "each",
+		"body": [
+			"each([${1:Participants}], () => ${0:LocalStep});"
+		],
+		"description": "Have multiple participants perform actions."
+	},
+	"Parallel Reduce": {
+		"prefix": "parallel_reduce",
+		"body": [
+			"parallel_reduce(${1:INIT_EXPR})",
+			"  .invariant(${2:INVARIANT_EXPR})",
+			"  .while(${3:COND_EXPR})",
+			"  .case(${4:PART_EXPR},",
+			"    ${5:PUBLISH_EXPR},",
+			"    ${6:PAY_EXPR},",
+			"    ${7:CONSENSUS_EXPR},",
+			"   )",
+			"   timeout(${8:DEADLINE}, () => ${9:TIMEOUT_BLOCK});"
+		],
+		"description": "parallel_reduce"
+	}
+	"While Loop": {
+		"prefix": "while",
+		"body": [
+			"var ${1:LHS} = ${2:INIT_EXPR};",
+			"invariant(${3:INVARIANT_EXPR});",
+			"while(${4:COND_EXPR}) {",
+			"    ${5:BLOCK}",
+			"}",
+		],
+		"description": "while"
 	}
 }
