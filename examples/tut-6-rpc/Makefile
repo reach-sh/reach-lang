@@ -12,6 +12,7 @@ build: server/build/index.main.mjs
 	cd server    && docker build -f Dockerfile --tag=reachsh/reach-app-tut-6-rpc-server:latest    .
 	cd client-js && docker build -f Dockerfile --tag=reachsh/reach-app-tut-6-rpc-client-js:latest .
 	cd client-py && docker build -f Dockerfile --tag=reachsh/reach-app-tut-6-rpc-client-py:latest .
+	cd client-go && docker build -f Dockerfile --tag=reachsh/reach-app-tut-6-rpc-client-go:latest .
 
 .PHONY: run
 run: build
