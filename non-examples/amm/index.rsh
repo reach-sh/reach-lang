@@ -57,7 +57,7 @@ const swap = (amtIns, amtOuts, to, tokens, market) => {
   Array.zip(startingReserves, amtOuts).forEach(([reserve, amtOut]) =>
     assert(amtOut < reserve, "Insufficient liquidity"));
 
-  // Optimistically transfer the given amount of tokens
+  // Transfer the given amount of tokens
   // XXX: Feature - Pay in a specified token
   Array.zip(tokens, amtOuts)
     .forEach(([ tok, amtOut ]) =>
