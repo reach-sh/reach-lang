@@ -3,6 +3,7 @@ package main
 import (
   "fmt"
   "log"
+  "net"
   "os"
   "reflect"
   "strings"
@@ -41,7 +42,24 @@ func mkRpc() (func(string, ...interface{}) interface{},
   host  := os.Getenv("REACH_RPC_SERVER")
   port  := os.Getenv("REACH_RPC_PORT")
 
-  // TODO wait for server to become available
+  // Wait for RPC server to become available
+  timeout := please(time.ParseDuration("5.0s")).(time.Duration)
+  began   := time.Now()
+  for true {
+    conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host, port), timeout)
+    if err == nil {
+      conn.Close()
+      break
+    } else {
+      time.Sleep(please(time.ParseDuration("0.01s")).(time.Duration))
+
+      if time.Since(began) > timeout {
+        log.Fatalf("Waited too long for the port %s on host %s " +
+                   "to start accepting connections", port, host)
+        os.Exit(1)
+      }
+    }
+  }
 
   rpc := func(m string, args ...interface{}) (interface{}) {
     var ans   interface{}
