@@ -69,8 +69,6 @@ func mkRpc() (func(string, ...interface{}) interface{},
   }
 
   rpcCallbacks := func(m string, arg contract, cbacks map[string]interface{}) {
-    var ans interface{}
-
     vals  := make(map[string]interface{})
     meths := make(map[string]bool)
 
@@ -89,33 +87,29 @@ func mkRpc() (func(string, ...interface{}) interface{},
         break
 
       } else if p["t"] == "Kont" {
+        cb    := reflect.ValueOf(cbacks[p["m"].(string)])
+        args  := p["args"].([]interface{})
+        vargs := make([]reflect.Value, len(args))
 
-        // Apply interact method to supplied inputs
-        if _, exists := meths[p["m"].(string)]; exists {
-          cb    := reflect.ValueOf(cbacks[p["m"].(string)])
-          args  := p["args"].([]interface{})
-          vargs := make([]reflect.Value, len(args))
-
-          for i, a := range args {
-            vargs[i] = reflect.ValueOf(a)
-          }
-
-          ans = nil
-          for _, a := range cb.Call(vargs) {
-            ans = a.Interface()
-            break
-          }
-
-          p = rpc("/kont", p["kid"], ans).(map[string]interface{})
-
-        // Respond with simple field value
-        } else {
-          ans = vals[p["m"].(string)]
-          p   = rpc("/kont", p["kid"], ans).(map[string]interface{})
+        for i, a := range args {
+          vargs[i] = reflect.ValueOf(a)
         }
 
+        var ans []interface{} = []interface{}{p["kid"]}
+        res := cb.Call(vargs)
+
+        if len(res) == 0 {
+          ans = append(ans, nil)
+        } else {
+          for _, a := range res {
+            ans = append(ans, a.Interface())
+          }
+        }
+
+        p = rpc("/kont", ans...).(map[string]interface{})
+
       } else {
-        log.Fatalf("Illegal callback return: %s", p)
+        log.Fatalf("Illegal callback return: %s\n", p)
         os.Exit(1)
       }
     }
