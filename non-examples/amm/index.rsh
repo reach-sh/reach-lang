@@ -247,7 +247,7 @@ export const main =
             })),
             // Amt in has fees incorporated into it
             (({ amtIn, amtInTok }) => [ [ amtIn, amtInTok ] ]),
-            (({ amtIn, amtInTok }) => {
+            (({ amtIn, amtInTok, amtOutTok }) => {
               // Calculate amount out
               const reserveIn  = market.tokens[amtInTok].balance;
               const reserveOut = market.tokens[amtOutTok].balance;
