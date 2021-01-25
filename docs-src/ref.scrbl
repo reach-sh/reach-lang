@@ -152,7 +152,7 @@ because reach will use it in specific ways. Refer to the @litchar{Makefile} gene
   @item{
     @exec{reach run ...} will invoke @exec{make run-target ARGS="..."},
     where "..." is an escaped, space-separated representation of the command-line args to @exec{reach run}.
-    See @link[https://github.com/reach-sh/reach-lang/blob/master/examples/argz/Makefile]{examples/argz/Makefile}
+    See @link["https://github.com/reach-sh/reach-lang/blob/master/examples/argz/Makefile"]{examples/argz/Makefile}
     for an example invocation of @exec{reach run} with command-line arguments.
   }
 ]
