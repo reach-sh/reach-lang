@@ -112,6 +112,9 @@ instance Pretty T.Text where
 instance Pretty LT.Text where
   pretty = DText
 
+instance Pretty Doc where
+  pretty = id
+
 instance Semigroup Doc where
   (<>) = DCat
 

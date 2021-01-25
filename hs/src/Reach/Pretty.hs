@@ -8,6 +8,7 @@ import Generics.Deriving (conNameOf)
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
+import Reach.AST.DK
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.AST.SL
@@ -252,6 +253,23 @@ prettyToConsensus fa fb send (ltv, win, msg, amtv, tv, body) mtime =
 prettyCommit :: Doc
 prettyCommit = "commit();"
 
+prettyCom :: Pretty a => Pretty b => a -> b -> Doc
+prettyCom x y = pretty x <> hardline <> pretty y
+
+prettyOnly :: Pretty a => SLPart -> a -> Doc
+prettyOnly who b =
+  "only" <> parens (render_sp who) <+> render_nest (pretty b) <> semi
+
+prettyOnlyK :: Pretty a => Pretty b => SLPart -> a -> b -> Doc
+prettyOnlyK who onlys k =
+  prettyOnly who onlys <> hardline <> pretty k
+
+prettyBlock :: Doc -> DLArg -> Doc
+prettyBlock b da = b <> hardline <> "return" <+> pretty da <> semi
+
+prettyBlockP :: Pretty a => a -> DLArg -> Doc
+prettyBlockP b da = prettyBlock (pretty b) da
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -283,7 +301,7 @@ instance Pretty DLStmt where
       DLS_Stop _ ->
         prettyStop
       DLS_Only _ who onlys ->
-        "only" <> parens (render_sp who) <+> ns onlys <> semi
+        prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
         prettyToConsensus render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
@@ -306,8 +324,7 @@ instance Pretty (Seq.Seq DLStmt) where
   pretty = render_dls
 
 instance Pretty DLBlock where
-  pretty (DLBlock _at _ ss da) =
-    render_dls ss <> hardline <> "return" <+> pretty da <> semi
+  pretty (DLBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
 instance Pretty InteractEnv where
   pretty (InteractEnv m) = "interact" <+> render_obj m
@@ -348,33 +365,65 @@ instance Pretty a => Pretty (DLinStmt a) where
 instance Pretty a => Pretty (DLinTail a) where
   pretty = \case
     DT_Return _at -> mempty
-    DT_Com x k -> pretty x <> hardline <> pretty k
+    DT_Com x k -> prettyCom x k
 
 instance Pretty a => Pretty (DLinBlock a) where
-  pretty (DLinBlock _ _ ts ta) =
-    (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
+  pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
+
+--- DK language
+instance Pretty DKCommon where
+  pretty = \case
+    DKC_ m -> pretty m
+    DKC_FluidSet at fv a ->
+      pretty (DLS_FluidSet at fv a)
+    DKC_FluidRef at dv fv ->
+      pretty (DLS_FluidRef at dv fv)
+
+instance Pretty DKTail where
+  pretty = \case
+    DK_Com m k -> prettyCom m k
+    DK_Stop _ -> prettyStop
+    DK_Only _ who body k -> prettyOnlyK who body k
+    DK_ToConsensus {..} ->
+      prettyToConsensus pretty pretty dk_tc_send dk_tc_recv dk_tc_mtime
+    DK_If _at ca t f -> prettyIfp ca t f
+    DK_Switch _at ov csm -> prettySwitch ov csm
+    DK_FromConsensus _at _ret_at k ->
+      prettyCommit <> hardline <> pretty k
+    DK_While _at asn inv cond body k ->
+      prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
+    DK_Continue _at asn -> prettyContinue asn
+
+instance Pretty DKBlock where
+  pretty (DKBlock _ _ k a) = prettyBlockP k a
+
+instance Pretty DKProg where
+  pretty (DKProg _at _ sps dli t) =
+    "#lang dk" <> hardline
+      <> pretty sps
+      <> hardline
+      <> hardline
+      <> pretty dli
+      <> pretty t
 
 --- Linear language
 instance Pretty LLConsensus where
   pretty = \case
-    LLC_Com x k -> pretty x <> hardline <> pretty k
+    LLC_Com x k -> prettyCom x k
     LLC_If _at ca t f -> prettyIfp ca t f
     LLC_Switch _at ov csm -> prettySwitch ov csm
     LLC_FromConsensus _at _ret_at k ->
       prettyCommit <> hardline <> pretty k
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
-    LLC_Continue _at asn ->
-      prettyContinue asn
-    LLC_Only _at who onlys k ->
-      "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
+    LLC_Continue _at asn -> prettyContinue asn
+    LLC_Only _at who onlys k -> prettyOnlyK who onlys k
 
 instance Pretty LLStep where
   pretty = \case
-    LLS_Com x k -> pretty x <> hardline <> pretty k
+    LLS_Com x k -> prettyCom x k
     LLS_Stop _at -> prettyStop
-    LLS_Only _at who onlys k ->
-      "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
+    LLS_Only _at who onlys k -> prettyOnlyK who onlys k
     LLS_ToConsensus {..} ->
       prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
 

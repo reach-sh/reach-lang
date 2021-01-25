@@ -2,97 +2,329 @@ module Reach.Linearize (linearize) where
 
 import Control.Monad.Reader
 import Data.IORef
-import Data.List (foldl')
+import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Sequence as Seq
-import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
+import Reach.AST.DK
 import Reach.AST.LL
+import Reach.Pretty ()
+import Reach.Texty
 import Reach.Util
 
-type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
-
-type FVMap = M.Map FluidVar DLVar
-
+-- Remove returns, duplicate continuations, and transform into dk
+type DKApp = ReaderT DKEnv IO
 type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
-
 type LLRets = M.Map Int LLRetRHS
+data DKEnv = DKEnv
+  { eRets :: LLRets }
 
-type App = ReaderT Env IO
+lookupRet :: Int -> DKApp (Maybe LLRetRHS)
+lookupRet r = do
+  DKEnv {..} <- ask
+  return $ M.lookup r eRets
 
-data Env = Env
+captureRets :: DKApp LLRets
+captureRets = do
+  DKEnv {..} <- ask
+  return eRets
+
+restoreRets :: LLRets -> DKApp a -> DKApp a
+restoreRets rets' = local (\e -> e {eRets = rets'})
+
+setRetsToEmpty :: DKApp a -> DKApp a
+setRetsToEmpty = restoreRets mempty
+
+withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
+withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
+
+dk2lin :: DKTail -> LLTail
+dk2lin = \case
+  DK_Com (DKC_ m) k -> DT_Com m $ dk2lin k
+  DK_Stop at -> DT_Return at
+  _ -> impossible "dk2lin"
+
+lin :: DLStmt -> DKApp LLCommon
+lin = \case
+  DLS_Let at mdv de ->
+    return $ DL_Let at mdv de
+  DLS_ArrayMap at ans x a f ->
+    DL_ArrayMap at ans x a <$> lin_block at f
+  DLS_ArrayReduce at ans x z b a f ->
+    DL_ArrayReduce at ans x z b a <$> lin_block at f
+  DLS_If at ca _ ts fs ->
+    DL_LocalIf at ca <$> lin_local_rets at ts <*> lin_local_rets at fs
+  DLS_Switch at dv _ cm ->
+    DL_LocalSwitch at dv <$> mapM cm1 cm
+    where
+      cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
+  _ -> impossible "lin"
+
+lin_local_rets :: SrcLoc -> DLStmts -> DKApp LLTail
+lin_local_rets at ks = do
+  r <- dk_ at ks
+  return $ dk2lin r
+
+lin_local :: SrcLoc -> DLStmts -> DKApp LLTail
+lin_local at ks = setRetsToEmpty $ lin_local_rets at ks
+
+lin_block :: SrcLoc -> DLBlock -> DKApp LLBlock
+lin_block _at (DLBlock at fs l a) =
+  DLinBlock at fs <$> lin_local at l <*> pure a
+
+dk_block :: SrcLoc -> DLBlock -> DKApp DKBlock
+dk_block _at (DLBlock at fs l a) =
+  DKBlock at fs <$> (setRetsToEmpty $ dk_ at l) <*> pure a
+
+dk1 :: SrcLoc -> DLStmts -> DLStmt -> DKApp DKTail
+dk1 at_top ks s =
+  case s of
+    DLS_Let {} -> com
+    DLS_ArrayMap {} -> com
+    DLS_ArrayReduce {} -> com
+    DLS_If at c _ t f ->
+      case isLocal s of
+        True -> com
+        False ->
+          DK_If at c <$> dk_ at (t <> ks) <*> dk_ at (f <> ks)
+    DLS_Switch at v _ csm ->
+      case isLocal s of
+        True -> com
+        False ->
+          DK_Switch at v <$> mapM cm1 csm
+          where
+            cm1 (dv', c) = (\x -> (dv', x)) <$> dk_ at (c <> ks)
+    DLS_Return at ret eda -> do
+      rv <- lookupRet ret
+      case rv of
+        Nothing ->
+          impossible $ "unknown ret " <> show ret
+        Just Nothing ->
+          dk_ at ks
+        Just (Just (dv, retsm)) ->
+          case eda of
+            Left reti ->
+              case M.lookup reti retsm of
+                Nothing -> impossible $ "missing return da"
+                Just (das, da) ->
+                  case das <> (return $ DLS_Return at ret (Right da)) <> ks of
+                    s' Seq.:<| ks' ->
+                      dk1 at ks' s'
+                    _ ->
+                      impossible $ "no cons"
+            Right da ->
+              com' $ DL_Set at dv da
+    DLS_Prompt at (Left ret) ss ->
+      withReturn ret Nothing $
+        dk_ at (ss <> ks)
+    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
+      withReturn ret (Just (dv, retms)) $
+        com'' (DL_Var at dv) (ss <> ks)
+    DLS_Stop at ->
+      return $ DK_Stop at
+    DLS_Only at who ss ->
+      DK_Only at who <$> lin_local at ss <*> dk_ at ks
+    DLS_ToConsensus at send recv mtime -> do
+      let (last_timev, winner_dv, msg, amtv, timev, cs) = recv
+      let cs' = dk_ at (cs <> ks)
+      let recv' =
+            (\x -> (last_timev, winner_dv, msg, amtv, timev, x)) <$> cs'
+      let mtime' =
+            case mtime of
+              Just (delay_da, time_ss) ->
+                (\x y -> Just (x, y)) <$> pure delay_da <*> dk_ at (time_ss <> ks)
+              Nothing ->
+                return $ Nothing
+      DK_ToConsensus at send <$> recv' <*> mtime'
+    DLS_FromConsensus at ss ->
+      DK_FromConsensus at at_top <$> dk_ at (ss <> ks)
+    DLS_While at asn inv_b cond_b body -> do
+      let body' = dk_ at body
+      let block = dk_block at
+      DK_While at asn <$> block inv_b <*> block cond_b <*> body' <*> dk_ at ks
+    DLS_Continue at asn ->
+      return $ DK_Continue at asn
+    DLS_FluidSet at fv a ->
+      DK_Com (DKC_FluidSet at fv a) <$> dk_ at ks
+    DLS_FluidRef at v fv ->
+      DK_Com (DKC_FluidRef at v fv) <$> dk_ at ks
+  where
+    com :: DKApp DKTail
+    com = com' =<< lin s
+    com' :: LLCommon -> DKApp DKTail
+    com' m = com'' m ks
+    com'' :: LLCommon -> DLStmts -> DKApp DKTail
+    com'' m ks' = DK_Com (DKC_ m) <$> dk_ (srclocOf s) ks'
+
+dk_ :: SrcLoc -> DLStmts -> DKApp DKTail
+dk_ at = \case
+  Seq.Empty -> return $ DK_Stop at
+  s Seq.:<| ks -> dk1 at ks s
+
+dekont :: DLProg -> IO DKProg
+dekont (DLProg at opts sps dli ss) = do
+  let eRets = mempty
+  flip runReaderT (DKEnv {..}) $
+    DKProg at opts sps dli <$> dk_ at ss
+
+-- Lift common things to the previous consensus
+type LCApp = ReaderT LCEnv IO
+type LCAppT a = a -> LCApp a
+data LCEnv = LCEnv
+  { eLifts :: Maybe (IORef (Seq.Seq DKCommon))
+  }
+
+-- FIXME: I think this always returns True
+class CanLift a where
+  canLift :: a -> Bool
+
+instance CanLift DLExpr where
+  canLift = isLocal
+
+instance CanLift a => CanLift (SwitchCases a) where
+  canLift = getAll . mconcatMap (All . canLift . snd . snd) . M.toList
+
+instance CanLift (DLinStmt a) where
+  canLift = \case
+    DL_Nop {} -> True
+    DL_Let _ _ e -> canLift e
+    DL_ArrayMap _ _ _ _ f -> canLift f
+    DL_ArrayReduce _ _ _ _ _ _ f -> canLift f
+    DL_Var {} -> True
+    DL_Set {} -> True
+    DL_LocalIf _ _ t f -> canLift t && canLift f
+    DL_LocalSwitch _ _ csm -> canLift csm
+
+instance CanLift (DLinTail a) where
+  canLift = \case
+    DT_Return {} -> True
+    DT_Com m k -> canLift m && canLift k
+
+instance CanLift (DLinBlock a) where
+  canLift = \case
+    DLinBlock _ _ t _ -> canLift t
+
+instance CanLift DKCommon where
+  canLift = \case
+    DKC_ m -> canLift m
+    DKC_FluidSet {} -> True
+    DKC_FluidRef {} -> True
+
+noLifts :: LCApp a -> LCApp a
+noLifts = local (\e -> e { eLifts = Nothing })
+
+doLift :: DKCommon -> LCApp DKTail -> LCApp DKTail
+doLift m mk = do
+  LCEnv {..} <- ask
+  case (eLifts, canLift m) of
+    (Just lr, True) -> do
+      liftIO $ modifyIORef lr (Seq.|> m)
+      mk
+    _ -> DK_Com m <$> mk
+
+captureLifts :: LCApp DKTail -> LCApp DKTail
+captureLifts mc = do
+  lr <- liftIO $ newIORef mempty
+  c <- local (\e -> e {eLifts = Just lr}) mc
+  ls <- liftIO $ readIORef lr
+  return $ foldr DK_Com c ls
+
+class LiftCon a where
+  lc :: LCAppT a
+
+instance LiftCon a => LiftCon (Maybe a) where
+  lc = \case
+    Nothing -> return $ Nothing
+    Just x -> Just <$> lc x
+
+instance LiftCon z => LiftCon (a, z) where
+  lc (a, z) = (\z' -> (a, z')) <$> lc z
+
+instance LiftCon z => LiftCon (a, b, c, d, e, z) where
+  lc (a, b, c, d, e, z) = (\z' -> (a, b, c, d, e, z')) <$> lc z
+
+instance LiftCon a => LiftCon (SwitchCases a) where
+  lc = traverse lc
+
+instance LiftCon DKTail where
+  lc = \case
+    DK_Com m k -> doLift m (lc k)
+    DK_Stop at -> return $ DK_Stop at
+    DK_Only at who l s -> DK_Only at who l <$> lc s
+    DK_ToConsensus at send recv mtime -> do
+      DK_ToConsensus at send <$> (noLifts $ lc recv) <*> lc mtime
+    DK_If at c t f -> DK_If at c <$> lc t <*> lc f
+    DK_Switch at v csm -> DK_Switch at v <$> lc csm
+    DK_FromConsensus at1 at2 k ->
+      captureLifts $ DK_FromConsensus at1 at2 <$> lc k
+    DK_While at asn inv cond body k ->
+      DK_While at asn inv cond <$> lc body <*> lc k
+    DK_Continue at asn -> return $ DK_Continue at asn
+
+liftcon :: DKProg -> IO DKProg
+liftcon (DKProg at opts sps dli k) = do
+  let eLifts = Nothing
+  flip runReaderT (LCEnv {..}) $
+    DKProg at opts sps dli <$> lc k
+
+-- Remove fluid variables and convert to proper linear shape
+type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
+type FVMap = M.Map FluidVar DLVar
+type DFApp = ReaderT DFEnv IO
+data DFEnv = DFEnv
   { eCounterR :: IORef Int
   , eFVMm :: Maybe FVMap
   , eFVE :: FluidEnv
-  , eRets :: LLRets
   }
 
-allocVar :: (Int -> a) -> App a
+allocVar :: (Int -> a) -> DFApp a
 allocVar mk = do
-  Env {..} <- ask
+  DFEnv {..} <- ask
   idx <- liftIO $ readIORef eCounterR
   liftIO $ modifyIORef eCounterR (1 +)
   return $ mk idx
 
-fluidRefm :: FluidVar -> App (Maybe (SrcLoc, DLArg))
+fluidRefm :: FluidVar -> DFApp (Maybe (SrcLoc, DLArg))
 fluidRefm fv = do
-  Env {..} <- ask
+  DFEnv {..} <- ask
   return $ M.lookup fv eFVE
 
-fluidRef :: FluidVar -> App (SrcLoc, DLArg)
+fluidRef :: FluidVar -> DFApp (SrcLoc, DLArg)
 fluidRef fv = do
   r <- fluidRefm fv
   case r of
     Nothing -> impossible $ "fluid ref unbound: " <> show fv
     Just x -> return x
 
-fluidSet :: FluidVar -> (SrcLoc, DLArg) -> App a -> App a
-fluidSet fv fvv = local (\e@Env {..} -> e {eFVE = M.insert fv fvv eFVE})
+fluidSet :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
+fluidSet fv fvv = local (\e@DFEnv {..} -> e {eFVE = M.insert fv fvv eFVE})
 
-lookupRet :: Int -> App (Maybe LLRetRHS)
-lookupRet r = do
-  Env {..} <- ask
-  return $ M.lookup r eRets
-
-captureRets :: App LLRets
-captureRets = do
-  Env {..} <- ask
-  return eRets
-
-restoreRets :: LLRets -> App a -> App a
-restoreRets rets' = local (\e -> e {eRets = rets'})
-
-setRetsToEmpty :: App a -> App a
-setRetsToEmpty = restoreRets mempty
-
-withReturn :: Int -> LLRetRHS -> App a -> App a
-withReturn rv rvv = local (\e@Env {..} -> e {eRets = M.insert rv rvv eRets})
-
-withWhileFVMap :: FVMap -> App a -> App a
+withWhileFVMap :: FVMap -> DFApp a -> DFApp a
 withWhileFVMap fvm' = local (\e -> e {eFVMm = Just fvm'})
 
-readWhileFVMap :: App FVMap
+readWhileFVMap :: DFApp FVMap
 readWhileFVMap = do
-  Env {..} <- ask
+  DFEnv {..} <- ask
   case eFVMm of
     Nothing -> impossible "attempt to read fvm with no fvm"
     Just x -> return x
 
-unpackFVMap :: SrcLoc -> DLStmts -> App DLStmts
-unpackFVMap at ss = do
+unpackFVMap :: SrcLoc -> DKTail -> DFApp DKTail
+unpackFVMap at k = do
   fvm <- readWhileFVMap
-  let go ss' (fv, dv) = (return $ DLS_FluidSet at fv (DLA_Var dv)) <> ss'
-  let ss' = foldl' go ss (M.toList fvm)
-  return $ ss'
+  let go k' (fv, dv) = DK_Com (DKC_FluidSet at fv (DLA_Var dv)) k'
+  let k' = foldl' go k (M.toList fvm)
+  return $ k'
 
-block_unpackFVMap :: SrcLoc -> DLBlock -> App DLBlock
-block_unpackFVMap uat (DLBlock at fs ss a) =
-  (\x -> DLBlock at fs x a) <$> unpackFVMap uat ss
+block_unpackFVMap :: SrcLoc -> DKBlock -> DFApp DKBlock
+block_unpackFVMap uat (DKBlock at fs t a) =
+  (\x -> DKBlock at fs x a) <$> unpackFVMap uat t
 
-expandFromFVMap :: DLAssignment -> App DLAssignment
+expandFromFVMap :: DLAssignment -> DFApp DLAssignment
 expandFromFVMap (DLAssignment updatem) = do
   fvm <- readWhileFVMap
   let go (fv, dv) = do
@@ -102,173 +334,89 @@ expandFromFVMap (DLAssignment updatem) = do
   let updatem' = M.union (M.fromList $ fvm'l) updatem
   return $ DLAssignment updatem'
 
-lin_com :: String -> (SrcLoc -> DLStmts -> App a) -> (LLCommon -> a -> a) -> DLStmt -> DLStmts -> App a
-lin_com who back mkk s ks =
-  case s of
-    DLS_FluidSet at fv da ->
-      fluidSet fv (at, da) $ back at ks
-    DLS_FluidRef at dv fv -> do
-      (at', da) <- fluidRef fv
-      mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back at ks
-    DLS_Let at mdv de -> mkk <$> (pure $ DL_Let at mdv de) <*> back at ks
-    DLS_ArrayMap at ans x a f ->
-      mkk <$> (DL_ArrayMap at ans x a <$> f') <*> back at ks
-      where
-        f' = lin_block at f
-    DLS_ArrayReduce at ans x z b a f ->
-      mkk <$> (DL_ArrayReduce at ans x z b a <$> f') <*> back at ks
-      where
-        f' = lin_block at f
-    DLS_If at ca _ ts fs
-      | isLocal s ->
-        mkk <$> (DL_LocalIf at ca <$> t' <*> f') <*> back at ks
-      where
-        t' = lin_local_rets at ts
-        f' = lin_local_rets at fs
-    DLS_Switch at dv _ cm
-      | isLocal s ->
-        mkk <$> (DL_LocalSwitch at dv <$> cm') <*> back at ks
-      where
-        cm' = mapM cm1 cm
-        cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
-    DLS_Return at ret eda -> do
-      rv <- lookupRet ret
-      case rv of
-        Nothing ->
-          impossible $ "unknown ret " <> show ret
-        Just Nothing ->
-          back at ks
-        Just (Just (dv, retsm)) ->
-          case eda of
-            Left reti ->
-              case M.lookup reti retsm of
-                Nothing -> impossible $ "missing return da"
-                Just (das, da) ->
-                  case das <> (return $ DLS_Return at ret (Right da)) <> ks of
-                    s' Seq.:<| ks' ->
-                      lin_com who back mkk s' ks'
-                    _ ->
-                      impossible $ "no cons"
-            Right da ->
-              mkk <$> (pure $ DL_Set at dv da) <*> back at ks
-    DLS_Prompt at (Left ret) ss ->
-      withReturn ret Nothing $
-        back at (ss <> ks)
-    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
-      withReturn ret (Just (dv, retms)) $
-        mkk <$> (pure $ DL_Var at dv) <*> back at (ss <> ks)
-    DLS_If {} -> bad
-    DLS_Switch {} -> bad
-    DLS_Stop {} -> bad
-    DLS_Only {} -> bad
-    DLS_ToConsensus {} -> bad
-    DLS_FromConsensus {} -> bad
-    DLS_While {} -> bad
-    DLS_Continue {} -> bad
+df_com :: (LLCommon -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
+df_com mkk back = \case
+  DK_Com (DKC_FluidSet at fv da) k ->
+    fluidSet fv (at, da) (back k)
+  DK_Com (DKC_FluidRef at dv fv) k -> do
+    (at', da) <- fluidRef fv
+    mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back k
+  DK_Com (DKC_ m) k ->
+    mkk m <$> back k
+  t -> impossible $ "df_com " <> show t
+
+df_bl :: DKBlock -> DFApp LLBlock
+df_bl (DKBlock at fs t a) =
+  DLinBlock at fs <$> go t <*> pure a
   where
-    bad = impossible $ who <> " cannot " <> conNameOf s <> " at " <> show (srclocOf s)
+    go = \case
+      DK_Stop sat -> return $ DT_Return sat
+      x -> df_com DT_Com go x
 
-lin_local_rets :: SrcLoc -> DLStmts -> App LLTail
-lin_local_rets at Seq.Empty =
-  return $ DT_Return at
-lin_local_rets _ (s Seq.:<| ks) =
-  lin_com "local" lin_local_rets DT_Com s ks
+df_con :: DKTail -> DFApp LLConsensus
+df_con = \case
+  DK_If a c t f ->
+    LLC_If a c <$> df_con t <*> df_con f
+  DK_Switch a v csm ->
+    LLC_Switch a v <$> mapM cm1 csm
+    where
+      cm1 (dv', c) = (\x -> (dv', x)) <$> df_con c
+  DK_While at asn inv cond body k -> do
+    let go fv = do
+          r <- fluidRefm fv
+          case r of
+            Nothing -> return $ Nothing
+            Just _ -> do
+              dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
+              return $ Just (fv, dv)
+    fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
+    let body_fvs' = df_con =<< unpackFVMap at body
+    --- Note: The invariant and condition can't return
+    let block b = df_bl =<< block_unpackFVMap at b
+    withWhileFVMap fvm $
+      LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs' <*> (df_con =<< unpackFVMap at k)
+  DK_Continue at asn ->
+    LLC_Continue at <$> expandFromFVMap asn
+  DK_Only at who body k ->
+    LLC_Only at who body <$> df_con k
+  DK_FromConsensus at1 at2 t ->
+    LLC_FromConsensus at1 at2 <$> df_step t
+  x -> df_com LLC_Com df_con x
 
-lin_local :: SrcLoc -> DLStmts -> App LLTail
-lin_local at ks = setRetsToEmpty $ lin_local_rets at ks
+df_step :: DKTail -> DFApp LLStep
+df_step = \case
+  DK_Stop at -> return $ LLS_Stop at
+  DK_Only at who body k -> LLS_Only at who body <$> df_step k
+  DK_ToConsensus at send recv mtime -> do
+    let (a, b, c, d, e, k) = recv
+    k' <- df_con k
+    let recv' = (a, b, c, d, e, k')
+    mtime' <-
+      case mtime of
+        Nothing -> return $ Nothing
+        Just (ta, tk) -> do
+          tk' <- df_step tk
+          return $ Just (ta, tk')
+    return $ LLS_ToConsensus at send recv' mtime'
+  x -> df_com LLS_Com df_step x
 
-lin_block :: SrcLoc -> DLBlock -> App LLBlock
-lin_block _at (DLBlock at fs l a) =
-  DLinBlock at fs <$> lin_local at l <*> pure a
-
-lin_con :: (DLStmts -> App LLStep) -> SrcLoc -> DLStmts -> App LLConsensus
-lin_con _ _ Seq.Empty = impossible $ "empty consensus"
-lin_con back at_top (s Seq.:<| ks) =
-  case s of
-    DLS_If at ca _ ts fs
-      | not (isLocal s) ->
-        LLC_If at ca <$> t' <*> f'
-      where
-        t' = lin_con back at (ts <> ks)
-        f' = lin_con back at (fs <> ks)
-    DLS_Switch at dv _ cm
-      | not (isLocal s) ->
-        LLC_Switch at dv <$> cm'
-      where
-        cm' = mapM cm1 cm
-        cm1 (dv', c) = (\x -> (dv', x)) <$> lin_con back at (c <> ks)
-    DLS_FromConsensus at cons ->
-      LLC_FromConsensus at at_top <$> back (cons <> ks)
-    DLS_While at asn inv_b cond_b body -> do
-      let go fv = do
-            r <- fluidRefm fv
-            case r of
-              Nothing -> return $ Nothing
-              Just _ -> do
-                dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
-                return $ Just (fv, dv)
-      fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
-      let body_fvs' = lin_con back at =<< unpackFVMap at body
-      --- Note: The invariant and condition can't return
-      let block b = lin_block at =<< block_unpackFVMap at b
-      withWhileFVMap fvm $
-        LLC_While at <$> expandFromFVMap asn <*> block inv_b <*> block cond_b <*> body_fvs' <*> (lin_con back at =<< unpackFVMap at ks)
-    DLS_Continue at update ->
-      case ks of
-        Seq.Empty ->
-          LLC_Continue at <$> expandFromFVMap update
-        _ ->
-          impossible $ "consensus cannot continue w/ non-empty k"
-    DLS_Only at who ss ->
-      LLC_Only at who <$> ls <*> lin_con back at ks
-      where
-        ls = lin_local at ss
-    _ ->
-      lin_com "consensus" (lin_con back) LLC_Com s ks
-
-lin_step :: SrcLoc -> DLStmts -> App LLStep
-lin_step at Seq.Empty =
-  return $ LLS_Stop at
-lin_step _ (s Seq.:<| ks) =
-  case s of
-    DLS_If {}
-      | not (isLocal s) ->
-        impossible $ "step cannot unlocal if, must occur in consensus"
-    DLS_Switch {}
-      | not (isLocal s) ->
-        impossible $ "step cannot unlocal switch, must occur in consensus"
-    DLS_Stop at ->
-      return $ LLS_Stop at
-    DLS_Only at who ss ->
-      LLS_Only at who <$> ls <*> lin_step at ks
-      where
-        ls = lin_local at ss
-    DLS_ToConsensus at send recv mtime -> do
-      rets <- captureRets
-      let back = restoreRets rets . lin_step at
-      let (last_timev, winner_dv, msg, amtv, timev, cons) = recv
-      let cons' = lin_con back at (cons <> ks)
-      let recv' =
-            (\x -> (last_timev, winner_dv, msg, amtv, timev, x)) <$> cons'
-      let mtime' =
-            case mtime of
-              Just (delay_da, time_ss) ->
-                (\x y -> Just (x, y)) <$> pure delay_da <*> lin_step at (time_ss <> ks)
-              Nothing ->
-                return $ Nothing
-      LLS_ToConsensus at send <$> recv' <*> mtime'
-    _ ->
-      lin_com "step" lin_step LLS_Com s ks
-
-linearize :: DLProg -> IO LLProg
-linearize (DLProg at (DLOpts {..}) sps dli ss) = do
+defluid :: DKProg -> IO LLProg
+defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyOverflow = dlo_verifyOverflow
   let opts' = LLOpts {..}
   eCounterR <- newIORef dlo_counter
   let eFVMm = mempty
   let eFVE = mempty
-  let eRets = mempty
-  let env0 = Env {..}
-  flip runReaderT env0 $
-    LLProg at opts' sps dli <$> lin_step at ss
+  flip runReaderT (DFEnv {..}) $
+    LLProg at opts' sps dli <$> df_step k
+
+-- Stich it all together
+linearize :: (forall a . Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
+linearize outm p =
+  return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid
+  where
+    out lab f p' = do
+      p'' <- f p'
+      outm lab p''
+      return p''

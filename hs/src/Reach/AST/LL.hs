@@ -20,8 +20,7 @@ data LLConsensus
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Switch SrcLoc DLVar (SwitchCases LLConsensus)
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
-  | --- inv then cond then body then kont
-    LLC_While
+  | LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
       , llc_w_inv :: LLBlock

@@ -11,7 +11,6 @@ import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
 import Reach.EPP
 import Reach.Eval
-import Reach.LiftConsensus
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser
@@ -52,23 +51,24 @@ compile copts = do
         let woutn = outn . addWhich
         let woutnMay = outnMay woutn
         let winterOut = interOut woutn
+        let showp :: (forall a . Pretty a => T.Text -> a -> IO ())
+            showp l = winterOut l . render . pretty
+        let showp' :: (forall a . Pretty a => String -> a -> IO ())
+            showp' = showp . T.pack
         let dl = compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
-        winterOut "dl" $ render $ pretty dl
-        ll <- linearize dl
-        winterOut "ll" $ render $ pretty ll
-        fl <- liftcon ll
-        winterOut "fl" $ render $ pretty fl
-        ol <- optimize fl
-        winterOut "ol" $ render $ pretty ol
+        showp "dl" dl
+        ll <- linearize showp' dl
+        ol <- optimize ll
+        showp "ol" ol
         let vconnectors =
               case dlo_verifyPerConnector of
                 False -> Nothing
                 True -> Just connectors
         verify woutnMay vconnectors ol >>= maybeDie
         let pl = epp ol
-        winterOut "pl" $ render $ pretty pl
+        showp "pl" pl
         let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js woutn crs pl
