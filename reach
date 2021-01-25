@@ -950,6 +950,7 @@ do_usage () {
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
   echo "  version --- display version"
+  echo "  hashes  --- display git hashes used to build each Docker image"
   echo "  help    --- show this info"
 }
 

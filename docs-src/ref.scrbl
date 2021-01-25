@@ -67,6 +67,12 @@ You can create template @exec{index.rsh} and @exec{index.mjs} files for a simple
 
 @cmd{reach init}
 
+@subsection[#:tag "ref-usage-hashes"]{@tt{reach hashes}}
+
+You can see which exact versions of Reach Docker images you are using with @exec{reach hashes}.
+This is more precise, but less readable, than @exec{reach version},
+in that each hash refers to the git commit used to build the image.
+
 @subsection[#:tag "ref-usage-run"]{@tt{reach run}}
 
 You can run a simple Reach application by executing
