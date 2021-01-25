@@ -47,8 +47,10 @@ services:
     <<: *default-server
   client-js:
     image: reachsh/reach-app-tut-6-rpc-client-js:latest
-  client-py: &client
+  client-py:
     image: reachsh/reach-app-tut-6-rpc-client-py:latest
+  client-go: &client
+    image: reachsh/reach-app-tut-6-rpc-client-go:latest
   reach-app-tut-6-rpc:
     <<: *client
     depends_on:
