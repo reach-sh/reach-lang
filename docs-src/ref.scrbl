@@ -69,7 +69,10 @@ You can create template @exec{index.rsh} and @exec{index.mjs} files for a simple
 
 @subsection[#:tag "ref-usage-hashes"]{@tt{reach hashes}}
 
-You can see which exact versions of Reach Docker images you are using with @exec{reach hashes}.
+You can see which exact versions of Reach Docker images you are using by running
+
+@cmd{reach hashes}
+
 This is more precise, but less readable, than @exec{reach version},
 in that each hash refers to the git commit used to build the image.
 
