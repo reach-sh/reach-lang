@@ -118,6 +118,23 @@ It then
   }
 ]
 
+@exec{reach run} can be configured via the presence of certain files.
+In the absence of these files, @exec{reach run} assumes a default behavior based on @exec{reach scaffold}.
+
+@itemlist[
+  @item{
+    If a @litchar{Makefile} is present,
+    and if the @litchar{REACH_CONNECTOR_MODE} and @litchar{RUN_FROM_REACH} environment variables are unset or empty,
+    then @litchar{make run} will be invoked, with the @litchar{RUN_FROM_REACH} environment variable set to true.}
+  @item{
+    If a @litchar{Makefile}, @litchar{Dockerfile}, @litchar{package.json}, and @litchar{docker-compose.yml} are all present,
+    then these files will be used. You can call @exec{reach scaffold} to persist the default versions of these files.}
+  @item{
+    If only some of those files exist, but not all, then @litchar{reach run} will report an error.
+    Please delete them, or add the missing ones.}
+]
+
+
 @subsection[#:tag "ref-usage-scaffold"]{@tt{reach scaffold}}
 
 You can create template @exec{package.json}, @exec{Dockerfile}, @exec{docker-compose.yml}, and @exec{Makefile} files for a simple Reach app by running
@@ -152,4 +169,3 @@ You can see what version of Reach you have installed by running
 @include-section["ref-programs.scrbl"]
 @include-section["ref-networks.scrbl"]
 @include-section["ref-backends.scrbl"]
-
