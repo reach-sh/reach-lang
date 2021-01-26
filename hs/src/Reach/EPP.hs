@@ -275,7 +275,7 @@ epp_n st = \case
     let which = pst_prev_handler st
     let from_info =
           case more_chb of
-            True -> Just svs
+            True -> Just $ map (\x -> (x, DLA_Var x)) svs
             False -> Nothing
     updateHandlerSVS st which svs
     let mkp (ProRes_ cs_p et_p) =
@@ -385,7 +385,6 @@ epp_s st = \case
                   return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
             Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
               where
-                -- LLBlock _ _ delay_ss delaya = delayb
                 delayas = interval_from int_to
                 delay_cs_ = counts delayas
                 int_to = interval_add_from prev_int delaya

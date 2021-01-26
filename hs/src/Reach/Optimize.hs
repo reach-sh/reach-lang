@@ -13,6 +13,10 @@ import Reach.CollectCounts
 import Reach.Sanitize
 import Reach.Util
 
+import Reach.Texty
+import Reach.Pretty ()
+import Debug.Trace
+
 type App = ReaderT Env IO
 
 type AppT a = a -> App a
@@ -184,6 +188,7 @@ opt_m = \case
           case common of
             Just rt -> do
               rewrite dv rt
+              traceM $ "opt rm " <> (show $ pretty dv) <> " to " <> (show $ pretty rt)
               return $ DL_Nop at
             Nothing -> do
               remember dv e''
@@ -293,9 +298,17 @@ plopt_ct = \case
     where
       cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ plopt_ct t)
   CT_From at mvs ->
-    pure $ CT_From at mvs
+    CT_From at <$> opt_masn mvs
   CT_Jump at which vs asn ->
     CT_Jump at which <$> opt_vs vs <*> opt_asn asn
+
+opt_masn :: AppT (Maybe [(DLVar, DLArg)])
+opt_masn = \case
+  Nothing -> return $ Nothing
+  Just x -> Just <$> mapM go x
+  where
+    go (v, a) = (\x -> (v, x)) <$> opt_a a
+
 
 -- _U_pdate _C_ount_s_
 type UCST a = Counts -> a -> (Counts, a)

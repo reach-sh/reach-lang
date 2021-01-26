@@ -129,10 +129,10 @@ dk1 at_top ks s =
     DLS_Only at who ss ->
       DK_Only at who <$> lin_local at ss <*> dk_ at ks
     DLS_ToConsensus at send recv mtime -> do
-      let (last_timev, winner_dv, msg, amtv, timev, cs) = recv
+      let (winner_dv, msg, amtv, timev, cs) = recv
       let cs' = dk_ at (cs <> ks)
       let recv' =
-            (\x -> (last_timev, winner_dv, msg, amtv, timev, x)) <$> cs'
+            (\x -> (winner_dv, msg, amtv, timev, x)) <$> cs'
       let mtime' =
             case mtime of
               Just (delay_da, time_ss) ->
@@ -244,8 +244,8 @@ instance LiftCon a => LiftCon (Maybe a) where
 instance LiftCon z => LiftCon (a, z) where
   lc (a, z) = (\z' -> (a, z')) <$> lc z
 
-instance LiftCon z => LiftCon (a, b, c, d, e, z) where
-  lc (a, b, c, d, e, z) = (\z' -> (a, b, c, d, e, z')) <$> lc z
+instance LiftCon z => LiftCon (b, c, d, e, z) where
+  lc (b, c, d, e, z) = (\z' -> (b, c, d, e, z')) <$> lc z
 
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
@@ -379,8 +379,14 @@ df_con = \case
     LLC_Continue at <$> expandFromFVMap asn
   DK_Only at who body k ->
     LLC_Only at who body <$> df_con k
-  DK_FromConsensus at1 at2 t ->
-    LLC_FromConsensus at1 at2 <$> df_step t
+  DK_FromConsensus at1 at2 t -> do
+    -- This was formerly done inside of Eval.hs, but that meant that these refs
+    -- and sets would dominate the lifted ones in the step body, which defeats
+    -- the purpose of lifting fluid variable interactions, so we instead build
+    -- it into this pass
+    tct <- fluidRef FV_thisConsensusTime
+    fluidSet FV_lastConsensusTime tct $
+      LLC_FromConsensus at1 at2 <$> df_step t
   x -> df_com LLC_Com df_con x
 
 df_step :: DKTail -> DFApp LLStep
@@ -388,9 +394,13 @@ df_step = \case
   DK_Stop at -> return $ LLS_Stop at
   DK_Only at who body k -> LLS_Only at who body <$> df_step k
   DK_ToConsensus at send recv mtime -> do
-    let (a, b, c, d, e, k) = recv
+    let (b, c, d, e, k) = recv
+    let cvt = \case
+          DLA_Var v -> v
+          _ -> impossible $ "lct not a variable"
+    ltv <- fmap (cvt . snd) <$> fluidRefm FV_lastConsensusTime
     k' <- df_con k
-    let recv' = (a, b, c, d, e, k')
+    let recv' = (ltv, b, c, d, e, k')
     mtime' <-
       case mtime of
         Nothing -> return $ Nothing

@@ -2912,21 +2912,13 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   this_time_lifts <-
     doFluidSet ctxt st_recv at FV_thisConsensusTime $
       public $ SLV_DLVar time_dv
-  (last_time_mdv, last_time_lifts) <-
-    case st_after_first st of
-      True -> do
-        SLRes last_time_lifts _ last_time_dv <-
-          doFluidRef_dv ctxt at st FV_lastConsensusTime
-        return (Just last_time_dv, last_time_lifts)
-      False ->
-        return (Nothing, mempty)
   SLRes conlifts k_st k_cr <-
     keepLifts (balup <> this_time_lifts) $
       evalStmt ctxt at sco_recv st_recv' ks
-  let tc_recv = (last_time_mdv, winner_dv, msg_dvs, amt_dv, time_dv, conlifts)
+  let tc_recv = (winner_dv, msg_dvs, amt_dv, time_dv, conlifts)
   -- Prepare final result
   let the_tc = DLS_ToConsensus at tc_send tc_recv tc_mtime
-  let lifts' = send_lifts <> last_time_lifts <> (return $ the_tc)
+  let lifts' = send_lifts <> (return $ the_tc)
   return $ mtime_merge $ SLRes lifts' k_st k_cr
 
 srcloc2annot :: SrcLoc -> JSAnnot
@@ -3179,13 +3171,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               , st_after_first = True
               }
       let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
-      SLRes this_time_lifts _ this_time_v <-
-        doFluidRef ctxt at st FV_thisConsensusTime
-      time_lifts <-
-        doFluidSet ctxt st_step at FV_lastConsensusTime this_time_v
       SLRes steplifts k_st cr <-
-        keepLifts (this_time_lifts <> time_lifts) $
-          evalStmt ctxt at sco' st_step ks
+        evalStmt ctxt at sco' st_step ks
       let lifts' = (return $ DLS_FromConsensus at steplifts)
       return $ SLRes lifts' k_st cr
     _ ->

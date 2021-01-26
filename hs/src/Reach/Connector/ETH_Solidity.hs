@@ -388,13 +388,13 @@ solEventEmit _ctxt which hasArgument =
       True -> ["_a"]
       False -> []
 
-solHashStateSet :: SolCtxt -> [DLVar] -> ([Doc], Doc)
+solHashStateSet :: SolCtxt -> [(DLVar, DLArg)] -> ([Doc], Doc)
 solHashStateSet ctxt svs = (setl, sete)
   where
     sete = solHash [(solNum which), "nsvs"]
     which = ctxt_handler_num ctxt
     setl = [solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi] <> map go svs
-    go v = solSet ("nsvs." <> solRawVar v) (solVar ctxt v)
+    go (v, a) = solSet ("nsvs." <> solRawVar v) (solArg ctxt a)
 
 solHashStateCheck :: SolCtxt -> Int -> Doc
 solHashStateCheck _ctxt prev =
@@ -898,7 +898,8 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
                 , dli'
                 , consbody
                 ]
-            SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_))
+            csvs_m = map (\x -> (x, DLA_Var x)) csvs_
+            SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_m))
         DM_firstMsg ->
           -- XXX This is a hack... there are no constructor SVSs when the
           -- deployment mode is firstMsg, but rather than allow the rest of the

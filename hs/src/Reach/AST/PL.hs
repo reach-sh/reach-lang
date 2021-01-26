@@ -26,12 +26,16 @@ type PLTail = DLinTail PLVar
 
 type PLBlock = DLinBlock PLVar
 
+-- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
+-- like with M.toAscList
+type FromInfo = Maybe [(DLVar, DLArg)]
+
 data ETail
   = ET_Com PLCommon ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
-  | ET_FromConsensus SrcLoc Int (Maybe [DLVar]) ETail
+  | ET_FromConsensus SrcLoc Int FromInfo ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
@@ -67,7 +71,7 @@ data CTail
   = CT_Com PLCommon CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
-  | CT_From SrcLoc (Maybe [DLVar])
+  | CT_From SrcLoc FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq, Show)
 

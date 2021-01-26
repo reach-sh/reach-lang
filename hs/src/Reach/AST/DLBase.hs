@@ -53,6 +53,9 @@ dvdeletem = \case
   Nothing -> id
   Just x -> dvdelete x
 
+dvdeletep :: DLVar -> [(DLVar, a)] -> [(DLVar, a)]
+dvdeletep x = filter ((x /=) . fst)
+
 varType :: DLVar -> DLType
 varType (DLVar _ _ t _) = t
 

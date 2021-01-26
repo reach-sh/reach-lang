@@ -1014,7 +1014,7 @@ ct = \case
               ck = do
                 Env {..} <- ask
                 let timev = fromMaybe (impossible "no timev") emTimev
-                cstate HM_Set (dvdelete timev svs)
+                cstate HM_Set $ map snd $ dvdeletep timev svs
                 code "arg" [texty argNextSt]
                 eq_or_fail
 
@@ -1023,7 +1023,7 @@ data HashMode
   | HM_Check Int
   deriving (Eq, Show)
 
-cstate :: HashMode -> [DLVar] -> App ()
+cstate :: HashMode -> [DLArg] -> App ()
 cstate hm svs = do
   comment ("compute state in " <> texty hm)
   which <-
@@ -1035,7 +1035,7 @@ cstate hm svs = do
         return prev
   let go a = (argTypeOf a, ca a)
   let whicha w = DLA_Literal $ DLL_Int sb $ fromIntegral w
-  cdigest $ map go $ whicha which : map DLA_Var svs
+  cdigest $ map go $ whicha which : svs
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
@@ -1218,7 +1218,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             code "txn" ["NumArgs"]
             cl $ DLL_Int sb $ fromIntegral $ argCount
             eq_or_fail
-            cstate (HM_Check prev) (dvdeletem last_timemv svs)
+            cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
             code "arg" [texty argPrevSt]
             eq_or_fail
 

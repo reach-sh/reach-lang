@@ -21,6 +21,8 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 
+import Debug.Trace
+
 --- Pretty helpers
 
 sb :: SrcLoc
@@ -355,10 +357,13 @@ jsETail ctxt = \case
             )
           Just svs ->
             ( mkStDigest svs
-            , mkStDigest (dvdelete (fromMaybe (impossible "no timev") (ctxt_timev ctxt)) svs)
+            , (trace ("fc" <> show which <> " removing " <> (show $ pretty timev) <> " from " <> (show $ pretty svs) <> " to get " <> (show $ pretty svs')) (mkStDigest svs'))
             , jsCon $ DLL_Bool False
             )
-      mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map DLA_Var svs_))
+            where
+              timev = fromMaybe (impossible "no timev") (ctxt_timev ctxt)
+              svs' = dvdeletep timev svs
+      mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
   ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
@@ -419,7 +424,8 @@ jsETail ctxt = \case
                   , sim_body_core
                   , "return sim_r;"
                   ]
-              svs_noPrevTime = dvdeletem last_timemv svs
+              svs_noPrevTime_ = dvdeletem last_timemv svs
+              svs_noPrevTime = (trace ("tc" <> show which <> " removing " <> (show $ pretty last_timemv) <> " from " <> (show $ pretty svs) <> " to get " <> (show $ pretty svs_noPrevTime_)) svs_noPrevTime_)
               mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
               sim_body_core = jsETail ctxt'_sim k_ok
               ctxt'_sim = ctxt' {ctxt_simulate = True}

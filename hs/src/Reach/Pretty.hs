@@ -230,6 +230,10 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
+prettyToConsensus_ :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
+prettyToConsensus_ fa fb send (win, msg, amtv, tv, body) mtime =
+  prettyToConsensus fa fb send (Nothing, win, msg, amtv, tv, body) mtime
+
 prettyToConsensus :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
 prettyToConsensus fa fb send (ltv, win, msg, amtv, tv, body) mtime =
   "publish" <> parens emptyDoc
@@ -303,7 +307,7 @@ instance Pretty DLStmt where
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
-        prettyToConsensus render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
+        prettyToConsensus_ render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -385,7 +389,7 @@ instance Pretty DKTail where
     DK_Stop _ -> prettyStop
     DK_Only _ who body k -> prettyOnlyK who body k
     DK_ToConsensus {..} ->
-      prettyToConsensus pretty pretty dk_tc_send dk_tc_recv dk_tc_mtime
+      prettyToConsensus_ pretty pretty dk_tc_send dk_tc_recv dk_tc_mtime
     DK_If _at ca t f -> prettyIfp ca t f
     DK_Switch _at ov csm -> prettySwitch ov csm
     DK_FromConsensus _at _ret_at k ->
@@ -461,7 +465,7 @@ instance Pretty ETail where
         where
           msvs' = case msvs of
             Nothing -> emptyDoc
-            Just svs -> cm $ map pretty svs
+            Just svs -> pretty svs
           whichp = viaShow which
       ET_ToConsensus _ fs prev last_timev which msend msg amtv timev mtime k ->
         "sendrecv" <+> fsp <+> prevp <+> pretty last_timev <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <+> pretty timev <> timep <> ns (pretty k)

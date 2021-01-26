@@ -21,7 +21,7 @@ data DKTail
   | DK_ToConsensus
       { dk_tc_at :: SrcLoc
       , dk_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , dk_tc_recv :: (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, DKTail)
+      , dk_tc_recv :: (DLVar, [DLVar], DLVar, DLVar, DKTail)
       , dk_tc_mtime :: Maybe (DLArg, DKTail)
       }
   | DK_If SrcLoc DLArg DKTail DKTail
