@@ -34,13 +34,13 @@ export const main =
       Pollster.publish(ticketPrice, deadline, aliceAddr, bobAddr);
 
       const endTime = lastConsensusTime() + deadline;
-      const computeTimeRemaining = () =>
+      const timeRemaining = () =>
         (endTime - lastConsensusTime());
 
-      const [ timeRemaining, forA, forB ] =
-        parallel_reduce([ computeTimeRemaining(), 0, 0])
+      const [ forA, forB ] =
+        parallel_reduce([ 0, 0])
         .invariant(balance() == (forA + forB) * ticketPrice)
-        .while( timeRemaining > 0 )
+        .while( timeRemaining() > 0 )
         .case(Voter, (() => ({
             msg: declassify(interact.getVote()),
             when: declassify(interact.shouldVote()),
@@ -50,11 +50,11 @@ export const main =
             const voter = this;
             Voter.only(() => interact.voterWas(voter));
             const [ nA, nB ] = forAlice ? [ 1, 0 ] : [ 0, 1 ];
-            return [ computeTimeRemaining(), forA + nA, forB + nB ]; }))
-        .timeout(timeRemaining, () => {
+            return [ forA + nA, forB + nB ]; }))
+        .timeout(timeRemaining(), () => {
           race(Pollster, Voter).publish();
           showOutcome(TIMEOUT, forA, forB)();
-          return [ 0, forA, forB ]; });
+          return [ forA, forB ]; });
 
       const outcome = forA >= forB ? ALICE_WINS : BOB_WINS;
       const winner = outcome == ALICE_WINS ? aliceAddr : bobAddr;
