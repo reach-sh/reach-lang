@@ -52,7 +52,7 @@ contract ReachContract is Stdlib {
   struct a2postsvs {
     uint256 v4;
     address payable v3;
-    uint256 v24;
+    uint256 v22;
      }
   
   struct a1postsvs {
@@ -85,8 +85,6 @@ contract ReachContract is Stdlib {
     require((msg.value == uint256(0)));
     
     
-    
-    
     emit e1(_a);
     a1postsvs memory nsvs;
     nsvs.v11 = uint256(block.number);
@@ -112,20 +110,18 @@ contract ReachContract is Stdlib {
     require((msg.value == _a.svs.v4));
     
     
-    
-    
     emit e2(_a);
     a2postsvs memory nsvs;
     nsvs.v4 = _a.svs.v4;
     nsvs.v3 = _a.svs.v3;
-    nsvs.v24 = uint256(block.number);
+    nsvs.v22 = uint256(block.number);
     current_state = uint256(keccak256(abi.encode(uint256(2), nsvs)));
     
      }
   
   
   struct a3msg {
-    uint8[128] v30;
+    uint8[128] v26;
      }
   struct a3 {
     a2postsvs svs;
@@ -148,7 +144,6 @@ contract ReachContract is Stdlib {
     
     
     _a.svs.v3.transfer(_a.svs.v4);
-    
     
     
     
