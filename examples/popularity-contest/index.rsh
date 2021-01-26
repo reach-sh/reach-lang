@@ -36,11 +36,13 @@ export const main =
       const endTime = lastConsensusTime() + deadline;
       const timeRemaining = () =>
         (endTime - lastConsensusTime());
+      const keepGoing = () =>
+        (endTime > lastConsensusTime());
 
       const [ forA, forB ] =
         parallel_reduce([ 0, 0])
         .invariant(balance() == (forA + forB) * ticketPrice)
-        .while( timeRemaining() > 0 )
+        .while( keepGoing() )
         .case(Voter, (() => ({
             msg: declassify(interact.getVote()),
             when: declassify(interact.shouldVote()),
