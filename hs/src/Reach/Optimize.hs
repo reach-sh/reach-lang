@@ -13,9 +13,9 @@ import Reach.CollectCounts
 import Reach.Sanitize
 import Reach.Util
 
-import Reach.Texty
-import Reach.Pretty ()
-import Debug.Trace
+-- import Reach.Texty
+-- import Reach.Pretty ()
+-- import Debug.Trace
 
 type App = ReaderT Env IO
 
@@ -188,7 +188,6 @@ opt_m = \case
           case common of
             Just rt -> do
               rewrite dv rt
-              traceM $ "opt rm " <> (show $ pretty dv) <> " to " <> (show $ pretty rt)
               return $ DL_Nop at
             Nothing -> do
               remember dv e''

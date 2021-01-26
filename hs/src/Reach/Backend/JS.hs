@@ -21,7 +21,7 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 
-import Debug.Trace
+-- import Debug.Trace
 
 --- Pretty helpers
 
@@ -357,7 +357,7 @@ jsETail ctxt = \case
             )
           Just svs ->
             ( mkStDigest svs
-            , (trace ("fc" <> show which <> " removing " <> (show $ pretty timev) <> " from " <> (show $ pretty svs) <> " to get " <> (show $ pretty svs')) (mkStDigest svs'))
+            , mkStDigest svs'
             , jsCon $ DLL_Bool False
             )
             where
@@ -424,8 +424,7 @@ jsETail ctxt = \case
                   , sim_body_core
                   , "return sim_r;"
                   ]
-              svs_noPrevTime_ = dvdeletem last_timemv svs
-              svs_noPrevTime = (trace ("tc" <> show which <> " removing " <> (show $ pretty last_timemv) <> " from " <> (show $ pretty svs) <> " to get " <> (show $ pretty svs_noPrevTime_)) svs_noPrevTime_)
+              svs_noPrevTime = dvdeletem last_timemv svs
               mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
               sim_body_core = jsETail ctxt'_sim k_ok
               ctxt'_sim = ctxt' {ctxt_simulate = True}
