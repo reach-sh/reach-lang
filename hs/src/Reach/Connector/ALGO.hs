@@ -1,5 +1,6 @@
 module Reach.Connector.ALGO (connect_algo) where
 
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64')
@@ -31,7 +32,89 @@ import Reach.Util
 import Safe (atMay)
 import Text.Read
 
--- import Debug.Trace
+import Debug.Trace
+
+-- Variable substitution
+type SubstEnv = M.Map DLVar DLVar
+type SubstApp = ReaderT SubstEnv Identity
+type SubstT a = a -> SubstApp a
+
+class Subst a where
+  subst :: SubstT a
+
+instance (Traversable f, Subst a) => Subst (f a) where
+  subst = traverse subst
+
+instance Subst DLVar where
+  subst v = do
+    m <- ask
+    return $ fromMaybe v $ M.lookup v m
+
+instance Subst DLArg where
+  subst = \case
+    DLA_Var v -> DLA_Var <$> subst v
+    x -> return x
+
+instance Subst DLLargeArg where
+  subst = \case
+    DLLA_Array t as -> DLLA_Array t <$> subst as
+    DLLA_Tuple as -> DLLA_Tuple <$> subst as
+    DLLA_Obj m -> DLLA_Obj <$> subst m
+    DLLA_Data t v a -> DLLA_Data t v <$> subst a
+
+instance Subst DLExpr where
+  subst = \case
+    DLE_Arg at a -> DLE_Arg at <$> subst a
+    DLE_LArg at a -> DLE_LArg at <$> subst a
+    e@(DLE_Impossible {}) -> return $ e
+    DLE_PrimOp at p as -> DLE_PrimOp at p <$> subst as
+    DLE_ArrayRef at a b -> DLE_ArrayRef at <$> subst a <*> subst b
+    DLE_ArraySet at a b c -> DLE_ArraySet at <$> subst a <*> subst b <*> subst c
+    DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> subst a <*> subst b
+    DLE_ArrayZip at a b -> DLE_ArrayZip at <$> subst a <*> subst b
+    DLE_TupleRef at x y -> DLE_TupleRef at <$> subst x <*> pure y
+    DLE_ObjectRef at x y -> DLE_ObjectRef at <$> subst x <*> pure y
+    DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> subst f
+    DLE_Digest at as -> DLE_Digest at <$> subst as
+    DLE_Claim a b c d e -> DLE_Claim a b c <$> subst d <*> pure e
+    DLE_Transfer at x y -> DLE_Transfer at <$> subst x <*> subst y
+    DLE_Wait at x -> DLE_Wait at <$> subst x
+    DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
+
+instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
+  subst = \case
+    DL_Nop at -> return $ DL_Nop at
+    DL_Let at v de -> DL_Let at v <$> subst de
+    DL_ArrayMap at x a v bl ->
+      DL_ArrayMap at x <$> subst a <*> pure v <*> subst bl
+    DL_ArrayReduce at x a b u v bl ->
+      DL_ArrayReduce at x <$> subst a <*> subst b <*> pure u <*> pure v <*> subst bl
+    DL_Var at v -> return $ DL_Var at v
+    DL_Set at v a -> DL_Set at v <$> subst a
+    DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
+    DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
+
+instance {-# OVERLAPPING #-} Subst (DLinTail a) where
+  subst = \case
+    DT_Return at -> return $ DT_Return at
+    DT_Com m k -> DT_Com <$> subst m <*> subst k
+
+instance {-# OVERLAPPING #-} Subst (DLinBlock a) where
+  subst (DLinBlock at fs t a) = DLinBlock at fs <$> subst t <*> subst a
+
+instance Subst DLAssignment where
+  subst (DLAssignment m) = DLAssignment <$> subst m
+
+instance Subst CTail where
+  subst = \case
+    CT_Com m k -> CT_Com <$> subst m <*> subst k
+    CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f
+    CT_Switch at v csm -> CT_Switch at <$> subst v <*> subst csm
+    CT_From at msvs -> CT_From at <$> subst msvs
+    CT_Jump at which svs asn -> CT_Jump at which <$> subst svs <*> subst asn
+
+subst_ :: Subst a => SubstEnv -> a -> a
+subst_ rho x = runIdentity $ flip runReaderT rho $ subst x
 
 -- General tools that could be elsewhere
 
@@ -164,6 +247,7 @@ render ts = tt
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
   , sFailedR :: IORef Bool
+  , sCounterR :: IORef Int
   }
 
 type Lets = M.Map DLVar (App ())
@@ -185,6 +269,14 @@ data Env = Env
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
 -- really annoying to have the world parameter
 type App = ReaderT Env IO
+
+allocVar :: DLVar -> App DLVar
+allocVar (DLVar at s t _) = do
+  Env {..} <- ask
+  let Shared {..} = eShared
+  idx <- liftIO $ readIORef sCounterR
+  liftIO $ modifyIORef sCounterR (1 +)
+  return $ DLVar at s t idx
 
 output :: TEAL -> App ()
 output t = do
@@ -882,32 +974,31 @@ ct = \case
               case find ((== v) . snd) lcvars of
                 Nothing -> impossible $ "no loop var"
                 Just (lc, _) -> lc
-        --let llc _ = PL_Many
-        let wrap1_ (store_lets, vs) (v, a) =
-              case llc v of
-                PL_Many -> do
-                  return $ (store_lets, m : vs)
-                  where
-                    m = DL_Let at (PV_Let PL_Many v) (DLE_Arg at a)
-                PL_Once -> do
-                  sm <- argSmall a
-                  cad <- freeze $ ca a
-                  let store_lets' = store_let v sm cad
-                  return $ (store_lets' . store_lets, vs)
-        let wrap1 (store_lets, vs) (v, a) =
-              wrap1_ (store_lets' . store_lets, vs) (v, a)
-              where
-                store_lets' =
-                  case a == DLA_Var timev of
-                    True -> local (\e -> e {emTimev = Just v})
-                    False -> id
-        let wrap :: App ((App a -> App a), [PLCommon])
-            wrap = foldM wrap1 (id, []) (M.toList asnm)
-        (store_lets, vs) <- wrap
-        let t' = foldl (flip CT_Com) t vs
-        store_lets $
-          local (\e -> e {eWhich = which}) $ do
-            ct t'
+        rhor <- liftIO $ newIORef mempty
+        ntvr <- liftIO $ newIORef Nothing
+        let go (v, a) = do
+              v' <- allocVar v
+              liftIO $ modifyIORef rhor (M.insert v v')
+              when (a == DLA_Var timev) $ do
+                liftIO $ writeIORef ntvr $ Just v
+              let lc = llc v
+              let de = DLE_Arg at a
+              let m = DL_Let at (PV_Let lc v') de
+              return m
+        nms <- mapM go $ M.toList asnm
+        rho <- liftIO $ readIORef rhor
+        let t_subst = subst_ rho t
+        ntv <- liftIO $ readIORef ntvr
+        let new_timev = fromMaybe (impossible "no new_timev") ntv
+        let t_subst' = foldl (flip CT_Com) t_subst nms
+        traceM $ ""
+        traceM $ "jump " <> (show which)
+        traceM $ ""
+        traceM $ show $ pretty t_subst'
+        traceM $ ""
+        local (\e -> e { eWhich = which
+                       , emTimev = Just new_timev }) $ do
+          ct t_subst'
       _ ->
         impossible "bad jump"
   CT_From _ msvs -> do
@@ -1184,6 +1275,7 @@ compile_algo disp pl = do
   resr <- newIORef mempty
   let sHandlers = hm
   sFailedR <- newIORef False
+  sCounterR <- newIORef plo_counter
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)

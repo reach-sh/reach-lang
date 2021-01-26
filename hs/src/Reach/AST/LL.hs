@@ -47,6 +47,7 @@ data LLStep
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
   , llo_verifyOverflow :: Bool
+  , llo_counter :: Int
   }
   deriving (Generic, Eq, Show)
 

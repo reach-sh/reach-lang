@@ -404,12 +404,14 @@ defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyOverflow = dlo_verifyOverflow
-  let opts' = LLOpts {..}
   eCounterR <- newIORef dlo_counter
   let eFVMm = mempty
   let eFVE = mempty
-  flip runReaderT (DFEnv {..}) $
-    LLProg at opts' sps dli <$> df_step k
+  flip runReaderT (DFEnv {..}) $ do
+    k' <- df_step k
+    llo_counter <- liftIO $ readIORef eCounterR
+    let opts' = LLOpts {..}
+    return $ LLProg at opts' sps dli k'
 
 -- Stich it all together
 linearize :: (forall a . Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg

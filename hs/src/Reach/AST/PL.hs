@@ -111,6 +111,7 @@ newtype EPPs = EPPs (M.Map SLPart EPProg)
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
   , plo_verifyOverflow :: Bool
+  , plo_counter :: Int
   }
   deriving (Generic, Eq, Show)
 

@@ -468,4 +468,5 @@ epp (LLProg at (LLOpts {..}) ps dli s) = runST $ do
   let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
   let plo_deployMode = llo_deployMode
   let plo_verifyOverflow = llo_verifyOverflow
+  let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli pps cp
