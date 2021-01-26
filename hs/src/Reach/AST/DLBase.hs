@@ -4,10 +4,10 @@ module Reach.AST.DLBase where
 
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
+import Data.List
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
-import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 
 data DeployMode
@@ -29,8 +29,25 @@ data DLType
   | T_Data (M.Map SLVar DLType)
   deriving (Eq, Generic, NFData, Ord)
 
+showTys :: Show a => [a] -> String
+showTys = intercalate ", " . map show
+
+showTyMap :: Show a => M.Map SLVar a -> String
+showTyMap = intercalate ", " . map showPair . M.toList
+  where
+    showPair (name, ty) = show name <> ": " <> show ty
+
 instance Show DLType where
-  show = show . dt2st
+  show T_Null = "Null"
+  show T_Bool = "Bool"
+  show T_UInt = "UInt"
+  show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
+  show T_Digest = "Digest"
+  show T_Address = "Address"
+  show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
+  show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
+  show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
 
 -- Interact types can only be value types or first-order function types
 data IType
@@ -68,41 +85,6 @@ data DLVar = DLVar SrcLoc String DLType Int
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
-
-st2dt :: HasCallStack => SLType -> Maybe DLType
-st2dt = \case
-  ST_Null -> pure T_Null
-  ST_Bool -> pure T_Bool
-  ST_UInt -> pure T_UInt
-  ST_Bytes i -> pure $ T_Bytes i
-  ST_Digest -> pure T_Digest
-  ST_Address -> pure T_Address
-  ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
-  ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
-  ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
-  ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
-  ST_Fun {} -> Nothing
-  ST_Forall {} -> Nothing
-  ST_Var {} -> Nothing
-  ST_Type {} -> Nothing
-
-dt2st :: DLType -> SLType
-dt2st = \case
-  T_Null -> ST_Null
-  T_Bool -> ST_Bool
-  T_UInt -> ST_UInt
-  T_Bytes i -> ST_Bytes i
-  T_Digest -> ST_Digest
-  T_Address -> ST_Address
-  T_Array ty i -> ST_Array (dt2st ty) i
-  T_Tuple tys -> ST_Tuple (map dt2st tys)
-  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
-  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
-
-st2it :: SLType -> Maybe IType
-st2it t = case t of
-  ST_Fun dom rng -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
-  _ -> IT_Val <$> st2dt t
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)

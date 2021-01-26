@@ -279,28 +279,6 @@ output t = do
   Env {..} <- ask
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
 
-outputs :: TEALs -> App ()
-outputs ts = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eOutputR (<> ts)
-
-freeze :: App a -> App (App a)
-freeze m = do
-  eOutputR' <- liftIO $ newIORef mempty
-  sFailedR' <- liftIO $ newIORef False
-  Env {..} <- ask
-  let eShared' = eShared { sFailedR = sFailedR' }
-  ans <- local (\e -> e { eOutputR = eOutputR'
-                        , eShared = eShared' }) m
-  ts <- liftIO $ readIORef eOutputR'
-  didFail <- liftIO $ readIORef sFailedR'
-  -- Something frozen is only bad if it is actually executed
-  let maybe_bad =
-        case didFail of
-          True -> bad_
-          False -> return ()
-  return $ maybe_bad >> outputs ts >> return ans
-
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
 

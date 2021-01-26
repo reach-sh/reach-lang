@@ -8,12 +8,128 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 import GHC.Generics
+import GHC.Stack (HasCallStack)
 import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Util
+
+-- SL types are a superset of DL types.
+-- We copy/paste constructors instead of using `ST_Val DLType`
+--  because some things can exist in SL that do not exist in DL,
+--  such as an object whose fields are functions.
+data SLType
+  = ST_Null
+  | ST_Bool
+  | ST_UInt
+  | ST_Bytes Integer
+  | ST_Digest
+  | ST_Address
+  | ST_Array SLType Integer
+  | ST_Tuple [SLType]
+  | ST_Object (M.Map SLVar SLType)
+  | ST_Data (M.Map SLVar SLType)
+  | ST_Fun [SLType] SLType
+  | ST_Forall SLVar SLType
+  | ST_Var SLVar
+  | ST_Type SLType
+  deriving (Eq, Generic, NFData, Ord)
+
+-- | Fold over SLType, doing something special on Fun
+funFold
+  :: a -- ^ On no Fun inside
+  -> ([SLType] -> a) -- ^ On many DLType inside
+  -> ([SLType] -> SLType -> a) -- ^ On Fun
+  -> SLType -- ^ The type to fold over
+  -> a
+funFold z k fun = go
+  where
+    go = \case
+      ST_Null -> z
+      ST_Bool -> z
+      ST_UInt -> z
+      ST_Bytes _ -> z
+      ST_Digest -> z
+      ST_Address -> z
+      ST_Fun inTys outTy -> fun inTys outTy
+      ST_Array ty _ -> go ty
+      ST_Tuple tys -> k tys
+      ST_Object m -> k $ M.elems m
+      ST_Data m -> k $ M.elems m
+      ST_Forall _ ty -> go ty
+      ST_Var _ -> z
+      ST_Type _ -> z
+
+-- | True if the type is a Fun, or
+-- is a container/forall type with Fun somewhere inside
+hasFun :: SLType -> Bool
+hasFun = funFold z k fun
+  where
+    z = False
+    k = any hasFun
+    fun _ _ = True
+
+-- | True if all Function types within this type
+-- do not accept or return functions.
+isFirstOrder :: SLType -> Bool
+isFirstOrder = funFold z k fun
+  where
+    z = True
+    k = all isFirstOrder
+    fun inTys outTy = not $ any hasFun $ outTy : inTys
+
+st2dt :: HasCallStack => SLType -> Maybe DLType
+st2dt = \case
+  ST_Null -> pure T_Null
+  ST_Bool -> pure T_Bool
+  ST_UInt -> pure T_UInt
+  ST_Bytes i -> pure $ T_Bytes i
+  ST_Digest -> pure T_Digest
+  ST_Address -> pure T_Address
+  ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
+  ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
+  ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
+  ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
+  ST_Fun {} -> Nothing
+  ST_Forall {} -> Nothing
+  ST_Var {} -> Nothing
+  ST_Type {} -> Nothing
+
+dt2st :: DLType -> SLType
+dt2st = \case
+  T_Null -> ST_Null
+  T_Bool -> ST_Bool
+  T_UInt -> ST_UInt
+  T_Bytes i -> ST_Bytes i
+  T_Digest -> ST_Digest
+  T_Address -> ST_Address
+  T_Array ty i -> ST_Array (dt2st ty) i
+  T_Tuple tys -> ST_Tuple (map dt2st tys)
+  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
+  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
+
+st2it :: SLType -> Maybe IType
+st2it t = case t of
+  ST_Fun dom rng -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
+  _ -> IT_Val <$> st2dt t
+
+instance Show SLType where
+  show ST_Null = "Null"
+  show ST_Bool = "Bool"
+  show ST_UInt = "UInt"
+  show (ST_Bytes sz) = "Bytes(" <> show sz <> ")"
+  show ST_Digest = "Digest"
+  show ST_Address = "Address"
+  show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
+  show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
+  show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+  show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
+  show (ST_Var x) = show x
+  show (ST_Type ty) = "Type(" <> show ty <> ")"
 
 infixr 9 -->
 
