@@ -2,6 +2,8 @@
 
 const N = 2;
 
+const mtArr = Array.replicate(N, 0);
+
 /**
  * ===================================================
  * Value function
@@ -85,62 +87,6 @@ const N = 2;
  *
  * This function performs a swap for a Trader.
  */
-const TradeOutGivenInArgs = Object({
-  outToken : UInt,
-  inToken  : UInt,
-  amtIn    : UInt,
-});
-
-
-/**
- * ===================================================
- * Trading: In-Given-Out
- * ===================================================
- *
- * It's also useful for traders to know how much to send of
- * tokenIn to get a desired amount of tokenOut. We can calc
- * that by the same formula above, but solving for amtOut:
- *
- * let v = balanceOut / (balanceOut / amtOut)
- * let w = weightOut / weightIn
- * let u = v ** w
- * let t = u - 1
- * in
- * amtIn = balanceIn * t
- *
- * This function just returns info to Trader.
- */
-const CalcInGivenOutArgs = Object({
-  inToken  : UInt,
-  outToken : UInt,
-  amtOut   : UInt,
-});
-
-
-/**
- * ===================================================
- * Trading: In-Given-Price
- * ===================================================
- *
- * Traders who want to take advantage of arbitrage would like
- * to know how many tokenIn they will have to send to change
- * spot price of SPio to a desired SP'io. The formula to
- * calc it is:
- *
- * let v = SP'io / SPio
- * let w = weightOut / (weightOut + weightIn)
- * let u = v ** w
- * let t = u - 1
- * in
- * amtIn = balanceIn * t
- *
- * This function just returns info to Trader.
- */
-const CalcInGivenPriceArgs = Object({
-  inToken   : UInt,
-  outToken  : UInt,
-  desiredSP : UInt,
-});
 
 /**
  * ===================================================
@@ -167,9 +113,6 @@ const CalcInGivenPriceArgs = Object({
  * pIssued = t - pSupply
  *
  */
-const AllAssetDepositArgs = Object({
-  amtIns : Array(UInt, N),
-});
 
 /**
  * ===================================================
@@ -187,9 +130,6 @@ const AllAssetDepositArgs = Object({
  *
  * balanceK: balance of token k before withdrawal
  */
-const AllAssetWithdrawalArgs = Object({
-  liquidity: UInt,
-});
 
 /**
  * ===================================================
@@ -224,10 +164,6 @@ const AllAssetWithdrawalArgs = Object({
  * t : token used in single deposit
  *
  */
-const singleAssetDepositArgs = Object({
-  amtInToken : UInt,
-  amtIn      : UInt,
-});
 
 /**
  * ===================================================
@@ -243,10 +179,6 @@ const singleAssetDepositArgs = Object({
  * balanceT: balance of token before withdrawal
  *
  */
-const singleAssetWithdrawalArgs = Object({
-  liquidity : UInt,
-  outToken  : UInt,
-});
 
 const getReserves = (market) =>
   market.tokens.map(t => t.balance);
@@ -263,7 +195,7 @@ const swap = (amtIns, amtOuts, to, tokens, market) => {
     assert(amtOut < reserve, "Insufficient liquidity"));
 
   // Transfer the given amount of tokens
-  // XXX: Feature - Pay in a specified token
+  // XXX Feature - Pay in a specified token
   Array.zip(tokens, amtOuts)
     .forEach(([ tok, amtOut ]) =>
       transfer(amtOut).currency(tok).to(to));
@@ -299,6 +231,67 @@ const getSpotPrice = (i, o, swapFee) => {
   return sp * (1 / (1 - swapFee));
 }
 
+
+/**
+ * ===================================================
+ * Trading: In-Given-Out
+ * ===================================================
+ *
+ * It's also useful for traders to know how much to send of
+ * tokenIn to get a desired amount of tokenOut. We can calc
+ * that by the same formula above, but solving for amtOut:
+ *
+ * let v = balanceOut / (balanceOut / amtOut)
+ * let w = weightOut / weightIn
+ * let u = v ** w
+ * let t = u - 1
+ * in
+ * amtIn = balanceIn * t
+ *
+ * This function just returns info to Trader.
+ */
+export const calcInGivenOut = ({ balanceIn, balanceOut, weightIn, weightOut, amtOut }) => {
+
+  const v = balanceOut / (balanceOut / amtOut);
+  const w = weightOut / weightIn;
+  const u = v ** w;
+
+  return balanceIn * (u - 1) * (1 / (1 - swapFee));
+}
+
+
+/**
+ * ===================================================
+ * Trading: In-Given-Price
+ * ===================================================
+ *
+ * Traders who want to take advantage of arbitrage would like
+ * to know how many tokenIn they will have to send to change
+ * spot price of SPio to a desired SP'io. The formula to
+ * calc it is:
+ *
+ * let v = SP'io / SPio
+ * let w = weightOut / (weightOut + weightIn)
+ * let u = v ** w
+ * let t = u - 1
+ * in
+ * amtIn = balanceIn * t
+ *
+ * This function just returns info to Trader.
+ */
+export const calcInGivenPrice = ({ balanceIn, balanceOut, weightIn, weightOut, desiredSP }) => {
+
+  const curSP = getSpotPrice(
+    { balance: balanceIn, weight: weightIn },
+    { balance: balanceOut, weight: weightOut },
+    swapFee);
+
+  const u = weightOut / (weightOut + weightIn);
+  const t = (desiredSP / curSP) ** u;
+
+  return balanceIn * (t - 1);
+}
+
 const updateMarket = (market, amtIns, amtOuts) => ({
   params: market.params,
   tokens: Array.zip( market.tokens, Array.zip(amtIns, amtOuts) )
@@ -310,25 +303,47 @@ const updateMarket = (market, amtIns, amtOuts) => ({
 });
 
 const participants = [
+  // XXX feature: new interface for foreign to reach:
+  //  Participant/Class(name, interactInterface, foreignToReachInteractInterface);
   Participant('Admin', {
-    getParams : Fun([], {
-      formulaValuation: UInt,
-      totalWeight: UInt,        // Weight all token ratios should add up to
-      weights: Array(N, UInt),  // Weight for each token
-      swapFee: UInt,
+      getParams : Fun([], {
+        formulaValuation: UInt,
+        // Weight all token ratios should add up to
+        totalWeight: UInt,
+        // Weight for each token
+        weights: Array(N, UInt),
+        swapFee: UInt,
+      }),
+    }, {
+      closePool: Fun([], Null),
     }),
-    shouldClosePool: Fun([], Bool),
+  Class('Provider', {}, {
+    allAssetDeposit:
+      Fun([Object({
+        amtIns : Array(UInt, N) })],
+        Null),
+    allAssetWithdrawal:
+      Fun([Object({
+        liquidity: UInt })],
+        Null),
+    singleAssetDeposit:
+      Fun([Object({
+        amtInToken : UInt,
+        amtIn      : UInt })],
+        Null),
+    singleAssetWithdrawal:
+      Fun([Object({
+        liquidity : UInt,
+        outToken  : UInt })],
+        Null),
   }),
-  Class('Provider', {
-    allAssetDeposit       : Fun([AllAssetDepositArgs], Null),
-    allAssetWithdrawal    : Fun([AllAssetWithdrawalArgs], Null),
-    singleAssetDeposit    : Fun([singleAssetDepositArgs], Null),
-    singleAssetWithdrawal : Fun([singleAssetWithdrawalArgs], Null),
-  }),
-  Class('Trader', {
-    tradeOutGivenIn : Fun([TradeOutGivenInArgs], Null),
-    calcInGivenOut  : Fun([CalcInGivenOutArgs], UInt),
-    calcInGivenPrice: Fun([CalcInGivenPriceArgs], UInt),
+  Class('Trader', {}, {
+    tradeOutGivenIn:
+      Fun([Object({
+        outToken : UInt,
+        inToken  : UInt,
+        amtIn    : UInt })],
+      Null),
   }),
   Array(Token, N),
   MintedToken,
@@ -352,78 +367,37 @@ export const main =
         tokens: weights.map(w => ({ balance: 0, weight: w })),
       };
 
-      const [ alive, pool, market ] =
+      // XXX Feature: Make these variables available to front-end.
+      // This functionality will allow for users to get info they
+      // need to call helper functions (calcInGivenPrice, calcInGivenOut)
+      // and access info like weights, balances etc.
+      //
+      // https://trello.com/c/1dOhkM9h/633-have-the-backend-expose-all-non-app-values-like-numbers-etc
+      export const [ alive, pool, market ] =
         parallel_reduce([ true, initialPool, initialMarket ])
           .invariant(alive || pool.totalSupply() > 0)
           .while(true)
           // Admin functionality
           .case(Admin,
             (() => ({
-              exposeAs: "closePool",
-              when: declassify(interact.shouldClosePool())
+              implements: interact.closePool,
             })),
             (() => [ false, pool, market ]),
            )
-          // Trader Functionality
-          // XXX : This is just to give client info as
-          // opposed to contributing to the parallel reduce
-          // accumulator. How should this be handled? It
-          // needs to access market.
           .case(Trader,
             (() => ({
-              exposeAs: "calcInGivenPrice",
-              msg: declassify(interact.calcInGivePrice())
+              // XXX Feature: `implements`
+              // Foreign2Reach interact interface methods must be implemented.
+              // `implements` infers:
+              //  * The method that is implemented is foreign due to the
+              //    interface its in
+              //  * An implemented method from the foreign interface
+              //    should be always be `exposedAs: <name>`
+              //  * The `msg` argument is the type of function args
+              implements: interact.tradeOutGivenIn,
+              when: alive,
             })),
-            (({ inToken, outToken, desiredSP }) => {
-              const tokenOut = market.tokens[outToken];
-              const tokenIn  = market.tokens[inToken];
-
-              const weightOut = market.weights[outToken];
-              const weightIn  = market.weights[inToken];
-
-              const balanceIn = tokenIn.balance;
-
-              const curSP = getSpotPrice(tokenIn, tokenOut, swapFee);
-
-              const u = weightOut / (weightOut + weightIn);
-              const t = (desiredSP / curSP) ** u;
-
-              return balanceIn * (t - 1);
-            }),
-           )
-          // XXX Just gives client info as well
-          .case(Trader,
-            (() => ({
-              exposeAs: "calcInGivenOut",
-              msg: declassify(interact.calcInGivenOut())
-            })),
-            (({ inToken, outToken, amtOut }) => {
-              const tokenOut = market.tokens[outToken];
-              const tokenIn  = market.tokens[inToken];
-
-              const weightOut = market.weights[outToken];
-              const weightIn  = market.weights[inToken];
-
-              const balanceOut = tokenOut.balance;
-              const balanceIn  = tokenIn.balance;
-
-              const v = balanceOut / (balanceOut / amtOut);
-              const w = weightOut / weightIn;
-              const u = v ** w;
-
-              // XXX : This is just to give client info as
-              // opposed to contributing to the parallel reduce
-              // accumulator. How should this be handled? It
-              // needs to access market.
-              return balanceIn * (u - 1) * (1 / (1 - swapFee));
-            }),
-           )
-          .case(Trader,
-            (() => ({
-              exposeAs: "tradeOutGivenIn",
-              msg: declassify(interact.tradeOutGivenIn()),
-            })),
-            (({ amtIn, inToken }) => [ inToken, amtIn ]),
+            (({ amtIn, inToken }) => [ [ inToken, amtIn ] ]),
             (({ amtIn, inToken, outToken }) => {
 
               const tokenIn   = market.tokens[inToken];
@@ -449,8 +423,7 @@ export const main =
           // Provider functionality
           .case(Provider,
             (() => ({
-              exposeAs: "allAssetDeposit",
-              msg: declassify(interact.allAssetDeposit()),
+              implements: interact.allAssetDeposit,
               when: alive,
             })),
             (({ amtIns }) => tokens.zip(amtIns) ),
@@ -474,8 +447,7 @@ export const main =
            )
            .case(Provider,
             (() => ({
-              exposeAs: "allAssetWithdrawal",
-              msg: declassify(interact.allAssetWithdrawal()),
+              implements: interact.allAssetWithdrawal,
               when: alive,
             })),
             (({ liquidity }) => {
@@ -504,8 +476,7 @@ export const main =
            )
            .case(Provider,
             (() => ({
-              exposeAs: "singleAssetDeposit",
-              msg: declassify(interact.singleAssetDeposit()),
+              implements: interact.singleAssetDeposit,
               when: alive,
             })),
             (({ amtIn, amtInToken }) => [ [ amtInToken, amtIn ] ] ),
@@ -533,8 +504,7 @@ export const main =
            )
            .case(Provider,
             (() => ({
-              exposeAs: "singleAssetWithdrawal",
-              msg: declassify(interact.singleAssetWithdrawal()),
+              implements: interact.singleAssetWithdrawal,
               when: alive,
             })),
             (({ liquidity, outToken }) => {
