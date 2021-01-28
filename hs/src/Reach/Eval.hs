@@ -142,21 +142,7 @@ displaySlValType = \case
       Nothing -> "<" <> conNameOf sv <> ">"
 
 displayTy :: DLType -> String
-displayTy = \case
-  T_Null -> "null"
-  T_Bool -> "bool"
-  T_UInt -> "uint256"
-  T_Bytes sz -> "bytes[" <> show sz <> "]"
-  T_Digest -> "digest"
-  T_Address -> "address"
-  T_Array _ty _sz -> "array" -- <> displayTyList tys
-  T_Tuple _tys -> "tuple"
-  T_Object _m -> "object" -- FIXME
-  T_Data _m -> "data" -- FIXME
-  -- T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
-  -- T_Forall x ty {- SLVar DLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
-  -- T_Var x {- SLVar-} -> x
-  -- T_Type _ -> "type"
+displayTy = show
 
 displaySecurityLevel :: SecurityLevel -> String
 displaySecurityLevel Secret = "secret"
@@ -1085,10 +1071,6 @@ evalAsEnv ctx at obj =
       M.map (retV . sss_sls) env
     SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
-    SLV_Prim (SLPrim_interact _ who m it@(ST_Object tm)) ->
-      case (,) <$> traverse st2dt tm <*> st2dt it of
-        Just (tm', it') -> retDLVar tm' (DLA_Interact who m it') Secret
-        Nothing -> error "XXX get rid of this st2dt on SLPrim_interact"
     SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1145,8 +1127,6 @@ evalAsEnv ctx at obj =
       tupleValueEnv
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
       tupleValueEnv
-    SLV_Prim (SLPrim_interact _ _ _ (ST_Tuple _)) ->
-      tupleValueEnv
     SLV_Prim SLPrim_Tuple ->
       M.fromList
         [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
@@ -1156,17 +1136,11 @@ evalAsEnv ctx at obj =
       arrayValueEnv
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
       arrayValueEnv
-    SLV_Prim (SLPrim_interact _ _ _ (ST_Array _ _)) ->
-      arrayValueEnv
     SLV_Data {} ->
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
     SLV_DLVar (DLVar _ _ (T_Data _) _) ->
-      M.fromList
-        [ ("match", delayCall SLPrim_data_match)
-        ]
-    SLV_Prim (SLPrim_interact _ _ _ (ST_Data _)) ->
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
@@ -1432,7 +1406,6 @@ evalForm ctxt at sco st f args =
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _sco st p sargs = do
-  -- traceM $ "XXX " <> show at <> " XXX " <> show p
   case p of
     ADD -> nn2n (+)
     SUB -> nn2n (-)
@@ -1490,10 +1463,8 @@ evalPrimOp ctxt at _sco st p sargs = do
       return (lifts, v)
     (/\) (SLV_Bool bAt False) _ = return (mempty, SLV_Bool bAt False)
     (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return (mempty, r)
-    (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ ST_Bool)) = return $ (mempty, r)
     -- Flip args & process
     (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
-    (/\) l@(SLV_Prim (SLPrim_interact _ _ _ ST_Bool)) r@SLV_Bool {} = r /\ l
     -- Values not supported
     (/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
     polyEq args' =
@@ -1984,11 +1955,12 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_App_Delay {} ->
       expect_throw_ctx ctxt at (Err_Eval_NotApplicable rator)
-    SLPrim_interact _iat who m t -> do
+    SLPrim_interact iat who m dom rng -> do
       ensure_mode ctxt at st SLM_LocalStep "interact"
-      (lifts', rng, dargs) <- compileCheckAndConvert ctxt st at t $ map snd sargs
-      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
-      return $ SLRes (lifts' <> lifts) st $ secret $ SLV_DLVar dv
+      let arges = map (uncurry $ checkType_ctxt ctxt st at) $ zipEq (Just ctxt) at (Err_Apply_ArgCount iat) dom (map snd sargs)
+      (lifts, dargs) <- compileArgExprs ctxt at arges
+      SLRes lifts' st' res <- compileInteractResult ctxt at sco st m rng (\drng -> DLE_Interact at (ctxt_stack ctxt) who m drng dargs)
+      return $ SLRes (lifts <> lifts') st' res
     SLPrim_declassify ->
       case map snd sargs of
         [val] ->
@@ -2061,9 +2033,7 @@ evalPrim ctxt at sco st p sargs =
       case sargs of
         [(olvl, one)] -> do
           let t = expect_ty one
-          let dt = case st2dt t of
-                Just dt' -> dt'
-                Nothing -> error "XXX forall doesn't handle this"
+          let dt = st2dte at t
           (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" dt) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
@@ -2967,10 +2937,6 @@ typeToExpr = \case
   T_Tuple ts -> call "Tuple" $ map r ts
   T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
-  -- T_Fun {} -> impossible $ "only on rt tys"
-  -- T_Forall {} -> impossible $ "only on rt tys"
-  -- T_Var {} -> impossible $ "only on rt tys"
-  -- T_Type {} -> impossible $ "only on rt tys"
   where
     call f es = JSCallExpression (var f) a (toJSCL es) a
     var = JSIdentifier a
@@ -3500,12 +3466,6 @@ evalStmt ctxt at sco st ss =
       let select_all sv = do
             (dv, dv_lifts) <- case sv of
               SLV_DLVar dv -> return (dv, mempty)
-              SLV_Prim (SLPrim_interact iAt p v t) ->
-                ctxt_lift_expr ctxt at (DLVar iAt v dt) $
-                  (DLE_Arg iAt $ DLA_Interact p v dt)
-                  where dt = case st2dt t of
-                          Just dt_ -> dt_
-                          Nothing -> error "XXX Interact cannot have this kind of type (?)"
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
@@ -3543,7 +3503,6 @@ evalStmt ctxt at sco st ss =
                   False -> Nothing
                   True -> Just vv
           SLV_DLVar {} -> select_all de_val
-          SLV_Prim (SLPrim_interact {}) -> select_all de_val
           _ -> impossible "switch mvar"
       let at'_after = srcloc_after_semi "switch" a sp at
       retSeqn fr at'_after ks_ne
@@ -3803,17 +3762,6 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
 evalLibs :: STCounter s -> Connectors -> [SLMod] -> ST s (DLStmts, SLLibs)
 evalLibs idxr cns mods = foldrM (evalLib idxr cns) (mempty, mempty) mods
 
-makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
-makeInteract at who spec = SLV_Object at lab spec'
-  where
-    lab = Just $ (bunpack who) <> "'s interaction interface"
-    spec' = M.mapWithKey wrap_ty spec
-    wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = case isFirstOrder t of
-      True -> sls_sss idAt $ secret $ SLV_Prim $ SLPrim_interact at who k t
-      False -> expect_thrown at $ Err_App_Interact_NotFirstOrder t
-    -- TODO: add idAt info to the err below?
-    wrap_ty _ v = expect_thrown at $ Err_App_InvalidInteract $ sss_sls v
-
 app_default_opts :: [T.Text] -> DLOpts
 app_default_opts cns =
   DLOpts
@@ -3862,28 +3810,49 @@ app_options =
       where
         up m = Right $ opts {dlo_deployMode = m}
 
+st2dte :: SrcLoc -> SLType -> DLType
+st2dte at t =
+  case st2dt t of
+    Just x -> x
+    Nothing -> expect_thrown at $ Err_Type_NotDT t
+
+compileInteractResult :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVar -> SLType -> (DLType -> DLExpr) -> SLComp s SLSVal
+compileInteractResult ctxt at _sco st m t de = do
+  let dt = st2dte at t
+  (idv, lifts) <- ctxt_lift_expr ctxt at (DLVar at m dt) (de dt)
+  let isv = SLV_DLVar idv
+  let lifts' = mempty
+  return $ SLRes (lifts <> lifts') st $ secret isv
+
+makeInteract :: forall s . SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPart -> SLEnv -> ST s (SLVal, InteractEnv, DLStmts)
+makeInteract ctxt at sco st who spec = do
+  let lab = Just $ (bunpack who) <> "'s interaction interface"
+  let specl = M.toList spec
+  spec'l <- mapM (\(k,v) -> (\v' -> (k, v')) <$> wrap_ty k v) specl
+  let spec' = M.fromList spec'l
+  let io = SLV_Object at lab $ M.map (\(x,_,_)->x) spec'
+  let ienv = InteractEnv $ M.map (\(_,y,_)->y) spec'
+  let lifts = mconcat $ map (\(_,_,z)->z) $ M.elems spec'
+  let lifts' = return $ DLS_Only at who lifts
+  return $ (io, ienv, lifts')
+  where
+    wrap_ty :: SLVar -> SLSSVal -> ST s (SLSSVal, IType, DLStmts)
+    wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = case t of
+      ST_Fun dom rng -> do
+        let dom' = map (st2dte idAt) dom
+        let rng' = st2dte idAt rng
+        return $ (
+          (sls_sss idAt $ secret $ SLV_Prim $ SLPrim_interact at who k dom rng)
+          , IT_Fun dom' rng'
+          , mempty )
+      _ -> do
+        SLRes lifts _ isv <- compileInteractResult ctxt idAt sco st k t (\dt -> DLE_Arg idAt $ DLA_Interact who k dt)
+        return $ ( sls_sss idAt isv, IT_Val (st2dte idAt t), lifts )
+    wrap_ty _ v =
+      expect_thrown (sss_at v) $ Err_App_InvalidInteract $ sss_sls v
+
 compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
 compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_formals top_s top_env)) = do
-  let make_partio p_at isClass bs_at bs io_at io =
-        case "_" `B.isPrefixOf` bs of
-          True -> expect_thrown bs_at (Err_App_PartUnderscore bs)
-          False -> (p_at, isClass, bs, io_at, (makeInteract io_at bs io))
-  let check_partio v =
-        case v of
-          SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
-            make_partio p_at False bs_at bs io_at io
-          SLV_Tuple p_at [SLV_Bytes _ "class", SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
-            make_partio p_at True bs_at bs io_at io
-          _ -> expect_thrown at (Err_App_InvalidPartSpec v)
-  let part_ios = map check_partio parts
-  let make_part (p_at, _, pn, _, _) =
-        public $ SLV_Participant p_at pn Nothing Nothing
-  let partvs = map make_part part_ios
-  let top_args = map (jse_expect_id at) top_formals
-  let top_vargs = zipEq Nothing at (Err_Apply_ArgCount at) top_args partvs
-  let top_viargs = map (\(i, pv) -> (i, infectWithId_sls i pv)) top_vargs
-  let top_rvargs = map (second $ (sls_sss at)) top_viargs
-  let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
         case M.lookup k app_options of
           Nothing ->
@@ -3894,6 +3863,56 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
               Right x -> x
               Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
   let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) opts
+  let ctxt_io =
+        SLCtxt
+          { ctxt_dlo = dlo
+          , ctxt_id = idxr
+          , ctxt_stack = []
+          , ctxt_ios = mempty
+          , ctxt_classes = mempty
+          , ctxt_only = Nothing
+          }
+  let st_io =
+        SLState
+          { st_mode = SLM_Module
+          , st_live = False
+          , st_pdvs = mempty
+          , st_after_first = False }
+  let sco_io =
+        SLScope
+          { sco_ret = Nothing
+          , sco_must_ret = RS_CannotReturn
+          , sco_while_vars = Nothing
+          , sco_penvs = mempty
+          , sco_cenv = top_env
+          , sco_depth = recursionDepthLimit }
+  part_liftsr <- newSTRef $ mempty
+  let make_partio p_at isClass bs_at bs io_at io =
+        case "_" `B.isPrefixOf` bs of
+          True -> expect_thrown bs_at (Err_App_PartUnderscore bs)
+          False -> do
+            (io', ienv, lifts) <- makeInteract ctxt_io io_at sco_io st_io bs io
+            modifySTRef part_liftsr (lifts <>)
+            return $ (p_at, isClass, bs, io_at, io', ienv)
+  let check_partio v =
+        case v of
+          SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+            make_partio p_at False bs_at bs io_at io
+          SLV_Tuple p_at [SLV_Bytes _ "class", SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+            make_partio p_at True bs_at bs io_at io
+          _ -> expect_thrown at (Err_App_InvalidPartSpec v)
+  part_ios <- mapM check_partio parts
+  part_lifts <- readSTRef part_liftsr
+  -- XXX Everything before this should have been done prior to this... it's
+  -- kind of a mess.
+  let make_part (p_at, _, pn, _, _, _) =
+        public $ SLV_Participant p_at pn Nothing Nothing
+  let partvs = map make_part part_ios
+  let top_args = map (jse_expect_id at) top_formals
+  let top_vargs = zipEq Nothing at (Err_Apply_ArgCount at) top_args partvs
+  let top_viargs = map (\(i, pv) -> (i, infectWithId_sls i pv)) top_vargs
+  let top_rvargs = map (second $ (sls_sss at)) top_viargs
+  let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
   let st_after_first0 =
         case dlo_deployMode dlo of
           DM_constructor -> True
@@ -3906,10 +3925,10 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_after_first = st_after_first0
           }
   let at' = srcloc_at "compileDApp" Nothing at
-  let classes = S.fromList $ [pn | (_, True, pn, _, _) <- part_ios]
+  let classes = S.fromList $ [pn | (_, True, pn, _, _, _) <- part_ios]
   let ios =
         M.fromList $
-          [(pn, (sls_sss iat $ secret io)) | (_, _, pn, iat, io) <- part_ios]
+          [(pn, (sls_sss iat $ secret io)) | (_, _, pn, iat, io, _) <- part_ios]
   let ctxt =
         SLCtxt
           { ctxt_dlo = dlo
@@ -3920,7 +3939,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , ctxt_only = Nothing
           }
   let top_env_wps = foldl' (env_insertp ctxt at) top_env top_rvargs
-  let make_penvp (p_at, _, pn, _, _) = (pn, env0)
+  let make_penvp (p_at, _, pn, _, _, _) = (pn, env0)
         where
           iov = ios M.! pn
           add_io = env_insert ctxt p_at "interact" iov
@@ -3946,7 +3965,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
       DM_constructor -> yes
       DM_firstMsg -> no
   SLRes final st_final _ <-
-    keepLifts (liblifts <> bal_lifts <> ctime_lifts) $
+    keepLifts (liblifts <> part_lifts <> bal_lifts <> ctime_lifts) $
       evalStmt ctxt at' sco st_step top_ss
   final' <-
     case st_live st_final of
@@ -3957,18 +3976,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
         return $ elifts
       False ->
         return final
-  let make_sps_entry (_p_at, _, pn, _iat, io) =
-        (pn, ienv)
-        where
-          ienv = InteractEnv $ case traverse getType iom of
-            Just ienv_ -> ienv_
-            Nothing -> error "XXX bad InteractEnv types"
-          iom = case io of
-            SLV_Object _ _ m -> m
-            _ -> impossible $ "make_sps_entry io"
-          getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = st2it t
-          getType x = impossible $ "make_sps_entry getType " ++ show x
-  let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
+  let sps = SLParts $ M.fromList $ [ (pn, ienv) | (_, _, pn, _, _, ienv) <- part_ios ]
   let dli = DLInit ctimem
   final_idx <- readSTCounter idxr
   let dlo' = dlo {dlo_counter = final_idx}

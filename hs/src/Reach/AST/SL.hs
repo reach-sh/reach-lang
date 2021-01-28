@@ -37,49 +37,6 @@ data SLType
   | ST_Type SLType
   deriving (Eq, Generic, NFData, Ord)
 
--- | Fold over SLType, doing something special on Fun
-funFold
-  :: a -- ^ On no Fun inside
-  -> ([SLType] -> a) -- ^ On many DLType inside
-  -> ([SLType] -> SLType -> a) -- ^ On Fun
-  -> SLType -- ^ The type to fold over
-  -> a
-funFold z k fun = go
-  where
-    go = \case
-      ST_Null -> z
-      ST_Bool -> z
-      ST_UInt -> z
-      ST_Bytes _ -> z
-      ST_Digest -> z
-      ST_Address -> z
-      ST_Fun inTys outTy -> fun inTys outTy
-      ST_Array ty _ -> go ty
-      ST_Tuple tys -> k tys
-      ST_Object m -> k $ M.elems m
-      ST_Data m -> k $ M.elems m
-      ST_Forall _ ty -> go ty
-      ST_Var _ -> z
-      ST_Type _ -> z
-
--- | True if the type is a Fun, or
--- is a container/forall type with Fun somewhere inside
-hasFun :: SLType -> Bool
-hasFun = funFold z k fun
-  where
-    z = False
-    k = any hasFun
-    fun _ _ = True
-
--- | True if all Function types within this type
--- do not accept or return functions.
-isFirstOrder :: SLType -> Bool
-isFirstOrder = funFold z k fun
-  where
-    z = True
-    k = all isFirstOrder
-    fun inTys outTy = not $ any hasFun $ outTy : inTys
-
 st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
   ST_Null -> pure T_Null
@@ -318,7 +275,7 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc SLPart String SLType
+  | SLPrim_interact SrcLoc SLPart String [SLType] SLType
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf

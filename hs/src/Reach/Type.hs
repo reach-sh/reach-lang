@@ -222,9 +222,6 @@ slToDL pdvs _at v =
         Just dv -> return $ DLAE_Arg $ DLA_Var dv
         Nothing -> Nothing
     SLV_RaceParticipant {} -> Nothing
-    SLV_Prim (SLPrim_interact _ who m t) -> do
-      dt <- st2dt t
-      return $ DLAE_Arg $ DLA_Interact who m dt
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
     SLV_Kwd _ -> Nothing

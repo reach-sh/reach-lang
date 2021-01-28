@@ -1072,10 +1072,6 @@ _smtDefineTypes smt ts = do
           T_Bytes {} -> base
           T_Digest -> base
           T_Address -> base
-          -- T_Fun {} -> return none
-          -- T_Forall {} -> impossible "forall in ll"
-          -- T_Var {} -> impossible "var in ll"
-          -- T_Type {} -> impossible "type in ll"
           T_Array et sz -> do
             tni <- type_name et
             let tn = fst tni
