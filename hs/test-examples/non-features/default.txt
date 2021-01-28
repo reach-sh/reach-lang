@@ -1,4 +1,4 @@
-reachc: error: ./default.rsh:application: TypeError: TypeMeets_Mismatch. These types are mismatched: (./default.rsh:application,Object({"None": Null, "Some": UInt})) vs (./default.rsh:application,UInt)
+reachc: error: ./default.rsh:application: TypeError: TypeMeets_Mismatch. These types are mismatched: (./default.rsh:application,Data({"None": Null, "Some": UInt})) vs (./default.rsh:application,UInt)
 Trace:
   in [unknown function] from (./default.rsh:12:21:function exp) at (./default.rsh:15:35:application)
   in [unknown function] from (./default.rsh:10:15:function exp) at (./default.rsh:15:41:after expr stmt semicolon)

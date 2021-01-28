@@ -2,13 +2,36 @@
 
 module Reach.AST.DL where
 
-import Control.DeepSeq (NFData)
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
+
+data StmtAnnot = StmtAnnot
+  { sa_pure :: Bool
+  , sa_local :: Bool
+  }
+  deriving (Eq, Generic, Show)
+
+instance Semigroup StmtAnnot where
+  (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
+
+instance Monoid StmtAnnot where
+  mempty = StmtAnnot True True
+
+instance IsPure StmtAnnot where
+  isPure = sa_pure
+
+instance IsLocal StmtAnnot where
+  isLocal = sa_local
+
+mkAnnot :: IsPure a => IsLocal a => a -> StmtAnnot
+mkAnnot a = StmtAnnot {..}
+  where
+    sa_pure = isPure a
+    sa_local = isLocal a
 
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr
@@ -37,7 +60,7 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 instance SrcLocOf DLStmt where
   srclocOf = \case
@@ -97,7 +120,7 @@ type DLStmts = Seq.Seq DLStmt
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
@@ -106,8 +129,8 @@ data DLOpts = DLOpts
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Int
   }
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
-  deriving (Generic, NFData)
+  deriving (Generic)

@@ -3,22 +3,16 @@ module Reach.Type
   , typeEqual
   , typeMeet
   , typeMeets
-  , DLArgExpr (..)
   , checkAndConvert
-  , argExprTypeOf
-  , argTypeOf
-  , largeArgTypeOf
   , typeOf
   , typeOfM
   , checkType
-  , checkIntLiteral
   )
 where
 
 -- import Debug.Trace (traceM)
 import Control.Applicative
 import Control.Monad.ST
-import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.STRef
 import GHC.Stack (HasCallStack)
@@ -38,7 +32,6 @@ data TypeError
   | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
-  | Err_Type_IntLiteralRange Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance Show TypeError where
@@ -57,20 +50,12 @@ instance Show TypeError where
     "TypeError: TooFewArguments. Expected: " <> show ts
   show (Err_Type_TooManyArguments vs) =
     "TypeError: TooManyArguments. Surplus: " <> show (length vs)
-  show (Err_Type_IntLiteralRange rmin x rmax) =
-    "TypeError: int literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 type MCFS = Maybe [SLCtxtFrame]
 
 type PDVS = M.Map SLPart DLVar
 
 type TINT = (MCFS, PDVS)
-
-checkIntLiteral :: SrcLoc -> Integer -> Integer -> Integer -> Integer
-checkIntLiteral at rmin x rmax =
-  case rmin <= x && x <= rmax of
-    True -> x
-    False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
 typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either TypeError SLType
 typeEqual top_at x@(_, xt) y@(_, yt) =
@@ -150,46 +135,6 @@ typeCheck_help mcfs at env ty val val_ty res =
               typeCheck_help mcfs at env var_ty val val_ty res
     (_, _) ->
       typeMeet mcfs at (at, val_ty) (at, ty) `seq` return res
-
-conTypeOf :: DLConstant -> DLType
-conTypeOf = \case
-  DLC_UInt_max -> T_UInt
-
-litTypeOf :: DLLiteral -> DLType
-litTypeOf = \case
-  DLL_Null -> T_Null
-  DLL_Bool _ -> T_Bool
-  DLL_Int {} -> T_UInt
-  DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
-
-argTypeOf :: DLArg -> DLType
-argTypeOf = \case
-  DLA_Var (DLVar _ _ t _) -> t
-  DLA_Constant c -> conTypeOf c
-  DLA_Literal c -> litTypeOf c
-  DLA_Interact _ _ t -> t
-
-largeArgTypeOf :: DLLargeArg -> DLType
-largeArgTypeOf = \case
-  DLLA_Array sz as -> argExprTypeOf $ DLAE_Array sz $ map DLAE_Arg as
-  DLLA_Tuple as -> argExprTypeOf $ DLAE_Tuple $ map DLAE_Arg as
-  DLLA_Obj m -> argExprTypeOf $ DLAE_Obj $ M.map DLAE_Arg m
-  DLLA_Data m v a -> argExprTypeOf $ DLAE_Data m v $ DLAE_Arg a
-
-data DLArgExpr
-  = DLAE_Arg DLArg
-  | DLAE_Array DLType [DLArgExpr]
-  | DLAE_Tuple [DLArgExpr]
-  | DLAE_Obj (M.Map SLVar DLArgExpr)
-  | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
-
-argExprTypeOf :: DLArgExpr -> DLType
-argExprTypeOf = \case
-  DLAE_Arg a -> argTypeOf a
-  DLAE_Array t as -> T_Array t $ fromIntegral (length as)
-  DLAE_Tuple as -> T_Tuple $ map argExprTypeOf as
-  DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
-  DLAE_Data t _ _ -> T_Data t
 
 slToDL :: HasCallStack => PDVS -> SrcLoc -> SLVal -> Maybe DLArgExpr
 slToDL pdvs _at v =

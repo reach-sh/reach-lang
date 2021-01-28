@@ -22,7 +22,6 @@ import Reach.EmbeddedFiles
 import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Texty
-import Reach.Type
 import Reach.UnrollLoops
 import Reach.Util
 import Reach.Verify.SMTParser (parseModel)

@@ -27,7 +27,6 @@ import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.STCounter
 import Reach.Texty
-import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version

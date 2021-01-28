@@ -35,7 +35,7 @@ data SLType
   | ST_Forall SLVar SLType
   | ST_Var SLVar
   | ST_Type SLType
-  deriving (Eq, Generic, Ord)
+  deriving (Eq, Generic)
 
 st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
@@ -82,7 +82,7 @@ instance Show SLType where
   show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
   show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
   show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (ST_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
   show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
   show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
   show (ST_Var x) = show x

@@ -2,7 +2,6 @@
 
 module Reach.AST.DLBase where
 
-import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
 import qualified Data.Map.Strict as M
@@ -13,7 +12,7 @@ import Reach.AST.Base
 data DeployMode
   = DM_constructor
   | DM_firstMsg
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 -- DL types only describe data, and explicitly do not describe functions
 data DLType
@@ -27,7 +26,7 @@ data DLType
   | T_Tuple [DLType]
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
-  deriving (Eq, Generic, NFData, Ord)
+  deriving (Eq, Generic, Ord)
 
 showTys :: Show a => [a] -> String
 showTys = intercalate ", " . map show
@@ -53,35 +52,46 @@ instance Show DLType where
 data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
-  deriving (Eq, Ord, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, Show)
 
 newtype InteractEnv
   = InteractEnv (M.Map SLVar IType)
   deriving (Eq, Generic, Show)
-  deriving newtype (Monoid, NFData, Semigroup)
+  deriving newtype (Monoid, Semigroup)
 
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
   deriving (Eq, Generic, Show)
-  deriving newtype (Monoid, NFData, Semigroup)
+  deriving newtype (Monoid, Semigroup)
 
 data DLInit = DLInit
   {dli_ctimem :: Maybe DLVar}
-  deriving (Eq, Generic, NFData, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
 
 data DLConstant
   = DLC_UInt_max
-  deriving (Eq, Generic, NFData, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+conTypeOf :: DLConstant -> DLType
+conTypeOf = \case
+  DLC_UInt_max -> T_UInt
 
 data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
   | DLL_Bytes B.ByteString
-  deriving (Eq, Generic, NFData, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+litTypeOf :: DLLiteral -> DLType
+litTypeOf = \case
+  DLL_Null -> T_Null
+  DLL_Bool _ -> T_Bool
+  DLL_Int {} -> T_UInt
+  DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data DLVar = DLVar SrcLoc String DLType Int
-  deriving (Generic, NFData, Show, Ord)
+  deriving (Generic, Show, Ord)
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
@@ -105,7 +115,46 @@ data DLArg
   | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
   | DLA_Interact SLPart String DLType
-  deriving (Eq, Ord, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, Show)
+
+argTypeOf :: DLArg -> DLType
+argTypeOf = \case
+  DLA_Var (DLVar _ _ t _) -> t
+  DLA_Constant c -> conTypeOf c
+  DLA_Literal c -> litTypeOf c
+  DLA_Interact _ _ t -> t
+
+data DLLargeArg
+  = DLLA_Array DLType [DLArg]
+  | DLLA_Tuple [DLArg]
+  | DLLA_Obj (M.Map String DLArg)
+  | DLLA_Data (M.Map SLVar DLType) String DLArg
+  deriving (Eq, Ord, Generic, Show)
+
+data DLArgExpr
+  = DLAE_Arg DLArg
+  | DLAE_Array DLType [DLArgExpr]
+  | DLAE_Tuple [DLArgExpr]
+  | DLAE_Obj (M.Map SLVar DLArgExpr)
+  | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
+
+largeArgToArgExpr :: DLLargeArg -> DLArgExpr
+largeArgToArgExpr = \case
+  DLLA_Array sz as -> DLAE_Array sz $ map DLAE_Arg as
+  DLLA_Tuple as -> DLAE_Tuple $ map DLAE_Arg as
+  DLLA_Obj m -> DLAE_Obj $ M.map DLAE_Arg m
+  DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
+
+largeArgTypeOf :: DLLargeArg -> DLType
+largeArgTypeOf = argExprTypeOf . largeArgToArgExpr
+
+argExprTypeOf :: DLArgExpr -> DLType
+argExprTypeOf = \case
+  DLAE_Arg a -> argTypeOf a
+  DLAE_Array t as -> T_Array t $ fromIntegral (length as)
+  DLAE_Tuple as -> T_Tuple $ map argExprTypeOf as
+  DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
+  DLAE_Data t _ _ -> T_Data t
 
 data ClaimType
   = --- Verified on all paths
@@ -122,7 +171,7 @@ data ClaimType
     CT_Possible
   | --- Check if one part can't know what another party does know
     CT_Unknowable SLPart [DLArg]
-  deriving (Eq, Ord, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, Show)
 
 class IsPure a where
   isPure :: a -> Bool
@@ -130,42 +179,11 @@ class IsPure a where
 class IsLocal a where
   isLocal :: a -> Bool
 
-data StmtAnnot = StmtAnnot
-  { sa_pure :: Bool
-  , sa_local :: Bool
-  }
-  deriving (Eq, Generic, NFData, Show)
-
-instance Semigroup StmtAnnot where
-  (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
-
-instance Monoid StmtAnnot where
-  mempty = StmtAnnot True True
-
-instance IsPure StmtAnnot where
-  isPure = sa_pure
-
-instance IsLocal StmtAnnot where
-  isLocal = sa_local
-
 instance IsPure a => IsPure (Seq.Seq a) where
   isPure = all isPure
 
 instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
-
-mkAnnot :: IsPure a => IsLocal a => a -> StmtAnnot
-mkAnnot a = StmtAnnot {..}
-  where
-    sa_pure = isPure a
-    sa_local = isLocal a
-
-data DLLargeArg
-  = DLLA_Array DLType [DLArg]
-  | DLLA_Tuple [DLArg]
-  | DLLA_Obj (M.Map String DLArg)
-  | DLLA_Data (M.Map SLVar DLType) String DLArg
-  deriving (Eq, Ord, Generic, NFData, Show)
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
@@ -184,7 +202,7 @@ data DLExpr
   | DLE_Transfer SrcLoc DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
-  deriving (Eq, Ord, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, Show)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -233,7 +251,7 @@ instance IsLocal DLExpr where
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
   deriving (Eq, Generic, Show)
-  deriving newtype (Monoid, NFData, Semigroup)
+  deriving newtype (Monoid, Semigroup)
 
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
@@ -266,7 +284,7 @@ data FluidVar
   = FV_balance
   | FV_thisConsensusTime
   | FV_lastConsensusTime
-  deriving (Eq, Generic, NFData, Ord, Show, Bounded, Enum)
+  deriving (Eq, Generic, Ord, Show, Bounded, Enum)
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case

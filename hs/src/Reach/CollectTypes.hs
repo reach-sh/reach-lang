@@ -5,7 +5,6 @@ import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
-import Reach.Type
 
 class CollectsTypes a where
   cts :: a -> S.Set DLType

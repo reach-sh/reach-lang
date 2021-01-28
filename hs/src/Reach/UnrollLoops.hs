@@ -13,7 +13,6 @@ import Reach.AST.LL
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Texty
-import Reach.Type
 import Reach.Util
 
 type App s = ReaderT (Env s) (ST s)

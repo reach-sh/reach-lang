@@ -26,7 +26,6 @@ import Reach.AST.PL
 import Reach.Connector
 import Reach.Pretty ()
 import Reach.Texty (pretty)
-import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
