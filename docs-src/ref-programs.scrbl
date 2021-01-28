@@ -1865,9 +1865,28 @@ This aides scalability, because it increases the number of times when an operati
 
 @index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments and returns an unsigned integer of @tech{bit width} bits.
 
+
+@subsubsection{@tt{compose}}
+
 @(mint-define! '("compose"))
 @reach{
  compose(f, g) }
 
 @index{compose} Creates a new function that applies it's argument to @tt{g}, then pipes the result to the function @tt{f}.
 The argument type of @tt{f} must be the return type of @tt{g}.
+
+
+@subsubsection{@tt{sqrt}}
+
+@(mint-define! '("sqrt"))
+@reach{
+  sqrt(81, Array.iota(10)) }
+
+@index{sqrt} Calculates an approximate square root of the first argument. This method utilizes
+the @link["https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method"]{Babylonian Method} for computing
+the square root. The second argument must be an array from @tt{0} to @tt{N}, where @tt{N} represents the number
+of iterations the algorithm should perform.
+
+For reference, when provided with @reachin{Array.iota(5)}, the algorithm can reliably calculate the square root
+up to @tt{32} squared, or @tt{1,024}. When provided with @reachin{Array.iota(10)}, the algorithm can reliably calculate the
+square root up to @tt{580} squared, or @tt{336,400}.

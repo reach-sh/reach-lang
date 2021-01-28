@@ -2,6 +2,8 @@
 
 const N = 2;
 
+const TokenAmounts = Array(N, Tuple(Address, UInt));
+
 const Swap = Object({
   amtIn: UInt,
   amtInTok: UInt,
@@ -19,19 +21,18 @@ const Withdraw = Object({
 
 const PARTICIPANTS = [
   // XXX: Feature - Better specification of entities
+  // XXX: Feature - Specify interact and foreign interact interfaces
   Participant('Admin', {
-    formulaValuation: UInt, // k
-    shouldClosePool: Fun([], Bool),
-  }),
-  Class('Provider', {
-    wantsToDeposit: Fun([], Bool),
-    wantsToWithdraw: Fun([], Bool),
-    getDeposit: Fun([], Deposit),
-    getWithdrawal: Fun([], Withdraw),
-  }),
-  Class('Trader', {
-    shouldTrade: Fun([], Bool),
-    getTrade: Fun([], Swap),
+      formulaValuation: UInt, // k
+    }, {
+      closePool: Fun([], Bool),
+    }),
+  Class('Provider', {}, {
+      deposit: Fun([Deposit], UInt),
+      withdraw: Fun(Withdraw, TokenAmounts)
+    }),
+  Class('Trader', {}, {
+    trade: Fun([Swap], TokenAmounts),
   }),
 
   // XXX: Feature - Non-network token consumption
@@ -140,19 +141,21 @@ export const main =
 
       const mtArr = Array.replicate(N, 0);
 
-      const [ alive, pool, market ] =
+      // XXX Feature: Export some variables
+      export const [ alive, pool, market ] =
         parallel_reduce([ true, initialPool, initialMarket ])
           .while(alive || pool.totalSupply() > 0)
           .invariant(true)
           .case(
             Admin,
             (() => ({
-              when: declassify(interact.shouldClosePool()),
+              implements: interact.closePool,
+              when: alive,
               // XXX Feature: Foreign to Reach interface spec
               // This property is particularly for parallel_reduce stmts.
               // But in general, publish can be made externally visible with:
               //    A.publish(x).pay(x).exposeAs("foo");
-              exposeAs: "closePool", // Return void for now. Could return parallel reduce accumulator
+              // exposeAs: "closePool", // Return void for now. Could return parallel reduce accumulator
             })),
             (() => {
               return [ false, pool, market ]; })
@@ -160,9 +163,13 @@ export const main =
           .case(
             Provider,
             (() => ({
-              msg: declassify(interact.getWithdrawal()),
-              when: declassify(interact.wantsToWithdraw()),
-              exposeAs: "withdraw",
+              implements: interact.withdraw,
+              // XXX Feature: Not sure if this is the best way to do this,
+              // Need to return value to caller, however we already
+              // use `return` for parallel_reduce. So write `return : <expr>`
+              // which will represent what is returned to user. Scope of expr
+              // is end of block.
+              return: payout,
             })),
             (({ liquidity }) => {
               // Assert the Provider has the requested liquidity
@@ -176,9 +183,9 @@ export const main =
               const amtOuts = balances.map(bal => liquidity * bal / pool.totalSupply());
 
               // Payout provider
-              Array.zip(tokens, amtOuts)
-                .forEach(([ tok, amtOut ]) =>
-                  transfer(amtOut).currency(tok).to(this));
+              const payout = Array.zip(tokens, amtOuts);
+              payout.forEach(([ tok, amtOut ]) =>
+                transfer(amtOut).currency(tok).to(this));
 
               const updatedMarket = updateMarket(market, mtArr, amtOuts);
 
@@ -194,9 +201,9 @@ export const main =
           .case(
             Provider,
             (() => ({
-              msg: declassify(interact.getDeposit()),
-              when: alive && declassify(interact.wantsToDeposit()),
-              exposeAs: "deposit",
+              when: alive,
+              implements: interact.deposit,
+              return: minted,
             })),
             // XXX Feature: allow PAY_EXPR to make multiple payments in different currencies
             (({ amtIns }) => Array.zip(tokens, amtIns))
@@ -241,9 +248,9 @@ export const main =
           .case(
             Trader,
             (() => ({
-              msg: declassify(interact.getTrade()),
-              when: alive && declassify(interact.shouldMakeTrade()),
-              exposeAs: "swap",
+              when: alive,
+              implements: interact.trade,
+              return: amtOuts,
             })),
             // Amt in has fees incorporated into it
             (({ amtIn, amtInTok }) => [ [ amtIn, amtInTok ] ]),
