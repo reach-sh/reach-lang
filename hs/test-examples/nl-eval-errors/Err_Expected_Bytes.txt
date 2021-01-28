@@ -5,4 +5,4 @@ Verifying for generic connector
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
-reachc: error: ./Err_Expected_Bytes.rsh:10:13:application: expected bytes, got something else: uint256
+reachc: error: ./Err_Expected_Bytes.rsh:10:13:application: expected bytes, got something else: UInt

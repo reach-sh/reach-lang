@@ -1,1 +1,1 @@
-reachc: error: ./match_no_case_obj.rsh:17:26:decimal: Invalid binding. Expected object, got: uint256
+reachc: error: ./match_no_case_obj.rsh:17:26:decimal: Invalid binding. Expected object, got: UInt

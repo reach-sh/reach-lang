@@ -356,7 +356,7 @@ instance Show EvalError where
       where
         ty = displaySlValType slval
         reason = case take 5 ty of
-          "bytes" -> "It must be computable at compile time."
+          "Bytes" -> "It must be computable at compile time."
           _ -> "Fields must be bytes, but got: " <> ty
     Err_Obj_IllegalFieldValues exprs ->
       -- FIXME Is this syntactically possible?

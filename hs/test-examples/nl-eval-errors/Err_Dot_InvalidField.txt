@@ -1,1 +1,1 @@
-reachc: error: ./Err_Dot_InvalidField.rsh:6:30:dot: x is not a field of object
+reachc: error: ./Err_Dot_InvalidField.rsh:6:30:dot: x is not a field of Object({})

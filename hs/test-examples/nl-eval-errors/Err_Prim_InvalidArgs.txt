@@ -1,1 +1,1 @@
-reachc: error: ./Err_Prim_InvalidArgs.rsh:3:34:application: Invalid args for makeEnum. got: [bytes[4]]
+reachc: error: ./Err_Prim_InvalidArgs.rsh:3:34:application: Invalid args for makeEnum. got: [Bytes(4)]

@@ -1,1 +1,1 @@
-reachc: error: ./Err_Eval_RefNotInt.rsh:6:15:array ref: Invalid array index. Expected uint256, got: bytes[5]
+reachc: error: ./Err_Eval_RefNotInt.rsh:6:15:array ref: Invalid array index. Expected uint256, got: Bytes(5)
