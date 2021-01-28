@@ -68,7 +68,7 @@ If you're like us, you may find it beneficial to type each line out, rather than
 
 Let's start by creating a file named @exec{index.rsh}.
 It doesn't matter where you put this file, but we recommend putting in the current directory, which would be @exec{~/reach/tut} if you're following along exactly.
-In all the subsequent code samples, we'll label the files the the chapter of the tutorial you're reading.
+In all the subsequent code samples, we'll label the files based on the chapter of the tutorial you're reading.
 For example, start off by typing the following into @exec{index.rsh}:
 
 @reachex[#:show-lines? #t "tut-1/index.rsh"
@@ -915,7 +915,7 @@ In this section, we'll focus on a more subtle issue that is important and unique
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.
 
 In traditional client-server programs, like a Web server, this would be the case of a client not sending any more requests to the server, or the server stopping sending responses to the client.
-In these sorts of traditional programs, non-participation is an exceptional circumstances that normally leads to an error message for clients and, at most, a log entry for servers.
+In these sorts of traditional programs, non-participation is an exceptional circumstance that normally leads to an error message for clients and, at most, a log entry for servers.
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
 
