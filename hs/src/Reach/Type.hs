@@ -144,7 +144,6 @@ typeCheck_help mcfs at env ty val val_ty res =
           mvar_ty <- readSTRef var_ref
           case mvar_ty of
             Nothing -> do
-              -- traceM $ "XXX typeCheck_help writeSTRef XXX " <> show at <> " XXX " <> show val_ty <> " XXX"
               writeSTRef var_ref (Just val_ty)
               return res
             Just var_ty ->
@@ -261,7 +260,6 @@ checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> [S
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     ST_Fun dom rng -> do
-      -- traceM $ "XXX" <> show at
       dargs <- typeChecks tint at env dom args
       return (rng, dargs)
     ST_Forall var ft -> do
