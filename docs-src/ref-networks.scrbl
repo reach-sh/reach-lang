@@ -15,7 +15,7 @@ The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a 
 manages one instance of the @|DApp|'s execution. It is guaranteed to
 use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
 
-Etheruem uses the Keccak256 algorithm to perform @tech{digest}s.
+Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 256-bits.
 
 The connector provides a binding named @reachin{ETH} to
