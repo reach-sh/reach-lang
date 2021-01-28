@@ -2,7 +2,6 @@
 
 module Reach.AST.SL where
 
-import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -13,6 +12,7 @@ import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.AST.DL
 import Reach.JSOrphans ()
 import Reach.Util
 
@@ -35,7 +35,7 @@ data SLType
   | ST_Forall SLVar SLType
   | ST_Var SLVar
   | ST_Type SLType
-  deriving (Eq, Generic, NFData, Ord)
+  deriving (Eq, Generic, Ord)
 
 st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
@@ -97,7 +97,7 @@ type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
   = SLCloEnv SLPartEnvs SLEnv
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data SLVal
   = SLV_Null SrcLoc String
@@ -125,7 +125,7 @@ data SLVal
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -151,19 +151,19 @@ data ToConsensusMode
   | TCM_Pay
   | TCM_When
   | TCM_Timeout
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data ForkMode
   = FM_Case
   | FM_Timeout
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data ParallelReduceMode
   = PRM_Invariant
   | PRM_While
   | PRM_Case
   | PRM_Timeout
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data SLForm
   = SLForm_App
@@ -199,7 +199,7 @@ data SLForm
       , slpr_mtime :: Maybe (SrcLoc, [JSExpression])
       }
   | SLForm_wait
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 data SLKwd
   = SLK_async
@@ -239,7 +239,7 @@ data SLKwd
   | SLK_while
   | SLK_with
   | SLK_yield
-  deriving (Bounded, Enum, Eq, Generic, NFData)
+  deriving (Bounded, Enum, Eq, Generic)
 
 instance Show SLKwd where
   show k = drop 4 $ conNameOf k
@@ -267,6 +267,15 @@ primOpType RSH = [ST_UInt, ST_UInt] --> ST_UInt
 primOpType BAND = [ST_UInt, ST_UInt] --> ST_UInt
 primOpType BIOR = [ST_UInt, ST_UInt] --> ST_UInt
 primOpType BXOR = [ST_UInt, ST_UInt] --> ST_UInt
+
+data SLCompiledPartInfo = SLCompiledPartInfo
+    { slcpi_at :: SrcLoc
+    , slcpi_isClass :: Bool
+    , slcpi_who :: SLPart
+    , slcpi_io :: SLSSVal
+    , slcpi_ienv :: InteractEnv
+    , slcpi_lifts :: DLStmts }
+  deriving (Eq, Generic, Show)
 
 data SLPrimitive
   = SLPrim_makeEnum
@@ -298,7 +307,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLVal] [JSExpression] JSStatement SLEnv
+  | SLPrim_App_Delay SrcLoc SLEnv [SLCompiledPartInfo] [JSExpression] JSStatement SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -311,7 +320,7 @@ data SLPrimitive
   | SLPrim_fluid_read FluidVar
   | SLPrim_race
   | SLPrim_lastConsensusTime
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 type SLSVal = (SecurityLevel, SLVal)
 
@@ -320,7 +329,7 @@ data SLSSVal = SLSSVal
   , sss_level :: SecurityLevel
   , sss_val :: SLVal
   }
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, Show)
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
 sss_restrict lvl1 (SLSSVal at lvl2 val) =
