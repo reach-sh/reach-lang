@@ -4,41 +4,124 @@ import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Counter
-import Reach.Texty
 import Reach.Util
 
--- XXX Revise this to not always rename everything and use the standard counter
+type FApp = ReaderT FEnv IO
+type FAppT a = a -> FApp a
+
+data FEnv = FEnv
+  { fCounter :: Counter
+  , fRho :: IORef (M.Map DLVar DLVar)
+  }
+
+class Freshen a where
+  fu :: FAppT a
+
+fu_v :: DLVar -> FApp DLVar
+fu_v v@(DLVar at lab t _) = do
+  FEnv {..} <- ask
+  idx <- liftIO $ incCounter fCounter
+  let v' = DLVar at lab t idx
+  liftIO $ modifyIORef fRho (M.insert v v')
+  return $ v'
+
+fu_mv :: LLVar -> FApp LLVar
+fu_mv = mapM fu_v
+
+instance (Traversable f, Freshen a) => Freshen (f a) where
+  fu = traverse fu
+
+instance Freshen DLVar where
+  fu v = do
+    FEnv {..} <- ask
+    rho <- liftIO $ readIORef fRho
+    return $ fromMaybe v $ M.lookup v rho
+
+instance Freshen DLArg where
+  fu = \case
+    DLA_Var v -> DLA_Var <$> fu v
+    x -> return x
+
+instance Freshen DLLargeArg where
+  fu = \case
+    DLLA_Array t as -> DLLA_Array t <$> fu as
+    DLLA_Tuple as -> DLLA_Tuple <$> fu as
+    DLLA_Obj m -> DLLA_Obj <$> fu m
+    DLLA_Data t v a -> DLLA_Data t v <$> fu a
+
+instance Freshen DLExpr where
+  fu = \case
+    DLE_Arg at a -> DLE_Arg at <$> fu a
+    DLE_LArg at a -> DLE_LArg at <$> fu a
+    e@(DLE_Impossible {}) -> return $ e
+    DLE_PrimOp at p as -> DLE_PrimOp at p <$> fu as
+    DLE_ArrayRef at a b -> DLE_ArrayRef at <$> fu a <*> fu b
+    DLE_ArraySet at a b c -> DLE_ArraySet at <$> fu a <*> fu b <*> fu c
+    DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> fu a <*> fu b
+    DLE_ArrayZip at a b -> DLE_ArrayZip at <$> fu a <*> fu b
+    DLE_TupleRef at x y -> DLE_TupleRef at <$> fu x <*> pure y
+    DLE_ObjectRef at x y -> DLE_ObjectRef at <$> fu x <*> pure y
+    DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> fu f
+    DLE_Digest at as -> DLE_Digest at <$> fu as
+    DLE_Claim a b c d e -> DLE_Claim a b c <$> fu d <*> pure e
+    DLE_Transfer at x y -> DLE_Transfer at <$> fu x <*> fu y
+    DLE_Wait at x -> DLE_Wait at <$> fu x
+    DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
+
+instance {-# OVERLAPPING #-} Freshen LLCommon where
+  fu = \case
+    DL_Nop at -> return $ DL_Nop at
+    DL_Let at v e -> do
+      f' <- fu_mv v
+      DL_Let at f' <$> fu e
+    DL_Var at v -> DL_Var at <$> fu_v v
+    DL_Set at v a -> DL_Set at <$> fu v <*> fu a
+    DL_LocalIf at c t f -> DL_LocalIf at <$> fu c <*> fu t <*> fu f
+    DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> fu ov <*> fu csm
+    DL_ArrayMap at ans x a fb -> do
+      x' <- fu x
+      a' <- fu_v a
+      fb' <- fu fb
+      ans' <- fu_v ans
+      return $ DL_ArrayMap at ans' x' a' fb'
+    DL_ArrayReduce at ans x z b a fb -> do
+      ans' <- fu_v ans
+      x' <- fu x
+      z' <- fu z
+      b' <- fu_v b
+      a' <- fu_v a
+      fb' <- fu fb
+      return $ DL_ArrayReduce at ans' x' z' b' a' fb'
+
+instance {-# OVERLAPPING #-} Freshen LLTail where
+  fu = \case
+    DT_Return at -> return $ DT_Return at
+    DT_Com m k -> DT_Com <$> fu m <*> fu k
+
+instance {-# OVERLAPPING #-} Freshen LLBlock where
+  fu (DLinBlock at fs t a) =
+    DLinBlock at fs <$> fu t <*> fu a
+
+--
 
 type App = ReaderT Env IO
 type AppT a = a -> App a
 type Lifts = Seq.Seq LLCommon
-type Renaming = Either DLVar DLArg
 
 data Env = Env
-  { eDidUnroll :: IORef Bool
-  , eCounter :: Counter
-  , eRenaming :: IORef (M.Map Int Renaming)
+  { eCounter :: Counter
   , emLifts :: Maybe (IORef Lifts)
   }
 
-mkEnv0 :: IO (Env)
-mkEnv0 = do
-  eDidUnroll <- newIORef False
-  eCounter <- newCounter 0
-  eRenaming <- newIORef mempty
-  let emLifts = Nothing
-  return $ Env {..}
-
-recordUnroll :: App ()
-recordUnroll = do
-  Env {..} <- ask
-  lift $ writeIORef eDidUnroll True
+class Unroll a where
+  ul :: AppT a
 
 allocIdx :: App Int
 allocIdx = do
@@ -70,14 +153,11 @@ liftLocal = \case
   DT_Return _ -> return ()
   DT_Com m k -> liftCommon m >> liftLocal k
 
-liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App ()
-liftLet at v e = liftCommon (DL_Let at (Just v) e)
-
 liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App DLArg
 liftExpr at t e = do
   idx <- allocIdx
   let v = DLVar at "ul" t idx
-  liftLet at v e
+  liftCommon (DL_Let at (Just v) e)
   return $ DLA_Var v
 
 liftArray :: HasCallStack => SrcLoc -> DLType -> [DLArg] -> App DLExpr
@@ -85,71 +165,6 @@ liftArray at ty as = do
   let a_ty = T_Array ty $ fromIntegral $ length as
   na <- liftExpr at a_ty $ DLE_LArg at $ DLLA_Array ty as
   return $ DLE_Arg at na
-
-freshRenaming :: App a -> App a
-freshRenaming m = do
-  Env {..} <- ask
-  oldRenaming <- liftIO $ readIORef eRenaming
-  newRenaming <- liftIO $ newIORef oldRenaming
-  local (\e -> e {eRenaming = newRenaming}) m
-
-ul_v_rn :: AppT DLVar
-ul_v_rn (DLVar at lab t idx) = do
-  idx' <- allocIdx
-  Env {..} <- ask
-  let v' = DLVar at lab t idx'
-  lift $ modifyIORef eRenaming (M.insert idx (Left v'))
-  return v'
-
-ul_mv_rn :: AppT (Maybe DLVar)
-ul_mv_rn Nothing = return Nothing
-ul_mv_rn (Just v) = Just <$> ul_v_rn v
-
-ul_vs_rn :: AppT [DLVar]
-ul_vs_rn = mapM ul_v_rn
-
-lookupRenaming :: DLVar -> App Renaming
-lookupRenaming dv@(DLVar _ _ _ idx) = do
-  Env {..} <- ask
-  r <- liftIO $ readIORef eRenaming
-  case M.lookup idx r of
-    Just x -> return x
-    Nothing -> impossible $ "unbound var: " <> (show $ pretty dv)
-
-ul_v :: AppT DLVar
-ul_v v = do
-  r <- lookupRenaming v
-  case r of
-    Left v' -> return v'
-    Right _ ->
-      impossible "var is renamed to arg"
-
-ul_mv :: AppT (Maybe DLVar)
-ul_mv = \case
-  Nothing -> return Nothing
-  Just v -> Just <$> ul_v v
-
-ul_v_rna :: DLVar -> DLArg -> App ()
-ul_v_rna (DLVar _ _ _ idx) a = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eRenaming (M.insert idx (Right a))
-
-ul_va :: DLVar -> App DLArg
-ul_va v = do
-  r <- lookupRenaming v
-  case r of
-    Left v' -> return $ DLA_Var v'
-    Right a -> return a
-
-ul_a :: AppT DLArg
-ul_a = \case
-  DLA_Var v -> ul_va v
-  DLA_Constant c -> pure $ DLA_Constant c
-  DLA_Literal c -> (pure $ DLA_Literal c)
-  DLA_Interact p m t -> (pure $ DLA_Interact p m t)
-
-ul_as :: AppT [DLArg]
-ul_as = mapM ul_a
 
 ul_explode :: SrcLoc -> DLArg -> App (DLType, [DLArg])
 ul_explode at a =
@@ -164,178 +179,107 @@ ul_explode at a =
           liftExpr at t $
             DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
 
-ul_la :: AppT DLLargeArg
-ul_la = \case
-  DLLA_Array t as -> (pure $ DLLA_Array t) <*> ul_as as
-  DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> ul_as as
-  DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM ul_a m
-  DLLA_Data t vn vv -> DLLA_Data t vn <$> ul_a vv
+fu_ :: LLBlock -> [(DLVar, DLArg)] -> App DLArg
+fu_ b nvs = do
+  let DLinBlock at fs t a = b
+  let lets = map (\(nv, na) -> DL_Let at (Just nv) (DLE_Arg at na)) nvs
+  let t' = foldr DT_Com t lets
+  let b' = DLinBlock at fs t' a
+  Env {..} <- ask
+  let fCounter = eCounter
+  fRho <- liftIO $ newIORef mempty
+  DLinBlock _ _ t'' a' <-
+    liftIO $ flip runReaderT (FEnv {..}) $ fu b'
+  liftLocal =<< ul t''
+  return $ a'
 
-ul_e :: AppT DLExpr
-ul_e = \case
-  DLE_Arg at a -> (pure $ DLE_Arg at) <*> ul_a a
-  DLE_LArg at la -> (pure $ DLE_LArg at) <*> ul_la la
-  DLE_Impossible at lab -> pure $ DLE_Impossible at lab
-  DLE_PrimOp at p as -> (pure $ DLE_PrimOp at p) <*> ul_as as
-  DLE_ArrayRef at a i -> (pure $ DLE_ArrayRef at) <*> ul_a a <*> ul_a i
-  DLE_ArraySet at a i v -> (pure $ DLE_ArraySet at) <*> ul_a a <*> ul_a i <*> ul_a v
-  DLE_ArrayConcat at x0 y0 -> do
-    recordUnroll
-    x <- ul_a x0
-    y <- ul_a y0
-    (x_ty, x') <- ul_explode at x
-    (_, y') <- ul_explode at y
-    liftArray at x_ty $ x' <> y'
-  DLE_ArrayZip at x0 y0 -> do
-    recordUnroll
-    x <- ul_a x0
-    y <- ul_a y0
-    (x_ty, x') <- ul_explode at x
-    (y_ty, y') <- ul_explode at y
-    let ty = T_Tuple [x_ty, y_ty]
-    let go xa ya = liftExpr at ty $ DLE_LArg at $ DLLA_Tuple [xa, ya]
-    as <- zipWithM go x' y'
-    liftArray at ty as
-  DLE_TupleRef at t i -> (pure $ DLE_TupleRef at) <*> ul_a t <*> pure i
-  DLE_ObjectRef at o k -> (pure $ DLE_ObjectRef at) <*> ul_a o <*> pure k
-  DLE_Interact at fs p m t as -> (pure $ DLE_Interact at fs p m t) <*> ul_as as
-  DLE_Digest at as -> (pure $ DLE_Digest at) <*> ul_as as
-  DLE_Claim at fs t a m -> (pure $ DLE_Claim at fs t) <*> ul_a a <*> (pure $ m)
-  DLE_Transfer at t a -> (pure $ DLE_Transfer at) <*> ul_a t <*> ul_a a
-  DLE_Wait at a -> (pure $ DLE_Wait at) <*> ul_a a
-  DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> ul_a a
+instance Unroll DLExpr where
+  ul = \case
+    DLE_ArrayConcat at x y -> do
+      (x_ty, x') <- ul_explode at x
+      (_, y') <- ul_explode at y
+      liftArray at x_ty $ x' <> y'
+    DLE_ArrayZip at x y -> do
+      (x_ty, x') <- ul_explode at x
+      (y_ty, y') <- ul_explode at y
+      let ty = T_Tuple [x_ty, y_ty]
+      let go xa ya = liftExpr at ty $ DLE_LArg at $ DLLA_Tuple [xa, ya]
+      as <- zipWithM go x' y'
+      liftArray at ty as
+    e -> return $ e
 
-ul_asn1 :: Bool -> (DLVar, DLArg) -> App (DLVar, DLArg)
-ul_asn1 def (v, a) = (pure (,)) <*> ul_v_def v <*> ul_a a
-  where
-    ul_v_def = if def then ul_v_rn else ul_v
+instance Unroll LLCommon where
+  ul = \case
+    DL_Nop at -> return $ DL_Nop at
+    DL_Let at mdv e -> DL_Let at mdv <$> ul e
+    DL_Var at v -> return $ DL_Var at v
+    DL_Set at v a -> return $ DL_Set at v a
+    DL_LocalIf at c t f -> DL_LocalIf at c <$> ul t <*> ul f
+    DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
+    DL_ArrayMap at ans x a fb -> do
+      (_, x') <- ul_explode at x
+      r' <- mapM (\xa -> fu_ fb [(a, xa)]) x'
+      let r_ty = arrType $ varType ans
+      return $ DL_Let at (Just ans) (DLE_LArg at $ DLLA_Array r_ty r')
+    DL_ArrayReduce at ans x z b a fb -> do
+      (_, x') <- ul_explode at x
+      r' <- foldlM (\za xa -> fu_ fb [(b, za), (a, xa)]) z x'
+      return $ DL_Let at (Just ans) (DLE_Arg at r')
 
-ul_asn :: Bool -> DLAssignment -> App DLAssignment
-ul_asn def (DLAssignment m) = (pure $ DLAssignment) <*> ((pure M.fromList) <*> mapM (ul_asn1 def) (M.toList m))
-
-ul_mdv_rn :: AppT (Maybe DLVar)
-ul_mdv_rn = \case
-  Nothing -> pure Nothing
-  Just v -> pure Just <*> ul_v_rn v
-
-ul_m_ :: (LLCommon -> a -> a) -> (a -> App a) -> LLCommon -> a -> App a
-ul_m_ mkk ul_k m k = do
-  (lifts, m') <- collectLifts $ ul_m m
+ul_m :: Unroll a => (LLCommon -> a -> a) -> LLCommon -> AppT a
+ul_m mkk m k = do
+  (lifts, m') <- collectLifts $ ul m
   let lifts' = lifts <> (return $ m')
-  k' <- ul_k k
+  k' <- ul k
   return $ addLifts mkk lifts' k'
 
-ul_m :: AppT LLCommon
-ul_m = \case
-  DL_Nop at ->
-    return $ DL_Nop at
-  DL_Let at mdv e -> do
-    DL_Let at <$> ul_mdv_rn mdv <*> ul_e e
-  DL_Var at v ->
-    DL_Var at <$> ul_v_rn v
-  DL_Set at v a ->
-    DL_Set at <$> ul_v v <*> ul_a a
-  DL_LocalIf at c t f ->
-    DL_LocalIf at <$> ul_a c <*> ul_l t <*> ul_l f
-  DL_LocalSwitch at ov csm ->
-    DL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm
-    where
-      cm1 (mov', l) = (,) <$> (ul_mv_rn mov') <*> ul_l l
-  DL_ArrayMap at ans x0 a (DLinBlock _ _ f r) -> do
-    recordUnroll
-    x <- ul_a x0
-    (_, x') <- ul_explode at x
-    let r_ty = argTypeOf r
-    let f' a_a = freshRenaming $ do
-          ul_v_rna a a_a
-          liftLocal =<< ul_l f
-          ul_a r
-    r' <- mapM f' x'
-    ans' <- ul_v_rn ans
-    return $ DL_Let at (Just ans') (DLE_LArg at $ DLLA_Array r_ty r')
-  DL_ArrayReduce at ans x0 z b a (DLinBlock _ _ f r) -> do
-    recordUnroll
-    x <- ul_a x0
-    (_, x') <- ul_explode at x
-    z' <- ul_a z
-    let f' b_a a_a = freshRenaming $ do
-          ul_v_rna b b_a
-          ul_v_rna a a_a
-          liftLocal =<< ul_l f
-          ul_a r
-    r' <- foldlM f' z' x'
-    ans' <- ul_v_rn ans
-    return $ DL_Let at (Just ans') (DLE_Arg at r')
+instance Unroll LLTail where
+  ul = \case
+    DT_Return at -> return $ DT_Return at
+    DT_Com m k -> ul_m DT_Com m k
 
-ul_l :: AppT LLTail
-ul_l = \case
-  DT_Return at -> return $ DT_Return at
-  DT_Com m k -> ul_m_ DT_Com ul_l m k
+instance Unroll LLBlock where
+  ul (DLinBlock at fs b a) =
+    DLinBlock at fs <$> ul b <*> pure a
 
-ul_bl :: AppT LLBlock
-ul_bl (DLinBlock at fs b a) =
-  (pure $ DLinBlock at fs) <*> ul_l b <*> ul_a a
+instance Unroll LLConsensus where
+  ul = \case
+    LLC_Com m k -> ul_m LLC_Com m k
+    LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
+    LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
+    LLC_FromConsensus at at' s -> LLC_FromConsensus at at' <$> ul s
+    LLC_While at asn inv cond body k ->
+      LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
+    LLC_Continue at asn -> return $ LLC_Continue at asn
+    LLC_Only at p l k -> LLC_Only at p <$> ul l <*> ul k
 
-ul_n :: AppT LLConsensus
-ul_n = \case
-  LLC_Com m k -> ul_m_ LLC_Com ul_n m k
-  LLC_If at c t f ->
-    (pure $ LLC_If at) <*> ul_a c <*> ul_n t <*> ul_n f
-  LLC_Switch at ov csm ->
-    LLC_Switch at <$> ul_v ov <*> mapM cm1 csm
-    where
-      cm1 (mov', n) = (,) <$> ul_mv_rn mov' <*> ul_n n
-  LLC_FromConsensus at at' s ->
-    (pure $ LLC_FromConsensus at at') <*> ul_s s
-  LLC_While at asn inv cond body k ->
-    (pure $ LLC_While at) <*> ul_asn True asn <*> ul_bl inv <*> ul_bl cond <*> ul_n body <*> ul_n k
-  LLC_Continue at asn ->
-    (pure $ LLC_Continue at) <*> ul_asn False asn
-  LLC_Only at p l k ->
-    (pure $ LLC_Only at p) <*> ul_l l <*> ul_n k
+instance Unroll k => Unroll (a, k) where
+  ul (a, k) = (,) a <$> ul k
 
-ul_mtime :: AppT (Maybe (DLArg, LLStep))
-ul_mtime = \case
-  Nothing -> (pure $ Nothing)
-  Just (b, s) -> (pure $ Just) <*> (pure (,) <*> ul_a b <*> ul_s s)
+instance Unroll a => Unroll (M.Map k a) where
+  ul = mapM ul
 
-ul_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
-ul_send (p, (isClass, args, amta, whena)) =
-  (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
+instance Unroll a => Unroll (Maybe a) where
+  ul = mapM ul
 
-ul_s :: AppT LLStep
-ul_s = \case
-  LLS_Com m k -> ul_m_ LLS_Com ul_s m k
-  LLS_Stop at ->
-    (pure $ LLS_Stop at)
-  LLS_Only at p l s ->
-    (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
-  LLS_ToConsensus at send recv mtime ->
-    LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
-    where
-      send' = M.fromList <$> mapM ul_send (M.toList send)
-      (last_timev, winner_dv, msg, amtv, timev, cons) = recv
-      cons' = ul_n cons
-      recv' = (\a b c d e f -> (a, b, c, d, e, f)) <$> ul_mv last_timev <*> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> ul_v_rn timev <*> cons'
-      mtime' = ul_mtime mtime
+instance Unroll k => Unroll (a, b, c, d, e, k) where
+  ul (a, b, c, d, e, k) = (\k' -> (a, b, c, d, e, k')) <$> ul k
 
-ul_dli :: AppT DLInit
-ul_dli (DLInit ctimem) = do
-  DLInit <$> ul_mdv_rn ctimem
+instance Unroll LLStep where
+  ul = \case
+    LLS_Com m k -> ul_m LLS_Com m k
+    LLS_Stop at -> pure $ LLS_Stop at
+    LLS_Only at p l s -> LLS_Only at p <$> ul l <*> ul s
+    LLS_ToConsensus at send recv mtime ->
+      LLS_ToConsensus at send <$> ul recv <*> ul mtime
 
-ul_p :: AppT LLProg
-ul_p (LLProg at opts ps dli s) = do
-  LLProg at opts ps <$> ul_dli dli <*> ul_s s
+instance Unroll LLProg where
+  ul (LLProg at opts ps dli s) =
+    LLProg at opts ps dli <$> ul s
 
 unrollLoops :: LLProg -> IO LLProg
-unrollLoops lp = do
-  env0 <- mkEnv0
-  lp' <- flip runReaderT env0 $ ul_p lp
-  let Env {..} = env0
-  --- Note: Maybe laziness makes this fast? If not, then it would be
-  --- good to do a quick check to see if there is any need before
-  --- going through the work of doing it.
-  didUnroll <- readIORef eDidUnroll
-  case didUnroll of
-    True -> return $ lp'
-    False -> return lp
+unrollLoops lp@(LLProg _ llo _ _ _) = do
+  let LLOpts {..} = llo
+  let eCounter = llo_counter
+  let emLifts = Nothing
+  flip runReaderT (Env {..}) $ ul lp

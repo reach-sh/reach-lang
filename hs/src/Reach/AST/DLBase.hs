@@ -10,6 +10,7 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.Texty
 import Reach.Pretty
+import Reach.Util
 
 data DeployMode
   = DM_constructor
@@ -29,6 +30,11 @@ data DLType
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
   deriving (Eq, Generic, Ord)
+
+arrType :: DLType -> DLType
+arrType = \case
+  T_Array d _ -> d
+  _ -> impossible "no array"
 
 showTys :: Show a => [a] -> String
 showTys = intercalate ", " . map show
