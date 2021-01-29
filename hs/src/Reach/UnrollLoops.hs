@@ -225,7 +225,7 @@ ul_m_ mkk ul_k m k = do
   k' <- ul_k k
   return $ addLifts mkk lifts' k'
 
-ul_m :: LLCommon -> App LLCommon
+ul_m :: AppT LLCommon
 ul_m = \case
   DL_Nop at ->
     return $ DL_Nop at
