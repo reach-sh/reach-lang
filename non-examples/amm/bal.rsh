@@ -1,184 +1,8 @@
 'reach 0.1';
 
-const N = 2;
+const N = 3;
 
 const mtArr = Array.replicate(N, 0);
-
-/**
- * ===================================================
- * Value function
- * ===================================================
- *
- * An invariant that implies a spot price
- * at each point st. no matter what exchanges are carried
- * out, the share of value of each token in the pool remains
- * constant:
- *
- *  V = Π t => balanceT ** WeightT
- *
- * weightT : fraction representing share of pool
- *           ( total weights add up to 1 )
- */
-
-/**
- * ===================================================
- * Spot Price
- * ===================================================
- *
- * Each pair of tokens in a pool has a spot price. It is
- * defined solely in terms of the balance and weights of
- * each token in the pair. The spot price of any two tokens,
- * SpotPriceIO, or SPio, is the ratio of token balances,
- * normalized by their weights:
- *
- * let i = balanceI / weightI
- * let o = balanceO / weightO
- * in
- * SPio = i / o
- *
- * With constant weights, spot prices will only change
- * based on token balances.
- *
- */
-
-/**
- * ===================================================
- * Effective Price
- * ===================================================
- *
- * SPio is the theoretical price for trades which incur
- * no slippage. The effective price for a trade depends
- * on the amount traded, which always causes a price
- * change. We can define EPio as:
- *
- *  EPio = amtIn / amtOut
- *
- * EP tends to SP, when trade amounts tend to 0
- *
- */
-
-/**
- * ===================================================
- * Trading: Out-Given-In
- * ===================================================
- *
- * When a user sends tokens `i` to get tokens `o`,
- * all other token balances remain the same. Since
- * the value function after the trade should remain
- * the same as before, we can calculate the amtOut
- * from:
- *
- * Π (k /= i, o) =>
- *   let others = (balanceK ** weightK)
- *   let out    = (balanceOut - amtOut) ** weightOut
- *   let in     = (balanceIn + amtIn) ** weightIn
- *   let inv    = Π k => balanceK ** weightK
- *   in
- *   others * out * in = inv
- *
- * which simplifies to:
- *
- * let v = balanceIn / (balanceIn + amtIn)
- * let w = weightIn / weightOut
- * let u = v ** w
- * let t = 1 - u
- * in
- * amtOut = balanceOut * t
- *
- * This function performs a swap for a Trader.
- */
-
-/**
- * ===================================================
- * Liquidity Deposit: All-Asset Deposit
- * ===================================================
- *
- * An "all-asset" deposit must have all the assets in the
- * right proportions. To receive pIssued pool tokens,
- * given an existing total supply of pSupply, one must
- * deposit dK tokens to the pool.
- *
- * let u = (pSupply + pIssued) / pSupply
- * let t = u - 1
- * in
- * dK = t * balanceK
- *
- * balanceK: balance of token k before deposit
- *
- * Solved for pIssued:
- *
- * let u = (dK / balanceK) + 1
- * let t = pSupply * u
- * in
- * pIssued = t - pSupply
- *
- */
-
-/**
- * ===================================================
- * Liquidity Withdrawal: All-Asset Withdraw
- * ===================================================
- *
- * Provider redeems their pool tokens in return for a
- * proportional share of each asset in pool. To calc
- * the amount of each token to withdraw from the pool:
- *
- * let u = (pSupply - pRedeemed) / pSupply
- * let t = 1 - u
- * in
- * aK = t * balanceK
- *
- * balanceK: balance of token k before withdrawal
- */
-
-/**
- * ===================================================
- * Liquidity Deposit: Single-Asset Deposit
- * ===================================================
- *
- * Providers may depsoit single asset to pool, if pool
- * contains that asset. Depositing a single asset A, is
- * equivalent to depositing all pool assets proportionally
- * and then selling more of asset A to get back all the
- * other tokens deposited. This way a provider would end up
- * spending only asset A, since the amounts of other tokens
- * deposited would be returned through the trades.
- *
- * let u = V' / V
- * let t = u - 1
- * in
- * pIssued = pSupply * t
- *
- * V' : value after deposit
- * V  : value before deposit
- *
- * which simplifies to:
- *
- * let v = amtT / balanceT
- * let w = 1 + v
- * let u = w ** weightT
- * let t = u - 1
- * in
- * pIssued  = pSupplied * t
- *
- * t : token used in single deposit
- *
- */
-
-/**
- * ===================================================
- * Liquidity Withdrawal : Single-Asset Withdrawal
- * ===================================================
- *
- * let w = 1 - (pReedemed / pSupply)
- * let u = w ** (1 / weightT)
- * let t = 1 - u
- * in
- * amtT = balanceT * t
- *
- * balanceT: balance of token before withdrawal
- *
- */
 
 const getReserves = (market) =>
   market.tokens.map(t => t.balance);
@@ -231,25 +55,6 @@ const getSpotPrice = (i, o, swapFee) => {
   return sp * (1 / (1 - swapFee));
 }
 
-
-/**
- * ===================================================
- * Trading: In-Given-Out
- * ===================================================
- *
- * It's also useful for traders to know how much to send of
- * tokenIn to get a desired amount of tokenOut. We can calc
- * that by the same formula above, but solving for amtOut:
- *
- * let v = balanceOut / (balanceOut / amtOut)
- * let w = weightOut / weightIn
- * let u = v ** w
- * let t = u - 1
- * in
- * amtIn = balanceIn * t
- *
- * This function just returns info to Trader.
- */
 export const calcInGivenOut = ({ balanceIn, balanceOut, weightIn, weightOut, amtOut }) => {
 
   const v = balanceOut / (balanceOut / amtOut);
@@ -259,26 +64,6 @@ export const calcInGivenOut = ({ balanceIn, balanceOut, weightIn, weightOut, amt
   return balanceIn * (u - 1) * (1 / (1 - swapFee));
 }
 
-
-/**
- * ===================================================
- * Trading: In-Given-Price
- * ===================================================
- *
- * Traders who want to take advantage of arbitrage would like
- * to know how many tokenIn they will have to send to change
- * spot price of SPio to a desired SP'io. The formula to
- * calc it is:
- *
- * let v = SP'io / SPio
- * let w = weightOut / (weightOut + weightIn)
- * let u = v ** w
- * let t = u - 1
- * in
- * amtIn = balanceIn * t
- *
- * This function just returns info to Trader.
- */
 export const calcInGivenPrice = ({ balanceIn, balanceOut, weightIn, weightOut, desiredSP }) => {
 
   const curSP = getSpotPrice(
@@ -303,47 +88,47 @@ const updateMarket = (market, amtIns, amtOuts) => ({
 });
 
 const participants = [
-  // XXX feature: new interface for foreign to reach:
-  //  Participant/Class(name, interactInterface, foreignToReachInteractInterface);
+  // XXX feature: better specification of participant entities
   Participant('Admin', {
       getParams : Fun([], {
-        formulaValuation: UInt,
         // Weight all token ratios should add up to
         totalWeight: UInt,
         // Weight for each token
         weights: Array(N, UInt),
         swapFee: UInt,
       }),
-    }, {
-      closePool: Fun([], Null),
+      shouldClosePool: Fun([], Null),
     }),
-  Class('Provider', {}, {
-    allAssetDeposit:
-      Fun([Object({
-        amtIns : Array(UInt, N) })],
-        Null),
-    allAssetWithdrawal:
-      Fun([Object({
-        liquidity: UInt })],
-        Null),
-    singleAssetDeposit:
-      Fun([Object({
-        amtInToken : UInt,
-        amtIn      : UInt })],
-        Null),
-    singleAssetWithdrawal:
-      Fun([Object({
-        liquidity : UInt,
-        outToken  : UInt })],
-        Null),
+  Class('Provider', {
+    allAssetDepositMaybe:
+      Fun([], Tuple(Bool, Object({ amtIns: Array(UInt, N) }))),
+    allAssetDepositDone:
+      Fun([Bool, UInt], Null),
+
+    allAssetWithdrawalMaybe:
+      Fun([], Tuple(Bool, Object({ liquidity: UInt }))),
+    allAssetWithdrawalDone:
+      Fun([Bool, Array(N, UInt)], Null),
+
+    singleAssetDepositMaybe:
+      Fun([], Object({ inToken: UInt, amtIn: UInt })),
+    singleAssetDepositDone:
+      Fun([Bool, UInt], Null),
+
+    singleAssetWithdrawalMaybe:
+      Fun([], Object({ liquidity: UInt, outToken: UInt })),
+    singleAssetWithdrawalDone:
+      Fun([Bool, UInt], Null),
   }),
   Class('Trader', {}, {
-    tradeOutGivenIn:
-      Fun([Object({
-        outToken : UInt,
-        inToken  : UInt,
-        amtIn    : UInt })],
-      Null),
+    swapExactAmountInMaybe:
+      Fun([], Tuple(Bool, Object({ minAmtOut: UInt, outToken: UInt, inToken: UInt, amtIn: UInt }))),
+    swapExactAmountInDone:
+      Fun([Bool, UInt], Null),
+    swapExactAmountOutMaybe:
+      Fun([], Tuple(Bool, Object({ amtOut: UInt, outToken: UInt, inToken: UInt, maxAmtIn: UInt }))),
+    swapExactAmountOutDone:
+      Fun([Bool, UInt], Null),
   }),
   Array(Token, N),
   MintedToken,
@@ -367,36 +152,24 @@ export const main =
         tokens: weights.map(w => ({ balance: 0, weight: w })),
       };
 
-      // XXX Feature: Make these variables available to front-end.
-      // This functionality will allow for users to get info they
-      // need to call helper functions (calcInGivenPrice, calcInGivenOut)
-      // and access info like weights, balances etc.
-      //
-      // https://trello.com/c/1dOhkM9h/633-have-the-backend-expose-all-non-app-values-like-numbers-etc
-      export const [ alive, pool, market ] =
+      const [ alive, pool, market ] =
         parallel_reduce([ true, initialPool, initialMarket ])
           .invariant(alive || pool.totalSupply() > 0)
           .while(true)
+          .define(() => {
+            const st = [ true, initialPool, initialMarket ];
+            const wrap = (f, onlyIfAlive) => {
+              const [ when, msg ] = declassify(f(st));
+              return { when: (onlyIfAlive ? alive : true) && when, msg }
+            }
+          })
           // Admin functionality
           .case(Admin,
-            (() => ({
-              implements: interact.closePool,
-            })),
+            (() => ({  when: alive && declassify(interact.shouldClosePool()) })),
             (() => [ false, pool, market ]),
            )
           .case(Trader,
-            (() => ({
-              // XXX Feature: `implements`
-              // Foreign2Reach interact interface methods must be implemented.
-              // `implements` infers:
-              //  * The method that is implemented is foreign due to the
-              //    interface its in
-              //  * An implemented method from the foreign interface
-              //    should be always be `exposedAs: <name>`
-              //  * The `msg` argument is the type of function args
-              implements: interact.tradeOutGivenIn,
-              when: alive,
-            })),
+            (() => wrap(interact.swapExactAmountInMaybe, true)),
             (({ amtIn, inToken }) => [ [ inToken, amtIn ] ]),
             (({ amtIn, inToken, outToken }) => {
 
@@ -410,11 +183,55 @@ export const main =
 
               const amtOut = balanceOut * (1 - t);
 
+              require(amtOut >= minAmtOut, "Minimum amount out not met");
+
               const amtOuts = mtArr.set(outToken, amtOut);
               const amtIns  = mtArr.set(inToken, amtIn);
 
-              const to = this;
-              const updatedMarket = swap(amtIns, amtOuts, to, tokens, market);
+              const currentTrader = this;
+              const updatedMarket = swap(amtIns, amtOuts, currentTrader, tokens, market);
+
+              // Alert front end how many OutTokens trader received for swap
+              Trader.only(() =>
+                interact.swapExactAmountInDone(currentTrader == this, amtOut));
+
+              return [ true, pool, updatedMarket ];
+
+            }),
+           )
+          .case(Trader,
+            (() => {
+              const [ when, msg ] = declassify(interact.swapExactAmountOutMaybe(st));
+              if (alive && when) {
+                // Calculate what amtIn should be
+                const tokenIn  = market.tokens[inToken];
+                const tokenOut = market.tokens[outToken];
+
+                const amtIn = calcInGivenOut({
+                  balanceIn: tokenIn.balance,
+                  balanceOut: tokenOut.balance,
+                  weightIn: tokenIn.weight,
+                  weightOut: tokenOut.weight,
+                  amtOut: msg.amtOut
+                });
+
+                require(amtIn <= msg.maxAmtIn, "Maximum amtIn exceeded");
+
+                return { when: true, msg : Object.set(msg, 'amtIn', amtIn) };
+              } else {
+                return { when: false, msg }; }
+            }),
+            (({ amtIn, inToken }) => [ [ inToken, amtIn ] ]),
+            (({ amtIn, inToken, outToken, amtOut }) => {
+
+              const currentTrader = this;
+              const amtOuts = mtArr.set(outToken, amtOut);
+              const amtIns  = mtArr.set(inToken, amtIn);
+              const updatedMarket = swap(amtIns, amtOuts, currentTrader, tokens, market);
+
+              // Alert front end how many InTokens trader received for swap
+              Trader.only(() =>
+                interact.swapExactAmountOutDone(currentTrader == this, amtIn));
 
               return [ true, pool, updatedMarket ];
 
@@ -422,10 +239,7 @@ export const main =
            )
           // Provider functionality
           .case(Provider,
-            (() => ({
-              implements: interact.allAssetDeposit,
-              when: alive,
-            })),
+            (() => wrap(interact.allAssetDepositMaybe, true)),
             (({ amtIns }) => tokens.zip(amtIns) ),
             (({ amtIns }) => {
 
@@ -434,22 +248,28 @@ export const main =
               const pSupply = pool.totalSupply();
 
               const minted = (pSupply == 0)
-                ? sqrt(amtIns.product())
+                ? sqrt(amtIns.product(), 10)
                 : Array.zip(startingReserves, amtIn)
                   .map(([ sIn, amtIn ]) => pSupply * (amtIn / sIn - 1) - pSupply)
                   .average();
 
               const updatedPool = pool.mint(this, minted);
 
+              // Alert front end of how many pool tokens were minted
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.allAssetDepositDone(currentProvider == this, minted));
+
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.allAssetDepositDone(currentProvider == this, minted));
+
               return [ true, updatedPool, updatedMarket ];
 
             }),
            )
            .case(Provider,
-            (() => ({
-              implements: interact.allAssetWithdrawal,
-              when: alive,
-            })),
+            (() => wrap(interact.allAssetWithdrawalMaybe, false)),
             (({ liquidity }) => {
 
               assert(liquidity <= pool.balanceOf(this),
@@ -470,17 +290,23 @@ export const main =
               const updatedMarket = updateMarket(market, mtArr, amtOuts);
               const updatedPool = pool.burn(this, liquidity);
 
+              // Alert front end of how many tokens they withdrew
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.allAssetWithdrawalDone(currentProvider == this, amtOuts));
+
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.allAssetWithdrawalDone(currentProvider == this, amtOuts));
+
               return [ true, updatedPool, updatedMarket ];
 
             }),
            )
            .case(Provider,
-            (() => ({
-              implements: interact.singleAssetDeposit,
-              when: alive,
-            })),
-            (({ amtIn, amtInToken }) => [ [ amtInToken, amtIn ] ] ),
-            (({ amtIn, amtInToken }) => {
+            (() => wrap(interact.singleAssetDeposit, true)),
+            (({ amtIn, inToken }) => [ [ inToken, amtIn ] ] ),
+            (({ amtIn, inToken }) => {
 
               assert(pool.totalSupply() != 0,
                 "Cannot make single asset deposit before pool is initialized.");
@@ -495,18 +321,19 @@ export const main =
 
               const updatedMarket = updateMarket(market, amtIns, mtArr);
               const pSupply = pool.totalSupply();
-              const minted = calcSingleAssetDeposit(market.tokens[amtInToken], amtIn);
+              const minted = calcSingleAssetDeposit(market.tokens[inToken], amtIn);
               const updatedPool = pool.mint(this, minted);
+
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.singleAssetDepositDone(currentProvider == this, minted));
 
               return [ true, updatedPool, updatedMarket ];
 
             }),
            )
            .case(Provider,
-            (() => ({
-              implements: interact.singleAssetWithdrawal,
-              when: alive,
-            })),
+            (() => wrap(interact.singleAssetWithdrawalMaybe, false)),
             (({ liquidity, outToken }) => {
 
               assert(liquidity <= pool.balanceOf(this),
@@ -528,6 +355,10 @@ export const main =
               transfer(amtOut).currency(outToken).to(this);
               const updatedMarket = updateMarket(market, mtArr, amtOuts);
               const updatedPool = pool.burn(this, liquidity);
+
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.singleAssetWithdrawalDone(currentProvider == this, amtOut));
 
               return [ true, updatedPool, updatedMarket ];
 

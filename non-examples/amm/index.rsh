@@ -38,14 +38,14 @@ const PARTICIPANTS = [
     shouldClosePool: Fun([State], Bool),
   }),
   Class('Provider', {
-    withdrawMaybe: Fun([State], [Bool, Withdraw]),
-    withdrawDone : Fun([TokenAmounts], Null),
-    depositMaybe : Fun([State], [Bool, Deposit]),
-    depositDone  : Fun([UInt], Null),
+    withdrawMaybe: Fun([State], Tuple(Bool, Withdraw)),
+    withdrawDone : Fun([Bool, TokenAmounts], Null),
+    depositMaybe : Fun([State], Tuple(Bool, Deposit)),
+    depositDone  : Fun([Bool, UInt], Null),
   }),
   Class('Trader', {
-    tradeMaybe: Fun([State], [ Bool, Swap ]),
-    tradeDone : Fun([TokenAmounts], Null),
+    tradeMaybe: Fun([State], Tuple(Bool, Swap)),
+    tradeDone : Fun([Bool, TokenAmounts], Null),
   }),
 
   // XXX: Feature - Non-network token consumption

@@ -6,6 +6,8 @@ const NUM_TRADERS   = 2;
 
 const tokenRatio = [1, 2];
 
+const mtArr = tokenRatio.map(_ => 0);
+
 const createPartClassAccounts = async (length) =>
   Promise.all(
     Array.from({ length }),
@@ -46,13 +48,13 @@ const createPartClassAccounts = async (length) =>
     return backend.Provider(ctcProvider, {
       withdrawMaybe: ([ alive, pool, market ]) =>
         (iDeposited && everyOneTraded())
-          ? [ true, providerPoolTokens[i] ]
+          ? [ true, { liquidity: providerPoolTokens[i] } ]
           : [ false, { liquidity: 0 }],
       withdrawDone: (amtOuts) =>
         console.log(`${who} withdrew ${amtOuts}`),
       depositMaybe: ([ alive, pool, market ]) => {
         if (iDeposited) {
-          return [ false, { amtIn: 0, inToken: 0, outToken: 0 }];
+          return [ false, { amtIns: mtArr, ratios: tokenRatio }];
         } else {
           iDeposited = true;
           const amtIns = [2, 4];
