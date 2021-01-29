@@ -14,7 +14,6 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser
-import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util
 import Reach.Verify

@@ -9,6 +9,8 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.Counter
+import Reach.Texty
+import Reach.Pretty
 
 data StmtAnnot = StmtAnnot
   { sa_pure :: Bool
@@ -62,6 +64,53 @@ data DLStmt
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
   deriving (Eq, Generic, Show)
+
+instance Pretty DLStmt where
+  pretty d =
+    case d of
+      DLS_Let _ mv e ->
+        case mv of
+          Just v ->
+            "const" <+> pretty v <+> "=" <+> pretty e <> semi
+          Nothing ->
+            pretty e <> semi
+      DLS_ArrayMap _ ans x a f -> prettyMap ans x a f
+      DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+      DLS_If _ ca _ ts fs ->
+        prettyIf ca (render_dls ts) (render_dls fs)
+      DLS_Switch _ ov _ csm ->
+        prettySwitch ov csm
+      DLS_Return _ ret sv ->
+        "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
+      DLS_Prompt _ ret bodys ->
+        "prompt" <> parens pret <+> ns bodys <> semi
+        where
+          pret =
+            case ret of
+              Left dv -> "const" <+> pretty dv
+              Right (dv, retm) ->
+                "let" <+> pretty dv <+> "with" <+> render_obj retm
+      DLS_Stop _ ->
+        prettyStop
+      DLS_Only _ who onlys ->
+        prettyOnly who (ns onlys)
+      DLS_ToConsensus {..} ->
+        prettyToConsensus_ render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
+      DLS_FromConsensus _ more ->
+        prettyCommit <> hardline <> render_dls more
+      DLS_While _ asn inv cond body ->
+        prettyWhile asn inv cond $ render_dls body
+      DLS_Continue _ cont_da ->
+        prettyContinue cont_da
+      DLS_FluidSet _ fv da ->
+        "fluid" <+> pretty fv <+> ":=" <+> pretty da
+      DLS_FluidRef _ dv fv ->
+        pretty dv <+> "<-" <+> "fluid" <+> pretty fv
+    where
+      ns x = render_nest $ render_dls x
+
+render_dls :: DLStmts -> Doc
+render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
 instance SrcLocOf DLStmt where
   srclocOf = \case
@@ -119,9 +168,15 @@ instance IsLocal DLStmt where
 
 type DLStmts = Seq.Seq DLStmt
 
+instance Pretty (Seq.Seq DLStmt) where
+  pretty = render_dls
+
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
   deriving (Eq, Generic, Show)
+
+instance Pretty DLBlock where
+  pretty (DLBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
@@ -135,3 +190,12 @@ data DLOpts = DLOpts
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
   deriving (Generic)
+
+instance Pretty DLProg where
+  pretty (DLProg _at _ sps dli ds) =
+    "#lang dl" <> hardline
+      <> pretty sps
+      <> hardline
+      <> hardline
+      <> pretty dli
+      <> render_dls ds

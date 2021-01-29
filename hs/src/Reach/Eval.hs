@@ -26,7 +26,6 @@ import Reach.AST.SL
 import Reach.Connector
 import Reach.JSUtil
 import Reach.Parser
-import Reach.Pretty ()
 import Reach.Counter
 import Reach.Texty (pretty)
 import Reach.Type

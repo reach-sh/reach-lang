@@ -13,7 +13,6 @@ module Reach.Parser
   )
 where
 
-import Control.DeepSeq
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
@@ -135,18 +134,12 @@ type JSBundleMap = BundleMap ReachSource [JSModuleItem]
 data JSBundle = JSBundle [(ReachSource, [JSModuleItem])]
   deriving (Eq, Show, Generic)
 
-instance NFData JSBundle where
-  rnf (JSBundle xs) = go xs
-    where
-      go [] = ()
-      go ((rs, jmi) : rest) = rnf rs `seq` jmi `seq` go rest
-
 instance Pretty JSBundle where
   pretty (JSBundle ds) = vsep $ map go ds
     where
       go (rs, jms) =
         vsep $
-          (pretty $ "// " <> show rs) :
+          ("// " <> viaShow rs) :
           map (pretty . ppShow) jms
 
 gatherDeps_fc :: SrcLoc -> IORef JSBundleMap -> JSFromClause -> IO JSFromClause

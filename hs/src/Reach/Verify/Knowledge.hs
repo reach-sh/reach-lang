@@ -11,7 +11,6 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.IORefRef
-import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util
 import Reach.Verify.Shared

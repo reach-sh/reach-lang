@@ -7,6 +7,8 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.Counter
+import Reach.Texty
+import Reach.Pretty
 
 type LLVar = Maybe DLVar
 
@@ -33,6 +35,18 @@ data LLConsensus
   | LLC_Only SrcLoc SLPart LLTail LLConsensus
   deriving (Eq, Show)
 
+instance Pretty LLConsensus where
+  pretty = \case
+    LLC_Com x k -> prettyCom x k
+    LLC_If _at ca t f -> prettyIfp ca t f
+    LLC_Switch _at ov csm -> prettySwitch ov csm
+    LLC_FromConsensus _at _ret_at k ->
+      prettyCommit <> hardline <> pretty k
+    LLC_While _at asn inv cond body k ->
+      prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
+    LLC_Continue _at asn -> prettyContinue asn
+    LLC_Only _at who onlys k -> prettyOnlyK who onlys k
+
 data LLStep
   = LLS_Com LLCommon LLStep
   | LLS_Stop SrcLoc
@@ -45,6 +59,14 @@ data LLStep
       }
   deriving (Eq, Show)
 
+instance Pretty LLStep where
+  pretty = \case
+    LLS_Com x k -> prettyCom x k
+    LLS_Stop _at -> prettyStop
+    LLS_Only _at who onlys k -> prettyOnlyK who onlys k
+    LLS_ToConsensus {..} ->
+      prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
+
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
   , llo_verifyOverflow :: Bool
@@ -55,3 +77,13 @@ data LLOpts = LLOpts
 data LLProg
   = LLProg SrcLoc LLOpts SLParts DLInit LLStep
   deriving (Eq)
+
+instance Pretty LLProg where
+  pretty (LLProg _at _ sps dli db) =
+    "#lang ll" <> hardline
+      <> pretty sps
+      <> hardline
+      <> hardline
+      <> pretty dli
+      <> pretty db
+

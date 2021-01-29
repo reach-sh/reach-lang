@@ -25,7 +25,6 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Connector
 import Reach.Counter
-import Reach.Pretty ()
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util

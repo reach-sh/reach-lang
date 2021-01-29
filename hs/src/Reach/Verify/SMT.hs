@@ -20,7 +20,6 @@ import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.IORefRef
-import Reach.Pretty ()
 import Reach.Texty
 import Reach.UnrollLoops
 import Reach.Util

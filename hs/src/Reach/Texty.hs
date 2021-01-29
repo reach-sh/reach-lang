@@ -3,6 +3,7 @@ module Reach.Texty
   , render
   , Pretty
   , pretty
+  , prettyl
   , (<+>)
   , group --- XXX remove
   , emptyDoc
@@ -29,6 +30,7 @@ where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Set as S
 import Data.String
 import qualified Data.Text as T
@@ -75,15 +77,26 @@ render = runIdentity . flip runReaderT 0 . render_
 class Pretty a where
   pretty :: a -> Doc
 
-instance {-# OVERLAPPING #-} Pretty String where
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+  pretty = \case
+    Left x -> pretty x
+    Right x -> pretty x
+
+instance {-# OVERLAPS #-} Pretty String where
   pretty = DText . LT.pack
+
+instance {-# OVERLAPS #-} Pretty B.ByteString where
+  pretty = viaShow
 
 instance Pretty a => Pretty (Maybe a) where
   pretty Nothing = "Nothing"
   pretty (Just x) = "Just" <+> pretty x
 
-instance Pretty a => Pretty [a] where
-  pretty l = "[" <> (concatWith (\x y -> x <> ", " <> y) $ map pretty l) <> "]"
+prettyl :: Pretty a => [a] -> Doc
+prettyl l = "[" <> (concatWith (\x y -> x <> ", " <> y) $ map pretty l) <> "]"
+
+instance {-# OVERLAPPABLE #-} Pretty a => Pretty [a] where
+  pretty = prettyl
 
 instance Pretty a => Pretty (S.Set a) where
   pretty = pretty . S.toList
@@ -92,9 +105,6 @@ instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x, y) = "(" <> pretty x <> ", " <> pretty y <> ")"
 
 instance Pretty Bool where
-  pretty = viaShow
-
-instance Pretty Char where
   pretty = viaShow
 
 instance Pretty () where

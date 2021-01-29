@@ -15,6 +15,8 @@ import Reach.AST.DLBase
 import Reach.AST.DL
 import Reach.JSOrphans ()
 import Reach.Util
+import Reach.Pretty
+import Reach.Texty
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -36,6 +38,25 @@ data SLType
   | ST_Var SLVar
   | ST_Type SLType
   deriving (Eq, Generic)
+
+instance Show SLType where
+  show ST_Null = "Null"
+  show ST_Bool = "Bool"
+  show ST_UInt = "UInt"
+  show (ST_Bytes sz) = "Bytes(" <> show sz <> ")"
+  show ST_Digest = "Digest"
+  show ST_Address = "Address"
+  show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
+  show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
+  show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (ST_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
+  show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+  show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
+  show (ST_Var x) = show x
+  show (ST_Type ty) = "Type(" <> show ty <> ")"
+
+instance Pretty SLType where
+  pretty = viaShow
 
 st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
@@ -71,22 +92,6 @@ st2it :: SLType -> Maybe IType
 st2it t = case t of
   ST_Fun dom rng -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
   _ -> IT_Val <$> st2dt t
-
-instance Show SLType where
-  show ST_Null = "Null"
-  show ST_Bool = "Bool"
-  show ST_UInt = "UInt"
-  show (ST_Bytes sz) = "Bytes(" <> show sz <> ")"
-  show ST_Digest = "Digest"
-  show ST_Address = "Address"
-  show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
-  show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (ST_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
-  show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
-  show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
-  show (ST_Var x) = show x
-  show (ST_Type ty) = "Type(" <> show ty <> ")"
 
 infixr 9 -->
 
@@ -126,6 +131,32 @@ data SLVal
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
   deriving (Eq, Generic, Show)
+
+instance Pretty SLVal where
+  pretty = \case
+    SLV_Null {} -> "null"
+    SLV_Bool _ b -> pretty b
+    SLV_Int _ i -> pretty i
+    SLV_Bytes _ b -> pretty b
+    SLV_Array at t as ->
+      "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
+    SLV_Tuple _ as ->
+      brackets $ hsep $ punctuate comma $ map pretty as
+    SLV_Object _ (Just lab) _ -> pretty lab
+    SLV_Object _ _ m -> render_obj m
+    SLV_Clo {} -> "<closure>"
+    SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+    SLV_DLC c -> "<constant: " <> viaShow c <> ">"
+    SLV_DLVar v -> pretty v
+    SLV_Type t -> "<type: " <> pretty t <> ">"
+    SLV_Connector cn -> "<connector: " <> pretty cn <> ">"
+    SLV_Participant _ who _ _ ->
+      "<participant: " <> pretty who <> ">"
+    SLV_RaceParticipant _ whos ->
+      "<race: " <> pretty whos <> ">"
+    SLV_Prim p -> "<primitive: " <> pretty (conNameOf p) <> ">"
+    SLV_Form f -> "<form: " <> pretty (conNameOf f) <> ">"
+    SLV_Kwd k -> pretty k
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -244,6 +275,9 @@ data SLKwd
 instance Show SLKwd where
   show k = drop 4 $ conNameOf k
 
+instance Pretty SLKwd where
+  pretty = viaShow
+
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
@@ -330,6 +364,10 @@ data SLSSVal = SLSSVal
   , sss_val :: SLVal
   }
   deriving (Eq, Generic, Show)
+
+instance Pretty SLSSVal where
+  pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
+  -- TODO: incorporate srcloc in pretty?
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
 sss_restrict lvl1 (SLSSVal at lvl2 val) =

@@ -9,7 +9,6 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.Pretty ()
 import Reach.Counter
 import Reach.Texty
 import Reach.Util

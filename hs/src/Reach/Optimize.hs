@@ -14,7 +14,6 @@ import Reach.Sanitize
 import Reach.Util
 
 -- import Reach.Texty
--- import Reach.Pretty ()
 -- import Debug.Trace
 
 type App = ReaderT Env IO

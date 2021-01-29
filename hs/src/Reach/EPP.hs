@@ -14,7 +14,6 @@ import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Optimize
-import Reach.Pretty ()
 import Reach.Counter
 import Reach.Util
 

@@ -13,7 +13,6 @@ import Reach.AST.DLBase
 import Reach.AST.DK
 import Reach.AST.LL
 import Reach.Counter
-import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util
 

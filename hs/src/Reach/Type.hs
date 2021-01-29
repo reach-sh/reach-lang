@@ -19,7 +19,6 @@ import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.SL
-import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util
 

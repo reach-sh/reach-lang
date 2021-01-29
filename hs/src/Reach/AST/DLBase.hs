@@ -8,6 +8,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
+import Reach.Texty
+import Reach.Pretty
 
 data DeployMode
   = DM_constructor
@@ -48,29 +50,53 @@ instance Show DLType where
   show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
   show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
 
+instance Pretty DLType where
+  pretty = viaShow
+
 -- Interact types can only be value types or first-order function types
 data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
   deriving (Eq, Ord, Generic, Show)
 
+instance Pretty IType where
+  pretty = viaShow
+
 newtype InteractEnv
   = InteractEnv (M.Map SLVar IType)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, Semigroup)
+
+instance Pretty InteractEnv where
+  pretty (InteractEnv m) = "interact" <+> render_obj m
 
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, Semigroup)
 
+instance Pretty SLParts where
+  pretty (SLParts m) = "parts" <+> render_obj m <> semi
+
 data DLInit = DLInit
   {dli_ctimem :: Maybe DLVar}
   deriving (Eq, Generic, Show, Ord)
 
+instance Pretty DLInit where
+  pretty (DLInit ctimem) =
+    "// initialization" <> hardline
+      <> ctimem'
+    where
+      ctimem' = case ctimem of
+        Nothing -> "// no ctime" <> hardline
+        Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
 data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, Show, Ord)
+
+instance Pretty DLConstant where
+  pretty = \case
+    DLC_UInt_max -> "UInt.max"
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
@@ -82,6 +108,13 @@ data DLLiteral
   | DLL_Int SrcLoc Integer
   | DLL_Bytes B.ByteString
   deriving (Eq, Generic, Show, Ord)
+
+instance Pretty DLLiteral where
+  pretty = \case
+    DLL_Null -> "null"
+    DLL_Bool b -> if b then "#t" else "#f"
+    DLL_Int _ i -> viaShow i
+    DLL_Bytes bs -> dquotes (viaShow bs)
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
@@ -95,6 +128,10 @@ data DLVar = DLVar SrcLoc String DLType Int
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
+
+instance Pretty DLVar where
+  --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
+  pretty (DLVar _ _ _ i) = "v" <> viaShow i
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)
@@ -117,6 +154,14 @@ data DLArg
   | DLA_Interact SLPart String DLType
   deriving (Eq, Ord, Generic, Show)
 
+instance Pretty DLArg where
+  pretty = \case
+    DLA_Var v -> pretty v
+    DLA_Constant c -> pretty c
+    DLA_Literal c -> pretty c
+    DLA_Interact who m t ->
+      "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
+
 argTypeOf :: DLArg -> DLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
@@ -130,6 +175,13 @@ data DLLargeArg
   | DLLA_Obj (M.Map String DLArg)
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   deriving (Eq, Ord, Generic, Show)
+
+instance Pretty DLLargeArg where
+  pretty = \case
+    DLLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLLA_Tuple as))
+    DLLA_Tuple as -> brackets $ render_das as
+    DLLA_Obj env -> render_obj env
+    DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
 
 data DLArgExpr
   = DLAE_Arg DLArg
@@ -173,6 +225,14 @@ data ClaimType
     CT_Unknowable SLPart [DLArg]
   deriving (Eq, Ord, Generic, Show)
 
+instance Pretty ClaimType where
+  pretty = \case
+    CT_Assert -> "assert"
+    CT_Assume -> "assume"
+    CT_Require -> "require"
+    CT_Possible -> "possible"
+    CT_Unknowable p as -> "unknowable" <> parens (pretty p <> render_das as)
+
 class IsPure a where
   isPure :: a -> Bool
 
@@ -203,6 +263,30 @@ data DLExpr
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
   deriving (Eq, Ord, Generic, Show)
+
+instance Pretty DLExpr where
+  pretty e =
+    case e of
+      DLE_Arg _ a -> pretty a
+      DLE_LArg _ a -> pretty a
+      DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
+      DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> pretty c <> " ? " <> pretty t <> " : " <> pretty el
+      DLE_PrimOp _ o [a] -> pretty o <> pretty a
+      DLE_PrimOp _ o [a, b] -> hsep [pretty a, pretty o, pretty b]
+      DLE_PrimOp _ o as -> pretty o <> parens (render_das as)
+      DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
+      DLE_ArraySet _ a i v -> "array_set" <> (parens $ render_das [a, i, v])
+      DLE_ArrayConcat _ x y -> "array_concat" <> (parens $ render_das [x, y])
+      DLE_ArrayZip _ x y -> "array_zip" <> (parens $ render_das [x, y])
+      DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)
+      DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
+      DLE_Interact _ _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
+      DLE_Digest _ as -> "digest" <> parens (render_das as)
+      DLE_Claim _ _ ct a m -> prettyClaim ct a m
+      DLE_Transfer _ who da ->
+        prettyTransfer who da
+      DLE_Wait _ a -> "wait" <> parens (pretty a)
+      DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -253,6 +337,9 @@ newtype DLAssignment
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, Semigroup)
 
+instance Pretty DLAssignment where
+  pretty (DLAssignment m) = render_obj m
+
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
 
@@ -271,20 +358,45 @@ data DLinStmt a
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases (DLinTail a))
   deriving (Eq, Show)
 
+instance Pretty a => Pretty (DLinStmt a) where
+  pretty = \case
+    DL_Nop _ -> mempty
+    DL_Let _at x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
+    DL_ArrayMap _ ans x a f -> prettyMap ans x a f
+    DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+    DL_Var _at dv -> "let" <+> pretty dv <> semi
+    DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
+    DL_LocalIf _at ca t f -> prettyIfp ca t f
+    DL_LocalSwitch _at ov csm -> prettySwitch ov csm
+
 data DLinTail a
   = DT_Return SrcLoc
   | DT_Com (DLinStmt a) (DLinTail a)
   deriving (Eq, Show)
 
+instance Pretty a => Pretty (DLinTail a) where
+  pretty = \case
+    DT_Return _at -> mempty
+    DT_Com x k -> prettyCom x k
+
 data DLinBlock a
   = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
   deriving (Eq, Show)
+
+instance Pretty a => Pretty (DLinBlock a) where
+  pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
 
 data FluidVar
   = FV_balance
   | FV_thisConsensusTime
   | FV_lastConsensusTime
   deriving (Eq, Generic, Ord, Show, Bounded, Enum)
+
+instance Pretty FluidVar where
+  pretty = \case
+    FV_balance -> "balance"
+    FV_thisConsensusTime -> "thisConsensusTime"
+    FV_lastConsensusTime -> "lastConsensusTime"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case

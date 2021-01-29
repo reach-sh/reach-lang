@@ -15,6 +15,7 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
+import Reach.Texty
 
 --- Source Information
 data ReachSource
@@ -54,6 +55,9 @@ instance Show SrcLoc where
       loc = case mtp of
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
+
+instance Pretty SrcLoc where
+  pretty = viaShow
 
 data ImpossibleError
   = Err_Impossible String
@@ -151,6 +155,11 @@ public x = (Public, x)
 secret :: a -> (SecurityLevel, a)
 secret x = (Secret, x)
 
+instance Pretty SecurityLevel where
+  pretty = \case
+    Public -> "public"
+    Secret -> "secret"
+
 instance Semigroup SecurityLevel where
   Secret <> _ = Secret
   _ <> Secret = Secret
@@ -166,6 +175,9 @@ instance Monoid SecurityLevel where
 type SLVar = String
 
 type SLPart = B.ByteString
+
+render_sp :: SLPart -> Doc
+render_sp = viaShow
 
 data PrimOp
   = ADD
@@ -188,6 +200,28 @@ data PrimOp
   | BIOR
   | BXOR
   deriving (Eq, Generic, NFData, Ord, Show)
+
+instance Pretty PrimOp where
+  pretty = \case
+    ADD -> "+"
+    SUB -> "-"
+    MUL -> "*"
+    DIV -> "/"
+    MOD -> "%"
+    PLT -> "<"
+    PLE -> "<="
+    PEQ -> "=="
+    PGE -> ">="
+    PGT -> ">"
+    IF_THEN_ELSE -> "ite"
+    DIGEST_EQ -> "=="
+    ADDRESS_EQ -> "=="
+    SELF_ADDRESS -> "selfAddress"
+    LSH -> "<<"
+    RSH -> ">>"
+    BAND -> "&"
+    BIOR -> "|"
+    BXOR -> "^"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
