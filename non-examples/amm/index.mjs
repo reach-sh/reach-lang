@@ -1,13 +1,10 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const chance = (n) => Math.random() < n;
-
 const NUM_PROVIDERS = 2;
 const NUM_TRADERS   = 2;
 
-// Either make this more like
-const tokenRatio = [1, 1.5];
+const tokenRatio = [1, 2];
 
 const createPartClassAccounts = async (length) =>
   Promise.all(
@@ -24,68 +21,78 @@ const createPartClassAccounts = async (length) =>
   const accProviders = await createPartClassAccounts(NUM_PROVIDERS);
   const accTraders = await createPartClassAccounts(NUM_TRADERS);
 
-  const fmt = x => stdlib.formatCurrency(x, 4);
-  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
-
   const ctcAdmin = accAdmin.deploy(backend);
+
+  // Tracks how much pool tokens each provider has
+  const providerPoolTokens =
+    Array.from({ length: NUM_PROVIDERS }, _ => 0);
+
+  // Tracks whether a trader has performed a swap
+  const traderSwapActivity =
+    Array.from({ length: NUM_TRADERS }, _ => false);
+
+  const everyOneTraded = () =>
+    traderSwapActivity.every(x => x);
 
   const adminB = backend.Admin(ctcAdmin, {
     formulaValuation: 100,
+    shouldClosePool: everyOneTraded,
   });
 
   const providersB = accProviders.map((accProvider, i) => {
     const ctcProvider = accProvider.attach(backend, ctcInfo);
     const who = `Provider ${i}`;
-    return backend.Provider(ctcProvider, {});
+    let iDeposited = false;
+    return backend.Provider(ctcProvider, {
+      withdrawMaybe: ([ alive, pool, market ]) =>
+        (iDeposited && everyOneTraded())
+          ? [ true, providerPoolTokens[i] ]
+          : [ false, { liquidity: 0 }],
+      withdrawDone: (amtOuts) =>
+        console.log(`${who} withdrew ${amtOuts}`),
+      depositMaybe: ([ alive, pool, market ]) => {
+        if (iDeposited) {
+          return [ false, { amtIn: 0, inToken: 0, outToken: 0 }];
+        } else {
+          iDeposited = true;
+          const amtIns = [2, 4];
+          console.log(`${who} will deposit ${amtIns}`);
+          return [ true, {
+            amtIns,
+            ratios: tokenRatio,
+          }];
+        }
+      },
+      depositDone: (numOfPoolTokens) => {
+        providerPoolTokens[i] = numOfPoolTokens;
+        console.log(`${who} received ${numOfPoolTokens} for depositing.`);
+      }
+    });
   });
 
   const tradersB = accTraders.map((accTrader, i) => {
     const ctcTrader = accTrader.attach(backend, ctcInfo);
     const who = `Trader ${i}`;
-    return backend.Trader(ctcTrader, {});
+    return backend.Trader(ctcTrader, {
+      tradeMaybe : () => {
+        if ( traderSwapActivity[i] ) {
+          return [ false, { amtIn: 0, inToken: 0, outToken: 0 } ];
+        } else {
+          traderSwapActivity[i] = true;
+          const amtIn = 1;
+          const inToken  = (i % 2 == 0) ? 0 : 1;
+          const outToken = (i % 2 == 0) ? 1 : 0;
+          return [ true, { amtIn, inToken, outToken }];
+        }
+      },
+      tradeDone  : (amtOuts) => {
+        console.log(`${who} received ${amtOuts} from swap`);
+      }
+    });
   });
 
   const backends = [adminB, ...providersB, ...tradersB];
 
   await Promise.all(backends);
-
-  console.log(`Pool has been created.`);
-
-  // Have providers deposit tokens
-  const providerLiquidities = providersB.map((provider, i) => {
-    const liquidity = provider.deposit({
-      amtIns: [4, 6],
-      ratios: tokenRatio,
-    });
-    console.log(`Provider ${i} deposited ${[4, 6]} at a ${ratios} ratio for ${liquidity} pool tokens.`);
-    return liquidity;
-  });
-
-  // Have traders swap
-  const makeTrade = (i, amtIn, amtInTok, amtOutTok) => {
-    const amtOut = tradersB[i].trade({
-      amtIn: 3,
-      amtInTok: 1,
-      amtOutTok: 0,
-    });
-    console.log(`Trader ${i} swapped ${amtIn} ${amtInTok} for ${amtOut} ${amtOutTok}`);
-  };
-
-  makeTrade(0, 2, 0, 1);
-  makeTrade(1, 3, 1, 0);
-
-  // Have one provider withdraw their liquidity
-  const tokenAmts = providersB[0].withdraw(providerLiquidities[0]);
-  console.log(`Provider 0 withdrew ${providerLiquidities[0]} for: ${tokenAmts}`);
-
-  // Have admin close pool
-  adminB.closePool();
-  console.log(`Admin has closed pool.`);
-
-  // Have other provider withdraw their liquidity
-  const tokenAmts1 = providersB[1].withdraw(providerLiquidities[1]);
-  console.log(`Provider 1 withdrew ${providerLiquidities[1]} for: ${tokenAmts1}`);
-
-  console.log(`Pool has been closed.`);
 
 })();

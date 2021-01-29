@@ -6,8 +6,8 @@ const TokenAmounts = Array(N, Tuple(Address, UInt));
 
 const Swap = Object({
   amtIn: UInt,
-  amtInTok: UInt,
-  amtOutTok: UInt,
+  inToken: UInt,
+  outToken: UInt,
 });
 
 const Deposit = Object({
@@ -19,20 +19,33 @@ const Withdraw = Object({
   liquidity: UInt,
 });
 
+const State = Tuple(
+  // Alive
+  Bool,
+  // Pool
+  MintedToken,
+  // Market
+  Object({
+    // Formula Valudation
+    params: UInt,
+    tokens: Array(N, Object({ balance: UInt })) }
+  ))
+
 const PARTICIPANTS = [
   // XXX: Feature - Better specification of entities
-  // XXX: Feature - Specify interact and foreign interact interfaces
   Participant('Admin', {
-      formulaValuation: UInt, // k
-    }, {
-      closePool: Fun([], Bool),
-    }),
-  Class('Provider', {}, {
-      deposit: Fun([Deposit], UInt),
-      withdraw: Fun(Withdraw, TokenAmounts)
-    }),
-  Class('Trader', {}, {
-    trade: Fun([Swap], TokenAmounts),
+    formulaValuation: UInt, // k
+    shouldClosePool: Fun([State], Bool),
+  }),
+  Class('Provider', {
+    withdrawMaybe: Fun([State], [Bool, Withdraw]),
+    withdrawDone : Fun([TokenAmounts], Null),
+    depositMaybe : Fun([State], [Bool, Deposit]),
+    depositDone  : Fun([UInt], Null),
+  }),
+  Class('Trader', {
+    tradeMaybe: Fun([State], [ Bool, Swap ]),
+    tradeDone : Fun([TokenAmounts], Null),
   }),
 
   // XXX: Feature - Non-network token consumption
@@ -142,35 +155,29 @@ export const main =
       const mtArr = Array.replicate(N, 0);
 
       // XXX Feature: Export some variables
-      export const [ alive, pool, market ] =
+      const [ alive, pool, market ] =
         parallel_reduce([ true, initialPool, initialMarket ])
           .while(alive || pool.totalSupply() > 0)
           .invariant(true)
+          // XXX Feature: `define` will allow definitions
+          // to be in scope of all `case`s
+          .define(() => {
+            const st = [ alive, pool, market];
+            const wrap = (f, onlyIfAlive) => {
+              const [ when, msg ] = declassify(f(st));
+              return { when: (onlyIfAlive ? alive : true) && when, msg };
+            }
+          })
           .case(
             Admin,
             (() => ({
-              implements: interact.closePool,
-              when: alive,
-              // XXX Feature: Foreign to Reach interface spec
-              // This property is particularly for parallel_reduce stmts.
-              // But in general, publish can be made externally visible with:
-              //    A.publish(x).pay(x).exposeAs("foo");
-              // exposeAs: "closePool", // Return void for now. Could return parallel reduce accumulator
+              when: alive &&
+                    declassify(interact.shouldClosePool(st))
             })),
-            (() => {
-              return [ false, pool, market ]; })
-            )
+            (() => [ false, pool, market ]))
           .case(
             Provider,
-            (() => ({
-              implements: interact.withdraw,
-              // XXX Feature: Not sure if this is the best way to do this,
-              // Need to return value to caller, however we already
-              // use `return` for parallel_reduce. So write `return : <expr>`
-              // which will represent what is returned to user. Scope of expr
-              // is end of block.
-              return: payout,
-            })),
+            (() => wrap(interact.withdrawMaybe, false)),
             (({ liquidity }) => {
               // Assert the Provider has the requested liquidity
               assert(liquidity <= pool.balanceOf(this),
@@ -196,15 +203,16 @@ export const main =
               */
               const updatedPool = pool.burn(this, liquidity);
 
+              // Alert front end of their payout details
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.withdrawDone(currentProvider == this, payout));
+
               return [ true, updatedPool, updatedMarket ];
             }))
           .case(
             Provider,
-            (() => ({
-              when: alive,
-              implements: interact.deposit,
-              return: minted,
-            })),
+            (() => wrap(interact.depositMaybe, true)),
             // XXX Feature: allow PAY_EXPR to make multiple payments in different currencies
             (({ amtIns }) => Array.zip(tokens, amtIns))
             (({ amtIns, ratios }) => {
@@ -229,9 +237,8 @@ export const main =
                    Otherwise:
                      calculate the % of pool provided
               */
-              const minted = pool.totalSupply() == 0
-                // XXX Stdlib Fn: Square root
-                ? sqrt(amtIns.product())
+              const minted = (pool.totalSupply() == 0)
+                ? sqrt(amtIns.product(), 10)
                 : Array.zip(startingReserves, amtIns)
                   .map(([ sIn, amtIn ]) => (amtIn / sIn) * pool.totalSupply())
                   .average();
@@ -243,29 +250,35 @@ export const main =
               */
               const updatedPool = pool.mint(this, minted);
 
+              // Alert front end how many pool tokens were minted from deposit
+              const currentProvider = this;
+              Provider.only(() =>
+                interact.tradeDone(currentProvider == this, minted));
+
               return [ true, updatedPool, updatedMarket ];
             }))
           .case(
             Trader,
-            (() => ({
-              when: alive,
-              implements: interact.trade,
-              return: amtOuts,
-            })),
+            (() => wrap(interact.tradeMaybe, true)),
             // Amt in has fees incorporated into it
-            (({ amtIn, amtInTok }) => [ [ amtIn, amtInTok ] ]),
-            (({ amtIn, amtInTok, amtOutTok }) => {
+            (({ amtIn, inToken }) => [ [ amtIn, inToken ] ]),
+            (({ amtIn, inToken, outToken }) => {
               // Calculate amount out
-              const reserveIn  = market.tokens[amtInTok].balance;
-              const reserveOut = market.tokens[amtOutTok].balance;
+              const reserveIn  = market.tokens[inToken].balance;
+              const reserveOut = market.tokens[outToken].balance;
               const amtOut  = getAmountOut(amtIn, reserveIn, reserveOut);
 
               // Get all outs and ins for tokens
-              const amtOuts = mtArr.set(amtOutTok, amtOut);
-              const amtIns  = mtArr.set(amtInTok, amtIn);
+              const amtOuts = mtArr.set(outToken, amtOut);
+              const amtIns  = mtArr.set(inToken, amtIn);
 
               const to = this;
               const updatedMarket = swap(amtIns, amtOuts, to, tokens, market);
+
+              // Alert front end of how much OutToken they received from their swap
+              const currentTrader = this;
+              Trader.only(() =>
+                interact.tradeDone(currentTrader == this, amtOuts));
 
               return [ true, pool, updatedMarket ];
             }));

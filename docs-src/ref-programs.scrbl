@@ -1880,13 +1880,13 @@ The argument type of @tt{f} must be the return type of @tt{g}.
 
 @(mint-define! '("sqrt"))
 @reach{
-  sqrt(81, Array.iota(10)) }
+  sqrt(81, 10) }
 
 @index{sqrt} Calculates an approximate square root of the first argument. This method utilizes
 the @link["https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method"]{Babylonian Method} for computing
-the square root. The second argument must be an array from @tt{0} to @tt{N}, where @tt{N} represents the number
+the square root. The second argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
 of iterations the algorithm should perform.
 
-For reference, when provided with @reachin{Array.iota(5)}, the algorithm can reliably calculate the square root
-up to @tt{32} squared, or @tt{1,024}. When provided with @reachin{Array.iota(10)}, the algorithm can reliably calculate the
+For reference, when performing @reachin{5} iterations, the algorithm can reliably calculate the square root
+up to @tt{32} squared, or @tt{1,024}. When performing @reachin{10} iterations, the algorithm can reliably calculate the
 square root up to @tt{580} squared, or @tt{336,400}.
