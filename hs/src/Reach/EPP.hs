@@ -1,13 +1,11 @@
 module Reach.EPP (epp) where
 
 import Control.Monad
-import Control.Monad.ST
-import Control.Monad.ST.Unsafe
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import Data.STRef
+import Data.IORef
 import qualified Data.Set as S
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -17,11 +15,13 @@ import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Optimize
 import Reach.Pretty ()
-import Reach.STCounter
+import Reach.Counter
 import Reach.Util
 
 -- import Debug.Trace
 -- import Reach.Texty
+
+-- XXX Use a nicer monad
 
 data EPPError
   = Err_ContinueDomination
@@ -51,10 +51,10 @@ type UndefdVars = S.Set DLVar
 data ProResC = ProResC SLPartETs (ProRes_ (UndefdVars, CTail))
   deriving (Eq, Show)
 
-data ProSt s = ProSt
+data ProSt = ProSt
   { pst_prev_handler :: Int
-  , pst_handlers :: STRef s CHandlers
-  , pst_handlerc :: STCounter s
+  , pst_handlers :: IORef CHandlers
+  , pst_handlerc :: Counter
   , pst_interval :: CInterval DLArg
   , pst_parts :: [SLPart]
   , pst_loop_fixed_point :: Bool
@@ -83,8 +83,8 @@ interval_no_to :: CInterval a -> CInterval a
 interval_no_to (CBetween froml _) =
   CBetween froml []
 
-updateHandlerSVS :: ProSt s -> Int -> [DLVar] -> ST s ()
-updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
+updateHandlerSVS :: ProSt -> Int -> [DLVar] -> IO ()
+updateHandlerSVS st target new_svs = modifyIORef (pst_handlers st) update
   where
     update (CHandlers hs) = CHandlers $ fmap update1 hs
     update1 = \case
@@ -97,24 +97,24 @@ updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
               False -> old_svs
       h -> h
 
-newHandler :: ProSt s -> ST s Int
+newHandler :: ProSt -> IO Int
 newHandler st =
   case pst_loop_fixed_point st of
     True -> return $ 0
     False ->
-      incSTCounter $ pst_handlerc st
+      incCounter $ pst_handlerc st
 
-addHandler :: ProSt s -> Int -> CHandler -> ST s ()
+addHandler :: ProSt -> Int -> CHandler -> IO ()
 addHandler st which this_h =
   case pst_loop_fixed_point st of
     True -> mempty
     False ->
-      modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+      modifyIORef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
 
-pmap :: ProSt s -> (SLPart -> b) -> M.Map SLPart b
+pmap :: ProSt -> (SLPart -> b) -> M.Map SLPart b
 pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
 
-pall :: ProSt s -> a -> M.Map SLPart a
+pall :: ProSt -> a -> M.Map SLPart a
 pall st x = pmap st (\_ -> x)
 
 data ProResS = ProResS SLPartETs (ProRes_ Bool)
@@ -229,7 +229,7 @@ var_addlc cs v = (lc, v)
         Count Nothing -> PL_Once
         Count (Just x) -> x
 
-epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
+epp_n :: ProSt -> LLConsensus -> IO ProResC
 epp_n st = \case
   LLC_Com c k -> do
     ProResC p_prts_s (ProRes_ cs_k (udvs_k, k')) <- epp_n st k
@@ -313,7 +313,7 @@ epp_n st = \case
 
     let loop_if = CT_If cond_at cond_da ct_body ct_k
     let loop_top = pltReplace CT_Com loop_if pt_cond
-    (loop_top'_cs, loop_top') <- unsafeIOToST $ pltoptimize loop_top
+    (loop_top'_cs, loop_top') <- pltoptimize loop_top
     let loop_lcvars = map (var_addlc loop_top'_cs) loop_vars
     let this_h = C_Loop at loop_svs loop_lcvars loop_top'
     addHandler st loop_num this_h
@@ -348,7 +348,7 @@ epp_n st = \case
     let udvs' = udvs_k <> who_body_udvs
     return $ ProResC p_prts (ProRes_ cs_k (udvs', prchs_k))
 
-epp_s :: ProSt s -> LLStep -> ST s ProResS
+epp_s :: ProSt -> LLStep -> IO ProResS
 epp_s st = \case
   LLS_Com c k -> do
     let st' =
@@ -439,11 +439,11 @@ epp_s st = \case
     addHandler st which this_h
     return $ ProResS p_prts (ProRes_ time_cons_cs True)
 
-epp :: LLProg -> PLProg
-epp (LLProg at (LLOpts {..}) ps dli s) = runST $ do
+epp :: LLProg -> IO PLProg
+epp (LLProg at (LLOpts {..}) ps dli s) = do
   let SLParts p_to_ie = ps
-  nhr <- newSTCounter 1
-  hsr <- newSTRef $ mempty
+  nhr <- newCounter 1
+  hsr <- newIORef $ mempty
   let st =
         ProSt
           { pst_prev_handler = 0
@@ -457,7 +457,7 @@ epp (LLProg at (LLOpts {..}) ps dli s) = runST $ do
           , pst_forced_svs = mempty
           }
   ProResS p_prts _ <- epp_s st s
-  chs <- readSTRef hsr
+  chs <- readIORef hsr
   let cp = CPProg at chs
   let mk_pp p ie =
         case M.lookup p p_prts of

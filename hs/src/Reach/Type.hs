@@ -12,9 +12,8 @@ where
 
 -- import Debug.Trace (traceM)
 import Control.Applicative
-import Control.Monad.ST
 import qualified Data.Map.Strict as M
-import Data.STRef
+import Data.IORef
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Reach.AST.Base
@@ -81,9 +80,9 @@ typeMeets mcfs top_at l =
     [x, y] -> typeMeet mcfs top_at x y
     x : more -> typeMeet mcfs top_at x $ (top_at, typeMeets mcfs top_at more)
 
-type TypeEnv s = M.Map SLVar (STRef s (Maybe SLType))
+type TypeEnv = M.Map SLVar (IORef (Maybe SLType))
 
-typeSubst :: SrcLoc -> TypeEnv s -> SLType -> ST s SLType
+typeSubst :: SrcLoc -> TypeEnv -> SLType -> IO SLType
 typeSubst at env ty =
   case ty of
     ST_Fun doms rng -> do
@@ -104,7 +103,7 @@ typeSubst at env ty =
         Nothing ->
           impossible $ "typeSubst: unbound type variable"
         Just var_ref -> do
-          mvar <- readSTRef var_ref
+          mvar <- readIORef var_ref
           case mvar of
             Nothing ->
               impossible $ "typeSubst: uninstantiated type variable"
@@ -116,7 +115,7 @@ typeSubst at env ty =
   where
     iter = typeSubst at env
 
-typeCheck_help :: HasCallStack => MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> a -> ST s a
+typeCheck_help :: HasCallStack => MCFS -> SrcLoc -> TypeEnv -> SLType -> SLVal -> SLType -> a -> IO a
 typeCheck_help mcfs at env ty val val_ty res =
   case (val_ty, ty) of
     (ST_Var _, _) ->
@@ -126,10 +125,10 @@ typeCheck_help mcfs at env ty val val_ty res =
         Nothing ->
           impossible $ "typeCheck: unbound type variable"
         Just var_ref -> do
-          mvar_ty <- readSTRef var_ref
+          mvar_ty <- readIORef var_ref
           case mvar_ty of
             Nothing -> do
-              writeSTRef var_ref (Just val_ty)
+              writeIORef var_ref (Just val_ty)
               return res
             Just var_ty ->
               typeCheck_help mcfs at env var_ty val val_ty res
@@ -181,13 +180,13 @@ typeOf (mcfs, pdvs) at v =
     Just x -> x
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
+typeCheck :: HasCallStack => TINT -> SrcLoc -> TypeEnv -> SLType -> SLVal -> IO DLArgExpr
 typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val vty res
   where
     (val_ty, res) = typeOf tint at val
     vty = dt2st val_ty
 
-typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks :: HasCallStack => TINT -> SrcLoc -> TypeEnv -> [SLType] -> [SLVal] -> IO [DLArgExpr]
 typeChecks tint@(mcfs, _) at env ts vs =
   case (ts, vs) of
     ([], []) ->
@@ -201,22 +200,22 @@ typeChecks tint@(mcfs, _) at env ts vs =
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
+checkAndConvert_i :: HasCallStack => TINT -> SrcLoc -> TypeEnv -> SLType -> [SLVal] -> IO (SLType, [DLArgExpr])
 checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     ST_Fun dom rng -> do
       dargs <- typeChecks tint at env dom args
       return (rng, dargs)
     ST_Forall var ft -> do
-      var_ref <- newSTRef Nothing
+      var_ref <- newIORef Nothing
       let env' = M.insert var var_ref env
       (vrng, dargs) <- checkAndConvert_i tint at env' ft args
       rng <- typeSubst at env' vrng
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: HasCallStack => TINT -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
-checkAndConvert tint@(mcfs, _) at t args = runST $ do
+checkAndConvert :: HasCallStack => TINT -> SrcLoc -> SLType -> [SLVal] -> IO (DLType, [DLArgExpr])
+checkAndConvert tint@(mcfs, _) at t args = do
   (st, exprs) <- checkAndConvert_i tint at mempty t args
   case st2dt st of
     Just dt -> pure (dt, exprs)

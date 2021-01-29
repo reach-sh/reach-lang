@@ -1262,7 +1262,7 @@ newFileLogger p = do
 
 verify_smt :: Maybe FilePath -> Maybe [Connector] -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt logpMay mvcs vst lp prog args = do
-  let ulp = unrollLoops lp
+  ulp <- unrollLoops lp
   case logpMay of
     Nothing -> return ()
     Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)

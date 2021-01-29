@@ -55,7 +55,7 @@ compile copts = do
             showp l = winterOut l . render . pretty
         let showp' :: (forall a . Pretty a => String -> a -> IO ())
             showp' = showp . T.pack
-        let dl = compileBundle all_connectors djp which
+        dl <- compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
         showp "dl" dl
@@ -67,7 +67,7 @@ compile copts = do
                 False -> Nothing
                 True -> Just connectors
         verify woutnMay vconnectors ol >>= maybeDie
-        let pl = epp ol
+        pl <- epp ol
         showp "pl" pl
         let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors

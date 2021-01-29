@@ -1,125 +1,123 @@
 module Reach.UnrollLoops (unrollLoops) where
 
 import Control.Monad.Reader
-import Control.Monad.ST
 import Data.Foldable
+import Data.IORef
 import qualified Data.Map.Strict as M
-import Data.STRef
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Pretty ()
-import Reach.STCounter
+import Reach.Counter
 import Reach.Texty
 import Reach.Util
 
-type App s = ReaderT (Env s) (ST s)
+-- XXX Revise this to not always rename everything and use the standard counter
 
-type AppT s a = a -> App s a
-
+type App = ReaderT Env IO
+type AppT a = a -> App a
 type Lifts = Seq.Seq LLCommon
-
 type Renaming = Either DLVar DLArg
 
-data Env s = Env
-  { eDidUnroll :: STRef s Bool
-  , eCounter :: STCounter s
-  , eRenaming :: STRef s (M.Map Int Renaming)
-  , emLifts :: Maybe (STRef s Lifts)
+data Env = Env
+  { eDidUnroll :: IORef Bool
+  , eCounter :: Counter
+  , eRenaming :: IORef (M.Map Int Renaming)
+  , emLifts :: Maybe (IORef Lifts)
   }
 
-mkEnv0 :: ST s (Env s)
+mkEnv0 :: IO (Env)
 mkEnv0 = do
-  eDidUnroll <- newSTRef False
-  eCounter <- newSTCounter 0
-  eRenaming <- newSTRef mempty
+  eDidUnroll <- newIORef False
+  eCounter <- newCounter 0
+  eRenaming <- newIORef mempty
   let emLifts = Nothing
   return $ Env {..}
 
-recordUnroll :: App s ()
+recordUnroll :: App ()
 recordUnroll = do
   Env {..} <- ask
-  lift $ writeSTRef eDidUnroll True
+  lift $ writeIORef eDidUnroll True
 
-allocIdx :: App s Int
+allocIdx :: App Int
 allocIdx = do
   Env {..} <- ask
-  lift $ incSTCounter eCounter
+  lift $ incCounter eCounter
 
 addLifts :: (LLCommon -> a -> a) -> Lifts -> a -> a
 addLifts mkk ls k = foldr mkk k ls
 
-collectLifts :: App s a -> App s (Lifts, a)
+collectLifts :: App a -> App (Lifts, a)
 collectLifts m = do
   Env {..} <- ask
-  newLifts <- lift $ newSTRef mempty
+  newLifts <- liftIO $ newIORef mempty
   res <- local (\e -> e {emLifts = Just newLifts}) m
-  lifts <- lift $ readSTRef newLifts
+  lifts <- liftIO $ readIORef newLifts
   return $ (lifts, res)
 
-liftCommon :: HasCallStack => LLCommon -> App s ()
+liftCommon :: HasCallStack => LLCommon -> App ()
 liftCommon m = do
   Env {..} <- ask
   case emLifts of
     Just r ->
-      lift $ modifySTRef r (flip (Seq.|>) m)
+      liftIO $ modifyIORef r (flip (Seq.|>) m)
     Nothing ->
       impossible "no lifts"
 
-liftLocal :: HasCallStack => LLTail -> App s ()
+liftLocal :: HasCallStack => LLTail -> App ()
 liftLocal = \case
   DT_Return _ -> return ()
   DT_Com m k -> liftCommon m >> liftLocal k
 
-liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App s ()
+liftLet :: HasCallStack => SrcLoc -> DLVar -> DLExpr -> App ()
 liftLet at v e = liftCommon (DL_Let at (Just v) e)
 
-liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App s DLArg
+liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App DLArg
 liftExpr at t e = do
   idx <- allocIdx
   let v = DLVar at "ul" t idx
   liftLet at v e
   return $ DLA_Var v
 
-liftArray :: HasCallStack => SrcLoc -> DLType -> [DLArg] -> App s DLExpr
+liftArray :: HasCallStack => SrcLoc -> DLType -> [DLArg] -> App DLExpr
 liftArray at ty as = do
   let a_ty = T_Array ty $ fromIntegral $ length as
   na <- liftExpr at a_ty $ DLE_LArg at $ DLLA_Array ty as
   return $ DLE_Arg at na
 
-freshRenaming :: App s a -> App s a
+freshRenaming :: App a -> App a
 freshRenaming m = do
   Env {..} <- ask
-  oldRenaming <- lift $ readSTRef eRenaming
-  newRenaming <- lift $ newSTRef oldRenaming
+  oldRenaming <- liftIO $ readIORef eRenaming
+  newRenaming <- liftIO $ newIORef oldRenaming
   local (\e -> e {eRenaming = newRenaming}) m
 
-ul_v_rn :: AppT s DLVar
+ul_v_rn :: AppT DLVar
 ul_v_rn (DLVar at lab t idx) = do
   idx' <- allocIdx
   Env {..} <- ask
   let v' = DLVar at lab t idx'
-  lift $ modifySTRef eRenaming (M.insert idx (Left v'))
+  lift $ modifyIORef eRenaming (M.insert idx (Left v'))
   return v'
 
-ul_mv_rn :: AppT s (Maybe DLVar)
+ul_mv_rn :: AppT (Maybe DLVar)
 ul_mv_rn Nothing = return Nothing
 ul_mv_rn (Just v) = Just <$> ul_v_rn v
 
-ul_vs_rn :: AppT s [DLVar]
+ul_vs_rn :: AppT [DLVar]
 ul_vs_rn = mapM ul_v_rn
 
-lookupRenaming :: DLVar -> App s Renaming
+lookupRenaming :: DLVar -> App Renaming
 lookupRenaming dv@(DLVar _ _ _ idx) = do
   Env {..} <- ask
-  r <- lift $ readSTRef eRenaming
+  r <- liftIO $ readIORef eRenaming
   case M.lookup idx r of
     Just x -> return x
     Nothing -> impossible $ "unbound var: " <> (show $ pretty dv)
 
-ul_v :: AppT s DLVar
+ul_v :: AppT DLVar
 ul_v v = do
   r <- lookupRenaming v
   case r of
@@ -127,34 +125,34 @@ ul_v v = do
     Right _ ->
       impossible "var is renamed to arg"
 
-ul_mv :: AppT s (Maybe DLVar)
+ul_mv :: AppT (Maybe DLVar)
 ul_mv = \case
   Nothing -> return Nothing
   Just v -> Just <$> ul_v v
 
-ul_v_rna :: DLVar -> DLArg -> App s ()
+ul_v_rna :: DLVar -> DLArg -> App ()
 ul_v_rna (DLVar _ _ _ idx) a = do
   Env {..} <- ask
-  lift $ modifySTRef eRenaming (M.insert idx (Right a))
+  liftIO $ modifyIORef eRenaming (M.insert idx (Right a))
 
-ul_va :: DLVar -> App s DLArg
+ul_va :: DLVar -> App DLArg
 ul_va v = do
   r <- lookupRenaming v
   case r of
     Left v' -> return $ DLA_Var v'
     Right a -> return a
 
-ul_a :: AppT s DLArg
+ul_a :: AppT DLArg
 ul_a = \case
   DLA_Var v -> ul_va v
   DLA_Constant c -> pure $ DLA_Constant c
   DLA_Literal c -> (pure $ DLA_Literal c)
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
-ul_as :: AppT s [DLArg]
+ul_as :: AppT [DLArg]
 ul_as = mapM ul_a
 
-ul_explode :: SrcLoc -> DLArg -> App s (DLType, [DLArg])
+ul_explode :: SrcLoc -> DLArg -> App (DLType, [DLArg])
 ul_explode at a =
   case a of
     DLA_Var (DLVar _ _ (T_Array t sz) _) -> do_explode t sz
@@ -167,14 +165,14 @@ ul_explode at a =
           liftExpr at t $
             DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
 
-ul_la :: AppT s DLLargeArg
+ul_la :: AppT DLLargeArg
 ul_la = \case
   DLLA_Array t as -> (pure $ DLLA_Array t) <*> ul_as as
   DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> ul_as as
   DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM ul_a m
   DLLA_Data t vn vv -> DLLA_Data t vn <$> ul_a vv
 
-ul_e :: AppT s DLExpr
+ul_e :: AppT DLExpr
 ul_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> ul_a a
   DLE_LArg at la -> (pure $ DLE_LArg at) <*> ul_la la
@@ -208,27 +206,27 @@ ul_e = \case
   DLE_Wait at a -> (pure $ DLE_Wait at) <*> ul_a a
   DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> ul_a a
 
-ul_asn1 :: Bool -> (DLVar, DLArg) -> App s (DLVar, DLArg)
+ul_asn1 :: Bool -> (DLVar, DLArg) -> App (DLVar, DLArg)
 ul_asn1 def (v, a) = (pure (,)) <*> ul_v_def v <*> ul_a a
   where
     ul_v_def = if def then ul_v_rn else ul_v
 
-ul_asn :: Bool -> DLAssignment -> App s DLAssignment
+ul_asn :: Bool -> DLAssignment -> App DLAssignment
 ul_asn def (DLAssignment m) = (pure $ DLAssignment) <*> ((pure M.fromList) <*> mapM (ul_asn1 def) (M.toList m))
 
-ul_mdv_rn :: AppT s (Maybe DLVar)
+ul_mdv_rn :: AppT (Maybe DLVar)
 ul_mdv_rn = \case
   Nothing -> pure Nothing
   Just v -> pure Just <*> ul_v_rn v
 
-ul_m_ :: (LLCommon -> a -> a) -> (a -> App s a) -> LLCommon -> a -> App s a
+ul_m_ :: (LLCommon -> a -> a) -> (a -> App a) -> LLCommon -> a -> App a
 ul_m_ mkk ul_k m k = do
   (lifts, m') <- collectLifts $ ul_m m
   let lifts' = lifts <> (return $ m')
   k' <- ul_k k
   return $ addLifts mkk lifts' k'
 
-ul_m :: LLCommon -> App s LLCommon
+ul_m :: LLCommon -> App LLCommon
 ul_m = \case
   DL_Nop at ->
     return $ DL_Nop at
@@ -270,16 +268,16 @@ ul_m = \case
     ans' <- ul_v_rn ans
     return $ DL_Let at (Just ans') (DLE_Arg at r')
 
-ul_l :: AppT s LLTail
+ul_l :: AppT LLTail
 ul_l = \case
   DT_Return at -> return $ DT_Return at
   DT_Com m k -> ul_m_ DT_Com ul_l m k
 
-ul_bl :: AppT s LLBlock
+ul_bl :: AppT LLBlock
 ul_bl (DLinBlock at fs b a) =
   (pure $ DLinBlock at fs) <*> ul_l b <*> ul_a a
 
-ul_n :: AppT s LLConsensus
+ul_n :: AppT LLConsensus
 ul_n = \case
   LLC_Com m k -> ul_m_ LLC_Com ul_n m k
   LLC_If at c t f ->
@@ -297,16 +295,16 @@ ul_n = \case
   LLC_Only at p l k ->
     (pure $ LLC_Only at p) <*> ul_l l <*> ul_n k
 
-ul_mtime :: AppT s (Maybe (DLArg, LLStep))
+ul_mtime :: AppT (Maybe (DLArg, LLStep))
 ul_mtime = \case
   Nothing -> (pure $ Nothing)
   Just (b, s) -> (pure $ Just) <*> (pure (,) <*> ul_a b <*> ul_s s)
 
-ul_send :: AppT s (SLPart, (Bool, [DLArg], DLArg, DLArg))
+ul_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
 ul_send (p, (isClass, args, amta, whena)) =
   (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
 
-ul_s :: AppT s LLStep
+ul_s :: AppT LLStep
 ul_s = \case
   LLS_Com m k -> ul_m_ LLS_Com ul_s m k
   LLS_Stop at ->
@@ -322,23 +320,23 @@ ul_s = \case
       recv' = (\a b c d e f -> (a, b, c, d, e, f)) <$> ul_mv last_timev <*> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> ul_v_rn timev <*> cons'
       mtime' = ul_mtime mtime
 
-ul_dli :: AppT s DLInit
+ul_dli :: AppT DLInit
 ul_dli (DLInit ctimem) = do
   DLInit <$> ul_mdv_rn ctimem
 
-ul_p :: AppT s LLProg
+ul_p :: AppT LLProg
 ul_p (LLProg at opts ps dli s) = do
   LLProg at opts ps <$> ul_dli dli <*> ul_s s
 
-unrollLoops :: LLProg -> LLProg
-unrollLoops lp = runST $ do
+unrollLoops :: LLProg -> IO LLProg
+unrollLoops lp = do
   env0 <- mkEnv0
   lp' <- flip runReaderT env0 $ ul_p lp
   let Env {..} = env0
   --- Note: Maybe laziness makes this fast? If not, then it would be
   --- good to do a quick check to see if there is any need before
   --- going through the work of doing it.
-  didUnroll <- readSTRef eDidUnroll
+  didUnroll <- readIORef eDidUnroll
   case didUnroll of
     True -> return $ lp'
     False -> return lp

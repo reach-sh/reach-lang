@@ -3,18 +3,17 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
 
 import Control.Monad
-import Control.Monad.ST
 import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
 import Data.Aeson.Text
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
+import Data.IORef
 import Data.List (find, foldl', intersperse)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -25,7 +24,7 @@ import Reach.AST.PL
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles
-import Reach.STCounter
+import Reach.Counter
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -747,7 +746,7 @@ solHandlersStructSVS ctxt csvs (CHandlers hs) =
     defd = S.singleton 0
     res0 = [solStructSVS ctxt 0 csvs True]
 
-_solDefineType1 :: (DLType -> ST s (Doc)) -> Int -> Doc -> DLType -> ST s ((Doc), (Doc))
+_solDefineType1 :: (DLType -> IO (Doc)) -> Int -> Doc -> DLType -> IO ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
   T_Null -> base
   T_Bool -> base
@@ -794,9 +793,9 @@ _solDefineType1 getTypeName i name = \case
   where
     base = impossible "base"
 
-_solDefineType :: STCounter s -> STRef s (M.Map DLType Int) -> STRef s (M.Map DLType (Maybe (Doc, Doc))) -> DLType -> ST s (Doc)
+_solDefineType :: Counter -> IORef (M.Map DLType Int) -> IORef (M.Map DLType (Maybe (Doc, Doc))) -> DLType -> IO (Doc)
 _solDefineType tcr timr tmr t = do
-  tm <- readSTRef tmr
+  tm <- readIORef tmr
   case M.lookup t tm of
     Just (Just x) -> return $ fst x
     Just Nothing -> impossible $ "recursive type: " ++ show t
@@ -804,107 +803,106 @@ _solDefineType tcr timr tmr t = do
       case t of
         T_Bytes sz -> do
           let tr = "uint8[" <> pretty sz <> "]"
-          modifySTRef tmr $ M.insert t $ Just (tr, emptyDoc)
+          modifyIORef tmr $ M.insert t $ Just (tr, emptyDoc)
           return $ tr
         _ -> do
-          tn <- incSTCounter tcr
-          modifySTRef timr $ M.insert t tn
-          modifySTRef tmr $ M.insert t $ Nothing
+          tn <- incCounter tcr
+          modifyIORef timr $ M.insert t tn
+          modifyIORef tmr $ M.insert t $ Nothing
           let n = pretty $ "T" ++ show tn
           (tr, def) <- _solDefineType1 (_solDefineType tcr timr tmr) tn n t
-          modifySTRef tmr $ M.insert t $ Just (tr, def)
+          modifyIORef tmr $ M.insert t $ Just (tr, def)
           return $ tr
 
-solDefineTypes :: S.Set DLType -> (M.Map DLType Int, M.Map DLType (Doc), Doc)
-solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
-  where
-    base_typem =
-      M.fromList
-        [ (T_Null, "bool")
-        , (T_Bool, "bool")
-        , (T_UInt, "uint256")
-        , (T_Digest, "uint256")
-        , (T_Address, "address payable")
-        ]
-    base_tm = M.map (\t -> Just (t, emptyDoc)) base_typem
-    tm = M.map (maybe (impossible "unfinished type") id) tmm
-    (tim, tmm) = runST $ do
-      tcr <- newSTCounter 0
-      timr <- newSTRef mempty
-      tmr <- newSTRef base_tm
-      mapM_ (_solDefineType tcr timr tmr) $ S.toList ts
-      liftM2 (,) (readSTRef timr) (readSTRef tmr)
+solDefineTypes :: S.Set DLType -> IO (M.Map DLType Int, M.Map DLType (Doc), Doc)
+solDefineTypes ts = do
+  tcr <- newCounter 0
+  timr <- newIORef mempty
+  let base_typem =
+        M.fromList
+          [ (T_Null, "bool")
+          , (T_Bool, "bool")
+          , (T_UInt, "uint256")
+          , (T_Digest, "uint256")
+          , (T_Address, "address payable")
+          ]
+  let base_tm = M.map (\t -> Just (t, emptyDoc)) base_typem
+  tmr <- newIORef base_tm
+  mapM_ (_solDefineType tcr timr tmr) $ S.toList ts
+  tim <- readIORef timr
+  tmm <- readIORef tmr
+  let tm = M.map (maybe (impossible "unfinished type") id) tmm
+  return $ (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
 
-solPLProg :: PLProg -> (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
-  (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
-  where
-    ctcp =
-      solContract "ReachContract is Stdlib" $
-        ctcbody
-    (typei, typem, typesp) = solDefineTypes $ cts hs
-    ctxt =
-      SolCtxt
-        { ctxt_typem = typem
-        , ctxt_typei = typei
-        , ctxt_handler_num = 0
-        , ctxt_emit = emptyDoc
-        , ctxt_varm = mempty
-        , ctxt_plo = plo
-        }
-    ctcbody =
-      vsep_with_blank $
-        [ state_defn
-        , consp
-        , typesp
-        , solHandlersStructSVS ctxt csvs hs
-        , solHandlers ctxt hs
-        ]
-    (csvs, consp) =
-      case plo_deployMode of
-        DM_constructor ->
-          ( csvs_
-          , vsep
-              [ solEvent ctxt 0 False
-              , cfDefn
-              , solFunctionLike SFL_Constructor [] "payable" consbody'
-              ]
-          )
-          where
-            DLInit ctimem = dli
-            dli' = vsep $ ctimem'
-            (ctimem', csvs_, cctxt) =
-              case ctimem of
-                Nothing -> (mempty, mempty, ctxt)
-                Just v ->
-                  ( [solSet (solMemVar v) solBlockNumber]
-                  , [v]
-                  , ctxt {ctxt_varm = M.insert v (solMemVar v) (ctxt_varm ctxt)}
-                  )
-            (cfDefn, cfDecl) = solFrame cctxt 0 (S.fromList csvs_)
-            consbody' =
-              vsep
-                [ solEventEmit ctxt 0 False
-                , cfDecl
-                , dli'
-                , consbody
+solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
+  (typei, typem, typesp) <- solDefineTypes $ cts hs
+  let ctxt =
+        SolCtxt
+          { ctxt_typem = typem
+          , ctxt_typei = typei
+          , ctxt_handler_num = 0
+          , ctxt_emit = emptyDoc
+          , ctxt_varm = mempty
+          , ctxt_plo = plo
+          }
+  let (csvs, consp) =
+        case plo_deployMode of
+          DM_constructor ->
+            ( csvs_
+            , vsep
+                [ solEvent ctxt 0 False
+                , cfDefn
+                , solFunctionLike SFL_Constructor [] "payable" consbody'
                 ]
-            csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-            SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_m))
-        DM_firstMsg ->
-          -- XXX This is a hack... there are no constructor SVSs when the
-          -- deployment mode is firstMsg, but rather than allow the rest of the
-          -- code to deal with this being missing (because Solidity doesn't
-          -- allow empty structs), we force there to be one that will be
-          -- ignored
-          ([(DLVar at "fake" T_UInt 0)], emptyDoc)
-    cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
-    state_defn = "uint256 current_state;"
-    preamble =
-      vsep
-        [ "// Automatically generated with Reach" <+> (pretty versionStr)
-        , "pragma abicoder v2" <> semi
-        ]
+            )
+            where
+              DLInit ctimem = dli
+              dli' = vsep $ ctimem'
+              (ctimem', csvs_, cctxt) =
+                case ctimem of
+                  Nothing -> (mempty, mempty, ctxt)
+                  Just v ->
+                    ( [solSet (solMemVar v) solBlockNumber]
+                    , [v]
+                    , ctxt {ctxt_varm = M.insert v (solMemVar v) (ctxt_varm ctxt)}
+                    )
+              (cfDefn, cfDecl) = solFrame cctxt 0 (S.fromList csvs_)
+              consbody' =
+                vsep
+                  [ solEventEmit ctxt 0 False
+                  , cfDecl
+                  , dli'
+                  , consbody
+                  ]
+              csvs_m = map (\x -> (x, DLA_Var x)) csvs_
+              SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_m))
+          DM_firstMsg ->
+            -- XXX This is a hack... there are no constructor SVSs when the
+            -- deployment mode is firstMsg, but rather than allow the rest of
+            -- the code to deal with this being missing (because Solidity
+            -- doesn't allow empty structs), we force there to be one that will
+            -- be ignored
+            ([(DLVar at "fake" T_UInt 0)], emptyDoc)
+  let state_defn = "uint256 current_state;"
+  let ctcbody =
+        vsep_with_blank $
+          [ state_defn
+          , consp
+          , typesp
+          , solHandlersStructSVS ctxt csvs hs
+          , solHandlers ctxt hs
+          ]
+  let ctcp =
+        solContract "ReachContract is Stdlib" $
+          ctcbody
+  let cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
+  let preamble =
+        vsep
+          [ "// Automatically generated with Reach" <+> (pretty versionStr)
+          , "pragma abicoder v2" <> semi
+          ]
+  return $ (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
 
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
@@ -990,7 +988,7 @@ connect_eth = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          let (cinfo, sol) = solPLProg pl
+          (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf

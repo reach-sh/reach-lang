@@ -2,17 +2,16 @@ module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Arrow (second)
 import Control.Monad
-import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
+import Data.IORef
 import Data.List (intercalate, sortBy, transpose, (\\))
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import Data.Ord (comparing)
-import Data.STRef
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -28,7 +27,7 @@ import Reach.Connector
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Pretty ()
-import Reach.STCounter
+import Reach.Counter
 import Reach.Texty (pretty)
 import Reach.Type
 import Reach.Util
@@ -442,7 +441,7 @@ instance Show EvalError where
       "parallel reduce incomplete: " <> lab
 
 --- Utilities
-zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
+zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe SLCtxt -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
 zipEq ctxt at ce x y =
   if lx == ly
     then zip x y
@@ -451,17 +450,17 @@ zipEq ctxt at ce x y =
     lx = length x
     ly = length y
 
-ensure_public :: SLCtxt s -> SrcLoc -> SLSVal -> SLVal
+ensure_public :: SLCtxt -> SrcLoc -> SLSVal -> SLVal
 ensure_public ctxt at (lvl, v) =
   case lvl of
     Public -> v
     Secret ->
       expect_throw_ctx ctxt at $ Err_ExpectedPublic v
 
-ensure_publics :: SLCtxt s -> SrcLoc -> [SLSVal] -> [SLVal]
+ensure_publics :: SLCtxt -> SrcLoc -> [SLSVal] -> [SLVal]
 ensure_publics ctxt at svs = map (ensure_public ctxt at) svs
 
-lvlMeetR :: SecurityLevel -> SLComp s (SecurityLevel, a) -> SLComp s (SecurityLevel, a)
+lvlMeetR :: SecurityLevel -> SLComp (SecurityLevel, a) -> SLComp (SecurityLevel, a)
 lvlMeetR lvl m = do
   SLRes lifts st v <- m
   return $ SLRes lifts st $ lvlMeet lvl v
@@ -488,7 +487,7 @@ data EnvInsertMode
 -- Secret idents must start with _.
 -- Public idents must not start with _.
 -- Special idents "interact" and "__decode_testing__" skip these rules.
-env_insert_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
+env_insert_ :: HasCallStack => EnvInsertMode -> SLCtxt -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert_ _ _ _ "_" _ env = env
 env_insert_ insMode ctxt at k v env = case insMode of
   DisallowShadowing -> check
@@ -517,19 +516,19 @@ env_insert_ insMode ctxt at k v env = case insMode of
         -- trace ("of " <> (take 128 $ show $ sss_val v)) $
         M.insert k v env
 
-env_insert :: HasCallStack => SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
+env_insert :: HasCallStack => SLCtxt -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert = env_insert_ DisallowShadowing
 
-env_insertp_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
+env_insertp_ :: HasCallStack => EnvInsertMode -> SLCtxt -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp_ imode ctxt at = flip (uncurry (env_insert_ imode ctxt at))
 
-env_insertp :: HasCallStack => SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
+env_insertp :: HasCallStack => SLCtxt -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp = env_insertp_ DisallowShadowing
 
-env_merge_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge_ :: HasCallStack => EnvInsertMode -> SLCtxt -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge_ imode ctxt at left righte = foldl' (env_insertp_ imode ctxt at) left $ M.toList righte
 
-env_merge :: HasCallStack => SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge :: HasCallStack => SLCtxt -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge = env_merge_ DisallowShadowing
 
 data LookupCtx
@@ -540,7 +539,7 @@ data LookupCtx
   deriving (Eq, Show)
 
 -- | The "_" ident may never be looked up.
-env_lookup :: Maybe (SLCtxt s) -> SrcLoc -> LookupCtx -> SLVar -> SLEnv -> SLSSVal
+env_lookup :: Maybe SLCtxt -> SrcLoc -> LookupCtx -> SLVar -> SLEnv -> SLSSVal
 env_lookup ctxt at _ "_" _ =
   expect_throw (Just $ maybe [] ctxt_stack ctxt) at Err_Eval_LookupUnderscore
 env_lookup ctxt at ctx x env =
@@ -630,73 +629,73 @@ jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
 --- A context has global stuff (the variable counter) and abstracts
 --- the control-flow state that leads to the expression, so it
 --- inherits in a function call.
-data SLCtxt s = SLCtxt
+data SLCtxt = SLCtxt
   { ctxt_dlo :: DLOpts
-  , ctxt_id :: STCounter s
+  , ctxt_id :: Counter
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_ios :: M.Map SLPart SLSSVal
   , ctxt_classes :: S.Set SLPart
   , ctxt_only :: Maybe SLPart
   }
 
-instance Show (SLCtxt s) where
+instance Show SLCtxt where
   show _ = "<context>"
 
-mcfs :: SLCtxt s -> Maybe [SLCtxtFrame]
+mcfs :: SLCtxt -> Maybe [SLCtxtFrame]
 mcfs = Just . ctxt_stack
 
-tint :: SLCtxt s -> SLState -> (Maybe [SLCtxtFrame], M.Map SLPart DLVar)
+tint :: SLCtxt -> SLState -> (Maybe [SLCtxtFrame], M.Map SLPart DLVar)
 tint ctxt st = (mcfs ctxt, st_pdvs st)
 
-is_class :: SLCtxt s -> SLPart -> Bool
+is_class :: SLCtxt -> SLPart -> Bool
 is_class ctxt who = S.member who $ ctxt_classes ctxt
 
-expect_throw_ctx :: HasCallStack => (Show a, ErrorMessageForJson a, ErrorSuggestions a) => SLCtxt s -> SrcLoc -> a -> b
+expect_throw_ctx :: HasCallStack => (Show a, ErrorMessageForJson a, ErrorSuggestions a) => SLCtxt -> SrcLoc -> a -> b
 expect_throw_ctx ctxt = expect_throw (mcfs ctxt)
 
-typeOf_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLVal -> (DLType, DLArgExpr)
+typeOf_ctxt :: HasCallStack => SLCtxt -> SLState -> SrcLoc -> SLVal -> (DLType, DLArgExpr)
 typeOf_ctxt ctxt st = typeOf (tint ctxt st)
 
-checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> DLArgExpr
+checkType_ctxt :: SLCtxt -> SLState -> SrcLoc -> SLType -> SLVal -> DLArgExpr
 checkType_ctxt ctxt st = checkType (tint ctxt st)
 
-typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet_ctxt :: HasCallStack => SLCtxt -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 
 -- precondition: the SLTypes coming in are known to be DLTypes
-typeMeet_ctxt_dt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> DLType
+typeMeet_ctxt_dt :: HasCallStack => SLCtxt -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> DLType
 typeMeet_ctxt_dt ctxt at t1 t2 = case st2dt $ typeMeet_ctxt ctxt at t1 t2 of
   Just dt -> dt
   Nothing -> impossible "The type meet of two DLTypes must also be a DLType"
 
-typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets_ctxt :: HasCallStack => SLCtxt -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
 
 -- precondition: the SLTypes coming in are known to be DLTypes
-typeMeets_ctxt_dt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> DLType
+typeMeets_ctxt_dt :: HasCallStack => SLCtxt -> SrcLoc -> [(SrcLoc, SLType)] -> DLType
 typeMeets_ctxt_dt ctxt at tys = case st2dt $ typeMeets_ctxt ctxt at tys of
   Just dt -> dt
   Nothing -> impossible "The type meet of DLTypes must also be a DLType"
 
-checkAndConvert_ctxt :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArgExpr])
+checkAndConvert_ctxt :: HasCallStack => SLCtxt -> SLState -> SrcLoc -> SLType -> [SLVal] -> IO (DLType, [DLArgExpr])
 checkAndConvert_ctxt ctxt st = checkAndConvert (tint ctxt st)
 
-ctxt_alloc :: SLCtxt s -> ST s Int
+ctxt_alloc :: SLCtxt -> IO Int
 ctxt_alloc ctxt =
-  incSTCounter $ ctxt_id ctxt
+  incCounter $ ctxt_id ctxt
 
-ctxt_mkvar :: SLCtxt s -> (Int -> DLVar) -> ST s DLVar
+ctxt_mkvar :: SLCtxt -> (Int -> DLVar) -> IO DLVar
 ctxt_mkvar ctxt mkvar =
   mkvar <$> ctxt_alloc ctxt
 
-ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar, DLStmts)
+ctxt_lift_expr :: SLCtxt -> SrcLoc -> (Int -> DLVar) -> DLExpr -> IO (DLVar, DLStmts)
 ctxt_lift_expr ctxt at mkvar e = do
   dv <- ctxt_mkvar ctxt mkvar
   let s = DLS_Let at (Just dv) e
   return (dv, return s)
 
 -- Arg Expr -> Arg
-compileArgExpr :: SLCtxt s -> SrcLoc -> DLArgExpr -> ST s (DLStmts, DLArg)
+compileArgExpr :: SLCtxt -> SrcLoc -> DLArgExpr -> IO (DLStmts, DLArg)
 compileArgExpr ctxt at = \case
   DLAE_Arg a -> return $ (mempty, a)
   DLAE_Array t aes -> do
@@ -718,14 +717,14 @@ compileArgExpr ctxt at = \case
       (dv, ss') <- ctxt_lift_expr ctxt at mkvar (DLE_LArg at la)
       return (ss <> ss', DLA_Var dv)
 
-compileArgExprs :: SLCtxt s -> SrcLoc -> [DLArgExpr] -> ST s (DLStmts, [DLArg])
+compileArgExprs :: SLCtxt -> SrcLoc -> [DLArgExpr] -> IO (DLStmts, [DLArg])
 compileArgExprs ctxt at aes = do
   aes' <- mapM (compileArgExpr ctxt at) aes
   let ss = mconcat $ map fst aes'
   let as = map snd aes'
   return (ss, as)
 
-compileArgExprMap :: SLCtxt s -> SrcLoc -> M.Map a DLArgExpr -> ST s (DLStmts, M.Map a DLArg)
+compileArgExprMap :: SLCtxt -> SrcLoc -> M.Map a DLArgExpr -> IO (DLStmts, M.Map a DLArg)
 compileArgExprMap ctxt at m = do
   m' <- mapM (compileArgExpr ctxt at) m
   let ss = mconcat $ map fst $ M.elems m'
@@ -733,35 +732,35 @@ compileArgExprMap ctxt at m = do
   return (ss, m'')
 
 -- General compiler utilities
-slvParticipant_part :: SLCtxt s -> SrcLoc -> SLVal -> SLPart
+slvParticipant_part :: SLCtxt -> SrcLoc -> SLVal -> SLPart
 slvParticipant_part ctxt at = \case
   SLV_Participant _ x _ _ -> x
   x -> expect_throw_ctx ctxt at $ Err_NotParticipant x
 
-compileCheckAndConvert :: HasCallStack => SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, DLType, [DLArg])
+compileCheckAndConvert :: HasCallStack => SLCtxt -> SLState -> SrcLoc -> SLType -> [SLVal] -> IO (DLStmts, DLType, [DLArg])
 compileCheckAndConvert ctxt st at t argvs = do
-  let (res, arges) = checkAndConvert_ctxt ctxt st at t argvs
+  (res, arges) <- checkAndConvert_ctxt ctxt st at t argvs
   (lifts, args) <- compileArgExprs ctxt at arges
   return (lifts, res, args)
 
-compileTypeOf :: SLCtxt s -> SLState -> SrcLoc -> SLVal -> ST s (DLStmts, DLType, DLArg)
+compileTypeOf :: SLCtxt -> SLState -> SrcLoc -> SLVal -> IO (DLStmts, DLType, DLArg)
 compileTypeOf ctxt st at v = do
   let (t, dae) = typeOf_ctxt ctxt st at v
   (lifts, da) <- compileArgExpr ctxt at dae
   return (lifts, t, da)
 
-compileTypeOfs :: SLCtxt s -> SLState -> SrcLoc -> [SLVal] -> ST s (DLStmts, [DLType], [DLArg])
+compileTypeOfs :: SLCtxt -> SLState -> SrcLoc -> [SLVal] -> IO (DLStmts, [DLType], [DLArg])
 compileTypeOfs ctxt st at vs = do
   let (ts, daes) = unzip $ map (typeOf_ctxt ctxt st at) vs
   (lifts, das) <- compileArgExprs ctxt at daes
   return (lifts, ts, das)
 
-compileCheckType :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> ST s (DLStmts, DLArg)
+compileCheckType :: SLCtxt -> SLState -> SrcLoc -> SLType -> SLVal -> IO (DLStmts, DLArg)
 compileCheckType ctxt st at et v = do
   let ae = checkType_ctxt ctxt st at et v
   compileArgExpr ctxt at ae
 
-checkResType :: SLCtxt a -> SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
+checkResType :: SLCtxt -> SrcLoc -> SLType -> SLComp SLSVal -> SLComp DLArg
 checkResType ctxt at et m = do
   SLRes lifts st (_lvl, v) <- m
   (lifts', a) <- compileCheckType ctxt st at et v
@@ -806,7 +805,7 @@ data SLState = SLState
 all_slm_modes :: [SLMode]
 all_slm_modes = enumFrom minBound
 
-ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
+ensure_modes :: SLCtxt -> SrcLoc -> SLState -> [SLMode] -> String -> IO ()
 ensure_modes ctxt at st ems msg = do
   let am = st_mode st
   case elem am ems of
@@ -815,17 +814,17 @@ ensure_modes ctxt at st ems msg = do
       --- NOTE use this function every where and shown em
       expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg ems
 
-ensure_mode :: SLCtxt s -> SrcLoc -> SLState -> SLMode -> String -> ST s ()
+ensure_mode :: SLCtxt -> SrcLoc -> SLState -> SLMode -> String -> IO ()
 ensure_mode ctxt at st em msg = ensure_modes ctxt at st [em] msg
 
-ensure_live :: SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
+ensure_live :: SLCtxt -> SrcLoc -> SLState -> String -> IO ()
 ensure_live ctxt at st msg = do
   case st_live st of
     True -> return ()
     False ->
       expect_throw_ctx ctxt at $ Err_Eval_MustBeLive msg
 
-allowed_to_wait :: SLCtxt s -> SrcLoc -> SLState -> x -> x
+allowed_to_wait :: SLCtxt -> SrcLoc -> SLState -> x -> x
 allowed_to_wait ctxt at st =
   case st_after_first st of
     True -> id
@@ -857,7 +856,7 @@ data SLScope = SLScope
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)
 
-sco_depth_update :: SLCtxt s -> SrcLoc -> SLScope -> Int
+sco_depth_update :: SLCtxt -> SrcLoc -> SLScope -> Int
 sco_depth_update ctxt at (SLScope {..}) =
   case x > 0 of
     True -> x
@@ -869,13 +868,13 @@ sco_to_cloenv :: SLScope -> SLCloEnv
 sco_to_cloenv SLScope {..} =
   SLCloEnv sco_penvs sco_cenv
 
-sco_lookup_penv :: SLCtxt s -> SrcLoc -> SLScope -> SLPart -> SLEnv
+sco_lookup_penv :: SLCtxt -> SrcLoc -> SLScope -> SLPart -> SLEnv
 sco_lookup_penv _ctxt _at sco who =
   case M.lookup who $ sco_penvs sco of
     Nothing -> sco_cenv sco
     Just x -> x
 
-penvs_update :: SLCtxt s -> SrcLoc -> SLScope -> (SLPart -> SLEnv -> SLEnv) -> SLPartEnvs
+penvs_update :: SLCtxt -> SrcLoc -> SLScope -> (SLPart -> SLEnv -> SLEnv) -> SLPartEnvs
 penvs_update ctxt at sco f =
   M.fromList $
     map (\p -> (p, f p $ sco_lookup_penv ctxt at sco p)) $
@@ -890,7 +889,7 @@ sco_set v sv sco@(SLScope {..}) =
   where
     go = M.insert v sv
 
-sco_update_and_mod :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
+sco_update_and_mod :: HasCallStack => EnvInsertMode -> SLCtxt -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
 sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   ps $ c sco
   where
@@ -941,14 +940,14 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
         _ -> imode
     do_merge imode' = env_mod . flip (env_merge_ imode' ctxt at) addl_env
 
-sco_update_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update_ :: HasCallStack => EnvInsertMode -> SLCtxt -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update_ imode ctxt at sco st addl_env =
   sco_update_and_mod imode ctxt at sco st addl_env id
 
-sco_update :: HasCallStack => SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update :: HasCallStack => SLCtxt -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update = sco_update_ DisallowShadowing
 
-stMerge :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
+stMerge :: HasCallStack => SLCtxt -> SrcLoc -> SLState -> SLState -> SLState
 stMerge ctxt at x y =
   -- This is a little bit suspicious. What's going on?
   -- Basically, the point of merge is so that afterwards, when we look at the
@@ -964,13 +963,13 @@ stMerge ctxt at x y =
         True -> y
         False -> expect_throw_ctx ctxt at $ Err_Eval_IncompatibleStates x y
 
-stEnsureMode :: SLCtxt s -> SrcLoc -> SLMode -> SLState -> SLState
+stEnsureMode :: SLCtxt -> SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode ctxt at slm st =
   stMerge ctxt at st $ st {st_mode = slm}
 
 data SLRes a = SLRes DLStmts SLState a
 
-keepLifts :: DLStmts -> SLComp s a -> SLComp s a
+keepLifts :: DLStmts -> SLComp a -> SLComp a
 keepLifts lifts m = do
   SLRes lifts' st r <- m
   return $ SLRes (lifts <> lifts') st r
@@ -981,7 +980,7 @@ cannotLift what (SLRes lifts _ ans) =
     False -> impossible $ what <> " had lifts"
     True -> ans
 
-type SLComp s a = ST s (SLRes a)
+type SLComp a = IO (SLRes a)
 
 data SLExits
   = NeverExits
@@ -995,11 +994,11 @@ data SLStmtRes = SLStmtRes SLScope SLStmtRets
 
 data SLAppRes = SLAppRes SLScope SLSVal
 
-ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
+ctxt_stack_push :: SLCtxt -> SLCtxtFrame -> SLCtxt
 ctxt_stack_push ctxt f =
   (ctxt {ctxt_stack = f : (ctxt_stack ctxt)})
 
-binaryToPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSBinOp -> SLVal
+binaryToPrim :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSBinOp -> SLVal
 binaryToPrim ctxt at sco st o =
   case o of
     JSBinOpAnd _ -> impossible "and"
@@ -1027,7 +1026,7 @@ binaryToPrim ctxt at sco st o =
     fun a s ctx = snd $ evalId ctxt (srcloc_jsa "binop" a at) sco st ctx s
     prim _a p = SLV_Prim $ SLPrim_op p
 
-unaryToPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSUnaryOp -> SLVal
+unaryToPrim :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSUnaryOp -> SLVal
 unaryToPrim ctxt at sco st o =
   case o of
     JSUnaryOpMinus a -> fun a "minus" "-"
@@ -1050,21 +1049,21 @@ infectWithId_sss v (SLSSVal at lvl sv) =
 infectWithId_sls :: SLVar -> SLSVal -> SLSVal
 infectWithId_sls v (lvl, sv) = (lvl, infectWithId_sv v sv)
 
-type SLObjEnvRHS s = SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal
+type SLObjEnvRHS s = SLCtxt -> SLScope -> SLState -> SLComp SLSVal
 
 type SLObjEnv s = M.Map SLVar (SLObjEnvRHS s)
 
-evalObjEnv :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLObjEnv s -> SLComp s SLEnv
+evalObjEnv :: forall s. SLCtxt -> SrcLoc -> SLScope -> SLState -> SLObjEnv s -> SLComp SLEnv
 evalObjEnv ctxt at sco st0 m =
   foldM go (SLRes mempty st0 mempty) $ M.toList m
   where
-    go :: SLRes SLEnv -> (SLVar, SLObjEnvRHS s) -> SLComp s SLEnv
+    go :: SLRes SLEnv -> (SLVar, SLObjEnvRHS s) -> SLComp SLEnv
     go (SLRes lifts st env) (f, getv) = do
       SLRes lifts' st' v <- getv ctxt sco st
       let env' = M.insert f (sls_sss at v) env
       return $ SLRes (lifts <> lifts') st' env'
 
-evalAsEnv :: HasCallStack => SLCtxt s -> SrcLoc -> SLVal -> SLObjEnv s
+evalAsEnv :: HasCallStack => SLCtxt -> SrcLoc -> SLVal -> SLObjEnv s
 evalAsEnv ctx at obj =
   case obj of
     SLV_Object _ _ env ->
@@ -1235,18 +1234,18 @@ evalAsEnv ctx at obj =
     retStdLib n ctxt sco st =
       retV (public $ lookStdlib n sco) ctxt sco st
 
-evalDot_ :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> SLObjEnv s -> String -> SLComp s SLSVal
+evalDot_ :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> SLObjEnv s -> String -> SLComp SLSVal
 evalDot_ ctxt at sco st obj env field = do
   case M.lookup field env of
     Just gv -> gv ctxt sco st
     Nothing -> expect_throw_ctx ctxt at $ Err_Dot_InvalidField obj (M.keys env) field
 
-evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
+evalDot :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp SLSVal
 evalDot ctxt at sco st obj field = do
   let env = evalAsEnv ctxt at obj
   evalDot_ ctxt at sco st obj env field
 
-make_partio :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> ST s SLCompiledPartInfo
+make_partio :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> IO SLCompiledPartInfo
 make_partio ctxt at sco st = check_partio
   where
     check_partio v =
@@ -1264,7 +1263,7 @@ make_partio ctxt at sco st = check_partio
               makeInteract ctxt io_at sco st slcpi_who iov
             return $ SLCompiledPartInfo {..}
 
-evalForm :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLForm -> [JSExpression] -> SLComp s SLSVal
+evalForm :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLForm -> [JSExpression] -> SLComp SLSVal
 evalForm ctxt at sco st f args =
   case f of
     SLForm_App ->
@@ -1423,7 +1422,7 @@ evalForm ctxt at sco st f args =
           Just (at, de, (jsStmtToBlock dt_s))
         _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
-evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
+evalPrimOp :: SLCtxt -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp SLSVal
 evalPrimOp ctxt at _sco st p sargs = do
   case p of
     ADD -> nn2n (+)
@@ -1602,7 +1601,7 @@ evalPrimOp ctxt at _sco st p sargs = do
                 False -> lifts
       return $ SLRes lifts' st $ (lvl, SLV_DLVar dv)
 
-explodeTupleLike :: SLCtxt s -> SrcLoc -> String -> SLVal -> ST s (DLStmts, [SLVal])
+explodeTupleLike :: SLCtxt -> SrcLoc -> String -> SLVal -> IO (DLStmts, [SLVal])
 explodeTupleLike ctxt at lab tuplv =
   case tuplv of
     SLV_Tuple _ vs ->
@@ -1623,7 +1622,7 @@ explodeTupleLike ctxt at lab tuplv =
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
-doFluidRef_dv :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s DLVar
+doFluidRef_dv :: SLCtxt -> SrcLoc -> SLState -> FluidVar -> SLComp DLVar
 doFluidRef_dv ctxt at st fv = do
   ensure_modes ctxt at st (all_slm_modes \\ [SLM_Module]) "fluid ref"
   let fvt = fluidVarType fv
@@ -1631,19 +1630,19 @@ doFluidRef_dv ctxt at st fv = do
   let lifts = return $ DLS_FluidRef at dv fv
   return $ SLRes lifts st dv
 
-doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
+doFluidRef :: SLCtxt -> SrcLoc -> SLState -> FluidVar -> SLComp SLSVal
 doFluidRef ctxt at st fv = do
   SLRes lifts st' dv <- doFluidRef_dv ctxt at st fv
   return $ SLRes lifts st' $ public $ SLV_DLVar dv
 
-doFluidSet :: SLCtxt s -> SLState -> SrcLoc -> FluidVar -> SLSVal -> ST s DLStmts
+doFluidSet :: SLCtxt -> SLState -> SrcLoc -> FluidVar -> SLSVal -> IO DLStmts
 doFluidSet ctxt st at fv ssv = do
   (lifts, da) <- compileCheckType ctxt st at (dt2st $ fluidVarType fv) sv
   return $ lifts <> (return $ DLS_FluidSet at fv da)
   where
     sv = ensure_public ctxt at ssv
 
-doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
+doAssertBalance :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> IO DLStmts
 doAssertBalance ctxt at sco st lhs op = do
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
@@ -1654,7 +1653,7 @@ doAssertBalance ctxt at sco st lhs op = do
       evalApplyVals ctxt at sco st ass_rator [cmp_v, public $ SLV_Bytes at "balance assertion"]
   return res_lifts
 
-doArrayBoundsCheck :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> Integer -> SLVal -> SLComp s a -> SLComp s a
+doArrayBoundsCheck :: SLCtxt -> SrcLoc -> SLScope -> SLState -> Integer -> SLVal -> SLComp a -> SLComp a
 doArrayBoundsCheck ctxt at sco st sz idxv m = do
   SLRes cmp_lifts _ (SLAppRes _ cmp_v) <-
     evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_op PLT) [public idxv, public $ SLV_Int at sz]
@@ -1664,7 +1663,7 @@ doArrayBoundsCheck ctxt at sco st sz idxv m = do
   let lifts = cmp_lifts <> check_lifts
   keepLifts lifts $ m
 
-doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
+doBalanceUpdate :: SLCtxt -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp ()
 doBalanceUpdate ctxt at sco st op rhs = do
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
@@ -1673,13 +1672,13 @@ doBalanceUpdate ctxt at sco st op rhs = do
   fs_lifts <- doFluidSet ctxt st' at FV_balance balance_v'
   return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
 
-mustBeBytes :: SLCtxt s -> SrcLoc -> SLVal -> B.ByteString
+mustBeBytes :: SLCtxt -> SrcLoc -> SLVal -> B.ByteString
 mustBeBytes ctxt at v =
   case v of
     SLV_Bytes _ x -> x
     _ -> expect_throw_ctx ctxt at $ Err_Expected_Bytes v
 
-evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
+evalPrim :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
     SLPrim_race ->
@@ -2160,7 +2159,7 @@ evalPrim ctxt at sco st p sargs =
       dv <- ctxt_mkvar ctxt $ DLVar at' lab ty
       return $ (dv, SLV_DLVar dv)
 
-evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
+evalApplyVals :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp SLAppRes
 evalApplyVals ctxt at sco st rator randvs =
   case rator of
     SLV_Prim p -> do
@@ -2231,7 +2230,7 @@ evalApplyVals ctxt at sco st rator randvs =
     v ->
       expect_throw_ctx ctxt at (Err_Eval_NotApplicableVals v)
 
-evalApply :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [JSExpression] -> SLComp s SLSVal
+evalApply :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVal -> [JSExpression] -> SLComp SLSVal
 evalApply ctxt at sco st rator rands =
   case rator of
     SLV_Prim _ -> vals
@@ -2261,7 +2260,7 @@ getKwdOrPrim ident env =
     Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
     _ -> Nothing
 
-evalPropertyName :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSPropertyName -> SLComp s (SecurityLevel, String)
+evalPropertyName :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSPropertyName -> SLComp (SecurityLevel, String)
 evalPropertyName ctxt at sco st pn =
   case pn of
     JSPropertyIdent an s ->
@@ -2289,7 +2288,7 @@ evalPropertyName ctxt at sco st pn =
   where
     k_res s = return $ SLRes mempty st s
 
-evalPropertyPair :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> JSObjectProperty -> SLComp s (SecurityLevel, SLEnv)
+evalPropertyPair :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLEnv -> JSObjectProperty -> SLComp (SecurityLevel, SLEnv)
 evalPropertyPair ctxt at sco st fenv p =
   case p of
     JSPropertyNameandValue pn a vs -> do
@@ -2331,7 +2330,7 @@ evalPropertyPair ctxt at sco st fenv p =
       --- FIXME support these
       expect_throw_ctx ctxt at (Err_Obj_IllegalMethodDefinition p)
 
-evalId_ :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> String -> SLVar -> SLSSVal
+evalId_ :: SLCtxt -> SrcLoc -> SLScope -> SLState -> String -> SLVar -> SLSSVal
 evalId_ ctxt at sco st lab x =
   infectWithId_sss x $ env_lookup (Just ctxt) at (LC_RefFrom lab) x env
   where
@@ -2355,10 +2354,10 @@ evalId_ ctxt at sco st lab x =
         Nothing ->
           impossible $ "no ctxt_only in local mode"
 
-evalId :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> String -> SLVar -> SLSVal
+evalId :: SLCtxt -> SrcLoc -> SLScope -> SLState -> String -> SLVar -> SLSVal
 evalId ctxt at sco st lab x = sss_sls $ evalId_ ctxt at sco st lab x
 
-evalExpr :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> SLComp s SLSVal
+evalExpr :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSExpression -> SLComp SLSVal
 evalExpr ctxt at sco st e = do
   case e of
     JSIdentifier a x ->
@@ -2560,7 +2559,7 @@ evalExpr ctxt at sco st e = do
           _ ->
             expect_throw_ctx ctxt at' $ Err_Eval_RefNotInt idxv
 
-evalExprs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSExpression] -> SLComp s [SLSVal]
+evalExprs :: SLCtxt -> SrcLoc -> SLScope -> SLState -> [JSExpression] -> SLComp [SLSVal]
 evalExprs ctxt at sco st rands =
   case rands of
     [] -> return $ SLRes mempty st []
@@ -2579,7 +2578,7 @@ evalExprs ctxt at sco st rands =
       SLRes liftsN stN svalN <- evalExprs ctxt at sco st0 randN
       return $ SLRes (lifts0 <> liftsN) stN (svals0 <> svalN)
 
-evalDeclLHSArray :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> [SLVal] -> [JSExpression] -> SLComp s SLEnv
+evalDeclLHSArray :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> [SLVal] -> [JSExpression] -> SLComp SLEnv
 evalDeclLHSArray ctxt at sco st rhs_lvl lhs_env vs es =
   case (vs, es) of
     ([], []) ->
@@ -2598,7 +2597,7 @@ evalDeclLHSArray ctxt at sco st rhs_lvl lhs_env vs es =
     (_, _) ->
       expect_throw_ctx ctxt at $ Err_Decl_WrongArrayLength (length es) (length vs)
 
-evalDeclLHSObject :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> SLObjEnv s -> [JSObjectProperty] -> SLComp s SLEnv
+evalDeclLHSObject :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> SLObjEnv s -> [JSObjectProperty] -> SLComp SLEnv
 evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
   [] ->
     return $ SLRes mempty st lhs_env
@@ -2632,7 +2631,7 @@ evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
       _ ->
         expect_throw_ctx ctxt at $ Err_Parse_ExpectIdentifierProp o
 
-evalDeclLHS :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> SLComp s SLEnv
+evalDeclLHS :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> SLComp SLEnv
 evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     let at_ = srcloc_jsa "id" a at
@@ -2649,26 +2648,26 @@ evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case
   e ->
     expect_throw_ctx ctxt at $ Err_DeclLHS_IllegalJS e
 
-evalDeclLHSs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> [(JSExpression, SLSVal)] -> SLComp s SLEnv
+evalDeclLHSs :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLEnv -> [(JSExpression, SLSVal)] -> SLComp SLEnv
 evalDeclLHSs ctxt at sco st lhs_env = \case
   [] -> return $ SLRes mempty st lhs_env
   (e, (rhs_lvl, v)) : more -> do
     SLRes lifts st' lhs_env' <- evalDeclLHS ctxt at sco st rhs_lvl lhs_env v e
     keepLifts lifts $ evalDeclLHSs ctxt at sco st' lhs_env' more
 
-evalDecl :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> SLComp s SLEnv
+evalDecl :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> SLComp SLEnv
 evalDecl ctxt at sco st lhs rhs = do
   SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at sco st rhs
   keepLifts rhs_lifts $ evalDeclLHS ctxt at sco rhs_st rhs_lvl mempty rhs_v lhs
 
-destructDecls :: SLCtxt s -> SrcLoc -> (JSCommaList JSExpression) -> (JSExpression, JSExpression)
+destructDecls :: SLCtxt -> SrcLoc -> (JSCommaList JSExpression) -> (JSExpression, JSExpression)
 destructDecls ctxt at = \case
   (JSLOne (JSVarInitExpression lhs (JSVarInit _ rhs))) -> (lhs, rhs)
   es -> expect_throw_ctx ctxt at $ Err_Decls_IllegalJS es
 
 -- | Make sure all bindings in this SLEnv respect the rule that
 -- private vars must be named with a leading underscore.
-enforcePrivateUnderscore :: Monad m => SLCtxt s -> SrcLoc -> SLEnv -> m ()
+enforcePrivateUnderscore :: Monad m => SLCtxt -> SrcLoc -> SLEnv -> m ()
 enforcePrivateUnderscore ctxt at = mapM_ enf . M.toList
   where
     enf (k, (SLSSVal _ secLev _)) = case secLev of
@@ -2678,7 +2677,7 @@ enforcePrivateUnderscore ctxt at = mapM_ enf . M.toList
           expect_throw_ctx ctxt at (Err_Eval_NotSecretIdent k)
       _ -> return ()
 
-doOnlyExpr :: SLCtxt s -> SrcLoc -> (SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLEnv, DLType, SLVal)
+doOnlyExpr :: SLCtxt -> SrcLoc -> (SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> IO (DLStmts, SLEnv, DLType, SLVal)
 doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
@@ -2742,7 +2741,7 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
       return (alifts, penv', only_ty, only_v)
     _ -> expect_throw_ctx ctxt_l at $ Err_Only_NotOneClosure $ snd only_arg
 
-doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
+doOnly :: SLCtxt -> SrcLoc -> (DLStmts, SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> IO (DLStmts, SLScope, SLState)
 doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
   (alifts, penv', only_ty, only_v) <- doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg)
   case only_ty of
@@ -2753,7 +2752,7 @@ doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) 
     ty ->
       expect_throw_ctx ctxt only_at (Err_Block_NotNull ty only_v)
 
-doGetSelfAddress :: SLCtxt s -> SrcLoc -> SLPart -> ST s (DLVar, DLStmts)
+doGetSelfAddress :: SLCtxt -> SrcLoc -> SLPart -> IO (DLVar, DLStmts)
 doGetSelfAddress ctxt at who = do
   let whos = bunpack who
   let isClass = is_class ctxt who
@@ -2784,7 +2783,7 @@ all_just = \case
       Just xs' -> Just $ x : xs'
       Nothing -> Nothing
 
-doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doToConsensus :: SLCtxt -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp SLStmtRes
 doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
   ensure_live ctxt at st "to consensus"
@@ -2965,7 +2964,7 @@ typeToExpr = \case
     rm m = JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toList m) a
     rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [r t]
 
-doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doFork :: SLCtxt -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp SLStmtRes
 doFork ctxt at sco st ks cases mtime = do
   idx <- ctxt_alloc ctxt
   let fid x = ".fork" <> (show idx) <> "." <> x
@@ -2977,17 +2976,17 @@ doFork ctxt at sco st ks cases mtime = do
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
   let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
-  seenr <- newSTRef (mempty :: M.Map SLPart SrcLoc)
+  seenr <- newIORef (mempty :: M.Map SLPart SrcLoc)
   let go (c_at, (who_e, before_e, pay_e, after_e)) = do
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
         let who_s = bpack who
-        seen <- readSTRef seenr
+        seen <- readIORef seenr
         case M.lookup who_s seen of
           Just prev_at ->
             expect_throw_ctx ctxt c_at $ Err_Fork_CaseAppearsTwice who_s prev_at c_at
           Nothing -> do
-            modifySTRef seenr (M.insert who_s c_at)
+            modifyIORef seenr (M.insert who_s c_at)
         let var_i = who
         let var_e = jid var_i
         let mkobjp x = JSPropertyNameandValue (JSPropertyIdent a var_i) a [x]
@@ -3081,7 +3080,7 @@ doFork ctxt at sco st ks cases mtime = do
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   evalStmt ctxt at sco st $ exp_ss <> ks
 
-doParallelReduce :: SLCtxt s -> SrcLoc -> JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (SrcLoc, [JSExpression]) -> ST s [JSStatement]
+doParallelReduce :: SLCtxt -> SrcLoc -> JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (SrcLoc, [JSExpression]) -> IO [JSStatement]
 doParallelReduce ctxt _at lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = do
   idx <- ctxt_alloc ctxt
   let prid x = ".pr" <> (show idx) <> "." <> x
@@ -3130,7 +3129,7 @@ doParallelReduce ctxt _at lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr
   -- forM_ pr_ss (traceM . ppShow)
   return $ pr_ss
 
-evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
+evalStmtTrampoline :: SLCtxt -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
   case ev of
     SLV_Prim (SLPrim_part_setted at' who addr_da) -> do
@@ -3185,7 +3184,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
         (T_Null, _) -> evalStmt ctxt at sco st ks
         (ty, _) -> expect_throw_ctx ctxt at (Err_Block_NotNull ty ev)
 
-doExit :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLComp s ()
+doExit :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLComp ()
 doExit ctxt at sco st = do
   ensure_mode ctxt at st SLM_Step "exit"
   ensure_live ctxt at st "exit"
@@ -3195,7 +3194,7 @@ doExit ctxt at sco st = do
   let st' = st {st_live = False}
   return $ SLRes lifts st' ()
 
-doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
+doWhileLikeInitEval :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> IO (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
 doWhileLikeInitEval ctxt at sco st lhs rhs = do
   SLRes init_lifts st_init vars_env <- evalDecl ctxt at sco st lhs rhs
   let help v (SLSSVal _ _ val) = do
@@ -3214,7 +3213,7 @@ doWhileLikeInitEval ctxt at sco st lhs rhs = do
   let post_lifts = mempty
   return $ (pre_lifts, post_lifts, init_vars, init_dl, st_init', sco_env')
 
-doWhileLikeContinueEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> M.Map SLVar DLVar -> SLSVal -> SLComp s ()
+doWhileLikeContinueEval :: SLCtxt -> SrcLoc -> SLScope -> SLState -> JSExpression -> M.Map SLVar DLVar -> SLSVal -> SLComp ()
 doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
   SLRes decl_lifts st_decl decl_env <-
     evalDeclLHS ctxt at sco st rhs_lvl mempty rhs_v lhs
@@ -3242,7 +3241,7 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
   let lifts' = decl_lifts <> ae_lifts <> (return $ DLS_Continue at cont_das)
   return $ SLRes lifts' st_decl' ()
 
-evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
+evalPureExprToBlock :: SLCtxt -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> IO DLBlock
 evalPureExprToBlock ctxt at sco st klifts e rest = do
   let pure_st = st {st_mode = SLM_ConsensusPure}
   let fs = ctxt_stack ctxt
@@ -3251,7 +3250,7 @@ evalPureExprToBlock ctxt at sco st klifts e rest = do
       checkResType ctxt at rest $ evalExpr ctxt at sco pure_st e
   return $ DLBlock at fs e_lifts e_da
 
-evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> SLComp s SLStmtRes
+evalStmt :: SLCtxt -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> SLComp SLStmtRes
 evalStmt ctxt at sco st ss =
   case ss of
     [] ->
@@ -3587,7 +3586,7 @@ evalStmt ctxt at sco st ss =
       expect_throw_ctx ctxt (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
     retSeqn = retSeqn_ ctxt sco
 
-retSeqn_ :: SLCtxt s -> SLScope -> SLRes SLStmtRes -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
+retSeqn_ :: SLCtxt -> SLScope -> SLRes SLStmtRes -> SrcLoc -> [JSStatement] -> SLComp SLStmtRes
 retSeqn_ ctxt sco sr at' ks = do
   case dropEmptyJSStmts ks of
     [] -> return $ sr
@@ -3618,7 +3617,7 @@ combineStmtRets at' lvl lst lrets rst rrets =
         True -> [(at', Nothing, (lvl, SLV_Null at' $ "empty " <> lab), False)]
         False -> []
 
-expect_empty_tail :: SLCtxt s -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
+expect_empty_tail :: SLCtxt -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail ctxt lab a sp at ks res =
   case ks of
     [] -> res
@@ -3639,14 +3638,14 @@ evalFromClause :: SLLibs -> JSFromClause -> SLEnv
 evalFromClause libm (JSFromClause _ _ libn) =
   lookupDep (ReachSourceFile libn) libm
 
-evalImExportSpecifiers :: SLCtxt s -> SrcLoc -> LookupCtx -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
+evalImExportSpecifiers :: SLCtxt -> SrcLoc -> LookupCtx -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
 evalImExportSpecifiers ctxt at lookupCtx env go cl =
   foldl' (env_insertp ctxt at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
   where
     p f t = p' (parseIdent at f) (parseIdent at t)
     p' (_, f) (_, t) = (t, env_lookup (Just ctxt) at lookupCtx f env)
 
-evalImportClause :: SLCtxt s -> SrcLoc -> SLEnv -> JSImportClause -> SLEnv
+evalImportClause :: SLCtxt -> SrcLoc -> SLEnv -> JSImportClause -> SLEnv
 evalImportClause ctxt at env im =
   case im of
     JSImportClauseNameSpace (JSImportNameSpace _ _ ji) ->
@@ -3665,7 +3664,7 @@ evalImportClause ctxt at env im =
   where
     illegal_import = expect_throw_ctx ctxt at (Err_Import_IllegalJS im)
 
-evalExportClause :: SLCtxt s -> SrcLoc -> SLEnv -> JSExportClause -> SLEnv
+evalExportClause :: SLCtxt -> SrcLoc -> SLEnv -> JSExportClause -> SLEnv
 evalExportClause ctxt at env (JSExportClause _ escl _) =
   evalImExportSpecifiers ctxt at (LC_RefFrom "module export") env go escl
   where
@@ -3673,7 +3672,7 @@ evalExportClause ctxt at env (JSExportClause _ escl _) =
       JSExportSpecifier x -> (x, x)
       JSExportSpecifierAs x _ y -> (x, y)
 
-evalTopBody :: SLCtxt s -> SrcLoc -> SLState -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> SLComp s SLEnv
+evalTopBody :: SLCtxt -> SrcLoc -> SLState -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> SLComp SLEnv
 evalTopBody ctxt at st libm env exenv body =
   case body of
     [] -> return $ SLRes mempty st exenv
@@ -3738,7 +3737,7 @@ evalTopBody ctxt at st libm env exenv body =
 
 type SLMod = (ReachSource, [JSModuleItem])
 
-evalLib :: STCounter s -> Connectors -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
+evalLib :: Counter -> Connectors -> SLMod -> (DLStmts, SLLibs) -> IO (DLStmts, SLLibs)
 evalLib idxr cns (src, body) (liblifts, libm) = do
   let at = srcloc_src src
   let st =
@@ -3778,7 +3777,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
     evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
   return $ (liblifts <> more_lifts, M.insert src exenv libm)
 
-evalLibs :: STCounter s -> Connectors -> [SLMod] -> ST s (DLStmts, SLLibs)
+evalLibs :: Counter -> Connectors -> [SLMod] -> IO (DLStmts, SLLibs)
 evalLibs idxr cns mods = foldrM (evalLib idxr cns) (mempty, mempty) mods
 
 app_default_opts :: [T.Text] -> DLOpts
@@ -3835,7 +3834,7 @@ st2dte at t =
     Just x -> x
     Nothing -> expect_thrown at $ Err_Type_NotDT t
 
-compileInteractResult :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVar -> SLType -> (DLType -> DLExpr) -> SLComp s SLSVal
+compileInteractResult :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLVar -> SLType -> (DLType -> DLExpr) -> SLComp SLSVal
 compileInteractResult ctxt at _sco st m t de = do
   let dt = st2dte at t
   (idv, lifts) <- ctxt_lift_expr ctxt at (DLVar at m dt) (de dt)
@@ -3843,7 +3842,7 @@ compileInteractResult ctxt at _sco st m t de = do
   let lifts' = mempty
   return $ SLRes (lifts <> lifts') st $ secret isv
 
-makeInteract :: forall s . SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPart -> SLEnv -> ST s (SLSSVal, InteractEnv, DLStmts)
+makeInteract :: SLCtxt -> SrcLoc -> SLScope -> SLState -> SLPart -> SLEnv -> IO (SLSSVal, InteractEnv, DLStmts)
 makeInteract ctxt at sco st who spec = do
   let lab = Just $ (bunpack who) <> "'s interaction interface"
   let specl = M.toList spec
@@ -3855,7 +3854,7 @@ makeInteract ctxt at sco st who spec = do
   let lifts' = return $ DLS_Only at who lifts
   return $ (io, ienv, lifts')
   where
-    wrap_ty :: SLVar -> SLSSVal -> ST s (SLSSVal, IType, DLStmts)
+    wrap_ty :: SLVar -> SLSSVal -> IO (SLSSVal, IType, DLStmts)
     wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = case t of
       ST_Fun dom rng -> do
         let dom' = map (st2dte idAt) dom
@@ -3870,7 +3869,7 @@ makeInteract ctxt at sco st who spec = do
     wrap_ty _ v =
       expect_thrown (sss_at v) $ Err_App_InvalidInteract $ sss_sls v
 
-compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
+compileDApp :: Counter -> DLStmts -> Connectors -> SLVal -> IO DLProg
 compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s top_env)) = do
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
         case M.lookup k app_options of
@@ -3954,15 +3953,15 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_f
         return final
   let sps = SLParts $ M.fromList $ [ (slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios ]
   let dli = DLInit ctimem
-  final_idx <- readSTCounter idxr
+  final_idx <- readCounter idxr
   let dlo' = dlo {dlo_counter = final_idx}
   return $ DLProg at dlo' sps dli final'
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)
 
-compileBundleST :: Connectors -> JSBundle -> SLVar -> ST s DLProg
-compileBundleST cns (JSBundle mods) main = do
-  idxr <- newSTCounter 0
+compileBundle :: Connectors -> JSBundle -> SLVar -> IO DLProg
+compileBundle cns (JSBundle mods) main = do
+  idxr <- newCounter 0
   (liblifts, libm) <- evalLibs idxr cns mods
   let exe_ex = libm M.! exe
   let topv = case env_lookup Nothing srcloc_top LC_CompilerRequired main exe_ex of
@@ -3974,6 +3973,3 @@ compileBundleST cns (JSBundle mods) main = do
       [] -> impossible $ "compileBundle: no files"
       ((x, _) : _) -> x
 
-compileBundle :: Connectors -> JSBundle -> SLVar -> DLProg
-compileBundle cns jsb main =
-  runST $ compileBundleST cns jsb main
