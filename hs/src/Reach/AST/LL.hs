@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as M
 import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.Counter
 
 type LLVar = Maybe DLVar
 
@@ -47,10 +48,10 @@ data LLStep
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
   , llo_verifyOverflow :: Bool
-  , llo_counter :: Int
+  , llo_counter :: Counter
   }
-  deriving (Generic, Eq, Show)
+  deriving (Generic, Eq)
 
 data LLProg
   = LLProg SrcLoc LLOpts SLParts DLInit LLStep
-  deriving (Eq, Show)
+  deriving (Eq)

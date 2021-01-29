@@ -1,4 +1,4 @@
-module Reach.Counter (Counter, newCounter, incCounter, readCounter) where
+module Reach.Counter (Counter, newCounter, incCounter) where
 
 import Data.IORef
 
@@ -13,6 +13,3 @@ incCounter (Counter r) = do
   i <- readIORef r
   writeIORef r $ i + 1
   return i
-
-readCounter :: Counter -> IO Int
-readCounter (Counter r) = readIORef r

@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as M
 import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.Counter
 
 data PLLetCat
   = PL_Once
@@ -115,10 +116,10 @@ newtype EPPs = EPPs (M.Map SLPart EPProg)
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
   , plo_verifyOverflow :: Bool
-  , plo_counter :: Int
+  , plo_counter :: Counter
   }
-  deriving (Generic, Eq, Show)
+  deriving (Generic, Eq)
 
 data PLProg
   = PLProg SrcLoc PLOpts DLInit EPPs CPProg
-  deriving (Eq, Show)
+  deriving (Eq)

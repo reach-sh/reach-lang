@@ -8,6 +8,7 @@ import qualified Data.Text as T
 import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.Counter
 
 data StmtAnnot = StmtAnnot
   { sa_pure :: Bool
@@ -127,9 +128,9 @@ data DLOpts = DLOpts
   , dlo_verifyOverflow :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
-  , dlo_counter :: Int
+  , dlo_counter :: Counter
   }
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLInit DLStmts

@@ -12,6 +12,7 @@ import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.DK
 import Reach.AST.LL
+import Reach.Counter
 import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util
@@ -276,7 +277,7 @@ type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
 type FVMap = M.Map FluidVar DLVar
 type DFApp = ReaderT DFEnv IO
 data DFEnv = DFEnv
-  { eCounterR :: IORef Int
+  { eCounterR :: Counter
   , eFVMm :: Maybe FVMap
   , eFVE :: FluidEnv
   }
@@ -284,9 +285,7 @@ data DFEnv = DFEnv
 allocVar :: (Int -> a) -> DFApp a
 allocVar mk = do
   DFEnv {..} <- ask
-  idx <- liftIO $ readIORef eCounterR
-  liftIO $ modifyIORef eCounterR (1 +)
-  return $ mk idx
+  mk <$> (liftIO $ incCounter eCounterR)
 
 fluidRefm :: FluidVar -> DFApp (Maybe (SrcLoc, DLArg))
 fluidRefm fv = do
@@ -414,13 +413,13 @@ defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyOverflow = dlo_verifyOverflow
-  eCounterR <- newIORef dlo_counter
+  let llo_counter = dlo_counter
+  let opts' = LLOpts {..}
+  let eCounterR = llo_counter
   let eFVMm = mempty
   let eFVE = mempty
   flip runReaderT (DFEnv {..}) $ do
     k' <- df_step k
-    llo_counter <- liftIO $ readIORef eCounterR
-    let opts' = LLOpts {..}
     return $ LLProg at opts' sps dli k'
 
 -- Stich it all together

@@ -3747,7 +3747,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
           , st_pdvs = mempty
           , st_after_first = False
           }
-  let dlo = app_default_opts $ M.keys cns
+  let dlo = app_default_opts idxr $ M.keys cns
   let ctxt_top =
         (SLCtxt
            { ctxt_dlo = dlo
@@ -3780,14 +3780,14 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
 evalLibs :: Counter -> Connectors -> [SLMod] -> IO (DLStmts, SLLibs)
 evalLibs idxr cns mods = foldrM (evalLib idxr cns) (mempty, mempty) mods
 
-app_default_opts :: [T.Text] -> DLOpts
-app_default_opts cns =
+app_default_opts :: Counter -> [T.Text] -> DLOpts
+app_default_opts idxr cns =
   DLOpts
     { dlo_deployMode = DM_constructor
     , dlo_verifyOverflow = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
-    , dlo_counter = 0
+    , dlo_counter = idxr
     }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
@@ -3880,7 +3880,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_f
             case opt acc v of
               Right x -> x
               Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
-  let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) opts
+  let dlo = M.foldrWithKey use_opt (app_default_opts idxr $ M.keys cns) opts
   let part_lifts = mconcat $ map slcpi_lifts part_ios
   let make_part (SLCompiledPartInfo {..}) =
         public $ SLV_Participant slcpi_at slcpi_who Nothing Nothing
@@ -3953,9 +3953,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_f
         return final
   let sps = SLParts $ M.fromList $ [ (slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios ]
   let dli = DLInit ctimem
-  final_idx <- readCounter idxr
-  let dlo' = dlo {dlo_counter = final_idx}
-  return $ DLProg at dlo' sps dli final'
+  return $ DLProg at dlo sps dli final'
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)
 

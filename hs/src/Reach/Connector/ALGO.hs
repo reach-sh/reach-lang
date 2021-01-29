@@ -24,6 +24,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Connector
+import Reach.Counter
 import Reach.Pretty ()
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
@@ -242,7 +243,7 @@ render ts = tt
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
   , sFailedR :: IORef Bool
-  , sCounterR :: IORef Int
+  , sCounterR :: Counter
   }
 
 type Lets = M.Map DLVar (App ())
@@ -269,8 +270,7 @@ allocVar :: DLVar -> App DLVar
 allocVar (DLVar at s t _) = do
   Env {..} <- ask
   let Shared {..} = eShared
-  idx <- liftIO $ readIORef sCounterR
-  liftIO $ modifyIORef sCounterR (1 +)
+  idx <- liftIO $ incCounter sCounterR
   return $ DLVar at s t idx
 
 output :: TEAL -> App ()
@@ -1235,7 +1235,7 @@ compile_algo disp pl = do
   resr <- newIORef mempty
   let sHandlers = hm
   sFailedR <- newIORef False
-  sCounterR <- newIORef plo_counter
+  let sCounterR = plo_counter
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)
