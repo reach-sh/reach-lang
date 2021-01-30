@@ -1,6 +1,7 @@
 module Reach.EPP (epp) where
 
 import Control.Monad
+import Control.Monad.Reader
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -20,8 +21,6 @@ import Reach.Util
 -- import Debug.Trace
 -- import Reach.Texty
 
--- XXX Use a nicer monad
-
 data EPPError
   = Err_ContinueDomination
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
@@ -29,6 +28,22 @@ data EPPError
 instance Show EPPError where
   show Err_ContinueDomination =
     "Continue must be dominated by communication"
+
+-- XXX change this to have more implicit things happening in the monads
+--
+-- ProSt would have an IORef Counts for the consensus, that would get updated
+--
+-- ProSt would have an M.Map SLPart (IORef Counts) that would get updated for
+-- each end-point
+--
+-- ProSt would have an IORef UndefdVars for the consensus
+--
+-- There would be instructions like insertVar, removeVar, insertUndefd,
+-- removeUndefd that would look at those, and when we focused on a particular
+-- end-point, we'd grab its Counts ref and set it as the global one during that
+-- evaluation. Getting the order of evaluation would be tricky and annoying,
+-- because we have to ensure that the remove happens after the continuation is
+-- evaluated
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
@@ -64,6 +79,8 @@ data ProSt = ProSt
   }
   deriving (Eq)
 
+type App = ReaderT ProSt IO
+
 default_interval :: CInterval a
 default_interval = CBetween [] []
 
@@ -82,33 +99,31 @@ interval_no_to :: CInterval a -> CInterval a
 interval_no_to (CBetween froml _) =
   CBetween froml []
 
-updateHandlerSVS :: ProSt -> Int -> [DLVar] -> IO ()
-updateHandlerSVS st target new_svs = modifyIORef (pst_handlers st) update
+updateHandlerSVS :: Int -> [DLVar] -> App ()
+updateHandlerSVS target new_svs = do
+  st <- ask
+  liftIO $ modifyIORef (pst_handlers st) update
   where
     update (CHandlers hs) = CHandlers $ fmap update1 hs
     update1 = \case
-      C_Handler at int ltv fs prev old_svs msg amtv tv body ->
-        C_Handler at int ltv fs prev svs msg amtv tv body
-        where
-          svs =
-            case target == prev of
-              True -> new_svs
-              False -> old_svs
+      C_Handler at int ltv fs prev _ msg amtv tv body | target == prev ->
+        C_Handler at int ltv fs prev new_svs msg amtv tv body
       h -> h
 
-newHandler :: ProSt -> IO Int
-newHandler st =
-  case pst_loop_fixed_point st of
+newHandler :: App Int
+newHandler = do
+  ProSt {..} <- ask
+  case pst_loop_fixed_point of
     True -> return $ 0
-    False ->
-      incCounter $ pst_handlerc st
+    False -> liftIO $ incCounter pst_handlerc
 
-addHandler :: ProSt -> Int -> CHandler -> IO ()
-addHandler st which this_h =
-  case pst_loop_fixed_point st of
-    True -> mempty
+addHandler :: Int -> CHandler -> App ()
+addHandler which this_h = do
+  ProSt {..} <- ask
+  case pst_loop_fixed_point of
+    True -> return ()
     False ->
-      modifyIORef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+      liftIO $ modifyIORef pst_handlers $ ((CHandlers $ M.singleton which this_h) <>)
 
 pmap :: ProSt -> (SLPart -> b) -> M.Map SLPart b
 pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
@@ -228,29 +243,29 @@ var_addlc cs v = (lc, v)
         Count Nothing -> PL_Once
         Count (Just x) -> x
 
-epp_n :: ProSt -> LLConsensus -> IO ProResC
-epp_n st = \case
+epp_n :: LLConsensus -> App ProResC
+epp_n = \case
   LLC_Com c k -> do
-    ProResC p_prts_s (ProRes_ cs_k (udvs_k, k')) <- epp_n st k
+    ProResC p_prts_s (ProRes_ cs_k (udvs_k, k')) <- epp_n k
     let ProRes_ cs_k' (udvs_k', c') = epp_m cs_k udvs_k c
     let p_prts_s' = extend_locals_look c p_prts_s
     return $ ProResC p_prts_s' (ProRes_ cs_k' (udvs_k', CT_Com c' k'))
   LLC_If at ca t f -> do
-    ProResC p_prts_t (ProRes_ cs_t (udvs_t, ct_t)) <- epp_n st t
-    ProResC p_prts_f (ProRes_ cs_f (udvs_f, ct_f)) <- epp_n st f
+    ProResC p_prts_t (ProRes_ cs_t (udvs_t, ct_t)) <- epp_n t
+    ProResC p_prts_f (ProRes_ cs_f (udvs_f, ct_f)) <- epp_n f
     let mkp p = ProRes_ cs_p et_p
           where
             ProRes_ cs_p_t et_p_t = p_prts_t M.! p
             ProRes_ cs_p_f et_p_f = p_prts_f M.! p
             cs_p = counts ca <> cs_p_t <> cs_p_f
             et_p = ET_If at ca et_p_t et_p_f
-    let p_prts' = pmap st mkp
+    p_prts' <- flip pmap mkp <$> ask
     let cs' = counts ca <> cs_t <> cs_f
     let ct' = CT_If at ca ct_t ct_f
     let udvs' = udvs_t <> udvs_f
     return $ ProResC p_prts' (ProRes_ cs' (udvs', ct'))
   LLC_Switch at ov csm -> do
-    let cm1 (ov', l) = (,) <$> (pure ov') <*> epp_n st l
+    let cm1 (ov', l) = (,) <$> (pure ov') <*> epp_n l
     csm'0 <- mapM cm1 csm
     let mkp p = ProRes_ cs_p $ ET_Switch at ov csm'p
           where
@@ -262,30 +277,34 @@ epp_n st = \case
                 csm'0
             cs_p = mconcatMap fst $ M.elems csm'0p
             csm'p = M.map snd csm'0p
-    let p_prts' = pmap st mkp
+    p_prts' <- flip pmap mkp <$> ask
     let csm'ct = M.map (\(mov', ProResC _ (ProRes_ _ (_, ct))) -> (mov', ct)) csm'0
     let cs' = counts ov <> (mconcatMap (\(mov', ProResC _ (ProRes_ cs _)) -> count_rms (maybeToList mov') cs) $ M.elems csm'0)
     let udvs' = mconcatMap (\(_, ProResC _ (ProRes_ _ (udvs, _))) -> udvs) $ M.elems csm'0
     return $ ProResC p_prts' (ProRes_ cs' (udvs', CT_Switch at ov csm'ct))
   LLC_FromConsensus at1 _at2 s -> do
+    st <- ask
     let st' = st {pst_interval = default_interval}
-    ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
+    ProResS p_prts_s (ProRes_ cons_cs more_chb) <-
+      local (const st') $ epp_s s
     let svs = counts_nzs cons_cs
     let which = pst_prev_handler st
     let from_info =
           case more_chb of
             True -> Just $ map (\x -> (x, DLA_Var x)) svs
             False -> Nothing
-    updateHandlerSVS st which svs
+    updateHandlerSVS which svs
     let mkp (ProRes_ cs_p et_p) =
           ProRes_ cs_p (ET_FromConsensus at1 which from_info et_p)
     let p_prts_s' = M.map mkp p_prts_s
     let ctw = CT_From at1 from_info
     return $ ProResC p_prts_s' (ProRes_ cons_cs (mempty, ctw))
   LLC_While at asn _inv cond body k -> do
-    loop_num <- newHandler st
+    loop_num <- newHandler
+    st <- ask
     let st_k = st {pst_prev_handler = loop_num}
-    ProResC p_prts_k (ProRes_ cs_k (udvs_k, ct_k)) <- epp_n st_k k
+    ProResC p_prts_k (ProRes_ cs_k (udvs_k, ct_k)) <-
+      local (const st_k) $ epp_n k
     let loop_vars = assignment_vars asn
     let DLinBlock cond_at _ cond_l cond_da = cond
     let st_body0 = st_k {pst_loop_num = Just loop_num}
@@ -303,7 +322,7 @@ epp_n st = \case
               , pst_loop_fixed_point = not done
               }
       ProResC p_prts_body_ (ProRes_ cs_body (udvs_body_, ct_body_)) <-
-        epp_n st_body body
+        local (const st_body) $ epp_n body
       let post_cond_cs = counts cond_da <> cs_body <> cs_k
       let ProResL (ProRes_ cs_cond (cond_udvs, pt_cond_)) = epp_l post_cond_cs cond_l
       let udvs' = cond_udvs <> udvs_body_
@@ -312,10 +331,10 @@ epp_n st = \case
 
     let loop_if = CT_If cond_at cond_da ct_body ct_k
     let loop_top = pltReplace CT_Com loop_if pt_cond
-    (loop_top'_cs, loop_top') <- pltoptimize loop_top
+    (loop_top'_cs, loop_top') <- liftIO $ pltoptimize loop_top
     let loop_lcvars = map (var_addlc loop_top'_cs) loop_vars
     let this_h = C_Loop at loop_svs loop_lcvars loop_top'
-    addHandler st loop_num this_h
+    addHandler loop_num this_h
     let ct' = CT_Jump at loop_num loop_svs asn
     let cons_cs' = counts loop_svs <> counts asn
     let mkp p = ProRes_ cs_p t_p
@@ -328,6 +347,7 @@ epp_n st = \case
     let udvs' = udvs_k <> udvs_body
     return $ ProResC p_prts' (ProRes_ cons_cs' (udvs', ct'))
   LLC_Continue at asn -> do
+    st <- ask
     let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
     let loop_svs = fromMaybe (impossible "no loop") $ pst_loop_svs st
     when (this_loop == pst_prev_handler st) $
@@ -338,7 +358,7 @@ epp_n st = \case
     let p_prts' = pall st (ProRes_ asn_cs (ET_Continue at asn))
     return $ ProResC p_prts' (ProRes_ cons_cs' (mempty, ct'))
   LLC_Only at who body_l k_n -> do
-    ProResC p_prts_k (ProRes_ cs_k (udvs_k, prchs_k)) <- epp_n st k_n
+    ProResC p_prts_k (ProRes_ cs_k (udvs_k, prchs_k)) <- epp_n k_n
     let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
     let ProResL (ProRes_ who_body_cs (who_body_udvs, who_body_lt)) = epp_l who_k_cs body_l
     let who_prt_only =
@@ -347,24 +367,27 @@ epp_n st = \case
     let udvs' = udvs_k <> who_body_udvs
     return $ ProResC p_prts (ProRes_ cs_k (udvs', prchs_k))
 
-epp_s :: ProSt -> LLStep -> IO ProResS
-epp_s st = \case
+epp_s :: LLStep -> App ProResS
+epp_s = \case
   LLS_Com c k -> do
+    st <- ask
     let st' =
           case c of
             (DL_Let _ _ (DLE_Wait _ amt)) ->
               st {pst_interval = interval_add_from (pst_interval st) amt}
             _ -> st
-    ProResS p_prts_s (ProRes_ cs_k morech) <- epp_s st' k
+    ProResS p_prts_s (ProRes_ cs_k morech) <-
+      local (const st') $ epp_s k
     let ProRes_ cs_k' _ = epp_m cs_k mempty c
     let p_prts_s' = extend_locals_look c p_prts_s
     return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
   LLS_Stop at -> do
+    st <- ask
     let cs = pst_forced_svs st
     let p_prts_s = pall st (ProRes_ cs (ET_Stop at))
     return $ ProResS p_prts_s $ ProRes_ cs False
   LLS_Only _at who body_l k_s -> do
-    ProResS p_prts_k prchs_k <- epp_s st k_s
+    ProResS p_prts_k prchs_k <- epp_s k_s
     let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
     let ProResL (ProRes_ who_body_cs (_, who_body_lt)) = epp_l who_k_cs body_l
     let who_prt_only =
@@ -372,8 +395,9 @@ epp_s st = \case
     let p_prts = M.insert who who_prt_only p_prts_k
     return $ ProResS p_prts prchs_k
   LLS_ToConsensus at send (last_timev, fromv, msg, amt_dv, timev, cons) mtime -> do
+    st <- ask
     let prev_int = pst_interval st
-    which <- newHandler st
+    which <- newHandler
     let (int_ok, delay_cs, continue_time) =
           case mtime of
             Nothing ->
@@ -395,7 +419,7 @@ epp_s st = \case
                           , pst_forced_svs = ok_cons_cs
                           }
                   ProResS delay_prts (ProRes_ tcons_cs _) <-
-                    epp_s st_to delays
+                    local (const st_to) $ epp_s delays
                   let cs' = delay_cs_ <> tcons_cs
                   let update (ProRes_ tk_cs tk_et) =
                         ProRes_ (tk_cs <> delay_cs_) (Just (delayas, tk_et))
@@ -406,7 +430,8 @@ epp_s st = \case
             , pst_interval = int_ok
             }
     ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <-
-      epp_n st_cons cons
+      local (const st_cons) $
+        epp_n cons
     let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
     let ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
     let (fs_uses, fs_defns) = (mempty, [fromv])
@@ -435,7 +460,7 @@ epp_s st = \case
                 Just (_isClass, from_as, amt_da, when_da) ->
                   mk_et $ Just (from_as, amt_da, when_da, svs, soloSend)
     let p_prts = M.mapWithKey mk_p_prt p_prts_cons
-    addHandler st which this_h
+    addHandler which this_h
     return $ ProResS p_prts (ProRes_ time_cons_cs True)
 
 epp :: LLProg -> IO PLProg
@@ -455,7 +480,8 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
           , pst_loop_num = Nothing
           , pst_forced_svs = mempty
           }
-  ProResS p_prts _ <- epp_s st s
+  ProResS p_prts _ <-
+    flip runReaderT st $ epp_s s
   chs <- readIORef hsr
   let cp = CPProg at chs
   let mk_pp p ie =
@@ -468,3 +494,4 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let plo_verifyOverflow = llo_verifyOverflow
   let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli pps cp
+
