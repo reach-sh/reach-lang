@@ -4,9 +4,9 @@ ARG NODE_IMAGE=node:$NODE_VERSION
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE
 
-WORKDIR /js_deps
+WORKDIR /js-deps
 COPY package.json package-lock.json \
-     /js_deps/
+     /js-deps/
 RUN npm install
 
 # TODO: remove this eventually

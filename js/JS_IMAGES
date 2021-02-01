@@ -1,15 +1,11 @@
 include $(ROOT)/VERSION
 
+JS_DEPS_IMAGE="reachsh/js-deps"
 STDLIB_IMAGE="reachsh/stdlib"
 RUNNER_IMAGE="reachsh/runner"
-
-JS_DEPS_IMAGE="reachsh/js_deps"
-STDLIB2_IMAGE="reachsh/stdlib2"
-RUNNER2_IMAGE="reachsh/runner2"
-REACT_RUNNER_IMAGE="reachsh/react_runner"
+REACT_RUNNER_IMAGE="reachsh/react-runner"
 
 REACH_VERSION=$(VERSION)
 NODE_VERSION="12.18.3"
-ESLINT_VERSION="7.7.0" # TODO: delete
 
 REACH_GIT_HASH="$$($(ROOT)/scripts/git-hash.sh)"

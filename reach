@@ -928,12 +928,20 @@ do_react_down () {
   exit 0
 }
 
+REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react_runner'
+
+do_update() {
+  for IMG in $REACH_IMAGES ; do
+    docker pull "reachsh/${IMG}:${REACH_VERSION}"
+  done
+}
+
 do_hash () {
   echo "$1:" "$(docker run --entrypoint /bin/sh "reachsh/$1:$REACH_VERSION" -c 'echo $REACH_GIT_HASH')"
 }
 
 do_hashes () {
-  for IMG in reach ethereum-devnet algorand-devnet stdlib runner react_runner ; do
+  for IMG in $REACH_IMAGES ; do
     do_hash "$IMG"
   done
 }
@@ -993,12 +1001,7 @@ case ${SUBCOMMAND} in
         exit 0
         ;;
     update)
-        docker pull "reachsh/reach:${REACH_VERSION}"
-        docker pull "reachsh/stdlib:${REACH_VERSION}"
-        docker pull "reachsh/runner:${REACH_VERSION}"
-        docker pull "reachsh/react_runner:${REACH_VERSION}"
-        docker pull "reachsh/ethereum-devnet:${REACH_VERSION}"
-        docker pull "reachsh/algorand-devnet:${REACH_VERSION}"
+        do_update
         exit 0
         ;;
     version|--version)

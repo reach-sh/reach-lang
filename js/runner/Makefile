@@ -16,21 +16,11 @@ mo:
 package.json: package.mo.json $(ROOT)/VERSION mo
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
-.PHONY: build2
-build2: package.json
+.PHONY: build
+build: package.json
 	docker build --tag=$(IMAGE):latest \
-	  --file Dockerfile.old \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(REACH_VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
-
-.PHONY: build
-build: package.json
-	docker build --tag=$(RUNNER2_IMAGE):latest \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
-	  --build-arg REACH_VERSION=$(REACH_VERSION) \
-	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-	  .
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(RUNNER2_IMAGE)
