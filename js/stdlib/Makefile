@@ -18,7 +18,7 @@ mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
 package.json: package.mo.json $(ROOT)/VERSION mo
-	VERSION=$(VERSION) mo $< > $@
+	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
 .PHONY: build
 build: package.json

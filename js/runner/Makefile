@@ -14,19 +14,23 @@ mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
 package.json: package.mo.json $(ROOT)/VERSION mo
-	VERSION=$(VERSION) mo $< > $@
+	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
 .PHONY: build
 build: package.json
 	docker build --tag=$(IMAGE):latest \
- 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
- 	  --build-arg REACH_VERSION=$(REACH_VERSION) \
- 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
+	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg REACH_VERSION=$(REACH_VERSION) \
+	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
-# TODO: replace build w/ build2,
-# in the style of react_runner
 .PHONY: build2
-build2:
-	echo TODO build2-runner
+build2: package.json
+	docker build --tag=$(RUNNER2_IMAGE):latest \
+	  --file Dockerfile.runner2 \
+	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg REACH_VERSION=$(REACH_VERSION) \
+	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
+	  .
+	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(RUNNER2_IMAGE)

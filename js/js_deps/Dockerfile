@@ -9,6 +9,9 @@ COPY package.json package-lock.json \
      /js_deps/
 RUN npm install
 
+# TODO: remove this eventually
+COPY langspec.json /app/node_modules/algosdk/src/logic/
+
 ENTRYPOINT ["bin/sh"]
 CMD []
 

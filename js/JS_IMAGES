@@ -5,6 +5,7 @@ RUNNER_IMAGE="reachsh/runner"
 
 JS_DEPS_IMAGE="reachsh/js_deps"
 STDLIB2_IMAGE="reachsh/stdlib2"
+RUNNER2_IMAGE="reachsh/runner2"
 REACT_RUNNER_IMAGE="reachsh/react_runner"
 
 REACH_VERSION=$(VERSION)
