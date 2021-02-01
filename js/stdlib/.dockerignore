@@ -1,6 +1,4 @@
 node_modules
-js_deps
-react_runner
 Makefile
 .dockerignore
 /package.mo.json
