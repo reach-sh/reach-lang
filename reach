@@ -228,6 +228,14 @@ ensure_docker_reach_network () {
     (echo creating reach-network && docker network create --driver bridge reach-network)
 }
 
+# If docker network for current dir exists,
+# call `reach down` to clean up some stuff,
+# and `docker network rm $NET` to remove it.
+down_old_network () {
+  NET="$(basename $(pwd))_default"
+  (docker network inspect "$NET" >/dev/null 2>&1 && reach down && docker network rm "$NET") || :
+}
+
 do_whoami () {
   docker info --format '{{.ID}}' 2>/dev/null
 }
@@ -727,6 +735,8 @@ do_run () {
     cd "$(dirname "$ARG")" || exit
     APP="$(basename "$ARG")"
   fi
+
+  down_old_network
 
   RSH="${APP}.rsh"
   MJS="${APP}.mjs"
