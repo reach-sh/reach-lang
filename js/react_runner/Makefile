@@ -11,7 +11,3 @@ build:
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 		.
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
-
-.PHONY: push
-push:
-	$(ROOT)/scripts/docker-push.sh $(IMAGE)

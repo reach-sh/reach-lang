@@ -25,10 +25,6 @@ build: package.json
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
-.PHONY: push
-push:
-	$(ROOT)/scripts/docker-push.sh $(IMAGE)
-
 # TODO: replace build w/ build2,
 # in the style of react_runner
 .PHONY: build2
