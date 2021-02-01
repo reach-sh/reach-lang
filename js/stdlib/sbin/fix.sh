@@ -8,7 +8,7 @@ done
 
 # Remove the need for this and instead turn off ESLint or use typescript-eslint
 npm run beautify
-# npm run format # XXX do we need this?
+npm run format
 
 # Rewrite `from './blah'` to `from './blah.mjs'`
 # Usage: sbin/fix.sh
