@@ -30,7 +30,7 @@ build: package.json
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: run
-run:
+run: build
 	docker-compose run stdlib
 
 .PHONY: down

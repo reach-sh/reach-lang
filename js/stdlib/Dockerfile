@@ -17,6 +17,7 @@ COPY package.json package-lock.json /stdlib/
 # RUN npm install
 
 COPY ts/* /stdlib/ts/
+COPY *.mjs /stdlib/
 COPY types/* /stdlib/types/
 # We need .gitignore for eslint, weirdly
 COPY tsconfig.json \

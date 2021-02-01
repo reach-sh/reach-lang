@@ -14,6 +14,10 @@ build:
 	(cd runner && $(MAKE) build)
 	(cd react-runner && $(MAKE) build)
 
+.PHONY: test
+test: build
+	(cd stdlib && $(MAKE) test)
+
 # No need to push js-deps or stdlib
 .PHONY: push
 push:
