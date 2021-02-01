@@ -232,7 +232,7 @@ ensure_docker_reach_network () {
 # call `reach down` to clean up some stuff,
 # and `docker network rm $NET` to remove it.
 down_old_network () {
-  NET="$(basename $(pwd))_default"
+  NET="$(basename "$(pwd)")_default"
   (docker network inspect "$NET" >/dev/null 2>&1 && reach down && docker network rm "$NET") || :
 }
 
