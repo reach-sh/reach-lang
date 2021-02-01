@@ -136,23 +136,16 @@ data EvalError
 
 --- FIXME I think most of these things should be in Pretty
 
-displaySlValType :: SLVal -> String
-displaySlValType = \case
+show_sv :: SLVal -> String
+show_sv = \case
   SLV_Participant _ who _ _ ->
     "<participant " <> (bunpack who) <> ">"
   SLV_Object _ (Just lab) _ ->
     lab
   sv ->
     case typeOfM mempty (SrcLoc Nothing Nothing Nothing) sv of
-      Just (t, _) -> displayTy t
+      Just (t, _) -> show t
       Nothing -> "<" <> conNameOf sv <> ">"
-
-displayTy :: DLType -> String
-displayTy = show
-
-displaySecurityLevel :: SecurityLevel -> String
-displaySecurityLevel Secret = "secret"
-displaySecurityLevel Public = "public"
 
 getErrorSuggestions :: String -> [String] -> Int -> [String]
 getErrorSuggestions invalidStr validOptions maxClosest =
@@ -227,7 +220,7 @@ instance ErrorMessageForJson EvalError where
     Err_Dot_InvalidField slval _ k ->
       k
         <> " is not a field of "
-        <> displaySlValType slval
+        <> show_sv slval
     Err_Eval_UnboundId (LC_RefFrom ctx) slvar _ ->
       "Invalid unbound identifier in " <> ctx <> ": " <> slvar
     ow -> show ow
@@ -276,7 +269,7 @@ instance Show EvalError where
         <> show ty
     Err_App_InvalidInteract (secLev, val) ->
       "Invalid interact specification. Expected public type, got: "
-        <> (displaySecurityLevel secLev <> " " <> displaySlValType val)
+        <> (show secLev <> " " <> show_sv val)
     Err_App_InvalidPartSpec _slval ->
       "Invalid participant spec"
     Err_App_InvalidArgs _jes ->
@@ -305,13 +298,13 @@ instance Show EvalError where
     Err_Decl_ArraySpreadNotLast ->
       "Array spread on left-hand side of binding must occur in last position"
     Err_Decl_NotType ty slval ->
-      "Invalid binding. Expected " <> ty <> ", got: " <> displaySlValType slval
+      "Invalid binding. Expected " <> ty <> ", got: " <> show_sv slval
     Err_Decl_NotRefable slval ->
-      "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
+      "Invalid binding. Expected array or tuple, got: " <> show_sv slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
     Err_Dot_InvalidField slval ks k ->
-      k <> " is not a field of " <> displaySlValType slval <> didYouMean k ks 5
+      k <> " is not a field of " <> show_sv slval <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
@@ -325,17 +318,17 @@ instance Show EvalError where
       --- Answer: I think if you put a return at the top-level it will error.
       "Nowhere to return to"
     Err_Eval_NotApplicable slval ->
-      "Invalid function application. Cannot apply: " <> displaySlValType slval
+      "Invalid function application. Cannot apply: " <> show_sv slval
     Err_Eval_NotApplicableVals slval ->
-      "Invalid function. Cannot apply: " <> displaySlValType slval
+      "Invalid function. Cannot apply: " <> show_sv slval
     Err_Eval_NotObject slval ->
-      "Invalid field access. Expected object, got: " <> displaySlValType slval
+      "Invalid field access. Expected object, got: " <> show_sv slval
     Err_Eval_RefNotRefable slval ->
-      "Invalid element reference. Expected array or tuple, got: " <> displaySlValType slval
+      "Invalid element reference. Expected array or tuple, got: " <> show_sv slval
     Err_Eval_IndirectRefNotArray slval ->
-      "Invalid indirect element reference. Expected array, got: " <> displaySlValType slval
+      "Invalid indirect element reference. Expected array, got: " <> show_sv slval
     Err_Eval_RefNotInt slval ->
-      "Invalid array index. Expected uint256, got: " <> displaySlValType slval
+      "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
       "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctx) slvar slvars ->
@@ -344,9 +337,9 @@ instance Show EvalError where
       "Expected the following identifier to be declared: " <> show slvar
     Err_ExpectedPrivate slval ->
       "Invalid declassify. Expected to declassify something private, "
-        <> ("but this " <> displaySlValType slval <> " is public.")
+        <> ("but this " <> show_sv slval <> " is public.")
     Err_ExpectedPublic slval ->
-      "Invalid access of secret value (" <> displaySlValType slval <> ")"
+      "Invalid access of secret value (" <> show_sv slval <> ")"
     Err_Form_InvalidArgs _SLForm n es ->
       "Invalid args. Expected " <> show n <> " but got " <> show (length es)
     Err_Fun_NamesIllegal ->
@@ -360,7 +353,7 @@ instance Show EvalError where
     Err_Obj_IllegalComputedField slval ->
       "Invalid computed field name. " <> reason
       where
-        ty = displaySlValType slval
+        ty = show_sv slval
         reason = case take 5 ty of
           "Bytes" -> "It must be computable at compile time."
           _ -> "Fields must be bytes, but got: " <> ty
@@ -378,7 +371,7 @@ instance Show EvalError where
     Err_Prim_InvalidArgs prim slvals ->
       "Invalid args for " <> displayPrim prim <> ". got: "
         <> "["
-        <> (intercalate ", " $ map displaySlValType slvals)
+        <> (intercalate ", " $ map show_sv slvals)
         <> "]"
     Err_Prim_InvalidArg_Dynamic prim ->
       "Invalid arg for " <> displayPrim prim <>
@@ -398,17 +391,17 @@ instance Show EvalError where
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
     Err_Top_NotApp slval ->
-      "Invalid compilation target. Expected App, but got " <> displaySlValType slval
+      "Invalid compilation target. Expected App, but got " <> show_sv slval
     Err_While_IllegalInvariant exprs ->
       "Invalid while loop invariant. Expected 1 expr, but got " <> got
       where
         got = show $ length exprs
     Err_Only_NotOneClosure slval ->
-      "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (displaySlValType slval)
+      "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (show_sv slval)
     Err_Each_NotTuple slval ->
-      "each not given a tuple as an argument, instead got " <> displaySlValType slval
+      "each not given a tuple as an argument, instead got " <> show_sv slval
     Err_NotParticipant slval ->
-      "expected a participant as an argument, instead got " <> displaySlValType slval
+      "expected a participant as an argument, instead got " <> show_sv slval
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
@@ -422,7 +415,7 @@ instance Show EvalError where
     Err_Eval_LookupUnderscore ->
       "Invalid identifier reference. The _ identifier may never be read."
     Err_Switch_NotData x ->
-      "switch expects data instance, but got " <> displaySlValType x
+      "switch expects data instance, but got " <> show_sv x
     Err_Switch_DoubleCase at0 at1 mc ->
       "switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
     Err_Switch_MissingCases cs ->
@@ -430,7 +423,7 @@ instance Show EvalError where
     Err_Switch_ExtraCases cs ->
       "switch contains extra cases: " <> show cs
     Err_Expected_Bytes v ->
-      "expected bytes, got something else: " <> displaySlValType v
+      "expected bytes, got something else: " <> show_sv v
     Err_RecursionDepthLimit ->
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_Eval_MustBeLive m ->
