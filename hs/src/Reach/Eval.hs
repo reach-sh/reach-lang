@@ -2,7 +2,7 @@ module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Applicative
 import Control.Arrow (second)
-import Control.Monad
+import Control.Monad.Reader
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
@@ -38,8 +38,145 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 -- import Text.Show.Pretty (ppShow)
 -- import Debug.Trace
 
---- Errors
+--- New Types
 
+type App = ReaderT Env IO
+data Env = Env
+  {
+  }
+
+--- Old Types
+
+--- A context has global stuff (the variable counter) and abstracts
+--- the control-flow state that leads to the expression, so it
+--- inherits in a function call.
+data SLCtxt = SLCtxt
+  { ctxt_dlo :: DLOpts
+  , ctxt_id :: Counter
+  , ctxt_stack :: [SLCtxtFrame]
+  , ctxt_ios :: M.Map SLPart SLSSVal
+  , ctxt_classes :: S.Set SLPart
+  , ctxt_only :: Maybe SLPart
+  }
+
+instance Show SLCtxt where
+  show _ = "<context>"
+
+type SLComp a = IO (SLRes a)
+
+data SLExits
+  = NeverExits
+  | AlwaysExits
+  | MayExit
+  deriving (Eq, Show)
+
+type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal, Bool)]
+
+data SLStmtRes = SLStmtRes SLScope SLStmtRets
+
+data SLAppRes = SLAppRes SLScope SLSVal
+
+type SLObjEnvRHS s = SLCtxt -> SLScope -> SLState -> SLComp SLSVal
+
+type SLObjEnv s = M.Map SLVar (SLObjEnvRHS s)
+
+type MCFS = Maybe [SLCtxtFrame]
+
+type PDVS = M.Map SLPart DLVar
+
+type TINT = (MCFS, PDVS)
+
+type TypeEnv = M.Map SLVar (IORef (Maybe SLType))
+
+type SLPartDVars = M.Map SLPart DLVar
+
+data ReturnStyle
+  = RS_ImplicitNull
+  | RS_NeedExplicit
+  | RS_CannotReturn
+  | RS_MayBeEmpty
+  deriving (Eq, Show)
+
+--- A scope is local to a single function body (i.e. sequence of
+--- statements), so it is reset every function call.
+data SLScope = SLScope
+  { sco_ret :: Maybe Int
+  , sco_must_ret :: ReturnStyle
+  , sco_while_vars :: Maybe (M.Map SLVar DLVar)
+  , -- One env per participant
+    sco_penvs :: SLPartEnvs
+  , -- One for the consensus
+    sco_cenv :: SLEnv
+  , sco_depth :: Int
+  }
+  deriving (Show)
+
+data CompiledForkCase = CompiledForkCase
+  { cfc_part :: JSExpression
+  , cfc_data_def :: JSObjectProperty
+  , cfc_pay_prop :: JSObjectProperty
+  , cfc_req_prop :: JSObjectProperty
+  , cfc_switch_case :: JSSwitchParts
+  , cfc_only :: JSStatement
+  }
+
+data LookupCtx
+  = -- Signifies the user referencing a variable from a (ctx :: String).
+    LC_RefFrom String
+  | -- Signifies the compiler expecting a certain id to exist.
+    LC_CompilerRequired
+  deriving (Eq, Show)
+
+data EnvInsertMode
+  = AllowShadowing
+  | DisallowShadowing
+  | AllowShadowingSome (S.Set SLVar)
+  | AllowShadowingRace (S.Set SLPart) (S.Set SLVar)
+
+data SLMode
+  = --- The top-level of a module, before the App starts
+    SLM_Module
+  | --- The app starts in a "step"
+    SLM_Step
+  | --- An "only" moves from "step" to "local step" and then to "step" again, where x = live
+    SLM_LocalStep
+  | SLM_LocalPure
+  | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
+    SLM_ConsensusStep
+  | SLM_ConsensusPure
+  deriving (Bounded, Enum, Eq, Generic)
+
+instance Show SLMode where
+  show = \case
+    SLM_Module -> "module"
+    SLM_Step -> "step"
+    SLM_LocalStep -> "local step"
+    SLM_LocalPure -> "local pure"
+    SLM_ConsensusStep -> "consensus step"
+    SLM_ConsensusPure -> "consensus pure"
+
+--- A state represents the state of the protocol, so it is returned
+--- out of a function call.
+data SLState = SLState
+  { --- A function call may modify the mode
+    st_mode :: SLMode
+  , st_live :: Bool
+  , st_after_first :: Bool
+  , --- A function call may cause a participant to join
+    st_pdvs :: SLPartDVars
+  }
+  deriving (Eq, Show)
+
+all_slm_modes :: [SLMode]
+all_slm_modes = enumFrom minBound
+
+data SLRes a = SLRes DLStmts SLState a
+
+type SLLibs = (M.Map ReachSource SLEnv)
+
+type SLMod = (ReachSource, [JSModuleItem])
+
+--- Errors
 data EvalError
   = Err_Apply_ArgCount SrcLoc Int Int
   | Err_Block_Assign JSAssignOp [JSStatement]
@@ -493,12 +630,6 @@ isSecretIdent :: SLVar -> Bool
 isSecretIdent ('_' : _ : _) = True
 isSecretIdent _ = False
 
-data EnvInsertMode
-  = AllowShadowing
-  | DisallowShadowing
-  | AllowShadowingSome (S.Set SLVar)
-  | AllowShadowingRace (S.Set SLPart) (S.Set SLVar)
-
 -- | The "_" never actually gets bound;
 -- it is therefore only ident that may be "shadowed".
 -- Secret idents must start with _.
@@ -547,13 +678,6 @@ env_merge_ imode ctxt at left righte = foldl' (env_insertp_ imode ctxt at) left 
 
 env_merge :: HasCallStack => SLCtxt -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge = env_merge_ DisallowShadowing
-
-data LookupCtx
-  = -- Signifies the user referencing a variable from a (ctx :: String).
-    LC_RefFrom String
-  | -- Signifies the compiler expecting a certain id to exist.
-    LC_CompilerRequired
-  deriving (Eq, Show)
 
 -- | The "_" ident may never be looked up.
 env_lookup :: Maybe SLCtxt -> SrcLoc -> LookupCtx -> SLVar -> SLEnv -> SLSSVal
@@ -642,28 +766,6 @@ jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
--- Contexts
---- A context has global stuff (the variable counter) and abstracts
---- the control-flow state that leads to the expression, so it
---- inherits in a function call.
-data SLCtxt = SLCtxt
-  { ctxt_dlo :: DLOpts
-  , ctxt_id :: Counter
-  , ctxt_stack :: [SLCtxtFrame]
-  , ctxt_ios :: M.Map SLPart SLSSVal
-  , ctxt_classes :: S.Set SLPart
-  , ctxt_only :: Maybe SLPart
-  }
-
-instance Show SLCtxt where
-  show _ = "<context>"
-
-type MCFS = Maybe [SLCtxtFrame]
-
-type PDVS = M.Map SLPart DLVar
-
-type TINT = (MCFS, PDVS)
-
 typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either EvalError SLType
 typeEqual top_at x@(_, xt) y@(_, yt) =
   case xt == yt of
@@ -687,8 +789,6 @@ typeMeets mcfs top_at l =
     [(_, xt)] -> xt
     [x, y] -> typeMeet mcfs top_at x y
     x : more -> typeMeet mcfs top_at x $ (top_at, typeMeets mcfs top_at more)
-
-type TypeEnv = M.Map SLVar (IORef (Maybe SLType))
 
 typeSubst :: SrcLoc -> TypeEnv -> SLType -> IO SLType
 typeSubst at env ty =
@@ -962,43 +1062,6 @@ checkResType ctxt at et m = do
 
 -- Modes
 
-data SLMode
-  = --- The top-level of a module, before the App starts
-    SLM_Module
-  | --- The app starts in a "step"
-    SLM_Step
-  | --- An "only" moves from "step" to "local step" and then to "step" again, where x = live
-    SLM_LocalStep
-  | SLM_LocalPure
-  | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
-    SLM_ConsensusStep
-  | SLM_ConsensusPure
-  deriving (Bounded, Enum, Eq, Generic)
-
-instance Show SLMode where
-  show = \case
-    SLM_Module -> "module"
-    SLM_Step -> "step"
-    SLM_LocalStep -> "local step"
-    SLM_LocalPure -> "local pure"
-    SLM_ConsensusStep -> "consensus step"
-    SLM_ConsensusPure -> "consensus pure"
-
---- A state represents the state of the protocol, so it is returned
---- out of a function call.
-data SLState = SLState
-  { --- A function call may modify the mode
-    st_mode :: SLMode
-  , st_live :: Bool
-  , st_after_first :: Bool
-  , --- A function call may cause a participant to join
-    st_pdvs :: SLPartDVars
-  }
-  deriving (Eq, Show)
-
-all_slm_modes :: [SLMode]
-all_slm_modes = enumFrom minBound
-
 ensure_modes :: SLCtxt -> SrcLoc -> SLState -> [SLMode] -> String -> IO ()
 ensure_modes ctxt at st ems msg = do
   let am = st_mode st
@@ -1023,29 +1086,6 @@ allowed_to_wait ctxt at st =
   case st_after_first st of
     True -> id
     False -> expect_throw_ctx ctxt at $ Err_Eval_IllegalWait $ dlo_deployMode $ ctxt_dlo ctxt
-
-type SLPartDVars = M.Map SLPart DLVar
-
-data ReturnStyle
-  = RS_ImplicitNull
-  | RS_NeedExplicit
-  | RS_CannotReturn
-  | RS_MayBeEmpty
-  deriving (Eq, Show)
-
---- A scope is local to a single function body (i.e. sequence of
---- statements), so it is reset every function call.
-data SLScope = SLScope
-  { sco_ret :: Maybe Int
-  , sco_must_ret :: ReturnStyle
-  , sco_while_vars :: Maybe (M.Map SLVar DLVar)
-  , -- One env per participant
-    sco_penvs :: SLPartEnvs
-  , -- One for the consensus
-    sco_cenv :: SLEnv
-  , sco_depth :: Int
-  }
-  deriving (Show)
 
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)
@@ -1161,8 +1201,6 @@ stEnsureMode :: SLCtxt -> SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode ctxt at slm st =
   stMerge ctxt at st $ st {st_mode = slm}
 
-data SLRes a = SLRes DLStmts SLState a
-
 keepLifts :: DLStmts -> SLComp a -> SLComp a
 keepLifts lifts m = do
   SLRes lifts' st r <- m
@@ -1173,20 +1211,6 @@ cannotLift what (SLRes lifts _ ans) =
   case lifts == mempty of
     False -> impossible $ what <> " had lifts"
     True -> ans
-
-type SLComp a = IO (SLRes a)
-
-data SLExits
-  = NeverExits
-  | AlwaysExits
-  | MayExit
-  deriving (Eq, Show)
-
-type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal, Bool)]
-
-data SLStmtRes = SLStmtRes SLScope SLStmtRets
-
-data SLAppRes = SLAppRes SLScope SLSVal
 
 ctxt_stack_push :: SLCtxt -> SLCtxtFrame -> SLCtxt
 ctxt_stack_push ctxt f =
@@ -1242,10 +1266,6 @@ infectWithId_sss v (SLSSVal at lvl sv) =
 
 infectWithId_sls :: SLVar -> SLSVal -> SLSVal
 infectWithId_sls v (lvl, sv) = (lvl, infectWithId_sv v sv)
-
-type SLObjEnvRHS s = SLCtxt -> SLScope -> SLState -> SLComp SLSVal
-
-type SLObjEnv s = M.Map SLVar (SLObjEnvRHS s)
 
 evalObjEnv :: forall s. SLCtxt -> SrcLoc -> SLScope -> SLState -> SLObjEnv s -> SLComp SLEnv
 evalObjEnv ctxt at sco st0 m =
@@ -3129,15 +3149,6 @@ srcloc2annot = \case
   SrcLoc _ (Just x) _ -> JSAnnot x []
   _ -> JSNoAnnot
 
-data CompiledForkCase = CompiledForkCase
-  { cfc_part :: JSExpression
-  , cfc_data_def :: JSObjectProperty
-  , cfc_pay_prop :: JSObjectProperty
-  , cfc_req_prop :: JSObjectProperty
-  , cfc_switch_case :: JSSwitchParts
-  , cfc_only :: JSStatement
-  }
-
 typeToExpr :: DLType -> JSExpression
 typeToExpr = \case
   T_Null -> var "Null"
@@ -3821,8 +3832,6 @@ expect_empty_tail ctxt lab a sp at ks res =
       where
         at' = srcloc_after_semi lab a sp at
 
-type SLLibs = (M.Map ReachSource SLEnv)
-
 lookupDep :: ReachSource -> SLLibs -> SLEnv
 lookupDep rs libm =
   case M.lookup rs libm of
@@ -3929,8 +3938,6 @@ evalTopBody ctxt at st libm env exenv body =
                     evalTopBody ctxt at' st libm env' exenv' body'
             SLRes {} ->
               expect_throw_ctx ctxt at' $ Err_Module_Return
-
-type SLMod = (ReachSource, [JSModuleItem])
 
 evalLib :: Counter -> Connectors -> SLMod -> (DLStmts, SLLibs) -> IO (DLStmts, SLLibs)
 evalLib idxr cns (src, body) (liblifts, libm) = do
