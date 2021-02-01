@@ -5,10 +5,8 @@ ARG NODE_IMAGE=node:$NODE_VERSION
 FROM $NODE_IMAGE
 
 WORKDIR /stdlib
-ARG ESLINT_VERSION
 COPY package.json package-lock.json /stdlib/
 RUN npm install
-RUN npm install -g eslint@$ESLINT_VERSION
 RUN npm link
 
 COPY . /stdlib

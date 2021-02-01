@@ -6,10 +6,7 @@ FROM $REACH_IMAGE
 
 WORKDIR /app
 
-COPY runner_package.json /app/package.json
-
-# TODO: use a gentler linter for this
-COPY .eslintrc.yaml /app/
+COPY package.json /app/package.json
 
 RUN npm link '@reach-sh/stdlib'
 # Make use of stuff already installed for stdlib

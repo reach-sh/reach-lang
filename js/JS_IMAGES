@@ -1,6 +1,6 @@
 include $(ROOT)/VERSION
 
-IMAGE="reachsh/stdlib"
+STDLIB_IMAGE="reachsh/stdlib"
 RUNNER_IMAGE="reachsh/runner"
 
 JS_DEPS_IMAGE="reachsh/js_deps"
