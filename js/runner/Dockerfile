@@ -13,7 +13,7 @@ FROM $NODE_IMAGE as app0
 
 WORKDIR /app
 COPY --from=js-deps /js-deps/node_modules/ /app/node_modules/
-COPY package.json package-lock.json \
+COPY package.json \
      /app/
 
 # hadolint ignore=DL3006
