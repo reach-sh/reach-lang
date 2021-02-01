@@ -1,22 +1,33 @@
+ARG NODE_VERSION
+ARG NODE_IMAGE=node:$NODE_VERSION
+
 ARG REACH_VERSION
-ARG REACH_IMAGE=reachsh/stdlib:$REACH_VERSION
+ARG JS_DEPS_IMAGE=reachsh/js_deps:$REACH_VERSION
+ARG STDLIB_IMAGE=reachsh/stdlib2:$REACH_VERSION
+# XXX ^ stdlib2 -> stdlib
 
 # hadolint ignore=DL3006
-FROM $REACH_IMAGE
+FROM $JS_DEPS_IMAGE as js_deps
+
+# hadolint ignore=DL3006
+FROM $NODE_IMAGE as app0
 
 WORKDIR /app
+COPY --from=js_deps /js_deps/node_modules/ /app/node_modules/
+COPY package.json package-lock.json \
+     /app/
 
-COPY package.json /app/package.json
+# hadolint ignore=DL3006
+FROM $STDLIB_IMAGE as stdlib
 
-RUN npm link '@reach-sh/stdlib'
-# Make use of stuff already installed for stdlib
-# RUN npm install
-# RUN cp -r /stdlib/node_modules /app/node_modules
-RUN mkdir -p /app/node_modules
-RUN ln -s /stdlib/node_modules/* /app/node_modules/
-RUN mkdir /app/build
+FROM app0
 
-CMD ["app"]
+# TODO: make this less flimsy
+COPY --from=stdlib /stdlib/*.mjs /stdlib/package.json \
+     /app/node_modules/@reach-sh/stdlib/
+
+ENTRYPOINT ["npm", "run", "--"]
+CMD ["start"]
 
 ARG REACH_GIT_HASH
 ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
