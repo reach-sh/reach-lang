@@ -197,7 +197,7 @@ export const Array_product = (arr) =>
 export const Array_product1 = (arr) => () =>
   Array_product(arr);
 
-const sqrt = (y, k) =>
+export const sqrt = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], a) =>
     (x < z)
       ? [ x, ((y / x + x) / 2) ]

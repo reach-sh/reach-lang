@@ -95,6 +95,7 @@ data EvalError
   | Err_Obj_SpreadNotObj SLVal
   | --- FIXME add count
     Err_Prim_InvalidArgs SLPrimitive [SLVal]
+  | Err_Prim_InvalidArg_Dynamic SLPrimitive
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
@@ -372,8 +373,9 @@ instance Show EvalError where
         <> "["
         <> (intercalate ", " $ map displaySlValType slvals)
         <> "]"
-      where
-        displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
+    Err_Prim_InvalidArg_Dynamic prim ->
+      "Invalid arg for " <> displayPrim prim <>
+        ". The argument must be computable at compile time"
     Err_Shadowed n (SLSSVal at0 _ _) (SLSSVal at _ _) ->
       -- FIXME tell the srcloc of the original binding
       "Invalid name shadowing"
@@ -438,6 +440,9 @@ instance Show EvalError where
       "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
+    where
+      displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
+
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe SLCtxt -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -1744,6 +1749,7 @@ evalPrim ctxt at sco st p sargs =
       case map snd sargs of
         [SLV_Int _ sz] ->
           retV $ (lvl, SLV_Array at ST_UInt $ map (SLV_Int at) [0 .. (sz -1)])
+        [_] -> expect_throw_ctx ctxt at (Err_Prim_InvalidArg_Dynamic p)
         _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
