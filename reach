@@ -857,7 +857,7 @@ react_compose () {
 version: '3.4'
 services:
   dev-server:
-    image: reachsh/react_runner:$REACH_VERSION
+    image: reachsh/react-runner:$REACH_VERSION
     volumes:
       - .:/app/src
     ports:
@@ -928,7 +928,7 @@ do_react_down () {
   exit 0
 }
 
-REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react_runner'
+REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react-runner'
 
 do_update() {
   for IMG in $REACH_IMAGES ; do
