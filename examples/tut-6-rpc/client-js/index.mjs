@@ -4,7 +4,9 @@ import bent from 'bent';
 
 const rpc_server = process.env.REACH_RPC_SERVER;
 const rpc_port = process.env.REACH_RPC_PORT;
-const call = bent(`http://${rpc_server}:${rpc_port}`, `POST`, `json`, 200);
+const call = bent(`http://${rpc_server}:${rpc_port}`, `POST`, `json`, 200, {
+  'X-API-Key': process.env.REACH_RPC_KEY,
+});
 
 const rpcReady = async () => {
   await waitPort({host: rpc_server, port: parseInt(rpc_port)}); };
