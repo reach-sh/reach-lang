@@ -2,6 +2,24 @@ import express from 'express';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
+const withApiKey = () => {
+  const key = process.env.REACH_RPC_KEY;
+
+  if (!key) {
+    console.error(
+      [ '\nPlease populate the `REACH_RPC_KEY` environment variable with a'
+      , ' strong pre-shared key, e.g.:\n'
+      , '  $ head -c 24 /dev/urandom | base64\n'
+      ].join(''));
+    process.exit(1);
+  }
+
+  return (req, res, next) =>
+    req.get('X-API-Key') === key
+      ? next()
+      : res.status(403).json({});
+};
+
 (async () => {
   const makeHandle = (container) => (val) => {
     const id = container.length;
@@ -98,6 +116,8 @@ import * as backend from './build/index.main.mjs';
     console.log(`${lab} OUT`);
     resolve(ans);
   };
+
+  app.use(withApiKey());
 
   // app.use((req, res, next) => {
   //   console.log(`LOG ${req.url}`);

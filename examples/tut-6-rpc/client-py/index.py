@@ -33,13 +33,16 @@ def wait_for_port(port, host='localhost', timeout=5.0):
 
 def mk_rpc(proto='http',
            host=os.environ['REACH_RPC_SERVER'],
-           port=os.environ['REACH_RPC_PORT']):
+           port=os.environ['REACH_RPC_PORT'],
+           akey=os.environ['REACH_RPC_KEY']):
 
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         print(lab)
         ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
-                            json=[*args])
+                            json=[*args],
+                            headers={'X-API-Key': akey})
+        ans.raise_for_status()
         print('%s ==> %s' % (lab, json.dumps(ans.json())))
         return ans.json()
 

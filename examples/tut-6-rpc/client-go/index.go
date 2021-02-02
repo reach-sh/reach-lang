@@ -41,6 +41,7 @@ func mkRpc() (func(string, ...interface{}) interface{},
   proto := "http"
   host  := os.Getenv("REACH_RPC_SERVER")
   port  := os.Getenv("REACH_RPC_PORT")
+  key   := os.Getenv("REACH_RPC_KEY")
 
   // Wait for RPC server to become available
   timeout := please(time.ParseDuration("5.0s")).(time.Duration)
@@ -75,10 +76,21 @@ func mkRpc() (func(string, ...interface{}) interface{},
     fmt.Printf(lab)
 
     uri  := fmt.Sprintf("%s://%s:%s%s", proto, host, port, m)
-    res  := please(http.Post(uri, "application/json", strings.NewReader(jargs))).(*http.Response)
-    body := please(ioutil.ReadAll(res.Body)).([]byte)
+    clnt := &http.Client{}
+    req  := please(http.NewRequest("POST", uri, strings.NewReader(jargs))).(*http.Request)
 
+    req.Header.Add("Content-Type", "application/json; charset=utf-8")
+    req.Header.Add("X-API-Key",    key)
+
+    res  := please(clnt.Do(req)).(*http.Response)
+    body := please(ioutil.ReadAll(res.Body)).([]byte)
     res.Body.Close();
+
+    if res.StatusCode >= 400 {
+      log.Fatal(fmt.Sprintf("RPC %s %s %s\n", m, res.Status, body))
+      os.Exit(1)
+    }
+
     dieIf(json.Unmarshal(body, &ans))
 
     fmt.Printf("%s ==> %s\n", lab, string(body))
