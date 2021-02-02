@@ -223,25 +223,11 @@ ensure_connector_mode () {
   export REACH_CONNECTOR_MODE
 }
 
-ensure_docker_reach_network () {
-  docker network inspect reach-network >/dev/null 2>&1 || \
-    (echo creating reach-network && docker network create --driver bridge reach-network)
-}
-
-# If docker network for current dir exists,
-# call `reach down` to clean up some stuff,
-# and `docker network rm $NET` to remove it.
-down_old_network () {
-  NET="$(basename "$(pwd)")_default"
-  (docker network inspect "$NET" >/dev/null 2>&1 && reach down && docker network rm "$NET") || :
-}
-
 do_whoami () {
   docker info --format '{{.ID}}' 2>/dev/null
 }
 
 do_compile () {
-	ensure_docker_reach_network
     HS=${HERE}/hs
 
     # Note: shellcheck says splatting is dangerous,
@@ -491,10 +477,6 @@ EOF
 version: '3.4'
 x-app-base: &app-base
   image: ${IMAGE_TAG}
-networks:
-  default:
-    external:
-      name: reach-network
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
@@ -700,7 +682,6 @@ run_ () {
 }
 
 do_run () {
-  ensure_docker_reach_network
   # reach run args
   # check state of scaffolded files
   # * if none exist: scaffold in --isolate --quiet mode, set flag UNSCAFFOLD
@@ -735,8 +716,6 @@ do_run () {
     cd "$(dirname "$ARG")" || exit
     APP="$(basename "$ARG")"
   fi
-
-  down_old_network
 
   RSH="${APP}.rsh"
   MJS="${APP}.mjs"
@@ -876,10 +855,6 @@ react_compose () {
   fi
   cat<<EOF > docker-compose.yml.react
 version: '3.4'
-networks:
-  default:
-    external:
-      name: reach-network
 services:
   dev-server:
     image: reachsh/react-runner:$REACH_VERSION
@@ -924,7 +899,6 @@ EOF
 }
 
 do_react () {
-  ensure_docker_reach_network
   USE_EXISTING_DEVNET=false
   if [ "x$1" = "x--use-existing-devnet" ]; then
     shift
