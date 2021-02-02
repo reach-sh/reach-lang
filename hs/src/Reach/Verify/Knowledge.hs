@@ -27,7 +27,7 @@ data Point
 
 instance Pretty Point where
   pretty (P_Var v) = pretty v
-  pretty (P_Con) = "con"
+  pretty P_Con = "constant"
   pretty (P_Interact p m) = pretty p <> "." <> pretty m
   pretty (P_Part p) = pretty p
 
@@ -83,18 +83,37 @@ query1 ctxt who what = do
         Nothing -> mempty
   return $ G.dfs look (== (P_Part who)) what
 
+displayPath :: SLPart -> (Point, Maybe [Point]) -> IO ()
+displayPath who = \case
+  (up, Just ps)
+    | length ps > 1 -> do
+    let ps' = reverse $ init ps
+    case ps' of
+      [] -> return ()
+      (h:tl) -> putStrLn $
+        "  " <> B.unpack who <> " could learn of " <> sp up <> " via " <> sp h <> ".\n\n  " <>
+        publishInfo h <>
+        "\n  ^ which contains info about " <>
+        intercalate "\n  ^ which contains info about " (map bindingInfo $ tl <> [up]) <> "\n"
+  (up, _) ->
+    putStrLn $ "  " <> B.unpack who <> " knows of " <> sp up <> " because it is published.\n"
+  where
+    sp = show . pretty
+    bindingInfo = \case
+      P_Var (DLVar at' _ _ i ) ->
+        show $ "v" <> pretty i <> " (defined at " <> pretty at' <> ")"
+      ow -> sp ow
+    publishInfo = \case
+      P_Var (DLVar at' _ _ i ) ->
+        show $ "v" <> pretty i <> " was published at " <> pretty at'
+      ow -> sp ow
+
 query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> SLPart -> S.Set Point -> IO ()
 query ctxt at f mmsg who whats = do
   let whatsl = S.toList whats
   mpaths <- mapM (query1 ctxt who) whatsl
   let good = inc $ ctxt_res_succ ctxt
   let bad = inc $ ctxt_res_fail ctxt
-  let disp1 _ Nothing = mempty
-      disp1 what (Just path) =
-        --- FIXME we could keep some extra information, like the
-        --- binding origin from SMT to say why these variables are
-        --- connected.
-        putStrLn $ "  " ++ show (hcat $ punctuate " -> " $ map pretty (what : path))
   let disp = do
         cwd <- getCurrentDirectory
         putStrLn $ "Verification failed:"
@@ -105,7 +124,7 @@ query ctxt at f mmsg who whats = do
           Just x -> putStrLn $ "  msg: " <> show x
         mapM_ (putStrLn . ("  " ++) . show) f
         putStrLn $ ""
-        mapM_ (uncurry disp1) $ zip whatsl mpaths
+        mapM_ (displayPath who) $ zip whatsl mpaths
   case getAll $ mconcatMap (All . (maybe False (const True))) mpaths of
     True -> bad >> disp
     False -> good

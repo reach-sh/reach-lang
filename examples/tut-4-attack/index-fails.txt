@@ -3,7 +3,8 @@ Verification failed:
   of theorem unknowable("Bob", v7)
   at ./index-fails.rsh:25:17:application
 
-  v7 -> "Bob"
+  Bob knows of v7 because it is published.
+
 Verifying for generic connector
   Verifying with mode = VM_Honest
   Verifying with mode = VM_Dishonest RoleContract
