@@ -87,7 +87,7 @@ displayPath :: SLPart -> (Point, Maybe [Point]) -> IO ()
 displayPath who = \case
   (up, Just ps)
     | length ps > 1 -> do
-    let ps' = reverse $ init ps
+    let ps' = drop 1 $ reverse ps
     case ps' of
       [] -> return ()
       (h:tl) -> putStrLn $
