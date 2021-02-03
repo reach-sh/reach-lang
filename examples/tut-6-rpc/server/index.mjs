@@ -1,3 +1,6 @@
+import { createSecureServer } from 'http2';
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
 import express from 'express';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
@@ -135,8 +138,40 @@ const withApiKey = () => {
     res.json(true);
     process.exit(0); });
 
-  app.listen(process.env.REACH_RPC_PORT, () => {
-    console.log(`I am alive`);
-  });
+  app.disable('X-Powered-By');
 
+  const fetchOrFail = (envvar, desc) => {
+    const f = process.env[envvar];
+
+    if (!f) {
+      console.error(
+        [ `\nPlease populate the \`${envvar}\` environment variable with`
+        , ` the path to your TLS ${desc}.\n`
+        ].join(''));
+      process.exit(1);
+    }
+
+    const fq = resolve(f);
+
+    if (!existsSync(fq)) {
+      console.error(`\nPath: ${fq} does not exist!\n`);
+      process.exit(1);
+    }
+
+    return readFileSync(fq);
+  };
+
+  const opts = {
+    allowHTTP1: true,
+    key:        fetchOrFail('REACH_RPC_TLS_KEY', 'private key'),
+    cert:       fetchOrFail('REACH_RPC_TLS_CRT', 'public certificate'),
+  };
+
+  const passphrase = process.env.REACH_RPC_TLS_PASSPHRASE;
+  if (passphrase)
+    Object.assign(opts, { passphrase });
+
+  createSecureServer(opts, app)
+    .listen(process.env.REACH_RPC_PORT, () =>
+      console.log(`I am alive`));
 })();
