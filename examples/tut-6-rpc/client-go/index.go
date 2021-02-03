@@ -9,6 +9,7 @@ import (
   "strings"
   "sync"
   "time"
+  "crypto/tls"
   "encoding/json"
   "io/ioutil"
   "math/rand"
@@ -38,10 +39,17 @@ func please(a interface{}, err error) interface{} {
 func mkRpc() (func(string, ...interface{}) interface{},
               func(string, contract, map[string]interface{})) {
 
-  proto := "http"
   host  := os.Getenv("REACH_RPC_SERVER")
   port  := os.Getenv("REACH_RPC_PORT")
   key   := os.Getenv("REACH_RPC_KEY")
+
+  skipVerify := os.Getenv("REACH_RPC_TLS_REJECT_UNVERIFIED") == "0"
+  if skipVerify {
+    fmt.Printf("\n*** Warning! TLS verification disabled! ***\n\n")
+    fmt.Printf(" This is highly insecure in Real Life™ applications and must\n")
+    fmt.Printf(" only be permitted under controlled conditions (such as\n")
+    fmt.Printf(" during development).\n\n")
+  }
 
   // Wait for RPC server to become available
   timeout := please(time.ParseDuration("5.0s")).(time.Duration)
@@ -75,8 +83,10 @@ func mkRpc() (func(string, ...interface{}) interface{},
     lab  := fmt.Sprintf("RPC %s %s\n", m, jargs)
     fmt.Printf(lab)
 
-    uri  := fmt.Sprintf("%s://%s:%s%s", proto, host, port, m)
-    clnt := &http.Client{}
+    uri  := fmt.Sprintf("https://%s:%s%s", host, port, m)
+    tls  := &tls.Config     { InsecureSkipVerify: skipVerify, }
+    trns := &http.Transport { TLSClientConfig:    tls,        }
+    clnt := &http.Client    { Transport:          trns,       }
     req  := please(http.NewRequest("POST", uri, strings.NewReader(jargs))).(*http.Request)
 
     req.Header.Add("Content-Type", "application/json; charset=utf-8")

@@ -4,6 +4,7 @@ import random
 import requests
 import socket
 import time
+import urllib3
 from threading import Thread
 
 
@@ -31,17 +32,25 @@ def wait_for_port(port, host='localhost', timeout=5.0):
                                    .format(port, host)) from ex
 
 
-def mk_rpc(proto='http',
-           host=os.environ['REACH_RPC_SERVER'],
+def mk_rpc(host=os.environ['REACH_RPC_SERVER'],
            port=os.environ['REACH_RPC_PORT'],
            akey=os.environ['REACH_RPC_KEY']):
+
+    verify = os.environ['REACH_RPC_TLS_REJECT_UNVERIFIED'] != '0'
+    if not verify:
+        urllib3.disable_warnings()
+        print('\n*** Warning! TLS verification disabled! ***\n')
+        print(' This is highly insecure in Real Life™ applications and must')
+        print(' only be permitted under controlled conditions (such as')
+        print(' during development).\n')
 
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         print(lab)
-        ans = requests.post('%s://%s:%s%s' % (proto, host, port, m),
+        ans = requests.post('https://%s:%s%s' % (host, port, m),
                             json=[*args],
-                            headers={'X-API-Key': akey})
+                            headers={'X-API-Key': akey},
+                            verify=verify)
         ans.raise_for_status()
         print('%s ==> %s' % (lab, json.dumps(ans.json())))
         return ans.json()

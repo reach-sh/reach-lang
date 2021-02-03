@@ -9,6 +9,8 @@ RUN cp -r /stdlib/node_modules /app/node_modules
 COPY package.json /app/package.json
 RUN npm install --loglevel=verbose
 
-COPY . /app
+COPY build /app/build
+COPY tls /app/tls
+COPY index.mjs /app/
 
 CMD ["index"]
