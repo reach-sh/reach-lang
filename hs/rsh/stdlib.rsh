@@ -264,3 +264,9 @@ export const fixed_point_cmp = (cmp, x, y) => {
   const [ _, x_, y_ ] = fixed_point_homogenize_scales(x, y);
   return cmp(x_.i, y_.i);
 }
+
+export const pow = (base, power, precision) =>
+  Array.iota(precision)
+    .reduce([ 1, power, base ], ([ r, p, b ], _) =>
+      [ (p % 2 == 1) ? r * b : r, p / 2, b * b ])
+  [0];

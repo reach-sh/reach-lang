@@ -1891,6 +1891,17 @@ For reference, when performing @reachin{5} iterations, the algorithm can reliabl
 up to @tt{32} squared, or @tt{1,024}. When performing @reachin{10} iterations, the algorithm can reliably calculate the
 square root up to @tt{580} squared, or @tt{336,400}.
 
+@subsubsection{@tt{pow}}
+
+@(mint-define! '("pow"))
+@reach{
+  pow (2, 40, 10) // => 1,099,511,627,776 }
+
+@index{pow} @reachin{pow(base, power, precision)} Calculates the approximate value of raising base to power.
+The third argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
+of iterations the algorithm should perform. For reference, @tt{10} iterations provides accuracy until the
+point of overflow.
+
 @subsubsection{@tt{Fixed-Point Numbers}}
 
 @reachin{FixedPoint} is defined by
