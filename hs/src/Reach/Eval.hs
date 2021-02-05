@@ -321,13 +321,8 @@ data EvalError
   | Err_Obj_IllegalMethodDefinition JSObjectProperty
   | Err_Obj_IllegalNumberField JSPropertyName
   | Err_Obj_SpreadNotObj SLVal
-  | --- FIXME add count
-<<<<<<< HEAD
-    Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Prim_InvalidArg_Dynamic SLPrimitive
-=======
-    Err_Prim_InvalidArgs SLPrimitive [SLValTy]
->>>>>>> f4f89fd2 (pre-testing)
+  | Err_Prim_InvalidArgs SLPrimitive [SLValTy]
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
