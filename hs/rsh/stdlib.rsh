@@ -203,3 +203,59 @@ export const sqrt = (y, k) =>
       ? [ x, ((y / x + x) / 2) ]
       : [ z, x ]
   )[1];
+
+export const FixedPoint = Object({ scale: UInt, i: UInt });
+
+export const mk_fixed_point = (scale) => (i) =>
+  ({ scale, i });
+
+export const fixed_point_convert_scale = (x, scale) => {
+  assert(scale / x.scale >= 0,
+    "fixed_point_convert_scale: Scale division causes underflow.");
+  return (x.scale == scale)
+    ? x
+    : { i: (x.i * scale) / x.scale, scale };
+}
+
+export const fixed_point_homogenize_scales = (x, y) => {
+  const scale = x.scale < y.scale ? y.scale : x.scale;
+  const x_ = fixed_point_convert_scale(x, scale);
+  const y_ = fixed_point_convert_scale(y, scale);
+  return [ scale, x_, y_ ];
+}
+
+export const fixed_point_add = (x, y) => {
+  const [ scale, x_, y_ ] = fixed_point_homogenize_scales(x, y);
+  assert(x_.i + y_.i <= UInt.max, "fixed_point_add: Addition causes overflow.");
+  return { i: x_.i + y_.i, scale };
+}
+
+export const fixed_point_sub = (x, y) => {
+  const [ scale, x_, y_ ] = fixed_point_homogenize_scales(x, y);
+  assert(x_.i - y_.i >= 0, "fixed_point_sub: Subtraction causes underflow.");
+  return { i: x_.i - y_.i, scale };
+}
+
+export const fixed_point_mul = (x, y) => {
+  assert(x.scale * y.scale <= UInt.max,
+    "fixed_point_mul: Multiplication of scales overflow.");
+  assert(x.i * y.i <= UInt.max,
+    "fixed_point_mul: Multiplication of integers overflow.");
+  return { i: x.i * y.i, scale: x.scale * y.scale };
+}
+
+export const fixed_point_div = (x, y, scale_factor) => {
+  const x_ = {
+    i: x.i * scale_factor,
+    scale: x.scale * scale_factor
+  };
+  assert(x_.scale / y.scale >= 0,
+    "fixed_point_div: Division of scales underflow.");
+  assert(x_.i / y.i >= 0,
+    "fixed_point_div: Division of integers underflow.");
+  return { i: x_.i / y.i, scale: x_.scale / y.scale };
+}
+
+export const fixed_point_sqrt = (x, k) => {
+  return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
+}
