@@ -1,0 +1,22 @@
+{
+  "name": "@reach-sh/rpc-server",
+  "description": "JSON-RPC interface to your DApp + the Reach standard library",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reach-sh/reach-lang.git",
+    "directory": "js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": "{{REACH_VERSION}}"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/reach-sh/reach-lang/issues"
+  },
+  "homepage": "https://github.com/reach-sh/reach-lang#readme",
+  "scripts": {
+    "app": "node --experimental-modules --unhandled-rejections=strict index.mjs"
+  }
+}

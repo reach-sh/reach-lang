@@ -1,6 +1,9 @@
 version: '3.4'
 x-server-base: &server-base
-  image: reachsh/reach-app-tut-6-rpc-server:latest
+  image: reachsh/rpc-server:latest
+  volumes:
+    - ./server/build:/app/build
+    - ./server/tls:/app/tls
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:0.1
