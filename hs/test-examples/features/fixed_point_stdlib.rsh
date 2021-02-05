@@ -19,6 +19,9 @@ export const main = Reach.App(
       const fp45_42   = fp100(4542);
       const fp57_765  = fp1000(57765);
       const fp560_70990 = fp100000(56070990);
+      assert(fixed_point_cmp(le, fp45_42, fp57_765));
+      assert(fixed_point_cmp(le, fp45_42, fp45_42));
+      assert(fixed_point_cmp(gt, fp560_70990, fp57_765));
       assert(fixed_point_add(fp12_345, fp45_42) == fp57_765);
       assert(fixed_point_sub(fp45_42, fp12_345) == fp33_075);
       assert(fixed_point_mul(fp12_345, fp45_42) == fp560_70990);

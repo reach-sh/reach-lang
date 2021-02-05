@@ -259,3 +259,8 @@ export const fixed_point_div = (x, y, scale_factor) => {
 export const fixed_point_sqrt = (x, k) => {
   return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
 }
+
+export const fixed_point_cmp = (cmp, x, y) => {
+  const [ _, x_, y_ ] = fixed_point_homogenize_scales(x, y);
+  return cmp(x_.i, y_.i);
+}

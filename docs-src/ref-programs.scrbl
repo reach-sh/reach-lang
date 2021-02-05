@@ -1908,7 +1908,7 @@ have 2 decimal places of precision.
 @reach{
   const scale = 10;
   const i = 56;
-  mk_fixed_point(scale)(10) // represents 5.6 }
+  mk_fixed_point(scale)(i) // represents 5.6 }
 
 @index{mk_fixed_point} @reachin{mk_fixed_point(scale)(i)} will return a function that can be used to
 instantiate fixed point numbers with a particular scale factor.
@@ -1947,3 +1947,5 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
 @index{fixed_point_sqrt} @reachin{fixed_point_sqrt(x, k)} approximates the sqrt of the fixed number, @tt{x}, using
 @tt{k} iterations of the @reachin{sqrt} algorithm.
 
+@index{fixed_point_cmp} @reachin{fixed_point_cmp(op, x, y)} applies the comparison
+operator to the two fixed point numbers after homogenizing their scales.
