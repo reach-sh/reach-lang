@@ -1241,7 +1241,7 @@ sco_update :: SLEnv -> App SLScope
 sco_update = sco_update_ DisallowShadowing
 
 stMerge :: SLState -> SLState -> App SLState
-stMerge x y =
+stMerge old new =
   -- This is a little bit suspicious. What's going on?
   --
   -- Basically, the point of merge is so that afterwards, when we look at the
@@ -1249,13 +1249,13 @@ stMerge x y =
   -- if either side is an exit, then that branch of code can't return past this
   -- point, so the only one who made it thus far would be the one that lived,
   -- so we can just go on with their assumptions
-  case (st_live x, st_live y) of
-    (_, False) -> return x
-    (False, _) -> return y
+  case (st_live old, st_live new) of
+    (_, False) -> return old
+    (False, _) -> return new
     (True, True) ->
-      case x == y of
-        True -> return y
-        False -> expect_ $ Err_Eval_IncompatibleStates x y
+      case old == new of
+        True -> return new
+        False -> expect_ $ Err_Eval_IncompatibleStates new old
 
 stEnsureMode :: SLMode -> App ()
 stEnsureMode slm = do
@@ -2387,12 +2387,12 @@ evalApplyVals rator randvs =
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
-    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv) -> locAt clo_at $ do
+    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv) -> do
       ret <- ctxt_alloc
-      body_at <- withAt $ srcloc_jsa "block" body_a
+      let body_at = srcloc_jsa "block" body_a clo_at
       at <- withAt id
       arg_env <- evalDeclLHSs mempty =<<
-        zipEq (Err_Apply_ArgCount at) formals randvs
+        zipEq (Err_Apply_ArgCount clo_at) formals randvs
       let clo_sco =
             (SLScope
                { sco_ret = Just ret

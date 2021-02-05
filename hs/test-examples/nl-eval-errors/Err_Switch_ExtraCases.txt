@@ -1,4 +1,4 @@
 reachc: error: ./Err_Switch_ExtraCases.rsh:12:9:switch: switch contains extra cases: ["Mone"]
 Trace:
   in [unknown function] from (./Err_Switch_ExtraCases.rsh:11:21:function exp) at (./Err_Switch_ExtraCases.rsh:15:35:application)
-  in [unknown function] from (./Err_Switch_ExtraCases.rsh:9:15:function exp) at (./Err_Switch_ExtraCases.rsh:16:7:after expr stmt semicolon)
+  in [unknown function] from (./Err_Switch_ExtraCases.rsh:9:15:function exp) at (./Err_Switch_ExtraCases.rsh:9:11:application)

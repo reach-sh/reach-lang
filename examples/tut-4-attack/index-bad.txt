@@ -10,15 +10,15 @@ Verification failed:
   // Violation witness
   const interact_Alice_wager = 1;
   //    ^ from interaction at ./index-bad.rsh:14:12:application
-  const v4 = 2;
+  const v4 = 0;
   //    ^ from evaluating interact("Alice")."getHand"() at ./index-bad.rsh:20:50:application
 
   // Theorem formalization
-  const v36 = (v4 + (4 - ((v4 + 1) % 3))) % 3;
+  const v27 = (v4 + (4 - ((v4 + 1) % 3))) % 3;
   //    ^ would be 0
-  const v49 = (v36 == 0) ? [0, 1] : ((v36 == 1) ? [1, 1] : [2, 0]);
+  const v38 = (v27 == 0) ? [0, 1] : ((v27 == 1) ? [1, 1] : [2, 0]);
   //    ^ would be [0, 1]
-  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v49[0] * interact_Alice_wager)) - (v49[1] * interact_Alice_wager)));
+  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v38[0] * interact_Alice_wager)) - (v38[1] * interact_Alice_wager)));
 
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:

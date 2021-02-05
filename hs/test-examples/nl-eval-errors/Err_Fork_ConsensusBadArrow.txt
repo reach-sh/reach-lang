@@ -1,1 +1,1 @@
-reachc: error: ./Err_Fork_ConsensusBadArrow.rsh:8:11:application: fork consensus block should be arrow with zero or one parameters, but got something else
+reachc: error: ./Err_Fork_ConsensusBadArrow.rsh:9:12:application: fork consensus block should be arrow with zero or one parameters, but got something else
