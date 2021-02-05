@@ -6,12 +6,14 @@ include $(ROOT)/js/JS_IMAGES
 	(cd js-deps && $(MAKE) build)
 	(cd stdlib && $(MAKE) build)
 	(cd runner && $(MAKE) build)
+	(cd rpc-server && $(MAKE) build)
 
 .PHONY: build
 build:
 	(cd js-deps && $(MAKE) build)
 	(cd stdlib && $(MAKE) build)
 	(cd runner && $(MAKE) build)
+	(cd rpc-server && $(MAKE) build)
 	(cd react-runner && $(MAKE) build)
 
 .PHONY: test

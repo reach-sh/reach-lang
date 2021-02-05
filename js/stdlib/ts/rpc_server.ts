@@ -1,9 +1,11 @@
+import { loadStdlib } from './loader';
+
 import { createSecureServer } from 'http2';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import express from 'express';
-import { loadStdlib } from '@reach-sh/stdlib';
-import * as backend from './build/index.main.mjs';
+import { BigNumber } from 'ethers';
+import express, { Request, Response, NextFunction } from 'express';
+
 
 const withApiKey = () => {
   const key = process.env.REACH_RPC_KEY;
@@ -17,50 +19,50 @@ const withApiKey = () => {
     process.exit(1);
   }
 
-  return (req, res, next) =>
+  return (req: Request, res: Response, next: NextFunction) =>
     req.get('X-API-Key') === key
       ? next()
       : res.status(403).json({});
 };
 
-(async () => {
-  const makeHandle = (container) => (val) => {
+export const serveRpc = async (backend: any) => {
+  const makeHandle = (container: Array<any>) => (val: any) => {
     const id = container.length;
     container[id] = val;
     return id;
   };
 
-  const ACC = [];
+  const ACC: Array<any> = [];
   const makeACC = makeHandle(ACC);
-  const CTC = [];
+  const CTC: Array<any> = [];
   const makeCTC = makeHandle(CTC);
   const real_stdlib = await loadStdlib();
   // XXX bigNumberify in this object should be pushed into the standard library
   const rpc_stdlib = {
     ...real_stdlib,
-    "newTestAccount": (async (bal) =>
+    "newTestAccount": (async (bal: BigNumber) =>
       makeACC(await real_stdlib.newTestAccount(real_stdlib.bigNumberify(bal)))),
-    "balanceOf": (async (id) =>
+    "balanceOf": (async (id: number) =>
       await real_stdlib.balanceOf(ACC[id])),
-    "formatCurrency": (async (x, y) =>
+    "formatCurrency": (async (x: BigNumber, y: number) =>
       await real_stdlib.formatCurrency(real_stdlib.bigNumberify(x), y)),
-    "bigNumbertoNumber": (async (x) =>
+    "bigNumbertoNumber": (async (x: BigNumber) =>
       real_stdlib.bigNumberify(x).toNumber()),
   };
   const rpc_acc = {
-    "attach": (async (id, ...args) =>
+    "attach": (async (id: number, ...args: any[]) =>
       makeCTC(await ACC[id].attach(backend, ...args))),
-    "deploy": (async (id) =>
+    "deploy": (async (id: number) =>
       makeCTC(await ACC[id].deploy(backend))),
   };
   const rpc_ctc = {
-    "getInfo": (async (id) =>
+    "getInfo": (async (id: number) =>
       await CTC[id].getInfo()),
   };
 
   const app = express();
 
-  const makeRPC = (olab, obj) => {
+  const makeRPC = (olab: string, obj: any) => {
     const router = express.Router();
     for (const k in obj) {
       router.post(`/${k}`, async (req, res) => {
@@ -74,7 +76,7 @@ const withApiKey = () => {
     return router;
   };
 
-  const KONT = [];
+  const KONT: Array<any | null> = [];
   const makeKont = makeHandle(KONT);
   const route_backend = express.Router();
   for (const b in backend) {
@@ -92,7 +94,7 @@ const withApiKey = () => {
         io = { ...real_stdlib.hasRandom, ...io };
       }
       for ( const m in meths ) {
-        io[m] = (...args) => new Promise((resolve, reject) => {
+        io[m] = (...args: any[]) => new Promise((resolve, reject) => {
           console.log(`${lab} IO ${m} ${JSON.stringify(args)}`);
           const old_res = KONT[kid];
           KONT[kid] = {resolve, reject};
@@ -107,7 +109,7 @@ const withApiKey = () => {
       new_res.json({t: `Done`, ans});
     });
   }
-  const do_kont = (req, res) => {
+  const do_kont = (req: Request, res: Response) => {
     let lab = `KONT`;
     console.log(`${lab} IN`);
     const [ kid, ans ] = req.body;
@@ -134,13 +136,13 @@ const withApiKey = () => {
   app.use(`/ctc`, makeRPC('ctc', rpc_ctc));
   app.use(`/backend`, route_backend);
   app.post(`/kont`, do_kont);
-  app.post(`/stop`, (req, res) => {
+  app.post(`/stop`, (_: Request, res: Response) => {
     res.json(true);
     process.exit(0); });
 
   app.disable('X-Powered-By');
 
-  const fetchOrFail = (envvar, desc) => {
+  const fetchOrFail = (envvar: string, desc: string) => {
     const f = process.env[envvar];
 
     if (!f) {
@@ -171,7 +173,8 @@ const withApiKey = () => {
   if (passphrase)
     Object.assign(opts, { passphrase });
 
+  // @ts-ignore
   createSecureServer(opts, app)
     .listen(process.env.REACH_RPC_PORT, () =>
       console.log(`I am alive`));
-})();
+};
