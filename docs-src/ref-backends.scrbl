@@ -389,6 +389,13 @@ The number of bits generated depends on the particular @tech{consensus network}.
 A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function.
 
 @(hrule)
+@(mint-define! '("parseFixedPoint"))
+@js{
+ parseFixedPoint(FixedPoint) => number}
+
+Parses a @reachin{FixedPoint} number into a Javascript number.
+
+@(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
 @js{
  add(UInt, UInt) => UInt
