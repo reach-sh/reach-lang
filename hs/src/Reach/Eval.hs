@@ -3920,7 +3920,8 @@ makeInteract who spec = do
   return $ (io, ienv)
 
 compileDApp :: Connectors -> SLVal -> App (DLStmts -> DLProg)
-compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s top_env)) = do
+compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s top_env)) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+  at' <- withAt id
   idr <- e_id <$> ask
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
         case M.lookup k app_options of
@@ -3951,7 +3952,6 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           , st_pdvs = mempty
           , st_after_first = st_after_first0
           }
-  let at' = srcloc_at "compileDApp" Nothing at
   let classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass ]
   let ios = M.fromList $ [(slcpi_who, slcpi_io) | SLCompiledPartInfo {..} <- part_ios]
   top_env_wps <- foldlM env_insertp top_env top_rvargs
