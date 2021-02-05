@@ -130,6 +130,7 @@ captureSt m = do
   st <- liftIO $ readIORef e_st'
   return (st, x)
 
+-- XXX this should be removed
 locSt :: SLState -> App a -> App a
 locSt x m = snd <$> (captureSt $ (setSt x >> m))
 
@@ -3116,11 +3117,12 @@ doFork ks cases mtime = do
         let mkobjp x = JSPropertyNameandValue (JSPropertyIdent a var_i) a [x]
         let before_call_e = JSCallExpression before_e a JSLNil a
         let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne $ before_e) a
-        res_sv <- snd <$> evalExpr only_before_call_e
-        (_, res_ty, _) <-
+        (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
+        (_, (_, res_ty, _)) <-
           case res_sv of
             SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
-              doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
+              captureLifts $
+                doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
             _ -> impossible $ "not each"
         isBound <- readSt $ M.member who_s . st_pdvs
         res_ty_m <-
@@ -3264,7 +3266,8 @@ evalStmtTrampoline sp ks = \case
           whodv <- ctxt_lift_expr (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
           let pdvs' = M.insert who whodv pdvs
           let st' = st {st_pdvs = pdvs'}
-          locSt st' $ evalStmt ks
+          setSt st'
+          evalStmt ks
     SLV_Prim SLPrim_exitted -> do
       expect_empty_tail "exit" JSNoAnnot sp ks
       sco <- e_sco <$> ask
@@ -3459,13 +3462,13 @@ evalStmt = \case
               captureRes $ locAt t_at' $ evalStmt [ts]
             SLRes flifts st_f (SLStmtRes _ frets) <-
               captureRes $ locAt f_at' $ evalStmt [fs]
-            setSt st_t
-            mergeSt st_f
             let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
             at <- withAt id
             saveLift $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts
             let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
             ir <- locSt st_t $ combineStmtRes clvl (levelHelp trets) st_f (levelHelp frets)
+            setSt st_t
+            mergeSt st_f
             retSeqn ir ks_ne
           _ -> do
             let (n_at', ns) = case cv of
@@ -3596,27 +3599,29 @@ evalStmt = \case
                 SLV_DLVar dv -> return dv
                 _ -> impossible "select_all: not dlvar or interact field"
               let casemm = M.mapWithKey select_one casesm
-              let cmb :: (StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts)) -> (SLVar, App (Maybe DLVar, SrcLoc, App SLStmtRes)) -> App (StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts))
-                  cmb (sa', mrets', casemm') (vn, casem) = do
+              let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts)) -> (SLVar, App (Maybe DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts))
+                  cmb (mst', sa', mrets', casemm') (vn, casem) = do
                     (mdv', at_c, casem') <- casem
                     locAt at_c $ do
                       SLRes case_lifts case_st (SLStmtRes _ case_rets) <-
                         captureRes casem'
                       let case_rets' = map (\(ra, rb, rc, _) -> (ra, rb, rc, True)) case_rets
                       let sa'' = sa' <> mkAnnot case_lifts
-                      rets'' <-
-                        case mrets' of
-                          Nothing -> do
-                            setSt case_st
-                            return $ case_rets'
-                          Just rets' -> do
-                            mergeSt case_st
-                            combineStmtRets de_lvl rets' case_st case_rets'
+                      (mst'', rets'') <-
+                        case (mst', mrets') of
+                          (Nothing, Nothing) ->
+                            return $ (Just case_st, case_rets')
+                          (Just st', Just rets') -> do
+                            st'' <- stMerge st' case_st
+                            rets'' <- locSt st'' $ combineStmtRets de_lvl rets' case_st case_rets'
+                            return $ (Just st'', rets'')
+                          _ -> impossible $ "switch"
                       let casemm'' = M.insert vn (mdv', case_lifts) casemm'
-                      return $ (sa'', Just rets'', casemm'')
-              (sa', mrets', casemm') <-
-                foldM cmb (mempty, Nothing, mempty) $ M.toList casemm
+                      return $ (mst'', sa'', Just rets'', casemm'')
+              (mst', sa', mrets', casemm') <-
+                foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
               let rets' = maybe mempty id mrets'
+              maybe (return ()) setSt mst'
               saveLift =<< withAt (\at -> DLS_Switch at dv sa' casemm')
               return $ SLStmtRes sco rets'
         fr <-
