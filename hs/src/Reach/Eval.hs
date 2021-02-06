@@ -1967,7 +1967,7 @@ evalPrim p sargs =
       case map snd sargs of
         [SLV_Int _ sz] ->
           retV $ (lvl, SLV_Array at ST_UInt $ map (SLV_Int at) [0 .. (sz -1)])
-        [_] -> expect_throw_ctx ctxt at (Err_Prim_InvalidArg_Dynamic p)
+        [_] -> expect_ $ Err_Prim_InvalidArg_Dynamic p
         _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
