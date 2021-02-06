@@ -6,7 +6,7 @@ module Reach.Test_Eval
 where
 
 import Data.Proxy
-import Reach.Eval
+import Reach.Eval.Error
 import Reach.Parser
 import Reach.Test.Util
 import Test.Hspec

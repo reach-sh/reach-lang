@@ -1,4 +1,4 @@
-module Reach.Eval (EvalError, compileBundle) where
+module Reach.Eval (compileBundle) where
 
 import Control.Applicative
 import Control.Arrow (second)
