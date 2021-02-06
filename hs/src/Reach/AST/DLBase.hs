@@ -130,10 +130,13 @@ litTypeOf = \case
   DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data DLVar = DLVar SrcLoc String DLType Int
-  deriving (Generic, Show, Ord)
+  deriving (Generic, Show)
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
+
+instance Ord DLVar where
+  (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
   --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
