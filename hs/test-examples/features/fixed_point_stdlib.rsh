@@ -4,29 +4,33 @@ export const main = Reach.App(
   {},
   [['Alice', {}]],
   (Alice) => {
-    const fp10      = mk_fixed_point(10);   // 1 decimal places
-    const fp100     = mk_fixed_point(100);  // 2 decimal places
-    const fp1000    = mk_fixed_point(1000); // ...
-    const fp100000  = mk_fixed_point(100000);
+    const fx10      = fx(10);   // 1 decimal places
+    const fx100     = fx(100);  // 2 decimal places
+    const fx1000    = fx(1000); // ...
+    const fx100000  = fx(100000);
     Alice.only(() => {
       assume(UInt.max >= 999999999);
-      const fp1_234   = fp1000(1234);
-      const fp5_8     = fp10(58);
-      const fp12_345  = fp1000(12345);
-      const fp28_006  = fp1000(28006);
-      const fp33_075  = fp1000(33075);
-      const fp34_56   = fp100(3456);
-      const fp45_42   = fp100(4542);
-      const fp57_765  = fp1000(57765);
-      const fp560_70990 = fp100000(56070990);
-      assert(fixed_point_cmp(le, fp45_42, fp57_765));
-      assert(fixed_point_cmp(le, fp45_42, fp45_42));
-      assert(fixed_point_cmp(gt, fp560_70990, fp57_765));
-      assert(fixed_point_add(fp12_345, fp45_42) == fp57_765);
-      assert(fixed_point_sub(fp45_42, fp12_345) == fp33_075);
-      assert(fixed_point_mul(fp12_345, fp45_42) == fp560_70990);
-      assert(fixed_point_div(fp34_56, fp1_234, 10000) == fp28_006);
-      assert(fixed_point_sqrt(fp34_56, 10) == fp5_8);
+      const fx1_234   = fx1000(1234);
+      const fx5_8     = fx10(58);
+      const fx12_345  = fx1000(12345);
+      const fx28_006  = fx1000(28006);
+      const fx33_075  = fx1000(33075);
+      const fx34_56   = fx100(3456);
+      const fx45_42   = fx100(4542);
+      const fx57_765  = fx1000(57765);
+      const fx195_112 = fx1000(195112);
+      const fx560_70990 = fx100000(56070990);
+      assert(fxle(fx45_42, fx57_765));
+      assert(fxle(fx45_42, fx45_42));
+      assert(fxgt(fx560_70990, fx57_765));
+      assert(fxeq(fx560_70990, fx560_70990));
+      assert(fxne(fx560_70990, fx57_765));
+      assert(fxadd(fx12_345, fx45_42) == fx57_765);
+      assert(fxsub(fx45_42, fx12_345) == fx33_075);
+      assert(fxmul(fx12_345, fx45_42) == fx560_70990);
+      assert(fxdiv(fx34_56, fx1_234, 10000) == fx28_006);
+      assert(fxsqrt(fx34_56, 10) == fx5_8);
+      assert(fxpowi(fx5_8, 3, 10) == fx195_112);
     });
   }
   );

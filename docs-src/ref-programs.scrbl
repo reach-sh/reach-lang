@@ -1911,52 +1911,72 @@ point of overflow.
 @reachin{FixedPoint} can be used to represent numbers with a fixed number of digits after the decimal point.
 They are handy for representing fractional values, especially in base 10. The value of a fixed point number is determined
 by dividing the underlying integer value, @tt{i}, by its scale factor, @tt{scale}. For example, we could
-represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : 1234 }} or @reachin{mk_fixed_point(1000)(1234)}.
+represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : 1234 }} or @reachin{fx(1000)(1234)}.
 A scale factor of @tt{1000} correlates to 3 decimal places of precision. Similarly, a scale factor of @tt{100} would
 have 2 decimal places of precision.
 
-@(mint-define! '("mk_fixed_point"))
+@(mint-define! '("fx"))
 @reach{
   const scale = 10;
   const i = 56;
-  mk_fixed_point(scale)(i) // represents 5.6 }
+  fx(scale)(i) // represents 5.6 }
 
-@index{mk_fixed_point} @reachin{mk_fixed_point(scale)(i)} will return a function that can be used to
+@index{fx} @reachin{fx(scale)(i)} will return a function that can be used to
 instantiate fixed point numbers with a particular scale factor.
 
-@(mint-define! '("fixed_point_convert_scale"))
+@(mint-define! '("fxrescale"))
 @reach{
-  const x = mk_fixed_point(1000)(1234); // x = 1.234
-  fixed_point_convert_scale(x, 100);    // => 1.23 }
+  const x = fx(1000)(1234); // x = 1.234
+  fxrescale(x, 100);    // => 1.23 }
 
-@index{fixed_point_convert_scale} @reachin{fixed_point_convert_scale(x, scale)} will convert a fixed point number from using
+@index{fxrescale} @reachin{fxrescale(x, scale)} will convert a fixed point number from using
 one scale to another. This operation can result in loss of precision, as demonstrated in the above example.
 
-@(mint-define! '("fixed_point_homogenize_scales"))
+@(mint-define! '("fxunify"))
 @reach{
-  const x = mk_fixed_point(1000)(824345); // x = 824.345
-  const y = mk_fixed_point(100)(4567);    // y =  45.67
-  fixed_point_homogenize_scales(x, y);    // => [ 1000, 824.345, 45.670 ] }
+  const x = fx(1000)(824345); // x = 824.345
+  const y = fx(100)(4567);    // y =  45.67
+  fxunify(x, y);    // => [ 1000, 824.345, 45.670 ] }
 
-@index{fixed_point_homogenize_scales} @reachin{fixed_point_homogenize_scales(x, y)} will convert the fixed point numbers
+@index{fxunify} @reachin{fxunify(x, y)} will convert the fixed point numbers
 to use the same scale. The larger scale of the two arguments will be chosen. The function will return a @tt{3-tuple} consisting
 of the common scale and the newly scaled values.
 
-@index{fixed_point_add} @reachin{fixed_point_add(x, y)} adds two fixed point numbers.
+@index{fxadd} @reachin{fxadd(x, y)} adds two fixed point numbers.
 
-@index{fixed_point_sub} @reachin{fixed_point_sub(x, y)} subtracts two fixed point numbers.
+@index{fxsub} @reachin{fxsub(x, y)} subtracts two fixed point numbers.
 
-@index{fixed_point_mul} @reachin{fixed_point_mul(x, y)} multiplies two fixed point numbers.
+@index{fxmul} @reachin{fxmul(x, y)} multiplies two fixed point numbers.
 
-@index{fixed_point_div} @reachin{fixed_point_div(x, y, scale_factor)} divides two fixed point numbers. The numerator, @tt{x},
+@index{fxdiv} @reachin{fxdiv(x, y, scale_factor)} divides two fixed point numbers. The numerator, @tt{x},
 will be multiplied by the scale factor to provide a more precise answer. For example,
 
 @reach{
-  fixed_point_div(34.56, 1.234, 10)     // => 28
-  fixed_point_div(34.56, 1.234, 100000) // => 28.0064 }
+  fxdiv(34.56, 1.234, 10)     // => 28
+  fxdiv(34.56, 1.234, 100000) // => 28.0064 }
 
-@index{fixed_point_sqrt} @reachin{fixed_point_sqrt(x, k)} approximates the sqrt of the fixed number, @tt{x}, using
+@index{fxsqrt} @reachin{fxsqrt(x, k)} approximates the sqrt of the fixed number, @tt{x}, using
 @tt{k} iterations of the @reachin{sqrt} algorithm.
 
-@index{fixed_point_cmp} @reachin{fixed_point_cmp(op, x, y)} applies the comparison
-operator to the two fixed point numbers after homogenizing their scales.
+@index{fxcmp} @reachin{fxcmp(op, x, y)} applies the comparison
+operator to the two fixed point numbers after unifying their scales.
+
+There are convenience methods defined for comparing fixed point numbers:
+
+@index{fxlt} @reachin{fxlt(x, y)} tests whether @tt{x} is less than @tt{y}.
+
+@index{fxle} @reachin{fxle(x, y)} tests whether @tt{x} is less than or equal to @tt{y}.
+
+@index{fxgt} @reachin{fxgt(x, y)} tests whether @tt{x} is greater than @tt{y}.
+
+@index{fxge} @reachin{fxge(x, y)} tests whether @tt{x} is greater than or equal to @tt{y}.
+
+@index{fxeq} @reachin{fxeq(x, y)} tests whether @tt{x} is equal to @tt{y}.
+
+@index{fxne} @reachin{fxne(x, y)} tests whether @tt{x} is not equal to @tt{y}.
+
+@index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
+raised to the @reachin{UInt}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{10}
+iterations provides accuracy until the point of overflow.
+

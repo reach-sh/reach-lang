@@ -206,64 +206,64 @@ export const sqrt = (y, k) =>
 
 export const FixedPoint = Object({ scale: UInt, i: UInt });
 
-export const mk_fixed_point = (scale) => (i) =>
+export const fx = (scale) => (i) =>
   ({ scale, i });
 
-export const fixed_point_convert_scale = (x, scale) => {
-  assert(scale / x.scale >= 0,
-    "fixed_point_convert_scale: Scale division causes underflow.");
-  return (x.scale == scale)
+export const fxrescale = (x, scale) =>
+  (x.scale == scale)
     ? x
     : { i: (x.i * scale) / x.scale, scale };
-}
 
-export const fixed_point_homogenize_scales = (x, y) => {
+export const fxunify = (x, y) => {
   const scale = x.scale < y.scale ? y.scale : x.scale;
-  const x_ = fixed_point_convert_scale(x, scale);
-  const y_ = fixed_point_convert_scale(y, scale);
+  const x_ = fxrescale(x, scale);
+  const y_ = fxrescale(y, scale);
   return [ scale, x_, y_ ];
 }
 
-export const fixed_point_add = (x, y) => {
-  const [ scale, x_, y_ ] = fixed_point_homogenize_scales(x, y);
-  assert(x_.i + y_.i <= UInt.max, "fixed_point_add: Addition causes overflow.");
+export const fxadd = (x, y) => {
+  const [ scale, x_, y_ ] = fxunify(x, y);
   return { i: x_.i + y_.i, scale };
 }
 
-export const fixed_point_sub = (x, y) => {
-  const [ scale, x_, y_ ] = fixed_point_homogenize_scales(x, y);
-  assert(x_.i - y_.i >= 0, "fixed_point_sub: Subtraction causes underflow.");
+export const fxsub = (x, y) => {
+  const [ scale, x_, y_ ] = fxunify(x, y);
   return { i: x_.i - y_.i, scale };
 }
 
-export const fixed_point_mul = (x, y) => {
-  assert(x.scale * y.scale <= UInt.max,
-    "fixed_point_mul: Multiplication of scales overflow.");
-  assert(x.i * y.i <= UInt.max,
-    "fixed_point_mul: Multiplication of integers overflow.");
+export const fxmul = (x, y) => {
   return { i: x.i * y.i, scale: x.scale * y.scale };
 }
 
-export const fixed_point_div = (x, y, scale_factor) => {
+export const fxdiv = (x, y, scale_factor) => {
   const x_ = {
     i: x.i * scale_factor,
     scale: x.scale * scale_factor
   };
-  assert(x_.scale / y.scale >= 0,
-    "fixed_point_div: Division of scales underflow.");
-  assert(x_.i / y.i >= 0,
-    "fixed_point_div: Division of integers underflow.");
   return { i: x_.i / y.i, scale: x_.scale / y.scale };
 }
 
-export const fixed_point_sqrt = (x, k) => {
+export const fxsqrt = (x, k) => {
   return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
 }
 
-export const fixed_point_cmp = (cmp, x, y) => {
-  const [ _, x_, y_ ] = fixed_point_homogenize_scales(x, y);
+export const fxcmp = (cmp, x, y) => {
+  const [ _, x_, y_ ] = fxunify(x, y);
   return cmp(x_.i, y_.i);
 }
+
+export const fxlt = (x, y) => fxcmp(lt, x, y);
+export const fxle = (x, y) => fxcmp(le, x, y);
+export const fxgt = (x, y) => fxcmp(gt, x, y);
+export const fxge = (x, y) => fxcmp(ge, x, y);
+export const fxeq = (x, y) => fxcmp(polyEq, x, y);
+export const fxne = (x, y) => fxcmp(polyNeq, x, y);
+
+export const fxpowi = (base, power, precision) =>
+  Array.iota(precision)
+    .reduce([ fx(1)(1), power, base ], ([ r, p, b ], _) =>
+      [ (p % 2 == 1) ? fxmul(r, b) : r, p / 2, fxmul(b, b) ])
+  [0];
 
 export const pow = (base, power, precision) =>
   Array.iota(precision)
