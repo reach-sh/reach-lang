@@ -1071,7 +1071,8 @@ make_partio = check_partio
         case "_" `B.isPrefixOf` slcpi_who of
           True -> locAt bs_at $ expect_ $ Err_App_PartUnderscore slcpi_who
           False -> locAt io_at $ do
-            (slcpi_io, slcpi_ienv) <- makeInteract slcpi_who iov
+            (slcpi_lifts, (slcpi_io, slcpi_ienv)) <-
+              captureLifts $ makeInteract slcpi_who iov
             return $ SLCompiledPartInfo {..}
 
 evalForm :: SLForm -> [JSExpression] -> App SLSVal

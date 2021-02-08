@@ -109,6 +109,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
   top_env_wps <- foldlM env_insertp top_env top_rvargs
   let make_penvp (SLCompiledPartInfo {..}) = do
         let iov = ios M.! slcpi_who
+        saveLifts slcpi_lifts
         env0 <- locAt slcpi_at $ env_insert "interact" iov top_env_wps
         return $ (slcpi_who, env0)
   penvs <- M.fromList <$> mapM make_penvp part_ios

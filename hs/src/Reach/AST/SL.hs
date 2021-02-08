@@ -12,6 +12,7 @@ import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.AST.DL
 import Reach.JSOrphans ()
 import Reach.Util
 import Reach.Pretty
@@ -306,7 +307,8 @@ data SLCompiledPartInfo = SLCompiledPartInfo
     , slcpi_isClass :: Bool
     , slcpi_who :: SLPart
     , slcpi_io :: SLSSVal
-    , slcpi_ienv :: InteractEnv }
+    , slcpi_ienv :: InteractEnv
+    , slcpi_lifts :: DLStmts }
   deriving (Eq, Generic, Show)
 
 data SLPrimitive
