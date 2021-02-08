@@ -8,9 +8,9 @@ import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST.Base
 import Reach.AST.SL
+import Reach.Connector
 import Reach.Eval.Core
 import Reach.Eval.Error
-import Reach.Connector
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
@@ -62,55 +62,55 @@ evalExportClause env (JSExportClause _ escl _) =
 
 evalTopBody :: SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> App SLEnv
 evalTopBody libm env exenv = \case
-    [] -> return $ exenv
-    mi : body' ->
-      case mi of
-        (JSModuleImportDeclaration a im) ->
-          locAtf (srcloc_jsa "import" a) $
-            case im of
-              JSImportDeclarationBare _ libn _ -> do
-                libex <- lookupDep (ReachSourceFile libn) libm
-                env' <- env_merge env libex
-                evalTopBody libm env' exenv body'
-              JSImportDeclaration ic fc _ -> do
-                ienv <- evalFromClause libm fc
-                news <- evalImportClause ienv ic
-                env' <- env_merge env news
-                evalTopBody libm env' exenv body'
-        (JSModuleExportDeclaration a ex) ->
-          locAtf (srcloc_jsa "export" a) $
+  [] -> return $ exenv
+  mi : body' ->
+    case mi of
+      (JSModuleImportDeclaration a im) ->
+        locAtf (srcloc_jsa "import" a) $
+          case im of
+            JSImportDeclarationBare _ libn _ -> do
+              libex <- lookupDep (ReachSourceFile libn) libm
+              env' <- env_merge env libex
+              evalTopBody libm env' exenv body'
+            JSImportDeclaration ic fc _ -> do
+              ienv <- evalFromClause libm fc
+              news <- evalImportClause ienv ic
+              env' <- env_merge env news
+              evalTopBody libm env' exenv body'
+      (JSModuleExportDeclaration a ex) ->
+        locAtf (srcloc_jsa "export" a) $
           case ex of
             JSExport s _ -> doStmt True s
             JSExportFrom ec fc _ -> go ec =<< evalFromClause libm fc
             JSExportLocals ec _ -> go ec env
             JSExportAllFrom {} -> impossible "XXX export *"
-          where
-            go ec eenv = do
-              news <- evalExportClause eenv ec
-              env' <- env_merge exenv news
-              evalTopBody libm env env' body'
-        (JSModuleStatementListItem s) -> doStmt False s
-      where
-        doStmt isExport sm = do
-          let sco =
-                (SLScope
-                   { sco_ret = Nothing
-                   , sco_must_ret = RS_CannotReturn
-                   , sco_while_vars = Nothing
-                   , sco_penvs = mempty
-                   , sco_cenv = env
-                   })
-          smr <- locSco sco $ evalStmt [sm]
-          case smr of
-            SLStmtRes sco' [] -> do
-              let env' = sco_cenv sco'
-              exenv' <- case isExport of
-                -- If this is an exporting statement, then add to the export
-                -- environment everything that is new.
-                True -> env_merge exenv (M.difference env' env)
-                False -> return $ exenv
-              evalTopBody libm env' exenv' body'
-            _ -> expect_ $ Err_Module_Return
+        where
+          go ec eenv = do
+            news <- evalExportClause eenv ec
+            env' <- env_merge exenv news
+            evalTopBody libm env env' body'
+      (JSModuleStatementListItem s) -> doStmt False s
+    where
+      doStmt isExport sm = do
+        let sco =
+              (SLScope
+                 { sco_ret = Nothing
+                 , sco_must_ret = RS_CannotReturn
+                 , sco_while_vars = Nothing
+                 , sco_penvs = mempty
+                 , sco_cenv = env
+                 })
+        smr <- locSco sco $ evalStmt [sm]
+        case smr of
+          SLStmtRes sco' [] -> do
+            let env' = sco_cenv sco'
+            exenv' <- case isExport of
+              -- If this is an exporting statement, then add to the export
+              -- environment everything that is new.
+              True -> env_merge exenv (M.difference env' env)
+              False -> return $ exenv
+            evalTopBody libm env' exenv' body'
+          _ -> expect_ $ Err_Module_Return
 
 evalLib :: Connectors -> SLMod -> SLLibs -> App SLLibs
 evalLib cns (src, body) libm = do
@@ -136,4 +136,3 @@ evalLib cns (src, body) libm = do
 
 evalLibs :: Connectors -> [SLMod] -> App SLLibs
 evalLibs cns mods = foldrM (evalLib cns) mempty mods
-

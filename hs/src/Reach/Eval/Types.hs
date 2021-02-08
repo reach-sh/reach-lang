@@ -5,8 +5,8 @@ module Reach.Eval.Types where
 import qualified Data.Map.Strict as M
 import Generics.Deriving
 import Reach.AST.Base
-import Reach.AST.SL
 import Reach.AST.DLBase
+import Reach.AST.SL
 
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)
@@ -51,4 +51,3 @@ all_slm_modes :: [SLMode]
 all_slm_modes = enumFrom minBound
 
 type SLPartDVars = M.Map SLPart DLVar
-

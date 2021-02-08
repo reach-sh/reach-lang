@@ -10,11 +10,13 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Counter
-import Reach.Util
 import Reach.Freshen
+import Reach.Util
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
+
 type Lifts = Seq.Seq LLCommon
 
 data Env = Env

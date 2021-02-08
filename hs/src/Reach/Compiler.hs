@@ -50,9 +50,9 @@ compile copts = do
         let woutn = outn . addWhich
         let woutnMay = outnMay woutn
         let winterOut = interOut woutn
-        let showp :: (forall a . Pretty a => T.Text -> a -> IO ())
+        let showp :: (forall a. Pretty a => T.Text -> a -> IO ())
             showp l = winterOut l . render . pretty
-        let showp' :: (forall a . Pretty a => String -> a -> IO ())
+        let showp' :: (forall a. Pretty a => String -> a -> IO ())
             showp' = showp . T.pack
         dl <- compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ _ = dl

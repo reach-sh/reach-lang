@@ -1,10 +1,12 @@
 module Reach.Eval.Error
-  ( EvalError(..)
-  , LookupCtx(..)
+  ( EvalError (..)
+  , LookupCtx (..)
   , didYouMean
-  ) where
+  )
+where
 
 import qualified Data.ByteString as B
+import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
 import Generics.Deriving
@@ -13,7 +15,6 @@ import Language.JavaScript.Parser.AST
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.SL
-import Data.List (intercalate, sortBy)
 import Reach.Eval.Types
 import Reach.Texty (pretty)
 import Reach.Util
@@ -359,8 +360,8 @@ instance Show EvalError where
         <> (intercalate ", " $ map show_sv slvals)
         <> "]"
     Err_Prim_InvalidArg_Dynamic prim ->
-      "Invalid arg for " <> displayPrim prim <>
-        ". The argument must be computable at compile time"
+      "Invalid arg for " <> displayPrim prim
+        <> ". The argument must be computable at compile time"
     Err_Shadowed n (SLSSVal at0 _ _) (SLSSVal at _ _) ->
       -- FIXME tell the srcloc of the original binding
       "Invalid name shadowing"
@@ -443,4 +444,3 @@ instance Show EvalError where
       "Too many arguments; surplus: " <> show (length vs)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
-

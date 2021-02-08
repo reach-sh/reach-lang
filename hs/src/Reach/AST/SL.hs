@@ -11,12 +11,12 @@ import GHC.Stack (HasCallStack)
 import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
-import Reach.AST.DLBase
 import Reach.AST.DL
+import Reach.AST.DLBase
 import Reach.JSOrphans ()
-import Reach.Util
 import Reach.Pretty
 import Reach.Texty
+import Reach.Util
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -303,12 +303,13 @@ primOpType BIOR = [ST_UInt, ST_UInt] --> ST_UInt
 primOpType BXOR = [ST_UInt, ST_UInt] --> ST_UInt
 
 data SLCompiledPartInfo = SLCompiledPartInfo
-    { slcpi_at :: SrcLoc
-    , slcpi_isClass :: Bool
-    , slcpi_who :: SLPart
-    , slcpi_io :: SLSSVal
-    , slcpi_ienv :: InteractEnv
-    , slcpi_lifts :: DLStmts }
+  { slcpi_at :: SrcLoc
+  , slcpi_isClass :: Bool
+  , slcpi_who :: SLPart
+  , slcpi_io :: SLSSVal
+  , slcpi_ienv :: InteractEnv
+  , slcpi_lifts :: DLStmts
+  }
   deriving (Eq, Generic, Show)
 
 data SLPrimitive

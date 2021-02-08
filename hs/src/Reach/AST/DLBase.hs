@@ -8,8 +8,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 import Reach.Util
 
 data DeployMode
@@ -96,6 +96,7 @@ instance Pretty DLInit where
       ctimem' = case ctimem of
         Nothing -> "// no ctime" <> hardline
         Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
+
 data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, Show, Ord)

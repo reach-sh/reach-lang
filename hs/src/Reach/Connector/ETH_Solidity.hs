@@ -23,8 +23,8 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.CollectTypes
 import Reach.Connector
-import Reach.EmbeddedFiles
 import Reach.Counter
+import Reach.EmbeddedFiles
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util

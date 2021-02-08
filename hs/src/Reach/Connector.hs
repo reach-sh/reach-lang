@@ -34,7 +34,7 @@ data ConnectorError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance Show ConnectorError where
-   show (Err_IntLiteralRange rmin x rmax) =
+  show (Err_IntLiteralRange rmin x rmax) =
     "integer literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 checkIntLiteralC :: SrcLoc -> Connector -> Integer -> Integer

@@ -13,14 +13,14 @@ import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.SL
-import Reach.Eval.Error
-import Reach.Eval.Types
-import Reach.Eval.Core
-import Reach.Eval.Module
 import Reach.Connector
+import Reach.Counter
+import Reach.Eval.Core
+import Reach.Eval.Error
+import Reach.Eval.Module
+import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
-import Reach.Counter
 import Reach.Util
 
 app_default_opts :: Counter -> [T.Text] -> DLOpts
@@ -104,7 +104,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           , st_pdvs = mempty
           , st_after_first = st_after_first0
           }
-  let classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass ]
+  let classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass]
   let ios = M.fromList $ [(slcpi_who, slcpi_io) | SLCompiledPartInfo {..} <- part_ios]
   top_env_wps <- foldlM env_insertp top_env top_rvargs
   let make_penvp (SLCompiledPartInfo {..}) = do
@@ -132,10 +132,14 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
     case dlo_deployMode dlo of
       DM_constructor -> yes
       DM_firstMsg -> no
-  _ <- locIOs ios $ locSco sco $ locDLO dlo $ locClasses classes $
-    evalStmt top_ss
+  _ <-
+    locIOs ios $
+      locSco sco $
+        locDLO dlo $
+          locClasses classes $
+            evalStmt top_ss
   flip when doExit =<< readSt st_live
-  let sps = SLParts $ M.fromList $ [ (slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios ]
+  let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
   let dli = DLInit ctimem
   return $ DLProg at dlo sps dli
 compileDApp _ topv =
@@ -168,13 +172,13 @@ compileBundle cns jsb main = do
   let e_classes = mempty
   let e_sco =
         SLScope
-           { sco_ret = Nothing
-           , sco_must_ret = RS_CannotReturn
-           , sco_while_vars = Nothing
-           , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
-             sco_penvs = mempty
-           , sco_cenv = mempty
-           }
+          { sco_ret = Nothing
+          , sco_must_ret = RS_CannotReturn
+          , sco_while_vars = Nothing
+          , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
+            sco_penvs = mempty
+          , sco_cenv = mempty
+          }
   let e_depth = recursionDepthLimit
   e_st <- newIORef e_stv
   let e_at = srcloc_top

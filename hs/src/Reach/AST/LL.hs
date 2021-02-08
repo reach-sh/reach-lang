@@ -7,8 +7,8 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.Counter
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 
 type LLVar = Maybe DLVar
 
@@ -86,4 +86,3 @@ instance Pretty LLProg where
       <> hardline
       <> pretty dli
       <> pretty db
-

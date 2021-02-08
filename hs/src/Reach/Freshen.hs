@@ -9,6 +9,7 @@ import Reach.AST.LL
 import Reach.Counter
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 data Env = Env
@@ -108,4 +109,3 @@ freshen :: Freshen a => Counter -> a -> IO a
 freshen fCounter x = do
   fRho <- newIORef mempty
   flip runReaderT (Env {..}) $ fu x
-  

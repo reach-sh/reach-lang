@@ -307,7 +307,6 @@ opt_masn = \case
   where
     go (v, a) = (\x -> (v, x)) <$> opt_a a
 
-
 -- _U_pdate _C_ount_s_
 type UCST a = Counts -> a -> (Counts, a)
 

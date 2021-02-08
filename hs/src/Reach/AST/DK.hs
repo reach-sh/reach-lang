@@ -7,8 +7,8 @@ import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 
 data DKCommon
   = DKC_ LLCommon
@@ -80,4 +80,3 @@ instance Pretty DKProg where
       <> hardline
       <> pretty dli
       <> pretty t
-

@@ -6,13 +6,13 @@ import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
+import qualified Data.List as List
 import Data.List.Extra (foldl', mconcatMap)
 import qualified Data.Map as M
 import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
-import qualified Data.List as List
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -322,15 +322,15 @@ dlvOccurs :: [Int] -> BindingEnv -> DLExpr -> [Int]
 dlvOccurs env bindings de =
   case de of
     DLE_Arg _ (DLA_Var (DLVar _ _ _ i)) ->
-      let env' = i:env in
-      if i `List.elem` env
-        -- If we already expanded, mark that we've seen var again and go home
-        then env'
-        -- Otherwise, expand and mark all sub expressions
-        else
-          case ("v" <> show i) `M.lookup` bindings of
-            Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
-            _ -> env'
+      let env' = i : env
+       in if i `List.elem` env
+            then -- If we already expanded, mark that we've seen var again and go home
+              env'
+            else -- Otherwise, expand and mark all sub expressions
+
+            case ("v" <> show i) `M.lookup` bindings of
+              Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
+              _ -> env'
     DLE_Arg {} -> env
     DLE_LArg at (DLLA_Array _ as) -> _recs at as
     DLE_LArg at (DLLA_Tuple as) -> _recs at as
@@ -351,7 +351,7 @@ dlvOccurs env bindings de =
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
   where
-    _recs at as = foldr (\ a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
+    _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
 
 displayDLAsJs :: [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
@@ -360,52 +360,52 @@ displayDLAsJs inlineCtxt nested d =
     DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
     DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
-    DLE_LArg _ (DLLA_Tuple as)   -> bracket $ commaSep (map sub as)
-    DLE_LArg _ (DLLA_Obj env)    ->
-      curly $ commaSep (map (\ (k, v) -> k <> ": " <> sub v) $ M.toList env)
+    DLE_LArg _ (DLLA_Tuple as) -> bracket $ commaSep (map sub as)
+    DLE_LArg _ (DLLA_Obj env) ->
+      curly $ commaSep (map (\(k, v) -> k <> ": " <> sub v) $ M.toList env)
     DLE_LArg _ (DLLA_Data _ _ a) -> sub a
-    DLE_Impossible {}            -> ps d
+    DLE_Impossible {} -> ps d
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
       mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
-    DLE_PrimOp _ o [a]    -> mparen $ ps o <> sub a
+    DLE_PrimOp _ o [a] -> mparen $ ps o <> sub a
     DLE_PrimOp _ o [a, b] ->
       case (o, sub a, sub b) of
-        (ADD, "0", b')  -> b'
+        (ADD, "0", b') -> b'
         (ADD, a', "0") -> a'
         (_, a', b') -> mparen $ unwords [a', ps o, b']
-    DLE_PrimOp _ o as     -> ps o <> args as
-    DLE_ArrayRef _ x y    -> sub x <> bracket (sub y)
-    DLE_ArraySet _ x y z  -> "Array.set" <> args [x, y, z]
+    DLE_PrimOp _ o as -> ps o <> args as
+    DLE_ArrayRef _ x y -> sub x <> bracket (sub y)
+    DLE_ArraySet _ x y z -> "Array.set" <> args [x, y, z]
     DLE_ArrayConcat _ x y -> "Array.concat" <> args [x, y]
-    DLE_ArrayZip _ x y    -> "Array.zip" <> args [x, y]
-    DLE_TupleRef _ a i    -> sub a <> bracket (show i)
-    DLE_ObjectRef _ a i   -> sub a <> bracket i
+    DLE_ArrayZip _ x y -> "Array.zip" <> args [x, y]
+    DLE_TupleRef _ a i -> sub a <> bracket (show i)
+    DLE_ObjectRef _ a i -> sub a <> bracket i
     DLE_Interact _ _ pv f _ as -> show pv <> "." <> f <> args as
-    DLE_Digest _ as       -> "digest" <> args as
-    DLE_Claim _ _ ty a m  -> show ty <> paren (commaSep [sub a, show m])
-    DLE_Transfer _ x y    -> "transfer" <> paren (sub y) <> ".to" <> paren (sub x)
-    DLE_Wait _ a          -> "wait" <> paren (sub a)
-    DLE_PartSet _ p a     -> "Participant.set" <> paren (commaSep [show p, sub a])
+    DLE_Digest _ as -> "digest" <> args as
+    DLE_Claim _ _ ty a m -> show ty <> paren (commaSep [sub a, show m])
+    DLE_Transfer _ x y -> "transfer" <> paren (sub y) <> ".to" <> paren (sub x)
+    DLE_Wait _ a -> "wait" <> paren (sub a)
+    DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
   where
-    commaSep  = List.intercalate ", "
-    args as   = paren (commaSep (map sub as))
-    ps o      = show $ pretty o
-    mparen    = if nested then paren else id
-    curly e   = "{" <> e <> "}"
-    paren e   = "(" <> e <> ")"
+    commaSep = List.intercalate ", "
+    args as = paren (commaSep (map sub as))
+    ps o = show $ pretty o
+    mparen = if nested then paren else id
+    curly e = "{" <> e <> "}"
+    paren e = "(" <> e <> ")"
     bracket e = "[" <> e <> "]"
     sub e@(DLA_Var (DLVar _ _ _ i)) =
       case i `List.lookup` inlineCtxt of
-        Nothing         -> ps e
+        Nothing -> ps e
         Just (Right de) -> displayDLAsJs inlineCtxt True de
-        Just (Left s)   -> s
+        Just (Left s) -> s
     sub e = ps e
 
 displaySexpAsJs :: Bool -> SExpr -> String
 displaySexpAsJs nested s =
   case s of
     Atom i -> i
-    List (Atom w:rs)
+    List (Atom w : rs)
       | "cons" `List.isSuffixOf` w ->
         "[" <> List.intercalate ", " (map r rs) <> "]"
     List xs -> lparen <> unwords (map r xs) <> rparen
@@ -418,58 +418,65 @@ subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr 
 subAllVars bindings tk pm (Atom ai) =
   case ai `M.lookup` bindings of
     Just (_, _, _, _, Just de) ->
-          let env = dlvOccurs [] bindings de in
-          let sortedEnv = List.group $ List.sort env in
-          -- Get variable/values to inline. Inline a DLExpr if available,
-          -- or fallback to s-exp Atom value
-          let inlineVars = List.foldr canInline [] sortedEnv in
-          let inlines = map getInlineValue inlineVars in
-          let toJs = displayDLAsJs inlines False in
-          -- Get let assignments
-          let assignVars = List.foldr canAssign [] sortedEnv in
-          let assigns = List.foldr (\ x acc ->
-                let i = "v" <> show x in
-                case i `M.lookup` bindings of
-                  Just (_, _, _, _, Just dl) -> (i, Right dl) : acc
-                  Just (_, _, _, Just se, _) -> (i, Left se)  : acc
-                  _ -> acc) [] assignVars in
-          let assignStr = unlines $ map (\ (k, eds) ->
-                let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm in
-                "  const " <> k <> " = " <> case eds of
-                  Right v -> toJs v
-                  Left v  -> SMT.showsSExpr v ""
-                <> ";"
-                <> "\n  //    ^ would be " <>  kv) assigns in
-          let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");" in
-          assignStr <> assertStr
+      let env = dlvOccurs [] bindings de
+       in let sortedEnv = List.group $ List.sort env
+           in -- Get variable/values to inline. Inline a DLExpr if available,
+              -- or fallback to s-exp Atom value
+              let inlineVars = List.foldr canInline [] sortedEnv
+               in let inlines = map getInlineValue inlineVars
+                   in let toJs = displayDLAsJs inlines False
+                       in -- Get let assignments
+                          let assignVars = List.foldr canAssign [] sortedEnv
+                           in let assigns =
+                                    List.foldr
+                                      (\x acc ->
+                                         let i = "v" <> show x
+                                          in case i `M.lookup` bindings of
+                                               Just (_, _, _, _, Just dl) -> (i, Right dl) : acc
+                                               Just (_, _, _, Just se, _) -> (i, Left se) : acc
+                                               _ -> acc)
+                                      []
+                                      assignVars
+                               in let assignStr =
+                                        unlines $
+                                          map
+                                            (\(k, eds) ->
+                                               let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm
+                                                in "  const " <> k <> " = " <> case eds of
+                                                     Right v -> toJs v
+                                                     Left v -> SMT.showsSExpr v ""
+                                                     <> ";"
+                                                     <> "\n  //    ^ would be "
+                                                     <> kv)
+                                            assigns
+                                   in let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");"
+                                       in assignStr <> assertStr
     -- Something like assert(false)
     _ -> "  " <> show (pretty tk) <> "(" <> ai <> ");"
   where
     -- Variable can be inlined if it is used once or its value is a `DLArg`
     canInline [x] acc = x : acc
-    canInline (x:_)  acc =
+    canInline (x : _) acc =
       case ("v" <> show x) `M.lookup` bindings of
         Just (_, _, _, _, Just (DLE_Arg _ _)) -> x : acc
         _ -> acc
-    canInline _  acc = acc
+    canInline _ acc = acc
 
     -- Variable can be assigned if it is used many times and its value is not a `DLArg`
-    canAssign (x:_:_) acc =
+    canAssign (x : _ : _) acc =
       case ("v" <> show x) `M.lookup` bindings of
         Just (_, _, _, _, Just (DLE_Arg _ _)) -> acc
         _ -> x : acc
-    canAssign _       acc = acc
+    canAssign _ acc = acc
 
     getInlineValue :: Int -> (Int, Either String DLExpr)
     getInlineValue v =
-      let vid = "v" <> show v in
-      case vid `M.lookup` bindings of
-        Just (_, _, _, _, Just del) -> (v, Right del)
-        Just (_, _, _, Just se, _)  -> (v, Left $ SMT.showsSExpr se "")
-        _                           -> (v, Left vid)
-
+      let vid = "v" <> show v
+       in case vid `M.lookup` bindings of
+            Just (_, _, _, _, Just del) -> (v, Right del)
+            Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
+            _ -> (v, Left vid)
 subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
-
 
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
