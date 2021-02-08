@@ -25,3 +25,4 @@ test: build
 push:
 	$(ROOT)/scripts/docker-push.sh $(RUNNER_IMAGE)
 	$(ROOT)/scripts/docker-push.sh $(REACT_RUNNER_IMAGE)
+	$(ROOT)/scripts/docker-push.sh $(RPC_SERVER_IMAGE)
