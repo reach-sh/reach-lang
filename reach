@@ -928,7 +928,7 @@ do_react_down () {
   exit 0
 }
 
-REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react-runner'
+REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react-runner rpc-server'
 
 do_update() {
   for IMG in $REACH_IMAGES ; do
