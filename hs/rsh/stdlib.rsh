@@ -317,8 +317,16 @@ const getNumDenom = (value, precision) => {
 }
 
 export const fxpow = (base, power, precision, scalePrecision) => {
-  const [ num, den ] = getNumDenom(power, precision);
-  return fxpow_ratio(base, num, den, precision, scalePrecision);
+  const whole = fxfloor(power);
+  const fwhole = fx(1)(whole);
+  if (fxeq(power, fwhole)) {
+    return fxpowi(base, whole, precision);
+  } else {
+    const remain = fxsub(power, fwhole);
+    const wholePow = fxpowi(base, whole, precision);
+    const [ num, den ] = getNumDenom(remain, precision);
+    return fxmul(wholePow, fxpow_ratio(base, num, den, precision, scalePrecision));
+  }
 }
 
 export const pow = (base, power, precision) =>

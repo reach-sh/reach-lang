@@ -1899,7 +1899,8 @@ square root up to @tt{580} squared, or @tt{336,400}.
 
 @index{pow} @reachin{pow(base, power, precision)} Calculates the approximate value of raising base to power.
 The third argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
-of iterations the algorithm should perform.
+of iterations the algorithm should perform. For reference, @tt{6} iterations provides enough accuracy to calculate
+up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
 @subsubsection{@tt{Fixed-Point Numbers}}
 
@@ -1963,12 +1964,21 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
 
 @index{fxpow} @reachin{fxpow(base, power, precision, scalePrecision)} approximates the power of the fixed number, @tt{base},
 raised to the fixed point number, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
-at compile time, which represents the number of iterations the algorithm should perform. The @tt{scalePrecision} argument must
-be a @tt{UInt} and represents the scale of the return value.
+at compile time, which represents the number of iterations the algorithm should perform.
+The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of the return value. Choosing a larger
+@tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
+
+@reachin{
+  const base  = fx(1)(2);
+  const power = fx(100)(33);
+  fxpow(base, power, 10, 1000);    // 1.260
+  fxpow(base, power, 10, 10000);   // 1.2599
+  fxpow(base, power, 10, 1000000); // 1.259921 }
 
 @index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
 raised to the @reachin{UInt}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
-at compile time, which represents the number of iterations the algorithm should perform.
+at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{6} iterations
+provides enough accuracy to calculate up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
 @index{fxcmp} @reachin{fxcmp(op, x, y)} applies the comparison
 operator to the two fixed point numbers after unifying their scales.
