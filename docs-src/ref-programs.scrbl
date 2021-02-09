@@ -1899,8 +1899,7 @@ square root up to @tt{580} squared, or @tt{336,400}.
 
 @index{pow} @reachin{pow(base, power, precision)} Calculates the approximate value of raising base to power.
 The third argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
-of iterations the algorithm should perform. For reference, @tt{10} iterations provides accuracy until the
-point of overflow.
+of iterations the algorithm should perform.
 
 @subsubsection{@tt{Fixed-Point Numbers}}
 
@@ -1955,8 +1954,21 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
   fxdiv(34.56, 1.234, 10)     // => 28
   fxdiv(34.56, 1.234, 100000) // => 28.0064 }
 
+@index{fxmod} @reachin{fxmod(x, y)} finds the remainder of dividing @tt{x} by @tt{y}.
+
+@index{fxfloor} @reachin{fxfloor(x)} rounds the fixed point number, @tt{x}, down to the nearest whole number.
+
 @index{fxsqrt} @reachin{fxsqrt(x, k)} approximates the sqrt of the fixed number, @tt{x}, using
 @tt{k} iterations of the @reachin{sqrt} algorithm.
+
+@index{fxpow} @reachin{fxpow(base, power, precision, scalePrecision)} approximates the power of the fixed number, @tt{base},
+raised to the fixed point number, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+at compile time, which represents the number of iterations the algorithm should perform. The @tt{scalePrecision} argument must
+be a @tt{UInt} and represents the scale of the return value.
+
+@index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
+raised to the @reachin{UInt}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+at compile time, which represents the number of iterations the algorithm should perform.
 
 @index{fxcmp} @reachin{fxcmp(op, x, y)} applies the comparison
 operator to the two fixed point numbers after unifying their scales.
@@ -1974,9 +1986,3 @@ There are convenience methods defined for comparing fixed point numbers:
 @index{fxeq} @reachin{fxeq(x, y)} tests whether @tt{x} is equal to @tt{y}.
 
 @index{fxne} @reachin{fxne(x, y)} tests whether @tt{x} is not equal to @tt{y}.
-
-@index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
-raised to the @reachin{UInt}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
-at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{10}
-iterations provides accuracy until the point of overflow.
-

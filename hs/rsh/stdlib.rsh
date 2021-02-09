@@ -265,6 +265,62 @@ export const fxpowi = (base, power, precision) =>
       [ (p % 2 == 1) ? fxmul(r, b) : r, p / 2, fxmul(b, b) ])
   [0];
 
+export const fxmod = (x, y) => {
+    const [ _, x_, y_] = fxunify(x, y);
+    const q = fxdiv(x_, y_, 1);
+    const p = fxmul(q, y_);
+    return fxsub(x_, p);
+  }
+
+export const fxfloor = (x) =>
+  fxrescale(x, 1).i;
+
+const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
+  const xN = fxpowi(x, numerator, precision);
+  const fxd = fx(1)(denominator);
+  return Array.iota(precision).reduce(xN, (acc, _) => {
+    const n = fxsub(fxpowi(acc, denominator, precision), xN);
+    const d = fxmul(fxd, fxpowi(acc, denominator - 1, precision));
+    const t = fxdiv(n, d, 10);
+    return fxrescale(fxsub(acc, t), scalePrecision);
+  });
+}
+
+const getNumDenom = (value, precision) => {
+  const [ numerator, denominator, _ ] =
+    Array.iota(precision)
+      .reduce([ 0, 1, value ], ([ accNum, accDen, accVal ], _) => {
+        const i = fxrescale(accVal, 1).i;
+        const v = fxsub(accVal, fx(1)(i));
+        const num = accNum + i;
+        const v2 = fxmul(v, fx(1)(2));
+        return [ num * 2, accDen * 2, v2 ];
+      });
+
+  const [ hi, lo ] = (numerator > denominator)
+      ? [ numerator, denominator ]
+      : [ denominator, numerator ];
+
+  const [ _, _, lo_ ] = Array.iota(precision)
+    .reduce([ false, hi, lo ], ([ br, accHi, accLo ], _) => {
+      if (br) {
+        return [ br, accHi, accLo ];
+      } else {
+        const rem = accHi % accLo;
+        return (rem == 0)
+          ? [ true, accHi, accLo ]
+          : [ false, accLo, accHi ];
+      }
+    });
+
+  return [ numerator / lo_, denominator / lo_ ];
+}
+
+export const fxpow = (base, power, precision, scalePrecision) => {
+  const [ num, den ] = getNumDenom(power, precision);
+  return fxpow_ratio(base, num, den, precision, scalePrecision);
+}
+
 export const pow = (base, power, precision) =>
   Array.iota(precision)
     .reduce([ 1, power, base ], ([ r, p, b ], _) =>
