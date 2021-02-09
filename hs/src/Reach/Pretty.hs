@@ -119,4 +119,3 @@ prettyBlock b da = b <> hardline <> "return" <+> pretty da <> semi
 
 prettyBlockP :: Pretty a => Pretty b => a -> b -> Doc
 prettyBlockP b da = prettyBlock (pretty b) da
-

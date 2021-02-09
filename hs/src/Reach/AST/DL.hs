@@ -9,8 +9,8 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.Counter
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 
 data StmtAnnot = StmtAnnot
   { sa_pure :: Bool

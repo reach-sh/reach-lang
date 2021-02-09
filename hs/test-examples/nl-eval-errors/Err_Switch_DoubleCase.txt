@@ -1,4 +1,4 @@
-reachc: error: ./Err_Switch_DoubleCase.rsh:11:24:block: switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case
+reachc: error: ./Err_Switch_DoubleCase.rsh:12:9:switch: switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case
 Trace:
   in [unknown function] from (./Err_Switch_DoubleCase.rsh:11:21:function exp) at (./Err_Switch_DoubleCase.rsh:15:35:application)
-  in [unknown function] from (./Err_Switch_DoubleCase.rsh:9:15:function exp) at (./Err_Switch_DoubleCase.rsh:16:7:after expr stmt semicolon)
+  in [unknown function] from (./Err_Switch_DoubleCase.rsh:9:15:function exp) at (./Err_Switch_DoubleCase.rsh:9:11:application)

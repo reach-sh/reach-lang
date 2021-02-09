@@ -1,1 +1,1 @@
-reachc: error: ./Err_App_InvalidInteract.rsh:4:22:property binding: Invalid interact specification. Expected public type, got: public UInt
+reachc: error: ./Err_App_InvalidInteract.rsh:4:22:property binding: Invalid interact specification. Expected public type, got: UInt

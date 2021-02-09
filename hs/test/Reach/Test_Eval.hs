@@ -1,16 +1,14 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
-  , spec_examples_cover_TypeError
   , test_compileBundle_errs
   )
 where
 
 import Data.Proxy
-import Reach.Eval
+import Reach.Eval.Error
 import Reach.Parser
 import Reach.Test.Util
-import Reach.Type
 import Test.Hspec
 import Test.Tasty
 
@@ -41,6 +39,15 @@ spec_examples_cover_EvalError =
       , "Err_TopFun_NoName" -- hiding behind Err_Type_None
       , "Err_Transfer_NotBound"
       , "Err_While_IllegalInvariant"
+      , "Err_Type_Mismatch"
+      , "Err_Type_None"
+      , "Err_Type_NotDT"
+      , "Err_Type_NotApplicable"
+      , "Err_TypeMeets_None"
+      , "Err_TypeMeets_Mismatch"
+      , "Err_dTypeMeets_Mismatch"
+      , "Err_Type_TooFewArguments"
+      , "Err_Type_TooManyArguments"
       ]
 
 spec_examples_cover_ParserError :: Spec
@@ -54,21 +61,4 @@ spec_examples_cover_ParserError =
       , "Err_Parse_IllegalLiteral" -- undefined didn't work
       , "Err_Parse_NotModule"
       , "Err_Parse_JSIdentNone"
-      ]
-
-spec_examples_cover_TypeError :: Spec
-spec_examples_cover_TypeError =
-  mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
-  where
-    p = Proxy @TypeError
-    -- TODO: exceptions = []
-    exceptions =
-      [ "Err_Type_Mismatch"
-      , "Err_Type_None"
-      , "Err_Type_NotDT"
-      , "Err_Type_NotApplicable"
-      , "Err_TypeMeets_None"
-      , "Err_TypeMeets_Mismatch"
-      , "Err_Type_TooFewArguments"
-      , "Err_Type_TooManyArguments"
       ]

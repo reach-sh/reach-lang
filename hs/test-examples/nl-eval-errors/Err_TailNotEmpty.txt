@@ -1,1 +1,1 @@
-reachc: error: ./Err_TailNotEmpty.rsh:5:13:after return semicolon: Invalid statement block. Expected empty tail, but found 1 more statements
+reachc: error: ./Err_TailNotEmpty.rsh:5:5:return: Nowhere to return to

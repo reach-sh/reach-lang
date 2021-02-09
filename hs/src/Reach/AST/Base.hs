@@ -14,8 +14,8 @@ import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
-import Reach.UnsafeUtil
 import Reach.Texty
+import Reach.UnsafeUtil
 
 --- Source Information
 data ReachSource

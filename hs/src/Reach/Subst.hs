@@ -8,7 +8,9 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 
 type SubstEnv = M.Map DLVar DLVar
+
 type SubstApp = ReaderT SubstEnv Identity
+
 type SubstT a = a -> SubstApp a
 
 class Subst a where
@@ -87,5 +89,3 @@ instance Subst CTail where
 
 subst_ :: Subst a => SubstEnv -> a -> a
 subst_ rho x = runIdentity $ flip runReaderT rho $ subst x
-
-

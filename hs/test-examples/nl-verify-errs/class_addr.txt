@@ -9,7 +9,7 @@ Verification failed:
   // Violation witness
 
   // Theorem formalization
-  require(selfAddress(""C"", #t, 1) == selfAddress(""C"", #t, 13));
+  require(selfAddress(""C"", #t, 1) == selfAddress(""C"", #t, 11));
 
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "C")

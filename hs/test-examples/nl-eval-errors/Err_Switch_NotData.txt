@@ -1,1 +1,1 @@
-reachc: error: ./Err_Switch_NotData.rsh:7:16:after const semicolon: switch expects data instance, but got UInt
+reachc: error: ./Err_Switch_NotData.rsh:8:5:switch: switch expects data instance, but got UInt

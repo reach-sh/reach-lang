@@ -8,9 +8,9 @@ import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
 import Reach.AST.Base
+import Reach.AST.DK
 import Reach.AST.DL
 import Reach.AST.DLBase
-import Reach.AST.DK
 import Reach.AST.LL
 import Reach.Counter
 import Reach.Texty
@@ -18,10 +18,13 @@ import Reach.Util
 
 -- Remove returns, duplicate continuations, and transform into dk
 type DKApp = ReaderT DKEnv IO
+
 type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
+
 type LLRets = M.Map Int LLRetRHS
+
 data DKEnv = DKEnv
-  { eRets :: LLRets }
+  {eRets :: LLRets}
 
 lookupRet :: Int -> DKApp (Maybe LLRetRHS)
 lookupRet r = do
@@ -173,7 +176,9 @@ dekont (DLProg at opts sps dli ss) = do
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
+
 type LCAppT a = a -> LCApp a
+
 data LCEnv = LCEnv
   { eLifts :: Maybe (IORef (Seq.Seq DKCommon))
   }
@@ -215,7 +220,7 @@ instance CanLift DKCommon where
     DKC_FluidRef {} -> True
 
 noLifts :: LCApp a -> LCApp a
-noLifts = local (\e -> e { eLifts = Nothing })
+noLifts = local (\e -> e {eLifts = Nothing})
 
 doLift :: DKCommon -> LCApp DKTail -> LCApp DKTail
 doLift m mk = do
@@ -273,8 +278,11 @@ liftcon (DKProg at opts sps dli k) = do
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
+
 type FVMap = M.Map FluidVar DLVar
+
 type DFApp = ReaderT DFEnv IO
+
 data DFEnv = DFEnv
   { eCounterR :: Counter
   , eFVMm :: Maybe FVMap
@@ -422,7 +430,7 @@ defluid (DKProg at (DLOpts {..}) sps dli k) = do
     return $ LLProg at opts' sps dli k'
 
 -- Stich it all together
-linearize :: (forall a . Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
+linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
 linearize outm p =
   return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid
   where

@@ -1,1 +1,1 @@
-reachc: error: ./Err_Parse_ExpectIdentifier.rsh:3:17:function exp: Invalid binding. Expressions cannot appear on the LHS.
+reachc: error: ./Err_Parse_ExpectIdentifier.rsh:6:27:application: Invalid binding. Expressions cannot appear on the LHS.

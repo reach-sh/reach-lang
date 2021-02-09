@@ -7,8 +7,8 @@ import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.Counter
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 
 data PLLetCat
   = PL_Once
@@ -237,4 +237,3 @@ instance Pretty PLProg where
       <> hardline
       <> hardline
       <> pretty cp
-

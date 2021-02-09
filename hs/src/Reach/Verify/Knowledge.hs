@@ -87,24 +87,26 @@ displayPath :: SLPart -> (Point, Maybe [Point]) -> IO ()
 displayPath who = \case
   (up, Just ps)
     | length ps > 1 -> do
-    let ps' = drop 1 $ reverse ps
-    case ps' of
-      [] -> return ()
-      (h:tl) -> putStrLn $
-        "  " <> B.unpack who <> " could learn of " <> sp up <> " via " <> sp h <> ".\n\n  " <>
-        publishInfo h <>
-        "\n  ^ which contains info about " <>
-        intercalate "\n  ^ which contains info about " (map bindingInfo $ tl <> [up]) <> "\n"
+      let ps' = drop 1 $ reverse ps
+      case ps' of
+        [] -> return ()
+        (h : tl) ->
+          putStrLn $
+            "  " <> B.unpack who <> " could learn of " <> sp up <> " via " <> sp h <> ".\n\n  "
+              <> publishInfo h
+              <> "\n  ^ which contains info about "
+              <> intercalate "\n  ^ which contains info about " (map bindingInfo $ tl <> [up])
+              <> "\n"
   (up, _) ->
     putStrLn $ "  " <> B.unpack who <> " knows of " <> sp up <> " because it is published.\n"
   where
     sp = show . pretty
     bindingInfo = \case
-      P_Var (DLVar at' _ _ i ) ->
+      P_Var (DLVar at' _ _ i) ->
         show $ "v" <> pretty i <> " (defined at " <> pretty at' <> ")"
       ow -> sp ow
     publishInfo = \case
-      P_Var (DLVar at' _ _ i ) ->
+      P_Var (DLVar at' _ _ i) ->
         show $ "v" <> pretty i <> " was published at " <> pretty at'
       ow -> sp ow
 

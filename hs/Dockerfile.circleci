@@ -4,11 +4,12 @@ FROM alpine:3 as dl-deps
 RUN apk add wget=1.20.3-r1 unzip=6.0-r8 --no-cache
 
 WORKDIR /z3
-ENV Z3_VER 4.8.9
-RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-x64-ubuntu-16.04.zip
-RUN unzip z3-${Z3_VER}-x64-ubuntu-16.04.zip
-RUN rm z3-${Z3_VER}-x64-ubuntu-16.04.zip
-RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
+ENV Z3_VER 4.8.10
+ENV Z3_SYS x64-ubuntu-18.04
+RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip
+RUN unzip z3-${Z3_VER}-${Z3_SYS}.zip
+RUN rm z3-${Z3_VER}-${Z3_SYS}.zip
+RUN ln -s /z3/z3-${Z3_VER}-${Z3_SYS}/bin/z3 /z3/z3
 
 FROM ubuntu:18.04
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

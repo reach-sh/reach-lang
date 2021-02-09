@@ -23,6 +23,8 @@ parse_modelse e =
   case e of
     (List (Atom "model" : sexprs)) ->
       catMaybes $ map parse_define sexprs
+    List sexprs ->
+      catMaybes $ map parse_define sexprs
     _ ->
       error $ "invalid model " <> show e
 

@@ -874,9 +874,14 @@ ct = \case
         ntv <- liftIO $ readIORef ntvr
         let new_timev = fromMaybe (impossible "no new_timev") ntv
         let t_subst' = foldl' (flip CT_Com) t_subst nms
-        local (\e -> e { eWhich = which
-                       , emTimev = Just new_timev }) $ do
-          ct t_subst'
+        local
+          (\e ->
+             e
+               { eWhich = which
+               , emTimev = Just new_timev
+               })
+          $ do
+            ct t_subst'
       _ ->
         impossible "bad jump"
   CT_From _ msvs -> do

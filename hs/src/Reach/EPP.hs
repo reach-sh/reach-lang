@@ -2,11 +2,11 @@ module Reach.EPP (epp) where
 
 import Control.Monad
 import Control.Monad.Reader
+import Data.IORef
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import Data.IORef
 import qualified Data.Set as S
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -14,8 +14,8 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
-import Reach.Optimize
 import Reach.Counter
+import Reach.Optimize
 import Reach.Util
 
 -- import Debug.Trace
@@ -106,8 +106,9 @@ updateHandlerSVS target new_svs = do
   where
     update (CHandlers hs) = CHandlers $ fmap update1 hs
     update1 = \case
-      C_Handler at int ltv fs prev _ msg amtv tv body | target == prev ->
-        C_Handler at int ltv fs prev new_svs msg amtv tv body
+      C_Handler at int ltv fs prev _ msg amtv tv body
+        | target == prev ->
+          C_Handler at int ltv fs prev new_svs msg amtv tv body
       h -> h
 
 newHandler :: App Int
@@ -494,4 +495,3 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let plo_verifyOverflow = llo_verifyOverflow
   let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli pps cp
-

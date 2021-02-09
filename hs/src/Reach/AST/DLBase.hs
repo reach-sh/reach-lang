@@ -8,8 +8,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 import Reach.Util
 
 data DeployMode
@@ -96,6 +96,7 @@ instance Pretty DLInit where
       ctimem' = case ctimem of
         Nothing -> "// no ctime" <> hardline
         Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
+
 data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, Show, Ord)
@@ -130,10 +131,13 @@ litTypeOf = \case
   DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data DLVar = DLVar SrcLoc String DLType Int
-  deriving (Generic, Show, Ord)
+  deriving (Generic, Show)
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
+
+instance Ord DLVar where
+  (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
   --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i

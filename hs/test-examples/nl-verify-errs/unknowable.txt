@@ -3,11 +3,11 @@ Verification failed:
   of theorem unknowable("Bob", v0)
   at ./unknowable.rsh:22:17:application
 
-  Bob could learn of v0 via v11.
+  Bob could learn of v0 via v8.
 
-  v11 was published at ./unknowable.rsh:19:9:dot
-  ^ which contains info about v9 (defined at ./unknowable.rsh:application)
-  ^ which contains info about v7 (defined at ./unknowable.rsh:application)
+  v8 was published at ./unknowable.rsh:19:9:dot
+  ^ which contains info about v6 (defined at ./unknowable.rsh:application)
+  ^ which contains info about v5 (defined at ./unknowable.rsh:application)
   ^ which contains info about v0 (defined at ./unknowable.rsh:4:4:property binding)
 
 Verifying for generic connector
