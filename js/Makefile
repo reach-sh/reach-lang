@@ -7,6 +7,8 @@ include $(ROOT)/js/JS_IMAGES
 	(cd stdlib && $(MAKE) build)
 	(cd runner && $(MAKE) build)
 	(cd rpc-server && $(MAKE) build)
+	(cd rpc-client && $(MAKE) build)
+	(cd rpc-client-runner && $(MAKE) build)
 
 .PHONY: build
 build:
@@ -14,6 +16,8 @@ build:
 	(cd stdlib && $(MAKE) build)
 	(cd runner && $(MAKE) build)
 	(cd rpc-server && $(MAKE) build)
+	(cd rpc-client && $(MAKE) build)
+	(cd rpc-client-runner && $(MAKE) build)
 	(cd react-runner && $(MAKE) build)
 
 .PHONY: test

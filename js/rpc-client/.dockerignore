@@ -1,0 +1,7 @@
+node_modules/
+build/
+.dockerignore
+.gitignore
+Dockerfile
+Makefile
+package.mo.json

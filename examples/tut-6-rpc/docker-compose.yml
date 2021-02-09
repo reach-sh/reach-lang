@@ -56,11 +56,16 @@ services:
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
   reach-app-tut-6-rpc-server:
     <<: *default-server
-  client-js:
-    image: reachsh/reach-app-tut-6-rpc-client-js:latest
+  client-js: &client
+    image: reachsh/rpc-client-runner:latest
+    volumes:
+      - ./client-js/build:/app/build
+      - type:   bind
+        source: ./client-js/index.mjs
+        target: /app/index.mjs
   client-py:
     image: reachsh/reach-app-tut-6-rpc-client-py:latest
-  client-go: &client
+  client-go:
     image: reachsh/reach-app-tut-6-rpc-client-go:latest
   reach-app-tut-6-rpc:
     <<: *client
