@@ -203,3 +203,134 @@ export const sqrt = (y, k) =>
       ? [ x, ((y / x + x) / 2) ]
       : [ z, x ]
   )[1];
+
+export const FixedPoint = Object({ scale: UInt, i: UInt });
+
+export const fx = (scale) => (i) =>
+  ({ scale, i });
+
+export const fxrescale = (x, scale) =>
+  (x.scale == scale)
+    ? x
+    : { i: (x.i * scale) / x.scale, scale };
+
+export const fxunify = (x, y) => {
+  const scale = x.scale < y.scale ? y.scale : x.scale;
+  const x_ = fxrescale(x, scale);
+  const y_ = fxrescale(y, scale);
+  return [ scale, x_, y_ ];
+}
+
+export const fxadd = (x, y) => {
+  const [ scale, x_, y_ ] = fxunify(x, y);
+  return { i: x_.i + y_.i, scale };
+}
+
+export const fxsub = (x, y) => {
+  const [ scale, x_, y_ ] = fxunify(x, y);
+  return { i: x_.i - y_.i, scale };
+}
+
+export const fxmul = (x, y) => {
+  return { i: x.i * y.i, scale: x.scale * y.scale };
+}
+
+export const fxdiv = (x, y, scale_factor) => {
+  const x_ = {
+    i: x.i * scale_factor,
+    scale: x.scale * scale_factor
+  };
+  return { i: x_.i / y.i, scale: x_.scale / y.scale };
+}
+
+export const fxsqrt = (x, k) => {
+  return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
+}
+
+export const fxcmp = (cmp, x, y) => {
+  const [ _, x_, y_ ] = fxunify(x, y);
+  return cmp(x_.i, y_.i);
+}
+
+export const fxlt = (x, y) => fxcmp(lt, x, y);
+export const fxle = (x, y) => fxcmp(le, x, y);
+export const fxgt = (x, y) => fxcmp(gt, x, y);
+export const fxge = (x, y) => fxcmp(ge, x, y);
+export const fxeq = (x, y) => fxcmp(polyEq, x, y);
+export const fxne = (x, y) => fxcmp(polyNeq, x, y);
+
+export const fxpowi = (base, power, precision) =>
+  Array.iota(precision)
+    .reduce([ fx(1)(1), power, base ], ([ r, p, b ], _) =>
+      [ (p % 2 == 1) ? fxmul(r, b) : r, p / 2, fxmul(b, b) ])
+  [0];
+
+export const fxmod = (x, y) => {
+    const [ _, x_, y_] = fxunify(x, y);
+    const q = fxdiv(x_, y_, 1);
+    const p = fxmul(q, y_);
+    return fxsub(x_, p);
+  }
+
+export const fxfloor = (x) =>
+  fxrescale(x, 1).i;
+
+const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
+  const xN = fxpowi(x, numerator, precision);
+  const fxd = fx(1)(denominator);
+  return Array.iota(precision).reduce(xN, (acc, _) => {
+    const n = fxsub(fxpowi(acc, denominator, precision), xN);
+    const d = fxmul(fxd, fxpowi(acc, denominator - 1, precision));
+    const t = fxdiv(n, d, 10);
+    return fxrescale(fxsub(acc, t), scalePrecision);
+  });
+}
+
+const getNumDenom = (value, precision) => {
+  const [ numerator, denominator, _ ] =
+    Array.iota(precision)
+      .reduce([ 0, 1, value ], ([ accNum, accDen, accVal ], _) => {
+        const i = fxrescale(accVal, 1).i;
+        const v = fxsub(accVal, fx(1)(i));
+        const num = accNum + i;
+        const v2 = fxmul(v, fx(1)(2));
+        return [ num * 2, accDen * 2, v2 ];
+      });
+
+  const [ hi, lo ] = (numerator > denominator)
+      ? [ numerator, denominator ]
+      : [ denominator, numerator ];
+
+  const [ _, _, lo_ ] = Array.iota(precision)
+    .reduce([ false, hi, lo ], ([ br, accHi, accLo ], _) => {
+      if (br) {
+        return [ br, accHi, accLo ];
+      } else {
+        const rem = accHi % accLo;
+        return (rem == 0)
+          ? [ true, accHi, accLo ]
+          : [ false, accLo, accHi ];
+      }
+    });
+
+  return [ numerator / lo_, denominator / lo_ ];
+}
+
+export const fxpow = (base, power, precision, scalePrecision) => {
+  const whole = fxfloor(power);
+  const fwhole = fx(1)(whole);
+  if (fxeq(power, fwhole)) {
+    return fxpowi(base, whole, precision);
+  } else {
+    const remain = fxsub(power, fwhole);
+    const wholePow = fxpowi(base, whole, precision);
+    const [ num, den ] = getNumDenom(remain, precision);
+    return fxmul(wholePow, fxpow_ratio(base, num, den, precision, scalePrecision));
+  }
+}
+
+export const pow = (base, power, precision) =>
+  Array.iota(precision)
+    .reduce([ 1, power, base ], ([ r, p, b ], _) =>
+      [ (p % 2 == 1) ? r * b : r, p / 2, b * b ])
+  [0];
