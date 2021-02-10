@@ -334,3 +334,36 @@ export const pow = (base, power, precision) =>
     .reduce([ 1, power, base ], ([ r, p, b ], _) =>
       [ (p % 2 == 1) ? r * b : r, p / 2, b * b ])
   [0];
+
+export const Int = Object({ sign: Bool, i: UInt});
+export const int = (sign, i) => ({ sign, i });
+export const Positive = true;
+export const Negative = false;
+
+export const igt = (x, y) => {
+  const t = [ x.sign, y.sign ];
+  return (
+      (t == [ Positive, Negative ]) ? true
+    : (t == [ Positive, Positive ]) ? x.i > y.i
+    : (t == [ Negative, Positive ]) ? false
+    : x.i < y.i);
+}
+
+export const ige = (x, y) => igt(x, y) || x == y;
+export const ilt = (x, y) => !igt(x, y) && x != y;
+export const ile = (x, y) => !igt(x, y);
+
+export const iadd = (x, y) => {
+  if (x.sign == y.sign) {
+    return int(x.sign, x.i + y.i);
+  } else {
+    const [ max, min ] =
+      (x.i > y.i) ? [ x, y ] : [ y, x ];
+    return int(max.sign, max.i - min.i);
+  }
+}
+
+export const isub = (x, y) => iadd (x, int(!y.sign, y.i));
+export const imul = (x, y) => int(x.sign == y.sign, x.i * y.i);
+export const idiv = (x, y) => int(x.sign == y.sign, x.i / y.i);
+export const imod = (x, y) => isub(x, imul(idiv(x, y), y));

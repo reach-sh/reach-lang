@@ -1996,3 +1996,32 @@ There are convenience methods defined for comparing fixed point numbers:
 @index{fxeq} @reachin{fxeq(x, y)} tests whether @tt{x} is equal to @tt{y}.
 
 @index{fxne} @reachin{fxne(x, y)} tests whether @tt{x} is not equal to @tt{y}.
+
+@subsubsection{@tt{Signed Integers}}
+
+The standard library provides abstractions for dealing with signed integers. The following definitions
+are used to represent @reachin{Int}s:
+
+@(mint-define! '("Int") '("Positive") '("Negative"))
+@reachin{
+  const Int = { sign: bool, i: UInt };
+  const Positive = true;
+  const Negative = false;  }
+
+@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
+
+@index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
+
+@index{isub} @reachin{isub(x, y)} subtracts the @reachin{Int} @tt{y} from the @reachin{Int} @tt{x}.
+
+@index{imul} @reachin{imul(x, y)} multiplies the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
+
+@index{idiv} @reachin{idiv(x, y)} divides the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
+
+@index{ilt} @reachin{ilt(x, y)} determines whether @tt{x} is less than @tt{y}.
+
+@index{ile} @reachin{ile(x, y)} determines whether @tt{x} is less than or equal to @tt{y}.
+
+@index{igt} @reachin{igt(x, y)} determines whether @tt{x} is greather than @tt{y}.
+
+@index{ige} @reachin{ige(x, y)} determines whether @tt{x} is greater than or equal to @tt{y}.

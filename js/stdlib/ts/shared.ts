@@ -246,3 +246,6 @@ export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
 
 export const parseFixedPoint = (x: { scale: num, i: num }): number =>
   bigNumberify(x.i).toNumber() / bigNumberify(x.scale).toNumber();
+
+export const parseInt = (x: { sign: boolean, i: num}) =>
+  bigNumberify(x.i).toNumber() * (x.sign ? 1 : (- 1));

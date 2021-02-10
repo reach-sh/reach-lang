@@ -1,1 +1,1 @@
-reachc: error: ./minted_token_burn.rsh:19:7:id ref: Invalid unbound identifier in expression: MintedToken. Did you mean: ["FixedPoint","Either","closeTo","either","intEq"]
+reachc: error: ./minted_token_burn.rsh:19:7:id ref: Invalid unbound identifier in expression: MintedToken. Did you mean: ["FixedPoint","Either","closeTo","either","int"]
