@@ -2008,6 +2008,10 @@ are used to represent @reachin{Int}s:
   const Positive = true;
   const Negative = false;  }
 
+@reach{
+  int(Positive, 4); // represents 4
+  int(Negative, 4); // represents (- 4) }
+
 @index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
 
 @index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
