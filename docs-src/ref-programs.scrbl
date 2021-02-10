@@ -1101,7 +1101,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
 
 @(mint-define! '("typeOf") '("isType"))
 @reach{
- typeOf(x)  // type
+ typeOf(x) // type
  isType(t) // Bool
 }
 
@@ -2003,16 +2003,17 @@ The standard library provides abstractions for dealing with signed integers. The
 are used to represent @reachin{Int}s:
 
 @(mint-define! '("Int") '("Positive") '("Negative"))
-@reachin{
+@reach{
   const Int = { sign: bool, i: UInt };
   const Positive = true;
   const Negative = false;  }
 
+@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
+
+@(mint-define! '("int"))
 @reach{
   int(Positive, 4); // represents 4
   int(Negative, 4); // represents (- 4) }
-
-@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
 
 @index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
 
@@ -2021,6 +2022,8 @@ are used to represent @reachin{Int}s:
 @index{imul} @reachin{imul(x, y)} multiplies the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
 
 @index{idiv} @reachin{idiv(x, y)} divides the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
+
+@index{imod} @reachin{imod(x, y)} finds the remainder of dividing the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
 
 @index{ilt} @reachin{ilt(x, y)} determines whether @tt{x} is less than @tt{y}.
 

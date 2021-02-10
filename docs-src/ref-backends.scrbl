@@ -396,6 +396,13 @@ A value suitable for use as a @tech{participant interact interface} requiring a 
 Parses a @reachin{FixedPoint} number into a Javascript number.
 
 @(hrule)
+@(mint-define! '("parseInt"))
+@js{
+ parseInt(Int) => number}
+
+Parses a signed @reachin{Int} into a Javascript number.
+
+@(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
 @js{
  add(UInt, UInt) => UInt
