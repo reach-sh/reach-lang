@@ -1,7 +1,7 @@
-import { makeRpc } from '@reach-sh/rpc-client';
+import { mkRPC } from '@reach-sh/rpc-client';
 
 (async () => {
-  const { rpcReady, rpc, rpcCallbacks } = makeRpc();
+  const { rpcReady, rpc, rpcCallbacks } = mkRPC();
 
   await rpcReady();
 
