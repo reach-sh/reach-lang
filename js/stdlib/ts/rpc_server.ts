@@ -37,6 +37,8 @@ export const serveRpc = async (backend: any) => {
   const CTC: Array<any> = [];
   const makeCTC = makeHandle(CTC);
   const real_stdlib = await loadStdlib();
+  const { debug } = real_stdlib;
+
   // XXX bigNumberify in this object should be pushed into the standard library
   const rpc_stdlib = {
     ...real_stdlib,
@@ -68,9 +70,9 @@ export const serveRpc = async (backend: any) => {
       router.post(`/${k}`, async (req, res) => {
         const args = req.body;
         const lab = `RPC ${olab}/${k} ${JSON.stringify(args)}`;
-        console.log(`${lab}`);
+        debug(`${lab}`);
         const ans = await obj[k](...args);
-        console.log(`${lab} ==> ${JSON.stringify(ans)}`);
+        debug(`${lab} ==> ${JSON.stringify(ans)}`);
         res.json(ans); });
     }
     return router;
@@ -82,12 +84,12 @@ export const serveRpc = async (backend: any) => {
   for (const b in backend) {
     route_backend.post(`/${b}`, async (req, res) => {
       let lab = `RPC backend/${b}`;
-      console.log(`${lab} IN`);
+      debug(`${lab} IN`);
       const [ cid, vals, meths ] = req.body;
       const ctc = CTC[cid];
       const kid = makeKont(res);
       lab = `${lab} ${cid} ${kid}`;
-      console.log(`${lab} START ${JSON.stringify(req.body)}`);
+      debug(`${lab} START ${JSON.stringify(req.body)}`);
       let io = { ...vals };
       if ( io["stdlib.hasRandom"] ) {
         delete io["stdlib.hasRandom"];
@@ -95,41 +97,41 @@ export const serveRpc = async (backend: any) => {
       }
       for ( const m in meths ) {
         io[m] = (...args: any[]) => new Promise((resolve, reject) => {
-          console.log(`${lab} IO ${m} ${JSON.stringify(args)}`);
+          debug(`${lab} IO ${m} ${JSON.stringify(args)}`);
           const old_res = KONT[kid];
           KONT[kid] = {resolve, reject};
           old_res.json({t: `Kont`, kid, m, args});
         });
       }
       const ans = await backend[b](ctc, io);
-      console.log(`${lab} END ${JSON.stringify(ans)}`);
+      debug(`${lab} END ${JSON.stringify(ans)}`);
       const new_res = KONT[kid];
       KONT[kid] = null;
-      console.log(`${lab} DONE`);
+      debug(`${lab} DONE`);
       new_res.json({t: `Done`, ans});
     });
   }
   const do_kont = (req: Request, res: Response) => {
     let lab = `KONT`;
-    console.log(`${lab} IN`);
+    debug(`${lab} IN`);
     const [ kid, ans ] = req.body;
     lab = `${lab} ${kid}`;
-    console.log(`${lab} ANS ${JSON.stringify(ans)}`);
+    debug(`${lab} ANS ${JSON.stringify(ans)}`);
     const { resolve, reject } = KONT[kid];
     void (reject);
     KONT[kid] = res;
-    console.log(`${lab} OUT`);
+    debug(`${lab} OUT`);
     resolve(ans);
   };
 
   app.use(withApiKey());
 
   // app.use((req, res, next) => {
-  //   console.log(`LOG ${req.url}`);
+  //   debug(`LOG ${req.url}`);
   //   next(); });
   app.use(express.json());
   // app.use((req, res, next) => {
-  //   console.log(`LOGb ${req.url} ${req.body}`);
+  //   debug(`LOGb ${req.url} ${req.body}`);
   //   next(); });
   app.use(`/stdlib`, makeRPC('stdlib', rpc_stdlib));
   app.use(`/acc`, makeRPC('acc', rpc_acc));
@@ -176,5 +178,5 @@ export const serveRpc = async (backend: any) => {
   // @ts-ignore
   createSecureServer(opts, app)
     .listen(process.env.REACH_RPC_PORT, () =>
-      console.log(`I am alive`));
+      debug(`I am alive`));
 };
