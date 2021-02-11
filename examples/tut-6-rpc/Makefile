@@ -7,11 +7,9 @@ clean:
 server/build/%.main.mjs: server/%.rsh
 	$(REACH) compile $^ main
 
-# TODO: ditch this once `@reach-sh/rpc-client` package is available on NPM
 .PHONY: client-lib-js
 client-lib-js:
-	cd ../../js/rpc-client && npm pack
-	mv ../../js/rpc-client/reach-sh-rpc-client-0.0.1.tgz ./client-js
+	cp -fr ../../js/rpc-client ./client-js
 
 .PHONY: build
 build: server/build/index.main.mjs client-lib-js
