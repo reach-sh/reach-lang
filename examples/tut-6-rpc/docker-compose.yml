@@ -12,7 +12,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
-      - REACH_DEBUG=1
+      - REACH_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -30,7 +30,7 @@ services:
     depends_on:
       - ethereum-devnet
     environment:
-      - REACH_DEBUG=1
+      - REACH_DEBUG
       - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
@@ -43,7 +43,7 @@ services:
     depends_on:
       - algorand-devnet
     environment:
-      - REACH_DEBUG=1
+      - REACH_DEBUG
       - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
       - ALGO_SERVER=http://algorand-devnet
