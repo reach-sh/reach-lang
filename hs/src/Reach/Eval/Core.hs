@@ -812,6 +812,7 @@ binaryToPrim = \case
 unaryToPrim :: JSUnaryOp -> App SLVal
 unaryToPrim = \case
   JSUnaryOpMinus a -> fun a "minus" "-"
+  JSUnaryOpPlus a -> fun a "plus" "+"
   JSUnaryOpNot a -> fun a "not" "!"
   JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
   j -> expect_ $ Err_Parse_IllegalUnaOp j
@@ -1264,8 +1265,8 @@ evalForm f args = do
 evalPrimOp :: PrimOp -> [SLSVal] -> App SLSVal
 evalPrimOp p sargs = do
   case p of
-    ADD -> nn2n (+)
-    SUB -> nn2n (-)
+    ADD -> intOrBinop (+) True
+    SUB -> intOrBinop (-) False
     MUL -> nn2n (*)
     DIV -> nn2n (div)
     MOD -> nn2n (mod)
@@ -1364,6 +1365,13 @@ evalPrimOp p sargs = do
     getType x = fst <$> typeOf x
     args = map snd sargs
     lvl = mconcat $ map fst sargs
+    intOrBinop op sign =
+      case sargs of
+      [h] ->
+        let sv = snd h in
+        let at = srclocOf sv in
+          return (lvl, SLV_Tuple at [SLV_Bool at sign, sv])
+      _    -> nn2n op
     nn2b op =
       case args of
         [SLV_Int _ lhs, SLV_Int _ rhs] -> do

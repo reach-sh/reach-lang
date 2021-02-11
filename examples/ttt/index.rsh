@@ -31,19 +31,21 @@ const marks_all = (st) =>
 
 const cell = (r, c) => c + r * COLS;
 
+const op = (op, x) => (y) => op(x, y);
+
 const seq = (b, r, c, dr, dc) =>
       (b[cell(r, c)] &&
-       b[cell(r+dr, c+dc)] &&
-       b[cell(r+dr+dr, c+dc+dc)]);
+       b[cell(r+dr, dc(c))] &&
+       b[cell(r+dr+dr, dc(dc(c)))]);
 
-const row = (b, r) => seq(b, r, 0, 0, 1);
-const col = (b, c) => seq(b, 0, c, 1, 0);
+const row = (b, r) => seq(b, r, 0, 0, op(add, 1));
+const col = (b, c) => seq(b, 0, c, 1, op(add, 0));
 
 const winning_p = (b) =>
       (row(b, 0) || row(b, 1) || row(b, 2) ||
        col(b, 0) || col(b, 1) || col(b, 2) ||
-       seq(b, 0, 0, 1, 1) ||
-       seq(b, 0, 2, 1, -1));
+       seq(b, 0, 0, 1, op(add, 1)) ||
+       seq(b, 0, 2, 1, op(sub, 1)));
 
 const complete_p = (b) =>
       (b[0] && b[1] && b[2] &&

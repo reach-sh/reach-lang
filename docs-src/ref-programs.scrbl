@@ -1918,12 +1918,15 @@ are used to represent @reachin{Int}s:
   const Pos = true;
   const Neg = false;  }
 
-@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
+@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record. You may also
+use the @reachin{+} and @reachin{-} unary operators to declare integers.
 
 @(mint-define! '("int"))
 @reach{
   int(Pos, 4); // represents 4
-  int(Neg, 4); // represents (- 4) }
+  int(Neg, 4); // represents (- 4)
+  +4;          // represents 4
+  -4;          // represents (- 4) }
 
 @index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
 
@@ -1956,14 +1959,14 @@ are used to represent @reachin{Int}s:
 @reachin{FixedPoint} can be used to represent numbers with a fixed number of digits after the decimal point.
 They are handy for representing fractional values, especially in base 10. The value of a fixed point number is determined
 by dividing the underlying integer value, @tt{i}, by its scale factor, @tt{scale}. For example, we could
-represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : int(Pos,1234) }} or @reachin{fx(1000)(int(Pos,1234))}.
+represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : + 1234 }} or @reachin{fx(1000)(+1234)}.
 A scale factor of @tt{1000} correlates to 3 decimal places of precision. Similarly, a scale factor of @tt{100} would
 have 2 decimal places of precision.
 
 @(mint-define! '("fx"))
 @reach{
   const scale = 10;
-  const i = int(Neg,56);
+  const i = -56;
   fx(scale)(i) // represents - 5.6 }
 
 @index{fx} @reachin{fx(scale)(i)} will return a function that can be used to
@@ -1979,8 +1982,8 @@ one scale to another. This operation can result in loss of precision, as demonst
 
 @(mint-define! '("fxunify"))
 @reach{
-  const x = fx(1000)(int(Pos,824345)); // x = 824.345
-  const y = fx(100)(int(Pos,4567));    // y =  45.67
+  const x = fx(1000)(+824345); // x = 824.345
+  const y = fx(100)(+4567);    // y =  45.67
   fxunify(x, y);    // => [ 1000, 824.345, 45.670 ] }
 
 @index{fxunify} @reachin{fxunify(x, y)} will convert the fixed point numbers
@@ -2014,8 +2017,8 @@ The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of
 @tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
 
 @reachin{
-  const base  = fx(1)(int(Pos,2));
-  const power = fx(100)(int(Pos,33));
+  const base  = fx(1)(+2);
+  const power = fx(100)(+33);
   fxpow(base, power, 10, 1000);    // 1.260
   fxpow(base, power, 10, 10000);   // 1.2599
   fxpow(base, power, 10, 1000000); // 1.259921 }
