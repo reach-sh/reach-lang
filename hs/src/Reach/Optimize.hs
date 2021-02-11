@@ -161,6 +161,9 @@ opt_e = \case
   DLE_Transfer at t a -> (pure $ DLE_Transfer at) <*> opt_a t <*> opt_a a
   DLE_Wait at a -> (pure $ DLE_Wait at) <*> opt_a a
   DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> opt_a a
+  DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt_a fa
+  DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt_a fa <*> opt_a na
+  DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt_a fa
 
 opt_asn :: AppT DLAssignment
 opt_asn (DLAssignment m) =

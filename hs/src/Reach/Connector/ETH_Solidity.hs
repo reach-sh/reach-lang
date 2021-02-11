@@ -361,6 +361,9 @@ solExpr ctxt sp = \case
       require = solRequire (show (at, fs, mmsg)) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
+  DLE_MapRef {} -> impossible $ "XXX sol mapref"
+  DLE_MapSet {} -> impossible $ "XXX sol mapset"
+  DLE_MapDel {} -> impossible $ "XXX sol mapdel"
 
 solTransfer :: SolCtxt -> DLArg -> DLArg -> Doc
 solTransfer ctxt who amt =

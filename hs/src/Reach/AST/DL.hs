@@ -63,7 +63,7 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 instance Pretty DLStmt where
   pretty d =
@@ -173,7 +173,7 @@ instance Pretty (Seq.Seq DLStmt) where
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 instance Pretty DLBlock where
   pretty (DLBlock _at _ ss da) = prettyBlock (render_dls ss) da

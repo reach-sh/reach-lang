@@ -183,6 +183,9 @@ compileBundle cns jsb main = do
   e_st <- newIORef e_stv
   let e_at = srcloc_top
   e_lifts <- newIORef mempty
+  me_id <- liftIO $ newCounter 0
+  me_ms <- newIORef mempty
+  let e_mape = MapEnv {..}
   mkprog <-
     flip runReaderT (Env {..}) $
       compileBundle_ cns jsb main

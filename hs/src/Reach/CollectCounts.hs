@@ -87,24 +87,26 @@ instance Countable DLLargeArg where
     DLLA_Data _ _ v -> counts v
 
 instance Countable DLExpr where
-  counts e =
-    case e of
-      DLE_Arg _ a -> counts a
-      DLE_LArg _ a -> counts a
-      DLE_Impossible _ _ -> mempty
-      DLE_PrimOp _ _ as -> counts as
-      DLE_ArrayRef _ aa ea -> counts [aa, ea]
-      DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
-      DLE_ArrayConcat _ x y -> counts x <> counts y
-      DLE_ArrayZip _ x y -> counts x <> counts y
-      DLE_TupleRef _ t _ -> counts t
-      DLE_ObjectRef _ aa _ -> counts aa
-      DLE_Interact _ _ _ _ _ as -> counts as
-      DLE_Digest _ as -> counts as
-      DLE_Claim _ _ _ a _ -> counts a
-      DLE_Transfer _ x y -> counts [x, y]
-      DLE_Wait _ a -> counts a
-      DLE_PartSet _ _ a -> counts a
+  counts = \case
+    DLE_Arg _ a -> counts a
+    DLE_LArg _ a -> counts a
+    DLE_Impossible _ _ -> mempty
+    DLE_PrimOp _ _ as -> counts as
+    DLE_ArrayRef _ aa ea -> counts [aa, ea]
+    DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
+    DLE_ArrayConcat _ x y -> counts x <> counts y
+    DLE_ArrayZip _ x y -> counts x <> counts y
+    DLE_TupleRef _ t _ -> counts t
+    DLE_ObjectRef _ aa _ -> counts aa
+    DLE_Interact _ _ _ _ _ as -> counts as
+    DLE_Digest _ as -> counts as
+    DLE_Claim _ _ _ a _ -> counts a
+    DLE_Transfer _ x y -> counts [x, y]
+    DLE_Wait _ a -> counts a
+    DLE_PartSet _ _ a -> counts a
+    DLE_MapRef _ _ fa -> counts fa
+    DLE_MapSet _ _ fa na -> counts [fa, na]
+    DLE_MapDel _ _ fa -> counts fa
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

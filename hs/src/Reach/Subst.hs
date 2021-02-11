@@ -54,6 +54,9 @@ instance Subst DLExpr where
     DLE_Transfer at x y -> DLE_Transfer at <$> subst x <*> subst y
     DLE_Wait at x -> DLE_Wait at <$> subst x
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
+    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
+    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
+    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> subst fa
 
 instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
   subst = \case

@@ -15,6 +15,7 @@ module Reach.JSUtil
   , srcloc_src_only
   , mkCommaList
   , mkArrowParameterList
+  , jsa
   )
 where
 
@@ -112,3 +113,62 @@ mkCommaList = aux . reverse
 
 mkArrowParameterList :: [JSExpression] -> JSArrowParameterList
 mkArrowParameterList args = JSParenthesizedArrowParameterList JSNoAnnot (mkCommaList args) JSNoAnnot
+
+--
+
+class HasJSAnnot a where
+  jsa :: a -> JSAnnot
+
+instance HasJSAnnot JSAssignOp where
+  jsa = \case
+    JSAssign a -> a
+    JSTimesAssign a -> a
+    JSDivideAssign a -> a
+    JSModAssign a -> a
+    JSPlusAssign a -> a
+    JSMinusAssign a -> a
+    JSLshAssign a -> a
+    JSRshAssign a -> a
+    JSUrshAssign a -> a
+    JSBwAndAssign a -> a
+    JSBwXorAssign a -> a
+    JSBwOrAssign a -> a
+
+instance HasJSAnnot JSUnaryOp where
+  jsa = \case
+    JSUnaryOpDecr a -> a
+    JSUnaryOpDelete a -> a
+    JSUnaryOpIncr a -> a
+    JSUnaryOpMinus a -> a
+    JSUnaryOpNot a -> a
+    JSUnaryOpPlus a -> a
+    JSUnaryOpTilde a -> a
+    JSUnaryOpTypeof a -> a
+    JSUnaryOpVoid a -> a
+
+instance HasJSAnnot JSBinOp where
+  jsa = \case
+    JSBinOpAnd a -> a
+    JSBinOpBitAnd a -> a
+    JSBinOpBitOr a -> a
+    JSBinOpBitXor a -> a
+    JSBinOpDivide a -> a
+    JSBinOpEq a -> a
+    JSBinOpGe a -> a
+    JSBinOpGt a -> a
+    JSBinOpIn a -> a
+    JSBinOpInstanceOf a -> a
+    JSBinOpLe a -> a
+    JSBinOpLsh a -> a
+    JSBinOpLt a -> a
+    JSBinOpMinus a -> a
+    JSBinOpMod a -> a
+    JSBinOpNeq a -> a
+    JSBinOpOf a -> a
+    JSBinOpOr a -> a
+    JSBinOpPlus a -> a
+    JSBinOpRsh a -> a
+    JSBinOpStrictEq a -> a
+    JSBinOpStrictNeq a -> a
+    JSBinOpTimes a -> a
+    JSBinOpUrsh a -> a

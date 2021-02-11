@@ -59,6 +59,7 @@ data EvalError
   | Err_Eval_PartSet_Class SLPart
   | Err_Eval_PartSet_Bound SLPart
   | Err_Eval_IllegalMode SLMode String [SLMode]
+  | Err_LValue_IllegalJS JSExpression
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_NoReturn
   | Err_Eval_NotApplicable SLValTy
@@ -297,6 +298,8 @@ instance Show EvalError where
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> show ok_modes
+    Err_LValue_IllegalJS e ->
+      "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->
       "Invalid Reach expression syntax: " <> conNameOf e
     Err_Eval_NoReturn ->

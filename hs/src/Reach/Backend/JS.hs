@@ -250,6 +250,9 @@ jsExpr ctxt = \case
         jsApply "ctc.iam" [jsArg what]
       False ->
         jsArg what
+  DLE_MapRef {} -> impossible $ "XXX js mapref"
+  DLE_MapSet {} -> impossible $ "XXX js mapset"
+  DLE_MapDel {} -> impossible $ "XXX js mapdel"
 
 jsEmitSwitch :: (JSCtxt -> k -> Doc) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc
 jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)

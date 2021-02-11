@@ -140,7 +140,6 @@ instance Ord DLVar where
   (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
-  --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
   pretty (DLVar _ _ _ i) = "v" <> viaShow i
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
@@ -156,6 +155,17 @@ dvdeletep x = filter ((x /=) . fst)
 
 varType :: DLVar -> DLType
 varType (DLVar _ _ t _) = t
+
+newtype DLMVar = DLMVar Int
+  deriving (Eq, Ord, Generic)
+
+instance Pretty DLMVar where
+  pretty (DLMVar i) = "map" <> pretty i
+
+data DLMapInfo = DLMapInfo
+  { dlmi_ty :: DLType
+  , dlmi_at :: SrcLoc }
+  deriving (Eq, Generic)
 
 data DLArg
   = DLA_Var DLVar
@@ -272,7 +282,10 @@ data DLExpr
   | DLE_Transfer SrcLoc DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
-  deriving (Eq, Ord, Generic, Show)
+  | DLE_MapRef SrcLoc DLMVar DLArg
+  | DLE_MapSet SrcLoc DLMVar DLArg DLArg
+  | DLE_MapDel SrcLoc DLMVar DLArg
+  deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
   pretty e =
@@ -297,6 +310,10 @@ instance Pretty DLExpr where
         prettyTransfer who da
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
+      DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
+      DLE_MapSet _ mv kv nv ->
+        pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
+      DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -322,6 +339,9 @@ instance IsPure DLExpr where
     DLE_Transfer {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> False
+    DLE_MapRef {} -> True
+    DLE_MapSet {} -> False
+    DLE_MapDel {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -341,6 +361,9 @@ instance IsLocal DLExpr where
     DLE_Transfer {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> True
+    DLE_MapRef {} -> True
+    DLE_MapSet {} -> False
+    DLE_MapDel {} -> False
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
@@ -366,7 +389,7 @@ data DLinStmt a
   | DL_Set SrcLoc DLVar DLArg
   | DL_LocalIf SrcLoc DLArg (DLinTail a) (DLinTail a)
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases (DLinTail a))
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty a => Pretty (DLinStmt a) where
   pretty = \case
@@ -382,7 +405,7 @@ instance Pretty a => Pretty (DLinStmt a) where
 data DLinTail a
   = DT_Return SrcLoc
   | DT_Com (DLinStmt a) (DLinTail a)
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty a => Pretty (DLinTail a) where
   pretty = \case
@@ -391,7 +414,7 @@ instance Pretty a => Pretty (DLinTail a) where
 
 data DLinBlock a
   = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty a => Pretty (DLinBlock a) where
   pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta

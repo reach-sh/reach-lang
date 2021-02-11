@@ -56,14 +56,14 @@ instance Monoid a => Monoid (ProRes_ a) where
   mempty = ProRes_ mempty mempty
 
 data ProResL = ProResL (ProRes_ (UndefdVars, PLTail))
-  deriving (Eq, Show)
+  deriving (Eq)
 
 type SLPartETs = (M.Map SLPart (ProRes_ ETail))
 
 type UndefdVars = S.Set DLVar
 
 data ProResC = ProResC SLPartETs (ProRes_ (UndefdVars, CTail))
-  deriving (Eq, Show)
+  deriving (Eq)
 
 data ProSt = ProSt
   { pst_prev_handler :: Int
@@ -133,7 +133,7 @@ pall :: ProSt -> a -> M.Map SLPart a
 pall st x = pmap st (\_ -> x)
 
 data ProResS = ProResS SLPartETs (ProRes_ Bool)
-  deriving (Eq, Show)
+  deriving (Eq)
 
 epp_m :: Counts -> UndefdVars -> LLCommon -> ProRes_ (UndefdVars, PLCommon)
 epp_m k_cs k_udvs = \case

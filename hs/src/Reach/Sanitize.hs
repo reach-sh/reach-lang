@@ -54,6 +54,9 @@ instance Sanitize DLExpr where
     DLE_Transfer _ x y -> DLE_Transfer sb (sani x) (sani y)
     DLE_Wait _ x -> DLE_Wait sb (sani x)
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
+    DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
+    DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
+    DLE_MapDel _ mv fa -> DLE_MapDel sb mv (sani fa)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

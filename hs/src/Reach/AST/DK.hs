@@ -14,7 +14,7 @@ data DKCommon
   = DKC_ LLCommon
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty DKCommon where
   pretty = \case
@@ -46,7 +46,7 @@ data DKTail
       , dk_w_k :: DKTail
       }
   | DK_Continue SrcLoc DLAssignment
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty DKTail where
   pretty = \case
@@ -64,7 +64,7 @@ instance Pretty DKTail where
     DK_Continue _at asn -> prettyContinue asn
 
 data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a

@@ -102,7 +102,7 @@ type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
   = SLCloEnv SLPartEnvs SLEnv
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 data SLVal
   = SLV_Null SrcLoc String
@@ -130,7 +130,9 @@ data SLVal
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
-  deriving (Eq, Generic, Show)
+  | SLV_MapCtor SLType
+  | SLV_Map DLMVar
+  deriving (Eq, Generic)
 
 instance Pretty SLVal where
   pretty = \case
@@ -157,6 +159,8 @@ instance Pretty SLVal where
     SLV_Prim p -> "<primitive: " <> pretty (conNameOf p) <> ">"
     SLV_Form f -> "<form: " <> pretty (conNameOf f) <> ">"
     SLV_Kwd k -> pretty k
+    SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
+    SLV_Map mv -> "<map: " <> pretty mv <> ">"
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -176,6 +180,9 @@ instance SrcLocOf SLVal where
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
+
+data SLLValue
+  = SLLV_MapRef SrcLoc DLMVar DLArg
 
 data ToConsensusMode
   = TCM_Publish
@@ -230,7 +237,7 @@ data SLForm
       , slpr_mtime :: Maybe (SrcLoc, [JSExpression])
       }
   | SLForm_wait
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 data SLKwd
   = SLK_async
@@ -310,7 +317,7 @@ data SLCompiledPartInfo = SLCompiledPartInfo
   , slcpi_ienv :: InteractEnv
   , slcpi_lifts :: DLStmts
   }
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 data SLPrimitive
   = SLPrim_makeEnum
@@ -355,7 +362,9 @@ data SLPrimitive
   | SLPrim_fluid_read FluidVar
   | SLPrim_race
   | SLPrim_lastConsensusTime
-  deriving (Eq, Generic, Show)
+  | SLPrim_Map
+  | SLPrim_MapCtor SLType
+  deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)
 
@@ -364,7 +373,7 @@ data SLSSVal = SLSSVal
   , sss_level :: SecurityLevel
   , sss_val :: SLVal
   }
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
 instance Pretty SLSSVal where
   pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at

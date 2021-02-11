@@ -23,13 +23,15 @@ data Point
   | P_Con
   | P_Interact SLPart String
   | P_Part SLPart
-  deriving (Eq, Ord, Show)
+  | P_Map DLMVar
+  deriving (Eq, Ord)
 
 instance Pretty Point where
   pretty (P_Var v) = pretty v
   pretty P_Con = "constant"
   pretty (P_Interact p m) = pretty p <> "." <> pretty m
   pretty (P_Part p) = pretty p
+  pretty (P_Map mv) = pretty mv
 
 data KCtxt = KCtxt
   { ctxt_mlog :: Maybe Handle
@@ -157,6 +159,12 @@ kgq_a_onlym ctxt mv a =
     Nothing -> mempty
     Just v -> kgq_a_only ctxt v a
 
+kgq_v_onlym :: KCtxt -> Maybe DLVar -> S.Set Point -> IO ()
+kgq_v_onlym ctxt mv ps =
+  case mv of
+    Nothing -> mempty
+    Just v -> knows ctxt (P_Var v) ps
+
 kgq_la :: KCtxt -> Maybe DLVar -> DLLargeArg -> IO ()
 kgq_la ctxt mv = \case
   DLLA_Array _ as -> moreas as
@@ -205,6 +213,11 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt amt
   DLE_PartSet _ _ arg ->
     kgq_a_all ctxt arg
+  DLE_MapRef _ mpv _ ->
+    kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
+  DLE_MapSet _ mpv _ va ->
+    knows ctxt (P_Map mpv) $ all_points va
+  DLE_MapDel {} -> mempty
 
 kgq_m :: KCtxt -> LLCommon -> IO ()
 kgq_m ctxt = \case

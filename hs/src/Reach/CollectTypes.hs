@@ -85,6 +85,9 @@ instance CollectsTypes DLExpr where
   cts (DLE_Transfer _ x y) = cts x <> cts y
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
+  cts (DLE_MapRef _ _ fa) = cts fa
+  cts (DLE_MapSet _ _ fa na) = cts [fa, na]
+  cts (DLE_MapDel _ _ fa) = cts fa
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

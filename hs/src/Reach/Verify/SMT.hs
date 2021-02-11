@@ -17,6 +17,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.CollectTypes
+import Reach.Counter
 import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.IORefRef
@@ -146,8 +147,8 @@ data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
   , ctxt_smt_con :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
-  , ctxt_res_succ :: IORef Int
-  , ctxt_res_fail :: IORef Int
+  , ctxt_res_succ :: Counter
+  , ctxt_res_fail :: Counter
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
   , ctxt_bindingsrr :: (IORefRef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)))
@@ -322,15 +323,15 @@ dlvOccurs :: [Int] -> BindingEnv -> DLExpr -> [Int]
 dlvOccurs env bindings de =
   case de of
     DLE_Arg _ (DLA_Var (DLVar _ _ _ i)) ->
-      let env' = i : env
-       in if i `List.elem` env
-            then -- If we already expanded, mark that we've seen var again and go home
-              env'
-            else -- Otherwise, expand and mark all sub expressions
-
-            case ("v" <> show i) `M.lookup` bindings of
-              Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
-              _ -> env'
+      case i `List.elem` env of
+        -- If we already expanded, mark that we've seen var again and go home
+        True -> env'
+        -- Otherwise, expand and mark all sub expressions
+        False ->
+          case ("v" <> show i) `M.lookup` bindings of
+            Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
+            _ -> env'
+      where env' = i  : env
     DLE_Arg {} -> env
     DLE_LArg at (DLLA_Array _ as) -> _recs at as
     DLE_LArg at (DLLA_Tuple as) -> _recs at as
@@ -350,13 +351,15 @@ dlvOccurs env bindings de =
     DLE_Transfer at x y -> _recs at [x, y]
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
+    DLE_MapRef at _ fa -> _rec at fa
+    DLE_MapSet at _ fa na -> _recs at [fa, na]
+    DLE_MapDel at _ fa -> _rec at fa
   where
     _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
 
 displayDLAsJs :: [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
-displayDLAsJs inlineCtxt nested d =
-  case d of
+displayDLAsJs inlineCtxt nested = \case
     DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
     DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
@@ -364,7 +367,7 @@ displayDLAsJs inlineCtxt nested d =
     DLE_LArg _ (DLLA_Obj env) ->
       curly $ commaSep (map (\(k, v) -> k <> ": " <> sub v) $ M.toList env)
     DLE_LArg _ (DLLA_Data _ _ a) -> sub a
-    DLE_Impossible {} -> ps d
+    d@(DLE_Impossible {}) -> ps d
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
       mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
     DLE_PrimOp _ o [a] -> mparen $ ps o <> sub a
@@ -386,6 +389,9 @@ displayDLAsJs inlineCtxt nested d =
     DLE_Transfer _ x y -> "transfer" <> paren (sub y) <> ".to" <> paren (sub x)
     DLE_Wait _ a -> "wait" <> paren (sub a)
     DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
+    DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
+    DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
+    DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -653,6 +659,14 @@ pathAddBound ctxt at_dv (Just dv) bo de se = do
   let v = smtVar ctxt dv
   pathAddBound_v ctxt (Just dv) at_dv v t bo de se
 
+smtMapLookup :: SMTCtxt -> DLMVar -> IO SExpr
+smtMapLookup _ctxt _mpv = do
+  impossible $ "xxx map lookup"
+
+smtMapUpdate :: SMTCtxt -> SrcLoc -> DLMVar -> DLArg -> Maybe SExpr -> SMTComp
+smtMapUpdate _ctxt _at _mpv _fa _mse = do
+  impossible $ "xxx map update"
+
 smt_lt :: SMTCtxt -> SrcLoc -> DLLiteral -> SExpr
 smt_lt _ctxt _at_de dc =
   case dc of
@@ -711,27 +725,22 @@ smt_la ctxt at_de dla =
 smt_e :: SMTCtxt -> SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv mdv de =
   case de of
-    DLE_Arg at da ->
-      pathAddBound ctxt at mdv bo (Just de) $ smt_a ctxt at da
-    DLE_LArg at dla ->
-      pathAddBound ctxt at mdv bo (Just de) $ smt_la ctxt at dla
+    DLE_Arg at da -> bound at $ smt_a ctxt at da
+    DLE_LArg at dla -> bound at $ smt_la ctxt at dla
     DLE_Impossible _ _ ->
       pathAddUnbound ctxt at_dv mdv bo
     DLE_PrimOp at cp args -> do
-      se <- smtPrimOp ctxt cp args args'
-      pathAddBound ctxt at mdv bo (Just de) se
+      bound at =<< smtPrimOp ctxt cp args args'
       where
         args' = map (smt_a ctxt at) args
-    DLE_ArrayRef at arr_da idx_da -> do
-      pathAddBound ctxt at mdv bo (Just de) se
+    DLE_ArrayRef at arr_da idx_da ->
+      bound at $ smtApply "select" [arr_da', idx_da']
       where
-        se = smtApply "select" [arr_da', idx_da']
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
-    DLE_ArraySet at arr_da idx_da val_da -> do
-      pathAddBound ctxt at mdv bo (Just de) se
+    DLE_ArraySet at arr_da idx_da val_da ->
+      bound at $ smtApply "store" [arr_da', idx_da', val_da']
       where
-        se = smtApply "store" [arr_da', idx_da', val_da']
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
         val_da' = smt_a ctxt at val_da
@@ -742,25 +751,21 @@ smt_e ctxt at_dv mdv de =
       --- FIXME: This might be possible to do by using `map`
       impossible "array_zip"
     DLE_TupleRef at arr_da i ->
-      pathAddBound ctxt at mdv bo (Just de) se
+      bound at $ smtApply (s ++ "_elem" ++ show i) [arr_da']
       where
-        se = smtApply (s ++ "_elem" ++ show i) [arr_da']
         s = smtTypeSort ctxt t
         t = argTypeOf arr_da
         arr_da' = smt_a ctxt at arr_da
     DLE_ObjectRef at obj_da f ->
-      pathAddBound ctxt at mdv bo (Just de) se
+      bound at $ smtApply (s ++ "_" ++ f) [obj_da']
       where
-        se = smtApply (s ++ "_" ++ f) [obj_da']
         s = smtTypeSort ctxt t
         t = argTypeOf obj_da
         obj_da' = smt_a ctxt at obj_da
     DLE_Interact at _ _ _ _ _ ->
       pathAddUnbound ctxt at mdv bo
     DLE_Digest at args ->
-      pathAddBound ctxt at mdv bo (Just de) se
-      where
-        se = smtApply "digest" [smtDigestCombine ctxt at args]
+      bound at $ smtApply "digest" [smtDigestCombine ctxt at args]
     DLE_Claim at f ct ca mmsg -> this_m
       where
         this_m =
@@ -783,14 +788,22 @@ smt_e ctxt at_dv mdv de =
     DLE_Wait {} ->
       mempty
     DLE_PartSet at who a ->
-      pathAddBound ctxt at mdv bo (Just de) (smt_a ctxt at a)
-        <> case (mdv, shouldSimulate ctxt who) of
+      (bound at $ smt_a ctxt at a)
+      <> case (mdv, shouldSimulate ctxt who) of
           (Just psv, True) ->
             smtAssertCtxt ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
           _ ->
             mempty
+    DLE_MapRef at mpv fa -> do
+      ma <- smtMapLookup ctxt mpv
+      bound at $ smtApply "select" [ ma, smt_a ctxt at fa ]
+    DLE_MapSet at mpv fa na ->
+      smtMapUpdate ctxt at mpv fa $ Just $ smt_a ctxt at na
+    DLE_MapDel at mpv fa ->
+      smtMapUpdate ctxt at mpv fa $ Nothing
   where
     bo = O_Expr de
+    bound at = pathAddBound ctxt at mdv bo (Just de)
 
 data SwitchMode
   = SM_Local

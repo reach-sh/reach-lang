@@ -28,6 +28,8 @@ export const or = (x, y) => x || y;
 export const and = (x, y) => x && y;
 
 // Library functions
+export const xor = (x, y) => (x && !y) || (!x && y);
+
 export const Maybe = (A) => Data({None: Null, Some: A});
 export const fromMaybe = (v, onNull, onSome) => {
   switch (v) {

@@ -33,7 +33,7 @@ data LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
   | LLC_Only SrcLoc SLPart LLTail LLConsensus
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty LLConsensus where
   pretty = \case
@@ -57,7 +57,7 @@ data LLStep
       , lls_tc_recv :: (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, LLConsensus)
       , lls_tc_mtime :: Maybe (DLArg, LLStep)
       }
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty LLStep where
   pretty = \case

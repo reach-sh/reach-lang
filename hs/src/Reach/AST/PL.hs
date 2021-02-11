@@ -73,7 +73,7 @@ data ETail
       }
   | ET_Continue SrcLoc DLAssignment
   | ET_ConsensusOnly SrcLoc PLTail ETail
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty ETail where
   pretty e =
@@ -116,7 +116,7 @@ instance Pretty ETail where
 
 data EPProg
   = EPProg SrcLoc InteractEnv ETail
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty EPProg where
   pretty (EPProg _ ie et) =
@@ -128,7 +128,7 @@ data CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_From SrcLoc FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty CTail where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
@@ -170,7 +170,7 @@ data CHandler
       , cl_vars :: [(PLLetCat, DLVar)]
       , cl_body :: CTail
       }
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty CHandler where
   pretty (C_Handler _ int last_timev fs last_i svs msg amtv timev body) =
@@ -196,7 +196,7 @@ instance Pretty CHandler where
       ]
 
 newtype CHandlers = CHandlers (M.Map Int CHandler)
-  deriving (Eq, Show)
+  deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
 instance Pretty CHandlers where
@@ -205,13 +205,13 @@ instance Pretty CHandlers where
 
 data CPProg
   = CPProg SrcLoc CHandlers
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Pretty CPProg where
   pretty (CPProg _ chs) = pretty chs
 
 newtype EPPs = EPPs (M.Map SLPart EPProg)
-  deriving (Eq, Show)
+  deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
 instance Pretty EPPs where

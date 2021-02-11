@@ -70,6 +70,9 @@ instance Freshen DLExpr where
     DLE_Transfer at x y -> DLE_Transfer at <$> fu x <*> fu y
     DLE_Wait at x -> DLE_Wait at <$> fu x
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
+    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
+    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
+    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> fu fa
 
 instance {-# OVERLAPS #-} Freshen LLCommon where
   fu = \case

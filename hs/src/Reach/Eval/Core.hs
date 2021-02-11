@@ -48,6 +48,7 @@ data Env = Env
   , e_depth :: Int
   , e_dlo :: DLOpts
   , e_classes :: S.Set SLPart
+  , e_mape :: MapEnv
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -194,7 +195,6 @@ data SLScope = SLScope
   , -- One for the consensus
     sco_cenv :: SLEnv
   }
-  deriving (Show)
 
 data EnvInsertMode
   = AllowShadowing
@@ -353,6 +353,7 @@ base_env =
     , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
+    , ("Map", SLV_Prim SLPrim_Map)
     , ( "Participant"
       , (SLV_Object srcloc_builtin (Just $ "Participant") $
            m_fromList_public_builtin
@@ -449,7 +450,7 @@ typeCheck_help :: TypeEnv -> SLType -> SLVal -> SLType -> a -> App a
 typeCheck_help env ty val val_ty res =
   case (val_ty, ty) of
     (ST_Var _, _) ->
-      impossible $ "typeCheck: value has type var: " ++ show val
+      impossible $ "typeCheck: value has type var"
     (_, ST_Var var) ->
       case M.lookup var env of
         Nothing ->
@@ -502,9 +503,11 @@ slToDL = \case
       Just dv -> yes $ DLAE_Arg $ DLA_Var dv
       Nothing -> no
   SLV_RaceParticipant {} -> no
-  SLV_Prim _ -> no
-  SLV_Form _ -> no
-  SLV_Kwd _ -> no
+  SLV_Prim {} -> no
+  SLV_Form {} -> no
+  SLV_Kwd {} -> no
+  SLV_MapCtor {} -> no
+  SLV_Map {} -> no
   where
     yes = return . Just
     no = return Nothing
@@ -585,6 +588,11 @@ ctxt_lift_expr mkvar e = do
   dv <- ctxt_mkvar mkvar
   saveLift $ DLS_Let at (Just dv) e
   return dv
+
+ctxt_lift_eff :: DLExpr -> App ()
+ctxt_lift_eff e = do
+  at <- withAt id
+  saveLift $ DLS_Let at Nothing e
 
 compileArgExpr :: DLArgExpr -> App DLArg
 compileArgExpr = \case
@@ -967,6 +975,10 @@ evalAsEnvM obj = case obj of
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
   SLV_Type (ST_Data varm) ->
     Just $ M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm
+  SLV_MapCtor t ->
+    Just $
+      M.fromList
+        [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
   _ -> Nothing
   where
     tupleValueEnv =
@@ -1304,7 +1316,7 @@ evalPrimOp p sargs = do
     -- Flip args & process
     (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
     -- Values not supported
-    (/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
+    (/\) _ _ = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar"
     polyEq = \case
       -- Both args static
       [SLV_Int _ l, SLV_Int _ r] -> retBool $ l == r
@@ -1932,6 +1944,14 @@ evalPrim p sargs =
       -- Apply the object and cases to the newly created function
       let fn = snd fnv
       evalApplyVals' fn [public obj, public cases]
+    SLPrim_Map -> do
+      t <- expect_ty =<< one_arg
+      retV $ (lvl, SLV_MapCtor t)
+    SLPrim_MapCtor t -> do
+      _ <- ensure_public (lvl, SLV_Prim p)
+      ensure_mode SLM_ConsensusStep "Map.new"
+      mv <- mapNew =<< st2dte t
+      retV $ public $ SLV_Map mv
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -2208,7 +2228,7 @@ evalExpr e = case e of
       JSBinOpOr a -> tern a False
       _ ->
         binaryToPrim op >>= \x ->
-          doCallV x JSNoAnnot [lhs, rhs]
+          doCallV x (jsa op) [lhs, rhs]
     where
       tern a isAnd = evalExpr $ JSExpressionTernary lhs a te a fe
         where
@@ -2217,7 +2237,64 @@ evalExpr e = case e of
             False -> (JSLiteral a "true", rhs)
   JSExpressionParen a ie _ -> locAtf (srcloc_jsa "paren" a) $ evalExpr ie
   JSExpressionPostfix _ _ -> illegal
-  JSExpressionTernary ce a te fa fe -> locAtf (srcloc_jsa "?:" a) $ do
+  JSExpressionTernary ce a te fa fe -> doTernary ce a te fa fe
+  JSArrowExpression aformals a bodys -> locAtf (srcloc_jsa "arrow" a) $ do
+    let body = jsArrowStmtToBlock bodys
+    fformals <- withAt $ flip jsArrowFormalsToFunFormals aformals
+    evalExpr $ JSFunctionExpression a JSIdentNone a fformals a body
+  JSFunctionExpression a name _ jsformals _ body ->
+    locAtf (srcloc_jsa "function exp" a) $ do
+      at' <- withAt id
+      let formals = parseJSFormals at' jsformals
+      fname <-
+        case name of
+          JSIdentNone -> return $ Nothing
+          JSIdentName na _ ->
+            locAtf (srcloc_jsa "function name" na) $
+              expect_ Err_Fun_NamesIllegal
+      ce <- sco_to_cloenv . e_sco <$> ask
+      return $ public $ SLV_Clo at' fname formals body ce
+  JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
+  JSMemberDot obj a field -> doDot obj a field
+  JSMemberExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
+  JSMemberNew a f lb args rb -> evalExpr $ JSMemberExpression rator a JSLNil a
+    where
+      rator = JSMemberDot obj a (JSIdentifier a "new")
+      obj = JSMemberExpression f lb args rb
+  JSMemberSquare arr a idx _ -> doRef arr a idx
+  JSNewExpression _ _ -> illegal
+  JSObjectLiteral a plist _ -> locAtf (srcloc_jsa "obj" a) $ do
+    at' <- withAt id
+    let f (lvl, oenv) pp = lvlMeet lvl <$> evalPropertyPair oenv pp
+    (lvl, fenv) <- foldlM f (mempty, mempty) $ jsctl_flatten plist
+    return $ (lvl, SLV_Object at' Nothing fenv)
+  JSSpreadExpression _ _ -> illegal
+  JSTemplateLiteral _ _ _ _ -> illegal
+  JSUnaryExpression op@JSUnaryOpMinus {} i -> castToSigned i op
+  JSUnaryExpression op@JSUnaryOpPlus {} i  -> castToSigned i op
+  JSUnaryExpression (JSUnaryOpDelete a) ue ->
+    locAtf (srcloc_jsa "delete" a) $ do
+      at <- withAt id
+      doDelete =<< evalLValue ue
+      return $ public $ SLV_Null at "delete"
+  JSUnaryExpression op ue ->
+    unaryToPrim op
+      >>= \x -> doCallV x (jsa op) [ue]
+  JSVarInitExpression _ _ -> illegal
+  JSYieldExpression _ _ -> illegal
+  JSYieldFromExpression _ _ _ -> illegal
+  where
+    illegal = expect_ $ Err_Eval_IllegalJS e
+    doCallV ratorv a rands =
+      locAtf (srcloc_jsa "application" a) $
+        evalApply ratorv rands
+    doCall rator a rands = do
+      (rator_lvl, ratorv) <-
+        locAtf (srcloc_jsa "application, rator" a) $ evalExpr rator
+      lvlMeet rator_lvl <$> doCallV ratorv a rands
+
+doTernary :: JSExpression -> JSAnnot -> JSExpression -> JSAnnot -> JSExpression -> App SLSVal
+doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
     t_at' <- withAt $ srcloc_jsa "?: > true" a
     f_at' <- withAt $ srcloc_jsa "?: > false" fa
     csv@(clvl, cv) <- evalExpr ce
@@ -2258,53 +2335,9 @@ evalExpr e = case e of
               SLV_Bool _ False -> (f_at', fe)
               _ -> (t_at', te)
         lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
-  JSArrowExpression aformals a bodys -> locAtf (srcloc_jsa "arrow" a) $ do
-    let body = jsArrowStmtToBlock bodys
-    fformals <- withAt $ flip jsArrowFormalsToFunFormals aformals
-    evalExpr $ JSFunctionExpression a JSIdentNone a fformals a body
-  JSFunctionExpression a name _ jsformals _ body ->
-    locAtf (srcloc_jsa "function exp" a) $ do
-      at' <- withAt id
-      let formals = parseJSFormals at' jsformals
-      fname <-
-        case name of
-          JSIdentNone -> return $ Nothing
-          JSIdentName na _ ->
-            locAtf (srcloc_jsa "function name" na) $
-              expect_ Err_Fun_NamesIllegal
-      ce <- sco_to_cloenv . e_sco <$> ask
-      return $ public $ SLV_Clo at' fname formals body ce
-  JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
-  JSMemberDot obj a field -> doDot obj a field
-  JSMemberExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
-  JSMemberNew _ _ _ _ _ -> illegal
-  JSMemberSquare arr a idx _ -> doRef arr a idx
-  JSNewExpression _ _ -> illegal
-  JSObjectLiteral a plist _ -> locAtf (srcloc_jsa "obj" a) $ do
-    at' <- withAt id
-    let f (lvl, oenv) pp = lvlMeet lvl <$> evalPropertyPair oenv pp
-    (lvl, fenv) <- foldlM f (mempty, mempty) $ jsctl_flatten plist
-    return $ (lvl, SLV_Object at' Nothing fenv)
-  JSSpreadExpression _ _ -> illegal
-  JSTemplateLiteral _ _ _ _ -> illegal
-  JSUnaryExpression op@JSUnaryOpMinus {} i -> castToSigned i op
-  JSUnaryExpression op@JSUnaryOpPlus {} i  -> castToSigned i op
-  JSUnaryExpression op ue ->
-    unaryToPrim op
-      >>= \x -> doCallV x JSNoAnnot [ue]
-  JSVarInitExpression _ _ -> illegal
-  JSYieldExpression _ _ -> illegal
-  JSYieldFromExpression _ _ _ -> illegal
-  where
-    illegal = expect_ $ Err_Eval_IllegalJS e
-    doCallV ratorv a rands =
-      locAtf (srcloc_jsa "application" a) $
-        evalApply ratorv rands
-    doCall rator a rands = do
-      (rator_lvl, ratorv) <-
-        locAtf (srcloc_jsa "application, rator" a) $ evalExpr rator
-      lvlMeet rator_lvl <$> doCallV ratorv a rands
-    doDot obj a field = do
+
+doDot :: JSExpression -> JSAnnot -> JSExpression -> App SLSVal
+doDot obj a field = do
       at' <- withAt $ srcloc_jsa "dot" a
       (obj_lvl, objv) <- locAt at' $ evalExpr obj
       let fields = (jse_expect_id at') field
@@ -2313,9 +2346,27 @@ evalExpr e = case e of
           JSIdentifier iat _ -> withAt $ srcloc_jsa "dot" iat
           _ -> return $ at'
       lvlMeet obj_lvl <$> (locAt fieldAt $ evalDot objv fields)
-    doRef arr a idxe = locAtf (srcloc_jsa "array ref" a) $ do
+
+doDelete :: SLLValue -> App ()
+doDelete = \case
+  SLLV_MapRef _at mv mc -> do
+    ensure_mode SLM_ConsensusStep "Map.set"
+    mapDel mv mc
+
+doRef :: JSExpression -> JSAnnot -> JSExpression -> App SLSVal
+doRef arre a idxe = locAtf (srcloc_jsa "ref" a) $ do
+  arrsv <- evalExpr arre
+  case snd arrsv of
+    SLV_Map mv -> do
+      -- xxx constrain to consensus?
+      iv <- ensure_public =<< evalExpr idxe
+      (public . SLV_DLVar) <$> mapRef mv iv
+    _ ->
+      doArrRef arrsv a idxe
+
+doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
+doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
       at' <- withAt id
-      (arr_lvl, arrv) <- evalExpr arr
       (idx_lvl, idxv) <- evalExpr idxe
       let lvl = arr_lvl <> idx_lvl
       let retRef t de = do
@@ -2919,7 +2970,8 @@ evalStmtTrampoline sp ks = \case
         setSt st'
         evalStmt ks
   SLV_Prim SLPrim_exitted -> do
-    expect_empty_tail "exit" JSNoAnnot sp ks
+    at <- withAt id
+    expect_empty_tail "exit" (srcloc2annot at) sp ks
     sco <- e_sco <$> ask
     return $ SLStmtRes sco []
   SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
@@ -3020,6 +3072,26 @@ evalPureExprToBlock e rest = do
       locSt pure_st $
         compileCheckType rest =<< (snd <$> evalExpr e)
   return $ DLBlock at fs e_lifts e_da
+
+evalLValue :: JSExpression -> App SLLValue
+evalLValue = \case
+  JSMemberSquare ce a fe _ -> locAtf (srcloc_jsa "ref" a) $ do
+    at <- withAt id
+    cv <- snd <$> evalExpr ce
+    fv <- snd <$> evalExpr fe
+    case cv of
+      SLV_Map mv -> do
+        fa <- compileCheckType ST_Address fv
+        return $ SLLV_MapRef at mv fa
+      _ ->
+        expect_t cv $ Err_Eval_RefNotRefable
+  e -> expect_ $ Err_LValue_IllegalJS e
+
+evalAssign :: SLSVal -> SLLValue -> App ()
+evalAssign rhs = \case
+  SLLV_MapRef _at mv mc -> do
+    ensure_mode SLM_ConsensusStep "Map.set"
+    mapSet mv mc =<< ensure_public rhs
 
 evalStmt :: [JSStatement] -> App SLStmtRes
 evalStmt = \case
@@ -3143,7 +3215,7 @@ evalStmt = \case
     sev <- snd <$> evalExpr e
     locAtf (srcloc_after_semi "expr stmt" JSNoAnnot sp) $
       evalStmtTrampoline sp ks sev
-  ((JSAssignStatement lhs op rhs _asp) : ks) ->
+  ((JSAssignStatement lhs op rhs asp) : ks) ->
     case (op, ks) of
       ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) -> do
         let lab = "continue"
@@ -3161,9 +3233,15 @@ evalStmt = \case
         -- tail?
         expect_empty_tail lab cont_a cont_sp cont_ks
         return $ SLStmtRes sco []
-      (jsop, stmts) ->
-        locAtf (srcloc_jsa "assign" JSNoAnnot) $
-          expect_ $ Err_Block_Assign jsop stmts
+      ((JSAssign var_a), _) -> do
+        let lab = "assign"
+        lhs' <- evalLValue lhs
+        rhs' <- evalExpr rhs
+        locAtf (srcloc_jsa lab var_a) $ evalAssign rhs' lhs'
+        locAtf (srcloc_after_semi lab var_a asp) $ evalStmt ks
+      (jsop, _) ->
+        locAtf (srcloc_jsa "assign" $ jsa op) $
+          expect_ $ Err_Block_Assign jsop ks
   ((JSMethodCall e a args ra sp) : ks) -> evalStmt ss'
     where
       ss' = (JSExpressionStatement e' sp) : ks
@@ -3366,3 +3444,48 @@ expect_empty_tail :: String -> JSAnnot -> JSSemi -> [JSStatement] -> App ()
 expect_empty_tail lab a sp = \case
   [] -> return ()
   ks -> locAtf (srcloc_after_semi lab a sp) $ expect_ $ Err_TailNotEmpty ks
+
+-- Maps
+
+data MapEnv = MapEnv
+  { me_id :: Counter
+  , me_ms :: IORef (M.Map DLMVar DLMapInfo)
+  }
+
+mapLookup :: DLMVar -> App DLMapInfo
+mapLookup mv = do
+  MapEnv {..} <- e_mape <$> ask
+  msm <- liftIO $ readIORef me_ms
+  case M.lookup mv msm of
+    Just x -> return x
+    Nothing -> impossible $ "mapLookup on unknown map"
+
+mapNew :: DLType -> App DLMVar
+mapNew dlmi_ty = do
+  dlmi_at <- withAt id
+  MapEnv {..} <- e_mape <$> ask
+  mc <- DLMVar <$> (liftIO $ incCounter me_id)
+  let mci = DLMapInfo {..}
+  liftIO $ modifyIORef me_ms $ M.insert mc mci
+  return $ mc
+
+mapDel :: DLMVar -> DLArg -> App ()
+mapDel mv mc = do
+  at <- withAt id
+  ctxt_lift_eff $ DLE_MapDel at mv mc
+
+mapSet :: DLMVar -> DLArg -> SLVal -> App ()
+mapSet mv mc nv = do
+  at <- withAt id
+  DLMapInfo {..} <- mapLookup mv
+  na <- compileCheckType (dt2st dlmi_ty) nv
+  ctxt_lift_eff $ DLE_MapSet at mv mc na
+
+mapRef :: DLMVar -> SLVal -> App DLVar
+mapRef mv mcv = do
+  at <- withAt id
+  DLMapInfo {..} <- mapLookup mv
+  mc <- compileCheckType ST_Address mcv
+  let mt = T_Data $ M.fromList $ [("Some", dlmi_ty), ("None", T_Null)]
+  let mkvar = DLVar at "map.ref" mt
+  ctxt_lift_expr mkvar $ DLE_MapRef at mv mc

@@ -31,11 +31,6 @@ lookupRet r = do
   DKEnv {..} <- ask
   return $ M.lookup r eRets
 
-captureRets :: DKApp LLRets
-captureRets = do
-  DKEnv {..} <- ask
-  return eRets
-
 restoreRets :: LLRets -> DKApp a -> DKApp a
 restoreRets rets' = local (\e -> e {eRets = rets'})
 
@@ -349,7 +344,7 @@ df_com mkk back = \case
     mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back k
   DK_Com (DKC_ m) k ->
     mkk m <$> back k
-  t -> impossible $ "df_com " <> show t
+  t -> impossible $ show $ "df_com " <> pretty t
 
 df_bl :: DKBlock -> DFApp LLBlock
 df_bl (DKBlock at fs t a) =

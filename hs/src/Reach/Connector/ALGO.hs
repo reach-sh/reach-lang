@@ -731,6 +731,9 @@ ce = \case
       check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
+  DLE_MapRef {} -> xxx "algo mapref"
+  DLE_MapSet {} -> xxx "algo mapset"
+  DLE_MapDel {} -> xxx "algo mapdel"
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
