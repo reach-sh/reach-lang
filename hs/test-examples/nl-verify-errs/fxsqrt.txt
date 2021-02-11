@@ -1,0 +1,28 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TClaim CT_Assert
+  msg: "fxsqrt: Cannot find the square root of a negative number."
+  at reach standard library:282:9:application
+  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:281:30:function exp)
+  at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
+
+  // Violation witness
+
+  // Theorem formalization
+  assert(false);
+
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "A")
+Verification failed:
+  in VM_Dishonest (RolePart "A") mode
+  of theorem TClaim CT_Assert
+  msg: "fxsqrt: Cannot find the square root of a negative number."
+  at reach standard library:282:9:application
+  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:281:30:function exp)
+  at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
+
+  (details omitted on repeat)
+Checked 5 theorems; 2 failures. :'(

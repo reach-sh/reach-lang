@@ -1902,24 +1902,69 @@ The third argument must be an @reachin{UInt} whose value is known at compile tim
 of iterations the algorithm should perform. For reference, @tt{6} iterations provides enough accuracy to calculate
 up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
+
+@subsubsection{@tt{Signed Integers}}
+
+The standard library provides abstractions for dealing with signed integers. The following definitions
+are used to represent @reachin{Int}s:
+
+@margin-note{
+  @tt{Int} is represented as an object, as opposed to a scalar value, because some platforms
+  that Reach targets do not provide native support for signed integers. }
+
+@(mint-define! '("Int") '("Pos") '("Neg"))
+@reach{
+  const Int = { sign: bool, i: UInt };
+  const Pos = true;
+  const Neg = false;  }
+
+@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
+
+@(mint-define! '("int"))
+@reach{
+  int(Pos, 4); // represents 4
+  int(Neg, 4); // represents (- 4) }
+
+@index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
+
+@index{isub} @reachin{isub(x, y)} subtracts the @reachin{Int} @tt{y} from the @reachin{Int} @tt{x}.
+
+@index{imul} @reachin{imul(x, y)} multiplies the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
+
+@index{idiv} @reachin{idiv(x, y)} divides the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
+
+@index{imod} @reachin{imod(x, y)} finds the remainder of dividing the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
+
+@index{ilt} @reachin{ilt(x, y)} determines whether @tt{x} is less than @tt{y}.
+
+@index{ile} @reachin{ile(x, y)} determines whether @tt{x} is less than or equal to @tt{y}.
+
+@index{igt} @reachin{igt(x, y)} determines whether @tt{x} is greather than @tt{y}.
+
+@index{ige} @reachin{ige(x, y)} determines whether @tt{x} is greater than or equal to @tt{y}.
+
+@index{ieq} @reachin{ieq(x, y)} determines whether @tt{x} is equal to @tt{y}.
+
+@index{ine} @reachin{ine(x, y)} determines whether @tt{x} is not equal to @tt{y}.
+
 @subsubsection{@tt{Fixed-Point Numbers}}
 
 @reachin{FixedPoint} is defined by
 @reach{
-  export const FixedPoint = Object({ scale: UInt, i: UInt }); }
+  export const FixedPoint = Object({ scale: UInt, i: Int }); }
 
 @reachin{FixedPoint} can be used to represent numbers with a fixed number of digits after the decimal point.
 They are handy for representing fractional values, especially in base 10. The value of a fixed point number is determined
 by dividing the underlying integer value, @tt{i}, by its scale factor, @tt{scale}. For example, we could
-represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : 1234 }} or @reachin{fx(1000)(1234)}.
+represent the value @reachin{1.234} with @reachin{{ scale: 1000, i : int(Pos,1234) }} or @reachin{fx(1000)(int(Pos,1234))}.
 A scale factor of @tt{1000} correlates to 3 decimal places of precision. Similarly, a scale factor of @tt{100} would
 have 2 decimal places of precision.
 
 @(mint-define! '("fx"))
 @reach{
   const scale = 10;
-  const i = 56;
-  fx(scale)(i) // represents 5.6 }
+  const i = int(Neg,56);
+  fx(scale)(i) // represents - 5.6 }
 
 @index{fx} @reachin{fx(scale)(i)} will return a function that can be used to
 instantiate fixed point numbers with a particular scale factor.
@@ -1934,8 +1979,8 @@ one scale to another. This operation can result in loss of precision, as demonst
 
 @(mint-define! '("fxunify"))
 @reach{
-  const x = fx(1000)(824345); // x = 824.345
-  const y = fx(100)(4567);    // y =  45.67
+  const x = fx(1000)(int(Pos,824345)); // x = 824.345
+  const y = fx(100)(int(Pos,4567));    // y =  45.67
   fxunify(x, y);    // => [ 1000, 824.345, 45.670 ] }
 
 @index{fxunify} @reachin{fxunify(x, y)} will convert the fixed point numbers
@@ -1969,14 +2014,14 @@ The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of
 @tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
 
 @reachin{
-  const base  = fx(1)(2);
-  const power = fx(100)(33);
+  const base  = fx(1)(int(Pos,2));
+  const power = fx(100)(int(Pos,33));
   fxpow(base, power, 10, 1000);    // 1.260
   fxpow(base, power, 10, 10000);   // 1.2599
   fxpow(base, power, 10, 1000000); // 1.259921 }
 
 @index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
-raised to the @reachin{UInt}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+raised to the @reachin{Int}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
 at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{6} iterations
 provides enough accuracy to calculate up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
@@ -1997,38 +2042,3 @@ There are convenience methods defined for comparing fixed point numbers:
 
 @index{fxne} @reachin{fxne(x, y)} tests whether @tt{x} is not equal to @tt{y}.
 
-@subsubsection{@tt{Signed Integers}}
-
-The standard library provides abstractions for dealing with signed integers. The following definitions
-are used to represent @reachin{Int}s:
-
-@(mint-define! '("Int") '("Positive") '("Negative"))
-@reach{
-  const Int = { sign: bool, i: UInt };
-  const Positive = true;
-  const Negative = false;  }
-
-@index{int} @reachin{int(Bool, UInt)} is shorthand for defining an @reachin{Int} record.
-
-@(mint-define! '("int"))
-@reach{
-  int(Positive, 4); // represents 4
-  int(Negative, 4); // represents (- 4) }
-
-@index{iadd} @reachin{iadd(x, y)} adds the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
-
-@index{isub} @reachin{isub(x, y)} subtracts the @reachin{Int} @tt{y} from the @reachin{Int} @tt{x}.
-
-@index{imul} @reachin{imul(x, y)} multiplies the @reachin{Int} @tt{x} and the @reachin{Int} @tt{y}.
-
-@index{idiv} @reachin{idiv(x, y)} divides the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
-
-@index{imod} @reachin{imod(x, y)} finds the remainder of dividing the @reachin{Int} @tt{x} by the @reachin{Int} @tt{y}.
-
-@index{ilt} @reachin{ilt(x, y)} determines whether @tt{x} is less than @tt{y}.
-
-@index{ile} @reachin{ile(x, y)} determines whether @tt{x} is less than or equal to @tt{y}.
-
-@index{igt} @reachin{igt(x, y)} determines whether @tt{x} is greather than @tt{y}.
-
-@index{ige} @reachin{ige(x, y)} determines whether @tt{x} is greater than or equal to @tt{y}.
