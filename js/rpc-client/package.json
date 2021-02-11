@@ -1,0 +1,22 @@
+{
+  "name": "@reach-sh/rpc-client",
+  "description": "JSON-RPC client to your DApp + the Reach standard library",
+  "version": "0.0.1",
+  "main": "./index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reach-sh/reach-lang.git",
+    "directory": "js"
+  },
+  "type": "module",
+  "dependencies": {
+    "bent": "^7.3.12",
+    "wait-port": "^0.2.9"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/reach-sh/reach-lang/issues"
+  },
+  "homepage": "https://github.com/reach-sh/reach-lang#readme"
+}
