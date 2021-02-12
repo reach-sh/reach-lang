@@ -3,6 +3,7 @@ module Reach.Verify.SMT (verify_smt) where
 import qualified Control.Exception as Exn
 import Control.Monad
 import Control.Monad.Extra
+import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
@@ -20,7 +21,6 @@ import Reach.CollectTypes
 import Reach.Counter
 import Reach.Connector
 import Reach.EmbeddedFiles
-import Reach.IORefRef
 import Reach.Texty
 import Reach.UnrollLoops
 import Reach.Util
@@ -143,45 +143,69 @@ type SMTTypeInv = SExpr -> SExpr
 type SMTTypeMap =
   M.Map DLType (String, SMTTypeInv)
 
+type App = ReaderT SMTCtxt IO
+
+instance Semigroup a => Semigroup (App a) where
+  x <> y = liftM2 (<>) x y
+
+instance Monoid a => Monoid (App a) where
+  mempty = return mempty
+
+type SMTComp = App ()
+
+type BindingEnv = M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)
+
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
-  , ctxt_smt_con :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
+  , ctxt_smt_con :: SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
-  , ctxt_res_succ :: Counter
-  , ctxt_res_fail :: Counter
+  , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_bindingsrr :: (IORefRef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)))
+  , ctxt_bindingsr :: IORef BindingEnv
   , ctxt_while_invariant :: Maybe LLBlock
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
   , ctxt_displayed :: IORef (S.Set SExpr)
-  , ctxt_vars_defdrr :: IORefRef (S.Set String)
+  , ctxt_vars_defdr :: IORef (S.Set String)
   }
 
-ctxt_mode :: SMTCtxt -> VerifyMode
-ctxt_mode ctxt =
-  case ctxt_modem ctxt of
+ctxt_mode :: App VerifyMode
+ctxt_mode = (ctxt_modem <$> ask) >>= \case
     Nothing -> impossible "uninitialized"
-    Just x -> x
+    Just x -> return $ x
 
-ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
-ctxtNewScope ctxt m = do
-  paramIORefRef (ctxt_bindingsrr ctxt) $
-    paramIORefRef (ctxt_vars_defdrr ctxt) $
-      SMT.inNewScope (ctxt_smt ctxt) $ m
+smtNewScope :: App a -> App a
+smtNewScope m = do
+  smt <- ctxt_smt <$> ask
+  liftIO $ SMT.push smt
+  x <- m
+  liftIO $ SMT.pop smt
+  return $ x
 
-shouldSimulate :: SMTCtxt -> SLPart -> Bool
-shouldSimulate ctxt p =
-  case ctxt_mode ctxt of
-    VM_Honest -> True
+dupeIORef :: IORef a -> IO (IORef a)
+dupeIORef r = newIORef =<< readIORef r
+
+ctxtNewScope :: App a -> App a
+ctxtNewScope m = do
+  SMTCtxt {..} <- ask
+  ctxt_bindingsr' <- liftIO $ dupeIORef ctxt_bindingsr
+  ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
+  smtNewScope $
+    local (\e -> e { ctxt_bindingsr = ctxt_bindingsr'
+                   , ctxt_vars_defdr = ctxt_vars_defdr' }) $
+      m
+
+shouldSimulate :: SLPart -> App Bool
+shouldSimulate p = ctxt_mode >>= \case
+    VM_Honest -> return $ True
     VM_Dishonest which ->
       case which of
-        RoleContract -> False
-        RolePart me -> me == p
+        RoleContract -> return $ False
+        RolePart me -> return $ me == p
 
-smtInteract :: SMTCtxt -> SLPart -> String -> String
-smtInteract _ctxt who m = "interact_" ++ (bunpack who) ++ "_" ++ m
+smtInteract :: SLPart -> String -> String
+smtInteract who m = "interact_" ++ (bunpack who) ++ "_" ++ m
 
 smtAddress :: SLPart -> String
 smtAddress who = "address_" <> bunpack who
@@ -190,45 +214,47 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
-smtVar :: SMTCtxt -> DLVar -> String
-smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
-  where
-    mp =
-      case elem dv $ ctxt_primed_vars ctxt of
+smtVar :: DLVar -> App String
+smtVar dv@(DLVar _ _ _ i) = do
+  pvs <- ctxt_primed_vars <$> ask
+  let mp = case elem dv pvs of
         True -> "p"
         False -> ""
+  return $ "v" ++ show i ++ mp
 
-smtTypeSort :: SMTCtxt -> DLType -> String
-smtTypeSort ctxt t =
-  case M.lookup t (ctxt_typem ctxt) of
-    Just (s, _) -> s
+smtTypeSort :: DLType -> App String
+smtTypeSort t = do
+  tm <- ctxt_typem <$> ask
+  case M.lookup t tm of
+    Just (s, _) -> return s
     Nothing -> impossible $ "smtTypeSort " <> show t
 
-smtTypeInv :: SMTCtxt -> DLType -> SExpr -> IO ()
-smtTypeInv ctxt t se =
-  case M.lookup t (ctxt_typem ctxt) of
-    Just (_, i) -> smtAssertCtxt ctxt $ i se
+smtTypeInv :: DLType -> SExpr -> SMTComp
+smtTypeInv t se = do
+  tm <- ctxt_typem <$> ask
+  case M.lookup t tm of
+    Just (_, i) -> smtAssertCtxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
-smtDeclare_v :: SMTCtxt -> String -> DLType -> IO ()
-smtDeclare_v ctxt v t = do
-  let smt = ctxt_smt ctxt
-  let s = smtTypeSort ctxt t
-  void $ SMT.declare smt v $ Atom s
-  smtTypeInv ctxt t $ Atom v
+smtDeclare_v :: String -> DLType -> SMTComp
+smtDeclare_v v t = do
+  smt <- ctxt_smt <$> ask
+  s <- smtTypeSort t
+  liftIO $ void $ SMT.declare smt v $ Atom s
+  smtTypeInv t $ Atom v
 
-smtDeclare_v_memo :: SMTCtxt -> String -> DLType -> IO ()
-smtDeclare_v_memo ctxt v t = do
-  let vds = ctxt_vars_defdrr ctxt
-  vars_defd <- readIORefRef vds
+smtDeclare_v_memo :: String -> DLType -> App ()
+smtDeclare_v_memo v t = do
+  vds <- ctxt_vars_defdr <$> ask
+  vars_defd <- liftIO $ readIORef vds
   case S.member v vars_defd of
     True -> return ()
     False -> do
-      modifyIORefRef vds $ S.insert v
-      smtDeclare_v ctxt v t
+      liftIO $ modifyIORef vds $ S.insert v
+      smtDeclare_v v t
 
-smtPrimOp :: SMTCtxt -> PrimOp -> [DLArg] -> [SExpr] -> IO SExpr
-smtPrimOp ctxt p dargs =
+smtPrimOp :: PrimOp -> [DLArg] -> [SExpr] -> App SExpr
+smtPrimOp p dargs =
   case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
@@ -259,7 +285,7 @@ smtPrimOp ctxt p dargs =
                 return $ Atom $ smtAddress pn
               True -> do
                 let addrVar = "classAddr" <> show addrNum
-                smtDeclare_v ctxt addrVar T_Address
+                smtDeclare_v addrVar T_Address
                 return $ Atom addrVar
         se -> impossible $ "self address " <> show se
   where
@@ -267,24 +293,29 @@ smtPrimOp ctxt p dargs =
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 
-smtTypeByteConverter :: SMTCtxt -> DLType -> String
-smtTypeByteConverter ctxt t = (smtTypeSort ctxt t) ++ "_toBytes"
+smtTypeByteConverter :: DLType -> App String
+smtTypeByteConverter t = (++ "_toBytes") <$> smtTypeSort t
 
-smtArgByteConverter :: SMTCtxt -> DLArg -> String
-smtArgByteConverter ctxt arg =
-  smtTypeByteConverter ctxt (argTypeOf arg)
+smtArgByteConverter :: DLArg -> App String
+smtArgByteConverter = smtTypeByteConverter . argTypeOf
 
-smtArgBytes :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
-smtArgBytes ctxt at arg = smtApply (smtArgByteConverter ctxt arg) [smt_a ctxt at arg]
+smtArgBytes :: SrcLoc -> DLArg -> App SExpr
+smtArgBytes at arg = do
+  conv <- smtArgByteConverter arg
+  arg' <- smt_a at arg
+  return $ smtApply conv [arg']
 
-smtDigestCombine :: SMTCtxt -> SrcLoc -> [DLArg] -> SExpr
-smtDigestCombine ctxt at args =
+smtDigestCombine :: SrcLoc -> [DLArg] -> App SExpr
+smtDigestCombine at args =
   case args of
-    [] -> smtApply "bytes0" []
+    [] -> return $ smtApply "bytes0" []
     [x] -> convert1 x
-    (x : xs) -> smtApply "bytesAppend" [convert1 x, smtDigestCombine ctxt at xs]
+    (x : xs) -> do
+      x' <- convert1 x
+      xs' <- smtDigestCombine at xs
+      return $ smtApply "bytesAppend" [x', xs']
   where
-    convert1 = smtArgBytes ctxt at
+    convert1 = smtArgBytes at
 
 --- Verifier
 
@@ -302,8 +333,6 @@ data ResultDesc
   = RD_UnsatCore [String]
   | RD_Model SExpr
 
-type SMTComp = IO ()
-
 seVars :: SExpr -> S.Set String
 seVars se =
   case se of
@@ -315,8 +344,6 @@ seVars se =
 
 set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
-
-type BindingEnv = M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)
 
 -- Log every occurence of dlvars so we know what is used how many times
 dlvOccurs :: [Int] -> BindingEnv -> DLExpr -> [Int]
@@ -487,30 +514,32 @@ subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
-display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> IO ()
-display_fail ctxt tat f tk tse mmsg repeated mrd = do
-  cwd <- getCurrentDirectory
-  putStrLn $ "Verification failed:"
-  putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
-  putStrLn $ "  of theorem " ++ show tk
+display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> SMTComp
+display_fail tat f tk tse mmsg repeated mrd = do
+  let iputStrLn = liftIO . putStrLn
+  cwd <- liftIO $ getCurrentDirectory
+  iputStrLn $ "Verification failed:"
+  mode <- ctxt_mode
+  iputStrLn $ "  in " ++ (show mode) ++ " mode"
+  iputStrLn $ "  of theorem " ++ show tk
   case mmsg of
     Nothing -> mempty
     Just msg -> do
-      putStrLn $ "  msg: " <> show msg
-  putStrLn $ redactAbsStr cwd $ "  at " ++ show tat
-  mapM_ (putStrLn . ("  " ++) . show) f
-  putStrLn $ ""
+      iputStrLn $ "  msg: " <> show msg
+  iputStrLn $ redactAbsStr cwd $ "  at " ++ show tat
+  mapM_ (iputStrLn . ("  " ++) . show) f
+  iputStrLn $ ""
   case repeated of
     True -> do
       --- FIXME have an option to force these to display
-      putStrLn $ "  (details omitted on repeat)"
+      iputStrLn $ "  (details omitted on repeat)"
     False -> do
       --- FIXME Another way to think about this is to take `tse` and fully
       --- substitute everything that came from the program (the "context"
       --- below) and then just show the remaining variables found by the
       --- model.
-      bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
-      putStrLn $ "  // Violation witness"
+      bindingsm <- (liftIO . readIORef) =<< (ctxt_bindingsr <$> ask)
+      iputStrLn $ "  // Violation witness"
       let pm =
             case mrd of
               Nothing ->
@@ -520,9 +549,8 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                 mempty
               Just (RD_Model m) -> do
                 parseModel m
-      let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO ()
-          show_vars shown q =
-            case q of
+      let show_vars :: (S.Set String) -> (Seq.Seq String) -> App ()
+          show_vars shown = \case
               Seq.Empty -> return ()
               (v0 Seq.:<| q') -> do
                 v0vars <-
@@ -543,7 +571,7 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                             Nothing ->
                               return $ mempty
                             Just (_ty, se) -> do
-                              mapM_ putStrLn (this se)
+                              mapM_ iputStrLn (this se)
                               return $ seVars se
                         Just se ->
                           return $ seVars se
@@ -554,40 +582,35 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
                 show_vars shown' q''
       let tse_vars = seVars tse
       show_vars tse_vars $ set_to_seq $ tse_vars
-      putStrLn ""
-      putStrLn $ "  // Theorem formalization"
-      putStrLn $ subAllVars bindingsm tk pm tse
-      putStrLn ""
+      iputStrLn ""
+      iputStrLn $ "  // Theorem formalization"
+      iputStrLn $ subAllVars bindingsm tk pm tse
+      iputStrLn ""
 
-smtAddPathConstraints :: SMTCtxt -> SExpr -> SExpr
-smtAddPathConstraints ctxt se = se'
-  where
-    se' =
-      case ctxt_path_constraint ctxt of
-        [] -> se
-        pcs ->
-          smtApply "=>" [(smtAndAll pcs), se]
+smtAddPathConstraints :: SExpr -> App SExpr
+smtAddPathConstraints se = (ctxt_path_constraint <$> ask) >>= \case
+  [] -> return $ se
+  pcs -> return $ smtApply "=>" [(smtAndAll pcs), se]
 
-smtAssertCtxt :: SMTCtxt -> SExpr -> SMTComp
-smtAssertCtxt ctxt se =
-  smtAssert smt $ smtAddPathConstraints ctxt se
-  where
-    smt = ctxt_smt ctxt
+smtAssertCtxt :: SExpr -> SMTComp
+smtAssertCtxt se = smtAssert =<< smtAddPathConstraints se
 
 -- Intercept failures to prevent showing "user error",
 -- which is confusing to a Reach developer. The library
 -- `fail`s if there's a problem with the compiler,
 -- not a Reach program.
-smtAssert :: Solver -> SExpr -> SMTComp
-smtAssert smt se =
-  Exn.catch (do SMT.assert smt se) $
+smtAssert :: SExpr -> SMTComp
+smtAssert se = do
+  smt <- ctxt_smt <$> ask
+  liftIO $ Exn.catch (do SMT.assert smt se) $
     \(e :: Exn.SomeException) ->
       impossible $ safeInit $ drop 12 $ show e
 
-checkUsing :: SMT.Solver -> IO SMT.Result
-checkUsing smt = do
+checkUsing :: App SMT.Result
+checkUsing = do
+  smt <- ctxt_smt <$> ask
   let our_tactic = List [Atom "then", Atom "simplify", Atom "qflia"]
-  res <- SMT.command smt (List [Atom "check-sat-using", our_tactic])
+  res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
     Atom "unsat" -> return Unsat
     Atom "unknown" -> return Unknown
@@ -600,75 +623,80 @@ checkUsing smt = do
           , "  Result: " ++ SMT.showsSExpr res ""
           ]
 
-verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
-verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
-  forM_ (ctxt_path_constraint ctxt) $ smtAssert smt
-  smtAssert smt $ if isPossible then se else smtNot se
-  r <- checkUsing smt
+verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
+verify1 at mf tk se mmsg = smtNewScope $ do
+  flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
+  smtAssert $ if isPossible then se else smtNot se
+  r <- checkUsing
+  smt <- ctxt_smt <$> ask
   case isPossible of
     True ->
       case r of
         Unknown -> bad $ return Nothing
-        Unsat -> bad $ liftM (Just . RD_UnsatCore) $ SMT.getUnsatCore smt
+        Unsat -> bad $ liftM (Just . RD_UnsatCore) $
+          liftIO $ SMT.getUnsatCore smt
         Sat -> good
     False ->
       case r of
         Unknown -> bad $ return Nothing
         Unsat -> good
-        Sat -> bad $ liftM (Just . RD_Model) $ SMT.command smt $ List [Atom "get-model"]
+        Sat -> bad $ liftM (Just . RD_Model) $
+          liftIO $ SMT.command smt $ List [Atom "get-model"]
   where
-    smt = ctxt_smt ctxt
-    good =
-      modifyIORef (ctxt_res_succ ctxt) $ (1 +)
+    good = void $ (liftIO . incCounter . vst_res_succ) =<< (ctxt_vst <$> ask)
     bad mgetm = do
       mm <- mgetm
-      dspd <- readIORef $ ctxt_displayed ctxt
-      display_fail ctxt at mf tk se mmsg (elem se dspd) mm
-      modifyIORef (ctxt_displayed ctxt) (S.insert se)
-      modifyIORef (ctxt_res_fail ctxt) $ (1 +)
+      dr <- ctxt_displayed <$> ask
+      dspd <- liftIO $ readIORef dr
+      display_fail at mf tk se mmsg (elem se dspd) mm
+      liftIO $ modifyIORef dr $ S.insert se
+      void $ (liftIO . incCounter . vst_res_fail) =<< (ctxt_vst <$> ask)
     isPossible =
       case tk of
         TClaim CT_Possible -> True
         _ -> False
 
-pathAddUnbound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
-pathAddUnbound_v ctxt mdv at_dv v t bo = do
-  smtDeclare_v ctxt v t
-  modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Nothing, Nothing)
+pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v mdv at_dv v t bo = do
+  smtDeclare_v v t
+  ctxt <- ask
+  liftIO $ modifyIORef (ctxt_bindingsr ctxt) $
+    M.insert v (mdv, at_dv, bo, Nothing, Nothing)
 
-pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
-pathAddBound_v ctxt mdv at_dv v t bo de se = do
-  smtDeclare_v ctxt v t
-  let smt = ctxt_smt ctxt
+pathAddBound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
+pathAddBound_v mdv at_dv v t bo de se = do
+  smtDeclare_v v t
   --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
-  smtAssert smt (smtEq (Atom $ v) se)
-  modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Just se, de)
+  smtAssert (smtEq (Atom $ v) se)
+  ctxt <- ask
+  liftIO $ modifyIORef (ctxt_bindingsr ctxt) $
+    M.insert v (mdv, at_dv, bo, Just se, de)
 
-pathAddUnbound :: SMTCtxt -> SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
-pathAddUnbound _ _ Nothing _ = mempty
-pathAddUnbound ctxt at_dv (Just dv) bo = do
+pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
+pathAddUnbound _ Nothing _ = mempty
+pathAddUnbound at_dv (Just dv) bo = do
   let DLVar _ _ t _ = dv
-  let v = smtVar ctxt dv
-  pathAddUnbound_v ctxt (Just dv) at_dv v t bo
+  v <- smtVar dv
+  pathAddUnbound_v (Just dv) at_dv v t bo
 
-pathAddBound :: SMTCtxt -> SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
-pathAddBound _ _ Nothing _ _ _ = mempty
-pathAddBound ctxt at_dv (Just dv) bo de se = do
+pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
+pathAddBound _ Nothing _ _ _ = mempty
+pathAddBound at_dv (Just dv) bo de se = do
   let DLVar _ _ t _ = dv
-  let v = smtVar ctxt dv
-  pathAddBound_v ctxt (Just dv) at_dv v t bo de se
+  v <- smtVar dv
+  pathAddBound_v (Just dv) at_dv v t bo de se
 
-smtMapLookup :: SMTCtxt -> DLMVar -> IO SExpr
-smtMapLookup _ctxt _mpv = do
+smtMapLookup :: DLMVar -> App SExpr
+smtMapLookup _mpv = do
   impossible $ "xxx map lookup"
 
-smtMapUpdate :: SMTCtxt -> SrcLoc -> DLMVar -> DLArg -> Maybe SExpr -> SMTComp
-smtMapUpdate _ctxt _at _mpv _fa _mse = do
+smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe SExpr -> SMTComp
+smtMapUpdate _at _mpv _fa _mse = do
   impossible $ "xxx map update"
 
-smt_lt :: SMTCtxt -> SrcLoc -> DLLiteral -> SExpr
-smt_lt _ctxt _at_de dc =
+smt_lt :: SrcLoc -> DLLiteral -> SExpr
+smt_lt _at_de dc =
   case dc of
     DLL_Null -> Atom "null"
     DLL_Bool b ->
@@ -686,230 +714,214 @@ smt_lt _ctxt _at_de dc =
     DLL_Bytes bs ->
       smtApply "bytes" [Atom (show $ crc32 bs)]
 
-smt_v :: SMTCtxt -> SrcLoc -> DLVar -> SExpr
-smt_v ctxt at_de dv =
+smt_v :: SrcLoc -> DLVar -> App SExpr
+smt_v at_de dv = do
+  lvars <- ctxt_loop_var_subst <$> ask
   case M.lookup dv lvars of
     Nothing ->
-      Atom $ smtVar ctxt dv
+      Atom <$> smtVar dv
     Just da' ->
-      smt_a ctxt' at_de da'
-  where
-    lvars = ctxt_loop_var_subst ctxt
-    ctxt' =
-      ctxt
-        { ctxt_loop_var_subst = mempty
-        , ctxt_primed_vars = mempty
-        }
+      local (\e -> e { ctxt_loop_var_subst = mempty
+                     , ctxt_primed_vars = mempty }) $
+        smt_a at_de da'
 
-smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
-smt_a ctxt at_de da =
-  case da of
-    DLA_Var dv -> smt_v ctxt at_de dv
-    DLA_Constant c -> ctxt_smt_con ctxt ctxt at_de c
-    DLA_Literal c -> smt_lt ctxt at_de c
-    DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
+smt_a :: SrcLoc -> DLArg -> App SExpr
+smt_a at_de = \case
+    DLA_Var dv -> smt_v at_de dv
+    DLA_Constant c -> do
+      smt_con <- ctxt_smt_con <$> ask
+      return $ smt_con at_de c
+    DLA_Literal c -> return $ smt_lt at_de c
+    DLA_Interact who i _ -> return $ Atom $ smtInteract who i
 
-smt_la :: SMTCtxt -> SrcLoc -> DLLargeArg -> SExpr
-smt_la ctxt at_de dla =
+smt_la :: SrcLoc -> DLLargeArg -> App SExpr
+smt_la at_de dla = do
+  let t = largeArgTypeOf dla
+  s <- smtTypeSort t
+  let cons as = smtApply (s ++ "_cons") <$> mapM (smt_a at_de) as
   case dla of
     DLLA_Array _ as -> cons as
     DLLA_Tuple as -> cons as
     DLLA_Obj m -> cons $ M.elems m
-    DLLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [smt_a ctxt at_de vv]
-  where
-    t = largeArgTypeOf dla
-    s = smtTypeSort ctxt t
-    cons as =
-      smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
+    DLLA_Data _ vn vv -> do
+      vv' <- smt_a at_de vv
+      return $ smtApply (s ++ "_" ++ vn) [vv']
 
-smt_e :: SMTCtxt -> SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
-smt_e ctxt at_dv mdv de =
+smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
+smt_e at_dv mdv de =
   case de of
-    DLE_Arg at da -> bound at $ smt_a ctxt at da
-    DLE_LArg at dla -> bound at $ smt_la ctxt at dla
+    DLE_Arg at da -> bound at =<< smt_a at da
+    DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible _ _ ->
-      pathAddUnbound ctxt at_dv mdv bo
+      pathAddUnbound at_dv mdv bo
     DLE_PrimOp at cp args -> do
-      bound at =<< smtPrimOp ctxt cp args args'
-      where
-        args' = map (smt_a ctxt at) args
-    DLE_ArrayRef at arr_da idx_da ->
+      args' <- mapM (smt_a at) args
+      bound at =<< smtPrimOp cp args args'
+    DLE_ArrayRef at arr_da idx_da -> do
+      arr_da' <- smt_a at arr_da
+      idx_da' <- smt_a at idx_da
       bound at $ smtApply "select" [arr_da', idx_da']
-      where
-        arr_da' = smt_a ctxt at arr_da
-        idx_da' = smt_a ctxt at idx_da
-    DLE_ArraySet at arr_da idx_da val_da ->
+    DLE_ArraySet at arr_da idx_da val_da -> do
+      arr_da' <- smt_a at arr_da
+      idx_da' <- smt_a at idx_da
+      val_da' <- smt_a at val_da
       bound at $ smtApply "store" [arr_da', idx_da', val_da']
-      where
-        arr_da' = smt_a ctxt at arr_da
-        idx_da' = smt_a ctxt at idx_da
-        val_da' = smt_a ctxt at val_da
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
     DLE_ArrayZip {} ->
       --- FIXME: This might be possible to do by using `map`
       impossible "array_zip"
-    DLE_TupleRef at arr_da i ->
+    DLE_TupleRef at arr_da i -> do
+      let t = argTypeOf arr_da
+      s <- smtTypeSort t
+      arr_da' <- smt_a at arr_da
       bound at $ smtApply (s ++ "_elem" ++ show i) [arr_da']
-      where
-        s = smtTypeSort ctxt t
-        t = argTypeOf arr_da
-        arr_da' = smt_a ctxt at arr_da
-    DLE_ObjectRef at obj_da f ->
+    DLE_ObjectRef at obj_da f -> do
+      let t = argTypeOf obj_da
+      s <- smtTypeSort t
+      obj_da' <- smt_a at obj_da
       bound at $ smtApply (s ++ "_" ++ f) [obj_da']
-      where
-        s = smtTypeSort ctxt t
-        t = argTypeOf obj_da
-        obj_da' = smt_a ctxt at obj_da
     DLE_Interact at _ _ _ _ _ ->
-      pathAddUnbound ctxt at mdv bo
-    DLE_Digest at args ->
-      bound at $ smtApply "digest" [smtDigestCombine ctxt at args]
-    DLE_Claim at f ct ca mmsg -> this_m
-      where
-        this_m =
-          case ct of
-            CT_Assert -> check_m <> assert_m
-            CT_Assume -> assert_m
-            CT_Require ->
-              case ctxt_mode ctxt of
-                VM_Honest -> check_m <> assert_m
-                VM_Dishonest {} -> assert_m
-            CT_Possible -> check_m
-            CT_Unknowable {} -> mempty
-        ca' = smt_a ctxt at ca
-        check_m =
-          verify1 ctxt at f (TClaim ct) ca' mmsg
-        assert_m =
-          smtAssertCtxt ctxt ca'
+      pathAddUnbound at mdv bo
+    DLE_Digest at args -> do
+      args' <- smtDigestCombine at args
+      bound at $ smtApply "digest" [args']
+    DLE_Claim at f ct ca mmsg -> do
+      ca' <- smt_a at ca
+      let check_m = verify1 at f (TClaim ct) ca' mmsg
+      let assert_m = smtAssertCtxt ca'
+      case ct of
+        CT_Assert -> check_m <> assert_m
+        CT_Assume -> assert_m
+        CT_Require -> ctxt_mode >>= \case
+            VM_Honest -> check_m <> assert_m
+            VM_Dishonest {} -> assert_m
+        CT_Possible -> check_m
+        CT_Unknowable {} -> mempty
     DLE_Transfer {} ->
       mempty
     DLE_Wait {} ->
       mempty
-    DLE_PartSet at who a ->
-      (bound at $ smt_a ctxt at a)
-      <> case (mdv, shouldSimulate ctxt who) of
-          (Just psv, True) ->
-            smtAssertCtxt ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
-          _ ->
-            mempty
+    DLE_PartSet at who a -> do
+      bound at =<< smt_a at a
+      sim <- shouldSimulate who
+      case (mdv, sim) of
+        (Just psv, True) -> do
+          psv' <- smtVar psv
+          smtAssertCtxt (smtEq (Atom psv') (Atom $ smtAddress who))
+        _ ->
+          mempty
     DLE_MapRef at mpv fa -> do
-      ma <- smtMapLookup ctxt mpv
-      bound at $ smtApply "select" [ ma, smt_a ctxt at fa ]
+      ma <- smtMapLookup mpv
+      fa' <- smt_a at fa
+      bound at $ smtApply "select" [ ma, fa' ]
     DLE_MapSet at mpv fa na ->
-      smtMapUpdate ctxt at mpv fa $ Just $ smt_a ctxt at na
+      smtMapUpdate at mpv fa =<< (Just <$> smt_a at na)
     DLE_MapDel at mpv fa ->
-      smtMapUpdate ctxt at mpv fa $ Nothing
+      smtMapUpdate at mpv fa $ Nothing
   where
     bo = O_Expr de
-    bound at = pathAddBound ctxt at mdv bo (Just de)
+    bound at = pathAddBound at mdv bo (Just de)
 
 data SwitchMode
   = SM_Local
   | SM_Consensus
 
-smtSwitch :: SwitchMode -> SMTCtxt -> SrcLoc -> DLVar -> SwitchCases a -> (SMTCtxt -> a -> SMTComp) -> SMTComp
-smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
-  where
-    casesl = map cm1 $ M.toList csm
-    branches_m = mconcat (map fst casesl)
-    after_m =
-      case sm of
-        SM_Local ->
-          smtAssertCtxt ctxt (smtOrAll $ map snd casesl)
-        SM_Consensus ->
-          mempty
-    ova = DLA_Var ov
-    ovp = smt_a ctxt at ova
-    ovt = argTypeOf ova
-    ovtm = case ovt of
-      T_Data m -> m
-      _ -> impossible "switch"
-    pc = ctxt_path_constraint ctxt
-    cm1 (vn, (mov', l)) = (branch_m, eqc)
-      where
-        branch_m =
-          case sm of
-            SM_Local ->
-              udef_m <> iter ctxt' l
-            SM_Consensus ->
-              ctxtNewScope ctxt $ udef_m <> smtAssertCtxt ctxt eqc <> iter ctxt l
-        ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
-        eqc = smtEq ovp ov'p
-        vt = ovtm M.! vn
-        vnv = smtVar ctxt ov <> "_vn_" <> vn
-        (ov'p_m, ov'p) =
-          case mov' of
-            Just ov' ->
-              ( mempty
-              , smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov'))
-              )
-            -- XXX It would be nice to ensure that this is always a Just and
-            -- then make it so that EPP can remove them if they aren't actually
-            -- used
-            Nothing ->
-              ( smtDeclare_v_memo ctxt vnv vt
-              , smtApply (s <> "_" <> vn) [Atom vnv]
-              )
-              where
-                s = smtTypeSort ctxt ovt
-        udef_m = ov'p_m <> pathAddUnbound ctxt at mov' (O_SwitchCase vn)
+smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> SMTComp) -> SMTComp
+smtSwitch sm at ov csm iter = do
+  let ova = DLA_Var ov
+  let ovt = argTypeOf ova
+  let ovtm = case ovt of
+        T_Data m -> m
+        _ -> impossible "switch"
+  ovp <- smt_a at ova
+  pc <- ctxt_path_constraint <$> ask
+  let cm1 (vn, (mov', l)) = do
+        ov_s <- smtVar ov
+        let vnv = ov_s <> "_vn_" <> vn
+        let vt = ovtm M.! vn
+        let (ov'p_m, get_ov'p) =
+              case mov' of
+                Just ov' ->
+                  ( mempty
+                  , smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
+                  )
+                -- XXX It would be nice to ensure that this is always a Just
+                -- and then make it so that EPP can remove them if they aren't
+                -- actually used
+                Nothing ->
+                  ( smtDeclare_v_memo vnv vt
+                  , smtTypeSort ovt >>= \s -> (return $ smtApply (s <> "_" <> vn) [Atom vnv])
+                  )
+        ov'p <- get_ov'p
+        let eqc = smtEq ovp ov'p
+        let udef_m = ov'p_m <> pathAddUnbound at mov' (O_SwitchCase vn)
+        let with_pc = local (\e -> e {ctxt_path_constraint = eqc : pc})
+        let branch_m =
+             case sm of
+                SM_Local ->
+                  udef_m <> with_pc (iter l)
+                SM_Consensus ->
+                  ctxtNewScope $ udef_m <> smtAssertCtxt eqc <> iter l
+        return $ (branch_m, eqc)
+  casesl <- mapM cm1 $ M.toList csm
+  mapM_ fst casesl
+  case sm of
+    SM_Local -> smtAssertCtxt (smtOrAll $ map snd casesl)
+    SM_Consensus -> mempty
 
-smt_m :: SMTCtxt -> LLCommon -> SMTComp
-smt_m ctxt = \case
+smt_m :: LLCommon -> SMTComp
+smt_m = \case
   DL_Nop _ -> mempty
-  DL_Let at mdv de -> smt_e ctxt at mdv de
-  DL_Var at dv -> var_m
-    where
-      var_m =
-        pathAddUnbound ctxt at (Just dv) O_Var
+  DL_Let at mdv de -> smt_e at mdv de
+  DL_Var at dv -> pathAddUnbound at (Just dv) O_Var
   DL_ArrayMap {} ->
     --- FIXME: It might be possible to do this in Z3 by generating a function
     impossible "array_map"
   DL_ArrayReduce {} ->
     --- NOTE: I don't think this is possible
     impossible "array_reduce"
-  DL_Set at dv va -> set_m
-    where
-      set_m =
-        smtAssertCtxt ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
-  DL_LocalIf at ca t f ->
-    smt_l ctxt_t t <> smt_l ctxt_f f
-    where
-      ctxt_f = ctxt {ctxt_path_constraint = (smtNot ca_se) : pc}
-      ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
-      pc = ctxt_path_constraint ctxt
-      ca_se = smt_a ctxt at ca
+  DL_Set at dv va -> do
+    dv' <- smt_a at (DLA_Var dv)
+    va' <- smt_a at va
+    smtAssertCtxt (smtEq dv' va')
+  DL_LocalIf at ca t f -> do
+    ca_se <- smt_a at ca
+    pc <- ctxt_path_constraint <$> ask
+    let with_f = local (\e -> e {ctxt_path_constraint = (smtNot ca_se) : pc})
+    let with_t = local (\e -> e {ctxt_path_constraint = ca_se : pc})
+    with_t (smt_l t) <> with_f (smt_l f)
   DL_LocalSwitch at ov csm ->
-    smtSwitch SM_Local ctxt at ov csm smt_l
+    smtSwitch SM_Local at ov csm smt_l
 
-smt_l :: SMTCtxt -> LLTail -> SMTComp
-smt_l ctxt = \case
+smt_l :: LLTail -> SMTComp
+smt_l = \case
   DT_Return _ -> mempty
-  DT_Com m k -> smt_m ctxt m <> smt_l ctxt k
+  DT_Com m k -> smt_m m <> smt_l k
+
+smt_lm :: SLPart -> LLTail -> SMTComp
+smt_lm who l = shouldSimulate who >>= \case
+  True -> smt_l l
+  False -> mempty
 
 data BlockMode
   = B_Assume Bool
   | B_Prove
   | B_None
 
-smt_block :: SMTCtxt -> BlockMode -> LLBlock -> SMTComp
-smt_block ctxt bm b = before_m <> after_m
-  where
-    DLinBlock at f l da = b
-    before_m = smt_l ctxt l
-    da' = smt_a ctxt at da
-    after_m =
-      case bm of
-        B_Assume True ->
-          smtAssertCtxt ctxt da'
-        B_Assume False ->
-          smtAssertCtxt ctxt (smtNot da')
-        B_Prove ->
-          verify1 ctxt at f TInvariant da' Nothing
-        B_None ->
-          mempty
+smt_block :: BlockMode -> LLBlock -> SMTComp
+smt_block bm b = do
+  let DLinBlock at f l da = b
+  let before_m = smt_l l
+  da' <- smt_a at da
+  let after_m =
+        case bm of
+          B_Assume True -> smtAssertCtxt da'
+          B_Assume False -> smtAssertCtxt (smtNot da')
+          B_Prove -> verify1 at f TInvariant da' Nothing
+          B_None -> mempty
+  before_m <> after_m
 
 gatherDefinedVars_m :: LLCommon -> S.Set DLVar
 gatherDefinedVars_m = \case
@@ -932,116 +944,90 @@ gatherDefinedVars_l = \case
 gatherDefinedVars :: LLBlock -> S.Set DLVar
 gatherDefinedVars (DLinBlock _ _ l _) = gatherDefinedVars_l l
 
-smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp
-smt_asn ctxt vars_are_primed asn = smt_block ctxt' B_Prove inv
-  where
-    ctxt' =
-      ctxt
-        { ctxt_loop_var_subst = asnm
-        , ctxt_primed_vars = pvars
-        }
-    DLAssignment asnm = asn
-    pvars = case vars_are_primed of
-      True -> gatherDefinedVars inv
-      False -> mempty
-    inv = case ctxt_while_invariant ctxt of
-      Just x -> x
+smt_asn :: Bool -> DLAssignment -> SMTComp
+smt_asn vars_are_primed asn = do
+  let DLAssignment asnm = asn
+  inv <- (ctxt_while_invariant <$> ask) >>= \case
+      Just x -> return $ x
       Nothing -> impossible "asn outside loop"
+  let pvars = case vars_are_primed of
+        True -> gatherDefinedVars inv
+        False -> mempty
+  local (\e -> e { ctxt_loop_var_subst = asnm
+                 , ctxt_primed_vars = pvars }) $
+    smt_block B_Prove inv
 
-smt_asn_def :: SMTCtxt -> SrcLoc -> DLAssignment -> SMTComp
-smt_asn_def ctxt at asn = mapM_ def1 $ M.keys asnm
+smt_asn_def :: SrcLoc -> DLAssignment -> SMTComp
+smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
-    def1 dv =
-      pathAddUnbound ctxt at (Just dv) O_Assignment
+    def1 dv = pathAddUnbound at (Just dv) O_Assignment
 
-smt_n :: SMTCtxt -> LLConsensus -> SMTComp
-smt_n ctxt n =
-  case n of
-    LLC_Com m k -> smt_m ctxt m <> smt_n ctxt k
-    LLC_If at ca t f ->
-      mapM_ ((ctxtNewScope ctxt) . go) [(True, t), (False, f)]
-      where
-        ca' = smt_a ctxt at ca
-        go (v, k) =
-          --- FIXME Can we use path constraints to avoid this forking?
-          smtAssertCtxt ctxt (smtEq ca' v') <> smt_n ctxt k
-          where
-            v' = smt_a ctxt at (DLA_Literal (DLL_Bool v))
+smt_n :: LLConsensus -> SMTComp
+smt_n = \case
+    LLC_Com m k -> smt_m m <> smt_n k
+    LLC_If at ca t f -> do
+      ca' <- smt_a at ca
+      let go (v, k) = do
+            v' <- smt_a at (DLA_Literal (DLL_Bool v))
+            --- FIXME Can we use path constraints to avoid this forking?
+            smtAssertCtxt (smtEq ca' v') <> smt_n k
+      mapM_ (ctxtNewScope . go) [(True, t), (False, f)]
     LLC_Switch at ov csm ->
-      smtSwitch SM_Consensus ctxt at ov csm smt_n
-    LLC_FromConsensus _ _ s -> smt_s ctxt s
+      smtSwitch SM_Consensus at ov csm smt_n
+    LLC_FromConsensus _ _ s -> smt_s s
     LLC_While at asn inv cond body k ->
-      mapM_ (ctxtNewScope ctxt) [before_m, loop_m, after_m]
+      mapM_ ctxtNewScope [before_m, loop_m, after_m]
       where
-        ctxt_inv = ctxt {ctxt_while_invariant = Just inv}
-        before_m = smt_asn ctxt_inv False asn
+        with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
+        before_m = with_inv $ smt_asn False asn
         loop_m =
-          smt_asn_def ctxt at asn
-            <> smt_block ctxt (B_Assume True) inv
-            <> smt_block ctxt (B_Assume True) cond
-            <> smt_n ctxt_inv body
+          smt_asn_def at asn
+            <> smt_block (B_Assume True) inv
+            <> smt_block (B_Assume True) cond
+            <> (with_inv $ smt_n body)
         after_m =
-          smt_asn_def ctxt at asn
-            <> smt_block ctxt (B_Assume True) inv
-            <> smt_block ctxt (B_Assume False) cond
-            <> smt_n ctxt k
-    LLC_Continue _at asn ->
-      smt_asn ctxt True asn
-    LLC_Only _at who loc k ->
-      loc_m <> smt_n ctxt k
-      where
-        loc_m =
-          case shouldSimulate ctxt who of
-            True -> smt_l ctxt loc
-            False -> mempty
+          smt_asn_def at asn
+            <> smt_block (B_Assume True) inv
+            <> smt_block (B_Assume False) cond
+            <> smt_n k
+    LLC_Continue _at asn -> smt_asn True asn
+    LLC_Only _at who loc k -> smt_lm who loc <> smt_n k
 
-smt_s :: SMTCtxt -> LLStep -> SMTComp
-smt_s ctxt s =
-  case s of
-    LLS_Com m k -> smt_m ctxt m <> smt_s ctxt k
+smt_s :: LLStep -> SMTComp
+smt_s = \case
+    LLS_Com m k -> smt_m m <> smt_s k
     LLS_Stop _at -> mempty
-    LLS_Only _at who loc k ->
-      loc_m <> smt_s ctxt k
-      where
-        loc_m =
-          case shouldSimulate ctxt who of
-            True -> smt_l ctxt loc
-            False -> mempty
-    LLS_ToConsensus at send recv mtime ->
-      mapM_ (ctxtNewScope ctxt) $ timeout : map go (M.toList send)
-      where
-        (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
-        timeout = case mtime of
-          Nothing -> mempty
-          Just (_delay_a, delay_s) ->
-            -- smt_block ctxt B_None delayb <>
-            smt_s ctxt delay_s
-        after = bind_time <> order_time <> smt_n ctxt next_n
-        bind_time = pathAddUnbound ctxt at (Just timev) O_ToConsensus
-        order_time =
-          case last_timemv of
+    LLS_Only _at who loc k -> smt_lm who loc <> smt_s k
+    LLS_ToConsensus at send recv mtime -> do
+      let (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
+      timev' <- Atom <$> smtVar timev
+      let timeout = case mtime of
             Nothing -> mempty
-            Just last_timev ->
-              smtAssertCtxt ctxt (uint256_lt last_timev' timev')
-              where
-                last_timev' = Atom $ smtVar ctxt last_timev
-        timev' = Atom $ smtVar ctxt timev
-        go (from, (isClass, msgas, amta, _whena)) =
-          -- XXX Potentially we need to look at whena to determine if we even
-          -- do these bindings in honest mode
-          bind_from <> bind_msg <> bind_amt <> after
-          where
-            bind_from =
-              case isClass of
-                True -> pathAddUnbound ctxt at (Just whov) (O_ClassJoin from)
-                False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
-            bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (Just $ DLE_Arg at amta) (smt_a ctxt at amta)
-            bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (Just $ DLE_Arg at da) (smt_a ctxt at da)) msgvs msgas
-            maybe_pathAdd v bo_no bo_yes mde se =
-              case shouldSimulate ctxt from of
-                False -> pathAddUnbound ctxt at (Just v) bo_no
-                True -> pathAddBound ctxt at (Just v) bo_yes mde se
+            Just (_delay_a, delay_s) -> smt_s delay_s
+      let bind_time = pathAddUnbound at (Just timev) O_ToConsensus
+      let order_time =
+            case last_timemv of
+              Nothing -> mempty
+              Just last_timev -> do
+                last_timev' <- Atom <$> smtVar last_timev
+                smtAssertCtxt $ uint256_lt last_timev' timev'
+      let after = bind_time <> order_time <> smt_n next_n
+      let go (from, (isClass, msgas, amta, _whena)) = do
+            -- XXX Potentially we need to look at whena to determine if we even
+            -- do these bindings in honest mode
+            let maybe_pathAdd v bo_no bo_yes mde se =
+                 shouldSimulate from >>= \case
+                    False -> pathAddUnbound at (Just v) bo_no
+                    True -> pathAddBound at (Just v) bo_yes mde se
+            let bind_from =
+                  case isClass of
+                    True -> pathAddUnbound at (Just whov) (O_ClassJoin from)
+                    False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
+            let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
+            let bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (Just $ DLE_Arg at amta) =<< (smt_a at amta)
+            bind_from <> bind_msg <> bind_amt <> after
+      mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do
@@ -1098,7 +1084,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_lt (error "no context") (error "no at") . DLL_Int srcloc_builtin) idxs
+            let idxses = map (smt_lt srcloc_builtin . DLL_Int srcloc_builtin) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
@@ -1183,12 +1169,12 @@ _verify_smt mc vst smt lp = do
         Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> T.unpack mcs
   dspdr <- newIORef mempty
-  bindingsrr <- newIORefRef mempty
-  vars_defdrr <- newIORefRef mempty
+  bindingsr <- newIORef mempty
+  vars_defdr <- newIORef mempty
   typem <- _smtDefineTypes smt (cts lp)
-  let smt_con ctxt at_de cn =
+  let smt_con at_de cn =
         case mc of
-          Just c -> smt_lt ctxt at_de $ conCons c cn
+          Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
   let LLProg at (LLOpts {..}) (SLParts pies_m) dli s = lp
   let DLInit ctimem = dli
@@ -1197,42 +1183,41 @@ _verify_smt mc vst smt lp = do
           { ctxt_smt = smt
           , ctxt_smt_con = smt_con
           , ctxt_typem = typem
-          , ctxt_res_succ = vst_res_succ vst
-          , ctxt_res_fail = vst_res_fail vst
+          , ctxt_vst = vst
           , ctxt_modem = Nothing
           , ctxt_path_constraint = []
-          , ctxt_bindingsrr = bindingsrr
+          , ctxt_bindingsr = bindingsr
           , ctxt_while_invariant = Nothing
           , ctxt_loop_var_subst = mempty
           , ctxt_primed_vars = mempty
           , ctxt_displayed = dspdr
-          , ctxt_vars_defdrr = vars_defdrr
+          , ctxt_vars_defdr = vars_defdr
           }
-  case ctimem of
-    Nothing -> mempty
-    Just ctimev ->
-      pathAddUnbound ctxt at (Just ctimev) O_BuiltIn
-  case mc of
-    Just _ -> mempty
-    Nothing ->
-      pathAddUnbound_v ctxt Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn
-  -- FIXME it might make sense to assert that UInt_max is no less than
-  -- something reasonable, like 64-bit?
-  let defineIE who (v, it) =
-        case it of
-          IT_Fun {} -> mempty
-          IT_Val itv ->
-            pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) itv O_Interact
-  let definePIE (who, InteractEnv iem) = do
-        pathAddUnbound_v ctxt Nothing at (smtAddress who) T_Address O_BuiltIn
-        mapM_ (defineIE who) $ M.toList iem
-  mapM_ definePIE $ M.toList pies_m
-  let smt_s_top mode = do
-        putStrLn $ "  Verifying with mode = " ++ show mode
-        let ctxt' = ctxt {ctxt_modem = Just mode}
-        ctxtNewScope ctxt' $ smt_s ctxt' s
-  let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
-  mapM_ smt_s_top ms
+  flip runReaderT ctxt $ do
+    case ctimem of
+      Nothing -> mempty
+      Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn
+    case mc of
+      Just _ -> mempty
+      Nothing ->
+        pathAddUnbound_v Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn
+    -- FIXME it might make sense to assert that UInt_max is no less than
+    -- something reasonable, like 64-bit?
+    let defineIE who (v, it) =
+          case it of
+            IT_Fun {} -> mempty
+            IT_Val itv ->
+              pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact
+    let definePIE (who, InteractEnv iem) = do
+          pathAddUnbound_v Nothing at (smtAddress who) T_Address O_BuiltIn
+          mapM_ (defineIE who) $ M.toList iem
+    mapM_ definePIE $ M.toList pies_m
+    let smt_s_top mode = do
+          liftIO $ putStrLn $ "  Verifying with mode = " ++ show mode
+          local (\e -> e {ctxt_modem = Just mode}) $
+            ctxtNewScope $ smt_s s
+    let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
+    mapM_ smt_s_top ms
 
 hPutStrLn' :: Handle -> String -> IO ()
 hPutStrLn' h s = do

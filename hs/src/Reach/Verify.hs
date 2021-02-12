@@ -1,10 +1,10 @@
 module Reach.Verify (verify) where
 
 import Control.Monad
-import Data.IORef
 import qualified Data.Text as T
 import Reach.AST.LL
 import Reach.Connector
+import Reach.Counter
 import Reach.Verify.Knowledge
 import Reach.Verify.SMT
 import Reach.Verify.Shared
@@ -15,13 +15,9 @@ data VerifierName = Boolector | CVC4 | Yices | Z3
 
 verify :: Maybe (T.Text -> String) -> Maybe [Connector] -> LLProg -> IO ExitCode
 verify outnMay mvcs lp = do
-  succ_ref <- newIORef 0
-  fail_ref <- newIORef 0
-  let vst =
-        VerifySt
-          { vst_res_succ = succ_ref
-          , vst_res_fail = fail_ref
-          }
+  vst_res_succ <- newCounter 0
+  vst_res_fail <- newCounter 0
+  let vst = VerifySt {..}
   verify_knowledge (($ "know") <$> outnMay) vst lp
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes
@@ -42,8 +38,8 @@ verify outnMay mvcs lp = do
       -- - doesn't support unsat-cores
       -- - doesn't support declare-datatypes
       smt "boolector" ["--smt2"]
-  ss <- readIORef succ_ref
-  fs <- readIORef fail_ref
+  ss <- readCounter vst_res_succ
+  fs <- readCounter vst_res_fail
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
   case fs == 0 of
     True -> do

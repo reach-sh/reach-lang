@@ -1,8 +1,8 @@
 module Reach.Verify.Knowledge (verify_knowledge) where
 
 import qualified Algorithm.Search as G
+import Control.Monad
 import qualified Data.ByteString.Char8 as B
-import Data.IORef
 import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Monoid
@@ -10,6 +10,7 @@ import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.Counter
 import Reach.IORefRef
 import Reach.Texty
 import Reach.Util
@@ -36,15 +37,11 @@ instance Pretty Point where
 data KCtxt = KCtxt
   { ctxt_mlog :: Maybe Handle
   , ctxt_loglvl :: IORefRef Int
-  , ctxt_res_succ :: IORef Int
-  , ctxt_res_fail :: IORef Int
+  , ctxt_vst :: VerifySt
   , ctxt_ps :: [SLPart]
   , ctxt_back_ptrs :: S.Set Point
   , ctxt_kg :: IORefRef (M.Map Point (S.Set Point))
   }
-
-inc :: IORef Int -> IO ()
-inc r = modifyIORef r (1 +)
 
 klog :: KCtxt -> String -> IO ()
 klog ctxt msg =
@@ -116,8 +113,8 @@ query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> SLPart -> S.S
 query ctxt at f mmsg who whats = do
   let whatsl = S.toList whats
   mpaths <- mapM (query1 ctxt who) whatsl
-  let good = inc $ ctxt_res_succ ctxt
-  let bad = inc $ ctxt_res_fail ctxt
+  let good = void $ incCounter $ vst_res_succ $ ctxt_vst ctxt
+  let bad = void $ incCounter $ vst_res_fail $ ctxt_vst ctxt
   let disp = do
         cwd <- getCurrentDirectory
         putStrLn $ "Verification failed:"
@@ -334,8 +331,7 @@ kgq_lp mh vst (LLProg _ (LLOpts {..}) (SLParts psm) _dli s) = do
         KCtxt
           { ctxt_mlog = mh
           , ctxt_loglvl = llr
-          , ctxt_res_succ = vst_res_succ vst
-          , ctxt_res_fail = vst_res_fail vst
+          , ctxt_vst = vst
           , ctxt_ps = ps
           , ctxt_back_ptrs = mempty
           , ctxt_kg = kgr

@@ -1,8 +1,8 @@
 module Reach.Verify.Shared (VerifySt (..)) where
 
-import Data.IORef
+import Reach.Counter
 
 data VerifySt = VerifySt
-  { vst_res_succ :: IORef Int
-  , vst_res_fail :: IORef Int
+  { vst_res_succ :: Counter
+  , vst_res_fail :: Counter
   }
