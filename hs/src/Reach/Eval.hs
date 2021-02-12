@@ -71,7 +71,9 @@ app_options =
       where
         up m = Right $ opts {dlo_deployMode = m}
 
-compileDApp :: Connectors -> SLVal -> App (DLStmts -> DLProg)
+type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
+
+compileDApp :: Connectors -> SLVal -> App CompiledDApp
 compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s top_env)) = locAt (srcloc_at "compileDApp" Nothing at) $ do
   at' <- withAt id
   idr <- e_id <$> ask
@@ -123,7 +125,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           }
   setSt st_step
   doFluidSet FV_balance $ public $ SLV_Int at' 0
-  ctimem <- do
+  dli_ctimem <- do
     let no = return $ Nothing
     let yes = do
           time_dv <- ctxt_mkvar $ DLVar at "ctime" T_UInt
@@ -140,12 +142,13 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
             evalStmt top_ss
   flip when doExit =<< readSt st_live
   let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
-  let dli = DLInit ctimem
-  return $ DLProg at dlo sps dli
+  return $ \ dli_maps final ->
+    let dli = DLInit {..}
+     in DLProg at dlo sps dli final
 compileDApp _ topv =
   expect_t topv $ Err_Top_NotApp
 
-compileBundle_ :: Connectors -> JSBundle -> SLVar -> App (DLStmts -> DLProg)
+compileBundle_ :: Connectors -> JSBundle -> SLVar -> App CompiledDApp
 compileBundle_ cns (JSBundle mods) main = do
   libm <- evalLibs cns mods
   let exe = case mods of
@@ -183,11 +186,12 @@ compileBundle cns jsb main = do
   e_st <- newIORef e_stv
   let e_at = srcloc_top
   e_lifts <- newIORef mempty
-  me_id <- liftIO $ newCounter 0
+  me_id <- newCounter 0
   me_ms <- newIORef mempty
   let e_mape = MapEnv {..}
   mkprog <-
     flip runReaderT (Env {..}) $
       compileBundle_ cns jsb main
+  ms' <- readIORef me_ms
   final <- readIORef e_lifts
-  return $ mkprog final
+  return $ mkprog ms' final

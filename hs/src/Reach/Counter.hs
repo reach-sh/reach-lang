@@ -3,6 +3,7 @@ module Reach.Counter
   , newCounter
   , incCounter
   , readCounter
+  , dupeCounter
   ) where
 
 import Data.IORef
@@ -21,3 +22,6 @@ incCounter (Counter r) = do
 
 readCounter :: Counter -> IO Int
 readCounter (Counter r) = readIORef r
+
+dupeCounter :: Counter -> IO Counter
+dupeCounter c = newCounter =<< readCounter c

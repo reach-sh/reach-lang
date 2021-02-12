@@ -92,8 +92,11 @@ instance CollectsTypes DLExpr where
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
 
+instance CollectsTypes DLMapInfo where
+  cts (DLMapInfo {..}) = cts $ maybeT dlmi_ty
+
 instance CollectsTypes DLInit where
-  cts (DLInit ctimem) = cts ctimem
+  cts (DLInit {..}) = cts dli_ctimem <> cts dli_maps
 
 instance CollectsTypes a => CollectsTypes (DLinStmt a) where
   cts (DL_Nop _) = mempty

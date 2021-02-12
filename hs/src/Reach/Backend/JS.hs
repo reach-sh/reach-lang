@@ -506,9 +506,9 @@ jsPart dli p (EPProg _ _ et) =
         , ctxt_while = Nothing
         , ctxt_timev = Nothing
         }
-    DLInit ctimem = dli
+    DLInit {..} = dli
     ctimem' =
-      case ctimem of
+      case dli_ctimem of
         Nothing -> mempty
         Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
     bodyp' =

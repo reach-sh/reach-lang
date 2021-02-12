@@ -31,6 +31,14 @@ data DLType
   | T_Data (M.Map SLVar DLType)
   deriving (Eq, Generic, Ord)
 
+maybeT :: DLType -> DLType
+maybeT t = T_Data $ M.fromList $ [ ("None", T_Null), ("Some", t) ]
+
+dataTypeMap :: DLType -> M.Map SLVar DLType
+dataTypeMap = \case
+  T_Data m -> m
+  _ -> impossible "no data"
+
 arrType :: DLType -> DLType
 arrType = \case
   T_Array d _ -> d
@@ -85,15 +93,18 @@ instance Pretty SLParts where
   pretty (SLParts m) = "parts" <+> render_obj m <> semi
 
 data DLInit = DLInit
-  {dli_ctimem :: Maybe DLVar}
-  deriving (Eq, Generic, Show, Ord)
+  { dli_ctimem :: Maybe DLVar
+  , dli_maps :: M.Map DLMVar DLMapInfo }
+  deriving (Eq, Generic)
 
 instance Pretty DLInit where
-  pretty (DLInit ctimem) =
-    "// initialization" <> hardline
-      <> ctimem'
+  pretty (DLInit {..}) =
+    "// maps" <> hardline
+    <> render_obj dli_maps <> hardline
+    <> "// initialization" <> hardline
+    <> ctimem'
     where
-      ctimem' = case ctimem of
+      ctimem' = case dli_ctimem of
         Nothing -> "// no ctime" <> hardline
         Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
 
@@ -166,6 +177,9 @@ data DLMapInfo = DLMapInfo
   { dlmi_ty :: DLType
   , dlmi_at :: SrcLoc }
   deriving (Eq, Generic)
+
+instance Pretty DLMapInfo where
+  pretty (DLMapInfo {..}) = pretty dlmi_ty
 
 data DLArg
   = DLA_Var DLVar

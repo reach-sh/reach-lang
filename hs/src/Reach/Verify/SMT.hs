@@ -155,6 +155,10 @@ type SMTComp = App ()
 
 type BindingEnv = M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)
 
+data SMTMapInfo = SMTMapInfo
+  { sm_c :: Counter
+  , sm_t :: DLType }
+
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
   , ctxt_smt_con :: SrcLoc -> DLConstant -> SExpr
@@ -168,6 +172,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_primed_vars :: S.Set DLVar
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_vars_defdr :: IORef (S.Set String)
+  , ctxt_maps :: M.Map DLMVar SMTMapInfo
   }
 
 ctxt_mode :: App VerifyMode
@@ -191,9 +196,15 @@ ctxtNewScope m = do
   SMTCtxt {..} <- ask
   ctxt_bindingsr' <- liftIO $ dupeIORef ctxt_bindingsr
   ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
+  let dupeMapInfo (SMTMapInfo {..}) = do
+        sm_c' <- liftIO $ dupeCounter sm_c
+        return $ SMTMapInfo { sm_t = sm_t
+                            , sm_c = sm_c' }
+  ctxt_maps' <- mapM dupeMapInfo ctxt_maps
   smtNewScope $
     local (\e -> e { ctxt_bindingsr = ctxt_bindingsr'
-                   , ctxt_vars_defdr = ctxt_vars_defdr' }) $
+                   , ctxt_vars_defdr = ctxt_vars_defdr'
+                   , ctxt_maps = ctxt_maps' }) $
       m
 
 shouldSimulate :: SLPart -> App Bool
@@ -687,13 +698,48 @@ pathAddBound at_dv (Just dv) bo de se = do
   v <- smtVar dv
   pathAddBound_v (Just dv) at_dv v t bo de se
 
-smtMapLookup :: DLMVar -> App SExpr
-smtMapLookup _mpv = do
-  impossible $ "xxx map lookup"
+smtMapVar :: DLMVar -> Int -> String
+smtMapVar (DLMVar mi) ri = "map" <> show mi <> "_" <> show ri
 
-smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe SExpr -> SMTComp
-smtMapUpdate _at _mpv _fa _mse = do
-  impossible $ "xxx map update"
+smtMapLookupC :: DLMVar -> App SMTMapInfo
+smtMapLookupC mpv = do
+  ms <- ctxt_maps <$> ask
+  case M.lookup mpv ms of
+    Just x -> return $ x
+    Nothing -> impossible $ "smtMapLookupC unknown map"
+
+smtMapDeclare :: DLMVar -> Int -> App ()
+smtMapDeclare mpv mi = do
+  SMTMapInfo {..} <- smtMapLookupC mpv
+  let mv = smtMapVar mpv mi
+  t_addr' <- smtTypeSort $ T_Address
+  sm_t' <- smtTypeSort sm_t
+  let t = smtApply "Array" [ Atom t_addr', Atom sm_t' ]
+  smt <- ctxt_smt <$> ask
+  liftIO $ void $ SMT.declare smt mv t
+
+smtMapLookup :: DLMVar -> App SExpr
+smtMapLookup mpv = do
+  SMTMapInfo {..} <- smtMapLookupC mpv
+  mi <- liftIO $ readCounter sm_c
+  return $ Atom $ smtMapVar mpv (mi - 1)
+
+smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe DLArg -> SMTComp
+smtMapUpdate at mpv fa mna = do
+  fa' <- smt_a at fa
+  SMTMapInfo {..} <- smtMapLookupC mpv
+  let mkna = DLLA_Data $ dataTypeMap sm_t
+  let na = case mna of
+             Just x -> mkna "Some" x
+             Nothing -> mkna "None" $ DLA_Literal DLL_Null
+  na' <- smt_la at na
+  mi' <- liftIO $ incCounter sm_c
+  let mi = mi' - 1
+  smtMapDeclare mpv mi'
+  let mv = smtMapVar mpv mi
+  let mv' = smtMapVar mpv mi'
+  let se = smtApply "store" [ Atom mv, fa', na' ]
+  smtAssert $ smtEq (Atom mv') se
 
 smt_lt :: SrcLoc -> DLLiteral -> SExpr
 smt_lt _at_de dc =
@@ -817,7 +863,7 @@ smt_e at_dv mdv de =
       fa' <- smt_a at fa
       bound at $ smtApply "select" [ ma, fa' ]
     DLE_MapSet at mpv fa na ->
-      smtMapUpdate at mpv fa =<< (Just <$> smt_a at na)
+      smtMapUpdate at mpv fa $ Just na
     DLE_MapDel at mpv fa ->
       smtMapUpdate at mpv fa $ Nothing
   where
@@ -1176,8 +1222,12 @@ _verify_smt mc vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) dli s = lp
-  let DLInit ctimem = dli
+  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) s = lp
+  let initMapInfo (DLMapInfo {..}) = do
+        sm_c <- liftIO $ newCounter 0
+        let sm_t = maybeT dlmi_ty
+        return $ SMTMapInfo {..}
+  maps <- mapM initMapInfo dli_maps
   let ctxt =
         SMTCtxt
           { ctxt_smt = smt
@@ -1192,9 +1242,14 @@ _verify_smt mc vst smt lp = do
           , ctxt_primed_vars = mempty
           , ctxt_displayed = dspdr
           , ctxt_vars_defdr = vars_defdr
+          , ctxt_maps = maps
           }
   flip runReaderT ctxt $ do
-    case ctimem of
+    let defineMap (mpv, SMTMapInfo {..}) = do
+          mi <- liftIO $ incCounter sm_c
+          smtMapDeclare mpv mi
+    mapM_ defineMap $ M.toList maps
+    case dli_ctimem of
       Nothing -> mempty
       Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn
     case mc of

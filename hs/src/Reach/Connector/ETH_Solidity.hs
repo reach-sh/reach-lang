@@ -860,10 +860,10 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
                 ]
             )
             where
-              DLInit ctimem = dli
+              DLInit {..} = dli
               dli' = vsep $ ctimem'
               (ctimem', csvs_, cctxt) =
-                case ctimem of
+                case dli_ctimem of
                   Nothing -> (mempty, mempty, ctxt)
                   Just v ->
                     ( [solSet (solMemVar v) solBlockNumber]

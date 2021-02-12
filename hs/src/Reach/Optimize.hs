@@ -265,8 +265,10 @@ opt_s = \case
       mtime' = opt_mtime mtime
 
 opt_dli :: AppT DLInit
-opt_dli (DLInit ctimem) =
-  DLInit <$> (opt_mv ctimem)
+opt_dli (DLInit {..}) = do
+  dli_ctimem' <- opt_mv dli_ctimem
+  return $ DLInit { dli_ctimem = dli_ctimem'
+                  , dli_maps = dli_maps }
 
 optimize :: LLProg -> IO LLProg
 optimize (LLProg at opts ps dli s) = do
