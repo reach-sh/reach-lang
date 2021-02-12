@@ -45,7 +45,7 @@ export const main =
         .case( Player, (() => {
             const _ticket = interact.random();
             const when = declassify(interact.shouldBuy(ticketPrice, _ticket));
-            assume(!when || isNone(randomsM[this]));
+            assume(implies(when, isNone(randomsM[this])));
             const msg = declassify(digest(_ticket));
             return { msg, when };
           }),
@@ -86,6 +86,7 @@ export const main =
           ((ticket) => {
             const player = this;
             Player.only(() => interact.returnerWas(player));
+            require(isNone(ticketsM[player]));
             require(randomMatches(player, ticket));
             ticketsM[player] = howManyReturned;
             delete randomsM[player];

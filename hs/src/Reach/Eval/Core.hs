@@ -2605,6 +2605,7 @@ doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do
   let whos = bunpack who
   isClass <- is_class who
+  --- XXX Remove this and just use the main counter in SMT
   addrNum <-
     case isClass of
       False -> return $ 0

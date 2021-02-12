@@ -161,6 +161,7 @@ data SMTMapInfo = SMTMapInfo
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
+  , ctxt_idx :: Counter
   , ctxt_smt_con :: SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
   , ctxt_vst :: VerifySt
@@ -173,6 +174,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
+  , ctxt_addrs :: M.Map SLPart DLVar
   }
 
 ctxt_mode :: App VerifyMode
@@ -295,9 +297,14 @@ smtPrimOp p dargs =
               False ->
                 return $ Atom $ smtAddress pn
               True -> do
-                let addrVar = "classAddr" <> show addrNum
-                smtDeclare_v addrVar T_Address
-                return $ Atom addrVar
+                should <- shouldSimulate pn
+                case should of
+                  True ->
+                    Atom <$> smtCurrentAddress pn
+                  False -> do
+                    let addrVar = "classAddr" <> show addrNum
+                    smtDeclare_v addrVar T_Address
+                    return $ Atom addrVar
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
@@ -333,12 +340,14 @@ smtDigestCombine at args =
 data TheoremKind
   = TClaim ClaimType
   | TInvariant
+  | TWhenNotUnknown
   deriving (Show)
 
 instance Pretty TheoremKind where
   pretty = \case
     TClaim c -> pretty c
     TInvariant -> "invariant"
+    TWhenNotUnknown -> "when is not unknown"
 
 data ResultDesc
   = RD_UnsatCore [String]
@@ -701,6 +710,14 @@ pathAddBound at_dv (Just dv) bo de se = do
 smtMapVar :: DLMVar -> Int -> String
 smtMapVar (DLMVar mi) ri = "map" <> show mi <> "_" <> show ri
 
+smtMapRefresh :: App ()
+smtMapRefresh = do
+  ms <- ctxt_maps <$> ask
+  let go (mpv, SMTMapInfo {..}) = do
+        mi' <- liftIO $ incCounter sm_c
+        smtMapDeclare mpv mi'
+  mapM_ go $ M.toList ms
+
 smtMapLookupC :: DLMVar -> App SMTMapInfo
 smtMapLookupC mpv = do
   ms <- ctxt_maps <$> ask
@@ -1009,6 +1026,23 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
     DLAssignment asnm = asn
     def1 dv = pathAddUnbound at (Just dv) O_Assignment
 
+freshAddrs :: App a -> App a
+freshAddrs m = do
+  idxr <- ctxt_idx <$> ask
+  let go (DLVar at lab t _) = do
+        dv <- DLVar at lab t <$> (liftIO $ incCounter idxr)
+        pathAddUnbound at (Just dv) O_BuiltIn
+        return dv
+  addrs' <- mapM go =<< (ctxt_addrs <$> ask)
+  local (\e -> e { ctxt_addrs = addrs' }) m
+
+smtCurrentAddress :: SLPart -> App String
+smtCurrentAddress who = do
+  am <- ctxt_addrs <$> ask
+  case M.lookup who am of
+    Just x -> smtVar x
+    Nothing -> impossible "smtCurrentAddress"
+
 smt_n :: LLConsensus -> SMTComp
 smt_n = \case
     LLC_Com m k -> smt_m m <> smt_n k
@@ -1027,16 +1061,18 @@ smt_n = \case
       where
         with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
         before_m = with_inv $ smt_asn False asn
-        loop_m =
+        loop_m = do
+          smtMapRefresh
           smt_asn_def at asn
-            <> smt_block (B_Assume True) inv
-            <> smt_block (B_Assume True) cond
-            <> (with_inv $ smt_n body)
-        after_m =
+          smt_block (B_Assume True) inv
+          smt_block (B_Assume True) cond
+          (with_inv $ smt_n body)
+        after_m = do
+          smtMapRefresh
           smt_asn_def at asn
-            <> smt_block (B_Assume True) inv
-            <> smt_block (B_Assume False) cond
-            <> smt_n k
+          smt_block (B_Assume True) inv
+          smt_block (B_Assume False) cond
+          smt_n k
     LLC_Continue _at asn -> smt_asn True asn
     LLC_Only _at who loc k -> smt_lm who loc <> smt_n k
 
@@ -1058,21 +1094,42 @@ smt_s = \case
               Just last_timev -> do
                 last_timev' <- Atom <$> smtVar last_timev
                 smtAssertCtxt $ uint256_lt last_timev' timev'
-      let after = bind_time <> order_time <> smt_n next_n
-      let go (from, (isClass, msgas, amta, _whena)) = do
-            -- XXX Potentially we need to look at whena to determine if we even
-            -- do these bindings in honest mode
+      let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
+      let go (from, (isClass, msgas, amta, whena)) = do
+            should <- shouldSimulate from
             let maybe_pathAdd v bo_no bo_yes mde se =
-                 shouldSimulate from >>= \case
+                 case should of
                     False -> pathAddUnbound at (Just v) bo_no
                     True -> pathAddBound at (Just v) bo_yes mde se
             let bind_from =
                   case isClass of
-                    True -> pathAddUnbound at (Just whov) (O_ClassJoin from)
-                    False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
+                    True ->
+                      case should of
+                        False ->
+                          pathAddUnbound at (Just whov) (O_ClassJoin from)
+                        True -> do
+                          from' <- smtCurrentAddress from
+                          pathAddBound at (Just whov) (O_HonestJoin from) Nothing (Atom $ from')
+                    _ -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
             let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
             let bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (Just $ DLE_Arg at amta) =<< (smt_a at amta)
-            bind_from <> bind_msg <> bind_amt <> after
+            let this_case = bind_from <> bind_msg <> bind_amt <> after
+            when' <- smt_a at whena
+            case should of
+              True -> do
+                smtAssert $ when'
+                r <- checkUsing
+                case r of
+                  -- If this context is satisfiable, then whena can be true, so
+                  -- we need to evaluate it
+                  Sat -> this_case
+                  -- If this context is not-satisfiable, then whena will never
+                  -- be true, so if we go try to evaluate it, then we will fail
+                  -- all subsequent theorems
+                  Unsat -> return ()
+                  Unknown ->
+                    verify1 at [] TWhenNotUnknown (Atom $ "false") Nothing
+              False -> this_case
       mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
@@ -1228,9 +1285,11 @@ _verify_smt mc vst smt lp = do
         let sm_t = maybeT dlmi_ty
         return $ SMTMapInfo {..}
   maps <- mapM initMapInfo dli_maps
+  let addrs0 = M.mapWithKey (\p _ -> DLVar at (bunpack p) T_Address 0) pies_m
   let ctxt =
         SMTCtxt
           { ctxt_smt = smt
+          , ctxt_idx = llo_counter
           , ctxt_smt_con = smt_con
           , ctxt_typem = typem
           , ctxt_vst = vst
@@ -1243,6 +1302,7 @@ _verify_smt mc vst smt lp = do
           , ctxt_displayed = dspdr
           , ctxt_vars_defdr = vars_defdr
           , ctxt_maps = maps
+          , ctxt_addrs = addrs0
           }
   flip runReaderT ctxt $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
@@ -1270,7 +1330,7 @@ _verify_smt mc vst smt lp = do
     let smt_s_top mode = do
           liftIO $ putStrLn $ "  Verifying with mode = " ++ show mode
           local (\e -> e {ctxt_modem = Just mode}) $
-            ctxtNewScope $ smt_s s
+            ctxtNewScope $ freshAddrs $ smt_s s
     let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
     mapM_ smt_s_top ms
 
