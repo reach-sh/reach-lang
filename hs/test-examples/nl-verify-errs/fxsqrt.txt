@@ -5,8 +5,8 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   msg: "fxsqrt: Cannot find the square root of a negative number."
-  at reach standard library:284:9:application
-  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:283:30:function exp)
+  at reach standard library:298:9:application
+  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:297:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
   // Violation witness
@@ -20,8 +20,8 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TClaim CT_Assert
   msg: "fxsqrt: Cannot find the square root of a negative number."
-  at reach standard library:284:9:application
-  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:283:30:function exp)
+  at reach standard library:298:9:application
+  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:297:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
   (details omitted on repeat)

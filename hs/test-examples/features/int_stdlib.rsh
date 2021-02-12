@@ -86,6 +86,13 @@ export const main =
         assert(le2 == true);
         assert(le3 == false);
         assert(le4 == true);
+
+        assert(- (- 4) == + (+4));
+        const x = - 5;
+        assert(-x == +5);
+        const o = { u: 5, i: +5 };
+        assert(+o.u == -(-o.u));
+        assert(+o.i == o.i);
       });
     }
  );

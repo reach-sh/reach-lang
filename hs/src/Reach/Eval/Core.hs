@@ -10,7 +10,7 @@ import qualified Data.ByteString as B
 import Data.Foldable
 import Data.IORef
 import Data.List (transpose, (\\))
-import Data.List.Extra (mconcatMap)
+import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
@@ -2162,8 +2162,25 @@ evalExpr e = case e of
   JSIdentifier a x ->
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
-  JSDecimal a ns -> locAtf (srcloc_jsa "decimal" a) $
-    withAt $ \at -> public $ SLV_Int at $ numberValue 10 ns
+  JSDecimal a ns ->
+    case splitOn "." ns of
+      [iDigits, fDigits] ->
+        let i     = iDigits <> fDigits in
+        let scale = '1' : replicate (length fDigits) '0' in
+        let signV = \at ->
+              SLSSVal at Public $ SLV_Bool at True in
+        let signedInt = \at ->
+              SLV_Object at Nothing $ M.fromList [
+                ("scale", SLSSVal at Public $ SLV_Int at $ numberValue 10 scale),
+                ("i", SLSSVal at Public $ SLV_Int at $ numberValue 10 i) ] in
+        let iV = \at -> SLSSVal at Public $ signedInt at in
+        locAtf (srcloc_jsa "decimal" a) $
+        withAt $ \at ->
+          public $ SLV_Object at Nothing $
+            M.fromList [("sign", signV at),("i", iV at) ]
+      [_] -> locAtf (srcloc_jsa "decimal" a) $
+        withAt $ \at -> public $ SLV_Int at $ numberValue 10 ns
+      _ -> impossible "Number must have 0 or 1 decimal points."
   JSLiteral a l -> locAtf (srcloc_jsa "literal" a) $ do
     at' <- withAt id
     case l of
@@ -2277,6 +2294,8 @@ evalExpr e = case e of
     return $ (lvl, SLV_Object at' Nothing fenv)
   JSSpreadExpression _ _ -> illegal
   JSTemplateLiteral _ _ _ _ -> illegal
+  JSUnaryExpression op@JSUnaryOpMinus {} i -> castToSigned i op
+  JSUnaryExpression op@JSUnaryOpPlus {} i  -> castToSigned i op
   JSUnaryExpression op ue ->
     unaryToPrim op
       >>= \x -> doCallV x JSNoAnnot [ue]
@@ -2349,6 +2368,21 @@ evalExpr e = case e of
               retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
             _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
         _ -> expect_t idxv $ Err_Eval_RefNotInt
+    -- unary (-, +) work on signed types such as Int and FixedPoint
+    -- which are of the shape: ∀ a . { sign: bool, i : a }
+    -- This function will first cast UInt args to Int before applying op.
+    -- Any arg that is already signed will just apply the op.
+    castToSigned i op =  do
+      ex <- evalExpr i
+      let mkField k v = JSPropertyNameandValue (JSPropertyString JSNoAnnot $ "'" <> k <> "'") JSNoAnnot [v]
+      i' <- typeOf (snd ex) >>= \case
+        (T_UInt, _) ->
+          let i_field = JSLOne $ mkField "i" i in
+          let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true" in
+          let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot in
+          return si
+        _ -> return i
+      unaryToPrim op >>= \o -> doCallV o JSNoAnnot [i']
 
 evalExprs :: [JSExpression] -> App [SLSVal]
 evalExprs = \case

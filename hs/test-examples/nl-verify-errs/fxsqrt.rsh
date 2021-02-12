@@ -7,6 +7,6 @@ export const main =
     [['A', { show: Fun([FixedPoint], Null) }]],
     (A) => {
       A.only(() => {
-        interact.show( fxsqrt( fx(1)( int(Neg, 9) ) , 10 ) );
+        interact.show( fxsqrt( fx(1)(Neg, 9) , 10 ) );
       });
     });

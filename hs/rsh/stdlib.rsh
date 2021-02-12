@@ -208,8 +208,8 @@ export const Pos = true;
 export const Neg = false;
 
 // Operator abbreviation expansions
-export const minus = (x) => int(Neg,x);
-export const plus = (x) => int(Pos,x);
+export const minus = (x) => ({ i: x.i, sign: !x.sign });
+export const plus = (x) => x;
 
 export const igt = (x, y) => {
   const t = [ x.sign, y.sign ];
@@ -241,18 +241,28 @@ export const imul = (x, y) => int(x.sign == y.sign, x.i * y.i);
 export const idiv = (x, y) => int(x.sign == y.sign, x.i / y.i);
 export const imod = (x, y) => isub(x, imul(idiv(x, y), y));
 
-export const FixedPoint = Object({ scale: UInt, i: Int });
+export const FixedPoint = Object({ sign: Bool, i: Object({ scale: UInt, i: UInt }) });
 
-export const fx = (scale) => (i) =>
-  ({ scale, i });
+export const fx = (scale) => (sign, i) =>
+  ({sign, i: { scale, i }});
 
-export const fxrescale = (x, scale) =>
-  (x.scale == scale)
-    ? x
-    : { i: idiv( imul( x.i, +scale ), +x.scale ), scale };
+export const fxint = (i) =>
+  ({ sign: i.sign, i: { i: i.i, scale: 1 }})
+
+const fxi2int = (x) =>
+  int(x.sign, x.i.i);
+
+export const fxrescale = (x, scale) => {
+  if (x.i.scale == scale) {
+    return x
+  } else {
+    const r = idiv( imul( fxi2int(x), + scale ), int(Pos, x.i.scale) );
+    return fx(scale)(r.sign, r.i);
+  }
+}
 
 export const fxunify = (x, y) => {
-  const scale = x.scale < y.scale ? y.scale : x.scale;
+  const scale = x.i.scale < y.i.scale ? y.i.scale : x.i.scale;
   const x_ = fxrescale(x, scale);
   const y_ = fxrescale(y, scale);
   return [ scale, x_, y_ ];
@@ -260,34 +270,38 @@ export const fxunify = (x, y) => {
 
 export const fxadd = (x, y) => {
   const [ scale, x_, y_ ] = fxunify(x, y);
-  return { i: iadd(x_.i, y_.i), scale };
+  const r = iadd( fxi2int(x_), fxi2int(y_) );
+  return fx(scale)(r.sign, r.i);
 }
 
 export const fxsub = (x, y) => {
   const [ scale, x_, y_ ] = fxunify(x, y);
-  return { i: isub(x_.i, y_.i), scale };
+  const r = isub( fxi2int(x_), fxi2int(y_) );
+  return fx(scale)(r.sign, r.i);
 }
 
 export const fxmul = (x, y) => {
-  return { i: imul(x.i, y.i), scale: x.scale * y.scale };
+  const r = imul( fxi2int(x), fxi2int(y) );
+  return fx(x.i.scale * y.i.scale )(r.sign, r.i);
 }
 
 export const fxdiv = (x, y, scale_factor) => {
   const x_ = {
-    i: imul( x.i, +scale_factor),
-    scale: x.scale * scale_factor
+    i: imul( fxi2int(x), + scale_factor),
+    scale: x.i.scale * scale_factor
   };
-  return { i: idiv(x_.i, y.i), scale: x_.scale / y.scale };
+  const r = idiv( x_.i, fxi2int(y) );
+  return fx(x_.scale / y.i.scale)(r.sign, r.i);
 }
 
 export const fxsqrt = (x, k) => {
-  assert(x.i.sign == Pos, "fxsqrt: Cannot find the square root of a negative number.");
-  return { i : +sqrt(x.i.i, k), scale: x.scale / sqrt(x.scale, k) };
+  assert(x.sign == Pos, "fxsqrt: Cannot find the square root of a negative number.");
+  return fx( x.i.scale / sqrt(x.i.scale, k) )(Pos, sqrt(x.i.i, k));
 }
 
 export const fxcmp = (cmp, x, y) => {
   const [ _, x_, y_ ] = fxunify(x, y);
-  return cmp(x_.i, y_.i);
+  return cmp( fxi2int(x_), fxi2int(y_) );
 }
 
 export const fxlt = (x, y) => fxcmp(ilt, x, y);
@@ -299,7 +313,7 @@ export const fxne = (x, y) => fxcmp(ine, x, y);
 
 export const fxpowui = (base, power, precision) =>
   Array.iota(precision)
-    .reduce([ fx(1)(+ 1 ), power, base ], ([ r, p, b ], _) =>
+    .reduce([ +1.0, power, base ], ([ r, p, b ], _) =>
       [ (p % 2 == 1) ? fxmul(r, b) : r, p / 2, fxmul(b, b) ])
   [0];
 
@@ -318,11 +332,13 @@ export const fxmod = (x, y) => {
   }
 
 export const fxfloor = (x) =>
-  fxrescale(x, 1).i;
+  x.sign
+  ? int(x.sign, fxrescale(x, 1).i.i)
+  : int(x.sign, fxrescale(x, 1).i.i + 1);
 
 const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
   const xN = fxpowi(x, numerator, precision);
-  const fxd = fx(1)(denominator);
+  const fxd = fxint(denominator);
   return Array.iota(precision).reduce(xN, (acc, _) => {
     const n = fxsub(fxpowi(acc, denominator, precision), xN);
     const d = fxmul(fxd, fxpowi(acc, isub(denominator, +1), precision));
@@ -335,10 +351,10 @@ const getNumDenom = (value, precision) => {
   const [ numerator, denominator, _ ] =
     Array.iota(precision)
       .reduce([ +0, +1, value ], ([ accNum, accDen, accVal ], _) => {
-        const i = fxrescale(accVal, 1).i;
-        const v = fxsub(accVal, fx(1)(i));
-        const num = iadd(accNum, i);
-        const v2 = fxmul(v, fx(1)(+2));
+        const i   = fxrescale(accVal, 1);
+        const v   = fxsub(accVal, i);
+        const num = iadd(accNum, fxi2int(i) );
+        const v2  = fxmul(v, +2.0);
         return [ imul(num, +2), imul(accDen, +2), v2 ];
       });
 
@@ -363,7 +379,7 @@ const getNumDenom = (value, precision) => {
 
 export const fxpow = (base, power, precision, scalePrecision) => {
   const whole = fxfloor(power);
-  const fwhole = fx(1)( whole );
+  const fwhole = fxint(whole);
   if (fxeq(power, fwhole)) {
     return fxpowi(base, whole, precision);
   } else {
