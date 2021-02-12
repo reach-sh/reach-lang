@@ -5,10 +5,10 @@ export const main = Reach.App(
   [['A', { put: Fun([UInt], UInt) }]],
   (A) => {
     A.only(() => {
-      const x = -1;
+      const x = 18446744073709551616;
     });
     A.publish(x);
-    const y = -1;
+    const y = 18446744073709551616;
     const z = x + y;
     commit();
 

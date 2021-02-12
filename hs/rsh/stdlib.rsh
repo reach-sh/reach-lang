@@ -4,9 +4,6 @@ export function not (x) {
   return (x ? false : true); }
 export const boolEq = (x, y) => (x ? y : !y);
 
-// Operator abbreviation expansions
-export function minus (x) {
-  return 0 - x; }
 export function polyNeq (x, y) {
   return not(x == y); }
 
@@ -202,20 +199,70 @@ export const sqrt = (y, k) =>
     (x < z)
       ? [ x, ((y / x + x) / 2) ]
       : [ z, x ]
-  )[1];
+      )[1];
 
-export const FixedPoint = Object({ scale: UInt, i: UInt });
+export const Int = Object({ sign: Bool, i: UInt});
+export const int = (sign, i) => ({ sign, i });
 
-export const fx = (scale) => (i) =>
-  ({ scale, i });
+export const Pos = true;
+export const Neg = false;
 
-export const fxrescale = (x, scale) =>
-  (x.scale == scale)
-    ? x
-    : { i: (x.i * scale) / x.scale, scale };
+// Operator abbreviation expansions
+export const minus = (x) => ({ i: x.i, sign: !x.sign });
+export const plus = (x) => x;
+
+export const igt = (x, y) => {
+  const t = [ x.sign, y.sign ];
+  return (
+      (t == [ Pos, Neg ]) ? true
+    : (t == [ Pos, Pos ]) ? x.i > y.i
+    : (t == [ Neg, Pos ]) ? false
+    : x.i < y.i);
+}
+
+export const ige = (x, y) => igt(x, y) || x == y;
+export const ilt = (x, y) => !igt(x, y) && x != y;
+export const ile = (x, y) => !igt(x, y);
+export const ieq = (x, y) => x == y;
+export const ine = (x, y) => x != y;
+
+export const iadd = (x, y) => {
+  if (x.sign == y.sign) {
+    return int(x.sign, x.i + y.i);
+  } else {
+    const [ max, min ] =
+      (x.i > y.i) ? [ x, y ] : [ y, x ];
+    return int(max.sign, max.i - min.i);
+  }
+}
+
+export const isub = (x, y) => iadd (x, int(!y.sign, y.i));
+export const imul = (x, y) => int(x.sign == y.sign, x.i * y.i);
+export const idiv = (x, y) => int(x.sign == y.sign, x.i / y.i);
+export const imod = (x, y) => isub(x, imul(idiv(x, y), y));
+
+export const FixedPoint = Object({ sign: Bool, i: Object({ scale: UInt, i: UInt }) });
+
+export const fx = (scale) => (sign, i) =>
+  ({sign, i: { scale, i }});
+
+export const fxint = (i) =>
+  ({ sign: i.sign, i: { i: i.i, scale: 1 }})
+
+const fxi2int = (x) =>
+  int(x.sign, x.i.i);
+
+export const fxrescale = (x, scale) => {
+  if (x.i.scale == scale) {
+    return x
+  } else {
+    const r = idiv( imul( fxi2int(x), + scale ), int(Pos, x.i.scale) );
+    return fx(scale)(r.sign, r.i);
+  }
+}
 
 export const fxunify = (x, y) => {
-  const scale = x.scale < y.scale ? y.scale : x.scale;
+  const scale = x.i.scale < y.i.scale ? y.i.scale : x.i.scale;
   const x_ = fxrescale(x, scale);
   const y_ = fxrescale(y, scale);
   return [ scale, x_, y_ ];
@@ -223,47 +270,59 @@ export const fxunify = (x, y) => {
 
 export const fxadd = (x, y) => {
   const [ scale, x_, y_ ] = fxunify(x, y);
-  return { i: x_.i + y_.i, scale };
+  const r = iadd( fxi2int(x_), fxi2int(y_) );
+  return fx(scale)(r.sign, r.i);
 }
 
 export const fxsub = (x, y) => {
   const [ scale, x_, y_ ] = fxunify(x, y);
-  return { i: x_.i - y_.i, scale };
+  const r = isub( fxi2int(x_), fxi2int(y_) );
+  return fx(scale)(r.sign, r.i);
 }
 
 export const fxmul = (x, y) => {
-  return { i: x.i * y.i, scale: x.scale * y.scale };
+  const r = imul( fxi2int(x), fxi2int(y) );
+  return fx(x.i.scale * y.i.scale )(r.sign, r.i);
 }
 
 export const fxdiv = (x, y, scale_factor) => {
   const x_ = {
-    i: x.i * scale_factor,
-    scale: x.scale * scale_factor
+    i: imul( fxi2int(x), + scale_factor),
+    scale: x.i.scale * scale_factor
   };
-  return { i: x_.i / y.i, scale: x_.scale / y.scale };
+  const r = idiv( x_.i, fxi2int(y) );
+  return fx(x_.scale / y.i.scale)(r.sign, r.i);
 }
 
 export const fxsqrt = (x, k) => {
-  return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
+  assert(x.sign == Pos, "fxsqrt: Cannot find the square root of a negative number.");
+  return fx( x.i.scale / sqrt(x.i.scale, k) )(Pos, sqrt(x.i.i, k));
 }
 
 export const fxcmp = (cmp, x, y) => {
   const [ _, x_, y_ ] = fxunify(x, y);
-  return cmp(x_.i, y_.i);
+  return cmp( fxi2int(x_), fxi2int(y_) );
 }
 
-export const fxlt = (x, y) => fxcmp(lt, x, y);
-export const fxle = (x, y) => fxcmp(le, x, y);
-export const fxgt = (x, y) => fxcmp(gt, x, y);
-export const fxge = (x, y) => fxcmp(ge, x, y);
-export const fxeq = (x, y) => fxcmp(polyEq, x, y);
-export const fxne = (x, y) => fxcmp(polyNeq, x, y);
+export const fxlt = (x, y) => fxcmp(ilt, x, y);
+export const fxle = (x, y) => fxcmp(ile, x, y);
+export const fxgt = (x, y) => fxcmp(igt, x, y);
+export const fxge = (x, y) => fxcmp(ige, x, y);
+export const fxeq = (x, y) => fxcmp(ieq, x, y);
+export const fxne = (x, y) => fxcmp(ine, x, y);
 
-export const fxpowi = (base, power, precision) =>
+export const fxpowui = (base, power, precision) =>
   Array.iota(precision)
-    .reduce([ fx(1)(1), power, base ], ([ r, p, b ], _) =>
+    .reduce([ +1.0, power, base ], ([ r, p, b ], _) =>
       [ (p % 2 == 1) ? fxmul(r, b) : r, p / 2, fxmul(b, b) ])
   [0];
+
+export const fxpowi = (base, power, precision) => {
+  const r = fxpowui(base, power.i, precision);
+  return (power.sign)
+    ? r
+    : fxdiv(1, r, base.scale);
+}
 
 export const fxmod = (x, y) => {
     const [ _, x_, y_] = fxunify(x, y);
@@ -273,14 +332,16 @@ export const fxmod = (x, y) => {
   }
 
 export const fxfloor = (x) =>
-  fxrescale(x, 1).i;
+  x.sign
+  ? int(x.sign, fxrescale(x, 1).i.i)
+  : int(x.sign, fxrescale(x, 1).i.i + 1);
 
 const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
   const xN = fxpowi(x, numerator, precision);
-  const fxd = fx(1)(denominator);
+  const fxd = fxint(denominator);
   return Array.iota(precision).reduce(xN, (acc, _) => {
     const n = fxsub(fxpowi(acc, denominator, precision), xN);
-    const d = fxmul(fxd, fxpowi(acc, denominator - 1, precision));
+    const d = fxmul(fxd, fxpowi(acc, isub(denominator, +1), precision));
     const t = fxdiv(n, d, 10);
     return fxrescale(fxsub(acc, t), scalePrecision);
   });
@@ -289,15 +350,15 @@ const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
 const getNumDenom = (value, precision) => {
   const [ numerator, denominator, _ ] =
     Array.iota(precision)
-      .reduce([ 0, 1, value ], ([ accNum, accDen, accVal ], _) => {
-        const i = fxrescale(accVal, 1).i;
-        const v = fxsub(accVal, fx(1)(i));
-        const num = accNum + i;
-        const v2 = fxmul(v, fx(1)(2));
-        return [ num * 2, accDen * 2, v2 ];
+      .reduce([ +0, +1, value ], ([ accNum, accDen, accVal ], _) => {
+        const i   = fxrescale(accVal, 1);
+        const v   = fxsub(accVal, i);
+        const num = iadd(accNum, fxi2int(i) );
+        const v2  = fxmul(v, +2.0);
+        return [ imul(num, +2), imul(accDen, +2), v2 ];
       });
 
-  const [ hi, lo ] = (numerator > denominator)
+  const [ hi, lo ] = (igt(numerator, denominator))
       ? [ numerator, denominator ]
       : [ denominator, numerator ];
 
@@ -306,19 +367,19 @@ const getNumDenom = (value, precision) => {
       if (br) {
         return [ br, accHi, accLo ];
       } else {
-        const rem = accHi % accLo;
-        return (rem == 0)
+        const rem = imod(accHi, accLo);
+        return (rem.i == 0)
           ? [ true, accHi, accLo ]
           : [ false, accLo, accHi ];
       }
     });
 
-  return [ numerator / lo_, denominator / lo_ ];
+  return [ idiv(numerator, lo_), idiv(denominator, lo_) ];
 }
 
 export const fxpow = (base, power, precision, scalePrecision) => {
   const whole = fxfloor(power);
-  const fwhole = fx(1)(whole);
+  const fwhole = fxint(whole);
   if (fxeq(power, fwhole)) {
     return fxpowi(base, whole, precision);
   } else {

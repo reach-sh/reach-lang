@@ -244,5 +244,8 @@ export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
 ) => (x:any, y:any): boolean =>
   bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
 
-export const parseFixedPoint = (x: { scale: num, i: num }): number =>
-  bigNumberify(x.i).toNumber() / bigNumberify(x.scale).toNumber();
+export const parseFixedPoint = (x: { sign: boolean, i: { i: num, scale: num } }): number =>
+  parseInt({ sign: x.sign, i: x.i.i }) / bigNumberify(x.i.scale).toNumber();
+
+export const parseInt = (x: { sign: boolean, i: num}) =>
+  bigNumberify(x.i).toNumber() * (x.sign ? 1 : (- 1));
