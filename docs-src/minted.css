@@ -44,6 +44,11 @@ code.highlight {
     color: #228b22 !important;
 }
 
+/* float literals *and* line numbers like: 3 */
+.mf {
+    color: #228b22 !important;
+}
+
 /* int literals like: 0xdeadbeef */
 .mh {
     color: #228b22 !important;

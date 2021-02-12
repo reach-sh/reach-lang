@@ -1117,6 +1117,8 @@ Any expression satisfying @reachin{isType} is compiled away and does not exist a
  10
  0xdeadbeef
  007
+ -10
+ 34.5432
  true
  false
  null
@@ -1130,7 +1132,10 @@ is an @tech{expression} that evaluates to the given @tech{value}.
 The @deftech{null literal} may be written as @reachin{null}.
 
 @deftech{Numeric literal}s may be written in decimal, hexadecimal, or octal.
-Numeric literals must obey the @deftech{bit width} of @reachin{UInt} if they are used as @reachin{UInt} values at runtime, but if they only appear at compile-time, then they may be any number.
+Numeric literals must obey the @deftech{bit width} of @reachin{UInt} if they are used as @reachin{UInt} values at runtime, but if they only appear at compile-time, then they may be any positive number.
+Reach provides abstractions for working with @reachin{Int}s and signed @reachin{FixedPoint} numbers.
+@reachin{Int}s may be defined by applying the unary @reachin{+} and @reachin{-} operators to values of type @reachin{UInt}.
+Reach provides syntactic sugar for defining signed @reachin{FixedPoint} numbers, in base 10, with decimal syntax.
 
 @deftech{Boolean literal}s may be written as @reachin{true} or @reachin{false}.
 
@@ -1146,15 +1151,20 @@ which is either a @tech{unary operator}, or a @tech{binary operator}.
 
 @(hrule)
 
-@(mint-define! '("!") '("-") '("typeof"))
+@(mint-define! '("!") '("-") '("+") '("typeof"))
 @reach{
  ! a
  - a
+ + a
  typeof a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - typeof}.
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - + typeof}.
 
 It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
+
+When applied to values of type @reachin{UInt}, unary @reachin{-} and @reachin{+} operators will cast
+their arguments to type @reachin{Int}. The unary @reachin{-} and @reachin{+} operations are defined for
+values of type: @reachin{Int}, and @reachin{FixedPoint}.
 
 @(hrule)
 
@@ -1216,7 +1226,7 @@ All @tech{binary expression} operators have a corresponding named function in th
 While @reachin{&&} and @reachin{||} may not evaluate their second argument,
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
-@(mint-define! '("boolEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
+@(mint-define! '("boolEq") '("typeEq") '("intEq") '("digestEq") '("addressEq") '("fxeq") '("ieq"))
 @reach{
  polyEq(a, b)    // eq on all types
  boolEq(a, b)    // eq on Bool
@@ -1224,6 +1234,8 @@ their corresponding named functions @reachin{and} and @reachin{or}, always do.
  intEq(a, b)     // eq on UInt
  digestEq(a, b)  // eq on Digest
  addressEq(a, b) // eq on Addresses
+ fxeq(a, b)      // eq on FixedPoint
+ ieq(a, b)       // eq on Int
 }
 
 @reachin{==} is a function which operates on all types.
@@ -1954,6 +1966,8 @@ use the @reachin{+} and @reachin{-} unary operators to declare integers instead 
 @subsubsection{@tt{Fixed-Point Numbers}}
 
 @reachin{FixedPoint} is defined by
+
+@(mint-define! '("FixedPoint"))
 @reach{
   export const FixedPoint = Object({ sign: bool, i: Object({ scale: UInt, i: UInt }) }); }
 
