@@ -1880,7 +1880,7 @@ you can call:
 If you'd like to instead use Reach in your own JavaScript project,
 you can call:
 
-@cmd{npm install @"@"reachsh/stdlib}
+@cmd{npm install @"@"reach-sh/stdlib}
 
 @margin-note{The Reach standard library is undergoing continual improvement and is updated often.
 If you are experiencing issues with the Node.js package, try updating!}
