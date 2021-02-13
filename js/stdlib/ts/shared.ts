@@ -238,6 +238,14 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 
+export const mapRef = (m: any, f: any): any => {
+  const v = m[f];
+  if ( v === undefined ) {
+    return ['None', true];
+  } else {
+    return ['Some', v];
+  }
+};
 
 // XXX this doesn't really belong here, but hard to relocate due to dep on bytesEq
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}

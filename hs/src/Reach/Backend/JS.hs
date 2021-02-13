@@ -32,6 +32,9 @@ vsep_with_blank l = vsep $ punctuate emptyDoc l
 
 --- JS Helpers
 
+jsMapVar :: DLMVar -> Doc
+jsMapVar mpv = pretty mpv
+
 jsString :: String -> Doc
 jsString s = squotes $ pretty s
 
@@ -250,9 +253,12 @@ jsExpr ctxt = \case
         jsApply "ctc.iam" [jsArg what]
       False ->
         jsArg what
-  DLE_MapRef {} -> impossible $ "XXX js mapref"
-  DLE_MapSet {} -> impossible $ "XXX js mapset"
-  DLE_MapDel {} -> impossible $ "XXX js mapdel"
+  DLE_MapRef _ mpv fa ->
+    jsApply "stdlib.mapRef" [ jsMapVar mpv, jsArg fa ]
+  DLE_MapSet _ mpv fa na ->
+    jsMapVar mpv <> brackets (jsArg fa) <+> "=" <+> jsArg na
+  DLE_MapDel _ mpv fa ->
+    "delete" <+> jsMapVar mpv <> brackets (jsArg fa)
 
 jsEmitSwitch :: (JSCtxt -> k -> Doc) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc
 jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
@@ -511,9 +517,13 @@ jsPart dli p (EPProg _ _ et) =
       case dli_ctimem of
         Nothing -> mempty
         Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
+    map_defn (mpv, DLMapInfo {..}) =
+      "const" <+> jsMapVar mpv <+> "=" <+> "{};"
+    maps_defn = vsep $ map map_defn $ M.toList dli_maps
     bodyp' =
       vsep
         [ "const stdlib = ctc.stdlib;"
+        , maps_defn
         , ctimem'
         , jsETail ctxt et
         ]
