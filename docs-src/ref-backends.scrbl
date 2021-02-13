@@ -263,7 +263,7 @@ this is the current block number, represented as a @litchar{BigNumber}.
 
 @(mint-define! '("waitUntilTime"))
 @js{
- waitUntilTime(time, onProgress) => Promise<void>
+ waitUntilTime(time, onProgress) => Promise<time>
 }
 
 Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
@@ -281,7 +281,7 @@ It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
 
 @(mint-define! '("wait"))
 @js{
- wait(timedelta, onProgress) => Promise<void>
+ wait(timedelta, onProgress) => Promise<time>
 }
 
 Returns a Promise that will only be resolved after the specified @tech{time delta} has elapsed.
