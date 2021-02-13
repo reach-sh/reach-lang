@@ -2292,6 +2292,21 @@ evalExpr e = case e of
       (rator_lvl, ratorv) <-
         locAtf (srcloc_jsa "application, rator" a) $ evalExpr rator
       lvlMeet rator_lvl <$> doCallV ratorv a rands
+    -- unary (-, +) work on signed types such as Int and FixedPoint
+    -- which are of the shape: ∀ a . { sign: bool, i : a }
+    -- This function will first cast UInt args to Int before applying op.
+    -- Any arg that is already signed will just apply the op.
+    castToSigned i op =  do
+      ex <- evalExpr i
+      let mkField k v = JSPropertyNameandValue (JSPropertyString JSNoAnnot $ "'" <> k <> "'") JSNoAnnot [v]
+      i' <- typeOf (snd ex) >>= \case
+        (T_UInt, _) ->
+          let i_field = JSLOne $ mkField "i" i in
+          let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true" in
+          let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot in
+          return si
+        _ -> return i
+      unaryToPrim op >>= \o -> doCallV o JSNoAnnot [i']
 
 doTernary :: JSExpression -> JSAnnot -> JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
@@ -2412,21 +2427,6 @@ doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
               retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
             _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
         _ -> expect_t idxv $ Err_Eval_RefNotInt
-    -- unary (-, +) work on signed types such as Int and FixedPoint
-    -- which are of the shape: ∀ a . { sign: bool, i : a }
-    -- This function will first cast UInt args to Int before applying op.
-    -- Any arg that is already signed will just apply the op.
-    castToSigned i op =  do
-      ex <- evalExpr i
-      let mkField k v = JSPropertyNameandValue (JSPropertyString JSNoAnnot $ "'" <> k <> "'") JSNoAnnot [v]
-      i' <- typeOf (snd ex) >>= \case
-        (T_UInt, _) ->
-          let i_field = JSLOne $ mkField "i" i in
-          let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true" in
-          let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot in
-          return si
-        _ -> return i
-      unaryToPrim op >>= \o -> doCallV o JSNoAnnot [i']
 
 evalExprs :: [JSExpression] -> App [SLSVal]
 evalExprs = \case
