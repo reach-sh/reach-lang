@@ -380,10 +380,10 @@ export async function getFaucet(): Promise<Account> {
   return REACHY_RICH_P;
 }
 
-export const newTestAccount = async (startingBalance: BigNumber) => {
+export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
   debug(`new account: ${account.networkAccount.address}`);
-  await fundFromFaucet(account, startingBalance);
+  await fundFromFaucet(account, bigNumberify(startingBalance));
   return account;
 };
 

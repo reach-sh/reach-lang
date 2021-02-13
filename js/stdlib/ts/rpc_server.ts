@@ -43,7 +43,7 @@ export const serveRpc = async (backend: any) => {
   const rpc_stdlib = {
     ...real_stdlib,
     "newTestAccount": (async (bal: BigNumber) =>
-      makeACC(await real_stdlib.newTestAccount(real_stdlib.bigNumberify(bal)))),
+      makeACC(await real_stdlib.newTestAccount(bal))),
     "balanceOf": (async (id: number) =>
       await real_stdlib.balanceOf(ACC[id])),
     "formatCurrency": (async (x: BigNumber, y: number) =>
