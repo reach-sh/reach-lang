@@ -5,7 +5,7 @@ import * as FAKE_stdlib from './FAKE.mjs';
 
 runTests(async () => {
   await describe('The `web3` stdlib', async () => {
-    const { bigNumberify, ge, le } = stdlib;
+    const { bigNumberify, ge, le, getNetworkTime, add } = stdlib;
 
     describe('exposes a `bigNumberToHex` function that', () => {
       it('correctly translates positive `BigNumber`s to hex', () => {
@@ -33,7 +33,7 @@ runTests(async () => {
       });
     });
 
-    describe('T_Address.canonicalize can handle multiple inputs', async () => {
+    await describe('T_Address.canonicalize can handle multiple inputs', async () => {
       const acc = await stdlib.createAccount();
       const addr = acc.networkAccount.address;
       const { canonicalize } = stdlib.T_Address;
@@ -168,6 +168,30 @@ runTests(async () => {
         .toBe(true));
     });
 
+
+    await describe('exposes a `newTestAccount` function which', async () => {
+      const balance = Math.floor(Math.random() * 1000);
+
+      await describe('accepts numeric arguments of type', async () => {
+        await it('`BigNumber`', async () => {
+          const a = await stdlib.newTestAccount(bigNumberify(balance));
+          const b = await stdlib.balanceOf(a);
+
+          expect(stdlib.eq(balance, b))
+            .toBe(true);
+        });
+
+        await it('raw JavaScript `Number`', async () => {
+          const a = await stdlib.newTestAccount(balance);
+          const b = await stdlib.balanceOf(a);
+
+          expect(stdlib.eq(balance, b))
+            .toBe(true);
+        });
+      });
+    });
+
+
     describe('protect', () => {
       const hello = 'hello';
       const helloHex = stdlib.stringToHex('hello');
@@ -293,32 +317,40 @@ runTests(async () => {
     await describe('wait', async () => {
       // Note: this test could go faster with a faster pollingInterval
       // I think.
+      const begin = await getNetworkTime();
+
       let prog0 = 1;
-      await stdlib.wait(1, ({ currentTime }) => {
+      const first = await stdlib.wait(1, ({ currentTime }) => {
         describe(`prog0: ${prog0}`, () => {
-          expect(ge(currentTime, 0) && le(currentTime, 1)).toBe(true);
+          expect(ge(currentTime, 0) && le(currentTime, add(begin, prog0)))
+            .toBe(true);
           prog0++;
         });
       });
-      expect(await stdlib.getNetworkTime()).toBe(bigNumberify(1));
+      expect(ge(first, add(begin, 1)))
+        .toBe(true);
 
       let prog1 = 1;
-      await stdlib.wait(1, ({ currentTime }) => {
+      const second = await stdlib.wait(1, ({ currentTime }) => {
         describe(`prog1: ${prog1}`, () => {
-          expect(ge(currentTime, 1) && le(currentTime, 2)).toBe(true);
+          expect(ge(currentTime, 1) && le(currentTime, add(begin, prog1 + 1)))
+            .toBe(true);
           prog1++;
         });
       });
-      expect(await stdlib.getNetworkTime()).toBe(bigNumberify(2));
+      expect(ge(second, add(begin, 2)))
+        .toBe(true);
 
       let prog2 = 1;
-      await stdlib.waitUntilTime(5, ({ currentTime }) => {
+      const third = await stdlib.waitUntilTime(add(second, 5), ({ currentTime }) => {
         describe(`prog2: ${prog2}`, () => {
-          expect(ge(currentTime, 2) && le(currentTime, 5)).toBe(true);
+          expect(ge(currentTime, 2) && le(currentTime, add(begin, prog2 + 2)))
+            .toBe(true);
           prog2++;
         });
       });
-      expect(await stdlib.getNetworkTime()).toBe(bigNumberify(5));
+      expect(ge(third, add(second, 5)))
+        .toBe(true);
     });
 
   });
