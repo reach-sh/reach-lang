@@ -92,19 +92,33 @@ instance Pretty ETail where
             Just svs -> pretty svs
           whichp = viaShow which
       ET_ToConsensus _ fs prev last_timev which msend msg amtv timev mtime k ->
-        "sendrecv" <+> fsp <+> prevp <+> pretty last_timev <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <+> pretty timev <> timep <> ns (pretty k)
+        msendp <> recvp <> mtimep <> kp
         where
-          fsp = pretty fs
-          prevp = viaShow prev
-          whichp = viaShow which
+          recvp = "recv" <> parens (render_obj $ M.fromList $
+            [ ("from"::String, pretty fs)
+            , ("prev", pretty prev)
+            , ("last_time", pretty last_timev)
+            , ("which", pretty which)
+            , ("msg", (cm $ map pretty msg))
+            , ("amtv", pretty amtv)
+            , ("timev", pretty timev) ]) <> hardline
+          kp = ns $ pretty k
           msendp =
             case msend of
               Nothing -> mempty
-              Just (as, amt, whena, saved, soloSend) -> ".publish" <> cm [parens (render_das as), pretty amt, pretty whena, cm (map pretty saved), pretty soloSend]
-          timep =
+              Just (as, amt, whena, saved, soloSend) ->
+                "send" <> parens (render_obj $ M.fromList $
+                  [ ("which"::String, pretty which)
+                  , ("as", cm $ map pretty as)
+                  , ("amt", pretty amt)
+                  , ("when", pretty whena)
+                  , ("saved", cm $ map pretty saved)
+                  , ("soloSend", pretty soloSend) ]) <> hardline
+          mtimep =
             case mtime of
               Nothing -> mempty
-              Just (td, tl) -> nest 2 (hardline <> ".timeout" <> (cm [pretty td, (render_nest $ pretty tl)]))
+              Just (td, tl) ->
+                "timeout" <> (cm [pretty td, (render_nest $ pretty tl)]) <> hardline
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn

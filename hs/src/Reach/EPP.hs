@@ -3,6 +3,7 @@ module Reach.EPP (epp) where
 import Control.Monad
 import Control.Monad.Reader
 import Data.IORef
+import Data.List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -16,6 +17,7 @@ import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
 import Reach.Optimize
+import Reach.Texty
 import Reach.Util
 
 -- import Debug.Trace
@@ -101,15 +103,16 @@ interval_no_to (CBetween froml _) =
 
 updateHandlerSVS :: Int -> [DLVar] -> App ()
 updateHandlerSVS target new_svs = do
-  st <- ask
-  liftIO $ modifyIORef (pst_handlers st) update
-  where
-    update (CHandlers hs) = CHandlers $ fmap update1 hs
-    update1 = \case
-      C_Handler at int ltv fs prev _ msg amtv tv body
-        | target == prev ->
-          C_Handler at int ltv fs prev new_svs msg amtv tv body
-      h -> h
+  hsr <- pst_handlers <$> ask
+  CHandlers hs <- liftIO $ readIORef hsr
+  let update1 = \case
+        C_Handler at int ltv fs prev old_svs msg amtv tv body
+          | target == prev && old_svs /= new_svs -> do
+            liftIO $ putStrLn $ "updateHandlerSVS " <> show target <> " w/ " <> (show $ pretty $ new_svs \\ old_svs)
+            return $ C_Handler at int ltv fs prev new_svs msg amtv tv body
+        h -> return h
+  hs' <- mapM update1 hs
+  liftIO $ writeIORef hsr $ CHandlers hs'
 
 newHandler :: App Int
 newHandler = do
