@@ -1159,10 +1159,10 @@ export const fundFromFaucet = async (account: Account, value: BigNumber) => {
   await transfer(faucet, account, value);
 }
 
-export const newTestAccount = async (startingBalance: BigNumber) => {
+export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
   if (getDEBUG()) { await showBalance('before', account.networkAccount); }
-  await fundFromFaucet(account, startingBalance);
+  await fundFromFaucet(account, bigNumberify(startingBalance));
   if (getDEBUG()) { await showBalance('after', account.networkAccount); }
   return account;
 };

@@ -912,15 +912,16 @@ export const fundFromFaucet = async (account: AccountTransferable, value: BigNum
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
-  debug(`newTestAccount(${startingBalance})`);
+export const newTestAccount = async (startingBalance: any): Promise<Account> => {
+  const sb = bigNumberify(startingBalance);
+  debug(`newTestAccount(${sb})`);
   requireIsolatedNetwork('newTestAccount');
   const acc = await createAccount();
   const to = getAddr(acc);
 
   try {
     debug(`newTestAccount awaiting transfer: ${to}`);
-    await fundFromFaucet(acc, startingBalance);
+    await fundFromFaucet(acc, sb);
     debug(`newTestAccount got transfer: ${to}`);
     return acc;
   } catch (e) {
