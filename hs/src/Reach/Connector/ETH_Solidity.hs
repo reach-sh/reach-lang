@@ -123,8 +123,11 @@ solEq ctxt x y = solPrimApply ctxt PEQ [x, y]
 solSet :: Doc -> Doc -> Doc
 solSet x y = solBinOp "=" x y <> semi
 
+solWhen :: Doc -> Doc -> Doc
+solWhen c t = "if" <+> parens c <+> solBraces t
+
 solIf :: Doc -> Doc -> Doc -> Doc
-solIf c t f = "if" <+> parens c <+> solBraces t <> hardline <> "else" <+> solBraces f
+solIf c t f = solWhen c t <> hardline <> "else" <+> solBraces f
 
 --- FIXME don't nest
 solIfs :: [(Doc, Doc)] -> Doc
@@ -162,6 +165,12 @@ solMsg_fun i = "m" <> pretty i
 
 solLoop_fun :: Pretty i => i -> Doc
 solLoop_fun i = "l" <> pretty i
+
+solMapVar :: DLMVar -> Doc
+solMapVar mpv = pretty mpv
+
+solMapRef :: DLMVar -> Doc
+solMapRef mpv = pretty mpv <> "_ref"
 
 solBlockNumber :: Doc
 solBlockNumber = "uint256(block.number)"
@@ -302,8 +311,8 @@ solPrimApply ctxt = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
 
-solLargeArg :: SolCtxt -> DLVar -> DLLargeArg -> Doc
-solLargeArg ctxt dv la =
+solLargeArg' :: SolCtxt -> Doc -> DLLargeArg -> Doc
+solLargeArg' ctxt dv la =
   case la of
     DLLA_Array _ as -> c $ zipWith go ([0 ..] :: [Int]) as
       where
@@ -322,8 +331,11 @@ solLargeArg ctxt dv la =
   where
     t = solType ctxt $ largeArgTypeOf la
     one :: Doc -> Doc -> Doc
-    one f v = solVar ctxt dv <> f <+> "=" <+> v <> semi
+    one f v = dv <> f <+> "=" <+> v <> semi
     c = vsep
+
+solLargeArg :: SolCtxt -> DLVar -> DLLargeArg -> Doc
+solLargeArg ctxt dv = solLargeArg' ctxt (solVar ctxt dv)
 
 solExpr :: SolCtxt -> Doc -> DLExpr -> Doc
 solExpr ctxt sp = \case
@@ -361,9 +373,15 @@ solExpr ctxt sp = \case
       require = solRequire (show (at, fs, mmsg)) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
-  DLE_MapRef {} -> impossible $ "XXX sol mapref"
-  DLE_MapSet {} -> impossible $ "XXX sol mapset"
-  DLE_MapDel {} -> impossible $ "XXX sol mapdel"
+  DLE_MapRef _ mpv fa ->
+    solApply (solMapRef mpv) [solArg ctxt fa] <> sp
+  DLE_MapSet _ mpv fa na ->
+    solLargeArg' ctxt (solArrayRef (solMapVar mpv) (solArg ctxt fa)) nla
+    where
+      nla = DLLA_Data (dataTypeMap $ maybeT na_t) "Some" na
+      na_t = argTypeOf na
+  DLE_MapDel _ mpv fa ->
+    "delete" <+> solArrayRef (solMapVar mpv) (solArg ctxt fa) <> sp
 
 solTransfer :: SolCtxt -> DLArg -> DLArg -> Doc
 solTransfer ctxt who amt =
@@ -839,7 +857,8 @@ solDefineTypes ts = do
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
-  (typei, typem, typesp) <- solDefineTypes $ cts hs
+  let DLInit {..} = dli
+  (typei, typem, typesp) <- solDefineTypes $ cts dli <> cts hs
   let ctxt =
         SolCtxt
           { ctxt_typem = typem
@@ -860,7 +879,6 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
                 ]
             )
             where
-              DLInit {..} = dli
               dli' = vsep $ ctimem'
               (ctimem', csvs_, cctxt) =
                 case dli_ctimem of
@@ -887,7 +905,25 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
             -- doesn't allow empty structs), we force there to be one that will
             -- be ignored
             ([(DLVar at "fake" T_UInt 0)], emptyDoc)
-  let state_defn = "uint256 current_state;"
+  let map_defn (mpv, DLMapInfo {..}) =
+        vsep $
+          [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> solMapVar mpv <> semi
+          , ref_defn ]
+        where
+          keyTy = "address"
+          mt = maybeT dlmi_ty
+          valTy = solType ctxt mt
+          args = [ solDecl "addr" keyTy ]
+          ret = "internal returns (" <> valTy <> " memory res)"
+          ref = (solArrayRef (solMapVar mpv) "addr")
+          do_none = solLargeArg' ctxt "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
+          do_some = solSet "res" ref
+          body = solIf (solEq ctxt (ref <> ".which") (solVariant valTy "Some")) do_some do_none
+          ref_defn = solFunction (solMapRef mpv) args ret body
+  let state_defn =
+        vsep_with_blank $
+          [ "uint256 current_state;" ]
+          <> map map_defn (M.toList dli_maps)
   let ctcbody =
         vsep_with_blank $
           [ state_defn

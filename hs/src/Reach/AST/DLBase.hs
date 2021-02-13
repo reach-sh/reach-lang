@@ -379,6 +379,15 @@ instance IsLocal DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
 
+canDupe :: DLExpr -> Bool
+canDupe e =
+  isPure e && x
+  where
+    x =
+      case e of
+        DLE_MapRef {} -> False
+        _ -> True
+
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
   deriving (Eq, Generic, Show)

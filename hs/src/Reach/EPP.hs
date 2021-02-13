@@ -150,7 +150,8 @@ epp_m k_cs k_udvs = \case
             case get_count dv k_cs of
               Count Nothing -> maybe_skip [dv]
               Count (Just lc) ->
-                ProRes_ (cs' [dv]) (k_udvs, (DL_Let at (PV_Let lc dv) de))
+                ProRes_ (cs' [dv]) (k_udvs, (DL_Let at (PV_Let lc' dv) de))
+                  where lc' = if canDupe de then lc else PL_Many
     where
       maybe_skip vs =
         case isPure de of

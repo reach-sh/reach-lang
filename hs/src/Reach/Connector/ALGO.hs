@@ -248,7 +248,7 @@ bad lab = do
 xxx :: LT.Text -> App ()
 xxx lab = do
   let lab' = "XXX " <> lab
-  when False $
+  when True $
     liftIO $ LTIO.putStrLn lab'
   bad lab'
 
@@ -851,6 +851,9 @@ ct = \case
     ct ft
   CT_Switch at dv csm -> doSwitch ct at dv csm
   CT_Jump at which _ (DLAssignment asnm) -> do
+    -- XXX This is broken with multiple loops in a row. It could be changed to
+    -- work the same way, but by doing all of the substitution beforehand, so
+    -- the outer loop can see into the inner loop
     Env {..} <- ask
     let Shared {..} = eShared
     case M.lookup which sHandlers of

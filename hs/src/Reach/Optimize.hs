@@ -320,11 +320,12 @@ ucs_m cs_k = \case
   DL_Nop at -> (cs_k, DL_Nop at)
   DL_Let at (PV_Let _ v) e -> (cs', ct')
     where
-      ct' = DL_Let at (PV_Let lc' v) e
+      ct' = DL_Let at (PV_Let lc'' v) e
       lc' =
         case get_count v cs_k of
           Count Nothing -> impossible "no use"
           Count (Just x) -> x
+      lc'' = if canDupe e then lc' else PL_Many
       cs' = count_rms [v] cs'_
       cs'_ = counts e <> cs_k
   DL_Let at PV_Eff e -> (cs', ct')
