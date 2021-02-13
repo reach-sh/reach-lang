@@ -2,7 +2,8 @@
 
 const Common = {
   ...hasRandom,
-  showWinner: Fun([UInt], Null)
+  showWinner: Fun([UInt], Null),
+  showOutcome: Fun([Address], Null),
 };
 
 export const main =
@@ -16,7 +17,7 @@ export const main =
       { ...Common,
         shouldBuy: Fun([UInt, UInt], Bool),
         buyerWas: Fun([Address], Null),
-        returnerWas: Fun([Address], Null),
+        returnerWas: Fun([Address, UInt], Null),
         recoverTicket: Fun([], UInt) } ],
     ],
     (Sponsor, Player) => {
@@ -79,13 +80,13 @@ export const main =
         .case( Player, (() => {
             const player = this;
             const ticket = declassify(interact.recoverTicket());
-            assume(isNone(ticketsM[player]));
-            assume(randomMatches(player, ticket));
-            return { msg: ticket };
+            const when = isNone(ticketsM[player])
+              && randomMatches(player, ticket);
+            return { msg: ticket, when };
           }),
           ((ticket) => {
             const player = this;
-            Player.only(() => interact.returnerWas(player));
+            Player.only(() => interact.returnerWas(player, howManyReturned));
             require(isNone(ticketsM[player]));
             require(randomMatches(player, ticket));
             ticketsM[player] = howManyReturned;
@@ -119,18 +120,18 @@ export const main =
       require(sponsortc == digest(sponsort));
 
       const howManyNotReturned = howMany - howManyReturned;
-      const winner = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
+      const winning_no = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
       commit();
 
       each([Sponsor, Player], () => {
-        interact.showWinner(winner);
+        interact.showWinner(winning_no);
       });
 
       const isWinner = (who) => {
         const tn = ticketsM[who];
         switch ( tn ) {
           case None: return false;
-          case Some: return tn == winner;
+          case Some: return tn == winning_no;
         }
       };
 
@@ -139,8 +140,12 @@ export const main =
           when: isWinner(this),
         })),
         (() => {
-          require(isWinner(this));
-          transfer(howMany * ticketPrice).to(this);
+          const winner = this;
+          require(isWinner(winner));
+          each([Sponsor, Player], () => {
+            interact.showOutcome(winner);
+          });
+          transfer(howMany * ticketPrice).to(winner);
         }))
       .timeout(deadline, () => closeTo(Sponsor, () => {}));
       commit();
