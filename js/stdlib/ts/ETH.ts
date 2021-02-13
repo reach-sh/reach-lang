@@ -677,13 +677,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
           const arg = [ munged_svs, munged_msg ];
-          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND ARG --- ${JSON.stringify(arg)}`);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND ARG --- ${JSON.stringify(arg)} --- ${JSON.stringify(value)}`);
+
           const r_fn = await callC(funcName, arg, value);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- POST CALL`);
+
           r_maybe = await r_fn.wait();
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- POST WAIT`);
 
           assert(r_maybe !== null);
           const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
 
           // XXX It might be a little dangerous to rely on the polling to just work
@@ -699,7 +702,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           if ( ! soloSend ) {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SKIPPING (${e})`);
           } else {
-          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR: ${e.stack}`);
 
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
