@@ -3,7 +3,7 @@ module Reach.EPP (epp) where
 import Control.Monad
 import Control.Monad.Reader
 import Data.IORef
-import Data.List
+-- import Data.List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -17,7 +17,7 @@ import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
 import Reach.Optimize
-import Reach.Texty
+-- import Reach.Texty
 import Reach.Util
 
 -- import Debug.Trace
@@ -108,7 +108,7 @@ updateHandlerSVS target new_svs = do
   let update1 = \case
         C_Handler at int ltv fs prev old_svs msg amtv tv body
           | target == prev && old_svs /= new_svs -> do
-            liftIO $ putStrLn $ "updateHandlerSVS " <> show target <> " w/ " <> (show $ pretty $ new_svs \\ old_svs)
+            -- liftIO $ putStrLn $ "updateHandlerSVS " <> show target <> " w/ " <> (show $ pretty $ new_svs \\ old_svs)
             return $ C_Handler at int ltv fs prev new_svs msg amtv tv body
         h -> return h
   hs' <- mapM update1 hs
