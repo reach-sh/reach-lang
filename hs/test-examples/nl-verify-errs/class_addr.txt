@@ -7,6 +7,10 @@ Verification failed:
   at ./class_addr.rsh:16:14:application
 
   // Violation witness
+  const v25 = Address!val!1;
+  //    ^ from builtin at ./class_addr.rsh:4:12:application
+  const v24 = Address!val!0;
+  //    ^ from builtin at ./class_addr.rsh:4:12:application
 
   // Theorem formalization
   require(selfAddress(""C"", #t, 1) == selfAddress(""C"", #t, 11));

@@ -5,7 +5,7 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow_con.rsh:application
+  at ./overflow_con.rsh:14:17:application
 
   // Violation witness
   const dlc_UInt_max = 1;
@@ -21,7 +21,7 @@ Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow_con.rsh:application
+  at ./overflow_con.rsh:14:17:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "A")
@@ -29,7 +29,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow_con.rsh:application
+  at ./overflow_con.rsh:14:17:application
 
   (details omitted on repeat)
 Checked 12 theorems; 3 failures. :'(

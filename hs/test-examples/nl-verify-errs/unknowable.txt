@@ -6,8 +6,8 @@ Verification failed:
   Bob could learn of v0 via v8.
 
   v8 was published at ./unknowable.rsh:19:9:dot
-  ^ which contains info about v6 (defined at ./unknowable.rsh:application)
-  ^ which contains info about v5 (defined at ./unknowable.rsh:application)
+  ^ which contains info about v6 (defined at ./unknowable.rsh:16:22:application)
+  ^ which contains info about v5 (defined at ./unknowable.rsh:15:21:application)
   ^ which contains info about v0 (defined at ./unknowable.rsh:4:4:property binding)
 
 Verifying for generic connector

@@ -1,1 +1,1 @@
-reachc: error: ./object_mutation.rsh:assign: Invalid assignment
+reachc: error: ./object_mutation.rsh:5:20:after const semicolon: Invalid Reach l-value syntax: JSMemberDot
