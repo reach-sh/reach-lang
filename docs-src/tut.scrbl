@@ -1004,7 +1004,7 @@ However, we will adjust Bob's first message, because if he fails to participate,
 
 ]
 
-The timeout handler specifies that if Bob does not complete perform this action within a @tech{time delta} of @reachin{DEADLINE}, then the application transitions to @tech{step} given by the arrow expression.
+The timeout handler specifies that if Bob does not complete this action within a @tech{time delta} of @reachin{DEADLINE}, then the application transitions to @tech{step} given by the arrow expression.
 In this case, the timeout code is a call to @reachin{closeTo}, which is a Reach standard library function that has Alice send a message and transfer all of the funds in the @tech{contract} to herself, then call the given function afterwards.
 This means that if Bob fails to publish his hand, then Alice will take her @tech{network tokens} back.
 
