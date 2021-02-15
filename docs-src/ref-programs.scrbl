@@ -579,6 +579,14 @@ An @tech{interaction expression} may only occur in a @tech{local step}.
 This may only appear in a @tech{local step}.
 It accepts an optional bytes argument, which is included in any reported violation.
 
+@subsubsection{@tt{fail}}
+
+@(mint-define! '("fail"))
+@reach{
+ fail() }
+
+@index{fail} is a convenience method equivalent to @reachin{assume(false)}. This may only appear in a @tech{local step}.
+
 @subsubsection{@tt{declassify}}
 
 @(mint-define! '("declassify"))
@@ -1151,14 +1159,15 @@ which is either a @tech{unary operator}, or a @tech{binary operator}.
 
 @(hrule)
 
-@(mint-define! '("!") '("-") '("+") '("typeof"))
+@(mint-define! '("!") '("-") '("+") '("typeof") '("not") '("minus") '("plus"))
 @reach{
- ! a
- - a
- + a
+ ! a  // not
+ - a  // minus
+ + a  // plus
  typeof a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - + typeof}.
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - + typeof}. All the unary operators, besides @reachin{typeof}, have a
+corresponding named version in the standard library.
 
 It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
 
@@ -1246,6 +1255,16 @@ Specialized functions exist for equality checking on each supported type.
 
 If @reachin{verifyOverflow} is @reachin{true}, then operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enable @tech{consensus networks}.
 If it is @reachin{false}, then the @tech{connector} will ensure this dynamically.
+
+@subsubsection{xor}
+
+@reach{
+ xor(false, false); // false
+ xor(false, true);  // true
+ xor(true, false);  // true
+ xor(true, true);   // false }
+
+@index{xor} @reachin{xor(Bool, Bool)} returns @reachin{true} only when the inputs differ in value.
 
 @subsubsection{Parenthesized expression}
 
@@ -1914,7 +1933,6 @@ The third argument must be an @reachin{UInt} whose value is known at compile tim
 of iterations the algorithm should perform. For reference, @tt{6} iterations provides enough accuracy to calculate
 up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
-
 @subsubsection{@tt{Signed Integers}}
 
 The standard library provides abstractions for dealing with signed integers. The following definitions
@@ -2020,12 +2038,13 @@ of the common scale and the newly scaled values.
 
 @index{fxmul} @reachin{fxmul(x, y)} multiplies two fixed point numbers.
 
-@index{fxdiv} @reachin{fxdiv(x, y, scale_factor)} divides two fixed point numbers. The numerator, @tt{x},
-will be multiplied by the scale factor to provide a more precise answer. For example,
-
+@(mint-define! '("fxdiv"))
 @reach{
   fxdiv(34.56, 1.234, 10)     // => 28
   fxdiv(34.56, 1.234, 100000) // => 28.0064 }
+
+@index{fxdiv} @reachin{fxdiv(x, y, scale_factor)} divides two fixed point numbers. The numerator, @tt{x},
+will be multiplied by the scale factor to provide a more precise answer. For example,
 
 @index{fxmod} @reachin{fxmod(x, y)} finds the remainder of dividing @tt{x} by @tt{y}.
 
@@ -2034,12 +2053,7 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
 @index{fxsqrt} @reachin{fxsqrt(x, k)} approximates the sqrt of the fixed number, @tt{x}, using
 @tt{k} iterations of the @reachin{sqrt} algorithm.
 
-@index{fxpow} @reachin{fxpow(base, power, precision, scalePrecision)} approximates the power of the fixed number, @tt{base},
-raised to the fixed point number, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
-at compile time, which represents the number of iterations the algorithm should perform.
-The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of the return value. Choosing a larger
-@tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
-
+@(mint-define! '("fxpow"))
 @reachin{
   const base  = 2.0;
   const power = 0.33;
@@ -2047,10 +2061,24 @@ The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of
   fxpow(base, power, 10, 10000);   // 1.2599
   fxpow(base, power, 10, 1000000); // 1.259921 }
 
+@index{fxpow} @reachin{fxpow(base, power, precision, scalePrecision)} approximates the power of the fixed number, @tt{base},
+raised to the fixed point number, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+at compile time, which represents the number of iterations the algorithm should perform.
+The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of the return value. Choosing a larger
+@tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
+
 @index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
 raised to the @reachin{Int}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
 at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{6} iterations
 provides enough accuracy to calculate up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
+
+@(mint-define! '("fxpowui"))
+@reachin{
+  fxpowui(5.8, 3, 10); // 195.112 }
+
+@index{fxpowui} @reachin{fxpowui(base, power, precision)} approximates the power of
+the fixed number, @tt{base}, raised to the @reachin{UInt}, @tt{power}. The third
+argument must be an @reachin{UInt} whose value is known at compile time.
 
 @index{fxcmp} @reachin{fxcmp(op, x, y)} applies the comparison
 operator to the two fixed point numbers after unifying their scales.
