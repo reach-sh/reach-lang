@@ -10,10 +10,7 @@ const State = Object({ xs_turn: Bool,
                        os: Board });
 
 const board_mt =
-      array( Bool,
-             [ false, false, false,
-               false, false, false,
-               false, false, false ] );
+      Array.replicate(9, false);
 
 const ttt_initial = (XisFirst) =>
       ({ xs_turn: XisFirst,
@@ -24,14 +21,11 @@ const cell_both = (st, i) =>
       (st.xs[i] || st.os[i]);
 
 const marks_all = (st) =>
-      array( Bool,
-             [ cell_both(st, 0), cell_both(st, 1), cell_both(st, 2),
-               cell_both(st, 3), cell_both(st, 4), cell_both(st, 5),
-               cell_both(st, 6), cell_both(st, 7), cell_both(st, 8) ] );
+      Array.iota(9).map(i => cell_both(st, i));
 
 const cell = (r, c) => c + r * COLS;
 
-const op = (op, x) => (y) => op(x, y);
+const op = (op, rhs) => (lhs) => op(lhs, rhs);
 
 const seq = (b, r, c, dr, dc) =>
       (b[cell(r, c)] &&
@@ -47,10 +41,7 @@ const winning_p = (b) =>
        seq(b, 0, 0, 1, op(add, 1)) ||
        seq(b, 0, 2, 1, op(sub, 1)));
 
-const complete_p = (b) =>
-      (b[0] && b[1] && b[2] &&
-       b[3] && b[4] && b[5] &&
-       b[6] && b[7] && b[8]);
+const complete_p = (b) => b.and();
 
 const ttt_done = (st) =>
       (winning_p(st.xs)
