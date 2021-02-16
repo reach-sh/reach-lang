@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SAN=reach-app-tut-6-rpc-server
+SAN=reach-server
 TLS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/tls
 KEY="$TLS/$SAN.key"
 CSR="$TLS/$SAN.csr"

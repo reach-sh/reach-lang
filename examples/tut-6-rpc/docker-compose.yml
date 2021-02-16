@@ -4,6 +4,13 @@ x-server-base: &server-base
   volumes:
     - ./server/build:/app/build
     - ./server/tls:/app/tls
+x-client-env: &client-env
+  environment:
+    - REACH_RPC_SERVER=host.docker.internal
+    - REACH_RPC_PORT=3000
+    - REACH_RPC_KEY
+    - REACH_RPC_TLS_REJECT_UNVERIFIED=0
+    - NODE_TLS_REJECT_UNAUTHORIZED=0
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:0.1
@@ -35,8 +42,8 @@ services:
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
-      - REACH_RPC_TLS_KEY=./tls/reach-app-tut-6-rpc-server.key
-      - REACH_RPC_TLS_CRT=./tls/reach-app-tut-6-rpc-server.crt
+      - REACH_RPC_TLS_KEY=./tls/reach-server.key
+      - REACH_RPC_TLS_CRT=./tls/reach-server.crt
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
   server-ALGO:
     <<: *server-base
@@ -56,12 +63,14 @@ services:
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
   reach-app-tut-6-rpc-server:
     <<: *default-server
-  client-js: &client
+  client-js: &client-js
     image: reachsh/reach-app-tut-6-rpc-client-js:latest
-  client-py:
+  client-py: &client-py
     image: reachsh/reach-app-tut-6-rpc-client-py:latest
-  client-go:
+  client-go: &client-go
     image: reachsh/reach-app-tut-6-rpc-client-go:latest
+  client: &client
+    <<: *client-js
   reach-app-tut-6-rpc:
     <<: *client
     depends_on:
@@ -79,3 +88,15 @@ services:
       # https://golang.org/pkg/crypto/tls/#Config
       - REACH_RPC_TLS_REJECT_UNVERIFIED=0 # Default "on"
       - NODE_TLS_REJECT_UNAUTHORIZED=0    # Default "on"
+  client-only:
+    <<: *client
+    <<: *client-env
+  client-js-only:
+    <<: *client-js
+    <<: *client-env
+  client-py-only:
+    <<: *client-py
+    <<: *client-env
+  client-go-only:
+    <<: *client-go
+    <<: *client-env

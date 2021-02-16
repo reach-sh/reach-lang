@@ -149,7 +149,7 @@ def main():
     print('Alice went from %s to %s' % (before_alice, after_alice))
     print('  Bob went from %s to %s' % (before_bob,   after_bob))
 
-    rpc('/stop')
+    # rpc('/stop')
 
 
 if __name__ == '__main__':
