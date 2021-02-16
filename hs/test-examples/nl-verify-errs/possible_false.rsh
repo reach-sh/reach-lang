@@ -3,5 +3,6 @@
 export const main = Reach.App(
   {}, [], () => {
     possible(false);
+    possible(false); // Multiple failures display
   }
 );

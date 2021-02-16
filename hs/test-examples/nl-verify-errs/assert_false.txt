@@ -11,6 +11,12 @@ Verification failed:
   // Theorem formalization
   assert(false);
 
+Verification failed:
+  in VM_Honest mode
+  of theorem TClaim CT_Assert
+  at ./assert_false.rsh:6:11:application
+
+  (details omitted on repeat)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
@@ -18,4 +24,10 @@ Verification failed:
   at ./assert_false.rsh:5:11:application
 
   (details omitted on repeat)
-Checked 4 theorems; 2 failures. :'(
+Verification failed:
+  in VM_Dishonest RoleContract mode
+  of theorem TClaim CT_Assert
+  at ./assert_false.rsh:6:11:application
+
+  (details omitted on repeat)
+Checked 6 theorems; 4 failures. :'(
