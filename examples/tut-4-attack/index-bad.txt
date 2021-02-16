@@ -8,9 +8,9 @@ Verification failed:
   at ./index-bad.rsh:45:11:application
 
   // Violation witness
-  const interact_Alice_wager = 1;
+  const interact_Alice_wager = 2;
   //    ^ from interaction at ./index-bad.rsh:14:12:application
-  const v4 = 0;
+  const v4 = 2;
   //    ^ from evaluating interact("Alice")."getHand"() at ./index-bad.rsh:20:50:application
 
   // Theorem formalization
