@@ -3,7 +3,7 @@
 module Reach.AST.DLBase where
 
 import qualified Data.ByteString.Char8 as B
-import Data.List
+import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
@@ -45,10 +45,10 @@ arrType = \case
   _ -> impossible "no array"
 
 showTys :: Show a => [a] -> String
-showTys = intercalate ", " . map show
+showTys = List.intercalate ", " . map show
 
 showTyMap :: Show a => M.Map SLVar a -> String
-showTyMap = intercalate ", " . map showPair . M.toList
+showTyMap = List.intercalate ", " . map showPair . M.toList
   where
     showPair (name, ty) = show name <> ": " <> show ty
 

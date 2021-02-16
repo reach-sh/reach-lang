@@ -1,5 +1,6 @@
 module Reach.CompilerTool (CompilerToolOpts (..), makeCompilerOpts, compilerToolMain) where
 
+import Control.Monad
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler
 import System.Directory
@@ -27,6 +28,4 @@ makeCompilerOpts CompilerToolOpts {..} = do
       }
 
 compilerToolMain :: CompilerToolOpts -> IO ()
-compilerToolMain ctool_opts@CompilerToolOpts {..} = do
-  copts <- makeCompilerOpts ctool_opts
-  compile copts
+compilerToolMain = makeCompilerOpts >=> compile

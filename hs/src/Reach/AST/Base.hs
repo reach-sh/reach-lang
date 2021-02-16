@@ -8,7 +8,7 @@ import Data.Aeson.Types (ToJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
-import Data.List
+import qualified Data.List as List
 import qualified Data.Text as T
 import GHC.Generics
 import GHC.Stack (HasCallStack)
@@ -44,7 +44,7 @@ instance Monoid SrcLoc where
   mempty = SrcLoc Nothing Nothing Nothing
 
 instance Show SrcLoc where
-  show (SrcLoc mlab mtp mrs) = concat $ intersperse ":" $ concat [sr, loc, lab]
+  show (SrcLoc mlab mtp mrs) = concat $ List.intersperse ":" $ concat [sr, loc, lab]
     where
       lab = case mlab of
         Nothing -> []
@@ -107,7 +107,7 @@ expect_throw mCtx src ce =
         "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
           <> case concat mCtx of
             [] -> ""
-            ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
+            ctx -> "\nTrace:\n" <> List.intercalate "\n" (topOfStackTrace ctx)
 
 expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing

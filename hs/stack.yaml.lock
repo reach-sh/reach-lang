@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
+    hackage: dir-traverse-0.2.3.0@sha256:adcc128f201ff95131b15ffe41365dc99c50dc3fa3a910f021521dc734013bfa,2137
     pantry-tree:
       size: 389
-      sha256: ba5b192c9bbd353ca46b3d308d4519ecf7a298e1d559c4350ddcee9591112246
+      sha256: b19f0562746dfd0f8f21eccab6584592f55fb781ca3e043da9132cc23d8a5b99
   original:
-    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
+    hackage: dir-traverse-0.2.3.0@sha256:adcc128f201ff95131b15ffe41365dc99c50dc3fa3a910f021521dc734013bfa,2137
 - completed:
     hackage: extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
     pantry-tree:
@@ -25,6 +25,13 @@ packages:
       sha256: ad9e1d73267680bd860c83f5910c671d641410d571b7f7ce2dae97e494ae7fcd
   original:
     hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
+- completed:
+    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
+    pantry-tree:
+      size: 1406
+      sha256: 7ee6639e988993d0b48b8f83160072c9cd9d945ef33691b0a0fd52b0aa04cd06
+  original:
+    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
 - completed:
     hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
     pantry-tree:
@@ -67,6 +74,13 @@ packages:
       sha256: b0bccc20c9438f1353dedf7efc70716e58e6fc7e741a47617e9a6c1be59f0a1d
   original:
     hackage: tasty-html-0.4.1.2@sha256:7c8be5359940fcbd0228b9a1f5dc9a1113a9a5e03dc9b9ae018eb17f870aef13,1241
+- completed:
+    hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
+    pantry-tree:
+      size: 888
+      sha256: dd905b22e9b56d03aa8f994f1509ab2cde99d649712089dfd957daddeb6e1220
+  original:
+    hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
 - completed:
     name: shell-monad
     version: 0.6.9
@@ -113,7 +127,7 @@ packages:
     commit: f16c62c18db1b328ee481c781171ea61f354ff70
 snapshots:
 - completed:
-    size: 532377
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/12.yaml
-    sha256: f914cfa23fef85bdf895e300a8234d9d0edc2dbec67f4bc9c53f85867c50eab6
-  original: lts-16.12
+    size: 563103
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/4.yaml
+    sha256: f11e2153044f5f71ea7b1c9398f4721f517c9bd37642ed769647b896564021f3
+  original: lts-17.4

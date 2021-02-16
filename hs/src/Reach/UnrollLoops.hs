@@ -37,7 +37,7 @@ addLifts mkk ls k = foldr mkk k ls
 
 collectLifts :: App a -> App (Lifts, a)
 collectLifts m = do
-  Env {..} <- ask
+  -- Env {..} <- ask -- XXX unused (DELETEME?)
   newLifts <- liftIO $ newIORef mempty
   res <- local (\e -> e {emLifts = Just newLifts}) m
   lifts <- liftIO $ readIORef newLifts

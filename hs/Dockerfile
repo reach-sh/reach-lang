@@ -1,5 +1,5 @@
 # --- Build
-FROM reachsh/haskell-builder:lts-16.12 as build
+FROM reachsh/haskell-builder:lts-17.4 as build
 WORKDIR /build
 
 COPY stack.yaml package.yaml stack.yaml.lock ./

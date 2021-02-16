@@ -517,7 +517,7 @@ jsPart dli p (EPProg _ _ et) =
       case dli_ctimem of
         Nothing -> mempty
         Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
-    map_defn (mpv, DLMapInfo {..}) =
+    map_defn (mpv, DLMapInfo {}) =
       "const" <+> jsMapVar mpv <+> "=" <+> "{};"
     maps_defn = vsep $ map map_defn $ M.toList dli_maps
     bodyp' =
@@ -549,7 +549,7 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
 jsPLProg :: ConnectorResult -> PLProg -> Doc
-jsPLProg cr (PLProg _ (PLOpts {..}) dli (EPPs pm) _) = modp
+jsPLProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
     preamble =

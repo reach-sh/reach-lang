@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.List
+import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
@@ -281,7 +281,7 @@ lookup_let dv = do
   case M.lookup dv eLets of
     Just m -> m
     Nothing ->
-      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (intercalate ", " $ map (show . pretty) $ M.keys eLets)
+      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -574,7 +574,7 @@ cla = \case
   DLLA_Obj m ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
   DLLA_Data tm vt va -> do
-    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
+    let mvti = List.find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
     let vti =
           case mvti of
             Just (_, x) -> x
@@ -693,7 +693,7 @@ ce = \case
     cfrombs t
   DLE_ObjectRef at oa f -> do
     let fts = typeObjectTypes oa
-    let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ findIndex ((== f) . fst) fts
+    let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ List.findIndex ((== f) . fst) fts
     let (t, start, end) = computeSubstring (map snd fts) fidx
     ca oa
     csubstring at start end
@@ -860,7 +860,7 @@ ct = \case
       Just (C_Loop _ _ lcvars t) -> do
         let timev = fromMaybe (impossible "no timev") emTimev
         let llc v =
-              case find ((== v) . snd) lcvars of
+              case List.find ((== v) . snd) lcvars of
                 Nothing -> impossible $ "no loop var"
                 Just (lc, _) -> lc
         rhor <- liftIO $ newIORef mempty
@@ -879,7 +879,7 @@ ct = \case
         let t_subst = subst_ rho t
         ntv <- liftIO $ readIORef ntvr
         let new_timev = fromMaybe (impossible "no new_timev") ntv
-        let t_subst' = foldl' (flip CT_Com) t_subst nms
+        let t_subst' = List.foldl' (flip CT_Com) t_subst nms
         local
           (\e ->
              e
