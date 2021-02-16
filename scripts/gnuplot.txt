@@ -9,6 +9,7 @@ set boxwidth 1.0
 set autoscale
 set ylabel "Unique Users"
 set xlabel "Month"
+set xtics rotate by -90
 set terminal png
 set output filename
 set linetype 1 lc rgb "orange"
