@@ -6,7 +6,7 @@
 	"license": "EPL-2.0",
 	"version": "0.1.0",
 	"preview": true,
-	"icon": "images/reach-logo-light.png",
+	"icon": "images/reach-logo-dark.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/reach-sh/reach-ide"
@@ -140,8 +140,8 @@
 				"category": "Reach IDE",
 				"title": "Open Reach Documentation",
 				"icon": {
-					"light": "./images/reach-logo-light.png",
-					"dark": "./images/reach-logo-dark.png"
+					"light": "./images/reach-logo.png",
+					"dark": "./images/reach-logo.png"
 				}
 			},
 			{
