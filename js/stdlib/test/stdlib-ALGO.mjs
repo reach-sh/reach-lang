@@ -12,7 +12,6 @@ runTests(async () => describe('The `ALGO` stdlib', async () => {
   // TODO await common.mkNewAccountFromSecret(ALGO,   8, sec);
   // TODO await common.mkNewAccountFromMnemonic(ALGO, 8, mon);
   await common.mkConnectAccount(ALGO, a => a.networkAccount);
-  // TODO await common.mkFundFromFaucet(ALGO);
 
 
   await describe('T_Address.canonicalize can handle multiple inputs', async () => {

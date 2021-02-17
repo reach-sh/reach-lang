@@ -14,6 +14,7 @@ export const mkStdlibNetworkCommon = async lib => {
     T_UInt,
 
     createAccount,
+    fundFromFaucet,
     newTestAccount,
 
     balanceOf,
@@ -217,6 +218,25 @@ export const mkStdlibNetworkCommon = async lib => {
   });
 
 
+  await describe('exposes a `fundFromFaucet` function which', async () => {
+    await it('can fund testnet accounts with `BigNumber` values', async () => {
+      const a = await createAccount();
+      await fundFromFaucet(a, bigNumberify(100000));
+
+      expect(eq(await balanceOf(a), 100000))
+        .toBe(true);
+    });
+
+    await it('can fund testnet accounts with JavaScript `Number` values', async () => {
+      const a = await createAccount();
+      await fundFromFaucet(a, 100000);
+
+      expect(eq(await balanceOf(a), 100000))
+        .toBe(true);
+    });
+  });
+
+
   describe('protect', () => {
     const hello      = 'hello';
     const helloHex   = stringToHex('hello');
@@ -382,20 +402,6 @@ export const mkConnectAccount = async (lib, accessor) =>
       const b = await connectAccount(accessor(a));
 
       expect(eq(await balanceOf(a), await balanceOf(b)))
-        .toBe(true);
-    });
-  });
-
-
-export const mkFundFromFaucet = async lib =>
-  describe('exposes a `fundFromFaucet` function which', async () => {
-    const { fundFromFaucet, createAccount, balanceOf, bigNumberify, eq } = lib;
-
-    await it('can fund testnet accounts', async () => {
-      const a = await createAccount();
-      await fundFromFaucet(a, bigNumberify(1000));
-
-      expect(eq(await balanceOf(a), 1000))
         .toBe(true);
     });
   });
