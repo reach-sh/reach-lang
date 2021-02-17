@@ -36,9 +36,13 @@
   "scripts": {
     "beautify": "js-beautify --indent-size=2 --end-with-newline --brace-style=collapse-preserve-inline --replace *.mjs",
     "format": "eslint --ignore-path .gitignore --ext .mjs --fix .",
-    "test": "node --experimental-modules ETH-test.mjs",
+    "test-stdlib-ETH": "node --experimental-modules ./test/stdlib-ETH.mjs",
+    "test-stdlib-ALGO": "node --experimental-modules ./test/stdlib-ALGO.mjs",
+    "test-stdlib-FAKE": "node --experimental-modules ./test/stdlib-FAKE.mjs",
+    "test-rpc-server-ETH": "node --experimental-modules ./test/rpc-server-ETH.mjs",
+    "test-rpc-server-ALGO": "node --experimental-modules ./test/rpc-server-ALGO.mjs",
+    "test-rpc-server-FAKE": "node --experimental-modules ./test/rpc-server-FAKE.mjs",
     "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs",
-    "zzz": "node --experimental-modules --unhandled-rejections=strict test.mjs",
     "tsc": "tsc"
   }
 }

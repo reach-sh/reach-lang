@@ -1135,7 +1135,7 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 18): string {
+export function formatCurrency(amt: any, decimals: number = 18): string {
   // Recall that 1 WEI = 10e18 ETH
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
@@ -1143,7 +1143,8 @@ export function formatCurrency(amt: BigNumber, decimals: number = 18): string {
   // Truncate
   decimals = Math.min(decimals, 18);
   const decimalsToForget = 18 - decimals;
-  const divAmt = amt.div(bigNumberify(10).pow(decimalsToForget));
+  const divAmt = bigNumberify(amt)
+    .div(bigNumberify(10).pow(decimalsToForget));
   const amtStr = ethers.utils.formatUnits(divAmt, decimals)
   // If the str ends with .0, chop it off
   if (amtStr.slice(amtStr.length - 2) == ".0") {

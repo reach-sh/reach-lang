@@ -1201,13 +1201,15 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
+export function formatCurrency(amt: any, decimals: number = 6): string {
   // Recall that 1 algo = 10^6 microalgos
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
   // Use decimals+1 and then slice it off to truncate instead of round
-  const algosStr = algosdk.microalgosToAlgos(amt.toNumber()).toFixed(decimals+1);
+  const algosStr = algosdk
+    .microalgosToAlgos(bigNumberify(amt).toNumber())
+    .toFixed(decimals+1);
   // Have to roundtrip thru Number to drop trailing zeroes
   return Number(algosStr.slice(0, algosStr.length - 1)).toString();
 }

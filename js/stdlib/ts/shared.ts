@@ -142,6 +142,9 @@ export const { isBigNumber } = BigNumber;
 
 export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
 
+export const bigNumberToNumber = (x: any) =>
+  bigNumberify(x).toNumber();
+
 export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber => {
   const xb = bigNumberify(x);
   if (xb.gte(0) && xb.lte(m)) {
