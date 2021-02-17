@@ -156,14 +156,9 @@ showDiff x y f s =
         True -> ""
         False -> "\n  * " <> s fx fy
 
-getCorrectGrammer :: Foldable t => t a -> p -> p -> p
-getCorrectGrammer xs sing plur = case length xs of
-  1 -> sing
-  _ -> plur
-
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
-  "\nThe expected state of the program varies between branches, because:"
+  "\nThe expected state of the program varies between branches because:"
     <> showDiff
       x
       y
@@ -193,11 +188,9 @@ showStateDiff x y =
       y
       st_pdvs
       (\xParts yParts ->
-         let showParts = intercalate ", " . map (show . fst) . M.toList
-          in let actual = case length xParts of
-                   0 -> getCorrectGrammer yParts "it hasn't." "they haven't."
-                   _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
-              in unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual])
+        let showParts = intercalate ", " . map (show . fst) . M.toList in
+        "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
+            <> ". Not all of the participants have been set. You might be missing a `commit`, `publish`, or `only` before the erroneous expression.")
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
