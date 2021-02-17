@@ -31,7 +31,12 @@ build: package.json
 
 .PHONY: run
 run: build
-	docker-compose run stdlib
+	docker-compose run test-stdlib-ETH
+	docker-compose run test-stdlib-ALGO
+	docker-compose run test-stdlib-FAKE
+	docker-compose run test-rpc-server-ETH
+	docker-compose run test-rpc-server-ALGO
+	docker-compose run test-rpc-server-FAKE
 
 .PHONY: down
 down:

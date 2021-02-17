@@ -451,12 +451,12 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
+export function formatCurrency(amt: any, decimals: number = 0): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
   void(decimals); // There are no fractional quantities in FAKE
-  return amt.toString();
+  return bigNumberify(amt).toString();
 }
 
 export const setFaucet = false; // XXX
