@@ -16,7 +16,6 @@ runTests(async () => describe('The `ETH` stdlib', async () => {
   await common.mkNewAccountFromSecret(ETH, 14, sec);
   // TODO await common.mkNewAccountFromMnemonic(ETH, 14, mon);
   await common.mkConnectAccount(ETH, a => a.networkAccount);
-  await common.mkFundFromFaucet(ETH);
 
 
   await describe('T_Address.canonicalize can handle multiple inputs', async () => {

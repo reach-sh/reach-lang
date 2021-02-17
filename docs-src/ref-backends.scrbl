@@ -176,7 +176,7 @@ Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account
 @js{
   fundFromFaucet(account, balance) => Promise<void>}
 
-Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
+Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}. @reachin{bigNumberify} is transparently applied to the @jsin{balance} argument.
 
 @(hrule)
 @(mint-define! '("connectAccount"))

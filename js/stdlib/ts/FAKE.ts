@@ -144,16 +144,17 @@ export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
 
-export const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber) => {
+export const fundFromFaucet = async (toa: AccountTransferrable, value: any) => {
+  const v = bigNumberify(value);
   const faucet = await getFaucet();
   const faucetAddress = faucet.networkAccount.address;
   const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
   // For FAKE, the faucet may need to add funds on demand,
   // if the user created an account without a starting balance.
-  if (stdlib.le(faucetFunds, value)) {
-    BALANCES[faucetAddress] = faucetFunds.add(value);
+  if (stdlib.le(faucetFunds, v)) {
+    BALANCES[faucetAddress] = faucetFunds.add(v);
   }
-  transfer(faucet, toa, value);
+  transfer(faucet, toa, v);
 }
 
 /**
@@ -383,7 +384,7 @@ export async function getFaucet(): Promise<Account> {
 export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
   debug(`new account: ${account.networkAccount.address}`);
-  await fundFromFaucet(account, bigNumberify(startingBalance));
+  await fundFromFaucet(account, startingBalance);
   return account;
 };
 

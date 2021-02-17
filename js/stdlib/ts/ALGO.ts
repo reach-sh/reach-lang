@@ -1154,15 +1154,15 @@ export const createAccount = async () => {
   return await connectAccount(networkAccount);
 }
 
-export const fundFromFaucet = async (account: Account, value: BigNumber) => {
+export const fundFromFaucet = async (account: Account, value: any) => {
   const faucet = await getFaucet();
-  await transfer(faucet, account, value);
+  await transfer(faucet, account, bigNumberify(value));
 }
 
 export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
   if (getDEBUG()) { await showBalance('before', account.networkAccount); }
-  await fundFromFaucet(account, bigNumberify(startingBalance));
+  await fundFromFaucet(account, startingBalance);
   if (getDEBUG()) { await showBalance('after', account.networkAccount); }
   return account;
 };

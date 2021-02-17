@@ -12,7 +12,6 @@ runTests(async () => describe('The `FAKE` stdlib', async () => {
   // TODO await common.mkNewAccountFromSecret(FAKE, 8, sec);
   // TODO await common.mkNewAccountFromMnemonic(FAKE, 8, mon);
   await common.mkConnectAccount(FAKE, a => a.networkAccount);
-  await common.mkFundFromFaucet(FAKE);
 
 
   await describe('T_Address.canonicalize can handle multiple inputs', async () => {

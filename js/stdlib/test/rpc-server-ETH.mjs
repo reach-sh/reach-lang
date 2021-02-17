@@ -16,6 +16,5 @@ runTests(async () => {
     await common.mkNewAccountFromSecret(rpc_stdlib, 14, sec);
     // TODO await common.mkNewAccountFromMnemonic(rpc_stdlib, 14, mon);
     await common.mkConnectAccount(rpc_stdlib, a => a);
-    await common.mkFundFromFaucet(rpc_stdlib);
   });
 });

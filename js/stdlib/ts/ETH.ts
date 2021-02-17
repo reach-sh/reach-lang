@@ -910,21 +910,20 @@ export const createAccount = async () => {
   return await connectAccount(networkAccount);
 }
 
-export const fundFromFaucet = async (account: AccountTransferable, value: BigNumber) => {
+export const fundFromFaucet = async (account: AccountTransferable, value: any) => {
   const faucet = await getFaucet();
-  await transfer(faucet, account, value);
+  await transfer(faucet, account, bigNumberify(value));
 };
 
 export const newTestAccount = async (startingBalance: any): Promise<Account> => {
-  const sb = bigNumberify(startingBalance);
-  debug(`newTestAccount(${sb})`);
+  debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
   const acc = await createAccount();
   const to = getAddr(acc);
 
   try {
     debug(`newTestAccount awaiting transfer: ${to}`);
-    await fundFromFaucet(acc, sb);
+    await fundFromFaucet(acc, startingBalance);
     debug(`newTestAccount got transfer: ${to}`);
     return acc;
   } catch (e) {
