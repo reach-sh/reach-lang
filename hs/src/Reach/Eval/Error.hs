@@ -190,7 +190,7 @@ showStateDiff x y =
       (\xParts yParts ->
         let showParts = intercalate ", " . map (show . fst) . M.toList in
         "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
-            <> ". Not all of the participants have been set. You might be missing a `commit`, `publish`, or `only` before the erroneous expression.")
+            <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
@@ -204,6 +204,31 @@ instance ErrorMessageForJson EvalError where
     Err_Eval_UnboundId (LC_RefFrom ctx) slvar _ ->
       "Invalid unbound identifier in " <> ctx <> ": " <> slvar
     ow -> show ow
+
+getIllegalModeSuggestion :: SLMode -> [SLMode] -> String
+getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expected mode"
+getIllegalModeSuggestion mode (m:_) = get (mode, m)
+  where
+    isConsensusStep = \case
+      SLM_ConsensusStep -> True
+      SLM_ConsensusPure -> True
+      _ -> False
+    isLocalStep = \case
+      SLM_LocalStep -> True
+      SLM_LocalPure -> True
+      _ -> False
+    get = \case
+      (SLM_Module, _) -> "create a `React.App`"
+      (s, SLM_Step)
+        | isConsensusStep s -> "`commit`"
+        | isLocalStep s -> "exit `only` or `each`"
+      (SLM_Step, s)
+        | isConsensusStep s -> "`publish`, `pay`, or `fork`"
+        | isLocalStep s -> "`only` or `each`"
+      (s1, s2)
+        | isConsensusStep s1 && isLocalStep s2 -> "`only` or `each`"
+        | isLocalStep s1 && isConsensusStep s2 -> "exit `only`, `each` or `case`"
+      _ -> impossible "getIllegalModeSuggestion"
 
 instance ErrorSuggestions EvalError where
   errorSuggestions = \case
@@ -290,7 +315,8 @@ instance Show EvalError where
     Err_Eval_ContinueNotLoopVariable var ->
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
-      "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> show ok_modes
+      "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
+        <> ". You must " <> getIllegalModeSuggestion mode ok_modes <> " first." -- be missing a `commit`, `publish`, or `only` before the erroneous expression."
     Err_LValue_IllegalJS e ->
       "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->
