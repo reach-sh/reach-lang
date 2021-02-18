@@ -316,7 +316,7 @@ instance Show EvalError where
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
-        <> ". You must " <> getIllegalModeSuggestion mode ok_modes <> " first." -- be missing a `commit`, `publish`, or `only` before the erroneous expression."
+        <> ". You must " <> getIllegalModeSuggestion mode ok_modes <> " first."
     Err_LValue_IllegalJS e ->
       "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->
