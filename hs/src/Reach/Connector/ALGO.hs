@@ -859,10 +859,13 @@ ct = \case
     case M.lookup which sHandlers of
       Just (C_Loop _ _ lcvars t) -> do
         let timev = fromMaybe (impossible "no timev") emTimev
+        let pveq v = \case
+              PV_Eff -> False
+              PV_Let _ v' -> v == v'
         let llc v =
-              case List.find ((== v) . snd) lcvars of
-                Nothing -> impossible $ "no loop var"
-                Just (lc, _) -> lc
+              case List.find (pveq v) lcvars of
+                Just (PV_Let lc _) -> lc
+                _ -> impossible $ "no loop var"
         rhor <- liftIO $ newIORef mempty
         ntvr <- liftIO $ newIORef Nothing
         let go (v, a) = do

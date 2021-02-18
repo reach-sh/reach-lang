@@ -1,88 +1,29 @@
 module Reach.EPP (epp) where
 
-import Control.Monad
+-- import Control.Monad
 import Control.Monad.Reader
+import Data.Foldable
 import Data.IORef
 -- import Data.List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
+import Generics.Deriving (Generic)
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Set as S
-import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
-import Reach.Optimize
--- import Reach.Texty
+-- import Reach.Optimize
+import Reach.Texty
 import Reach.Util
 
 -- import Debug.Trace
--- import Reach.Texty
 
-data EPPError
-  = Err_ContinueDomination
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
-
-instance Show EPPError where
-  show Err_ContinueDomination =
-    "Continue must be dominated by communication"
-
--- XXX change this to have more implicit things happening in the monads
---
--- ProSt would have an IORef Counts for the consensus, that would get updated
---
--- ProSt would have an M.Map SLPart (IORef Counts) that would get updated for
--- each end-point
---
--- ProSt would have an IORef UndefdVars for the consensus
---
--- There would be instructions like insertVar, removeVar, insertUndefd,
--- removeUndefd that would look at those, and when we focused on a particular
--- end-point, we'd grab its Counts ref and set it as the global one during that
--- evaluation. Getting the order of evaluation would be tricky and annoying,
--- because we have to ensure that the remove happens after the continuation is
--- evaluated
-
-data ProRes_ a = ProRes_ Counts a
-  deriving (Eq, Show)
-
-instance Semigroup a => Semigroup (ProRes_ a) where
-  (ProRes_ x_cs x) <> (ProRes_ y_cs y) =
-    ProRes_ (x_cs <> y_cs) (x <> y)
-
-instance Monoid a => Monoid (ProRes_ a) where
-  mempty = ProRes_ mempty mempty
-
-data ProResL = ProResL (ProRes_ (UndefdVars, PLTail))
-  deriving (Eq)
-
-type SLPartETs = (M.Map SLPart (ProRes_ ETail))
-
-type UndefdVars = S.Set DLVar
-
-data ProResC = ProResC SLPartETs (ProRes_ (UndefdVars, CTail))
-  deriving (Eq)
-
-data ProSt = ProSt
-  { pst_prev_handler :: Int
-  , pst_handlers :: IORef CHandlers
-  , pst_handlerc :: Counter
-  , pst_interval :: CInterval DLArg
-  , pst_parts :: [SLPart]
-  , pst_loop_fixed_point :: Bool
-  , --- FIXME These would be maps when we have labelled loops
-    pst_loop_svs :: Maybe [DLVar]
-  , pst_loop_num :: Maybe Int
-  , pst_forced_svs :: Counts
-  }
-  deriving (Eq)
-
-type App = ReaderT ProSt IO
-
+-- Helpers
 default_interval :: CInterval a
 default_interval = CBetween [] []
 
@@ -101,400 +42,442 @@ interval_no_to :: CInterval a -> CInterval a
 interval_no_to (CBetween froml _) =
   CBetween froml []
 
-updateHandlerSVS :: Int -> [DLVar] -> App ()
-updateHandlerSVS target new_svs = do
-  hsr <- pst_handlers <$> ask
-  CHandlers hs <- liftIO $ readIORef hsr
-  let update1 = \case
-        C_Handler at int ltv fs prev old_svs msg amtv tv body
-          | target == prev && old_svs /= new_svs -> do
-            -- liftIO $ putStrLn $ "updateHandlerSVS " <> show target <> " w/ " <> (show $ pretty $ new_svs \\ old_svs)
-            return $ C_Handler at int ltv fs prev new_svs msg amtv tv body
-        h -> return h
-  hs' <- mapM update1 hs
-  liftIO $ writeIORef hsr $ CHandlers hs'
+-- Flow
+type DLVarS = S.Set DLVar
 
-newHandler :: App Int
-newHandler = do
-  ProSt {..} <- ask
-  case pst_loop_fixed_point of
-    True -> return $ 0
-    False -> liftIO $ incCounter pst_handlerc
+type FlowInput = M.Map Int FlowInputData
+data FlowInputData = FlowInputData
+  { fid_uses :: DLVarS
+  , fid_defns :: DLVarS
+  , fid_parents :: S.Set Int
+  , fid_children :: S.Set Int
+  , fid_jumps :: S.Set Int }
+instance Semigroup FlowInputData where
+  (FlowInputData xa xb xc xd xe) <> (FlowInputData ya yb yc yd ye) =
+    FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd) (xe <> ye)
+instance Monoid FlowInputData where
+  mempty = FlowInputData mempty mempty mempty mempty mempty
+instance Pretty FlowInputData where
+  pretty (FlowInputData {..}) =
+    render_obj $ M.fromList [ ("uses"::String, pretty fid_uses)
+                            , ("defns", pretty fid_defns)
+                            , ("parents", pretty fid_parents)
+                            , ("children", pretty fid_children)
+                            , ("jumps", pretty fid_jumps) ]
 
-addHandler :: Int -> CHandler -> App ()
-addHandler which this_h = do
-  ProSt {..} <- ask
-  case pst_loop_fixed_point of
-    True -> return ()
-    False ->
-      liftIO $ modifyIORef pst_handlers $ ((CHandlers $ M.singleton which this_h) <>)
-
-pmap :: ProSt -> (SLPart -> b) -> M.Map SLPart b
-pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
-
-pall :: ProSt -> a -> M.Map SLPart a
-pall st x = pmap st (\_ -> x)
-
-data ProResS = ProResS SLPartETs (ProRes_ Bool)
+type FlowOutput = M.Map Int FlowOutputData
+data FlowOutputData = FlowOutputData
+  { fod_save :: DLVarS
+  , fod_recv :: DLVarS }
   deriving (Eq)
+instance Semigroup FlowOutputData where
+  (FlowOutputData xa xb) <> (FlowOutputData ya yb) =
+    FlowOutputData (xa <> ya) (xb <> yb)
+instance Monoid FlowOutputData where
+  mempty = FlowOutputData mempty mempty
+instance Pretty FlowOutputData where
+  pretty (FlowOutputData {..}) =
+    render_obj $ M.fromList [ ("save"::String, fod_save)
+                            , ("recv", fod_recv) ]
+fod_savel :: FlowOutputData -> [DLVar]
+fod_savel = S.toAscList . fod_save
+fod_recvl :: FlowOutputData -> [DLVar]
+fod_recvl = S.toAscList . fod_recv
 
-epp_m :: Counts -> UndefdVars -> LLCommon -> ProRes_ (UndefdVars, PLCommon)
-epp_m k_cs k_udvs = \case
-  DL_Nop at -> skip at
-  DL_Let at mdv de ->
-    case de of
-      DLE_Claim _ _ CT_Assert _ _ -> skip at
-      DLE_Claim _ _ CT_Possible _ _ -> skip at
-      DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip at
-      _ ->
-        case mdv of
-          Nothing -> maybe_skip []
-          Just dv ->
-            case get_count dv k_cs of
-              Count Nothing -> maybe_skip [dv]
-              Count (Just lc) ->
-                ProRes_ (cs' [dv]) (k_udvs, (DL_Let at (PV_Let lc' dv) de))
-                  where lc' = if canDupe de then lc else PL_Many
-    where
-      maybe_skip vs =
-        case isPure de of
-          True -> ProRes_ (k_cs' vs) (k_udvs, DL_Nop at)
-          False -> ProRes_ (cs' vs) (k_udvs, (DL_Let at PV_Eff de))
-      cs' vs = counts de <> k_cs' vs
-      k_cs' vs = count_rms vs k_cs
-  DL_ArrayMap at ans x a (DLinBlock fat _ f r) ->
-    case get_count ans k_cs of
-      Count Nothing -> skip at
-      Count (Just _) ->
-        --- Note: Maybe use LetCat for fusing?
-        ProRes_ cs' (udvs', (DL_ArrayMap at ans x a (DLinBlock fat mempty f' r)))
-    where
-      cs' = (counts x <> f_cs' <> k_cs')
-      udvs' = f_udvs <> k_udvs
-      k_cs' = count_rms [ans] k_cs
-      f_cs' = count_rms [a] f_cs
-      --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-      fk_cs' = k_cs' <> (counts r <> counts r)
-      ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l fk_cs' f
-  DL_ArrayReduce at ans x z b a (DLinBlock fat _ f r) ->
-    case get_count ans k_cs of
-      Count Nothing -> skip at
-      Count (Just _) ->
-        --- Note: Maybe use LetCat for fusing?
-        ProRes_ cs' (udvs', (DL_ArrayReduce at ans x z b a (DLinBlock fat mempty f' r)))
-    where
-      cs' = (counts x <> counts z <> f_cs' <> k_cs')
-      udvs' = k_udvs <> f_udvs
-      k_cs' = count_rms [ans] k_cs
-      f_cs' = count_rms [b, a] f_cs
-      --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-      fk_cs' = k_cs' <> (counts r <> counts r)
-      ProResL (ProRes_ f_cs (f_udvs, f')) = epp_l fk_cs' f
-  DL_Var at dv ->
-    let cs' = count_rms [dv] k_cs
-        udvs' = S.delete dv k_udvs
-     in ProRes_ cs' (udvs', (DL_Var at dv))
-  DL_Set at dv da ->
-    let cs' = counts da <> count_rms [dv] k_cs
-        udvs' = S.insert dv k_udvs
-     in ProRes_ cs' (udvs', (DL_Set at dv da))
-  DL_LocalIf at ca t f ->
-    let cs' = counts ca <> t'_cs <> f'_cs
-        ProResL (ProRes_ t'_cs (t_udvs, t')) = epp_l k_cs t
-        ProResL (ProRes_ f'_cs (f_udvs, f')) = epp_l k_cs f
-        udvs' = t_udvs <> f_udvs <> k_udvs
-     in ProRes_ cs' (udvs', DL_LocalIf at ca t' f')
-  DL_LocalSwitch at ov csm ->
-    let cm1 (mov', l) = (l'_cs', (l'_udvs, (mov', l')))
-          where
-            ProResL (ProRes_ l'_cs (l'_udvs, l')) = epp_l k_cs l
-            l'_cs' = count_rms (maybeToList mov') l'_cs
-        csm'0 = M.map cm1 csm
-        csm' = M.map (snd . snd) csm'0
-        c_udvs = mconcatMap (fst . snd) $ M.elems csm'0
-        udvs' = c_udvs <> k_udvs
-        cs' = counts ov <> (mconcatMap fst $ M.elems csm'0)
-     in ProRes_ cs' (udvs', DL_LocalSwitch at ov csm')
+fixedPoint :: forall a . Eq a => Monoid a => (a -> a) -> a
+fixedPoint f = h mempty
   where
-    skip at = ProRes_ k_cs (k_udvs, DL_Nop at)
+    h :: a -> a
+    h x =
+      let x' = f x in
+      case x == x' of
+        True -> x
+        False -> h x'
 
-epp_l :: Counts -> LLTail -> ProResL
-epp_l ok_cs = \case
-  DT_Return at ->
-    ProResL (ProRes_ ok_cs (mempty, DT_Return at))
-  DT_Com c k ->
-    ProResL (ProRes_ cs'' (udvs'', DT_Com c' k'))
-    where
-      ProRes_ cs'' (udvs'', c') = epp_m cs' udvs' c
-      ProResL (ProRes_ cs' (udvs', k')) = epp_l ok_cs k
-
-extend_locals_look :: LLCommon -> SLPartETs -> SLPartETs
-extend_locals_look c p_prts_s = M.map add p_prts_s
+solve :: FlowInput -> FlowOutput
+solve fi = fixedPoint go
   where
-    add (ProRes_ cs_k k) = ProRes_ cs' (ET_Com c' k)
+    -- fi = trace imsg fi'
+    -- imsg = "\nflow input:" <> show (pretty fi') <> "\n"
+    -- omsg fo = "\nflow ouput:" <> show (pretty fo) <> "\n"
+    -- go' fo = trace (omsg fo) $ go fo
+    go fo = M.map (go1 fo) fi
+    go1 fo (FlowInputData {..}) = fod
       where
-        ProRes_ cs' (_, c') = epp_m cs_k mempty c
+        fod = FlowOutputData { fod_save = save
+                             , fod_recv = recv }
+        foread which = fromMaybe mempty $ M.lookup which fo
+        unionmap f s = S.unions $ map f $ S.toList s
+        save =
+          -- We must save what our children recv
+          unionmap (fod_recv . foread) fid_children
+        recv =
+          -- We must recv what our parents sends plus what we need
+          S.union (unionmap (fod_save . foread) fid_parents) need
+        use =
+          -- We use what our jumps recv and what we actually use
+          S.union fid_uses (unionmap (fod_recv . foread) fid_jumps)
+        need =
+          -- We need what we save & use, minus what we define
+          S.difference (S.union use save) fid_defns
 
-pltReplace :: (PLCommon -> a -> a) -> a -> PLTail -> a
-pltReplace mkk nk = \case
-  DT_Return _ -> nk
-  DT_Com c pt -> mkk c $ pltReplace mkk nk pt
+-- Build flow
+data EPPError
+  = Err_ContinueDomination
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
-var_addlc :: Counts -> DLVar -> (PLLetCat, DLVar)
-var_addlc cs v = (lc, v)
-  where
-    lc =
-      case get_count v cs of
-        Count Nothing -> PL_Once
-        Count (Just x) -> x
+instance Show EPPError where
+  show Err_ContinueDomination =
+    "Continue must be dominated by communication"
 
-epp_n :: LLConsensus -> App ProResC
-epp_n = \case
+data BEnv = BEnv
+  { be_which :: Int
+  , be_handlerc :: Counter
+  , be_interval :: CInterval DLArg
+  , be_handlers :: IORef (M.Map Int (CApp CIHandler))
+  , be_flowr :: IORef FlowInput
+  , be_more :: IORef Bool
+  , be_loop :: Maybe Int }
+type BApp = ReaderT BEnv IO
+
+signalMore :: BApp ()
+signalMore = liftIO . flip writeIORef True =<< (be_more <$> ask)
+
+captureMore :: BApp a -> BApp (Bool, a)
+captureMore m = do
+  mr <- liftIO $ newIORef False
+  x <- local (\e -> e { be_more = mr }) m
+  a <- liftIO $ readIORef mr
+  return (a, x)
+
+newHandler :: BApp Int
+newHandler = do
+  hc <- be_handlerc <$> ask
+  liftIO $ incCounter hc
+
+setHandler :: Int -> CApp CIHandler -> BApp ()
+setHandler which m = do
+  hsr <- be_handlers <$> ask
+  hs <- liftIO $ readIORef hsr
+  case M.lookup which hs of
+    Just _ -> impossible "epp double set handler"
+    Nothing -> do
+      liftIO $ modifyIORef hsr $ M.insert which m
+
+fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
+fg_record fidm = do
+  which <- be_which <$> ask
+  fr <- be_flowr <$> ask
+  liftIO $ modifyIORef fr $ \f ->
+    M.insert which (fidm $ fromMaybe mempty $ M.lookup which f) f
+
+fg_use :: Countable a => a -> BApp ()
+fg_use x = fg_record $ \f -> f { fid_uses = S.union (countsS x) (fid_uses f) }
+
+fg_defn :: Countable a => a -> BApp ()
+fg_defn x = fg_record $ \f -> f { fid_defns = S.union (countsS x) (fid_defns f) }
+
+fg_child :: Int -> BApp ()
+fg_child child = do
+  parent <- be_which <$> ask
+  fg_record $ \f -> f { fid_children = S.insert child $ fid_children f }
+  local (\e -> e { be_which = child }) $ do
+    fg_record $ \f -> f { fid_parents = S.insert parent $ fid_parents f }
+
+fg_jump :: Int -> BApp ()
+fg_jump dst = do
+  fg_record $ \f -> f { fid_jumps = S.insert dst $ fid_jumps f }
+
+-- Read flow
+data CEnv = CEnv
+  { ce_flow :: FlowOutput
+  , ce_vars :: IORef DLVarS }
+type CApp = ReaderT CEnv IO
+
+data EEnv = EEnv
+  { ee_flow :: FlowOutput
+  , ee_who :: SLPart }
+type EApp = ReaderT EEnv IO
+
+ce_vsm :: (DLVarS -> DLVarS) -> CApp ()
+ce_vsm f = do
+  cstr <- ce_vars <$> ask
+  liftIO $ modifyIORef cstr f
+
+ce_vuse :: DLVar -> CApp ()
+ce_vuse x = ce_vsm $ S.insert x
+
+ce_vdef :: DLVar -> CApp ()
+ce_vdef x = ce_vsm $ S.delete x
+
+readFlow :: Monad m => (a -> FlowOutput) -> Int -> ReaderT a m FlowOutputData
+readFlow get_flow which = do
+  fo <- get_flow <$> ask
+  return $ fo M.! which
+
+ee_readFlow :: Int -> EApp FlowOutputData
+ee_readFlow = readFlow ee_flow
+ee_readMustSave :: Int -> EApp [DLVar]
+ee_readMustSave x = fod_savel <$> ee_readFlow x
+ee_readMustReceive :: Int -> EApp [DLVar]
+ee_readMustReceive x = fod_recvl <$> ee_readFlow x
+
+ce_readFlow :: Int -> CApp FlowOutputData
+ce_readFlow = readFlow ce_flow
+ce_readMustSave :: Int -> CApp [DLVar]
+ce_readMustSave x = fod_savel <$> ce_readFlow x
+ce_readMustReceive :: Int -> CApp [DLVar]
+ce_readMustReceive x = fod_recvl <$> ce_readFlow x
+
+readVars :: CApp [DLVar]
+readVars = do
+  vsr <- ce_vars <$> ask
+  S.toAscList <$> (liftIO $ readIORef vsr)
+
+-- End-point Construction
+
+itsame :: SLPart -> EApp Bool
+itsame who = ((who ==) . ee_who) <$> ask
+
+ee_only :: SrcLoc -> SLPart -> LLTail -> EITail -> EApp EITail
+ee_only _at who l k' = itsame who >>= \case
+  False -> return k'
+  True -> return $ dtReplace ET_Com k' l
+
+be_m :: LLCommon -> BApp (CApp PILCommon)
+be_m = \case
+  DL_Nop at -> return $ return $ DL_Nop at
+  DL_Let at mdv de -> do
+    fg_use $ de
+    fg_defn $ mdv
+    return $ return $ DL_Let at mdv de
+  DL_ArrayMap at ans x a f -> do
+    fg_defn $ [ans, a]
+    fg_use $ x
+    f' <- be_bl f
+    return $ DL_ArrayMap at ans x a <$> f'
+  DL_ArrayReduce at ans x z b a f -> do
+    fg_defn $ [ans, b, a]
+    fg_use $ [x, z]
+    f' <- be_bl f
+    return $ DL_ArrayReduce at ans x z b a <$> f'
+  DL_Var at v -> do
+    fg_defn $ v
+    return $ do
+      ce_vdef v
+      return $ DL_Var at v
+  DL_Set at v a -> do
+    fg_use $ a
+    return $ do
+      ce_vuse v
+      return $ DL_Set at v a
+  DL_LocalIf at c t f -> do
+    fg_use $ c
+    t' <- be_t t
+    f' <- be_t f
+    return $ DL_LocalIf at c <$> t' <*> f'
+  DL_LocalSwitch at ov csm -> do
+    fg_use $ ov
+    let go (mv, k) = do
+          fg_defn $ mv
+          k' <- be_t k
+          return $ (,) mv <$> k'
+    csm' <- mapM go csm
+    return $ (DL_LocalSwitch at ov <$> mapM id csm')
+
+be_t :: LLTail -> BApp (CApp PILTail)
+be_t = \case
+  DT_Return at -> return $ return $ DT_Return at
+  DT_Com m k -> do
+    m' <- be_m m
+    k' <- be_t k
+    return $ DT_Com <$> m' <*> k'
+
+be_bl :: LLBlock -> BApp (CApp PILBlock)
+be_bl (DLinBlock at fs t a) = do
+  fg_use $ a
+  t' <- be_t t
+  return $ DLinBlock at fs <$> t' <*> pure a
+
+be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
+be_c = \case
   LLC_Com c k -> do
-    ProResC p_prts_s (ProRes_ cs_k (udvs_k, k')) <- epp_n k
-    let ProRes_ cs_k' (udvs_k', c') = epp_m cs_k udvs_k c
-    let p_prts_s' = extend_locals_look c p_prts_s
-    return $ ProResC p_prts_s' (ProRes_ cs_k' (udvs_k', CT_Com c' k'))
-  LLC_If at ca t f -> do
-    ProResC p_prts_t (ProRes_ cs_t (udvs_t, ct_t)) <- epp_n t
-    ProResC p_prts_f (ProRes_ cs_f (udvs_f, ct_f)) <- epp_n f
-    let mkp p = ProRes_ cs_p et_p
-          where
-            ProRes_ cs_p_t et_p_t = p_prts_t M.! p
-            ProRes_ cs_p_f et_p_f = p_prts_f M.! p
-            cs_p = counts ca <> cs_p_t <> cs_p_f
-            et_p = ET_If at ca et_p_t et_p_f
-    p_prts' <- flip pmap mkp <$> ask
-    let cs' = counts ca <> cs_t <> cs_f
-    let ct' = CT_If at ca ct_t ct_f
-    let udvs' = udvs_t <> udvs_f
-    return $ ProResC p_prts' (ProRes_ cs' (udvs', ct'))
+    (k'c, k'l) <- be_c k
+    c'c <- be_m c
+    return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com c <$> k'l)
+  LLC_Only at who l k -> do
+    (k'c, k'l) <- be_c k
+    let lm = itsame who >>= \case
+          False -> k'l
+          True -> ET_ConsensusOnly at l <$> k'l
+    return $ (,) (k'c) lm
+  LLC_If at c t f -> do
+    (t'c, t'l) <- be_c t
+    (f'c, f'l) <- be_c f
+    fg_use $ c
+    let go mk t' f' = mk at c <$> t' <*> f'
+    return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
   LLC_Switch at ov csm -> do
-    let cm1 (ov', l) = (,) <$> (pure ov') <*> epp_n l
-    csm'0 <- mapM cm1 csm
-    let mkp p = ProRes_ cs_p $ ET_Switch at ov csm'p
-          where
-            csm'0p =
-              M.map
-                (\(mov', ProResC p_prts _) ->
-                   let ProRes_ cs_p_c et_p_c = p_prts M.! p
-                    in (count_rms (maybeToList mov') cs_p_c, (mov', et_p_c)))
-                csm'0
-            cs_p = mconcatMap fst $ M.elems csm'0p
-            csm'p = M.map snd csm'0p
-    p_prts' <- flip pmap mkp <$> ask
-    let csm'ct = M.map (\(mov', ProResC _ (ProRes_ _ (_, ct))) -> (mov', ct)) csm'0
-    let cs' = counts ov <> (mconcatMap (\(mov', ProResC _ (ProRes_ cs _)) -> count_rms (maybeToList mov') cs) $ M.elems csm'0)
-    let udvs' = mconcatMap (\(_, ProResC _ (ProRes_ _ (udvs, _))) -> udvs) $ M.elems csm'0
-    return $ ProResC p_prts' (ProRes_ cs' (udvs', CT_Switch at ov csm'ct))
+    fg_use $ ov
+    let go (mv, k) = do
+          fg_defn $ mv
+          (k'c, k'l) <- be_c k
+          let wrap k' = (,) mv <$> k'
+          return (wrap k'c, wrap k'l)
+    csm' <- mapM go csm
+    return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
-    st <- ask
-    let st' = st {pst_interval = default_interval}
-    ProResS p_prts_s (ProRes_ cons_cs more_chb) <-
-      local (const st') $ epp_s s
-    let svs = counts_nzs cons_cs
-    let which = pst_prev_handler st
-    let from_info =
-          case more_chb of
-            True -> Just $ map (\x -> (x, DLA_Var x)) svs
-            False -> Nothing
-    updateHandlerSVS which svs
-    let mkp (ProRes_ cs_p et_p) =
-          ProRes_ cs_p (ET_FromConsensus at1 which from_info et_p)
-    let p_prts_s' = M.map mkp p_prts_s
-    let ctw = CT_From at1 from_info
-    return $ ProResC p_prts_s' (ProRes_ cons_cs (mempty, ctw))
+    which <- be_which <$> ask
+    (more, s'l) <- captureMore $ be_s s
+    let mkfrom_info do_readMustSave = do
+          svs <- do_readMustSave which
+          return $ case more of
+                      True -> Just $ map (\x -> (x, DLA_Var x)) svs
+                      False -> Nothing
+    let cm = CT_From at1 <$> mkfrom_info ce_readMustSave
+    let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
+    return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
-    loop_num <- newHandler
-    st <- ask
-    let st_k = st {pst_prev_handler = loop_num}
-    ProResC p_prts_k (ProRes_ cs_k (udvs_k, ct_k)) <-
-      local (const st_k) $ epp_n k
-    let loop_vars = assignment_vars asn
-    let DLinBlock cond_at _ cond_l cond_da = cond
-    let st_body0 = st_k {pst_loop_num = Just loop_num}
-
-    --- This might be insane
-    let fixSVS loop_svs0 run = do
-          (loop_svs1, _) <- run loop_svs0 False
-          case loop_svs0 == loop_svs1 of
-            True -> run loop_svs1 True
-            False -> fixSVS loop_svs1 run
-    (loop_svs, (p_prts_body, udvs_body, ct_body, pt_cond)) <- fixSVS mempty $ \loop_svs0 done -> do
-      let st_body =
-            st_body0
-              { pst_loop_svs = Just loop_svs0
-              , pst_loop_fixed_point = not done
-              }
-      ProResC p_prts_body_ (ProRes_ cs_body (udvs_body_, ct_body_)) <-
-        local (const st_body) $ epp_n body
-      let post_cond_cs = counts cond_da <> cs_body <> cs_k
-      let ProResL (ProRes_ cs_cond (cond_udvs, pt_cond_)) = epp_l post_cond_cs cond_l
-      let udvs' = cond_udvs <> udvs_body_
-      let loop_svs_ = counts_nzs $ count_rms loop_vars $ cs_cond
-      return $ (loop_svs_, (p_prts_body_, udvs', ct_body_, pt_cond_))
-
-    let loop_if = CT_If cond_at cond_da ct_body ct_k
-    let loop_top = pltReplace CT_Com loop_if pt_cond
-    (loop_top'_cs, loop_top') <- liftIO $ pltoptimize loop_top
-    let loop_lcvars = map (var_addlc loop_top'_cs) loop_vars
-    let this_h = C_Loop at loop_svs loop_lcvars loop_top'
-    addHandler loop_num this_h
-    let ct' = CT_Jump at loop_num loop_svs asn
-    let cons_cs' = counts loop_svs <> counts asn
-    let mkp p = ProRes_ cs_p t_p
-          where
-            ProRes_ p_cs_k t_k = p_prts_k M.! p
-            ProRes_ p_cs_body t_body = p_prts_body M.! p
-            cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)
-            t_p = ET_While at asn (DLinBlock cond_at mempty pt_cond cond_da) t_body t_k
-    let p_prts' = pmap st mkp
-    let udvs' = udvs_k <> udvs_body
-    return $ ProResC p_prts' (ProRes_ cons_cs' (udvs', ct'))
+    let DLinBlock cond_at _ cond_l cond_a = cond
+    this_loop <- newHandler
+    kont_block <- newHandler
+    let inBlock which = local (\e -> e { be_which = which })
+    let inLoop = inBlock this_loop
+    let inKont = inBlock kont_block
+    fg_use $ asn
+    let loop_vars = map Just $ assignment_vars asn
+    fg_defn $ loop_vars
+    cond_l' <- inLoop $ do
+      fg_defn $ loop_vars
+      fg_jump $ kont_block
+      be_t cond_l
+    (k'c, k'l) <- inKont $
+      be_c k
+    setHandler kont_block $ do
+      kont_svs <- ce_readMustReceive kont_block
+      C_Loop at kont_svs [] <$> k'c
+    let goto_kont = CT_Jump at kont_block <$> ce_readMustReceive kont_block <*> pure mempty
+    (body'c, body'l) <- inLoop $ local (\e -> e { be_loop = Just this_loop }) $
+      be_c body
+    let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
+    let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'
+    setHandler this_loop $ do
+      loop_svs <- ce_readMustReceive this_loop
+      C_Loop at loop_svs loop_vars <$> loop_top
+    fg_jump $ this_loop
+    let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
+    let lm = ET_While at asn cond <$> body'l <*> k'l
+    return $ (,) cm lm
   LLC_Continue at asn -> do
-    st <- ask
-    let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
-    let loop_svs = fromMaybe (impossible "no loop") $ pst_loop_svs st
-    when (this_loop == pst_prev_handler st) $
+    let loop_vars = map Just $ assignment_vars asn
+    fg_defn $ loop_vars
+    fg_use $ asn
+    this_loop <- fromMaybe (impossible "no loop") . be_loop <$> ask
+    which <- be_which <$> ask
+    when (this_loop == which) $
       expect_thrown at Err_ContinueDomination
-    let asn_cs = counts asn
-    let cons_cs' = asn_cs <> counts loop_svs
-    let ct' = CT_Jump at this_loop loop_svs asn
-    let p_prts' = pall st (ProRes_ asn_cs (ET_Continue at asn))
-    return $ ProResC p_prts' (ProRes_ cons_cs' (mempty, ct'))
-  LLC_Only at who body_l k_n -> do
-    ProResC p_prts_k (ProRes_ cs_k (udvs_k, prchs_k)) <- epp_n k_n
-    let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-    let ProResL (ProRes_ who_body_cs (who_body_udvs, who_body_lt)) = epp_l who_k_cs body_l
-    let who_prt_only =
-          ProRes_ who_body_cs $ ET_ConsensusOnly at who_body_lt who_k_et
-    let p_prts = M.insert who who_prt_only p_prts_k
-    let udvs' = udvs_k <> who_body_udvs
-    return $ ProResC p_prts (ProRes_ cs_k (udvs', prchs_k))
+    fg_jump $ this_loop
+    let cm = CT_Jump at this_loop <$> ce_readMustSave this_loop <*> pure asn
+    let lm = return $ ET_Continue at asn
+    return $ (,) cm lm
 
-epp_s :: LLStep -> App ProResS
-epp_s = \case
+be_s :: LLStep -> BApp (EApp EITail)
+be_s = \case
   LLS_Com c k -> do
-    st <- ask
-    let st' =
+    int <- be_interval <$> ask
+    let int' =
           case c of
-            (DL_Let _ _ (DLE_Wait _ amt)) ->
-              st {pst_interval = interval_add_from (pst_interval st) amt}
-            _ -> st
-    ProResS p_prts_s (ProRes_ cs_k morech) <-
-      local (const st') $ epp_s k
-    let ProRes_ cs_k' _ = epp_m cs_k mempty c
-    let p_prts_s' = extend_locals_look c p_prts_s
-    return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
-  LLS_Stop at -> do
-    st <- ask
-    let cs = pst_forced_svs st
-    let p_prts_s = pall st (ProRes_ cs (ET_Stop at))
-    return $ ProResS p_prts_s $ ProRes_ cs False
-  LLS_Only _at who body_l k_s -> do
-    ProResS p_prts_k prchs_k <- epp_s k_s
-    let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-    let ProResL (ProRes_ who_body_cs (_, who_body_lt)) = epp_l who_k_cs body_l
-    let who_prt_only =
-          ProRes_ who_body_cs $ pltReplace ET_Com who_k_et who_body_lt
-    let p_prts = M.insert who who_prt_only p_prts_k
-    return $ ProResS p_prts prchs_k
-  LLS_ToConsensus at send (last_timev, fromv, msg, amt_dv, timev, cons) mtime -> do
-    st <- ask
-    let prev_int = pst_interval st
+            (DL_Let _ _ (DLE_Wait _ amt)) -> interval_add_from int amt
+            _ -> int
+    k' <- local (\e -> e { be_interval = int' }) $ be_s k
+    return $ ET_Com c <$> k'
+  LLS_Stop at ->
+    return $ (return $ ET_Stop at)
+  LLS_Only at who l k -> do
+    k' <- be_s k
+    return $ ee_only at who l =<< k'
+  LLS_ToConsensus at send recv mtime -> do
+    let (last_time_mv, from_v, msg_vs, amt_v, time_v, ok_c) = recv
+    prev <- be_which <$> ask
+    signalMore
     which <- newHandler
-    let (int_ok, delay_cs, continue_time) =
-          case mtime of
-            Nothing ->
-              (int_ok_, mempty, continue_time_)
-              where
-                int_ok_ = interval_no_to prev_int
-                continue_time_ ok_cons_cs =
-                  return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
-            Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
-              where
-                delayas = interval_from int_to
-                delay_cs_ = counts delayas
-                int_to = interval_add_from prev_int delaya
-                int_ok_ = interval_add_to prev_int delaya
-                continue_time_ ok_cons_cs = do
-                  let st_to =
-                        st
-                          { pst_interval = int_to
-                          , pst_forced_svs = ok_cons_cs
-                          }
-                  ProResS delay_prts (ProRes_ tcons_cs _) <-
-                    local (const st_to) $ epp_s delays
-                  let cs' = delay_cs_ <> tcons_cs
-                  let update (ProRes_ tk_cs tk_et) =
-                        ProRes_ (tk_cs <> delay_cs_) (Just (delayas, tk_et))
-                  return $ (cs', M.map update delay_prts)
-    let st_cons =
-          st
-            { pst_prev_handler = which
-            , pst_interval = int_ok
-            }
-    ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <-
-      local (const st_cons) $
-        epp_n cons
-    let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
-    let ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
-    let (fs_uses, fs_defns) = (mempty, [fromv])
-    let msg_and_defns = (msg <> [amt_dv, timev] <> fs_defns)
-    let int_ok_cs = counts int_ok
-    let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st <> (counts [last_timev])
-    (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
-    let svs = counts_nzs time_cons_cs
-    let prev = pst_prev_handler st
-    let this_h = C_Handler at int_ok last_timev fromv prev svs msg amt_dv timev ct_cons
-    let soloSend0 = (M.size send) == 1
-    let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _) -> All isClass) $ M.elems send
+    int <- be_interval <$> ask
+    (int_ok, mtime'm) <-
+      case mtime of
+        Nothing -> do
+          let int_ok = interval_no_to int
+          return $ (int_ok, return $ Nothing)
+        Just (delay_a, to_s) -> do
+          let int_ok = interval_add_to int delay_a
+          let int_to = interval_add_from int delay_a
+          let delay_as = interval_from int_to
+          to_s'm <- local (\e -> e { be_interval = int_to }) $
+            be_s to_s
+          let mtime'm = Just . (,) delay_as <$> to_s'm
+          return $ (int_ok, mtime'm)
+    (ok_c'm, ok_l'm) <-
+      local (\e -> e { be_interval = int_ok
+                     , be_which = which }) $ do
+        fg_use $ int_ok
+        fg_use $ last_time_mv
+        fg_defn $ from_v : amt_v : time_v : msg_vs
+        be_c ok_c
+    fg_child which
+    setHandler which $ do
+      svs <- ce_readMustReceive which
+      ok_c' <- ok_c'm
+      udvs <- readVars
+      let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
+      let ok_c'' = foldl' add_udv_def ok_c' udvs
+      return $ C_Handler at int_ok last_time_mv from_v prev svs msg_vs amt_v time_v ok_c''
     -- It is only a solo send if we are the only sender AND we are not a
     -- class
+    let soloSend0 = (M.size send) == 1
+    let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _) -> All isClass) $ M.elems send
     let soloSend = soloSend0 && soloSend1
-    let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-          ProRes_ cs_' $ ET_ToConsensus at fromv prev last_timev which mfrom msg amt_dv timev mtime' et_
-          where
-            cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
-    let mk_p_prt p prt = mker prt mtime'
-          where
-            mtime' = mtime'_ps M.! p
-            mker =
-              case M.lookup p send of
-                Nothing -> mk_et Nothing
-                Just (_isClass, from_as, amt_da, when_da) ->
-                  mk_et $ Just (from_as, amt_da, when_da, svs, soloSend)
-    let p_prts = M.mapWithKey mk_p_prt p_prts_cons
-    addHandler which this_h
-    return $ ProResS p_prts (ProRes_ time_cons_cs True)
+    let ok_l''m = do
+          ok_l' <- ok_l'm
+          who <- ee_who <$> ask
+          mfrom <- case M.lookup who send of
+            Nothing -> return $ Nothing
+            Just (_isClass, from_as, amt_a, when_a) -> do
+              svs <- ee_readMustReceive which
+              return $ Just (from_as, amt_a, when_a, svs, soloSend)
+          mtime' <- mtime'm
+          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs amt_v time_v mtime' ok_l'
+    return $ ok_l''m
 
-epp :: LLProg -> IO PLProg
+epp :: LLProg -> IO PIProg
 epp (LLProg at (LLOpts {..}) ps dli s) = do
+  -- Step 1: Analyze the program to compute basic blocks
+  be_handlerc <- newCounter 1
+  be_handlers <- newIORef mempty
+  be_flowr <- newIORef mempty
+  be_more <- newIORef False
+  let be_loop = Nothing
+  let be_which = 0
+  let be_interval = default_interval
+  mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  -- Step 2: Solve the flow graph
+  flow <- solve <$> readIORef be_flowr
+  -- Step 3: Turn the blocks into handlers
+  hs <- readIORef be_handlers
+  let mkh m = do
+        let ce_flow = flow
+        ce_vars <- newIORef mempty
+        flip runReaderT (CEnv {..}) m
+  cp <- (CPProg at . CHandlers) <$> mapM mkh hs
+  -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
-  nhr <- newCounter 1
-  hsr <- newIORef $ mempty
-  let st =
-        ProSt
-          { pst_prev_handler = 0
-          , pst_handlers = hsr
-          , pst_handlerc = nhr
-          , pst_interval = default_interval
-          , pst_parts = M.keys p_to_ie
-          , pst_loop_fixed_point = False
-          , pst_loop_svs = Nothing
-          , pst_loop_num = Nothing
-          , pst_forced_svs = mempty
-          }
-  ProResS p_prts _ <-
-    flip runReaderT st $ epp_s s
-  chs <- readIORef hsr
-  let cp = CPProg at chs
-  let mk_pp p ie =
-        case M.lookup p p_prts of
-          Just (ProRes_ _ et) -> EPProg at ie et
-          Nothing ->
-            impossible $ "part not in projection"
-  let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
+  let mkep ee_who ie = do
+        let ee_flow = flow
+        et <- flip runReaderT (EEnv {..}) $
+                mkep_
+        return $ EPProg at ie et
+  let mapWithKeyM f m =
+        M.fromList <$> mapM (\(k, v) -> (,) k <$> f k v) (M.toList m)
+  pps <- EPPs <$> mapWithKeyM mkep p_to_ie
+  -- Step 4: Generate the final PLProg
   let plo_deployMode = llo_deployMode
   let plo_verifyOverflow = llo_verifyOverflow
   let plo_counter = llo_counter

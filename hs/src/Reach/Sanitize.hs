@@ -85,7 +85,7 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinBlock a) where
 instance Sanitize PLVar where
   sani x = x
 
-instance Sanitize CTail where
+instance {-# OVERLAPPING #-} Sanitize a => Sanitize (CTail_ a) where
   sani = \case
     CT_Com m k -> CT_Com (sani m) (sani k)
     CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)

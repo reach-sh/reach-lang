@@ -435,6 +435,11 @@ instance Pretty a => Pretty (DLinTail a) where
     DT_Return _at -> mempty
     DT_Com x k -> prettyCom x k
 
+dtReplace :: (DLinStmt a -> b -> b) -> b -> DLinTail a -> b
+dtReplace mkk nk = \case
+  DT_Return _ -> nk
+  DT_Com m k -> mkk m $ dtReplace mkk nk k
+
 data DLinBlock a
   = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
   deriving (Eq)

@@ -32,22 +32,26 @@ instance Pretty PLVar where
     PV_Eff -> "eff"
     PV_Let lc x -> pretty x <> pretty lc
 
+type PILVar = Maybe DLVar
+
 type PLCommon = DLinStmt PLVar
-
 type PLTail = DLinTail PLVar
-
 type PLBlock = DLinBlock PLVar
+
+type PILCommon = DLinStmt PILVar
+type PILTail = DLinTail PILVar
+type PILBlock = DLinBlock PILVar
 
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
 type FromInfo = Maybe [(DLVar, DLArg)]
 
-data ETail
-  = ET_Com PLCommon ETail
+data ETail_ a
+  = ET_Com (DLinStmt a) (ETail_ a)
   | ET_Stop SrcLoc
-  | ET_If SrcLoc DLArg ETail ETail
-  | ET_Switch SrcLoc DLVar (SwitchCases ETail)
-  | ET_FromConsensus SrcLoc Int FromInfo ETail
+  | ET_If SrcLoc DLArg (ETail_ a) (ETail_ a)
+  | ET_Switch SrcLoc DLVar (SwitchCases (ETail_ a))
+  | ET_FromConsensus SrcLoc Int FromInfo (ETail_ a)
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
@@ -61,21 +65,24 @@ data ETail
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_amtv :: DLVar
       , et_tc_from_timev :: DLVar
-      , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
-      , et_tc_cons :: ETail
+      , et_tc_from_mtime :: (Maybe ([DLArg], (ETail_ a)))
+      , et_tc_cons :: (ETail_ a)
       }
   | ET_While
       { et_w_at :: SrcLoc
       , et_w_asn :: DLAssignment
-      , et_w_cond :: PLBlock
-      , et_w_body :: ETail
-      , et_w_k :: ETail
+      , et_w_cond :: (DLinBlock a)
+      , et_w_body :: (ETail_ a)
+      , et_w_k :: (ETail_ a)
       }
   | ET_Continue SrcLoc DLAssignment
-  | ET_ConsensusOnly SrcLoc PLTail ETail
+  | ET_ConsensusOnly SrcLoc (DLinTail a) (ETail_ a)
   deriving (Eq)
 
-instance Pretty ETail where
+type ETail = ETail_ PLVar
+type EITail = ETail_ PILVar
+
+instance Pretty a => Pretty (ETail_ a) where
   pretty e =
     case e of
       ET_Com c k -> pretty c <> hardline <> pretty k
@@ -128,23 +135,25 @@ instance Pretty ETail where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
 
-data EPProg
-  = EPProg SrcLoc InteractEnv ETail
+data EPProg_ a
+  = EPProg SrcLoc InteractEnv (ETail_ a)
   deriving (Eq)
 
-instance Pretty EPProg where
+type EPProg = EPProg_ PLVar
+
+instance Pretty a => Pretty (EPProg_ a) where
   pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
 
-data CTail
-  = CT_Com PLCommon CTail
-  | CT_If SrcLoc DLArg CTail CTail
-  | CT_Switch SrcLoc DLVar (SwitchCases CTail)
+data CTail_ a
+  = CT_Com (DLinStmt a) (CTail_ a)
+  | CT_If SrcLoc DLArg (CTail_ a) (CTail_ a)
+  | CT_Switch SrcLoc DLVar (SwitchCases (CTail_ a))
   | CT_From SrcLoc FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
-instance Pretty CTail where
+instance Pretty a => Pretty (CTail_ a) where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
@@ -156,6 +165,9 @@ instance Pretty CTail where
     where
       args = pretty which <+> pretty vars <+> pretty assignment
 
+type CTail = CTail_ PLVar
+type CITail = CTail_ PILVar
+
 data CInterval a
   = CBetween [a] [a]
   deriving (Show, Eq)
@@ -165,7 +177,7 @@ instance Pretty a => Pretty (CInterval a) where
     where
       go = brackets . render_das
 
-data CHandler
+data CHandler_ a
   = C_Handler
       { ch_at :: SrcLoc
       , ch_int :: CInterval DLArg
@@ -176,17 +188,20 @@ data CHandler
       , ch_msg :: [DLVar]
       , ch_amtv :: DLVar
       , ch_timev :: DLVar
-      , ch_body :: CTail
+      , ch_body :: (CTail_ a)
       }
   | C_Loop
       { cl_at :: SrcLoc
       , cl_svs :: [DLVar]
-      , cl_vars :: [(PLLetCat, DLVar)]
-      , cl_body :: CTail
+      , cl_vars :: [a]
+      , cl_body :: (CTail_ a)
       }
   deriving (Eq)
 
-instance Pretty CHandler where
+type CHandler = CHandler_ PLVar
+type CIHandler = CHandler_ PILVar
+
+instance Pretty a => Pretty (CHandler_ a) where
   pretty (C_Handler _ int last_timev fs last_i svs msg amtv timev body) =
     pbrackets
       [ pretty fs
@@ -209,26 +224,28 @@ instance Pretty CHandler where
       , render_nest $ pretty body
       ]
 
-newtype CHandlers = CHandlers (M.Map Int CHandler)
+newtype CHandlers_ a = CHandlers (M.Map Int (CHandler_ a))
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
-instance Pretty CHandlers where
+type CHandlers = CHandlers_ PLVar
+
+instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =
     render_obj m
 
-data CPProg
-  = CPProg SrcLoc CHandlers
+data CPProg a
+  = CPProg SrcLoc (CHandlers_ a)
   deriving (Eq)
 
-instance Pretty CPProg where
+instance Pretty a => Pretty (CPProg a) where
   pretty (CPProg _ chs) = pretty chs
 
-newtype EPPs = EPPs (M.Map SLPart EPProg)
+newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
-instance Pretty EPPs where
+instance Pretty a => Pretty (EPPs a) where
   pretty (EPPs m) = render_obj m
 
 data PLOpts = PLOpts
@@ -238,11 +255,14 @@ data PLOpts = PLOpts
   }
   deriving (Generic, Eq)
 
-data PLProg
-  = PLProg SrcLoc PLOpts DLInit EPPs CPProg
+data PLinProg a
+  = PLProg SrcLoc PLOpts DLInit (EPPs a) (CPProg a)
   deriving (Eq)
 
-instance Pretty PLProg where
+type PLProg = PLinProg PLVar
+type PIProg = PLinProg PILVar
+
+instance Pretty a => Pretty (PLinProg a) where
   pretty (PLProg _ _ dli ps cp) =
     "#lang pl" <> hardline
       <> pretty dli

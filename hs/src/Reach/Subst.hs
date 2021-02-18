@@ -82,7 +82,7 @@ instance {-# OVERLAPPING #-} Subst (DLinBlock a) where
 instance Subst DLAssignment where
   subst (DLAssignment m) = DLAssignment <$> subst m
 
-instance Subst CTail where
+instance {-# OVERLAPPING #-} Subst (CTail_ a) where
   subst = \case
     CT_Com m k -> CT_Com <$> subst m <*> subst k
     CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f

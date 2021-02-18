@@ -14,12 +14,6 @@ pform_ f = pform f mempty
 pbrackets :: [Doc] -> Doc
 pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
-render_obj :: Pretty k => Pretty v => M.Map k v -> Doc
-render_obj env =
-  braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env)
-  where
-    render_p (k, oa) = pretty k <+> "=" <+> pretty oa
-
 render_das :: Pretty a => [a] -> Doc
 render_das as = hsep $ punctuate comma $ map pretty as
 

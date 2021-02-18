@@ -1,7 +1,9 @@
 module Reach.CollectCounts
   ( Count (..)
   , Counts (..)
+  , Countable
   , counts
+  , countsS
   , get_count
   , count_rms
   , count_rmm
@@ -10,6 +12,7 @@ module Reach.CollectCounts
 where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Data.Maybe
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -40,6 +43,9 @@ count_rmm = count_rms . maybeToList
 
 counts_nzs :: Counts -> [DLVar]
 counts_nzs (Counts cs) = M.keys cs
+
+countsS :: Countable a => a -> S.Set DLVar
+countsS = S.fromList . counts_nzs . counts
 
 class Countable a where
   counts :: a -> Counts

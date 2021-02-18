@@ -14,7 +14,6 @@ import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.JSOrphans ()
-import Reach.Pretty
 import Reach.Texty
 import Reach.Util
 

@@ -25,11 +25,13 @@ module Reach.Texty
   , semi
   , comma
   , space
+  , render_obj
   )
 where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
+import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Set as S
 import Data.String
@@ -74,8 +76,17 @@ render_ = \case
 render :: Doc -> LT.Text
 render = runIdentity . flip runReaderT 0 . render_
 
+render_obj :: Pretty k => Pretty v => M.Map k v -> Doc
+render_obj env =
+  braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toAscList env)
+  where
+    render_p (k, oa) = pretty k <+> "=" <+> pretty oa
+
 class Pretty a where
   pretty :: a -> Doc
+
+instance (Pretty k, Pretty v) => Pretty (M.Map k v) where
+  pretty = render_obj
 
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = \case
@@ -99,7 +110,7 @@ instance {-# OVERLAPPABLE #-} Pretty a => Pretty [a] where
   pretty = prettyl
 
 instance Pretty a => Pretty (S.Set a) where
-  pretty = pretty . S.toList
+  pretty = pretty . S.toAscList
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x, y) = "(" <> pretty x <> ", " <> pretty y <> ")"

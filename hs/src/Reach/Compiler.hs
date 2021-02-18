@@ -13,6 +13,8 @@ import Reach.EPP
 import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
+import Reach.EraseLogic
+import Reach.AddCounts
 import Reach.Parser
 import Reach.Texty
 import Reach.Util
@@ -66,7 +68,11 @@ compile copts = do
                 False -> Nothing
                 True -> Just connectors
         verify woutnMay vconnectors ol >>= maybeDie
-        pl <- epp ol
+        el <- erase_logic ol
+        showp "el" el
+        pil <- epp el
+        showp "pil" pil
+        pl <- add_counts pil
         showp "pl" pl
         let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
