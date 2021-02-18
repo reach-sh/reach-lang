@@ -339,7 +339,7 @@ be_c = \case
           return $ case more of
                       True -> Just $ map (\x -> (x, DLA_Var x)) svs
                       False -> Nothing
-    let cm = CT_From at1 <$> mkfrom_info ce_readMustSave
+    let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
     let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do

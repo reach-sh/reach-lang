@@ -8,7 +8,7 @@ const Common = {
 
 export const main =
   Reach.App(
-    { connectors: [ ETH ] },
+    { /*connectors: [ ETH ]*/ },
     [['Sponsor',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,

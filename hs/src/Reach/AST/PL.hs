@@ -150,7 +150,7 @@ data CTail_ a
   = CT_Com (DLinStmt a) (CTail_ a)
   | CT_If SrcLoc DLArg (CTail_ a) (CTail_ a)
   | CT_Switch SrcLoc DLVar (SwitchCases (CTail_ a))
-  | CT_From SrcLoc FromInfo
+  | CT_From SrcLoc Int FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
@@ -158,10 +158,10 @@ instance Pretty a => Pretty (CTail_ a) where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
-  pretty (CT_From _ mvars) =
+  pretty (CT_From _ which mvars) =
     case mvars of
-      Nothing -> pform_ "halt!"
-      Just vars -> pform "wait!" $ pretty vars
+      Nothing -> pform "halt!" $ pretty which
+      Just vars -> pform "wait!" $ pretty which <> "," <+> pretty vars
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
       args = pretty which <+> pretty vars <+> pretty assignment

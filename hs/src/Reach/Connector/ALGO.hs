@@ -27,6 +27,7 @@ import Reach.Counter
 import Reach.Subst
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
+import Reach.Optimize
 import Reach.DeJump
 import Reach.AddCounts
 import Reach.Util
@@ -894,7 +895,7 @@ ct = \case
             ct t_subst'
       _ ->
         impossible "bad jump"
-  CT_From _ msvs -> do
+  CT_From _ _which msvs -> do
     check_nextSt
     halt_should_be isHalt
     where
@@ -1343,10 +1344,12 @@ connect_algo = Connector {..}
     conGen moutn pil = do
       let disp_ = conWrite moutn
       let disp which = disp_ (which <> ".teal")
-      let showp which = conShowP moutn (".algo." <> which)
+      let showp which = conShowP moutn ("algo." <> which)
       djp <- dejump pil
       showp "djp" djp
-      pl <- add_counts djp
+      djpo <- optimize djp
+      showp "djpo" djpo
+      pl <- add_counts djpo
       showp "pl" pl
       res <- compile_algo disp pl
       return $ res

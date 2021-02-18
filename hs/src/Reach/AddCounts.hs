@@ -88,9 +88,9 @@ ac_ct = \case
     csm' <- ac_csm ac_ct csm
     ac_visit $ v
     return $ CT_Switch at v csm'
-  CT_From at fi -> do
+  CT_From at w fi -> do
     ac_visit $ fi
-    return $ CT_From at fi
+    return $ CT_From at w fi
   CT_Jump at which svs asn -> do
     ac_visit $ svs
     ac_visit $ asn

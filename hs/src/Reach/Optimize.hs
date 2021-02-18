@@ -1,24 +1,21 @@
-module Reach.Optimize (optimize, pltoptimize) where
+module Reach.Optimize (optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
-import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
-import Reach.CollectCounts
 import Reach.Sanitize
-import Reach.Util
-
--- import Reach.Texty
--- import Debug.Trace
 
 type App = ReaderT Env IO
 
 type AppT a = a -> App a
+
+class Optimize a where
+  opt :: AppT a
 
 data Focus
   = F_All
@@ -113,61 +110,52 @@ mkEnv0 eParts = do
   eEnvsR <- liftIO $ newIORef eEnvs
   return $ Env {..}
 
-opt_v :: AppT DLVar
-opt_v v = do
-  r <- rewritten v
-  return $ fromMaybe v r
+instance Optimize DLVar where
+  opt v = do
+    r <- rewritten v
+    return $ fromMaybe v r
 
-opt_mv :: AppT (Maybe DLVar)
-opt_mv = \case
-  Nothing -> return Nothing
-  Just x -> Just <$> opt_v x
+instance (Traversable t, Optimize a) => Optimize (t a) where
+  opt = traverse opt
 
-opt_vs :: AppT [DLVar]
-opt_vs = mapM opt_v
+instance Optimize DLArg where
+  opt = \case
+    DLA_Var v -> DLA_Var <$> opt v
+    DLA_Constant c -> return $ DLA_Constant c
+    DLA_Literal c -> return $ DLA_Literal c
+    DLA_Interact p m t -> return $ DLA_Interact p m t
 
-opt_a :: AppT DLArg
-opt_a = \case
-  DLA_Var v -> DLA_Var <$> opt_v v
-  DLA_Constant c -> pure $ DLA_Constant c
-  DLA_Literal c -> (pure $ DLA_Literal c)
-  DLA_Interact p m t -> (pure $ DLA_Interact p m t)
+instance Optimize DLLargeArg where
+  opt = \case
+    DLLA_Array t as -> DLLA_Array t <$> opt as
+    DLLA_Tuple as -> DLLA_Tuple <$> opt as
+    DLLA_Obj m -> DLLA_Obj <$> opt m
+    DLLA_Data t vn vv -> DLLA_Data t vn <$> opt vv
 
-opt_as :: AppT [DLArg]
-opt_as = mapM opt_a
+instance Optimize DLExpr where
+  opt = \case
+    DLE_Arg at a -> DLE_Arg at <$> opt a
+    DLE_LArg at a -> DLE_LArg at <$> opt a
+    DLE_Impossible at lab -> return $ DLE_Impossible at lab
+    DLE_PrimOp at p as -> DLE_PrimOp at p <$> opt as
+    DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
+    DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
+    DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
+    DLE_ArrayZip at x0 y0 -> DLE_ArrayZip at <$> opt x0 <*> opt y0
+    DLE_TupleRef at t i -> DLE_TupleRef at <$> opt t <*> pure i
+    DLE_ObjectRef at o k -> DLE_ObjectRef at <$> opt o <*> pure k
+    DLE_Interact at fs p m t as -> DLE_Interact at fs p m t <$> opt as
+    DLE_Digest at as -> DLE_Digest at <$> opt as
+    DLE_Claim at fs t a m -> DLE_Claim at fs t <$> opt a <*> (pure $ m)
+    DLE_Transfer at t a -> DLE_Transfer at <$> opt t <*> opt a
+    DLE_Wait at a -> DLE_Wait at <$> opt a
+    DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
+    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
+    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
+    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
 
-opt_la :: AppT DLLargeArg
-opt_la = \case
-  DLLA_Array t as -> (pure $ DLLA_Array t) <*> opt_as as
-  DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> opt_as as
-  DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM opt_a m
-  DLLA_Data t vn vv -> DLLA_Data t vn <$> opt_a vv
-
-opt_e :: AppT DLExpr
-opt_e = \case
-  DLE_Arg at a -> (pure $ DLE_Arg at) <*> opt_a a
-  DLE_LArg at a -> (pure $ DLE_LArg at) <*> opt_la a
-  DLE_Impossible at lab -> pure $ DLE_Impossible at lab
-  DLE_PrimOp at p as -> (pure $ DLE_PrimOp at p) <*> opt_as as
-  DLE_ArrayRef at a i -> (pure $ DLE_ArrayRef at) <*> opt_a a <*> opt_a i
-  DLE_ArraySet at a i v -> (pure $ DLE_ArraySet at) <*> opt_a a <*> opt_a i <*> opt_a v
-  DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt_a x0 <*> opt_a y0
-  DLE_ArrayZip at x0 y0 -> DLE_ArrayZip at <$> opt_a x0 <*> opt_a y0
-  DLE_TupleRef at t i -> (pure $ DLE_TupleRef at) <*> opt_a t <*> pure i
-  DLE_ObjectRef at o k -> (pure $ DLE_ObjectRef at) <*> opt_a o <*> pure k
-  DLE_Interact at fs p m t as -> (pure $ DLE_Interact at fs p m t) <*> opt_as as
-  DLE_Digest at as -> (pure $ DLE_Digest at) <*> opt_as as
-  DLE_Claim at fs t a m -> (pure $ DLE_Claim at fs t) <*> opt_a a <*> (pure $ m)
-  DLE_Transfer at t a -> (pure $ DLE_Transfer at) <*> opt_a t <*> opt_a a
-  DLE_Wait at a -> (pure $ DLE_Wait at) <*> opt_a a
-  DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> opt_a a
-  DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt_a fa
-  DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt_a fa <*> opt_a na
-  DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt_a fa
-
-opt_asn :: AppT DLAssignment
-opt_asn (DLAssignment m) =
-  DLAssignment <$> mapM opt_a m
+instance Optimize DLAssignment where
+  opt (DLAssignment m) = DLAssignment <$> opt m
 
 class Extract a where
   extract :: a -> Maybe DLVar
@@ -175,109 +163,106 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
-opt_m_ :: Extract b => (DLinStmt b -> a -> a) -> AppT a -> DLinStmt b -> AppT a
-opt_m_ mkk opt_k c k = mkk <$> opt_m c <*> opt_k k
+instance {-# OVERLAPPING #-} Extract a => Optimize (DLinStmt a) where
+  opt = \case
+    DL_Nop at -> return $ DL_Nop at
+    DL_Let at x e -> do
+      let no = DL_Let at x <$> opt e
+      let yes dv = do
+            e' <- opt e
+            let e'' = sani e'
+            common <- repeated e''
+            case common of
+              Just rt -> do
+                rewrite dv rt
+                return $ DL_Nop at
+              Nothing -> do
+                remember dv e''
+                return $ DL_Let at x e'
+      case (extract x, isPure e) of
+        (Just dv, True) -> yes dv
+        _ -> no
+    DL_Var at v ->
+      return $ DL_Var at v
+    DL_Set at v a ->
+      DL_Set at v <$> opt a
+    DL_LocalIf at c t f ->
+      DL_LocalIf at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+    DL_LocalSwitch at ov csm ->
+      DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
+      where
+        cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt l)
+    DL_ArrayMap at ans x0 a f -> do
+      DL_ArrayMap at ans <$> opt x0 <*> (pure a) <*> opt f
+    DL_ArrayReduce at ans x0 z b a f -> do
+      DL_ArrayReduce at ans <$> opt x0 <*> opt z <*> (pure b) <*> (pure a) <*> opt f
 
-opt_m :: Extract a => AppT (DLinStmt a)
-opt_m = \case
-  DL_Nop at -> return $ DL_Nop at
-  DL_Let at x e -> do
-    let no = DL_Let at x <$> opt_e e
-    let yes dv = do
-          e' <- opt_e e
-          let e'' = sani e'
-          common <- repeated e''
-          case common of
-            Just rt -> do
-              rewrite dv rt
-              return $ DL_Nop at
-            Nothing -> do
-              remember dv e''
-              return $ DL_Let at x e'
-    case (extract x, isPure e) of
-      (Just dv, True) -> yes dv
-      _ -> no
-  DL_Var at v ->
-    return $ DL_Var at v
-  DL_Set at v a ->
-    DL_Set at v <$> opt_a a
-  DL_LocalIf at c t f ->
-    DL_LocalIf at <$> opt_a c <*> (newScope $ opt_l t) <*> (newScope $ opt_l f)
-  DL_LocalSwitch at ov csm ->
-    DL_LocalSwitch at <$> opt_v ov <*> mapM cm1 csm
-    where
-      cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt_l l)
-  DL_ArrayMap at ans x0 a f -> do
-    DL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> opt_bl f
-  DL_ArrayReduce at ans x0 z b a f -> do
-    DL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> opt_bl f
+instance {-# OVERLAPPING #-} Extract a => Optimize (DLinTail a) where
+  opt = \case
+    DT_Return at -> return $ DT_Return at
+    DT_Com m k -> DT_Com <$> opt m <*> opt k
 
-opt_l :: Extract a => AppT (DLinTail a)
-opt_l = \case
-  DT_Return at -> return $ DT_Return at
-  DT_Com m k -> opt_m_ DT_Com opt_l m k
+instance {-# OVERLAPPING #-} Extract a => Optimize (DLinBlock a) where
+  opt (DLinBlock at fs b a) =
+    newScope $ DLinBlock at fs <$> opt b <*> opt a
 
-opt_bl :: Extract a => AppT (DLinBlock a)
-opt_bl (DLinBlock at fs b a) =
-  newScope $ DLinBlock at fs <$> opt_l b <*> opt_a a
-
-opt_n :: AppT LLConsensus
-opt_n = \case
-  LLC_Com m k -> opt_m_ LLC_Com opt_n m k
-  LLC_If at c t f ->
-    LLC_If at <$> opt_a c <*> (newScope $ opt_n t) <*> (newScope $ opt_n f)
-  LLC_Switch at ov csm ->
-    LLC_Switch at <$> opt_v ov <*> mapM cm1 csm
-    where
-      cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt_n n)
-  LLC_While at asn inv cond body k ->
-    LLC_While at <$> opt_asn asn <*> opt_bl inv <*> opt_bl cond <*> (newScope $ opt_n body) <*> opt_n k
-  LLC_Continue at asn ->
-    LLC_Continue at <$> opt_asn asn
-  LLC_FromConsensus at1 at2 s ->
-    LLC_FromConsensus at1 at2 <$> (focusa $ opt_s s)
-  LLC_Only at p l k ->
-    LLC_Only at p <$> (focusp p $ opt_l l) <*> opt_n k
+instance Optimize LLConsensus where
+  opt = \case
+    LLC_Com m k -> LLC_Com <$> opt m <*> opt k
+    LLC_If at c t f ->
+      LLC_If at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+    LLC_Switch at ov csm ->
+      LLC_Switch at <$> opt ov <*> mapM cm1 csm
+      where
+        cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt n)
+    LLC_While at asn inv cond body k ->
+      LLC_While at <$> opt asn <*> opt inv <*> opt cond <*> (newScope $ opt body) <*> opt k
+    LLC_Continue at asn ->
+      LLC_Continue at <$> opt asn
+    LLC_FromConsensus at1 at2 s ->
+      LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
+    LLC_Only at p l k ->
+      LLC_Only at p <$> (focusp p $ opt l) <*> opt k
 
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
-  Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt_a d) <*> (newScope $ opt_s s))
+  Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt d) <*> (newScope $ opt s))
 
 opt_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
 opt_send (p, (isClass, args, amta, whena)) =
   focusp p $
-    (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
+    (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> opt args <*> opt amta <*> opt whena)
 
-opt_s :: LLStep -> App LLStep
-opt_s = \case
-  LLS_Com m k -> opt_m_ LLS_Com opt_s m k
-  LLS_Stop at -> pure $ LLS_Stop at
-  LLS_Only at p l s ->
-    LLS_Only at p <$> (focusp p $ opt_l l) <*> opt_s s
-  LLS_ToConsensus at send recv mtime ->
-    LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
-    where
-      send' = M.fromList <$> mapM opt_send (M.toList send)
-      (last_timev, winner_dv, msg, amtv, timev, cons) = recv
-      cons' = newScope $ focusc $ opt_n cons
-      recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt_mv last_timev <*> cons'
-      mtime' = opt_mtime mtime
+instance Optimize LLStep where
+  opt = \case
+    LLS_Com m k -> LLS_Com <$> opt m <*> opt k
+    LLS_Stop at -> pure $ LLS_Stop at
+    LLS_Only at p l s ->
+      LLS_Only at p <$> (focusp p $ opt l) <*> opt s
+    LLS_ToConsensus at send recv mtime ->
+      LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
+      where
+        send' = M.fromList <$> mapM opt_send (M.toList send)
+        (last_timev, winner_dv, msg, amtv, timev, cons) = recv
+        cons' = newScope $ focusc $ opt cons
+        recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt last_timev <*> cons'
+        mtime' = opt_mtime mtime
 
-opt_dli :: AppT DLInit
-opt_dli (DLInit {..}) = do
-  dli_ctimem' <- opt_mv dli_ctimem
-  return $ DLInit { dli_ctimem = dli_ctimem'
-                  , dli_maps = dli_maps }
+instance Optimize DLInit where
+  opt (DLInit {..}) = do
+    dli_ctimem' <- opt dli_ctimem
+    return $ DLInit { dli_ctimem = dli_ctimem'
+                    , dli_maps = dli_maps }
 
-optimize :: LLProg -> IO LLProg
-optimize (LLProg at opts ps dli s) = do
-  let SLParts m = ps
-  let psl = M.keys m
-  env0 <- mkEnv0 psl
-  flip runReaderT env0 $
-    focusa $
-      LLProg at opts ps <$> opt_dli dli <*> opt_s s
+instance Optimize LLProg where
+  opt (LLProg at opts ps dli s) = do
+    let SLParts m = ps
+    let psl = M.keys m
+    env0 <- liftIO $ mkEnv0 psl
+    local (\_ -> env0) $
+      focusa $
+        LLProg at opts ps <$> opt dli <*> opt s
 
 -- This is a bit of a hack...
 
@@ -286,148 +271,48 @@ instance Extract PLVar where
     PV_Eff -> Nothing
     PV_Let _ v -> Just v
 
-plopt_ct :: AppT CTail
-plopt_ct = \case
-  CT_Com m k ->
-    opt_m_ CT_Com plopt_ct m k
-  CT_If at c t f ->
-    case sani t == sani f of
-      True ->
-        plopt_ct t
-      False ->
-        CT_If at <$> opt_a c <*> (newScope $ plopt_ct t) <*> (newScope $ plopt_ct f)
-  CT_Switch at ov csm ->
-    CT_Switch at ov <$> mapM cm1 csm
-    where
-      cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ plopt_ct t)
-  CT_From at mvs ->
-    CT_From at <$> opt_masn mvs
-  CT_Jump at which vs asn ->
-    CT_Jump at which <$> opt_vs vs <*> opt_asn asn
-
 opt_masn :: AppT (Maybe [(DLVar, DLArg)])
 opt_masn = \case
   Nothing -> return $ Nothing
   Just x -> Just <$> mapM go x
   where
-    go (v, a) = (\x -> (v, x)) <$> opt_a a
+    go (v, a) = (\x -> (v, x)) <$> opt a
 
--- _U_pdate _C_ount_s_
-type UCST a = Counts -> a -> (Counts, a)
+instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a) where
+  opt = \case
+    CT_Com m k -> CT_Com <$> opt m <*> opt k
+    CT_If at c t f ->
+      case sani t == sani f of
+        True ->
+          opt t
+        False ->
+          CT_If at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+    CT_Switch at ov csm ->
+      CT_Switch at ov <$> mapM cm1 csm
+      where
+        cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
+    CT_From at w mvs ->
+      CT_From at w <$> opt_masn mvs
+    CT_Jump at which vs asn ->
+      CT_Jump at which <$> opt vs <*> opt asn
 
-ucs_m :: UCST PLCommon
-ucs_m cs_k = \case
-  DL_Nop at -> (cs_k, DL_Nop at)
-  DL_Let at (PV_Let _ v) e -> (cs', ct')
-    where
-      ct' = DL_Let at (PV_Let lc'' v) e
-      lc' =
-        case get_count v cs_k of
-          Count Nothing -> impossible "no use"
-          Count (Just x) -> x
-      lc'' = if canDupe e then lc' else PL_Many
-      cs' = count_rms [v] cs'_
-      cs'_ = counts e <> cs_k
-  DL_Let at PV_Eff e -> (cs', ct')
-    where
-      ct' = DL_Let at PV_Eff e
-      cs' = counts e <> cs_k
-  DL_Var at v -> (cs', ct')
-    where
-      ct' = DL_Var at v
-      cs' = count_rms [v] cs_k
-  DL_Set at v a -> (cs', ct')
-    where
-      ct' = DL_Set at v a
-      cs' = count_rms [v] cs'_
-      cs'_ = counts a <> cs_k
-  DL_LocalIf at c t f -> (cs', ct')
-    where
-      ct' = DL_LocalIf at c t' f'
-      cs' = counts c <> cs_t <> cs_f <> cs_k
-      (cs_t, t') = ucs_pt cs_k t
-      (cs_f, f') = ucs_pt cs_k f
-  DL_LocalSwitch at v csm -> (cs', ct')
-    where
-      ct' = DL_LocalSwitch at v csm'
-      cs' = counts v <> cs_csm
-      (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
-      cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
-        where
-          cs_csm_' = cs_csm_ <> count_rmm mov cs_t
-          (cs_t, t') = ucs_pt cs_k t
-          csm_' = M.insert var (mov, t') csm_
-  DL_ArrayMap at ans x a f -> (cs', ct')
-    where
-      ct' = DL_ArrayMap at ans x a f'
-      cs' = counts x <> cs_body
-      cs_body = count_rms [a] cs_f
-      (cs_f, f') = ucs_bl cs_k' f
-      cs_k' = count_rms [ans] cs_k
-  DL_ArrayReduce at ans x z b a f -> (cs', ct')
-    where
-      ct' = DL_ArrayReduce at ans x z b a f'
-      cs' = counts x <> counts z <> cs_body
-      cs_body = count_rms [b, a] cs_f
-      (cs_f, f') = ucs_bl cs_k' f
-      cs_k' = count_rms [ans] cs_k
+instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler_ a) where
+  opt = \case
+    C_Handler {..} -> do
+      C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_amtv ch_timev <$> opt ch_body
+    C_Loop {..} -> do
+      C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 
-ucs_pt :: UCST PLTail
-ucs_pt cs_kp = \case
-  DT_Return at -> (cs', ct')
-    where
-      ct' = DT_Return at
-      cs' = cs_kp
-  DT_Com c k -> (cs'', ct')
-    where
-      ct' = DT_Com c' k'
-      (cs', k') = ucs_pt cs_kp k
-      (cs'', c') = ucs_m cs' c
+instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
+  opt (CPProg at (CHandlers hs)) =
+    CPProg at . CHandlers <$> mapM (newScope . opt) hs
 
-ucs_bl :: UCST PLBlock
-ucs_bl cs_k (DLinBlock at _ t a) = (cs_t, DLinBlock at mempty t' a)
-  where
-    cs_k' = counts a <> cs_k
-    (cs_t, t') = ucs_pt cs_k' t
+instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
+  opt (PLProg at plo dli epps cp) =
+    PLProg at plo dli epps <$> opt cp
 
-ucs_m_ :: (PLCommon -> a -> a) -> PLCommon -> UCST a -> UCST a
-ucs_m_ mkk m ucs_k cs_kp k = (cs'', mkk m' k')
-  where
-    (cs', k') = ucs_k cs_kp k
-    (cs'', m') = ucs_m cs' m
-
-ucs_t :: UCST CTail
-ucs_t cs_kp = \case
-  CT_Com m k ->
-    ucs_m_ CT_Com m ucs_t cs_kp k
-  CT_If at c t f -> (cs', ct')
-    where
-      ct' = CT_If at c t' f'
-      (cs_t, t') = ucs_t cs_kp t
-      (cs_f, f') = ucs_t cs_kp f
-      cs' = counts c <> cs_t <> cs_f
-  CT_Switch at ov csm -> (cs', ct')
-    where
-      ct' = CT_Switch at ov csm'
-      cs' = counts ov <> cs_csm
-      (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
-      cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
-        where
-          cs_csm_' = cs_csm_ <> count_rmm mov cs_t
-          (cs_t, t') = ucs_t cs_kp t
-          csm_' = M.insert var (mov, t') csm_
-  CT_From at mvs -> (cs', ct')
-    where
-      ct' = CT_From at mvs
-      cs' = counts mvs <> cs_kp
-  CT_Jump at which vs asn -> (cs', ct')
-    where
-      ct' = CT_Jump at which vs asn
-      cs' = counts vs <> counts asn <> cs_kp
-
-pltoptimize :: CTail -> IO (Counts, CTail)
-pltoptimize t = do
+optimize :: Optimize a => a -> IO a
+optimize t = do
   env0 <- mkEnv0 []
-  ucs_t mempty
-    <$> (flip runReaderT env0 $
-           plopt_ct t)
+  flip runReaderT env0 $
+    opt t

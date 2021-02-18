@@ -560,7 +560,7 @@ solCTail ctxt = \case
     where
       go_svs v = solSet ("la.svs." <> solRawVar v) (solVar ctxt v)
       go_asn (v, a) = solSet ("la.msg." <> solRawVar v) (solArg ctxt a)
-  CT_From _ (Just svs) ->
+  CT_From _ _XXX_which (Just svs) ->
     SolTailRes ctxt $
       vsep $
         [ctxt_emit ctxt]
@@ -568,7 +568,7 @@ solCTail ctxt = \case
           <> [solSet ("current_state") sete]
     where
       (setl, sete) = solHashStateSet ctxt svs
-  CT_From _ Nothing ->
+  CT_From _ _ Nothing ->
     SolTailRes ctxt $
       vsep
         [ ctxt_emit ctxt
@@ -901,7 +901,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
                   , consbody
                   ]
               csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-              SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_m))
+              SolTailRes _ consbody = solCTail cctxt (CT_From at 0 (Just csvs_m))
           DM_firstMsg ->
             -- XXX This is a hack... there are no constructor SVSs when the
             -- deployment mode is firstMsg, but rather than allow the rest of

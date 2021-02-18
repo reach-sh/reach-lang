@@ -1,4 +1,7 @@
-module Reach.Sanitize (sani) where
+module Reach.Sanitize 
+  ( sani
+  , Sanitize
+  ) where
 
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -12,6 +15,9 @@ sb = srcloc_builtin
 
 instance (Functor f, Sanitize a) => Sanitize (f a) where
   sani = fmap sani
+
+instance Sanitize DLVar where
+  sani = id
 
 instance Sanitize DLLiteral where
   sani l =
@@ -90,5 +96,5 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (CTail_ a) where
     CT_Com m k -> CT_Com (sani m) (sani k)
     CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)
     CT_Switch _ x b -> CT_Switch sb x (sani b)
-    CT_From _ vs -> CT_From sb vs
+    CT_From _ w vs -> CT_From sb w vs
     CT_Jump _ a b c -> CT_Jump sb a b (sani c)
