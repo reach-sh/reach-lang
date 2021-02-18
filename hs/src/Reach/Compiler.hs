@@ -14,7 +14,6 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.EraseLogic
-import Reach.AddCounts
 import Reach.Parser
 import Reach.Texty
 import Reach.Util
@@ -72,11 +71,9 @@ compile copts = do
         showp "el" el
         pil <- epp el
         showp "pil" pil
-        pl <- add_counts pil
-        showp "pl" pl
-        let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
+        let runConnector c = (,) (conName c) <$> conGen c woutnMay pil
         crs <- HM.fromList <$> mapM runConnector connectors
-        backend_js woutn crs pl
+        backend_js woutn crs pil
         return ()
   mapM_ compile1 $ tops copts
   return ()

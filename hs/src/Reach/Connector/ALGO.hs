@@ -14,7 +14,6 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
 import qualified Data.Vector as Vector
@@ -28,6 +27,8 @@ import Reach.Counter
 import Reach.Subst
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
+import Reach.DeJump
+import Reach.AddCounts
 import Reach.Util
 import Safe (atMay)
 import Text.Read
@@ -109,22 +110,22 @@ comment_ t = ["//", t]
 
 type TEALs = DL.DList TEAL
 
-optimize :: [TEAL] -> [TEAL]
-optimize = \case
+peep_optimize :: [TEAL] -> [TEAL]
+peep_optimize = \case
   [] -> []
-  ["b", x] : b@[y] : l | y == (x <> ":") -> b : optimize l
-  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> optimize l
-  ["btoi"] : ["itob"] : l -> optimize l
-  ["itob"] : ["btoi"] : l -> optimize l
+  ["b", x] : b@[y] : l | y == (x <> ":") -> b : peep_optimize l
+  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
+  ["btoi"] : ["itob"] : l -> peep_optimize l
+  ["itob"] : ["btoi"] : l -> peep_optimize l
   a@["store", x] : ["load", y] : l
     | x == y ->
-      ["dup"] : optimize (a : l)
+      ["dup"] : peep_optimize (a : l)
   a@["substring", s0, _] : b@["substring", s1, e1] : l ->
     case mse of
       Just (s2, e2) ->
-        optimize $ ["substring", s2, e2] : l
+        peep_optimize $ ["substring", s2, e2] : l
       Nothing ->
-        a : (optimize $ b : l)
+        a : (peep_optimize $ b : l)
     where
       mse = do
         s0n <- parse s0
@@ -138,10 +139,10 @@ optimize = \case
   --a@["int", x] : b@["itob"] : l ->
   --  case itob x of
   --    Nothing ->
-  --      a : (optimize $ b : l)
+  --      a : (peep_optimize $ b : l)
   --    Just xbs ->
-  --      optimize $ ["byte", xbs ] : l
-  x : l -> x : optimize l
+  --      peep_optimize $ ["byte", xbs ] : l
+  x : l -> x : peep_optimize l
   where
     parse :: LT.Text -> Maybe Integer
     parse = readMaybe . LT.unpack
@@ -156,7 +157,7 @@ render ts = tt
   where
     tt = LT.toStrict lt
     lt = LT.unlines lts
-    lts = "#pragma version 2" : (map LT.unwords $ optimize $ DL.toList ts)
+    lts = "#pragma version 2" : (map LT.unwords $ peep_optimize $ DL.toList ts)
 
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
@@ -1339,11 +1340,13 @@ connect_algo = Connector {..}
   where
     conName = "ALGO"
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
-    conGen moutn pl = do
-      let disp which c =
-            case moutn of
-              Nothing -> return ()
-              Just outn ->
-                TIO.writeFile (outn $ T.pack $ which <> ".teal") c
+    conGen moutn pil = do
+      let disp_ = conWrite moutn
+      let disp which = disp_ (which <> ".teal")
+      let showp which = conShowP moutn (".algo." <> which)
+      djp <- dejump pil
+      showp "djp" djp
+      pl <- add_counts djp
+      showp "pl" pl
       res <- compile_algo disp pl
       return $ res

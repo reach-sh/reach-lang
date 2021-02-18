@@ -33,6 +33,7 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Reach.AddCounts
 
 --- Debugging tools
 
@@ -1023,13 +1024,15 @@ connect_eth = Connector {..}
   where
     conName = "ETH"
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
-    conGen outnMay pl = case outnMay of
+    conGen moutn pil = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
         go (dir </> "compiled.sol")
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
+          pl <- add_counts pil
+          conShowP moutn "pl" pl
           (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol

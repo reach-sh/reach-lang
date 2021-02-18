@@ -74,7 +74,7 @@ data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
   , ctxt_simulate :: Bool
-  , ctxt_while :: Maybe (Maybe DLVar, PLBlock, ETail, ETail)
+  , ctxt_while :: Maybe (Maybe DLVar, PILBlock, EITail, EITail)
   , ctxt_timev :: Maybe DLVar
   }
 
@@ -270,12 +270,12 @@ jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> 
           Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
           Nothing -> emptyDoc
 
-jsCom :: JSCtxt -> PLCommon -> Doc
+jsCom :: JSCtxt -> PILCommon -> Doc
 jsCom ctxt = \case
   DL_Nop _ -> mempty
-  DL_Let _ (PV_Let _ dv) de ->
+  DL_Let _ (Just dv) de ->
     "const" <+> jsVar dv <+> "=" <+> jsExpr ctxt de <> semi
-  DL_Let _ PV_Eff de ->
+  DL_Let _ Nothing de ->
     jsExpr ctxt de <> semi
   DL_Var _ dv ->
     "let" <+> jsVar dv <> semi
@@ -290,7 +290,7 @@ jsCom ctxt = \case
   DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [(jsApply "" (map (jsArg . DLA_Var) [b, a]) <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r))), jsArg z]
 
-jsPLTail :: JSCtxt -> PLTail -> Doc
+jsPLTail :: JSCtxt -> PILTail -> Doc
 jsPLTail ctxt = \case
   DT_Return {} -> emptyDoc
   DT_Com m k -> jsCom ctxt m <> hardline <> jsPLTail ctxt k
@@ -299,7 +299,7 @@ jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlock :: JSCtxt -> PLBlock -> Doc
+jsBlock :: JSCtxt -> PILBlock -> Doc
 jsBlock ctxt (DLinBlock _ _ t a) = jsNewScope body
   where
     body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
@@ -332,7 +332,7 @@ jsFromSpec :: JSCtxt -> DLVar -> Doc
 jsFromSpec ctxt v =
   "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
 
-jsETail :: JSCtxt -> ETail -> Doc
+jsETail :: JSCtxt -> EITail -> Doc
 jsETail ctxt = \case
   ET_Com m k -> jsCom ctxt m <> hardline <> jsETail ctxt k
   ET_Stop _ ->
@@ -500,7 +500,7 @@ jsETail ctxt = \case
       kp = jsETail ctxt k
       lp = jsPLTail ctxt l
 
-jsPart :: DLInit -> SLPart -> EPProg -> Doc
+jsPart :: DLInit -> SLPart -> EIProg -> Doc
 jsPart dli p (EPProg _ _ et) =
   "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
   where
@@ -548,8 +548,8 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsPLProg :: ConnectorResult -> PLProg -> Doc
-jsPLProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
+jsPIProg :: ConnectorResult -> PIProg -> Doc
+jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
     preamble =
@@ -565,4 +565,4 @@ jsPLProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
 backend_js :: Backend
 backend_js outn crs pl = do
   let jsf = outn "mjs"
-  LTIO.writeFile jsf $ render $ jsPLProg crs pl
+  LTIO.writeFile jsf $ render $ jsPIProg crs pl

@@ -140,6 +140,7 @@ data EPProg_ a
   deriving (Eq)
 
 type EPProg = EPProg_ PLVar
+type EIProg = EPProg_ PILVar
 
 instance Pretty a => Pretty (EPProg_ a) where
   pretty (EPProg _ ie et) =

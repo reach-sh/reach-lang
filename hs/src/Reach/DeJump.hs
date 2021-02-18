@@ -2,5 +2,7 @@ module Reach.DeJump (dejump) where
 
 import Reach.AST.PL
 
-dejump :: PLProg -> IO PLProg
+-- XXX use optimize
+
+dejump :: PIProg -> IO PIProg
 dejump = error "XXX dejump"

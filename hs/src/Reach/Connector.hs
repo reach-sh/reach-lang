@@ -5,17 +5,22 @@ module Reach.Connector
   , Connector (..)
   , Connectors
   , checkIntLiteralC
+  , conWrite
+  , conShowP
   )
 where
 
 import Data.Aeson (Object, Value)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Util
+import Reach.Texty
 
 type ConnectorInfoMap = Object
 
@@ -26,7 +31,7 @@ type ConnectorInfo = Value
 data Connector = Connector
   { conName :: T.Text
   , conCons :: DLConstant -> DLLiteral
-  , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
+  , conGen :: Maybe (T.Text -> String) -> PIProg -> IO ConnectorInfo
   }
 
 data ConnectorError
@@ -36,6 +41,19 @@ data ConnectorError
 instance Show ConnectorError where
   show (Err_IntLiteralRange rmin x rmax) =
     "integer literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
+
+conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> String -> a -> IO ()
+conWriteH doWrite moutn which c =
+  case moutn of
+    Nothing -> return ()
+    Just outn -> doWrite (outn $ T.pack $ which) c
+
+conWrite :: Maybe (T.Text -> String) -> String -> T.Text -> IO ()
+conWrite = conWriteH TIO.writeFile
+
+conShowP :: Pretty a => Maybe (T.Text -> String) -> String -> a -> IO ()
+conShowP moutn which v =
+  conWriteH LTIO.writeFile moutn which (render $ pretty v)
 
 checkIntLiteralC :: SrcLoc -> Connector -> Integer -> Integer
 checkIntLiteralC at c x =
