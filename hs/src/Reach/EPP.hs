@@ -21,7 +21,7 @@ import Reach.Counter
 import Reach.Texty
 import Reach.Util
 
--- import Debug.Trace
+import Debug.Trace
 
 -- Helpers
 default_interval :: CInterval a
@@ -95,13 +95,18 @@ fixedPoint f = h mempty
         False -> h x'
 
 solve :: FlowInput -> FlowOutput
-solve fi = fixedPoint go
+solve fi' = fixedPoint go
   where
-    -- fi = trace imsg fi'
-    -- imsg = "\nflow input:" <> show (pretty fi') <> "\n"
-    -- omsg fo = "\nflow ouput:" <> show (pretty fo) <> "\n"
-    -- go' fo = trace (omsg fo) $ go fo
-    go fo = M.map (go1 fo) fi
+    shouldTrace = False
+    mtrace m v =
+      case shouldTrace of
+        True -> trace m v
+        False -> v
+    fi = mtrace imsg fi'
+    imsg = "\nflow input:" <> show (pretty fi') <> "\n"
+    omsg fo = "\nflow ouput:" <> show (pretty fo) <> "\n"
+    go fo = mtrace (omsg fo) $ go' fo
+    go' fo = M.map (go1 fo) fi
     go1 fo (FlowInputData {..}) = fod
       where
         fod = FlowOutputData { fod_save = save
@@ -369,15 +374,13 @@ be_c = \case
     let lm = ET_While at asn cond <$> body'l <*> k'l
     return $ (,) cm lm
   LLC_Continue at asn -> do
-    let loop_vars = map Just $ assignment_vars asn
-    fg_defn $ loop_vars
     fg_use $ asn
     this_loop <- fromMaybe (impossible "no loop") . be_loop <$> ask
     which <- be_which <$> ask
     when (this_loop == which) $
       expect_thrown at Err_ContinueDomination
     fg_jump $ this_loop
-    let cm = CT_Jump at this_loop <$> ce_readMustSave this_loop <*> pure asn
+    let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
 

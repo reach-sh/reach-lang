@@ -230,6 +230,7 @@ newtype CHandlers_ a = CHandlers (M.Map Int (CHandler_ a))
   deriving newtype (Monoid, Semigroup)
 
 type CHandlers = CHandlers_ PLVar
+type CIHandlers = CHandlers_ PILVar
 
 instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =

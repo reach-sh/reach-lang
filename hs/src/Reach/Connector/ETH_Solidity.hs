@@ -1032,7 +1032,7 @@ connect_eth = Connector {..}
         go :: FilePath -> IO ConnectorInfo
         go solf = do
           pl <- add_counts pil
-          conShowP moutn "pl" pl
+          conShowP moutn "sol.pl" pl
           (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
