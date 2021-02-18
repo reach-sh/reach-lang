@@ -176,7 +176,7 @@ Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account
 @js{
   fundFromFaucet(account, balance) => Promise<void>}
 
-Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}. @reachin{bigNumberify} is transparently applied to the @jsin{balance} argument.
+Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}. @jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
 
 @(hrule)
 @(mint-define! '("connectAccount"))
@@ -242,11 +242,13 @@ Returns a Promise for the balance of @tech{network tokens} held by the @tech{acc
 
 @(mint-define! '("transfer"))
 @js{
- transfer(from:acc, to:acc, amount:BigNumber) => Promise<void> }
+ transfer(from:acc, to:acc, amount) => Promise<void> }
 
 Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
 The returned Promise will only be resolved after the transfer completes.
+
+@jsin{bigNumberify} is transparently applied to the @jsin{amount} argument.
 
 @(hrule)
 

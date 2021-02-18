@@ -15,7 +15,7 @@ const {Buffer} = buffer;
 import {
   CurrencyAmount, OnProgress, WPArgs,
   debug, getDEBUG,
-  isBigNumber, bigNumberify,
+  isBigNumber, bigNumberify, bigNumberToNumber,
   argsSlice,
   makeRandom,
 } from './shared';
@@ -626,8 +626,8 @@ const [getFaucet, setFaucet] = replaceableThunk(async () => {
 export {getFaucet, setFaucet};
 
 
-export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
-  const valuen = value.toNumber();
+export const transfer = async (from: Account, to: Account, value: any): Promise<TxnInfo> => {
+  const valuen = bigNumberToNumber(value);
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
 
@@ -1156,7 +1156,7 @@ export const createAccount = async () => {
 
 export const fundFromFaucet = async (account: Account, value: any) => {
   const faucet = await getFaucet();
-  await transfer(faucet, account, bigNumberify(value));
+  await transfer(faucet, account, value);
 }
 
 export const newTestAccount = async (startingBalance: any) => {

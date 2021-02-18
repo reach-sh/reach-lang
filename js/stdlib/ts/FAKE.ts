@@ -108,16 +108,18 @@ const checkStateTransition = async (label:string, which: string, prevSt: Digest,
 const transfer_ = (
   froma: Address,
   toa: Address,
-  value: BigNumber,
+  value: any,
   is_ctc?: boolean,
 ): void => {
-  if (is_ctc) {
+  const v = bigNumberify(value);
+
+  if (is_ctc)
     debug('transfer_: contract is paying out to someone');
-  }
-  stdlib.assert(stdlib.le(value, BALANCES[froma]));
-  debug(`transfer_ ${froma} -> ${toa} of ${value}`);
-  BALANCES[toa] = stdlib.add(BALANCES[toa], value);
-  BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+
+  stdlib.assert(stdlib.le(v, BALANCES[froma]));
+  debug(`transfer_ ${froma} -> ${toa} of ${v}`);
+  BALANCES[toa] = stdlib.add(BALANCES[toa], v);
+  BALANCES[froma] = stdlib.sub(BALANCES[froma], v);
 }
 
 const makeAccount = (): NetworkAccount => {
@@ -145,16 +147,15 @@ export const balanceOf = async (acc: Account) => {
 };
 
 export const fundFromFaucet = async (toa: AccountTransferrable, value: any) => {
-  const v = bigNumberify(value);
   const faucet = await getFaucet();
   const faucetAddress = faucet.networkAccount.address;
   const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
   // For FAKE, the faucet may need to add funds on demand,
   // if the user created an account without a starting balance.
-  if (stdlib.le(faucetFunds, v)) {
-    BALANCES[faucetAddress] = faucetFunds.add(v);
+  if (stdlib.le(faucetFunds, value)) {
+    BALANCES[faucetAddress] = faucetFunds.add(value);
   }
-  transfer(faucet, toa, v);
+  transfer(faucet, toa, value);
 }
 
 /**
@@ -163,7 +164,7 @@ export const fundFromFaucet = async (toa: AccountTransferrable, value: any) => {
 export const transfer = async (
   from: AccountTransferrable,
   to: AccountTransferrable,
-  value: BigNumber
+  value: any
 ): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;

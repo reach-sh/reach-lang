@@ -17,7 +17,6 @@ import {
   eq,
   ge,
   getDEBUG,
-  isBigNumber,
   lt,
   CurrencyAmount,
   IAccount,
@@ -395,15 +394,15 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 export const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
-  value: BigNumber
+  value: any
 ): Promise<any> => {
-  if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
-
   const sender = from.networkAccount;
   const receiver = getAddr(to);
-  const txn = { to: receiver, value };
+  const txn = { to: receiver, value: bigNumberify(value) };
 
-  if (!sender || !sender.sendTransaction) throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
+  if (!sender || !sender.sendTransaction)
+    throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
+
   debug(`sender.sendTransaction(${JSON.stringify(txn)})`);
   return await sender.sendTransaction(txn);
 };
@@ -912,7 +911,7 @@ export const createAccount = async () => {
 
 export const fundFromFaucet = async (account: AccountTransferable, value: any) => {
   const faucet = await getFaucet();
-  await transfer(faucet, account, bigNumberify(value));
+  await transfer(faucet, account, value);
 };
 
 export const newTestAccount = async (startingBalance: any): Promise<Account> => {
