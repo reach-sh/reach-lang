@@ -1,12 +1,12 @@
-import { runTests, describe, it, expect } from '../tester.mjs';
-
-import * as ETH    from '../ETH.mjs';
-import * as ALGO   from '../ALGO.mjs';
-import * as FAKE   from '../FAKE.mjs';
+import * as ETH    from '@reach-sh/stdlib/ETH.mjs';
+import * as ALGO   from '@reach-sh/stdlib/ALGO.mjs';
+import * as FAKE   from '@reach-sh/stdlib/FAKE.mjs';
 import * as common from './common.mjs';
 
+const { describe, it, expect } = common;
 
-runTests(async () => describe('The `ETH` stdlib', async () => {
+
+export const spec = async () => describe('The `ETH` stdlib', async () => {
   const { bigNumberify, formatCurrency, parseCurrency } = ETH;
 
   const sec = '9573fa33a57fee662a23bf60f1b1674364d99fb8dd2166b4ae470ce7ab20ed9f';
@@ -81,4 +81,4 @@ runTests(async () => describe('The `ETH` stdlib', async () => {
       expect(formatCurrency(789)).toBe('0.000000000000000789');
     });
   });
-}));
+});

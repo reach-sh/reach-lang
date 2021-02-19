@@ -1,4 +1,41 @@
-import { describe, it, expect } from '../tester.mjs';
+import { strict as assert } from 'assert';
+
+
+const AsyncFunction = (async () => {}).constructor;
+
+
+export const run = async specs => {
+  const s = [ ...specs ];
+  let   f;
+
+  while (f = s.shift()) {
+    if (f instanceof AsyncFunction) {
+      await f().catch(e => {
+        console.log(e);
+        process.exit(1);
+      });
+    } else {
+      f();
+    }
+
+    if (s.length > 0)
+      console.log('\n ---\n');
+  }
+};
+
+
+export const describe = (label, f) => {
+  console.log(label);
+  return f();
+};
+
+
+export const it = describe;
+
+
+export const expect = x => ({
+  toBe: v => assert.deepEqual(x, v),
+});
 
 
 export const mkStdlibNetworkCommon = async lib => {
@@ -281,7 +318,7 @@ export const mkStdlibNetworkCommon = async lib => {
     });
 
     it('recurses into Data', () => {
-      expect(protect(T_MaybeInt, ['Some', n        ])).toBe(['Some', bn]);
+      expect(protect(T_MaybeInt, ['Some', n        ])).toBe(['Some', bn  ]);
       expect(protect(T_MaybeInt, ['None', undefined])).toBe(['None', null]);
     });
   });
