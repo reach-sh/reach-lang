@@ -194,7 +194,7 @@ data CHandler_ a
   | C_Loop
       { cl_at :: SrcLoc
       , cl_svs :: [DLVar]
-      , cl_vars :: [a]
+      , cl_vars :: [DLVar]
       , cl_body :: (CTail_ a)
       }
   deriving (Eq)

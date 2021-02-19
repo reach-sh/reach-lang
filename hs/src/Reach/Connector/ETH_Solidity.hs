@@ -738,10 +738,7 @@ solHandler ctxt_top which (C_Handler at interval last_timemv from prev svs msg a
 solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
   vsep $ argDefns <> [frameDefn, funDefn]
   where
-    lcvar = \case
-      PV_Eff -> impossible "effect arg"
-      PV_Let _ v -> v
-    msg = map lcvar lcmsg
+    msg = lcmsg
     (ctxt_fin, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_top which svs msg Nothing ct
     (argDefns, argDefs) = solArgDefn ctxt_fin which (ADK_Loop svs) msg

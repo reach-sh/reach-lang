@@ -100,8 +100,7 @@ ac_ch :: CIHandler -> App CHandler
 ac_ch = \case
   C_Loop {..} -> do
     body' <- ac_ct cl_body
-    vars' <- mapM (ac_vdef True) cl_vars
-    return $ C_Loop cl_at cl_svs vars' body'
+    return $ C_Loop cl_at cl_svs cl_vars body'
   C_Handler {..} -> do
     ch_body' <- ac_ct ch_body
     return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_amtv ch_timev ch_body'

@@ -350,7 +350,7 @@ be_c = \case
     let inLoop = inBlock this_loop
     let inKont = inBlock kont_block
     fg_use $ asn
-    let loop_vars = map Just $ assignment_vars asn
+    let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
     cond_l' <- inLoop $ do
       fg_defn $ loop_vars
