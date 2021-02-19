@@ -1,10 +1,10 @@
-import { runTests, describe, it, expect } from '../tester.mjs';
-
-import * as FAKE   from '../FAKE.mjs';
+import * as FAKE   from '@reach-sh/stdlib/FAKE.mjs';
 import * as common from './common.mjs';
 
+const { describe, it, expect } = common;
 
-runTests(async () => describe('The `FAKE` stdlib', async () => {
+
+export const spec = async () => describe('The `FAKE` stdlib', async () => {
   const { bigNumberify, formatCurrency, parseCurrency } = FAKE;
 
   await common.mkStdlibNetworkCommon(FAKE);
@@ -42,4 +42,4 @@ runTests(async () => describe('The `FAKE` stdlib', async () => {
       expect(formatCurrency(789)).toBe('789');
     });
   });
-}));
+});

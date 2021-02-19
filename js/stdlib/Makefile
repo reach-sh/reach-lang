@@ -4,8 +4,12 @@ include $(ROOT)/js/JS_IMAGES
 IMAGE=$(STDLIB_IMAGE)
 
 .PHONY: clean
-clean:
+clean: clean-test
 	rm -f package.json
+
+.PHONY: clean-test
+clean-test:
+	[ -d test/stdlib-test ] && rm -r test/stdlib-test || true
 
 .PHONY: install-mo
 install-mo:
@@ -26,24 +30,24 @@ build: package.json
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-		.
+	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
-.PHONY: run
-run: build
-	docker-compose run test-stdlib-ETH
-	docker-compose run test-stdlib-ALGO
-	docker-compose run test-stdlib-FAKE
-	docker-compose run test-rpc-server-ETH
-	docker-compose run test-rpc-server-ALGO
-	docker-compose run test-rpc-server-FAKE
-
-.PHONY: down
-down:
-	docker-compose down
-
+# Note: We're creating an `stdlib-test` directory from scratch here in order
+#   to leverage the `reach` script and abstract over boilerplate such as
+#   `docker-compose.yml` config.
 .PHONY: test
-test: run
+test: build clean-test
+	mkdir test/stdlib-test
+	cp    test/index.* test/stdlib-test
+	cp -r test/lib     test/stdlib-test/lib
+	cd test/stdlib-test \
+	  && reach scaffold \
+	  && reach compile \
+	  && REACH_CONNECTOR_MODE=ALGO reach run \
+	  && REACH_CONNECTOR_MODE=ETH  reach run \
+	  && REACH_CONNECTOR_MODE=FAKE reach run \
+	   ; reach down
 
 .PHONY: format
 format: package.json

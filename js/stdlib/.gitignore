@@ -4,3 +4,4 @@
 /build/
 /*.d.ts
 /js-algorand-sdk
+/test/stdlib-test/

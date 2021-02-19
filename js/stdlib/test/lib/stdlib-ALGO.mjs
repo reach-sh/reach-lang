@@ -1,10 +1,10 @@
-import { runTests, describe, it, expect } from '../tester.mjs';
-
-import * as ALGO   from '../ALGO.mjs';
+import * as ALGO   from '@reach-sh/stdlib/ALGO.mjs';
 import * as common from './common.mjs';
 
+const { describe, it, expect } = common;
 
-runTests(async () => describe('The `ALGO` stdlib', async () => {
+
+export const spec = async () => describe('The `ALGO` stdlib', async () => {
   const { bigNumberify, formatCurrency, parseCurrency } = ALGO;
 
   await common.mkStdlibNetworkCommon(ALGO);
@@ -42,4 +42,4 @@ runTests(async () => describe('The `ALGO` stdlib', async () => {
       expect(formatCurrency(789)).toBe('0.000789');
     });
   });
-}));
+});
