@@ -196,6 +196,16 @@ instance Pretty DLArg where
     DLA_Interact who m t ->
       "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
+class CanDupe a where
+  canDupe :: a -> Bool
+
+instance CanDupe DLArg where
+  canDupe = \case
+    DLA_Var {} -> True
+    DLA_Constant {} -> True
+    DLA_Literal {} -> True
+    DLA_Interact {} -> False
+
 argTypeOf :: DLArg -> DLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
@@ -379,14 +389,14 @@ instance IsLocal DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
 
-canDupe :: DLExpr -> Bool
-canDupe e =
-  isPure e && x
-  where
-    x =
-      case e of
-        DLE_MapRef {} -> False
-        _ -> True
+instance CanDupe DLExpr where
+  canDupe e =
+    isPure e && x
+    where
+      x =
+        case e of
+          DLE_MapRef {} -> False
+          _ -> True
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)

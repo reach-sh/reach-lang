@@ -209,7 +209,7 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
       let no = DL_Let at x <$> opt e
       let yes dv = do
             opt e >>= \case
-              e'@(DLE_Arg _ a') -> do
+              e'@(DLE_Arg _ a') | canDupe a' -> do
                 rewrite dv (dv, Just a')
                 mremember dv (sani e')
                 return $ DL_Let at x e'
