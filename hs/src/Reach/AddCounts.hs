@@ -31,7 +31,9 @@ ac_m = \case
   DL_Let at x de -> do
     ac_visit $ de
     x' <- ac_vdef (canDupe de) x
-    return $ DL_Let at x' de
+    case (isPure de, x') of
+      (True, PV_Eff) -> return $ DL_Nop at
+      _ -> return $ DL_Let at x' de
   DL_ArrayMap at ans x a f -> do
     f' <- ac_bl f
     ac_visit $ x

@@ -3,7 +3,6 @@ module Reach.Optimize (optimize) where
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -24,7 +23,7 @@ data Focus
   deriving (Eq, Ord, Show)
 
 data CommonEnv = CommonEnv
-  { ceReplaced :: M.Map DLVar DLVar
+  { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
   , cePrev :: M.Map DLExpr DLVar
   }
 
@@ -73,19 +72,29 @@ lookupCommon dict obj = do
     cenv <- M.lookup eFocus eEnvs
     M.lookup obj (dict cenv)
 
-rewritten :: DLVar -> App (Maybe DLVar)
-rewritten = lookupCommon ceReplaced
+rewrittenp :: DLVar -> App (Maybe (DLVar, Maybe DLArg))
+rewrittenp = lookupCommon ceReplaced
 
 repeated :: DLExpr -> App (Maybe DLVar)
 repeated = \case
   DLE_Arg _ (DLA_Var dv') -> return $ Just dv'
   e -> lookupCommon cePrev e
 
-remember :: DLVar -> DLExpr -> App ()
-remember v e =
-  updateLookup (\cenv -> cenv {cePrev = M.insert e v (cePrev cenv)})
+remember_ :: Bool -> DLVar -> DLExpr -> App ()
+remember_ always v e =
+  updateLookup (\cenv -> cenv {cePrev = up $ cePrev cenv})
+  where
+    up prev =
+      case always || not (M.member e prev) of
+        True -> M.insert e v prev
+        False -> prev
 
-rewrite :: DLVar -> DLVar -> App ()
+remember :: DLVar -> DLExpr -> App ()
+remember = remember_ True
+mremember :: DLVar -> DLExpr -> App ()
+mremember = remember_ False
+
+rewrite :: DLVar -> (DLVar, Maybe DLArg) -> App ()
 rewrite v r = do
   updateLookup (\cenv -> cenv {ceReplaced = M.insert v r (ceReplaced cenv)})
 
@@ -110,17 +119,29 @@ mkEnv0 eParts = do
   eEnvsR <- liftIO $ newIORef eEnvs
   return $ Env {..}
 
-instance Optimize DLVar where
-  opt v = do
-    r <- rewritten v
-    return $ fromMaybe v r
+opt_v2p :: DLVar -> App (DLVar, DLArg)
+opt_v2p v = do
+  r <- rewrittenp v
+  let both v' = return $ (v', DLA_Var v')
+  case r of
+    Nothing -> both v
+    Just (v', Nothing) -> both v'
+    Just (v', Just a') -> return $ (v', a')
+
+opt_v2v :: DLVar -> App DLVar
+opt_v2v v = fst <$> opt_v2p v
+opt_v2a :: DLVar -> App DLArg
+opt_v2a v = snd <$> opt_v2p v
 
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
 
+instance Optimize DLVar where
+  opt = opt_v2v
+
 instance Optimize DLArg where
   opt = \case
-    DLA_Var v -> DLA_Var <$> opt v
+    DLA_Var v -> opt_v2a v
     DLA_Constant c -> return $ DLA_Constant c
     DLA_Literal c -> return $ DLA_Literal c
     DLA_Interact p m t -> return $ DLA_Interact p m t
@@ -163,22 +184,45 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
-instance {-# OVERLAPPING #-} Extract a => Optimize (DLinStmt a) where
+-- XXX Add DL_LocalDo
+locDo :: DLinTail a -> DLinStmt a
+locDo t = DL_LocalIf at (DLA_Literal $ DLL_Bool True) t (DT_Return at)
+  where at = srcloc_builtin
+
+opt_if :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
+opt_if mkDo mkIf at c t f = do
+  c' <- opt c
+  case c' of
+    DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
+    DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
+    _ -> do
+      t' <- newScope $ opt t
+      f' <- newScope $ opt f
+      case sani t == sani f of
+        True -> return $ mkDo t'
+        False -> return $ mkIf at c' t' f'
+
+instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt a) where
   opt = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at x e -> do
       let no = DL_Let at x <$> opt e
       let yes dv = do
-            e' <- opt e
-            let e'' = sani e'
-            common <- repeated e''
-            case common of
-              Just rt -> do
-                rewrite dv rt
-                return $ DL_Nop at
-              Nothing -> do
-                remember dv e''
+            opt e >>= \case
+              e'@(DLE_Arg _ a') -> do
+                rewrite dv (dv, Just a')
+                mremember dv (sani e')
                 return $ DL_Let at x e'
+              e' -> do
+                let e'' = sani e'
+                common <- repeated e''
+                case common of
+                  Just rt -> do
+                    rewrite dv (rt, Nothing)
+                    return $ DL_Nop at
+                  Nothing -> do
+                    remember dv e''
+                    return $ DL_Let at x e'
       case (extract x, isPure e) of
         (Just dv, True) -> yes dv
         _ -> no
@@ -187,7 +231,7 @@ instance {-# OVERLAPPING #-} Extract a => Optimize (DLinStmt a) where
     DL_Set at v a ->
       DL_Set at v <$> opt a
     DL_LocalIf at c t f ->
-      DL_LocalIf at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+      opt_if locDo DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
       where
@@ -197,12 +241,12 @@ instance {-# OVERLAPPING #-} Extract a => Optimize (DLinStmt a) where
     DL_ArrayReduce at ans x0 z b a f -> do
       DL_ArrayReduce at ans <$> opt x0 <*> opt z <*> (pure b) <*> (pure a) <*> opt f
 
-instance {-# OVERLAPPING #-} Extract a => Optimize (DLinTail a) where
+instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
   opt = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> DT_Com <$> opt m <*> opt k
 
-instance {-# OVERLAPPING #-} Extract a => Optimize (DLinBlock a) where
+instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBlock a) where
   opt (DLinBlock at fs b a) =
     newScope $ DLinBlock at fs <$> opt b <*> opt a
 
@@ -210,7 +254,7 @@ instance Optimize LLConsensus where
   opt = \case
     LLC_Com m k -> LLC_Com <$> opt m <*> opt k
     LLC_If at c t f ->
-      LLC_If at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+      opt_if id LLC_If at c t f
     LLC_Switch at ov csm ->
       LLC_Switch at <$> opt ov <*> mapM cm1 csm
       where
@@ -282,11 +326,7 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a
   opt = \case
     CT_Com m k -> CT_Com <$> opt m <*> opt k
     CT_If at c t f ->
-      case sani t == sani f of
-        True ->
-          opt t
-        False ->
-          CT_If at <$> opt c <*> (newScope $ opt t) <*> (newScope $ opt f)
+      opt_if id CT_If at c t f
     CT_Switch at ov csm ->
       CT_Switch at ov <$> mapM cm1 csm
       where

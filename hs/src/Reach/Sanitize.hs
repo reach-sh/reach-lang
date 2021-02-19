@@ -5,6 +5,7 @@ module Reach.Sanitize
 
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.AST.LL
 import Reach.AST.PL
 
 class Sanitize a where
@@ -90,6 +91,26 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinBlock a) where
 
 instance Sanitize PLVar where
   sani x = x
+
+instance Sanitize LLConsensus where
+  sani = \case
+    LLC_Com m k -> LLC_Com (sani m) (sani k)
+    LLC_If _ c t f -> LLC_If sb (sani c) (sani t) (sani f)
+    LLC_Switch _ ov csm -> LLC_Switch sb ov (sani csm)
+    LLC_While _ asn inv cond body k -> LLC_While sb (sani asn) (sani inv) (sani cond) (sani body) (sani k)
+    LLC_Continue _ asn -> LLC_Continue sb (sani asn)
+    LLC_FromConsensus _ _ s -> LLC_FromConsensus sb sb (sani s)
+    LLC_Only _ p l k -> LLC_Only sb p (sani l) (sani k)
+
+instance {-# OVERLAPPING #-} (Sanitize a, Sanitize b, Sanitize c, Sanitize d, Sanitize e, Sanitize f) => Sanitize (a, b, c, d, e, f) where
+  sani (a, b, c, d, e, f) = (sani a, sani b, sani c, sani d, sani e, sani f)
+
+instance Sanitize LLStep where
+  sani = \case
+    LLS_Com m k -> LLS_Com (sani m) (sani k)
+    LLS_Stop _ -> LLS_Stop sb
+    LLS_Only _ p l s -> LLS_Only sb p (sani l) (sani s)
+    LLS_ToConsensus _ send recv mtime -> LLS_ToConsensus sb (sani send) (sani recv) (sani mtime)
 
 instance {-# OVERLAPPING #-} Sanitize a => Sanitize (CTail_ a) where
   sani = \case
