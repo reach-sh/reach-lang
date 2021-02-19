@@ -23,8 +23,6 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Connector
-import Reach.Counter
-import Reach.Subst
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Optimize
@@ -161,9 +159,7 @@ render ts = tt
     lts = "#pragma version 2" : (map LT.unwords $ peep_optimize $ DL.toList ts)
 
 data Shared = Shared
-  { sHandlers :: M.Map Int CHandler
-  , sFailedR :: IORef Bool
-  , sCounterR :: Counter
+  { sFailedR :: IORef Bool
   }
 
 type Lets = M.Map DLVar (App ())
@@ -185,13 +181,6 @@ data Env = Env
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
 -- really annoying to have the world parameter
 type App = ReaderT Env IO
-
-allocVar :: DLVar -> App DLVar
-allocVar (DLVar at s t _) = do
-  Env {..} <- ask
-  let Shared {..} = eShared
-  idx <- liftIO $ incCounter sCounterR
-  return $ DLVar at s t idx
 
 output :: TEAL -> App ()
 output t = do
@@ -852,50 +841,9 @@ ct = \case
     label false_lab
     ct ft
   CT_Switch at dv csm -> doSwitch ct at dv csm
-  CT_Jump at which _ (DLAssignment asnm) -> do
-    -- XXX This is broken with multiple loops in a row. It could be changed to
-    -- work the same way, but by doing all of the substitution beforehand, so
-    -- the outer loop can see into the inner loop
-    Env {..} <- ask
-    let Shared {..} = eShared
-    case M.lookup which sHandlers of
-      Just (C_Loop _ _ lcvars t) -> do
-        let timev = fromMaybe (impossible "no timev") emTimev
-        let pveq v = \case
-              PV_Eff -> False
-              PV_Let _ v' -> v == v'
-        let llc v =
-              case List.find (pveq v) lcvars of
-                Just (PV_Let lc _) -> lc
-                _ -> impossible $ "no loop var"
-        rhor <- liftIO $ newIORef mempty
-        ntvr <- liftIO $ newIORef Nothing
-        let go (v, a) = do
-              v' <- allocVar v
-              liftIO $ modifyIORef rhor (M.insert v v')
-              when (a == DLA_Var timev) $ do
-                liftIO $ writeIORef ntvr $ Just v
-              let lc = llc v
-              let de = DLE_Arg at a
-              let m = DL_Let at (PV_Let lc v') de
-              return m
-        nms <- mapM go $ M.toList asnm
-        rho <- liftIO $ readIORef rhor
-        let t_subst = subst_ rho t
-        ntv <- liftIO $ readIORef ntvr
-        let new_timev = fromMaybe (impossible "no new_timev") ntv
-        let t_subst' = List.foldl' (flip CT_Com) t_subst nms
-        local
-          (\e ->
-             e
-               { eWhich = which
-               , emTimev = Just new_timev
-               })
-          $ do
-            ct t_subst'
-      _ ->
-        impossible "bad jump"
-  CT_From _ _which msvs -> do
+  CT_Jump {} ->
+    impossible $ "continue after dejump"
+  CT_From _ which msvs -> do
     check_nextSt
     halt_should_be isHalt
     where
@@ -908,25 +856,22 @@ ct = \case
               ck = do
                 Env {..} <- ask
                 let timev = fromMaybe (impossible "no timev") emTimev
-                cstate HM_Set $ map snd $ dvdeletep timev svs
+                cstate (HM_Set which) $ map snd $ dvdeletep timev svs
                 code "arg" [texty argNextSt]
                 eq_or_fail
 
 data HashMode
-  = HM_Set
+  = HM_Set Int
   | HM_Check Int
   deriving (Eq, Show)
 
 cstate :: HashMode -> [DLArg] -> App ()
 cstate hm svs = do
   comment ("compute state in " <> texty hm)
-  which <-
-    case hm of
-      HM_Set -> do
-        Env {..} <- ask
-        return eWhich
-      HM_Check prev ->
-        return prev
+  let which =
+        case hm of
+          HM_Set w -> w
+          HM_Check prev -> prev
   let go a = (argTypeOf a, ca a)
   let whicha w = DLA_Literal $ DLL_Int sb $ fromIntegral w
   cdigest $ map go $ whicha which : svs
@@ -1161,15 +1106,13 @@ type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
-  let PLProg _at (PLOpts {..}) _dli _ cpp = pl
+  let PLProg _at _plo _dli _ cpp = pl
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
   let CPProg _at (CHandlers hm) = cpp
   resr <- newIORef mempty
-  let sHandlers = hm
   sFailedR <- newIORef False
-  let sCounterR = plo_counter
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)
@@ -1224,7 +1167,7 @@ compile_algo disp pl = do
     eq_or_fail
     --- XXX if firstMsg mode, then paste a version of handler 1 right here
     app_global_put keyState $ do
-      cstate HM_Set []
+      cstate (HM_Set 0) []
     app_global_put keyLast $ do
       code "global" ["Round"]
     app_global_put keyHalts $ do
