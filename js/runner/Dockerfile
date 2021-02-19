@@ -36,7 +36,12 @@ RUN sed -i.bak '/ganache-core/d' '/stdlib/package.json' \
 RUN sed -i.bak "s/import('ganache-core')/null/" '/stdlib/ETH.mjs' \
   && rm '/stdlib/ETH.mjs.bak'
 # RUN npm install /stdlib
-RUN (cd /stdlib && npm link)
+
+# XXX This could be done in the stdlib image
+WORKDIR /stdlib
+RUN npm link
+
+WORKDIR /app
 RUN npm link @reach-sh/stdlib
 
 ENTRYPOINT ["npm", "run", "--"]

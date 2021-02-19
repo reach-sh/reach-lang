@@ -101,23 +101,26 @@ HERE="$(dirname "$REACH")"
 
 # XXX Get from VERSION in Haskell version
 REACH_DEFAULT_VERSION=0.1
-REACH_FULL_VERSION=0.1.2
+# REACH_FULL_VERSION=0.1.2
 
+# XXX RV_TAG* is no longer used b/c
+#   the reach version is no longer embedded into package.json
 # When breaking changes occur between RCs,
 # it may help to bump the TAGMIN
 # so that users are less likely to end up with old RCs.
 # When we stop making breaking changes on patch/rc versions
 # then this probably won't be necessary
-RV_TAG='rc'
-RV_TAGMIN=4
-RV_TAGMAX=9999
+# RV_TAG='rc'
+# RV_TAGMIN=4
+# RV_TAGMAX=9999
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
     REACH_VERSION="${REACH_DEFAULT_VERSION}"
 else
     # XXX this is wrong if specified version is not full
-    REACH_FULL_VERSION="${REACH_VERSION}"
-    RV_TAG='release'
+    # REACH_FULL_VERSION="${REACH_VERSION}"
+    # RV_TAG='release'
+    :
 fi
 if [ "${REACH_VERSION}" = "stable" ] ; then
     REACH_VERSION_SHORT="${REACH_DEFAULT_VERSION}"
@@ -448,12 +451,14 @@ EOF
 
   if $VERBOSE ; then echo writing $PACKAGE_JSON; fi
   # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
-  if [ "$RV_TAG" = "release" ] ; then
-    echo "$RV_TAG"
-    REACH_VERSION_EXPR="$REACH_FULL_VERSION"
-  else
-    REACH_VERSION_EXPR=">=$REACH_FULL_VERSION-$RV_TAG.$RV_TAGMIN <$REACH_FULL_VERSION-$RV_TAG.$RV_TAGMAX"
-  fi
+  # if [ "$RV_TAG" = "release" ] ; then
+  #   echo "$RV_TAG"
+  #   REACH_VERSION_EXPR="$REACH_FULL_VERSION"
+  # else
+  #   REACH_VERSION_EXPR=">=$REACH_FULL_VERSION-$RV_TAG.$RV_TAGMIN <$REACH_FULL_VERSION-$RV_TAG.$RV_TAGMAX"
+  # fi
+  # XXX: Is REACH_VERSION_EXPR still useful somehow?
+  #   It seems wasteful to just throw it away
   cat >"${PACKAGE_JSON}" <<EOF
 {
   "name": "@reach-sh/${PROJ}",
