@@ -425,6 +425,12 @@ instance Pretty a => Pretty (DLinStmt a) where
     DL_LocalIf _at ca t f -> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> prettySwitch ov csm
 
+mkCom :: (DLinStmt a -> k -> k) -> DLinStmt a -> k -> k
+mkCom mk m k =
+  case m of
+    DL_Nop _ -> k
+    _ -> mk m k
+
 data DLinTail a
   = DT_Return SrcLoc
   | DT_Com (DLinStmt a) (DLinTail a)

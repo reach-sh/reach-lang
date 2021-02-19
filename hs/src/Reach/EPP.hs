@@ -20,8 +20,10 @@ import Reach.Counter
 -- import Reach.Optimize
 import Reach.Texty
 import Reach.Util
-
 import Debug.Trace
+
+shouldTrace :: Bool
+shouldTrace = False
 
 -- Helpers
 default_interval :: CInterval a
@@ -97,7 +99,6 @@ fixedPoint f = h mempty
 solve :: FlowInput -> FlowOutput
 solve fi' = fixedPoint go
   where
-    shouldTrace = False
     mtrace m v =
       case shouldTrace of
         True -> trace m v
@@ -155,10 +156,13 @@ captureMore m = do
   a <- liftIO $ readIORef mr
   return (a, x)
 
-newHandler :: BApp Int
-newHandler = do
+newHandler :: String -> BApp Int
+newHandler lab = do
   hc <- be_handlerc <$> ask
-  liftIO $ incCounter hc
+  n <- liftIO $ incCounter hc
+  when shouldTrace $ do
+    traceM $ "newHandler " <> show lab <> " => " <> show n
+  return $ n
 
 setHandler :: Int -> CApp CIHandler -> BApp ()
 setHandler which m = do
@@ -218,7 +222,9 @@ ce_vdef x = ce_vsm $ S.delete x
 readFlow :: Monad m => (a -> FlowOutput) -> Int -> ReaderT a m FlowOutputData
 readFlow get_flow which = do
   fo <- get_flow <$> ask
-  return $ fo M.! which
+  case M.lookup which fo of
+    Just x -> return $ x
+    Nothing -> impossible $ "no flow for " <> show which
 
 ee_readFlow :: Int -> EApp FlowOutputData
 ee_readFlow = readFlow ee_flow
@@ -304,6 +310,26 @@ be_bl (DLinBlock at fs t a) = do
   t' <- be_t t
   return $ DLinBlock at fs <$> t' <*> pure a
 
+class OnlyHalts a where
+  onlyHalts :: a -> Bool
+
+instance OnlyHalts LLConsensus where
+  onlyHalts = \case
+    LLC_Com {} -> False
+    LLC_If {} -> False
+    LLC_Switch {} -> False
+    LLC_FromConsensus _ _ s -> onlyHalts s
+    LLC_While {} -> False
+    LLC_Continue {} -> False
+    LLC_Only _ _ _ k -> onlyHalts k
+
+instance OnlyHalts LLStep where
+  onlyHalts = \case
+    LLS_Com _ k -> onlyHalts k
+    LLS_Stop _ -> True
+    LLS_Only _ _ _ s -> onlyHalts s
+    LLS_ToConsensus {} -> False
+
 be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
 be_c = \case
   LLC_Com c k -> do
@@ -344,24 +370,36 @@ be_c = \case
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLinBlock cond_at _ cond_l cond_a = cond
-    this_loop <- newHandler
-    kont_block <- newHandler
+    this_loop <- newHandler "While"
     let inBlock which = local (\e -> e { be_which = which })
     let inLoop = inBlock this_loop
-    let inKont = inBlock kont_block
+    -- <Kont>
+    (goto_kont, k'l) <-
+      -- XXX This is a convoluted hack because Solidity does not allow empty
+      -- structs and if the computation immediately halts, then we won't have
+      -- any saved variables and therefore we'll crash solc. Even this isn't
+      -- enough though, because what if we don't immediately halt, but instead
+      -- transfer 0 ETH to the sender... there will be no SVS. So, that's why
+      -- this is a bad hack.
+      case onlyHalts k of
+        True -> inLoop $ be_c k
+        False -> do
+          kont_block <- newHandler "While Kont"
+          let inKont = inBlock kont_block
+          (k'c, k'l) <- inKont $ be_c k
+          setHandler kont_block $ do
+            kont_svs <- ce_readMustReceive kont_block
+            C_Loop at kont_svs [] <$> k'c
+          inLoop $ fg_jump $ kont_block
+          let gk = CT_Jump at kont_block <$> ce_readMustReceive kont_block <*> pure mempty
+          return (gk, k'l)
+    -- </Kont>
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
     cond_l' <- inLoop $ do
       fg_defn $ loop_vars
-      fg_jump $ kont_block
       be_t cond_l
-    (k'c, k'l) <- inKont $
-      be_c k
-    setHandler kont_block $ do
-      kont_svs <- ce_readMustReceive kont_block
-      C_Loop at kont_svs [] <$> k'c
-    let goto_kont = CT_Jump at kont_block <$> ce_readMustReceive kont_block <*> pure mempty
     (body'c, body'l) <- inLoop $ local (\e -> e { be_loop = Just this_loop }) $
       be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
@@ -403,7 +441,7 @@ be_s = \case
     let (last_time_mv, from_v, msg_vs, amt_v, time_v, ok_c) = recv
     prev <- be_which <$> ask
     signalMore
-    which <- newHandler
+    which <- newHandler "ToConsensus"
     int <- be_interval <$> ask
     (int_ok, mtime'm) <-
       case mtime of
@@ -461,10 +499,12 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let be_which = 0
   let be_interval = default_interval
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
-  -- Step 2: Solve the flow graph
-  flow <- solve <$> readIORef be_flowr
-  -- Step 3: Turn the blocks into handlers
   hs <- readIORef be_handlers
+  -- Step 2: Solve the flow graph
+  flowi <- readIORef be_flowr
+  let flowi' = M.map (const mempty) hs
+  let flow = solve $ flowi <> flowi'
+  -- Step 3: Turn the blocks into handlers
   let mkh m = do
         let ce_flow = flow
         ce_vars <- newIORef mempty

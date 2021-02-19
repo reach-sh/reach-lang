@@ -62,7 +62,7 @@ ac_lt = \case
   DT_Com m k -> do
     k' <- ac_lt k
     m' <- ac_m m
-    return $ DT_Com m' k'
+    return $ mkCom DT_Com m' k'
 
 ac_bl :: PILBlock -> App PLBlock
 ac_bl (DLinBlock at fs t a) = do
@@ -80,7 +80,7 @@ ac_ct = \case
   CT_Com m k -> do
     k' <- ac_ct k
     m' <- ac_m m
-    return $ CT_Com m' k'
+    return $ mkCom CT_Com m' k'
   CT_If at c t f -> do
     f' <- ac_ct f
     t' <- ac_ct t

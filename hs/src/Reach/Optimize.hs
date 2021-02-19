@@ -244,7 +244,7 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
   opt = \case
     DT_Return at -> return $ DT_Return at
-    DT_Com m k -> DT_Com <$> opt m <*> opt k
+    DT_Com m k -> mkCom DT_Com <$> opt m <*> opt k
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBlock a) where
   opt (DLinBlock at fs b a) =
@@ -252,7 +252,7 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
 
 instance Optimize LLConsensus where
   opt = \case
-    LLC_Com m k -> LLC_Com <$> opt m <*> opt k
+    LLC_Com m k -> mkCom LLC_Com <$> opt m <*> opt k
     LLC_If at c t f ->
       opt_if id LLC_If at c t f
     LLC_Switch at ov csm ->
@@ -280,7 +280,7 @@ opt_send (p, (isClass, args, amta, whena)) =
 
 instance Optimize LLStep where
   opt = \case
-    LLS_Com m k -> LLS_Com <$> opt m <*> opt k
+    LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
     LLS_Stop at -> pure $ LLS_Stop at
     LLS_Only at p l s ->
       LLS_Only at p <$> (focusp p $ opt l) <*> opt s
@@ -324,7 +324,7 @@ opt_masn = \case
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a) where
   opt = \case
-    CT_Com m k -> CT_Com <$> opt m <*> opt k
+    CT_Com m k -> mkCom CT_Com <$> opt m <*> opt k
     CT_If at c t f ->
       opt_if id CT_If at c t f
     CT_Switch at ov csm ->

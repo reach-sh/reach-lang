@@ -81,7 +81,7 @@ instance Erase LLTail where
     DT_Com m k -> do
       k' <- el k
       m' <- el m
-      return $ DT_Com m' k'
+      return $ mkCom DT_Com m' k'
 
 instance Erase LLBlock where
   el (DLinBlock at fs t r) = do
@@ -94,7 +94,7 @@ instance Erase LLConsensus where
     LLC_Com m k -> do
       k' <- el k
       m' <- el m
-      return $ LLC_Com m' k'
+      return $ mkCom LLC_Com m' k'
     LLC_If at c t f -> do
       f' <- el f
       t' <- el t
@@ -130,7 +130,7 @@ instance Erase LLStep where
     LLS_Com m k -> do
       k' <- el k
       m' <- el m
-      return $ LLS_Com m' k'
+      return $ mkCom LLS_Com m' k'
     LLS_Stop at -> return $ LLS_Stop at
     LLS_Only at p l k -> do
       k' <- el k
