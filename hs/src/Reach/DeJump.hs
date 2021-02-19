@@ -12,7 +12,7 @@ import Reach.Counter
 
 data Env = Env
   { e_hs :: M.Map Int CIHandler
-  , e_rho :: IORef (M.Map DLVar DLVar)
+  , e_rho :: M.Map DLVar DLVar
   , e_idx :: Counter }
 type App = ReaderT Env IO
 
@@ -22,13 +22,6 @@ allocVar (DLVar at s t _) = do
   idx <- liftIO $ incCounter e_idx
   return $ DLVar at s t idx
 
-renameVar :: DLVar -> App DLVar
-renameVar v = do
-  v' <- allocVar v
-  rhor <- e_rho <$> ask
-  liftIO $ modifyIORef rhor $ M.insert v v'
-  return $ v'
-
 getLoop :: Int -> App CITail
 getLoop w = do
   hs <- e_hs <$> ask
@@ -37,10 +30,7 @@ getLoop w = do
     _ -> impossible $ "no loop"
 
 djs :: Subst a => a -> App a
-djs x = do
-  rhor <- e_rho <$> ask
-  rho <- liftIO $ readIORef rhor
-  return $ subst_ rho x
+djs x = flip subst_ x . e_rho <$> ask
 
 djs_fi :: FromInfo -> App FromInfo
 djs_fi = mapM (mapM go)
@@ -61,12 +51,20 @@ instance DeJump CITail where
     CT_From at w fi -> CT_From at w <$> djs_fi fi
     CT_Jump at dst _ (DLAssignment asnm) -> do
       t <- getLoop dst
-      let go (v, a) = do
-            v' <- renameVar v
-            -- Note: We don't subst a, because it will get subst'd later
-            return $ DL_Let at (Just v') $ DLE_Arg at a
-      nms <- mapM go $ M.toList asnm
-      dj $ foldr' CT_Com t nms
+      rho <- e_rho <$> ask
+      rho'r <- liftIO $ newIORef rho
+      -- Rebind them and add the renaming to rho
+      let go2 (v, a) = do
+            v' <- allocVar v
+            liftIO $ modifyIORef rho'r $ M.insert v v'
+            a' <- djs a
+            return $ DL_Let at (Just v') $ DLE_Arg at a'
+      nms <- mapM go2 $ M.toList asnm
+      rho' <- liftIO $ readIORef rho'r
+      -- Process the body in the context of the new substitution
+      t' <- local (\e -> e { e_rho = rho' }) $ dj t
+      -- Include the new variable definitions
+      return $ foldr' CT_Com t' nms
 
 instance DeJump CIHandler where
   dj (C_Loop {}) = impossible $ "dejump loop"
@@ -81,7 +79,7 @@ dejump (PLProg at plo dli epps cp) = do
   let go (_, C_Loop {}) = return mempty
       go (i, h) = do
         let e_hs = hs
-        e_rho <- newIORef mempty
+        let e_rho = mempty
         let e_idx = plo_counter
         h' <- flip runReaderT (Env {..}) $ dj h
         return $ M.singleton i h'
