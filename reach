@@ -435,6 +435,7 @@ FROM reachsh/runner:${REACH_VERSION}
 # If your project needs more node dependencies:
 # COPY ${PACKAGE_JSON} /app/package.json
 # RUN npm install
+# RUN npm link @reach-sh/stdlib
 
 COPY . /app
 ${CPLINE}
@@ -458,7 +459,6 @@ EOF
   "name": "@reach-sh/${PROJ}",
   "type": "module",
   "dependencies": {
-    "@reach-sh/stdlib": "${REACH_VERSION_EXPR}"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
