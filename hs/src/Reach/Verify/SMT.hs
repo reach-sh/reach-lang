@@ -473,7 +473,6 @@ displaySexpAsJs nested s =
 
 subAllVars :: M.Map String DLVar -> BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> String
 subAllVars v2dv bindings tk pm (Atom ai) =
-  let getBindingOrigin v = maybe v show $ M.lookup v v2dv in
   case ai `M.lookup` bindings of
     Just (_, _, _, _, Just de) ->
       let env = dlvOccurs [] bindings de
@@ -512,6 +511,7 @@ subAllVars v2dv bindings tk pm (Atom ai) =
     -- Something like assert(false)
     _ -> "  " <> show (pretty tk) <> "(" <> ai <> ");"
   where
+    getBindingOrigin v = maybe v show $ M.lookup v v2dv
     -- Variable can be inlined if it is used once or its value is a `DLArg`
     canInline [x] acc = x : acc
     canInline (x : _) acc =
@@ -533,9 +533,7 @@ subAllVars v2dv bindings tk pm (Atom ai) =
        in case vid `M.lookup` bindings of
             Just (_, _, _, _, Just del) -> (v, Right del)
             Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
-            _ ->
-              let l = maybe vid show $ M.lookup vid v2dv in
-              (v, Left l)
+            _ -> (v, Left $ getBindingOrigin vid)
 subAllVars _ _ _ _ _ = impossible "subAllVars: expected Atom"
 
 --- FYI, the last version that had Dan's display code was
