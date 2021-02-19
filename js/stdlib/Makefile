@@ -2,6 +2,7 @@ ROOT=../..
 include $(ROOT)/js/JS_IMAGES
 
 IMAGE=$(STDLIB_IMAGE)
+REACH="$(shell cd ../.. && pwd)/reach"
 
 .PHONY: clean
 clean: clean-test
@@ -42,11 +43,11 @@ test: build clean-test
 	cp    test/index.* test/stdlib-test
 	cp -r test/lib     test/stdlib-test/lib
 	cd test/stdlib-test \
-	  && reach compile \
-	  && REACH_CONNECTOR_MODE=ALGO reach run \
-	  && REACH_CONNECTOR_MODE=ETH  reach run \
-	  && REACH_CONNECTOR_MODE=FAKE reach run \
-	   ; reach down
+	  && $(REACH) compile \
+	  && REACH_CONNECTOR_MODE=ALGO $(REACH) run \
+	  && REACH_CONNECTOR_MODE=ETH  $(REACH) run \
+	  && REACH_CONNECTOR_MODE=FAKE $(REACH) run \
+	   ; $(REACH) down
 
 .PHONY: format
 format: package.json
