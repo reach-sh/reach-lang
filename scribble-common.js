@@ -129,7 +129,7 @@ function NormalizePath(path) {
 
 function DoSearchKey(event, field, ver, top_path) {
   var val = field.value;
-  if (event && event.keyCode == 13) {
+  if (event && event.key === 'Enter') {
     var u = GetCookie("PLT_Root."+ver, null);
     if (u == null) u = top_path; // default: go to the top path
     u += "search/index.html?q=" + encodeURIComponent(val);
@@ -171,10 +171,12 @@ AddOnLoad(function(){
 
 // Pressing "S" or "s" focuses on the "...search manuals..." text field
 AddOnLoad(function(){
-  window.addEventListener("keyup", function(event) {
-    if (event && (event.keyCode == 83 || event.keyCode == 115) && event.target == document.body) {
-      var field = document.getElementsByClassName("searchbox")[0];
-      field.focus();
+  window.addEventListener("keyup", function(e) {
+    if ((e.key === 's' || e.key === 'S') && e.target === document.body) {
+      var searchBox = document.getElementById('searchbox');
+      if (searchBox) {
+        searchBox.focus();
+      }
     }
   }, false);
 });

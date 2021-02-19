@@ -152,8 +152,11 @@ table td {
   padding: 0px;
   background-color: #eee;
   border: 1px solid #ddd;
-  text-align: center;
   vertical-align: middle;
+}
+
+.searchbox::placeholder {
+  text-align: center;
 }
 
 #contextindicator {
