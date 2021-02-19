@@ -42,7 +42,6 @@ test: build clean-test
 	cp    test/index.* test/stdlib-test
 	cp -r test/lib     test/stdlib-test/lib
 	cd test/stdlib-test \
-	  && reach scaffold \
 	  && reach compile \
 	  && REACH_CONNECTOR_MODE=ALGO reach run \
 	  && REACH_CONNECTOR_MODE=ETH  reach run \
