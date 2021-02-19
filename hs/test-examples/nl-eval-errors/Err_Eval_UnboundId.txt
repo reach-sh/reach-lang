@@ -1,1 +1,1 @@
-reachc: error: ./Err_Eval_UnboundId.rsh:9:12:id ref: Invalid unbound identifier in expression: alfa. Did you mean: ["alpha","Data","add","and","array"]
+reachc: error: ./Err_Eval_UnboundId.rsh:9:12:id ref: Invalid unbound identifier: alfa. Did you mean: ["alpha","Data","add","and","array"]

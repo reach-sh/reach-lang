@@ -10,11 +10,11 @@ Verification failed:
   // Violation witness
   const dlc_UInt_max = 1;
   //    ^ from builtin at ./overflow_con.rsh:3:30:application
-  const v3 = 1;
+  const x/3 = 1;
   //    ^ from evaluating interact("A")."get"() at ./overflow_con.rsh:9:40:application
 
   // Theorem formalization
-  assert(v3 <= (UInt.max - 1));
+  assert(x/3 <= (UInt.max - 1));
 
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:

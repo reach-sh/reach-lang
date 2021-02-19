@@ -141,8 +141,8 @@ litTypeOf = \case
   DLL_Int {} -> T_UInt
   DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
-data DLVar = DLVar SrcLoc String DLType Int
-  deriving (Generic, Show)
+data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
+  deriving (Generic)
 
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
@@ -152,6 +152,12 @@ instance Ord DLVar where
 
 instance Pretty DLVar where
   pretty (DLVar _ _ _ i) = "v" <> viaShow i
+
+instance Show DLVar where
+  show (DLVar _ b _ i) =
+    case b of
+      Nothing -> "v" <> show i
+      Just (_, v) -> v <> "/" <> show i
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)

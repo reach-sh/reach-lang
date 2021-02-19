@@ -613,7 +613,7 @@ compileArgExpr = \case
     mk la = do
       at <- withAt id
       let t = largeArgTypeOf la
-      let mkvar = DLVar at "large arg" t
+      let mkvar = DLVar at Nothing t
       DLA_Var <$> ctxt_lift_expr mkvar (DLE_LArg at la)
 
 compileArgExprs :: [DLArgExpr] -> App [DLArg]
@@ -794,18 +794,18 @@ binaryToPrim :: JSBinOp -> App SLVal
 binaryToPrim = \case
   JSBinOpAnd _ -> impossible "and"
   JSBinOpDivide a -> prim a DIV
-  JSBinOpEq a -> fun a "polyEq" "=="
+  JSBinOpEq a -> fun a "polyEq"
   JSBinOpGe a -> prim a PGE
   JSBinOpGt a -> prim a PGT
   JSBinOpLe a -> prim a PLE
   JSBinOpLt a -> prim a PLT
   JSBinOpMinus a -> prim a SUB
   JSBinOpMod a -> prim a MOD
-  JSBinOpNeq a -> fun a "polyNeq" "!="
+  JSBinOpNeq a -> fun a "polyNeq"
   JSBinOpOr _ -> impossible "or"
   JSBinOpPlus a -> prim a ADD
-  JSBinOpStrictEq a -> fun a "polyEq" "==="
-  JSBinOpStrictNeq a -> fun a "polyNeq" "!=="
+  JSBinOpStrictEq a -> fun a "polyEq"
+  JSBinOpStrictNeq a -> fun a "polyNeq"
   JSBinOpTimes a -> prim a MUL
   JSBinOpLsh a -> prim a LSH
   JSBinOpRsh a -> prim a RSH
@@ -814,31 +814,33 @@ binaryToPrim = \case
   JSBinOpBitXor a -> prim a BXOR
   j -> expect_ $ Err_Parse_IllegalBinOp j
   where
-    fun a s ctx = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId ctx s)
+    fun a s = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId s)
     prim _a p = return $ SLV_Prim $ SLPrim_op p
 
 unaryToPrim :: JSUnaryOp -> App SLVal
 unaryToPrim = \case
-  JSUnaryOpMinus a -> fun a "minus" "-"
-  JSUnaryOpPlus a -> fun a "plus" "+"
-  JSUnaryOpNot a -> fun a "not" "!"
-  JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
+  JSUnaryOpMinus a -> fun a "minus"
+  JSUnaryOpPlus a -> fun a "plus"
+  JSUnaryOpNot a -> fun a "not"
+  JSUnaryOpTypeof a -> fun a "typeOf"
   j -> expect_ $ Err_Parse_IllegalUnaOp j
   where
-    fun a s ctx = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId ctx s)
+    fun a s = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId s)
 
-infectWithId_sv :: SLVar -> SLVal -> SLVal
-infectWithId_sv v = \case
-  SLV_Participant at who _ mdv ->
-    SLV_Participant at who (Just v) mdv
+infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
+infectWithId_sv at v = \case
+  SLV_Participant a who _ mdv ->
+    SLV_Participant a who (Just v) mdv
+  SLV_DLVar (DLVar a _ t i) ->
+    SLV_DLVar $ DLVar a (Just (at, v)) t i
   x -> x
 
 infectWithId_sss :: SLVar -> SLSSVal -> SLSSVal
 infectWithId_sss v (SLSSVal at lvl sv) =
-  SLSSVal at lvl $ infectWithId_sv v sv
+  SLSSVal at lvl $ infectWithId_sv at v sv
 
-infectWithId_sls :: SLVar -> SLSVal -> SLSVal
-infectWithId_sls v (lvl, sv) = (lvl, infectWithId_sv v sv)
+infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> SLSVal
+infectWithId_sls at v (lvl, sv) = (lvl, infectWithId_sv at v sv)
 
 evalObjEnv :: SLObjEnv -> App SLEnv
 evalObjEnv = mapM go
@@ -1018,14 +1020,14 @@ evalAsEnvM obj = case obj of
     doStdlib :: SLVar -> App SLSVal
     doStdlib = doApply <=< lookStdlib
     lookStdlib :: SLVar -> App SLVal
-    lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
+    lookStdlib n = sss_val <$> ((env_lookup LC_RefFrom n) =<< (sco_cenv . e_sco) <$> ask)
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
     doApply f = evalApplyVals' f [(public obj)]
     retDLVar tm obj_dla slvl = do
       let retk field t = do
             at <- withAt id
-            let mkv = DLVar at "object ref" t
+            let mkv = DLVar at Nothing t
             let e = DLE_ObjectRef at obj_dla field
             dv <- ctxt_lift_expr mkv e
             let ansv = SLV_DLVar dv
@@ -1060,13 +1062,13 @@ compileInteractResult m t de = do
   at <- withAt id
   dt <- st2dte t
   let de' = de dt
-  isv <- 
+  isv <-
     case dt of
       T_Null -> do
         ctxt_lift_eff de'
         return $ SLV_Null at $ "interact " <> m
       _ ->
-        SLV_DLVar <$> ctxt_lift_expr (DLVar at m dt) (de dt)
+        SLV_DLVar <$> ctxt_lift_expr (DLVar at (Just (at, m)) dt) (de dt)
   return $ secret isv
 
 makeInteract :: SLPart -> SLEnv -> App (SLSSVal, InteractEnv)
@@ -1373,7 +1375,7 @@ evalPrimOp p sargs = do
     digestEq2 x y = digestEq [x, y]
     lookupFn f = do
       env <- (sco_cenv . e_sco) <$> ask
-      sss_val <$> env_lookup (LC_RefFrom "polyEq") f env
+      sss_val <$> env_lookup LC_RefFrom f env
     digestEq as = lookupFn "digestEq" >>= flip evalApplyVals' as
     getHash :: SLSVal -> App SLSVal
     getHash x = lookupFn "digest" >>= flip evalApplyVals' [x]
@@ -1404,7 +1406,7 @@ evalPrimOp p sargs = do
             saveLift $
               DLS_Let at Nothing $
                 DLE_Claim at fs CT_Assert ca $ Just msg
-      let mkvar t = DLVar at "overflow" t
+      let mkvar t = DLVar at Nothing t
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
@@ -1421,7 +1423,7 @@ evalPrimOp p sargs = do
             ca <- doCmp PGE dargs
             doClaim ca "sub wraparound"
           _ -> return ()
-      dv <- ctxt_lift_expr (DLVar at "prim" rng) (DLE_PrimOp at p dargs)
+      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
       whenVerifyOverflow $
         case p of
@@ -1447,7 +1449,7 @@ explodeTupleLike lab = \case
     mkdv tupdv mkde t i = do
       at <- withAt id
       let de = mkde at (DLA_Var tupdv) i
-      let mdv = DLVar at lab t
+      let mdv = DLVar at Nothing t
       dv <- ctxt_lift_expr mdv de
       return $ [SLV_DLVar dv]
 
@@ -1456,7 +1458,7 @@ doFluidRef_dv fv = do
   at <- withAt id
   ensure_modes (all_slm_modes \\ [SLM_Module]) "fluid ref"
   let fvt = fluidVarType fv
-  dv <- ctxt_mkvar (DLVar at "fluid" fvt)
+  dv <- ctxt_mkvar (DLVar at Nothing fvt)
   saveLift $ DLS_FluidRef at dv fv
   return dv
 
@@ -1599,7 +1601,7 @@ evalPrim p sargs =
             (T_Array x_ty x_sz, T_Array y_ty y_sz) -> do
               meet_ty <- dtypeMeet (at, x_ty) (at, y_ty)
               let t = T_Array meet_ty (x_sz + y_sz)
-              let mkdv = DLVar at "array_concat" t
+              let mkdv = DLVar at Nothing t
               dv <- ctxt_lift_expr mkdv $ DLE_ArrayConcat at xa ya
               return $ (lvl, SLV_DLVar dv)
             _ -> illegal_args
@@ -1624,7 +1626,7 @@ evalPrim p sargs =
           return $ (lvl, SLV_Array at sty' vs')
         False -> do
           let t = T_Array ty' sz'
-          let mkdv = (DLVar at "array_zip" t)
+          let mkdv = (DLVar at Nothing t)
           dv <- ctxt_lift_expr mkdv $ DLE_ArrayZip at x_da y_da
           return $ (lvl, SLV_DLVar dv)
     SLPrim_array_map ->
@@ -1636,7 +1638,7 @@ evalPrim p sargs =
           (xt, x_da) <- compileTypeOf x
           (x_ty, x_sz) <- mustBeArray xt
           let f' a = evalApplyVals' f [(lvl, a)]
-          (a_dv, a_dsv) <- make_dlvar at "map in" x_ty
+          (a_dv, a_dsv) <- make_dlvar at Nothing x_ty
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ (f_lvl, f_ty, f_da) <-
@@ -1653,7 +1655,7 @@ evalPrim p sargs =
               return $ (f_lvl, SLV_Array at (dt2st f_ty) vs')
             False -> do
               let t = T_Array f_ty x_sz
-              (ans_dv, ans_dsv) <- make_dlvar at "array_map" t
+              (ans_dv, ans_dsv) <- make_dlvar at Nothing t
               let f_bl = DLBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayMap at ans_dv x_da a_dv f_bl
               return $ (lvl, ans_dsv)
@@ -1676,8 +1678,8 @@ evalPrim p sargs =
           (x_ty, _) <- mustBeArray xt
           let f' b a = evalApplyVals' f [(lvl, b), (lvl, a)]
           (z_ty, z_da) <- compileTypeOf z
-          (b_dv, b_dsv) <- make_dlvar at "reduce acc" z_ty
-          (a_dv, a_dsv) <- make_dlvar at "reduce in" x_ty
+          (b_dv, b_dsv) <- make_dlvar at Nothing z_ty
+          (a_dv, a_dsv) <- make_dlvar at Nothing x_ty
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ (f_lvl, f_ty, f_da) <-
@@ -1700,7 +1702,7 @@ evalPrim p sargs =
                     return $ xv_v'
               foldM evalem (f_lvl, z) x_vs
             False -> do
-              (ans_dv, ans_dsv) <- make_dlvar at "array_reduce" f_ty
+              (ans_dv, ans_dsv) <- make_dlvar at Nothing f_ty
               let f_bl = DLBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
               return $ (lvl, ans_dsv)
@@ -1755,7 +1757,7 @@ evalPrim p sargs =
       where
         retArrDV t de = do
           at <- withAt id
-          dv <- ctxt_lift_expr (DLVar at "array_set" t) de
+          dv <- ctxt_lift_expr (DLVar at Nothing t) de
           return $ (lvl, SLV_DLVar dv)
     SLPrim_Tuple -> do
       vs <- mapM expect_ty $ map snd sargs
@@ -1818,7 +1820,7 @@ evalPrim p sargs =
       darges <- map snd <$> mapM (typeOf . snd) sargs
       dargs <- compileArgExprs darges
       at <- withAt id
-      dv <- ctxt_lift_expr (DLVar at "digest" rng) (DLE_Digest at dargs)
+      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_Digest at dargs)
       return $ (lvl, SLV_DLVar dv)
     SLPrim_claim ct -> do
       let barg = compileCheckType ST_Bool
@@ -1877,7 +1879,7 @@ evalPrim p sargs =
         [(olvl, one)] -> do
           dt <- st2dte =<< expect_ty one
           at <- withAt id
-          dv <- ctxt_lift_expr (DLVar at "forall" dt) (DLE_Impossible at $ "cannot inspect value from forall")
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -2062,7 +2064,7 @@ evalApplyVals rator randvs =
               (retsms, tys) <- unzip <$> mapM go rs
               let retsm = mconcat retsms
               r_ty <- locAt body_at $ dtypeMeets tys
-              let dv = DLVar body_at "clo app" r_ty ret
+              let dv = DLVar body_at Nothing r_ty ret
               saveLift $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
               return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
     v -> expect_t v $ Err_Eval_NotApplicableVals
@@ -2140,7 +2142,7 @@ evalPropertyPair fenv = \case
         let mkOneEnv k t = do
               at' <- withAt id
               let de = DLE_ObjectRef at' (DLA_Var dlv) k
-              let mdv = DLVar at' "obj_ref" t
+              let mdv = DLVar at' Nothing t
               dv <- ctxt_lift_expr mdv de
               return $ M.singleton k $ SLSSVal at' slvl $ SLV_DLVar dv
         -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
@@ -2150,37 +2152,28 @@ evalPropertyPair fenv = \case
     --- FIXME support these
     expect_ $ Err_Obj_IllegalMethodDefinition p
 
-evalId_ :: String -> SLVar -> App SLSSVal
-evalId_ lab x = do
+evalId_ :: SLVar -> App SLSSVal
+evalId_ x = do
   sco <- e_sco <$> ask
-  let c = ("consensus environment", return $ sco_cenv sco)
-  let s = ("step environment", return $ sco_cenv sco)
   mwho <- e_who <$> ask
   let l = case mwho of
-        Just who ->
-          ( (show who <> "'s environment")
-          , sco_lookup_penv who
-          )
+        Just who -> sco_lookup_penv who
         Nothing -> impossible $ "no ctxt_only in local mode"
   m <- readSt st_mode
-  let (elab, env) = case m of
-        SLM_Module -> s
-        SLM_Step -> s
+  let env = case m of
         SLM_LocalStep -> l
         SLM_LocalPure -> l
-        SLM_ConsensusStep -> c
-        SLM_ConsensusPure -> c
-  let _lab' = lab <> " in " <> elab
-  infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
+        _ -> return $ sco_cenv sco
+  infectWithId_sss x <$> (env_lookup LC_RefFrom x =<< env)
 
-evalId :: String -> SLVar -> App SLSVal
-evalId lab x = sss_sls <$> evalId_ lab x
+evalId :: SLVar -> App SLSVal
+evalId x = sss_sls <$> evalId_ x
 
 evalExpr :: JSExpression -> App SLSVal
 evalExpr e = case e of
   JSIdentifier a x ->
     locAtf (srcloc_jsa "id ref" a) $
-      evalId "expression" x
+      evalId x
   JSDecimal a ns ->
     case splitOn "." ns of
       [iDigits, fDigits] ->
@@ -2346,7 +2339,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
             (flifts', f_ty) <- add_ret f_at' flifts fv
             ty <- dtypeMeet (t_at', t_ty) (f_at', f_ty)
             at' <- withAt id
-            let ans_dv = DLVar at' "clo app" ty ret
+            let ans_dv = DLVar at' Nothing ty ret
             saveLift $
               DLS_Prompt at' (Right (ans_dv, mempty)) $
                 return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
@@ -2391,7 +2384,7 @@ doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
       (idx_lvl, idxv) <- evalExpr idxe
       let lvl = arr_lvl <> idx_lvl
       let retRef t de = do
-            dv <- ctxt_lift_expr (DLVar at' "ref" t) de
+            dv <- ctxt_lift_expr (DLVar at' Nothing t) de
             let ansv = SLV_DLVar dv
             return $ (lvl, ansv)
       let retArrayRef t sz arr_dla idx_dla = do
@@ -2497,7 +2490,12 @@ evalDeclLHS rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
-      env_insert x (SLSSVal at_ rhs_lvl v) lhs_env
+      let bindingOrigin = Just (at_, x)
+      let v' =
+            case v of
+            SLV_DLVar (DLVar a' _ t i) -> SLV_DLVar $ DLVar a' bindingOrigin t i
+            ow -> ow
+      env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
   JSArrayLiteral a xs _ -> do
     locAtf (srcloc_jsa "array" a) $ do
       vs <- explodeTupleLike "lhs array" v
@@ -2609,7 +2607,6 @@ doOnly sco ((who, vas), only_at, only_cloenv, only_synarg) = locAt only_at $ do
 
 doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do
-  let whos = bunpack who
   isClass <- is_class who
   --- XXX Remove this and just use the main counter in SMT
   addrNum <-
@@ -2618,7 +2615,7 @@ doGetSelfAddress who = do
       True -> ctxt_alloc
   Env {..} <- ask
   ctxt_lift_expr
-    (DLVar e_at whos T_Address)
+    (DLVar e_at Nothing T_Address)
     (DLE_PrimOp
        e_at
        SELF_ADDRESS
@@ -2635,6 +2632,10 @@ all_just = \case
     case all_just xs of
       Just xs' -> Just $ x : xs'
       Nothing -> Nothing
+
+getBindingOrigin :: [DLArg] -> Maybe (SrcLoc, SLVar)
+getBindingOrigin [DLA_Var (DLVar _ b _ _)] = b
+getBindingOrigin _ = Nothing
 
 doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> App SLStmtRes
 doToConsensus ks whos vas msg amt_e when_e mtime = do
@@ -2655,7 +2656,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               captureLifts $ do
                 let repeat_dv = M.lookup who pdvs
                 isClass <- is_class who
-                msg_das <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
+                msg_das <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId v)) msg
                 amt_da <- ctepee ST_UInt amt_e
                 when_da <- ctepee ST_Bool when_e
                 return (repeat_dv, isClass, msg_das, amt_da, when_da)
@@ -2671,7 +2672,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   msg_ts <- mapM get_msg_t msg_dass_t
   let mrepeat_dvs = all_just $ M.elems $ M.map (\(x, _, _, _, _) -> x) tc_send'
   -- Handle receiving / consensus
-  winner_dv <- ctxt_mkvar $ DLVar at "race winner" T_Address
+  winner_dv <- ctxt_mkvar $ DLVar at Nothing T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   whosc <- mapM (\w -> (,) w <$> is_class w) $ S.toList whos
   (who_env_mod, pdvs_recv) <-
@@ -2683,7 +2684,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               case vas of
                 Nothing -> return $ env
                 Just whov ->
-                  evalId_ "publish who binding" whov >>= \case
+                  evalId_ whov >>= \case
                     (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
                       return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
@@ -2696,7 +2697,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
           }
-  msg_dvs <- mapM (\t -> ctxt_mkvar (DLVar at "msg" t)) msg_ts
+  msg_dvs <- mapM (\ (v, t) ->  ctxt_mkvar (DLVar at (getBindingOrigin v) t)) $ zip msg_dass_t msg_ts
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
   let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar winner_dv))
   let recv_env = msg_env
@@ -2705,7 +2706,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
       setSt st_recv
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
-        amt_dv <- ctxt_mkvar $ DLVar at "amt" T_UInt
+        amt_dv <- ctxt_mkvar $ DLVar at Nothing T_UInt
         let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
         cmp_v <- locSt st_pure $ evalApply cmp_rator [amt_e]
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
@@ -2731,7 +2732,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
             evalApplyVals' req_rator $
               [whoc_v, public $ SLV_Bytes at $ "sender correct"]
         doBalanceUpdate ADD (SLV_DLVar amt_dv)
-        time_dv <- ctxt_mkvar $ DLVar at "ctime" T_UInt
+        time_dv <- ctxt_mkvar $ DLVar at Nothing T_UInt
         doFluidSet FV_thisConsensusTime $ public $ SLV_DLVar time_dv
         k_cr <- evalStmt ks
         let mktc_recv x = (winner_dv, msg_dvs, amt_dv, time_dv, x)
@@ -2970,8 +2971,7 @@ evalStmtTrampoline sp ks = \case
           True -> evalStmt ks
           False -> expect_ $ Err_Eval_PartSet_Bound who
       Nothing -> do
-        let who_s = bunpack who
-        whodv <- ctxt_lift_expr (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
+        whodv <- ctxt_lift_expr (DLVar at' Nothing T_Address) (DLE_PartSet at' who addr_da)
         let pdvs' = M.insert who whodv pdvs
         let st' = st {st_pdvs = pdvs'}
         setSt st'
@@ -3031,9 +3031,9 @@ doWhileLikeInitEval :: JSExpression -> JSExpression -> App (M.Map SLVar DLVar, D
 doWhileLikeInitEval lhs rhs = do
   at <- withAt id
   vars_env <- unchangedSt $ evalDecl lhs rhs
-  let help v (SLSSVal _ _ val) = do
+  let help v (SLSSVal at' _ val) = do
         (t, da) <- typeOf val
-        dv <- ctxt_mkvar $ DLVar at v t
+        dv <- ctxt_mkvar $ DLVar at (Just (at', v)) t
         return $ (dv, da)
   helpm <- M.traverseWithKey help vars_env
   let unknown_var_env = M.map (sls_sss at . public . SLV_DLVar . fst) helpm
@@ -3275,7 +3275,7 @@ evalStmt = \case
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
       let de_v = jse_expect_id at' de
-      (de_lvl, de_val) <- evalId "switch" de_v
+      (de_lvl, de_val) <- evalId de_v
       (de_ty, _) <- typeOf de_val
       varm <- case de_ty of
         T_Data m -> return $ m
@@ -3329,7 +3329,7 @@ evalStmt = \case
                     T_Null ->
                       return (Nothing, Just $ SLV_Null at_c "case")
                     _ -> do
-                      dv' <- ctxt_mkvar $ DLVar at_c ("switch " <> vn) vt
+                      dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, vn)) vt
                       return (Just dv', Just $ SLV_DLVar dv')
                 False ->
                   return (Nothing, Nothing)
@@ -3494,5 +3494,5 @@ mapRef mv mcv = do
   DLMapInfo {..} <- mapLookup mv
   mc <- compileCheckType ST_Address mcv
   let mt = T_Data $ M.fromList $ [("Some", dlmi_ty), ("None", T_Null)]
-  let mkvar = DLVar at "map.ref" mt
+  let mkvar = DLVar at Nothing mt
   ctxt_lift_expr mkvar $ DLE_MapRef at mv mc

@@ -41,7 +41,7 @@ evalImportClause env im =
       (at', ns) <- withAt $ flip parseIdent ji
       return $ M.singleton ns $ (SLSSVal at' Public $ SLV_Object at' (Just $ "module " <> ns) env)
     JSImportClauseNamed (JSImportsNamed _ iscl _) ->
-      evalImExportSpecifiers (LC_RefFrom "module import") env go iscl
+      evalImExportSpecifiers LC_RefFrom env go iscl
       where
         go = \case
           JSImportSpecifier x -> (x, x)
@@ -54,7 +54,7 @@ evalImportClause env im =
 
 evalExportClause :: SLEnv -> JSExportClause -> App SLEnv
 evalExportClause env (JSExportClause _ escl _) =
-  evalImExportSpecifiers (LC_RefFrom "module export") env go escl
+  evalImExportSpecifiers LC_RefFrom env go escl
   where
     go = \case
       JSExportSpecifier x -> (x, x)

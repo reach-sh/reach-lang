@@ -8,6 +8,7 @@ module Reach.Texty
   , group --- XXX remove
   , emptyDoc
   , viaShow
+  , textOfString
   , vsep
   , hcat
   , hsep
@@ -176,6 +177,9 @@ concatWith f xs =
 
 viaShow :: Show a => a -> Doc
 viaShow = DText . LT.pack . show
+
+textOfString :: String -> Doc
+textOfString = DText. LT.pack
 
 punctuate :: Doc -> [Doc] -> [Doc]
 punctuate p = go

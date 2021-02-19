@@ -905,7 +905,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
             -- the code to deal with this being missing (because Solidity
             -- doesn't allow empty structs), we force there to be one that will
             -- be ignored
-            ([(DLVar at "fake" T_UInt 0)], emptyDoc)
+            ([(DLVar at Nothing T_UInt 0)], emptyDoc)
   let map_defn (mpv, DLMapInfo {..}) =
         vsep $
           [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> solMapVar mpv <> semi

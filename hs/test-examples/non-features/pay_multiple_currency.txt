@@ -1,1 +1,1 @@
-reachc: error: ./pay_multiple_currency.rsh:13:13:id ref: Invalid unbound identifier in expression: Token. Did you mean: ["Bool","Bytes","Fun","Neg","Pos"]
+reachc: error: ./pay_multiple_currency.rsh:13:13:id ref: Invalid unbound identifier: Token. Did you mean: ["Bool","Bytes","Fun","Neg","Pos"]

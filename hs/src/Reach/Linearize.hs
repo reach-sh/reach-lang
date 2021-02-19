@@ -368,7 +368,7 @@ df_con = \case
           case r of
             Nothing -> return $ Nothing
             Just _ -> do
-              dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
+              dv <- allocVar $ DLVar at (Just (srcloc_builtin, show fv)) (fluidVarType fv)
               return $ Just (fv, dv)
     fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
     let body_fvs' = df_con =<< unpackFVMap at body
