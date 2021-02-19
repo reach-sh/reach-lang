@@ -141,6 +141,10 @@ export const serveRpc = async (backend: any) => {
   app.post(`/stop`, (_: Request, res: Response) => {
     res.json(true);
     process.exit(0); });
+  app.post(`/health`, (req: Request, res: Response) => {
+    void(req);
+    res.json(true);
+  });
 
   app.disable('X-Powered-By');
 

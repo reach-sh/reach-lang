@@ -54,5 +54,5 @@ import { mkRPC } from '@reach-sh/rpc-client';
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-  await rpc(`/stop`);
+  // await rpc(`/stop`);
 })();

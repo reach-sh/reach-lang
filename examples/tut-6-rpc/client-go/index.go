@@ -244,5 +244,5 @@ func main() {
   fmt.Printf("Alice went from %s to %s\n", beforeAlice, afterAlice)
   fmt.Printf("  Bob went from %s to %s\n", beforeBob,   afterBob)
 
-  rpc("/stop")
+  // rpc("/stop")
 }

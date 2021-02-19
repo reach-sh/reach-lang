@@ -928,6 +928,135 @@ do_react_down () {
   exit 0
 }
 
+server_compose () {
+  # TODO: write this docker-compose file a better way
+
+  if $USE_EXISTING_DEVNET ; then
+    echo 'using existing devnet'
+    DEPENDS_ON=''
+  else
+    if $IS_ALGO ; then
+      DEPENDS_ON='
+    # Does not technically depend on algorand-devnet.
+    # This is just to get it to run both.
+    depends_on:
+      - algorand-devnet
+'
+    else
+      DEPENDS_ON='
+    # Does not technically depend on ganache.
+    # This is just to get it to run both.
+    depends_on:
+      - ganache
+'
+    fi
+  fi
+  TLS_PATH='./tls/reach-server'
+
+  cat<<EOF > docker-compose.yml.server
+version: '3.4'
+services:
+  rpc-server:
+    image: reachsh/rpc-server:$REACH_VERSION
+    volumes:
+      - ./build:/app/build
+      - ./tls:/app/tls
+    ports:
+      - '3000:3000'
+    stdin_open: true
+    tty: true
+    environment:
+      - REACH_DEBUG
+      - REACH_RPC_PORT=3000
+      - REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
+      - ETH_NODE_URI=http://ganache:8545
+      - REACH_RPC_KEY
+      - REACH_RPC_TLS_KEY=${TLS_PATH}.key
+      - REACH_RPC_TLS_CRT=${TLS_PATH}.crt
+      - REACH_RPC_TLS_PASSPHRASE=rpc-demo
+$DEPENDS_ON
+  ganache:
+    image: trufflesuite/ganache-cli:v6.12.0
+    command:
+      - '--accounts=1'
+      - '--defaultBalanceEther=1000000'
+    ports:
+      - '8545:8545'
+  algorand-devnet:
+    image: reachsh/algorand-devnet:latest
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - '4180:4180'
+      - '8980:8980'
+      - '9392:9392'
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+EOF
+
+  REACH_RPC_KEY=${REACH_RPC_KEY} docker-compose -f docker-compose.yml.server "$@" || :
+  rm docker-compose.yml.server  
+}
+
+do_server () {
+  # TODO: less copy/paste duplication from do_react
+  # TODO: check for different ports based on REACH_CONNECTOR_MODE
+  USE_EXISTING_DEVNET=false
+  if [ "x$1" = "x--use-existing-devnet" ]; then
+    shift
+    USE_EXISTING_DEVNET=true
+  fi
+  if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
+    USE_EXISTING_DEVNET=true
+  fi
+
+  # TODO: rework REACH_CONNECTOR_MODE to work better w/ server
+  IS_ALGO=false
+  case "$REACH_CONNECTOR_MODE" in ALGO*)
+    IS_ALGO=true ;;
+  esac
+
+  if [ "x$REACH_RPC_KEY" = "x" ]; then
+    REACH_RPC_KEY="$(head -c 24 /dev/urandom | base64)"
+    echo
+    echo '==============================='
+    echo 'auto-generating rpc key:'
+    echo "REACH_RPC_KEY=${REACH_RPC_KEY}"
+    echo '==============================='
+    echo
+  else
+    echo
+    echo '==============================='
+    echo 'using rpc key:'
+    echo "REACH_RPC_KEY=${REACH_RPC_KEY}"
+    echo '==============================='
+    echo
+  fi
+
+  # TODO: auto-gen self-signed tls cert if not present
+
+  # All args are just forwarded to do_compile
+  do_compile "$@"
+
+  server_compose run --service-ports --rm rpc-server
+  exit 0
+}
+
+do_server_down () {
+  USE_EXISTING_DEVNET=false
+  server_compose down
+  exit 0
+}
+
 REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react-runner rpc-server'
 
 do_update() {
@@ -980,6 +1109,12 @@ case ${SUBCOMMAND} in
         ;;
     react-down)
         do_react_down "$@"
+        ;;
+    server)
+        do_server "$@"
+        ;;
+    server-down)
+        do_server_down "$@"
         ;;
     init)
         do_init "$@"

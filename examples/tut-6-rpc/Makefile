@@ -18,5 +18,14 @@ build: server/build/index.main.mjs client-lib-js
 	cd client-go && docker build -f Dockerfile --tag=reachsh/reach-app-tut-6-rpc-client-go:latest .
 
 .PHONY: run
-run: build
+run: test
+
+.PHONY: test
+test: build
+	sbin/test-on.sh ETH js py go
+#	sbin/test-on.sh ALGO js py go
+#	sbin/test-on.sh FAKE js py go
+
+.PHONY: run_old
+run_old: build
 	docker-compose -f "docker-compose.yml" up --remove-orphans reach-app-tut-6-rpc-server reach-app-tut-6-rpc
