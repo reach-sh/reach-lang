@@ -17,13 +17,14 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   aha=0.4.10.6-4 \
-  curl=7.58.0-2ubuntu3.10 \
+  containerd=1.3.3-0ubuntu1~18.04.4 \
+  curl=7.58.0-2ubuntu3.12 \
   docker-compose=1.17.1-2 \
-  docker.io=19.03.6-0ubuntu1~18.04.2 \
+  docker.io=19.03.6-0ubuntu1~18.04.3 \
   gcc=4:7.4.0-1ubuntu2.3 \
   git=1:2.17.1-1ubuntu0.7 \
   gnupg=2.2.4-1ubuntu1.3 \
-  libc6-dev=2.27-3ubuntu1.3 \
+  libc6-dev=2.27-3ubuntu1.4 \
   libcairo2=1.15.10-2ubuntu0.1 \
   libffi-dev=3.2.1-8 \
   libfontconfig1=2.12.6-0ubuntu2 \
@@ -33,7 +34,7 @@ RUN apt-get update \
   libpango-1.0=1.40.14-1ubuntu0.1 \
   libpangocairo-1.0=1.40.14-1ubuntu0.1 \
   libtinfo-dev=6.1-1ubuntu1.18.04 \
-  locales=2.27-3ubuntu1.3 \
+  locales=2.27-3ubuntu1.4 \
   make=4.1-9.1ubuntu1 \
   netbase=5.4 \
   python3-pip=9.0.1-2.3~ubuntu1.18.04.4 \
@@ -44,7 +45,7 @@ RUN apt-get update \
   zlib1g-dev=1:1.2.11.dfsg-0ubuntu2 \
   && add-apt-repository -y ppa:plt/racket \
   && apt-get update \
-  && apt-get install -y racket=7.9+ppa2-1~bionic1 --no-install-recommends \
+  && apt-get install -y racket=8.0+ppa1-5~bionic1 --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
