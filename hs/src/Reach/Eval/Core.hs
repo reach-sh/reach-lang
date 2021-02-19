@@ -1059,8 +1059,14 @@ compileInteractResult :: SLVar -> SLType -> (DLType -> DLExpr) -> App SLSVal
 compileInteractResult m t de = do
   at <- withAt id
   dt <- st2dte t
-  idv <- ctxt_lift_expr (DLVar at m dt) (de dt)
-  let isv = SLV_DLVar idv
+  let de' = de dt
+  isv <- 
+    case dt of
+      T_Null -> do
+        ctxt_lift_eff de'
+        return $ SLV_Null at $ "interact " <> m
+      _ ->
+        SLV_DLVar <$> ctxt_lift_expr (DLVar at m dt) (de dt)
   return $ secret isv
 
 makeInteract :: SLPart -> SLEnv -> App (SLSSVal, InteractEnv)
