@@ -11,7 +11,9 @@ build/index.main.pl: index.rsh
 	$(REACH) compile $^
 
 .PHONY: build
-build: check
+# build: check # TODO: re-enable this
+build:
+	$(REACH) compile index.rsh
 
 .PHONY: run
 run:
