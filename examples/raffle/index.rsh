@@ -19,11 +19,8 @@ export const main =
       }],
      ['class', 'Player',
       { ...Common,
-        informBuy: Fun([Address, UInt, Digest], Null),
         shouldBuy: Fun([UInt, UInt], Tuple(Bool, UInt)),
         buyerWas: Fun([Address], Null),
-        informReturn: Fun([Address, UInt, Digest, Digest, Bool], Null),
-        willReturn: Fun([Bool, Bool, Bool], Null),
         returnerWas: Fun([Address, UInt], Null),
         recoverTicket: Fun([], UInt) } ],
     ],
@@ -58,7 +55,6 @@ export const main =
             const when = declassify(_when);
             assume(implies(when, isNone(randomsM[this])));
             const msg = declassify(digest(_ticket));
-            if ( when ) { interact.informBuy(this, _ticket, msg); }
             return { msg, when };
           }),
           (() => ticketPrice),
@@ -82,15 +78,6 @@ export const main =
           case Some: return rc == digest(r);
         }
       };
-      const randomMatchesI = (inform, who, r) => {
-        const rc = randomsM[who];
-        switch ( rc ) {
-          case None: return false;
-          case Some:
-            inform(who, r, digest(r), rc, rc == digest(r));
-            return rc == digest(r);
-        }
-      };
 
       Sponsor.only(() => { interact.showReturning(howMany); });
 
@@ -103,10 +90,8 @@ export const main =
             const player = this;
             const ticket = declassify(interact.recoverTicket());
             const notReturned = isNone(ticketsM[player]);
-            const rightTicket =
-              randomMatchesI(interact.informReturn, player, ticket);
+            const rightTicket = randomMatches(player, ticket);
             const when = notReturned && rightTicket;
-            interact.willReturn(when, notReturned, rightTicket);
             return { msg: ticket, when };
           }),
           ((ticket) => {

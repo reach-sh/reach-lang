@@ -58,22 +58,12 @@ const numOfPlayers = 5;
           console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
           return [ true, _ticket ];
         }),
-        informBuy: (async (...args) => {
-          console.log(`Player ${i}: informBuy: ${JSON.stringify(args)}`); }),
         buyerWas: (async (addr) => {
           const bought_n = bought || stdlib.addressEq(addr, accPlayer);
           if ( bought == false && bought_n == true ) {
             console.log(`Player ${i} bought a ticket`);
           }
           bought = bought_n;
-        }),
-        informReturn: (async (...args) => {
-          console.log(`Player ${i}: informReturn: ${JSON.stringify(args)}`); }),
-        willReturn: (async (when, nr, rt) => {
-          console.log(`Player ${i}: willReturn: ${JSON.stringify([when, nr, rt])}`);
-          if ( when ) {
-            console.log(`Player ${i} trying to return`);
-          }
         }),
         returnerWas: (async (addr, ticket) => {
           void(addr);
@@ -82,7 +72,6 @@ const numOfPlayers = 5;
           }
         }),
         recoverTicket: (async () => {
-          console.log(`Player ${i} recovering secret '${JSON.stringify(_ticket)}'`);
           return _ticket;
         }),
       });
