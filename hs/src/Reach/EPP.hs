@@ -278,6 +278,7 @@ be_m = \case
       ce_vdef v
       return $ DL_Var at v
   DL_Set at v a -> do
+    fg_defn $ v
     fg_use $ a
     return $ do
       ce_vuse v

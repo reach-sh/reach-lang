@@ -663,6 +663,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if (tys.length !== args.length) {
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
+
+      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND --- ARGS ${JSON.stringify(args)}`);
       const munged = args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
       const [ munged_svs, munged_msg ] = argsSplit(munged, evt_cnt);
 
