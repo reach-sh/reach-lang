@@ -360,7 +360,9 @@ be_c = \case
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     which <- be_which <$> ask
-    (more, s'l) <- captureMore $ be_s s
+    (more, s'l) <- captureMore $
+      local (\e -> e { be_interval = default_interval }) $
+        be_s s
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case more of

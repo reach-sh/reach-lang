@@ -4,15 +4,14 @@ REACH = ../../reach
 check: expected actual
 	diff -u $^
 
-actual: build/index.main.pl
+actual: build/index.main.pil
 	grep between $^ > $@
 
-build/index.main.pl: index.rsh
+build/index.main.pil: index.rsh
 	$(REACH) compile $^
 
 .PHONY: build
-# build: check # TODO: re-enable this
-build:
+build: check
 	$(REACH) compile index.rsh
 
 .PHONY: run
@@ -26,4 +25,4 @@ down:
 
 .PHONY: clean
 clean:
-	rm -f build/index.main.pl
+	rm -f build/index.main.pil
