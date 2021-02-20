@@ -35,6 +35,9 @@ vsep_with_blank l = vsep $ punctuate emptyDoc l
 jsMapVar :: DLMVar -> Doc
 jsMapVar mpv = pretty mpv
 
+jsMapVarCtc :: DLMVar -> Doc
+jsMapVarCtc mpv = jsMapVar mpv <> "_ctc"
+
 jsString :: String -> Doc
 jsString s = squotes $ pretty s
 
@@ -102,9 +105,13 @@ jsContract = \case
   T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
 
+jsProtect_ :: Doc -> Doc -> Doc -> Doc
+jsProtect_ ai how what =
+  jsApply "stdlib.protect" $ [how, what, ai]
+
 jsProtect :: Doc -> DLType -> Doc -> Doc
 jsProtect ai how what =
-  jsApply "stdlib.protect" $ [jsContract how, what, ai]
+  jsProtect_ ai (jsContract how) what
 
 jsAt :: SrcLoc -> Doc
 jsAt at = jsString $ unsafeRedactAbsStr $ show at
@@ -254,11 +261,13 @@ jsExpr ctxt = \case
       False ->
         jsArg what
   DLE_MapRef _ mpv fa ->
-    jsApply "stdlib.mapRef" [ jsMapVar mpv, jsArg fa ]
+    jsProtect_ "null" (jsMapVarCtc mpv) $ jsApply "stdlib.mapRef" [ jsMapVar mpv, jsArg fa ]
   DLE_MapSet _ mpv fa na ->
+    -- XXX something really bad is going to happen during the simulation of
+    -- this
     jsMapVar mpv <> brackets (jsArg fa) <+> "=" <+> jsArg na
   DLE_MapDel _ mpv fa ->
-    "delete" <+> jsMapVar mpv <> brackets (jsArg fa)
+    jsMapVar mpv <> brackets (jsArg fa) <+> "=" <+> "undefined"
 
 jsEmitSwitch :: (JSCtxt -> k -> Doc) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc
 jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
@@ -517,8 +526,9 @@ jsPart dli p (EPProg _ _ et) =
       case dli_ctimem of
         Nothing -> mempty
         Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
-    map_defn (mpv, DLMapInfo {}) =
-      "const" <+> jsMapVar mpv <+> "=" <+> "{};"
+    map_defn (mpv, DLMapInfo {..}) =
+      vsep [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
+           , "const" <+> jsMapVarCtc mpv <+> "=" <+> jsContract (maybeT dlmi_ty) <> ";" ]
     maps_defn = vsep $ map map_defn $ M.toList dli_maps
     bodyp' =
       vsep

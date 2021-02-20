@@ -1,7 +1,7 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const numOfPlayers = 10;
+const numOfPlayers = 5;
 
 (async () => {
   const stdlib = await loadStdlib();
@@ -21,13 +21,19 @@ const numOfPlayers = 10;
   await Promise.all([
     backend.Sponsor(ctcSponsor, {
       ...stdlib.hasRandom,
-      showOutcome: ((addr) =>
-        console.log(`Funder saw ${addr} won.`)),
-      showWinner: ((ticket) =>
-        console.log(`Funder saw ticket #${ticket} won.`)),
       getParams: (() => ({
         ticketPrice: stdlib.parseCurrency(5),
-        deadline: 15 })),
+        deadline: 50 })),
+      showOpen: (() =>
+        console.log(`Sponsor saw ticket sales open`)),
+      showReturning: ((howMany) =>
+        console.log(`Sponsor saw ${howMany} tickets sold`)),
+      showReturned: ((howManyReturned) =>
+        console.log(`Sponsor saw ${howManyReturned} tickets revealed`)),
+      showWinner: ((ticket) =>
+        console.log(`Sponsor saw ticket #${ticket} won.`)),
+      showOutcome: ((addr) =>
+        console.log(`Sponsor saw ${addr} won.`)),
     }),
   ].concat(
     await Promise.all(
@@ -45,23 +51,40 @@ const numOfPlayers = 10;
         showWinner: (async (ticket) =>
           void(ticket)),
         shouldBuy: (async (ticketPrice, ticketr) => {
-          if ( bought ) { return false; }
-          if ( _ticket === undefined ) {
+          if ( bought ) { return [ false, _ticket ]; }
+          if ( _ticket == undefined ) {
             _ticket = ticketr;
-            console.log(`Player ${i} buying a ticket for ${fmt(ticketPrice)}`);
           }
-          return true;
+          console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
+          return [ true, _ticket ];
         }),
+        informBuy: (async (...args) => {
+          console.log(`Player ${i}: informBuy: ${JSON.stringify(args)}`); }),
         buyerWas: (async (addr) => {
-          bought = bought || stdlib.addressEq(addr, accPlayer);
+          const bought_n = bought || stdlib.addressEq(addr, accPlayer);
+          if ( bought == false && bought_n == true ) {
+            console.log(`Player ${i} bought a ticket`);
+          }
+          bought = bought_n;
+        }),
+        informReturn: (async (...args) => {
+          console.log(`Player ${i}: informReturn: ${JSON.stringify(args)}`); }),
+        willReturn: (async (when, nr, rt) => {
+          console.log(`Player ${i}: willReturn: ${JSON.stringify([when, nr, rt])}`);
+          if ( when ) {
+            console.log(`Player ${i} trying to return`);
+          }
         }),
         returnerWas: (async (addr, ticket) => {
           void(addr);
           if ( stdlib.addressEq(addr, accPlayer) ) {
-            console.log(`Player ${i} bought ticket #${ticket}`);
+            console.log(`Player ${i} returned and revealed ticket #${ticket}`);
           }
         }),
-        recoverTicket: (async () => _ticket),
+        recoverTicket: (async () => {
+          console.log(`Player ${i} recovering secret '${JSON.stringify(_ticket)}'`);
+          return _ticket;
+        }),
       });
     })
     )));

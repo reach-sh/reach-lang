@@ -4,6 +4,7 @@ build:
 
 .PHONY: run
 run:
+	REACH_CONNECTOR_MODE=ETH ../../reach run
 
 .PHONY: down
 down:

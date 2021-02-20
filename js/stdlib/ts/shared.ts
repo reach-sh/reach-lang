@@ -243,8 +243,9 @@ export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
 
 export const mapRef = (m: any, f: any): any => {
   const v = m[f];
+  // console.log(`Reading map ${JSON.stringify(m)} field ${JSON.stringify(f)} => ${JSON.stringify(v)}`);
   if ( v === undefined ) {
-    return ['None', true];
+    return ['None', null];
   } else {
     return ['Some', v];
   }

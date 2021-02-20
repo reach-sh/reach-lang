@@ -102,7 +102,7 @@ export const BT_Digest: BackendTy<CBR_Digest> = {
   name: 'Digest',
   canonicalize: (val: unknown): CBR_Digest => {
     if (typeof val !== 'string') {
-      throw Error(`${val} is not a valid digest`);
+      throw Error(`${JSON.stringify(val)} is not a valid digest`);
     }
     return val;
   },
