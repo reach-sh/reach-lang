@@ -164,6 +164,8 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
 
 Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
 
+@jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
+
 @(hrule)
 @(mint-define! '("createAccount"))
 @js{
@@ -176,7 +178,9 @@ Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account
 @js{
   fundFromFaucet(account, balance) => Promise<void>}
 
-Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}. @jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
+Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
+
+@jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
 
 @(hrule)
 @(mint-define! '("connectAccount"))
@@ -349,11 +353,16 @@ Returns a new array identical to @jsin{arr}, except that index @jsin{idx} is @js
 @(mint-define! '("bigNumberify") '("isBigNumber"))
 @js{
  bigNumberify(x) => UInt
- isBigNumber(x) => bool}
+ isBigNumber(x) => bool
+ bigNumberToNumber(x) => number}
 
 @deftech{bigNumberify} converts a JavaScript number to a BigNumber,
 the JavaScript representation of Reach's @reachin{UInt}.
+
 @deftech{isBigNumber} checks if its input is a BigNumber.
+
+@deftech{bigNumberToNumber} transparently applies @deftech{bigNumberify} to its
+argument and returns a JavaScript number.
 
 @(hrule)
 @(mint-define! '("isHex") '("hexToBigNumber") '("stringToHex") '("bigNumberToHex") '("uintToBytes") '("bytesEq") '("digestEq") '("addressEq"))
@@ -453,6 +462,8 @@ BigNumber is used to represet values in WEI.
 
 Quantities of a @tech{network token} should always be passed into Reach
 in the token's @tech{atomic unit}.
+
+Note that @jsin{bigNumberify} is transparently applied to @jsin{formatCurrency}'s first argument.
 
 @subsection[#:tag "ref-backend-js-ask.mjs"]{@tt{ask.mjs}}
 
