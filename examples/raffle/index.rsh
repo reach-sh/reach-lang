@@ -6,9 +6,18 @@ const Common = {
   showOutcome: Fun([Address], Null),
 };
 
+const makeDeadline = (deadline) => {
+  const endTime = lastConsensusTime() + deadline;
+  const timeRemaining = () =>
+    endTime - lastConsensusTime();
+  const keepGoing = () =>
+    endTime > lastConsensusTime();
+  return [ timeRemaining, keepGoing ];
+};
+
 export const main =
   Reach.App(
-    { /*connectors: [ ETH ]*/ },
+    {},
     [['Sponsor',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,
@@ -19,10 +28,10 @@ export const main =
       }],
      ['class', 'Player',
       { ...Common,
-        shouldBuy: Fun([UInt, UInt], Tuple(Bool, UInt)),
+        shouldBuy: Fun([UInt], Bool),
         buyerWas: Fun([Address], Null),
         returnerWas: Fun([Address, UInt], Null),
-        recoverTicket: Fun([], UInt) } ],
+      } ],
     ],
     (Sponsor, Player) => {
       Sponsor.only(() => {
@@ -33,26 +42,23 @@ export const main =
       });
       Sponsor.publish(ticketPrice, deadline, sponsortc);
 
-      const endTime_buy = lastConsensusTime() + deadline;
-      const endTime_ret = endTime_buy + deadline;
-      const [ isTime, BUYING, RETURNING ] = makeEnum(2);
-      const endTime = [ endTime_buy, endTime_ret ];
-      const timeRemaining = (which) =>
-        (endTime[which] - lastConsensusTime());
-      const keepGoing = (which) =>
-        (endTime[which] > lastConsensusTime());
+      const [ buyTimeout, keepBuying ] =
+        makeDeadline(deadline);
+      const [ returnTimeout, keepReturning ] =
+        makeDeadline(2 * deadline);
 
-      Sponsor.only(() => { interact.showOpen(); });
+      Sponsor.only(() => {
+        interact.showOpen(); });
+      Player.only(() => {
+        const _ticket = interact.random(); });
 
       const randomsM = new Map(Digest);
       const [ howMany ] =
         parallel_reduce([ 0 ])
         .invariant(balance() == ticketPrice * howMany)
-        .while( keepGoing(BUYING) )
+        .while( keepBuying() )
         .case( Player, (() => {
-            const _random = interact.random();
-            const [ _when, _ticket ] = interact.shouldBuy(ticketPrice, _random);
-            const when = declassify(_when);
+            const when = declassify(interact.shouldBuy(ticketPrice));
             assume(implies(when, isNone(randomsM[this])));
             const msg = declassify(digest(_ticket));
             return { msg, when };
@@ -67,7 +73,7 @@ export const main =
           })
         )
         // XXX Add a short-hand for timeouts like this
-        .timeout(timeRemaining(BUYING), () => {
+        .timeout(buyTimeout(), () => {
           race(Sponsor, Player).publish();
           return [ howMany ]; });
 
@@ -85,13 +91,12 @@ export const main =
       const [ hwinner, howManyReturned ] =
         parallel_reduce([ 0, 0 ])
         .invariant(balance() == howMany * ticketPrice)
-        .while( keepGoing(RETURNING) && howManyReturned < howMany )
+        .while( keepReturning() && howManyReturned < howMany )
         .case( Player, (() => {
             const player = this;
-            const ticket = declassify(interact.recoverTicket());
-            const notReturned = isNone(ticketsM[player]);
-            const rightTicket = randomMatches(player, ticket);
-            const when = notReturned && rightTicket;
+            const ticket = declassify(_ticket);
+            const when = isNone(ticketsM[player])
+              && randomMatches(player, ticket);
             return { msg: ticket, when };
           }),
           ((ticket) => {
@@ -105,7 +110,7 @@ export const main =
                      howManyReturned + 1 ];
           })
         )
-        .timeout(timeRemaining(RETURNING), () => {
+        .timeout(returnTimeout(), () => {
           race(Sponsor, Player).publish();
           return [ hwinner, howManyReturned ]; });
       commit();

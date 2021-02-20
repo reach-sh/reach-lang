@@ -40,7 +40,6 @@ const numOfPlayers = 5;
     accPlayer_arr.map(async (accPlayer, i) => {
       const before = await getBalance(accPlayer);
       const ctcPlayer = accPlayer.attach(backend, ctcInfo);
-      let _ticket = undefined;
       let bought = false;
       return backend.Player(ctcPlayer, {
         ...stdlib.hasRandom,
@@ -51,12 +50,9 @@ const numOfPlayers = 5;
         showWinner: (async (ticket) =>
           void(ticket)),
         shouldBuy: (async (ticketPrice, ticketr) => {
-          if ( bought ) { return [ false, _ticket ]; }
-          if ( _ticket == undefined ) {
-            _ticket = ticketr;
-          }
+          if ( bought ) { return false; }
           console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
-          return [ true, _ticket ];
+          return true;
         }),
         buyerWas: (async (addr) => {
           const bought_n = bought || stdlib.addressEq(addr, accPlayer);
@@ -70,9 +66,6 @@ const numOfPlayers = 5;
           if ( stdlib.addressEq(addr, accPlayer) ) {
             console.log(`Player ${i} returned and revealed ticket #${ticket}`);
           }
-        }),
-        recoverTicket: (async () => {
-          return _ticket;
         }),
       });
     })
