@@ -855,8 +855,19 @@ ct = \case
             where
               ck = do
                 Env {..} <- ask
+                -- XXX incorporate this logic in svs via EPP
                 let timev = fromMaybe (impossible "no timev") emTimev
-                cstate (HM_Set which) $ map snd $ dvdeletep timev svs
+                let delete_timev = \case
+                      [] -> []
+                      (v, a) : more ->
+                        case v == timev || a == DLA_Var timev of
+                          True -> more'
+                          False -> a : more'
+                        where
+                          more' = delete_timev more
+                let svs' = delete_timev svs
+                -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
+                cstate (HM_Set which) svs'
                 code "arg" [texty argNextSt]
                 eq_or_fail
 
