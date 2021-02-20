@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/rpc-client",
   "description": "JSON-RPC client to your DApp + the Reach standard library",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./index.mjs",
   "repository": {
     "type": "git",
