@@ -5,3 +5,10 @@ Verifying for generic connector
   Verifying with mode = VM_Dishonest (RolePart "Player")
   Verifying with mode = VM_Dishonest (RolePart "Sponsor")
 Checked 76 theorems; No failures!
+XXX algo mapref
+XXX algo mapref
+XXX algo mapref
+XXX algo mapset
+XXX algo mapdel
+XXX algo mapref
+XXX algo mapset

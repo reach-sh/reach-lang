@@ -24,18 +24,19 @@ contract Stdlib {
 contract ReachContract is Stdlib {
   uint256 current_state;
   
+  
   event e0();
   struct _F0 {
-    uint256 v0;
+    uint256 v2;
      }
   constructor() payable {
     emit e0();
     _F0 memory _f;
-    _f.v0 = uint256(block.number);
+    _f.v2 = uint256(block.number);
     
     
     a0postsvs memory nsvs;
-    nsvs.v0 = _f.v0;
+    nsvs.v2 = _f.v2;
     current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
      }
@@ -50,24 +51,24 @@ contract ReachContract is Stdlib {
   
   
   struct a2postsvs {
-    uint256 v4;
-    address payable v3;
-    uint256 v22;
+    address payable v5;
+    uint256 v6;
+    uint256 v19;
      }
   
   struct a1postsvs {
+    address payable v5;
+    uint256 v6;
     uint256 v11;
-    uint256 v4;
-    address payable v3;
      }
   
   struct a0postsvs {
-    uint256 v0;
+    uint256 v2;
      }
   
   
   struct a1msg {
-    uint256 v4;
+    uint256 v6;
      }
   struct a1 {
     a0postsvs svs;
@@ -80,16 +81,14 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
-    require(true);
     
     require((msg.value == uint256(0)));
-    
-    
+    require(true);
     emit e1(_a);
     a1postsvs memory nsvs;
+    nsvs.v5 = payable(msg.sender);
+    nsvs.v6 = _a.msg.v6;
     nsvs.v11 = uint256(block.number);
-    nsvs.v4 = _a.msg.v4;
-    nsvs.v3 = payable(msg.sender);
     current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
     
      }
@@ -105,23 +104,21 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
+    
+    require((msg.value == _a.svs.v6));
     require(true);
-    
-    require((msg.value == _a.svs.v4));
-    
-    
     emit e2(_a);
     a2postsvs memory nsvs;
-    nsvs.v4 = _a.svs.v4;
-    nsvs.v3 = _a.svs.v3;
-    nsvs.v22 = uint256(block.number);
+    nsvs.v5 = _a.svs.v5;
+    nsvs.v6 = _a.svs.v6;
+    nsvs.v19 = uint256(block.number);
     current_state = uint256(keccak256(abi.encode(uint256(2), nsvs)));
     
      }
   
   
   struct a3msg {
-    uint8[128] v26;
+    uint8[128] v23;
      }
   struct a3 {
     a2postsvs svs;
@@ -135,20 +132,10 @@ contract ReachContract is Stdlib {
     
     require(true && true);
     
-    require((_a.svs.v3 == payable(msg.sender)));
-    
     require((msg.value == uint256(0)));
     
-    
-    
-    
-    
-    _a.svs.v3.transfer(_a.svs.v4);
-    
-    
-    
-    
-    
+    require((_a.svs.v5 == payable(msg.sender)));
+    _a.svs.v5.transfer(_a.svs.v6);
     emit e3(_a);
     current_state = 0x0;
     selfdestruct(payable(msg.sender));
