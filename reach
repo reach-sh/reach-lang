@@ -538,7 +538,7 @@ services:
       - ALGO_INDEXER_SERVER=http://host.docker.internal
       - ALGO_INDEXER_PORT=8980
     extra_hosts:
-      'host.docker.internal:172.17.0.1'
+      - 'host.docker.internal:172.17.0.1'
   ${SERVICE}-ALGO-test-dockerized-algod:
     <<: *app-base
     depends_on:
