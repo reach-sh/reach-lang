@@ -475,11 +475,10 @@ displaySexpAsJs nested s =
 -- assigned to a variable. So, choose the second variable inserted
 -- into list, if it exists (This will be the user named variable).
 -- If no user assigned var, display the name of the tmp var.
--- If association list is empty, it is an "unbound" var like an interact field.
+-- If the list is empty, it is an "unbound" var like an interact field.
 getBindingOrigin :: String -> M.Map String [DLVar] -> String
 getBindingOrigin v v2dv =
-  let possibleDvs = maybe [] id (M.lookup v v2dv) in
-  case reverse possibleDvs of
+  case reverse $ maybe [] id $ M.lookup v v2dv of
     (_:val:_) -> show val
     (val:_) -> show val
     [] -> v

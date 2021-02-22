@@ -794,18 +794,18 @@ binaryToPrim :: JSBinOp -> App SLVal
 binaryToPrim = \case
   JSBinOpAnd _ -> impossible "and"
   JSBinOpDivide a -> prim a DIV
-  JSBinOpEq a -> fun a "polyEq"
+  JSBinOpEq a -> fun a "polyEq" "=="
   JSBinOpGe a -> prim a PGE
   JSBinOpGt a -> prim a PGT
   JSBinOpLe a -> prim a PLE
   JSBinOpLt a -> prim a PLT
   JSBinOpMinus a -> prim a SUB
   JSBinOpMod a -> prim a MOD
-  JSBinOpNeq a -> fun a "polyNeq"
+  JSBinOpNeq a -> fun a "polyNeq" "!="
   JSBinOpOr _ -> impossible "or"
   JSBinOpPlus a -> prim a ADD
-  JSBinOpStrictEq a -> fun a "polyEq"
-  JSBinOpStrictNeq a -> fun a "polyNeq"
+  JSBinOpStrictEq a -> fun a "polyEq" "==="
+  JSBinOpStrictNeq a -> fun a "polyNeq" "!=="
   JSBinOpTimes a -> prim a MUL
   JSBinOpLsh a -> prim a LSH
   JSBinOpRsh a -> prim a RSH
@@ -814,18 +814,18 @@ binaryToPrim = \case
   JSBinOpBitXor a -> prim a BXOR
   j -> expect_ $ Err_Parse_IllegalBinOp j
   where
-    fun a s = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId s)
+    fun a s ctxt = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId ctxt s)
     prim _a p = return $ SLV_Prim $ SLPrim_op p
 
 unaryToPrim :: JSUnaryOp -> App SLVal
 unaryToPrim = \case
-  JSUnaryOpMinus a -> fun a "minus"
-  JSUnaryOpPlus a -> fun a "plus"
-  JSUnaryOpNot a -> fun a "not"
-  JSUnaryOpTypeof a -> fun a "typeOf"
+  JSUnaryOpMinus a -> fun a "minus" "-"
+  JSUnaryOpPlus a -> fun a "plus" "+"
+  JSUnaryOpNot a -> fun a "not" "!"
+  JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
   j -> expect_ $ Err_Parse_IllegalUnaOp j
   where
-    fun a s = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId s)
+    fun a s ctxt = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId ctxt s)
 
 infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
@@ -2154,28 +2154,37 @@ evalPropertyPair fenv = \case
     --- FIXME support these
     expect_ $ Err_Obj_IllegalMethodDefinition p
 
-evalId_ :: SLVar -> App SLSSVal
-evalId_ x = do
+evalId_ :: String -> SLVar -> App SLSSVal
+evalId_ lab x = do
   sco <- e_sco <$> ask
+  let c = ("consensus environment", return $ sco_cenv sco)
+  let s = ("step environment", return $ sco_cenv sco)
   mwho <- e_who <$> ask
   let l = case mwho of
-        Just who -> sco_lookup_penv who
+        Just who ->
+          ( (show who <> "'s environment")
+          , sco_lookup_penv who
+          )
         Nothing -> impossible $ "no ctxt_only in local mode"
   m <- readSt st_mode
-  let env = case m of
+  let (elab, env) = case m of
+        SLM_Module -> s
+        SLM_Step -> s
         SLM_LocalStep -> l
         SLM_LocalPure -> l
-        _ -> return $ sco_cenv sco
-  infectWithId_sss x <$> (env_lookup (LC_RefFrom "id reference") x =<< env)
+        SLM_ConsensusStep -> c
+        SLM_ConsensusPure -> c
+  let _lab' = lab <> " in " <> elab
+  infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
 
-evalId :: SLVar -> App SLSVal
-evalId x = sss_sls <$> evalId_ x
+evalId :: String -> SLVar -> App SLSVal
+evalId lab x = sss_sls <$> evalId_ lab x
 
 evalExpr :: JSExpression -> App SLSVal
 evalExpr e = case e of
   JSIdentifier a x ->
     locAtf (srcloc_jsa "id ref" a) $
-      evalId x
+      evalId "expression" x
   JSDecimal a ns ->
     case splitOn "." ns of
       [iDigits, fDigits] ->
@@ -2654,7 +2663,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               captureLifts $ do
                 let repeat_dv = M.lookup who pdvs
                 isClass <- is_class who
-                msg_das <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId v)) msg
+                msg_das <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
                 amt_da <- ctepee ST_UInt amt_e
                 when_da <- ctepee ST_Bool when_e
                 return (repeat_dv, isClass, msg_das, amt_da, when_da)
@@ -2682,7 +2691,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               case vas of
                 Nothing -> return $ env
                 Just whov ->
-                  evalId_ whov >>= \case
+                  evalId_ "publish who binding" whov >>= \case
                     (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
                       return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
@@ -3273,7 +3282,7 @@ evalStmt = \case
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
       let de_v = jse_expect_id at' de
-      (de_lvl, de_val) <- evalId de_v
+      (de_lvl, de_val) <- evalId "switch" de_v
       (de_ty, _) <- typeOf de_val
       varm <- case de_ty of
         T_Data m -> return $ m
