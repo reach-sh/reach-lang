@@ -1,8 +1,11 @@
+.DEFAULT_GOAL := build
+
 ROOT=..
 include $(ROOT)/js/JS_IMAGES
 
 # faster build for local tests; ignores react-runner
 .PHONY: b
+b:
 	(cd js-deps && $(MAKE) build)
 	(cd stdlib && $(MAKE) build)
 	(cd runner && $(MAKE) build)
