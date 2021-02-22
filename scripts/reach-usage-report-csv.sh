@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Requires curl, awscli, gnuplot, requests (pip3 lib) and jq
-# usage: ./reach-usage-report-csv.sh
+# usage: ./reach-usage-report-csv.sh [--convert-ip]
 
 HERE=$(dirname "$(realpath "$0")")
+GEOLOCATIONS="$1"
 REPORT_FILE='report.csv'
 USERS_FILE='user-report.csv'
 LOCATION_FILE='raw_location.csv'
@@ -32,9 +33,12 @@ echo "$UsageReport" | jq -r '
     )
   | flatten
   | map(join(",")) | join("\n")' >> $LOCATION_FILE
-echo "Converting location information..."
-python3 convert_location.py "$LOCATION_FILE"
-echo "Wrote location report to $LOCATION_FILE"
+
+if [ "x${GEOLOCATIONS}" = "x--convert-ip" ] ; then
+    echo "Converting location information..."
+    python3 convert_location.py "$LOCATION_FILE"
+    echo "Wrote location report to $LOCATION_FILE"
+fi
 
 gnuplot -e "filename='$HISTOGRAM_FILE'" -e "datafile='$USERS_FILE'" "gnuplot.txt"
 echo "Generated $HISTOGRAM_FILE"
