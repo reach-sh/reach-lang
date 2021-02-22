@@ -68,6 +68,7 @@ jobs:
       - run:
           name: dan is losing his mind
           command: |
+            git checkout -- js/runner/package.json
             git diff --exit-code HEAD -- js/
             test -f js/runner/package.json
       - run:
