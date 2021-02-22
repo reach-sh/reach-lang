@@ -5,28 +5,6 @@ export const _version = '0.1.2';
 
 export async function Alice(ctc, interact) {
   const stdlib = ctc.stdlib;
-<<<<<<< HEAD
-=======
-  
-  const v32 = await ctc.creationTime();
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
   
   const v32 = await ctc.creationTime();
   const v31 = stdlib.protect(stdlib.T_UInt, interact.wager, null);
@@ -79,11 +57,7 @@ export async function Alice(ctc, interact) {
   const v40 = stdlib.add(stdlib.checkedBigNumberify('./index.rsh:compileDApp', stdlib.UInt_max, 0), v37);
   const txn2 = await (ctc.recv('Alice', 2, 0, [], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
   if (txn2.didTimeout) {
-<<<<<<< HEAD
     const txn3 = await (ctc.sendrecv('Alice', 3, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 3), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v40, v41], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn3) => {
-=======
-    const txn3 = await (ctc.sendrecv('Alice', 10, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 3), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v40, v41], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn3) => {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
       const sim_r = { txns: [] };
       sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 1), v35, v36, v40, v41]);
       sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 1), v35, v36, v40]);
@@ -92,27 +66,17 @@ export async function Alice(ctc, interact) {
       const v190 = txn3.time;
       const v184 = txn3.from;
       
-<<<<<<< HEAD
       const v186 = stdlib.eq(v185, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
       stdlib.assert(v186, {
-=======
-      const v195 = stdlib.eq(v194, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-      stdlib.assert(v195, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
         at: 'reach standard library:66:7:dot',
-        fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+        fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
         msg: 'pay amount correct',
         who: 'Alice'
          });
-<<<<<<< HEAD
       const v187 = stdlib.addressEq(v35, v184);
       stdlib.assert(v187, {
-=======
-      const v196 = stdlib.addressEq(v35, v193);
-      stdlib.assert(v196, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
         at: 'reach standard library:66:7:dot',
-        fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+        fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
         msg: 'sender correct',
         who: 'Alice'
          });
@@ -128,33 +92,20 @@ export async function Alice(ctc, interact) {
       return sim_r;
        })));
     const [] = txn3.data;
-<<<<<<< HEAD
     const v185 = txn3.value;
     const v190 = txn3.time;
     const v184 = txn3.from;
     const v186 = stdlib.eq(v185, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
     stdlib.assert(v186, {
-=======
-    const v194 = txn3.value;
-    const v199 = txn3.time;
-    const v193 = txn3.from;
-    const v195 = stdlib.eq(v194, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-    stdlib.assert(v195, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
       at: 'reach standard library:66:7:dot',
-      fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'pay amount correct',
       who: 'Alice'
        });
-<<<<<<< HEAD
     const v187 = stdlib.addressEq(v35, v184);
     stdlib.assert(v187, {
-=======
-    const v196 = stdlib.addressEq(v35, v193);
-    stdlib.assert(v196, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
       at: 'reach standard library:66:7:dot',
-      fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'sender correct',
       who: 'Alice'
        });
@@ -162,7 +113,7 @@ export async function Alice(ctc, interact) {
     ;
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
-      fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'informTimeout',
       who: 'Alice'
        });
@@ -202,13 +153,9 @@ export async function Alice(ctc, interact) {
         msg: 'getHand',
         who: 'Alice'
          });
-<<<<<<< HEAD
       const v65 = stdlib.protect(stdlib.T_UInt, await interact.random(), {
-=======
-      const v66 = stdlib.protect(stdlib.T_UInt, await interact.random(), {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
         at: 'reach standard library:58:31:application',
-        fs: ['at ./index.rsh:60:52:application call to [unknown function] (defined at: reach standard library:57:8:function exp)', 'at ./index.rsh:58:15:application call to [unknown function] (defined at: ./index.rsh:58:19:function exp)'],
+        fs: ['at ./index.rsh:60:52:application call to "makeCommitment" (defined at: reach standard library:57:8:function exp)', 'at ./index.rsh:58:15:application call to [unknown function] (defined at: ./index.rsh:58:19:function exp)'],
         msg: 'random',
         who: 'Alice'
          });
@@ -246,33 +193,20 @@ export async function Alice(ctc, interact) {
       if (txn3.didTimeout) {
         const txn4 = await (ctc.recv('Alice', 7, 0, [], false, false));
         const [] = txn4.data;
-<<<<<<< HEAD
         const v149 = txn4.value;
         const v154 = txn4.time;
         const v148 = txn4.from;
         const v150 = stdlib.eq(v149, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
         stdlib.assert(v150, {
-=======
-        const v154 = txn4.value;
-        const v159 = txn4.time;
-        const v153 = txn4.from;
-        const v155 = stdlib.eq(v154, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-        stdlib.assert(v155, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
           at: 'reach standard library:66:7:dot',
-          fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'pay amount correct',
           who: 'Alice'
            });
-<<<<<<< HEAD
         const v151 = stdlib.addressEq(v44, v148);
         stdlib.assert(v151, {
-=======
-        const v156 = stdlib.addressEq(v45, v153);
-        stdlib.assert(v156, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
           at: 'reach standard library:66:7:dot',
-          fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'sender correct',
           who: 'Alice'
            });
@@ -280,7 +214,7 @@ export async function Alice(ctc, interact) {
         ;
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
-          fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'informTimeout',
           who: 'Alice'
            });
@@ -308,43 +242,26 @@ export async function Alice(ctc, interact) {
         const v74 = stdlib.add(v203, v70);
         const txn4 = await (ctc.recv('Alice', 8, 1, [stdlib.T_UInt], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
         if (txn4.didTimeout) {
-<<<<<<< HEAD
           const txn5 = await (ctc.sendrecv('Alice', 9, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 5), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v44, v69, v74, v75], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn5) => {
             const sim_r = { txns: [] };
             sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 6), v35, v36, v44, v69, v74, v75]);
             sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 6), v35, v36, v44, v69, v74]);
-=======
-          const txn5 = await (ctc.sendrecv('Alice', 8, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 5), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v45, v70, v75, v76], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn5) => {
-            const sim_r = { txns: [] };
-            sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), v35, v36, v45, v70, v75, v76]);
-            sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), v35, v36, v45, v70, v75]);
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             const [] = txn5.data;
             const v129 = txn5.value;
             const v134 = txn5.time;
             const v128 = txn5.from;
             
-<<<<<<< HEAD
             const v130 = stdlib.eq(v129, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
             stdlib.assert(v130, {
-=======
-            const v133 = stdlib.eq(v132, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-            stdlib.assert(v133, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'pay amount correct',
               who: 'Alice'
                });
-<<<<<<< HEAD
             const v131 = stdlib.addressEq(v35, v128);
             stdlib.assert(v131, {
-=======
-            const v134 = stdlib.addressEq(v35, v131);
-            stdlib.assert(v134, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'sender correct',
               who: 'Alice'
                });
@@ -360,33 +277,20 @@ export async function Alice(ctc, interact) {
             return sim_r;
              })));
           const [] = txn5.data;
-<<<<<<< HEAD
           const v129 = txn5.value;
           const v134 = txn5.time;
           const v128 = txn5.from;
           const v130 = stdlib.eq(v129, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
           stdlib.assert(v130, {
-=======
-          const v132 = txn5.value;
-          const v137 = txn5.time;
-          const v131 = txn5.from;
-          const v133 = stdlib.eq(v132, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-          stdlib.assert(v133, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'pay amount correct',
             who: 'Alice'
              });
-<<<<<<< HEAD
           const v131 = stdlib.addressEq(v35, v128);
           stdlib.assert(v131, {
-=======
-          const v134 = stdlib.addressEq(v35, v131);
-          stdlib.assert(v134, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'sender correct',
             who: 'Alice'
              });
@@ -394,7 +298,7 @@ export async function Alice(ctc, interact) {
           ;
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
-            fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'informTimeout',
             who: 'Alice'
              });
@@ -443,20 +347,12 @@ export async function Alice(ctc, interact) {
               msg: 'sender correct',
               who: 'Alice'
                });
-<<<<<<< HEAD
             const v96 = stdlib.add(v85, v92);
             const v99 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v90, v91]);
             const v100 = stdlib.eq(v69, v99);
             stdlib.assert(v100, {
-=======
-            
-            const v97 = stdlib.add(v86, v93);
-            const v100 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v91, v92]);
-            const v101 = stdlib.eq(v70, v100);
-            stdlib.assert(v101, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:63:17:application',
-              fs: ['at ./index.rsh:77:24:application call to [unknown function] (defined at: reach standard library:62:8:function exp)'],
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment" (defined at: reach standard library:62:8:function exp)'],
               msg: null,
               who: 'Alice'
                });
@@ -499,33 +395,20 @@ export async function Alice(ctc, interact) {
           if (txn5.didTimeout) {
             const txn6 = await (ctc.recv('Alice', 11, 0, [], false, false));
             const [] = txn6.data;
-<<<<<<< HEAD
             const v109 = txn6.value;
             const v114 = txn6.time;
             const v108 = txn6.from;
             const v110 = stdlib.eq(v109, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
             stdlib.assert(v110, {
-=======
-            const v110 = txn6.value;
-            const v115 = txn6.time;
-            const v109 = txn6.from;
-            const v111 = stdlib.eq(v110, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-            stdlib.assert(v111, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'pay amount correct',
               who: 'Alice'
                });
-<<<<<<< HEAD
             const v111 = stdlib.addressEq(v44, v108);
             stdlib.assert(v111, {
-=======
-            const v112 = stdlib.addressEq(v45, v109);
-            stdlib.assert(v112, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'sender correct',
               who: 'Alice'
                });
@@ -533,7 +416,7 @@ export async function Alice(ctc, interact) {
             ;
             stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
-              fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'informTimeout',
               who: 'Alice'
                });
@@ -558,20 +441,12 @@ export async function Alice(ctc, interact) {
               msg: 'sender correct',
               who: 'Alice'
                });
-<<<<<<< HEAD
             const v96 = stdlib.add(v85, v92);
             const v99 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v90, v91]);
             const v100 = stdlib.eq(v69, v99);
             stdlib.assert(v100, {
-=======
-            
-            const v97 = stdlib.add(v86, v93);
-            const v100 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v91, v92]);
-            const v101 = stdlib.eq(v70, v100);
-            stdlib.assert(v101, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:63:17:application',
-              fs: ['at ./index.rsh:77:24:application call to [unknown function] (defined at: reach standard library:62:8:function exp)'],
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment" (defined at: reach standard library:62:8:function exp)'],
               msg: null,
               who: 'Alice'
                });
@@ -608,28 +483,6 @@ export async function Alice(ctc, interact) {
    }
 export async function Bob(ctc, interact) {
   const stdlib = ctc.stdlib;
-<<<<<<< HEAD
-=======
-  
-  const v32 = await ctc.creationTime();
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
   
   const v32 = await ctc.creationTime();
   const txn1 = await (ctc.recv('Bob', 1, 1, [stdlib.T_UInt], false, false));
@@ -710,33 +563,20 @@ export async function Bob(ctc, interact) {
   if (txn2.didTimeout) {
     const txn3 = await (ctc.recv('Bob', 3, 0, [], false, false));
     const [] = txn3.data;
-<<<<<<< HEAD
     const v185 = txn3.value;
     const v190 = txn3.time;
     const v184 = txn3.from;
     const v186 = stdlib.eq(v185, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
     stdlib.assert(v186, {
-=======
-    const v194 = txn3.value;
-    const v199 = txn3.time;
-    const v193 = txn3.from;
-    const v195 = stdlib.eq(v194, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-    stdlib.assert(v195, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
       at: 'reach standard library:66:7:dot',
-      fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'pay amount correct',
       who: 'Bob'
        });
-<<<<<<< HEAD
     const v187 = stdlib.addressEq(v35, v184);
     stdlib.assert(v187, {
-=======
-    const v196 = stdlib.addressEq(v35, v193);
-    stdlib.assert(v196, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
       at: 'reach standard library:66:7:dot',
-      fs: ['at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'sender correct',
       who: 'Bob'
        });
@@ -744,7 +584,7 @@ export async function Bob(ctc, interact) {
     ;
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
-      fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+      fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
       msg: 'informTimeout',
       who: 'Bob'
        });
@@ -780,43 +620,26 @@ export async function Bob(ctc, interact) {
       return v60; })()) {
       const txn3 = await (ctc.recv('Bob', 6, 1, [stdlib.T_Digest], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
       if (txn3.didTimeout) {
-<<<<<<< HEAD
         const txn4 = await (ctc.sendrecv('Bob', 7, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v44, v203, v204], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn4) => {
           const sim_r = { txns: [] };
           sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), v35, v36, v44, v203, v204]);
           sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), v35, v36, v44, v203]);
-=======
-        const txn4 = await (ctc.sendrecv('Bob', 9, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 4), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v45, v214, v215], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn4) => {
-          const sim_r = { txns: [] };
-          sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 3), v35, v36, v45, v214, v215]);
-          sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 3), v35, v36, v45, v214]);
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
           const [] = txn4.data;
           const v149 = txn4.value;
           const v154 = txn4.time;
           const v148 = txn4.from;
           
-<<<<<<< HEAD
           const v150 = stdlib.eq(v149, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
           stdlib.assert(v150, {
-=======
-          const v155 = stdlib.eq(v154, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-          stdlib.assert(v155, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'pay amount correct',
             who: 'Bob'
              });
-<<<<<<< HEAD
           const v151 = stdlib.addressEq(v44, v148);
           stdlib.assert(v151, {
-=======
-          const v156 = stdlib.addressEq(v45, v153);
-          stdlib.assert(v156, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'sender correct',
             who: 'Bob'
              });
@@ -832,33 +655,20 @@ export async function Bob(ctc, interact) {
           return sim_r;
            })));
         const [] = txn4.data;
-<<<<<<< HEAD
         const v149 = txn4.value;
         const v154 = txn4.time;
         const v148 = txn4.from;
         const v150 = stdlib.eq(v149, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
         stdlib.assert(v150, {
-=======
-        const v154 = txn4.value;
-        const v159 = txn4.time;
-        const v153 = txn4.from;
-        const v155 = stdlib.eq(v154, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-        stdlib.assert(v155, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
           at: 'reach standard library:66:7:dot',
-          fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'pay amount correct',
           who: 'Bob'
            });
-<<<<<<< HEAD
         const v151 = stdlib.addressEq(v44, v148);
         stdlib.assert(v151, {
-=======
-        const v156 = stdlib.addressEq(v45, v153);
-        stdlib.assert(v156, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
           at: 'reach standard library:66:7:dot',
-          fs: ['at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'sender correct',
           who: 'Bob'
            });
@@ -866,7 +676,7 @@ export async function Bob(ctc, interact) {
         ;
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
-          fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+          fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
           msg: 'informTimeout',
           who: 'Bob'
            });
@@ -931,33 +741,20 @@ export async function Bob(ctc, interact) {
         if (txn4.didTimeout) {
           const txn5 = await (ctc.recv('Bob', 9, 0, [], false, false));
           const [] = txn5.data;
-<<<<<<< HEAD
           const v129 = txn5.value;
           const v134 = txn5.time;
           const v128 = txn5.from;
           const v130 = stdlib.eq(v129, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
           stdlib.assert(v130, {
-=======
-          const v132 = txn5.value;
-          const v137 = txn5.time;
-          const v131 = txn5.from;
-          const v133 = stdlib.eq(v132, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-          stdlib.assert(v133, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'pay amount correct',
             who: 'Bob'
              });
-<<<<<<< HEAD
           const v131 = stdlib.addressEq(v35, v128);
           stdlib.assert(v131, {
-=======
-          const v134 = stdlib.addressEq(v35, v131);
-          stdlib.assert(v134, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
             at: 'reach standard library:66:7:dot',
-            fs: ['at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'sender correct',
             who: 'Bob'
              });
@@ -965,7 +762,7 @@ export async function Bob(ctc, interact) {
           ;
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
-            fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+            fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
             msg: 'informTimeout',
             who: 'Bob'
              });
@@ -993,43 +790,26 @@ export async function Bob(ctc, interact) {
           const v85 = stdlib.add(v74, v81);
           const txn5 = await (ctc.recv('Bob', 10, 2, [stdlib.T_UInt, stdlib.T_UInt], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
           if (txn5.didTimeout) {
-<<<<<<< HEAD
             const txn6 = await (ctc.sendrecv('Bob', 11, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 6), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v44, v69, v80, v85, v86], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn6) => {
               const sim_r = { txns: [] };
               sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 8), v35, v36, v44, v69, v80, v85, v86]);
               sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 8), v35, v36, v44, v69, v80, v85]);
-=======
-            const txn6 = await (ctc.sendrecv('Bob', 7, 0, stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 6), [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt], [v35, v36, v45, v70, v81, v86, v87], stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), [], true, true, false, ((txn6) => {
-              const sim_r = { txns: [] };
-              sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 5), v35, v36, v45, v70, v81, v86, v87]);
-              sim_r.prevSt_noPrevTime = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt]), [stdlib.checkedBigNumberify('reach standard library:66:7:dot', stdlib.UInt_max, 5), v35, v36, v45, v70, v81, v86]);
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               const [] = txn6.data;
               const v109 = txn6.value;
               const v114 = txn6.time;
               const v108 = txn6.from;
               
-<<<<<<< HEAD
               const v110 = stdlib.eq(v109, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
               stdlib.assert(v110, {
-=======
-              const v111 = stdlib.eq(v110, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-              stdlib.assert(v111, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
                 at: 'reach standard library:66:7:dot',
-                fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+                fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
                 msg: 'pay amount correct',
                 who: 'Bob'
                  });
-<<<<<<< HEAD
               const v111 = stdlib.addressEq(v44, v108);
               stdlib.assert(v111, {
-=======
-              const v112 = stdlib.addressEq(v45, v109);
-              stdlib.assert(v112, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
                 at: 'reach standard library:66:7:dot',
-                fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+                fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
                 msg: 'sender correct',
                 who: 'Bob'
                  });
@@ -1045,33 +825,20 @@ export async function Bob(ctc, interact) {
               return sim_r;
                })));
             const [] = txn6.data;
-<<<<<<< HEAD
             const v109 = txn6.value;
             const v114 = txn6.time;
             const v108 = txn6.from;
             const v110 = stdlib.eq(v109, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
             stdlib.assert(v110, {
-=======
-            const v110 = txn6.value;
-            const v115 = txn6.time;
-            const v109 = txn6.from;
-            const v111 = stdlib.eq(v110, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
-            stdlib.assert(v111, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'pay amount correct',
               who: 'Bob'
                });
-<<<<<<< HEAD
             const v111 = stdlib.addressEq(v44, v108);
             stdlib.assert(v111, {
-=======
-            const v112 = stdlib.addressEq(v45, v109);
-            stdlib.assert(v112, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:66:7:dot',
-              fs: ['at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'sender correct',
               who: 'Bob'
                });
@@ -1079,7 +846,7 @@ export async function Bob(ctc, interact) {
             ;
             stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
-              fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to [unknown function] (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)'],
+              fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:69:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:65:8:function exp)'],
               msg: 'informTimeout',
               who: 'Bob'
                });
@@ -1104,20 +871,12 @@ export async function Bob(ctc, interact) {
               msg: 'sender correct',
               who: 'Bob'
                });
-<<<<<<< HEAD
             const v96 = stdlib.add(v85, v92);
             const v99 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v90, v91]);
             const v100 = stdlib.eq(v69, v99);
             stdlib.assert(v100, {
-=======
-            
-            const v97 = stdlib.add(v86, v93);
-            const v100 = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt]), [v91, v92]);
-            const v101 = stdlib.eq(v70, v100);
-            stdlib.assert(v101, {
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
               at: 'reach standard library:63:17:application',
-              fs: ['at ./index.rsh:77:24:application call to [unknown function] (defined at: reach standard library:62:8:function exp)'],
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment" (defined at: reach standard library:62:8:function exp)'],
               msg: null,
               who: 'Bob'
                });
@@ -1738,7 +1497,7 @@ assert
 // Run body
 // Just "pay amount correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:51:41:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 gtxn 3 Amount
 arg 3
 btoi
@@ -1748,7 +1507,7 @@ int 0
 assert
 // Just "sender correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:51:41:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 arg 5
 gtxn 3 Sender
 ==
@@ -1954,8 +1713,6 @@ assert
 arg 4
 btoi
 int 10
-int 10
-+
 +
 dup
 gtxn 0 LastValid
@@ -2026,82 +1783,6 @@ int 0
 assert
 txn Receiver
 gtxn 1 Sender
-<<<<<<< HEAD
-=======
-==
-assert
-txn NumArgs
-int 13
-==
-assert
-// compute state in HM_Check 5
-int 5
-itob
-arg 5
-concat
-arg 6
-concat
-arg 7
-concat
-arg 8
-concat
-arg 9
-concat
-arg 10
-concat
-keccak256
-arg 0
-==
-assert
-// Run body
-// Just "pay amount correct"
-// "./index.rsh:75:11:dot"
-// "[]"
-gtxn 3 Amount
-arg 3
-btoi
--
-int 0
-==
-assert
-// Just "sender correct"
-// "./index.rsh:75:11:dot"
-// "[]"
-arg 5
-gtxn 3 Sender
-==
-assert
-// Nothing
-// "reach standard library:63:17:application"
-// "[at ./index.rsh:77:24:application call to [unknown function] (defined at: reach standard library:62:8:function exp)]"
-arg 8
-arg 11
-arg 12
-concat
-keccak256
-==
-assert
-arg 10
-btoi
-gtxn 3 Amount
-arg 3
-btoi
--
-+
-store 255
-arg 12
-btoi
-int 4
-arg 9
-btoi
--
-+
-int 3
-%
-dup
-store 254
-int 1
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 ==
 assert
 txn NumArgs
@@ -2126,7 +1807,7 @@ assert
 // Run body
 // Just "pay amount correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:63:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 gtxn 3 Amount
 arg 3
 btoi
@@ -2136,7 +1817,7 @@ int 0
 assert
 // Just "sender correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:63:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 arg 7
 gtxn 3 Sender
 ==
@@ -2282,13 +1963,8 @@ arg 0
 assert
 // Run body
 // Just "pay amount correct"
-<<<<<<< HEAD
 // "./index.rsh:69:11:dot"
 // "[]"
-=======
-// "reach standard library:66:7:dot"
-// "[at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 gtxn 3 Amount
 arg 3
 btoi
@@ -2297,13 +1973,8 @@ int 0
 ==
 assert
 // Just "sender correct"
-<<<<<<< HEAD
 // "./index.rsh:69:11:dot"
 // "[]"
-=======
-// "reach standard library:66:7:dot"
-// "[at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 arg 7
 gtxn 3 Sender
 ==
@@ -2356,10 +2027,6 @@ assert
 arg 4
 btoi
 int 10
-int 10
-+
-int 10
-+
 +
 dup
 gtxn 0 LastValid
@@ -2456,7 +2123,7 @@ assert
 // Run body
 // Just "pay amount correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:70:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 gtxn 3 Amount
 arg 3
 btoi
@@ -2466,7 +2133,7 @@ int 0
 assert
 // Just "sender correct"
 // "reach standard library:66:7:dot"
-// "[at ./index.rsh:70:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:70:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 arg 5
 gtxn 3 Sender
 ==
@@ -2614,13 +2281,8 @@ arg 0
 assert
 // Run body
 // Just "pay amount correct"
-<<<<<<< HEAD
 // "./index.rsh:75:11:dot"
 // "[]"
-=======
-// "reach standard library:66:7:dot"
-// "[at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 gtxn 3 Amount
 arg 3
 btoi
@@ -2629,15 +2291,9 @@ int 0
 ==
 assert
 // Just "sender correct"
-<<<<<<< HEAD
 // "./index.rsh:75:11:dot"
 // "[]"
 arg 5
-=======
-// "reach standard library:66:7:dot"
-// "[at ./index.rsh:63:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
-arg 7
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 gtxn 3 Sender
 ==
 assert
@@ -2651,7 +2307,7 @@ btoi
 store 255
 // Nothing
 // "reach standard library:63:17:application"
-// "[at ./index.rsh:77:24:application call to [unknown function] (defined at: reach standard library:62:8:function exp)]"
+// "[at ./index.rsh:77:24:application call to \"checkCommitment\" (defined at: reach standard library:62:8:function exp)]"
 arg 8
 arg 11
 arg 12
@@ -2740,12 +2396,6 @@ assert
 arg 4
 btoi
 int 10
-int 10
-+
-int 10
-+
-int 10
-+
 +
 dup
 gtxn 0 LastValid
@@ -2848,11 +2498,7 @@ assert
 // Run body
 // Just "pay amount correct"
 // "reach standard library:66:7:dot"
-<<<<<<< HEAD
-// "[at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
-=======
-// "[at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
+// "[at ./index.rsh:76:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 gtxn 3 Amount
 arg 3
 btoi
@@ -2862,13 +2508,8 @@ int 0
 assert
 // Just "sender correct"
 // "reach standard library:66:7:dot"
-<<<<<<< HEAD
-// "[at ./index.rsh:76:43:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
+// "[at ./index.rsh:76:43:application call to \"closeTo\" (defined at: reach standard library:65:8:function exp)]"
 arg 7
-=======
-// "[at ./index.rsh:51:41:application call to [unknown function] (defined at: reach standard library:65:8:function exp)]"
-arg 5
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
 gtxn 3 Sender
 ==
 assert
@@ -3908,11 +3549,7 @@ const _ETH = {
     "type": "function"
   }
 ]`,
-<<<<<<< HEAD
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461007a565b43815261003f61007a565b8151815260405161005790600090839060200161008d565b60408051601f1981840301815291905280516020909101206000555061009c9050565b6040518060200160405280600081525090565b91825251602082015260400190565b61147a806100ab6000396000f3fe6080604052600436106100865760003560e01c80638b513b1f116100595780638b513b1f146100d95780638d20bc42146100ec5780639532ef01146100ff578063dc0f106b14610112578063f5aa5a421461012557610086565b80632e6453cc1461008b57806332a5928d146100a05780636cc4a844146100b35780636dacfd6f146100c6575b600080fd5b61009e610099366004611017565b610138565b005b61009e6100ae366004610fe1565b610257565b61009e6100c1366004610ffc565b610361565b61009e6100d4366004610fb5565b6104d1565b61009e6100e7366004610fe1565b610639565b61009e6100fa366004610fb5565b610754565b61009e61010d366004610fd0565b610864565b61009e610120366004610fa3565b610931565b61009e610133366004610ffc565b610b08565b60405161014c906004908390602001611271565b6040516020818303038152906040528051906020012060001c6000541461017257600080fd5b610181600a60808301356113c0565b431015801561018e575060015b61019757600080fd5b34156101a257600080fd5b336101b36060830160408401610f82565b6001600160a01b0316146101c657600080fd5b6101d66060820160408301610f82565b6001600160a01b03166108fc6101f03460608501356113c0565b6040518115909202916000818181858888f19350505050158015610218573d6000803e3d6000fd5b507f30cb8287e966e3d7021b3ac9899109f2f8fdb380b1791d6f301768e4174fe1f88160405161024891906111da565b60405180910390a16000805533ff5b60405161026b906001908390602001611221565b6040516020818303038152906040528051906020012060001c6000541461029157600080fd5b6102a0600a60608301356113c0565b43101580156102ad575060015b6102b657600080fd5b34156102c157600080fd5b336102cf6020830183610f82565b6001600160a01b0316146102e257600080fd5b6102ef6020820182610f82565b6001600160a01b03166108fc6103093460408501356113c0565b6040518115909202916000818181858888f19350505050158015610331573d6000803e3d6000fd5b507f88b9720f2f4655921324cbb52751bf1684df44f57ba750f9a50c5a6cf87f14388160405161024891906111b0565b604051610375906004908390602001611271565b6040516020818303038152906040528051906020012060001c6000541461039b57600080fd5b6103a3610d57565b600a6103b38160808501356113c0565b6103bd91906113c0565b43106103c857600080fd5b34156103d357600080fd5b336103e16020840184610f82565b6001600160a01b0316146103f457600080fd5b6104023460608401356113c0565b81526040517f16424d059cabc243859f670786693b7e657c3f04cbc39631fa14608999bfaef9906104349084906111be565b60405180910390a1610444610d6a565b6104516020840184610f82565b6001600160a01b03168152602080840135908201526104766060840160408501610f82565b6001600160a01b031660408083019190915260a0808501356060840152835160808401524390830152516104b19060069083906020016112e4565b60408051601f198184030181529190528051602090910120600055505050565b6040516104e59060069083906020016112d0565b6040516020818303038152906040528051906020012060001c6000541461050b57600080fd5b610513610d57565b600a806105248160a08601356113c0565b61052e91906113c0565b61053891906113c0565b431061054357600080fd5b341561054e57600080fd5b3361055f6060840160408501610f82565b6001600160a01b03161461057257600080fd5b6105803460808401356113c0565b81526040517fa03e2b199cbd4c163bca89aa8e3581bcf82ee511c6ed7b600ee5e8a3e78842b4906105b29084906111e8565b60405180910390a16105c2610db2565b6105cf6020840184610f82565b6001600160a01b03168152602080840135908201526105f46060840160408501610f82565b6001600160a01b03166040808301919091526060808501359083015260c0808501356080840152835160a08401524390830152516104b1906008908390602001611350565b60405161064d906001908390602001611221565b6040516020818303038152906040528051906020012060001c6000541461067357600080fd5b610682600a60608301356113c0565b431061068d57600080fd5b3460208201351461069d57600080fd5b7f1b6c319555642e7ccd14c9ec83bd3a26d9469f9b1c26d4fa430499a5eb7ec09c816040516106cc91906111b0565b60405180910390a16106dc610e01565b6106e96020830183610f82565b81516001600160a01b03909116905280516020808401359181019190915281513360409182015290820151600190526107269034908401356113c0565b60208083018051909101919091528051436040909101525160608084013591015261075081610c12565b5050565b60405161076890600890839060200161133b565b6040516020818303038152906040528051906020012060001c6000541461078e57600080fd5b61079d600a60c08301356113c0565b43101580156107aa575060015b6107b357600080fd5b34156107be57600080fd5b336107cf6060830160408401610f82565b6001600160a01b0316146107e257600080fd5b6107f26060820160408301610f82565b6001600160a01b03166108fc61080c3460a08501356113c0565b6040518115909202916000818181858888f19350505050158015610834573d6000803e3d6000fd5b507fff606702526c61dfd9001dc8007dc7aa69588310924937cca3d16cf053a8912b816040516102489190611185565b604051610878906000908390602001611212565b6040516020818303038152906040528051906020012060001c6000541461089e57600080fd5b6108a6610d57565b346020830135146108b657600080fd5b6108c13460006113c0565b81526040517ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166906108f3908490611199565b60405180910390a1610903610e26565b338152602080840135818301528251604080840191909152436060840152516104b191600191849101611235565b60405161094590600890839060200161133b565b6040516020818303038152906040528051906020012060001c6000541461096b57600080fd5b600a808061097d8160c08601356113c0565b61098791906113c0565b61099191906113c0565b61099b91906113c0565b43106109a657600080fd5b34156109b157600080fd5b336109bf6020830183610f82565b6001600160a01b0316146109d257600080fd5b6040516109ee9060e083013590610100840135906020016113b2565b60408051601f198184030181529190528051602090910120606082013514610a1557600080fd5b7f352ea7fc48371f0bd43d7d1ad042d3e6a673947e2deccddfd368812813abc47281604051610a44919061115a565b60405180910390a1610a54610e01565b610a616020830183610f82565b81516001600160a01b0390911690528051602080840135910152610a8b6060830160408401610f82565b81516001600160a01b039091166040909101526003610aaf608084013560046113f7565b610abe906101008501356113c0565b610ac8919061140e565b602082015152610adc3460a08401356113c0565b60208083018051909101919091528051436040909101525160c083013560609091015261075081610c12565b604051610b1c9060069083906020016112d0565b6040516020818303038152906040528051906020012060001c60005414610b4257600080fd5b610b51600a60a08301356113c0565b4310158015610b5e575060015b610b6757600080fd5b3415610b7257600080fd5b33610b806020830183610f82565b6001600160a01b031614610b9357600080fd5b610ba06020820182610f82565b6001600160a01b03166108fc610bba3460808501356113c0565b6040518115909202916000818181858888f19350505050158015610be2573d6000803e3d6000fd5b507f0608b566092f92bab36d763cae7ac63f95ffcb7a407274c378383f52d53d68bb816040516102489190611204565b60208101515160011415610c9b57610c28610e57565b8151516001600160a01b039081168252825160209081015181840152835160409081015190921682840152808401805182015160608501525182015160808401529051610c7a91600491849101611285565b60408051601f19818403018152919052805160209091012060005550610ce7565b610ca3610e98565b81515181516001600160a01b039182169052825160209081015183518201528351604090810151845193169201919091528201515181516060015261075081610cea565b50565b805160600151600214610d0257805160400151610d06565b8051515b6001600160a01b03166108fc8260000151602001516002610d2791906113d8565b6040518115909202916000818181858888f19350505050158015610d4f573d6000803e3d6000fd5b506000805533ff5b6040518060200160405280600081525090565b6040518060c0016040528060006001600160a01b031681526020016000815260200160006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060e0016040528060006001600160a01b031681526020016000815260200160006001600160a01b03168152602001600081526020016000815260200160008152602001600081525090565b6040518060400160405280610e14610eab565b8152602001610e21610ecb565b905290565b604051806080016040528060006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060a0016040528060006001600160a01b031681526020016000815260200160006001600160a01b0316815260200160008152602001600081525090565b6040518060200160405280610e21610ef3565b604080516060810182526000808252602082018190529181019190915290565b6040518060800160405280600081526020016000815260200160008152602001600081525090565b604051806080016040528060006001600160a01b031681526020016000815260200160006001600160a01b03168152602001600081525090565b80356001600160a01b0381168114610f4457600080fd5b919050565b600060e08284031215610f5a578081fd5b50919050565b600060808284031215610f5a578081fd5b600060c08284031215610f5a578081fd5b600060208284031215610f93578081fd5b610f9c82610f2d565b9392505050565b60006101208284031215610f5a578081fd5b600060e08284031215610fc6578081fd5b610f9c8383610f49565b600060408284031215610f5a578081fd5b600060808284031215610ff2578081fd5b610f9c8383610f60565b600060c0828403121561100d578081fd5b610f9c8383610f71565b600060a08284031215610f5a578081fd5b6001600160a01b0361103982610f2d565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061107083610f2d565b168352602082013560208401528061108a60408401610f2d565b1660408401525060608181013590830152608090810135910152565b6001600160a01b03806110b883610f2d565b16835260208201356020840152806110d260408401610f2d565b16604084015250606081013560608301526080810135608083015260a081013560a08301525050565b6001600160a01b038061110d83610f2d565b168352602082013560208401528061112760408401610f2d565b16604084015250606081013560608301526080810135608083015260a081013560a083015260c081013560c08301525050565b610120810161116982846110fb565b60e083013560e083015261010080840135818401525092915050565b60e0810161119382846110fb565b92915050565b813581526020918201359181019190915260400190565b608081016111938284611028565b60c081016111cc828461105e565b60a092830135919092015290565b60a08101611193828461105e565b60e081016111f682846110a6565b60c092830135919092015290565b60c0810161119382846110a6565b91825235602082015260400190565b82815260a08101610f9c6020830184611028565b91825280516001600160a01b03166020808401919091528101516040808401919091528101516060808401919091520151608082015260a00190565b82815260c08101610f9c602083018461105e565b91825280516001600160a01b0390811660208085019190915282015160408085019190915282015116606080840191909152810151608080840191909152015160a082015260c00190565b82815260e08101610f9c60208301846110a6565b600060e08201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c08301529392505050565b8281526101008101610f9c60208301846110fb565b60006101008201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c083015260c083015160e08301529392505050565b918252602082015260400190565b600082198211156113d3576113d361142e565b500190565b60008160001904831182151516156113f2576113f261142e565b500290565b6000828210156114095761140961142e565b500390565b60008261142957634e487b7160e01b81526012600452602481fd5b500690565b634e487b7160e01b600052601160045260246000fdfea2646970667358221220a9272ac970e384ea103313ff91ef94e2b00d881501bbe8ba2a9f2a35b547df0764736f6c63430008000033`,
-=======
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461007a565b43815261003f61007a565b8151815260405161005790600090839060200161008d565b60408051601f1981840301815291905280516020909101206000555061009c9050565b6040518060200160405280600081525090565b91825251602082015260400190565b61139f806100ab6000396000f3fe6080604052600436106100865760003560e01c80639532ef01116100595780639532ef01146100d9578063a60cb28b146100ec578063b928f166146100ff578063b97c0f1e14610112578063bfdc69f61461012557610086565b80631c2947e31461008b57806323d1d605146100a057806355f3fcdf146100b35780638b513b1f146100c6575b600080fd5b61009e610099366004610f2a565b610138565b005b61009e6100ae366004610f0f565b6102f2565b61009e6100c1366004610f0f565b610464565b61009e6100d4366004610ec8565b610583565b61009e6100e7366004610ee3565b61069a565b61009e6100fa366004610f3c565b610767565b61009e61010d366004610ef4565b610877565b61009e610120366004610ec8565b610981565b61009e610133366004610ef4565b610a8b565b60405161014c906005908390602001611260565b6040516020818303038152906040528051906020012060001c6000541461017257600080fd5b610181600a60c08301356112e5565b431061018c57600080fd5b341561019757600080fd5b336101a56020830183610ea7565b6001600160a01b0316146101b857600080fd5b6040516101d49060e083013590610100840135906020016112d7565b60408051601f1981840301815291905280516020909101206060820135146101fb57600080fd5b7ff9573e675c9bc3a16b419c409b77495ceab1a0967da38c45725a0e3a3d710d258160405161022a91906110e2565b60405180910390a161023a610cc9565b6102476020830183610ea7565b81516001600160a01b03909116905280516020808401359101526102716060830160408401610ea7565b81516001600160a01b0390911660409091015260036102956080840135600461131c565b6102a4906101008501356112e5565b6102ae9190611333565b6020820151526102c23460a08401356112e5565b60208083018051909101919091528051436040909101525160c08301356060909101526102ee81610bd0565b5050565b6040516103069060049083906020016111f5565b6040516020818303038152906040528051906020012060001c6000541461032c57600080fd5b610334610cee565b610343600a60a08401356112e5565b431061034e57600080fd5b341561035957600080fd5b3361036a6060840160408501610ea7565b6001600160a01b03161461037d57600080fd5b61038b3460808401356112e5565b81526040517f07e87f433158c49148bc85908421c64bbd90c439998a99b53ad987517b07d12e906103bd9084906110c6565b60405180910390a16103cd610d01565b6103da6020840184610ea7565b6001600160a01b03168152602080840135908201526103ff6060840160408501610ea7565b6001600160a01b03166040808301919091526060808501359083015260c0808501356080840152835160a0840152439083015251610444906005908390602001611275565b60408051601f198184030181529190528051602090910120600055505050565b604051610478906005908390602001611260565b6040516020818303038152906040528051906020012060001c6000541461049e57600080fd5b6104ad600a60c08301356112e5565b43101580156104ba575060015b6104c357600080fd5b34156104ce57600080fd5b336104df6060830160408401610ea7565b6001600160a01b0316146104f257600080fd5b6105026060820160408301610ea7565b6001600160a01b03166108fc61051c3460a08501356112e5565b6040518115909202916000818181858888f19350505050158015610544573d6000803e3d6000fd5b507f7ed031221b39c7cece29fe3483202ab9dd5e9229499f90125a41871b667131a881604051610574919061110d565b60405180910390a16000805533ff5b604051610597906001908390602001611146565b6040516020818303038152906040528051906020012060001c600054146105bd57600080fd5b6105cc600a60608301356112e5565b43106105d757600080fd5b346020820135146105e757600080fd5b7f1b6c319555642e7ccd14c9ec83bd3a26d9469f9b1c26d4fa430499a5eb7ec09c81604051610616919061107f565b60405180910390a1610626610cc9565b6106336020830183610ea7565b81516001600160a01b03909116905280516020808401359181019190915281513360409182015290820151600190526106709034908401356112e5565b6020808301805190910191909152805143604090910152516060808401359101526102ee81610bd0565b6040516106ae906000908390602001611137565b6040516020818303038152906040528051906020012060001c600054146106d457600080fd5b6106dc610cee565b346020830135146106ec57600080fd5b6106f73460006112e5565b81526040517ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc16690610729908490611093565b60405180910390a1610739610d50565b338152602080840135818301528251604080840191909152436060840152516104449160019184910161115a565b60405161077b906003908390602001611196565b6040516020818303038152906040528051906020012060001c600054146107a157600080fd5b6107b0600a60808301356112e5565b43101580156107bd575060015b6107c657600080fd5b34156107d157600080fd5b336107e26060830160408401610ea7565b6001600160a01b0316146107f557600080fd5b6108056060820160408301610ea7565b6001600160a01b03166108fc61081f3460608501356112e5565b6040518115909202916000818181858888f19350505050158015610847573d6000803e3d6000fd5b507f5234c2e5474a4b3ee203f8e9bc7a6b9165f1e184026f2ecdf72ea9b0d711924e816040516105749190611129565b60405161088b9060049083906020016111f5565b6040516020818303038152906040528051906020012060001c600054146108b157600080fd5b6108c0600a60a08301356112e5565b43101580156108cd575060015b6108d657600080fd5b34156108e157600080fd5b336108ef6020830183610ea7565b6001600160a01b03161461090257600080fd5b61090f6020820182610ea7565b6001600160a01b03166108fc6109293460808501356112e5565b6040518115909202916000818181858888f19350505050158015610951573d6000803e3d6000fd5b507fbe5b7e1448066eef48ef80b637b416050858d2b00390b046215df248ad038aff81604051610574919061111b565b604051610995906001908390602001611146565b6040516020818303038152906040528051906020012060001c600054146109bb57600080fd5b6109ca600a60608301356112e5565b43101580156109d7575060015b6109e057600080fd5b34156109eb57600080fd5b336109f96020830183610ea7565b6001600160a01b031614610a0c57600080fd5b610a196020820182610ea7565b6001600160a01b03166108fc610a333460408501356112e5565b6040518115909202916000818181858888f19350505050158015610a5b573d6000803e3d6000fd5b507f2eb160a2b43a7b56d73a5bf2556c2a4ee41a4ce71ad77f3ba1774567293583ff81604051610574919061107f565b604051610a9f906003908390602001611196565b6040516020818303038152906040528051906020012060001c60005414610ac557600080fd5b610acd610cee565b610adc600a60808401356112e5565b4310610ae757600080fd5b3415610af257600080fd5b33610b006020840184610ea7565b6001600160a01b031614610b1357600080fd5b610b213460608401356112e5565b81526040517f3d182e6f2fea74a81e189829571ba90ae445412add5653bfab12c4bdf626347e90610b539084906110aa565b60405180910390a1610b63610d81565b610b706020840184610ea7565b6001600160a01b0316815260208084013590820152610b956060840160408501610ea7565b6001600160a01b031660408083019190915260a080850135606084015283516080840152439083015251610444906004908390602001611209565b60208101515160011415610c5957610be6610dc9565b8151516001600160a01b039081168252825160209081015181840152835160409081015190921682840152808401805182015160608501525182015160808401529051610c38916003918491016111aa565b60408051601f19818403018152919052805160209091012060005550610cc6565b602081015151600214610c7157805160400151610c75565b8051515b6001600160a01b03166108fc8260000151602001516002610c9691906112fd565b6040518115909202916000818181858888f19350505050158015610cbe573d6000803e3d6000fd5b506000805533ff5b50565b6040518060400160405280610cdc610e0a565b8152602001610ce9610e2a565b905290565b6040518060200160405280600081525090565b6040518060e0016040528060006001600160a01b031681526020016000815260200160006001600160a01b03168152602001600081526020016000815260200160008152602001600081525090565b604051806080016040528060006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060c0016040528060006001600160a01b031681526020016000815260200160006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060a0016040528060006001600160a01b031681526020016000815260200160006001600160a01b0316815260200160008152602001600081525090565b604080516060810182526000808252602082018190529181019190915290565b6040518060800160405280600081526020016000815260200160008152602001600081525090565b80356001600160a01b0381168114610e6957600080fd5b919050565b600060808284031215610e7f578081fd5b50919050565b600060c08284031215610e7f578081fd5b600060e08284031215610e7f578081fd5b600060208284031215610eb8578081fd5b610ec182610e52565b9392505050565b600060808284031215610ed9578081fd5b610ec18383610e6e565b600060408284031215610e7f578081fd5b600060c08284031215610f05578081fd5b610ec18383610e85565b600060e08284031215610f20578081fd5b610ec18383610e96565b60006101208284031215610e7f578081fd5b600060a08284031215610e7f578081fd5b6001600160a01b03610f5e82610e52565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b0380610f9583610e52565b1683526020820135602084015280610faf60408401610e52565b1660408401525060608181013590830152608090810135910152565b6001600160a01b0380610fdd83610e52565b1683526020820135602084015280610ff760408401610e52565b16604084015250606081013560608301526080810135608083015260a081013560a08301525050565b6001600160a01b038061103283610e52565b168352602082013560208401528061104c60408401610e52565b16604084015250606081013560608301526080810135608083015260a081013560a083015260c081013560c08301525050565b6080810161108d8284610f4d565b92915050565b813581526020918201359181019190915260400190565b60c081016110b88284610f83565b60a092830135919092015290565b60e081016110d48284610fcb565b60c092830135919092015290565b61012081016110f18284611020565b60e083013560e083015261010080840135818401525092915050565b60e0810161108d8284611020565b60c0810161108d8284610fcb565b60a0810161108d8284610f83565b91825235602082015260400190565b82815260a08101610ec16020830184610f4d565b91825280516001600160a01b03166020808401919091528101516040808401919091528101516060808401919091520151608082015260a00190565b82815260c08101610ec16020830184610f83565b91825280516001600160a01b0390811660208085019190915282015160408085019190915282015116606080840191909152810151608080840191909152015160a082015260c00190565b82815260e08101610ec16020830184610fcb565b600060e08201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c08301529392505050565b8281526101008101610ec16020830184611020565b60006101008201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c083015260c083015160e08301529392505050565b918252602082015260400190565b600082198211156112f8576112f8611353565b500190565b600081600019048311821515161561131757611317611353565b500290565b60008282101561132e5761132e611353565b500390565b60008261134e57634e487b7160e01b81526012600452602481fd5b500690565b634e487b7160e01b600052601160045260246000fdfea264697066735822122008c7e9a8addd751487ecd60d19a281d05b2070faf774dbd46c9d9d83e0b929b264736f6c63430008000033`,
->>>>>>> 30bf14cd... Store binding origin information in DLVar & display it in SMT errors
+  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461007a565b43815261003f61007a565b8151815260405161005790600090839060200161008d565b60408051601f1981840301815291905280516020909101206000555061009c9050565b6040518060200160405280600081525090565b91825251602082015260400190565b611438806100ab6000396000f3fe6080604052600436106100865760003560e01c80638b513b1f116100595780638b513b1f146100d95780638d20bc42146100ec5780639532ef01146100ff578063dc0f106b14610112578063f5aa5a421461012557610086565b80632e6453cc1461008b57806332a5928d146100a05780636cc4a844146100b35780636dacfd6f146100c6575b600080fd5b61009e610099366004610fd5565b610138565b005b61009e6100ae366004610f9f565b610257565b61009e6100c1366004610fba565b610361565b61009e6100d4366004610f73565b6104c6565b61009e6100e7366004610f9f565b610618565b61009e6100fa366004610f73565b610733565b61009e61010d366004610f8e565b610843565b61009e610120366004610f61565b610910565b61009e610133366004610fba565b610ac6565b60405161014c90600490839060200161122f565b6040516020818303038152906040528051906020012060001c6000541461017257600080fd5b610181600a608083013561137e565b431015801561018e575060015b61019757600080fd5b34156101a257600080fd5b336101b36060830160408401610f40565b6001600160a01b0316146101c657600080fd5b6101d66060820160408301610f40565b6001600160a01b03166108fc6101f034606085013561137e565b6040518115909202916000818181858888f19350505050158015610218573d6000803e3d6000fd5b507f30cb8287e966e3d7021b3ac9899109f2f8fdb380b1791d6f301768e4174fe1f8816040516102489190611198565b60405180910390a16000805533ff5b60405161026b9060019083906020016111df565b6040516020818303038152906040528051906020012060001c6000541461029157600080fd5b6102a0600a606083013561137e565b43101580156102ad575060015b6102b657600080fd5b34156102c157600080fd5b336102cf6020830183610f40565b6001600160a01b0316146102e257600080fd5b6102ef6020820182610f40565b6001600160a01b03166108fc61030934604085013561137e565b6040518115909202916000818181858888f19350505050158015610331573d6000803e3d6000fd5b507f88b9720f2f4655921324cbb52751bf1684df44f57ba750f9a50c5a6cf87f143881604051610248919061116e565b60405161037590600490839060200161122f565b6040516020818303038152906040528051906020012060001c6000541461039b57600080fd5b6103a3610d15565b6103b2600a608084013561137e565b43106103bd57600080fd5b34156103c857600080fd5b336103d66020840184610f40565b6001600160a01b0316146103e957600080fd5b6103f734606084013561137e565b81526040517f16424d059cabc243859f670786693b7e657c3f04cbc39631fa14608999bfaef99061042990849061117c565b60405180910390a1610439610d28565b6104466020840184610f40565b6001600160a01b031681526020808401359082015261046b6060840160408501610f40565b6001600160a01b031660408083019190915260a0808501356060840152835160808401524390830152516104a69060069083906020016112a2565b60408051601f198184030181529190528051602090910120600055505050565b6040516104da90600690839060200161128e565b6040516020818303038152906040528051906020012060001c6000541461050057600080fd5b610508610d15565b610517600a60a084013561137e565b431061052257600080fd5b341561052d57600080fd5b3361053e6060840160408501610f40565b6001600160a01b03161461055157600080fd5b61055f34608084013561137e565b81526040517fa03e2b199cbd4c163bca89aa8e3581bcf82ee511c6ed7b600ee5e8a3e78842b4906105919084906111a6565b60405180910390a16105a1610d70565b6105ae6020840184610f40565b6001600160a01b03168152602080840135908201526105d36060840160408501610f40565b6001600160a01b03166040808301919091526060808501359083015260c0808501356080840152835160a08401524390830152516104a690600890839060200161130e565b60405161062c9060019083906020016111df565b6040516020818303038152906040528051906020012060001c6000541461065257600080fd5b610661600a606083013561137e565b431061066c57600080fd5b3460208201351461067c57600080fd5b7f1b6c319555642e7ccd14c9ec83bd3a26d9469f9b1c26d4fa430499a5eb7ec09c816040516106ab919061116e565b60405180910390a16106bb610dbf565b6106c86020830183610f40565b81516001600160a01b039091169052805160208084013591810191909152815133604091820152908201516001905261070590349084013561137e565b60208083018051909101919091528051436040909101525160608084013591015261072f81610bd0565b5050565b6040516107479060089083906020016112f9565b6040516020818303038152906040528051906020012060001c6000541461076d57600080fd5b61077c600a60c083013561137e565b4310158015610789575060015b61079257600080fd5b341561079d57600080fd5b336107ae6060830160408401610f40565b6001600160a01b0316146107c157600080fd5b6107d16060820160408301610f40565b6001600160a01b03166108fc6107eb3460a085013561137e565b6040518115909202916000818181858888f19350505050158015610813573d6000803e3d6000fd5b507fff606702526c61dfd9001dc8007dc7aa69588310924937cca3d16cf053a8912b816040516102489190611143565b6040516108579060009083906020016111d0565b6040516020818303038152906040528051906020012060001c6000541461087d57600080fd5b610885610d15565b3460208301351461089557600080fd5b6108a034600061137e565b81526040517ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166906108d2908490611157565b60405180910390a16108e2610de4565b338152602080840135818301528251604080840191909152436060840152516104a6916001918491016111f3565b6040516109249060089083906020016112f9565b6040516020818303038152906040528051906020012060001c6000541461094a57600080fd5b610959600a60c083013561137e565b431061096457600080fd5b341561096f57600080fd5b3361097d6020830183610f40565b6001600160a01b03161461099057600080fd5b6040516109ac9060e08301359061010084013590602001611370565b60408051601f1981840301815291905280516020909101206060820135146109d357600080fd5b7f352ea7fc48371f0bd43d7d1ad042d3e6a673947e2deccddfd368812813abc47281604051610a029190611118565b60405180910390a1610a12610dbf565b610a1f6020830183610f40565b81516001600160a01b0390911690528051602080840135910152610a496060830160408401610f40565b81516001600160a01b039091166040909101526003610a6d608084013560046113b5565b610a7c9061010085013561137e565b610a8691906113cc565b602082015152610a9a3460a084013561137e565b60208083018051909101919091528051436040909101525160c083013560609091015261072f81610bd0565b604051610ada90600690839060200161128e565b6040516020818303038152906040528051906020012060001c60005414610b0057600080fd5b610b0f600a60a083013561137e565b4310158015610b1c575060015b610b2557600080fd5b3415610b3057600080fd5b33610b3e6020830183610f40565b6001600160a01b031614610b5157600080fd5b610b5e6020820182610f40565b6001600160a01b03166108fc610b7834608085013561137e565b6040518115909202916000818181858888f19350505050158015610ba0573d6000803e3d6000fd5b507f0608b566092f92bab36d763cae7ac63f95ffcb7a407274c378383f52d53d68bb8160405161024891906111c2565b60208101515160011415610c5957610be6610e15565b8151516001600160a01b039081168252825160209081015181840152835160409081015190921682840152808401805182015160608501525182015160808401529051610c3891600491849101611243565b60408051601f19818403018152919052805160209091012060005550610ca5565b610c61610e56565b81515181516001600160a01b039182169052825160209081015183518201528351604090810151845193169201919091528201515181516060015261072f81610ca8565b50565b805160600151600214610cc057805160400151610cc4565b8051515b6001600160a01b03166108fc8260000151602001516002610ce59190611396565b6040518115909202916000818181858888f19350505050158015610d0d573d6000803e3d6000fd5b506000805533ff5b6040518060200160405280600081525090565b6040518060c0016040528060006001600160a01b031681526020016000815260200160006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060e0016040528060006001600160a01b031681526020016000815260200160006001600160a01b03168152602001600081526020016000815260200160008152602001600081525090565b6040518060400160405280610dd2610e69565b8152602001610ddf610e89565b905290565b604051806080016040528060006001600160a01b031681526020016000815260200160008152602001600081525090565b6040518060a0016040528060006001600160a01b031681526020016000815260200160006001600160a01b0316815260200160008152602001600081525090565b6040518060200160405280610ddf610eb1565b604080516060810182526000808252602082018190529181019190915290565b6040518060800160405280600081526020016000815260200160008152602001600081525090565b604051806080016040528060006001600160a01b031681526020016000815260200160006001600160a01b03168152602001600081525090565b80356001600160a01b0381168114610f0257600080fd5b919050565b600060e08284031215610f18578081fd5b50919050565b600060808284031215610f18578081fd5b600060c08284031215610f18578081fd5b600060208284031215610f51578081fd5b610f5a82610eeb565b9392505050565b60006101208284031215610f18578081fd5b600060e08284031215610f84578081fd5b610f5a8383610f07565b600060408284031215610f18578081fd5b600060808284031215610fb0578081fd5b610f5a8383610f1e565b600060c08284031215610fcb578081fd5b610f5a8383610f2f565b600060a08284031215610f18578081fd5b6001600160a01b03610ff782610eeb565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061102e83610eeb565b168352602082013560208401528061104860408401610eeb565b1660408401525060608181013590830152608090810135910152565b6001600160a01b038061107683610eeb565b168352602082013560208401528061109060408401610eeb565b16604084015250606081013560608301526080810135608083015260a081013560a08301525050565b6001600160a01b03806110cb83610eeb565b16835260208201356020840152806110e560408401610eeb565b16604084015250606081013560608301526080810135608083015260a081013560a083015260c081013560c08301525050565b610120810161112782846110b9565b60e083013560e083015261010080840135818401525092915050565b60e0810161115182846110b9565b92915050565b813581526020918201359181019190915260400190565b608081016111518284610fe6565b60c0810161118a828461101c565b60a092830135919092015290565b60a08101611151828461101c565b60e081016111b48284611064565b60c092830135919092015290565b60c081016111518284611064565b91825235602082015260400190565b82815260a08101610f5a6020830184610fe6565b91825280516001600160a01b03166020808401919091528101516040808401919091528101516060808401919091520151608082015260a00190565b82815260c08101610f5a602083018461101c565b91825280516001600160a01b0390811660208085019190915282015160408085019190915282015116606080840191909152810151608080840191909152015160a082015260c00190565b82815260e08101610f5a6020830184611064565b600060e08201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c08301529392505050565b8281526101008101610f5a60208301846110b9565b60006101008201905083825260018060a01b03808451166020840152602084015160408401528060408501511660608401525060608301516080830152608083015160a083015260a083015160c083015260c083015160e08301529392505050565b918252602082015260400190565b60008219821115611391576113916113ec565b500190565b60008160001904831182151516156113b0576113b06113ec565b500290565b6000828210156113c7576113c76113ec565b500390565b6000826113e757634e487b7160e01b81526012600452602481fd5b500690565b634e487b7160e01b600052601160045260246000fdfea2646970667358221220ee12974e1de918dc93b08d511580471b712e3971099dd99aa4b4a967cfbf05ff64736f6c63430008000033`,
   deployMode: `DM_constructor`
    };
 

@@ -831,7 +831,7 @@ infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
   SLV_Participant a who _ mdv ->
     SLV_Participant a who (Just v) mdv
-  SLV_Clo a Nothing e b c ->
+  SLV_Clo a _ e b c ->
     SLV_Clo a (Just v) e b c
   SLV_DLVar (DLVar a _ t i) ->
     SLV_DLVar $ DLVar a (Just (at, v)) t i
