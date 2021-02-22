@@ -1,0 +1,9 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "Bidder")
+  Verifying with mode = VM_Dishonest (RolePart "Sponsor")
+Checked 53 theorems; No failures!
+XXX algo mapref
+XXX algo mapset
