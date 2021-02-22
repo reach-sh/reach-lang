@@ -1022,7 +1022,7 @@ evalAsEnvM obj = case obj of
     doStdlib :: SLVar -> App SLSVal
     doStdlib = doApply <=< lookStdlib
     lookStdlib :: SLVar -> App SLVal
-    lookStdlib n = sss_val <$> ((env_lookup LC_RefFrom n) =<< (sco_cenv . e_sco) <$> ask)
+    lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
     doApply f = evalApplyVals' f [(public obj)]
@@ -1377,7 +1377,7 @@ evalPrimOp p sargs = do
     digestEq2 x y = digestEq [x, y]
     lookupFn f = do
       env <- (sco_cenv . e_sco) <$> ask
-      sss_val <$> env_lookup LC_RefFrom f env
+      sss_val <$> env_lookup (LC_RefFrom "polyEq") f env
     digestEq as = lookupFn "digestEq" >>= flip evalApplyVals' as
     getHash :: SLSVal -> App SLSVal
     getHash x = lookupFn "digest" >>= flip evalApplyVals' [x]
@@ -2166,7 +2166,7 @@ evalId_ x = do
         SLM_LocalStep -> l
         SLM_LocalPure -> l
         _ -> return $ sco_cenv sco
-  infectWithId_sss x <$> (env_lookup LC_RefFrom x =<< env)
+  infectWithId_sss x <$> (env_lookup (LC_RefFrom "id reference") x =<< env)
 
 evalId :: SLVar -> App SLSVal
 evalId x = sss_sls <$> evalId_ x

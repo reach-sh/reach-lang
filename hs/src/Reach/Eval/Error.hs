@@ -22,8 +22,8 @@ import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 
 data LookupCtx
-  = -- Signifies the user referencing a variable.
-    LC_RefFrom
+  = -- Signifies the user referencing a variable from a ctxt (:: String).
+    LC_RefFrom String
   | -- Signifies the compiler expecting a certain id to exist.
     LC_CompilerRequired
   deriving (Eq, Show)
@@ -201,8 +201,8 @@ instance ErrorMessageForJson EvalError where
       k
         <> " is not a field of "
         <> show_sv slval
-    Err_Eval_UnboundId LC_RefFrom slvar _ ->
-      "Invalid unbound identifier: " <> slvar
+    Err_Eval_UnboundId (LC_RefFrom ctxt) slvar _ ->
+      "Invalid unbound identifier in " <> ctxt <> ": " <> slvar
     ow -> show ow
 
 getIllegalModeSuggestion :: SLMode -> [SLMode] -> String
@@ -339,8 +339,8 @@ instance Show EvalError where
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
       "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
-    Err_Eval_UnboundId LC_RefFrom slvar slvars ->
-      "Invalid unbound identifier: " <> slvar <> didYouMean slvar slvars 5
+    Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
+      "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
       "Expected the following identifier to be declared: " <> show slvar
     Err_ExpectedPrivate slval ->
