@@ -6,7 +6,6 @@ IMAGE=$(REACT_RUNNER_IMAGE)
 .PHONY: build
 build:
 	docker build --tag=$(IMAGE) \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(REACH_VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 		.

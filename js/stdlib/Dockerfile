@@ -28,10 +28,7 @@ RUN npm run tsc
 RUN ./sbin/fix.sh
 RUN rm ./sbin/fix.sh
 
-# TODO: remove this runner stuff, probably
-ENV REACH_RUNNER_MOUNT_DIR /app
-ENTRYPOINT ["npm", "run", "--"]
-CMD ["runner", "FAKE", "index.mjs"]
+RUN npm link
 
 ARG REACH_GIT_HASH
 ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
