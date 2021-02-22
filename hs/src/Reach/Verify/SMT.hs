@@ -175,7 +175,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
-  , ctxt_v_to_dv :: IORef (M.Map String DLVar)
+  , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
   }
 
 ctxt_mode :: App VerifyMode
@@ -236,7 +236,7 @@ smtVar dv@(DLVar _ _ _ i) = do
             False -> ""
   let name = "v" ++ show i ++ mp
   v2dv <- ctxt_v_to_dv <$> ask
-  liftIO $ modifyIORef v2dv $ M.insert name dv
+  liftIO $ modifyIORef v2dv $ M.insertWith (<>) name [dv]
   return $ name
 
 smtTypeSort :: DLType -> App String
@@ -409,7 +409,7 @@ dlvOccurs env bindings de =
     _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
 
-displayDLAsJs :: M.Map String DLVar -> [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
+displayDLAsJs :: M.Map String [DLVar] -> [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
 displayDLAsJs v2dv inlineCtxt nested = \case
     DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
@@ -471,47 +471,59 @@ displaySexpAsJs nested s =
     rparen = if nested then ")" else ""
     r = displaySexpAsJs True
 
-subAllVars :: M.Map String DLVar -> BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> String
+-- A computation is first stored into an unamed var, then `const`
+-- assigned to a variable. So, choose the second variable inserted
+-- into list, if it exists (This will be the user named variable).
+-- If no user assigned var, display the name of the tmp var.
+-- If association list is empty, it is an "unbound" var like an interact field.
+getBindingOrigin :: String -> M.Map String [DLVar] -> String
+getBindingOrigin v v2dv =
+  let possibleDvs = maybe [] id (M.lookup v v2dv) in
+  case reverse possibleDvs of
+    (_:val:_) -> show val
+    (val:_) -> show val
+    [] -> v
+
+subAllVars :: M.Map String [DLVar] -> BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> String
 subAllVars v2dv bindings tk pm (Atom ai) =
   case ai `M.lookup` bindings of
     Just (_, _, _, _, Just de) ->
-      let env = dlvOccurs [] bindings de
-       in let sortedEnv = List.group $ List.sort env
-           in -- Get variable/values to inline. Inline a DLExpr if available,
-              -- or fallback to s-exp Atom value
-              let inlineVars = List.foldr canInline [] sortedEnv
-               in let inlines = map getInlineValue inlineVars
-                   in let toJs = displayDLAsJs v2dv inlines False
-                       in -- Get let assignments
-                          let assignVars = List.foldr canAssign [] sortedEnv
-                           in let assigns =
-                                    List.foldr
-                                      (\x acc ->
-                                         let i = "v" <> show x
-                                          in case i `M.lookup` bindings of
-                                               Just (_, _, _, _, Just dl) -> (i, Right dl) : acc
-                                               Just (_, _, _, Just se, _) -> (i, Left se) : acc
-                                               _ -> acc)
-                                      []
-                                      assignVars
-                               in let assignStr =
-                                        unlines $
-                                          map
-                                            (\(k, eds) ->
-                                               let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm
-                                                in "  const " <> getBindingOrigin k <> " = " <> case eds of
-                                                     Right v -> toJs v
-                                                     Left v -> SMT.showsSExpr v ""
-                                                     <> ";"
-                                                     <> "\n  //    ^ would be "
-                                                     <> kv)
-                                            assigns
-                                   in let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");"
-                                       in assignStr <> assertStr
+      let env = dlvOccurs [] bindings de in
+      let sortedEnv = List.group $ List.sort env in
+      -- Get variable/values to inline. Inline a DLExpr if available,
+      -- or fallback to s-exp Atom value
+      let inlineVars = List.foldr canInline [] sortedEnv in
+      let inlines = map getInlineValue inlineVars in
+      let toJs = displayDLAsJs v2dv inlines False in
+      -- Get let assignments
+      let assignVars = List.foldr canAssign [] sortedEnv in
+      let assigns =
+            List.foldr
+              (\x acc ->
+                  let i = "v" <> show x
+                  in case i `M.lookup` bindings of
+                        Just (_, _, _, _, Just dl) -> (i, Right dl) : acc
+                        Just (_, _, _, Just se, _) -> (i, Left se) : acc
+                        _ -> acc)
+              []
+              assignVars in
+      let assignStr =
+            unlines $
+              map
+                (\(k, eds) ->
+                    let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm in
+                    "  const " <> getBindingOrigin k v2dv <> " = " <> case eds of
+                          Right v -> toJs v
+                          Left v -> SMT.showsSExpr v ""
+                          <> ";"
+                          <> "\n  //    ^ would be "
+                          <> kv)
+                    assigns in
+        let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");" in
+        assignStr <> assertStr
     -- Something like assert(false)
     _ -> "  " <> show (pretty tk) <> "(" <> ai <> ");"
   where
-    getBindingOrigin v = maybe v show $ M.lookup v v2dv
     -- Variable can be inlined if it is used once or its value is a `DLArg`
     canInline [x] acc = x : acc
     canInline (x : _) acc =
@@ -533,7 +545,7 @@ subAllVars v2dv bindings tk pm (Atom ai) =
        in case vid `M.lookup` bindings of
             Just (_, _, _, _, Just del) -> (v, Right del)
             Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
-            _ -> (v, Left $ getBindingOrigin vid)
+            _ -> (v, Left $ getBindingOrigin vid v2dv)
 subAllVars _ _ _ _ _ = impossible "subAllVars: expected Atom"
 
 --- FYI, the last version that had Dan's display code was
@@ -585,7 +597,7 @@ display_fail tat f tk tse mmsg repeated mrd = do
                       return $ mempty
                     Just (_, at, bo, mvse, _) -> do
                       let this se =
-                            [("  const " ++ maybe v0 show (M.lookup v0 v2dv) ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
+                            [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
                               ++ (map
                                     (redactAbsStr cwd)
                                     [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)

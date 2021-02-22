@@ -6,7 +6,7 @@ Verification failed:
   of theorem TClaim CT_Assert
   msg: "fxsqrt: Cannot find the square root of a negative number."
   at reach standard library:300:9:application
-  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:299:30:function exp)
+  at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:299:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
   // Violation witness
@@ -21,7 +21,7 @@ Verification failed:
   of theorem TClaim CT_Assert
   msg: "fxsqrt: Cannot find the square root of a negative number."
   at reach standard library:300:9:application
-  at ./fxsqrt.rsh:10:30:application call to [unknown function] (defined at: reach standard library:299:30:function exp)
+  at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:299:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
   (details omitted on repeat)

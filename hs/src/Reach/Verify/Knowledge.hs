@@ -101,17 +101,14 @@ displayPath who = \case
   where
     sp = show . pretty
     bindingInfo = \case
-      P_Var (DLVar _ (Just (at, n))  _ i) ->
-        show $ pretty n <> "/" <> pretty i <> " (defined at " <> pretty at <> ")"
-      P_Var (DLVar at' Nothing _ i) ->
-        show $ "v" <> pretty i <> " (defined at " <> pretty at' <> ")"
+      P_Var v@(DLVar _ (Just (at, _))  _ _) -> showBinding at $ viaShow v
+      P_Var v@(DLVar at _ _ _) -> showBinding at $ viaShow v
       ow -> sp ow
+    showBinding at v = show $ v <> " (defined at " <> pretty at <> ")"
     publishInfo = \case
-      P_Var (DLVar at' (Just (_, n))  _ i) ->
-        show $ pretty n <> "/" <> pretty i <> " was published at " <> pretty at'
-      P_Var (DLVar at' Nothing _ i) ->
-          show $ "v" <> pretty i <> " was published at " <> pretty at'
+      P_Var v@(DLVar at _ _ _) -> show $ viaShow v <> " was published at " <> pretty at
       ow -> sp ow
+
 
 query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> SLPart -> S.Set Point -> IO ()
 query ctxt at f mmsg who whats = do

@@ -831,6 +831,8 @@ infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
   SLV_Participant a who _ mdv ->
     SLV_Participant a who (Just v) mdv
+  SLV_Clo a Nothing e b c ->
+    SLV_Clo a (Just v) e b c
   SLV_DLVar (DLVar a _ t i) ->
     SLV_DLVar $ DLVar a (Just (at, v)) t i
   x -> x
@@ -2490,11 +2492,7 @@ evalDeclLHS rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
-      let bindingOrigin = Just (at_, x)
-      let v' =
-            case v of
-            SLV_DLVar (DLVar a' _ t i) -> SLV_DLVar $ DLVar a' bindingOrigin t i
-            ow -> ow
+      let v' = infectWithId_sv at_ x v
       env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
   JSArrayLiteral a xs _ -> do
     locAtf (srcloc_jsa "array" a) $ do
