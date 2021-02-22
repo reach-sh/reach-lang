@@ -66,6 +66,11 @@ jobs:
           command: (cd scripts/ethereum-devnet && make build)
       # TODO: cache node_modules?
       - run:
+          name: dan is losing his mind
+          command: |
+            git diff --exit-code HEAD -- js/
+            test -f js/runner/package.json
+      - run:
           name: build and test js
           command: |
             (cd js && make build test)
