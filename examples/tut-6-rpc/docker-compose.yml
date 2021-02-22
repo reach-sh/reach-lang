@@ -11,6 +11,8 @@ x-client-env: &client-env
     - REACH_RPC_KEY
     - REACH_RPC_TLS_REJECT_UNVERIFIED=0
     - NODE_TLS_REJECT_UNAUTHORIZED=0
+  extra_hosts:
+    - 'host.docker.internal:172.17.0.1'
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:0.1
