@@ -20,9 +20,6 @@
     "wait-port": "^0.2.9",
     "express": "^4.17.1"
   },
-  "optionalDependencies": {
-    "ganache-core": "^2.11.2"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reach-sh/reach-lang.git",

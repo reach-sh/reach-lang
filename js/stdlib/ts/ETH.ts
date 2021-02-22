@@ -268,15 +268,15 @@ const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> 
     provider.pollingInterval = 500; // ms
     return provider;
   } else if (networkDesc.type == 'embedded-ganache') {
-    const { default: ganache } = await import('ganache-core');
-    if (!ganache) {
-      throw Error(`Sorry, optional dependency ganache cannot be found.`)
-    }
+    throw Error(`Sorry, optional dependency ganache cannot be found.`)
 
-    const default_balance_ether = 999999999;
-    const ganachep = ganache.provider({ default_balance_ether });
+    // XXX delete the embedded-ganache network type?
+    // Nobody uses it and it seems to only cause issues.
+    // const { default: ganache } = await import('ganache-core');
+    // const default_balance_ether = 999999999;
+    // const ganachep = ganache.provider({ default_balance_ether });
     // @ts-ignore
-    return new ethers.providers.Web3Provider(ganachep);
+    // return new ethers.providers.Web3Provider(ganachep);
   } else if (networkDesc.type == 'window') {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
