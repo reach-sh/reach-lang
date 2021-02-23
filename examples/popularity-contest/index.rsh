@@ -33,11 +33,7 @@ export const main =
       });
       Pollster.publish(ticketPrice, deadline, aliceAddr, bobAddr);
 
-      const endTime = lastConsensusTime() + deadline;
-      const timeRemaining = () =>
-        (endTime - lastConsensusTime());
-      const keepGoing = () =>
-        (endTime > lastConsensusTime());
+      const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
 
       const [ forA, forB ] =
         parallel_reduce([ 0, 0])

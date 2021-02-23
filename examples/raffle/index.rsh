@@ -6,15 +6,6 @@ const Common = {
   showOutcome: Fun([Address], Null),
 };
 
-const makeDeadline = (deadline) => {
-  const endTime = lastConsensusTime() + deadline;
-  const timeRemaining = () =>
-    endTime - lastConsensusTime();
-  const keepGoing = () =>
-    endTime > lastConsensusTime();
-  return [ timeRemaining, keepGoing ];
-};
-
 export const main =
   Reach.App(
     {},
