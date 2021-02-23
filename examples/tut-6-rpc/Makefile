@@ -22,7 +22,8 @@ run: test
 
 .PHONY: test
 test: build
-	sbin/test-on.sh ETH js py go || echo 'FIXME'
+	echo 'FIXME'
+#	sbin/test-on.sh ETH  js py go
 #	sbin/test-on.sh ALGO js py go
 #	sbin/test-on.sh FAKE js py go
 
