@@ -441,7 +441,7 @@ instance Show EvalError where
     Err_ToConsensus_WhenNoTimeout ->
       "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
-      "fork local result must be object with fields `msg` ior `when`, but got " <> show t
+      "fork local result must be object with fields `msg` or `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->
       "fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_Fork_CaseAppearsTwice who at0 _at1 ->

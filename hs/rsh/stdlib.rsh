@@ -397,3 +397,12 @@ export const pow = (base, power, precision) =>
     .reduce([ 1, power, base ], ([ r, p, b ], _) =>
       [ (p % 2 == 1) ? r * b : r, p / 2, b * b ])
   [0];
+
+export const makeDeadline = (deadline) => {
+  const endTime = lastConsensusTime() + deadline;
+  const timeRemaining = () =>
+    endTime - lastConsensusTime();
+  const keepGoing = () =>
+    endTime > lastConsensusTime();
+  return [ timeRemaining, keepGoing ];
+}

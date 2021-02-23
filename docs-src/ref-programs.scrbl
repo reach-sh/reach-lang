@@ -1872,6 +1872,27 @@ This may not be available if there was no such previous publication, such as at 
 Some networks do not support observing the time of a consensus operation until after it has finalized.
 This aides scalability, because it increases the number of times when an operation could be finalized.}
 
+@subsubsection{@tt{makeDeadline}}
+
+@(mint-define! '("makeDeadline"))
+@reach{
+  const [ timeRemaining, keepGoing ] = makeDeadline(10); }
+
+@index{makeDeadline} @reachin{makeDeadline(deadline)} takes an @reachin{UInt} as an argument and returns a pair of functions
+that can be used for dealing with absolute deadlines. It internally determines the end time based off of the deadline
+and the last consensus time—at the time of calling @reachin{makeDeadline}. @tt{timeRemaining} will calculate the difference
+between the end time and the current last consensus time. @tt{keepGoing} determines whether the current last consensus time
+is less than the end time. It is typical to use the two fields for the @tt{while} and @tt{timeout} field of a @reachin{parallel_reduce}
+expression. For example:
+
+@reach{
+  const [ timeRemaining, keepGoing ] = makeDeadline(10);
+  const _ = parallel_reduce(...)
+    .invariant(...)
+    .while( keepGoing() )
+    .case(...)
+    .timeout( timeRemaining(), ...) }
+
 @subsubsection{@tt{implies}}
 
 @(mint-define! '("implies"))
