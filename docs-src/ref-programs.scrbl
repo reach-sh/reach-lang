@@ -216,14 +216,7 @@ It supports the following options:
 
 )]
 
-The @reachin{participantDefinitions} argument is a tuple of @tt{Participant}s.
-A @tech{participant} and @tech{participant class} may be declared with
-@reachin{Participant(participantName, participantInteractInterface)} and
-@reachin{ParticipantClass(participantName, participantInteractInterface)}, respectively.
-
-@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
-
-@reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
+The @reachin{participantDefinitions} argument is a tuple of @tech{participant constructor}s.
 
 The @reachin{program} argument must be a syntactic @tech{arrow expression}.
 The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
@@ -232,6 +225,27 @@ It specifies a @tech{step}, which means its content is specified by @Secref["ref
 When it returns, it must be in a @tech{step}, as well; which means that its content cannot end within a @tech{consensus step}.
 
 If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then it may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
+
+@subsubsection{Participant Constructors}
+
+A @deftech{participant constructor} is used for declaring a logical actor in
+a Reach program. A @tech{participant} and @tech{participant class} may be declared with
+
+@(mint-define! '("Participant"))
+@reach{
+  Participant(participantName, participantInteractInterface)}
+
+and
+
+@(mint-define! '("ParticipantClass"))
+@reach{
+  ParticipantClass(participantName, participantInteractInterface)}
+
+respectively.
+
+@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
+
+@reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
 
 @section[#:tag "ref-programs-step"]{Steps}
 

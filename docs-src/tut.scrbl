@@ -418,8 +418,8 @@ First, we need to update the @tech{participant interact interface}.
 @item{Lines 9 through 11 do the same for Bob, where he has a method called @reachin{acceptWager} that can look at the wager value.}
 
 @item{Line 16 associates these interfaces with the corresponding participants.
-The format of this line is a @tech{tuple} of @tech{tuples}, where the first value in the @tech{tuple} is a string that names the @tech{backend} @tech{participant} and the second value is the @tech{participant interact interface}.
-It's conventional to name them similarly.}
+The format of this line is a @tech{tuple} of @tech{participant constructor}s, where the first argument is a string that names the @tech{backend} @tech{participant}
+and the second argument is the @tech{participant interact interface}. It's conventional to name them similarly.}
 
 ]
 
