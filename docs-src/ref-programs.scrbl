@@ -1954,7 +1954,7 @@ The third argument must be an @reachin{UInt} whose value is known at compile tim
 of iterations the algorithm should perform. For reference, @tt{6} iterations provides enough accuracy to calculate
 up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
-@subsubsection{@tt{Signed Integers}}
+@subsubsection{Signed Integers}
 
 The standard library provides abstractions for dealing with signed integers. The following definitions
 are used to represent @reachin{Int}s:
@@ -2002,7 +2002,7 @@ use the @reachin{+} and @reachin{-} unary operators to declare integers instead 
 
 @index{ine} @reachin{ine(x, y)} determines whether @tt{x} is not equal to @tt{y}.
 
-@subsubsection{@tt{Fixed-Point Numbers}}
+@subsubsection{Fixed-Point Numbers}
 
 @reachin{FixedPoint} is defined by
 
