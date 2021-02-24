@@ -2,9 +2,9 @@
 
 export const main = Reach.App(
   { deployMode: 'firstMsg' },
-  [['Alice', { amt : UInt,
-               getRelay: Fun([], Address) }],
-   ['Relay', { getBob: Fun([], Address) }] ],
+  [Participant('Alice', { amt : UInt,
+               getRelay: Fun([], Address) }),
+   Participant('Relay', { getBob: Fun([], Address) }) ],
   (Alice, Relay) => {
     Alice.only(() => {
       const [ amt, relay ] =

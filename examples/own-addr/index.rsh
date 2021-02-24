@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', {myAddr: Fun([Address], Null)}]],
+    [Participant('Alice', {myAddr: Fun([Address], Null)})],
     (Alice) => {
       const abstractedSet = (Who) => {
         Who.only(() => {

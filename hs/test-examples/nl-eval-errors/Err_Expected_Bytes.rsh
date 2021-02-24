@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A',{}]],
+    [Participant('A',{})],
     (A) => {
       A.only(() => { const x = 1; });
       A.publish(x);

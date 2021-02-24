@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [['Alice', {}]],
+  [Participant('Alice', {})],
   (Alice) => {
     Alice.only(() => {
       assume(UInt.max >= 999999999);

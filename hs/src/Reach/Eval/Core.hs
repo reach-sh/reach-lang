@@ -354,11 +354,8 @@ base_env =
     , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ("Map", SLV_Prim SLPrim_Map)
-    , ( "Participant"
-      , (SLV_Object srcloc_builtin (Just $ "Participant") $
-           m_fromList_public_builtin
-             [("set", SLV_Prim SLPrim_part_set)])
-      )
+    , ("Participant", SLV_Prim SLPrim_Participant)
+    , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -508,6 +505,7 @@ slToDL = \case
   SLV_Kwd {} -> no
   SLV_MapCtor {} -> no
   SLV_Map {} -> no
+  SLV_ParticipantConstructor {} -> no
   where
     yes = return . Just
     no = return Nothing
@@ -939,6 +937,10 @@ evalAsEnvM obj = case obj of
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
+  SLV_Prim SLPrim_Participant ->
+    Just $
+      M.fromList
+        [ ("set", retV $ public $ SLV_Prim SLPrim_part_set)]
   SLV_Prim SLPrim_Array ->
     Just $
       M.fromList
@@ -1108,9 +1110,16 @@ make_partio = check_partio
   where
     check_partio v =
       case v of
-        SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+        -- Participant declarations via tuple are deprecated
+        SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object io_at _ io] -> do
+          liftIO $ deprecated_warning $ Deprecated_ParticipantTuples p_at
           make_partio_ p_at False bs_at bs io_at io
-        SLV_Tuple p_at [SLV_Bytes _ "class", SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+        SLV_Tuple p_at [SLV_Bytes _ "class", SLV_Bytes bs_at bs, SLV_Object io_at _ io] -> do
+          liftIO $ deprecated_warning $ Deprecated_ParticipantTuples p_at
+          make_partio_ p_at True bs_at bs io_at io
+        SLV_ParticipantConstructor (SLP_Participant p_at (SLV_Bytes bs_at bs) (SLV_Object io_at _ io)) ->
+          make_partio_ p_at False bs_at bs io_at io
+        SLV_ParticipantConstructor (SLP_ParticipantClass p_at (SLV_Bytes bs_at bs) (SLV_Object io_at _ io)) ->
           make_partio_ p_at True bs_at bs io_at io
         _ -> expect_ $ Err_App_InvalidPartSpec v
     make_partio_ slcpi_at slcpi_isClass bs_at slcpi_who io_at iov =
@@ -1954,6 +1963,8 @@ evalPrim p sargs =
       -- Apply the object and cases to the newly created function
       let fn = snd fnv
       evalApplyVals' fn [public obj, public cases]
+    SLPrim_Participant -> makeParticipant SLP_Participant
+    SLPrim_ParticipantClass -> makeParticipant SLP_ParticipantClass
     SLPrim_Map -> do
       t <- expect_ty =<< one_arg
       retV $ (lvl, SLV_MapCtor t)
@@ -1986,12 +1997,22 @@ evalPrim p sargs =
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args
+    mustBeObject = \case
+      v@SLV_Object {} -> return v
+      ow -> locAtf (flip getSrcLocOrDefault ow) $
+        expect_t ow $ Err_Decl_NotType "object"
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
       _ -> illegal_args
     make_dlvar at' lab ty = do
       dv <- ctxt_mkvar $ DLVar at' lab ty
       return $ (dv, SLV_DLVar dv)
+    makeParticipant ty = do
+      at <- withAt id
+      (n, interface) <- two_args
+      name <- return . SLV_Bytes (srclocOf n) =<< mustBeBytes n
+      objEnv <- mustBeObject interface
+      retV $ (lvl, SLV_ParticipantConstructor $ ty at name objEnv)
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do

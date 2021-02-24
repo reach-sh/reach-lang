@@ -6,7 +6,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const double = x => x * 2;
       5 |> double |> Array.iota;

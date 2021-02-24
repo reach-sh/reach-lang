@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {  },
-    [['Alice', {}], ['Bob', {}],
+    [Participant('Alice', {}), Participant('Bob', {}),
     ],
     (Alice, Bob) => {
       closeTo(Bob,

@@ -1,1 +1,0 @@
-reachc: error: ./participant_entities.rsh:11:1:const: Invalid name shadowing. Identifier 'Participant' is already bound at <builtin>. It cannot be bound again at ./participant_entities.rsh:11:7:id

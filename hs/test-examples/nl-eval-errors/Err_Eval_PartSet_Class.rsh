@@ -3,10 +3,10 @@
 export const main =
   Reach.App(
     {},
-    [['A', {
+    [Participant('A', {
       getAddr: Fun([], Address),
-      }],
-     ['class', 'C', {}] ],
+      }),
+      ParticipantClass('C', {}) ],
     (A, C) => {
       A.only(() => {
         const addr = declassify(interact.getAddr()); });

@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', { shouldPublish: Fun([], Bool) }]],
+    [Participant('Alice', { shouldPublish: Fun([], Bool) })],
     (Alice) => {
       Alice.pay(1);
       commit();

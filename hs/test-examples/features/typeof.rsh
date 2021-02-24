@@ -8,8 +8,8 @@ const YTy = typeOf(true);
 
 export const main = Reach.App(
   {},
-  [['A', {getX: Fun([], XTy),
-          getY: Fun([], YTy)}]],
+  [Participant('A', {getX: Fun([], XTy),
+          getY: Fun([], YTy)})],
   (A) => {
     A.only(() => {
       const _x = interact.getX();

@@ -7,7 +7,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', { onStop: Fun([], Null) }]],
+    [Participant('A', { onStop: Fun([], Null) })],
     (A) => {
       A.publish().pay(1).exposeAs("initialPay");
 

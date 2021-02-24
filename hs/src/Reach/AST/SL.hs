@@ -131,6 +131,7 @@ data SLVal
   | SLV_Kwd SLKwd
   | SLV_MapCtor SLType
   | SLV_Map DLMVar
+  | SLV_ParticipantConstructor SLParticipantType
   deriving (Eq, Generic)
 
 instance Pretty SLVal where
@@ -160,6 +161,15 @@ instance Pretty SLVal where
     SLV_Kwd k -> pretty k
     SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
+    SLV_ParticipantConstructor p -> pretty p
+
+instance Pretty SLParticipantType where
+    pretty p =
+      case p of
+        SLP_Participant _ n e -> pp "Participant" n e
+        SLP_ParticipantClass _ n e -> pp "ParticipantClass" n e
+      where
+        pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -179,6 +189,11 @@ instance SrcLocOf SLVal where
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
+
+data SLParticipantType
+  = SLP_Participant SrcLoc SLVal SLVal
+  | SLP_ParticipantClass SrcLoc SLVal SLVal
+  deriving (Eq, Generic)
 
 data SLLValue
   = SLLV_MapRef SrcLoc DLMVar DLArg
@@ -363,6 +378,8 @@ data SLPrimitive
   | SLPrim_lastConsensusTime
   | SLPrim_Map
   | SLPrim_MapCtor SLType
+  | SLPrim_Participant
+  | SLPrim_ParticipantClass
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

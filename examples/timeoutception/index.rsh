@@ -27,7 +27,7 @@ function thrice(f, x) {
 
 export const main = Reach.App(
   {},
-  [['A', Player]],
+  [Participant('A', Player)],
   (A) => {
     A.publish();
     commit();

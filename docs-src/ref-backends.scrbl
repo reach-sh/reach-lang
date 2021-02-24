@@ -51,7 +51,7 @@ For example, if the Reach program,
 
 @reach{
  Reach.App({},
-  [["A", { get: Bytes(32), give: Fun([Bytes(32)], Bool) }]],
+  [Participant("A", { get: Bytes(32), give: Fun([Bytes(32)], Bool) })],
   (A) => {
    A.only(() => {
     const x = interact.give(interact.get); });

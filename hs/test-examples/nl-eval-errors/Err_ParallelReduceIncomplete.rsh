@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const a =
         parallel_reduce(null);

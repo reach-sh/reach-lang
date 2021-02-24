@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['C', {}]],
+    [Participant('C', {})],
     (C) => {
       C.only(() => {
         const addr1 = this; });

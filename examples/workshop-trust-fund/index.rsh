@@ -8,16 +8,16 @@ const common = {
 export const main =
   Reach.App(
     { deployMode: 'firstMsg' },
-    [ [   'Funder', {
+    [ Participant('Funder', {
       ...common,
       getParams: Fun([], Object({
         receiverAddr: Address,
         payment:      UInt,
         maturity:     UInt,
         refund:       UInt,
-        dormant:      UInt })) }],
-      ['Receiver', common],
-      ['Bystander', common] ],
+        dormant:      UInt })) }),
+      Participant('Receiver', common),
+      Participant('Bystander', common) ],
     (Funder, Receiver, Bystander) => {
       Funder.only(() => {
         const { receiverAddr,

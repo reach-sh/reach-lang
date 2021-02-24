@@ -7,7 +7,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}], Token, Array(Token, 2)],
+    [Participant('A', {}), Token, Array(Token, 2)],
     (A, token, tokens) => {
       A.pay(5).currency(token);
       transfer(5).currency(token).to(A);

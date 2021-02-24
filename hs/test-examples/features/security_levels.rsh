@@ -13,7 +13,7 @@ const fnDeclassify = (_x) => { return declassify(_x); };
 const fnPolymorphic = (x) => { return x + 1; };
 
 export const main = Reach.App(
-  {}, [['A', {x: UInt}]], (A) => {
+  {}, [Participant('A', {x: UInt})], (A) => {
     A.only(() => {
       const _x = interact.x;
       assume(_x == 1);

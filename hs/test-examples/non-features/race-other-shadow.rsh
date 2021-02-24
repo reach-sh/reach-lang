@@ -3,9 +3,9 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', {}],
-     ['Bob', {}],
-     ['Claire', {}],
+    [Participant('Alice', {}),
+     Participant('Bob', {}),
+     Participant('Claire', {}),
     ],
     (Alice, Bob, Claire) => {
       Alice.only(() => {

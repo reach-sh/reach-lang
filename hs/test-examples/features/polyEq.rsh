@@ -15,7 +15,7 @@ const aliceInterface = {
 export const main =
   Reach.App(
     {},
-    [['A', aliceInterface]],
+    [Participant('A', aliceInterface)],
     (A) => {
       A.publish();
       commit();

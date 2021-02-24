@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', { x : UInt }]],
+    [Participant('A', { x : UInt })],
     (A) => {
       A.only(() => {
         // Lets say `declassify(interact.x) - 4` evaluates

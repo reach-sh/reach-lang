@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [["A", {getKey: Fun([], Bytes(4))}]],
+  [Participant("A", {getKey: Fun([], Bytes(4))})],
   (A) => {
     A.only(() => {
       const key = interact.getKey();

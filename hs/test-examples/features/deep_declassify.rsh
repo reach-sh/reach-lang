@@ -10,10 +10,10 @@ const Common = {
 export const main =
   Reach.App(
     {  },
-    [['Alice',
-      { ...Common } ],
-     ['Bob',
-      { ...Common } ],
+    [Participant('Alice',
+      { ...Common }),
+     Participant('Bob',
+      { ...Common }),
     ],
     (Alice, Bob) => {
       Alice.only(() => {

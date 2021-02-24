@@ -1,7 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(
-  {}, [['A', {get: Fun([],Tuple(UInt, Bool, UInt))}]], (A) => {
+  {}, [Participant('A', {get: Fun([],Tuple(UInt, Bool, UInt))})], (A) => {
     const xs = [0, true, 2, 3];
     assert(xs[1] == true);
 

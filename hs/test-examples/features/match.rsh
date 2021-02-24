@@ -3,14 +3,14 @@
 export const main =
   Reach.App(
     {  },
-    [['Alice', {
+    [Participant('Alice', {
         get: Fun([], Data({
           ENull: Null,
           EInt: UInt,
           EObj: Object({ i: UInt }) })),
         put: Fun([UInt], Null),
-      },
-    ]],
+      })
+    ],
     (Alice) => {
       Alice.only(() => {
         const mx = declassify(interact.get());

@@ -9,7 +9,7 @@ class C {
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const c = new C(x);
       exit();

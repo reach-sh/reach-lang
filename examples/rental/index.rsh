@@ -12,7 +12,7 @@ const Tenant =
 
 const DEADLINE = 10;
 export const l_first = Reach.App(
-  {}, [['Tenant', Tenant], ['Landlord', Landlord]], (T, L) => {
+  {}, [Participant('Tenant', Tenant), Participant('Landlord', Landlord)], (T, L) => {
 
     L.only(() => {
       const terms = declassify(interact.terms); });
@@ -57,7 +57,7 @@ export const l_first = Reach.App(
   } );
 
 export const t_first = Reach.App(
-  {}, [['Tenant', Tenant], ['Landlord', Landlord]], (T, L) => {
+  {}, [Participant('Tenant', Tenant), Participant('Landlord', Landlord)], (T, L) => {
 
     L.only(() => {
       const terms = declassify(interact.terms); });
@@ -102,7 +102,7 @@ export const t_first = Reach.App(
   } );
 
 export const fair = Reach.App(
-  {}, [['Tenant', Tenant], ['Landlord', Landlord]], (T, L) => {
+  {}, [Participant('Tenant', Tenant), Participant('Landlord', Landlord)], (T, L) => {
 
     L.only(() => {
       const terms = declassify(interact.terms); });

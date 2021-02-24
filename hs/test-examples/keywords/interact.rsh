@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       A.only(() => {
         const interact = 5;

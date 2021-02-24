@@ -85,7 +85,7 @@ const Bob =
 export const main =
   Reach.App(
     {},
-    [['A', Alice], ['B', Bob]],
+    [Participant('A', Alice), Participant('B', Bob)],
     (A, B) => {
       A.only(() => {
         const wagerAmount = declassify(interact.getWager());

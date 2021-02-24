@@ -24,7 +24,7 @@ const BuyerInterface = {
 export const main = Reach.App(
   { },
   [
-    ['Funder', FunderInterface], ['class', 'Buyer', BuyerInterface],
+    Participant('Funder', FunderInterface), ParticipantClass('Buyer', BuyerInterface),
   ],
   (Funder, Buyer) => {
     const showOutcome = (winners) =>

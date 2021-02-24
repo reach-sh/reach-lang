@@ -4,13 +4,13 @@ const Obj = Object({x: UInt, y: Bool});
 
 export const main = Reach.App(
   {}, [
-    ['Alice', {
+    Participant('Alice', {
       ...hasRandom,
       getObj: Fun([], Obj),
-    }],
-    ['Bob', {
+    }),
+    Participant('Bob', {
       showObj: Fun([Obj, Digest, UInt], Null),
-    }],
+    }),
   ], (Alice, Bob) => {
     Alice.only(() => {
       const obj = declassify(interact.getObj());

@@ -33,7 +33,7 @@ const DEADLINE = 30;
 export const main =
   Reach.App(
     {},
-    [['Alice', Alice], ['Bob', Bob]],
+    [Participant('Alice', Alice), Participant('Bob', Bob)],
     (A, B) => {
       const informTimeout = () => {
         each([A, B], () => {

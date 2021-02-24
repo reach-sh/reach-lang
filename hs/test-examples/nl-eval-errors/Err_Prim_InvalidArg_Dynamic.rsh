@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', { x : UInt }]],
+    [Participant('A', { x : UInt })],
     (A) => {
       A.only(() => {
         assert(sqrt(10, declassify(interact.x)) == 3);

@@ -7,7 +7,7 @@ function sum(...xs) {
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const x = sum(1, 2, 3, 4, 5);
       assert(x == 15);

@@ -8,7 +8,7 @@ function multiply (a, b = 1) {
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const x = multiply(5);
       assert(x==5);

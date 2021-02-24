@@ -9,13 +9,13 @@ const Common = {
 export const main =
   Reach.App(
     { 'deployMode': 'firstMsg' },
-    [['Alice',
+    [Participant('Alice',
       { ...Common,
         getParams: Fun([], Object({ wager: UInt,
-                                    deadline: UInt })) }],
-     ['Bob',
+                                    deadline: UInt })) }),
+     Participant('Bob',
       { ...Common,
-        confirmWager: Fun([UInt], Null) } ],
+        confirmWager: Fun([UInt], Null) } ),
     ],
     (Alice, Bob) => {
       const showOutcome = (which) => () => {

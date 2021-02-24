@@ -9,18 +9,18 @@ const Common = {
 export const main =
   Reach.App(
     { connectors: [ETH, ALGO] },
-    [['Pollster',
+    [Participant('Pollster',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,
                                     deadline: UInt,
                                     aliceAddr: Address,
-                                    bobAddr: Address })) }],
-     ['class', 'Voter',
+                                    bobAddr: Address })) }),
+     ParticipantClass('Voter',
       { ...Common,
         getVote: Fun([], Bool),
         voterWas: Fun([Address], Null),
         shouldVote: Fun([], Bool),
-      } ],
+      }),
     ],
     (Pollster, Voter) => {
       const showOutcome = (which, forA, forB) => () => {

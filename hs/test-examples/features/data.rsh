@@ -7,10 +7,10 @@ const Point = Data(
 
 export const main = Reach.App(
   {},
-  [['A', { get1: Fun([], MUInt),
+  [Participant('A', { get1: Fun([], MUInt),
            put1: Fun([MUInt], Null),
            get2: Fun([], Point),
-           put2: Fun([Point], Null) }]],
+           put2: Fun([Point], Null) })],
   (A) => {
     A.only(() => {
       const mi = declassify(interact.get1());

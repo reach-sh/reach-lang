@@ -9,20 +9,20 @@ const Common = {
 export const main =
   Reach.App(
     {},
-    [['Sponsor',
+    [Participant('Sponsor',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,
                                     deadline: UInt })),
         showOpen: Fun([], Null),
         showReturning: Fun([UInt], Null),
         showReturned: Fun([UInt], Null),
-      }],
-     ['class', 'Player',
+      }),
+      ParticipantClass('Player',
       { ...Common,
         shouldBuy: Fun([UInt], Bool),
         buyerWas: Fun([Address], Null),
         returnerWas: Fun([Address, UInt], Null),
-      } ],
+      }),
     ],
     (Sponsor, Player) => {
       Sponsor.only(() => {

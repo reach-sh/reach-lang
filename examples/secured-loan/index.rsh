@@ -15,15 +15,15 @@ const hasSendOutcome = {
 export const main = Reach.App(
   {},
   [
-    ['Borrower', {
+    Participant('Borrower', {
       ...hasSendOutcome,
       getParams: Fun([], ParamsType),
       waitForPayback: Fun([], Null),
-    }],
-    ['Lender', {
+    }),
+    Participant('Lender', {
       ...hasSendOutcome,
       acceptParams: Fun([ParamsType], Null),
-    }],
+    }),
   ],
   (Borrower, Lender) => {
     const sendOutcome = (which) => {

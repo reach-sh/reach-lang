@@ -3,7 +3,7 @@
 const x = 0;
 
 export const main = Reach.App(
-  {}, [["A", {}]], (A) => {
+  {}, [Participant("A", {})], (A) => {
     A.only(() => {
       const y = declassify(x);
     });

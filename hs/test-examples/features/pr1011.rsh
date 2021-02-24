@@ -9,12 +9,12 @@ export const main = Reach.App(
   {
     verifyPerConnector: true,
   },
-  [[
+  [Participant(
     'Alice',
     {
       show: Fun([XFixedPoint], Null)
     }
-  ]],
+  )],
   (Alice) => {
     const fp100 = XmkFixedPoint(100);
     Alice.only(() => {
