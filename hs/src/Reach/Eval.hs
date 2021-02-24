@@ -92,7 +92,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
   let partvs = map make_part part_ios
   let top_args = map (jse_expect_id at) top_formals
   top_vargs <- zipEq (Err_Apply_ArgCount at) top_args partvs
-  let top_viargs = map (\(i, pv) -> (i, infectWithId_sls i pv)) top_vargs
+  let top_viargs = map (\(i, pv) -> (i, infectWithId_sls at' i pv)) top_vargs
   let top_rvargs = map (second $ (sls_sss at)) top_viargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
   let st_after_first0 =
@@ -128,7 +128,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
   dli_ctimem <- do
     let no = return $ Nothing
     let yes = do
-          time_dv <- ctxt_mkvar $ DLVar at "ctime" T_UInt
+          time_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
           doFluidSet FV_lastConsensusTime $ public $ SLV_DLVar time_dv
           return $ Just time_dv
     case dlo_deployMode dlo of

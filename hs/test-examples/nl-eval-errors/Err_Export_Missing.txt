@@ -1,1 +1,1 @@
-reachc: error: ./Err_Export_Missing.rsh:8:1:export: Invalid unbound identifier in module export: x. Did you mean: ["fx","eq","ge","gt","le"]
+reachc: error: ./Err_Export_Missing.rsh:8:1:export: Invalid unbound identifier in export: x. Did you mean: ["fx","eq","ge","gt","le"]

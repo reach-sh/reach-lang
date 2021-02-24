@@ -60,7 +60,7 @@ liftLocal = \case
 liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App DLArg
 liftExpr at t e = do
   idx <- allocIdx
-  let v = DLVar at "ul" t idx
+  let v = DLVar at Nothing t idx
   liftCommon (DL_Let at (Just v) e)
   return $ DLA_Var v
 

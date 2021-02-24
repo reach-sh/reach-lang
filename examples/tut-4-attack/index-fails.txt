@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable("Bob", v7)
+  of theorem unknowable("Bob", handA/7)
   at ./index-fails.rsh:25:17:application
 
-  Bob knows of v7 because it is published.
+  Bob knows of handA/7 because it is published.
 
 Verifying for generic connector
   Verifying with mode = VM_Honest

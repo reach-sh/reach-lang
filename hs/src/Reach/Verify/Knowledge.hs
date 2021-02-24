@@ -28,7 +28,7 @@ data Point
   deriving (Eq, Ord)
 
 instance Pretty Point where
-  pretty (P_Var v) = pretty v
+  pretty (P_Var v) = viaShow v
   pretty P_Con = "constant"
   pretty (P_Interact p m) = pretty p <> "." <> pretty m
   pretty (P_Part p) = pretty p
@@ -101,13 +101,14 @@ displayPath who = \case
   where
     sp = show . pretty
     bindingInfo = \case
-      P_Var (DLVar at' _ _ i) ->
-        show $ "v" <> pretty i <> " (defined at " <> pretty at' <> ")"
+      P_Var v@(DLVar _ (Just (at, _))  _ _) -> showBinding at $ viaShow v
+      P_Var v@(DLVar at _ _ _) -> showBinding at $ viaShow v
       ow -> sp ow
+    showBinding at v = show $ v <> " (defined at " <> pretty at <> ")"
     publishInfo = \case
-      P_Var (DLVar at' _ _ i) ->
-        show $ "v" <> pretty i <> " was published at " <> pretty at'
+      P_Var v@(DLVar at _ _ _) -> show $ viaShow v <> " was published at " <> pretty at
       ow -> sp ow
+
 
 query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> SLPart -> S.Set Point -> IO ()
 query ctxt at f mmsg who whats = do

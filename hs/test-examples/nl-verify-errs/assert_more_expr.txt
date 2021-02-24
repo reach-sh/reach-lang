@@ -8,13 +8,13 @@ Verification failed:
   at ./assert_more_expr.rsh:7:11:application call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   // Violation witness
-  const v3 = 0;
+  const _x1/3 = 0;
   //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:8:32:application
-  const v4 = 1;
+  const _x2/4 = 1;
   //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:9:32:application
 
   // Theorem formalization
-  assert((v3 + v4) == (v3 * 2));
+  assert((_x1/3 + _x2/4) == (_x1/3 * 2));
 
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
