@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [ ['A', { getX: Fun([], UInt) }] ],
+    [ Participant('A', { getX: Fun([], UInt) }) ],
     (A) => {
       A.only(() => {
         const x = declassify(interact.getX());

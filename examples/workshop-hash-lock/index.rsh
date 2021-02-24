@@ -2,9 +2,9 @@
 
 export const main = Reach.App(
   { deployMode: 'firstMsg' },
-  [['Alice', { amt : UInt,
-               pass: UInt }],
-   ['Bob', { getPass: Fun([], UInt) }] ],
+  [Participant('Alice', { amt : UInt,
+               pass: UInt }),
+   Participant('Bob', { getPass: Fun([], UInt) }) ],
   (Alice, Bob) => {
     Alice.only(() => {
       const [ amt, passDigest ] =

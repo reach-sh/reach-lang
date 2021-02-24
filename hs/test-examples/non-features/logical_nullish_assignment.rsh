@@ -7,7 +7,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       const obj = { a: 1 };
       obj.a ??= 100;

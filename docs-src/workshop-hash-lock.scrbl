@@ -87,9 +87,9 @@ Let's compare notes again.
 We wrote this in our program as:
 
 @reach{
-  [['Alice', { amt : UInt,
-               pass: UInt }],
-   ['Bob', { getPass: Fun([], UInt) }] ],
+  [Participant('Alice', { amt : UInt,
+               pass: UInt }),
+   Participant('Bob', { getPass: Fun([], UInt) }) ],
 }
 
 It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?

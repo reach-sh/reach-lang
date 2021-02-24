@@ -3,9 +3,9 @@
 export const main =
   Reach.App(
     {},
-    [['A', { getAddr: Fun([], Address) }],
-     ['B', {}],
-     ['C', {}]],
+    [Participant('A', { getAddr: Fun([], Address) }),
+     Participant('B', {}),
+     Participant('C', {})],
     (A, B, C) => {
       A.only(() => {
         const b = declassify(interact.getAddr()); });

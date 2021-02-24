@@ -8,8 +8,8 @@ const Common = {
 export const main =
   Reach.App(
     {  },
-    [['Alice',
-      { ...Common } ]
+    [Participant('Alice',
+      { ...Common } )
     ],
     (Alice) => {
 

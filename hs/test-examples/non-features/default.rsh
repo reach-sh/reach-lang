@@ -4,8 +4,8 @@ const MUInt = Maybe(UInt);
 
 export const main = Reach.App(
   {},
-  [['A', { get1: Fun([], MUInt),
-           put1: Fun([MUInt], Null) }]],
+  [Participant('A', { get1: Fun([], MUInt),
+           put1: Fun([MUInt], Null) })],
   (A) => {
     A.only(() => {
       const mi = declassify(interact.get1());

@@ -74,7 +74,7 @@ const winner = (handA, handB) =>
 export const rps =
   Reach.App(
     {},
-    [['Alice', Alice(UInt, UInt)], ['Bob', Bob(UInt, UInt)]],
+    [Participant('Alice', Alice(UInt, UInt)), Participant('Bob', Bob(UInt, UInt))],
     (A, B) =>
     simultaneous_loop(
       A, B,
@@ -88,7 +88,7 @@ const [ isRentalOutcome, NONE, ONLY_L, ONLY_T, BOTH ] = makeEnum(4);
 export const rental =
   Reach.App(
     {},
-    [['Landlord', Alice(Bool, UInt)], ['Tenant', Bob(Bool, UInt)]],
+    [Participant('Landlord', Alice(Bool, UInt)), Participant('Tenant', Bob(Bool, UInt))],
     (A, B) =>
     simultaneous_loop(
       A, B,

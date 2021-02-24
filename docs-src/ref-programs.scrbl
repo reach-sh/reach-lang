@@ -149,7 +149,7 @@ However, some additional expressions are allowed.
 @(mint-define! '("Reach") '("App"))
 @reach{
 export const main =
-  Reach.App({}, [["A", {displayResult: Fun(Int, Null)}]], (A) => {
+  Reach.App({}, [Participant("A", {displayResult: Fun(Int, Null)})], (A) => {
     const result = 0;
     A.only(() => { interact.displayResult(result); })
     return result;
@@ -216,13 +216,10 @@ It supports the following options:
 
 )]
 
-The @reachin{participantDefinitions} argument is an tuple of tuples.
-Each tuple is either
-(1) a pair of a @reachin{participantName} and a @reachin{participantInteractInterface}; or,
-(2) a triple of @reachin{'class'}, a @reachin{participantName}
-and a @reachin{participantInteractInterface}.
-
-If the tuple is preceded by @reach{'class'}, then this is a @tech{participant class}.
+The @reachin{participantDefinitions} argument is a tuple of @tt{Participant}s.
+A @tech{participant} and @tech{participant class} may be declared with
+@reachin{Participant(participantName, participantInteractInterface)} and
+@reachin{ParticipantClass(participantName, participantInteractInterface)}, respectively.
 
 @reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
 
@@ -629,7 +626,7 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 
 @subsubsection{@tt{Participant.set} and @tt{.set}}
 
-@(mint-define! '("Participant"))
+@(mint-define! '("Participant.set"))
 @reach{
  Participant.set(PART, ADDR);
  PART.set(ADDR); }

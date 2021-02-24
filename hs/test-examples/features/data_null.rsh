@@ -4,7 +4,7 @@ const MUInt = Maybe(UInt);
 
 export const main = Reach.App(
   {},
-  [['A', { }]],
+  [Participant('A', { })],
   (A) => {
     A.only(() => {
       const mi = MUInt.None();

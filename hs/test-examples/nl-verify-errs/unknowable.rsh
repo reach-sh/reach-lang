@@ -8,7 +8,7 @@ const Interface = {
 export const main =
   Reach.App(
     {},
-    [['Alice', Interface], ['Bob', {}]],
+    [Participant('Alice', Interface), Participant('Bob', {})],
     (A, B) => {
       A.only(() => {
         const x = declassify(interact.x);

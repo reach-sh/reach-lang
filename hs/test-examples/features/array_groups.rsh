@@ -2,9 +2,9 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([], Array(Object({x: UInt, y: UInt}), 32)),
+  [Participant('A', { get: Fun([], Array(Object({x: UInt, y: UInt}), 32)),
            put: Fun([ Array(UInt, 12),
-                      UInt, UInt ], Null) }]],
+                      UInt, UInt ], Null) })],
   (A) => {
     const a0 =
           Array.iota(5)

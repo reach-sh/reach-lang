@@ -1,1 +1,1 @@
-reachc: error: ./Err_App_Interact_NotFirstOrder.rsh:4:16:property binding: Value of this type cannot exist at runtime: Fun([], UInt)
+reachc: error: ./Err_App_Interact_NotFirstOrder.rsh:4:27:property binding: Value of this type cannot exist at runtime: Fun([], UInt)

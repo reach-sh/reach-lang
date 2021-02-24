@@ -7,7 +7,7 @@ const Player =
 export const main =
   Reach.App(
     {},
-    [['Alice', Player], ['Bob', Player]],
+    [Participant('Alice', Player), Participant('Bob', Player)],
     (A, B) => {
       A.only(() => {
         const handA = declassify(interact.getHand()); });

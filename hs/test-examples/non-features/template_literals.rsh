@@ -2,7 +2,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       A.only(() => {
         const day = 'TUESDAY';

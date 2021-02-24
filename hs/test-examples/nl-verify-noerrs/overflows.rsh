@@ -2,8 +2,8 @@
 
 export const main = Reach.App(
   { verifyOverflow: true },
-  [['A', { get: Fun([], Array(UInt, 16)),
-           put: Fun([Array(UInt, 16)], Null) }]],
+  [Participant('A', { get: Fun([], Array(UInt, 16)),
+           put: Fun([Array(UInt, 16)], Null) })],
   (A) => {
     A.only(() => {
       const x = declassify(interact.get());

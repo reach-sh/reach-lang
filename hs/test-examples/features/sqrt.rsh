@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {}]],
+    [Participant('A', {})],
     (A) => {
       A.only(() => {
         assert(sqrt(9, 5) == 3, "sqrt 9 = 3");

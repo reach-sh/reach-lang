@@ -3,6 +3,6 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', {}], ['Bob', {}]],
+    [Participant('Alice', {}), Participant('Bob', {})],
     (A, B) => {
       exit(); });

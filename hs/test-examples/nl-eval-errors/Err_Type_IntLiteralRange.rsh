@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [['A', { put: Fun([UInt], UInt) }]],
+  [Participant('A', { put: Fun([UInt], UInt) })],
   (A) => {
     A.only(() => {
       const x = 18446744073709551616;

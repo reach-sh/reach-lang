@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', { }]],
+    [Participant('Alice', { })],
     (Alice) => {
       Alice.pay(1);
       commit();

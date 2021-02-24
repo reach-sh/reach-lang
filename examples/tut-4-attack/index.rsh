@@ -13,7 +13,7 @@ const Bob =
 export const main =
   Reach.App(
     {},
-    [['Alice', Alice], ['Bob', Bob]],
+    [Participant('Alice', Alice), Participant('Bob', Bob)],
     (A, B) => {
       A.only(() => {
         const wager = declassify(interact.wager);

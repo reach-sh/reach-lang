@@ -1,7 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(
-  {}, [['A', {}]], (A) => {
+  {}, [Participant('A', {})], (A) => {
     A.only(() => {
       // This added failure is just to make the test suite pass.
       assert(false);

@@ -9,8 +9,8 @@ const Common = {
 export const main =
   Reach.App(
     { 'deployMode': 'firstMsg' },
-    [['Alice', Common ],
-     ['Bob', Common ],
+    [Participant('Alice', Common),
+     Participant('Bob', Common),
     ],
     (Alice, Bob) => {
       Alice.only(() => {

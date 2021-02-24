@@ -3,10 +3,10 @@
 export const main =
   Reach.App(
     {},
-    [['A', {
+    [Participant('A', {
       showBool: Fun([Bool], Null),
       showInt: Fun([UInt], Null),
-    }]],
+    })],
     (A) => {
       const e = Either(UInt, Bool);
       A.only(() => {

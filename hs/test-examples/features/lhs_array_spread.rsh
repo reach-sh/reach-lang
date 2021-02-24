@@ -2,8 +2,8 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([], Tuple(UInt, Bool, UInt)),
-           put: Fun([UInt, Bool, Tuple(UInt)], Null) }]],
+  [Participant('A', { get: Fun([], Tuple(UInt, Bool, UInt)),
+           put: Fun([UInt, Bool, Tuple(UInt)], Null) })],
   (A) => {
     const [ t, ...foo ] = [ 0 ];
     assert(t == 0);
