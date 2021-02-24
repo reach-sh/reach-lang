@@ -23,16 +23,16 @@ const common = {
 export const main =
   Reach.App(
     { deployMode: 'firstMsg' },
-    [ [   'Funder', {
+    [ Participant('Funder', {
       ...common,
       getParams: Fun([], Object({
         receiverAddr: Address,
         payment:      UInt,
         maturity:     UInt,
         refund:       UInt,
-        dormant:      UInt })) }],
-      ['Receiver', common],
-      ['Bystander', common] ],
+        dormant:      UInt })) }),
+      Participant('Receiver', common),
+      Participant('Bystander', common) ],
     (Funder, Receiver, Bystander) =&gt; {"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="mi">1</span>    <span class="s1">&#39;reach 0.1&#39;</span><span class="p">;</span>
  <span class="mi">2</span>    
  <span class="mi">3</span>    <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">common</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">{</span>
@@ -43,16 +43,16 @@ export const main =
  <span class="mi">8</span>    <a href="ref-programs-module.html#%28reach._%28%28export%29%29%29" class="kd" data-pltdoc="x">export</a> <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">main</span></font> <font class="badlink"><span class="o">=</span></font>
  <span class="mi">9</span>      <a href="ref-programs-module.html#%28reach._%28%28.Reach%29%29%29" class="nb" data-pltdoc="x">Reach</a><span class="p">.</span><a href="ref-programs-module.html#%28reach._%28%28.App%29%29%29" class="nb" data-pltdoc="x">App</a><span class="p">(</span>
 <span class="mi">10</span>        <span class="p">{</span> <a href="ref-programs-module.html#%28reach._%28%28deploy.Mode%29%29%29" class="nb" data-pltdoc="x">deployMode</a><font class="badlink"><span class="o">:</span></font> <span class="s1">&#39;firstMsg&#39;</span> <span class="p">},</span>
-<span class="mi">11</span>        <span class="p">[</span> <span class="p">[</span>   <span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <span class="p">{</span>
+<span class="mi">11</span>        <span class="p">[</span> <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <span class="p">{</span>
 <span class="mi">12</span>    <span class="p">...</span><font class="badlink"><span class="nx">common</span></font><span class="p">,</span>
 <span class="mi">13</span>    <font class="badlink"><span class="nx">getParams</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Object%29%29%29" class="nb" data-pltdoc="x">Object</a><span class="p">({</span>
 <span class="mi">14</span>      <font class="badlink"><span class="nx">receiverAddr</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Address%29%29%29" class="nb" data-pltdoc="x">Address</a><span class="p">,</span>
 <span class="mi">15</span>      <font class="badlink"><span class="nx">payment</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
 <span class="mi">16</span>      <font class="badlink"><span class="nx">maturity</span></font><font class="badlink"><span class="o">:</span></font>     <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
 <span class="mi">17</span>      <font class="badlink"><span class="nx">refund</span></font><font class="badlink"><span class="o">:</span></font>       <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
-<span class="mi">18</span>      <font class="badlink"><span class="nx">dormant</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a> <span class="p">}))</span> <span class="p">}],</span>
-<span class="mi">19</span>    <span class="p">[</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">],</span>
-<span class="mi">20</span>    <span class="p">[</span><span class="s1">&#39;Bystander&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">]</span> <span class="p">],</span>
+<span class="mi">18</span>      <font class="badlink"><span class="nx">dormant</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a> <span class="p">}))</span> <span class="p">}),</span>
+<span class="mi">19</span>    <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">),</span>
+<span class="mi">20</span>    <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Bystander&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">)</span> <span class="p">],</span>
 <span class="mi">21</span>        <span class="p">(</span><font class="badlink"><span class="nx">Funder</span></font><span class="p">,</span> <font class="badlink"><span class="nx">Receiver</span></font><span class="p">,</span> <font class="badlink"><span class="nx">Bystander</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div></div></p><p>We&rsquo;ve represented most values as <code class="highlight"><a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a></code> fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is <code class="highlight"><font class="badlink"><span class="nx">funded</span></font></code>, one for when the particular participant is <code class="highlight"><font class="badlink"><span class="nx">ready</span></font></code> to extract the funds, and finally one for when they have successfuly <code class="highlight"><font class="badlink"><span class="nx">recvd</span></font></code> (received) them.</p><h5>4.3.3<tt>&nbsp;</tt><a name="(part._workshop-trust-fund-cc)"></a>Communication Construction</h5><p>Now, we can write down the structure of communication and action in our application.
@@ -115,16 +115,16 @@ const common = {
 export const main =
   Reach.App(
     { deployMode: 'firstMsg' },
-    [ [   'Funder', {
+    [ Participant('Funder', {
       ...common,
       getParams: Fun([], Object({
         receiverAddr: Address,
         payment:      UInt,
         maturity:     UInt,
         refund:       UInt,
-        dormant:      UInt })) }],
-      ['Receiver', common],
-      ['Bystander', common] ],
+        dormant:      UInt })) }),
+      Participant('Receiver', common),
+      Participant('Bystander', common) ],
     (Funder, Receiver, Bystander) =&gt; {
       Funder.only(() =&gt; {
         const { receiverAddr,
@@ -173,16 +173,16 @@ export const main =
  <span class="mi">8</span>    <a href="ref-programs-module.html#%28reach._%28%28export%29%29%29" class="kd" data-pltdoc="x">export</a> <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">main</span></font> <font class="badlink"><span class="o">=</span></font>
  <span class="mi">9</span>      <a href="ref-programs-module.html#%28reach._%28%28.Reach%29%29%29" class="nb" data-pltdoc="x">Reach</a><span class="p">.</span><a href="ref-programs-module.html#%28reach._%28%28.App%29%29%29" class="nb" data-pltdoc="x">App</a><span class="p">(</span>
 <span class="mi">10</span>        <span class="p">{</span> <a href="ref-programs-module.html#%28reach._%28%28deploy.Mode%29%29%29" class="nb" data-pltdoc="x">deployMode</a><font class="badlink"><span class="o">:</span></font> <span class="s1">&#39;firstMsg&#39;</span> <span class="p">},</span>
-<span class="mi">11</span>        <span class="p">[</span> <span class="p">[</span>   <span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <span class="p">{</span>
+<span class="mi">11</span>        <span class="p">[</span> <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <span class="p">{</span>
 <span class="mi">12</span>          <span class="p">...</span><font class="badlink"><span class="nx">common</span></font><span class="p">,</span>
 <span class="mi">13</span>          <font class="badlink"><span class="nx">getParams</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Object%29%29%29" class="nb" data-pltdoc="x">Object</a><span class="p">({</span>
 <span class="mi">14</span>            <font class="badlink"><span class="nx">receiverAddr</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Address%29%29%29" class="nb" data-pltdoc="x">Address</a><span class="p">,</span>
 <span class="mi">15</span>            <font class="badlink"><span class="nx">payment</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
 <span class="mi">16</span>            <font class="badlink"><span class="nx">maturity</span></font><font class="badlink"><span class="o">:</span></font>     <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
 <span class="mi">17</span>            <font class="badlink"><span class="nx">refund</span></font><font class="badlink"><span class="o">:</span></font>       <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">,</span>
-<span class="mi">18</span>            <font class="badlink"><span class="nx">dormant</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a> <span class="p">}))</span> <span class="p">}],</span>
-<span class="mi">19</span>          <span class="p">[</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">],</span>
-<span class="mi">20</span>          <span class="p">[</span><span class="s1">&#39;Bystander&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">]</span> <span class="p">],</span>
+<span class="mi">18</span>            <font class="badlink"><span class="nx">dormant</span></font><font class="badlink"><span class="o">:</span></font>      <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a> <span class="p">}))</span> <span class="p">}),</span>
+<span class="mi">19</span>          <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">),</span>
+<span class="mi">20</span>          <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Bystander&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">)</span> <span class="p">],</span>
 <span class="mi">21</span>        <span class="p">(</span><font class="badlink"><span class="nx">Funder</span></font><span class="p">,</span> <font class="badlink"><span class="nx">Receiver</span></font><span class="p">,</span> <font class="badlink"><span class="nx">Bystander</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="mi">22</span>          <font class="badlink"><span class="nx">Funder</span></font><span class="p">.</span><a href="ref-programs-step.html#%28reach._%28%28only%29%29%29" class="k" data-pltdoc="x">only</a><span class="p">(()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="mi">23</span>            <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <span class="p">{</span> <font class="badlink"><span class="nx">receiverAddr</span></font><span class="p">,</span>

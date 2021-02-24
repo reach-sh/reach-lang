@@ -35,7 +35,7 @@ const DEADLINE = 10;
 export const main =
   Reach.App(
     {},
-    [['Alice', Alice], ['Bob', Bob]],
+    [Participant('Alice', Alice), Participant('Bob', Bob)],
     (A, B) =&gt; {
       const informTimeout = () =&gt; {
         each([A, B], () =&gt; {
@@ -122,7 +122,7 @@ export const main =
 <span class="mi">33</span>    <a href="ref-programs-module.html#%28reach._%28%28export%29%29%29" class="kd" data-pltdoc="x">export</a> <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">main</span></font> <font class="badlink"><span class="o">=</span></font>
 <span class="mi">34</span>      <a href="ref-programs-module.html#%28reach._%28%28.Reach%29%29%29" class="nb" data-pltdoc="x">Reach</a><span class="p">.</span><a href="ref-programs-module.html#%28reach._%28%28.App%29%29%29" class="nb" data-pltdoc="x">App</a><span class="p">(</span>
 <span class="mi">35</span>        <span class="p">{},</span>
-<span class="mi">36</span>        <span class="p">[[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">Alice</span></font><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">Bob</span></font><span class="p">]],</span>
+<span class="mi">36</span>        <span class="p">[</span><a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">Alice</span></font><span class="p">),</span> <a href="ref-programs-module.html#%28reach._%28%28.Participant%29%29%29" class="nb" data-pltdoc="x">Participant</a><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">Bob</span></font><span class="p">)],</span>
 <span class="mi">37</span>        <span class="p">(</span><font class="badlink"><span class="nx">A</span></font><span class="p">,</span> <font class="badlink"><span class="nx">B</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="mi">38</span>          <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">informTimeout</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="mi">39</span>            <a href="ref-programs-step.html#%28reach._%28%28each%29%29%29" class="k" data-pltdoc="x">each</a><span class="p">([</span><font class="badlink"><span class="nx">A</span></font><span class="p">,</span> <font class="badlink"><span class="nx">B</span></font><span class="p">],</span> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
