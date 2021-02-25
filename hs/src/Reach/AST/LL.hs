@@ -69,7 +69,7 @@ instance Pretty LLStep where
 
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
-  , llo_verifyOverflow :: Bool
+  , llo_verifyArithmetic :: Bool
   , llo_counter :: Counter
   }
   deriving (Generic, Eq)

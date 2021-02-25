@@ -180,7 +180,7 @@ instance Pretty DLBlock where
 
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
-  , dlo_verifyOverflow :: Bool
+  , dlo_verifyArithmetic :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter

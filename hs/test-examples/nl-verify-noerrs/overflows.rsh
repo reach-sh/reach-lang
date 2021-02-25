@@ -1,7 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(
-  { verifyOverflow: true },
+  { verifyArithmetic: true },
   [Participant('A', { get: Fun([], Array(UInt, 16)),
            put: Fun([Array(UInt, 16)], Null) })],
   (A) => {

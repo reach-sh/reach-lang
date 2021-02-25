@@ -525,6 +525,6 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   pps <- EPPs <$> mapWithKeyM mkep p_to_ie
   -- Step 4: Generate the final PLProg
   let plo_deployMode = llo_deployMode
-  let plo_verifyOverflow = llo_verifyOverflow
+  let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli pps cp

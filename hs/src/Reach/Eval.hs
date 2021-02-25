@@ -27,7 +27,7 @@ app_default_opts :: Counter -> [T.Text] -> DLOpts
 app_default_opts idxr cns =
   DLOpts
     { dlo_deployMode = DM_constructor
-    , dlo_verifyOverflow = False
+    , dlo_verifyArithmetic = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
     , dlo_counter = idxr
@@ -37,7 +37,7 @@ app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options =
   M.fromList
     [ ("deployMode", opt_deployMode)
-    , ("verifyOverflow", opt_verifyOverflow)
+    , ("verifyArithmetic", opt_verifyArithmetic)
     , ("verifyPerConnector", opt_verifyPerConnector)
     , ("connectors", opt_connectors)
     ]
@@ -46,9 +46,9 @@ app_options =
       case v of
         SLV_Bool _ b -> Right $ opts {dlo_verifyPerConnector = b}
         _ -> Left $ "expected boolean"
-    opt_verifyOverflow opts v =
+    opt_verifyArithmetic opts v =
       case v of
-        SLV_Bool _ b -> Right $ opts {dlo_verifyOverflow = b}
+        SLV_Bool _ b -> Right $ opts {dlo_verifyArithmetic = b}
         _ -> Left $ "expected boolean"
     opt_connectors opts v =
       case v of
