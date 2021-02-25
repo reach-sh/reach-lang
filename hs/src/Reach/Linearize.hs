@@ -414,7 +414,7 @@ df_step = \case
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let llo_deployMode = dlo_deployMode
-  let llo_verifyOverflow = dlo_verifyOverflow
+  let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
   let opts' = LLOpts {..}
   let eCounterR = llo_counter

@@ -252,7 +252,7 @@ instance Pretty a => Pretty (EPPs a) where
 
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
-  , plo_verifyOverflow :: Bool
+  , plo_verifyArithmetic :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

@@ -105,8 +105,8 @@ saveLifts ss = do
 saveLift :: DLStmt -> App ()
 saveLift = saveLifts . return
 
-whenVerifyOverflow :: App () -> App ()
-whenVerifyOverflow m = flip when m =<< (dlo_verifyOverflow . e_dlo <$> ask)
+whenVerifyArithmetic :: App () -> App ()
+whenVerifyArithmetic m = flip when m =<< (dlo_verifyArithmetic . e_dlo <$> ask)
 
 setSt :: SLState -> App ()
 setSt x = do
@@ -1421,7 +1421,7 @@ evalPrimOp p sargs = do
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
-      whenVerifyOverflow $
+      whenVerifyArithmetic $
         case p of
           ADD -> do
             let (a, b) = case dargs of
@@ -1433,10 +1433,16 @@ evalPrimOp p sargs = do
           SUB -> do
             ca <- doCmp PGE dargs
             doClaim ca "sub wraparound"
+          DIV -> do
+            let denom = case dargs of
+                  [_, b] -> b
+                  _ -> impossible "div args"
+            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
+            doClaim ca "div by zero"
           _ -> return ()
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
-      whenVerifyOverflow $
+      whenVerifyArithmetic $
         case p of
           MUL -> do
             ca <- doCmp PLE [da, lim_maxUInt_a]

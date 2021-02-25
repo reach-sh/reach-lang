@@ -1,0 +1,28 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TClaim CT_Assert
+  msg: "div by zero"
+  at ./div_by_zero.rsh:9:21:application
+  at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
+
+  // Violation witness
+  const interact_A_x = 0;
+  //    ^ from interaction at ./div_by_zero.rsh:4:12:application
+
+  // Theorem formalization
+  assert(interact_A_x > 0);
+
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "A")
+Verification failed:
+  in VM_Dishonest (RolePart "A") mode
+  of theorem TClaim CT_Assert
+  msg: "div by zero"
+  at ./div_by_zero.rsh:9:21:application
+  at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
+
+  (details omitted on repeat)
+Checked 5 theorems; 2 failures. :'(

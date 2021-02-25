@@ -181,7 +181,7 @@ It supports the following options:
 (list @~ @~ @~ @~ @~)
 
 (list
- @(begin @(mint-define! '("verifyOverflow")) @reachin{verifyOverflow})
+ @(begin @(mint-define! '("verifyArithmetic")) @reachin{verifyArithmetic})
  @~
  @para{@reachin{true} or @reachin{false} (default)}
  @~
@@ -1264,7 +1264,7 @@ Specialized functions exist for equality checking on each supported type.
 
 @(hrule)
 
-If @reachin{verifyOverflow} is @reachin{true}, then operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enable @tech{consensus networks}.
+If @reachin{verifyArithmetic} is @reachin{true}, then arithmetic operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enable @tech{consensus networks}.
 If it is @reachin{false}, then the @tech{connector} will ensure this dynamically.
 
 @subsubsection{xor}

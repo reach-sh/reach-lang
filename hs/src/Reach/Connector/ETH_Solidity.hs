@@ -305,7 +305,7 @@ solPrimApply ctxt = \case
   where
     PLOpts {..} = ctxt_plo ctxt
     safeOp fun op =
-      case plo_verifyOverflow of
+      case plo_verifyArithmetic of
         False -> binOp op
         True -> solApply fun
     binOp op = \case
