@@ -1434,10 +1434,10 @@ evalPrimOp p sargs = do
             ca <- doCmp PGE dargs
             doClaim ca "sub wraparound"
           DIV -> do
-            let (_, b) = case dargs of
-                  [a_, b_] -> (a_, b_)
+            let denom = case dargs of
+                  [_, b] -> b
                   _ -> impossible "div args"
-            ca <- doCmp PGT [b, DLA_Literal $ DLL_Int srcloc_builtin 0]
+            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
             doClaim ca "div by zero"
           _ -> return ()
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
