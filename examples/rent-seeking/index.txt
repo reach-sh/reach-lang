@@ -10,3 +10,4 @@ XXX algo mapdel
 XXX algo mapset
 XXX algo mapref
 XXX algo mapset
+XXX algo mapset

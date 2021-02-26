@@ -51,6 +51,7 @@ export const main =
 
             const newBid = getBid(this) + addl;
             bidsM[this] = newBid;
+            bidsM[this] = newBid;
             if ( winningBid <= newBid ) { // <- <= on purpose
               each([Sponsor, Bidder], () => {
                 interact.showWinner(false, this, newBid);
