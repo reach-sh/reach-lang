@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
+  Verifying when ALL participants are honest
 Verification failed:
-  in VM_Honest mode
-  of theorem TClaim CT_Require
+  when ALL participants are honest
+  of theorem: require
   at ./class_addr.rsh:16:14:application
 
   // Violation witness
@@ -15,6 +15,6 @@ Verification failed:
   // Theorem formalization
   require(selfAddress(""C"", #t, 1) == selfAddress(""C"", #t, 11));
 
-  Verifying with mode = VM_Dishonest RoleContract
-  Verifying with mode = VM_Dishonest (RolePart "C")
+  Verifying when NO participants are honest
+  Verifying when ONLY "C" is honest
 Checked 8 theorems; 1 failures. :'(

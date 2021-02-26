@@ -1,9 +1,12 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
-  Verifying with mode = VM_Dishonest RoleContract
-  Verifying with mode = VM_Dishonest (RolePart "Bidder")
-  Verifying with mode = VM_Dishonest (RolePart "Sponsor")
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Bidder" is honest
+  Verifying when ONLY "Sponsor" is honest
 Checked 53 theorems; No failures!
+XXX algo mapref
+XXX algo mapdel
+XXX algo mapset
 XXX algo mapref
 XXX algo mapset

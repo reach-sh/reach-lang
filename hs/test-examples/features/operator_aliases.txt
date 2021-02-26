@@ -1,5 +1,5 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
-  Verifying with mode = VM_Dishonest RoleContract
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
 Checked 22 theorems; No failures!

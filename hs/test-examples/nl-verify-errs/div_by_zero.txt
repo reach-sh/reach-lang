@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
+  Verifying when ALL participants are honest
 Verification failed:
-  in VM_Honest mode
-  of theorem TClaim CT_Assert
+  when ALL participants are honest
+  of theorem: assert
   msg: "div by zero"
   at ./div_by_zero.rsh:9:21:application
   at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
@@ -15,11 +15,11 @@ Verification failed:
   // Theorem formalization
   assert(interact_A_x > 0);
 
-  Verifying with mode = VM_Dishonest RoleContract
-  Verifying with mode = VM_Dishonest (RolePart "A")
+  Verifying when NO participants are honest
+  Verifying when ONLY "A" is honest
 Verification failed:
-  in VM_Dishonest (RolePart "A") mode
-  of theorem TClaim CT_Assert
+  when ONLY "A" is honest
+  of theorem: assert
   msg: "div by zero"
   at ./div_by_zero.rsh:9:21:application
   at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)

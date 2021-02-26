@@ -1,3 +1,0 @@
-reachc: error: ./Err_ExpectedPrivate.rsh:8:27:application: Invalid declassify. Expected to declassify something private, but this UInt is public.
-Trace:
-  in [unknown function] from (./Err_ExpectedPrivate.rsh:7:15:function exp) at (./Err_ExpectedPrivate.rsh:7:11:application)

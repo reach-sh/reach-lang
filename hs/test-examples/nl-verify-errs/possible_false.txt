@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
+  Verifying when ALL participants are honest
 Verification failed:
-  in VM_Honest mode
-  of theorem TClaim CT_Possible
+  when ALL participants are honest
+  of theorem: possible
   at ./possible_false.rsh:5:13:application
 
   // Violation witness
@@ -12,21 +12,21 @@ Verification failed:
   possible(false);
 
 Verification failed:
-  in VM_Honest mode
-  of theorem TClaim CT_Possible
+  when ALL participants are honest
+  of theorem: possible
   at ./possible_false.rsh:6:13:application
 
   (details omitted on repeat)
-  Verifying with mode = VM_Dishonest RoleContract
+  Verifying when NO participants are honest
 Verification failed:
-  in VM_Dishonest RoleContract mode
-  of theorem TClaim CT_Possible
+  when NO participants are honest
+  of theorem: possible
   at ./possible_false.rsh:5:13:application
 
   (details omitted on repeat)
 Verification failed:
-  in VM_Dishonest RoleContract mode
-  of theorem TClaim CT_Possible
+  when NO participants are honest
+  of theorem: possible
   at ./possible_false.rsh:6:13:application
 
   (details omitted on repeat)

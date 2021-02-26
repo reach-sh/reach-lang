@@ -1,0 +1,3 @@
+reachc: error: ./Err_ExpectedLevel.rsh:8:27:application: Invalid declassify. Expected to declassify something private
+Trace:
+  in [unknown function] from (./Err_ExpectedLevel.rsh:7:15:function exp) at (./Err_ExpectedLevel.rsh:7:11:application)

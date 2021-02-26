@@ -1,7 +1,7 @@
 Verifying knowledge assertions
 Verifying for generic connector
-  Verifying with mode = VM_Honest
-  Verifying with mode = VM_Dishonest RoleContract
-  Verifying with mode = VM_Dishonest (RolePart "Alice")
-  Verifying with mode = VM_Dishonest (RolePart "Bob")
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
 Checked 14 theorems; No failures!
