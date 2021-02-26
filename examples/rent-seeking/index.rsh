@@ -58,9 +58,7 @@ export const main =
             }
           })
         )
-        .timeout(bidTimeout(), () => {
-          race(Sponsor, Bidder).publish();
-          return [ winner, winningBid ]; });
+        .time_remaining(bidTimeout());
       commit();
 
       Bidder.only(() => {

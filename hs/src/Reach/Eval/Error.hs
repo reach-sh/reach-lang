@@ -116,6 +116,7 @@ data EvalError
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   | Err_ParallelReduceIncomplete String
+  | Err_ParallelReduceTimeRemainingArgs [JSExpression]
   | Err_Type_None SLVal
   | Err_Type_NotDT SLType
   | Err_Type_NotApplicable SLType
@@ -451,6 +452,8 @@ instance Show EvalError where
       "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
+    Err_ParallelReduceTimeRemainingArgs args ->
+      "The `time_remaining` branch of `parallel_reduce` expects 1 argument, but received " <> show (length args)
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->

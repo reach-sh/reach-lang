@@ -215,6 +215,7 @@ data ParallelReduceMode
   | PRM_While
   | PRM_Case
   | PRM_Timeout
+  | PRM_TimeRemaining
   deriving (Eq, Generic, Show)
 
 data SLForm
@@ -248,7 +249,7 @@ data SLForm
       , slpr_minv :: Maybe JSExpression
       , slpr_mwhile :: Maybe JSExpression
       , slpr_cases :: [(SrcLoc, [JSExpression])]
-      , slpr_mtime :: Maybe (SrcLoc, [JSExpression])
+      , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
       }
   | SLForm_wait
   deriving (Eq, Generic)
