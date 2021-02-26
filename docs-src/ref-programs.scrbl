@@ -751,6 +751,28 @@ while the @reachin{.case} and @reachin{.timeout} components are like the corresp
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
 
+@subsubsub*section{@tt{.time_remaining}}
+
+When dealing with absolute deadlines in @reachin{parallel_reduce}, there is a common pattern in the
+@reachin{TIMEOUT_BLOCK} to have participants @reachin{race} to @reachin{publish} and return the accumulator.
+There is a shorthand, @reachin{.time_remaining}, available for this situation:
+
+@(mint-define! '("time_remaining"))
+@reach{
+  const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
+  const [ x, y, z ] =
+    parallel_reduce([ 1, 2, 3 ])
+      .while(keepGoing())
+      ...
+      .time_remaining(timeRemaining()) }
+
+which will expand to:
+
+@reach{
+  .timeout(timeRemaining(), () => {
+    race(...Participants).publish();
+    return [ x, y, z ]; }) }
+
 @(hrule)
 
 A @tech{parallel reduce statement} is essentially an abbreviation of pattern of a @reachin{while} loop combined with a @reachin{fork} statement that you could write yourself.
@@ -1902,7 +1924,10 @@ expression. For example:
     .invariant(...)
     .while( keepGoing() )
     .case(...)
-    .timeout( timeRemaining(), ...) }
+    .timeout( timeRemaining(), () => { ... }) }
+
+This pattern is so common that it can be abbreviated as @reachin{.time_remaining}.
+
 
 @subsubsection{@tt{implies}}
 

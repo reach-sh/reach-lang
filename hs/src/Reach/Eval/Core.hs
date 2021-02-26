@@ -7,6 +7,7 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Bits
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as BC
 import Data.Foldable
 import Data.IORef
 import Data.List (transpose, (\\))
@@ -929,6 +930,7 @@ evalAsEnvM obj = case obj of
           <> gom "while" PRM_While pr_mwhile
           <> go "case" PRM_Case
           <> gom "timeout" PRM_Timeout pr_mtime
+          <> gom "time_remaining" PRM_TimeRemaining pr_mtime
     where
       gom key mode me =
         case me of
@@ -1205,7 +1207,6 @@ evalForm f args = do
       retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing
     SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime -> do
       aa <- withAt $ \at -> (at, args)
-      let jaa = Just aa
       case pr_mode of
         Just PRM_Invariant -> do
           x <- one_arg
@@ -1216,9 +1217,15 @@ evalForm f args = do
         Just PRM_Case ->
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime
         Just PRM_Timeout ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases jaa
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases
+            $ makeTimeoutArgs PRM_Timeout aa
+        Just PRM_TimeRemaining ->
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases
+            $ makeTimeoutArgs PRM_TimeRemaining aa
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
+      where
+        makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -2995,7 +3002,7 @@ doFork ks cases mtime = do
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   evalStmt $ exp_ss <> ks
 
-doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (SrcLoc, [JSExpression]) -> App [JSStatement]
+doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> App [JSStatement]
 doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = locAt pr_at $ do
   idx <- ctxt_alloc
   let prid x = ".pr" <> (show idx) <> "." <> x
@@ -3015,12 +3022,32 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
-  let fork_e1 =
+  fork_e1 <-
         case pr_mtime of
-          Nothing -> fork_e0
-          Just (t_at, t_es) ->
-            JSCallExpression (JSMemberDot fork_e0 ta (jid "timeout")) ta (toJSCL t_es) ta
+          Nothing -> return fork_e0
+          Just (mode, t_at, args) ->
+            case (mode, args) of
+              (PRM_TimeRemaining, [t_e]) -> do
+                ps <- asks $ M.keys . e_ios
+                let pids = map (jid . BC.unpack) ps
+                let semi = JSSemiAuto
+                let race = call (jid "race") pids
+                let dot o f = JSCallExpressionDot o ta f
+                let publish = dot race $ jid "publish"
+                let pubApp = call publish []
+                let noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
+                let bodys = [
+                      JSExpressionStatement pubApp semi,
+                      JSReturn ta (Just lhs) semi ]
+                let block = JSStatementBlock ta bodys ta semi
+                let thunk = JSArrowExpression noArgs ta block
+                return $ call (JSMemberDot fork_e0 ta timeOutId) [ t_e, thunk ]
+              (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceTimeRemainingArgs args
+              (PRM_Timeout, t_es) -> return $ call (JSMemberDot fork_e0 ta timeOutId) t_es
+              _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
             where
+              timeOutId = jid "timeout"
+              call f es = JSCallExpression f ta (toJSCL es) ta
               ta = ao t_at
   let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
         where

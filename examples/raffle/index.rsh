@@ -63,10 +63,7 @@ export const main =
             return [ howMany + 1 ];
           })
         )
-        // XXX Add a short-hand for timeouts like this
-        .timeout(buyTimeout(), () => {
-          race(Sponsor, Player).publish();
-          return [ howMany ]; });
+        .time_remaining(buyTimeout());
 
       const randomMatches = (who, r) => {
         const rc = randomsM[who];
@@ -101,9 +98,7 @@ export const main =
                      howManyReturned + 1 ];
           })
         )
-        .timeout(returnTimeout(), () => {
-          race(Sponsor, Player).publish();
-          return [ hwinner, howManyReturned ]; });
+        .time_remaining(returnTimeout());
       commit();
 
       Sponsor.only(() => { interact.showReturned(howManyReturned); });
