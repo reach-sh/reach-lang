@@ -824,6 +824,8 @@ cm km = \case
   DL_LocalSwitch at dv csm -> do
     doSwitch (cp (return ())) at dv csm
     km
+  DL_MapReduce {} ->
+    impossible $ "cannot inspect maps at runtime"
 
 cp :: App () -> PLTail -> App ()
 cp km = \case

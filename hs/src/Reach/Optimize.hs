@@ -223,7 +223,7 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
                   Nothing -> do
                     remember dv e''
                     return $ DL_Let at x e'
-      case (extract x, isPure e) of
+      case (extract x, isPure e && canDupe e) of
         (Just dv, True) -> yes dv
         _ -> no
     DL_Var at v ->
@@ -236,10 +236,12 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
       DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
       where
         cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt l)
-    DL_ArrayMap at ans x0 a f -> do
-      DL_ArrayMap at ans <$> opt x0 <*> (pure a) <*> opt f
-    DL_ArrayReduce at ans x0 z b a f -> do
-      DL_ArrayReduce at ans <$> opt x0 <*> opt z <*> (pure b) <*> (pure a) <*> opt f
+    DL_ArrayMap at ans x a f -> do
+      DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
+    DL_ArrayReduce at ans x z b a f -> do
+      DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
+    DL_MapReduce at ans x z b a f -> do
+      DL_MapReduce at ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
   opt = \case

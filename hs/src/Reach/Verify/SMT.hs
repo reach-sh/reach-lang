@@ -6,9 +6,10 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
+import Data.Foldable
 import Data.IORef
 import qualified Data.List as List
-import Data.List.Extra (foldl', mconcatMap)
+import Data.List.Extra (mconcatMap)
 import qualified Data.Map as M
 import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
@@ -21,6 +22,8 @@ import Reach.CollectTypes
 import Reach.Counter
 import Reach.Connector
 import Reach.EmbeddedFiles
+import Reach.Pretty
+import Reach.Freshen
 import Reach.Texty
 import Reach.UnrollLoops
 import Reach.Util
@@ -92,21 +95,23 @@ smtNot se = smtApply "not" [se]
 data Role
   = RoleContract
   | RolePart SLPart
-  deriving (Eq, Show)
+  deriving (Eq)
 
 data VerifyMode
   = VM_Honest
   | VM_Dishonest Role
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance Pretty VerifyMode where
+  pretty = \case
+    VM_Honest -> "ALL participants are honest"
+    VM_Dishonest RoleContract -> "NO participants are honest"
+    VM_Dishonest (RolePart p) -> "ONLY " <> pretty p <> " is honest"
 
 data BindingOrigin
-  = -- XXX simplify into honest/dishonst
-    O_DishonestJoin SLPart
-  | O_DishonestMsg SLPart
-  | O_DishonestPay SLPart
-  | O_HonestJoin SLPart
-  | O_HonestMsg SLPart DLArg
-  | O_HonestPay SLPart DLArg
+  = O_Join SLPart Bool
+  | O_Msg SLPart (Maybe DLArg)
+  | O_Pay SLPart (Maybe DLArg)
   | O_ClassJoin SLPart
   | O_ToConsensus
   | O_BuiltIn
@@ -115,17 +120,18 @@ data BindingOrigin
   | O_Expr DLExpr
   | O_Assignment
   | O_SwitchCase SLVar
+  | O_ReduceVar
   deriving (Eq)
 
 instance Show BindingOrigin where
   show bo =
     case bo of
-      O_DishonestJoin who -> "a dishonest join from " ++ sp who
-      O_DishonestMsg who -> "a dishonest message from " ++ sp who
-      O_DishonestPay who -> "a dishonest payment from " ++ sp who
-      O_HonestJoin who -> "an honest join from " ++ sp who
-      O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
-      O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
+      O_Join who False -> "a dishonest join from " ++ sp who
+      O_Msg who Nothing -> "a dishonest message from " ++ sp who
+      O_Pay who Nothing -> "a dishonest payment from " ++ sp who
+      O_Join who True -> "an honest join from " ++ sp who
+      O_Msg who (Just what) -> "an honest message from " ++ sp who ++ " of " ++ sp what
+      O_Pay who (Just amt) -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
       O_ClassJoin who -> "a join by a class member of " <> sp who
       O_ToConsensus -> "a consensus transfer"
       O_BuiltIn -> "builtin"
@@ -134,6 +140,7 @@ instance Show BindingOrigin where
       O_Expr e -> "evaluating " ++ sp e
       O_Assignment -> "loop variable"
       O_SwitchCase vn -> "switch case " <> vn
+      O_ReduceVar -> "map reduction"
     where
       sp :: Pretty a => a -> String
       sp = show . pretty
@@ -157,7 +164,31 @@ type BindingEnv = M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr,
 
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
-  , sm_t :: DLType }
+  , sm_t :: DLType
+  , sm_rs :: IORef [SMTMapRecordReduce]
+  , sm_us :: IORef [SMTMapRecordUpdate] }
+
+data SMTMapRecordReduce
+  = SMR_Reduce
+    { smrr_ans :: DLVar
+    , smrr_z :: DLArg
+    , smrr_b :: DLVar
+    , smrr_a :: DLVar
+    , smrr_f :: LLBlock }
+
+instance Pretty SMTMapRecordReduce where
+  pretty (SMR_Reduce ans z b a f) =
+    prettyReduce ans ("map"::String) z b a f
+
+data SMTMapRecordUpdate
+  = SMR_Update
+    { smru_ma :: SExpr
+    , smru_fa' :: SExpr
+    , smru_na' :: SExpr}
+
+instance Pretty SMTMapRecordUpdate where
+  pretty (SMR_Update ma fa' na') =
+      viaShow ma <> "[" <> viaShow fa' <> "]" <+> "=" <+> viaShow na'
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
@@ -176,6 +207,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
+  , ctxt_inv_mode :: BlockMode
   }
 
 ctxt_mode :: App VerifyMode
@@ -201,8 +233,12 @@ ctxtNewScope m = do
   ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
   let dupeMapInfo (SMTMapInfo {..}) = do
         sm_c' <- liftIO $ dupeCounter sm_c
+        sm_rs' <- lift $ dupeIORef sm_rs
+        sm_us' <- lift $ dupeIORef sm_us
         return $ SMTMapInfo { sm_t = sm_t
-                            , sm_c = sm_c' }
+                            , sm_c = sm_c'
+                            , sm_rs = sm_rs'
+                            , sm_us = sm_us' }
   ctxt_maps' <- mapM dupeMapInfo ctxt_maps
   smtNewScope $
     local (\e -> e { ctxt_bindingsr = ctxt_bindingsr'
@@ -228,16 +264,20 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
-smtVar :: DLVar -> App String
-smtVar dv@(DLVar _ _ _ i) = do
+smtVar_ :: Bool -> DLVar -> App String
+smtVar_ usemp dv@(DLVar _ _ _ i) = do
   pvs <- ctxt_primed_vars <$> ask
   let mp = case elem dv pvs of
             True -> "p"
             False -> ""
-  let name = "v" ++ show i ++ mp
+  let mmp = if usemp then mp else ""
+  let name = "v" ++ show i ++ mmp
   v2dv <- ctxt_v_to_dv <$> ask
   liftIO $ modifyIORef v2dv $ M.insertWith (<>) name [dv]
   return $ name
+
+smtVar :: DLVar -> App String
+smtVar = smtVar_ True
 
 smtTypeSort :: DLType -> App String
 smtTypeSort t = do
@@ -343,15 +383,21 @@ smtDigestCombine at args =
 
 data TheoremKind
   = TClaim ClaimType
-  | TInvariant
+  | TInvariant Bool
   | TWhenNotUnknown
-  deriving (Show)
 
 instance Pretty TheoremKind where
   pretty = \case
     TClaim c -> pretty c
-    TInvariant -> "invariant"
+    TInvariant False -> "while invariant before loop"
+    TInvariant True -> "while invariant after loop"
     TWhenNotUnknown -> "when is not unknown"
+
+fmtAssert :: TheoremKind -> String
+fmtAssert = \case
+  TClaim c -> show $ pretty c
+  TInvariant _ -> "invariant"
+  TWhenNotUnknown -> "assert"
 
 data ResultDesc
   = RD_UnsatCore [String]
@@ -518,10 +564,10 @@ subAllVars v2dv bindings tk pm (Atom ai) =
                           <> "\n  //    ^ would be "
                           <> kv)
                     assigns in
-        let assertStr = "  " <> show (pretty tk) <> "(" <> toJs de <> ");" in
+        let assertStr = "  " <> fmtAssert tk <> "(" <> toJs de <> ");" in
         assignStr <> assertStr
     -- Something like assert(false)
-    _ -> "  " <> show (pretty tk) <> "(" <> ai <> ");"
+    _ -> "  " <> fmtAssert tk <> "(" <> ai <> ");"
   where
     -- Variable can be inlined if it is used once or its value is a `DLArg`
     canInline [x] acc = x : acc
@@ -557,8 +603,8 @@ display_fail tat f tk tse mmsg repeated mrd = do
   cwd <- liftIO $ getCurrentDirectory
   iputStrLn $ "Verification failed:"
   mode <- ctxt_mode
-  iputStrLn $ "  in " ++ (show mode) ++ " mode"
-  iputStrLn $ "  of theorem " ++ show tk
+  iputStrLn $ "  when " ++ (show $ pretty mode)
+  iputStrLn $ "  of theorem: " ++ (show $ pretty tk)
   case mmsg of
     Nothing -> mempty
     Just msg -> do
@@ -623,6 +669,12 @@ display_fail tat f tk tse mmsg repeated mrd = do
       iputStrLn $ "  // Theorem formalization"
       iputStrLn $ subAllVars v2dv bindingsm tk pm tse
       iputStrLn ""
+
+smtNewPathConstraint :: SExpr -> App a -> App a
+smtNewPathConstraint se m = do
+  pc <- ctxt_path_constraint <$> ask
+  local (\e -> e { ctxt_path_constraint = se : pc }) $
+    m
 
 smtAddPathConstraints :: SExpr -> App SExpr
 smtAddPathConstraints se = (ctxt_path_constraint <$> ask) >>= \case
@@ -733,6 +785,8 @@ smtMapRefresh = do
   let go (mpv, SMTMapInfo {..}) = do
         mi' <- liftIO $ incCounter sm_c
         smtMapDeclare mpv mi'
+        liftIO $ writeIORef sm_rs $ mempty
+        liftIO $ writeIORef sm_us $ mempty
   mapM_ go $ M.toList ms
 
 smtMapLookupC :: DLMVar -> App SMTMapInfo
@@ -771,9 +825,99 @@ smtMapUpdate at mpv fa mna = do
   let mi = mi' - 1
   smtMapDeclare mpv mi'
   let mv = smtMapVar mpv mi
+  let ma = Atom mv
+  smtMapRecordUpdate mpv $ SMR_Update ma fa' na'
   let mv' = smtMapVar mpv mi'
-  let se = smtApply "store" [ Atom mv, fa', na' ]
+  let se = smtApply "store" [ ma, fa', na' ]
   smtAssert $ smtEq (Atom mv') se
+
+smtMapRecordReduce :: DLMVar -> SMTMapRecordReduce -> App ()
+smtMapRecordReduce mpv r = do
+  SMTMapInfo {..} <- smtMapLookupC mpv
+  liftIO $ modifyIORef sm_rs $ (r :)
+
+smtMapRecordUpdate :: DLMVar -> SMTMapRecordUpdate -> App ()
+smtMapRecordUpdate mpv r = do
+  SMTMapInfo {..} <- smtMapLookupC mpv
+  liftIO $ modifyIORef sm_us $ (r :)
+
+smtMapReviewRecord :: DLMVar -> (SMTMapInfo -> IORef a) -> App a
+smtMapReviewRecord mpv sm_x = do
+  mi <- smtMapLookupC mpv
+  liftIO $ readIORef $ sm_x mi
+
+smt_freshen :: LLBlock -> [DLVar] -> App (LLBlock, [DLVar])
+smt_freshen x vs = do
+  c <- ctxt_idx <$> ask
+  liftIO $ freshen_ c x vs
+
+smtMapReduceApply :: SrcLoc -> DLVar -> DLVar -> LLBlock -> App (SExpr, SExpr, App SExpr)
+smtMapReduceApply at b a f = do
+  (f', b_f, a_f) <-
+    smt_freshen f [b, a] >>= \case
+      (f', [b_f, a_f]) -> return (f', b_f, a_f)
+      _ -> impossible "smt_freshen bad"
+  b' <- smt_v at b_f
+  pathAddUnbound at (Just b_f) O_ReduceVar
+  a' <- smt_v at a_f
+  pathAddUnbound at (Just a_f) O_ReduceVar
+  let call_f' = smt_block f'
+  return $ (b', a', call_f')
+
+smtMapReviewRecordRef :: SrcLoc -> DLMVar -> SExpr -> DLVar -> App ()
+smtMapReviewRecordRef at x fse res = do
+  us <- smtMapReviewRecord x sm_us
+  -- We only learn something about what we've read from the map via the
+  -- reduction if this field has not been modified, so we add negative path
+  -- constraints and then apply the reduction function
+  let go_u (SMR_Update _ fa' _) more =
+        smtNewPathConstraint (smtNot $ smtEq fa' fse) . more
+  let add_us_constraints = foldr go_u id us
+  rs <- smtMapReviewRecord x sm_rs
+  res' <- smt_v at res
+  add_us_constraints $
+    forM_ rs $ \(SMR_Reduce ans _ b a f) -> do
+      ans' <- smt_v at ans
+      (_, a', f') <- smtMapReduceApply at b a f
+      smtAssertCtxt $ smtEq a' res'
+      fres' <- f'
+      smtAssertCtxt $ smtEq ans' fres'
+
+smtMapReviewRecordReduce :: SrcLoc -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> LLBlock -> App ()
+smtMapReviewRecordReduce at ans x z b a f = do
+  us <- smtMapReviewRecord x sm_us
+  -- We go through each one of the updates and inline the computation of the
+  -- reduction function back to the last known value, which is either z in the
+  -- beginning or the last value
+  --
+  -- NOTE: A question remains: what if we have two loops in a row that use
+  -- different reductions? How will we be able to relate one to the next? I
+  -- don't know and don't have a test case right now.
+  let go (SMR_Update ma fa' na') z' = do
+        (b'0, a'0, f'0) <- smtMapReduceApply at b a f
+        smtAssertCtxt $ smtEq a'0 $ smtApply "select" [ ma, fa' ]
+        fres'0 <- f'0
+        smtAssertCtxt $ smtEq fres'0 z'
+        -- n f( Z0, m[fa] ) = z'
+        -- u f( Z0, na' ) = z''
+        (b'1, a'1, f'1) <- smtMapReduceApply at b a f
+        smtAssertCtxt $ smtEq b'1 b'0
+        smtAssertCtxt $ smtEq a'1 na'
+        f'1
+  pvars <- ctxt_primed_vars <$> ask
+  z' <-
+    case ans `elem` pvars of
+      True ->
+        -- We are primed, therefore, we are proving an invariant after the
+        -- first round, so we need to review the changes after the last summary
+        Atom <$> smtVar_ False ans
+      False ->
+        -- We are proving the invariant at the start of a loop, so ignore the
+        -- last value
+        smt_a at z
+  z'' <- foldrM go z' us
+  ans' <- smt_v at ans
+  smtAssertCtxt $ smtEq ans' z''
 
 smt_lt :: SrcLoc -> DLLiteral -> SExpr
 smt_lt _at_de dc =
@@ -896,6 +1040,7 @@ smt_e at_dv mdv de =
       ma <- smtMapLookup mpv
       fa' <- smt_a at fa
       bound at $ smtApply "select" [ ma, fa' ]
+      forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa na ->
       smtMapUpdate at mpv fa $ Just na
     DLE_MapDel at mpv fa ->
@@ -916,7 +1061,6 @@ smtSwitch sm at ov csm iter = do
         T_Data m -> m
         _ -> impossible "switch"
   ovp <- smt_a at ova
-  pc <- ctxt_path_constraint <$> ask
   let cm1 (vn, (mov', l)) = do
         ov_s <- smtVar ov
         let vnv = ov_s <> "_vn_" <> vn
@@ -927,7 +1071,7 @@ smtSwitch sm at ov csm iter = do
                   ( mempty
                   , smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
                   )
-                -- XXX It would be nice to ensure that this is always a Just
+                -- Note It would be nice to ensure that this is always a Just
                 -- and then make it so that EPP can remove them if they aren't
                 -- actually used
                 Nothing ->
@@ -937,7 +1081,7 @@ smtSwitch sm at ov csm iter = do
         ov'p <- get_ov'p
         let eqc = smtEq ovp ov'p
         let udef_m = ov'p_m <> pathAddUnbound at mov' (O_SwitchCase vn)
-        let with_pc = local (\e -> e {ctxt_path_constraint = eqc : pc})
+        let with_pc = smtNewPathConstraint eqc
         let branch_m =
              case sm of
                 SM_Local ->
@@ -968,12 +1112,19 @@ smt_m = \case
     smtAssertCtxt (smtEq dv' va')
   DL_LocalIf at ca t f -> do
     ca_se <- smt_a at ca
-    pc <- ctxt_path_constraint <$> ask
-    let with_f = local (\e -> e {ctxt_path_constraint = (smtNot ca_se) : pc})
-    let with_t = local (\e -> e {ctxt_path_constraint = ca_se : pc})
+    let with_f = smtNewPathConstraint $ smtNot ca_se
+    let with_t = smtNewPathConstraint $ ca_se
     with_t (smt_l t) <> with_f (smt_l f)
   DL_LocalSwitch at ov csm ->
     smtSwitch SM_Local at ov csm smt_l
+  DL_MapReduce at ans x z b a f -> do
+    pathAddUnbound at (Just ans) O_ReduceVar
+    (ctxt_inv_mode <$> ask) >>= \case
+      B_Assume _ -> do
+        smtMapRecordReduce x $ SMR_Reduce ans z b a f
+      B_Prove _ ->
+        smtMapReviewRecordReduce at ans x z b a f
+      _ -> impossible $ "Map.reduce outside invariant"
 
 smt_l :: LLTail -> SMTComp
 smt_l = \case
@@ -987,34 +1138,38 @@ smt_lm who l = shouldSimulate who >>= \case
 
 data BlockMode
   = B_Assume Bool
-  | B_Prove
+  | B_Prove Bool
   | B_None
 
-smt_block :: BlockMode -> LLBlock -> SMTComp
-smt_block bm b = do
-  let DLinBlock at f l da = b
-  let before_m = smt_l l
-  da' <- smt_a at da
-  let after_m =
-        case bm of
-          B_Assume True -> smtAssertCtxt da'
-          B_Assume False -> smtAssertCtxt (smtNot da')
-          B_Prove -> verify1 at f TInvariant da' Nothing
-          B_None -> mempty
-  before_m <> after_m
+smt_block :: LLBlock -> App SExpr
+smt_block (DLinBlock at _ l da) = do
+  smt_l l
+  smt_a at da
+
+smt_invblock :: BlockMode -> LLBlock -> SMTComp
+smt_invblock bm b@(DLinBlock at f _ _) = do
+  da' <-
+    local (\e -> e { ctxt_inv_mode = bm }) $
+      smt_block b
+  case bm of
+    B_Assume True -> smtAssertCtxt da'
+    B_Assume False -> smtAssertCtxt (smtNot da')
+    B_Prove inCont -> verify1 at f (TInvariant inCont) da' Nothing
+    B_None -> mempty
 
 gatherDefinedVars_m :: LLCommon -> S.Set DLVar
 gatherDefinedVars_m = \case
   DL_Nop _ -> mempty
   DL_Let _ mdv _ -> maybe mempty S.singleton mdv
-  DL_ArrayMap {} -> impossible "array_map"
-  DL_ArrayReduce {} -> impossible "array_reduce"
+  DL_ArrayMap {} -> impossible "Array.map"
+  DL_ArrayReduce {} -> impossible "Array.reduce"
   DL_Var _ dv -> S.singleton dv
   DL_Set {} -> mempty
   DL_LocalIf _ _ t f -> gatherDefinedVars_l t <> gatherDefinedVars_l f
   DL_LocalSwitch _ _ csm -> mconcatMap cm1 (M.toList csm)
     where
       cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
+  DL_MapReduce _ ans _ _ _ _ _ -> S.singleton ans
 
 gatherDefinedVars_l :: LLTail -> S.Set DLVar
 gatherDefinedVars_l = \case
@@ -1024,8 +1179,8 @@ gatherDefinedVars_l = \case
 gatherDefinedVars :: LLBlock -> S.Set DLVar
 gatherDefinedVars (DLinBlock _ _ l _) = gatherDefinedVars_l l
 
-smt_asn :: Bool -> DLAssignment -> SMTComp
-smt_asn vars_are_primed asn = do
+smt_while_jump :: Bool -> DLAssignment -> SMTComp
+smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
   inv <- (ctxt_while_invariant <$> ask) >>= \case
       Just x -> return $ x
@@ -1035,7 +1190,7 @@ smt_asn vars_are_primed asn = do
         False -> mempty
   local (\e -> e { ctxt_loop_var_subst = asnm
                  , ctxt_primed_vars = pvars }) $
-    smt_block B_Prove inv
+    smt_invblock (B_Prove vars_are_primed) inv
 
 smt_asn_def :: SrcLoc -> DLAssignment -> SMTComp
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1077,20 +1232,20 @@ smt_n = \case
       mapM_ ctxtNewScope [before_m, loop_m, after_m]
       where
         with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
-        before_m = with_inv $ smt_asn False asn
+        before_m = with_inv $ smt_while_jump False asn
         loop_m = do
           smtMapRefresh
           smt_asn_def at asn
-          smt_block (B_Assume True) inv
-          smt_block (B_Assume True) cond
+          smt_invblock (B_Assume True) inv
+          smt_invblock (B_Assume True) cond
           (with_inv $ smt_n body)
         after_m = do
           smtMapRefresh
           smt_asn_def at asn
-          smt_block (B_Assume True) inv
-          smt_block (B_Assume False) cond
+          smt_invblock (B_Assume True) inv
+          smt_invblock (B_Assume False) cond
           smt_n k
-    LLC_Continue _at asn -> smt_asn True asn
+    LLC_Continue _at asn -> smt_while_jump True asn
     LLC_Only _at who loc k -> smt_lm who loc <> smt_n k
 
 smt_s :: LLStep -> SMTComp
@@ -1100,7 +1255,7 @@ smt_s = \case
     LLS_Only _at who loc k -> smt_lm who loc <> smt_s k
     LLS_ToConsensus at send recv mtime -> do
       let (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
-      timev' <- Atom <$> smtVar timev
+      timev' <- smt_v at timev
       let timeout = case mtime of
             Nothing -> mempty
             Just (_delay_a, delay_s) -> smt_s delay_s
@@ -1109,7 +1264,7 @@ smt_s = \case
             case last_timemv of
               Nothing -> mempty
               Just last_timev -> do
-                last_timev' <- Atom <$> smtVar last_timev
+                last_timev' <- smt_v at last_timev
                 smtAssertCtxt $ uint256_lt last_timev' timev'
       let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
       let go (from, (isClass, msgas, amta, whena)) = do
@@ -1126,10 +1281,10 @@ smt_s = \case
                           pathAddUnbound at (Just whov) (O_ClassJoin from)
                         True -> do
                           from' <- smtCurrentAddress from
-                          pathAddBound at (Just whov) (O_HonestJoin from) Nothing (Atom $ from')
-                    _ -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) Nothing (Atom $ smtAddress from)
-            let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
-            let bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (Just $ DLE_Arg at amta) =<< (smt_a at amta)
+                          pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from')
+                    _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
+            let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
+            let bind_amt = maybe_pathAdd amtv (O_Pay from Nothing) (O_Pay from $ Just amta) (Just $ DLE_Arg at amta) =<< (smt_a at amta)
             let this_case = bind_from <> bind_msg <> bind_amt <> after
             when' <- smt_a at whena
             case should of
@@ -1283,17 +1438,17 @@ _smtDefineTypes smt ts = do
   readIORef tmr
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
-_verify_smt mc vst smt lp = do
+_verify_smt mc ctxt_vst smt lp = do
   let mcs = case mc of
         Nothing -> "generic connector"
         Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> T.unpack mcs
-  dspdr <- newIORef mempty
-  bindingsr <- newIORef mempty
-  vars_defdr <- newIORef mempty
-  v_to_dv <- newIORef mempty
-  typem <- _smtDefineTypes smt (cts lp)
-  let smt_con at_de cn =
+  ctxt_displayed <- newIORef mempty
+  ctxt_bindingsr <- newIORef mempty
+  ctxt_vars_defdr <- newIORef mempty
+  ctxt_v_to_dv <- newIORef mempty
+  ctxt_typem <- _smtDefineTypes smt (cts lp)
+  let ctxt_smt_con at_de cn =
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
@@ -1301,33 +1456,24 @@ _verify_smt mc vst smt lp = do
   let initMapInfo (DLMapInfo {..}) = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = maybeT dlmi_ty
+        sm_rs <- liftIO $ newIORef mempty
+        sm_us <- liftIO $ newIORef mempty
         return $ SMTMapInfo {..}
-  maps <- mapM initMapInfo dli_maps
-  let addrs0 = M.mapWithKey (\p _ -> DLVar at (Just (at, bunpack p)) T_Address 0) pies_m
-  let ctxt =
-        SMTCtxt
-          { ctxt_smt = smt
-          , ctxt_idx = llo_counter
-          , ctxt_smt_con = smt_con
-          , ctxt_typem = typem
-          , ctxt_vst = vst
-          , ctxt_modem = Nothing
-          , ctxt_path_constraint = []
-          , ctxt_bindingsr = bindingsr
-          , ctxt_while_invariant = Nothing
-          , ctxt_loop_var_subst = mempty
-          , ctxt_primed_vars = mempty
-          , ctxt_displayed = dspdr
-          , ctxt_vars_defdr = vars_defdr
-          , ctxt_maps = maps
-          , ctxt_addrs = addrs0
-          , ctxt_v_to_dv = v_to_dv
-          }
-  flip runReaderT ctxt $ do
+  ctxt_maps <- mapM initMapInfo dli_maps
+  let ctxt_addrs = M.mapWithKey (\p _ -> DLVar at (Just (at, bunpack p)) T_Address 0) pies_m
+  let ctxt_primed_vars = mempty
+  let ctxt_loop_var_subst = mempty
+  let ctxt_while_invariant = Nothing
+  let ctxt_inv_mode = B_None
+  let ctxt_path_constraint = []
+  let ctxt_modem = Nothing
+  let ctxt_smt = smt
+  let ctxt_idx = llo_counter
+  flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
           smtMapDeclare mpv mi
-    mapM_ defineMap $ M.toList maps
+    mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of
       Nothing -> mempty
       Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn
@@ -1347,7 +1493,7 @@ _verify_smt mc vst smt lp = do
           mapM_ (defineIE who) $ M.toList iem
     mapM_ definePIE $ M.toList pies_m
     let smt_s_top mode = do
-          liftIO $ putStrLn $ "  Verifying with mode = " ++ show mode
+          liftIO $ putStrLn $ "  Verifying when " <> show (pretty mode)
           local (\e -> e {ctxt_modem = Just mode}) $
             ctxtNewScope $ freshAddrs $ smt_s s
     let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))

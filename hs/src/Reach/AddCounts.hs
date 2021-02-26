@@ -55,6 +55,10 @@ ac_m = \case
     csm' <- ac_csm ac_lt csm
     ac_visit $ ov
     return $ DL_LocalSwitch at ov csm'
+  DL_MapReduce at ans x z b a f -> do
+    f' <- ac_bl f
+    ac_visit $ z
+    return $ DL_MapReduce at ans x z b a f'
 
 ac_lt :: PILTail -> App PLTail
 ac_lt = \case

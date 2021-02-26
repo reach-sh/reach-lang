@@ -65,7 +65,7 @@ prettyMap ans x a f =
   "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyReduce :: Pretty a => Pretty b => Pretty c => a -> b -> b -> a -> a -> c -> Doc
+prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => a -> b -> c -> d -> e -> f -> Doc
 prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)

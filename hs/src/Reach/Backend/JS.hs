@@ -298,6 +298,8 @@ jsCom ctxt = \case
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
   DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [(jsApply "" (map (jsArg . DLA_Var) [b, a]) <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r))), jsArg z]
+  DL_MapReduce {} ->
+    impossible $ "cannot inspect maps at runtime"
 
 jsPLTail :: JSCtxt -> PILTail -> Doc
 jsPLTail ctxt = \case

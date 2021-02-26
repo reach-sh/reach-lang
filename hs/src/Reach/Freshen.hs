@@ -1,4 +1,7 @@
-module Reach.Freshen (freshen) where
+module Reach.Freshen
+  ( freshen
+  , freshen_
+  ) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -83,7 +86,10 @@ instance {-# OVERLAPS #-} Freshen LLCommon where
     DL_Var at v -> DL_Var at <$> fu_v v
     DL_Set at v a -> DL_Set at <$> fu v <*> fu a
     DL_LocalIf at c t f -> DL_LocalIf at <$> fu c <*> fu t <*> fu f
-    DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> fu ov <*> fu csm
+    DL_LocalSwitch at ov csm ->
+      DL_LocalSwitch at <$> fu ov <*> mapM go csm
+      where
+        go (vn, k) = (,) <$> fu_mv vn <*> fu k
     DL_ArrayMap at ans x a fb -> do
       x' <- fu x
       a' <- fu_v a
@@ -98,6 +104,13 @@ instance {-# OVERLAPS #-} Freshen LLCommon where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_ArrayReduce at ans' x' z' b' a' fb'
+    DL_MapReduce at ans x z b a fb -> do
+      ans' <- fu_v ans
+      z' <- fu z
+      b' <- fu_v b
+      a' <- fu_v a
+      fb' <- fu fb
+      return $ DL_MapReduce at ans' x z' b' a' fb'
 
 instance {-# OVERLAPS #-} Freshen LLTail where
   fu = \case
@@ -108,7 +121,14 @@ instance {-# OVERLAPS #-} Freshen LLBlock where
   fu (DLinBlock at fs t a) =
     DLinBlock at fs <$> fu t <*> fu a
 
-freshen :: Freshen a => Counter -> a -> IO a
-freshen fCounter x = do
+freshen_ :: Freshen a => Counter -> a -> [DLVar] -> IO (a, [DLVar])
+freshen_ fCounter x vs = do
   fRho <- newIORef mempty
-  flip runReaderT (Env {..}) $ fu x
+  flip runReaderT (Env {..}) $ do
+    vs' <- mapM fu_v vs
+    x' <- fu x
+    return $ (x', vs')
+
+freshen :: Freshen a => Counter -> a -> IO a
+freshen fCounter x = fst <$> freshen_ fCounter x []
+

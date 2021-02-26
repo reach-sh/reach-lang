@@ -80,6 +80,8 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinStmt a) where
     DL_Set _ v a -> DL_Set sb v (sani a)
     DL_LocalIf _ a b c -> DL_LocalIf sb (sani a) (sani b) (sani c)
     DL_LocalSwitch _ a b -> DL_LocalSwitch sb a (sani b)
+    DL_MapReduce _ a b c d e f ->
+      DL_MapReduce sb a b (sani c) d e (sani f)
 
 instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinTail a) where
   sani = \case

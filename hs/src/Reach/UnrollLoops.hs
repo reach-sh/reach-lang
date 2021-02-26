@@ -127,6 +127,8 @@ instance Unroll LLCommon where
       (_, x') <- ul_explode at x
       r' <- foldlM (\za xa -> fu_ fb [(b, za), (a, xa)]) z x'
       return $ DL_Let at (Just ans) (DLE_Arg at r')
+    DL_MapReduce at ans x z b a fb ->
+      DL_MapReduce at ans x z b a <$> ul fb
 
 ul_m :: Unroll a => (LLCommon -> a -> a) -> LLCommon -> AppT a
 ul_m mkk m k = do

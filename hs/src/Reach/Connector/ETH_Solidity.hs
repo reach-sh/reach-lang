@@ -526,6 +526,8 @@ solCom ctxt = \case
           , (solVar ctxt ans) <+> "=" <+> (solVar ctxt b) <> semi
           ]
       SolTailRes fctxt f' = solPLTail ctxt f
+  DL_MapReduce {} ->
+    impossible $ "cannot inspect maps at runtime"
 
 solCom_ :: (SolCtxt -> a -> SolTailRes) -> SolCtxt -> PLCommon -> a -> SolTailRes
 solCom_ iter ctxt m k = SolTailRes ctxt'' doc''
@@ -609,6 +611,8 @@ manyVars_m = \case
   DL_ArrayMap _ ans _ a f ->
     s_inserts [ans, a] (manyVars_bl f)
   DL_ArrayReduce _ ans _ _ b a f ->
+    s_inserts [ans, b, a] (manyVars_bl f)
+  DL_MapReduce _ ans _ _ b a f ->
     s_inserts [ans, b, a] (manyVars_bl f)
   where
     s_inserts l = S.union (S.fromList l)

@@ -73,8 +73,7 @@ data EvalError
   | Err_Eval_IndirectRefNotArray SLValTy
   | Err_Eval_RefOutOfBounds Int Integer
   | Err_Eval_UnboundId LookupCtx SLVar [SLVar]
-  | Err_ExpectedPrivate SLValTy
-  | Err_ExpectedPublic SLValTy
+  | Err_ExpectedLevel SecurityLevel
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
   | Err_Import_IllegalJS JSImportClause
@@ -124,6 +123,7 @@ data EvalError
   | Err_dTypeMeets_Mismatch (SrcLoc, DLType) (SrcLoc, DLType)
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
+  | Err_Eval_MustBeInWhileInvariant String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -346,11 +346,12 @@ instance Show EvalError where
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
       "Expected the following identifier to be declared: " <> show slvar
-    Err_ExpectedPrivate slval ->
-      "Invalid declassify. Expected to declassify something private, "
-        <> ("but this " <> show_sv slval <> " is public.")
-    Err_ExpectedPublic slval ->
-      "Invalid access of secret value (" <> show_sv slval <> ")"
+    Err_ExpectedLevel want ->
+      case want of
+        Public ->
+          "Invalid access of secret value"
+        Secret ->
+          "Invalid declassify. Expected to declassify something private"
     Err_Form_InvalidArgs _SLForm n es ->
       "Invalid args. Expected " <> show n <> " but got " <> show (length es)
     Err_Fun_NamesIllegal ->
@@ -439,6 +440,8 @@ instance Show EvalError where
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_Eval_MustBeLive m ->
       "must be live at " <> m
+    Err_Eval_MustBeInWhileInvariant m ->
+      "must be in while invariant at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
     Err_ToConsensus_WhenNoTimeout ->

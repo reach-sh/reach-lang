@@ -183,6 +183,7 @@ compileBundle cns jsb main = do
           , sco_cenv = mempty
           }
   let e_depth = recursionDepthLimit
+  let e_while_invariant = False
   e_st <- newIORef e_stv
   let e_at = srcloc_top
   e_lifts <- newIORef mempty

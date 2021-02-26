@@ -34,7 +34,7 @@ export const main =
 
       const [ winner, winningBid ] =
         parallel_reduce([ Sponsor, 0 ])
-        .invariant(balance() == prize)
+        .invariant(balance() == prize + bidsM.reduce(0, (acc, x) => acc + x))
         .while( keepBidding() )
         .case( Bidder, (() => {
             const previousBid = getBid(this);
@@ -45,7 +45,10 @@ export const main =
           }),
           ((addl) => addl),
           ((addl) => {
-            transfer(addl).to(Sponsor);
+            const x = getBid(this)
+            delete bidsM[this];
+            bidsM[this] = x;
+
             const newBid = getBid(this) + addl;
             bidsM[this] = newBid;
             if ( winningBid <= newBid ) { // <- <= on purpose
@@ -68,6 +71,7 @@ export const main =
       Bidder.publish().when(itsame)
         .timeout(deadline, () => closeTo(Sponsor, () => {}));
       transfer(prize).to(winner);
+      transfer(balance()).to(Sponsor);
       commit();
 
       each([Sponsor, Bidder], () => {

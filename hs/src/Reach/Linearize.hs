@@ -60,6 +60,8 @@ lin = \case
     DL_LocalSwitch at dv <$> mapM cm1 cm
     where
       cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
+  DLS_MapReduce at ans x z b a f ->
+    DL_MapReduce at ans x z b a <$> lin_block at f
   _ -> impossible "lin"
 
 lin_local_rets :: SrcLoc -> DLStmts -> DKApp LLTail
@@ -150,6 +152,7 @@ dk1 at_top ks s =
       DK_Com (DKC_FluidSet at fv a) <$> dk_ at ks
     DLS_FluidRef at v fv ->
       DK_Com (DKC_FluidRef at v fv) <$> dk_ at ks
+    DLS_MapReduce {} -> com
   where
     com :: DKApp DKTail
     com = com' =<< lin s
@@ -198,6 +201,7 @@ instance CanLift (DLinStmt a) where
     DL_Set {} -> True
     DL_LocalIf _ _ t f -> canLift t && canLift f
     DL_LocalSwitch _ _ csm -> canLift csm
+    DL_MapReduce _ _ _ _ _ _ f -> canLift f
 
 instance CanLift (DLinTail a) where
   canLift = \case

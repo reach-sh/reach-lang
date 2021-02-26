@@ -49,6 +49,7 @@ data Env = Env
   , e_dlo :: DLOpts
   , e_classes :: S.Set SLPart
   , e_mape :: MapEnv
+  , e_while_invariant :: Bool
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -82,6 +83,9 @@ locClasses m = local (\e -> e {e_classes = m})
 
 locWho :: SLPart -> App a -> App a
 locWho w = local (\e -> e {e_who = Just w})
+
+locWhileInvariant :: App a -> App a
+locWhileInvariant = local (\e -> e { e_while_invariant = True })
 
 locAtf :: (SrcLoc -> SrcLoc) -> App a -> App a
 locAtf f = local (\e -> e {e_at = f $ e_at e})
@@ -209,7 +213,7 @@ type SLLibs = (M.Map ReachSource SLEnv)
 type SLMod = (ReachSource, [JSModuleItem])
 
 --- Utilities
-expect_ :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = do
   Env {..} <- ask
   expect_throw (Just e_stack) e_at e
@@ -219,10 +223,10 @@ mkValType v = do
   r <- typeOfM v
   return (v, fmap fst r)
 
-expect_t :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
+expect_t :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
 expect_t v f = (expect_ . f) =<< mkValType v
 
-expect_ts :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
+expect_ts :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
 expect_ts vs f = (expect_ . f) =<< mapM mkValType vs
 
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
@@ -235,10 +239,15 @@ zipEq ce x y =
     ly = length y
 
 ensure_public :: SLSVal -> App SLVal
-ensure_public (lvl, v) =
-  case lvl of
-    Public -> return $ v
-    Secret -> expect_t v $ Err_ExpectedPublic
+ensure_public (lvl, v) = do
+  ensure_level Public lvl
+  return $ v
+
+ensure_level :: SecurityLevel -> SecurityLevel -> App ()
+ensure_level x y =
+  case x == y of
+    True -> return ()
+    False -> expect_ $ Err_ExpectedLevel x
 
 -- | Certain idents are special and bypass the public/private
 -- enforced naming convention.
@@ -390,6 +399,15 @@ dtypeMeet :: (SrcLoc, DLType) -> (SrcLoc, DLType) -> App DLType
 dtypeMeet x y = do
   case dtypeMeetM x y of
     Just t -> return t
+    Nothing -> expect_ $ Err_dTypeMeets_Mismatch x y
+
+ensure_dtypeEq :: DLType -> DLType -> App ()
+ensure_dtypeEq xt yt = do
+  at <- withAt id
+  let x = (at, xt)
+  let y = (at, yt)
+  case dtypeMeetM x y of
+    Just _ -> return ()
     Nothing -> expect_ $ Err_dTypeMeets_Mismatch x y
 
 dtypeMeets :: [(SrcLoc, DLType)] -> App DLType
@@ -660,6 +678,12 @@ ensure_live msg =
   readSt st_live >>= \case
     True -> return ()
     False -> expect_ $ Err_Eval_MustBeLive msg
+
+ensure_while_invariant :: String -> App ()
+ensure_while_invariant msg =
+  (e_while_invariant <$> ask) >>= \case
+    True -> return ()
+    False -> expect_ $ Err_Eval_MustBeInWhileInvariant msg
 
 ensure_can_wait :: App ()
 ensure_can_wait = do
@@ -985,6 +1009,10 @@ evalAsEnvM obj = case obj of
     Just $
       M.fromList
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
+  SLV_Map mpv ->
+    Just $
+      M.fromList
+        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce mpv) ]
   _ -> Nothing
   where
     tupleValueEnv =
@@ -1655,7 +1683,7 @@ evalPrim p sargs =
           (xt, x_da) <- compileTypeOf x
           (x_ty, x_sz) <- mustBeArray xt
           let f' a = evalApplyVals' f [(lvl, a)]
-          (a_dv, a_dsv) <- make_dlvar at Nothing x_ty
+          (a_dv, a_dsv) <- make_dlvar at x_ty
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ (f_lvl, f_ty, f_da) <-
@@ -1672,7 +1700,7 @@ evalPrim p sargs =
               return $ (f_lvl, SLV_Array at (dt2st f_ty) vs')
             False -> do
               let t = T_Array f_ty x_sz
-              (ans_dv, ans_dsv) <- make_dlvar at Nothing t
+              (ans_dv, ans_dsv) <- make_dlvar at t
               let f_bl = DLBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayMap at ans_dv x_da a_dv f_bl
               return $ (lvl, ans_dsv)
@@ -1695,15 +1723,17 @@ evalPrim p sargs =
           (x_ty, _) <- mustBeArray xt
           let f' b a = evalApplyVals' f [(lvl, b), (lvl, a)]
           (z_ty, z_da) <- compileTypeOf z
-          (b_dv, b_dsv) <- make_dlvar at Nothing z_ty
-          (a_dv, a_dsv) <- make_dlvar at Nothing x_ty
+          (b_dv, b_dsv) <- make_dlvar at z_ty
+          (a_dv, a_dsv) <- make_dlvar at x_ty
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
-          SLRes f_lifts _ (f_lvl, f_ty, f_da) <-
+          SLRes f_lifts _ f_da <-
             captureRes $ do
               (f_lvl, f_v) <- f' b_dsv a_dsv
+              ensure_level lvl f_lvl
               (f_ty, f_da) <- compileTypeOf f_v
-              return (f_lvl, f_ty, f_da)
+              ensure_dtypeEq z_ty f_ty
+              return $ f_da
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
             True -> do
@@ -1715,11 +1745,11 @@ evalPrim p sargs =
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
-                    _ <- checkType (dt2st f_ty) (snd xv_v')
+                    _ <- checkType (dt2st z_ty) (snd xv_v')
                     return $ xv_v'
-              foldM evalem (f_lvl, z) x_vs
+              foldM evalem (lvl, z) x_vs
             False -> do
-              (ans_dv, ans_dsv) <- make_dlvar at Nothing f_ty
+              (ans_dv, ans_dsv) <- make_dlvar at z_ty
               let f_bl = DLBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
               return $ (lvl, ans_dsv)
@@ -1820,17 +1850,13 @@ evalPrim p sargs =
       fs <- e_stack <$> ask
       at <- withAt id
       compileInteractResult m rng (\drng -> DLE_Interact at fs who m drng dargs)
-    SLPrim_declassify ->
-      case map snd sargs of
-        [val] ->
-          case lvl of
-            Secret -> retV $ public $ val
-            Public -> expect_t val $ Err_ExpectedPrivate
-        _ -> illegal_args
-    SLPrim_commit ->
-      case sargs of
-        [] -> retV $ public $ SLV_Prim SLPrim_committed
-        _ -> illegal_args
+    SLPrim_declassify -> do
+      val <- one_arg
+      ensure_level Secret lvl
+      retV $ public $ val
+    SLPrim_commit -> do
+      zero_args
+      retV $ public $ SLV_Prim SLPrim_committed
     SLPrim_committed -> illegal_args
     SLPrim_digest -> do
       let rng = T_Digest
@@ -1979,6 +2005,28 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "Map.new"
       mv <- mapNew =<< st2dte t
       retV $ public $ SLV_Map mv
+    SLPrim_MapReduce mv -> do
+      DLMapInfo {..} <- mapLookup mv
+      let x_ty = dlmi_ty
+      let x_tym = maybeT x_ty
+      at <- withAt id
+      (z, f_) <- two_args
+      let f = jsClo at "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
+      ensure_while_invariant "Map.reduce"
+      (z_ty, z_da) <- compileTypeOf z
+      (b_dv, b_dsv) <- make_dlvar at z_ty
+      (ma_dv, ma_dsv) <- make_dlvar at x_tym
+      SLRes f_lifts _ f_da <-
+        captureRes $ do
+          (f_lvl, f_v) <- evalApplyVals' f [(lvl, b_dsv), (lvl, ma_dsv)]
+          ensure_level lvl f_lvl
+          (f_ty, f_da) <- compileTypeOf f_v
+          ensure_dtypeEq z_ty f_ty
+          return $ f_da
+      (ans_dv, ans_dsv) <- make_dlvar at z_ty
+      let f_bl = DLBlock at [] f_lifts f_da
+      saveLift $ DLS_MapReduce at ans_dv mv z_da b_dv ma_dv f_bl
+      return $ (lvl, ans_dsv)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -2010,8 +2058,8 @@ evalPrim p sargs =
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
       _ -> illegal_args
-    make_dlvar at' lab ty = do
-      dv <- ctxt_mkvar $ DLVar at' lab ty
+    make_dlvar at' ty = do
+      dv <- ctxt_mkvar $ DLVar at' Nothing ty
       return $ (dv, SLV_DLVar dv)
     makeParticipant ty = do
       at <- withAt id
@@ -3421,7 +3469,9 @@ evalStmt = \case
             (init_vars, init_dl, sco_env') <- doWhileLikeInitEval while_lhs while_rhs
             inv_b <-
               locAtf (srcloc_jsa "invariant" inv_a) $
-                locSco sco_env' $ evalPureExprToBlock invariant_e ST_Bool
+                locSco sco_env' $
+                  locWhileInvariant $
+                    evalPureExprToBlock invariant_e ST_Bool
             cond_b <-
               locAtf (srcloc_jsa "cond" cond_a) $
                 locSco sco_env' $ evalPureExprToBlock while_cond ST_Bool
@@ -3513,12 +3563,16 @@ mapNew dlmi_ty = do
 mapDel :: DLMVar -> DLArg -> App ()
 mapDel mv mc = do
   at <- withAt id
+  -- XXX constrain this in some way so that it is the "most recent" sender, re:
+  -- Algorand opt-in restriction
   ctxt_lift_eff $ DLE_MapDel at mv mc
 
 mapSet :: DLMVar -> DLArg -> SLVal -> App ()
 mapSet mv mc nv = do
   at <- withAt id
   DLMapInfo {..} <- mapLookup mv
+  -- XXX constrain this in some way so that it is the "most recent" sender, re:
+  -- Algorand opt-in restriction
   na <- compileCheckType (dt2st dlmi_ty) nv
   ctxt_lift_eff $ DLE_MapSet at mv mc na
 
