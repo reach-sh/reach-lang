@@ -125,6 +125,7 @@ data EvalError
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
   | Err_Eval_MustBeInWhileInvariant String
+  | Err_Expected_Map SLValTy
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -473,6 +474,8 @@ instance Show EvalError where
       "Too few arguments; expected: " <> show ts
     Err_Type_TooManyArguments vs ->
       "Too many arguments; surplus: " <> show (length vs)
+    Err_Expected_Map v ->
+      "Expected map, got: " <> show_sv v
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

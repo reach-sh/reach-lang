@@ -25,8 +25,6 @@ A @tech{consensus network}'s @deftech{time} is some monotonically increasing dis
 A @deftech{time delta} represents the difference between two points in @tech{time} as a discrete number of @tech{time} units.
 @tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} between @tech{accounts}. An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
 @tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}.
-@deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception.
-The creation of a @tech{contract} is called @deftech{deploy}ment.
 The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach.
 
 @margin-note{This description of @tech{consensus networks} is an abstraction that may not be directly implemented by actual networks.
@@ -41,6 +39,11 @@ However, Reach is flexible enough to support non-blockchain-based consensus netw
 Finally, Reach's definition of @tech{consensus network} does not require any particular technology or features of this.
 In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
 }
+
+@deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception.
+In addition to @tech{values}, @tech{consensus state} may contain a fixed number of @deftech{mappings} between an @tech{address} and a @tech{value}.
+These @tech{mappings} are referred to as "@deftech{linear state}" because their size in linear in the number of @tech{participants} in the @tech{contract}.
+The creation of a @tech{contract} is called @deftech{deploy}ment.
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.
 It is associated with an @tech{account} on the @tech{consensus network}.

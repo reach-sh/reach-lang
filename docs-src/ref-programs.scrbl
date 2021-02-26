@@ -806,6 +806,23 @@ However, some additional expressions are allowed.
 Inside of a @tech{consensus step}, @reachin{this} refers to the address of the participant that performed the @tech{consensus transfer}.
 This is useful when the @tech{consensus transfer} was initiated by a @reachin{race} expression.
 
+@subsubsection{Mappings: creation and modification}
+
+@(mint-define! '("Map"))
+@reach{
+  const bidsM = new Map(UInt);
+  bidsM[this] = 17;
+  delete bidsM[this];
+}
+
+A new @tech{mapping} of @tech{linear state} may be constructed in a @tech{consensus step} by writing @reachin{new Map(TYPE_EXPR)}, where @reachin{TYPE_EXPR} is some @tech{type}.
+
+This returns a value which may be used to dereference particular mappings via @reachin{map[ADDR_EXPR]}, where @reachin{ADDR_EXPR} is an @tech{address}.
+Such dereferences return a value of type @reachin{Maybe(TYPE_EXPR)}, because the @tech{mapping} may not contain a value for @reachin{ADDR_EXPR}.
+
+A @tech{mapping} may be modified by writing @reachin{map[ADDR_EXPR] = VALUE_EXPR} to install @reachin{VALUE_EXPR} (of type @reachin{TYPE_EXPR}) at @reachin{ADDR_EXPR}, or by writing @reachin{delete map[ADDR_EXPR]} to remove the mapping entry.
+Such modifications may only occur in a @tech{consensus step}.
+
 @subsubsection{@tt{transfer}}
 
 @(mint-define! '("transfer"))
@@ -1335,6 +1352,8 @@ and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural numbe
 selects the element at the given index of the array.
 Indices start at zero.
 
+If @reachin{REF_EXPR} is a @tech{mapping} and @reachin{IDX_EXPR} evaluates to an @tech{address}, then this @tech{reference} evaluates to a value of type @reachin{Maybe(TYPE)}, where @reachin{TYPE} is the @tech{type} of the @tech{mapping}.
+
 @subsubsection{Array & tuple length: @tt{Tuple.length}, @tt{Array.length}, and @tt{.length}}
 
 @(mint-define! '("length"))
@@ -1585,6 +1604,21 @@ satisfy the predicate, @tt{f}.
 
 @index{Array.average} @reachin{Array.average(arr)} returns the mean of an array of @tt{UInt}s.
 
+@subsubsection{Mapping group operations}
+
+@tech{Mappings} may be aggregated with these operations within the @reachin{invariant} of a @reachin{while} loop.
+
+@subsubsub*section{@tt{Map.reduce} && @tt{.reduce}}
+
+@reach{
+ Map.reduce(map, z, f)
+ map.reduce(z, f) }
+
+@index{Map.reduce} @reachin{Map.reduce(map, z, f)} returns the @link["https://en.wikipedia.org/wiki/Fold_(higher-order_function)"]{left fold} of the function @reachin{f} over the given @tech{mapping} with the initial value @reachin{z}.
+For example, @reachin{m.reduce(0, add)} sums the elements of the @tech{mapping}.
+This may be abbreviated as @reachin{map.reduce(z, f)}.
+
+The function @reachin{f} must satisfy the property, for all @reachin{z}, @reachin{a}, @reachin{b}, @reachin{f(f(z, b), a) == f(f(z, a), b)}, because the order of evaluation is unpredictable.
 
 @subsubsection[#:tag "ref-programs-objects"]{Objects}
 

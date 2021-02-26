@@ -195,6 +195,22 @@ This workshop introduces effective use of @tech{participant class}es and @reachi
 
 @(WIP/XXX "popularity-contest")
 
+@section[#:tag "workshop-raffle"]{Workshop: Raffle}
+
+@(workshop-deps "workshop-popularity-contest")
+
+In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{raffle}, where a sponsor starts a timed raffle and a @tech{participant class} of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses @tech{linear state} through the @reachin{Map} structure; second, it uses an commitment pattern structure to acquire safe randomness from the set of buyers.
+
+@(WIP/XXX "raffle")
+
+@section[#:tag "workshop-rent-seeking"]{Workshop: Rent Seeking}
+
+@(workshop-deps "workshop-raffle")
+
+In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Rent-seeking"]{rent-seeking} competition, where a sponsor attempts to sell a prize (e.g. 10 ETH) and a number of bidders seek to acquire the prize by bidding for it (e.g. 5 ETH). Unlike a "normal" auction, however, the bidders lose the money they bid to the sponsor. Thus, while the winner may get more than the bid, and the sponsor may get more than they give away, there is a net transfer away from the bidders to the sponsor. This program also uses @tech{linear state}.
+
+@(WIP/XXX "rent-seeking")
+
 @section[#:tag "workshop-auction-te"]{Workshop: Timed English Auction}
 
 @(workshop-deps "tut")

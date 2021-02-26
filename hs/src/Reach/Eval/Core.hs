@@ -1011,10 +1011,14 @@ evalAsEnvM obj = case obj of
     Just $
       M.fromList
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
-  SLV_Map mpv ->
+  SLV_Prim SLPrim_Map ->
     Just $
       M.fromList
-        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce mpv) ]
+        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce) ]
+  SLV_Map _ ->
+    Just $
+      M.fromList
+        [ ("reduce", delayCall SLPrim_MapReduce) ]
   _ -> Nothing
   where
     tupleValueEnv =
@@ -2012,12 +2016,16 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "Map.new"
       mv <- mapNew =<< st2dte t
       retV $ public $ SLV_Map mv
-    SLPrim_MapReduce mv -> do
+    SLPrim_MapReduce -> do
+      at <- withAt id
+      (m, z, f_) <- three_args
+      mv <-
+        case m of
+          SLV_Map mv -> return $ mv
+          _ -> expect_t m $ Err_Expected_Map
       DLMapInfo {..} <- mapLookup mv
       let x_ty = dlmi_ty
       let x_tym = maybeT x_ty
-      at <- withAt id
-      (z, f_) <- two_args
       let f = jsClo at "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
       ensure_while_invariant "Map.reduce"
       (z_ty, z_da) <- compileTypeOf z
@@ -2055,7 +2063,7 @@ evalPrim p sargs =
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args
-    _three_args = case args of
+    three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args
     mustBeObject = \case

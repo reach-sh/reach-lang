@@ -379,7 +379,7 @@ data SLPrimitive
   | SLPrim_lastConsensusTime
   | SLPrim_Map
   | SLPrim_MapCtor SLType
-  | SLPrim_MapReduce DLMVar
+  | SLPrim_MapReduce
   | SLPrim_Participant
   | SLPrim_ParticipantClass
   deriving (Eq, Generic)
