@@ -7,9 +7,9 @@
 			"export const main =",
 			"	Reach.App(",
 			"		{},",
-			"		[['A', {}]],",
+			"		[Participant('A', {})],",
 			"		(A) => {",
-			"     $0",
+			"      $0",
 			"		});",
 			""
 		],
@@ -38,9 +38,9 @@
 			"  .case(${4:PART_EXPR},",
 			"    ${5:PUBLISH_EXPR},",
 			"    ${6:PAY_EXPR},",
-			"    ${7:CONSENSUS_EXPR},",
+			"    ${7:CONSENSUS_EXPR}",
 			"   )",
-			"   timeout(${8:DEADLINE}, () => ${9:TIMEOUT_BLOCK});"
+			"   .timeout(${8:DEADLINE}, () => ${9:TIMEOUT_BLOCK});"
 		],
 		"description": "parallel_reduce"
 	}
