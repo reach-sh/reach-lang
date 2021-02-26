@@ -61,6 +61,11 @@
 					],
 					"default": "off",
 					"description": "Traces the communication between VS Code and the Reach IDE language server."
+				},
+				"reachide.executableLocation": {
+					"default": "./reach",
+					"type": "string",
+					"description": "Specifies the filepath to the reach executable."
 				}
 			}
 		},

@@ -149,12 +149,13 @@ connection.onInitialized(() => {
 
 interface ReachIdeSettings {
 	maxNumberOfProblems: number;
+	executableLocation: string;
 }
 
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: ReachIdeSettings = { maxNumberOfProblems: 100 };
+const defaultSettings: ReachIdeSettings = { maxNumberOfProblems: 100, executableLocation: path.join(process.cwd(), "reach") };
 let globalSettings: ReachIdeSettings = defaultSettings;
 
 // Cache the settings of all open documents
@@ -253,7 +254,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	const reachPath = (settings.executableLocation == './reach')
+		? path.join(process.cwd(), "reach")
+		: settings.executableLocation;
+	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
