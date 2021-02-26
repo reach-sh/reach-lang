@@ -751,10 +751,13 @@ while the @reachin{.case} and @reachin{.timeout} components are like the corresp
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
 
-In the case of absolute deadlines, there is a common pattern in the @reachin{TIMEOUT_BLOCK} to have participants
-@reachin{race} to @reachin{publish} and return the accumulator. There is a shorthand, @reachin{.time_remaining},
-available for this situation:
+@subsubsub*section{@tt{.time_remaining}}
 
+When dealing with absolute deadlines in @reachin{parallel_reduce}, there is a common pattern in the
+@reachin{TIMEOUT_BLOCK} to have participants @reachin{race} to @reachin{publish} and return the accumulator.
+There is a shorthand, @reachin{.time_remaining}, available for this situation:
+
+@(mint-define! '("time_remaining"))
 @reach{
   const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
   const [ x, y, z ] =
@@ -1923,24 +1926,8 @@ expression. For example:
     .case(...)
     .timeout( timeRemaining(), () => { ... }) }
 
-When dealing with absolute deadlines in @reachin{parallel_reduce}, there is a common pattern in the
-@reachin{TIMEOUT_BLOCK} to have participants @reachin{race} to @reachin{publish} and return the accumulator.
-There is a shorthand, @reachin{.time_remaining}, available for this situation:
+This pattern is so common that it can be abbreviated as @reachin{.time_remaining}.
 
-@reach{
-  const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
-  const [ x, y, z ] =
-    parallel_reduce([ 1, 2, 3 ])
-      .while(keepGoing())
-      ...
-      .time_remaining(timeRemaining()) }
-
-which will expand to:
-
-@reach{
-  .timeout(timeRemaining(), () => {
-    race(...Participants).publish();
-    return [ x, y, z ]; }) }
 
 @subsubsection{@tt{implies}}
 
