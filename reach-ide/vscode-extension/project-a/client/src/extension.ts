@@ -52,7 +52,11 @@ export function activate(context: ExtensionContext) {
 	};
 
 	terminal = window.createTerminal({ name: "Reach IDE" });
-	registerCommands(context);
+	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
+	const reachPath = (reachExecutablePath == './reach')
+		? path.join(process.cwd(), "reach")
+		: reachExecutablePath;
+	registerCommands(context, reachPath);
 
 
 	// Options to control the language client
@@ -90,28 +94,28 @@ export function activate(context: ExtensionContext) {
 	associateRshFiles();
 }
 
-function registerCommands(context: ExtensionContext) {
+function registerCommands(context: ExtensionContext, reachPath: string) {
 	const disposable = commands.registerCommand('reach.compile', () => {
 		terminal.show();
-		terminal.sendText("./reach compile");
+		terminal.sendText(`${reachPath} compile`);
 	});
 	context.subscriptions.push(disposable);
 
 	const disposable2 = commands.registerCommand('reach.run', () => {
 		terminal.show();
-		terminal.sendText("./reach run");
+		terminal.sendText(`${reachPath} run`);
 	});
 	context.subscriptions.push(disposable2);
 
 	const disposable3 = commands.registerCommand('reach.upgrade', () => {
 		terminal.show();
-		terminal.sendText("./reach upgrade");
+		terminal.sendText(`${reachPath} upgrade`);
 	});
 	context.subscriptions.push(disposable3);
 
 	const disposable6 = commands.registerCommand('reach.update', () => {
 		terminal.show();
-		terminal.sendText("./reach update");
+		terminal.sendText(`${reachPath} update`);
 	});
 	context.subscriptions.push(disposable6);
 
