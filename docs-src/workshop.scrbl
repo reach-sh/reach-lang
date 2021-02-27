@@ -186,7 +186,7 @@ This workshop introduces effective use of @tech{participant class}es and @reachi
 
 @(WIP/XXX "popularity-contest")
 
-@section[#:tag "workshop-race"]{Workshop: Simple NFT}
+@section[#:tag "workshop-nft-dumb]{Workshop: Simple NFT}
 
 @(workshop-deps "race")
 
