@@ -157,15 +157,6 @@ Thus, the interest rate for the loan is essentially the Lender's prediction of t
 
 @(WIP/XXX "secured-loan")
 
-@section[#:tag "workshop-oracle"]{Workshop: Oracle}
-
-@(workshop-deps "tut")
-
-In this workshop, we implement a centralized @link["https://en.wikipedia.org/wiki/Oracle_machine"]{oracle} for some property not otherwise computable within a Reach program.
-Typically oracles are used to connect physical data from outside a @tech{consensus network} to the agents of the network, such as by reading physical sensors, like a thermometer, and posting the information inside the network.
-
-@(WIP/XXX)
-
 @section[#:tag "workshop-race"]{Workshop: Race}
 
 @(workshop-deps "tut")
@@ -195,6 +186,16 @@ This workshop introduces effective use of @tech{participant class}es and @reachi
 
 @(WIP/XXX "popularity-contest")
 
+@section[#:tag "workshop-race"]{Workshop: Simple NFT}
+
+@(workshop-deps "race")
+
+In this workshop, we implement a trivial @link["https://en.wikipedia.org/wiki/Non-fungible_token"]{non-fungible token} (NFT) where a single creator creates a unique item and initial owns it.
+The creator and all subsequent owners may transfer ownership of the unique item to a different owner and so on.
+This workshop uses a @tech{participant class} to represent owners and is a kind of trial temple before we explore more interesting and in-depth variants of the NFT concept.
+
+@(WIP/XXX "nft-dumb")
+
 @section[#:tag "workshop-raffle"]{Workshop: Raffle}
 
 @(workshop-deps "workshop-popularity-contest")
@@ -210,6 +211,15 @@ In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{r
 In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Rent-seeking"]{rent-seeking} competition, where a sponsor attempts to sell a prize (e.g. 10 ETH) and a number of bidders seek to acquire the prize by bidding for it (e.g. 5 ETH). Unlike a "normal" auction, however, the bidders lose the money they bid to the sponsor. Thus, while the winner may get more than the bid, and the sponsor may get more than they give away, there is a net transfer away from the bidders to the sponsor. This program also uses @tech{linear state}.
 
 @(WIP/XXX "rent-seeking")
+
+@section[#:tag "workshop-oracle"]{Workshop: Oracle}
+
+@(workshop-deps "tut")
+
+In this workshop, we implement a centralized @link["https://en.wikipedia.org/wiki/Oracle_machine"]{oracle} for some property not otherwise computable within a Reach program.
+Typically oracles are used to connect physical data from outside a @tech{consensus network} to the agents of the network, such as by reading physical sensors, like a thermometer, and posting the information inside the network.
+
+@(WIP/XXX)
 
 @section[#:tag "workshop-auction-te"]{Workshop: Timed English Auction}
 
