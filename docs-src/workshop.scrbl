@@ -200,7 +200,7 @@ This workshop uses a @tech{participant class} to represent owners and is a kind 
 
 @(workshop-deps "workshop-popularity-contest")
 
-In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{raffle}, where a sponsor starts a timed raffle and a @tech{participant class} of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses @tech{linear state} through the @reachin{Map} structure; second, it uses an commitment pattern structure to acquire safe randomness from the set of buyers.
+In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{raffle}, where a sponsor starts a timed raffle and a @tech{participant class} of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses @tech{linear state} through the @reachin{Map} structure; second, it uses an commitment pattern structure to acquire safe randomness from the set of buyers. 
 
 @(WIP/XXX "raffle")
 
