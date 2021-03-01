@@ -825,7 +825,7 @@ Such modifications may only occur in a @tech{consensus step}.
 
 @subsubsection{Sets: creation and modification}
 
-@(mint-define! '("Set") '("insert") '("delete"))
+@(mint-define! '("Set") '("insert") '("delete") '("member"))
 @reach{
   const bidders = new Set();
   Set.insert(bidders, Alice);
@@ -834,7 +834,7 @@ Such modifications may only occur in a @tech{consensus step}.
 }
 
 A @reachin{Set} is another container for @tech{linear state}. It is simply a type alias of @reachin{Map(Null)};
-so it is only useful for tracking @reachin{Address}es. Because a @reachin{Set} is internally a @reachin{Map}, it may
+it is only useful for tracking @reachin{Address}es. Because a @reachin{Set} is internally a @reachin{Map}, it may
 only be constructed in a @tech{consensus step}.
 
 A @reachin{Set} may be modified by writing @reachin{Set.insert(s, ADDRESS)} to install @reachin{ADDRESS} in the
