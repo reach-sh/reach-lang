@@ -3,6 +3,7 @@ all: render check
 .PHONY: rebuild
 rebuild:
 	raco scribble --dest .. --dest-name docs --htmls reach.scrbl 2>&1 | tee scribble.log
+	[ -f ../docs/index.html ]
 	./add-scripts.sh
 
 .PHONY: copy
