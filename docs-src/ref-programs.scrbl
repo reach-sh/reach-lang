@@ -823,6 +823,26 @@ Such dereferences return a value of type @reachin{Maybe(TYPE_EXPR)}, because the
 A @tech{mapping} may be modified by writing @reachin{map[ADDR_EXPR] = VALUE_EXPR} to install @reachin{VALUE_EXPR} (of type @reachin{TYPE_EXPR}) at @reachin{ADDR_EXPR}, or by writing @reachin{delete map[ADDR_EXPR]} to remove the mapping entry.
 Such modifications may only occur in a @tech{consensus step}.
 
+@subsubsection{Sets: creation and modification}
+
+@(mint-define! '("Set") '("insert") '("delete"))
+@reach{
+  const bidders = new Set();
+  Set.insert(bidders, Alice);
+  Set.delete(bidders, Alice);
+  Set.member(bidders, Alice); // false
+}
+
+A @reachin{Set} is another container for @tech{linear state}. It is simply a type alias of @reachin{Map(Null)};
+so it is only useful for tracking @reachin{Address}es. Because a @reachin{Set} is internally a @reachin{Map}, it may
+only be constructed in a @tech{consensus step}.
+
+A @reachin{Set} may be modified by writing @reachin{Set.insert(s, ADDRESS)} to install @reachin{ADDRESS} in the
+set, @reachin{s}, or @reachin{Set.delete(s, ADDRESS)} to remove the @reachin{ADDRESS} from the set.
+Such modifications may only occur in a @tech{consensus step}.
+
+@reachin{Set.member(s, ADDRESS)} will return a @reachin{Bool} representing whether the address is in the set.
+
 @subsubsection{@tt{transfer}}
 
 @(mint-define! '("transfer"))
