@@ -1226,11 +1226,14 @@ export async function getDefaultAccount(): Promise<Account> {
   if (!window.prompt) {
     throw Error(`Cannot prompt the user for default account with window.prompt`);
   }
-  const mnemonic = window.prompt(`Please paste the mnemonic for your account`);
+  const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
   if (mnemonic) {
+    debug(`Creating account from user-provided mnemonic`);
     return await newAccountFromMnemonic(mnemonic);
   } else {
-    throw Error(`User declined to provide a mnemonic`);
+    debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
+    return await createAccount();
+    // throw Error(`User declined to provide a mnemonic`);
     // XXX: figure out how to let the user pick which wallet they want to use.
     // AlgoSigner, My Algo Wallet, etc.
     // throw Error(`Please use newAccountFromAlgoSigner instead`);
