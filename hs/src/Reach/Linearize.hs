@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DK
 import Reach.AST.DL
@@ -44,7 +45,8 @@ dk2lin :: DKTail -> LLTail
 dk2lin = \case
   DK_Com (DKC_ m) k -> DT_Com m $ dk2lin k
   DK_Stop at -> DT_Return at
-  _ -> impossible "dk2lin"
+  DK_Com c _ -> impossible $ "dk2lin: DK_Com (" <> conNameOf c <> ")"
+  c -> impossible $ "dk2lin: " <> conNameOf c
 
 lin :: DLStmt -> DKApp LLCommon
 lin = \case

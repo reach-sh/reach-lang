@@ -3,6 +3,7 @@
 module Reach.AST.DK where
 
 import qualified Data.Map.Strict as M
+import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
@@ -14,7 +15,7 @@ data DKCommon
   = DKC_ LLCommon
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 instance Pretty DKCommon where
   pretty = \case
@@ -46,7 +47,7 @@ data DKTail
       , dk_w_k :: DKTail
       }
   | DK_Continue SrcLoc DLAssignment
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 instance Pretty DKTail where
   pretty = \case
