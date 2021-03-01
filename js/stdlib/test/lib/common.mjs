@@ -8,6 +8,7 @@ export const run = async specs => {
   const s = [ ...specs ];
   let   f;
 
+  // eslint-disable-next-line no-cond-assign
   while (f = s.shift()) {
     if (f instanceof AsyncFunction) {
       await f().catch(e => {
