@@ -1671,6 +1671,13 @@ On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled @reachin{backend}.
 On line 8, we import the @reachin{stdlib} as @reachin{reach}.
 
+@(hrule)
+
+To run on Algorand, change the import on line 8.
+
+@reachin{import * as reach from '@"@"reach-sh/stdlib/ALGO'}
+
+
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
@@ -1874,6 +1881,13 @@ As a convenience for running the React development server,
 you can call:
 
 @cmd{./reach react}
+
+@(hrule)
+
+To run the React development server with Algorand,
+you can call:
+
+@cmd{REACH_CONNECTOR_MODE=ALGO ./reach react}
 
 @(hrule) @;; explain npm install
 
