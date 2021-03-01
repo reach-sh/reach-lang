@@ -194,7 +194,7 @@ const setBrowser = (b: boolean) => {
     setWaitPort(false);
   }
   setBrowserRaw(b);
-}
+};
 export { setBrowser };
 
 // Yes, this is dumb. TODO something better
@@ -214,10 +214,10 @@ async function wait1port(theServer: string, thePort: string | number) {
     port: thePort,
     output: 'silent',
     timeout: 1000 * 60 * 1,
-  }
+  };
   debug('wait1port');
   if (getDEBUG()) {
-    console.log(args)
+    console.log(args);
   }
   debug('waitPort complete');
   return await waitPort(args);
@@ -252,7 +252,7 @@ type STX = {
 }
 
 const sendAndConfirm = async (
-  stx_or_stxs: STX | Array<STX>
+  stx_or_stxs: STX | Array<STX>,
 ): Promise<TxnInfo> => {
   // @ts-ignore
   let {lastRound, txID, tx} = stx_or_stxs;
@@ -283,7 +283,7 @@ const sendAndConfirm = async (
 
 // Backend
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
-  debug(`compile ${label}`)
+  debug(`compile ${label}`);
   let s, r;
   try {
     r = await (await getAlgodClient()).compile(code).do();
@@ -296,7 +296,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   if ( s == 200 ) {
     debug(`compile ${label} succeeded: ${JSON.stringify(r)}`);
     r.src = code;
-    r.result = new Uint8Array(Buffer.from(r.result, "base64"));
+    r.result = new Uint8Array(Buffer.from(r.result, 'base64'));
     // debug(`compile transformed: ${JSON.stringify(r)}`);
     return r;
   } else {
@@ -353,7 +353,7 @@ function regroup(thisAcc: NetworkAccount, txns: Array<Txn>): Array<TXN> {
 function unclean_for_AlgoSigner(txnOrig: any) {
   const txn = {...txnOrig};
   Object.keys({...txnOrig}).forEach(key => {
-    if(txn[key] === undefined || txn[key] === null){
+    if (txn[key] === undefined || txn[key] === null){
         delete txn[key];
     }
   });
@@ -363,14 +363,14 @@ function unclean_for_AlgoSigner(txnOrig: any) {
       txn.note = new Uint8Array(Buffer.from(txn.note));
   }
   // Application transactions only
-  if(txn && txn.type === 'appl'){
-    if('appApprovalProgram' in txn){
+  if (txn && txn.type === 'appl'){
+    if ('appApprovalProgram' in txn){
       txn.appApprovalProgram = Uint8Array.from(Buffer.from(txn.appApprovalProgram,'base64'));
     }
-    if('appClearProgram' in txn){
+    if ('appClearProgram' in txn){
       txn.appClearProgram = Uint8Array.from(Buffer.from(txn.appClearProgram,'base64'));
     }
-    if('appArgs' in txn){
+    if ('appArgs' in txn){
       var tempArgs: Array<Uint8Array> = [];
       txn.appArgs.forEach((element: string) => {
           tempArgs.push(Uint8Array.from(Buffer.from(element,'base64')));
@@ -441,7 +441,7 @@ const clean_for_AlgoSigner = (txnOrig: any) => {
   txn.flatFee = true;
 
   return txn;
-}
+};
 
 const sign_and_send_sync = async (
   label: string,
@@ -525,7 +525,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
     ctc: ctc_bin,
     steps: stepCode_bin,
   };
-};
+}
 
 const ui8z = new Uint8Array();
 
@@ -624,7 +624,7 @@ const [getFaucet, setFaucet] = replaceableThunk(async () => {
   const browser = getBrowser();
   const FAUCET = algosdk.mnemonicToSecretKey(browser
     ? rawFaucetDefaultMnemonic
-    : process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic
+    : process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
   );
   return await connectAccount(FAUCET);
 });
@@ -654,7 +654,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
       tx,
       txID: txnOrig.txID().toString(),
       lastRound: txnOrig.lastRound,
-    }
+    };
     return ret;
   } else if (AlgoSigner) {
     // TODO: clean up txn before signing
@@ -873,8 +873,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             tx: tx_obj.blob,
             txID: tx_obj.txID,
             lastRound: txn.lastRound,
-          }
-        }
+          };
+        };
         const sign_me = async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
 
         const txnAppl_s = await sign_me(txnAppl);
@@ -890,7 +890,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           txnToHandler_s,
           txnFromHandler_s,
           txnToContract_s,
-          ...txnFromContracts_s
+          ...txnFromContracts_s,
         ];
 
         debug(`${dhead} --- SEND: ${txns_s.length}`);
@@ -904,7 +904,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           const handle_error =
             (!soloSend) ? debug : ((x:string) => { throw Error(x); });
 
-          if ( e.type == "sendRawTransaction" ) {
+          if ( e.type == 'sendRawTransaction' ) {
             handle_error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
           } else {
             handle_error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
@@ -921,7 +921,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       evt_cnt: number,
       tys: Array<AnyALGO_Ty>,
       waitIfNotPresent: boolean,
-      timeout_delay: undefined | BigNumber
+      timeout_delay: undefined | BigNumber,
     ): Promise<Recv> => {
       // Ignoring this, because no ALGO dev node
       void(waitIfNotPresent);
@@ -947,7 +947,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         let query = indexer.searchForTransactions()
           .address(handler.hash)
-          .addressRole("sender")
+          .addressRole('sender')
           // Look at the next one after the last message
           // XXX when we implement firstMsg, this won't work on the first
           // message
@@ -975,7 +975,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           const s: string = Buffer.from(x, 'base64').toString('hex');
           // debug(`${dhead} --- deNetify ${s}`);
           return ethers.utils.arrayify('0x' + s);
-        }
+        };
 
         const args_un =
             args.map((x, i) => tys[i].fromNet(reNetify(x)));
@@ -1001,7 +1001,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             dhead,
             indexer.searchForTransactions()
               .address(bin_comp.ctc.hash)
-              .addressRole("receiver")
+              .addressRole('receiver')
               .round(lastRound));
 
         const value =
@@ -1048,7 +1048,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           appClear_bin.result,
           0, 0, 2, 1));
 
-    const ApplicationID = createRes["application-index"];
+    const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
@@ -1081,7 +1081,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const txns = [
       txnUpdate,
       txnToContract,
-      ...txnToHandlers
+      ...txnToHandlers,
     ];
     algosdk.assignGroupID(txns);
     regroup(thisAcc, txns);
@@ -1133,7 +1133,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       iam, // doesn't need to await the implP
       selfAddress, // doesn't need to await the implP
       stdlib: compiledStdlib,
-    }
+    };
   };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): ContractAttached => {
@@ -1158,12 +1158,12 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 export const createAccount = async () => {
   const networkAccount = algosdk.generateAccount();
   return await connectAccount(networkAccount);
-}
+};
 
 export const fundFromFaucet = async (account: Account, value: any) => {
   const faucet = await getFaucet();
   await transfer(faucet, account, value);
-}
+};
 
 export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
@@ -1266,7 +1266,7 @@ export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSig
   }
   let networkAccount = {addr, AlgoSigner};
   return await connectAccount(networkAccount);
-}
+};
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());
 
@@ -1308,4 +1308,4 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   // (don't bother checking ctc balance at creationRound, the ctc enforces this)
 
   return true;
-}
+};
