@@ -108,46 +108,48 @@ export const Array_empty =
   Array.iota(0);
 export const Array_replicate =
   (sz, v) => Array.iota(sz).map(x => v);
-export const Array_forEach =
-  (arr, f) => arr.reduce(null, (acc, xe) => f(xe));
-export const Array_forEach1 =
-  (arr) => (f) => Array_forEach(arr, f);
 
-export const Array_min =
-  (arr) => arr.reduce(UInt.max, (acc, x) => (x < acc) ? x : acc);
-export const Array_min1 = (arr) => () => Array_min(arr);
+export const Foldable_forEach =
+  (c, f) => c.reduce(null, (_, xe) => f(xe));
+export const Foldable_forEach1 =
+  (c) => (f) => Foldable_forEach(c, f);
 
-export const Array_max =
-  (arr) => arr.reduce(0, (acc, x) => (x > acc) ? x : acc);
-export const Array_max1 = (arr) => () => Array_max(arr);
+export const Foldable_min =
+  (c) => c.reduce(UInt.max, (acc, x) =>
+    (x < acc) ? x : acc);
+export const Foldable_min1 = (c) => () => Foldable_min(c);
 
-export const Array_any =
-  (arr, f) => arr.reduce(false, (acc, x) =>
+export const Foldable_max =
+  (c) => c.reduce(0, (acc, x) => (x > acc) ? x : acc);
+export const Foldable_max1 = (c) => () => Foldable_max(c);
+
+export const Foldable_any =
+  (c, f) => c.reduce(false, (acc, x) =>
     acc ? acc : f(x));
-export const Array_any1 = (arr) => (f) => Array_any(arr, f);
+export const Foldable_any1 = (c) => (f) => Foldable_any(c, f);
 
-export const Array_all =
-  (arr, f) => arr.reduce(true, (acc, x) =>
+export const Foldable_all =
+  (c, f) => c.reduce(true, (acc, x) =>
     acc ? f(x) : false);
-export const Array_all1 = (arr) => (f) => Array_all(arr, f);
+export const Foldable_all1 = (c) => (f) => Foldable_all(c, f);
 
-export const Array_or =
-  (arr) => Array_any(arr, x => x);
-export const Array_or1 = (arr) => () => Array_or(arr);
+export const Foldable_or =
+  (c) => Foldable_any(c, x => x);
+export const Foldable_or1 = (c) => () => Foldable_or(arr);
 
-export const Array_and =
-  (arr) => Array_all(arr, x => x);
-export const Array_and1 = (arr) => () => Array_and(arr);
+export const Foldable_and =
+  (c) => Foldable_all(c, x => x);
+export const Foldable_and1 = (c) => () => Foldable_and(c);
 
-export const Array_sum =
-  (arr) => arr.reduce(0, (acc, x) => acc + x);
-export const Array_sum1 = (arr) => () => Array_sum(arr);
+export const Foldable_sum =
+  (c) => c.reduce(0, (acc, x) => acc + x);
+export const Foldable_sum1 = (c) => () => Foldable_sum(c);
 
-export const Array_includes =
-  (arr, x) => arr.reduce(false, (acc, e) =>
+export const Foldable_includes =
+  (c, x) => c.reduce(false, (acc, e) =>
     acc ? acc : (x == e) ? true : false);
-export const Array_includes1 =
-  (arr) => (x) => Array_includes(arr, x);
+export const Foldable_includes1 =
+  (c) => (x) => Foldable_includes(c, x);
 
 export const Array_indexOfAux =
   (arr, f) => {
@@ -175,26 +177,29 @@ export const Array_findIndex =
 export const Array_findIndex1 =
   (arr) => (f) => Array_findIndex(arr, f);
 
-export const Array_count =
-  (arr, f) => arr.reduce(0, (acc, x) =>
+export const Foldable_count =
+  (c, f) => c.reduce(0, (acc, x) =>
     f(x) ? acc + 1 : acc);
-export const Array_count1 =
-  (arr) => (f) => Array_count(arr, f);
+export const Foldable_count1 =
+  (c) => (f) => Foldable_count(c, f);
 
 export const compose =
   (f, g) => (v) => f(g(v));
 
-export const Array_average = (arr) =>
-  arr.sum() / arr.length;
+export const Foldable_length =
+  (c) => c.reduce(0, (acc, _) => acc + 1);
+export const Foldable_length1 =
+  (c) => () => Foldable_length(c);
 
-export const Array_average1 = (arr) => () =>
-  Array_average(arr);
+export const Foldable_average = (c) =>
+  Foldable_sum(c) / Foldable_length(s);
+export const Foldable_average1 = (c) => () =>
+  Foldable_average(c);
 
-export const Array_product = (arr) =>
-  arr.reduce(1, (acc, x) => acc * x);
-
-export const Array_product1 = (arr) => () =>
-  Array_product(arr);
+export const Foldable_product = (c) =>
+  c.reduce(1, (acc, x) => acc * x);
+export const Foldable_product1 = (c) => () =>
+  Foldable_product(c);
 
 export const sqrt = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], a) =>
@@ -406,3 +411,4 @@ export const makeDeadline = (deadline) => {
     endTime > lastConsensusTime();
   return [ timeRemaining, keepGoing ];
 }
+

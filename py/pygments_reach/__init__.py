@@ -90,7 +90,7 @@ class ReachLexer(RegexLexer):
              r'package|private|protected|public|short|static|super|synchronized|throws|'
              r'transient|volatile)\b', Keyword.Reserved),
             (r'(true|false|null|NaN|Infinity|undefined)\b', Keyword.Constant),
-            (r'(Array|Boolean|Date|Error|Function|Math|netscape|'
+            (r'(Array|Boolean|Date|Error|Function|Foldable|Math|netscape|'
              r'Number|Object|Packages|RegExp|String|Promise|Proxy|sun|decodeURI|'
              r'decodeURIComponent|encodeURI|encodeURIComponent|'
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'

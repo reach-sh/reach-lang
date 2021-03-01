@@ -1,4 +1,4 @@
-reachc: error: reach standard library:200:13:application: Invalid arg for Array_iota. The argument must be computable at compile time
+reachc: error: reach standard library:205:13:application: Invalid arg for Array_iota. The argument must be computable at compile time
 Trace:
-  in "sqrt" from (reach standard library:199:28:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:20:application)
+  in "sqrt" from (reach standard library:204:28:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:20:application)
   in [unknown function] from (./Err_Prim_InvalidArg_Dynamic.rsh:8:17:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:8:13:application)

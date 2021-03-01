@@ -1385,7 +1385,151 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
+@subsubsection{Foldable operations}
+
+The following methods are available on any @(mint-define! '("Foldable"))@reachin{Foldable} containers, such as: @reachin{Array}s and @reachin{Map}s.
+
+@subsubsub*section{ @tt{Foldable.forEach} && @tt{.forEach}}
+
+@(mint-define! '("forEach"))
+@reach{
+ c.forEach(f)
+ Foldable.forEach(c, f)
+ Array.forEach(c, f)
+ Map.forEach(c, f) }
+
+@index{Foldable.forEach} @reachin{Foldable.forEach(c, f)} iterates the function @reachin{f} over the elements of a container @reachin{c}, discarding the result.
+This may be abbreviated as @reachin{c.forEach(f)}.
+
+@subsubsub*section{@tt{Foldable.all} && @tt{.all}}
+
+@(mint-define! '("all"))
+@reach{
+  Foldable.all(c, f)
+  Array.all(c, f)
+  Map.all(c, f)
+  c.all(f) }
+
+@index{Foldable.all} @reachin{Foldable.all(c, f)} determines whether the predicate, @tt{f}, is satisfied
+by every element of the container, @tt{c}.
+
+@subsubsub*section{@tt{Foldable.any} && @tt{.any}}
+
+@(mint-define! '("any"))
+@reach{
+  Foldable.any(c, f)
+  Array.any(c, f)
+  Map.any(c, f)
+  c.any(f) }
+
+@index{Foldable.any} @reachin{Foldable.any(c, f)} determines whether the predicate, @tt{f}, is satisfied
+by at least one element of the container, @tt{c}.
+
+@subsubsub*section{@tt{Foldable.or} && @tt{.or}}
+
+@(mint-define! '("or"))
+@reach{
+  Foldable.or(c)
+  Array.or(c)
+  Map.or(c)
+  c.or() }
+
+@index{Foldable.or} @reachin{Foldable.or(c)} returns the disjunction of a container of @reachin{Bool}s.
+
+@subsubsub*section{@tt{Foldable.and} && @tt{.and}}
+
+@(mint-define! '("and"))
+@reach{
+  Foldable.and(c)
+  Array.and(c)
+  Map.and(c)
+  c.and() }
+
+@index{Foldable.and} @reachin{Foldable.and(c)} returns the conjunction of a container of @reachin{Bool}s.
+
+@subsubsub*section{@tt{Foldable.includes} && @tt{.includes}}
+
+@(mint-define! '("includes"))
+@reach{
+  Foldable.includes(c, x)
+  Array.includes(c, x)
+  Map.includes(c, x)
+  c.includes(x) }
+
+@index{Foldable.includes} @reachin{Foldable.includes(c, x)} determines whether the container includes
+the element, @tt{x}.
+
+@subsubsub*section{@tt{Foldable.count} && @tt{.count}}
+
+@(mint-define! '("count"))
+@reach{
+  Foldable.count(c, f)
+  Array.count(c, f)
+  Map.count(c, f)
+  c.count(f) }
+
+@index{Foldable.count} @reachin{Foldable.count(c, f)} returns the number of elements in @tt{c} that
+satisfy the predicate, @tt{f}.
+
+@subsubsub*section{@tt{Foldable.min} && @tt{.min}}
+
+@(mint-define! '("min"))
+@reach{
+  Foldable.min(c)
+  Array.min(c)
+  Map.min(c)
+  c.min() }
+
+@index{Foldable.min} @reachin{Foldable.min(arr)} returns the lowest number in a container of @tt{UInt}s.
+
+@subsubsub*section{@tt{Foldable.max} && @tt{.max}}
+
+@(mint-define! '("max"))
+@reach{
+  Foldable.max(c)
+  Array.max(c)
+  Map.max(c)
+  c.max() }
+
+@index{Foldable.max} @reachin{Foldable.max(c)} returns the largest number in a container of @tt{UInt}s.
+
+@subsubsub*section{@tt{Foldable.sum} && @tt{.sum}}
+
+@(mint-define! '("sum"))
+@reach{
+  Foldable.sum(c)
+  Array.sum(c)
+  Map.sum(c)
+  c.sum() }
+
+@index{Foldable.sum} @reachin{Foldable.sum(c)} returns the sum of a container of @tt{UInt}s.
+
+@subsubsub*section{@tt{Foldable.product} && @tt{.product}}
+
+@(mint-define! '("product"))
+@reach{
+  Foldable.product(c)
+  Array.product(c)
+  Map.product(c)
+  c.product() }
+
+@index{Foldable.product} @reachin{Foldable.product(c)} returns the product of a container of @tt{UInt}s.
+
+@subsubsub*section{@tt{Foldable.average} && @tt{.average}}
+
+@(mint-define! '("average"))
+@reach{
+  Foldable.average(c)
+  Array.average(c)
+  Map.average(c)
+  c.average() }
+
+@index{Foldable.average} @reachin{Foldable.average(c)} returns the mean of a container of @tt{UInt}s.
+
 @subsubsection{Array group operations}
+
+@reachin{Array} is a @reachin{Foldable} container. Along with the methods of @reachin{Foldable}, the
+following methods may be used with @reachin{Array}s.
 
 @subsubsub*section{@tt{Array.iota}}
 
@@ -1467,66 +1611,6 @@ This may be abbreviated as @reachin{arr.reduce(z, f)}.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
 For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
 
-@subsubsub*section{@tt{Array.forEach} && @tt{.forEach}}
-
-@(mint-define! '("forEach"))
-@reach{
- arr.forEach(f)
- Array.forEach(arr, f)
- Array_forEach(arr, f)
- Array_forEach1(arr)(f) }
-
-@index{Array.forEach} @reachin{Array.forEach(arr, f)} iterates the function @reachin{f} over the elements of the array @reachin{arr}, discarding the result.
-This may be abbreviated as @reachin{arr.forEach(f)}.
-
-@subsubsub*section{@tt{Array.all} && @tt{.all}}
-
-@(mint-define! '("all"))
-@reach{
-  Array.all(arr, f)
-  arr.all(f) }
-
-@index{Array.all} @reachin{Array.all(arr, f)} determines whether the predicate, @tt{f}, is satisfied
-by every element of the array, @tt{arr}.
-
-@subsubsub*section{@tt{Array.any} && @tt{.any}}
-
-@(mint-define! '("any"))
-@reach{
-  Array.any(arr, f)
-  arr.any(f) }
-
-@index{Array.any} @reachin{Array.any(arr, f)} determines whether the predicate, @tt{f}, is satisfied
-by at least one element of the array, @tt{arr}.
-
-@subsubsub*section{@tt{Array.or} && @tt{.or}}
-
-@(mint-define! '("or"))
-@reach{
-  Array.or(arr)
-  arr.or() }
-
-@index{Array.or} @reachin{Array.or(arr)} returns the disjunction of an array of @reachin{Bool}s.
-
-@subsubsub*section{@tt{Array.and} && @tt{.and}}
-
-@(mint-define! '("and"))
-@reach{
-  Array.and(arr)
-  arr.and() }
-
-@index{Array.and} @reachin{Array.and(arr)} returns the conjunction of an array of @reachin{Bool}s.
-
-@subsubsub*section{@tt{Array.includes} && @tt{.includes}}
-
-@(mint-define! '("includes"))
-@reach{
-  Array.includes(arr, x)
-  arr.includes(x) }
-
-@index{Array.includes} @reachin{Array.includes(arr, x)} determines whether the array includes
-the element, @tt{x}.
-
 @subsubsub*section{@tt{Array.indexOf} && @tt{.indexOf}}
 
 @(mint-define! '("indexOf"))
@@ -1549,64 +1633,10 @@ the value is not present in the array, @reachin{None} is returned.
 in the given array that satisfies the predicate @tt{f}. The return value is of type @reachin{Maybe(UInt)}. If
 no value in the array satisfies the predicate, @reachin{None} is returned.
 
-@subsubsub*section{@tt{Array.count} && @tt{.count}}
-
-@(mint-define! '("count"))
-@reach{
-  Array.count(arr, f)
-  arr.count(f) }
-
-@index{Array.count} @reachin{Array.count(arr, f)} returns the number of elements in @tt{arr} that
-satisfy the predicate, @tt{f}.
-
-@subsubsub*section{@tt{Array.min} && @tt{.min}}
-
-@(mint-define! '("min"))
-@reach{
-  Array.min(arr)
-  arr.min() }
-
-@index{Array.min} @reachin{Array.min(arr)} returns the lowest number in an array of @tt{UInt}s.
-
-@subsubsub*section{@tt{Array.max} && @tt{.max}}
-
-@(mint-define! '("max"))
-@reach{
-  Array.max(arr)
-  arr.max() }
-
-@index{Array.max} @reachin{Array.max(arr)} returns the largest number in an array of @tt{UInt}s.
-
-@subsubsub*section{@tt{Array.sum} && @tt{.sum}}
-
-@(mint-define! '("sum"))
-@reach{
-  Array.sum(arr)
-  arr.sum() }
-
-@index{Array.sum} @reachin{Array.sum(arr)} returns the sum of an array of @tt{UInt}s.
-
-@subsubsub*section{@tt{Array.product} && @tt{.product}}
-
-@(mint-define! '("product"))
-@reach{
-  Array.product(arr)
-  arr.product() }
-
-@index{Array.product} @reachin{Array.product(arr)} returns the product of an array of @tt{UInt}s.
-
-@subsubsub*section{@tt{Array.average} && @tt{.average}}
-
-@(mint-define! '("average"))
-@reach{
-  Array.average(arr)
-  arr.average() }
-
-@index{Array.average} @reachin{Array.average(arr)} returns the mean of an array of @tt{UInt}s.
-
 @subsubsection{Mapping group operations}
 
-@tech{Mappings} may be aggregated with these operations within the @reachin{invariant} of a @reachin{while} loop.
+@reachin{Map} is a @reachin{Foldable} container. @tech{Mappings} may be aggregated with the following
+operations and those of @reachin{Foldable} within the @reachin{invariant} of a @reachin{while} loop.
 
 @subsubsub*section{@tt{Map.reduce} && @tt{.reduce}}
 

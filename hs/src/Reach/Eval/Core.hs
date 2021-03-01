@@ -348,6 +348,7 @@ base_env =
     , ("array", SLV_Prim SLPrim_array)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
     , ("Object", SLV_Prim SLPrim_Object)
+    , ("Foldable", SLV_Prim SLPrim_Foldable)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
@@ -967,24 +968,15 @@ evalAsEnvM obj = case obj of
     Just $
       M.fromList
         [ ("set", retV $ public $ SLV_Prim SLPrim_part_set)]
+  SLV_Prim SLPrim_Foldable ->
+    Just $
+      M.fromList foldableValueEnv
   SLV_Prim SLPrim_Array ->
     Just $
-      M.fromList
+      M.fromList $
         [ ("empty", retStdLib "Array_empty")
-        , ("forEach", retStdLib "Array_forEach")
-        , ("min", retStdLib "Array_min")
-        , ("max", retStdLib "Array_max")
-        , ("all", retStdLib "Array_all")
-        , ("any", retStdLib "Array_any")
-        , ("or", retStdLib "Array_or")
-        , ("and", retStdLib "Array_and")
-        , ("sum", retStdLib "Array_sum")
-        , ("average", retStdLib "Array_average")
-        , ("product", retStdLib "Array_product")
-        , ("includes", retStdLib "Array_includes")
-        , ("indexOf", retStdLib "Array_indexOf")
         , ("findIndex", retStdLib "Array_findIndex")
-        , ("count", retStdLib "Array_count")
+        , ("indexOf", retStdLib "Array_indexOf")
         , ("replicate", retStdLib "Array_replicate")
         , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
         , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
@@ -993,7 +985,7 @@ evalAsEnvM obj = case obj of
         , ("map", retV $ public $ SLV_Prim $ SLPrim_array_map)
         , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce)
         , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
-        ]
+        ] <> foldableValueEnv
   SLV_Prim SLPrim_Object ->
     Just $
       M.fromList
@@ -1013,14 +1005,17 @@ evalAsEnvM obj = case obj of
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
   SLV_Prim SLPrim_Map ->
     Just $
-      M.fromList
-        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce) ]
+      M.fromList $
+        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce) ] <> foldableValueEnv
   SLV_Map _ ->
     Just $
-      M.fromList
-        [ ("reduce", delayCall SLPrim_MapReduce) ]
+      M.fromList $
+        [ ("reduce", delayCall SLPrim_MapReduce) ] <> foldableObjectEnv
   _ -> Nothing
   where
+    foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "length", "count"]
+    foldableObjectEnv = map (\m -> (m, doStdlib $ "Foldable_" <> m <> "1")) foldableMethods
+    foldableValueEnv = map (\m -> (m, retStdLib $ "Foldable_" <> m)) foldableMethods
     tupleValueEnv =
       Just $
         M.fromList
@@ -1029,28 +1024,16 @@ evalAsEnvM obj = case obj of
           ]
     arrayValueEnv =
       Just $
-        M.fromList
+        M.fromList $
           [ ("set", delayCall SLPrim_array_set)
           , ("length", doCall SLPrim_array_length)
           , ("concat", delayCall SLPrim_array_concat)
-          , ("forEach", doStdlib "Array_forEach1")
-          , ("min", doStdlib "Array_min1")
-          , ("max", doStdlib "Array_max1")
-          , ("all", doStdlib "Array_all1")
-          , ("any", doStdlib "Array_any1")
-          , ("or", doStdlib "Array_or1")
-          , ("and", doStdlib "Array_and1")
-          , ("sum", doStdlib "Array_sum1")
-          , ("average", doStdlib "Array_average1")
-          , ("product", doStdlib "Array_product1")
           , ("indexOf", doStdlib "Array_indexOf1")
           , ("findIndex", doStdlib "Array_findIndex1")
-          , ("includes", doStdlib "Array_includes1")
-          , ("count", doStdlib "Array_count1")
           , ("map", delayCall SLPrim_array_map)
           , ("reduce", delayCall SLPrim_array_reduce)
           , ("zip", delayCall SLPrim_array_zip)
-          ]
+          ] <> foldableObjectEnv
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
@@ -1609,6 +1592,7 @@ evalPrim p sargs =
         [(SLV_Type ty), (SLV_Int _ sz)] ->
           retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
+    SLPrim_Foldable -> expect_ Err_Prim_Foldable
     SLPrim_tuple_length -> do
       at <- withAt id
       one_arg >>= \case
