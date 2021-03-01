@@ -25,6 +25,7 @@ import {
 import waitPort from 'wait-port';
 import { replaceableThunk } from './shared_impl';
 import { stdlib as compiledStdlib, ALGO_Ty, NV, typeDefs } from './ALGO_compiled';
+import { process, window } from './shim';
 export * from './shared';
 
 
@@ -195,6 +196,11 @@ const setBrowser = (b: boolean) => {
   setBrowserRaw(b);
 }
 export { setBrowser };
+
+// Yes, this is dumb. TODO something better
+if (process.env.REACH_CONNECTOR_MODE == 'ETH-test-browser') {
+  setBrowser(true);
+}
 
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
@@ -1066,7 +1072,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         if ( ! sc) { return []; }
         return [algosdk.makePaymentTxnWithSuggestedParams(
           thisAcc.addr,
-          sc!.hash,
+          sc.hash,
           raw_minimumBalance,
           undefined, ui8z,
           params)];
@@ -1217,7 +1223,16 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
 // XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
 // AlgoSigner does not expose a "currently-selected account"
 export async function getDefaultAccount(): Promise<Account> {
-  throw Error(`Please use newAccountFromAlgoSigner instead`);
+  // @ts-ignore
+  const mnemonic = window.prompt('Please paste the mnemonic for your account');
+  if (mnemonic) {
+    return await newAccountFromMnemonic(mnemonic);
+  } else {
+    throw Error(`User declined to provide a mnemonic`);
+    // XXX: figure out how to let the user pick which wallet they want to use.
+    // AlgoSigner, My Algo Wallet, etc.
+    // throw Error(`Please use newAccountFromAlgoSigner instead`);
+  }
 }
 
 /**
