@@ -39,7 +39,10 @@ const processShim: Process = (() => {
   }
 })();
 
-type Window = {ethereum?: ethers.providers.ExternalProvider};
+type Window = {
+  ethereum?: ethers.providers.ExternalProvider,
+  prompt?: (s: string) => string | null,
+};
 
 const windowShim: Window = (() => {
   try {
