@@ -1223,8 +1223,10 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
 // XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
 // AlgoSigner does not expose a "currently-selected account"
 export async function getDefaultAccount(): Promise<Account> {
-  // @ts-ignore
-  const mnemonic = window.prompt('Please paste the mnemonic for your account');
+  if (!window.prompt) {
+    throw Error(`Cannot prompt the user for default account with window.prompt`);
+  }
+  const mnemonic = window.prompt(`Please paste the mnemonic for your account`);
   if (mnemonic) {
     return await newAccountFromMnemonic(mnemonic);
   } else {
