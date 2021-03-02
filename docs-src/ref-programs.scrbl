@@ -827,7 +827,7 @@ Such modifications may only occur in a @tech{consensus step}.
 
 @(mint-define! '("Set") '("insert") '("remove") '("member"))
 @reach{
-  const bidders = Set();
+  const bidders = new Set();
   bidders.insert(Alice);
   bidders.remove(Alice);
   bidders.member(Alice); // false

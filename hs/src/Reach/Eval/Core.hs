@@ -2166,6 +2166,8 @@ getKwdOrPrim ident env =
     -- Hack: Allow `default` to be used as object property name for `match`
     -- expr. Keywords are allowed as property names in JS anyway, *shrug*
     Just (SLSSVal _ _ (SLV_Kwd SLK_default)) -> Nothing
+    -- Allow `new` to be used as object property name for `Set`.
+    Just (SLSSVal _ _ (SLV_Kwd SLK_new)) -> Nothing
     Just s@(SLSSVal _ _ (SLV_Kwd _)) -> Just s
     Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
     _ -> Nothing
