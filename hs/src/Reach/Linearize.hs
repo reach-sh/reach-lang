@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
-import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DK
 import Reach.AST.DL
@@ -41,42 +40,27 @@ setRetsToEmpty = restoreRets mempty
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
 withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
 
-dk2lin :: DKTail -> LLTail
-dk2lin = \case
-  DK_Com (DKC_ m) k -> DT_Com m $ dk2lin k
-  DK_Stop at -> DT_Return at
-  DK_Com c _ -> impossible $ "dk2lin: DK_Com (" <> conNameOf c <> ")"
-  c -> impossible $ "dk2lin: " <> conNameOf c
-
-lin :: DLStmt -> DKApp LLCommon
-lin = \case
+dkc :: DLStmt -> DKApp DKCommon
+dkc = \case
   DLS_Let at mdv de ->
-    return $ DL_Let at mdv de
+    return $ DKC_Let at mdv de
   DLS_ArrayMap at ans x a f ->
-    DL_ArrayMap at ans x a <$> lin_block at f
+    DKC_ArrayMap at ans x a <$> dk_block at f
   DLS_ArrayReduce at ans x z b a f ->
-    DL_ArrayReduce at ans x z b a <$> lin_block at f
+    DKC_ArrayReduce at ans x z b a <$> dk_block at f
   DLS_If at ca _ ts fs ->
-    DL_LocalIf at ca <$> lin_local_rets at ts <*> lin_local_rets at fs
+    DKC_LocalIf at ca <$> dk_ at ts <*> dk_ at fs
   DLS_Switch at dv _ cm ->
-    DL_LocalSwitch at dv <$> mapM cm1 cm
+    DKC_LocalSwitch at dv <$> mapM cm1 cm
     where
-      cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
+      cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
   DLS_MapReduce at ans x z b a f ->
-    DL_MapReduce at ans x z b a <$> lin_block at f
-  _ -> impossible "lin"
-
-lin_local_rets :: SrcLoc -> DLStmts -> DKApp LLTail
-lin_local_rets at ks = do
-  r <- dk_ at ks
-  return $ dk2lin r
-
-lin_local :: SrcLoc -> DLStmts -> DKApp LLTail
-lin_local at ks = setRetsToEmpty $ lin_local_rets at ks
-
-lin_block :: SrcLoc -> DLBlock -> DKApp LLBlock
-lin_block _at (DLBlock at fs l a) =
-  DLinBlock at fs <$> lin_local at l <*> pure a
+    DKC_MapReduce at ans x z b a <$> dk_block at f
+  DLS_FluidSet at fv a ->
+    return $ DKC_FluidSet at fv a
+  DLS_FluidRef at v fv ->
+    return $ DKC_FluidRef at v fv
+  _ -> impossible "dkc"
 
 dk_block :: SrcLoc -> DLBlock -> DKApp DKBlock
 dk_block _at (DLBlock at fs l a) =
@@ -119,17 +103,17 @@ dk1 at_top ks s =
                     _ ->
                       impossible $ "no cons"
             Right da ->
-              com' $ DL_Set at dv da
+              com' $ DKC_Set at dv da
     DLS_Prompt at (Left ret) ss ->
       withReturn ret Nothing $
         dk_ at (ss <> ks)
     DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
       withReturn ret (Just (dv, retms)) $
-        com'' (DL_Var at dv) (ss <> ks)
+        com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Only at who ss ->
-      DK_Only at who <$> lin_local at ss <*> dk_ at ks
+      DK_Only at who <$> dk_ at ss <*> dk_ at ks
     DLS_ToConsensus at send recv mtime -> do
       let (winner_dv, msg, amtv, timev, cs) = recv
       let cs' = dk_ at (cs <> ks)
@@ -150,18 +134,16 @@ dk1 at_top ks s =
       DK_While at asn <$> block inv_b <*> block cond_b <*> body' <*> dk_ at ks
     DLS_Continue at asn ->
       return $ DK_Continue at asn
-    DLS_FluidSet at fv a ->
-      DK_Com (DKC_FluidSet at fv a) <$> dk_ at ks
-    DLS_FluidRef at v fv ->
-      DK_Com (DKC_FluidRef at v fv) <$> dk_ at ks
+    DLS_FluidSet {} -> com
+    DLS_FluidRef {} -> com
     DLS_MapReduce {} -> com
   where
     com :: DKApp DKTail
-    com = com' =<< lin s
-    com' :: LLCommon -> DKApp DKTail
+    com = com' =<< dkc s
+    com' :: DKCommon -> DKApp DKTail
     com' m = com'' m ks
-    com'' :: LLCommon -> DLStmts -> DKApp DKTail
-    com'' m ks' = DK_Com (DKC_ m) <$> dk_ (srclocOf s) ks'
+    com'' :: DKCommon -> DLStmts -> DKApp DKTail
+    com'' m ks' = DK_Com m <$> dk_ (srclocOf s) ks'
 
 dk_ :: SrcLoc -> DLStmts -> DKApp DKTail
 dk_ at = \case
@@ -193,30 +175,26 @@ instance CanLift DLExpr where
 instance CanLift a => CanLift (SwitchCases a) where
   canLift = getAll . mconcatMap (All . canLift . snd . snd) . M.toList
 
-instance CanLift (DLinStmt a) where
+instance CanLift DKTail where
   canLift = \case
-    DL_Nop {} -> True
-    DL_Let _ _ e -> canLift e
-    DL_ArrayMap _ _ _ _ f -> canLift f
-    DL_ArrayReduce _ _ _ _ _ _ f -> canLift f
-    DL_Var {} -> True
-    DL_Set {} -> True
-    DL_LocalIf _ _ t f -> canLift t && canLift f
-    DL_LocalSwitch _ _ csm -> canLift csm
-    DL_MapReduce _ _ _ _ _ _ f -> canLift f
+    DK_Stop {} -> True
+    DK_Com m k -> canLift m && canLift k
+    _ -> impossible "canLift on DKLTail"
 
-instance CanLift (DLinTail a) where
+instance CanLift DKBlock where
   canLift = \case
-    DT_Return {} -> True
-    DT_Com m k -> canLift m && canLift k
-
-instance CanLift (DLinBlock a) where
-  canLift = \case
-    DLinBlock _ _ t _ -> canLift t
+    DKBlock _ _ t _ -> canLift t
 
 instance CanLift DKCommon where
   canLift = \case
-    DKC_ m -> canLift m
+    DKC_Let _ _ e -> canLift e
+    DKC_ArrayMap _ _ _ _ f -> canLift f
+    DKC_ArrayReduce _ _ _ _ _ _ f -> canLift f
+    DKC_Var {} -> True
+    DKC_Set {} -> True
+    DKC_LocalIf _ _ t f -> canLift t && canLift f
+    DKC_LocalSwitch _ _ csm -> canLift csm
+    DKC_MapReduce _ _ _ _ _ _ f -> canLift f
     DKC_FluidSet {} -> True
     DKC_FluidRef {} -> True
 
@@ -348,8 +326,20 @@ df_com mkk back = \case
   DK_Com (DKC_FluidRef at dv fv) k -> do
     (at', da) <- fluidRef fv
     mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back k
-  DK_Com (DKC_ m) k ->
-    mkk m <$> back k
+  DK_Com m k -> do
+    m' <-
+      case m of
+        DKC_Let a b c -> return $ DL_Let a b c
+        DKC_ArrayMap a b c d x -> DL_ArrayMap a b c d <$> df_bl x
+        DKC_ArrayReduce a b c d e f x -> DL_ArrayReduce a b c d e f <$> df_bl x
+        DKC_Var a b -> return $ DL_Var a b
+        DKC_Set a b c -> return $ DL_Set a b c
+        DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
+        DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
+          where go (c, y) = (,) c <$> df_t y
+        DKC_MapReduce a b c d e f x -> DL_MapReduce a b c d e f <$> df_bl x
+        _ -> impossible "df_com"
+    mkk m' <$> back k
   t -> impossible $ show $ "df_com " <> pretty t
 
 df_bl :: DKBlock -> DFApp LLBlock
@@ -359,6 +349,11 @@ df_bl (DKBlock at fs t a) =
     go = \case
       DK_Stop sat -> return $ DT_Return sat
       x -> df_com DT_Com go x
+
+df_t :: DKTail -> DFApp LLTail
+df_t = \case
+  DK_Stop at -> return $ DT_Return at
+  x -> df_com DT_Com df_t x
 
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
@@ -385,7 +380,7 @@ df_con = \case
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap asn
   DK_Only at who body k ->
-    LLC_Only at who body <$> df_con k
+    LLC_Only at who <$> df_t body <*> df_con k
   DK_FromConsensus at1 at2 t -> do
     -- This was formerly done inside of Eval.hs, but that meant that these refs
     -- and sets would dominate the lifted ones in the step body, which defeats
@@ -399,7 +394,7 @@ df_con = \case
 df_step :: DKTail -> DFApp LLStep
 df_step = \case
   DK_Stop at -> return $ LLS_Stop at
-  DK_Only at who body k -> LLS_Only at who body <$> df_step k
+  DK_Only at who body k -> LLS_Only at who <$> df_t body <*> df_step k
   DK_ToConsensus at send recv mtime -> do
     let (b, c, d, e, k) = recv
     let cvt = \case

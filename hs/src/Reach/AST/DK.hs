@@ -7,19 +7,32 @@ import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
-import Reach.AST.LL
 import Reach.Pretty
 import Reach.Texty
 
 data DKCommon
-  = DKC_ LLCommon
+  = DKC_Let SrcLoc (Maybe DLVar) DLExpr
+  | DKC_ArrayMap SrcLoc DLVar DLArg DLVar DKBlock
+  | DKC_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DKBlock
+  | DKC_Var SrcLoc DLVar
+  | DKC_Set SrcLoc DLVar DLArg
+  | DKC_LocalIf SrcLoc DLArg DKTail DKTail
+  | DKC_LocalSwitch SrcLoc DLVar (SwitchCases DKTail)
+  | DKC_MapReduce SrcLoc DLVar DLMVar DLArg DLVar DLVar DKBlock
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
   deriving (Eq, Generic)
 
 instance Pretty DKCommon where
   pretty = \case
-    DKC_ m -> pretty m
+    DKC_Let _at x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
+    DKC_ArrayMap _ ans x a f -> prettyMap ans x a f
+    DKC_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+    DKC_Var _at dv -> "let" <+> pretty dv <> semi
+    DKC_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
+    DKC_LocalIf _at ca t f -> prettyIfp ca t f
+    DKC_LocalSwitch _at ov csm -> prettySwitch ov csm
+    DKC_MapReduce _ ans x z b a f -> prettyReduce ans x z b a f
     DKC_FluidSet at fv a ->
       pretty (DLS_FluidSet at fv a)
     DKC_FluidRef at dv fv ->
@@ -28,7 +41,7 @@ instance Pretty DKCommon where
 data DKTail
   = DK_Com DKCommon DKTail
   | DK_Stop SrcLoc
-  | DK_Only SrcLoc SLPart LLTail DKTail
+  | DK_Only SrcLoc SLPart DKTail DKTail
   | DK_ToConsensus
       { dk_tc_at :: SrcLoc
       , dk_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
