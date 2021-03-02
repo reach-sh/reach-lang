@@ -17,8 +17,8 @@ import (
 )
 
 
-type account   = float64
-type contract  = float64
+type account   = string
+type contract  = string
 type bigNumber = map[string]interface {}
 
 
@@ -39,9 +39,9 @@ func please(a interface{}, err error) interface{} {
 func mkRpc() (func(string, ...interface{}) interface{},
               func(string, contract, map[string]interface{})) {
 
-  host  := os.Getenv("REACH_RPC_SERVER")
-  port  := os.Getenv("REACH_RPC_PORT")
-  key   := os.Getenv("REACH_RPC_KEY")
+  host := os.Getenv("REACH_RPC_SERVER")
+  port := os.Getenv("REACH_RPC_PORT")
+  key  := os.Getenv("REACH_RPC_KEY")
 
   skipVerify := os.Getenv("REACH_RPC_TLS_REJECT_UNVERIFIED") == "0"
   if skipVerify {
@@ -243,6 +243,9 @@ func main() {
 
   fmt.Printf("Alice went from %s to %s\n", beforeAlice, afterAlice)
   fmt.Printf("  Bob went from %s to %s\n", beforeBob,   afterBob)
+
+  rpc("/forget/acc", accAlice, accBob)
+  rpc("/forget/ctc", ctcAlice, ctcBob)
 
   // rpc("/stop")
 }

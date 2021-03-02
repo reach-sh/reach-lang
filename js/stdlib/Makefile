@@ -44,10 +44,12 @@ test: build clean-test
 	cp -r test/lib     test/stdlib-test/lib
 	cd test/stdlib-test \
 	  && $(REACH) compile \
-	  && REACH_CONNECTOR_MODE=ALGO $(REACH) run \
 	  && REACH_CONNECTOR_MODE=ETH  $(REACH) run \
-	  && REACH_CONNECTOR_MODE=FAKE $(REACH) run \
 	   ; $(REACH) down
+
+# TODO re-enable these once `reach` script is ready
+#	  && REACH_CONNECTOR_MODE=ALGO $(REACH) run \
+#	  && REACH_CONNECTOR_MODE=FAKE $(REACH) run \
 
 .PHONY: format
 format: package.json
