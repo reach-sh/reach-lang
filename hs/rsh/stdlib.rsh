@@ -412,18 +412,17 @@ export const makeDeadline = (deadline) => {
   return [ timeRemaining, keepGoing ];
 }
 
-export const Set_insert = (s, v) =>
-  s[v] = null;
-
-export const Set_delete = (s, v) => {
-  delete s[v];
+export const Set = () => {
+  const s = new Map(Null);
+  return ({
+    insert: (v) => { s[v] = null; },
+    remove: (v) => { delete s[v]; },
+    member: (v) => {
+      const mv = s[v];
+      switch(mv) {
+        case None: return false;
+        case Some: return true;
+      }
+    }
+  });
 }
-
-export const Set_member = (s, k) => {
-  const mv = s[k];
-  switch(mv) {
-    case None: return false;
-    case Some: return true;
-  }
-}
-

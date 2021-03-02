@@ -367,7 +367,6 @@ base_env =
     , ("Map", SLV_Prim SLPrim_Map)
     , ("Participant", SLV_Prim SLPrim_Participant)
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
-    , ("Set", SLV_Prim SLPrim_Set)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -1012,12 +1011,6 @@ evalAsEnvM obj = case obj of
     Just $
       M.fromList $
         [ ("reduce", delayCall SLPrim_MapReduce) ] <> foldableObjectEnv
-  SLV_Prim SLPrim_Set ->
-    Just $
-      M.fromList [
-          ("insert", retStdLib "Set_insert")
-        , ("delete", retStdLib "Set_delete")
-        , ("member", retStdLib "Set_member")]
   _ -> Nothing
   where
     foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "length", "count"]
@@ -1999,7 +1992,6 @@ evalPrim p sargs =
       evalApplyVals' fn [public obj, public cases]
     SLPrim_Participant -> makeParticipant SLP_Participant
     SLPrim_ParticipantClass -> makeParticipant SLP_ParticipantClass
-    SLPrim_Set -> retV (lvl, SLV_MapCtor ST_Null)
     SLPrim_Map -> do
       t <- expect_ty =<< one_arg
       retV $ (lvl, SLV_MapCtor t)
