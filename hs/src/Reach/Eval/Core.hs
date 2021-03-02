@@ -361,6 +361,7 @@ base_env =
     , ("isType", SLV_Prim SLPrim_is_type)
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
+    , ("is", SLV_Prim SLPrim_is)
     , ("wait", SLV_Form SLForm_wait)
     , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
@@ -740,9 +741,13 @@ unaryToPrim = \case
   JSUnaryOpPlus a -> fun a "plus" "+"
   JSUnaryOpNot a -> fun a "not" "!"
   JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
+  JSUnaryOpVoid a -> clo a "void" "(_) => null"
   j -> expect_ $ Err_Parse_IllegalUnaOp j
   where
     fun a s ctxt = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId ctxt s)
+    clo a s js = do
+      at <- withAt $ srcloc_jsa "unop" a
+      return $ jsClo at s js mempty
 
 infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
@@ -1974,6 +1979,12 @@ evalPrim p sargs =
           (_, valp2) <- two_args
           return $ ST_Refine t valp2
       return $ public $ SLV_Type t'
+    SLPrim_is -> do
+      (x, y) <- two_args
+      t <- expect_ty y
+      void $ typeCheck_s t x
+      at <- withAt id
+      return $ (lvl, SLV_Bool at True)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs

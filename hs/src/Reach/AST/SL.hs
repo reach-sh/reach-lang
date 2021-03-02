@@ -380,6 +380,7 @@ data SLPrimitive
   | SLPrim_Participant
   | SLPrim_ParticipantClass
   | SLPrim_Foldable
+  | SLPrim_is
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

@@ -1173,20 +1173,29 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
+  @item{@(mint-define! '("Refine")) @reachin{Refine(Type_0, Predicate)}, where @reachin{Predicate} is a unary function returning a boolean, which denotes a @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement type}, that is instances of @reachin{Type_0} that satisfy @reachin{Predicate}.
+  When a refinement type appears in a negative position of a @reachin{Fun} (such as in a @tech{participant interact interface}), it introduces an @reachin{assert}; while when it is in a positive position, it introduces an @reachin{assume}.}
+ @item{@reachin{Refine(Type_0, PreCondition, PostCondition)}, where @reachin{Type_0} is a function type, @reachin{PreCondition} is a unary function that accepts a tuple of the domain and returns a boolean, and @reachin{PostCondition} is a binary function that accepts a tuple of the domain and the range and returns a boolean, denotes a function with a @link["https://en.wikipedia.org/wiki/Precondition"]{precondition} and @link["https://en.wikipedia.org/wiki/Postcondition"]{postcondition}.
+ Preconditions are enforced with @reachin{assert} and postconditions are enforced with @reachin{assume}.}
 ]
 
 @reachin{Object} and @reachin{Data} are commonly used to implemented @link["https://en.wikipedia.org/wiki/Algebraic_data_type"]{algebraic data types} in Reach.
 
-@(mint-define! '("typeOf") '("isType"))
+@(mint-define! '("typeOf") '("isType") '("is"))
 @reach{
  typeOf(x) // type
  isType(t) // Bool
+ is(x, t) // Bool
 }
 
 The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
 it returns the type of its argument.
+
 The @reachin{isType} function returns @reachin{true} if its argument is a type.
 Any expression satisfying @reachin{isType} is compiled away and does not exist at runtime.
+
+The @reachin{is} function returns @reachin{true} if its first argument satisfies the type of the second argument.
+This is considered a negative position for @reachin{Refine}.
 
 @subsubsection{Literal values}
 

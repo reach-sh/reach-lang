@@ -12,7 +12,7 @@ assert(winner(ROCK, ROCK) == DRAW);
 
 forall(UInt, handA =>
   forall(UInt, handB =>
-    assert(isOutcome(winner(handA, handB)))));
+    void is(winner(handA, handB), Refine(UInt, isOutcome))));
 
 forall(UInt, (hand) =>
   assert(winner(hand, hand) == DRAW));
