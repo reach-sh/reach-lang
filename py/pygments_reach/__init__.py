@@ -90,12 +90,12 @@ class ReachLexer(RegexLexer):
              r'package|private|protected|public|short|static|super|synchronized|throws|'
              r'transient|volatile)\b', Keyword.Reserved),
             (r'(true|false|null|NaN|Infinity|undefined)\b', Keyword.Constant),
-            (r'(Array|Boolean|Date|Error|Function|Math|netscape|'
+            (r'(Array|Boolean|Date|Error|Function|Foldable|Math|netscape|'
              r'Number|Object|Packages|RegExp|String|Promise|Proxy|sun|decodeURI|'
              r'decodeURIComponent|encodeURI|encodeURIComponent|'
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'
              # The reach ones
-             r'UInt|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|ParticipantClass|Data|Digest|Map|deployMode|verifyArithmetic|verifyPerConnector|connectors|ETH|ALGO|'
+             r'UInt|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|ParticipantClass|Data|Digest|Map|Set|deployMode|verifyArithmetic|verifyPerConnector|connectors|ETH|ALGO|'
              r'balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|lastConsensusTime|'
              r'and|or|add|sub|mul|div|mod|lt|le|gt|ge|lsh|rsh|band|bior|bxor|eq|neq|'
              r'polyEq|polyNeq|typeEq|intEq|ite|typeOf|isType|'

@@ -379,6 +379,7 @@ data SLPrimitive
   | SLPrim_MapReduce
   | SLPrim_Participant
   | SLPrim_ParticipantClass
+  | SLPrim_Foldable
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)
