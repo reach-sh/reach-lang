@@ -1,4 +1,4 @@
-reachc: error: ./default.rsh:15:27:application: These types are mismatched: (./default.rsh:15:27:application,Data({"None": Null, "Some": UInt})) vs (./default.rsh:15:27:application,UInt)
+reachc: error: ./default.rsh:15:27:application: These types are mismatched: Object({"None": Null, "Some": UInt}) vs UInt
 Trace:
   in [unknown function] from (./default.rsh:12:21:function exp) at (./default.rsh:15:35:application)
   in [unknown function] from (./default.rsh:10:15:function exp) at (./default.rsh:10:11:application)

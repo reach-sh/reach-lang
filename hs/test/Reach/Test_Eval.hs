@@ -43,11 +43,7 @@ spec_examples_cover_EvalError =
       , "Err_Type_None"
       , "Err_Type_NotDT"
       , "Err_Type_NotApplicable"
-      , "Err_TypeMeets_None"
-      , "Err_TypeMeets_Mismatch"
-      , "Err_dTypeMeets_Mismatch"
-      , "Err_Type_TooFewArguments"
-      , "Err_Type_TooManyArguments"
+      , "Err_TypeMeets_dMismatch"
       ]
 
 spec_examples_cover_ParserError :: Spec
