@@ -149,6 +149,9 @@ def main():
     print('Alice went from %s to %s' % (before_alice, after_alice))
     print('  Bob went from %s to %s' % (before_bob,   after_bob))
 
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice, ctc_bob)
+
     # rpc('/stop')
 
 

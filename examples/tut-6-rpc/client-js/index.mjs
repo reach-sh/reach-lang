@@ -52,7 +52,12 @@ import { mkRPC } from '@reach-sh/rpc-client';
   const afterBob = await getBalance(accBob);
 
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
-  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+  console.log(`  Bob went from ${beforeBob} to ${afterBob}.`);
+
+  await Promise.all([
+    rpc(`/forget/acc`, accAlice, accBob),
+    rpc(`/forget/ctc`, ctcAlice, ctcBob),
+  ]);
 
   // await rpc(`/stop`);
 })();

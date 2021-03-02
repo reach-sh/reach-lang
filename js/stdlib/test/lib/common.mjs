@@ -1,4 +1,5 @@
 import { strict as assert } from 'assert';
+import * as shared          from '@reach-sh/stdlib/shared.mjs';
 
 
 const AsyncFunction = (async () => {}).constructor;
@@ -25,17 +26,66 @@ export const run = async specs => {
 };
 
 
-export const describe = (label, f) => {
-  console.log(label);
-  return f();
+let indent     = 0;
+let lastReport = '';
+
+
+const report = l => {
+  const m = l.replace(' ', '') !== ''
+    ? `${' '.repeat(indent)}${l}`
+    : '';
+
+  if ((m === '' && lastReport !== '') || m !== '')
+    console.log(m);
+
+  lastReport = m;
 };
 
 
-export const it = describe;
+export const describe = async (label, f) => {
+  report(label);
+  indent += 2;
+
+  f instanceof AsyncFunction
+    ? await f()
+    : f();
+
+  indent -= 2;
+  report('');
+};
+
+
+export const it = async (label, f) => {
+  report(label);
+  await f();
+};
+
+
+const mkToRaise = async (x, e, f) => {
+  try {
+    await x();
+    expect(1)
+      .toBe(0);
+
+  } catch (ex) {
+    expect(f(ex.message))
+      .toBe(e);
+  }
+};
 
 
 export const expect = x => ({
-  toBe: v => assert.deepEqual(x, v),
+  toBe:    v => assert.deepStrictEqual(x, v),
+  toRaise: e => mkToRaise(x, e, a => a),
+
+  toEq: v => assert.deepStrictEqual(
+    shared.eq(x, v), true, `${String(x)} !== ${String(v)}`),
+
+  toNotEq: v => assert.deepStrictEqual(
+    shared.eq(x, v), false, `${String(x)} === ${String(v)}`),
+
+  toRaiseStartingWith: e => mkToRaise(x, e, a =>
+    (a.match(`^${e}`) || []).shift() || a.substr(0, e.length)),
 });
 
 
@@ -231,16 +281,16 @@ export const mkStdlibNetworkCommon = async lib => {
         const a = await newTestAccount(bigNumberify(balance));
         const b = await balanceOf(a);
 
-        expect(eq(balance, b))
-          .toBe(true);
+        expect(balance)
+          .toEq(b);
       });
 
       await it('raw JavaScript `Number`', async () => {
         const a = await newTestAccount(balance);
         const b = await balanceOf(a);
 
-        expect(eq(balance, b))
-          .toBe(true);
+        expect(balance)
+          .toEq(b);
       });
     });
   });
@@ -250,8 +300,8 @@ export const mkStdlibNetworkCommon = async lib => {
     await it('constructs new accounts with zero balances', async () => {
       const a = await createAccount();
 
-      expect(eq(await balanceOf(a), 0))
-        .toBe(true);
+      expect(await balanceOf(a))
+        .toEq(0);
     });
   });
 
@@ -261,21 +311,21 @@ export const mkStdlibNetworkCommon = async lib => {
       const a = await createAccount();
       await fundFromFaucet(a, bigNumberify(100000));
 
-      expect(eq(await balanceOf(a), 100000))
-        .toBe(true);
+      expect(await balanceOf(a))
+        .toEq(100000);
     });
 
     await it('can fund testnet accounts with JavaScript `Number` values', async () => {
       const a = await createAccount();
       await fundFromFaucet(a, 100000);
 
-      expect(eq(await balanceOf(a), 100000))
-        .toBe(true);
+      expect(await balanceOf(a))
+        .toEq(100000);
     });
   });
 
 
-  describe('protect', () => {
+  describe('exposes a `protect` function that', () => {
     const hello      = 'hello';
     const helloHex   = stringToHex('hello');
     const addr       = '0xdeadbeef';
@@ -332,7 +382,7 @@ export const mkStdlibNetworkCommon = async lib => {
 
     let prog0 = 1;
     const first = await wait(1, ({ currentTime }) => {
-      describe(`prog0: ${prog0}`, () => {
+      it(`prog0: ${prog0}`, () => {
         expect(ge(currentTime, 0) && le(currentTime, add(begin, prog0)))
           .toBe(true);
         prog0++;
@@ -343,7 +393,7 @@ export const mkStdlibNetworkCommon = async lib => {
 
     let prog1 = 1;
     const second = await wait(1, ({ currentTime }) => {
-      describe(`prog1: ${prog1}`, () => {
+      it(`prog1: ${prog1}`, () => {
         expect(ge(currentTime, 1) && le(currentTime, add(begin, prog1 + 1)))
           .toBe(true);
         prog1++;
@@ -354,7 +404,7 @@ export const mkStdlibNetworkCommon = async lib => {
 
     let prog2 = 1;
     const third = await waitUntilTime(add(second, 5), ({ currentTime }) => {
-      describe(`prog2: ${prog2}`, () => {
+      it(`prog2: ${prog2}`, () => {
         expect(ge(currentTime, 2) && le(currentTime, add(begin, prog2 + 2)))
           .toBe(true);
         prog2++;
@@ -378,7 +428,7 @@ export const mkT_AddressCanonicalize = (lib, a, accessor, fields, expected) =>
 //    `Error: null`
 export const mkGetDefaultAccount = async lib =>
   describe('exposes a `getDefaultAccount` function which', async () => {
-    const { getDefaultAccount, newTestAccount, bigNumberify, balanceOf, transfer, eq } = lib;
+    const { getDefaultAccount, newTestAccount, bigNumberify, balanceOf, transfer } = lib;
 
     await it('represents a faucet when running against a devnet', async () => {
       const a = await getDefaultAccount();
@@ -386,8 +436,8 @@ export const mkGetDefaultAccount = async lib =>
 
       await transfer(a, b, bigNumberify(19000));
 
-      expect(eq(await balanceOf(b), 20000))
-        .toBe(true);
+      expect(await balanceOf(b))
+        .toEq(20000);
     });
   });
 
@@ -398,7 +448,7 @@ export const mkGetDefaultAccount = async lib =>
 //    `TypeError: newAccountFromSecret is not a function`
 export const mkNewAccountFromSecret = async (lib, pow, sec) =>
   describe('exposes a `newAccountFromSecret` function which', async () => {
-    const { bigNumberify, newTestAccount, newAccountFromSecret, transfer, eq, balanceOf } = lib;
+    const { bigNumberify, newTestAccount, newAccountFromSecret, transfer, balanceOf } = lib;
 
     await it('begins life with a zero balance', async () => {
       const f = bigNumberify(10).pow(pow);
@@ -407,8 +457,8 @@ export const mkNewAccountFromSecret = async (lib, pow, sec) =>
 
       await transfer(a, b, f);
 
-      expect(eq(await balanceOf(b), f))
-        .toBe(true);
+      expect(await balanceOf(b))
+        .toEq(f);
     });
   });
 
@@ -416,7 +466,7 @@ export const mkNewAccountFromSecret = async (lib, pow, sec) =>
 // TODO currently no consumer knows how to use this
 export const mkNewAccountFromMnemonic = async (lib, pow, mon) =>
   describe('exposes a `newAccountFromMnemonic` function which', async () => {
-    const { bigNumberify, newTestAccount, newAccountFromMnemonic, transfer, eq, balanceOf } = lib;
+    const { bigNumberify, newTestAccount, newAccountFromMnemonic, transfer, balanceOf } = lib;
 
     await it('begins life with a zero balance', async () => {
       const f = bigNumberify(10).pow(pow);
@@ -425,21 +475,232 @@ export const mkNewAccountFromMnemonic = async (lib, pow, mon) =>
 
       await transfer(a, b, f);
 
-      expect(eq(await balanceOf(b), f))
-        .toBe(true);
+      expect(await balanceOf(b))
+        .toEq(f);
     });
   });
 
 
 export const mkConnectAccount = async (lib, accessor) =>
   describe('exposes a `connectAccount` function which connects when given', async () => {
-    const { connectAccount, newTestAccount, bigNumberify, eq, balanceOf } = lib;
+    const { connectAccount, newTestAccount, bigNumberify, balanceOf } = lib;
 
     await it(String(accessor), async () => {
       const a = await newTestAccount(bigNumberify(10).pow(10));
       const b = await connectAccount(accessor(a));
 
-      expect(eq(await balanceOf(a), await balanceOf(b)))
-        .toBe(true);
+      expect(await balanceOf(a))
+       .toEq(await balanceOf(b));
+    });
+  });
+
+
+export const mkKont = async lib =>
+  describe('exposes a `mkKont` constructor which provides', async () => {
+    const { mkKont } = lib;
+
+    const saturatedSingleByte = async () => {
+      const K = mkKont();
+
+      // Saturate the container until every possible key has been consumed;
+      // 1 random byte value expressed in (non-0x) hexadecimal encoding
+      //   == 16 characters * 16 characters in a 2 character-long string
+      //   == 256 possible keys
+      while (true) {
+        if (Object.keys(K._.k).length >= 256)
+          break;
+
+        try { await K.track(null, 1); } catch (_) { /* ignore */ }
+      }
+
+      return K;
+    };
+
+    await describe('an `id` function that', async () => {
+      const K = mkKont();
+
+      await it('raises an exception for untracked IDs', async () =>
+        (await expect(() => K.id('no such ID'))
+          .toRaise(K._.untracked('no such ID'))));
+
+      await it('fetches the entry indexed by a given ID', async () => {
+        const a = { a: { unique: { entry: true }}};
+        const b = 'something else entirely';
+
+        expect(K.id(await K.track(a)))
+          .toBe(a);
+
+        expect(K.id(await K.track(b)))
+          .toBe(b);
+      });
+    });
+
+    await describe('a `track` function that', async () => {
+      await describe('generates random IDs', async () => {
+        await it('of length 48 (by default)', async () => {
+          const K = mkKont();
+
+          for (let i = 100; i > 0; i--) {
+            expect((await K.track({})).length)
+              .toBe(48);
+          }
+        });
+
+        await it('which index its `a` argument in `k`', async () => {
+          const K = mkKont();
+          const a = { foo: 'bar' };
+          const i = await K.track(a);
+
+          expect(K.id(i))
+            .toBe(a);
+
+          expect(K._.k[i])
+            .toBe(a);
+        });
+
+        await it('which are guaranteed to be lowercase, non-0x hexadecimal', async () => {
+          const K     = mkKont();
+          const isHex = s => /^[0-9a-f]+$/.test(s);
+
+          expect(isHex(`0x${await K.track(null)}`))
+            .toBe(false);
+
+          expect(isHex((await K.track(null)).toUpperCase()))
+            .toBe(false);
+
+          for (let i = 100; i > 0; i--) {
+            expect(isHex(await K.track(null)))
+              .toBe(true);
+          }
+        });
+      });
+
+      await it('raises an exception if collision occurs in `k` indices', async () => {
+        const K = await saturatedSingleByte();
+
+        await expect(async () => { await K.track(null, 1); })
+          .toRaiseStartingWith(`${K._.COLLISION} `);
+      });
+    });
+
+    await describe('a `replace` function that', async () => {
+      await it('swaps the entry indexed by a given ID and returns the same ID', async () => {
+        const K = mkKont();
+        const a = 'first';
+        const b = 'second';
+        const i = await K.track(a);
+
+        expect(K.id(i))
+          .toBe(a);
+
+        expect(K.replace(i, b))
+          .toBe(i);
+
+        expect(K.id(i))
+          .toBe(b);
+      });
+
+      await it('raises an exception for untracked IDs', async () => {
+        const K              = mkKont();
+        const [ ai, bi, ci ] = [ await K.track(1), await K.track(1), await K.track(1) ];
+
+        K.forget(ai);
+        K.forget(ci);
+
+        expect(() => K.replace(ai, 2))
+          .toRaise(K._.untracked(ai));
+
+        expect(K.replace(bi, 2))
+          .toBe(bi);
+
+        expect(() => K.replace(ci, 2))
+          .toRaise(K._.untracked(ci));
+      });
+    });
+
+    await describe('a `forget` function that', async () => {
+      await it('clears a given index from `k`', async () => {
+        const K = mkKont();
+
+        const a = [ 'something', 'else' ];
+        const b = { forget: 'me' };
+        const c = { leave: { me: 'in memory please' }};
+
+        const [ ai, bi, ci ] = [ await K.track(a), await K.track(b), await K.track(c) ];
+
+        /* ~ */ K.forget(bi); /* ~ */
+
+        await expect(() => K.id(bi))
+          .toRaise(K._.untracked(bi));
+
+        expect(K.id(ai))
+          .toBe(a);
+
+        expect(K._.k[bi])
+          .toBe(undefined);
+
+        expect(K.id(ci))
+          .toBe(c);
+
+        /* ~ */ K.forget(ai); /* ~ */
+
+        await expect(() => K.id(ai))
+          .toRaise(K._.untracked(ai));
+
+        expect(K._.k[ai])
+          .toBe(undefined);
+
+        expect(K._.k[bi])
+          .toBe(undefined);
+
+        expect(K.id(ci))
+          .toBe(c);
+      });
+    });
+
+    await describe('a `was` namespace which exposes', async () => {
+      await describe('a `collision` function that can correctly', async () => {
+        const K = await saturatedSingleByte();
+
+        await it('identify exceptions raised due to collision in `k`', async () => {
+          try {
+            await K.track(null, 1);
+          } catch (e) {
+            expect(K.was.collision(e))
+              .toBe(true);
+          }
+        });
+
+        await it('distinguish other exceptions', async () => {
+          try {
+            throw new Error('nope');
+          } catch (e) {
+            expect(K.was.collision(e))
+              .toBe(false);
+          }
+        });
+      });
+
+      await describe('an `untracked` function that can correctly', async () => {
+        const K = mkKont();
+
+        await it('identify exceptions raised due to untracked IDs', async () => {
+          try {
+            K.id('d3adb33f');
+          } catch (e) {
+            expect(K.was.untracked(e))
+              .toBe(true);
+          }
+        });
+
+        await it('distinguish other exceptions', async () => {
+          try {
+            throw new Error('nope');
+          } catch (e) {
+            expect(K.was.untracked(e))
+              .toBe(false);
+          }
+        });
+      });
     });
   });
