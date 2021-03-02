@@ -32,27 +32,29 @@ data SLType
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
   | ST_Data (M.Map SLVar SLType)
-  | ST_Fun [SLType] SLType
-  | ST_Forall SLVar SLType
-  | ST_Var SLVar
+  | ST_Fun [SLType] SLType (Maybe SLVal) (Maybe SLVal)
   | ST_Type SLType
+  | ST_Refine SLType SLVal
   deriving (Eq, Generic)
 
 instance Show SLType where
-  show ST_Null = "Null"
-  show ST_Bool = "Bool"
-  show ST_UInt = "UInt"
-  show (ST_Bytes sz) = "Bytes(" <> show sz <> ")"
-  show ST_Digest = "Digest"
-  show ST_Address = "Address"
-  show (ST_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
-  show (ST_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (ST_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (ST_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
-  show (ST_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
-  show (ST_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
-  show (ST_Var x) = show x
-  show (ST_Type ty) = "Type(" <> show ty <> ")"
+  show = \case
+    ST_Null -> "Null"
+    ST_Bool -> "Bool"
+    ST_UInt -> "UInt"
+    ST_Bytes sz -> "Bytes(" <> show sz <> ")"
+    ST_Digest -> "Digest"
+    ST_Address -> "Address"
+    ST_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
+    ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
+    ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
+    ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
+    ST_Fun tys ty Nothing Nothing ->
+      "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+    ST_Fun tys ty _ _ ->
+      "Refine(Fun([" <> showTys tys <> "], " <> show ty <> "), ...., ....)"
+    ST_Type ty -> "Type(" <> show ty <> ")"
+    ST_Refine ty _ -> "Refine(" <> show ty <> ", ....)"
 
 instance Pretty SLType where
   pretty = viaShow
@@ -70,9 +72,8 @@ st2dt = \case
   ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
   ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Fun {} -> Nothing
-  ST_Forall {} -> Nothing
-  ST_Var {} -> Nothing
   ST_Type {} -> Nothing
+  ST_Refine t _ -> st2dt t
 
 dt2st :: DLType -> SLType
 dt2st = \case
@@ -89,13 +90,8 @@ dt2st = \case
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
-  ST_Fun dom rng -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
+  ST_Fun dom rng _ _ -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
   _ -> IT_Val <$> st2dt t
-
-infixr 9 -->
-
-(-->) :: [SLType] -> SLType -> SLType
-dom --> rng = ST_Fun dom rng
 
 type SLPartEnvs = M.Map SLPart SLEnv
 
@@ -108,11 +104,11 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
-  | SLV_Array SrcLoc SLType [SLVal]
+  | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
-  | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
+  | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
   | SLV_Type SLType
@@ -303,26 +299,26 @@ instance Pretty SLKwd where
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
-primOpType :: PrimOp -> SLType
+primOpType :: PrimOp -> ([DLType], DLType)
 primOpType SELF_ADDRESS = impossible "self address"
-primOpType ADD = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType SUB = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType MUL = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType DIV = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType MOD = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType PLT = [ST_UInt, ST_UInt] --> ST_Bool
-primOpType PLE = [ST_UInt, ST_UInt] --> ST_Bool
-primOpType PEQ = ST_Forall "a" ([ST_Var "a", ST_Var "a"] --> ST_Bool)
-primOpType PGE = [ST_UInt, ST_UInt] --> ST_Bool
-primOpType PGT = [ST_UInt, ST_UInt] --> ST_Bool
-primOpType IF_THEN_ELSE = ST_Forall "b" (ST_Forall "a" ([ST_Var "b", ST_Var "a", ST_Var "a"] --> ST_Var "a"))
-primOpType DIGEST_EQ = ([ST_Digest, ST_Digest] --> ST_Bool)
-primOpType ADDRESS_EQ = ([ST_Address, ST_Address] --> ST_Bool)
-primOpType LSH = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType RSH = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType BAND = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType BIOR = [ST_UInt, ST_UInt] --> ST_UInt
-primOpType BXOR = [ST_UInt, ST_UInt] --> ST_UInt
+primOpType ADD = ([T_UInt, T_UInt], T_UInt)
+primOpType SUB = ([T_UInt, T_UInt], T_UInt)
+primOpType MUL = ([T_UInt, T_UInt], T_UInt)
+primOpType DIV = ([T_UInt, T_UInt], T_UInt)
+primOpType MOD = ([T_UInt, T_UInt], T_UInt)
+primOpType PLT = ([T_UInt, T_UInt], T_Bool)
+primOpType PLE = ([T_UInt, T_UInt], T_Bool)
+primOpType PEQ = impossible "peq type"
+primOpType PGE = ([T_UInt, T_UInt], T_Bool)
+primOpType PGT = ([T_UInt, T_UInt], T_Bool)
+primOpType IF_THEN_ELSE = impossible "ite type"
+primOpType DIGEST_EQ = ([T_Digest, T_Digest], T_Bool)
+primOpType ADDRESS_EQ = ([T_Address, T_Address], T_Bool)
+primOpType LSH = ([T_UInt, T_UInt], T_UInt)
+primOpType RSH = ([T_UInt, T_UInt], T_UInt)
+primOpType BAND = ([T_UInt, T_UInt], T_UInt)
+primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
+primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
 
 data SLCompiledPartInfo = SLCompiledPartInfo
   { slcpi_at :: SrcLoc
@@ -341,11 +337,12 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc SLPart String [SLType] SLType
+  | SLPrim_interact SrcLoc SLPart String [SLType] SLType (Maybe SLVal) (Maybe SLVal)
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
+  | SLPrim_Refine
   | SLPrim_Bytes
   | SLPrim_Data
   | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType

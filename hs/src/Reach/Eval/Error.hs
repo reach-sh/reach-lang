@@ -119,11 +119,7 @@ data EvalError
   | Err_Type_None SLVal
   | Err_Type_NotDT SLType
   | Err_Type_NotApplicable SLType
-  | Err_TypeMeets_None
-  | Err_TypeMeets_Mismatch (SrcLoc, SLType) (SrcLoc, SLType)
-  | Err_dTypeMeets_Mismatch (SrcLoc, DLType) (SrcLoc, DLType)
-  | Err_Type_TooFewArguments [SLType]
-  | Err_Type_TooManyArguments [SLVal]
+  | Err_TypeMeets_dMismatch DLType DLType
   | Err_Eval_MustBeInWhileInvariant String
   | Err_Expected_Map SLValTy
   deriving (Eq, Generic)
@@ -464,16 +460,8 @@ instance Show EvalError where
       "Value of this type cannot exist at runtime: " <> show (pretty t)
     Err_Type_NotApplicable ty ->
       "Cannot apply this like a function: " <> show ty
-    Err_TypeMeets_None ->
-      "Cannot find the type meet of []"
-    Err_dTypeMeets_Mismatch t1 t2 ->
+    Err_TypeMeets_dMismatch t1 t2 ->
       "These types are mismatched: " <> (show t1 <> " vs " <> show t2)
-    Err_TypeMeets_Mismatch t1 t2 ->
-      "These types are mismatched: " <> (show t1 <> " vs " <> show t2)
-    Err_Type_TooFewArguments ts ->
-      "Too few arguments; expected: " <> show ts
-    Err_Type_TooManyArguments vs ->
-      "Too many arguments; surplus: " <> show (length vs)
     Err_Expected_Map v ->
       "Expected map, got: " <> show_sv v
     where
