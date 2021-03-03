@@ -14,3 +14,11 @@
     height: auto;
     margin: 0 auto;
 }
+
+.check-answer-body {
+  display: none;
+}
+
+.check-answer:hover .check-answer-body {
+  display: block;
+}
