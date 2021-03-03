@@ -7,14 +7,15 @@ export const main = Reach.App(
    Participant('Bob', { getPass: Fun([], UInt) }) ],
   (Alice, Bob) => {
     Alice.only(() => {
+      const _pass = interact.pass;
       const [ amt, passDigest ] =
             declassify([ interact.amt,
-                         digest(interact.pass) ]); });
+                         digest(_pass) ]); });
     Alice.publish(passDigest, amt)
       .pay(amt);
     commit();
 
-    unknowable(Bob, Alice(interact.pass));
+    unknowable(Bob, Alice(_pass));
     Bob.only(() => {
       const pass = declassify(interact.getPass());
       assume( passDigest == digest(pass) ); });

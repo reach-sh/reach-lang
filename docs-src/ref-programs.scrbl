@@ -536,9 +536,9 @@ A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPA
 
 @(mint-define! '("unknowable"))
 @reach{
- unknowable( Notter, Knower(expr_0, ..., expr_N), [msg] ) }
+ unknowable( Notter, Knower(var_0, ..., var_N), [msg] ) }
 
-@index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the results of the evaluations of expressions @reachin{expr_0} through @reachin{expr_N}, but that the @tech{participant} @reachin{Knower} @emph{does} know those values.
+@index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the results of the variables @reachin{var_0} through @reachin{var_N}, but that the @tech{participant} @reachin{Knower} @emph{does} know those values.
 It accepts an optional bytes argument, which is included in any reported violation.
 
 @subsubsection{@tt{closeTo}}

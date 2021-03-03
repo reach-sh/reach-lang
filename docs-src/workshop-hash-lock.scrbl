@@ -204,7 +204,7 @@ Here's what we did:
 
 @reach{
  // First
- unknowable(Bob, Alice(interact.pass));
+ unknowable(Bob, Alice(_pass));
 
  Bob.only(() => {
   // Second
@@ -244,8 +244,8 @@ Here's what we did:
          #:link #t]
 
 @itemlist[
- @item{Lines 10-12 have Alice declassify some of her values.}
- @item{Line 19 has Bob provide his password.}
+ @item{Lines 10-13 have Alice declassify some of her values.}
+ @item{Line 20 has Bob provide his password.}
 ]
 
 @margin-note{Did you notice that we didn't mention what line 4 is for?
