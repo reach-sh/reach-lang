@@ -499,23 +499,6 @@ export const mkKont = async lib =>
   describe('exposes a `mkKont` constructor which provides', async () => {
     const { mkKont } = lib;
 
-    const saturatedSingleByte = async () => {
-      const K = mkKont();
-
-      // Saturate the container until every possible key has been consumed;
-      // 1 random byte value expressed in (non-0x) hexadecimal encoding
-      //   == 16 characters * 16 characters in a 2 character-long string
-      //   == 256 possible keys
-      while (true) {
-        if (Object.keys(K._.k).length >= 256)
-          break;
-
-        try { await K.track(null, 1); } catch (_) { /* ignore */ }
-      }
-
-      return K;
-    };
-
     await describe('an `id` function that', async () => {
       const K = mkKont();
 
@@ -536,15 +519,11 @@ export const mkKont = async lib =>
     });
 
     await describe('a `track` function that', async () => {
-      await describe('generates random IDs', async () => {
-        await it('of length 48 (by default)', async () => {
-          const K = mkKont();
-
-          for (let i = 100; i > 0; i--) {
-            expect((await K.track({})).length)
-              .toBe(48);
-          }
-        });
+      await describe('generates IDs of the form `<nonce>_<random hex>`', async () => {
+        const deconstructed = i => {
+          const  [ pre, suf ] = i.split('_');
+          return { pre, suf: suf || '' };
+        };
 
         await it('which index its `a` argument in `k`', async () => {
           const K = mkKont();
@@ -558,28 +537,57 @@ export const mkKont = async lib =>
             .toBe(a);
         });
 
-        await it('which are guaranteed to be lowercase, non-0x hexadecimal', async () => {
-          const K     = mkKont();
-          const isHex = s => /^[0-9a-f]+$/.test(s);
+        await describe('where the nonce prefix', async () => {
+          await it('always starts at 0', async () => {
+            for (let l = 0; l < 100; l++) {
+              const K = mkKont();
+              const d = deconstructed(await K.track(null));
 
-          expect(isHex(`0x${await K.track(null)}`))
-            .toBe(false);
+              expect(Number(d.pre))
+                .toBe(0);
+            }
+          });
 
-          expect(isHex((await K.track(null)).toUpperCase()))
-            .toBe(false);
+          await it('is incremented by 1 for each entry `track`ed', async () => {
+            const K = mkKont();
 
-          for (let i = 100; i > 0; i--) {
-            expect(isHex(await K.track(null)))
-              .toBe(true);
-          }
+            for (let l = 0; l < 100; l++) {
+              const d = deconstructed(await K.track(null));
+
+              expect(Number(d.pre))
+                .toBe(l);
+            }
+          });
         });
-      });
 
-      await it('raises an exception if collision occurs in `k` indices', async () => {
-        const K = await saturatedSingleByte();
+        await describe('where the random hex suffix is', async () => {
+          await it('of length 48', async () => {
+            const K = mkKont();
 
-        await expect(async () => { await K.track(null, 1); })
-          .toRaiseStartingWith(`${K._.COLLISION} `);
+            for (let i = 100; i > 0; i--) {
+              const d = deconstructed(await K.track(null));
+
+              expect(d.suf.length)
+                .toBe(48);
+            }
+          });
+
+          await it('guaranteed to be lowercase, non-0x hexadecimal', async () => {
+            const K     = mkKont();
+            const isHex = s => /^[0-9a-f]+$/.test(s);
+            const a     = deconstructed(await K.track(null));
+
+            expect(isHex(`0x${a.suf}`))
+              .toBe(false);
+
+            for (let i = 100; i > 0; i--) {
+              const b = deconstructed(await K.track(null));
+
+              expect(isHex(b.suf))
+                .toBe(true);
+            }
+          });
+        });
       });
     });
 
@@ -659,28 +667,6 @@ export const mkKont = async lib =>
     });
 
     await describe('a `was` namespace which exposes', async () => {
-      await describe('a `collision` function that can correctly', async () => {
-        const K = await saturatedSingleByte();
-
-        await it('identify exceptions raised due to collision in `k`', async () => {
-          try {
-            await K.track(null, 1);
-          } catch (e) {
-            expect(K.was.collision(e))
-              .toBe(true);
-          }
-        });
-
-        await it('distinguish other exceptions', async () => {
-          try {
-            throw new Error('nope');
-          } catch (e) {
-            expect(K.was.collision(e))
-              .toBe(false);
-          }
-        });
-      });
-
       await describe('an `untracked` function that can correctly', async () => {
         const K = mkKont();
 

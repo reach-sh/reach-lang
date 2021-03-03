@@ -30,11 +30,10 @@ const withApiKey = () => {
 const mkKont = () => {
   // TODO consider replacing stringly-typed exceptions with structured
   // descendants of `Error` base class
-  const COLLISION = 'Collision on continuation ID:';
   const UNTRACKED = 'Untracked continuation ID:';
-  const collision = (i: string) => `${COLLISION} ${i}`;
   const untracked = (i: string) => `${UNTRACKED} ${i}`;
   const k: any    = {};
+  let   i: number = 0;
 
   const mkWas = (m: string) => (e: Error): boolean =>
     !!(e.message
@@ -42,7 +41,6 @@ const mkKont = () => {
       .match(`^${m}$`));
 
   const was = {
-    collision: mkWas(COLLISION),
     untracked: mkWas(UNTRACKED),
   };
 
@@ -50,15 +48,14 @@ const mkKont = () => {
     throw new Error(e);
   };
 
-  const track = (a: any, bytes: number = 24) =>
-    new Promise<string>((res, rej) => randomBytes(bytes, (e, b) =>
-        e ? rej(e)
-          : res(b.toString('hex'))))
-      .then(i =>
-        k[i] !== undefined
-          ? Promise.reject(collision(i))
-          : (() => { k[i] = a; return i; })())
-      .catch(raise);
+  const track = async (a: any) => {
+    const rb = await randomBytes(24);
+    const id = `${i}_${rb.toString('hex')}`;
+    k[id]    = a;
+    i++;
+
+    return id;
+  };
 
   const id = (i: string) =>
     k[i] === undefined
@@ -77,9 +74,8 @@ const mkKont = () => {
     // Internals
     _: {
       k,
-      COLLISION,
+      i,
       UNTRACKED,
-      collision,
       untracked,
     },
 
@@ -158,40 +154,24 @@ export const serveRpc = async (backend: any) => {
       contract.id(id).getInfo(),
   };
 
-  const safely = (f: any, retries = 5, previousError: null | Error = null) =>
-    (req: Request, res: Response) =>
-    (async (): Promise<any> => {
-      const { was } = kont;
+  const safely = (f: any) => (req: Request, res: Response) => (async (): Promise<any> => {
+    const { was } = kont;
 
-      const client =
-        `client ${req.ip}: ${req.method} ${req.originalUrl} ${JSON.stringify(req.body)}`;
+    const client =
+      `client ${req.ip}: ${req.method} ${req.originalUrl} ${JSON.stringify(req.body)}`;
 
-      if (previousError) {
-        debug(` !! ${client}:`)
-        debug(`  ${retries} retries remain after: ${previousError.message}`);
+    try {
+      await f(req, res);
+    } catch (e) {
+      debug(`Witnessed exception triggered by ${client}: ${e.message}\n${e.stack}`);
 
-        if (retries < 1) {
-          return was.collision(previousError)
-            ? res.status(403).json({})
-            : res.status(500).json({});
-        }
-      }
+      const [ s, message ]
+        = was.untracked(e) ? [ 404, String(e) ]
+        :                    [ 500, 'Unspecified fault' ];
 
-      try {
-        await f(req, res);
-      } catch (e) {
-        debug(`Witnessed exception triggered by ${client}: ${e.message}\n${e.stack}`);
-
-        if (was.collision(e))
-          return safely(f, retries - 1, e)(req, res);
-
-        const [ s, message ]
-          = was.untracked(e) ? [ 404, String(e) ]
-          :                    [ 500, 'Unspecified fault' ];
-
-        res.status(s).json({ message, request: req.body });
-      }
-    })();
+      res.status(s).json({ message, request: req.body });
+    }
+  })();
 
   const mkRPC = (olab: string, obj: any) => {
     const router = express.Router();
