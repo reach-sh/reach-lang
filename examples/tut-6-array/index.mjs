@@ -17,7 +17,8 @@ import * as backend from './build/index.main.mjs';
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
-  const Player = (Who) => ({
+  const Player = (Who) => {
+    const me = {
     ...stdlib.hasRandom,
     getHand: async () => { // <-- async now
       const hand = Math.floor(Math.random() * 3);
@@ -30,13 +31,23 @@ import * as backend from './build/index.main.mjs';
       }
       return hand;
     },
+    getBatch: async () => {
+      return [ await me.getHand(),
+               await me.getHand(),
+               await me.getHand(),
+               await me.getHand(),
+               await me.getHand(),
+             ];
+    },
     seeOutcome: (outcome) => {
       console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
     },
     informTimeout: () => {
       console.log(`${Who} observed a timeout`);
     },
-  });
+    };
+    return me;
+  };
 
   await Promise.all([
     backend.Alice(ctcAlice, {

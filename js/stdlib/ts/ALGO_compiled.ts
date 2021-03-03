@@ -131,13 +131,13 @@ export const T_Array = (
     return ethers.utils.concat(bv.map((v) => co.toNet(v)));
   },
   fromNet: (nv: NV): CBR_Array => {
+    // TODO: assert nv.size = len * size
+    const len = co.netSize;
     const chunks = new Array(size).fill(null);
-    let rest = nv;
-    for (const i in chunks) {
-      chunks[i] = co.fromNet(rest.slice(0, co.netSize));
-      rest = rest.slice(co.netSize);
+    for (let i = 0; i < size; i++) {
+      const start = i * len;
+      chunks[i] = co.fromNet(nv.slice(start, start + len));
     }
-    // TODO: assert size of nv/rest is correct?
     return chunks;
   },
 });

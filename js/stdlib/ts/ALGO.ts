@@ -973,9 +973,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         /** @description base64->hex->arrayify */
         const reNetify = (x: string): NV => {
           const s: string = Buffer.from(x, 'base64').toString('hex');
-          // debug(`${dhead} --- deNetify ${s}`);
+          debug(`${dhead} --- reNetify(${x}) = ${s}`);
           return ethers.utils.arrayify('0x' + s);
         };
+
+        debug(`${dhead} --- tys = ${JSON.stringify(tys)}`);
 
         const args_un =
             args.map((x, i) => tys[i].fromNet(reNetify(x)));
