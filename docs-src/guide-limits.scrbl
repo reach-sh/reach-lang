@@ -20,8 +20,7 @@ We are building a Go backend as a prototype of how to build a backend for a stat
 @(hrule)
 @bold{Computation.} Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like @tech{arrow expressions}, free-form objects, destructuring bindings, robust @reachin{import} and @reachin{export} specificiers, and so on.
 We are working on making the transition for JavaScript developers as seamless as possible by integrating more compatibility through features like syntactic sugar for @reachin{while} patterns, like @jsin{for} in JavaScript, and recursive functions (when they are in a tail-recursive set.)
-We also plan to add features from typed languages, like abstract data types and pattern matching.
-Similarly, we have plans to extend Reach's type system to be able to track more specific features of values, such as @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement types}, @link["https://en.wikipedia.org/wiki/Substructural_type_system"]{substructural types} to allow mutation, and arbitrary range integer types.
+We have plans to extend Reach's type system to be able to track more specific features of values, such as @link["https://en.wikipedia.org/wiki/Substructural_type_system"]{substructural types} to allow mutation and arbitrary range integer types, which will be coalesced during compilation.
 Finally, we have plans to allow more exotic features, like non-communicating loops with guaranteed termination, statically computable exceptions, and pay-as-you-go closures, including non-tail-recursion through closure conversion of non-contifiable continuations.
 
 @(hrule)
@@ -36,10 +35,10 @@ In the longer term, we intend to introduce verification promises that constrain 
 We intend to support these through network selection options with Reach programs and a @link["https://en.wikipedia.org/wiki/Gradual_typing"]{gradual typing}-style protection mechanism to characterize the verifiable properties of the foreign resources.
 
 @(hrule)
-@bold{Communication.} Reach's communication language is limited to protocols with finite @tech{consensus state}.
-This rules out many popular decentralized application designs, like auctions and tokens, which have state linear in the number of participants.
-We intend to address this via the introduction of inductive state through bounded induction, to ensure that arbitrary data is not communicated or stored in @tech{consensus state}.
-Bounded inductive state can be represented via @link["https://en.wikipedia.org/wiki/Merkle_tree"]{Merkle trees} to ensure that @tech{consensus state} remains finite.}
+@bold{Communication.}
+Reach's communication language has some limitations that we have plans to remove.
+For example, Reach @tech{linear state} must be linear in the number of participants to the application, rather than in the number of @tech{publications}, because some consensus networks do not support the latter.
+We plan to allow such programs and simply limit which networks they may compile to.
 
-Reach's communication language has other limitations for which we do not have short-term plans for removing.
+Reach's communication language has some limitations for which we do not have plans for removing.
 For example, we do not intend to support co-inductive or cyclic state, nor expose an arbitrary consensus heap to programmers.
