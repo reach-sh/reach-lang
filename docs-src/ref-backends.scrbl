@@ -18,16 +18,8 @@ This will normally be imported by writing:
  import * as backend from './build/index.main.mjs';
 }
 
-Each function accepts three arguments: @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}. These functions should be called by the @tech{frontend}.
+Each function accepts two arguments: @jsin{ctc} and @jsin{interact}. These functions should be called by the @tech{frontend}.
 For example, if a Reach program contains a participant named @reachin{'A'} in the argument to @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A}.
-
-The @(mint-define! '("stdlib")) @jsin{stdlib} argument is provided by either
-@itemlist[
- @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
- @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
- @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}; or,}
- @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
-]
 
 The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{acc.attach}.
 
@@ -123,9 +115,17 @@ Returns a Promise for a stlib based on the provided @jsin{connectorMode} string.
 You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
 
-@subsection[#:tag "ref-backend-js-stdlib"]{Standard Library}
+@subsection[#:tag "ref-backend-js-stdlib"]{Standard Library Exports}
 
-The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}:
+The Reach standard library, @(mint-define! '("stdlib")) @jsin{stdlib}, is provided by either
+@itemlist[
+ @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
+ @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
+ @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}; or,}
+ @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
+]
+
+These modules export the following functions that might be used in this @tech{frontend}:
 
 @(hrule)
 @(mint-define! '("getDefaultAccount"))
