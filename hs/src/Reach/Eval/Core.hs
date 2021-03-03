@@ -1171,15 +1171,17 @@ evalForm f args = do
       notter <- participant_who v_n
       (_, v_kn) <- evalExpr knower_e
       knower <- participant_who v_kn
+      at <- withAt id
+      let whats_v = map (jse_expect_id at) whats_e
       whats_sv <-
         locWho knower $
           locStMode SLM_LocalStep $
-            evalExprs whats_e
-      (_, whats_das) <- compileTypeOfs $ map snd whats_sv
+            mapM (evalId_ "unknown") whats_v
+      whats_dae <- map snd <$> (mapM typeOf $ map sss_val whats_sv)
+      let whats_das = argExprToArgs $ DLAE_Tuple whats_dae
       let whats_da = DLA_Literal $ DLL_Bool False
       let ct = CT_Unknowable notter whats_das
       fs <- e_stack <$> ask
-      at <- withAt id
       saveLift $
         DLS_Let at Nothing $
           DLE_Claim at fs ct whats_da mmsg

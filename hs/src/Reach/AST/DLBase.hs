@@ -240,6 +240,17 @@ data DLArgExpr
   | DLAE_Obj (M.Map SLVar DLArgExpr)
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
 
+argExprToArgs :: DLArgExpr -> [DLArg]
+argExprToArgs = \case
+  DLAE_Arg a -> [a]
+  DLAE_Array _ aes -> many aes
+  DLAE_Tuple aes -> many aes
+  DLAE_Obj m -> many $ M.elems m
+  DLAE_Data _ _ ae -> one ae
+  where
+    one = argExprToArgs
+    many = concatMap one
+
 largeArgToArgExpr :: DLLargeArg -> DLArgExpr
 largeArgToArgExpr = \case
   DLLA_Array sz as -> DLAE_Array sz $ map DLAE_Arg as
