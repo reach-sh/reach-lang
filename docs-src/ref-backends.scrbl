@@ -115,7 +115,7 @@ Returns a Promise for a stlib based on the provided @jsin{connectorMode} string.
 You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
 
-@subsection[#:tag "ref-backend-js-stdlib"]{Standard Library Exports}
+@subsection[#:tag "ref-backend-js-stdlib"]{Standard Library}
 
 The Reach standard library, @(mint-define! '("stdlib")) @jsin{stdlib}, is provided by either
 @itemlist[
