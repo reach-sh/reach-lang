@@ -1909,6 +1909,9 @@ Now our implementation of @|RPS| is live in the browser!
 We can leverage callbacks in the @tech{participant interact interface} to display to and gather information from the user,
 through any Web UI framework of our choice.
 
+If we wanted to deploy this application to the world, then we would take the static files that React produces and host them on a Web server.
+These files embed your compiled Reach program, so there's nothing more to do than provide them to the world.
+
 In @seclink["tut-9"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
 
 @check:tf{Reach integrates with all Web interface libraries, like React, Vue, and so on, because Reach frontends are just normal JavaScript programs.}
