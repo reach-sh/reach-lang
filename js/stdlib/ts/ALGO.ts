@@ -197,6 +197,23 @@ const setBrowser = (b: boolean) => {
 };
 export { setBrowser };
 
+type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
+
+const [getSignStrategy, setSignStrategy] = replaceableThunk<SignStrategy>(() => 'mnemonic');
+export { getSignStrategy, setSignStrategy };
+
+const [getAlgoSigner, setAlgoSigner] = replaceableThunk<Promise<AlgoSigner>>(async () => {
+  if (window.AlgoSigner) {
+    const AlgoSigner = window.AlgoSigner;
+    await AlgoSigner.connect();
+    return AlgoSigner;
+  } else {
+    // TODO: wait for a few seconds and try again before giving up
+    throw Error(`Can't find AlgoSigner. Please refresh the page and try again.`);
+  }
+});
+export { setAlgoSigner };
+
 // Yes, this is dumb. TODO something better
 if (process.env.REACH_CONNECTOR_MODE == 'ETH-test-browser') {
   setBrowser(true);
@@ -1228,17 +1245,26 @@ export async function getDefaultAccount(): Promise<Account> {
   if (!window.prompt) {
     throw Error(`Cannot prompt the user for default account with window.prompt`);
   }
-  const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
-  if (mnemonic) {
-    debug(`Creating account from user-provided mnemonic`);
-    return await newAccountFromMnemonic(mnemonic);
+  const signStrategy = getSignStrategy();
+  if (signStrategy === 'mnemonic') {
+    const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
+    if (mnemonic) {
+      debug(`Creating account from user-provided mnemonic`);
+      return await newAccountFromMnemonic(mnemonic);
+    } else {
+      debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
+      return await createAccount();
+    }
+  } else if (signStrategy === 'AlgoSigner') {
+    const ledger = 'Reach Devnet'; // XXX decide how to support other ledgers
+    const AlgoSigner = await getAlgoSigner();
+    const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
+    if (!addr) { throw Error(`No address provided`); }
+    return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
+  } else if (signStrategy === 'MyAlgo') {
+    throw Error(`MyAlgo wallet support is not yet implemented`);
   } else {
-    debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
-    return await createAccount();
-    // throw Error(`User declined to provide a mnemonic`);
-    // XXX: figure out how to let the user pick which wallet they want to use.
-    // AlgoSigner, My Algo Wallet, etc.
-    // throw Error(`Please use newAccountFromAlgoSigner instead`);
+    throw Error(`signStrategy '${signStrategy}' not recognized. Valid options are 'mnemonic', 'AlgoSigner', and 'MyAlgo'.`);
   }
 }
 
