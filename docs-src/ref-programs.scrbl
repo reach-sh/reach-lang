@@ -350,6 +350,8 @@ For example, the following are all @tech{valid}:
 
 If a @tech{consensus transfer} specifies a single @tech{participant}, which has not yet been @tech{fixed} in the application and is not a @tech{participant class}, then this statement does so; therefore, after it the @reachin{PART} may be used as an @tech{address}.
 
+If a @tech{consensus transfer} specificies a single @tech{participant class}, then all members of that class will attempt to perform the transfer, but only one will succeed.
+
 A @tech{consensus transfer} binds the identifiers @reachin{ID_0} through @reachin{ID_n} for all @tech{participants} to the values included in the @tech{consensus transfer}.
 If an existing @tech{participant}, not included in @reachin{PART_EXPR}, has previously bound one of these identifiers, then the program is not @tech{valid}. In other words, the following program is not valid:
 
@@ -1152,6 +1154,9 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 @reachin{EXPR_rator} must evaluate to an abstraction over @reachin{n} values or a primitive of arity @reachin{n}.
 A spread expression (@reachin{...expr}) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
 
+@(mint-define! '("new"))
+@reachin{new f(a)} is equivalent to @reachin{f(a).new()} and is a convenient short-hand for writing class-oriented programs.
+
 @subsubsection{Types}
 
 Reach's @deftech{type}s are represented with programs by the following identifiers and constructors:
@@ -1164,19 +1169,22 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bytes")) @reachin{Bytes(length)}, which denotes a string of bytes of length at most @reachin{length}.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
-  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
+  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
   @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.
   (Refer to @secref["ref-programs-objects"] for constructing objects.)}
-  @item{@(mint-define! '("Array")) @reachin{Array(ElementType, size)}, which denotes a statically-sized array.
+  @item{@(mint-define! '("Array")) @reachin{Array(Type_0, size)}, which denotes a statically-sized array.
+  @reachin{Type_0} must be a type that can exist at runtime (i.e., not a @tech{function type}.)}
   (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
   @item{@(mint-define! '("Refine")) @reachin{Refine(Type_0, Predicate)}, where @reachin{Predicate} is a unary function returning a boolean, which denotes a @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement type}, that is instances of @reachin{Type_0} that satisfy @reachin{Predicate}.
-  When a refinement type appears in a negative position of a @reachin{Fun} (such as in a @tech{participant interact interface}), it introduces an @reachin{assert}; while when it is in a positive position, it introduces an @reachin{assume}.}
- @item{@reachin{Refine(Type_0, PreCondition, PostCondition)}, where @reachin{Type_0} is a function type, @reachin{PreCondition} is a unary function that accepts a tuple of the domain and returns a boolean, and @reachin{PostCondition} is a binary function that accepts a tuple of the domain and the range and returns a boolean, denotes a function with a @link["https://en.wikipedia.org/wiki/Precondition"]{precondition} and @link["https://en.wikipedia.org/wiki/Postcondition"]{postcondition}.
- Preconditions are enforced with @reachin{assert} and postconditions are enforced with @reachin{assume}.}
+  When a refinement type appears in a negative position of a @reachin{Fun} (such as in a @tech{participant interact interface}), it introduces an @reachin{assert}; while when it is in a positive position, it introduces an @reachin{assume}.
+  For example, if @reachin{f} had type @reachin{Fun([Refine(UInt, (x => x < 5))], Refine(UInt, (x => x > 10)))}, then @reachin{const z = f(y)} is equivalent to @reachin{assert(y < 5); const z = f(y); assume(z > 10);}.}
+ @item{@reachin{Refine(Type_0, PreCondition, PostCondition)}, where @reachin{Type_0} is a @tech{function type}, @reachin{PreCondition} is a unary function that accepts a tuple of the domain and returns a boolean, and @reachin{PostCondition} is a binary function that accepts a tuple of the domain and the range and returns a boolean, denotes a @tech{function type} with a @link["https://en.wikipedia.org/wiki/Precondition"]{precondition} and @link["https://en.wikipedia.org/wiki/Postcondition"]{postcondition}.
+ Preconditions are enforced with @reachin{assert} and postconditions are enforced with @reachin{assume}.
+ For example, @reachin{Refine(Fun([UInt, UInt], UInt), ([x, y] => x < y), (([x, y], z) => x + y < z))} is a function that requires its second argument to be larger than its first and its result to be larger than its input.}
 ]
 
 @reachin{Object} and @reachin{Data} are commonly used to implemented @link["https://en.wikipedia.org/wiki/Algebraic_data_type"]{algebraic data types} in Reach.
@@ -1238,14 +1246,15 @@ which is either a @tech{unary operator}, or a @tech{binary operator}.
 
 @(hrule)
 
-@(mint-define! '("!") '("-") '("+") '("typeof") '("not") '("minus") '("plus"))
+@(mint-define! '("!") '("-") '("+") '("typeof") '("not") '("minus") '("plus") '("void"))
 @reach{
  ! a  // not
  - a  // minus
  + a  // plus
- typeof a}
+ typeof a
+ void a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - + typeof}. All the unary operators, besides @reachin{typeof}, have a
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - + typeof void}. All the unary operators, besides @reachin{typeof}, have a
 corresponding named version in the standard library.
 
 It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
@@ -1253,6 +1262,8 @@ It is @tech{invalid} to use unary operations on the wrong types of @tech{values}
 When applied to values of type @reachin{UInt}, unary @reachin{-} and @reachin{+} operators will cast
 their arguments to type @reachin{Int}. The unary @reachin{-} and @reachin{+} operations are defined for
 values of type: @reachin{Int}, and @reachin{FixedPoint}.
+
+@reachin{void a} evaluates to @reachin{null} for all arguments.
 
 @(hrule)
 
