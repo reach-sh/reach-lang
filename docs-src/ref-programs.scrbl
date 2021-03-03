@@ -1175,7 +1175,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.
   (Refer to @secref["ref-programs-objects"] for constructing objects.)}
   @item{@(mint-define! '("Array")) @reachin{Array(Type_0, size)}, which denotes a statically-sized array.
-  @reachin{Type_0} must be a type that can exist at runtime (i.e., not a @tech{function type}.)}
+  @reachin{Type_0} must be a type that can exist at runtime (i.e., not a @tech{function type}.)
   (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}

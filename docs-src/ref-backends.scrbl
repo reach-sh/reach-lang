@@ -361,7 +361,7 @@ the JavaScript representation of Reach's @reachin{UInt}.
 
 @deftech{isBigNumber} checks if its input is a BigNumber.
 
-@deftech{bigNumberToNumber} transparently applies @deftech{bigNumberify} to its
+@deftech{bigNumberToNumber} transparently applies @jsin{bigNumberify} to its
 argument and returns a JavaScript number.
 
 @(hrule)
