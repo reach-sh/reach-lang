@@ -4,7 +4,7 @@
 @title[#:version reach-vers #:tag "tut" #:style 'toc]{Tutorial}
 
 This tutorial walks through the creation of a simple decentralized application.
-It contains everything you need to know to build and test this application.
+It contains everything you need to know to build and test this application and assumes no prior experience with @|DApp|/blockchain development of any kind.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
 On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 

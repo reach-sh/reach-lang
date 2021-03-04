@@ -12,9 +12,13 @@ This set of documents contains everything you need to know about Reach.
 
 @itemize[
 
-@item{@seclink["overview"]{The overview} briefly introduces the basic ideas of Reach. It can be helpful to get some context before diving into other sections.}
+@item{@seclink["overview"]{The overview} briefly introduces the basic ideas of Reach.
+It can be helpful to get some context before diving into other sections.
+If you have experience with blockchain development using existing tools, we recommend reading @seclink["overview"]{the overview} and @seclink["guide-solidity"]{a comparision with other development platforms}.}
 
-@item{@seclink["tut"]{The tutorial} is a directed series of steps to create a simple @|DApp|. You should start here if you've never used Reach before and want to start at the beginning.}
+@item{@seclink["tut"]{The tutorial} is a directed series of steps to create a simple @|DApp|.
+You should start here if you've never used Reach before and want to start at the beginning.
+It assumes no prior experience in @|DApp|/blockchain development.}
 
 @item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach.
 You will often want to visit the guide to learn the background and "why" of some topic after you get started using it.}
