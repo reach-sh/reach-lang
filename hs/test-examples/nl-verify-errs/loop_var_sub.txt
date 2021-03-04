@@ -1,0 +1,39 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  at ./loop_var_sub.rsh:13:7:invariant
+
+  // Violation witness
+  const balance/26 = 0;
+  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+  const x/8 = [0, false];
+  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+
+  // Theorem formalization
+  invariant((balance/26 + 1) == [(x/8[0] + 2), x/8[1]][0]);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  at ./loop_var_sub.rsh:13:7:invariant
+
+  (details omitted on repeat)
+  Verifying when ONLY "A" is honest
+Verification failed:
+  when ONLY "A" is honest
+  of theorem: while invariant after loop
+  at ./loop_var_sub.rsh:13:7:invariant
+
+  (details omitted on repeat)
+  Verifying when ONLY "B" is honest
+Verification failed:
+  when ONLY "B" is honest
+  of theorem: while invariant after loop
+  at ./loop_var_sub.rsh:13:7:invariant
+
+  (details omitted on repeat)
+Checked 16 theorems; 4 failures. :'(
