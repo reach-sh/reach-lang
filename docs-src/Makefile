@@ -8,7 +8,7 @@ rebuild:
 
 .PHONY: copy
 copy:
-	@cp -f minted.css CNAME google*.html reach-pre.js reach-post.js clippy.svg reach.css tooltips.js tooltips.css favicon ../docs/
+	@cp -fr minted.css CNAME google*.html reach-pre.js reach-post.js clippy.svg reach.css tooltips.js tooltips.css favicon ../docs/
 
 .PHONY: render
 render: rebuild copy
