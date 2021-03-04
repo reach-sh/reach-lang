@@ -2036,6 +2036,26 @@ evalApplyVals' rator randvs = do
   SLAppRes _ val <- evalApplyVals rator randvs
   return $ val
 
+instDefaultArgs :: EvalError -> [JSExpression] -> [SLSVal] -> App [(JSExpression, SLSVal)]
+instDefaultArgs err formals = \case
+  []
+    -- Every argument was specified PERFECTLY
+    | [] <- formals -> return []
+    -- Since there are no more applications args, now start consuming default args
+    | JSAssignExpression lhs (JSAssign _) rhs : ft <- formals -> do
+      (:) <$> ((,) lhs <$> evalExpr rhs) <*> instDefaultArgs err ft []
+    -- Not enough args provided
+    | _ : _ <- formals -> expect_ err
+  h : t
+    -- There are too many args provided at application
+    | [] <- formals -> expect_ err
+    -- Ignore default arg since specified at application
+    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals ->
+      (:) (lhs, h) <$> instDefaultArgs err ft t
+    | e : ft <- formals ->
+      (:) (e, h) <$> instDefaultArgs err ft t
+
+
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals rator randvs =
   case rator of
@@ -2045,10 +2065,11 @@ evalApplyVals rator randvs =
     SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv) -> do
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
+      let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
+      instArgs <- instDefaultArgs err formals randvs
       at <- withAt id
       arg_env <-
-        evalDeclLHSs mempty
-          =<< zipEq (Err_Apply_ArgCount clo_at) formals randvs
+        evalDeclLHSs mempty instArgs
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2296,6 +2317,7 @@ evalExpr e = case e of
     locAtf (srcloc_jsa "function exp" a) $ do
       at' <- withAt id
       let formals = parseJSFormals at' jsformals
+      verifyFormals False formals
       fname <-
         case name of
           JSIdentNone -> return $ Nothing
@@ -2357,6 +2379,12 @@ evalExpr e = case e of
           return si
         _ -> return i
       unaryToPrim op >>= \o -> doCallV o JSNoAnnot [i']
+    verifyFormals readDefaults = \case
+      [] -> return ()
+      JSAssignExpression _ (JSAssign _) _ : t -> verifyFormals True t
+      _ : t
+        | readDefaults -> expect_ Err_Default_Arg_Position
+        | otherwise -> verifyFormals readDefaults t
 
 doTernary :: JSExpression -> JSAnnot -> JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
