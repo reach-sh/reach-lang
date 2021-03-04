@@ -40,7 +40,7 @@ Reach requires features of Teal 3 which are not yet available on Algorand MainNe
 Reach programs can be run on the Reach Devnet. For this to work, AlgoSigner must be configured to work with the Reach Devnet. Here's how:
 
 @itemlist[
- @item{@link["https://chrome.google.com/webstore/detail/algosigner/kmmolakhbgdlpkjkcjkebenjheonagdm"](Install the extension)}
+ @item{@link["https://chrome.google.com/webstore/detail/algosigner/kmmolakhbgdlpkjkcjkebenjheonagdm"]{Install the extension}}
  @item{Click the extension}
  @item{Click the gear icon on the top-right of the extension popover}
  @item{Click "Network Configuration"}
