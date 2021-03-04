@@ -1020,6 +1020,8 @@ sub_loop_vars_de de = do
 
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e at_dv mdv de = do
+  -- We could change `ctxt_loop_var_subst` to `Map DLVar DLVar`
+  -- by having jumps create new fresh variables then re-use `Subst` here
   de' <- sub_loop_vars_de de
   case de of
     DLE_Arg at da -> bound at de' =<< smt_a at da
