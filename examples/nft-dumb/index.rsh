@@ -31,7 +31,7 @@ export const main =
           // NOTE: Reach is trying to protect us from hanging, but in this case
           // we know that there is only one owner and we want to hang until
           // they are read, so use an absurdly large timeout
-          .timeout(512, () => { 
+          .timeout(pow(2,20,10), () => {
             Owner.publish();
             continue; });
         require(this == owner);

@@ -797,7 +797,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       while ( true ) {
         const params = await getTxnParams();
         if ( timeout_delay ) {
-          const tdn = timeout_delay.toNumber();
+          // This 1000 is MaxTxnLife --- https://github.com/algorand/go-algorand/blob/master/config/consensus.go#L560
+          const tdn = Math.min(1000, timeout_delay.toNumber());
           params.lastRound = lastRound + tdn;
           if ( params.firstRound > params.lastRound ) {
             debug(`${dhead} --- FAIL/TIMEOUT`);
@@ -824,7 +825,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- isHalt = ${JSON.stringify(isHalt)}`);
 
         const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+          [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
         [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
