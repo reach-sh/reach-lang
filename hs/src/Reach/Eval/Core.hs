@@ -2644,7 +2644,9 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
 
 doOnly :: SLScope -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> App SLScope
 doOnly sco ((who, vas), only_at, only_cloenv, only_synarg) = locAt only_at $ do
-  (alifts, (penv', only_ty, only_v)) <- captureLifts $ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg)
+  (alifts, (penv', only_ty, only_v)) <-
+    captureLifts $
+      doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg)
   case only_ty of
     T_Null -> do
       saveLift $ DLS_Only only_at who alifts
@@ -3021,8 +3023,17 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
   return $ pr_ss
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
-evalStmtTrampoline sp ks = \case
-  SLV_Prim (SLPrim_part_setted at' who addr_da) -> locAt at' $ do
+evalStmtTrampoline sp ks ev =
+  case findStmtTrampoline ev of
+    Just st -> st sp ks
+    Nothing ->
+      typeOf ev >>= \case
+        (T_Null, _) -> evalStmt ks
+        (ty, _) -> expect_ $ Err_Block_NotNull ty ev
+
+findStmtTrampoline :: SLVal -> Maybe (JSSemi -> [JSStatement] -> App SLStmtRes)
+findStmtTrampoline = \case
+  SLV_Prim (SLPrim_part_setted at' who addr_da) -> Just $ \_ ks -> locAt at' $ do
     ensure_mode SLM_ConsensusStep "participant set"
     st <- readSt id
     let pdvs = st_pdvs st
@@ -3040,26 +3051,26 @@ evalStmtTrampoline sp ks = \case
         let st' = st {st_pdvs = pdvs'}
         setSt st'
         evalStmt ks
-  SLV_Prim SLPrim_exitted -> do
+  SLV_Prim SLPrim_exitted -> Just $ \sp ks -> do
     at <- withAt id
     expect_empty_tail "exit" (srcloc2annot at) sp ks
     sco <- e_sco <$> ask
     return $ SLStmtRes sco []
-  SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
+  SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> Just $ \_ ks -> do
     ensure_modes [SLM_Step, SLM_ConsensusStep] "local action (only or each)"
     sco <- e_sco <$> ask
     sco' <-
       foldM doOnly sco $
         map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
     locSco sco' $ evalStmt ks
-  SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> locAt to_at $ do
+  SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> Just $ \_ ks -> locAt to_at $ do
     let msg = fromMaybe [] mmsg
     let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
     let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
     doToConsensus ks whos vas msg amt whene mtime
-  SLV_Form (SLForm_fork_partial f_at Nothing cases mtime) ->
+  SLV_Form (SLForm_fork_partial f_at Nothing cases mtime) -> Just $ \_ ks ->
     locAt f_at $ doFork ks cases mtime
-  SLV_Prim SLPrim_committed -> do
+  SLV_Prim SLPrim_committed -> Just $ \_ ks -> do
     ensure_mode SLM_ConsensusStep "commit"
     sco <- e_sco <$> ask
     at <- withAt id
@@ -3075,10 +3086,7 @@ evalStmtTrampoline sp ks = \case
         locSco sco' $ evalStmt ks
     saveLift $ DLS_FromConsensus at steplifts
     return $ cr
-  ev ->
-    typeOf ev >>= \case
-      (T_Null, _) -> evalStmt ks
-      (ty, _) -> expect_ $ Err_Block_NotNull ty ev
+  _ -> Nothing
 
 doExit :: App ()
 doExit = do
@@ -3325,16 +3333,20 @@ evalStmt = \case
       sev <- case me of
         Nothing -> return $ public $ SLV_Null at' "empty return"
         Just e -> evalExpr e
-      ret <- case sco_ret sco of
-        Just x ->
-          case sco_must_ret sco of
-            RS_CannotReturn -> expect_ $ Err_CannotReturn
-            _ -> return $ x
-        Nothing -> expect_ $ Err_Eval_NoReturn
-      evi <- ctxt_alloc
-      saveLift $ DLS_Return at' ret (Left evi)
-      expect_empty_tail lab a sp ks
-      return $ SLStmtRes sco [(at', Just evi, sev, False)]
+      case findStmtTrampoline $ snd sev of
+        Just st ->
+          st sp $ JSReturn a Nothing sp : ks
+        Nothing -> do
+          ret <- case sco_ret sco of
+            Just x ->
+              case sco_must_ret sco of
+                RS_CannotReturn -> expect_ $ Err_CannotReturn
+                _ -> return $ x
+            Nothing -> expect_ $ Err_Eval_NoReturn
+          evi <- ctxt_alloc
+          saveLift $ DLS_Return at' ret (Left evi)
+          expect_empty_tail lab a sp ks
+          return $ SLStmtRes sco [(at', Just evi, sev, False)]
   (JSSwitch a _ de _ _ cases _ sp : ks) -> do
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
