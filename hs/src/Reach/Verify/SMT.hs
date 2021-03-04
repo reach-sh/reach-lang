@@ -11,7 +11,7 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map as M
-import Data.Maybe (maybeToList)
+import Data.Maybe (maybeToList, fromMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -264,14 +264,16 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
+getVarName :: Bool -> S.Set DLVar -> DLVar -> String
+getVarName usemp pvs dv@(DLVar _ _ _ i) =
+  let mp = if dv `elem` pvs then "p" else "" in
+  let mmp = if usemp then mp else "" in
+  "v" ++ show i ++ mmp
+
 smtVar_ :: Bool -> DLVar -> App String
-smtVar_ usemp dv@(DLVar _ _ _ i) = do
+smtVar_ usemp dv = do
   pvs <- ctxt_primed_vars <$> ask
-  let mp = case elem dv pvs of
-            True -> "p"
-            False -> ""
-  let mmp = if usemp then mp else ""
-  let name = "v" ++ show i ++ mmp
+  let name = getVarName usemp pvs dv
   v2dv <- ctxt_v_to_dv <$> ask
   liftIO $ modifyIORef v2dv $ M.insertWith (<>) name [dv]
   return $ name
@@ -416,19 +418,21 @@ set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
 
 -- Log every occurence of dlvars so we know what is used how many times
-dlvOccurs :: [Int] -> BindingEnv -> DLExpr -> [Int]
-dlvOccurs env bindings de =
+dlvOccurs :: S.Set DLVar -> [String] -> BindingEnv -> DLExpr -> [String]
+dlvOccurs pvs env bindings de =
   case de of
-    DLE_Arg _ (DLA_Var (DLVar _ _ _ i)) ->
-      case i `List.elem` env of
+    DLE_Arg _ (DLA_Var dv) ->
+      case v `List.elem` env of
         -- If we already expanded, mark that we've seen var again and go home
         True -> env'
         -- Otherwise, expand and mark all sub expressions
         False ->
-          case ("v" <> show i) `M.lookup` bindings of
-            Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
+          case v `M.lookup` bindings of
+            Just (_, _, _, _, Just e) -> dlvOccurs pvs env' bindings e
             _ -> env'
-      where env' = i  : env
+      where
+        env' = v  : env
+        v = getVarName True pvs dv
     DLE_Arg {} -> env
     DLE_LArg at (DLLA_Array _ as) -> _recs at as
     DLE_LArg at (DLLA_Tuple as) -> _recs at as
@@ -452,11 +456,11 @@ dlvOccurs env bindings de =
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
   where
-    _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
-    _rec at a = dlvOccurs env bindings $ DLE_Arg at a
+    _recs at as = foldr (\a acc -> dlvOccurs pvs acc bindings $ DLE_Arg at a) env as
+    _rec at a = dlvOccurs pvs env bindings $ DLE_Arg at a
 
-displayDLAsJs :: M.Map String [DLVar] -> [(Int, Either String DLExpr)] -> Bool -> DLExpr -> String
-displayDLAsJs v2dv inlineCtxt nested = \case
+displayDLAsJs :: S.Set DLVar -> M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
+displayDLAsJs pvs v2dv inlineCtxt nested = \case
     DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
     DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
@@ -497,10 +501,10 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     curly e = "{" <> e <> "}"
     paren e = "(" <> e <> ")"
     bracket e = "[" <> e <> "]"
-    sub (DLA_Var v@(DLVar _ _ _ i)) =
-      case i `List.lookup` inlineCtxt of
+    sub (DLA_Var v) =
+      case getVarName True pvs v `List.lookup` inlineCtxt of
         Nothing -> show v
-        Just (Right de) -> displayDLAsJs v2dv inlineCtxt True de
+        Just (Right de) -> displayDLAsJs pvs v2dv inlineCtxt True de
         Just (Left s) -> s
     sub e = ps e
 
@@ -524,34 +528,35 @@ displaySexpAsJs nested s =
 -- If the list is empty, it is an "unbound" var like an interact field.
 getBindingOrigin :: String -> M.Map String [DLVar] -> String
 getBindingOrigin v v2dv =
-  case reverse $ maybe [] id $ M.lookup v v2dv of
+  case reverse $ fromMaybe [] $ M.lookup v v2dv of
     (_:val:_) -> show val
     (val:_) -> show val
     [] -> v
 
-subAllVars :: M.Map String [DLVar] -> BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> String
-subAllVars v2dv bindings tk pm (Atom ai) =
+subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> App String
+subAllVars bindings tk pm (Atom ai) = do
+  pvs <- asks ctxt_primed_vars
+  v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
   case ai `M.lookup` bindings of
-    Just (_, _, _, _, Just de) ->
-      let env = dlvOccurs [] bindings de in
-      let sortedEnv = List.group $ List.sort env in
+    Just (_, _, _, _, Just de) -> do
+      let env = dlvOccurs pvs [] bindings de
+      let sortedEnv = List.group $ List.sort env
       -- Get variable/values to inline. Inline a DLExpr if available,
       -- or fallback to s-exp Atom value
-      let inlineVars = List.foldr canInline [] sortedEnv in
-      let inlines = map getInlineValue inlineVars in
-      let toJs = displayDLAsJs v2dv inlines False in
+      let inlineVars = List.foldr canInline [] sortedEnv
+      let inlines = map (getInlineValue v2dv) inlineVars
+      let toJs = displayDLAsJs pvs v2dv inlines False
       -- Get let assignments
-      let assignVars = List.foldr canAssign [] sortedEnv in
+      let assignVars = List.foldr canAssign [] sortedEnv
       let assigns =
             List.foldr
               (\x acc ->
-                  let i = "v" <> show x
-                  in case i `M.lookup` bindings of
-                        Just (_, _, _, _, Just dl) -> (i, Right dl) : acc
-                        Just (_, _, _, Just se, _) -> (i, Left se) : acc
-                        _ -> acc)
+                  case x `M.lookup` bindings of
+                    Just (_, _, _, _, Just dl) -> (x, Right dl) : acc
+                    Just (_, _, _, Just se, _) -> (x, Left se) : acc
+                    _ -> acc)
               []
-              assignVars in
+              assignVars
       let assignStr =
             unlines $
               map
@@ -563,35 +568,34 @@ subAllVars v2dv bindings tk pm (Atom ai) =
                           <> ";"
                           <> "\n  //    ^ would be "
                           <> kv)
-                    assigns in
-        let assertStr = "  " <> fmtAssert tk <> "(" <> toJs de <> ");" in
-        assignStr <> assertStr
+                    assigns
+      let assertStr = "  " <> fmtAssert tk <> "(" <> toJs de <> ");"
+      return $ assignStr <> assertStr
     -- Something like assert(false)
-    _ -> "  " <> fmtAssert tk <> "(" <> ai <> ");"
+    _ -> return $ "  " <> fmtAssert tk <> "(" <> ai <> ");"
   where
     -- Variable can be inlined if it is used once or its value is a `DLArg`
     canInline [x] acc = x : acc
     canInline (x : _) acc =
-      case ("v" <> show x) `M.lookup` bindings of
+      case x `M.lookup` bindings of
         Just (_, _, _, _, Just (DLE_Arg _ _)) -> x : acc
         _ -> acc
     canInline _ acc = acc
 
     -- Variable can be assigned if it is used many times and its value is not a `DLArg`
     canAssign (x : _ : _) acc =
-      case ("v" <> show x) `M.lookup` bindings of
+      case x `M.lookup` bindings of
         Just (_, _, _, _, Just (DLE_Arg _ _)) -> acc
         _ -> x : acc
     canAssign _ acc = acc
 
-    getInlineValue :: Int -> (Int, Either String DLExpr)
-    getInlineValue v =
-      let vid = "v" <> show v
-       in case vid `M.lookup` bindings of
-            Just (_, _, _, _, Just del) -> (v, Right del)
-            Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
-            _ -> (v, Left $ getBindingOrigin vid v2dv)
-subAllVars _ _ _ _ _ = impossible "subAllVars: expected Atom"
+    getInlineValue :: M.Map String [DLVar] -> String -> (String, Either String DLExpr)
+    getInlineValue v2dv v =
+      case v `M.lookup` bindings of
+        Just (_, _, _, _, Just del) -> (v, Right del)
+        Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
+        _ -> (v, Left $ getBindingOrigin v v2dv)
+subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
 
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
@@ -665,9 +669,10 @@ display_fail tat f tk tse mmsg repeated mrd = do
                 show_vars shown' q''
       let tse_vars = seVars tse
       show_vars tse_vars $ set_to_seq $ tse_vars
+      theorem_formalization <- subAllVars bindingsm tk pm tse
       iputStrLn ""
       iputStrLn $ "  // Theorem formalization"
-      iputStrLn $ subAllVars v2dv bindingsm tk pm tse
+      iputStrLn theorem_formalization
       iputStrLn ""
 
 smtNewPathConstraint :: SExpr -> App a -> App a
@@ -971,25 +976,70 @@ smt_la at_de dla = do
       vv' <- smt_a at_de vv
       return $ smtApply (s ++ "_" ++ vn) [vv']
 
+sub_loop_vars_a :: M.Map DLVar DLArg -> DLArg -> DLArg
+sub_loop_vars_a lvars (DLA_Var v) = do
+  fromMaybe (DLA_Var v) $ v `M.lookup` lvars
+sub_loop_vars_a _ ow = ow
+
+sub_loop_vars_dla :: M.Map DLVar DLArg -> DLLargeArg -> DLLargeArg
+sub_loop_vars_dla lvars dla =
+  case dla of
+    DLLA_Array at as -> DLLA_Array at $ map sub as
+    DLLA_Tuple as -> DLLA_Tuple $ map sub as
+    DLLA_Obj m -> DLLA_Obj $ M.map sub m
+    DLLA_Data env vn vv -> DLLA_Data env vn $ sub vv
+  where
+    sub = sub_loop_vars_a lvars
+
+sub_loop_vars_de :: DLExpr -> App DLExpr
+sub_loop_vars_de de = do
+  lvars <- asks ctxt_loop_var_subst
+  let sub = sub_loop_vars_a lvars
+  return $ case de of
+    DLE_Arg at da -> DLE_Arg at $ sub da
+    DLE_LArg at dla -> DLE_LArg at $ sub_loop_vars_dla lvars dla
+    DLE_Impossible {} -> de
+    DLE_PrimOp at cp args -> DLE_PrimOp at cp $ map sub args
+    DLE_ArrayRef at arr_da idx_da ->
+      DLE_ArrayRef at (sub arr_da) (sub idx_da)
+    DLE_ArraySet at arr_da idx_da val_da ->
+      DLE_ArraySet at (sub arr_da) (sub idx_da) (sub val_da)
+    DLE_ArrayConcat {} -> de
+    DLE_ArrayZip {} -> de
+    DLE_TupleRef at arr_da i -> DLE_TupleRef at (sub arr_da) i
+    DLE_ObjectRef at obj_da f -> DLE_ObjectRef at (sub obj_da) f
+    DLE_Interact {} -> de
+    DLE_Digest at args -> DLE_Digest at (map sub args)
+    DLE_Claim at f ct ca mmsg -> DLE_Claim at f ct (sub ca) mmsg
+    DLE_Transfer {} -> de
+    DLE_Wait {} -> de
+    DLE_PartSet at who a -> DLE_PartSet at who (sub a)
+    DLE_MapRef at mpv fa -> DLE_MapRef at mpv (sub fa)
+    DLE_MapSet at mpv fa na -> DLE_MapSet at mpv (sub fa) (sub na)
+    DLE_MapDel at mpv fa -> DLE_MapDel at mpv (sub fa)
+
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
-smt_e at_dv mdv de =
+smt_e at_dv mdv de = do
+  -- We could change `ctxt_loop_var_subst` to `Map DLVar DLVar`
+  -- by having jumps create new fresh variables then re-use `Subst` here
+  de' <- sub_loop_vars_de de
   case de of
-    DLE_Arg at da -> bound at =<< smt_a at da
-    DLE_LArg at dla -> bound at =<< smt_la at dla
+    DLE_Arg at da -> bound at de' =<< smt_a at da
+    DLE_LArg at dla -> bound at de' =<< smt_la at dla
     DLE_Impossible _ _ ->
       pathAddUnbound at_dv mdv bo
     DLE_PrimOp at cp args -> do
       args' <- mapM (smt_a at) args
-      bound at =<< smtPrimOp cp args args'
+      bound at de' =<< smtPrimOp cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
-      bound at $ smtApply "select" [arr_da', idx_da']
+      bound at de' $ smtApply "select" [arr_da', idx_da']
     DLE_ArraySet at arr_da idx_da val_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
       val_da' <- smt_a at val_da
-      bound at $ smtApply "store" [arr_da', idx_da', val_da']
+      bound at de' $ smtApply "store" [arr_da', idx_da', val_da']
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
@@ -1000,17 +1050,17 @@ smt_e at_dv mdv de =
       let t = argTypeOf arr_da
       s <- smtTypeSort t
       arr_da' <- smt_a at arr_da
-      bound at $ smtApply (s ++ "_elem" ++ show i) [arr_da']
+      bound at de' $ smtApply (s ++ "_elem" ++ show i) [arr_da']
     DLE_ObjectRef at obj_da f -> do
       let t = argTypeOf obj_da
       s <- smtTypeSort t
       obj_da' <- smt_a at obj_da
-      bound at $ smtApply (s ++ "_" ++ f) [obj_da']
+      bound at de' $ smtApply (s ++ "_" ++ f) [obj_da']
     DLE_Interact at _ _ _ _ _ ->
       pathAddUnbound at mdv bo
     DLE_Digest at args -> do
       args' <- smtDigestCombine at args
-      bound at $ smtApply "digest" [args']
+      bound at de' $ smtApply "digest" [args']
     DLE_Claim at f ct ca mmsg -> do
       ca' <- smt_a at ca
       let check_m = verify1 at f (TClaim ct) ca' mmsg
@@ -1028,7 +1078,7 @@ smt_e at_dv mdv de =
     DLE_Wait {} ->
       mempty
     DLE_PartSet at who a -> do
-      bound at =<< smt_a at a
+      bound at de' =<< smt_a at a
       sim <- shouldSimulate who
       case (mdv, sim) of
         (Just psv, True) -> do
@@ -1039,7 +1089,7 @@ smt_e at_dv mdv de =
     DLE_MapRef at mpv fa -> do
       ma <- smtMapLookup mpv
       fa' <- smt_a at fa
-      bound at $ smtApply "select" [ ma, fa' ]
+      bound at de' $ smtApply "select" [ ma, fa' ]
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa na ->
       smtMapUpdate at mpv fa $ Just na
@@ -1047,7 +1097,7 @@ smt_e at_dv mdv de =
       smtMapUpdate at mpv fa $ Nothing
   where
     bo = O_Expr de
-    bound at = pathAddBound at mdv bo (Just de)
+    bound at nde = pathAddBound at mdv bo (Just nde)
 
 data SwitchMode
   = SM_Local
