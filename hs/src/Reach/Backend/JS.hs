@@ -567,9 +567,13 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
     preamble =
       vsep
         [ pretty $ "// Automatically generated with Reach " ++ versionStr
-        , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape, no-loop-func */"
-        , "export const _version =" <+> jsString versionStr <> semi
-        ]
+        -- While on one hand we should generate code that passes eslint,
+        -- on the other hand this is tedious,
+        -- and also we don't want users to have to deal with unforeseen linting issues.
+        -- , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape, no-loop-func */"
+        -- (New issues: default-case, no-unreachable)
+        , "/* eslint-disable */"
+        , "export const _version =" <+> jsString versionStr <> semi ]
     partsp = map (uncurry (jsPart dli)) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ HM.toList cr
     connsExp = jsConnsExp (HM.keys cr)
