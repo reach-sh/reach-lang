@@ -50,4 +50,9 @@ data SLState = SLState
 all_slm_modes :: [SLMode]
 all_slm_modes = enumFrom minBound
 
+pure_mode :: SLMode -> SLMode
+pure_mode (SLM_LocalStep) = SLM_LocalPure
+pure_mode (SLM_ConsensusStep) = SLM_ConsensusPure
+pure_mode ow = ow
+
 type SLPartDVars = M.Map SLPart DLVar

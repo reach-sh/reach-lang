@@ -2066,10 +2066,6 @@ evalApplyVals rator randvs =
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
       let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
-      instArgs <- instDefaultArgs err formals randvs
-      at <- withAt id
-      arg_env <-
-        evalDeclLHSs mempty instArgs
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2078,6 +2074,14 @@ evalApplyVals rator randvs =
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
                })
+      m <- readSt st_mode
+      instArgs <-
+        locStMode (pure_mode m) $
+          locSco clo_sco $
+            instDefaultArgs err formals randvs
+      at <- withAt id
+      arg_env <-
+        evalDeclLHSs mempty instArgs
       clo_sco' <- locSco clo_sco $ sco_update arg_env
       (body_lifts, (SLStmtRes clo_sco'' rs)) <-
         captureLifts $
