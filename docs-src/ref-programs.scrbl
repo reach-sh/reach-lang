@@ -530,6 +530,8 @@ However, some additional expressions are allowed.
 
 A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPANT_n);}, constructs a @tech{participant} that may be used in a @tech{consensus transfer} statement, such as @reachin{publish} or @reachin{pay}, where the various @tech{participants} race to be the first one to perform the @tech{consensus transfer}.
 
+Reach provides a shorthand, @reachin{Anybody}, which serves as a @reachin{race} between all the Participants.
+
 @margin-note{See @seclink["guide-race"]{the guide section on races} to understand the benefits and dangers of using @reachin{race}.}
 
 @subsubsection{@tt{unknowable}}
@@ -2271,4 +2273,15 @@ There are convenience methods defined for comparing fixed point numbers:
 @index{fxeq} @reachin{fxeq(x, y)} tests whether @tt{x} is equal to @tt{y}.
 
 @index{fxne} @reachin{fxne(x, y)} tests whether @tt{x} is not equal to @tt{y}.
+
+@subsubsection{Anybody}
+
+@(mint-define! '("Anybody"))
+@reach{
+  Anybody.publish(); // race(...Participants).publish()
+}
+
+@index{Anybody} Reach provides a shorthand, @reachin{Anybody}, which serves as a
+@reachin{race} between all @reachin{Participant}s. This shorthand can be useful for situations where
+it does not matter who @reachin{publish}es, such as in a @reachin{timeout}.
 
