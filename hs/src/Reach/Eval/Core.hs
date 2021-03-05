@@ -2036,25 +2036,27 @@ evalApplyVals' rator randvs = do
   SLAppRes _ val <- evalApplyVals rator randvs
   return $ val
 
-instDefaultArgs :: EvalError -> [JSExpression] -> [SLSVal] -> App [(JSExpression, SLSVal)]
-instDefaultArgs err formals = \case
+instDefaultArgs :: SLEnv -> EvalError -> [JSExpression] -> [SLSVal] -> App SLEnv
+instDefaultArgs env err formals = \case
   []
     -- Every argument was specified PERFECTLY
-    | [] <- formals -> return []
+    | [] <- formals -> return env
     -- Since there are no more applications args, now start consuming default args
     | JSAssignExpression lhs (JSAssign _) rhs : ft <- formals -> do
-      (:) <$> ((,) lhs <$> evalExpr rhs) <*> instDefaultArgs err ft []
+      rhs' <- sco_update env >>= flip locSco (evalExpr rhs)
+      evalArg lhs rhs' ft []
     -- Not enough args provided
     | _ : _ <- formals -> expect_ err
   h : t
     -- There are too many args provided at application
     | [] <- formals -> expect_ err
     -- Ignore default arg since specified at application
-    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals ->
-      (:) (lhs, h) <$> instDefaultArgs err ft t
-    | e : ft <- formals ->
-      (:) (e, h) <$> instDefaultArgs err ft t
-
+    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals -> evalArg lhs h ft t
+    | lhs : ft <- formals -> evalArg lhs h ft t
+  where
+    evalArg lhs rhs ft tl = do
+      env' <- evalDeclLHSs env [(lhs, rhs)]
+      instDefaultArgs env' err ft tl
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals rator randvs =
@@ -2075,13 +2077,11 @@ evalApplyVals rator randvs =
                , sco_cenv = clo_cenv
                })
       m <- readSt st_mode
-      instArgs <-
+      arg_env <-
         locStMode (pure_mode m) $
           locSco clo_sco $
-            instDefaultArgs err formals randvs
+            instDefaultArgs mempty err formals randvs
       at <- withAt id
-      arg_env <-
-        evalDeclLHSs mempty instArgs
       clo_sco' <- locSco clo_sco $ sco_update arg_env
       (body_lifts, (SLStmtRes clo_sco'' rs)) <-
         captureLifts $
