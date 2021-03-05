@@ -98,12 +98,14 @@ declare module 'algosdk' {
   declare function makeApplicationDeleteTxn(
     from: Address,
     suggestedParams: TxnParams,
-    appIndex: number
+    appIndex: number,
+    args: Array<LogicArg>,
   ): Txn;
   declare function makeApplicationNoOpTxn(
     from: Address,
     suggestedParams: TxnParams,
-    appIndex: number
+    appIndex: number,
+    args: Array<LogicArg>,
   ): Txn;
   declare function assignGroupID(
     txns: Array<Txn>

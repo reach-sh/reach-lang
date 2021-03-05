@@ -870,7 +870,7 @@ ct = \case
                 let svs' = delete_timev svs
                 -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
                 cstate (HM_Set which) svs'
-                code "arg" [texty argNextSt]
+                readArg argNextSt
                 eq_or_fail
 
 data HashMode
@@ -891,7 +891,7 @@ cstate hm svs = do
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
-  code "arg" [texty argHalts]
+  readArg argHalts
   cfrombs T_Bool
   cl $ DLL_Bool b
   eq_or_fail
@@ -973,14 +973,18 @@ argLast = argFeeAmount + 1
 argFirstUser :: Word8
 argFirstUser = argLast + 1
 
+readArg :: Word8 -> App ()
+readArg which =
+  code "gtxna" [texty txnAppl, "ApplicationArgs", texty which]
+
 lookup_sender :: App ()
 lookup_sender = code "gtxn" [texty txnToContract, "Sender"]
 
 lookup_last :: App ()
-lookup_last = code "arg" [texty argLast] >> cfrombs T_UInt
+lookup_last = readArg argLast >> cfrombs T_UInt
 
 lookup_fee_amount :: App ()
-lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt
+lookup_fee_amount = readArg argFeeAmount >> cfrombs T_UInt
 
 std_footer :: App ()
 std_footer = do
@@ -1001,17 +1005,19 @@ runApp eShared eWhich eLets emTimev m = do
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
+-- XXX This Integer could also include the number of arguments, because there's
+-- a limit to that too and/or we could ensure that it was always under the
+-- limit by taking the last one and tuple-izing it
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev body) =
   let svs = dvdeletem last_timemv svs_
    in fmap Just $
         fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-          let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
+          let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
           let args = svs <> msg
-          let argFirstUser' = fromIntegral argFirstUser
-          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
-          let argCount = argFirstUser' + length args
+          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
+          let argCount = fromIntegral argFirstUser + length args
           let eLets1 = M.insert from lookup_sender eLets0
           let lookup_txn_value = do
                 code "gtxn" [texty txnToContract, "Amount"]
@@ -1033,6 +1039,9 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             --- XXX Make this int
             code "byte" [tApplicationID]
             cfrombs T_UInt
+            eq_or_fail
+            code "gtxn" [texty txnAppl, "NumAppArgs"]
+            cl $ DLL_Int sb $ fromIntegral $ argCount
             eq_or_fail
 
             comment "Check txnToHandler"
@@ -1067,11 +1076,8 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             code "txn" ["Receiver"]
             code "gtxn" [texty txnToHandler, "Sender"]
             eq_or_fail
-            code "txn" ["NumArgs"]
-            cl $ DLL_Int sb $ fromIntegral $ argCount
-            eq_or_fail
             cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
-            code "arg" [texty argPrevSt]
+            readArg argPrevSt
             eq_or_fail
 
             --- XXX close remainder to is deployer if halts, zero otherwise
@@ -1214,23 +1220,23 @@ compile_algo disp pl = do
     forM_ hchecks id
     or_fail
     app_global_get keyState
-    code "gtxna" [texty txnFromHandler, "Args", texty argPrevSt]
+    readArg argPrevSt
     cfrombs T_Digest
     eq_or_fail
     app_global_get keyLast
-    code "gtxna" [texty txnFromHandler, "Args", texty argLast]
+    readArg argLast
     cfrombs T_UInt
     eq_or_fail
     comment "Don't check anyone else, because Handler does"
     comment "Update state"
     app_global_put keyState $ do
-      code "gtxna" [texty txnFromHandler, "Args", texty argNextSt]
+      readArg argNextSt
       cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
     --- XXX we don't actually need halts
     app_global_put keyHalts $ do
-      code "gtxna" [texty txnFromHandler, "Args", texty argHalts]
+      readArg argHalts
       cfrombs T_Bool
     app_global_get keyHalts
     code "bnz" ["halted"]

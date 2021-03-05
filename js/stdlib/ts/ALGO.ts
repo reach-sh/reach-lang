@@ -511,7 +511,17 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
       T_UInt.toNet(bigNumberify(ApplicationID)),
       x);
 
+  const checkLen = (label:string, actual:number, expected:number): void => {
+    if ( actual > expected ) {
+        throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
+  // Get these from stdlib
+  const LogicSigMaxSize = 1000;
+  // const MaxAppArgs = 16;
+  const MaxAppTotalArgLen = 2048;
+  const MaxAppProgramLen = 1024;
+
   const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
+  checkLen(`Escrow Contract`, ctc_bin.result.length, LogicSigMaxSize);
   const subst_ctc = (x: string) =>
     replaceAddr('ContractAddr', ctc_bin.hash, x);
 
@@ -522,11 +532,9 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
       const mN = `m${mi}`;
       const mc_subst = subst_ctc(subst_appid(mc));
       const cr = await compileTEAL(mN, mc_subst);
-      const plen = cr.result.length;
-      const alen = stepargs[mi];
-      const tlen = plen + alen;
-      if ( tlen > 1000 ) {
-        throw Error(`This Reach application is not supported by Algorand (program(${plen}) + args(${alen}) = total(${tlen}) > 1000)`); }
+      checkLen(`${mN} Contract`, cr.result.length, LogicSigMaxSize);
+      // XXX check arg count
+      checkLen(`${mN} Contract Arguments`, stepargs[mi], MaxAppTotalArgLen);
       appApproval_subst =
         replaceAddr(mN, cr.hash, appApproval_subst);
       return cr;
@@ -534,8 +542,10 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
 
   const appApproval_bin =
     await compileTEAL('appApproval_subst', appApproval_subst);
+  checkLen(`Approval Contract`, appApproval_bin.result.length, MaxAppProgramLen);
   const appClear_bin =
     await compileTEAL('appClear', appClear);
+  checkLen(`Clear Contract`, appClear_bin.result.length, MaxAppProgramLen);
 
   return { appApproval: appApproval_bin,
     appClear: appClear_bin,
@@ -841,9 +851,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
       debug(`${dhead} --- PREPARE: ${JSON.stringify(safe_args.map(ui8h))}`);
 
-      const handler_with_args =
-        algosdk.makeLogicSig(handler.result, safe_args);
-      debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
+      const handler_sig = algosdk.makeLogicSig(handler.result, []);
+      debug(`${dhead} --- PREPARED`);
 
         const whichAppl =
           isHalt ?
@@ -853,7 +862,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         // XXX if it is a halt, generate closeremaindertos for all the handlers and the contract account
         const txnAppl =
           whichAppl(
-            thisAcc.addr, params, ApplicationID);
+            thisAcc.addr, params, ApplicationID, safe_args);
         const txnFromHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,
@@ -896,7 +905,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const sign_me = async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
 
         const txnAppl_s = await sign_me(txnAppl);
-        const txnFromHandler_s = signLSTO(txnFromHandler, handler_with_args);
+        const txnFromHandler_s = signLSTO(txnFromHandler, handler_sig);
         // debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s)}`);
         const txnToHandler_s = await sign_me(txnToHandler);
         const txnToContract_s = await sign_me(txnToContract);
@@ -963,7 +972,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           return { didTimeout: true };
         }
 
-        let query = indexer.searchForTransactions()
+        let hquery = indexer.searchForTransactions()
           .address(handler.hash)
           .addressRole('sender')
           // Look at the next one after the last message
@@ -971,18 +980,31 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           // message
           .minRound(lastRound + 1);
         if ( timeoutRound ) {
-          query = query.maxRound(timeoutRound);
+          hquery = hquery.maxRound(timeoutRound);
         }
 
-        const txn = await doQuery(dhead, query);
-        if ( ! txn ) {
+        const htxn = await doQuery(dhead, hquery);
+        if ( ! htxn ) {
           // XXX perhaps wait until a new round has happened using wait
           await Timeout.set(2000);
           continue;
         }
+        debug(`${dhead} --- htxn = ${JSON.stringify(htxn)}`);
+
+        const theRound = htxn['confirmed-round'];
+        let query = indexer.searchForTransactions()
+          .applicationID(ApplicationID)
+          .txType('appl')
+          .round(theRound);
+        const txn = await doQuery(dhead, query);
+        if ( ! txn ) {
+          // XXX This is probably really bad
+          continue;
+        }
+        debug(`${dhead} --- txn = ${JSON.stringify(txn)}`);
 
         const ctc_args: Array<string> =
-          txn.signature.logicsig.args;
+          txn['application-transaction']['application-args'];
         debug(`${dhead} --- ctc_args = ${JSON.stringify(ctc_args)}`);
 
         const args = argsSlice(ctc_args, evt_cnt);
@@ -1006,13 +1028,13 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
 
         const fromAddr =
-          txn['payment-transaction'].receiver;
+          htxn['payment-transaction'].receiver;
         const from =
           T_Address.canonicalize({addr: fromAddr});
         debug(`${dhead} --- from = ${JSON.stringify(from)} = ${fromAddr}`);
 
         const oldLastRound = lastRound;
-        lastRound = txn['confirmed-round'];
+        lastRound = theRound;
         debug(`${dhead} --- updating round from ${oldLastRound} to ${lastRound}`);
 
         // XXX ideally we'd get the whole transaction group before and not need to do this.
@@ -1022,7 +1044,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             indexer.searchForTransactions()
               .address(bin_comp.ctc.hash)
               .addressRole('receiver')
-              .round(lastRound));
+              .round(theRound));
 
         const value =
           bigNumberify(ptxn['payment-transaction'].amount)
