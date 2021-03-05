@@ -47,9 +47,6 @@ export const main =
         owner = newOwner;
         continue;
       }
-      // XXX This line is here to force something in the saved variables to get
-      // around the empty struct problem in Solidity
-      transfer(balance()).to(Creator);
       commit();
 
       assert(false);

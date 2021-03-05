@@ -4,4 +4,19 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Creator" is honest
   Verifying when ONLY "Owner" is honest
-Checked 31 theorems; No failures!
+Checked 27 theorems; No failures!
+solc failed:
+STDOUT:
+
+STDERR:
+Warning: SPDX license identifier not provided in source file. Before publishing, consider adding a comment containing "SPDX-License-Identifier: <SPDX-License>" to each source file. Use "SPDX-License-Identifier: UNLICENSED" for non-open-source code. Please see https://spdx.org for more information.
+--> /private/tmp/reachc-sol-d994189bb1a52e36/compiled.sol
+
+Error: Defining empty structs is disallowed.
+  --> /private/tmp/reachc-sol-d994189bb1a52e36/compiled.sol:98:3:
+   |
+98 |   struct a2svs {
+   |   ^ (Relevant source part starts here and spans across multiple lines).
+
+
+
