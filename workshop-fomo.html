@@ -178,7 +178,7 @@ export const main = Reach.App(
           })
         )
         .timeout(deadline, () =&gt; {
-          race(Buyer, Funder).publish();
+          Anybody.publish();
           return [ false, winner, ticketsSold ]; });
 
     // Whoever, buys last wins and receives balance
@@ -245,7 +245,7 @@ export const main = Reach.App(
 <span class="mi">58</span>              <span class="p">})</span>
 <span class="mi">59</span>            <span class="p">)</span>
 <span class="mi">60</span>            <span class="p">.</span><a href="ref-programs-step.html#%28reach._%28%28timeout%29%29%29" class="k" data-pltdoc="x">timeout</a><span class="p">(</span><font class="badlink"><span class="nx">deadline</span></font><span class="p">,</span> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
-<span class="mi">61</span>              <a href="ref-programs-step.html#%28reach._%28%28race%29%29%29" class="k" data-pltdoc="x">race</a><span class="p">(</span><font class="badlink"><span class="nx">Buyer</span></font><span class="p">,</span> <font class="badlink"><span class="nx">Funder</span></font><span class="p">).</span><a href="ref-programs-step.html#%28reach._%28%28publish%29%29%29" class="k" data-pltdoc="x">publish</a><span class="p">();</span>
+<span class="mi">61</span>              <font class="badlink"><span class="nx">Anybody</span></font><span class="p">.</span><a href="ref-programs-step.html#%28reach._%28%28publish%29%29%29" class="k" data-pltdoc="x">publish</a><span class="p">();</span>
 <span class="mi">62</span>              <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <span class="p">[</span> <a href="ref-programs-compute.html#%28reach._%28%28false%29%29%29" class="kc" data-pltdoc="x">false</a><span class="p">,</span> <font class="badlink"><span class="nx">winner</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ticketsSold</span></font> <span class="p">];</span> <span class="p">});</span>
 <span class="mi">63</span>    
 <span class="mi">64</span>        <span class="c1">// Whoever, buys last wins and receives balance</span>
