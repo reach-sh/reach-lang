@@ -122,6 +122,7 @@ data SLVal
     -- differently.
     SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_RaceParticipant SrcLoc (S.Set SLPart)
+  | SLV_Anybody
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
@@ -158,6 +159,7 @@ instance Pretty SLVal where
     SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_ParticipantConstructor p -> pretty p
+    SLV_Anybody -> "Anybody"
 
 instance Pretty SLParticipantType where
     pretty p =

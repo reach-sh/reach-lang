@@ -7,7 +7,6 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Bits
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
 import Data.Foldable
 import Data.IORef
 import Data.List (transpose, (\\))
@@ -367,6 +366,7 @@ base_env =
     , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ("Map", SLV_Prim SLPrim_Map)
+    , ("Anybody", SLV_Anybody)
     , ("Participant", SLV_Prim SLPrim_Participant)
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ( "Reach"
@@ -445,6 +445,7 @@ slToDL = \case
       Just dv -> yes $ DLAE_Arg $ DLA_Var dv
       Nothing -> no
   SLV_RaceParticipant {} -> no
+  SLV_Anybody -> no
   SLV_Prim {} -> no
   SLV_Form {} -> no
   SLV_Kwd {} -> no
@@ -774,14 +775,14 @@ evalObjEnv = mapM go
       at <- withAt id
       sls_sss at <$> getv
 
-evalAsEnvM :: SLVal -> Maybe SLObjEnv
-evalAsEnvM obj = case obj of
+evalAsEnv :: SLVal -> App SLObjEnv
+evalAsEnv obj = case obj of
   SLV_Object _ _ env ->
-    Just $ M.map (retV . sss_sls) env
+    return $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
-    Just $ retDLVar tm (DLA_Var obj_dv) Public
+    return $ retDLVar tm (DLA_Var obj_dv) Public
   SLV_Participant _ who vas _ ->
-    Just $
+    return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
         , ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing Nothing))
@@ -790,14 +791,17 @@ evalAsEnvM obj = case obj of
         ]
     where
       whos = S.singleton who
+  SLV_Anybody -> do
+    whos <- asks $ S.fromList . M.keys . e_ios
+    evalAsEnv (SLV_RaceParticipant srcloc_builtin whos)
   SLV_RaceParticipant _ whos ->
-    Just $
+    return $
       M.fromList
         [ ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing Nothing))
         , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing Nothing))
         ]
   SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen mtime) ->
-    Just $
+    return $
       M.fromList $
         gom "publish" TCM_Publish mpub
           <> gom "pay" TCM_Pay mpay
@@ -811,7 +815,7 @@ evalAsEnvM obj = case obj of
       go key mode =
         [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mwhen mtime))]
   SLV_Form (SLForm_fork_partial fat Nothing cases mtime) ->
-    Just $
+    return $
       M.fromList $
         go "case" FM_Case
           <> gom "timeout" FM_Timeout mtime
@@ -823,7 +827,7 @@ evalAsEnvM obj = case obj of
       go key mode =
         [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime))]
   SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime) ->
-    Just $
+    return $
       M.fromList $
         gom "invariant" PRM_Invariant pr_minv
           <> gom "while" PRM_While pr_mwhile
@@ -839,38 +843,38 @@ evalAsEnvM obj = case obj of
         [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime))]
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ ->
-    tupleValueEnv
+    return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
-    tupleValueEnv
+    return tupleValueEnv
   SLV_Prim SLPrim_Tuple ->
-    Just $
+    return $
       M.fromList
         [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length)
         ]
   SLV_Array {} ->
-    arrayValueEnv
+    return arrayValueEnv
   SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
-    arrayValueEnv
+    return arrayValueEnv
   SLV_Data {} ->
-    Just $
+    return $
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
   SLV_DLVar (DLVar _ _ (T_Data _) _) ->
-    Just $
+    return $
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
   SLV_Prim SLPrim_Participant ->
-    Just $
+    return $
       M.fromList
         [ ("set", retV $ public $ SLV_Prim SLPrim_part_set)]
   SLV_Prim SLPrim_Foldable ->
-    Just $
+    return $
       M.fromList foldableValueEnv
   SLV_Prim SLPrim_Array ->
-    Just $
+    return $
       M.fromList $
         [ ("empty", retStdLib "Array_empty")
         , ("findIndex", retStdLib "Array_findIndex")
@@ -885,54 +889,52 @@ evalAsEnvM obj = case obj of
         , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
         ] <> foldableValueEnv
   SLV_Prim SLPrim_Object ->
-    Just $
+    return $
       M.fromList
         [ ("set", retStdLib "Object_set")
         , ("setIfUnset", retStdLib "Object_setIfUnset")
         , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
         ]
   SLV_Type ST_UInt ->
-    Just $
+    return $
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
   SLV_Type (ST_Data varm) ->
-    Just $ flip M.mapWithKey varm $ \k t ->
+    return $ flip M.mapWithKey varm $ \k t ->
       retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t
   SLV_MapCtor t ->
-    Just $
+    return $
       M.fromList
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
   SLV_Prim SLPrim_Map ->
-    Just $
+    return $
       M.fromList $
         [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce) ] <> foldableValueEnv
   SLV_Map _ ->
-    Just $
+    return $
       M.fromList $
         [ ("reduce", delayCall SLPrim_MapReduce) ] <> foldableObjectEnv
-  _ -> Nothing
+  _ -> expect_t obj $ Err_Eval_NotObject
   where
     foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "length", "count"]
     foldableObjectEnv = map (\m -> (m, doStdlib $ "Foldable_" <> m <> "1")) foldableMethods
     foldableValueEnv = map (\m -> (m, retStdLib $ "Foldable_" <> m)) foldableMethods
     tupleValueEnv =
-      Just $
-        M.fromList
-          [ ("set", delayCall SLPrim_tuple_set)
-          , ("length", doCall SLPrim_tuple_length)
-          ]
+      M.fromList
+        [ ("set", delayCall SLPrim_tuple_set)
+        , ("length", doCall SLPrim_tuple_length)
+        ]
     arrayValueEnv =
-      Just $
-        M.fromList $
-          [ ("set", delayCall SLPrim_array_set)
-          , ("length", doCall SLPrim_array_length)
-          , ("concat", delayCall SLPrim_array_concat)
-          , ("indexOf", doStdlib "Array_indexOf1")
-          , ("findIndex", doStdlib "Array_findIndex1")
-          , ("map", delayCall SLPrim_array_map)
-          , ("reduce", delayCall SLPrim_array_reduce)
-          , ("zip", delayCall SLPrim_array_zip)
-          ] <> foldableObjectEnv
+      M.fromList $
+        [ ("set", delayCall SLPrim_array_set)
+        , ("length", doCall SLPrim_array_length)
+        , ("concat", delayCall SLPrim_array_concat)
+        , ("indexOf", doStdlib "Array_indexOf1")
+        , ("findIndex", doStdlib "Array_findIndex1")
+        , ("map", delayCall SLPrim_array_map)
+        , ("reduce", delayCall SLPrim_array_reduce)
+        , ("zip", delayCall SLPrim_array_zip)
+        ] <> foldableObjectEnv
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
@@ -956,11 +958,6 @@ evalAsEnvM obj = case obj of
     retV = return
     retStdLib :: SLVar -> App SLSVal
     retStdLib n = (retV . public) =<< lookStdlib n
-
-evalAsEnv :: SLVal -> App SLObjEnv
-evalAsEnv obj = case evalAsEnvM obj of
-  Nothing -> expect_t obj $ Err_Eval_NotObject
-  Just x -> return $ x
 
 evalDot_ :: SLVal -> SLObjEnv -> String -> App SLSVal
 evalDot_ obj env field = do
@@ -3018,12 +3015,9 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
           Just (mode, t_at, args) ->
             case (mode, args) of
               (PRM_TimeRemaining, [t_e]) -> do
-                ps <- asks $ M.keys . e_ios
-                let pids = map (jid . BC.unpack) ps
                 let semi = JSSemiAuto
-                let race = call (jid "race") pids
                 let dot o f = JSCallExpressionDot o ta f
-                let publish = dot race $ jid "publish"
+                let publish = dot (jid "Anybody") $ jid "publish"
                 let pubApp = call publish []
                 let noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
                 let bodys = [

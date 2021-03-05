@@ -58,7 +58,7 @@ export const main = Reach.App(
           })
         )
         .timeout(deadline, () => {
-          race(Buyer, Funder).publish();
+          Anybody.publish();
           return [ false, winner, ticketsSold ]; });
 
     // Whoever, buys last wins and receives balance

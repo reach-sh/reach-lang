@@ -55,7 +55,7 @@ export const main =
             return [ true, as, 1 + bs ]; })
         .timeout(deadline, () => {
           showOutcome(TIMEOUT)();
-          race(Alice, Bob).publish();
+          Anybody.publish();
           return [ false, as, bs ]; });
 
       const outcome = bs > as ? BOB_WINS : ALICE_WINS;

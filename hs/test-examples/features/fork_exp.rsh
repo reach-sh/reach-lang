@@ -66,10 +66,10 @@ export const main =
           const f_when = f_res.when;
           const f_pay = f_res.pay; });
 
-        race(Alice, Bob).publish(f_msg, f_pay).when(f_when).pay(f_pay)
+        Anybody.publish(f_msg, f_pay).when(f_when).pay(f_pay)
           .timeout(deadline, () => {
             showOutcome(TIMEOUT)();
-            race(Alice, Bob).publish();
+            Anybody.publish();
             keepGoing = false;
             continue; });
         require(f_msg.match({F_Alice: (() => this == Alice),

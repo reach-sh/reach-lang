@@ -54,7 +54,7 @@ export const main = Reach.App(
               Array.set(winners, idx, buyer);
             return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(deadline, () => {
-          race(Buyer, Funder).publish();
+          Anybody.publish();
           return [ false, winners, ticketsSold ]; });
 
     transfer(balance() % NUM_OF_WINNERS).to(Funder);

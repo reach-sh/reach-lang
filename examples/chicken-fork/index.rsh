@@ -59,7 +59,7 @@ export const main =
             continue; })
         .timeout(deadline, () => {
           showOutcome(TIMEOUT)();
-          race(Alice, Bob).publish();
+          Anybody.publish();
           keepGoing = false;
           continue; });
       }

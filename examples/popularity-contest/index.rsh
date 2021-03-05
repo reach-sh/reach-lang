@@ -50,7 +50,7 @@ export const main =
             const [ nA, nB ] = forAlice ? [ 1, 0 ] : [ 0, 1 ];
             return [ forA + nA, forB + nB ]; }))
         .timeout(timeRemaining(), () => {
-          race(Pollster, Voter).publish();
+          Anybody.publish();
           showOutcome(TIMEOUT, forA, forB)();
           return [ forA, forB ]; });
 

@@ -42,13 +42,13 @@ export const main =
 
           Alice.only(() => interact.showOpponent(Bob));
 
-          race(Alice, Bob).publish();
+          Anybody.publish();
           transfer(2 * wager).to(this);
           commit();
           exit();
         })
       .timeout(deadline, () => {
-        race(Alice, Bob).publish();
+        Anybody.publish();
         transfer(wager).to(this);
         commit();
         exit(); });
