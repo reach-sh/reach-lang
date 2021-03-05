@@ -1937,6 +1937,7 @@ while the regular conditional expression only evaluates one branch.
 }
 
 An @deftech{arrow expression}, written @reachin{(LHS_0, ..., LHS_n) => EXPR}, where @reachin{LHS_0} through @reachin{LHS_n} are left-hand sides and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values compatible with the respective left-hand side.
+Like @tech{function definition}s, @tech{arrow expression}s may use default argument notation.
 
 @subsubsection{@tt{makeEnum}}
 
