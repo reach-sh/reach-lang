@@ -123,6 +123,7 @@ data EvalError
   | Err_Eval_MustBeInWhileInvariant String
   | Err_Expected_Map SLValTy
   | Err_Prim_Foldable
+  | Err_Default_Arg_Position
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -467,6 +468,8 @@ instance Show EvalError where
       "Expected map, got: " <> show_sv v
     Err_Prim_Foldable ->
       "Instances of Foldable cannot be created. Did you mean to call a function provided by `Foldable`?"
+    Err_Default_Arg_Position ->
+      "Parameters with default arguments must come after all other function arguments."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

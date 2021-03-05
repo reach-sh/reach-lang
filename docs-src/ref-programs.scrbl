@@ -986,7 +986,18 @@ Those @tech{values} are available as their corresponding @tech{bound identifier}
   function randomBool() {
     return (interact.random() % 2) == 0; }; }
 
-A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the left-hand sides @reachin{LHS_0} through @reachin{LHS_n}.
+A @deftech{function definition}, written @reachin{function FUN(LHS_0, ..., LHS_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the left-hand sides @reachin{LHS_0} through @reachin{LHS_n}.
+
+Function parameters may specify default arguments. The expressions used to instantiate these parameters
+have access to any variables in the scope of which the function was defined. Additionally, these expressions
+may reference previous arguments of the @tech{function definition}.
+Parameters with default arguments must come after all other parameters.
+
+@reach{
+  function f(a, b, c = a + 1, d = b + c) =>
+    a + b + c + d;
+}
+
 
 @(hrule)
 
@@ -1917,6 +1928,8 @@ while the regular conditional expression only evaluates one branch.
            return y + 1; })
  ((x, y) => { assert(x + y == 3); })(1, 2);
  ((x, y) => { assert(x + y == 3); })(...[1, 2]);
+ ((x, y = 2) => { assert(x + y == 3); })(1);
+ ((x, y = 2) => { assert(x + y == 2); })(1, 1);
  (([x, y]) => { assert(x + y == 3); })([1, 2]);
  (({x, y}) => { assert(x + y == 3); })({x: 1, y: 2});
  (([x, [y]]) => { assert(x + y == 3); })([1,[2]]);
