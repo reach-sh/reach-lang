@@ -995,7 +995,7 @@ Parameters with default arguments must come after all other parameters.
 
 @reach{
   function f(a, b, c = a + 1, d = b + c) =>
-    a + b + c + c;
+    a + b + c + d;
 }
 
 
