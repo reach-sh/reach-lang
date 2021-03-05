@@ -296,11 +296,11 @@ be_m = \case
           return $ (,) mv <$> k'
     csm' <- mapM go csm
     return $ (DL_LocalSwitch at ov <$> mapM id csm')
-  DL_MapReduce at ans x z b a f -> do
+  DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ z
     f' <- be_bl f
-    return $ DL_MapReduce at ans x z b a <$> f'
+    return $ DL_MapReduce at mri ans x z b a <$> f'
 
 be_t :: LLTail -> BApp (CApp PILTail)
 be_t = \case

@@ -242,7 +242,7 @@ kgq_m ctxt = \case
       cm1 (mov', l) =
         kgq_a_onlym ctxt mov' oa
           >> kgq_l ctxt' l
-  DL_MapReduce _ ans x z b a (DLinBlock _ _ f r) ->
+  DL_MapReduce _ _ ans x z b a (DLinBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r

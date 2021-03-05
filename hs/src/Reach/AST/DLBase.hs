@@ -439,7 +439,7 @@ data DLinStmt a
   | DL_Set SrcLoc DLVar DLArg
   | DL_LocalIf SrcLoc DLArg (DLinTail a) (DLinTail a)
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases (DLinTail a))
-  | DL_MapReduce SrcLoc DLVar DLMVar DLArg DLVar DLVar (DLinBlock a)
+  | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar (DLinBlock a)
   deriving (Eq)
 
 instance Pretty a => Pretty (DLinStmt a) where
@@ -452,7 +452,7 @@ instance Pretty a => Pretty (DLinStmt a) where
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalIf _at ca t f -> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> prettySwitch ov csm
-    DL_MapReduce _ ans x z b a f -> prettyReduce ans x z b a f
+    DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
 
 mkCom :: (DLinStmt a -> k -> k) -> DLinStmt a -> k -> k
 mkCom mk m k =

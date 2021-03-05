@@ -104,13 +104,13 @@ instance {-# OVERLAPS #-} Freshen LLCommon where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_ArrayReduce at ans' x' z' b' a' fb'
-    DL_MapReduce at ans x z b a fb -> do
+    DL_MapReduce at mri ans x z b a fb -> do
       ans' <- fu_v ans
       z' <- fu z
       b' <- fu_v b
       a' <- fu_v a
       fb' <- fu fb
-      return $ DL_MapReduce at ans' x z' b' a' fb'
+      return $ DL_MapReduce at mri ans' x z' b' a' fb'
 
 instance {-# OVERLAPS #-} Freshen LLTail where
   fu = \case

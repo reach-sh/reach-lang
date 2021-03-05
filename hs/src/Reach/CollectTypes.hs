@@ -107,7 +107,7 @@ instance CollectsTypes a => CollectsTypes (DLinStmt a) where
   cts (DL_Set _ v a) = cts v <> cts a
   cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
-  cts (DL_MapReduce _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
+  cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
 
 instance CollectsTypes a => CollectsTypes (DLinTail a) where
   cts (DT_Return _) = mempty

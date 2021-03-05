@@ -240,8 +240,8 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
       DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
     DL_ArrayReduce at ans x z b a f -> do
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
-    DL_MapReduce at ans x z b a f -> do
-      DL_MapReduce at ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
+    DL_MapReduce at mri ans x z b a f -> do
+      DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
   opt = \case

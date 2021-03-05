@@ -73,8 +73,8 @@ instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
     DL_Set at v a -> DL_Set at v <$> subst a
     DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
     DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
-    DL_MapReduce at x a b u v bl ->
-      DL_MapReduce at x a <$> subst b <*> pure u <*> pure v <*> subst bl
+    DL_MapReduce at mri x a b u v bl ->
+      DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
 
 instance {-# OVERLAPPING #-} Subst (DLinTail a) where
   subst = \case

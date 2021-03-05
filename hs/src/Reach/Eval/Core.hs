@@ -1955,7 +1955,8 @@ evalPrim p sargs =
           return $ f_da
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
       let f_bl = DLBlock at [] f_lifts f_da
-      saveLift $ DLS_MapReduce at ans_dv mv z_da b_dv ma_dv f_bl
+      mri <- ctxt_alloc
+      saveLift $ DLS_MapReduce at mri ans_dv mv z_da b_dv ma_dv f_bl
       return $ (lvl, ans_dsv)
     SLPrim_Refine -> do
       at <- withAt id

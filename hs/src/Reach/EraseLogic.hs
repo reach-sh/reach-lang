@@ -72,10 +72,10 @@ instance Erase LLCommon where
     DL_Set at dv da -> DL_Set at <$> el dv <*> el da
     DL_LocalIf at c t f -> DL_LocalIf at <$> el c <*> el t <*> el f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> el ov <*> el csm
-    DL_MapReduce at ans x z b a f ->
+    DL_MapReduce at mri ans x z b a f ->
       isUsed (Just ans) >>= \case
         False -> skip at
-        True -> DL_MapReduce at ans x <$> el z <*> pure b <*> pure a <*> el f
+        True -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> el f
     where
       skip at = return $ DL_Nop at
 

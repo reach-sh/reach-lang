@@ -63,7 +63,7 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  | DLS_MapReduce SrcLoc DLVar DLMVar DLArg DLVar DLVar DLBlock
+  | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
   deriving (Eq, Generic)
 
 instance Pretty DLStmt where
@@ -107,7 +107,7 @@ instance Pretty DLStmt where
         "fluid" <+> pretty fv <+> ":=" <+> pretty da
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
-      DLS_MapReduce _ ans x z b a f -> prettyReduce ans x z b a f
+      DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
     where
       ns x = render_nest $ render_dls x
 
@@ -131,7 +131,7 @@ instance SrcLocOf DLStmt where
     DLS_Continue a _ -> a
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
-    DLS_MapReduce a _ _ _ _ _ _ -> a
+    DLS_MapReduce a _ _ _ _ _ _ _ -> a
 
 instance IsPure DLStmt where
   isPure = \case

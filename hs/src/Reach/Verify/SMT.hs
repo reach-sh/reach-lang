@@ -10,8 +10,8 @@ import Data.Foldable
 import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
-import qualified Data.Map as M
-import Data.Maybe (maybeToList, fromMaybe)
+import qualified Data.Map.Strict as M
+import Data.Maybe (fromMaybe, catMaybes, listToMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -169,22 +169,14 @@ data SMTMapInfo = SMTMapInfo
   , sm_us :: IORef [SMTMapRecordUpdate] }
 
 data SMTMapRecordReduce
-  = SMR_Reduce
-    { smrr_ans :: DLVar
-    , smrr_z :: DLArg
-    , smrr_b :: DLVar
-    , smrr_a :: DLVar
-    , smrr_f :: LLBlock }
+  = SMR_Reduce Int DLVar DLArg DLVar DLVar LLBlock
 
 instance Pretty SMTMapRecordReduce where
-  pretty (SMR_Reduce ans z b a f) =
+  pretty (SMR_Reduce _mri ans z b a f) =
     prettyReduce ans ("map"::String) z b a f
 
 data SMTMapRecordUpdate
-  = SMR_Update
-    { smru_ma :: SExpr
-    , smru_fa' :: SExpr
-    , smru_na' :: SExpr}
+  = SMR_Update SExpr SExpr SExpr
 
 instance Pretty SMTMapRecordUpdate where
   pretty (SMR_Update ma fa' na') =
@@ -200,8 +192,6 @@ data SMTCtxt = SMTCtxt
   , ctxt_path_constraint :: [SExpr]
   , ctxt_bindingsr :: IORef BindingEnv
   , ctxt_while_invariant :: Maybe LLBlock
-  , ctxt_loop_var_subst :: M.Map DLVar DLArg
-  , ctxt_primed_vars :: S.Set DLVar
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
@@ -264,22 +254,15 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
-getVarName :: Bool -> S.Set DLVar -> DLVar -> String
-getVarName usemp pvs dv@(DLVar _ _ _ i) =
-  let mp = if dv `elem` pvs then "p" else "" in
-  let mmp = if usemp then mp else "" in
-  "v" ++ show i ++ mmp
+getVarName :: DLVar -> String
+getVarName (DLVar _ _ _ i) = "v" ++ show i
 
-smtVar_ :: Bool -> DLVar -> App String
-smtVar_ usemp dv = do
-  pvs <- ctxt_primed_vars <$> ask
-  let name = getVarName usemp pvs dv
+smtVar :: DLVar -> App String
+smtVar dv = do
+  let name = getVarName dv
   v2dv <- ctxt_v_to_dv <$> ask
   liftIO $ modifyIORef v2dv $ M.insertWith (<>) name [dv]
   return $ name
-
-smtVar :: DLVar -> App String
-smtVar = smtVar_ True
 
 smtTypeSort :: DLType -> App String
 smtTypeSort t = do
@@ -418,8 +401,8 @@ set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
 
 -- Log every occurence of dlvars so we know what is used how many times
-dlvOccurs :: S.Set DLVar -> [String] -> BindingEnv -> DLExpr -> [String]
-dlvOccurs pvs env bindings de =
+dlvOccurs ::[String] -> BindingEnv -> DLExpr -> [String]
+dlvOccurs env bindings de =
   case de of
     DLE_Arg _ (DLA_Var dv) ->
       case v `List.elem` env of
@@ -428,11 +411,11 @@ dlvOccurs pvs env bindings de =
         -- Otherwise, expand and mark all sub expressions
         False ->
           case v `M.lookup` bindings of
-            Just (_, _, _, _, Just e) -> dlvOccurs pvs env' bindings e
+            Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
             _ -> env'
       where
         env' = v  : env
-        v = getVarName True pvs dv
+        v = getVarName dv
     DLE_Arg {} -> env
     DLE_LArg at (DLLA_Array _ as) -> _recs at as
     DLE_LArg at (DLLA_Tuple as) -> _recs at as
@@ -456,11 +439,11 @@ dlvOccurs pvs env bindings de =
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
   where
-    _recs at as = foldr (\a acc -> dlvOccurs pvs acc bindings $ DLE_Arg at a) env as
-    _rec at a = dlvOccurs pvs env bindings $ DLE_Arg at a
+    _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
+    _rec at a = dlvOccurs env bindings $ DLE_Arg at a
 
-displayDLAsJs :: S.Set DLVar -> M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
-displayDLAsJs pvs v2dv inlineCtxt nested = \case
+displayDLAsJs :: M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
+displayDLAsJs v2dv inlineCtxt nested = \case
     DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
     DLE_Arg _ a -> sub a
     DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
@@ -502,9 +485,9 @@ displayDLAsJs pvs v2dv inlineCtxt nested = \case
     paren e = "(" <> e <> ")"
     bracket e = "[" <> e <> "]"
     sub (DLA_Var v) =
-      case getVarName True pvs v `List.lookup` inlineCtxt of
+      case getVarName v `List.lookup` inlineCtxt of
         Nothing -> show v
-        Just (Right de) -> displayDLAsJs pvs v2dv inlineCtxt True de
+        Just (Right de) -> displayDLAsJs v2dv inlineCtxt True de
         Just (Left s) -> s
     sub e = ps e
 
@@ -535,17 +518,16 @@ getBindingOrigin v v2dv =
 
 subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> App String
 subAllVars bindings tk pm (Atom ai) = do
-  pvs <- asks ctxt_primed_vars
   v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
   case ai `M.lookup` bindings of
     Just (_, _, _, _, Just de) -> do
-      let env = dlvOccurs pvs [] bindings de
+      let env = dlvOccurs [] bindings de
       let sortedEnv = List.group $ List.sort env
       -- Get variable/values to inline. Inline a DLExpr if available,
       -- or fallback to s-exp Atom value
       let inlineVars = List.foldr canInline [] sortedEnv
       let inlines = map (getInlineValue v2dv) inlineVars
-      let toJs = displayDLAsJs pvs v2dv inlines False
+      let toJs = displayDLAsJs v2dv inlines False
       -- Get let assignments
       let assignVars = List.foldr canAssign [] sortedEnv
       let assigns =
@@ -881,16 +863,25 @@ smtMapReviewRecordRef at x fse res = do
   rs <- smtMapReviewRecord x sm_rs
   res' <- smt_v at res
   add_us_constraints $
-    forM_ rs $ \(SMR_Reduce ans _ b a f) -> do
+    forM_ rs $ \(SMR_Reduce _ ans _ b a f) -> do
       ans' <- smt_v at ans
       (_, a', f') <- smtMapReduceApply at b a f
       smtAssertCtxt $ smtEq a' res'
       fres' <- f'
       smtAssertCtxt $ smtEq ans' fres'
 
-smtMapReviewRecordReduce :: SrcLoc -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> LLBlock -> App ()
-smtMapReviewRecordReduce at ans x z b a f = do
-  us <- smtMapReviewRecord x sm_us
+smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> LLBlock -> App ()
+smtMapReviewRecordReduce at mri ans x z b a f = do
+  rs <- smtMapReviewRecord x sm_rs
+  let look (SMR_Reduce mri' ans' _ _ _ _) =
+        if mri == mri' then Just ans' else Nothing
+  let firstJusts = listToMaybe . catMaybes
+  z' <-
+    case firstJusts $ map look rs of
+      Just oldAns ->
+        Atom <$> smtVar oldAns
+      Nothing ->
+        smt_a at z
   -- We go through each one of the updates and inline the computation of the
   -- reduction function back to the last known value, which is either z in the
   -- beginning or the last value
@@ -898,29 +889,18 @@ smtMapReviewRecordReduce at ans x z b a f = do
   -- NOTE: A question remains: what if we have two loops in a row that use
   -- different reductions? How will we be able to relate one to the next? I
   -- don't know and don't have a test case right now.
-  let go (SMR_Update ma fa' na') z' = do
+  let go (SMR_Update ma fa' na') z'0 = do
         (b'0, a'0, f'0) <- smtMapReduceApply at b a f
         smtAssertCtxt $ smtEq a'0 $ smtApply "select" [ ma, fa' ]
         fres'0 <- f'0
-        smtAssertCtxt $ smtEq fres'0 z'
+        smtAssertCtxt $ smtEq fres'0 z'0
         -- n f( Z0, m[fa] ) = z'
         -- u f( Z0, na' ) = z''
         (b'1, a'1, f'1) <- smtMapReduceApply at b a f
         smtAssertCtxt $ smtEq b'1 b'0
         smtAssertCtxt $ smtEq a'1 na'
         f'1
-  pvars <- ctxt_primed_vars <$> ask
-  z' <-
-    case ans `elem` pvars of
-      True ->
-        -- We are primed, therefore, we are proving an invariant after the
-        -- first round, so we need to review the changes after the last summary
-        Atom <$> smtVar_ False ans
-      False ->
-        -- We are proving the invariant at the start of a loop, so ignore the
-        -- last value
-        smt_a at z
-  z'' <- foldrM go z' us
+  z'' <- foldrM go z' =<< smtMapReviewRecord x sm_us
   ans' <- smt_v at ans
   smtAssertCtxt $ smtEq ans' z''
 
@@ -944,15 +924,7 @@ smt_lt _at_de dc =
       smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_v :: SrcLoc -> DLVar -> App SExpr
-smt_v at_de dv = do
-  lvars <- ctxt_loop_var_subst <$> ask
-  case M.lookup dv lvars of
-    Nothing ->
-      Atom <$> smtVar dv
-    Just da' ->
-      local (\e -> e { ctxt_loop_var_subst = mempty
-                     , ctxt_primed_vars = mempty }) $
-        smt_a at_de da'
+smt_v _at_de dv = Atom <$> smtVar dv
 
 smt_a :: SrcLoc -> DLArg -> App SExpr
 smt_a at_de = \case
@@ -976,70 +948,25 @@ smt_la at_de dla = do
       vv' <- smt_a at_de vv
       return $ smtApply (s ++ "_" ++ vn) [vv']
 
-sub_loop_vars_a :: M.Map DLVar DLArg -> DLArg -> DLArg
-sub_loop_vars_a lvars (DLA_Var v) = do
-  fromMaybe (DLA_Var v) $ v `M.lookup` lvars
-sub_loop_vars_a _ ow = ow
-
-sub_loop_vars_dla :: M.Map DLVar DLArg -> DLLargeArg -> DLLargeArg
-sub_loop_vars_dla lvars dla =
-  case dla of
-    DLLA_Array at as -> DLLA_Array at $ map sub as
-    DLLA_Tuple as -> DLLA_Tuple $ map sub as
-    DLLA_Obj m -> DLLA_Obj $ M.map sub m
-    DLLA_Data env vn vv -> DLLA_Data env vn $ sub vv
-  where
-    sub = sub_loop_vars_a lvars
-
-sub_loop_vars_de :: DLExpr -> App DLExpr
-sub_loop_vars_de de = do
-  lvars <- asks ctxt_loop_var_subst
-  let sub = sub_loop_vars_a lvars
-  return $ case de of
-    DLE_Arg at da -> DLE_Arg at $ sub da
-    DLE_LArg at dla -> DLE_LArg at $ sub_loop_vars_dla lvars dla
-    DLE_Impossible {} -> de
-    DLE_PrimOp at cp args -> DLE_PrimOp at cp $ map sub args
-    DLE_ArrayRef at arr_da idx_da ->
-      DLE_ArrayRef at (sub arr_da) (sub idx_da)
-    DLE_ArraySet at arr_da idx_da val_da ->
-      DLE_ArraySet at (sub arr_da) (sub idx_da) (sub val_da)
-    DLE_ArrayConcat {} -> de
-    DLE_ArrayZip {} -> de
-    DLE_TupleRef at arr_da i -> DLE_TupleRef at (sub arr_da) i
-    DLE_ObjectRef at obj_da f -> DLE_ObjectRef at (sub obj_da) f
-    DLE_Interact {} -> de
-    DLE_Digest at args -> DLE_Digest at (map sub args)
-    DLE_Claim at f ct ca mmsg -> DLE_Claim at f ct (sub ca) mmsg
-    DLE_Transfer {} -> de
-    DLE_Wait {} -> de
-    DLE_PartSet at who a -> DLE_PartSet at who (sub a)
-    DLE_MapRef at mpv fa -> DLE_MapRef at mpv (sub fa)
-    DLE_MapSet at mpv fa na -> DLE_MapSet at mpv (sub fa) (sub na)
-    DLE_MapDel at mpv fa -> DLE_MapDel at mpv (sub fa)
-
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e at_dv mdv de = do
-  -- We could change `ctxt_loop_var_subst` to `Map DLVar DLVar`
-  -- by having jumps create new fresh variables then re-use `Subst` here
-  de' <- sub_loop_vars_de de
   case de of
-    DLE_Arg at da -> bound at de' =<< smt_a at da
-    DLE_LArg at dla -> bound at de' =<< smt_la at dla
+    DLE_Arg at da -> bound at =<< smt_a at da
+    DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible _ _ ->
       pathAddUnbound at_dv mdv bo
     DLE_PrimOp at cp args -> do
       args' <- mapM (smt_a at) args
-      bound at de' =<< smtPrimOp cp args args'
+      bound at =<< smtPrimOp cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
-      bound at de' $ smtApply "select" [arr_da', idx_da']
+      bound at $ smtApply "select" [arr_da', idx_da']
     DLE_ArraySet at arr_da idx_da val_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
       val_da' <- smt_a at val_da
-      bound at de' $ smtApply "store" [arr_da', idx_da', val_da']
+      bound at $ smtApply "store" [arr_da', idx_da', val_da']
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
@@ -1050,17 +977,17 @@ smt_e at_dv mdv de = do
       let t = argTypeOf arr_da
       s <- smtTypeSort t
       arr_da' <- smt_a at arr_da
-      bound at de' $ smtApply (s ++ "_elem" ++ show i) [arr_da']
+      bound at $ smtApply (s ++ "_elem" ++ show i) [arr_da']
     DLE_ObjectRef at obj_da f -> do
       let t = argTypeOf obj_da
       s <- smtTypeSort t
       obj_da' <- smt_a at obj_da
-      bound at de' $ smtApply (s ++ "_" ++ f) [obj_da']
+      bound at $ smtApply (s ++ "_" ++ f) [obj_da']
     DLE_Interact at _ _ _ _ _ ->
       pathAddUnbound at mdv bo
     DLE_Digest at args -> do
       args' <- smtDigestCombine at args
-      bound at de' $ smtApply "digest" [args']
+      bound at $ smtApply "digest" [args']
     DLE_Claim at f ct ca mmsg -> do
       ca' <- smt_a at ca
       let check_m = verify1 at f (TClaim ct) ca' mmsg
@@ -1078,7 +1005,7 @@ smt_e at_dv mdv de = do
     DLE_Wait {} ->
       mempty
     DLE_PartSet at who a -> do
-      bound at de' =<< smt_a at a
+      bound at =<< smt_a at a
       sim <- shouldSimulate who
       case (mdv, sim) of
         (Just psv, True) -> do
@@ -1089,7 +1016,7 @@ smt_e at_dv mdv de = do
     DLE_MapRef at mpv fa -> do
       ma <- smtMapLookup mpv
       fa' <- smt_a at fa
-      bound at de' $ smtApply "select" [ ma, fa' ]
+      bound at $ smtApply "select" [ ma, fa' ]
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa na ->
       smtMapUpdate at mpv fa $ Just na
@@ -1097,7 +1024,7 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Nothing
   where
     bo = O_Expr de
-    bound at nde = pathAddBound at mdv bo (Just nde)
+    bound at = pathAddBound at mdv bo (Just de)
 
 data SwitchMode
   = SM_Local
@@ -1167,13 +1094,13 @@ smt_m = \case
     with_t (smt_l t) <> with_f (smt_l f)
   DL_LocalSwitch at ov csm ->
     smtSwitch SM_Local at ov csm smt_l
-  DL_MapReduce at ans x z b a f -> do
+  DL_MapReduce at mri ans x z b a f -> do
     pathAddUnbound at (Just ans) O_ReduceVar
     (ctxt_inv_mode <$> ask) >>= \case
       B_Assume _ -> do
-        smtMapRecordReduce x $ SMR_Reduce ans z b a f
+        smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
       B_Prove _ ->
-        smtMapReviewRecordReduce at ans x z b a f
+        smtMapReviewRecordReduce at mri ans x z b a f
       _ -> impossible $ "Map.reduce outside invariant"
 
 smt_l :: LLTail -> SMTComp
@@ -1207,40 +1134,28 @@ smt_invblock bm b@(DLinBlock at f _ _) = do
     B_Prove inCont -> verify1 at f (TInvariant inCont) da' Nothing
     B_None -> mempty
 
-gatherDefinedVars_m :: LLCommon -> S.Set DLVar
-gatherDefinedVars_m = \case
-  DL_Nop _ -> mempty
-  DL_Let _ mdv _ -> maybe mempty S.singleton mdv
-  DL_ArrayMap {} -> impossible "Array.map"
-  DL_ArrayReduce {} -> impossible "Array.reduce"
-  DL_Var _ dv -> S.singleton dv
-  DL_Set {} -> mempty
-  DL_LocalIf _ _ t f -> gatherDefinedVars_l t <> gatherDefinedVars_l f
-  DL_LocalSwitch _ _ csm -> mconcatMap cm1 (M.toList csm)
-    where
-      cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
-  DL_MapReduce _ ans _ _ _ _ _ -> S.singleton ans
-
-gatherDefinedVars_l :: LLTail -> S.Set DLVar
-gatherDefinedVars_l = \case
-  DT_Return _ -> mempty
-  DT_Com c k -> gatherDefinedVars_m c <> gatherDefinedVars_l k
-
-gatherDefinedVars :: LLBlock -> S.Set DLVar
-gatherDefinedVars (DLinBlock _ _ l _) = gatherDefinedVars_l l
-
 smt_while_jump :: Bool -> DLAssignment -> SMTComp
 smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
   inv <- (ctxt_while_invariant <$> ask) >>= \case
       Just x -> return $ x
       Nothing -> impossible "asn outside loop"
-  let pvars = case vars_are_primed of
-        True -> gatherDefinedVars inv
-        False -> mempty
-  local (\e -> e { ctxt_loop_var_subst = asnm
-                 , ctxt_primed_vars = pvars }) $
-    smt_invblock (B_Prove vars_are_primed) inv
+  let add_asn_lets m (DLinBlock at fs t ra) =
+        DLinBlock at fs t' ra
+          where
+            go (v, a) t_ = DT_Com (DL_Let at (Just v) (DLE_Arg at a)) t_
+            t' = foldr go t $ M.toList m
+  inv' <-
+    case vars_are_primed of
+      False -> return $ add_asn_lets asnm inv
+      True -> do
+        let lvars = M.keys asnm
+        (inv_f, nlvars) <- smt_freshen inv lvars
+        let rho = M.fromList $ zip nlvars lvars
+        let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
+        let asnm' = mapCompose asnm rho
+        return $ add_asn_lets asnm' inv_f
+  smt_invblock (B_Prove vars_are_primed) inv'
 
 smt_asn_def :: SrcLoc -> DLAssignment -> SMTComp
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1511,8 +1426,6 @@ _verify_smt mc ctxt_vst smt lp = do
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
   let ctxt_addrs = M.mapWithKey (\p _ -> DLVar at (Just (at, bunpack p)) T_Address 0) pies_m
-  let ctxt_primed_vars = mempty
-  let ctxt_loop_var_subst = mempty
   let ctxt_while_invariant = Nothing
   let ctxt_inv_mode = B_None
   let ctxt_path_constraint = []

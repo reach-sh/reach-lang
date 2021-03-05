@@ -54,8 +54,8 @@ dkc = \case
     DKC_LocalSwitch at dv <$> mapM cm1 cm
     where
       cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
-  DLS_MapReduce at ans x z b a f ->
-    DKC_MapReduce at ans x z b a <$> dk_block at f
+  DLS_MapReduce at mri ans x z b a f ->
+    DKC_MapReduce at mri ans x z b a <$> dk_block at f
   DLS_FluidSet at fv a ->
     return $ DKC_FluidSet at fv a
   DLS_FluidRef at v fv ->
@@ -194,7 +194,7 @@ instance CanLift DKCommon where
     DKC_Set {} -> True
     DKC_LocalIf _ _ t f -> canLift t && canLift f
     DKC_LocalSwitch _ _ csm -> canLift csm
-    DKC_MapReduce _ _ _ _ _ _ f -> canLift f
+    DKC_MapReduce _ _ _ _ _ _ _ f -> canLift f
     DKC_FluidSet {} -> True
     DKC_FluidRef {} -> True
 
@@ -337,7 +337,7 @@ df_com mkk back = \case
         DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
           where go (c, y) = (,) c <$> df_t y
-        DKC_MapReduce a b c d e f x -> DL_MapReduce a b c d e f <$> df_bl x
+        DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
         _ -> impossible "df_com"
     mkk m' <$> back k
   t -> impossible $ show $ "df_com " <> pretty t

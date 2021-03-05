@@ -612,7 +612,7 @@ manyVars_m = \case
     s_inserts [ans, a] (manyVars_bl f)
   DL_ArrayReduce _ ans _ _ b a f ->
     s_inserts [ans, b, a] (manyVars_bl f)
-  DL_MapReduce _ ans _ _ b a f ->
+  DL_MapReduce _ _ ans _ _ b a f ->
     s_inserts [ans, b, a] (manyVars_bl f)
   where
     s_inserts l = S.union (S.fromList l)
