@@ -1633,7 +1633,7 @@ Furthermore, MetaMask does not support multiple active accounts, so if you want 
 The code in this section does not use the scaffolding from the previous section.
 Reach comes with a convenience command for deleting scaffolded files:
 
-@cmd{reach unscaffold}
+@cmd{./reach unscaffold}
 
 Similarly, you do not need the previous @tt{index.mjs} file, because we'll be writing it completely from scratch to use React.
 You can run the following command to delete it:
