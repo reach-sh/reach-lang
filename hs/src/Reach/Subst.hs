@@ -1,7 +1,8 @@
 module Reach.Subst
   ( subst_
   , Subst
-  ) where
+  )
+where
 
 import Control.Monad.Identity
 import Control.Monad.Reader

@@ -1,13 +1,14 @@
 module Reach.AddCounts (add_counts) where
 
-import Reach.AST.PL
 import Control.Monad.Reader
 import Data.IORef
 import Reach.AST.DLBase
+import Reach.AST.PL
 import Reach.CollectCounts
 
 data Env = Env
-  { e_cs :: IORef Counts }
+  {e_cs :: IORef Counts}
+
 type App = ReaderT Env IO
 
 ac_visit :: Countable a => a -> App ()

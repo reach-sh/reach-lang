@@ -191,9 +191,9 @@ showStateDiff x y =
       y
       st_pdvs
       (\xParts yParts ->
-        let showParts = intercalate ", " . map (show . fst) . M.toList in
-        "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
-            <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
+         let showParts = intercalate ", " . map (show . fst) . M.toList
+          in "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
+               <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
@@ -210,7 +210,7 @@ instance ErrorMessageForJson EvalError where
 
 getIllegalModeSuggestion :: SLMode -> [SLMode] -> String
 getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expected mode"
-getIllegalModeSuggestion mode (m:_) = get (mode, m)
+getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     isConsensusStep = \case
       SLM_ConsensusStep -> True
@@ -319,7 +319,9 @@ instance Show EvalError where
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
-        <> ". You must " <> getIllegalModeSuggestion mode ok_modes <> " first."
+        <> ". You must "
+        <> getIllegalModeSuggestion mode ok_modes
+        <> " first."
     Err_LValue_IllegalJS e ->
       "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->
@@ -480,8 +482,9 @@ data Deprecation
 instance Show Deprecation where
   show = \case
     Deprecated_ParticipantTuples at ->
-      "Declaring Participants with a tuple is now deprecated. " <>
-      "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at " <> show at
+      "Declaring Participants with a tuple is now deprecated. "
+        <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at "
+        <> show at
 
 deprecated_warning :: Deprecation -> IO ()
 deprecated_warning d =

@@ -21,6 +21,7 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.AddCounts
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.Counter
@@ -33,7 +34,6 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
-import Reach.AddCounts
 
 --- Debugging tools
 
@@ -913,12 +913,13 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
   let map_defn (mpv, DLMapInfo {..}) =
         vsep $
           [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> solMapVar mpv <> semi
-          , ref_defn ]
+          , ref_defn
+          ]
         where
           keyTy = "address"
           mt = maybeT dlmi_ty
           valTy = solType ctxt mt
-          args = [ solDecl "addr" keyTy ]
+          args = [solDecl "addr" keyTy]
           ret = "internal returns (" <> valTy <> " memory res)"
           ref = (solArrayRef (solMapVar mpv) "addr")
           do_none = solLargeArg' ctxt "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
@@ -927,8 +928,8 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
           ref_defn = solFunction (solMapRef mpv) args ret body
   let state_defn =
         vsep_with_blank $
-          [ "uint256 current_state;" ]
-          <> map map_defn (M.toList dli_maps)
+          ["uint256 current_state;"]
+            <> map map_defn (M.toList dli_maps)
   let ctcbody =
         vsep_with_blank $
           [ state_defn

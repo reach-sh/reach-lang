@@ -22,12 +22,12 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.AddCounts
 import Reach.Connector
+import Reach.DeJump
+import Reach.Optimize
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
-import Reach.Optimize
-import Reach.DeJump
-import Reach.AddCounts
 import Reach.Util
 import Safe (atMay)
 import Text.Read

@@ -35,11 +35,15 @@ instance Pretty PLVar where
 type PILVar = Maybe DLVar
 
 type PLCommon = DLinStmt PLVar
+
 type PLTail = DLinTail PLVar
+
 type PLBlock = DLinBlock PLVar
 
 type PILCommon = DLinStmt PILVar
+
 type PILTail = DLinTail PILVar
+
 type PILBlock = DLinBlock PILVar
 
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
@@ -80,6 +84,7 @@ data ETail_ a
   deriving (Eq)
 
 type ETail = ETail_ PLVar
+
 type EITail = ETail_ PILVar
 
 instance Pretty a => Pretty (ETail_ a) where
@@ -101,26 +106,37 @@ instance Pretty a => Pretty (ETail_ a) where
       ET_ToConsensus _ fs prev last_timev which msend msg amtv timev mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
-          recvp = "recv" <> parens (render_obj $ M.fromList $
-            [ ("from"::String, pretty fs)
-            , ("prev", pretty prev)
-            , ("last_time", pretty last_timev)
-            , ("which", pretty which)
-            , ("msg", (cm $ map pretty msg))
-            , ("amtv", pretty amtv)
-            , ("timev", pretty timev) ]) <> hardline
+          recvp =
+            "recv"
+              <> parens
+                (render_obj $
+                   M.fromList $
+                     [ ("from" :: String, pretty fs)
+                     , ("prev", pretty prev)
+                     , ("last_time", pretty last_timev)
+                     , ("which", pretty which)
+                     , ("msg", (cm $ map pretty msg))
+                     , ("amtv", pretty amtv)
+                     , ("timev", pretty timev)
+                     ])
+              <> hardline
           kp = ns $ pretty k
           msendp =
             case msend of
               Nothing -> mempty
               Just (as, amt, whena, saved, soloSend) ->
-                "send" <> parens (render_obj $ M.fromList $
-                  [ ("which"::String, pretty which)
-                  , ("as", cm $ map pretty as)
-                  , ("amt", pretty amt)
-                  , ("when", pretty whena)
-                  , ("saved", cm $ map pretty saved)
-                  , ("soloSend", pretty soloSend) ]) <> hardline
+                "send"
+                  <> parens
+                    (render_obj $
+                       M.fromList $
+                         [ ("which" :: String, pretty which)
+                         , ("as", cm $ map pretty as)
+                         , ("amt", pretty amt)
+                         , ("when", pretty whena)
+                         , ("saved", cm $ map pretty saved)
+                         , ("soloSend", pretty soloSend)
+                         ])
+                  <> hardline
           mtimep =
             case mtime of
               Nothing -> mempty
@@ -140,6 +156,7 @@ data EPProg_ a
   deriving (Eq)
 
 type EPProg = EPProg_ PLVar
+
 type EIProg = EPProg_ PILVar
 
 instance Pretty a => Pretty (EPProg_ a) where
@@ -167,6 +184,7 @@ instance Pretty a => Pretty (CTail_ a) where
       args = pretty which <+> pretty vars <+> pretty assignment
 
 type CTail = CTail_ PLVar
+
 type CITail = CTail_ PILVar
 
 data CInterval a
@@ -200,6 +218,7 @@ data CHandler_ a
   deriving (Eq)
 
 type CHandler = CHandler_ PLVar
+
 type CIHandler = CHandler_ PILVar
 
 instance Pretty a => Pretty (CHandler_ a) where
@@ -230,6 +249,7 @@ newtype CHandlers_ a = CHandlers (M.Map Int (CHandler_ a))
   deriving newtype (Monoid, Semigroup)
 
 type CHandlers = CHandlers_ PLVar
+
 type CIHandlers = CHandlers_ PILVar
 
 instance Pretty a => Pretty (CHandlers_ a) where
@@ -262,6 +282,7 @@ data PLinProg a
   deriving (Eq)
 
 type PLProg = PLinProg PLVar
+
 type PIProg = PLinProg PILVar
 
 instance Pretty a => Pretty (PLinProg a) where

@@ -142,7 +142,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
             evalStmt top_ss
   flip when doExit =<< readSt st_live
   let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
-  return $ \ dli_maps final ->
+  return $ \dli_maps final ->
     let dli = DLInit {..}
      in DLProg at dlo sps dli final
 compileDApp _ topv =

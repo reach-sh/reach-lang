@@ -1,7 +1,8 @@
-module Reach.Sanitize 
+module Reach.Sanitize
   ( sani
   , Sanitize
-  ) where
+  )
+where
 
 import Reach.AST.Base
 import Reach.AST.DLBase

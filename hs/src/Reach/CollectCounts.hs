@@ -12,8 +12,8 @@ module Reach.CollectCounts
 where
 
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import Data.Maybe
+import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.PL
 

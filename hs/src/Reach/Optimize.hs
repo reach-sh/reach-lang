@@ -91,6 +91,7 @@ remember_ always v e =
 
 remember :: DLVar -> DLExpr -> App ()
 remember = remember_ True
+
 mremember :: DLVar -> DLExpr -> App ()
 mremember = remember_ False
 
@@ -130,6 +131,7 @@ opt_v2p v = do
 
 opt_v2v :: DLVar -> App DLVar
 opt_v2v v = fst <$> opt_v2p v
+
 opt_v2a :: DLVar -> App DLArg
 opt_v2a v = snd <$> opt_v2p v
 
@@ -187,7 +189,8 @@ instance Extract (Maybe DLVar) where
 -- XXX Add DL_LocalDo
 locDo :: DLinTail a -> DLinStmt a
 locDo t = DL_LocalIf at (DLA_Literal $ DLL_Bool True) t (DT_Return at)
-  where at = srcloc_builtin
+  where
+    at = srcloc_builtin
 
 opt_if :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 opt_if mkDo mkIf at c t f = do
@@ -298,8 +301,11 @@ instance Optimize LLStep where
 instance Optimize DLInit where
   opt (DLInit {..}) = do
     dli_ctimem' <- opt dli_ctimem
-    return $ DLInit { dli_ctimem = dli_ctimem'
-                    , dli_maps = dli_maps }
+    return $
+      DLInit
+        { dli_ctimem = dli_ctimem'
+        , dli_maps = dli_maps
+        }
 
 instance Optimize LLProg where
   opt (LLProg at opts ps dli s) = do

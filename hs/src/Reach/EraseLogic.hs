@@ -8,7 +8,8 @@ import Reach.AST.LL
 import Reach.CollectCounts
 
 data Env = Env
-  { e_vs :: IORef (S.Set DLVar) }
+  {e_vs :: IORef (S.Set DLVar)}
+
 type App = ReaderT Env IO
 
 isUsed :: Maybe DLVar -> App Bool
@@ -54,9 +55,10 @@ instance Erase LLCommon where
           let keep = DL_Let at mdv <$> el de
           case isPure de of
             False -> keep
-            True -> isUsed mdv >>= \case
-              False -> skip at
-              True -> keep
+            True ->
+              isUsed mdv >>= \case
+                False -> skip at
+                True -> keep
     DL_ArrayMap at ans x a f ->
       isUsed (Just ans) >>= \case
         False -> skip at

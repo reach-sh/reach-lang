@@ -1,19 +1,21 @@
 module Reach.DeJump (dejump) where
 
 import Control.Monad.Reader
-import Data.IORef
 import Data.Foldable (foldr')
+import Data.IORef
 import qualified Data.Map.Strict as M
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.Util
-import Reach.Subst
 import Reach.Counter
+import Reach.Subst
+import Reach.Util
 
 data Env = Env
   { e_hs :: M.Map Int CIHandler
   , e_rho :: M.Map DLVar DLVar
-  , e_idx :: Counter }
+  , e_idx :: Counter
+  }
+
 type App = ReaderT Env IO
 
 allocVar :: DLVar -> App DLVar
@@ -62,7 +64,7 @@ instance DeJump CITail where
       nms <- mapM go2 $ M.toList asnm
       rho' <- liftIO $ readIORef rho'r
       -- Process the body in the context of the new substitution
-      t' <- local (\e -> e { e_rho = rho' }) $ dj t
+      t' <- local (\e -> e {e_rho = rho'}) $ dj t
       -- Include the new variable definitions
       return $ foldr' CT_Com t' nms
 

@@ -92,6 +92,7 @@ data JSCtxt = JSCtxt
   }
 
 type App = ReaderT JSCtxt IO
+
 type AppT a = a -> App Doc
 
 instance Semigroup a => Semigroup (App a) where
@@ -166,13 +167,14 @@ jsAssertInfo at fs mmsg = do
   who <- ctxt_who <$> ask
   who_p <- jsCon $ DLL_Bytes $ who
   let fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
-  return $ jsObject $
-    M.fromList
-      [ ("who" :: String, who_p)
-      , ("msg", msg_p)
-      , ("at", jsAt at)
-      , ("fs", fs_p)
-      ]
+  return $
+    jsObject $
+      M.fromList
+        [ ("who" :: String, who_p)
+        , ("msg", msg_p)
+        , ("at", jsAt at)
+        , ("fs", fs_p)
+        ]
 
 jsVar :: AppT DLVar
 jsVar (DLVar _ _ _ n) = return $ "v" <> pretty n
@@ -217,7 +219,7 @@ jsDigest :: AppT [DLArg]
 jsDigest as = do
   ctc <- jsContract (T_Tuple $ map argTypeOf as)
   as' <- jsLargeArg (DLLA_Tuple as)
-  return $ jsApply "stdlib.digest" [ ctc , as' ]
+  return $ jsApply "stdlib.digest" [ctc, as']
 
 jsPrimApply :: PrimOp -> [Doc] -> Doc
 jsPrimApply = \case
@@ -299,14 +301,15 @@ jsExpr = \case
       True -> do
         who' <- jsArg who
         amt' <- jsArg amt
-        return $ jsApply
-          "sim_r.txns.push"
-          [ jsObject $
-              M.fromList $
-                [ ("to" :: String, who')
-                , ("amt" :: String, amt')
-                ]
-          ]
+        return $
+          jsApply
+            "sim_r.txns.push"
+            [ jsObject $
+                M.fromList $
+                  [ ("to" :: String, who')
+                  , ("amt" :: String, amt')
+                  ]
+            ]
   DLE_Wait _ amt -> do
     amt' <- jsArg amt
     (ctxt_simulate <$> ask) >>= \case
@@ -323,7 +326,7 @@ jsExpr = \case
   DLE_MapRef _ mpv fa -> do
     let ctc = jsMapVarCtc mpv
     fa' <- jsArg fa
-    return $ jsProtect_ "null" ctc $ jsApply "stdlib.mapRef" [ jsMapVar mpv, fa' ]
+    return $ jsProtect_ "null" ctc $ jsApply "stdlib.mapRef" [jsMapVar mpv, fa']
   DLE_MapSet _ mpv fa na -> do
     -- XXX something really bad is going to happen during the simulation of
     -- this
@@ -443,9 +446,10 @@ jsFromSpec v = do
 jsETail :: AppT EITail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
-  ET_Stop _ -> (ctxt_simulate <$> ask) >>= \case
-    False -> return $ "return" <> semi
-    True -> mempty
+  ET_Stop _ ->
+    (ctxt_simulate <$> ask) >>= \case
+      False -> return $ "return" <> semi
+      True -> mempty
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
   ET_FromConsensus at which msvs k ->
@@ -456,23 +460,28 @@ jsETail = \case
         (nextSt', nextSt_noTime', isHalt') <-
           case msvs of
             Nothing ->
-               --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
+              --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
               (,,) <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
             Just svs -> do
               timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
               let svs' = dvdeletep timev svs
               (,,) <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
-        return $ vsep
-          [ "sim_r.nextSt =" <+> nextSt' <> semi
-          , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
-          , "sim_r.isHalt =" <+> isHalt' <> semi
-          ]
+        return $
+          vsep
+            [ "sim_r.nextSt =" <+> nextSt' <> semi
+            , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
+            , "sim_r.isHalt =" <+> isHalt' <> semi
+            ]
   ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
     msg_vs <- mapM jsVar msg
     let withCtxt =
-          local (\e -> e { ctxt_txn = (ctxt_txn e) + 1
-                         , ctxt_timev = Just timev })
+          local
+            (\e ->
+               e
+                 { ctxt_txn = (ctxt_txn e) + 1
+                 , ctxt_timev = Just timev
+                 })
     txn <- withCtxt jsTxn
     let msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> txn <> ".data" <> semi <> hardline
     amtv' <- jsVar amtv
@@ -510,50 +519,50 @@ jsETail = \case
             ]
     callp <-
       withCtxt $
-          case from_me of
-            Just (args, amt, whena, svs, soloSend) -> do
-              let svs_as = map DLA_Var svs
-              amtp <- jsArg amt
-              let svs_noPrevTime = dvdeletem last_timemv svs
-              let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
-              let withSim = local (\e -> e {ctxt_simulate = True})
-              sim_body_core <- withSim $ jsETail k_ok
-              svs_d <- mkStDigest svs
-              svs_nptd <- mkStDigest svs_noPrevTime
-              let sim_body =
-                    vsep
-                      [ "const sim_r = { txns: [] };"
-                      , "sim_r.prevSt =" <+> svs_d <> semi
-                      , "sim_r.prevSt_noPrevTime =" <+> svs_nptd <> semi
-                      , k_defp
-                      , sim_body_core
-                      , "return sim_r;"
-                      ]
-              vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
-              whena' <- jsArg whena
-              soloSend' <- jsCon (DLL_Bool soloSend)
-              msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
-              rests <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
-              last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
-              let sendp =
-                   jsApply
-                      "ctc.sendrecv"
-                      [ whop
-                      , pretty which
-                      , pretty (length msg)
-                      , last_timev'
-                      , jsArray msgts
-                      , vs
-                      , amtp
-                      , jsArray rests
-                      , whena'
-                      , soloSend'
-                      , delayp
-                      , parens $ "(" <> txn <> ") => " <> jsBraces sim_body
-                      ]
-              return sendp
-            Nothing ->
-              return recvp
+        case from_me of
+          Just (args, amt, whena, svs, soloSend) -> do
+            let svs_as = map DLA_Var svs
+            amtp <- jsArg amt
+            let svs_noPrevTime = dvdeletem last_timemv svs
+            let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
+            let withSim = local (\e -> e {ctxt_simulate = True})
+            sim_body_core <- withSim $ jsETail k_ok
+            svs_d <- mkStDigest svs
+            svs_nptd <- mkStDigest svs_noPrevTime
+            let sim_body =
+                  vsep
+                    [ "const sim_r = { txns: [] };"
+                    , "sim_r.prevSt =" <+> svs_d <> semi
+                    , "sim_r.prevSt_noPrevTime =" <+> svs_nptd <> semi
+                    , k_defp
+                    , sim_body_core
+                    , "return sim_r;"
+                    ]
+            vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
+            whena' <- jsArg whena
+            soloSend' <- jsCon (DLL_Bool soloSend)
+            msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
+            rests <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
+            last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
+            let sendp =
+                  jsApply
+                    "ctc.sendrecv"
+                    [ whop
+                    , pretty which
+                    , pretty (length msg)
+                    , last_timev'
+                    , jsArray msgts
+                    , vs
+                    , amtp
+                    , jsArray rests
+                    , whena'
+                    , soloSend'
+                    , delayp
+                    , parens $ "(" <> txn <> ") => " <> jsBraces sim_body
+                    ]
+            return sendp
+          Nothing ->
+            return recvp
     let defp = "const" <+> txn <+> "=" <+> "await" <+> parens callp <> semi
     return $ vsep [defp, k_p]
   ET_While _ asn cond body k -> do
@@ -631,20 +640,23 @@ jsPart dli p (EPProg _ _ et) = do
           return $ "const" <+> v' <+> "=" <+> "await ctc.creationTime();"
     let map_defn (mpv, DLMapInfo {..}) = do
           ctc <- jsContract (maybeT dlmi_ty)
-          return $ vsep [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
-               , "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+          return $
+            vsep
+              [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
+              , "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";"
+              ]
     maps_defn <- vsep <$> (mapM map_defn $ M.toList dli_maps)
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let bodyp' =
           vsep
-          [ "const stdlib = ctc.stdlib;"
-          , ctcs
-          , maps_defn
-          , ctimem'
-          , et'
-          ]
+            [ "const stdlib = ctc.stdlib;"
+            , ctcs
+            , maps_defn
+            , ctimem'
+            , et'
+            ]
     return $ "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
 
 jsConnInfo :: ConnectorInfo -> App Doc
@@ -675,7 +687,8 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = do
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
           , "/* eslint-disable */"
-          , "export const _version =" <+> jsString versionStr <> semi ]
+          , "export const _version =" <+> jsString versionStr <> semi
+          ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
@@ -690,6 +703,7 @@ backend_js outn crs pl = do
   let ctxt_while = Nothing
   let ctxt_timev = Nothing
   let ctxt_ctcs = Nothing
-  d <- flip runReaderT (JSCtxt {..}) $
-    jsPIProg crs pl
+  d <-
+    flip runReaderT (JSCtxt {..}) $
+      jsPIProg crs pl
   LTIO.writeFile jsf $ render d

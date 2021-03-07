@@ -336,7 +336,8 @@ df_com mkk back = \case
         DKC_Set a b c -> return $ DL_Set a b c
         DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
-          where go (c, y) = (,) c <$> df_t y
+          where
+            go (c, y) = (,) c <$> df_t y
         DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
         _ -> impossible "df_com"
     mkk m' <$> back k

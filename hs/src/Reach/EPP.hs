@@ -7,20 +7,21 @@ import Data.IORef
 -- import Data.List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Generics.Deriving (Generic)
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Set as S
+-- import Reach.Optimize
+
+import Debug.Trace
+import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
--- import Reach.Optimize
 import Reach.Texty
 import Reach.Util
-import Debug.Trace
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -48,53 +49,71 @@ interval_no_to (CBetween froml _) =
 type DLVarS = S.Set DLVar
 
 type FlowInput = M.Map Int FlowInputData
+
 data FlowInputData = FlowInputData
   { fid_uses :: DLVarS
   , fid_defns :: DLVarS
   , fid_parents :: S.Set Int
   , fid_children :: S.Set Int
-  , fid_jumps :: S.Set Int }
+  , fid_jumps :: S.Set Int
+  }
+
 instance Semigroup FlowInputData where
   (FlowInputData xa xb xc xd xe) <> (FlowInputData ya yb yc yd ye) =
     FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd) (xe <> ye)
+
 instance Monoid FlowInputData where
   mempty = FlowInputData mempty mempty mempty mempty mempty
+
 instance Pretty FlowInputData where
   pretty (FlowInputData {..}) =
-    render_obj $ M.fromList [ ("uses"::String, pretty fid_uses)
-                            , ("defns", pretty fid_defns)
-                            , ("parents", pretty fid_parents)
-                            , ("children", pretty fid_children)
-                            , ("jumps", pretty fid_jumps) ]
+    render_obj $
+      M.fromList
+        [ ("uses" :: String, pretty fid_uses)
+        , ("defns", pretty fid_defns)
+        , ("parents", pretty fid_parents)
+        , ("children", pretty fid_children)
+        , ("jumps", pretty fid_jumps)
+        ]
 
 type FlowOutput = M.Map Int FlowOutputData
+
 data FlowOutputData = FlowOutputData
   { fod_save :: DLVarS
-  , fod_recv :: DLVarS }
+  , fod_recv :: DLVarS
+  }
   deriving (Eq)
+
 instance Semigroup FlowOutputData where
   (FlowOutputData xa xb) <> (FlowOutputData ya yb) =
     FlowOutputData (xa <> ya) (xb <> yb)
+
 instance Monoid FlowOutputData where
   mempty = FlowOutputData mempty mempty
+
 instance Pretty FlowOutputData where
   pretty (FlowOutputData {..}) =
-    render_obj $ M.fromList [ ("save"::String, fod_save)
-                            , ("recv", fod_recv) ]
+    render_obj $
+      M.fromList
+        [ ("save" :: String, fod_save)
+        , ("recv", fod_recv)
+        ]
+
 fod_savel :: FlowOutputData -> [DLVar]
 fod_savel = S.toAscList . fod_save
+
 fod_recvl :: FlowOutputData -> [DLVar]
 fod_recvl = S.toAscList . fod_recv
 
-fixedPoint :: forall a . Eq a => Monoid a => (a -> a) -> a
+fixedPoint :: forall a. Eq a => Monoid a => (a -> a) -> a
 fixedPoint f = h mempty
   where
     h :: a -> a
     h x =
-      let x' = f x in
-      case x == x' of
-        True -> x
-        False -> h x'
+      let x' = f x
+       in case x == x' of
+            True -> x
+            False -> h x'
 
 solve :: FlowInput -> FlowOutput
 solve fi' = fixedPoint go
@@ -110,8 +129,11 @@ solve fi' = fixedPoint go
     go' fo = M.map (go1 fo) fi
     go1 fo (FlowInputData {..}) = fod
       where
-        fod = FlowOutputData { fod_save = save
-                             , fod_recv = recv }
+        fod =
+          FlowOutputData
+            { fod_save = save
+            , fod_recv = recv
+            }
         foread which = fromMaybe mempty $ M.lookup which fo
         unionmap f s = S.unions $ map f $ S.toList s
         save =
@@ -143,7 +165,9 @@ data BEnv = BEnv
   , be_handlers :: IORef (M.Map Int (CApp CIHandler))
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
-  , be_loop :: Maybe Int }
+  , be_loop :: Maybe Int
+  }
+
 type BApp = ReaderT BEnv IO
 
 signalMore :: BApp ()
@@ -152,7 +176,7 @@ signalMore = liftIO . flip writeIORef True =<< (be_more <$> ask)
 captureMore :: BApp a -> BApp (Bool, a)
 captureMore m = do
   mr <- liftIO $ newIORef False
-  x <- local (\e -> e { be_more = mr }) m
+  x <- local (\e -> e {be_more = mr}) m
   a <- liftIO $ readIORef mr
   return (a, x)
 
@@ -177,35 +201,40 @@ fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
   which <- be_which <$> ask
   fr <- be_flowr <$> ask
-  liftIO $ modifyIORef fr $ \f ->
-    M.insert which (fidm $ fromMaybe mempty $ M.lookup which f) f
+  liftIO $
+    modifyIORef fr $ \f ->
+      M.insert which (fidm $ fromMaybe mempty $ M.lookup which f) f
 
 fg_use :: Countable a => a -> BApp ()
-fg_use x = fg_record $ \f -> f { fid_uses = S.union (countsS x) (fid_uses f) }
+fg_use x = fg_record $ \f -> f {fid_uses = S.union (countsS x) (fid_uses f)}
 
 fg_defn :: Countable a => a -> BApp ()
-fg_defn x = fg_record $ \f -> f { fid_defns = S.union (countsS x) (fid_defns f) }
+fg_defn x = fg_record $ \f -> f {fid_defns = S.union (countsS x) (fid_defns f)}
 
 fg_child :: Int -> BApp ()
 fg_child child = do
   parent <- be_which <$> ask
-  fg_record $ \f -> f { fid_children = S.insert child $ fid_children f }
-  local (\e -> e { be_which = child }) $ do
-    fg_record $ \f -> f { fid_parents = S.insert parent $ fid_parents f }
+  fg_record $ \f -> f {fid_children = S.insert child $ fid_children f}
+  local (\e -> e {be_which = child}) $ do
+    fg_record $ \f -> f {fid_parents = S.insert parent $ fid_parents f}
 
 fg_jump :: Int -> BApp ()
 fg_jump dst = do
-  fg_record $ \f -> f { fid_jumps = S.insert dst $ fid_jumps f }
+  fg_record $ \f -> f {fid_jumps = S.insert dst $ fid_jumps f}
 
 -- Read flow
 data CEnv = CEnv
   { ce_flow :: FlowOutput
-  , ce_vars :: IORef DLVarS }
+  , ce_vars :: IORef DLVarS
+  }
+
 type CApp = ReaderT CEnv IO
 
 data EEnv = EEnv
   { ee_flow :: FlowOutput
-  , ee_who :: SLPart }
+  , ee_who :: SLPart
+  }
+
 type EApp = ReaderT EEnv IO
 
 ce_vsm :: (DLVarS -> DLVarS) -> CApp ()
@@ -228,15 +257,19 @@ readFlow get_flow which = do
 
 ee_readFlow :: Int -> EApp FlowOutputData
 ee_readFlow = readFlow ee_flow
+
 ee_readMustSave :: Int -> EApp [DLVar]
 ee_readMustSave x = fod_savel <$> ee_readFlow x
+
 ee_readMustReceive :: Int -> EApp [DLVar]
 ee_readMustReceive x = fod_recvl <$> ee_readFlow x
 
 ce_readFlow :: Int -> CApp FlowOutputData
 ce_readFlow = readFlow ce_flow
+
 ce_readMustSave :: Int -> CApp [DLVar]
 ce_readMustSave x = fod_savel <$> ce_readFlow x
+
 ce_readMustReceive :: Int -> CApp [DLVar]
 ce_readMustReceive x = fod_recvl <$> ce_readFlow x
 
@@ -251,9 +284,10 @@ itsame :: SLPart -> EApp Bool
 itsame who = ((who ==) . ee_who) <$> ask
 
 ee_only :: SrcLoc -> SLPart -> LLTail -> EITail -> EApp EITail
-ee_only _at who l k' = itsame who >>= \case
-  False -> return k'
-  True -> return $ dtReplace ET_Com k' l
+ee_only _at who l k' =
+  itsame who >>= \case
+    False -> return k'
+    True -> return $ dtReplace ET_Com k' l
 
 be_m :: LLCommon -> BApp (CApp PILCommon)
 be_m = \case
@@ -344,9 +378,10 @@ be_c = \case
     return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com c <$> k'l)
   LLC_Only at who l k -> do
     (k'c, k'l) <- be_c k
-    let lm = itsame who >>= \case
-          False -> k'l
-          True -> ET_ConsensusOnly at l <$> k'l
+    let lm =
+          itsame who >>= \case
+            False -> k'l
+            True -> ET_ConsensusOnly at l <$> k'l
     return $ (,) (k'c) lm
   LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
@@ -365,21 +400,22 @@ be_c = \case
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     which <- be_which <$> ask
-    (more, s'l) <- captureMore $
-      local (\e -> e { be_interval = default_interval }) $
-        be_s s
+    (more, s'l) <-
+      captureMore $
+        local (\e -> e {be_interval = default_interval}) $
+          be_s s
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case more of
-                      True -> Just $ map (\x -> (x, DLA_Var x)) svs
-                      False -> Nothing
+            True -> Just $ map (\x -> (x, DLA_Var x)) svs
+            False -> Nothing
     let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
     let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLinBlock cond_at _ cond_l cond_a = cond
     this_loop <- newHandler "While"
-    let inBlock which = local (\e -> e { be_which = which })
+    let inBlock which = local (\e -> e {be_which = which})
     let inLoop = inBlock this_loop
     -- <Kont>
     (goto_kont, k'l) <-
@@ -408,8 +444,10 @@ be_c = \case
     cond_l' <- inLoop $ do
       fg_defn $ loop_vars
       be_t cond_l
-    (body'c, body'l) <- inLoop $ local (\e -> e { be_loop = Just this_loop }) $
-      be_c body
+    (body'c, body'l) <-
+      inLoop $
+        local (\e -> e {be_loop = Just this_loop}) $
+          be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'
     setHandler this_loop $ do
@@ -438,7 +476,7 @@ be_s = \case
           case c of
             (DL_Let _ _ (DLE_Wait _ amt)) -> interval_add_from int amt
             _ -> int
-    k' <- local (\e -> e { be_interval = int' }) $ be_s k
+    k' <- local (\e -> e {be_interval = int'}) $ be_s k
     return $ ET_Com c <$> k'
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
@@ -460,17 +498,23 @@ be_s = \case
           let int_ok = interval_add_to int delay_a
           let int_to = interval_add_from int delay_a
           let delay_as = interval_from int_to
-          to_s'm <- local (\e -> e { be_interval = int_to }) $
-            be_s to_s
+          to_s'm <-
+            local (\e -> e {be_interval = int_to}) $
+              be_s to_s
           let mtime'm = Just . (,) delay_as <$> to_s'm
           return $ (int_ok, mtime'm)
     (ok_c'm, ok_l'm) <-
-      local (\e -> e { be_interval = int_ok
-                     , be_which = which }) $ do
-        fg_use $ int_ok
-        fg_use $ last_time_mv
-        fg_defn $ from_v : amt_v : time_v : msg_vs
-        be_c ok_c
+      local
+        (\e ->
+           e
+             { be_interval = int_ok
+             , be_which = which
+             })
+        $ do
+          fg_use $ int_ok
+          fg_use $ last_time_mv
+          fg_defn $ from_v : amt_v : time_v : msg_vs
+          be_c ok_c
     fg_child which
     setHandler which $ do
       svs <- ce_readMustReceive which
@@ -522,8 +566,9 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do
         let ee_flow = flow
-        et <- flip runReaderT (EEnv {..}) $
-                mkep_
+        et <-
+          flip runReaderT (EEnv {..}) $
+            mkep_
         return $ EPProg at ie et
   let mapWithKeyM f m =
         M.fromList <$> mapM (\(k, v) -> (,) k <$> f k v) (M.toList m)

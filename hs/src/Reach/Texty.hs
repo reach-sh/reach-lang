@@ -31,8 +31,8 @@ where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
-import qualified Data.Map.Strict as M
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Data.String
 import qualified Data.Text as T

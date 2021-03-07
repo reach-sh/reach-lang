@@ -4,7 +4,8 @@ module Reach.Counter
   , incCounter
   , readCounter
   , dupeCounter
-  ) where
+  )
+where
 
 import Data.IORef
 

@@ -162,12 +162,12 @@ instance Pretty SLVal where
     SLV_Anybody -> "Anybody"
 
 instance Pretty SLParticipantType where
-    pretty p =
-      case p of
-        SLP_Participant _ n e -> pp "Participant" n e
-        SLP_ParticipantClass _ n e -> pp "ParticipantClass" n e
-      where
-        pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
+  pretty p =
+    case p of
+      SLP_Participant _ n e -> pp "Participant" n e
+      SLP_ParticipantClass _ n e -> pp "ParticipantClass" n e
+    where
+      pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 instance SrcLocOf SLVal where
   srclocOf = \case

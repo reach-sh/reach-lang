@@ -19,8 +19,8 @@ import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.Util
 import Reach.Texty
+import Reach.Util
 
 type ConnectorInfoMap = Object
 

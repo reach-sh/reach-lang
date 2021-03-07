@@ -27,18 +27,18 @@ verify outnMay mvcs lp = do
   case Z3 of
     Z3 ->
       smt "z3" ["-smt2", "-in"]
-    -- XXX "pattern match is redundant"
-    -- Yices ->
-    --   -- known not to work.
-    --   -- - doesn't support declare-datatypes
-    --   smt "yices-smt2" []
-    -- CVC4 ->
-    --   smt "cvc4" ["--lang=smt2", "--incremental"]
-    -- Boolector ->
-    --   -- known not to work.
-    --   -- - doesn't support unsat-cores
-    --   -- - doesn't support declare-datatypes
-    --   smt "boolector" ["--smt2"]
+  -- XXX "pattern match is redundant"
+  -- Yices ->
+  --   -- known not to work.
+  --   -- - doesn't support declare-datatypes
+  --   smt "yices-smt2" []
+  -- CVC4 ->
+  --   smt "cvc4" ["--lang=smt2", "--incremental"]
+  -- Boolector ->
+  --   -- known not to work.
+  --   -- - doesn't support unsat-cores
+  --   -- - doesn't support declare-datatypes
+  --   smt "boolector" ["--smt2"]
   ss <- readCounter vst_res_succ
   fs <- readCounter vst_res_fail
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"

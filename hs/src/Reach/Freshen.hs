@@ -1,7 +1,8 @@
 module Reach.Freshen
   ( freshen
   , freshen_
-  ) where
+  )
+where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -131,4 +132,3 @@ freshen_ fCounter x vs = do
 
 freshen :: Freshen a => Counter -> a -> IO a
 freshen fCounter x = fst <$> freshen_ fCounter x []
-

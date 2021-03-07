@@ -85,7 +85,7 @@ locWho :: SLPart -> App a -> App a
 locWho w = local (\e -> e {e_who = Just w})
 
 locWhileInvariant :: App a -> App a
-locWhileInvariant = local (\e -> e { e_while_invariant = True })
+locWhileInvariant = local (\e -> e {e_while_invariant = True})
 
 locAtf :: (SrcLoc -> SrcLoc) -> App a -> App a
 locAtf f = local (\e -> e {e_at = f $ e_at e})
@@ -476,11 +476,11 @@ typeCheck_d ty val = do
 applyRefinement :: ClaimType -> SLVal -> [SLVal] -> App ()
 applyRefinement ct p args = do
   pres <- evalApplyVals' p $ map public args
-  void $ evalPrim (SLPrim_claim ct) [ pres ]
+  void $ evalPrim (SLPrim_claim ct) [pres]
 
 applyType :: ClaimType -> SLVal -> SLType -> App ()
 applyType ct v = \case
-  ST_Refine _ p -> applyRefinement ct p [ v ]
+  ST_Refine _ p -> applyRefinement ct p [v]
   _ -> return ()
 
 typeCheck_s :: SLType -> SLVal -> App DLArgExpr
@@ -869,7 +869,7 @@ evalAsEnv obj = case obj of
   SLV_Prim SLPrim_Participant ->
     return $
       M.fromList
-        [ ("set", retV $ public $ SLV_Prim SLPrim_part_set)]
+        [("set", retV $ public $ SLV_Prim SLPrim_part_set)]
   SLV_Prim SLPrim_Foldable ->
     return $
       M.fromList foldableValueEnv
@@ -887,7 +887,8 @@ evalAsEnv obj = case obj of
         , ("map", retV $ public $ SLV_Prim $ SLPrim_array_map)
         , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce)
         , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
-        ] <> foldableValueEnv
+        ]
+          <> foldableValueEnv
   SLV_Prim SLPrim_Object ->
     return $
       M.fromList
@@ -900,20 +901,21 @@ evalAsEnv obj = case obj of
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
   SLV_Type (ST_Data varm) ->
-    return $ flip M.mapWithKey varm $ \k t ->
-      retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t
+    return $
+      flip M.mapWithKey varm $ \k t ->
+        retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t
   SLV_MapCtor t ->
     return $
       M.fromList
-        [ ("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t) ]
+        [("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t)]
   SLV_Prim SLPrim_Map ->
     return $
       M.fromList $
-        [ ("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce) ] <> foldableValueEnv
+        [("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce)] <> foldableValueEnv
   SLV_Map _ ->
     return $
       M.fromList $
-        [ ("reduce", delayCall SLPrim_MapReduce) ] <> foldableObjectEnv
+        [("reduce", delayCall SLPrim_MapReduce)] <> foldableObjectEnv
   _ -> expect_t obj $ Err_Eval_NotObject
   where
     foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "length", "count"]
@@ -934,7 +936,8 @@ evalAsEnv obj = case obj of
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
-        ] <> foldableObjectEnv
+        ]
+          <> foldableObjectEnv
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
@@ -1101,11 +1104,17 @@ evalForm f args = do
         Just PRM_Case ->
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime
         Just PRM_Timeout ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases
-            $ makeTimeoutArgs PRM_Timeout aa
+          retV $
+            public $
+              SLV_Form $
+                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
+                  makeTimeoutArgs PRM_Timeout aa
         Just PRM_TimeRemaining ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases
-            $ makeTimeoutArgs PRM_TimeRemaining aa
+          retV $
+            public $
+              SLV_Form $
+                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
+                  makeTimeoutArgs PRM_TimeRemaining aa
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
       where
@@ -1767,12 +1776,12 @@ evalPrim p sargs =
       at <- withAt id
       let dom_tupv = SLV_Tuple at argvs
       forM_ mdomp $ \domp ->
-        applyRefinement CT_Assert domp [ dom_tupv ]
+        applyRefinement CT_Assert domp [dom_tupv]
       dargs <- compileArgExprs arges
       fs <- e_stack <$> ask
       rng_v <- compileInteractResult m rng (\drng -> DLE_Interact at fs who m drng dargs)
       forM_ mrngp $ \rngp ->
-        applyRefinement CT_Assume rngp [ dom_tupv, snd rng_v ]
+        applyRefinement CT_Assume rngp [dom_tupv, snd rng_v]
       return rng_v
     SLPrim_declassify -> do
       val <- one_arg
@@ -1963,13 +1972,13 @@ evalPrim p sargs =
         ST_Fun dom rng mdomp1 mrngp1 -> do
           (_, domp2, rngp2) <- three_args
           let domp = case mdomp1 of
-                       Nothing -> domp2
-                       Just domp1 ->
-                         mkClo "(dom) => (domp1(dom) && domp2(dom))" $ M.fromList [("domp1", domp1), ("domp2", domp2)]
+                Nothing -> domp2
+                Just domp1 ->
+                  mkClo "(dom) => (domp1(dom) && domp2(dom))" $ M.fromList [("domp1", domp1), ("domp2", domp2)]
           let rngp = case mrngp1 of
-                       Nothing -> rngp2
-                       Just rngp1 ->
-                         mkClo "(dom, rng) => (rngp1(dom, rng) && rngp2(dom, rng))" $ M.fromList [("rngp1", rngp1), ("rngp2", rngp2)]
+                Nothing -> rngp2
+                Just rngp1 ->
+                  mkClo "(dom, rng) => (rngp1(dom, rng) && rngp2(dom, rng))" $ M.fromList [("rngp1", rngp1), ("rngp2", rngp2)]
           return $ ST_Fun dom rng (Just domp) (Just rngp)
         ST_Refine ot valp1 -> do
           (_, valp2) <- two_args
@@ -2014,8 +2023,9 @@ evalPrim p sargs =
       _ -> illegal_args
     mustBeObject = \case
       v@SLV_Object {} -> return v
-      ow -> locAtf (flip getSrcLocOrDefault ow) $
-        expect_t ow $ Err_Decl_NotType "object"
+      ow ->
+        locAtf (flip getSrcLocOrDefault ow) $
+          expect_t ow $ Err_Decl_NotType "object"
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
       _ -> illegal_args
@@ -2251,19 +2261,22 @@ evalExpr e = case e of
   JSDecimal a ns ->
     case splitOn "." ns of
       [iDigits, fDigits] ->
-        let i     = iDigits <> fDigits in
-        let scale = '1' : replicate (length fDigits) '0' in
-        let signV = \at ->
-              SLSSVal at Public $ SLV_Bool at True in
-        let signedInt = \at ->
-              SLV_Object at Nothing $ M.fromList [
-                ("scale", SLSSVal at Public $ SLV_Int at $ numberValue 10 scale),
-                ("i", SLSSVal at Public $ SLV_Int at $ numberValue 10 i) ] in
-        let iV = \at -> SLSSVal at Public $ signedInt at in
-        locAtf (srcloc_jsa "decimal" a) $
-        withAt $ \at ->
-          public $ SLV_Object at Nothing $
-            M.fromList [("sign", signV at),("i", iV at) ]
+        let i = iDigits <> fDigits
+         in let scale = '1' : replicate (length fDigits) '0'
+             in let signV = \at ->
+                      SLSSVal at Public $ SLV_Bool at True
+                 in let signedInt = \at ->
+                          SLV_Object at Nothing $
+                            M.fromList
+                              [ ("scale", SLSSVal at Public $ SLV_Int at $ numberValue 10 scale)
+                              , ("i", SLSSVal at Public $ SLV_Int at $ numberValue 10 i)
+                              ]
+                     in let iV = \at -> SLSSVal at Public $ signedInt at
+                         in locAtf (srcloc_jsa "decimal" a) $
+                              withAt $ \at ->
+                                public $
+                                  SLV_Object at Nothing $
+                                    M.fromList [("sign", signV at), ("i", iV at)]
       [_] -> locAtf (srcloc_jsa "decimal" a) $
         withAt $ \at -> public $ SLV_Int at $ numberValue 10 ns
       _ -> impossible "Number must have 0 or 1 decimal points."
@@ -2345,7 +2358,7 @@ evalExpr e = case e of
   JSSpreadExpression _ _ -> illegal
   JSTemplateLiteral _ _ _ _ -> illegal
   JSUnaryExpression op@JSUnaryOpMinus {} i -> castToSigned i op
-  JSUnaryExpression op@JSUnaryOpPlus {} i  -> castToSigned i op
+  JSUnaryExpression op@JSUnaryOpPlus {} i -> castToSigned i op
   JSUnaryExpression (JSUnaryOpDelete a) ue ->
     locAtf (srcloc_jsa "delete" a) $ do
       at <- withAt id
@@ -2370,16 +2383,17 @@ evalExpr e = case e of
     -- which are of the shape: ∀ a . { sign: bool, i : a }
     -- This function will first cast UInt args to Int before applying op.
     -- Any arg that is already signed will just apply the op.
-    castToSigned i op =  do
+    castToSigned i op = do
       ex <- evalExpr i
       let mkField k v = JSPropertyNameandValue (JSPropertyString JSNoAnnot $ "'" <> k <> "'") JSNoAnnot [v]
-      i' <- typeOf (snd ex) >>= \case
-        (T_UInt, _) ->
-          let i_field = JSLOne $ mkField "i" i in
-          let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true" in
-          let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot in
-          return si
-        _ -> return i
+      i' <-
+        typeOf (snd ex) >>= \case
+          (T_UInt, _) ->
+            let i_field = JSLOne $ mkField "i" i
+             in let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true"
+                 in let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot
+                     in return si
+          _ -> return i
       unaryToPrim op >>= \o -> doCallV o JSNoAnnot [i']
     verifyFormals readDefaults = \case
       [] -> return ()
@@ -2390,57 +2404,57 @@ evalExpr e = case e of
 
 doTernary :: JSExpression -> JSAnnot -> JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
-    t_at' <- withAt $ srcloc_jsa "?: > true" a
-    f_at' <- withAt $ srcloc_jsa "?: > false" fa
-    csv@(clvl, cv) <- evalExpr ce
-    case cv of
-      SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
-        SLRes tlifts st_t tsv@(tlvl, tv) <-
-          captureRes $ locAt t_at' $ evalExpr te
-        SLRes flifts st_f fsv@(flvl, fv) <-
-          captureRes $ locAt f_at' $ evalExpr fe
-        let lvl = clvl <> tlvl <> flvl
-        setSt =<< stMerge st_t st_f
-        let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
-        case isPure sa of
-          True -> do
-            saveLifts (tlifts <> flifts)
-            lvlMeet lvl
-              <$> evalPrim (SLPrim_op $ IF_THEN_ELSE) [csv, tsv, fsv]
-          False -> do
-            ret <- ctxt_alloc
-            let add_ret e_at' elifts ev = do
-                  (dlifts, (e_ty, da)) <-
-                    captureLifts $ locAt e_at' $ compileTypeOf ev
-                  let elifts' =
-                        elifts <> dlifts
-                          <> (return $ DLS_Return e_at' ret $ Right da)
-                  return $ (elifts', e_ty)
-            (tlifts', t_ty) <- add_ret t_at' tlifts tv
-            (flifts', f_ty) <- add_ret f_at' flifts fv
-            ty <- typeMeet_d t_ty f_ty
-            at' <- withAt id
-            let ans_dv = DLVar at' Nothing ty ret
-            saveLift $
-              DLS_Prompt at' (Right (ans_dv, mempty)) $
-                return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
-            return $ (lvl, SLV_DLVar ans_dv)
-      _ -> do
-        let (n_at', ne) = case cv of
-              SLV_Bool _ False -> (f_at', fe)
-              _ -> (t_at', te)
-        lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
+  t_at' <- withAt $ srcloc_jsa "?: > true" a
+  f_at' <- withAt $ srcloc_jsa "?: > false" fa
+  csv@(clvl, cv) <- evalExpr ce
+  case cv of
+    SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
+      SLRes tlifts st_t tsv@(tlvl, tv) <-
+        captureRes $ locAt t_at' $ evalExpr te
+      SLRes flifts st_f fsv@(flvl, fv) <-
+        captureRes $ locAt f_at' $ evalExpr fe
+      let lvl = clvl <> tlvl <> flvl
+      setSt =<< stMerge st_t st_f
+      let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
+      case isPure sa of
+        True -> do
+          saveLifts (tlifts <> flifts)
+          lvlMeet lvl
+            <$> evalPrim (SLPrim_op $ IF_THEN_ELSE) [csv, tsv, fsv]
+        False -> do
+          ret <- ctxt_alloc
+          let add_ret e_at' elifts ev = do
+                (dlifts, (e_ty, da)) <-
+                  captureLifts $ locAt e_at' $ compileTypeOf ev
+                let elifts' =
+                      elifts <> dlifts
+                        <> (return $ DLS_Return e_at' ret $ Right da)
+                return $ (elifts', e_ty)
+          (tlifts', t_ty) <- add_ret t_at' tlifts tv
+          (flifts', f_ty) <- add_ret f_at' flifts fv
+          ty <- typeMeet_d t_ty f_ty
+          at' <- withAt id
+          let ans_dv = DLVar at' Nothing ty ret
+          saveLift $
+            DLS_Prompt at' (Right (ans_dv, mempty)) $
+              return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
+          return $ (lvl, SLV_DLVar ans_dv)
+    _ -> do
+      let (n_at', ne) = case cv of
+            SLV_Bool _ False -> (f_at', fe)
+            _ -> (t_at', te)
+      lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
 
 doDot :: JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doDot obj a field = do
-      at' <- withAt $ srcloc_jsa "dot" a
-      (obj_lvl, objv) <- locAt at' $ evalExpr obj
-      let fields = (jse_expect_id at') field
-      fieldAt <-
-        case field of
-          JSIdentifier iat _ -> withAt $ srcloc_jsa "dot" iat
-          _ -> return $ at'
-      lvlMeet obj_lvl <$> (locAt fieldAt $ evalDot objv fields)
+  at' <- withAt $ srcloc_jsa "dot" a
+  (obj_lvl, objv) <- locAt at' $ evalExpr obj
+  let fields = (jse_expect_id at') field
+  fieldAt <-
+    case field of
+      JSIdentifier iat _ -> withAt $ srcloc_jsa "dot" iat
+      _ -> return $ at'
+  lvlMeet obj_lvl <$> (locAt fieldAt $ evalDot objv fields)
 
 doDelete :: SLLValue -> App ()
 doDelete = \case
@@ -2460,52 +2474,52 @@ doRef arre a idxe = locAtf (srcloc_jsa "ref" a) $ do
 
 doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
 doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
-      at' <- withAt id
-      (idx_lvl, idxv) <- evalExpr idxe
-      let lvl = arr_lvl <> idx_lvl
-      let retRef t de = do
-            dv <- ctxt_lift_expr (DLVar at' Nothing t) de
-            let ansv = SLV_DLVar dv
+  at' <- withAt id
+  (idx_lvl, idxv) <- evalExpr idxe
+  let lvl = arr_lvl <> idx_lvl
+  let retRef t de = do
+        dv <- ctxt_lift_expr (DLVar at' Nothing t) de
+        let ansv = SLV_DLVar dv
+        return $ (lvl, ansv)
+  let retArrayRef t sz arr_dla idx_dla = do
+        doArrayBoundsCheck sz idxv
+        retRef t $ DLE_ArrayRef at' arr_dla idx_dla
+  let retTupleRef t arr_dla idx =
+        retRef t $ DLE_TupleRef at' arr_dla idx
+  let retVal idxi arrvs =
+        case fromIntegerMay idxi >>= atMay arrvs of
+          Nothing ->
+            expect_ $ Err_Eval_RefOutOfBounds (length arrvs) idxi
+          Just ansv ->
             return $ (lvl, ansv)
-      let retArrayRef t sz arr_dla idx_dla = do
-            doArrayBoundsCheck sz idxv
-            retRef t $ DLE_ArrayRef at' arr_dla idx_dla
-      let retTupleRef t arr_dla idx =
-            retRef t $ DLE_TupleRef at' arr_dla idx
-      let retVal idxi arrvs =
-            case fromIntegerMay idxi >>= atMay arrvs of
-              Nothing ->
-                expect_ $ Err_Eval_RefOutOfBounds (length arrvs) idxi
-              Just ansv ->
-                return $ (lvl, ansv)
-      case idxv of
-        SLV_Int _ idxi ->
-          case arrv of
-            SLV_Array _ _ arrvs -> retVal idxi arrvs
-            SLV_Tuple _ tupvs -> retVal idxi tupvs
-            SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
-              case fromIntegerMay idxi >>= atMay ts of
-                Nothing ->
-                  expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
-                Just t -> retTupleRef t arr_dla idxi
-                  where
-                    arr_dla = DLA_Var adv
-            SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
-              case idxi < sz of
-                False ->
-                  expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
-                True -> do
-                  let arr_dla = DLA_Var adv
-                  idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
-                  retArrayRef t sz arr_dla idx_dla
-            _ -> expect_t arrv $ Err_Eval_RefNotRefable
-        SLV_DLVar idxdv@(DLVar _ _ T_UInt _) -> do
-          (arr_ty, arr_dla) <- compileTypeOf arrv
-          case arr_ty of
-            T_Array elem_ty sz ->
-              retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
-            _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
-        _ -> expect_t idxv $ Err_Eval_RefNotInt
+  case idxv of
+    SLV_Int _ idxi ->
+      case arrv of
+        SLV_Array _ _ arrvs -> retVal idxi arrvs
+        SLV_Tuple _ tupvs -> retVal idxi tupvs
+        SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
+          case fromIntegerMay idxi >>= atMay ts of
+            Nothing ->
+              expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
+            Just t -> retTupleRef t arr_dla idxi
+              where
+                arr_dla = DLA_Var adv
+        SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
+          case idxi < sz of
+            False ->
+              expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+            True -> do
+              let arr_dla = DLA_Var adv
+              idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
+              retArrayRef t sz arr_dla idx_dla
+        _ -> expect_t arrv $ Err_Eval_RefNotRefable
+    SLV_DLVar idxdv@(DLVar _ _ T_UInt _) -> do
+      (arr_ty, arr_dla) <- compileTypeOf arrv
+      case arr_ty of
+        T_Array elem_ty sz ->
+          retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
+        _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
+    _ -> expect_t idxv $ Err_Eval_RefNotInt
 
 evalExprs :: [JSExpression] -> App [SLSVal]
 evalExprs = \case
@@ -2773,7 +2787,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
           }
-  msg_dvs <- mapM (\ (v, t) ->  ctxt_mkvar (DLVar at (getBindingOrigin v) t)) $ zip msg_dass_t msg_ts
+  msg_dvs <- mapM (\(v, t) -> ctxt_mkvar (DLVar at (getBindingOrigin v) t)) $ zip msg_dass_t msg_ts
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
   let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar winner_dv))
   let recv_env = msg_env
@@ -3010,29 +3024,30 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
   fork_e1 <-
-        case pr_mtime of
-          Nothing -> return fork_e0
-          Just (mode, t_at, args) ->
-            case (mode, args) of
-              (PRM_TimeRemaining, [t_e]) -> do
-                let semi = JSSemiAuto
-                let dot o f = JSCallExpressionDot o ta f
-                let publish = dot (jid "Anybody") $ jid "publish"
-                let pubApp = call publish []
-                let noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
-                let bodys = [
-                      JSExpressionStatement pubApp semi,
-                      JSReturn ta (Just lhs) semi ]
-                let block = JSStatementBlock ta bodys ta semi
-                let thunk = JSArrowExpression noArgs ta block
-                return $ call (JSMemberDot fork_e0 ta timeOutId) [ t_e, thunk ]
-              (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceTimeRemainingArgs args
-              (PRM_Timeout, t_es) -> return $ call (JSMemberDot fork_e0 ta timeOutId) t_es
-              _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
-            where
-              timeOutId = jid "timeout"
-              call f es = JSCallExpression f ta (toJSCL es) ta
-              ta = ao t_at
+    case pr_mtime of
+      Nothing -> return fork_e0
+      Just (mode, t_at, args) ->
+        case (mode, args) of
+          (PRM_TimeRemaining, [t_e]) -> do
+            let semi = JSSemiAuto
+            let dot o f = JSCallExpressionDot o ta f
+            let publish = dot (jid "Anybody") $ jid "publish"
+            let pubApp = call publish []
+            let noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
+            let bodys =
+                  [ JSExpressionStatement pubApp semi
+                  , JSReturn ta (Just lhs) semi
+                  ]
+            let block = JSStatementBlock ta bodys ta semi
+            let thunk = JSArrowExpression noArgs ta block
+            return $ call (JSMemberDot fork_e0 ta timeOutId) [t_e, thunk]
+          (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceTimeRemainingArgs args
+          (PRM_Timeout, t_es) -> return $ call (JSMemberDot fork_e0 ta timeOutId) t_es
+          _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
+        where
+          timeOutId = jid "timeout"
+          call f es = JSCallExpression f ta (toJSCL es) ta
+          ta = ao t_at
   let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
         where
           ca = ao case_at

@@ -10,10 +10,10 @@ import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
 import Reach.EPP
+import Reach.EraseLogic
 import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
-import Reach.EraseLogic
 import Reach.Parser
 import Reach.Texty
 import Reach.Util
