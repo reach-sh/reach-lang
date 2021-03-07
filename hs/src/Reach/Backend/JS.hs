@@ -1,9 +1,11 @@
 module Reach.Backend.JS (backend_js) where
 
+import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HM
+import Data.IORef
 import Data.List (elemIndex, foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -15,6 +17,7 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Backend
 import Reach.Connector
+import Reach.Counter
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -71,114 +74,141 @@ jsObject m = jsBraces $ vsep $ punctuate comma $ map jsObjField $ M.toList m
 jsBacktickText :: T.Text -> Doc
 jsBacktickText x = "`" <> pretty x <> "`"
 
---- Compiler
---
+-- Compiler
+
+data JSContracts = JSContracts
+  { jsc_idx :: Counter
+  , jsc_t2i :: IORef (M.Map DLType Doc)
+  , jsc_i2t :: IORef (M.Map Int Doc)
+  }
+
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
   , ctxt_simulate :: Bool
   , ctxt_while :: Maybe (Maybe DLVar, PILBlock, EITail, EITail)
   , ctxt_timev :: Maybe DLVar
+  , ctxt_ctcs :: Maybe JSContracts
   }
 
-jsTxn :: JSCtxt -> Doc
-jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
+type App = ReaderT JSCtxt IO
+type AppT a = a -> App Doc
 
-jsTimeoutFlag :: JSCtxt -> Doc
-jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
+instance Semigroup a => Semigroup (App a) where
+  mx <> my = (<>) <$> mx <*> my
+
+instance Monoid a => Monoid (App a) where
+  mempty = return mempty
+
+jsTxn :: App Doc
+jsTxn = ("txn" <>) . pretty . ctxt_txn <$> ask
+
+jsTimeoutFlag :: App Doc
+jsTimeoutFlag = (<> ".didTimeout") <$> jsTxn
 
 --- FIXME use Haskell state to keep track of which contracts have been
 --- constructed and then use a JS backend map to store these so we
 --- don't create them ovre and over... or do something like the sol
 --- and smt backends and collect the set of types and define them all
 --- up front.
-jsContract :: DLType -> Doc
+jsContract :: DLType -> App Doc
 jsContract = \case
-  T_Null -> "stdlib.T_Null"
-  T_Bool -> "stdlib.T_Bool"
-  T_UInt -> "stdlib.T_UInt"
-  T_Bytes sz -> jsApply "stdlib.T_Bytes" [jsCon $ DLL_Int sb sz]
-  T_Digest -> "stdlib.T_Digest"
-  T_Address -> "stdlib.T_Address"
-  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLL_Int sb sz)]
-  T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
-  T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
-  T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
+  T_Null -> return "stdlib.T_Null"
+  T_Bool -> return "stdlib.T_Bool"
+  T_UInt -> return "stdlib.T_UInt"
+  T_Bytes sz -> do
+    sz' <- jsCon $ DLL_Int sb sz
+    return $ jsApply "stdlib.T_Bytes" [sz']
+  T_Digest -> return $ "stdlib.T_Digest"
+  T_Address -> return $ "stdlib.T_Address"
+  T_Array t sz -> do
+    t' <- jsContract t
+    sz' <- jsCon (DLL_Int sb sz)
+    return $ jsApply ("stdlib.T_Array") $ [t', sz']
+  T_Tuple as -> do
+    as' <- mapM jsContract as
+    return $ jsApply ("stdlib.T_Tuple") $ [jsArray as']
+  T_Object m -> do
+    m' <- mapM jsContract m
+    return $ jsApply ("stdlib.T_Object") [jsObject m']
+  T_Data m -> do
+    m' <- mapM jsContract m
+    return $ jsApply ("stdlib.T_Data") [jsObject m']
 
 jsProtect_ :: Doc -> Doc -> Doc -> Doc
 jsProtect_ ai how what =
   jsApply "stdlib.protect" $ [how, what, ai]
 
-jsProtect :: Doc -> DLType -> Doc -> Doc
+jsProtect :: Doc -> DLType -> Doc -> App Doc
 jsProtect ai how what =
-  jsProtect_ ai (jsContract how) what
+  flip (jsProtect_ ai) what <$> jsContract how
 
 jsAt :: SrcLoc -> Doc
 jsAt at = jsString $ unsafeRedactAbsStr $ show at
 
-jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> Doc
-jsAssertInfo ctxt at fs mmsg =
-  jsObject $
+jsAssertInfo :: SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> App Doc
+jsAssertInfo at fs mmsg = do
+  let msg_p = case mmsg of
+        Nothing -> "null"
+        Just b -> jsString $ bunpack b
+  who <- ctxt_who <$> ask
+  who_p <- jsCon $ DLL_Bytes $ who
+  let fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
+  return $ jsObject $
     M.fromList
       [ ("who" :: String, who_p)
       , ("msg", msg_p)
       , ("at", jsAt at)
       , ("fs", fs_p)
       ]
-  where
-    msg_p = case mmsg of
-      Nothing -> "null"
-      Just b -> jsString $ bunpack b
-    who_p = jsCon $ DLL_Bytes $ ctxt_who ctxt
-    fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
 
-jsVar :: DLVar -> Doc
-jsVar (DLVar _ _ _ n) = "v" <> pretty n
+jsVar :: AppT DLVar
+jsVar (DLVar _ _ _ n) = return $ "v" <> pretty n
 
-jsContinueVar :: DLVar -> Doc
-jsContinueVar dv = "c" <> jsVar dv
+jsContinueVar :: AppT DLVar
+jsContinueVar dv = ("c" <>) <$> jsVar dv
 
-jsCon :: DLLiteral -> Doc
+jsCon :: AppT DLLiteral
 jsCon = \case
-  DLL_Null -> "null"
-  DLL_Bool True -> "true"
-  DLL_Bool False -> "false"
-  DLL_Int at i ->
-    jsApply "stdlib.checkedBigNumberify" [jsAt at, jsArg (DLA_Constant $ DLC_UInt_max), pretty i]
-  DLL_Bytes b -> jsString $ bunpack b
+  DLL_Null -> return "null"
+  DLL_Bool True -> return "true"
+  DLL_Bool False -> return "false"
+  DLL_Int at i -> do
+    uim <- jsArg (DLA_Constant $ DLC_UInt_max)
+    return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
+  DLL_Bytes b -> return $ jsString $ bunpack b
 
-jsArg :: DLArg -> Doc
+jsArg :: AppT DLArg
 jsArg = \case
   DLA_Var v -> jsVar v
   DLA_Constant c ->
     case c of
       DLC_UInt_max ->
-        "stdlib.UInt_max"
+        return "stdlib.UInt_max"
   DLA_Literal c -> jsCon c
   DLA_Interact _ m t ->
     jsProtect "null" t $ "interact." <> pretty m
 
-jsLargeArg :: DLLargeArg -> Doc
+jsLargeArg :: AppT DLLargeArg
 jsLargeArg = \case
   DLLA_Array _ as ->
     jsLargeArg $ DLLA_Tuple as
   DLLA_Tuple as ->
-    jsArray $ map jsArg as
+    jsArray <$> mapM jsArg as
   DLLA_Obj m ->
-    jsObject $ M.map jsArg m
-  DLLA_Data _ vn vv ->
-    jsArray [jsString vn, jsArg vv]
+    jsObject <$> mapM jsArg m
+  DLLA_Data _ vn vv -> do
+    vv' <- jsArg vv
+    return $ jsArray [jsString vn, vv']
 
-jsDigest :: [DLArg] -> Doc
-jsDigest as =
-  jsApply
-    "stdlib.digest"
-    [ jsContract (T_Tuple $ map argTypeOf as)
-    , jsLargeArg (DLLA_Tuple as)
-    ]
+jsDigest :: AppT [DLArg]
+jsDigest as = do
+  ctc <- jsContract (T_Tuple $ map argTypeOf as)
+  as' <- jsLargeArg (DLLA_Tuple as)
+  return $ jsApply "stdlib.digest" [ ctc , as' ]
 
-jsPrimApply :: JSCtxt -> PrimOp -> [Doc] -> Doc
-jsPrimApply _ctxt = \case
+jsPrimApply :: PrimOp -> [Doc] -> Doc
+jsPrimApply = \case
   SELF_ADDRESS -> jsApply "ctc.selfAddress"
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
@@ -202,8 +232,8 @@ jsPrimApply _ctxt = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
 
-jsExpr :: JSCtxt -> DLExpr -> Doc
-jsExpr ctxt = \case
+jsExpr :: AppT DLExpr
+jsExpr = \case
   DLE_Arg _ a ->
     jsArg a
   DLE_LArg _ la ->
@@ -211,21 +241,32 @@ jsExpr ctxt = \case
   DLE_Impossible at msg ->
     expect_thrown at $ Err_Impossible msg
   DLE_PrimOp _ p as ->
-    jsPrimApply ctxt p $ map jsArg as
-  DLE_ArrayRef _ aa ia ->
-    jsArg aa <> brackets (jsArg ia)
-  DLE_ArraySet _ aa ia va ->
-    jsApply "stdlib.Array_set" $ map jsArg [aa, ia, va]
-  DLE_ArrayConcat _ x y ->
-    jsArg x <> "." <> jsApply "concat" [jsArg y]
-  DLE_ArrayZip _ x y ->
-    jsApply "stdlib.Array_zip" $ map jsArg [x, y]
-  DLE_TupleRef at aa i ->
-    jsArg aa <> brackets (jsCon $ DLL_Int at i)
-  DLE_ObjectRef _ oa f ->
-    jsArg oa <> "." <> pretty f
-  DLE_Interact at fs _ m t as ->
-    jsProtect (jsAssertInfo ctxt at fs (Just $ bpack m)) t $ "await" <+> (jsApply ("interact." <> pretty m) $ map jsArg as)
+    jsPrimApply p <$> mapM jsArg as
+  DLE_ArrayRef _ aa ia -> do
+    aa' <- jsArg aa
+    ia' <- jsArg ia
+    return $ aa' <> brackets ia'
+  DLE_ArraySet _ aa ia va -> do
+    as' <- mapM jsArg [aa, ia, va]
+    return $ jsApply "stdlib.Array_set" as'
+  DLE_ArrayConcat _ x y -> do
+    x' <- jsArg x
+    y' <- jsArg y
+    return $ x' <> "." <> jsApply "concat" [y']
+  DLE_ArrayZip _ x y -> do
+    as' <- mapM jsArg [x, y]
+    return $ jsApply "stdlib.Array_zip" as'
+  DLE_TupleRef at aa i -> do
+    aa' <- jsArg aa
+    i' <- jsCon $ DLL_Int at i
+    return $ aa' <> brackets i'
+  DLE_ObjectRef _ oa f -> do
+    oa' <- jsArg oa
+    return $ oa' <> "." <> pretty f
+  DLE_Interact at fs _ m t as -> do
+    ai' <- jsAssertInfo at fs (Just $ bpack m)
+    as' <- mapM jsArg as
+    jsProtect ai' t $ "await" <+> (jsApply ("interact." <> pretty m) as')
   DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a mmsg ->
     check
@@ -236,84 +277,123 @@ jsExpr ctxt = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require =
-        jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs mmsg]
+      require = do
+        a' <- jsArg a
+        ai' <- jsAssertInfo at fs mmsg
+        return $ jsApply "stdlib.assert" $ [a', ai']
   DLE_Transfer _ who amt ->
-    case ctxt_simulate ctxt of
-      False -> emptyDoc
-      True ->
-        jsApply
+    (ctxt_simulate <$> ask) >>= \case
+      False -> mempty
+      True -> do
+        who' <- jsArg who
+        amt' <- jsArg amt
+        return $ jsApply
           "sim_r.txns.push"
           [ jsObject $
               M.fromList $
-                [ ("to" :: String, jsArg who)
-                , ("amt" :: String, jsArg amt)
+                [ ("to" :: String, who')
+                , ("amt" :: String, amt')
                 ]
           ]
-  DLE_Wait _ amt ->
-    case ctxt_simulate ctxt of
-      True -> jsApply "void" [jsArg amt]
-      False -> "await" <+> jsApply "ctc.wait" [jsArg amt]
-  DLE_PartSet _ who what ->
-    case ctxt_who ctxt == who of
-      True ->
-        jsApply "ctc.iam" [jsArg what]
+  DLE_Wait _ amt -> do
+    amt' <- jsArg amt
+    (ctxt_simulate <$> ask) >>= \case
+      True -> return $ jsApply "void" [amt']
+      False -> return $ "await" <+> jsApply "ctc.wait" [amt']
+  DLE_PartSet _ who what -> do
+    rwho <- ctxt_who <$> ask
+    case rwho == who of
+      True -> do
+        what' <- jsArg what
+        return $ jsApply "ctc.iam" [what']
       False ->
         jsArg what
-  DLE_MapRef _ mpv fa ->
-    jsProtect_ "null" (jsMapVarCtc mpv) $ jsApply "stdlib.mapRef" [ jsMapVar mpv, jsArg fa ]
-  DLE_MapSet _ mpv fa na ->
+  DLE_MapRef _ mpv fa -> do
+    let ctc = jsMapVarCtc mpv
+    fa' <- jsArg fa
+    return $ jsProtect_ "null" ctc $ jsApply "stdlib.mapRef" [ jsMapVar mpv, fa' ]
+  DLE_MapSet _ mpv fa na -> do
     -- XXX something really bad is going to happen during the simulation of
     -- this
-    jsMapVar mpv <> brackets (jsArg fa) <+> "=" <+> jsArg na
-  DLE_MapDel _ mpv fa ->
-    jsMapVar mpv <> brackets (jsArg fa) <+> "=" <+> "undefined"
+    fa' <- jsArg fa
+    na' <- jsArg na
+    return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
+  DLE_MapDel _ mpv fa -> do
+    fa' <- jsArg fa
+    return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
 
-jsEmitSwitch :: (JSCtxt -> k -> Doc) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc
-jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
-  where
-    cm1 (vn, (mov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
-      where
-        set_and_body' = vsep [set', iter ctxt body, "break;"]
-        set' = case mov' of
-          Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
-          Nothing -> emptyDoc
+jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
+jsEmitSwitch iter _at ov csm = do
+  ov' <- jsVar ov
+  let cm1 (vn, (mov', body)) = do
+        body' <- iter body
+        set' <- case mov' of
+          Just ov2 -> do
+            ov2' <- jsVar ov2
+            return $ "const" <+> ov2' <+> "=" <+> ov' <> "[1]" <> semi
+          Nothing -> mempty
+        let set_and_body' = vsep [set', body', "break;"]
+        return $ "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
+  csm' <- mapM cm1 $ M.toAscList csm
+  return $ "switch" <+> parens (ov' <> "[0]") <+> jsBraces (vsep csm')
 
-jsCom :: JSCtxt -> PILCommon -> Doc
-jsCom ctxt = \case
+jsCom :: AppT PILCommon
+jsCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ (Just dv) de ->
-    "const" <+> jsVar dv <+> "=" <+> jsExpr ctxt de <> semi
-  DL_Let _ Nothing de ->
-    jsExpr ctxt de <> semi
-  DL_Var _ dv ->
-    "let" <+> jsVar dv <> semi
-  DL_Set _ dv da ->
-    jsVar dv <+> "=" <+> jsArg da <> semi
-  DL_LocalIf _ c t f ->
-    jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
+  DL_Let _ (Just dv) de -> do
+    dv' <- jsVar dv
+    de' <- jsExpr de
+    return $ "const" <+> dv' <+> "=" <+> de' <> semi
+  DL_Let _ Nothing de -> do
+    de' <- jsExpr de
+    return $ de' <> semi
+  DL_Var _ dv -> do
+    dv' <- jsVar dv
+    return $ "let" <+> dv' <> semi
+  DL_Set _ dv da -> do
+    dv' <- jsVar dv
+    da' <- jsArg da
+    return $ dv' <+> "=" <+> da' <> semi
+  DL_LocalIf _ c t f -> do
+    c' <- jsArg c
+    t' <- jsPLTail t
+    f' <- jsPLTail f
+    return $ jsIf c' t' f'
   DL_LocalSwitch at ov csm ->
-    jsEmitSwitch jsPLTail ctxt at ov csm
-  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) ->
-    "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
-  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
-    "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [(jsApply "" (map (jsArg . DLA_Var) [b, a]) <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r))), jsArg z]
+    jsEmitSwitch jsPLTail at ov csm
+  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
+    ans' <- jsVar ans
+    x' <- jsArg x
+    a' <- jsArg $ DLA_Var a
+    f' <- jsPLTail f
+    r' <- jsArg r
+    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
+  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) -> do
+    ans' <- jsVar ans
+    x' <- jsArg x
+    z' <- jsArg z
+    a' <- jsArg $ DLA_Var a
+    b' <- jsArg $ DLA_Var b
+    f' <- jsPLTail f
+    r' <- jsArg r
+    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "reduce" [(jsApply "" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'), z']
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
 
-jsPLTail :: JSCtxt -> PILTail -> Doc
-jsPLTail ctxt = \case
-  DT_Return {} -> emptyDoc
-  DT_Com m k -> jsCom ctxt m <> hardline <> jsPLTail ctxt k
+jsPLTail :: AppT PILTail
+jsPLTail = \case
+  DT_Return {} -> mempty
+  DT_Com m k -> jsCom m <> pure hardline <> jsPLTail k
 
 jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlock :: JSCtxt -> PILBlock -> Doc
-jsBlock ctxt (DLinBlock _ _ t a) = jsNewScope body
-  where
-    body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
+jsBlock :: AppT PILBlock
+jsBlock (DLinBlock _ _ t a) = do
+  t' <- jsPLTail t
+  a' <- jsArg a
+  return $ jsNewScope $ t' <> hardline <> jsReturn a'
 
 data AsnMode
   = AM_While
@@ -322,8 +402,8 @@ data AsnMode
   | AM_ContinueInner
   | AM_ContinueInnerSim
 
-jsAsn :: JSCtxt -> AsnMode -> DLAssignment -> Doc
-jsAsn _ctxt mode asn =
+jsAsn :: AsnMode -> DLAssignment -> App Doc
+jsAsn mode asn =
   case mode of
     AM_While -> def "let " v a
     AM_WhileSim -> def "const " v a
@@ -332,253 +412,266 @@ jsAsn _ctxt mode asn =
     AM_ContinueInnerSim -> def "const " v cv
   where
     def decl lhs rhs =
-      vsep $ map (mk1 decl lhs rhs) $ M.toList asnm
+      vsep <$> (mapM (mk1 decl lhs rhs) $ M.toList asnm)
     DLAssignment asnm = asn
-    mk1 decl lhs rhs row = decl <> lhs row <+> "=" <+> rhs row <> semi
+    mk1 decl lhs rhs row = do
+      lhs' <- lhs row
+      rhs' <- rhs row
+      return $ decl <> lhs' <+> "=" <+> rhs' <> semi
     v (v_, _) = jsVar v_
     cv (v_, _) = jsContinueVar v_
     a (_, a_) = jsArg a_
 
-jsFromSpec :: JSCtxt -> DLVar -> Doc
-jsFromSpec ctxt v =
-  "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
+jsFromSpec :: AppT DLVar
+jsFromSpec v = do
+  v' <- jsVar v
+  txn <- jsTxn
+  return $ "const" <+> v' <+> "=" <+> txn <> ".from" <> semi <> hardline
 
-jsETail :: JSCtxt -> EITail -> Doc
-jsETail ctxt = \case
-  ET_Com m k -> jsCom ctxt m <> hardline <> jsETail ctxt k
-  ET_Stop _ ->
-    case ctxt_simulate ctxt of
-      False -> "return" <> semi
-      True -> emptyDoc
-  ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
-  ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
+jsETail :: AppT EITail
+jsETail = \case
+  ET_Com m k -> jsCom m <> return hardline <> jsETail k
+  ET_Stop _ -> (ctxt_simulate <$> ask) >>= \case
+    False -> return $ "return" <> semi
+    True -> mempty
+  ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
+  ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
   ET_FromConsensus at which msvs k ->
-    case ctxt_simulate ctxt of
-      False -> kp
-      True ->
-        vsep
+    (ctxt_simulate <$> ask) >>= \case
+      False -> jsETail k
+      True -> do
+        let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
+        (nextSt', nextSt_noTime', isHalt') <-
+          case msvs of
+            Nothing ->
+               --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
+              (,,) <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
+            Just svs -> do
+              timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
+              let svs' = dvdeletep timev svs
+              (,,) <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
+        return $ vsep
           [ "sim_r.nextSt =" <+> nextSt' <> semi
           , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
           , "sim_r.isHalt =" <+> isHalt' <> semi
           ]
-    where
-      kp = jsETail ctxt k
-      (nextSt', nextSt_noTime', isHalt') =
-        case msvs of
-          Nothing ->
-            ( jsDigest [] --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
-            , jsDigest []
-            , jsCon $ DLL_Bool True
-            )
-          Just svs ->
-            ( mkStDigest svs
-            , mkStDigest svs'
-            , jsCon $ DLL_Bool False
-            )
-            where
-              timev = fromMaybe (impossible "no timev") (ctxt_timev ctxt)
-              svs' = dvdeletep timev svs
-      mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
-  ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> tp
-    where
-      tp = vsep [defp, k_p]
-      (delayp, k_p) =
-        case mto of
-          Nothing -> ("false", k_okp)
-          Just (delays, k_to) -> (jsSum delays, jsIf (jsTimeoutFlag ctxt') k_top k_okp)
-            where
-              jsSum [] = impossible "no delay"
+  ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> do
+    msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
+    msg_vs <- mapM jsVar msg
+    let withCtxt =
+          local (\e -> e { ctxt_txn = (ctxt_txn e) + 1
+                         , ctxt_timev = Just timev })
+    txn <- withCtxt jsTxn
+    let msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> txn <> ".data" <> semi <> hardline
+    amtv' <- jsVar amtv
+    let amt_defp = "const" <+> amtv' <+> "=" <+> txn <> ".value" <> semi <> hardline
+    timev' <- jsVar timev
+    let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
+    fs_ok' <- withCtxt $ jsFromSpec fs_ok
+    let k_defp = msg_vs_defp <> amt_defp <> time_defp <> fs_ok'
+    whop <- jsCon =<< ((DLL_Bytes . ctxt_who) <$> ask)
+    k_ok' <- withCtxt $ jsETail k_ok
+    let k_okp = k_defp <> k_ok'
+    (delayp, k_p) <-
+      case mto of
+        Nothing -> return ("false", k_okp)
+        Just (delays, k_to) -> do
+          let jsSum [] = impossible "no delay"
               jsSum [x] = jsArg x
-              jsSum (x : xs) = jsApply "stdlib.add" [jsArg x, jsSum xs]
-              k_top = jsETail ctxt' k_to
-      msg_vs = map jsVar msg
-      msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
-      amt_defp = "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt') <> ".value" <> semi <> hardline
-      time_defp = "const" <+> jsVar timev <+> "=" <+> (jsTxn ctxt') <> ".time" <> semi <> hardline
-      k_defp =
-        msg_vs_defp
-          <> amt_defp
-          <> time_defp
-          <> jsFromSpec ctxt' fs_ok
-      k_okp = k_defp <> jsETail ctxt' k_ok
-      ctxt' =
-        ctxt
-          { ctxt_txn = (ctxt_txn ctxt) + 1
-          , ctxt_timev = Just timev
-          }
-      whop = jsCon $ DLL_Bytes $ ctxt_who ctxt
-      defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> parens callp <> semi
-      callp =
-        case from_me of
-          Just (args, amt, whena, svs, soloSend) -> sendp
-            where
-              sendp =
-                jsApply
-                  "ctc.sendrecv"
-                  [ whop
-                  , pretty which
-                  , pretty (length msg)
-                  , jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
-                  , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
-                  , vs
-                  , amtp
-                  , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
-                  , jsArg whena
-                  , jsCon (DLL_Bool soloSend)
-                  , delayp
-                  , parens $ "(" <> jsTxn ctxt' <> ") => " <> jsBraces sim_body
-                  ]
-              svs_as = map DLA_Var svs
-              amtp = jsArg amt
-              sim_body =
-                vsep
-                  [ "const sim_r = { txns: [] };"
-                  , "sim_r.prevSt =" <+> mkStDigest svs <> semi
-                  , "sim_r.prevSt_noPrevTime =" <+> mkStDigest svs_noPrevTime <> semi
-                  , k_defp
-                  , sim_body_core
-                  , "return sim_r;"
-                  ]
-              svs_noPrevTime = dvdeletem last_timemv svs
-              mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
-              sim_body_core = jsETail ctxt'_sim k_ok
-              ctxt'_sim = ctxt' {ctxt_simulate = True}
-              vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
-          Nothing -> recvp
-      recvp =
-        jsApply
-          "ctc.recv"
-          [ whop
-          , pretty which
-          , pretty (length msg)
-          , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
-          , "false"
-          , delayp
-          ]
-  ET_While _ asn cond body k ->
-    case ctxt_simulate ctxt of
-      False ->
-        jsAsn ctxt AM_While asn
-          <> hardline
-          <> jsWhile (jsBlock ctxt cond) (jsETail ctxt' body)
-          <> hardline
-          <> jsETail ctxt_tv' k
-      True ->
-        jsAsn ctxt AM_WhileSim asn
-          <> hardline
-          <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt_tv' k)
-    where
-      mtimev' =
-        case ctxt_timev ctxt of
-          Nothing -> Just Nothing
-          Just timev -> foldl' go Nothing (M.toList asnm)
-            where
-              go mtv (v, a) =
-                case a == DLA_Var timev of
-                  True -> Just $ Just v
-                  False -> mtv
-              DLAssignment asnm = asn
-      timev' =
-        case mtimev' of
-          Nothing -> impossible "no timev in while"
-          Just x -> x
-      ctxt_tv' = ctxt {ctxt_timev = timev'}
-      ctxt' = ctxt_tv' {ctxt_while = Just (timev', cond, body, k)}
-  ET_Continue _ asn ->
-    jsAsn ctxt AM_ContinueOuter asn <> hardline
-      <> case ctxt_simulate ctxt of
-        False ->
-          jsAsn ctxt AM_ContinueInner asn
-            <> hardline
-            <> "continue"
-            <> semi
-        True ->
-          case ctxt_while ctxt of
-            Nothing -> impossible "continue not in while"
-            Just (wtimev', wcond, wbody, wk) ->
-              (jsNewScope $
-                 jsAsn ctxt AM_ContinueInnerSim asn
-                   <> hardline
-                   <> jsIf (jsBlock ctxt wcond) (jsETail ctxt' wbody) (jsETail ctxt' wk))
-                <> semi
+              jsSum (x : xs) = do
+                x' <- jsArg x
+                xs' <- jsSum xs
+                return $ jsApply "stdlib.add" [x', xs']
+          k_top <- withCtxt $ jsETail k_to
+          delays' <- jsSum delays
+          timef <- withCtxt $ jsTimeoutFlag
+          return (delays', jsIf timef k_top k_okp)
+    let recvp =
+          jsApply
+            "ctc.recv"
+            [ whop
+            , pretty which
+            , pretty (length msg)
+            , jsArray msg_ctcs
+            , "false"
+            , delayp
+            ]
+    callp <-
+      withCtxt $
+          case from_me of
+            Just (args, amt, whena, svs, soloSend) -> do
+              let svs_as = map DLA_Var svs
+              amtp <- jsArg amt
+              let svs_noPrevTime = dvdeletem last_timemv svs
+              let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
+              let withSim = local (\e -> e {ctxt_simulate = True})
+              sim_body_core <- withSim $ jsETail k_ok
+              svs_d <- mkStDigest svs
+              svs_nptd <- mkStDigest svs_noPrevTime
+              let sim_body =
+                    vsep
+                      [ "const sim_r = { txns: [] };"
+                      , "sim_r.prevSt =" <+> svs_d <> semi
+                      , "sim_r.prevSt_noPrevTime =" <+> svs_nptd <> semi
+                      , k_defp
+                      , sim_body_core
+                      , "return sim_r;"
+                      ]
+              vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
+              whena' <- jsArg whena
+              soloSend' <- jsCon (DLL_Bool soloSend)
+              msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
+              rests <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
+              last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
+              let sendp =
+                   jsApply
+                      "ctc.sendrecv"
+                      [ whop
+                      , pretty which
+                      , pretty (length msg)
+                      , last_timev'
+                      , jsArray msgts
+                      , vs
+                      , amtp
+                      , jsArray rests
+                      , whena'
+                      , soloSend'
+                      , delayp
+                      , parens $ "(" <> txn <> ") => " <> jsBraces sim_body
+                      ]
+              return sendp
+            Nothing ->
+              return recvp
+    let defp = "const" <+> txn <+> "=" <+> "await" <+> parens callp <> semi
+    return $ vsep [defp, k_p]
+  ET_While _ asn cond body k -> do
+    timev_ <- ctxt_timev <$> ask
+    let mtimev' =
+          case timev_ of
+            Nothing -> Just Nothing
+            Just timev -> foldl' go Nothing (M.toList asnm)
               where
-                ctxt' = ctxt {ctxt_timev = wtimev'}
+                go mtv (v, a) =
+                  case a == DLA_Var timev of
+                    True -> Just $ Just v
+                    False -> mtv
+                DLAssignment asnm = asn
+    let timev' =
+          case mtimev' of
+            Nothing -> impossible "no timev in while"
+            Just x -> x
+    let newCtxt_tv = local (\e -> e {ctxt_timev = timev'})
+    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = Just (timev', cond, body, k)})
+    cond' <- jsBlock cond
+    body' <- newCtxt' $ jsETail body
+    k' <- newCtxt_tv $ jsETail k
+    (ctxt_simulate <$> ask) >>= \case
+      False -> do
+        asn' <- jsAsn AM_While asn
+        return $ asn' <> hardline <> jsWhile cond' body' <> hardline <> k'
+      True -> do
+        asn' <- jsAsn AM_WhileSim asn
+        return $ asn' <> hardline <> jsIf cond' body' k'
+  ET_Continue _ asn -> do
+    asn'o <- jsAsn AM_ContinueOuter asn
+    asn'i <-
+      (ctxt_simulate <$> ask) >>= \case
+        False -> do
+          asn_ <- jsAsn AM_ContinueInner asn
+          return $ asn_ <> hardline <> "continue" <> semi
+        True ->
+          (ctxt_while <$> ask) >>= \case
+            Nothing -> impossible "continue not in while"
+            Just (wtimev', wcond, wbody, wk) -> do
+              let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
+              asn_ <- jsAsn AM_ContinueInnerSim asn
+              wcond' <- jsBlock wcond
+              wbody' <- newCtxt $ jsETail wbody
+              wk' <- newCtxt $ jsETail wk
+              return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
+    return $ asn'o <> hardline <> asn'i
   ET_ConsensusOnly _at l k ->
-    case ctxt_simulate ctxt of
+    (ctxt_simulate <$> ask) >>= \case
       True -> kp
-      False -> vsep [lp, kp]
+      False -> vsep <$> mapM id [lp, kp]
     where
-      kp = jsETail ctxt k
-      lp = jsPLTail ctxt l
+      kp = jsETail k
+      lp = jsPLTail l
 
-jsPart :: DLInit -> SLPart -> EIProg -> Doc
-jsPart dli p (EPProg _ _ et) =
-  "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
-  where
-    ctxt =
-      JSCtxt
-        { ctxt_who = p
-        , ctxt_txn = 0
-        , ctxt_simulate = False
-        , ctxt_while = Nothing
-        , ctxt_timev = Nothing
-        }
-    DLInit {..} = dli
-    ctimem' =
+jsPart :: DLInit -> SLPart -> EIProg -> App Doc
+jsPart dli p (EPProg _ _ et) = do
+  let ctxt_ctcs = Nothing
+  let ctxt_who = p
+  let ctxt_txn = 0
+  let ctxt_while = Nothing
+  let ctxt_simulate = False
+  let ctxt_timev = Nothing
+  local (const JSCtxt {..}) $ do
+    let DLInit {..} = dli
+    ctimem' <-
       case dli_ctimem of
         Nothing -> mempty
-        Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
-    map_defn (mpv, DLMapInfo {..}) =
-      vsep [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
-           , "const" <+> jsMapVarCtc mpv <+> "=" <+> jsContract (maybeT dlmi_ty) <> ";" ]
-    maps_defn = vsep $ map map_defn $ M.toList dli_maps
-    bodyp' =
-      vsep
-        [ "const stdlib = ctc.stdlib;"
-        , maps_defn
-        , ctimem'
-        , jsETail ctxt et
-        ]
+        Just v -> do
+          v' <- jsVar v
+          return $ "const" <+> v' <+> "=" <+> "await ctc.creationTime();"
+    let map_defn (mpv, DLMapInfo {..}) = do
+          ctc <- jsContract (maybeT dlmi_ty)
+          return $ vsep [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
+               , "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+    maps_defn <- vsep <$> (mapM map_defn $ M.toList dli_maps)
+    et' <- jsETail et
+    let bodyp' =
+          vsep
+          [ "const stdlib = ctc.stdlib;"
+          , maps_defn
+          , ctimem'
+          , et'
+          ]
+    return $ "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
 
-jsConnInfo :: ConnectorInfo -> Doc
+jsConnInfo :: ConnectorInfo -> App Doc
 jsConnInfo = \case
   Aeson.Null -> jsCon DLL_Null
   Aeson.Bool b -> jsCon $ DLL_Bool b
   -- Note: only integers are supported.
   -- TODO: throw error if non-integer detected,
   -- or alernatively, support non-integers
-  Aeson.Number i -> pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
-  Aeson.String t -> jsBacktickText t
-  Aeson.Array a -> jsArray $ map jsConnInfo $ Foldable.toList a
-  Aeson.Object m -> jsObject $ M.map jsConnInfo $ M.fromList $ HM.toList $ m
+  Aeson.Number i -> return $ pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
+  Aeson.String t -> return $ jsBacktickText t
+  Aeson.Array a -> jsArray <$> (mapM jsConnInfo $ Foldable.toList a)
+  Aeson.Object m -> jsObject <$> (mapM jsConnInfo $ M.fromList $ HM.toList $ m)
 
-jsCnp :: T.Text -> ConnectorInfo -> Doc
-jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> (jsConnInfo cnp) <> semi
+jsCnp :: T.Text -> ConnectorInfo -> App Doc
+jsCnp name cnp = do
+  cnp' <- jsConnInfo cnp
+  return $ "const" <+> "_" <> pretty name <+> "=" <+> cnp' <> semi
 
 jsConnsExp :: [T.Text] -> Doc
 jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsPIProg :: ConnectorResult -> PIProg -> Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = modp
-  where
-    modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
-    preamble =
-      vsep
-        [ pretty $ "// Automatically generated with Reach " ++ versionStr
-        -- While on one hand we should generate code that passes eslint,
-        -- on the other hand this is tedious,
-        -- and also we don't want users to have to deal with unforeseen linting issues.
-        -- , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape, no-loop-func */"
-        -- (New issues: default-case, no-unreachable)
-        , "/* eslint-disable */"
-        , "export const _version =" <+> jsString versionStr <> semi ]
-    partsp = map (uncurry (jsPart dli)) $ M.toList pm
-    cnpsp = map (uncurry jsCnp) $ HM.toList cr
-    connsExp = jsConnsExp (HM.keys cr)
+jsPIProg :: ConnectorResult -> PIProg -> App Doc
+jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = do
+  let preamble =
+        vsep
+          [ pretty $ "// Automatically generated with Reach " ++ versionStr
+          , "/* eslint-disable */"
+          , "export const _version =" <+> jsString versionStr <> semi ]
+  partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
+  cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
+  let connsExp = jsConnsExp $ HM.keys cr
+  return $ vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 
 backend_js :: Backend
 backend_js outn crs pl = do
   let jsf = outn "mjs"
-  LTIO.writeFile jsf $ render $ jsPIProg crs pl
+  let ctxt_who = "Module"
+  let ctxt_txn = 0
+  let ctxt_simulate = False
+  let ctxt_while = Nothing
+  let ctxt_timev = Nothing
+  let ctxt_ctcs = Nothing
+  d <- flip runReaderT (JSCtxt {..}) $
+    jsPIProg crs pl
+  LTIO.writeFile jsf $ render d
