@@ -106,13 +106,8 @@ jsTxn = ("txn" <>) . pretty . ctxt_txn <$> ask
 jsTimeoutFlag :: App Doc
 jsTimeoutFlag = (<> ".didTimeout") <$> jsTxn
 
---- FIXME use Haskell state to keep track of which contracts have been
---- constructed and then use a JS backend map to store these so we
---- don't create them ovre and over... or do something like the sol
---- and smt backends and collect the set of types and define them all
---- up front.
-jsContract :: DLType -> App Doc
-jsContract = \case
+jsContract_ :: DLType -> App Doc
+jsContract_ = \case
   T_Null -> return "stdlib.T_Null"
   T_Bool -> return "stdlib.T_Bool"
   T_UInt -> return "stdlib.T_UInt"
@@ -134,6 +129,23 @@ jsContract = \case
   T_Data m -> do
     m' <- mapM jsContract m
     return $ jsApply ("stdlib.T_Data") [jsObject m']
+
+jsContract :: DLType -> App Doc
+jsContract t = do
+  (ctxt_ctcs <$> ask) >>= \case
+    Nothing -> jsContract_ t
+    Just (JSContracts {..}) -> do
+      t2i <- liftIO $ readIORef jsc_t2i
+      case M.lookup t t2i of
+        Just d -> return d
+        Nothing -> do
+          def_rhs <- jsContract_ t
+          ti <- liftIO $ incCounter jsc_idx
+          let d = "ctc" <> pretty ti
+          let def = "const" <+> d <+> "=" <+> def_rhs <> semi
+          liftIO $ modifyIORef jsc_t2i $ M.insert t d
+          liftIO $ modifyIORef jsc_i2t $ M.insert ti def
+          return d
 
 jsProtect_ :: Doc -> Doc -> Doc -> Doc
 jsProtect_ ai how what =
@@ -600,7 +612,10 @@ jsETail = \case
 
 jsPart :: DLInit -> SLPart -> EIProg -> App Doc
 jsPart dli p (EPProg _ _ et) = do
-  let ctxt_ctcs = Nothing
+  jsc_idx <- liftIO $ newCounter 0
+  jsc_t2i <- liftIO $ newIORef mempty
+  jsc_i2t <- liftIO $ newIORef mempty
+  let ctxt_ctcs = Just $ JSContracts {..}
   let ctxt_who = p
   let ctxt_txn = 0
   let ctxt_while = Nothing
@@ -620,9 +635,12 @@ jsPart dli p (EPProg _ _ et) = do
                , "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
     maps_defn <- vsep <$> (mapM map_defn $ M.toList dli_maps)
     et' <- jsETail et
+    i2t' <- liftIO $ readIORef jsc_i2t
+    let ctcs = vsep $ map snd $ M.toAscList i2t'
     let bodyp' =
           vsep
           [ "const stdlib = ctc.stdlib;"
+          , ctcs
           , maps_defn
           , ctimem'
           , et'
