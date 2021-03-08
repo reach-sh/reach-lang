@@ -229,7 +229,7 @@ data SLForm
       , slptc_msg :: Maybe [SLVar]
       , slptc_amte :: Maybe JSExpression
       , slptc_whene :: Maybe JSExpression
-      , slptc_timeout :: Maybe (SrcLoc, JSExpression, JSBlock)
+      , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
       }
   | SLForm_unknowable
   | SLForm_fork
@@ -237,7 +237,7 @@ data SLForm
       { slf_at :: SrcLoc
       , slf_mode :: Maybe ForkMode
       , slf_cases :: [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))]
-      , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock)
+      , slf_mtime :: Maybe (SrcLoc, [JSExpression])
       }
   | SLForm_parallel_reduce
   | SLForm_parallel_reduce_partial

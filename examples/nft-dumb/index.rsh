@@ -28,12 +28,7 @@ export const main =
             amOwner ? declassify(interact.newOwner()) : this; });
         Owner.publish(newOwner)
           .when(amOwner)
-          // NOTE: Reach is trying to protect us from hanging, but in this case
-          // we know that there is only one owner and we want to hang until
-          // they are read, so use an absurdly large timeout
-          .timeout(pow(2,20,10), () => {
-            Owner.publish();
-            continue; });
+          .timeout(false);
         require(this == owner);
         // We could add a pay above and transfer(fee).to(Creator) below to
         // implement a basic royalty.

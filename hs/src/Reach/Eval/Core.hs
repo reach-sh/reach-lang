@@ -1085,8 +1085,8 @@ evalForm f args = do
               _ -> illegal_args 4
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [(at, case_args)]) mtime
         Just FM_Timeout -> do
-          x <- parsedTimeout
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases x
+          at <- withAt id
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args))
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
     SLForm_parallel_reduce -> do
       at <- withAt id
@@ -1136,8 +1136,13 @@ evalForm f args = do
           x <- one_arg
           retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just x) mtime
         Just TCM_Timeout -> do
-          x <- parsedTimeout
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen x
+          at <- withAt id
+          x <-
+            case args of
+              [de] -> return $ (at, de, Nothing)
+              [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] -> return $ (at, de, Just (jsStmtToBlock dt_s))
+              _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
+          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $ Just x
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
     SLForm_each -> do
@@ -1217,11 +1222,6 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
-    parsedTimeout =
-      case args of
-        [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
-          withAt $ \at -> Just (at, de, (jsStmtToBlock dt_s))
-        _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
 
 evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
@@ -2729,7 +2729,7 @@ getBindingOrigin :: [DLArg] -> Maybe (SrcLoc, SLVar)
 getBindingOrigin [DLA_Var (DLVar _ b _ _)] = b
 getBindingOrigin _ = Nothing
 
-doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> App SLStmtRes
+doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
 doToConsensus ks whos vas msg amt_e when_e mtime = do
   at <- withAt id
   st <- readSt id
@@ -2835,20 +2835,42 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   let not_all_true_send =
         getAny $ mconcat $ map (Any . not_true_send) (M.toList tc_send')
   let mustHaveTimeout = S.null whos || not_all_true_send
+  let timeout_ignore_okay1 = \case
+        (_, (_, _, _, _, DLA_Literal (DLL_Bool True))) -> True
+        (_, (_, True, _, _, when_da)) ->
+          case when_da of
+            DLA_Literal (DLL_Bool False) -> False
+            _ -> True
+        _ -> False
+  let timeout_ignore_okay =
+        getAny $ mconcat $ map (Any . timeout_ignore_okay1) (M.toList tc_send')
+  let mustHaveTimeoutNoMatterWhat = not $ timeout_ignore_okay
   (tc_mtime, fcr) <-
     case mtime of
       Nothing -> do
-        when mustHaveTimeout $ expect_ $ Err_ToConsensus_WhenNoTimeout
+        when mustHaveTimeout $ expect_ $ Err_ToConsensus_WhenNoTimeout False
         setSt k_st
         return $ (Nothing, k_cr)
-      Just (time_at, delay_e, (JSBlock _ time_ss _)) -> locAt time_at $ do
+      Just (time_at, delay_e, mtimeb) -> locAt time_at $ do
         ensure_can_wait
-        delay_da <- locSt st_pure $ ctepee T_UInt delay_e
-        SLRes time_lifts time_st time_cr <- captureRes $ evalStmt time_ss
-        setSt k_st
-        mergeSt time_st
-        fcr <- combineStmtRes Public k_cr time_st time_cr
-        return $ (Just (delay_da, time_lifts), fcr)
+        delay_sv <- locSt st_pure $ evalExpr delay_e >>= ensure_public
+        case delay_sv of
+          SLV_Bool _ False -> do
+            when mustHaveTimeoutNoMatterWhat $ expect_ $ Err_ToConsensus_WhenNoTimeout True
+            setSt k_st
+            return $ (Nothing, k_cr)
+          _ -> do
+            delay_da <- compileCheckType T_UInt delay_sv
+            case mtimeb of
+              Nothing ->
+                expect_ $ Err_ToConsensus_NoTimeoutBlock
+              Just (JSBlock _ time_ss _) -> do
+                SLRes time_lifts time_st time_cr <-
+                  captureRes $ evalStmt time_ss
+                setSt k_st
+                mergeSt time_st
+                fcr <- combineStmtRes Public k_cr time_st time_cr
+                return $ (Just (delay_da, time_lifts), fcr)
   -- Prepare final result
   saveLift $ DLS_ToConsensus at tc_send tc_recv tc_mtime
   return $ fcr
@@ -2888,7 +2910,7 @@ data CompiledForkCase = CompiledForkCase
   , cfc_only :: JSStatement
   }
 
-doFork :: [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, JSExpression, JSBlock) -> App SLStmtRes
+doFork :: [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, [JSExpression]) -> App SLStmtRes
 doFork ks cases mtime = do
   idx <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
@@ -2990,8 +3012,8 @@ doFork ks cases mtime = do
   let tc_time_e =
         case mtime of
           Nothing -> tc_pay_e
-          Just (_, td, JSBlock tbb tbs tba) ->
-            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) tbb (toJSCL [td, (JSArrowExpression (JSParenthesizedArrowParameterList tbb JSLNil tba) tba (JSStatementBlock tbb tbs tba sp))]) tba
+          Just (_, targs) ->
+            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) a (toJSCL targs) a
   let tc_e = tc_time_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a

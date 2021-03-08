@@ -40,6 +40,7 @@ data EvalError
   | Err_Block_While
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
+  | Err_ToConsensus_NoTimeoutBlock
   | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
@@ -110,7 +111,7 @@ data EvalError
   | Err_RecursionDepthLimit
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
-  | Err_ToConsensus_WhenNoTimeout
+  | Err_ToConsensus_WhenNoTimeout Bool
   | Err_Fork_ResultNotObject DLType
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
@@ -260,6 +261,8 @@ instance Show EvalError where
       "Invalid `while` syntax"
     Err_CannotReturn ->
       "Invalid `return` syntax"
+    Err_ToConsensus_NoTimeoutBlock ->
+      "Timeout delay given without timeout block"
     Err_ToConsensus_TimeoutArgs jes ->
       "Invalid Participant.timeout args"
         <> case jes of
@@ -271,7 +274,7 @@ instance Show EvalError where
                     impossible $ "nothing wrong with timeout args!"
                   _ -> ": the second argument should have no arguments"
               _ -> ": the second argument should be an arrow, but got something else"
-          _ -> ": expected two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
+          _ -> ": expected one argument or two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
     Err_App_Interact_NotFirstOrder ty ->
       "Invalid interact specification. Expected first-order type, got: "
         <> show ty
@@ -446,8 +449,10 @@ instance Show EvalError where
       "must be in while invariant at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
-    Err_ToConsensus_WhenNoTimeout ->
-      "Cannot optionally transition to consensus or have an empty race without timeout."
+    Err_ToConsensus_WhenNoTimeout noMatterWhat ->
+      case noMatterWhat of
+        True -> "Cannot ignore timeout requirement, unless at least one participant class"
+        False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
       "fork local result must be object with fields `msg` or `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->

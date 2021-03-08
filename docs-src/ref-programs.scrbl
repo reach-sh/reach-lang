@@ -310,6 +310,10 @@ It is an abbreviation of many @tech{local step} statements that could have been 
  Alice.publish(wagerAmount)
       .pay(wagerAmount)
       .timeout(DELAY, () => closeTo(Bob, false)); }
+@reach{
+ Alice.publish(wagerAmount)
+      .pay(wagerAmount)
+      .timeout(false); }
 
 A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
@@ -325,7 +329,6 @@ The @tech{continuation} of a timeout block is the same as the continuation of th
 
 The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}.
 The @reachin{when} component may always be omitted, in which case it is assumed to be @reachin{true}.
-The @reachin{timeout} component may omitted if @reachin{when} is statically @reachin{true}.
 @reachin{publish} or @reachin{pay} must occur first, after which components may occur in any order.
 For example, the following are all @tech{valid}:
 
@@ -348,6 +351,10 @@ For example, the following are all @tech{valid}:
  Alice.publish(bid).when(wantsToBid);
 
 }
+
+The @reachin{timeout} component must be included if @reachin{when} is not statically @reachin{true}.
+This ensures that your clients will eventually complete the program.
+If a @tech{consensus transfer} is a guaranteed race between non-class @tech{participants} and a @tech{participant class} that @emph{may} attempt to transfer (i.e. @reachin{when} is not statically @reachin{false}), then a @reachin{timeout} may be explicitly omitted by writing @reachin{.timeout(false)}.
 
 If a @tech{consensus transfer} specifies a single @tech{participant}, which has not yet been @tech{fixed} in the application and is not a @tech{participant class}, then this statement does so; therefore, after it the @reachin{PART} may be used as an @tech{address}.
 
