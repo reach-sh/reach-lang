@@ -55,7 +55,7 @@ Reach development includes each one of these seven components. But rather than r
 @itemlist[
 #:style 'ordered
 
-@item{@bold{Protocol Design} --- As a programming language, Reach operates a different level of abstraction than a language like Solidity.
+@item{@bold{Protocol Design} --- As a programming language, Reach operates at a different level of abstraction than a language like Solidity.
 Reach programs encode the same information that would be in the informal protocol design diagrams that often accompany smart contracts.
 A Reach program specifically names the various participants in a @|DApp| and their individual workflows.}
 
