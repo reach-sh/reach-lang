@@ -30,7 +30,7 @@ Part of the challenge of smart contract development is understanding the connect
 This middleware is co-developed with the smart contract and duplicates details like the names of methods and their arguments.
 It abstracts these details into higher-level patterns of operation that roughly correspond to the use-cases and workflows in the protocol design.}
 
-@item{@bold{Frontend} --- A developer builds a user interface that connects to the middleware and potentially a wallet, like MetaMask, and provides a high-leve user-facing perspective on the software.
+@item{@bold{Frontend} --- A developer builds a user interface that connects to the middleware and potentially a wallet, like MetaMask, and provides a high-level user-facing perspective on the software.
 This is mostly insulated from the details of the particular protocol and contract, but is typically specialized to the consensus network, because the user interface surfaces details about the underlying network.}
 
 @item{@bold{Testing} --- Developers typically use tools like Truffle Suite or a developer instance of @tt{geth} to launch a test consensus network and then build a suite of unit and end-to-end tests of their application, typically be either directly interacting with the middleware or the smart contract itself.
@@ -57,7 +57,7 @@ Reach development includes each one of these seven components. But rather than r
 
 @item{@bold{Protocol Design} --- As a programming language, Reach operates at a different level of abstraction than a language like Solidity.
 Reach programs encode the same information that would be in the informal protocol design diagrams that often accompany smart contracts.
-A Reach program specifically names the various participants in a @|DApp| and their individual workflows.}
+A Reach program specifically names the various participants in a @|DApp| and their individual workflows as a single chronological workflow that shows how and when the various individual workflows intertwine.}
 
 @item{@bold{Smart Contract} --- By operating this higher-level of abstraction, Reach developers are not responsible for determining the state space of the smart contract.
 Instead, the Reach compiler analyzes the structure of communication in the protocol design and derives the necessary state and transition functions.
@@ -65,7 +65,7 @@ This doesn't mean that Reach developers don't think about "consensus"; indeed, t
 However, Reach developers can focus on the constraints on individual @tech{publications} and the consensual actions of the computation, rather than the mechanics of ensuring the smart contract is in the appropriate state and transitions to the correct next state.}
 
 @item{@bold{Middleware} --- Similarly, a Reach program includes a specification of the API of the middleware layer, via a @tech{participant interact interface}.
-This part of Reach program is particular to each participant and explicitly names the points of contact between the participant workflow (embedded in the Reach program) and the frontend.
+This part of a Reach program is particular to each participant and explicitly names the points of contact between the participant workflow (embedded in the Reach program) and the frontend.
 This means that Reach developers do not need to manually keep the middleware and smart contract in sync or update either as the protocol design changes: the Reach compiler does all of that for them.}
 
 @item{@bold{Frontend} --- Reach programs do not embed the frontend, like they embed the protocol design, smart contract, and middleware.
@@ -82,9 +82,9 @@ This theorem prover verifies general properties that all programs should exhibit
 It verifies properties that all @|DApps| should exhibit, such as @tech{token linearity property} which guarantees that funds are not double-spent or forgotten about.
 Furthermore, it verifies bespoke properties that are unique to the particular @|DApp|, as specified with the @reachin{assert} primitive.}
 
-@item{@bold{Deployment} --- Some aspects of deployment decisions are embedded inside of Reach program, such as whether to use a contract factory or whether to have each instance of the @|DApp| use an independent smart contract deployed by one ofthe participants.
+@item{@bold{Deployment} --- Some aspects of deployment decisions are embedded inside of Reach program, such as whether to use a contract factory or whether to have each instance of the @|DApp| use an independent smart contract deployed by one of the participants.
 Other aspects are part of the configuration of the Reach compiler, such as which consensus network will be targeted.
-Still others are part of the configuration of the Reach standard library and testing infrastructure, like the which wallet the middleware should connect to or which kind of development node should be launched and managed by Reach.}
+Still others are part of the configuration of the Reach standard library and testing infrastructure, like which wallet the middleware should connect to or which kind of development node should be launched and managed by Reach.}
 
 ]
 
