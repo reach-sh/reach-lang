@@ -9,9 +9,9 @@ import System.IO.Extra (stderr)
 import Data.List.Extra (splitOn)
 import Data.Char (toUpper, toLower)
 
-capitalised :: String -> String
-capitalised [] = []
-capitalised x = toUpper (head x) : map toLower (tail x)
+capitalized :: String -> String
+capitalized [] = []
+capitalized (h:t) = toUpper h : map toLower t
 
 data Deprecation
   = Deprecated_ParticipantTuples SrcLoc
@@ -25,7 +25,10 @@ instance Show Deprecation where
         <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at "
         <> show at
     Deprecated_SnakeToCamelCase name ->
-      let name' = foldl1 (\ acc w -> acc <> capitalised w) $ splitOn "_" name in
+      let name' = case splitOn "_" name of
+                    []  -> name
+                    h:t -> foldl (\ acc w -> acc <> capitalized w) h t
+      in
       "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`"
 
 deprecated_warning :: Deprecation -> IO ()
