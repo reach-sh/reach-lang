@@ -3,20 +3,20 @@
 
 @title[#:version reach-vers #:tag "guide-browser-testing"]{Testing Reach programs in the browser}
 
-Reach is designed to work securely in a browser-based web app
+Reach is designed to work securely in a browser-based Web app
 by leveraging browser-based wallets to sign transactions.
 This document will give you a few hints about configuring
 wallets like MetaMask for Ethereum and AlgoSigner for Algorand.
 
 @;{TODO: MetaMask tips}
-@;{TODO: section links?}
 
-@(hrule)
+@(local-table-of-contents)
 
-The Reach stdlib gives you a few options for how to sign transactions for Algorand.
+@section{Algorand}
+The Reach standard library gives you a few options for how to sign transactions for Algorand.
 You can use @jsin{reach.setSignStrategy} to configure the behavior of @jsin{reach.getDefaultAccount}.
 
-@(hrule)
+@subsection{Algorand: mnemonic}
 
 @jsin{
 import * as reach from '@"@"reach-sh/stdlib/ALGO';
@@ -26,7 +26,7 @@ reach.setSignStrategy('mnemonic');
 The mnemonic strategy is the simplest, and is the default.
 Reach prompts the user for their mnemonic, and uses it to derive the secret key needed for signing.
 
-@(hrule)
+@subsection{Algorand: AlgoSigner}
 
 @jsin{
 import * as reach from '@"@"reach-sh/stdlib/ALGO';
@@ -36,8 +36,8 @@ reach.setSignStrategy('AlgoSigner');
 The AlgoSigner strategy will prompt the user for their account address,
 and will use AlgoSigner to sign transactions.
 
-Reach requires features of Teal 3 which are not yet available on Algorand MainNet.
-Reach programs can be run on the Reach Devnet. For this to work, AlgoSigner must be configured to work with the Reach Devnet. Here's how:
+Reach requires features of TEAL 3 which are not yet available on Algorand MainNet.
+Reach programs can be run on a development network, like the one created by @exec{reach run}. For AlgoSigner to work with a development network, it must be configured appropriately. Here's how to configure AlgoSigner for the Reach Devnet:
 
 @itemlist[
  @item{@link["https://chrome.google.com/webstore/detail/algosigner/kmmolakhbgdlpkjkcjkebenjheonagdm"]{Install the extension}}
