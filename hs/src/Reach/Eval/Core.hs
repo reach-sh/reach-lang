@@ -31,6 +31,7 @@ import Reach.Parser
 import Reach.Util
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
+import Reach.Deprecation
 
 --- New Types
 
@@ -314,6 +315,9 @@ env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
 env_lookup _ "_" _ = expect_ $ Err_Eval_LookupUnderscore
 env_lookup ctx x env =
   case M.lookup x env of
+    Just sv@(SLSSVal { sss_val = SLV_Deprecated d v }) -> do
+          liftIO $ deprecated_warning d
+          return $ sv { sss_val = v }
     Just v -> return $ v
     Nothing ->
       expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
@@ -369,7 +373,8 @@ base_env =
     , ("wait", SLV_Form SLForm_wait)
     , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
-    , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
+    , ("parallelReduce", SLV_Form SLForm_parallel_reduce)
+    , ("parallel_reduce", SLV_Deprecated (Deprecated_SnakeToCamelCase "parallel_reduce") $ SLV_Form SLForm_parallel_reduce)
     , ("Map", SLV_Prim SLPrim_Map)
     , ("Anybody", SLV_Anybody)
     , ("Participant", SLV_Prim SLPrim_Participant)
@@ -457,6 +462,7 @@ slToDL = \case
   SLV_MapCtor {} -> no
   SLV_Map {} -> no
   SLV_ParticipantConstructor {} -> no
+  SLV_Deprecated {} -> no
   where
     yes = return . Just
     no = return Nothing
@@ -838,7 +844,7 @@ evalAsEnv obj = case obj of
           <> gom "while" PRM_While pr_mwhile
           <> go "case" PRM_Case
           <> gom "timeout" PRM_Timeout pr_mtime
-          <> gom "time_remaining" PRM_TimeRemaining pr_mtime
+          <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
     where
       gom key mode me =
         case me of

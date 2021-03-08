@@ -38,7 +38,7 @@ export const main = Reach.App(
 
     // Until deadline, allow buyers to buy ticket
     const [ keepGoing, winners, ticketsSold ] =
-      parallel_reduce([ true, initialWinners, 0 ])
+      parallelReduce([ true, initialWinners, 0 ])
         .invariant(balance() == ticketsSold * ticketPrice)
         .while(keepGoing)
         .case(

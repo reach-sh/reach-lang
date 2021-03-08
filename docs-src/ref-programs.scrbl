@@ -716,12 +716,12 @@ A @tech{continue statement} may be written without the preceding identifier upda
 A @tech{continue statement} must be dominated by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
-@subsubsection{@tt{parallel_reduce}}
+@subsubsection{@tt{parallelReduce}}
 
-@(mint-define! '("parallel_reduce"))
+@(mint-define! '("parallelReduce"))
 @reach{
 const [ keepGoing, as, bs ] =
-  parallel_reduce([ true, 0, 0 ])
+  parallelReduce([ true, 0, 0 ])
   .invariant(balance() == 2 * wager)
   .while(keepGoing)
   .case(Alice, (() => ({
@@ -746,7 +746,7 @@ A @deftech{parallel reduce statement} is written:
 
 @reach{
 const LHS =
-  parallel_reduce(INIT_EXPR)
+  parallelReduce(INIT_EXPR)
   .invariant(INVARIANT_EXPR)
   .while(COND_EXPR)
   .case(PART_EXPR,
@@ -763,20 +763,20 @@ while the @reachin{.case} and @reachin{.timeout} components are like the corresp
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
 
-@subsubsub*section{@tt{.time_remaining}}
+@subsubsub*section{@tt{.timeRemaining}}
 
-When dealing with absolute deadlines in @reachin{parallel_reduce}, there is a common pattern in the
+When dealing with absolute deadlines in @reachin{parallelReduce}, there is a common pattern in the
 @reachin{TIMEOUT_BLOCK} to have participants @reachin{race} to @reachin{publish} and return the accumulator.
-There is a shorthand, @reachin{.time_remaining}, available for this situation:
+There is a shorthand, @reachin{.timeRemaining}, available for this situation:
 
-@(mint-define! '("time_remaining"))
+@(mint-define! '("timeRemaining"))
 @reach{
   const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
   const [ x, y, z ] =
-    parallel_reduce([ 1, 2, 3 ])
+    parallelReduce([ 1, 2, 3 ])
       .while(keepGoing())
       ...
-      .time_remaining(timeRemaining()) }
+      .timeRemaining(timeRemaining()) }
 
 which will expand to:
 
@@ -2043,18 +2043,18 @@ This aides scalability, because it increases the number of times when an operati
 that can be used for dealing with absolute deadlines. It internally determines the end time based off of the deadline
 and the last consensus time—at the time of calling @reachin{makeDeadline}. @tt{timeRemaining} will calculate the difference
 between the end time and the current last consensus time. @tt{keepGoing} determines whether the current last consensus time
-is less than the end time. It is typical to use the two fields for the @tt{while} and @tt{timeout} field of a @reachin{parallel_reduce}
+is less than the end time. It is typical to use the two fields for the @tt{while} and @tt{timeout} field of a @reachin{parallelReduce}
 expression. For example:
 
 @reach{
   const [ timeRemaining, keepGoing ] = makeDeadline(10);
-  const _ = parallel_reduce(...)
+  const _ = parallelReduce(...)
     .invariant(...)
     .while( keepGoing() )
     .case(...)
     .timeout( timeRemaining(), () => { ... }) }
 
-This pattern is so common that it can be abbreviated as @reachin{.time_remaining}.
+This pattern is so common that it can be abbreviated as @reachin{.timeRemaining}.
 
 
 @subsubsection{@tt{implies}}

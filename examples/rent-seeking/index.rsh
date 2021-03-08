@@ -33,7 +33,7 @@ export const main =
         fromMaybe(bidsM[who], (() => 0), (x => x));
 
       const [ winner, winningBid ] =
-        parallel_reduce([ Sponsor, 0 ])
+        parallelReduce([ Sponsor, 0 ])
         .invariant( balance() == prize + bidsM.sum()
           && balance() == prize + Map.sum(bidsM) )
         .while( keepBidding() )
@@ -65,7 +65,7 @@ export const main =
             }
           })
         )
-        .time_remaining(bidTimeout());
+        .timeRemaining(bidTimeout());
       commit();
 
       Bidder.only(() => {

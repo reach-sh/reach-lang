@@ -21,8 +21,8 @@ export const main = Reach.App(
 
     // TODO: object field ref []
     // "Invalid array index"
-    // const obj1_x1 = obj1["x"];
-    // assert(obj1_x1 == 1);
+    // const obj1X1 = obj1["x"];
+    // assert(obj1X1 == 1);
 
     // object splice, keys can be added
     const obj2 = {...obj0, y: 'y_val'};

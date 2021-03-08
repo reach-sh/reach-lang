@@ -12,7 +12,7 @@ const Bob = (Move, Outcome) =>
       ({ ...Player(Move, Outcome),
          acceptTerms: Fun([UInt], Null) });
 
-const simultaneous_loop =
+const simultaneousLoop =
       (A, B, DEADLINE, isOutcome, outcome0, stop, combine, divide) => {
         const informTimeout = () => {
           each([A, B], () => {
@@ -76,7 +76,7 @@ export const rps =
     {},
     [Participant('Alice', Alice(UInt, UInt)), Participant('Bob', Bob(UInt, UInt))],
     (A, B) =>
-    simultaneous_loop(
+    simultaneousLoop(
       A, B,
       10, isRPSOutcome, DRAW, ((o) => (o != DRAW)), winner,
       ((o) => (o == A_WINS ? [ 2, 0 ] : [ 0, 2 ]))));
@@ -90,7 +90,7 @@ export const rental =
     {},
     [Participant('Landlord', Alice(Bool, UInt)), Participant('Tenant', Bob(Bool, UInt))],
     (A, B) =>
-    simultaneous_loop(
+    simultaneousLoop(
       A, B,
       10, isRentalOutcome, NONE, ((o) => (o != NONE)),
       ((l, t) => (l && t ? BOTH :

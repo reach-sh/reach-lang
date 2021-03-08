@@ -292,10 +292,10 @@ export const fxmul = (x, y) => {
   return fx(x.i.scale * y.i.scale )(r.sign, r.i);
 }
 
-export const fxdiv = (x, y, scale_factor) => {
+export const fxdiv = (x, y, scaleFactor) => {
   const x_ = {
-    i: imul( fxi2int(x), + scale_factor),
-    scale: x.i.scale * scale_factor
+    i: imul( fxi2int(x), + scaleFactor),
+    scale: x.i.scale * scaleFactor
   };
   const r = idiv( x_.i, fxi2int(y) );
   return fx(x_.scale / y.i.scale)(r.sign, r.i);
@@ -343,7 +343,7 @@ export const fxfloor = (x) =>
   ? int(x.sign, fxrescale(x, 1).i.i)
   : int(x.sign, fxrescale(x, 1).i.i + 1);
 
-const fxpow_ratio = (x, numerator, denominator, precision, scalePrecision) => {
+const fxpowRatio = (x, numerator, denominator, precision, scalePrecision) => {
   const xN = fxpowi(x, numerator, precision);
   const fxd = fxint(denominator);
   return Array.iota(precision).reduce(xN, (acc, _) => {
@@ -393,7 +393,7 @@ export const fxpow = (base, power, precision, scalePrecision) => {
     const remain = fxsub(power, fwhole);
     const wholePow = fxpowi(base, whole, precision);
     const [ num, den ] = getNumDenom(remain, precision);
-    return fxmul(wholePow, fxpow_ratio(base, num, den, precision, scalePrecision));
+    return fxmul(wholePow, fxpowRatio(base, num, den, precision, scalePrecision));
   }
 }
 

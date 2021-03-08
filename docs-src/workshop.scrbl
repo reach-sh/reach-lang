@@ -182,7 +182,7 @@ Like @secref["workshop-race"], this demonstrates the deadweight losses associate
 
 In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Plurality_voting"]{two-party winner-takes-all vote}, where a pollster proposes two candidates---Alice and Bob---along with a voting price and a deadline, then a @tech{participant class} of voters each pay and cast their ballot.
 Once the deadline passes, the winning candidates takes the entire pot.
-This workshop introduces effective use of @tech{participant class}es and @reachin{parallel_reduce}.
+This workshop introduces effective use of @tech{participant class}es and @reachin{parallelReduce}.
 
 @(WIP/XXX "popularity-contest")
 
@@ -200,7 +200,7 @@ This workshop uses a @tech{participant class} to represent owners and is a kind 
 
 @(workshop-deps "workshop-popularity-contest")
 
-In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{raffle}, where a sponsor starts a timed raffle and a @tech{participant class} of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses @tech{linear state} through the @reachin{Map} structure; second, it uses an commitment pattern structure to acquire safe randomness from the set of buyers. 
+In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Raffle"]{raffle}, where a sponsor starts a timed raffle and a @tech{participant class} of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses @tech{linear state} through the @reachin{Map} structure; second, it uses an commitment pattern structure to acquire safe randomness from the set of buyers.
 
 @(WIP/XXX "raffle")
 

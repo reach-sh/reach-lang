@@ -6,5 +6,5 @@ export const main =
     [Participant('A', {})],
     (A) => {
       const a =
-        parallel_reduce(null);
+        parallelReduce(null);
     });

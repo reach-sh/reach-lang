@@ -156,7 +156,7 @@ export const main =
 
       // XXX Feature: Export some variables
       const [ alive, pool, market ] =
-        parallel_reduce([ true, initialPool, initialMarket ])
+        parallelReduce([ true, initialPool, initialMarket ])
           .while(alive || pool.totalSupply() > 0)
           .invariant(true)
           // XXX Feature: `define` will allow definitions

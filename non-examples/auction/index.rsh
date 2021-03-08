@@ -43,7 +43,7 @@ function main() {
       const endorsement = sign(Seller, Buyer); });
     Seller.publish(endorsement)
       .timeout(DELAY, closeTo(Buyer, false));
-    require(check_sign(endorsement, Seller, Buyer));
+    require(checkSign(endorsement, Seller, Buyer));
     transfer(bid).to(Seller);
     call(product).go(endorsement, Buyer);
     commit();

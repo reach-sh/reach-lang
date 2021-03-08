@@ -2,8 +2,6 @@ module Reach.Eval.Error
   ( EvalError (..)
   , LookupCtx (..)
   , didYouMean
-  , deprecated_warning
-  , Deprecation (..)
   )
 where
 
@@ -21,7 +19,6 @@ import Reach.Eval.Types
 import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
-import System.IO
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 
 data LookupCtx
@@ -463,7 +460,7 @@ instance Show EvalError where
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
     Err_ParallelReduceTimeRemainingArgs args ->
-      "The `time_remaining` branch of `parallel_reduce` expects 1 argument, but received " <> show (length args)
+      "The `timeRemaining` branch of `parallelReduce` expects 1 argument, but received " <> show (length args)
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->
@@ -483,17 +480,3 @@ instance Show EvalError where
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 
-data Deprecation
-  = Deprecated_ParticipantTuples SrcLoc
-  deriving (Eq)
-
-instance Show Deprecation where
-  show = \case
-    Deprecated_ParticipantTuples at ->
-      "Declaring Participants with a tuple is now deprecated. "
-        <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at "
-        <> show at
-
-deprecated_warning :: Deprecation -> IO ()
-deprecated_warning d =
-  hPutStrLn stderr $ "WARNING: " <> show d

@@ -11,7 +11,7 @@ const Tenant =
         acceptTerms: Fun([UInt], Null) };
 
 const DEADLINE = 10;
-export const l_first = Reach.App(
+export const lFirst = Reach.App(
   {}, [Participant('Tenant', Tenant), Participant('Landlord', Landlord)], (T, L) => {
 
     L.only(() => {
@@ -56,7 +56,7 @@ export const l_first = Reach.App(
     }
   } );
 
-export const t_first = Reach.App(
+export const tFirst = Reach.App(
   {}, [Participant('Tenant', Tenant), Participant('Landlord', Landlord)], (T, L) => {
 
     L.only(() => {

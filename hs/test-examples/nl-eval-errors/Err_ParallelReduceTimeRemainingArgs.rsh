@@ -6,7 +6,7 @@ export const main =
     [Participant('A', {})],
     (A) => {
       const [ x ] =
-        parallel_reduce([ 0 ])
+        parallelReduce([ 0 ])
           .invariant(balance() == balance())
           .while(true)
           .case(A,
@@ -15,5 +15,5 @@ export const main =
               return [ x + 1]
             })
           )
-         .time_remaining(1, () => {});
+         .timeRemaining(1, () => {});
     });

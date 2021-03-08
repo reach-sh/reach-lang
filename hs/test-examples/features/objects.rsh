@@ -9,13 +9,13 @@ export const main = Reach.App(
     const obj1 = {x: 1};
 
     // object field reference .
-    const obj1_x0 = obj1.x;
-    assert(obj1_x0 == 1);
+    const obj1X0 = obj1.x;
+    assert(obj1X0 == 1);
 
     // TODO: object field ref []
     // "Invalid array index"
-    // const obj1_x1 = obj1["x"];
-    // assert(obj1_x1 == 1);
+    // const obj1X1 = obj1["x"];
+    // assert(obj1X1 == 1);
 
     // object str field
     const obj2 = {'x': 1};

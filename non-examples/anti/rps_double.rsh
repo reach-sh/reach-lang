@@ -22,7 +22,7 @@ function whoWinsBestOfThree(winCountA, winCountB, lastOutcome) {
 }
 
 
-function do_round_1(a_1, b_1, wagerAmount_1, escrowAmount_1) {
+function doRound1(a_1, b_1, wagerAmount_1, escrowAmount_1) {
   var [ count_1, outcome_1 ] = [ 0, DRAW ];
   invariant((balance() == ((2 * wagerAmount_1) + escrowAmount_1))
             && isOutcome(outcome_1));
@@ -63,12 +63,12 @@ function do_round_1(a_1, b_1, wagerAmount_1, escrowAmount_1) {
         continue; });
     checkCommitment(commitA_1, saltA_1, handA_1);
     require(isHand(handA_1));
-    const this_outcome_1 = winner(handA_1, handB_1);
-    assert(implies(this_outcome_1 == A_WINS, isHand(handA_1)));
-    assert(implies(this_outcome_1 == B_WINS, isHand(handB_1)));
-    fair_game(handA_1, handB_1, this_outcome_1);
+    const thisOutcome1 = winner(handA_1, handB_1);
+    assert(implies(thisOutcome1 == A_WINS, isHand(handA_1)));
+    assert(implies(thisOutcome1 == B_WINS, isHand(handB_1)));
+    fairGame(handA_1, handB_1, thisOutcome1);
 
-    [ count_1, outcome_1 ] = [ 1 + count_1, this_outcome_1 ];
+    [ count_1, outcome_1 ] = [ 1 + count_1, thisOutcome1 ];
     continue; }
 
   return [ count_1, outcome_1 ]
@@ -97,7 +97,7 @@ function main() {
   // var [ winCountA, winCountB, roundCount, anyQuitters, lastOutcome ] = [ 0, 0, 0, false, A_WINS ];
   // invariant(balance() == 2 * wagerAmount + escrowAmount);
   // while ( winCountA < 2 && winCountB < 2 && !anyQuitters ) {
-  //   const [ count, outcome ] = do_round_1(A, B, wagerAmount, escrowAmount);
+  //   const [ count, outcome ] = doRound1(A, B, wagerAmount, escrowAmount);
   //   assert(outcome != DRAW);
   //   assert(isOutcome(outcome));
 
@@ -157,15 +157,15 @@ function main() {
           continue; });
       checkCommitment(commitA_1, saltA_1, handA_1);
       require(isHand(handA_1));
-      const this_outcome_1 = winner(handA_1, handB_1);
-      assert(implies(this_outcome_1 == A_WINS, isHand(handA_1)));
-      assert(implies(this_outcome_1 == B_WINS, isHand(handB_1)));
-      fair_game(handA_1, handB_1, this_outcome_1);
+      const thisOutcome1 = winner(handA_1, handB_1);
+      assert(implies(thisOutcome1 == A_WINS, isHand(handA_1)));
+      assert(implies(thisOutcome1 == B_WINS, isHand(handB_1)));
+      fairGame(handA_1, handB_1, thisOutcome1);
 
-      [ count_1, outcome_1 ] = [ 1 + count_1, this_outcome_1 ];
+      [ count_1, outcome_1 ] = [ 1 + count_1, thisOutcome1 ];
       continue; }
 
-    
+
     [ i, count, outcome ] = [ i + 1, count + count_1, outcome_1 ];
     continue;
   }

@@ -45,7 +45,7 @@ export const main =
 
       const randomsM = new Map(Digest);
       const [ howMany ] =
-        parallel_reduce([ 0 ])
+        parallelReduce([ 0 ])
         .invariant(balance() == ticketPrice * howMany)
         .while( keepBuying() )
         .case( Player, (() => {
@@ -63,7 +63,7 @@ export const main =
             return [ howMany + 1 ];
           })
         )
-        .time_remaining(buyTimeout());
+        .timeRemaining(buyTimeout());
 
       const randomMatches = (who, r) => {
         const rc = randomsM[who];
@@ -77,7 +77,7 @@ export const main =
 
       const ticketsM = new Map(UInt);
       const [ hwinner, howManyReturned ] =
-        parallel_reduce([ 0, 0 ])
+        parallelReduce([ 0, 0 ])
         .invariant(balance() == howMany * ticketPrice)
         .while( keepReturning() && howManyReturned < howMany )
         .case( Player, (() => {
@@ -98,7 +98,7 @@ export const main =
                      howManyReturned + 1 ];
           })
         )
-        .time_remaining(returnTimeout());
+        .timeRemaining(returnTimeout());
       commit();
 
       Sponsor.only(() => { interact.showReturned(howManyReturned); });
@@ -123,18 +123,18 @@ export const main =
       require(sponsortc == digest(sponsort));
 
       const howManyNotReturned = howMany - howManyReturned;
-      const winning_no = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
+      const winningNo = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
       commit();
 
       each([Sponsor, Player], () => {
-        interact.showWinner(winning_no);
+        interact.showWinner(winningNo);
       });
 
       const isWinner = (who) => {
         const tn = ticketsM[who];
         switch ( tn ) {
           case None: return false;
-          case Some: return tn == winning_no;
+          case Some: return tn == winningNo;
         }
       };
 

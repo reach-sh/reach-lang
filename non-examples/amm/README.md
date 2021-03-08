@@ -39,7 +39,7 @@ The structure is something like:
 Admin.publish(params);
 
 const [ alive, pool, market ] =
-  parallel_reduce( [ true, mempty, mempty ] )
+  parallelReduce( [ true, mempty, mempty ] )
   .while( alive )
   .case(Admin,
     /* maybe decide to close the pool */)

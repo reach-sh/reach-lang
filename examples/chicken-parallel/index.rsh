@@ -38,7 +38,7 @@ export const main =
         .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
 
       const [ keepGoing, as, bs ] =
-        parallel_reduce([ true, 0, 0 ])
+        parallelReduce([ true, 0, 0 ])
         .invariant(balance() == 2 * wager)
         .while(keepGoing)
         .case(Alice, (() => ({

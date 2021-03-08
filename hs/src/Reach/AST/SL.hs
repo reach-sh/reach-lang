@@ -16,6 +16,7 @@ import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Util
+import Reach.Deprecation (Deprecation)
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -129,6 +130,7 @@ data SLVal
   | SLV_MapCtor SLType
   | SLV_Map DLMVar
   | SLV_ParticipantConstructor SLParticipantType
+  | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
 instance Pretty SLVal where
@@ -160,6 +162,7 @@ instance Pretty SLVal where
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_ParticipantConstructor p -> pretty p
     SLV_Anybody -> "Anybody"
+    SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
 
 instance Pretty SLParticipantType where
   pretty p =
