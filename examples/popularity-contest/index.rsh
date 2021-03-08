@@ -36,7 +36,7 @@ export const main =
       const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
 
       const [ forA, forB ] =
-        parallel_reduce([ 0, 0])
+        parallelReduce([ 0, 0])
         .invariant(balance() == (forA + forB) * ticketPrice)
         .while( keepGoing() )
         .case(Voter, (() => ({

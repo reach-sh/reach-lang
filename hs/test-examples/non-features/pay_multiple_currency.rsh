@@ -1,6 +1,6 @@
 'reach 0.1';
 
-// Allow multiple payments/currencies in parallel_reduce
+// Allow multiple payments/currencies in parallelReduce
 // Depends on: non-network_token.rsh
 
 const N = 2;
@@ -26,7 +26,7 @@ export const main =
       const consensusE = (amtIns) => { return [ false, amtIns ]; };
 
       const [ keepGoing, amtIns ] =
-        parallel_reduce([ true, Array.replicate(N, 0) ])
+        parallelReduce([ true, Array.replicate(N, 0) ])
           .while(keepGoing)
           .invariant(true)
           .case(A, publishE, payE, consensusE)

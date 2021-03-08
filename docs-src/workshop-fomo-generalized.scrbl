@@ -100,7 +100,7 @@ The body of your application should look something like this:
 
   const [ keepGoing, winners, ticketsSold ] =
     // 2. While the deadline has yet to be reached:
-    parallel_reduce([ true, initialWinners, 0 ])
+    parallelReduce([ true, initialWinners, 0 ])
       .invariant(balance() == ticketsSold * ticketPrice)
       .while(keepGoing)
       .case(
@@ -149,7 +149,7 @@ will transfer @tt{1 ETH} to the Funder, and split the remaining @tt{39 ETH} betw
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the @tech{token linearity property}. The
-only property of interest is the @reachin{parallel_reduce} invariant
+only property of interest is the @reachin{parallelReduce} invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 

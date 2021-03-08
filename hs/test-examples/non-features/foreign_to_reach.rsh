@@ -12,7 +12,7 @@ export const main =
       A.publish().pay(1).exposeAs("initialPay");
 
       const [ keepGoing ] =
-        parallel_reduce([ true ])
+        parallelReduce([ true ])
           .while(keepGoing)
           .invariant(true)
           .case(A,

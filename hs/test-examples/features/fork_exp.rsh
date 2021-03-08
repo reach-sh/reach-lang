@@ -42,43 +42,43 @@ export const main =
       while ( keepGoing ) {
         commit();
 
-        const F = Data({F_Alice: Null, F_Bob: Null});
+        const F = Data({fAlice: Null, fBob: Null});
         Alice.only(() => {
-          const f_Alice = () => ({
+          const fAlice = () => ({
             when: declassify(interact.keepGoing()) });
-          const f_res0 = f_Alice();
-          const f_res1 = Object.setIfUnset(f_res0, "msg", null);
-          const f_res2 = Object.setIfUnset(f_res1, "when", true)
-          const f_res3 = Object.setIfUnset(f_res2, "pay", 0);
-          const f_res = f_res3;
-          const f_msg = F.F_Alice(f_res.msg);
-          const f_when = f_res.when;
-          const f_pay = f_res.pay; });
+          const fRes0 = fAlice();
+          const fRes1 = Object.setIfUnset(fRes0, "msg", null);
+          const fRes2 = Object.setIfUnset(fRes1, "when", true)
+          const fRes3 = Object.setIfUnset(fRes2, "pay", 0);
+          const fRes = fRes3;
+          const fMsg = F.fAlice(fRes.msg);
+          const fWhen = fRes.when;
+          const fPay = fRes.pay; });
         Bob.only(() => {
-          const f_Bob = () => ({
+          const fBob = () => ({
             when: declassify(interact.keepGoing()) });
-          const f_res0 = f_Bob();
-          const f_res1 = Object.setIfUnset(f_res0, "msg", null);
-          const f_res2 = Object.setIfUnset(f_res1, "when", true)
-          const f_res3 = Object.setIfUnset(f_res2, "pay", 0);
-          const f_res = f_res3;
-          const f_msg = F.F_Bob(f_res.msg);
-          const f_when = f_res.when;
-          const f_pay = f_res.pay; });
+          const fRes0 = fBob();
+          const fRes1 = Object.setIfUnset(fRes0, "msg", null);
+          const fRes2 = Object.setIfUnset(fRes1, "when", true)
+          const fRes3 = Object.setIfUnset(fRes2, "pay", 0);
+          const fRes = fRes3;
+          const fMsg = F.fBob(fRes.msg);
+          const fWhen = fRes.when;
+          const fPay = fRes.pay; });
 
-        Anybody.publish(f_msg, f_pay).when(f_when).pay(f_pay)
+        Anybody.publish(fMsg, fPay).when(fWhen).pay(fPay)
           .timeout(deadline, () => {
             showOutcome(TIMEOUT)();
             Anybody.publish();
             keepGoing = false;
             continue; });
-        require(f_msg.match({F_Alice: (() => this == Alice),
-                             F_Bob  : (() => this == Bob  ) }));
-        switch ( f_msg ) {
-          case F_Alice: {
+        require(fMsg.match({fAlice: (() => this == Alice),
+                             fBob  : (() => this == Bob  ) }));
+        switch ( fMsg ) {
+          case fAlice: {
             assert(this == Alice);
-            const f_hadpay = false; // <-- we know this by inspecting the object statically
-            require(f_hadpay || f_pay == 0);
+            const fHadPay = false; // <-- we know this by inspecting the object statically
+            require(fHadPay || fPay == 0);
             // <code that Alice wrote>
             each([Alice, Bob], () => {
               interact.roundWinnerWas(true); });
@@ -86,10 +86,10 @@ export const main =
             continue;
             // </>
           }
-          case F_Bob: {
+          case fBob: {
             assert(this == Bob);
-            const f_hadpay = false; // <-- we know this by inspecting the object statically
-            require(f_hadpay || f_pay == 0);
+            const fHadPay = false; // <-- we know this by inspecting the object statically
+            require(fHadPay || fPay == 0);
             // <code that Bob wrote>
             each([Alice, Bob], () => {
               interact.roundWinnerWas(false); });

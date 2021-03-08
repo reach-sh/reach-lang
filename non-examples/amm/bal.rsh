@@ -153,7 +153,7 @@ export const main =
       };
 
       const [ alive, pool, market ] =
-        parallel_reduce([ true, initialPool, initialMarket ])
+        parallelReduce([ true, initialPool, initialMarket ])
           .invariant(alive || pool.totalSupply() > 0)
           .while(true)
           .define(() => {

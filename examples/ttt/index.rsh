@@ -5,23 +5,23 @@ const ROWS = 3;
 const COLS = 3;
 const CELLS = ROWS * COLS;
 const Board = Array(Bool, CELLS);
-const State = Object({ xs_turn: Bool,
+const State = Object({ xsTurn: Bool,
                        xs: Board,
                        os: Board });
 
-const board_mt =
+const boardMt =
       Array.replicate(9, false);
 
-const ttt_initial = (XisFirst) =>
-      ({ xs_turn: XisFirst,
-         xs: board_mt,
-         os: board_mt });
+const tttInitial = (XisFirst) =>
+      ({ xsTurn: XisFirst,
+         xs: boardMt,
+         os: boardMt });
 
-const cell_both = (st, i) =>
+const cellBoth = (st, i) =>
       (st.xs[i] || st.os[i]);
 
-const marks_all = (st) =>
-      Array.iota(9).map(i => cell_both(st, i));
+const marksAll = (st) =>
+      Array.iota(9).map(i => cellBoth(st, i));
 
 const cell = (r, c) => c + r * COLS;
 
@@ -35,21 +35,21 @@ const seq = (b, r, c, dr, dc) =>
 const row = (b, r) => seq(b, r, 0, 0, op(add, 1));
 const col = (b, c) => seq(b, 0, c, 1, op(add, 0));
 
-const winning_p = (b) =>
+const winningP = (b) =>
       (row(b, 0) || row(b, 1) || row(b, 2) ||
        col(b, 0) || col(b, 1) || col(b, 2) ||
        seq(b, 0, 0, 1, op(add, 1)) ||
        seq(b, 0, 2, 1, op(sub, 1)));
 
-const complete_p = (b) => b.and();
+const completeP = (b) => b.and();
 
-const ttt_done = (st) =>
-      (winning_p(st.xs)
-       || winning_p(st.os)
-       || complete_p(marks_all(st)));
+const tttDone = (st) =>
+      (winningP(st.xs)
+       || winningP(st.os)
+       || completeP(marksAll(st)));
 
 const legalMove = (m) => (0 <= m && m < CELLS);
-const validMove = (st, m) => (! cell_both(st, m));
+const validMove = (st, m) => (! cellBoth(st, m));
 
 function getValidMove(interact, st) {
   const _m = interact.getMove(st);
@@ -60,13 +60,13 @@ function getValidMove(interact, st) {
 function applyMove(st, m) {
   require(legalMove(m));
   require(validMove(st, m));
-  const turn = st.xs_turn;
-  return { xs_turn: ! turn,
+  const turn = st.xsTurn;
+  return { xsTurn: ! turn,
            xs: (turn ? st.xs.set(m, true) : st.xs),
            os: (turn ? st.os : st.os.set(m, true)) }; }
 
-const ttt_winner_is_x = ( st ) => winning_p(st.xs);
-const ttt_winner_is_o = ( st ) => winning_p(st.os);
+const tttWinnerIsX = ( st ) => winningP(st.xs);
+const tttWinnerIsO = ( st ) => winningP(st.os);
 
 // Protocol
 const DELAY = 20; // in blocks
@@ -109,10 +109,10 @@ export const main =
       require(commitA == digest(coinFlipA));
       const XisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
 
-      var state = ttt_initial(XisFirst);
+      var state = tttInitial(XisFirst);
       invariant(balance() == (2 * wagerAmount));
-      while ( ! ttt_done(state) ) {
-        if ( state.xs_turn ) {
+      while ( ! tttDone(state) ) {
+        if ( state.xsTurn ) {
           commit();
 
           A.only(() => {
@@ -132,8 +132,8 @@ export const main =
           continue; } }
 
       const [ toA, toB ] =
-            (ttt_winner_is_x( state ) ? [ 2, 0 ]
-             : (ttt_winner_is_o( state ) ? [ 0, 2 ]
+            (tttWinnerIsX( state ) ? [ 2, 0 ]
+             : (tttWinnerIsO( state ) ? [ 0, 2 ]
                 : [ 1, 1 ]));
       transfer(toA * wagerAmount).to(A);
       transfer(toB * wagerAmount).to(B);
