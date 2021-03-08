@@ -229,7 +229,8 @@ If the result of @reachin{Reach.App} is eventually bound to an identifier that i
 @subsubsection{Participant Constructors}
 
 A @deftech{participant constructor} is used for declaring a logical actor in
-a Reach program. A @tech{participant} and @tech{participant class} may be declared with
+a Reach program.
+A @tech{participant} and @tech{participant class} may be declared with
 
 @(mint-define! '("Participant"))
 @reach{
@@ -530,7 +531,7 @@ However, some additional expressions are allowed.
 
 A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPANT_n);}, constructs a @tech{participant} that may be used in a @tech{consensus transfer} statement, such as @reachin{publish} or @reachin{pay}, where the various @tech{participants} race to be the first one to perform the @tech{consensus transfer}.
 
-Reach provides a shorthand, @reachin{Anybody}, which serves as a @reachin{race} between all the Participants.
+Reach provides a shorthand, @reachin{Anybody}, which serves as a @reachin{race} between all the @tech{participants}.
 
 @margin-note{See @seclink["guide-race"]{the guide section on races} to understand the benefits and dangers of using @reachin{race}.}
 
@@ -2282,6 +2283,10 @@ There are convenience methods defined for comparing fixed point numbers:
 }
 
 @index{Anybody} Reach provides a shorthand, @reachin{Anybody}, which serves as a
-@reachin{race} between all @reachin{Participant}s. This shorthand can be useful for situations where
+@reachin{race} between all @tech{participant}s.
+This shorthand can be useful for situations where
 it does not matter who @reachin{publish}es, such as in a @reachin{timeout}.
 
+@reachin{Anybody} is strictly an abbreviation of a @reachin{race} involving all of the named participants of the application.
+In an application with a @tech{participant class}, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
+In an application without any @tech{participant class}es, @reachin{Anybody} instead would mean only the actual previously-bound @tech{participant}s.
