@@ -30,9 +30,9 @@
 		"description": "Have multiple participants perform actions."
 	},
 	"Parallel Reduce": {
-		"prefix": "parallel_reduce",
+		"prefix": "parallelReduce",
 		"body": [
-			"parallel_reduce(${1:INIT_EXPR})",
+			"parallelReduce(${1:INIT_EXPR})",
 			"  .invariant(${2:INVARIANT_EXPR})",
 			"  .while(${3:COND_EXPR})",
 			"  .case(${4:PART_EXPR},",
@@ -42,7 +42,7 @@
 			"   )",
 			"   .timeout(${8:DEADLINE}, () => ${9:TIMEOUT_BLOCK});"
 		],
-		"description": "parallel_reduce"
+		"description": "parallelReduce"
 	}
 	"While Loop": {
 		"prefix": "while",
@@ -54,5 +54,19 @@
 			"}",
 		],
 		"description": "while"
+	},
+	"Participant": {
+		"prefix": "Participant",
+		"body": [
+			"Participant('${1:NAME}', { ${0} })"
+		],
+		"description": "Participant constructor"
+	},
+	"Participant Class": {
+		"prefix": "ParticipantClass",
+		"body": [
+			"ParticipantClass('${1:NAME}', { ${0} })"
+		],
+		"description": "Participant Class constructor"
 	}
 }
