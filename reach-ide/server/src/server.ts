@@ -254,9 +254,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	const reachPath = (settings.executableLocation == './reach')
+	const exeLoc = settings?.executableLocation?.trim() || '';
+	const reachPath = (exeLoc == '' || exeLoc == './reach')
 		? path.join(process.cwd(), "reach")
-		: settings.executableLocation;
+		: exeLoc;
 	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
@@ -698,6 +699,8 @@ function getReachKeywordMarkdown(word: string): string {
 		buf = "\t\tpow (2, 40, 10) \/\/ => 1,099,511,627,776 \r\n\r\n`[pow](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28pow%29%29%29)(base, power, precision)`\u00A0Calculates the approximate value of raising base to power. The third argument must be an\u00A0`[UInt](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29)`\u00A0whose value is known at compile time, which represents the number of iterations the algorithm should perform. For reference,\u00A06\u00A0iterations provides enough accuracy to calculate up to\u00A02^64 - 1, so the largest power it can compute is\u00A063.\r\n"; }
 	else if (word == 'sqrt') {
 		buf = "\t\tsqrt (81, 10)\r\n\r\nCalculates an approximate square root of the first argument. This method utilizes the Babylonian Method for computing the square root. The second argument must be an UInt whose value is known at compile time, which represents the number of iterations the algorithm should perform.\r\n\r\nFor reference, when performing 5 iterations, the algorithm can reliably calculate the square root up to 32 squared, or 1,024. When performing 10 iterations, the algorithm can reliably calculate the square root up to 580 squared, or 336,400.\r\n"; }
+	else if (word == 'Anybody') {
+		buf = "#### Anybody\r\n\r\n    Anybody.publish(); \/\/ race(...Participants).publish()\r\n\r\nReach provides a shorthand,\u00A0`[Anybody](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Anybody%29%29%29)`, which serves as a\u00A0`[race](https:\/\/docs.reach.sh\/ref-programs-step.html#%28reach._%28%28race%29%29%29)`\u00A0between all\u00A0`[Participant](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28.Participant%29%29%29)`s. This shorthand can be useful for situations where it does not matter who\u00A0`[publish](https:\/\/docs.reach.sh\/ref-programs-step.html#%28reach._%28%28publish%29%29%29)`es, such as in a\u00A0`[timeout](https:\/\/docs.reach.sh\/ref-programs-step.html#%28reach._%28%28timeout%29%29%29)`.";}
 	buf = buf.replace(/`/g, ''); // Get rid of all code formatting which messes up hyperlinks
 	return buf;
 }

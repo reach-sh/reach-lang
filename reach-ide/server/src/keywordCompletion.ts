@@ -36,6 +36,7 @@ export const addPrefix = (o: CompletionMap, s: string) =>
 
 export const reachCompletionKind: CompletionMap = {
   'Address': CompletionItemKind.TypeParameter,
+  'Anybody': CompletionItemKind.Keyword,
 	'array': CompletionItemKind.Function,
   'Array': CompletionItemKind.TypeParameter,
   ...ArrayMethodCompletion,
