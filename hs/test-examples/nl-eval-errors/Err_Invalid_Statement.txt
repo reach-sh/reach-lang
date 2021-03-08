@@ -1,3 +1,1 @@
-reachc: error: ./Err_Invalid_Statement.rsh:10:13:application: Invalid use of statement: each/only. Did you mean to wrap it in a thunk?
-Trace:
-  in "closeTo" from (reach standard library:65:8:function exp) at (./Err_Invalid_Statement.rsh:9:14:application)
+reachc: error: ./Err_Invalid_Statement.rsh:65:30:id: Effects cannot be bound, got: <SLV_Form>

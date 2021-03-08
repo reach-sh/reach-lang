@@ -266,7 +266,6 @@ isSecretIdent _ = False
 -- Public idents must not start with _.
 -- Special idents "interact" and "__decode_testing__" skip these rules.
 env_insert_ :: HasCallStack => EnvInsertMode -> SLVar -> SLSSVal -> SLEnv -> App SLEnv
-env_insert_ _ "_" _ env = return env
 env_insert_ insMode k v env = case insMode of
   DisallowShadowing -> check
   AllowShadowing -> go
@@ -287,7 +286,13 @@ env_insert_ insMode k v env = case insMode of
       (SLSSVal _ Public _)
         | not (isSpecialIdent k) && isSecretIdent k ->
           expect_ $ Err_Eval_NotPublicIdent k
-      _ -> return $ M.insert k v env
+      (SLSSVal _ _ ev) -> do
+        case findStmtTrampoline ev of
+          Just _ -> expect_t ev $ Err_IllegalEffPosition
+          Nothing ->
+            case k of
+              "_" -> return env
+              _ -> return $ M.insert k v env
 
 env_insert :: HasCallStack => SLVar -> SLSSVal -> SLEnv -> App SLEnv
 env_insert = env_insert_ DisallowShadowing
@@ -2059,7 +2064,8 @@ instDefaultArgs env err formals = \case
     -- There are too many args provided at application
     | [] <- formals -> expect_ err
     -- Ignore default arg since specified at application
-    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals -> evalArg lhs h ft t
+    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals ->
+      evalArg lhs h ft t
     | lhs : ft <- formals -> evalArg lhs h ft t
   where
     evalArg lhs rhs ft tl = do

@@ -125,6 +125,7 @@ data EvalError
   | Err_Expected_Map SLValTy
   | Err_Prim_Foldable
   | Err_Default_Arg_Position
+  | Err_IllegalEffPosition SLValTy
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -451,7 +452,7 @@ instance Show EvalError where
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
     Err_ToConsensus_WhenNoTimeout noMatterWhat ->
       case noMatterWhat of
-        True -> "Cannot ignore timeout requirement, unless at least one participant class"
+        True -> "Cannot ignore timeout requirement, unless at least one participant always races or one class might race"
         False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
       "fork local result must be object with fields `msg` or `when`, but got " <> show t
@@ -477,6 +478,8 @@ instance Show EvalError where
       "Instances of Foldable cannot be created. Did you mean to call a function provided by `Foldable`?"
     Err_Default_Arg_Position ->
       "Parameters with default arguments must come after all other function arguments."
+    Err_IllegalEffPosition v ->
+      "Effects cannot be bound, got: " <> show_sv v
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

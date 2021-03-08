@@ -1,0 +1,1 @@
+reachc: error: ./Err_IllegalEffPosition.rsh:8:13:id: Effects cannot be bound, got: <SLV_Form>
