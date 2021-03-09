@@ -2,6 +2,7 @@ module Reach.EraseLogic (erase_logic) where
 
 import Control.Monad.Reader
 import Data.IORef
+import qualified Data.Map as M
 import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -95,6 +96,12 @@ instance Erase LLBlock where
     t' <- el t
     return $ DLinBlock at fs t' r'
 
+restrictToUsed :: DLAssignment -> App DLAssignment
+restrictToUsed (DLAssignment m) = do
+  let go = isUsed . Just . fst
+  m' <- M.fromList <$> (filterM go $ M.toList m)
+  return $ DLAssignment m'
+
 instance Erase LLConsensus where
   el = \case
     LLC_Com m k -> do
@@ -114,18 +121,23 @@ instance Erase LLConsensus where
       LLC_FromConsensus at1 at2 <$> el s
     LLC_While at asn inv cond body k -> do
       k' <- el k
-      body' <- el body
       cond' <- el cond
+      let loop m = do
+            before <- m
+            body' <- el body
+            asn'' <- el before
+            after <- m
+            case before == after of
+              True -> return (body', asn'')
+              False -> loop m
+      (body', asn'') <- loop (restrictToUsed asn)
       let DLinBlock inv_at inv_fs _inv_t _inv_a = inv
       let inv' = DLinBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)
-      -- XXX Try to figure out which variables in asn are /only/ mentioned in
-      -- the invariant or future asserts. This has to be a fixed-point style
-      -- computation...
-      asn' <- el asn
-      return $ LLC_While at asn' inv' cond' body' k'
+      return $ LLC_While at asn'' inv' cond' body' k'
     LLC_Continue at asn -> do
-      asn' <- el asn
-      return $ LLC_Continue at asn'
+      asn' <- restrictToUsed asn
+      asn'' <- el asn'
+      return $ LLC_Continue at asn''
     LLC_Only at p l k -> do
       k' <- el k
       l' <- el l
