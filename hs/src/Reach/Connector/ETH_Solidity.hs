@@ -46,10 +46,6 @@ dontWriteSol = False
 includeRequireMsg :: Bool
 includeRequireMsg = False
 
---- Pretty helpers
-vsep_with_blank :: [Doc] -> Doc
-vsep_with_blank l = vsep $ intersperse emptyDoc l
-
 --- Solidity helpers
 
 sb :: SrcLoc
@@ -747,13 +743,7 @@ solHandler which (C_Handler at interval last_timemv from prev svs msg amtv timev
           int_fromp <- check True ifrom
           int_top <- check False ito
           return $ solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
-  let body =
-        vsep
-          [ hashCheck
-          , frameDecl
-          , timeoutCheck
-          , ctp
-          ]
+  let body = vsep [ hashCheck, frameDecl, timeoutCheck, ctp ]
   let funDefn = solFunctionLike sfl argDefs ret body
   return $
     vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
@@ -769,24 +759,23 @@ solHandler which (C_Loop _at svs lcmsg ct) = freshVarMap $ do
 
 solHandlers :: CHandlers -> App Doc
 solHandlers (CHandlers hs) =
-  vsep_with_blank <$> (mapM (uncurry solHandler) $ M.toList hs)
-
-solHandlerStructSVS :: (S.Set Int, [Doc]) -> (Int, CHandler) -> App (S.Set Int, [Doc])
-solHandlerStructSVS acc (_which, C_Loop {}) = return acc
-solHandlerStructSVS (defd, res) (_which, C_Handler _ _ _ _ prev svs _ _ _ _) = case S.member prev defd of
-    True -> return (defd, res)
-    False -> do
-      res' <- (:) <$> solStructSVS prev svs True <*> pure res
-      let defd' = S.insert prev defd
-      return (defd', res')
+  vsep <$> (mapM (uncurry solHandler) $ M.toList hs)
 
 solHandlersStructSVS :: [DLVar] -> CHandlers -> App Doc
 solHandlersStructSVS csvs (CHandlers hs) = do
-  let defd = S.singleton 0
-  res0h <- solStructSVS 0 csvs True
-  let res0 = [res0h]
-  acc <- foldlM solHandlerStructSVS (defd, res0) $ M.toList hs
-  return $ vsep_with_blank $ snd $ acc
+  defdr <- liftIO $ newIORef $ S.singleton 0
+  res0 <- solStructSVS 0 csvs True
+  let go = \case
+        C_Loop {} -> mempty
+        C_Handler _ _ _ _ prev svs _ _ _ _ -> do
+          defd <- liftIO $ readIORef defdr
+          case S.member prev defd of
+            True -> mempty
+            False -> do
+              liftIO $ modifyIORef defdr $ S.insert prev
+              solStructSVS prev svs True
+  res <- mapM go $ M.elems hs
+  return $ vsep $ res0 : res
 
 _solDefineType1 :: (DLType -> IO (Doc)) -> Int -> Doc -> DLType -> IO ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
@@ -941,18 +930,10 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
             , ref_defn
             ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    let state_defn =
-          vsep_with_blank $ ["uint256 current_state;"] <> map_defns
+    let state_defn = vsep $ ["uint256 current_state;"] <> map_defns
     hs' <- solHandlers hs
     hsstructs <- solHandlersStructSVS csvs hs
-    let ctcbody =
-          vsep_with_blank $
-            [ state_defn
-            , consp
-            , typesp
-            , hsstructs
-            , hs'
-            ]
+    let ctcbody = vsep $ [ state_defn , consp , typesp, hsstructs, hs' ]
     let ctcp =
           solContract "ReachContract is Stdlib" $
             ctcbody
@@ -962,7 +943,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
             [ "// Automatically generated with Reach" <+> (pretty versionStr)
             , "pragma abicoder v2" <> semi
             ]
-    return $ (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
+    return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, ctcp])
 
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
