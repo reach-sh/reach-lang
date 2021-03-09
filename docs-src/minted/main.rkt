@@ -5,6 +5,9 @@
          racket/list
          racket/hash
          racket/string
+         racket/file
+         racket/runtime-path
+         file/sha1
          (prefix-in xml: xml)
          scribble/html-properties
          scribble/core
@@ -29,18 +32,35 @@
 (define pygmentize-bin
   (find-executable-path "pygmentize"))
 
+(define-runtime-path cache "cache")
+(define (with-cache kv f)
+  (make-directory* cache)
+  (define kb (with-output-to-bytes (lambda () (write kv))))
+  (define k (sha1 kb))
+  (define kp (build-path cache k))
+  (cond
+    [(file-exists? kp)
+     (file->value kp)]
+    [else
+      (define v (f))
+      (write-to-file v kp #:exists 'replace)
+      v]))
+
 (define (pygmentize
          #:lang lang
          #:options [opts (hasheq)]
          content)
-  (io content
-      (apply system*-maybe
+  (with-cache
+    (list content lang opts)
+    (lambda ()
+      (io content
+        (apply system*-maybe
              pygmentize-bin
              "-l" lang
              "-f" "html"
              (append*
               (for/list ([(k v) (in-hash opts)])
-                (list "-O" (format "~a=~a" k v)))))))
+                (list "-O" (format "~a=~a" k v)))))))))
 
 (define mint-tag-claimed? (make-hash))
 (define (xml->scribble #:get-tag&may [get-tag&may (λ (c s) (values #f #f))] xs)
@@ -96,7 +116,6 @@
               #:scope [scopee (mint-scope)]
               lang . contentl)
   (define content (apply string-append contentl))
-  
   (define opts-p
     (if inline?
       (hash-union mint-inline-options opts)
