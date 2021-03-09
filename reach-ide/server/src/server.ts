@@ -1,4 +1,5 @@
 import { stringify } from 'querystring';
+import { Url } from 'url';
 /* --------------------------------------------------------------------------------------------
  * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample
  * are held by (c) Microsoft Corporation. All rights reserved.
@@ -68,6 +69,8 @@ const os = require('os')
 const path = require('path')
 
 let tempFolder: string;
+
+let workspaceFolder: string;
 
 connection.onInitialize((params: InitializeParams) => {
 
@@ -147,16 +150,15 @@ connection.onInitialized(() => {
 	}
 });
 
+const DEFAULT_MAX_PROBLEMS = 100;
+
 interface ReachIdeSettings {
 	maxNumberOfProblems: number;
 	executableLocation: string;
 }
 
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-const defaultSettings: ReachIdeSettings = { maxNumberOfProblems: 100, executableLocation: path.join(process.cwd(), "reach") };
-let globalSettings: ReachIdeSettings = defaultSettings;
+let defaultSettings: ReachIdeSettings;
+let globalSettings: ReachIdeSettings;
 
 // Cache the settings of all open documents
 let documentSettings: Map<string, Thenable<ReachIdeSettings>> = new Map();
@@ -189,6 +191,21 @@ function getDocumentSettings(resource: string): Thenable<ReachIdeSettings> {
 	}
 	return result;
 }
+
+documents.onDidOpen((event) => {
+	connection.console.log(`Document opened: ${event.document.uri}`);
+	let doc = event.document.uri;
+	let folderUrl : URL = new URL(doc.substring(0, doc.lastIndexOf('/')));
+	workspaceFolder = folderUrl.pathname;
+	connection.console.log(`Workspace folder: ${workspaceFolder}`);
+
+	// The global settings, used when the `workspace/configuration` request is not supported by the client.
+	// Please note that this is not the case when using this server with the client provided in this example
+	// but could happen with other clients.
+	defaultSettings = { maxNumberOfProblems: DEFAULT_MAX_PROBLEMS, executableLocation: path.join(workspaceFolder, "reach") };
+
+	globalSettings = defaultSettings;
+});
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
@@ -256,7 +273,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	const exeLoc = settings?.executableLocation?.trim() || '';
 	const reachPath = (exeLoc == '' || exeLoc == './reach')
-		? path.join(process.cwd(), "reach")
+		? path.join(workspaceFolder, "reach")
 		: exeLoc;
 	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
@@ -265,7 +282,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			let problems = 0;
 			errorLocations.forEach(err => {
 				connection.console.log(`Displaying error message: ` + err.errorMessage);
-				if (problems < settings.maxNumberOfProblems) {
+				let maxProblems = settings?.maxNumberOfProblems || DEFAULT_MAX_PROBLEMS;
+				if (problems < maxProblems) {
 					problems++;
 					addDiagnostic(
 						err,
