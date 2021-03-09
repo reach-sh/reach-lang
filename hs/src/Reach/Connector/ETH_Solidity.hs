@@ -532,7 +532,9 @@ solCom ctxt = \case
 solCom_ :: (SolCtxt -> a -> SolTailRes) -> SolCtxt -> PLCommon -> a -> SolTailRes
 solCom_ iter ctxt m k = SolTailRes ctxt'' doc''
   where
-    doc'' = m' <> hardline <> k'
+    doc'' = case m' == emptyDoc of
+              True -> k'
+              False -> m' <> hardline <> k'
     SolTailRes ctxt'' k' = iter ctxt' k
     SolTailRes ctxt' m' = solCom ctxt m
 

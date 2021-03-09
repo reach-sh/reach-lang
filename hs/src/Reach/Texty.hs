@@ -45,6 +45,7 @@ data Doc
   | DVSep [Doc]
   | DHSep [Doc]
   | DNest Integer Doc
+  deriving (Eq)
 
 instance Show Doc where
   show = LT.unpack . render
