@@ -13,6 +13,7 @@ import Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
+import Data.Maybe (fromMaybe)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -43,6 +44,9 @@ dontWriteSol = False
 
 includeRequireMsg :: Bool
 includeRequireMsg = False
+
+maxDepth :: Int
+maxDepth = 15
 
 --- Solidity helpers
 
@@ -198,6 +202,7 @@ data SolCtxt = SolCtxt
   { ctxt_handler_num :: Int
   , ctxt_varm :: IORef VarMap
   , ctxt_mvars :: IORef (S.Set DLVar)
+  , ctxt_depths :: IORef (M.Map DLVar Int)
   , ctxt_emit :: Doc
   , ctxt_typei :: M.Map DLType Int
   , ctxt_typem :: M.Map DLType Doc
@@ -227,8 +232,10 @@ freshVarMap m = do
   let d f = liftIO . dupeIORef . f =<< ask
   varmr' <- d ctxt_varm
   mvars' <- d ctxt_mvars
+  depths' <- d ctxt_depths
   local (\e -> e { ctxt_varm = varmr'
-                 , ctxt_mvars = mvars' }) m
+                 , ctxt_mvars = mvars'
+                 , ctxt_depths = depths' }) m
 
 readMemVars :: App (S.Set DLVar)
 readMemVars = liftIO . readIORef . ctxt_mvars =<< ask
@@ -241,6 +248,63 @@ addMemVar v = do
 
 addMemVars :: [DLVar] -> App ()
 addMemVars = mapM_ addMemVar
+
+recordDepth :: DLVar -> Int -> App ()
+recordDepth v d = do
+  depths <- ctxt_depths <$> ask
+  liftIO $ modifyIORef depths $ M.insert v d
+
+readDepth :: DLVar -> App Int
+readDepth v = do
+  mvars <- (liftIO . readIORef) . ctxt_depths =<< ask
+  return $ fromMaybe 0 $ M.lookup v mvars
+
+class DepthOf a where
+  depthOf :: a -> App Int
+
+instance (Traversable t, DepthOf a) => DepthOf (t a) where
+  depthOf o = maximum <$> mapM depthOf o
+
+instance DepthOf DLVar where
+  depthOf = readDepth
+
+instance DepthOf DLArg where
+  depthOf = \case
+    DLA_Var v -> depthOf v
+    DLA_Constant {} -> return 0
+    DLA_Literal {} -> return 0
+    DLA_Interact {} -> return 0
+
+instance DepthOf DLLargeArg where
+  depthOf = \case
+    DLLA_Array _ as -> depthOf as
+    DLLA_Tuple as -> depthOf as
+    DLLA_Obj m -> depthOf m
+    DLLA_Data _ _ x -> depthOf x
+
+instance DepthOf DLExpr where
+  depthOf = \case
+    DLE_Arg _ a -> depthOf a
+    DLE_LArg _ a -> depthOf a
+    DLE_Impossible {} -> return 0
+    DLE_PrimOp _ _ as -> add1 $ depthOf as
+    DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
+    DLE_ArraySet _ x y z -> depthOf [x, y, z]
+    DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
+    DLE_ArrayZip _ x y -> add1 $ depthOf [x, y]
+    DLE_TupleRef _ x _ -> add1 $ depthOf x
+    DLE_ObjectRef _ x _ -> add1 $ depthOf x
+    DLE_Interact _ _ _ _ _ as -> depthOf as
+    DLE_Digest _ as -> add1 $ depthOf as
+    DLE_Claim _ _ _ a _ -> depthOf a
+    DLE_Transfer _ x y -> depthOf [x, y]
+    DLE_Wait _ x -> depthOf x
+    DLE_PartSet _ _ x -> depthOf x
+    DLE_MapRef _ _ x -> add1 $ depthOf x
+    DLE_MapSet _ _ x y -> depthOf [x, y]
+    DLE_MapDel _ _ x -> depthOf x
+    where
+      add1 m = (+) 1 <$> m
 
 solVar :: AppT DLVar
 solVar v = do
@@ -325,6 +389,7 @@ solPrimApply = \case
   BIOR -> binOp "|"
   BXOR -> binOp "^"
   IF_THEN_ELSE -> \case
+    -- XXX Copy the simplifications from ALGO.hs
     [c, t, f] -> return $ c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitSol: ITE wrong args"
   DIGEST_EQ -> binOp "=="
@@ -511,14 +576,28 @@ solCom = \case
     y' <- ith y
     return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' "i" <+> "=" <+> solApply tcon [x', y'] <> semi)
   DL_Let _ (PV_Let pu dv) de ->
-    case pu of
-      PL_Once -> no_def
-      PL_Many -> def
+    case simple de of
+      True -> no_def
+      False ->
+        case pu of
+          PL_Once -> no_def
+          PL_Many -> def
     where
+      simple = \case
+        DLE_Arg {} -> True
+        DLE_ArrayRef {} -> True
+        DLE_TupleRef {} -> True
+        DLE_ObjectRef {} -> True
+        _ -> False
       no_def = do
-        de' <- parens <$> solExpr emptyDoc de
-        extendVarMap $ M.singleton dv de'
-        mempty
+        dp <- depthOf de
+        case dp > maxDepth of
+          True -> def
+          False -> do
+            de' <- parens <$> solExpr emptyDoc de
+            extendVarMap $ M.singleton dv de'
+            recordDepth dv dp
+            mempty
       def = do
         addMemVar dv
         de' <- solExpr emptyDoc de
@@ -850,6 +929,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
   let ctxt_emit = emptyDoc
   ctxt_varm <- newIORef mempty
   ctxt_mvars <- newIORef mempty
+  ctxt_depths <- newIORef mempty
   let ctxt_plo = plo
   flip runReaderT (SolCtxt {..}) $ do
     (csvs, consp) <-
