@@ -13,9 +13,7 @@ import Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
-import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -199,6 +197,7 @@ type VarMap = M.Map DLVar Doc
 data SolCtxt = SolCtxt
   { ctxt_handler_num :: Int
   , ctxt_varm :: IORef VarMap
+  , ctxt_mvars :: IORef (S.Set DLVar)
   , ctxt_emit :: Doc
   , ctxt_typei :: M.Map DLType Int
   , ctxt_typem :: M.Map DLType Doc
@@ -225,9 +224,23 @@ dupeIORef r = newIORef =<< readIORef r
 
 freshVarMap :: App a -> App a
 freshVarMap m = do
-  varmr <- ctxt_varm <$> ask
-  varmr' <- liftIO $ dupeIORef varmr
-  local (\e -> e { ctxt_varm = varmr' }) m
+  let d f = liftIO . dupeIORef . f =<< ask
+  varmr' <- d ctxt_varm
+  mvars' <- d ctxt_mvars
+  local (\e -> e { ctxt_varm = varmr'
+                 , ctxt_mvars = mvars' }) m
+
+readMemVars :: App (S.Set DLVar)
+readMemVars = liftIO . readIORef . ctxt_mvars =<< ask
+
+addMemVar :: DLVar -> App ()
+addMemVar v = do
+  extendVarMap $ M.singleton v (solMemVar v)
+  mvars <- ctxt_mvars <$> ask
+  liftIO $ modifyIORef mvars $ S.insert v
+
+addMemVars :: [DLVar] -> App ()
+addMemVars = mapM_ addMemVar
 
 solVar :: AppT DLVar
 solVar v = do
@@ -458,10 +471,12 @@ solSwitch iter _at ov csm = do
   t <- solType $ argTypeOf (DLA_Var ov)
   let cm1 (vn, (mov', body)) = do
         c <- solEq (ovp <> ".which") (solVariant t vn)
-        let set' = case mov' of
-              Just ov' ->
-                solSet (solMemVar ov') (ovp <> "._" <> pretty vn)
-              Nothing -> emptyDoc
+        set' <-
+          case mov' of
+            Just ov' -> do
+              addMemVar ov'
+              return $ solSet (solMemVar ov') (ovp <> "._" <> pretty vn)
+            Nothing -> return $ emptyDoc
         body' <- iter body
         let set_and_body' = vsep [set', body']
         return (c, set_and_body')
@@ -470,8 +485,11 @@ solSwitch iter _at ov csm = do
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> solLargeArg dv la
+  DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
+    addMemVar dv
+    solLargeArg dv la
   DL_Let _ (PV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
+    addMemVar dv
     dv' <- solVar dv
     let copy src (off :: Integer) = do
           let sz = arraySize src
@@ -482,6 +500,7 @@ solCom = \case
     y' <- copy y (arraySize x)
     return $ vsep [x', y']
   DL_Let _ (PV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
+    addMemVar dv
     let (xy_ty, xy_sz) = case t of
           T_Array a b -> (a, b)
           _ -> impossible "array_zip"
@@ -501,15 +520,19 @@ solCom = \case
         extendVarMap $ M.singleton dv de'
         mempty
       def = do
+        addMemVar dv
         de' <- solExpr emptyDoc de
         return $ solSet (solMemVar dv) de'
   DL_Let _ PV_Eff de -> solExpr semi de
-  DL_Var {} -> mempty
+  DL_Var _ dv -> do
+    addMemVar dv
+    mempty
   DL_Set _ dv da -> solSet (solMemVar dv) <$> solArg da
   DL_LocalIf _ ca t f ->
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
+    addMemVars $ [ans, a]
     let sz = arraySize x
     ans' <- solVar ans
     x' <- solArg x
@@ -526,6 +549,7 @@ solCom = \case
                    ])
           ]
   DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) -> do
+    addMemVars $ [ans, b, a]
     let sz = arraySize x
     ans' <- solVar ans
     x' <- solArg x
@@ -603,67 +627,19 @@ solFrame i sim = do
       let frame_defp = solStruct framei fs
       return $ (frame_defp, frame_declp)
 
-manyVars_m :: PLCommon -> S.Set DLVar
-manyVars_m = \case
-  DL_Nop _ -> mempty
-  DL_Let _ (PV_Let lc dv) de -> mdv
-    where
-      lc' = case de of
-        DLE_LArg {} -> PL_Many
-        DLE_ArrayConcat {} -> PL_Many
-        DLE_ArrayZip {} -> PL_Many
-        _ -> lc
-      mdv = case lc' of
-        PL_Once -> mempty
-        PL_Many -> S.singleton dv
-  DL_Let _ PV_Eff _ -> mempty
-  DL_Var _ dv -> S.singleton dv
-  DL_Set {} -> mempty
-  DL_LocalIf _ _ t f -> manyVars_p t <> manyVars_p f
-  DL_LocalSwitch _ _ csm -> (mconcatMap cm1 $ M.elems csm)
-    where
-      cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_p c
-  DL_ArrayMap _ ans _ a f ->
-    s_inserts [ans, a] (manyVars_bl f)
-  DL_ArrayReduce _ ans _ _ b a f ->
-    s_inserts [ans, b, a] (manyVars_bl f)
-  DL_MapReduce _ _ ans _ _ b a f ->
-    s_inserts [ans, b, a] (manyVars_bl f)
-  where
-    s_inserts l = S.union (S.fromList l)
-
-manyVars_p :: PLTail -> S.Set DLVar
-manyVars_p = \case
-  DT_Return _ -> mempty
-  DT_Com m k -> manyVars_m m <> manyVars_p k
-
-manyVars_bl :: PLBlock -> S.Set DLVar
-manyVars_bl (DLinBlock _ _ t _) = manyVars_p t
-
-manyVars_c :: CTail -> S.Set DLVar
-manyVars_c = \case
-  CT_Com m k -> manyVars_m m <> manyVars_c k
-  CT_If _ _ t f -> manyVars_c t <> manyVars_c f
-  CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
-    where
-      cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_c c
-  CT_Jump {} -> mempty
-  CT_From {} -> mempty
-
 solCTail_top :: Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> CTail -> App (Doc, Doc, Doc)
 solCTail_top which svs msg mmsg ct = do
   let svsm = M.fromList $ map (\v -> (v, solArgSVSVar v)) svs
   let msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) msg
-  let mvars = manyVars_c ct
-  let mvarsm = M.fromList $ map (\v -> (v, solMemVar v)) $ S.toList mvars
   let emitp = case mmsg of
         Just _ -> solEventEmit which True
         Nothing -> emptyDoc
-  extendVarMap $ mvarsm <> svsm <> msgm
-  (frameDefn, frameDecl) <- solFrame which mvars
+  extendVarMap $ svsm <> msgm
   ct' <- local (\e -> e { ctxt_emit = emitp
                         , ctxt_handler_num = which }) $
             solCTail ct
+  mvars <- readMemVars
+  (frameDefn, frameDecl) <- solFrame which mvars
   return (frameDefn, frameDecl, ct')
 
 solStructSVS :: Int -> [DLVar] -> Bool -> App Doc
@@ -707,55 +683,56 @@ solArgDefn which adk msg = do
   return (argDefns, argDefs)
 
 solHandler :: Int -> CHandler -> App Doc
-solHandler which (C_Handler at interval last_timemv from prev svs msg amtv timev ct) = freshVarMap $ do
-  let fromm = M.singleton from "payable(msg.sender)"
-  let given_mm = M.fromList [(amtv, "msg.value"), (timev, solBlockNumber)]
-  let checkMsg s = s <> " check at " <> show at
-  extendVarMap $ given_mm <> fromm
-  timev' <- solVar timev
-  (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
-  let evtDefn = solEvent which True
-  let ret = "payable"
-  plo <- ctxt_plo <$> ask
-  (hashCheck, am, sfl) <-
-    case (which, plo_deployMode plo) of
-      (1, DM_firstMsg) ->
-        return (emptyDoc, AM_Memory, SFL_Constructor)
-      _ -> do
-        eq' <- solEq ("current_state") (solHashStateCheck prev)
-        let hcp = (solRequire (checkMsg "state") $ eq') <> semi
-        return (hcp, AM_Call, SFL_Function True (solMsg_fun which))
-  (argDefns, argDefs) <- solArgDefn which (ADK_Handler prev am) msg
-  timeoutCheck <-
-      case last_timemv of
-        Nothing -> return emptyDoc
-        Just last_timev -> do
-          last_timev' <- solVar last_timev
-          let check sign mv =
-                case mv of
-                  [] -> return "true"
-                  mvs -> do
-                    mvs' <- mapM solArg mvs
-                    let go_sum x y = solPrimApply ADD [x, y]
-                    sum' <- foldlM go_sum last_timev' mvs'
-                    solPrimApply (if sign then PGE else PLT) [timev', sum']
-          let CBetween ifrom ito = interval
-          int_fromp <- check True ifrom
-          int_top <- check False ito
-          return $ solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
-  let body = vsep [ hashCheck, frameDecl, timeoutCheck, ctp ]
-  let funDefn = solFunctionLike sfl argDefs ret body
-  return $
-    vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
+solHandler which h = freshVarMap $
+  case h of
+    C_Handler at interval last_timemv from prev svs msg amtv timev ct -> do
+      let fromm = M.singleton from "payable(msg.sender)"
+      let given_mm = M.fromList [(amtv, "msg.value"), (timev, solBlockNumber)]
+      let checkMsg s = s <> " check at " <> show at
+      extendVarMap $ given_mm <> fromm
+      timev' <- solVar timev
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
+      let evtDefn = solEvent which True
+      let ret = "payable"
+      plo <- ctxt_plo <$> ask
+      (hashCheck, am, sfl) <-
+        case (which, plo_deployMode plo) of
+          (1, DM_firstMsg) ->
+            return (emptyDoc, AM_Memory, SFL_Constructor)
+          _ -> do
+            eq' <- solEq ("current_state") (solHashStateCheck prev)
+            let hcp = (solRequire (checkMsg "state") $ eq') <> semi
+            return (hcp, AM_Call, SFL_Function True (solMsg_fun which))
+      (argDefns, argDefs) <- solArgDefn which (ADK_Handler prev am) msg
+      timeoutCheck <-
+          case last_timemv of
+            Nothing -> return emptyDoc
+            Just last_timev -> do
+              last_timev' <- solVar last_timev
+              let check sign mv =
+                    case mv of
+                      [] -> return "true"
+                      mvs -> do
+                        mvs' <- mapM solArg mvs
+                        let go_sum x y = solPrimApply ADD [x, y]
+                        sum' <- foldlM go_sum last_timev' mvs'
+                        solPrimApply (if sign then PGE else PLT) [timev', sum']
+              let CBetween ifrom ito = interval
+              int_fromp <- check True ifrom
+              int_top <- check False ito
+              return $ solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
+      let body = vsep [ hashCheck, frameDecl, timeoutCheck, ctp ]
+      let funDefn = solFunctionLike sfl argDefs ret body
+      return $ vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
 
-solHandler which (C_Loop _at svs lcmsg ct) = freshVarMap $ do
-  let msg = lcmsg
-  (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing ct
-  (argDefns, argDefs) <- solArgDefn which (ADK_Loop svs) msg
-  let ret = "internal"
-  let body = vsep [frameDecl, ctp]
-  let funDefn = solFunction (solLoop_fun which) argDefs ret body
-  return $ vsep $ argDefns <> [frameDefn, funDefn]
+    C_Loop _at svs lcmsg ct -> do
+      let msg = lcmsg
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing ct
+      (argDefns, argDefs) <- solArgDefn which (ADK_Loop svs) msg
+      let ret = "internal"
+      let body = vsep [frameDecl, ctp]
+      let funDefn = solFunction (solLoop_fun which) argDefs ret body
+      return $ vsep $ argDefns <> [frameDefn, funDefn]
 
 solHandlers :: CHandlers -> App Doc
 solHandlers (CHandlers hs) =
@@ -872,6 +849,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
   let ctxt_handler_num = 0
   let ctxt_emit = emptyDoc
   ctxt_varm <- newIORef mempty
+  ctxt_mvars <- newIORef mempty
   let ctxt_plo = plo
   flip runReaderT (SolCtxt {..}) $ do
     (csvs, consp) <-
