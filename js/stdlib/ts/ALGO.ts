@@ -214,8 +214,9 @@ const [getAlgoSigner, setAlgoSigner] = replaceableThunk<Promise<AlgoSigner>>(asy
 });
 export { setAlgoSigner };
 
-// Yes, this is dumb. TODO something better
-if (process.env.REACH_CONNECTOR_MODE == 'ETH-test-browser') {
+if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
+  // Yes, this is dumb. TODO something better
+  || process.env.REACH_CONNECTOR_MODE === 'ETH-browser') {
   setBrowser(true);
 }
 

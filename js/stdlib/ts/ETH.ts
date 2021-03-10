@@ -126,7 +126,7 @@ const connectorMode: ConnectorMode = getConnectorMode();
 
 // Certain functions either behave differently,
 // or are only available on an "isolated" network.
-// Note: ETH-test-browser-window is NOT considered isolated.
+// Note: ETH-browser is NOT considered isolated.
 const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
@@ -145,7 +145,7 @@ const networkDesc: NetworkDesc =
   type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
-} : connectorMode == 'ETH-test-browser-window' ? {
+} : connectorMode == 'ETH-browser' ? {
   type: 'window',
 } : {
   type: 'skip',

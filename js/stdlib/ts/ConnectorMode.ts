@@ -4,20 +4,22 @@ export type Connector = 'ETH' | 'ALGO' | 'FAKE';
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
   'ETH-test-embedded-ganache' |
-  'ETH-test-browser-window' |
   'ETH-live' |
+  'ETH-browser' |
   'FAKE-test-embedded-mock' |
-  'ALGO-test-dockerized-algod';
+  'ALGO-test-dockerized-algod' |
+  'ALGO-browser';
 
 // Order is significant, earlier = default for shared prefix
 // e.g. ETH defaults to ETH-test-dockerized-geth
 const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-test-dockerized-geth',
   'ETH-test-embedded-ganache',
-  'ETH-test-browser-window',
   'ETH-live',
+  'ETH-browser',
   'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
+  'ALGO-browser',
 ];
 
 function isKnownConnector(s: string): s is Connector {

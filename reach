@@ -871,6 +871,11 @@ services:
       - "3000:3000"
     stdin_open: true
     tty: true
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE
+      - REACT_APP_REACH_DEBUG=${REACH_DEBUG}
+      - REACT_APP_REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
 $DEPENDS_ON
   ganache:
     image: trufflesuite/ganache-cli:v6.12.0
@@ -905,21 +910,68 @@ EOF
   rm docker-compose.yml.react # run.sh.react
 }
 
+
+fatal_unrecognized_connector_mode_react () {
+  echo "Unrecognized REACH_CONNECTOR_MODE=$REACH_CONNECTOR_MODE"
+  echo "Supported modes for reach react are: ETH, ALGO"
+  exit 1
+}
+
+ensure_connector_mode_browser () {
+  # Makes sure to set REACH_CONNECTOR_MODE to one of:
+  # * ETH-browser
+  # * ALGO-browser
+  # $WHAT-$WHERE
+
+  # TODO: distinguish between BLAH-browser-dockerized and browser-remote
+  # TODO: FAKE-browser
+
+  # Expand defaults
+  REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE:-ETH}
+  case "$REACH_CONNECTOR_MODE" in
+    "ETH")
+      REACH_CONNECTOR_MODE="ETH-browser"
+      ;;
+    "ALGO")
+      REACH_CONNECTOR_MODE="ALGO-browser"
+      ;;
+  esac
+
+  # ensure it is one of the supported things
+  case "$REACH_CONNECTOR_MODE" in
+    "ETH-browser")
+      ;;
+    "ALGO-browser")
+      ;;
+    *)
+      fatal_unrecognized_connector_mode_react
+      ;;
+  esac
+}
+
 do_react () {
-  USE_EXISTING_DEVNET=false
-  if [ "x$1" = "x--use-existing-devnet" ]; then
-    shift
-    USE_EXISTING_DEVNET=true
-  fi
-  if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
-    USE_EXISTING_DEVNET=true
-  fi
+  ensure_connector_mode_browser
 
   # TODO: rework REACH_CONNECTOR_MODE to work better w/ browser
   IS_ALGO=false
   case "$REACH_CONNECTOR_MODE" in ALGO*)
     IS_ALGO=true ;;
   esac
+
+  # TODO: make better use of REACH_CONNECTOR_MODE for branching here
+  USE_EXISTING_DEVNET=false
+  if [ "x$1" = "x--use-existing-devnet" ]; then
+    shift
+    USE_EXISTING_DEVNET=true
+  fi
+  if [ $IS_ALGO ]; then
+    if command -v lsof >/dev/null && lsof -i tcp:4180 | grep LISTEN >/dev/null ; then
+      USE_EXISTING_DEVNET=true
+    fi
+  fi
+  if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
+    USE_EXISTING_DEVNET=true
+  fi
 
   # All args are just forwarded to do_compile
   # TODO: support args comparable to do_run?
