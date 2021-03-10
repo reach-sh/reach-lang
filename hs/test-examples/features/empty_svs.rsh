@@ -3,18 +3,24 @@
 export const main =
   Reach.App(
     {},
-    [ Participant('A', {}),
-      Participant('B', {}),
-      Participant('C', {})
+    [ Participant('A', { getA: Fun([], Tuple()) }),
+      Participant('B', { getB: Fun([], Object({})) }),
+      Participant('C', { getC: Fun([], Array(UInt, 0)) })
     ],
     (A, B, C) => {
-      A.pay(0);
+      A.only(() => {
+        const a = declassify(interact.getA()); });
+      A.publish(a);
       commit();
 
-      B.pay(0);
+      B.only(() => {
+        const b = declassify(interact.getB()); });
+      B.publish(b);
       commit();
 
-      C.pay(0);
+      C.only(() => {
+        const c = declassify(interact.getC()); });
+      C.publish(c);
       commit();
 
       exit();

@@ -833,6 +833,8 @@ solDefineType t = case t of
     addMap $ "uint8[" <> pretty sz <> "]"
   T_Digest -> base
   T_Address -> base
+  T_Array _ 0 -> do
+    addMap "bool"
   T_Array et sz -> do
     tn <- solType et
     let me = tn <> brackets (pretty sz)
