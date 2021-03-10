@@ -182,11 +182,15 @@ const T_Tuple = <T>(
 ): ETH_Ty<CBR_Tuple, Array<T>> => ({
   ...CBR.BT_Tuple(ctcs),
   defaultValue: ctcs.map(ctc => ctc.defaultValue),
-  munge: (bv: CBR_Tuple): Array<T> => {
-    return bv.map((arg, i) => ctcs[i].munge(arg));
+  munge: (bv: CBR_Tuple): any => {
+    if (ctcs.length == 0 ) {
+      return false;
+    } else {
+      return bv.map((arg, i) => ctcs[i].munge(arg));
+    }
   },
   unmunge: (args: Array<T>): CBR_Tuple => {
-    return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
+    return V_Tuple(ctcs)(ctcs.map((ctc: any, i: number) => ctc.unmunge(args[i])));
   },
   paramType: `tuple(${ctcs.map((ctc) => ctc.paramType).join(',')})`
 });
@@ -208,14 +212,20 @@ const T_Object = <T>(
     }
     return obj;
   })(),
-  munge: (bv: CBR_Object): {[key: string]: T} => {
+  munge: (bv: CBR_Object): any => {
     const obj: {
       [key: string]: any
     } = {};
+    let none: boolean = true;
     for (const prop in co) {
+      none = false;
       obj[prop] = co[prop].munge(bv[prop]);
     }
-    return obj;
+    if ( none ) {
+      return false;
+    } else {
+      return obj;
+    }
   },
   unmunge: (bv: {[key: string]: T}): CBR_Object => {
     const obj: {
