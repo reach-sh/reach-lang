@@ -328,7 +328,7 @@ export const fxpowi = (base, power, precision) => {
   const r = fxpowui(base, power.i, precision);
   return (power.sign)
     ? r
-    : fxdiv(1, r, base.scale);
+    : fxdiv(+1.0, r, base.i.scale);
 }
 
 export const fxmod = (x, y) => {

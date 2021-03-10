@@ -122,7 +122,6 @@ export const main =
       Sponsor.publish(sponsort);
       require(sponsortc == digest(sponsort));
 
-      const howManyNotReturned = howMany - howManyReturned;
       const winningNo = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
       commit();
 

@@ -16,7 +16,7 @@ import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Util
-import Reach.Deprecation (Deprecation)
+import Reach.Warning (Deprecation)
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -398,7 +398,7 @@ data SLSSVal = SLSSVal
   deriving (Eq, Generic)
 
 instance Pretty SLSSVal where
-  pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
+  pretty (SLSSVal at level val) = viaShow at <> pretty (level, val) -- <> "@" <> pretty at
   -- TODO: incorporate srcloc in pretty?
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal

@@ -2,6 +2,8 @@
 
 const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
+void isOutcome;
+
 const Common = {
   showOutcome: Fun([UInt, UInt, UInt], Null),
 };

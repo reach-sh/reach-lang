@@ -56,4 +56,4 @@ export const main =
             Funder,
             { deadline: dormant,
               after: () =>
-              giveChance(Bystander, false) }) }); } );
+              giveChance(Bystander, None); } );

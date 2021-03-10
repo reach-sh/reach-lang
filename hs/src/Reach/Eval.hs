@@ -22,6 +22,7 @@ import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
+import Reach.Warning
 
 app_default_opts :: Counter -> [T.Text] -> DLOpts
 app_default_opts idxr cns =
@@ -189,10 +190,13 @@ compileBundle cns jsb main = do
   e_lifts <- newIORef mempty
   me_id <- newCounter 0
   me_ms <- newIORef mempty
+  e_unused_variables <- newIORef mempty
   let e_mape = MapEnv {..}
   mkprog <-
     flip runReaderT (Env {..}) $
       compileBundle_ cns jsb main
   ms' <- readIORef me_ms
   final <- readIORef e_lifts
+  unused_vars <- readIORef e_unused_variables
+  forM_ unused_vars $  emitWarning . uncurry W_UnusedVariable
   return $ mkprog ms' final

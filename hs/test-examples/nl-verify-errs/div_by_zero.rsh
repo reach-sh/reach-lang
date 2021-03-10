@@ -6,6 +6,6 @@ export const main =
     [Participant('A', { x: UInt })],
     (A) => {
       A.only(() => {
-        const x = 5 / declassify(interact.x);
+        const _ = 5 / declassify(interact.x);
       });
     });

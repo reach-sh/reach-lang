@@ -69,7 +69,6 @@ const tttWinnerIsX = ( st ) => winningP(st.xs);
 const tttWinnerIsO = ( st ) => winningP(st.os);
 
 // Protocol
-const DELAY = 20; // in blocks
 
 const Player =
       { ...hasRandom,

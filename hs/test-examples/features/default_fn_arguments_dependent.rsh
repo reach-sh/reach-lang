@@ -11,4 +11,5 @@ export const main =
     (A) => {
       const a = 20;
       assert(foo(1, 2) == 13);
+      void a;
     });

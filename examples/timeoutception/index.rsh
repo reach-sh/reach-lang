@@ -21,6 +21,8 @@ function gogo(who, kTim) {
   return () => go(who, kTim);
 }
 
+void gogo;
+
 function thrice(f, x) {
   return f(f(f(x)));
 }
