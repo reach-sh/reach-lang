@@ -35,7 +35,6 @@ import Reach.Warning
     ( emitWarning,
       Warning(W_Deprecated),
       Deprecation(D_ParticipantTuples, D_SnakeToCamelCase) )
-import Reach.Texty ( Pretty(pretty) )
 
 --- New Types
 
@@ -92,6 +91,13 @@ locMap m = do
   MapEnv {..} <- asks e_mape :: App MapEnv
   m' <- liftIO $ dupeIORef me_ms
   local (\e -> e { e_mape = MapEnv me_id m' }) m
+
+locNonStrict :: App b -> App b
+locNonStrict m = do
+  sco <- asks e_sco
+  use_strict <- liftIO $ newIORef False
+  let sco' = sco { sco_use_strict = use_strict }
+  local (\e -> e { e_sco = sco' }) m
 
 locWho :: SLPart -> App a -> App a
 locWho w = local (\e -> e {e_who = Just w})
@@ -433,7 +439,8 @@ base_env =
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
   where
-    cloenv = SLCloEnv mempty env
+    -- Since we're generating closure, don't fuss about unused vars
+    cloenv = SLCloEnv mempty env False
     env = M.map (SLSSVal at Public) env_
     (args, body) =
       case readJsExpr js of
@@ -642,9 +649,10 @@ ensure_can_wait = do
     True -> return ()
     False -> expect_ $ Err_Eval_IllegalWait dm
 
-sco_to_cloenv :: SLScope -> SLCloEnv
-sco_to_cloenv SLScope {..} =
-  SLCloEnv sco_penvs sco_cenv
+sco_to_cloenv :: SLScope -> App SLCloEnv
+sco_to_cloenv SLScope {..} = do
+  use_strict <- liftIO $ readIORef sco_use_strict
+  return $ SLCloEnv sco_penvs sco_cenv use_strict
 
 sco_lookup_penv :: SLPart -> App SLEnv
 sco_lookup_penv who = do
@@ -1118,7 +1126,7 @@ evalForm f args = do
     SLForm_Part_Only who mv -> do
       at <- withAt id
       x <- one_arg
-      env <- (sco_to_cloenv . e_sco) <$> ask
+      env <- ask >>= sco_to_cloenv . e_sco
       return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at env x
     SLForm_fork -> do
       zero_args
@@ -1209,7 +1217,7 @@ evalForm f args = do
                  SLV_Participant _ who mv _ -> return (who, mv)
                  v -> expect_t v $ Err_NotParticipant)
               part_vs
-          ce <- sco_to_cloenv . e_sco <$> ask
+          ce <- ask >>= sco_to_cloenv . e_sco
           at <- withAt id
           return $ public $ SLV_Form $ SLForm_EachAns parts at ce thunke
         _ ->
@@ -2129,11 +2137,11 @@ evalApplyVals rator randvs =
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
-    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv) -> do
+    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv clo_strict) -> do
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
       let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
-      use_strict <- liftIO . dupeIOfRef =<< asks (sco_use_strict . e_sco)
+      clo_use_strict <- liftIO $ newIORef clo_strict
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2141,7 +2149,7 @@ evalApplyVals rator randvs =
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
-               , sco_use_strict = use_strict
+               , sco_use_strict = clo_use_strict
                })
       m <- readSt st_mode
       arg_env <-
@@ -2398,7 +2406,7 @@ evalExpr e = case e of
           JSIdentName na _ ->
             locAtf (srcloc_jsa "function name" na) $
               expect_ Err_Fun_NamesIllegal
-      ce <- sco_to_cloenv . e_sco <$> ask
+      ce <- ask >>= sco_to_cloenv . e_sco
       return $ public $ SLV_Clo at' fname formals body ce
   JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
   JSMemberDot obj a field -> doDot obj a field
@@ -2504,10 +2512,6 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
             _ -> (t_at', te, fe)
       whenUsingStrict $ ignoreAll $ evalExpr oe
       lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
-
--- ignoreEverything
---
--- array [x, y, z] only used x
 
 doDot :: JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doDot obj a field = do
@@ -2693,12 +2697,14 @@ doOnlyExpr :: ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> App (SL
 doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
   st <- readSt id
   sco <- e_sco <$> ask
-  let SLCloEnv only_penvs only_cenv = only_cloenv
+  let SLCloEnv only_penvs only_cenv only_strict = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
+  use_strict <- liftIO $ newIORef only_strict
   let sco_only_pre =
         sco
           { sco_penvs = only_penvs
           , sco_cenv = only_cenv
+          , sco_use_strict = use_strict
           }
   locWho who $
     locSco sco_only_pre $
@@ -3228,9 +3234,6 @@ doExit = do
   st <- readSt id
   setSt $ st {st_live = False}
 
-showEnv :: (Show a1, Pretty a2) => M.Map a1 a2 -> [Char]
-showEnv env = concatMap (\(k, v) -> show k <> " = " <> show (pretty v) <> "\n") $ M.toList env
-
 doWhileLikeInitEval :: JSExpression -> JSExpression -> App (M.Map SLVar DLVar, DLAssignment, SLScope)
 doWhileLikeInitEval lhs rhs = do
   vars_env <- unchangedSt $ evalDecl True lhs rhs
@@ -3676,7 +3679,6 @@ data MapEnv = MapEnv
   { me_id :: Counter
   , me_ms :: IORef (M.Map DLMVar DLMapInfo)
   }
--- duplicated (like local)
 
 dupeIORef :: IORef a -> IO (IORef a)
 dupeIORef r = newIORef =<< readIORef r

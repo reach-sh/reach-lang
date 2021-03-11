@@ -9,7 +9,7 @@ export const main =
         // Lets say `declassify(interact.x) - 4` evaluates
         // to DLVar with counter 4.
         const u = declassify(interact.x) - 4;
-        const _ = u;
+        const w = u;
         const x = u;
         const y = u;
         // Ensure that the SMT error displays `x` and not

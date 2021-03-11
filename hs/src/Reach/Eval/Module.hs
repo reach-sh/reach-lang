@@ -15,6 +15,7 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 import Reach.Version
+import Data.IORef (writeIORef)
 
 lookupDep :: ReachSource -> SLLibs -> App SLEnv
 lookupDep rs libm =
@@ -60,6 +61,14 @@ evalExportClause env (JSExportClause _ escl _) =
       JSExportSpecifier x -> (x, x)
       JSExportSpecifierAs x _ y -> (x, y)
 
+trackImports :: SLEnv -> App ()
+trackImports env =
+  forM_ (M.toList env) $ \ (k, v) -> trackVariable (sss_at v, k)
+
+markExports :: SLEnv -> App ()
+markExports env =
+  forM_ (M.toList env) $ \ (k, v) -> markVarUsed (sss_at v, k)
+
 evalTopBody :: SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> App SLEnv
 evalTopBody libm env exenv = \case
   [] -> return $ exenv
@@ -70,14 +79,16 @@ evalTopBody libm env exenv = \case
           case im of
             JSImportDeclarationBare _ libn _ -> do
               libex <- lookupDep (ReachSourceFile libn) libm
+              trackImports libex
               env' <- env_merge env libex
               evalTopBody libm env' exenv body'
             JSImportDeclaration ic fc _ -> do
               ienv <- evalFromClause libm fc
               news <- evalImportClause ienv ic
+              trackImports news
               env' <- env_merge env news
               evalTopBody libm env' exenv body'
-      (JSModuleExportDeclaration a ex) ->
+      (JSModuleExportDeclaration a ex) -> do
         locAtf (srcloc_jsa "export" a) $
           case ex of
             JSExport s _ -> doStmt True s
@@ -109,7 +120,10 @@ evalTopBody libm env exenv = \case
             exenv' <- case isExport of
               -- If this is an exporting statement, then add to the export
               -- environment everything that is new.
-              True -> env_merge exenv (M.difference env' env)
+              True -> do
+                let newEnv = M.difference env' env
+                markExports newEnv
+                env_merge exenv newEnv
               False -> return $ exenv
             evalTopBody libm env' exenv' body'
           _ -> expect_ $ Err_Module_Return
@@ -133,6 +147,8 @@ evalLib cns (src, body) libm = do
             | (trimQuotes hs) == versionHeader ->
               ((srcloc_after_semi "header" a sp at), j)
           _ -> expect_thrown at (Err_NoHeader body)
+  use_strict <- asks $ sco_use_strict . e_sco
+  liftIO $ writeIORef use_strict False
   exenv <- locAt prev_at $ evalTopBody libm stdlib_env mt_env body'
   return $ M.insert src exenv libm
 

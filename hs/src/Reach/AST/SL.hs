@@ -97,7 +97,7 @@ st2it t = case t of
 type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
-  = SLCloEnv SLPartEnvs SLEnv
+  = SLCloEnv SLPartEnvs SLEnv Bool
   deriving (Eq, Generic)
 
 data SLVal
@@ -398,7 +398,7 @@ data SLSSVal = SLSSVal
   deriving (Eq, Generic)
 
 instance Pretty SLSSVal where
-  pretty (SLSSVal at level val) = viaShow at <> pretty (level, val) -- <> "@" <> pretty at
+  pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
   -- TODO: incorporate srcloc in pretty?
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
