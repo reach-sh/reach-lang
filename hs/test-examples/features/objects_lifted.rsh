@@ -41,7 +41,6 @@ export const main = Reach.App(
     const {y, ...obj6} = obj2;
     // TODO assert(y == 'y_val');
     require(obj6.x == 1);
-    void y;
 
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)

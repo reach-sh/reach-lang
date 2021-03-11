@@ -116,6 +116,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
         env0 <- locAt slcpi_at $ env_insert "interact" iov top_env_wps
         return $ (slcpi_who, env0)
   penvs <- M.fromList <$> mapM make_penvp part_ios
+  use_strict <- liftIO . dupeIORef =<< asks (sco_use_strict . e_sco)
   let sco =
         SLScope
           { sco_ret = Nothing
@@ -123,6 +124,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           , sco_while_vars = Nothing
           , sco_penvs = penvs
           , sco_cenv = top_env_wps
+          , sco_use_strict = use_strict
           }
   setSt st_step
   doFluidSet FV_balance $ public $ SLV_Int at' 0
@@ -174,6 +176,7 @@ compileBundle cns jsb main = do
           }
   let e_dlo = app_default_opts e_id $ M.keys cns
   let e_classes = mempty
+  sco_use_strict <- newIORef False
   let e_sco =
         SLScope
           { sco_ret = Nothing
@@ -182,6 +185,7 @@ compileBundle cns jsb main = do
           , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
             sco_penvs = mempty
           , sco_cenv = mempty
+          , sco_use_strict = sco_use_strict
           }
   let e_depth = recursionDepthLimit
   let e_while_invariant = False

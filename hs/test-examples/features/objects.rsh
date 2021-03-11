@@ -4,7 +4,6 @@ export const main = Reach.App(
   {}, [], () => {
     // empty object literal
     const obj0 = {};
-    void obj0;
 
     // Normal object literal
     const obj1 = {x: 1};
@@ -36,7 +35,6 @@ export const main = Reach.App(
     const {x, ...obj4a} = obj4;
     assert(x == 1);
     // TODO assert(obj4a.y == 'yval');
-    void obj4a;
 
     const obj4b = Object.set(obj4, field, 2);
     assert(obj4b.x == 2);
@@ -53,7 +51,6 @@ export const main = Reach.App(
     const {y, ...obj7} = obj4;
     // TODO assert(y == 'yval');
     assert(obj7.x == 1);
-    void y;
 
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)

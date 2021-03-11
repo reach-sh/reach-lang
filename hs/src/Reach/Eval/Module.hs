@@ -92,6 +92,7 @@ evalTopBody libm env exenv = \case
       (JSModuleStatementListItem s) -> doStmt False s
     where
       doStmt isExport sm = do
+        use_strict <- asks $ sco_use_strict . e_sco
         let sco =
               (SLScope
                  { sco_ret = Nothing
@@ -99,6 +100,7 @@ evalTopBody libm env exenv = \case
                  , sco_while_vars = Nothing
                  , sco_penvs = mempty
                  , sco_cenv = env
+                 , sco_use_strict = use_strict
                  })
         smr <- locSco sco $ evalStmt [sm]
         case smr of

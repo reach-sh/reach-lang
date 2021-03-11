@@ -3,8 +3,6 @@
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
-void [ isHand, SCISSORS ];
-
 const winner = (handA, handB) =>
       ((handA + (4 - handB)) % 3);
 

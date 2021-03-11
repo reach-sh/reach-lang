@@ -210,6 +210,7 @@ data SLScope = SLScope
     sco_penvs :: SLPartEnvs
   , -- One for the consensus
     sco_cenv :: SLEnv
+  , sco_use_strict :: IORef Bool
   }
 
 data EnvInsertMode
@@ -321,7 +322,13 @@ env_merge_ imode left righte = foldlM (env_insertp_ imode) left $ M.toList right
 env_merge :: HasCallStack => SLEnv -> SLEnv -> App SLEnv
 env_merge = env_merge_ DisallowShadowing
 
--- Utilities to track variable usage
+-- Utilities to track variable
+
+useStrict :: App Bool
+useStrict = liftIO . readIORef =<< asks (sco_use_strict . e_sco)
+
+whenUsingStrict :: App () -> App ()
+whenUsingStrict e = useStrict >>= flip when e
 
 shouldNotTrackVariable :: (SrcLoc, SLVar) -> Bool
 shouldNotTrackVariable (SrcLoc _ _ (Just ReachStdLib), _) = True
@@ -330,15 +337,17 @@ shouldNotTrackVariable (_, "_") = True
 shouldNotTrackVariable _ = False
 
 trackVariable :: (SrcLoc, SLVar) -> App ()
-trackVariable el = do
-  unused_vars <- asks e_unused_variables
-  unless (shouldNotTrackVariable el) $
-    liftIO $ modifyIORef unused_vars (el :)
+trackVariable el =
+  whenUsingStrict $ do
+    unused_vars <- asks e_unused_variables
+    unless (shouldNotTrackVariable el) $
+      liftIO $ modifyIORef unused_vars (el :)
 
 markVarUsed :: (SrcLoc, SLVar) -> App ()
-markVarUsed v = do
-  unused_vars <- asks e_unused_variables
-  liftIO $ modifyIORef unused_vars $ filter (v /=)
+markVarUsed v =
+  whenUsingStrict $ do
+    unused_vars <- asks e_unused_variables
+    liftIO $ modifyIORef unused_vars $ filter (v /=)
 
 -- | The "_" ident may never be looked up.
 env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
@@ -2111,6 +2120,9 @@ instDefaultArgs env err formals = \case
       env' <- evalDeclLHSs True env [(lhs, rhs)]
       instDefaultArgs env' err ft tl
 
+dupeIOfRef :: IORef a -> IO (IORef a)
+dupeIOfRef a = newIORef =<< readIORef a
+
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals rator randvs =
   case rator of
@@ -2121,6 +2133,7 @@ evalApplyVals rator randvs =
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
       let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
+      use_strict <- liftIO . dupeIOfRef =<< asks (sco_use_strict . e_sco)
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2128,6 +2141,7 @@ evalApplyVals rator randvs =
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
+               , sco_use_strict = use_strict
                })
       m <- readSt st_mode
       arg_env <-
@@ -2488,7 +2502,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
       let (n_at', ne, oe) = case cv of
             SLV_Bool _ False -> (f_at', fe, te)
             _ -> (t_at', te, fe)
-      ignoreAll $ evalExpr oe
+      whenUsingStrict $ ignoreAll $ evalExpr oe
       lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
 
 -- ignoreEverything
@@ -3316,6 +3330,11 @@ evalStmt = \case
   (s@(JSBreak a _ _) : _) -> illegal a s "break"
   (s@(JSLet a _ _) : _) -> illegal a s "let"
   (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
+  (JSExpressionStatement (JSStringLiteral a hs) sp) : ks
+    | trimQuotes hs == "use strict" -> do
+      use_strict <- asks $ sco_use_strict . e_sco
+      liftIO $ writeIORef use_strict True
+      locAtf (srcloc_after_semi "use strict" a sp) $ evalStmt ks
   ((JSConstant a decls sp) : ks) -> do
     let lab = "const"
     locAtf (srcloc_jsa lab a) $ do
@@ -3397,7 +3416,7 @@ evalStmt = \case
           let (n_at', ns, os) = case cv of
                 SLV_Bool _ False -> (f_at', fs, ts)
                 _ -> (t_at', ts, fs)
-          ignoreAll $ evalStmt [os]
+          whenUsingStrict $ ignoreAll $ evalStmt [os]
           nr <- locAt n_at' $ evalStmt [ns]
           retSeqn nr ks_ne
   (s@(JSLabelled _ a _) : _) ->
@@ -3563,7 +3582,7 @@ evalStmt = \case
           SLV_Data _ t vn vv -> do
             let (at_c, shouldBind, body) = (casesm M.! vn)
             let mvv = if shouldBind then Just vv else Nothing
-            ignoreAll $ select_all (SLV_DLVar $ DLVar srcloc_builtin Nothing (T_Data t) 0)
+            whenUsingStrict $ ignoreAll $ select_all (SLV_DLVar $ DLVar srcloc_builtin Nothing (T_Data t) 0)
             select at_c body mvv
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"

@@ -5,5 +5,5 @@
 export const x = 3;
 
 export const main = Reach.App(
-  {}, [], () => { void x; }
+  {}, [], () => { }
 );
