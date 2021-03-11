@@ -176,11 +176,18 @@ data Env = Env
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
   , emTimev :: Maybe DLVar
+  , eFinalize :: App ()
   }
 
--- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
--- really annoying to have the world parameter
 type App = ReaderT Env IO
+
+dupeIORef :: IORef a -> IO (IORef a)
+dupeIORef r = newIORef =<< readIORef r
+
+withFresh :: App m -> App m
+withFresh m = do
+  eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
+  local (\e -> e { eTxnsR = eTxnsR' }) m
 
 output :: TEAL -> App ()
 output t = do
@@ -839,15 +846,17 @@ ct = \case
     ca a
     false_lab <- freshLabel
     code "bz" [false_lab]
-    ct tt
+    withFresh $ ct tt
     label false_lab
-    ct ft
-  CT_Switch at dv csm -> doSwitch ct at dv csm
+    withFresh $ ct ft
+  CT_Switch at dv csm ->
+    doSwitch (withFresh . ct) at dv csm
   CT_Jump {} ->
     impossible $ "continue after dejump"
   CT_From _ which msvs -> do
     check_nextSt
     halt_should_be isHalt
+    finalize
     where
       (isHalt, check_nextSt) =
         case msvs of
@@ -872,6 +881,14 @@ ct = \case
                 cstate (HM_Set which) svs'
                 readArg argNextSt
                 eq_or_fail
+
+finalize :: App ()
+finalize = do
+  m <- eFinalize <$> ask
+  m
+
+ct_k :: CTail -> App () -> App ()
+ct_k t k = local (\e -> e { eFinalize = k }) $ ct t
 
 data HashMode
   = HM_Set Int
@@ -1002,6 +1019,7 @@ runApp eShared eWhich eLets emTimev m = do
   let eVars = mempty
   -- Everything initial is small
   let eLetSmalls = M.map (\_ -> True) eLets
+  let eFinalize = return ()
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
@@ -1083,41 +1101,40 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             --- XXX close remainder to is deployer if halts, zero otherwise
 
             comment "Run body"
-            ct body
+            ct_k body $ do
+              txns <- how_many_txns
+              comment "Check GroupSize"
+              code "global" ["GroupSize"]
+              cl $ DLL_Int sb $ fromIntegral $ 1 + txns
+              eq_or_fail
 
-            txns <- how_many_txns
-            comment "Check GroupSize"
-            code "global" ["GroupSize"]
-            cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-            eq_or_fail
+              lookup_fee_amount
+              csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
+              eq_or_fail
 
-            lookup_fee_amount
-            csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
-            eq_or_fail
-
-            comment "Check time limits"
-            -- We don't need to look at timev because the range of valid rounds
-            -- that a txn is valid within is built-in to Algorand, so rather than
-            -- checking that ( last_timev + from <= timev <= last_timev + to ), we
-            -- just check that FirstValid = last_time + from, etc.
-            (case last_timemv of
-               Nothing -> return ()
-               Just last_timev -> do
-                 let check_time f = \case
-                       [] -> nop
-                       as -> do
-                         ca $ DLA_Var last_timev
-                         csum as
-                         op "+"
-                         let go i = do
-                               op "dup"
-                               code "gtxn" [texty i, f]
-                               eq_or_fail
-                         forM_ [0 .. txns] go
-                         op "pop"
-                 let CBetween ifrom ito = int
-                 check_time "FirstValid" ifrom
-                 check_time "LastValid" ito)
+              comment "Check time limits"
+              -- We don't need to look at timev because the range of valid rounds
+              -- that a txn is valid within is built-in to Algorand, so rather than
+              -- checking that ( last_timev + from <= timev <= last_timev + to ), we
+              -- just check that FirstValid = last_time + from, etc.
+              (case last_timemv of
+                 Nothing -> return ()
+                 Just last_timev -> do
+                   let check_time f = \case
+                         [] -> nop
+                         as -> do
+                           ca $ DLA_Var last_timev
+                           csum as
+                           op "+"
+                           let go i = do
+                                 op "dup"
+                                 code "gtxn" [texty i, f]
+                                 eq_or_fail
+                           forM_ [0 .. txns] go
+                           op "pop"
+                   let CBetween ifrom ito = int
+                   check_time "FirstValid" ifrom
+                   check_time "LastValid" ito)
 
             std_footer
 
