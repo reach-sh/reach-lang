@@ -2297,3 +2297,33 @@ it does not matter who @reachin{publish}es, such as in a @reachin{timeout}.
 @reachin{Anybody} is strictly an abbreviation of a @reachin{race} involving all of the named participants of the application.
 In an application with a @tech{participant class}, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
 In an application without any @tech{participant class}es, @reachin{Anybody} instead would mean only the actual previously-bound @tech{participant}s.
+
+@subsubsection{'use strict'}
+
+@(mint-define! '("'use strict'"))
+@reach{
+  'use strict'; }
+
+@index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
+declarations within the current scope. If a variable is declared, but never used, there will
+be a warning emitted at compile time.
+
+Strict mode will reject some code that is normally valid and limit how dynamic Reach's type system is.
+For example, normally Reach will permit expressions like the following to be evaluated:
+
+@reach{
+  const foo = (o) =>
+    o ? o.b : false;
+
+  void foo({ b: true });
+  void foo(false); }
+
+Without @reachin{'use strict'}, Reach will not evaluate @reachin{o.b} when @reachin{o = false} and this code will compile
+successfully.
+
+However, to determine variable usage in strict mode, Reach traverses every conditional branch,
+whether or not it is the chosen one. In doing so, Reach will
+raise an error when reviewing the true branch of the ternary:
+
+@verbatim{
+  reachc: error: Invalid field access. Expected object, got: Bool }
