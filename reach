@@ -844,21 +844,25 @@ react_compose () {
     echo 'using existing devnet'
     DEPENDS_ON=''
   else
-    if $IS_ALGO ; then
-      DEPENDS_ON='
+    case "$REACH_CONNECTOR_MODE" in
+      ALGO*)
+        DEPENDS_ON='
     # Does not technically depend on algorand-devnet.
     # This is just to get it to run both.
     depends_on:
       - algorand-devnet
 '
-    else
-      DEPENDS_ON='
+        ;;
+      ETH*)
+        DEPENDS_ON='
     # Does not technically depend on ganache.
     # This is just to get it to run both.
     depends_on:
       - ganache
 '
-    fi
+        ;;
+      # TODO: FAKE?
+    esac
   fi
   cat<<EOF > docker-compose.yml.react
 version: '3.4'
@@ -952,26 +956,25 @@ ensure_connector_mode_browser () {
 do_react () {
   ensure_connector_mode_browser
 
-  # TODO: rework REACH_CONNECTOR_MODE to work better w/ browser
-  IS_ALGO=false
-  case "$REACH_CONNECTOR_MODE" in ALGO*)
-    IS_ALGO=true ;;
-  esac
-
   # TODO: make better use of REACH_CONNECTOR_MODE for branching here
   USE_EXISTING_DEVNET=false
   if [ "x$1" = "x--use-existing-devnet" ]; then
     shift
     USE_EXISTING_DEVNET=true
   fi
-  if [ $IS_ALGO ]; then
-    if command -v lsof >/dev/null && lsof -i tcp:4180 | grep LISTEN >/dev/null ; then
-      USE_EXISTING_DEVNET=true
-    fi
-  fi
-  if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
-    USE_EXISTING_DEVNET=true
-  fi
+  case "$REACH_CONNECTOR_MODE" in
+    ALGO*)
+      if command -v lsof >/dev/null && lsof -i tcp:4180 | grep LISTEN >/dev/null ; then
+        USE_EXISTING_DEVNET=true
+      fi
+      ;;
+    ETH*)
+      if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
+        USE_EXISTING_DEVNET=true
+      fi
+      ;;
+    # TODO: FAKE?
+  esac
 
   # All args are just forwarded to do_compile
   # TODO: support args comparable to do_run?
