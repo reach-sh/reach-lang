@@ -3624,8 +3624,6 @@ evalStmt = \case
     illegal a s lab =
       locAtf (srcloc_jsa lab a) $ expect_ $ Err_Block_IllegalJS s
 
---
-
 retSeqn :: SLStmtRes -> [JSStatement] -> App SLStmtRes
 retSeqn sr ks = do
   case dropEmptyJSStmts ks of
