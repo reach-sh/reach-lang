@@ -13,7 +13,7 @@ import Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
-import Data.Maybe (fromMaybe, fromJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -326,7 +326,7 @@ solVar v = do
 mkSolType :: (Ord a) => (a -> App ()) -> (SolCtxt -> IORef (M.Map a Doc)) -> AppT a
 mkSolType ensure f t = do
   ensure t
-  (fromJust . M.lookup t) <$> readCtxtIO f
+  (fromMaybe (impossible "solType") . M.lookup t) <$> readCtxtIO f
 
 solType_hc :: AppT DLType_hc
 solType_hc = mkSolType ensureTypeDefined_hc ctxt_typem_hc
@@ -336,7 +336,7 @@ solType = mkSolType ensureTypeDefined ctxt_typem
 solTypeI :: DLType -> App Int
 solTypeI t = do
   ensureTypeDefined t
-  (fromJust . M.lookup t) <$> readCtxtIO ctxt_typei
+  (fromMaybe (impossible "solTypeI") . M.lookup t) <$> readCtxtIO ctxt_typei
 
 mustBeMem :: DLType -> Bool
 mustBeMem = \case
@@ -874,7 +874,7 @@ solDefineType t = case t of
     (name, i) <- addName
     let enumn = "_enum_" <> name
     let enump = solEnum enumn $ map (pretty . fst) $ M.toAscList tmn
-    let structp = fromJust $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
+    let structp = fromMaybe (impossible "T_Data") $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
     addDef i $ vsep [enump, structp]
   where
     base = impossible "base"
