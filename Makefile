@@ -36,9 +36,9 @@ push-all:
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
 
-.PHONY: publish-all
-publish-all:
-	cd js && $(MAKE) publish
+.PHONY: routine-build-push
+routine-build-push:
+	scripts/routine-build-push.sh
 
 .PHONY: rebuild-and-run-all-examples
 rebuild-and-run-all-examples:
