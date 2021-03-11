@@ -92,13 +92,6 @@ locMap m = do
   m' <- liftIO $ dupeIORef me_ms
   local (\e -> e { e_mape = MapEnv me_id m' }) m
 
-locNonStrict :: App b -> App b
-locNonStrict m = do
-  sco <- asks e_sco
-  use_strict <- liftIO $ newIORef False
-  let sco' = sco { sco_use_strict = use_strict }
-  local (\e -> e { e_sco = sco' }) m
-
 locWho :: SLPart -> App a -> App a
 locWho w = local (\e -> e {e_who = Just w})
 
@@ -2127,9 +2120,6 @@ instDefaultArgs env err formals = \case
     evalArg lhs rhs ft tl = do
       env' <- evalDeclLHSs True env [(lhs, rhs)]
       instDefaultArgs env' err ft tl
-
-dupeIOfRef :: IORef a -> IO (IORef a)
-dupeIOfRef a = newIORef =<< readIORef a
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals rator randvs =

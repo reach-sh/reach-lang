@@ -88,7 +88,7 @@ evalTopBody libm env exenv = \case
               trackImports news
               env' <- env_merge env news
               evalTopBody libm env' exenv body'
-      (JSModuleExportDeclaration a ex) -> do
+      (JSModuleExportDeclaration a ex) ->
         locAtf (srcloc_jsa "export" a) $
           case ex of
             JSExport s _ -> doStmt True s
