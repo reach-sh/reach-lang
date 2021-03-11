@@ -935,6 +935,55 @@ do_react_down () {
   exit 0
 }
 
+do_devnet () {
+  ensure_connector_mode
+
+  case "$REACH_CONNECTOR_MODE" in
+    ALGO*)
+  cat<<EOF > docker-compose.yml.devnet
+version: '3.4'
+services:
+  algorand-devnet:
+    image: reachsh/algorand-devnet:latest
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - '4180:4180'
+      - '8980:8980'
+      - '9392:9392'
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+EOF
+    DEVNET_NAME=algorand-devnet
+    ;;
+
+    ETH*)
+  cat<<EOF > docker-compose.yml.devnet
+version: '3.4'
+services:
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:latest
+  ports:
+    - '8545:8545'
+EOF
+    DEVNET_NAME=ethereum-devnet
+    ;;
+
+  # TODO: FAKE "devnet"?
+  esac
+
+  docker-compose -f docker-compose.yml.devnet run --service-ports --rm "${DEVNET_NAME}"
+}
+
 server_compose () {
   # TODO: write this docker-compose file a better way
 
@@ -1107,6 +1156,9 @@ case ${SUBCOMMAND} in
         ;;
     clean)
         do_clean "$@"
+        ;;
+    devnet)
+        do_devnet "$@"
         ;;
     run)
         do_run "$@"
