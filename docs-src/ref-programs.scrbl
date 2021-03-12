@@ -1532,6 +1532,17 @@ the element, @tt{x}.
 @index{Foldable.count} @reachin{Foldable.count(c, f)} returns the number of elements in @tt{c} that
 satisfy the predicate, @tt{f}.
 
+@subsubsub*section{@tt{Foldable.size} && @tt{.size}}
+
+@(mint-define! '("size"))
+@reach{
+  Foldable.size(c)
+  Array.size(c)
+  Map.size(c)
+  c.size() }
+
+@index{Foldable.size} @reachin{Foldable.size(c)} returns the number of elements in @tt{c}.
+
 @subsubsub*section{@tt{Foldable.min} && @tt{.min}}
 
 @(mint-define! '("min"))

@@ -187,7 +187,7 @@ export const compose =
   (f, g) => (v) => f(g(v));
 
 export const Foldable_length =
-  (c) => c.reduce(0, (acc, _) => acc + 1);
+  (c) => Foldable_count(c, (_) => true);
 export const Foldable_length1 =
   (c) => () => Foldable_length(c);
 

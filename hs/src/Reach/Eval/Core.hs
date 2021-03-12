@@ -853,20 +853,16 @@ evalAsEnv obj = case obj of
       go key mode =
         [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime))]
   --- FIXME rewrite the rest to look at the type and go from there
-  SLV_Tuple _ _ ->
-    return tupleValueEnv
-  SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
-    return tupleValueEnv
+  SLV_Tuple _ _ -> return tupleValueEnv
+  SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
   SLV_Prim SLPrim_Tuple ->
     return $
       M.fromList
         [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length)
         ]
-  SLV_Array {} ->
-    return arrayValueEnv
-  SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
-    return arrayValueEnv
+  SLV_Array {} -> return arrayValueEnv
+  SLV_DLVar (DLVar _ _ (T_Array _ _) _) -> return arrayValueEnv
   SLV_Data {} ->
     return $
       M.fromList
@@ -929,34 +925,36 @@ evalAsEnv obj = case obj of
         [("reduce", delayCall SLPrim_MapReduce)] <> foldableObjectEnv
   _ -> expect_t obj $ Err_Eval_NotObject
   where
-    foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "length", "count"]
-    foldableObjectEnv = map (\m -> (m, doStdlib $ "Foldable_" <> m <> "1")) foldableMethods
+    foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
+    foldableObjectEnv :: [(SLVar, App SLSVal)]
+    foldableObjectEnv = map (\m -> (m, delayStdlib $ "Foldable_" <> m <> "1")) foldableMethods
+    foldableValueEnv :: [(SLVar, App SLSVal)]
     foldableValueEnv = map (\m -> (m, retStdLib $ "Foldable_" <> m)) foldableMethods
-    tupleValueEnv =
-      M.fromList
+    tupleValueEnv :: SLObjEnv
+    tupleValueEnv = M.fromList
         [ ("set", delayCall SLPrim_tuple_set)
         , ("length", doCall SLPrim_tuple_length)
         ]
-    arrayValueEnv =
-      M.fromList $
+    arrayValueEnv :: SLObjEnv
+    arrayValueEnv = M.fromList $ foldableObjectEnv <>
         [ ("set", delayCall SLPrim_array_set)
         , ("length", doCall SLPrim_array_length)
         , ("concat", delayCall SLPrim_array_concat)
-        , ("indexOf", doStdlib "Array_indexOf1")
-        , ("findIndex", doStdlib "Array_findIndex1")
+        , ("indexOf", delayStdlib "Array_indexOf1")
+        , ("findIndex", delayStdlib "Array_findIndex1")
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
         ]
-          <> foldableObjectEnv
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
       retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
-    doStdlib :: SLVar -> App SLSVal
-    doStdlib = doApply <=< lookStdlib
+    delayStdlib :: SLVar -> App SLSVal
+    delayStdlib = doApply <=< lookStdlib
     lookStdlib :: SLVar -> App SLVal
     lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
+    doCall :: SLPrimitive -> App SLSVal
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
     doApply f = evalApplyVals' f [(public obj)]
