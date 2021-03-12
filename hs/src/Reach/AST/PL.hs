@@ -260,12 +260,16 @@ data CPProg a
   = CPProg SrcLoc (CHandlers_ a)
   deriving (Eq)
 
+type CIProg = CPProg PILVar
+
 instance Pretty a => Pretty (CPProg a) where
   pretty (CPProg _ chs) = pretty chs
 
 newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)
+
+type EIPPs = EPPs PILVar
 
 instance Pretty a => Pretty (EPPs a) where
   pretty (EPPs m) = render_obj m
@@ -277,9 +281,15 @@ data PLOpts = PLOpts
   }
   deriving (Generic, Eq)
 
+instance HasCounter PLOpts where
+  getCounter (PLOpts {..}) = plo_counter
+
 data PLinProg a
   = PLProg SrcLoc PLOpts DLInit (EPPs a) (CPProg a)
   deriving (Eq)
+
+instance HasCounter (PLinProg a) where
+  getCounter (PLProg _ plo _ _ _) = getCounter plo
 
 type PLProg = PLinProg PLVar
 

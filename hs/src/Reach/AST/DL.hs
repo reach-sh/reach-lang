@@ -192,9 +192,15 @@ data DLOpts = DLOpts
   }
   deriving (Eq, Generic)
 
+instance HasCounter DLOpts where
+  getCounter (DLOpts {..}) = dlo_counter
+
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
   deriving (Generic)
+
+instance HasCounter DLProg where
+  getCounter (DLProg _ dlo _ _ _) = getCounter dlo
 
 instance Pretty DLProg where
   pretty (DLProg _at _ sps dli ds) =

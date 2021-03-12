@@ -74,9 +74,15 @@ data LLOpts = LLOpts
   }
   deriving (Generic, Eq)
 
+instance HasCounter LLOpts where
+  getCounter (LLOpts {..}) = llo_counter
+
 data LLProg
   = LLProg SrcLoc LLOpts SLParts DLInit LLStep
   deriving (Eq)
+
+instance HasCounter LLProg where
+  getCounter (LLProg _ llo _ _ _) = getCounter llo
 
 instance Pretty LLProg where
   pretty (LLProg _at _ sps dli db) =

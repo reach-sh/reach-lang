@@ -9,6 +9,7 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.AST.PL
 import Reach.Counter
 import Reach.Freshen
 import Reach.Util
@@ -181,9 +182,37 @@ instance Unroll LLProg where
   ul (LLProg at opts ps dli s) =
     LLProg at opts ps dli <$> ul s
 
-unrollLoops :: LLProg -> IO LLProg
-unrollLoops lp@(LLProg _ llo _ _ _) = do
-  let LLOpts {..} = llo
-  let eCounter = llo_counter
+instance Unroll CITail where
+  ul = \case
+    CT_Com m k -> ul_m CT_Com m k
+    CT_If at c t f -> CT_If at c <$> ul t <*> ul f
+    CT_Switch at ov csm -> CT_Switch at ov <$> ul csm
+    e@(CT_From {}) -> return $ e
+    e@(CT_Jump {}) -> return $ e
+
+instance Unroll CIHandler where
+  ul = \case
+    C_Handler at int last_timev from lasti svs msg amtv timev body ->
+      C_Handler at int last_timev from lasti svs msg amtv timev <$> ul body
+    C_Loop at svs vars body ->
+      C_Loop at svs vars <$> ul body
+
+instance Unroll CIHandlers where
+  ul (CHandlers m) = CHandlers <$> ul m
+
+instance Unroll CIProg where
+  ul (CPProg at hs) =
+    CPProg at <$> ul hs
+
+instance Unroll (EPPs a) where
+  ul (EPPs m) = pure $ EPPs m
+
+instance Unroll PIProg where
+  ul (PLProg at opts dli ep cp) =
+    PLProg at opts dli <$> ul ep <*> ul cp
+
+unrollLoops :: (HasCounter a, Unroll a) => a -> IO a
+unrollLoops x = do
+  let eCounter = getCounter x
   let emLifts = Nothing
-  flip runReaderT (Env {..}) $ ul lp
+  flip runReaderT (Env {..}) $ ul x

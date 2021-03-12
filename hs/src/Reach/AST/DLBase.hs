@@ -8,6 +8,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
+import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 import Reach.Util
@@ -506,3 +507,6 @@ fluidVarType = \case
 
 allFluidVars :: [FluidVar]
 allFluidVars = enumFrom minBound
+
+class HasCounter a where
+  getCounter :: a -> Counter

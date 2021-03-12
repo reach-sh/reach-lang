@@ -28,6 +28,7 @@ import Reach.DeJump
 import Reach.Optimize
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
+import Reach.UnrollLoops
 import Reach.Util
 import Safe (atMay)
 import Text.Read
@@ -1326,7 +1327,10 @@ connect_algo = Connector {..}
       let showp which = conShowP moutn ("algo." <> which)
       djp <- dejump pil
       showp "djp" djp
-      djpo <- optimize djp
+      -- Once we have backward jumps, throw this out
+      djpu <- unrollLoops djp
+      showp "ul" djpu
+      djpo <- optimize djpu
       showp "djpo" djpo
       pl <- add_counts djpo
       showp "pl" pl
