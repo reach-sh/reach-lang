@@ -10,6 +10,7 @@ export const main =
         'use strict';
         const x = 10;
         const z = 5;
+        const b = 'sus';
       });
       A.publish(x);
 

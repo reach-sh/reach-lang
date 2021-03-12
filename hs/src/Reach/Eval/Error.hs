@@ -123,6 +123,7 @@ data EvalError
   | Err_Prim_Foldable
   | Err_Default_Arg_Position
   | Err_IllegalEffPosition SLValTy
+  | Err_Unused_Variables [(SrcLoc, SLVar)]
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -477,6 +478,8 @@ instance Show EvalError where
       "Parameters with default arguments must come after all other function arguments."
     Err_IllegalEffPosition v ->
       "Effects cannot be bound, got: " <> show_sv v
+    Err_Unused_Variables vars ->
+      intercalate "\n" $ map (\ (at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

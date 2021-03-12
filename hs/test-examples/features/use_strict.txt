@@ -1,7 +1,0 @@
-Verifying knowledge assertions
-Verifying for generic connector
-  Verifying when ALL participants are honest
-  Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 5 theorems; No failures!
-WARNING: unused variable: z at ./use_strict.rsh:12:15:id

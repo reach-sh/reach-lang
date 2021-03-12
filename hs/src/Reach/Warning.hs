@@ -25,7 +25,6 @@ data Deprecation
 
 data Warning
   = W_Deprecated Deprecation
-  | W_UnusedVariable SrcLoc String
   deriving (Eq)
 
 instance Show Deprecation where
@@ -44,8 +43,6 @@ instance Show Deprecation where
 instance Show Warning where
   show = \case
     W_Deprecated d -> show d
-    W_UnusedVariable at v ->
-      "unused variable: " <> v <> " at " <> show at
 
 emitWarning :: Warning -> IO ()
 emitWarning d =
