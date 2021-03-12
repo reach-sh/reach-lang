@@ -186,13 +186,13 @@ export const Foldable_count1 =
 export const compose =
   (f, g) => (v) => f(g(v));
 
-export const Foldable_length =
+export const Foldable_size =
   (c) => Foldable_count(c, (_) => true);
-export const Foldable_length1 =
-  (c) => () => Foldable_length(c);
+export const Foldable_size1 =
+  (c) => () => Foldable_size(c);
 
 export const Foldable_average = (c) =>
-  Foldable_sum(c) / Foldable_length(s);
+  Foldable_sum(c) / Foldable_size(s);
 export const Foldable_average1 = (c) => () =>
   Foldable_average(c);
 
