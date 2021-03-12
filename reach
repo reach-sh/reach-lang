@@ -1027,8 +1027,8 @@ version: '3.4'
 services:
   ethereum-devnet:
     image: reachsh/ethereum-devnet:latest
-  ports:
-    - '8545:8545'
+    ports:
+      - '8545:8545'
 EOF
     DEVNET_NAME=ethereum-devnet
     ;;
