@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DK
 import Reach.AST.DL
@@ -15,6 +16,16 @@ import Reach.AST.LL
 import Reach.Counter
 import Reach.Texty
 import Reach.Util
+import GHC.Stack (HasCallStack)
+
+data LinError
+  = Err_NoImpureCondInStep String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show LinError where
+  show = \case
+    Err_NoImpureCondInStep _msg ->
+      "Conditionals may not include consensus transfers outside of consensus steps"
 
 -- Remove returns, duplicate continuations, and transform into dk
 type DKApp = ReaderT DKEnv IO
@@ -319,7 +330,7 @@ expandFromFVMap (DLAssignment updatem) = do
   let updatem' = M.union (M.fromList $ fvm'l) updatem
   return $ DLAssignment updatem'
 
-df_com :: (LLCommon -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
+df_com :: HasCallStack => (LLCommon -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
 df_com mkk back = \case
   DK_Com (DKC_FluidSet at fv da) k ->
     fluidSet fv (at, da) (back k)
@@ -411,7 +422,11 @@ df_step = \case
           tk' <- df_step tk
           return $ Just (ta, tk')
     return $ LLS_ToConsensus at send recv' mtime'
+  DK_If a _ _ _ -> nocond a "if"
+  DK_Switch a _ _ -> nocond a "switch"
   x -> df_com LLS_Com df_step x
+  where
+    nocond a msg = expect_throw Nothing a $ Err_NoImpureCondInStep msg
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli k) = do
