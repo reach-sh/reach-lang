@@ -215,9 +215,6 @@ smtNewScope m = do
   liftIO $ SMT.pop smt
   return $ x
 
-dupeIORef :: IORef a -> IO (IORef a)
-dupeIORef r = newIORef =<< readIORef r
-
 ctxtNewScope :: App a -> App a
 ctxtNewScope m = do
   SMTCtxt {..} <- ask

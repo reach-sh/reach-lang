@@ -54,7 +54,7 @@ data Env = Env
   , e_classes :: S.Set SLPart
   , e_mape :: MapEnv
   , e_while_invariant :: Bool
-  , e_unused_variables :: IORef [(SrcLoc, SLVar)]
+  , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -340,13 +340,12 @@ trackVariable el =
   whenUsingStrict $ do
     unused_vars <- asks e_unused_variables
     unless (shouldNotTrackVariable el) $
-      liftIO $ modifyIORef unused_vars (el :)
+      liftIO $ modifyIORef unused_vars $ S.insert el
 
 markVarUsed :: (SrcLoc, SLVar) -> App ()
-markVarUsed v =
-  whenUsingStrict $ do
-    unused_vars <- asks e_unused_variables
-    liftIO $ modifyIORef unused_vars $ filter (v /=)
+markVarUsed v = do
+  unused_vars <- asks e_unused_variables
+  liftIO $ modifyIORef unused_vars $ S.filter (v /=)
 
 -- | The "_" ident may never be looked up.
 env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
@@ -2127,11 +2126,11 @@ evalApplyVals rator randvs =
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
-    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_penvs clo_cenv clo_strict) -> do
+    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv {..}) -> do
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
       let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
-      clo_use_strict <- liftIO $ newIORef clo_strict
+      clo_strict <- liftIO $ newIORef clo_use_strict
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2139,7 +2138,7 @@ evalApplyVals rator randvs =
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
-               , sco_use_strict = clo_use_strict
+               , sco_use_strict = clo_strict
                })
       m <- readSt st_mode
       arg_env <-
@@ -3667,9 +3666,6 @@ data MapEnv = MapEnv
   { me_id :: Counter
   , me_ms :: IORef (M.Map DLMVar DLMapInfo)
   }
-
-dupeIORef :: IORef a -> IO (IORef a)
-dupeIORef r = newIORef =<< readIORef r
 
 ignoreAll :: App a -> App ()
 ignoreAll e =

@@ -7,8 +7,9 @@ export const main =
     (A) => {
       const y = 10;
       A.only(() => {
-        'use strict'; // test that 'use strict' is scope sensitive!
+        'use strict';
         const x = 10;
+        const z = 5;
       });
       A.publish(x);
 

@@ -2306,9 +2306,9 @@ In an application without any @tech{participant class}es, @reachin{Anybody} inst
 
 @index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
 declarations within the current scope. If a variable is declared, but never used, there will
-be a warning emitted at compile time.
+be a error emitted at compile time.
 
-Strict mode will reject some code that is normally valid and limit how dynamic Reach's type system is.
+@deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
 For example, normally Reach will permit expressions like the following to be evaluated:
 
 @reach{
@@ -2318,12 +2318,27 @@ For example, normally Reach will permit expressions like the following to be eva
   void foo({ b: true });
   void foo(false); }
 
-Without @reachin{'use strict'}, Reach will not evaluate @reachin{o.b} when @reachin{o = false} and this code will compile
-successfully.
+Reach allows @reachin{o} to be either an object with a @reachin{b} field or @reachin{false} because it
+partially evaluates the program at compile time. So, without @reachin{'use strict'}, Reach will not evaluate
+@reachin{o.b} when @reachin{o = false} and this code will compile successfully.
 
-However, to determine variable usage in strict mode, Reach traverses every conditional branch,
-whether or not it is the chosen one. In doing so, Reach will
-raise an error when reviewing the true branch of the ternary:
+But, in @tech{strict mode}, Reach will ensure that this program treats @reachin{o} as
+having a single type and detect an error in the program as follows:
 
 @verbatim{
   reachc: error: Invalid field access. Expected object, got: Bool }
+
+The correct way to write a program like this in @tech{strict mode} is to use @reachin{Maybe}. Like this:
+
+@reach{
+  const MObj = Maybe(Object({ b : Bool }));
+
+  const foo = (mo) =>
+    mo.match({
+      None: (() => false),
+      Some: ((o) => o.b)
+    });
+
+  void foo(MObj.Some({ b : true }));
+  void foo(MObj.None()); }
+

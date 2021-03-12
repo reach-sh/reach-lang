@@ -97,7 +97,11 @@ st2it t = case t of
 type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
-  = SLCloEnv SLPartEnvs SLEnv Bool
+  = SLCloEnv {
+    clo_penvs :: SLPartEnvs,
+    clo_cenv :: SLEnv,
+    clo_use_strict :: Bool
+  }
   deriving (Eq, Generic)
 
 data SLVal

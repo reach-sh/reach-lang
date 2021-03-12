@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 5 theorems; No failures!
-WARNING: unused variable: x at ./use_strict.rsh:11:15:id
+WARNING: unused variable: z at ./use_strict.rsh:12:15:id
