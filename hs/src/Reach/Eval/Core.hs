@@ -321,7 +321,11 @@ env_merge_ imode left righte = foldlM (env_insertp_ imode) left $ M.toList right
 env_merge :: HasCallStack => SLEnv -> SLEnv -> App SLEnv
 env_merge = env_merge_ DisallowShadowing
 
--- Utilities to track variable
+-- Utilities to track variables.
+-- We could track variable usage with `e_unused_vars :: [(SrcLoc, SLVar, IORef Bool)]`
+-- and extend the env to hold `Map SLVar (SLSSVal, Maybe (IORef Bool))`.
+-- Then, when looking up a variable, set the ref to `False`.
+-- Any `e_unused_vars` with Bool `True` is unused.
 
 useStrict :: App Bool
 useStrict = liftIO . readIORef =<< asks (sco_use_strict . e_sco)
