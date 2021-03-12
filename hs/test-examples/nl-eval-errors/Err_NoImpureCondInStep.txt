@@ -1,1 +1,1 @@
-reachc: error: ./Err_NoImpureCondInStep.rsh:36:9:if: Conditionals may not include consensus transfers outside of consensus steps
+reachc: error: ./Err_NoImpureCondInStep.rsh:36:9:if: Invalid operation. `conditional` cannot be used in context: step, must be in consensus step. You must `publish`, `pay`, or `fork` first.

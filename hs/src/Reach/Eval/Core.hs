@@ -2426,6 +2426,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
       SLRes flifts st_f fsv@(flvl, fv) <-
         captureRes $ locAt f_at' $ evalExpr fe
       let lvl = clvl <> tlvl <> flvl
+      om <- readSt st_mode
       setSt =<< stMerge st_t st_f
       let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
       case isPure sa of
@@ -2447,15 +2448,20 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
           ty <- typeMeet_d t_ty f_ty
           at' <- withAt id
           let ans_dv = DLVar at' Nothing ty ret
-          saveLift $
-            DLS_Prompt at' (Right (ans_dv, mempty)) $
-              return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
+          theIf <- checkCond om $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
+          saveLift $ DLS_Prompt at' (Right (ans_dv, mempty)) $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
     _ -> do
       let (n_at', ne) = case cv of
             SLV_Bool _ False -> (f_at', fe)
             _ -> (t_at', te)
       lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
+
+checkCond :: SLMode -> DLStmt -> App DLStmt
+checkCond om s = do
+  unless (isLocal s) $ locStMode om $
+    ensure_mode SLM_ConsensusStep "conditional"
+  return s
 
 doDot :: JSExpression -> JSAnnot -> JSExpression -> App SLSVal
 doDot obj a field = do
@@ -3346,7 +3352,8 @@ evalStmt = \case
             captureRes $ locAt f_at' $ evalStmt [fs]
           let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
           at <- withAt id
-          saveLift $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts
+          om <- readSt st_mode
+          saveLift =<< (checkCond om $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts)
           let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
           ir <- locSt st_t $ combineStmtRes clvl (levelHelp trets) st_f (levelHelp frets)
           setSt st_t
@@ -3426,6 +3433,7 @@ evalStmt = \case
   (JSSwitch a _ de _ _ cases _ sp : ks) -> do
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
+      om <- readSt st_mode
       let de_v = jse_expect_id at' de
       (de_lvl, de_val) <- evalId "switch" de_v
       (de_ty, _) <- typeOf de_val
@@ -3514,7 +3522,8 @@ evalStmt = \case
               foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
             maybe (return ()) setSt mst'
-            saveLift =<< withAt (\at -> DLS_Switch at dv sa' casemm')
+            saveLift =<< checkCond om =<<
+              withAt (\at -> DLS_Switch at dv sa' casemm')
             return $ SLStmtRes sco rets'
       fr <-
         case de_val of
