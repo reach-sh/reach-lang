@@ -50,6 +50,19 @@
 (define (jsin . contents)
   (apply mint #:inline? #t "javascript" contents))
 
+(define (urlin . contents)
+  (apply mint #:inline? #t "text" contents))
+
+(define (py . contents)
+  (apply mint "python" contents))
+(define (pyin . contents)
+  (apply mint #:inline? #t "python" contents))
+
+(define (go . contents)
+  (apply mint "go" contents))
+(define (goin . contents)
+  (apply mint #:inline? #t "go" contents))
+
 (define (yaml . contents)
   (apply mint "yaml" contents))
 (define (makefile . contents)
@@ -81,7 +94,7 @@
 (define (many-break n)
   (make-list n @(linebreak)))
 (define (stop . args)
-  (apply centered 
+  (apply centered
          (many-break 3) @bold{Stop!} @(linebreak)
          (append args (many-break 4))))
 
@@ -190,9 +203,10 @@ You should start off by initializing your Reach program:
        [_
         (length (file->lines (build-path x p)))]))))
 
-(define (reachexlink p [label #f] #:loc [loc #f] #:dir [dir "examples"])
+(define (reachexlink p [label #f] #:loc [loc #f] #:dir [dir "examples"] #:ref [ref "master"])
   (define url
-    (format "https://github.com/reach-sh/reach-lang/blob/master/~a/~a~a"
+    (format "https://github.com/reach-sh/reach-lang/blob/~a/~a/~a~a"
+            ref
             dir
             p
             (match loc
@@ -355,6 +369,3 @@ You should start off by initializing your Reach program:
 (module+ test
   (number->nice-string 123456)
   (number->nice-string (expt 2 (* 256 3))))
-
-
-
