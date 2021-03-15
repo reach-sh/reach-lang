@@ -1083,7 +1083,7 @@ services:
       - REACH_DEBUG
       - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
-      - ETH_NODE_URI=http://ganache:8545
+      - ETH_NODE_URI=http://ethereum-devnet:8545
       - REACH_RPC_KEY
       - REACH_RPC_TLS_KEY=${TLS_PATH}.key
       - REACH_RPC_TLS_CRT=${TLS_PATH}.crt
