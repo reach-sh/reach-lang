@@ -10,6 +10,6 @@ export const main = Reach.App(
 
     // Ignore arguments
     const f = (_, _, z) => { return z; };
-    const v = f('blah', null, x);
+    const _ = f('blah', null, x);
   }
 );

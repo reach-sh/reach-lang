@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
+const [ _, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
   showOutcome: Fun([UInt], Null),

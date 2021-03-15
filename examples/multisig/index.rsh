@@ -17,8 +17,6 @@
 
 */
 
-const DELAY = 10; // in blocks
-
 export const main =
   Reach.App(
     {},

@@ -115,6 +115,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
         env0 <- locAt slcpi_at $ env_insert "interact" iov top_env_wps
         return $ (slcpi_who, env0)
   penvs <- M.fromList <$> mapM make_penvp part_ios
+  use_strict <- asks (sco_use_strict . e_sco)
   let sco =
         SLScope
           { sco_ret = Nothing
@@ -122,6 +123,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           , sco_while_vars = Nothing
           , sco_penvs = penvs
           , sco_cenv = top_env_wps
+          , sco_use_strict = use_strict
           }
   setSt st_step
   doFluidSet FV_balance $ public $ SLV_Int at' 0
@@ -181,6 +183,7 @@ compileBundle cns jsb main = do
           , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
             sco_penvs = mempty
           , sco_cenv = mempty
+          , sco_use_strict = False
           }
   let e_depth = recursionDepthLimit
   let e_while_invariant = False
@@ -189,10 +192,17 @@ compileBundle cns jsb main = do
   e_lifts <- newIORef mempty
   me_id <- newCounter 0
   me_ms <- newIORef mempty
+  e_unused_variables <- newIORef mempty
   let e_mape = MapEnv {..}
   mkprog <-
     flip runReaderT (Env {..}) $
       compileBundle_ cns jsb main
   ms' <- readIORef me_ms
   final <- readIORef e_lifts
+  unused_vars <- readIORef e_unused_variables
+  reportUnusedVars $ S.toList unused_vars
   return $ mkprog ms' final
+  where
+    reportUnusedVars [] = return ()
+    reportUnusedVars l@(h:_) =
+      expect_throw Nothing (fst h) $ Err_Unused_Variables l

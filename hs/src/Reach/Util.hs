@@ -10,6 +10,7 @@ module Reach.Util
   , redactAbs
   , redactAbsStr
   , safeInit
+  , dupeIORef
   )
 where
 
@@ -21,6 +22,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import GHC.Stack
 import System.Exit
+import Data.IORef (IORef, newIORef, readIORef)
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
@@ -68,3 +70,6 @@ redactAbs dir = T.replace (T.pack dir) "."
 
 redactAbsStr :: FilePath -> String -> String
 redactAbsStr dir = T.unpack . redactAbs dir . T.pack
+
+dupeIORef :: IORef a -> IO (IORef a)
+dupeIORef r = newIORef =<< readIORef r

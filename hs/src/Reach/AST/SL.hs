@@ -16,7 +16,7 @@ import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Util
-import Reach.Deprecation (Deprecation)
+import Reach.Warning (Deprecation)
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -97,7 +97,11 @@ st2it t = case t of
 type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
-  = SLCloEnv SLPartEnvs SLEnv
+  = SLCloEnv {
+    clo_penvs :: SLPartEnvs,
+    clo_cenv :: SLEnv,
+    clo_use_strict :: Bool
+  }
   deriving (Eq, Generic)
 
 data SLVal

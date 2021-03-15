@@ -51,7 +51,7 @@ export const main =
       const AisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
 
       var [ AsTurn, heaps ] =
-        [ AisFirst, Array.iota(howMany).map(x => initialHeap) ];
+        [ AisFirst, Array.iota(howMany).map(_ => initialHeap) ];
       invariant(balance() == (2 * wagerAmount));
       while ( heaps.reduce(0, add) > 0 ) {
         const doMove = (now, next) => {

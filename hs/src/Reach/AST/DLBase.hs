@@ -148,6 +148,9 @@ litTypeOf = \case
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
 
+instance SrcLocOf DLVar where
+  srclocOf (DLVar a _ _ _) = a
+
 instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
 

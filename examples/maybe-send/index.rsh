@@ -14,7 +14,7 @@ export const main = Reach.App(
       const x = declassify(interact.getX());
     });
     Alice.publish(x);
-    const [i, mx0] = [0, Maybe(UInt).None()];
+    const [_, mx0] = [0, Maybe(UInt).None()];
     commit();
 
     Bob.only(() => {

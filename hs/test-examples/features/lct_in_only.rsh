@@ -11,7 +11,7 @@ export const main =
       commit();
 
       A.only(() => {
-        const z =
+        const _ =
           declassify(interact.getZ()).map((a) => lastConsensusTime() + a);
         const y = lastConsensusTime();
       });

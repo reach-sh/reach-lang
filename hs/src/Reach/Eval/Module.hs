@@ -60,6 +60,14 @@ evalExportClause env (JSExportClause _ escl _) =
       JSExportSpecifier x -> (x, x)
       JSExportSpecifierAs x _ y -> (x, y)
 
+trackImports :: SLEnv -> App ()
+trackImports env =
+  forM_ (M.toList env) $ \ (k, v) -> trackVariable (sss_at v, k)
+
+markExports :: SLEnv -> App ()
+markExports env =
+  forM_ (M.toList env) $ \ (k, v) -> markVarUsed (sss_at v, k)
+
 evalTopBody :: SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> App SLEnv
 evalTopBody libm env exenv = \case
   [] -> return $ exenv
@@ -70,11 +78,13 @@ evalTopBody libm env exenv = \case
           case im of
             JSImportDeclarationBare _ libn _ -> do
               libex <- lookupDep (ReachSourceFile libn) libm
+              trackImports libex
               env' <- env_merge env libex
               evalTopBody libm env' exenv body'
             JSImportDeclaration ic fc _ -> do
               ienv <- evalFromClause libm fc
               news <- evalImportClause ienv ic
+              trackImports news
               env' <- env_merge env news
               evalTopBody libm env' exenv body'
       (JSModuleExportDeclaration a ex) ->
@@ -89,9 +99,13 @@ evalTopBody libm env exenv = \case
             news <- evalExportClause eenv ec
             env' <- env_merge exenv news
             evalTopBody libm env env' body'
+      JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ hs) _)
+        | trimQuotes hs == "use strict" -> do
+          locUseStrict True $ evalTopBody libm env exenv body'
       (JSModuleStatementListItem s) -> doStmt False s
     where
       doStmt isExport sm = do
+        use_strict <- asks $ sco_use_strict . e_sco
         let sco =
               (SLScope
                  { sco_ret = Nothing
@@ -99,6 +113,7 @@ evalTopBody libm env exenv = \case
                  , sco_while_vars = Nothing
                  , sco_penvs = mempty
                  , sco_cenv = env
+                 , sco_use_strict = use_strict
                  })
         smr <- locSco sco $ evalStmt [sm]
         case smr of
@@ -107,7 +122,10 @@ evalTopBody libm env exenv = \case
             exenv' <- case isExport of
               -- If this is an exporting statement, then add to the export
               -- environment everything that is new.
-              True -> env_merge exenv (M.difference env' env)
+              True -> do
+                let newEnv = M.difference env' env
+                markExports newEnv
+                env_merge exenv newEnv
               False -> return $ exenv
             evalTopBody libm env' exenv' body'
           _ -> expect_ $ Err_Module_Return
@@ -131,7 +149,9 @@ evalLib cns (src, body) libm = do
             | (trimQuotes hs) == versionHeader ->
               ((srcloc_after_semi "header" a sp at), j)
           _ -> expect_thrown at (Err_NoHeader body)
-  exenv <- locAt prev_at $ evalTopBody libm stdlib_env mt_env body'
+  exenv <- locAt prev_at $
+    locUseStrict False $
+      evalTopBody libm stdlib_env mt_env body'
   return $ M.insert src exenv libm
 
 evalLibs :: Connectors -> [SLMod] -> App SLLibs

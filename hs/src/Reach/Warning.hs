@@ -1,6 +1,7 @@
-module Reach.Deprecation (
+module Reach.Warning (
+  Warning(..),
   Deprecation(..),
-  deprecated_warning
+  emitWarning
 ) where
 
 import Reach.AST.Base (SrcLoc)
@@ -18,23 +19,31 @@ camlCase _ [] = ""
 camlCase acc (h:t) = acc <> capitalized h <> camlCase acc t
 
 data Deprecation
-  = Deprecated_ParticipantTuples SrcLoc
-  | Deprecated_SnakeToCamelCase String
+  = D_ParticipantTuples SrcLoc
+  | D_SnakeToCamelCase String
+  deriving (Eq)
+
+data Warning
+  = W_Deprecated Deprecation
   deriving (Eq)
 
 instance Show Deprecation where
   show = \case
-    Deprecated_ParticipantTuples at ->
+    D_ParticipantTuples at ->
       "Declaring Participants with a tuple is now deprecated. "
         <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at "
         <> show at
-    Deprecated_SnakeToCamelCase name ->
+    D_SnakeToCamelCase name ->
       let name' = case splitOn "_" name of
                     []  -> name
                     h:t -> camlCase h t
       in
       "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`"
 
-deprecated_warning :: Deprecation -> IO ()
-deprecated_warning d =
+instance Show Warning where
+  show = \case
+    W_Deprecated d -> show d
+
+emitWarning :: Warning -> IO ()
+emitWarning d =
   hPutStrLn stderr $ "WARNING: " <> show d

@@ -41,7 +41,6 @@ export const main =
             const previousBid = getBid(this);
             const addl =
               declassify(interact.getBid(prize, winningBid, previousBid));
-            const newBid = previousBid + addl;
             return { msg: addl, when: addl != 0 };
           }),
           ((addl) => addl),
