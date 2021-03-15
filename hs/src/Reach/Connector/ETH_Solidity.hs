@@ -234,9 +234,6 @@ extendVarMap vm1 = do
   varmr <- ctxt_varm <$> ask
   liftIO $ modifyIORef varmr $ (<>) vm1
 
-dupeIORef :: IORef a -> IO (IORef a)
-dupeIORef r = newIORef =<< readIORef r
-
 freshVarMap :: App a -> App a
 freshVarMap m = do
   let d f = liftIO . dupeIORef . f =<< ask

@@ -182,9 +182,6 @@ data Env = Env
 
 type App = ReaderT Env IO
 
-dupeIORef :: IORef a -> IO (IORef a)
-dupeIORef r = newIORef =<< readIORef r
-
 withFresh :: App m -> App m
 withFresh m = do
   eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
