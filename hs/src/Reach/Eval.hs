@@ -200,6 +200,9 @@ compileBundle cns jsb main = do
   ms' <- readIORef me_ms
   final <- readIORef e_lifts
   unused_vars <- readIORef e_unused_variables
-  unless (null unused_vars) $
-    error $ show $ Err_Unused_Variables $ S.toList unused_vars
+  reportUnusedVars $ S.toList unused_vars
   return $ mkprog ms' final
+  where
+    reportUnusedVars [] = return ()
+    reportUnusedVars l@(h:_) =
+      expect_throw Nothing (fst h) $ Err_Unused_Variables l
