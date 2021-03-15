@@ -174,7 +174,7 @@ The files created are the same as those used temporarily by @exec{reach run}.
 
 @subsection[#:tag "ref-usage-react"]{@tt{reach react}}
 
-You can run a simple react app by executing
+You can run a simple React app by executing
 
 @cmd{reach react}
 
@@ -210,7 +210,7 @@ It then
   }
 ]
 
-Note that @exec{reach react} does not respect the same scaffolded files as @exec{reach run}. If you would like a more customized browser-based project, we recommend that you simply use @exec{reach compile}, and use your own preferred setup for the project. The compiled @exec{build/index.main.mjs} JavaScript file and the @exec{'@"@"reach-sh/stdlib'} JavaScript library may be used in any JavaScript project like any other JavaScript file and library, respectively.
+@exec{reach react} does not respect the same scaffolded files as @exec{reach run}. If you would like a more customized browser-based project, we recommend that you simply use @exec{reach compile}, and use your own preferred setup for the project. The compiled @exec{build/index.main.mjs} JavaScript file and the @exec{'@"@"reach-sh/stdlib'} JavaScript library may be used in any JavaScript project like any other JavaScript file and library, respectively.
 
 @subsection[#:tag "ref-usage-devnet"]{@tt{reach devnet}}
 
@@ -234,7 +234,7 @@ You can run a private Reach devnet by executing
   }
 ]
 
-Note: the @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand,
+The @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand,
 sends requests to localhost:3000/algod when running in the browser,
 to avoid CORS issues.
 When using @exec{reach devnet} instead of @exec{reach react} to start your Algorand devnet,
