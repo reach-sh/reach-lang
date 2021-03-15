@@ -232,9 +232,15 @@ You can run a private Reach devnet by executing
   @item{
     The environment variable @exec{REACH_DEBUG} enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
   }
-
-  Note: the @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand, sends requests to localhost:3000/algod when running in the browser, to avoid CORS issues. When using @exec{reach devnet} instead of @exec{reach react} to start your Algorand devnet, you are expected to also run a proxy server from localhost:3000/algod to localhost:4180. For an example of something similar to this, see @link[https://github.com/reach-sh/reach-lang/blob/master/js/react-runner/craco.config.js]{react-runner's use of craco}.
 ]
+
+Note: the @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand,
+sends requests to localhost:3000/algod when running in the browser,
+to avoid CORS issues.
+When using @exec{reach devnet} instead of @exec{reach react} to start your Algorand devnet,
+you are expected to also run a proxy server from localhost:3000/algod to localhost:4180.
+For an example of something similar to this,
+see @link["https://github.com/reach-sh/reach-lang/blob/master/js/react-runner/craco.config.js"]{react-runner's use of craco}.
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
