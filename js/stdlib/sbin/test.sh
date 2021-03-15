@@ -11,7 +11,7 @@ set -x
 mkdir test/stdlib-test
 cp    test/index.* test/stdlib-test
 cp -r test/lib     test/stdlib-test/lib
-cd test/stdlib-test
+cd test/stdlib-test || exit 1
 
 # js/stdlib/test/stdlib-test/
 REACH=../../../../reach
