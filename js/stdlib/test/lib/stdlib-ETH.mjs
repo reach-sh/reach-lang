@@ -38,10 +38,13 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
     ];
 
     const ALGO_extra_exports = [
+      'getSignStrategy',
       'newAccountFromAlgoSigner',
+      'setAlgoSigner',
       'setAlgodClient',
       'setBrowser',
       'setIndexer',
+      'setSignStrategy',
       'setWaitPort',
     ];
 
