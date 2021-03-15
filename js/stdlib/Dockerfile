@@ -12,7 +12,7 @@ FROM $NODE_IMAGE
 
 WORKDIR /stdlib
 COPY --from=js-deps /js-deps/node_modules /stdlib/node_modules
-COPY package.json package-lock.json /stdlib/
+COPY package.json /stdlib/
 # The above should cover all `npm install` needs
 # RUN npm install
 

@@ -10,9 +10,11 @@ FROM $STDLIB_IMAGE
 
 WORKDIR /app
 COPY --from=js-deps /js-deps/node_modules/ /app/node_modules/
-COPY package.json package-lock.json \
+COPY package.json \
      /app/
-RUN npm install
+# The above should cover all `npm install` needs
+# RUN npm install
+
 RUN npm link @reach-sh/stdlib
 
 COPY public/ /app/public/
