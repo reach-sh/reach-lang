@@ -855,10 +855,10 @@ react_compose () {
         ;;
       ETH*)
         DEPENDS_ON='
-    # Does not technically depend on ganache.
+    # Does not technically depend on ethereum-devnet.
     # This is just to get it to run both.
     depends_on:
-      - ganache
+      - ethereum-devnet
 '
         ;;
       # TODO: FAKE?
@@ -881,15 +881,12 @@ services:
       - REACT_APP_REACH_DEBUG=${REACH_DEBUG}
       - REACT_APP_REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
 $DEPENDS_ON
-  ganache:
-    image: trufflesuite/ganache-cli:v6.12.0
-    command:
-      - '--accounts=1'
-      - '--defaultBalanceEther=1000000'
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
     ports:
       - '8545:8545'
   algorand-devnet:
-    image: reachsh/algorand-devnet:latest
+    image: reachsh/algorand-devnet:${REACH_VERSION}
     depends_on:
       - algorand-postgres-db
     environment:
@@ -1057,10 +1054,10 @@ server_compose () {
 '
     else
       DEPENDS_ON='
-    # Does not technically depend on ganache.
+    # Does not technically depend on ethereum-devnet.
     # This is just to get it to run both.
     depends_on:
-      - ganache
+      - ethereum-devnet
 '
     fi
   fi
@@ -1088,11 +1085,8 @@ services:
       - REACH_RPC_TLS_CRT=${TLS_PATH}.crt
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
 $DEPENDS_ON
-  ganache:
-    image: trufflesuite/ganache-cli:v6.12.0
-    command:
-      - '--accounts=1'
-      - '--defaultBalanceEther=1000000'
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet${REACH_VERSION}
     ports:
       - '8545:8545'
   algorand-devnet:
