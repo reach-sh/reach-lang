@@ -893,6 +893,7 @@ $DEPENDS_ON
     depends_on:
       - algorand-postgres-db
     environment:
+      - REACH_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -1003,6 +1004,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
+      - REACH_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -1195,6 +1197,9 @@ do_usage () {
   echo "  run     --- run a simple app"
   echo "  down    --- halt any dockerized devnets for this app"
   echo "  scaffold -- set up Docker scaffolding for a simple app"
+  echo "  react   --- run a simple react app"
+  echo "  server  --- run a simple reach RPC server"
+  echo "  devnet  --- run only the devnet"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
   echo "  version --- display version"

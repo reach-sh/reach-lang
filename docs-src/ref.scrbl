@@ -120,10 +120,11 @@ It then
     @itemlist[
       @item{@litchar{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envvar{ETH_NODE_URI}.}
       @item{@litchar{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
-      @item{@litchar{ETH-test-embedded-ganache}, which uses @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
       @item{@litchar{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
-      @item{@litchar{FAKE-test-embedded-mock}, which uses a simplified mock network.}
     ]
+  }
+  @item{
+    The environment variable @deftech{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
   }
 ]
 
@@ -157,6 +158,12 @@ because @exec{reach} will use it in specific ways. Refer to the @litchar{Makefil
   }
 ]
 
+@subsection[#:tag "ref-usage-down"]{@tt{reach down}}
+
+You can halt the docker containers started by @exec{reach run} by running
+
+@cmd{reach down}
+
 @subsection[#:tag "ref-usage-scaffold"]{@tt{reach scaffold}}
 
 You can create template @exec{package.json}, @exec{Dockerfile}, @exec{docker-compose.yml}, and @exec{Makefile} files for a simple Reach app by running
@@ -164,6 +171,70 @@ You can create template @exec{package.json}, @exec{Dockerfile}, @exec{docker-com
 @cmd{reach scaffold}
 
 The files created are the same as those used temporarily by @exec{reach run}.
+
+@subsection[#:tag "ref-usage-react"]{@tt{reach react}}
+
+You can run a simple react app by executing
+
+@cmd{reach react}
+
+This assumes
+
+@itemlist[
+  @item{Your Reach program is named @exec{index.rsh}}
+  @item{Your frontend React program is named @exec{index.js}}
+]
+
+It then
+
+@itemlist[
+  @item{Compliles your program with Reach}
+  @item{Runs the appropriate devnet based on @exec{REACH_CONNECTOR_MODE}}
+  @item{Mounts the current directory into @exec{/app/} in the @exec{reachsh/react-runner} Docker image and runs it.}
+  @item{Runs (via @exec{react-runner}) a proxy server used to avoid CORS issues on some devnets}
+]
+
+@exec{reach react} supports the following options:
+
+@itemlist[
+  @item{
+    The environment variable @exec{REACH_CONNECTOR_MODE} specifies which context to run in. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
+
+    @itemlist[
+      @item{@litchar{ETH}, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.}
+      @item{@litchar{ALGO}, which runs a Dockerized private Algorand network which may be used. (Support for using any Algorand network is forthcoming with TEAL 3.)}
+    ]
+  }
+  @item{
+    The environment variable @exec{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
+  }
+]
+
+Note that @exec{reach react} does not respect the same scaffolded files as @exec{reach run}. If you would like a more customized browser-based project, we recommend that you simply use @exec{reach compile}, and use your own preferred setup for the project. The compiled @exec{build/index.main.mjs} JavaScript file and the @exec{'@"@"reach-sh/stdlib'} JavaScript library may be used in any JavaScript project like any other JavaScript file and library, respectively.
+
+@subsection[#:tag "ref-usage-devnet"]{@tt{reach devnet}}
+
+You can run a private Reach devnet by executing
+
+@cmd{reach devnet}
+
+@exec{reach devnet} supports the following options:
+
+@itemlist[
+  @item{
+    The environment variable @exec{REACH_CONNECTOR_MODE} specifies which devnet to run. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
+
+    @itemlist[
+      @item{@litchar{ETH}, which runs an Ethereum devnet on localhost:8545}
+      @item{@litchar{ALGO}, which runs an Algorand devnet on localhost:4180 and an Algorand indexer on localhost:8980}
+    ]
+  }
+  @item{
+    The environment variable @exec{REACH_DEBUG} enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
+  }
+
+  Note: the @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand, sends requests to localhost:3000/algod when running in the browser, to avoid CORS issues. When using @exec{reach devnet} instead of @exec{reach react} to start your Algorand devnet, you are expected to also run a proxy server from localhost:3000/algod to localhost:4180. For an example of something similar to this, see @link[https://github.com/reach-sh/reach-lang/blob/master/js/react-runner/craco.config.js]{react-runner's use of craco}.
+]
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
@@ -186,6 +257,12 @@ This may change the patch version used by @exec{reach} commands.
 You can see what version of Reach you have installed by running
 
 @cmd{reach version}
+
+@subsection[#:tag "ref-usage-hashes"]{@tt{reach hashes}}
+
+You can do a more specific version check of your Reach docker images by running
+
+@cmd{reach hashes}
 
 @include-section["ref-model.scrbl"]
 @include-section["ref-programs.scrbl"]
