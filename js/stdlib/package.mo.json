@@ -15,7 +15,7 @@
   "dependencies": {
     "algosdk": "reach-sh/js-algorand-sdk#246538f",
     "await-timeout": "^0.6.0",
-    "ethers": "^5.0.19",
+    "ethers": "^5.0.32",
     "hi-base32": "^0.5.0",
     "wait-port": "^0.2.9",
     "express": "^4.17.1"
