@@ -1,0 +1,6 @@
+REACH = ../../reach
+
+.PHONY: run
+run:
+	REACH_CONNECTOR_MODE=ETH $(REACH) run
+	REACH_CONNECTOR_MODE=ALGO $(REACH) run
