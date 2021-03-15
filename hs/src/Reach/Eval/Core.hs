@@ -112,6 +112,11 @@ withAt f = do
 locSco :: SLScope -> App a -> App a
 locSco e_sco' = local (\e -> e {e_sco = e_sco'})
 
+locUseStrict :: Bool -> App a -> App a
+locUseStrict v m = do
+  old_sco <- asks e_sco
+  local (\e -> e { e_sco = old_sco { sco_use_strict = v } }) m
+
 saveLifts :: DLStmts -> App ()
 saveLifts ss = do
   Env {..} <- ask
@@ -209,7 +214,7 @@ data SLScope = SLScope
     sco_penvs :: SLPartEnvs
   , -- One for the consensus
     sco_cenv :: SLEnv
-  , sco_use_strict :: IORef Bool
+  , sco_use_strict :: Bool
   }
 
 data EnvInsertMode
@@ -328,7 +333,7 @@ env_merge = env_merge_ DisallowShadowing
 -- Any `e_unused_vars` with Bool `True` is unused.
 
 useStrict :: App Bool
-useStrict = liftIO . readIORef =<< asks (sco_use_strict . e_sco)
+useStrict = asks (sco_use_strict . e_sco)
 
 whenUsingStrict :: App () -> App ()
 whenUsingStrict e = useStrict >>= flip when e
@@ -647,8 +652,7 @@ ensure_can_wait = do
 
 sco_to_cloenv :: SLScope -> App SLCloEnv
 sco_to_cloenv SLScope {..} = do
-  use_strict <- liftIO $ readIORef sco_use_strict
-  return $ SLCloEnv sco_penvs sco_cenv use_strict
+  return $ SLCloEnv sco_penvs sco_cenv sco_use_strict
 
 sco_lookup_penv :: SLPart -> App SLEnv
 sco_lookup_penv who = do
@@ -2134,7 +2138,6 @@ evalApplyVals rator randvs =
       ret <- ctxt_alloc
       let body_at = srcloc_jsa "block" body_a clo_at
       let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
-      clo_strict <- liftIO $ newIORef clo_use_strict
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
@@ -2142,7 +2145,7 @@ evalApplyVals rator randvs =
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
-               , sco_use_strict = clo_strict
+               , sco_use_strict = clo_use_strict
                })
       m <- readSt st_mode
       arg_env <-
@@ -2692,12 +2695,11 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
   sco <- e_sco <$> ask
   let SLCloEnv only_penvs only_cenv only_strict = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
-  use_strict <- liftIO $ newIORef only_strict
   let sco_only_pre =
         sco
           { sco_penvs = only_penvs
           , sco_cenv = only_cenv
-          , sco_use_strict = use_strict
+          , sco_use_strict = only_strict
           }
   locWho who $
     locSco sco_only_pre $
@@ -3327,10 +3329,9 @@ evalStmt = \case
   (s@(JSLet a _ _) : _) -> illegal a s "let"
   (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
   (JSExpressionStatement (JSStringLiteral a hs) sp) : ks
-    | trimQuotes hs == "use strict" -> do
-      use_strict <- asks $ sco_use_strict . e_sco
-      liftIO $ writeIORef use_strict True
-      locAtf (srcloc_after_semi "use strict" a sp) $ evalStmt ks
+    | trimQuotes hs == "use strict" ->
+      locAtf (srcloc_after_semi "use strict" a sp) $
+        locUseStrict True $ evalStmt ks
   ((JSConstant a decls sp) : ks) -> do
     let lab = "const"
     locAtf (srcloc_jsa lab a) $ do

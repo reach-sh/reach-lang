@@ -15,7 +15,6 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 import Reach.Version
-import Data.IORef (writeIORef)
 
 lookupDep :: ReachSource -> SLLibs -> App SLEnv
 lookupDep rs libm =
@@ -100,6 +99,9 @@ evalTopBody libm env exenv = \case
             news <- evalExportClause eenv ec
             env' <- env_merge exenv news
             evalTopBody libm env env' body'
+      JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ hs) _)
+        | trimQuotes hs == "use strict" -> do
+          locUseStrict True $ evalTopBody libm env exenv body'
       (JSModuleStatementListItem s) -> doStmt False s
     where
       doStmt isExport sm = do
@@ -147,9 +149,9 @@ evalLib cns (src, body) libm = do
             | (trimQuotes hs) == versionHeader ->
               ((srcloc_after_semi "header" a sp at), j)
           _ -> expect_thrown at (Err_NoHeader body)
-  use_strict <- asks $ sco_use_strict . e_sco
-  liftIO $ writeIORef use_strict False
-  exenv <- locAt prev_at $ evalTopBody libm stdlib_env mt_env body'
+  exenv <- locAt prev_at $
+    locUseStrict False $
+      evalTopBody libm stdlib_env mt_env body'
   return $ M.insert src exenv libm
 
 evalLibs :: Connectors -> [SLMod] -> App SLLibs
