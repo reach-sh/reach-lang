@@ -1002,7 +1002,7 @@ instance FromJSON CompiledSolRec where
             , csrOpcodes = opcodest
             }
       Nothing ->
-        fail "Expected contracts object to have a key with suffix ':ReachContract'"
+        impossible "Expected contracts object to have a key with suffix ':ReachContract'"
 
 extract :: ConnectorInfoMap -> Value -> Either String ConnectorInfo
 extract cinfo v = case fromJSON v of
@@ -1030,20 +1030,20 @@ compile_sol cinfo solf = do
     readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
   let show_output = "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr ++ "\n"
   case ec of
-    ExitFailure _ -> die $ "solc failed:\n" ++ show_output
+    ExitFailure _ -> impossible $ "solc failed:\n" ++ show_output
     ExitSuccess ->
       case (eitherDecode $ LB.pack stdout) of
         Right v ->
           case extract cinfo v of
             Right cr -> return cr
             Left err ->
-              die $
+              impossible $
                 "failed to extract valid output from solc:\n" ++ show_output
                   ++ "Decode:\n"
                   ++ err
                   ++ "\n"
         Left err ->
-          die $
+          impossible $
             "solc failed to produce valid output:\n" ++ show_output
               ++ "Decode:\n"
               ++ err

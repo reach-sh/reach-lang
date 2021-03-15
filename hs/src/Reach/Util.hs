@@ -45,7 +45,11 @@ maybeDie ec = do
   return ()
 
 impossible :: HasCallStack => String -> b
-impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
+impossible msg = error $
+  "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n" <>
+  "This error indicates a problem with the Reach compiler, not your program. " <>
+  "Please report this error, along with the pertinent program, to the Reach team as soon as possible " <>
+  "so we can fix it.\n\nOpen an issue at: https://github.com/reach-sh/reach-lang/issues\n"
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
