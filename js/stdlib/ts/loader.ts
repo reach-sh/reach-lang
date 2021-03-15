@@ -22,7 +22,7 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
   } else if (connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE']) {
     connectorModeStr = connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE'];
   } else {
-    throw Error (`Argument to loadStdlib is missing a connector mode: ${loadStdlib}`);
+    throw Error (`Argument to loadStdlib is missing a connector mode: ${connectorModeOrEnv}`);
   }
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);

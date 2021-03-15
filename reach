@@ -1090,7 +1090,7 @@ services:
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
 $DEPENDS_ON
   ethereum-devnet:
-    image: reachsh/ethereum-devnet${REACH_VERSION}
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
     ports:
       - '8545:8545'
   algorand-devnet:
@@ -1119,6 +1119,7 @@ EOF
 }
 
 do_server () {
+  ensure_connector_mode
   # TODO: less copy/paste duplication from do_react
   # TODO: check for different ports based on REACH_CONNECTOR_MODE
   USE_EXISTING_DEVNET=false
