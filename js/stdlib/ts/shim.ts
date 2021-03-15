@@ -43,6 +43,7 @@ type Window = {
   ethereum?: ethers.providers.ExternalProvider,
   AlgoSigner?: any, // TODO
   prompt?: (s: string) => string | null,
+  reach?: any, // TODO
 };
 
 const windowShim: Window = (() => {

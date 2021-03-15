@@ -2,7 +2,7 @@ import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
 import * as stdlib_FAKE from './FAKE';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
-import {process} from './shim';
+import {process, window} from './shim';
 
 export {getConnectorMode, getConnector};
 
@@ -22,7 +22,8 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
   } else if (connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE']) {
     connectorModeStr = connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE'];
   } else {
-    throw Error (`Argument to loadStdlib is missing a connector mode: ${connectorModeOrEnv}`);
+    // TODO: also check {REACT_APP_,}REACH_DEFAULT_NETWORK
+    connectorModeStr = 'ETH'; // If absolutely none specified/found, just default to 'ETH'
   }
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);
@@ -37,5 +38,7 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
     let debug: boolean = (connectorModeOrEnv['REACH_DEBUG'] || connectorModeOrEnv['REACT_APP_REACH_DEBUG']) ? true : false;
     stdlib.setDEBUG(debug);
   }
+  // also just inject ourselves into the window for ease of use
+  window.reach = stdlib;
   return stdlib;
 }
