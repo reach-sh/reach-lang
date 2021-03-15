@@ -13,9 +13,6 @@ setup(
 
     packages=find_packages(),
     install_requires=['pygments >= 1.4'],
-    # Temporarily use the master branch of pygments--which highlights
-    # `await`/`async` in JS files-- until the 2.7.3 release.
-    dependency_links=['https://github.com/pygments/pygments/tarball/master#egg=pygments-2.7.3'],
 
     entry_points='''[pygments.lexers]
                     reach=pygments_reach:ReachLexer''',
