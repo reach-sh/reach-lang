@@ -1,0 +1,1 @@
+reachc: error: ./Err_Remote_NotFun.rsh:13:23:application: Remote type not a function, "x" has type UInt
