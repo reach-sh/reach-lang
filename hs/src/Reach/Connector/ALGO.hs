@@ -719,7 +719,7 @@ ce = \case
     comment $ texty $ unsafeRedactAbsStr $ show fs
     case t of
       CT_Assert -> impossible "assert"
-      CT_Assume -> check
+      CT_Assume _ -> check
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
@@ -730,6 +730,7 @@ ce = \case
   DLE_MapRef {} -> xxx "algo mapref"
   DLE_MapSet {} -> xxx "algo mapset"
   DLE_MapDel {} -> xxx "algo mapdel"
+  DLE_Remote {} -> xxx "algo remote"
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do

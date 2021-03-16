@@ -387,7 +387,7 @@ base_env =
     , ("digest", SLV_Prim SLPrim_digest)
     , ("transfer", SLV_Prim SLPrim_transfer)
     , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
-    , ("assume", SLV_Prim $ SLPrim_claim CT_Assume)
+    , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume False)
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
@@ -412,8 +412,7 @@ base_env =
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
     , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
-    , --    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
-      ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
+    , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
     , ("isType", SLV_Prim SLPrim_is_type)
     , ("typeEq", SLV_Prim SLPrim_type_eq)
@@ -426,6 +425,7 @@ base_env =
     , ("parallel_reduce", SLV_Deprecated (D_SnakeToCamelCase "parallel_reduce") $ SLV_Form SLForm_parallel_reduce)
     , ("Map", SLV_Prim SLPrim_Map)
     , ("Anybody", SLV_Anybody)
+    , ("remote", SLV_Prim SLPrim_remote)
     , ("Participant", SLV_Prim SLPrim_Participant)
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ( "Reach"
@@ -973,6 +973,19 @@ evalAsEnv obj = case obj of
     return $
       M.fromList $
         [("reduce", delayCall SLPrim_MapReduce)] <> foldableObjectEnv
+  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing) ->
+    return $
+      M.fromList $
+        gom "pay" RFM_Pay mpay
+        <> gom "bill" RFM_Bill mbill
+        <> gom "withBill" RFM_WithBill mbill
+      where
+        gom key mode me =
+          case me of
+            Nothing -> go key mode
+            Just _ -> []
+        go key mode =
+          [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
   _ -> expect_t obj $ Err_Eval_NotObject
   where
     foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
@@ -1036,8 +1049,8 @@ st2dte t =
     Just x -> return $ x
     Nothing -> expect_ $ Err_Type_NotDT t
 
-compileInteractResult :: SLVar -> SLType -> (DLType -> DLExpr) -> App SLSVal
-compileInteractResult m st de = do
+compileInteractResult :: ClaimType -> String -> SLType -> (DLType -> DLExpr) -> App SLVal
+compileInteractResult ct lab st de = do
   at <- withAt id
   dt <- st2dte st
   let de' = de dt
@@ -1045,11 +1058,11 @@ compileInteractResult m st de = do
     case dt of
       T_Null -> do
         ctxt_lift_eff de'
-        return $ SLV_Null at $ "interact " <> m
+        return $ SLV_Null at lab
       _ ->
-        SLV_DLVar <$> ctxt_lift_expr (DLVar at (Just (at, m)) dt) (de dt)
-  applyType CT_Assume isv st
-  return $ secret isv
+        SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing dt) (de dt)
+  applyType ct isv st
+  return isv
 
 makeInteract :: SLPart -> SLEnv -> App (SLSSVal, InteractEnv)
 makeInteract who spec = do
@@ -1058,16 +1071,16 @@ makeInteract who spec = do
   let specl = M.toList spec
   let wrap_ty :: SLVar -> SLSSVal -> App (SLSSVal, IType)
       wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = locAt idAt $ case t of
-        ST_Fun dom rng mdomp mrngp -> do
-          dom' <- mapM st2dte dom
-          rng' <- st2dte rng
+        ST_Fun stf@(SLTypeFun {..}) -> do
+          dom' <- mapM st2dte stf_dom
+          rng' <- st2dte stf_rng
           return $
-            ( (sls_sss idAt $ secret $ SLV_Prim $ SLPrim_interact at who k dom rng mdomp mrngp)
+            ( (sls_sss idAt $ secret $ SLV_Prim $ SLPrim_localf at who k stf)
             , IT_Fun dom' rng'
             )
         _ -> do
           t' <- st2dte t
-          isv <- compileInteractResult k t (\dt -> DLE_Arg idAt $ DLA_Interact who k dt)
+          isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg idAt $ DLA_Interact who k dt)
           return $ (sls_sss idAt isv, IT_Val t')
       wrap_ty _ v = do
         _ <- ensure_public $ sss_sls v
@@ -1548,7 +1561,7 @@ evalPrim p sargs =
       case map snd sargs of
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] -> do
           dom <- mapM expect_ty dom_arr
-          retV $ (lvl, SLV_Type $ ST_Fun dom rng Nothing Nothing)
+          retV $ (lvl, SLV_Type $ ST_Fun (SLTypeFun dom rng Nothing Nothing))
         _ -> illegal_args
     SLPrim_is_type -> do
       at <- withAt id
@@ -1804,19 +1817,16 @@ evalPrim p sargs =
             expect_ $ Err_Eval_RefOutOfBounds len idxi
           return $ (lvl, SLV_Tuple at tupvs')
         _ -> illegal_args
-    SLPrim_Object ->
-      case map snd sargs of
-        [(SLV_Object _ _ objm)] -> do
-          vm <- mapM (expect_ty . sss_val) objm
-          retV $ (lvl, SLV_Type $ ST_Object vm)
-        _ -> illegal_args
+    SLPrim_Object -> do
+      objm <- mustBeObject_ =<< one_arg
+      vm <- mapM (expect_ty . sss_val) objm
+      retV $ (lvl, SLV_Type $ ST_Object vm)
     SLPrim_Object_has -> do
       at <- withAt id
-      case map snd sargs of
-        [obj, (SLV_Bytes _ bs)] -> do
-          vm <- evalAsEnv obj
-          retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) vm)
-        _ -> illegal_args
+      (obj, bsv) <- two_args
+      bs <- mustBeBytes bsv
+      vm <- evalAsEnv obj
+      retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) vm)
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
@@ -1826,22 +1836,8 @@ evalPrim p sargs =
             enum_pred = jsClo at' "makeEnum" "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
         _ -> illegal_args
     SLPrim_App_Delay {} -> expect_t rator $ Err_Eval_NotApplicable
-    SLPrim_interact iat who m dom rng mdomp mrngp -> do
-      ensure_mode SLM_LocalStep "interact"
-      let argvs = map snd sargs
-      arges <-
-        mapM (uncurry $ typeCheck_s)
-          =<< zipEq (Err_Apply_ArgCount iat) dom argvs
-      at <- withAt id
-      let dom_tupv = SLV_Tuple at argvs
-      forM_ mdomp $ \domp ->
-        applyRefinement CT_Assert domp [dom_tupv]
-      dargs <- compileArgExprs arges
-      fs <- e_stack <$> ask
-      rng_v <- compileInteractResult m rng (\drng -> DLE_Interact at fs who m drng dargs)
-      forM_ mrngp $ \rngp ->
-        applyRefinement CT_Assume rngp [dom_tupv, snd rng_v]
-      return rng_v
+    SLPrim_localf iat who m stf ->
+      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> DLE_Interact at fs who m drng dargs)
     SLPrim_declassify -> do
       val <- one_arg
       ensure_level Secret lvl
@@ -1872,7 +1868,8 @@ evalPrim p sargs =
       let good = return $ public $ SLV_Null at "claim"
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
-        CT_Assume -> some_good [SLM_LocalStep]
+        CT_Assume False -> some_good [SLM_LocalStep]
+        CT_Assume True -> some_good [SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure]
         CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure]
         CT_Assert -> good
         CT_Possible -> good
@@ -1900,12 +1897,10 @@ evalPrim p sargs =
       saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla
       doBalanceUpdate SUB amt_sv
       return $ public $ SLV_Null at "transfer.to"
-    SLPrim_exit ->
-      case sargs of
-        [] -> do
-          doExit
-          return $ public $ SLV_Prim $ SLPrim_exitted
-        _ -> illegal_args
+    SLPrim_exit -> do
+      zero_args
+      doExit
+      return $ public $ SLV_Prim $ SLPrim_exitted
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
       case sargs of
@@ -1928,9 +1923,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_part_setted {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_Data -> do
-      argm <- case args of
-        [SLV_Object _ _ m] -> return m
-        _ -> illegal_args
+      argm <- mustBeObject_ =<< one_arg
       varm <- mapM (expect_ty . sss_val) argm
       retV $ (lvl, SLV_Type $ ST_Data varm)
     SLPrim_Data_variant t vn vt -> do
@@ -2028,17 +2021,17 @@ evalPrim p sargs =
       let mkClo = jsClo at "refine"
       t <- first_arg >>= expect_ty
       t' <- case t of
-        ST_Fun dom rng mdomp1 mrngp1 -> do
+        ST_Fun (SLTypeFun {..}) -> do
           (_, domp2, rngp2) <- three_args
-          let domp = case mdomp1 of
+          let domp = case stf_pre of
                 Nothing -> domp2
                 Just domp1 ->
                   mkClo "(dom) => (domp1(dom) && domp2(dom))" $ M.fromList [("domp1", domp1), ("domp2", domp2)]
-          let rngp = case mrngp1 of
+          let rngp = case stf_post of
                 Nothing -> rngp2
                 Just rngp1 ->
                   mkClo "(dom, rng) => (rngp1(dom, rng) && rngp2(dom, rng))" $ M.fromList [("rngp1", rngp1), ("rngp2", rngp2)]
-          return $ ST_Fun dom rng (Just domp) (Just rngp)
+          return $ ST_Fun $ SLTypeFun stf_dom stf_rng (Just domp) (Just rngp)
         ST_Refine ot valp1 -> do
           (_, valp2) <- two_args
           let valp = mkClo "(x) => (valp1(x) && val1p2(x))" $ M.fromList [("valp1", valp1), ("valp2", valp2)]
@@ -2053,6 +2046,58 @@ evalPrim p sargs =
       void $ typeCheck_s t x
       at <- withAt id
       return $ (lvl, SLV_Bool at True)
+    SLPrim_remote -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
+      (av, ri) <- two_args
+      aa <- compileCheckType T_Address av
+      rm_ <- mustBeObject_ ri
+      rm <- mapM (expect_ty . sss_val) rm_
+      at <- withAt id
+      let go k = \case
+            ST_Fun stf ->
+              return $ SLSSVal at Public $ SLV_Prim $
+                SLPrim_remotef at aa k stf Nothing Nothing Nothing
+            t -> expect_ $ Err_Remote_NotFun k t
+      om <- mapWithKeyM go rm
+      return $ (lvl, SLV_Object at Nothing om)
+    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote pay"
+      payv <- one_arg
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
+      billv <- one_arg
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Just billv) Nothing)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
+      zero_args
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just Nothing) Nothing)
+    SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
+      at <- withAt id
+      let zero = SLV_Int at 0
+      let amtv = fromMaybe zero mpay
+      amta <- compileCheckType T_UInt amtv
+      doAssertBalance amtv PLE
+      doBalanceUpdate SUB amtv
+      let SLTypeFun dom rng pre post = stf
+      let rng' = ST_Tuple [ ST_UInt, rng ]
+      let post' = flip fmap post $ \postv ->
+                    jsClo at "post" "(dom, [_, rng]) => post(dom, rng)" $
+                      M.fromList [ ("post", postv) ]
+      let stf' = SLTypeFun dom rng' pre post'
+      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
+      apdvv <- doArrRef_ res' zero
+      doBalanceUpdate ADD apdvv
+      res <- doArrRef_ res' $ SLV_Int at 1
+      case fromMaybe (Just $ zero) mbill of
+        Nothing -> return $ public res'
+        Just epdvv -> do
+          cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op PEQ) [public epdvv, public apdvv]
+          void $
+            evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Assume True) $
+              [cmp_v, public $ SLV_Bytes at "remote bill check"]
+          return $ public res
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -2080,11 +2125,14 @@ evalPrim p sargs =
     three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args
-    mustBeObject = \case
-      v@SLV_Object {} -> return v
+    mustBeObject_ = \case
+      SLV_Object _ _ m -> return m
       ow ->
         locAtf (flip getSrcLocOrDefault ow) $
           expect_t ow $ Err_Decl_NotType "object"
+    mustBeObject v = do
+      void $ mustBeObject_ v
+      return v
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
       _ -> illegal_args
@@ -2097,6 +2145,25 @@ evalPrim p sargs =
       name <- return . SLV_Bytes (srclocOf n) =<< mustBeBytes n
       objEnv <- mustBeObject interface
       retV $ (lvl, SLV_ParticipantConstructor $ ty at name objEnv)
+
+doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
+doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
+  ensure_mode mode lab
+  let argvs = map snd sargs
+  arges <-
+    mapM (uncurry $ typeCheck_s)
+      =<< zipEq (Err_Apply_ArgCount iat) stf_dom argvs
+  at <- withAt id
+  let dom_tupv = SLV_Tuple at argvs
+  forM_ stf_pre $ \domp ->
+    applyRefinement CT_Assert domp [dom_tupv]
+  dargs <- compileArgExprs arges
+  fs <- e_stack <$> ask
+  rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
+    mkexpr at fs drng dargs
+  forM_ stf_post $ \rngp ->
+    applyRefinement ct rngp [dom_tupv, rng_v]
+  return rng_v
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do
@@ -2540,15 +2607,10 @@ doRef arre a idxe = locAtf (srcloc_jsa "ref" a) $ do
     _ ->
       doArrRef arrsv a idxe
 
-doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
-doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
+doArrRef_ :: SLVal -> SLVal -> App SLVal
+doArrRef_ arrv idxv = do
   at' <- withAt id
-  (idx_lvl, idxv) <- evalExpr idxe
-  let lvl = arr_lvl <> idx_lvl
-  let retRef t de = do
-        dv <- ctxt_lift_expr (DLVar at' Nothing t) de
-        let ansv = SLV_DLVar dv
-        return $ (lvl, ansv)
+  let retRef t de = SLV_DLVar <$> ctxt_lift_expr (DLVar at' Nothing t) de
   let retArrayRef t sz arr_dla idx_dla = do
         doArrayBoundsCheck sz idxv
         retRef t $ DLE_ArrayRef at' arr_dla idx_dla
@@ -2558,8 +2620,7 @@ doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
         case fromIntegerMay idxi >>= atMay arrvs of
           Nothing ->
             expect_ $ Err_Eval_RefOutOfBounds (length arrvs) idxi
-          Just ansv ->
-            return $ (lvl, ansv)
+          Just ansv -> return ansv
   case idxv of
     SLV_Int _ idxi ->
       case arrv of
@@ -2569,17 +2630,14 @@ doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
           case fromIntegerMay idxi >>= atMay ts of
             Nothing ->
               expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
-            Just t -> retTupleRef t arr_dla idxi
-              where
-                arr_dla = DLA_Var adv
+            Just t -> retTupleRef t (DLA_Var adv) idxi
         SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
           case idxi < sz of
             False ->
               expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
             True -> do
-              let arr_dla = DLA_Var adv
               idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
-              retArrayRef t sz arr_dla idx_dla
+              retArrayRef t sz (DLA_Var adv) idx_dla
         _ -> expect_t arrv $ Err_Eval_RefNotRefable
     SLV_DLVar idxdv@(DLVar _ _ T_UInt _) -> do
       (arr_ty, arr_dla) <- compileTypeOf arrv
@@ -2588,6 +2646,13 @@ doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
           retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
         _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
     _ -> expect_t idxv $ Err_Eval_RefNotInt
+
+doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
+doArrRef (arr_lvl, arrv) a idxe = locAtf (srcloc_jsa "array ref" a) $ do
+  (idx_lvl, idxv) <- evalExpr idxe
+  elemv <- doArrRef_ arrv idxv
+  let lvl = arr_lvl <> idx_lvl
+  return (lvl, elemv)
 
 evalExprs :: [JSExpression] -> App [SLSVal]
 evalExprs = \case

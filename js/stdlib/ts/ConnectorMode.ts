@@ -44,7 +44,7 @@ export function canonicalizeConnectorMode(connectorMode: string): ConnectorMode 
   if (canonicalized) {
     return canonicalized;
   } else {
-    throw Error(`Unrecognized REACH_CONNECTOR_MODE=${connectorMode}`);
+    throw Error(`Unrecognized REACH_CONNECTOR_MODE='${connectorMode}'`);
   }
 }
 

@@ -166,6 +166,7 @@ data BEnv = BEnv
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
   , be_loop :: Maybe Int
+  , be_output_vs :: IORef [DLVar]
   }
 
 type BApp = ReaderT BEnv IO
@@ -196,6 +197,20 @@ setHandler which m = do
     Just _ -> impossible "epp double set handler"
     Nothing -> do
       liftIO $ modifyIORef hsr $ M.insert which m
+
+recordOutputVar :: LLVar -> BApp ()
+recordOutputVar = \case
+  Nothing -> return ()
+  Just dv -> do
+    vsr <- be_output_vs <$> ask
+    liftIO $ modifyIORef vsr $ (:) dv
+
+captureOutputVars :: BApp a -> BApp ([DLVar], a)
+captureOutputVars m = do
+  vsr <- liftIO $ newIORef mempty
+  x <- local (\e -> e {be_output_vs = vsr}) m
+  a <- liftIO $ readIORef vsr
+  return (a, x)
 
 fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
@@ -294,6 +309,9 @@ be_m = \case
   DL_Nop at -> return $ return $ DL_Nop at
   DL_Let at mdv de -> do
     fg_use $ de
+    case de of
+      DLE_Remote {} -> recordOutputVar mdv
+      _ -> return ()
     fg_defn $ mdv
     return $ return $ DL_Let at mdv de
   DL_ArrayMap at ans x a f -> do
@@ -503,18 +521,19 @@ be_s = \case
               be_s to_s
           let mtime'm = Just . (,) delay_as <$> to_s'm
           return $ (int_ok, mtime'm)
-    (ok_c'm, ok_l'm) <-
-      local
-        (\e ->
-           e
-             { be_interval = int_ok
-             , be_which = which
-             })
-        $ do
-          fg_use $ int_ok
-          fg_use $ last_time_mv
-          fg_defn $ from_v : amt_v : time_v : msg_vs
-          be_c ok_c
+    (out_vs, (ok_c'm, ok_l'm)) <-
+      captureOutputVars $
+        local
+          (\e ->
+             e
+               { be_interval = int_ok
+               , be_which = which
+               })
+          $ do
+            fg_use $ int_ok
+            fg_use $ last_time_mv
+            fg_defn $ from_v : amt_v : time_v : msg_vs
+            be_c ok_c
     fg_child which
     setHandler which $ do
       svs <- ce_readMustReceive which
@@ -537,7 +556,7 @@ be_s = \case
               svs <- ee_readMustReceive which
               return $ Just (from_as, amt_a, when_a, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs amt_v time_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs amt_v time_v mtime' ok_l'
     return $ ok_l''m
 
 epp :: LLProg -> IO PIProg
@@ -550,6 +569,7 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let be_loop = Nothing
   let be_which = 0
   let be_interval = default_interval
+  be_output_vs <- newIORef mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   hs <- readIORef be_handlers
   -- Step 2: Solve the flow graph
@@ -570,8 +590,6 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
           flip runReaderT (EEnv {..}) $
             mkep_
         return $ EPProg at ie et
-  let mapWithKeyM f m =
-        M.fromList <$> mapM (\(k, v) -> (,) k <$> f k v) (M.toList m)
   pps <- EPPs <$> mapWithKeyM mkep p_to_ie
   -- Step 4: Generate the final PLProg
   let plo_deployMode = llo_deployMode

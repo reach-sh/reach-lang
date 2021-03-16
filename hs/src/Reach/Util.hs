@@ -11,12 +11,14 @@ module Reach.Util
   , redactAbsStr
   , safeInit
   , dupeIORef
+  , mapWithKeyM
   )
 where
 
 import Control.Monad
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -77,3 +79,6 @@ redactAbsStr dir = T.unpack . redactAbs dir . T.pack
 
 dupeIORef :: IORef a -> IO (IORef a)
 dupeIORef r = newIORef =<< readIORef r
+
+mapWithKeyM :: (Ord k, Monad m) => (k -> a -> m b) -> M.Map k a -> m (M.Map k b)
+mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscList m)

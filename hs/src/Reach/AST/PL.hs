@@ -67,6 +67,7 @@ data ETail_ a
              Maybe ([DLArg], DLArg, DLArg, [DLVar], Bool)
              )
       , et_tc_from_msg :: [DLVar]
+      , et_tc_from_out :: [DLVar]
       , et_tc_from_amtv :: DLVar
       , et_tc_from_timev :: DLVar
       , et_tc_from_mtime :: (Maybe ([DLArg], (ETail_ a)))
@@ -103,7 +104,7 @@ instance Pretty a => Pretty (ETail_ a) where
             Nothing -> emptyDoc
             Just svs -> pretty svs
           whichp = viaShow which
-      ET_ToConsensus _ fs prev last_timev which msend msg amtv timev mtime k ->
+      ET_ToConsensus _ fs prev last_timev which msend msg out amtv timev mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -116,6 +117,7 @@ instance Pretty a => Pretty (ETail_ a) where
                      , ("last_time", pretty last_timev)
                      , ("which", pretty which)
                      , ("msg", (cm $ map pretty msg))
+                     , ("out", (cm $ map pretty out))
                      , ("amtv", pretty amtv)
                      , ("timev", pretty timev)
                      ])

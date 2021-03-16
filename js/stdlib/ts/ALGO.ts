@@ -140,6 +140,7 @@ type Recv = {
   time: BigNumber,
   value: BigNumber,
   from: string,
+  getOutput: (o_lab:string, o_ctc:any) => Promise<any>,
 } | { didTimeout: true };
 
 type ContractAttached = {
@@ -772,7 +773,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       onlyIf: boolean,
       soloSend: boolean,
       timeout_delay: undefined | BigNumber,
-      sim_p: (fake: Recv) => SimRes,
+      sim_p: (fake: Recv) => Promise<SimRes>,
     ): Promise<Recv> => {
       if ( hasLastTime !== false ) {
         const ltidx = hasLastTime.toNumber();
@@ -799,8 +800,13 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         time: bigNumberify(0), // This should not be read.
         value: value,
         from: pks,
+        getOutput: (async (o_lab:string, o_ctc:any): Promise<any> => {
+          void(o_lab);
+          void(o_ctc);
+          throw Error(`Algorand does not support remote calls`);
+        }),
       };
-      const sim_r = sim_p( fake_res );
+      const sim_r = await sim_p( fake_res );
       debug(`${dhead} --- SIMULATE ${JSON.stringify(sim_r)}`);
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
@@ -1052,11 +1058,17 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             .sub(totalFromFee);
         debug(`${dhead} --- value = ${JSON.stringify(value)}`);
 
+        const getOutput = (o_lab:String, o_ctc:any): Promise<any> => {
+          void(o_lab);
+          void(o_ctc);
+          throw Error(`Algorand does not support remote calls`);
+        };
+
         return {
           didTimeout: false,
           data: args_un,
           time: bigNumberify(lastRound),
-          value, from,
+          value, from, getOutput,
         };
       }
     };

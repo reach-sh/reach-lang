@@ -42,7 +42,7 @@ dontWriteSol :: Bool
 dontWriteSol = False
 
 includeRequireMsg :: Bool
-includeRequireMsg = False
+includeRequireMsg = True
 
 maxDepth :: Int
 maxDepth = 15
@@ -141,6 +141,9 @@ solEnum name opts = "enum" <+> name <+> braces (hcat $ intersperse (comma <> spa
 
 --- Runtime helpers
 
+solOutput_evt :: DLVar -> Doc
+solOutput_evt dv = "oe_" <> solRawVar dv
+
 solMsg_evt :: Pretty i => i -> Doc
 solMsg_evt i = "e" <> pretty i
 
@@ -210,8 +213,12 @@ data SolCtxt = SolCtxt
   , ctxt_typem :: IORef (M.Map DLType Doc)
   , ctxt_typem_hc :: IORef (M.Map DLType_hc Doc)
   , ctxt_typed :: IORef (M.Map Int Doc)
+  , ctxt_typef :: IORef (M.Map Int Doc)
   , ctxt_typeidx :: Counter
   , ctxt_plo :: PLOpts
+  , ctxt_intidx :: Counter
+  , ctxt_ints :: IORef (M.Map Int Doc)
+  , ctxt_outputs :: IORef (M.Map DLVar Doc)
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -228,6 +235,20 @@ instance Semigroup a => Semigroup (App a) where
 
 instance Monoid a => Monoid (App a) where
   mempty = return mempty
+
+addInterface :: Doc -> [Doc] -> Doc -> App Doc
+addInterface f dom rng = do
+  idx <- (liftIO . incCounter) =<< (ctxt_intidx <$> ask)
+  let ip = "I" <> pretty idx
+  let idef = "interface" <+> ip <+> solBraces ("function" <+> solApply f dom <+> "external returns" <+> parens rng <> semi)
+  modifyCtxtIO ctxt_ints $ M.insert idx idef
+  return $ ip <> "." <> f <> ".selector"
+
+allocVar :: App Doc
+allocVar = do
+  PLOpts {..} <- ctxt_plo <$> ask
+  i <- liftIO $ incCounter plo_counter
+  return $ pretty $ "v" ++ show i
 
 extendVarMap :: VarMap -> App ()
 extendVarMap vm1 = do
@@ -257,14 +278,15 @@ addMemVars :: [DLVar] -> App ()
 addMemVars = mapM_ addMemVar
 
 recordDepth :: DLVar -> Int -> App ()
-recordDepth v d = do
-  depths <- ctxt_depths <$> ask
-  liftIO $ modifyIORef depths $ M.insert v d
+recordDepth v d = modifyCtxtIO ctxt_depths $ M.insert v d
 
 readDepth :: DLVar -> App Int
 readDepth v = do
   mvars <- readCtxtIO ctxt_depths
   return $ fromMaybe 0 $ M.lookup v mvars
+
+addOutputEvent :: DLVar -> Doc -> App ()
+addOutputEvent v d = modifyCtxtIO ctxt_outputs $ M.insert v d
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -310,6 +332,7 @@ instance DepthOf DLExpr where
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> depthOf [x, y]
     DLE_MapDel _ _ x -> depthOf x
+    DLE_Remote _ _ av _ amta as -> add1 $ depthOf $ av : amta : as
     where
       add1 m = (+) 1 <$> m
 
@@ -471,7 +494,7 @@ solExpr sp = \case
     where
       check = case ct of
         CT_Assert -> impossible "assert"
-        CT_Assume -> require
+        CT_Assume _ -> require
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
@@ -490,6 +513,7 @@ solExpr sp = \case
   DLE_MapDel _ mpv fa -> do
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
+  DLE_Remote {} -> impossible "remote"
   where
     spa m = (<> sp) <$> m
 
@@ -546,9 +570,66 @@ solSwitch iter _at ov csm = do
         return (c, set_and_body')
   solIfs <$> (mapM cm1 $ M.toAscList csm)
 
+withArgLoc :: DLType -> Doc
+withArgLoc t =
+  solArgLoc $
+    case mustBeMem t of
+      True -> AM_Memory
+      False -> AM_Event
+
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
+  DL_Let _ pv (DLE_Remote at fs av f amta as) -> do
+    av' <- solArg av
+    as' <- mapM solArg as
+    dom <- mapM (solType . argTypeOf) as
+    let rng_ty = case pv of
+          PV_Eff -> T_Null
+          PV_Let _ dv ->
+            case varType dv of
+              T_Tuple [ _, x ] -> x
+              _ -> impossible $ "remote not tuple"
+    rng_ty' <- solType rng_ty
+    let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
+    f' <- addInterface (pretty f) dom rng_ty'mem
+    let eargs = f' : as'
+    v_succ <- allocVar
+    v_return <- allocVar
+    v_before <- allocVar
+    -- Note: Not checking that the address is really a contract and not doing
+    -- exactly what OpenZeppelin does
+    amta' <- solArg amta
+    let call' = ".call{value:" <+> amta' <> "}"
+    let meBalance = "address(this).balance"
+    pv' <- case pv of
+      PV_Eff -> return []
+      PV_Let _ dv -> do
+        addMemVar dv
+        sub' <- solPrimApply SUB [ meBalance, v_before ]
+        let sub'l = [ solSet (solMemVar dv <> ".elem0") sub' ]
+        dv_ty' <- solType $ varType dv
+        let go sv l = solApply (solOutput_evt dv) [ l <+> sv dv ] <> semi
+        addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
+        let logl = [ "emit" <+> go solMemVar "" ]
+        case rng_ty of
+          T_Null ->
+            return $ sub'l <> logl
+          _ -> do
+            let de' = solApply "abi.decode" [ v_return, parens rng_ty' ]
+            let de'l = [ solSet (solMemVar dv <> ".elem1") de' ]
+            return $ sub'l <> de'l <> logl
+    let e_data = solApply "abi.encodeWithSelector" eargs
+    e_before <- solPrimApply SUB [ meBalance, amta' ]
+    let err_msg =
+          case includeRequireMsg of
+            True -> unsafeRedactAbsStr $ show (at, fs, ("remote " <> f <> " failed"))
+            False -> ""
+    return $ vsep $
+      [ solSet ("uint256" <+> v_before) e_before
+      , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [ e_data ] <> semi
+      , solApply "checkFunReturn" [ v_succ, v_return, solString err_msg ] <> semi
+      ] <> pv'
   DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
@@ -754,7 +835,12 @@ solHandler which h = freshVarMap $
             return (emptyDoc, AM_Memory, SFL_Constructor)
           _ -> do
             eq' <- solEq ("current_state") (solHashStateCheck prev)
-            let hcp = (solRequire (checkMsg "state") $ eq') <> semi
+            let hcp = vsep [ solRequire (checkMsg "state") eq' <> semi
+                           -- This is a re-entrancy lock, because we know that
+                           -- all methods start by checking the current state.
+                           -- When we implement on-chain state, we need to do
+                           -- this differently
+                           , solSet "current_state" "0x0" ]
             return (hcp, AM_Call, SFL_Function True (solMsg_fun which))
       argDefn <- solArgDefn am svs msg
       timeoutCheck <-
@@ -853,7 +939,7 @@ solDefineType t = case t of
             ]
     addMap me
     i <- addId
-    addDef i $ solFunction (solArraySet i) args ret body
+    addFun i $ solFunction (solArraySet i) args ret body
   T_Tuple ats -> do
     let ats' = map SDLT ats
     let ats'' = (flip zip) ats' $ map (("elem" ++) . show) ([0 ..] :: [Int])
@@ -886,6 +972,7 @@ solDefineType t = case t of
       addMap name
       return $ (name, i)
     addDef i d = modifyCtxtIO ctxt_typed $ M.insert i d
+    addFun i f = modifyCtxtIO ctxt_typef $ M.insert i f
 
 mkEnsureTypeDefined :: (Ord a) => (a -> App ()) -> (SolCtxt -> IORef (M.Map a b)) -> a -> App ()
 mkEnsureTypeDefined define f t =
@@ -918,8 +1005,12 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
           ]
   ctxt_typem <- newIORef base_typem
   ctxt_typem_hc <- newIORef mempty
+  ctxt_typef <- newIORef mempty
   ctxt_typed <- newIORef mempty
   ctxt_typeidx <- newCounter 0
+  ctxt_intidx <- newCounter 0
+  ctxt_ints <- newIORef mempty
+  ctxt_outputs <- newIORef mempty
   let ctxt_plo = plo
   flip runReaderT (SolCtxt {..}) $ do
     consp <-
@@ -966,8 +1057,14 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
     map_defns <- mapM map_defn (M.toList dli_maps)
     let state_defn = vsep $ ["uint256 current_state;"] <> map_defns
     hs' <- solHandlers hs
-    typesp <- (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_typed)
-    let ctcbody = vsep $ [ state_defn, typesp, consp, hs' ]
+    let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
+    typedsp <- getm ctxt_typed
+    typefsp <- getm ctxt_typef
+    intsp <- getm ctxt_ints
+    outputsp <- getm ctxt_outputs
+    -- XXX expose this to Reach? only include if bills?
+    let defp = "receive () external payable {}"
+    let ctcbody = vsep $ [ state_defn, consp, typefsp, outputsp, hs', defp ]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
     let preamble =
@@ -975,7 +1072,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
             [ "// Automatically generated with Reach" <+> (pretty versionStr)
             , "pragma abicoder v2" <> semi
             ]
-    return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, ctcp])
+    return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
 
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text

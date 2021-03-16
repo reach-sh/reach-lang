@@ -280,8 +280,9 @@ argExprTypeOf = \case
 data ClaimType
   = --- Verified on all paths
     CT_Assert
-  | --- Always assumed true
-    CT_Assume
+  | --- Assume true in verification, but check at runtime
+    --- Bool means it is internally generated, rather than specified by user
+    CT_Assume Bool
   | --- Verified in honest, assumed in dishonest. (This may sound
     --- backwards, but by verifying it in honest mode, then we are
     --- checking that the other participants fulfill the promise when
@@ -297,7 +298,7 @@ data ClaimType
 instance Pretty ClaimType where
   pretty = \case
     CT_Assert -> "assert"
-    CT_Assume -> "assume"
+    CT_Assume _ -> "assume"
     CT_Require -> "require"
     CT_Possible -> "possible"
     CT_Unknowable p as -> "unknowable" <> parens (pretty p <> render_das as)
@@ -334,6 +335,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLArg [DLArg]
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -363,6 +365,7 @@ instance Pretty DLExpr where
       DLE_MapSet _ mv kv nv ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
       DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
+      DLE_Remote _ _ av m amta as -> "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <> parens (render_das as)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -382,7 +385,7 @@ instance IsPure DLExpr where
       case ct of
         CT_Assert -> True
         CT_Possible -> True
-        CT_Assume -> False
+        CT_Assume _ -> False
         CT_Require -> False
         CT_Unknowable {} -> True
     DLE_Transfer {} -> False
@@ -391,6 +394,7 @@ instance IsPure DLExpr where
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
+    DLE_Remote {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -413,6 +417,7 @@ instance IsLocal DLExpr where
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
+    DLE_Remote {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -421,6 +426,7 @@ instance CanDupe DLExpr where
       x =
         case e of
           DLE_MapRef {} -> False
+          DLE_Remote {} -> False
           _ -> True
 
 newtype DLAssignment

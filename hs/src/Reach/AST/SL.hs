@@ -33,9 +33,16 @@ data SLType
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
   | ST_Data (M.Map SLVar SLType)
-  | ST_Fun [SLType] SLType (Maybe SLVal) (Maybe SLVal)
+  | ST_Fun SLTypeFun
   | ST_Type SLType
   | ST_Refine SLType SLVal
+  deriving (Eq, Generic)
+
+data SLTypeFun = SLTypeFun
+  { stf_dom :: [SLType]
+  , stf_rng :: SLType
+  , stf_pre :: Maybe SLVal
+  , stf_post :: Maybe SLVal }
   deriving (Eq, Generic)
 
 instance Show SLType where
@@ -50,9 +57,9 @@ instance Show SLType where
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
     ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
-    ST_Fun tys ty Nothing Nothing ->
+    ST_Fun (SLTypeFun tys ty Nothing Nothing) ->
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
-    ST_Fun tys ty _ _ ->
+    ST_Fun (SLTypeFun tys ty _ _) ->
       "Refine(Fun([" <> showTys tys <> "], " <> show ty <> "), ...., ....)"
     ST_Type ty -> "Type(" <> show ty <> ")"
     ST_Refine ty _ -> "Refine(" <> show ty <> ", ....)"
@@ -91,7 +98,8 @@ dt2st = \case
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
-  ST_Fun dom rng _ _ -> IT_Fun <$> traverse st2dt dom <*> st2dt rng
+  ST_Fun (SLTypeFun {..}) ->
+    IT_Fun <$> traverse st2dt stf_dom <*> st2dt stf_rng
   _ -> IT_Val <$> st2dt t
 
 type SLPartEnvs = M.Map SLPart SLEnv
@@ -339,6 +347,12 @@ data SLCompiledPartInfo = SLCompiledPartInfo
   }
   deriving (Eq, Generic)
 
+data RemoteFunMode
+  = RFM_Pay
+  | RFM_Bill
+  | RFM_WithBill
+  deriving (Eq, Generic, Show)
+
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
@@ -346,7 +360,7 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc SLPart String [SLType] SLType (Maybe SLVal) (Maybe SLVal)
+  | SLPrim_localf SrcLoc SLPart String SLTypeFun
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
@@ -390,6 +404,8 @@ data SLPrimitive
   | SLPrim_ParticipantClass
   | SLPrim_Foldable
   | SLPrim_is
+  | SLPrim_remote
+  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Maybe SLVal)) (Maybe RemoteFunMode)
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

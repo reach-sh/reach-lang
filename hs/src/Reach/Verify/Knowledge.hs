@@ -196,7 +196,7 @@ kgq_e ctxt mv = \case
       this =
         case ct of
           CT_Assert -> mempty
-          CT_Assume -> mempty
+          CT_Assume _ -> mempty
           CT_Require -> mempty
           CT_Possible -> mempty
           CT_Unknowable who whats ->
@@ -215,6 +215,8 @@ kgq_e ctxt mv = \case
   DLE_MapSet _ mpv _ va ->
     knows ctxt (P_Map mpv) $ all_points va
   DLE_MapDel {} -> mempty
+  DLE_Remote _ _ av _ amta as ->
+    kgq_la ctxt mv $ DLLA_Tuple $ av : amta : as
 
 kgq_m :: KCtxt -> LLCommon -> IO ()
 kgq_m ctxt = \case

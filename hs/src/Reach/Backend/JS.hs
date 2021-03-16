@@ -287,7 +287,7 @@ jsExpr = \case
     where
       check = case ct of
         CT_Assert -> impossible "assert"
-        CT_Assume -> require
+        CT_Assume _ -> require
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
@@ -336,6 +336,8 @@ jsExpr = \case
   DLE_MapDel _ mpv fa -> do
     fa' <- jsArg fa
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
+  DLE_Remote {} ->
+    impossible "jsExpr remote"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -355,6 +357,14 @@ jsEmitSwitch iter _at ov csm = do
 jsCom :: AppT PILCommon
 jsCom = \case
   DL_Nop _ -> mempty
+  DL_Let _ pv (DLE_Remote {}) ->
+    case pv of
+      Nothing -> mempty
+      Just dv -> do
+        dv' <- jsVar dv
+        txn' <- jsTxn
+        dvt' <- jsContract $ varType dv
+        return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [ squotes dv', dvt' ]
   DL_Let _ (Just dv) de -> do
     dv' <- jsVar dv
     de' <- jsExpr de
@@ -472,9 +482,9 @@ jsETail = \case
             , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
             , "sim_r.isHalt =" <+> isHalt' <> semi
             ]
-  ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> do
-    msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
-    msg_vs <- mapM jsVar msg
+  ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out amtv timev mto k_ok -> do
+    msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
+    msg_vs' <- mapM jsVar msg_vs
     let withCtxt =
           local
             (\e ->
@@ -483,7 +493,7 @@ jsETail = \case
                  , ctxt_timev = Just timev
                  })
     txn <- withCtxt jsTxn
-    let msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> txn <> ".data" <> semi <> hardline
+    let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
     amtv' <- jsVar amtv
     let amt_defp = "const" <+> amtv' <+> "=" <+> txn <> ".value" <> semi <> hardline
     timev' <- jsVar timev
@@ -512,7 +522,7 @@ jsETail = \case
             "ctc.recv"
             [ whop
             , pretty which
-            , pretty (length msg)
+            , pretty $ length msg_vs
             , jsArray msg_ctcs
             , "false"
             , delayp
@@ -542,23 +552,22 @@ jsETail = \case
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
-            rests <- mapM (jsContract . argTypeOf) $ map DLA_Var msg
             last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
             let sendp =
                   jsApply
                     "ctc.sendrecv"
                     [ whop
                     , pretty which
-                    , pretty (length msg)
+                    , pretty (length msg_vs)
                     , last_timev'
                     , jsArray msgts
                     , vs
                     , amtp
-                    , jsArray rests
+                    , jsArray msg_ctcs
                     , whena'
                     , soloSend'
                     , delayp
-                    , parens $ "(" <> txn <> ") => " <> jsBraces sim_body
+                    , parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
                     ]
             return sendp
           Nothing ->

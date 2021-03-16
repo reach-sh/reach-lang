@@ -179,6 +179,9 @@ ensure_connector_mode () {
     "ETH")
       REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
+    "ETH-live")
+      REACH_CONNECTOR_MODE="ETH-live"
+      ;;
     "ETH-test")
       REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
@@ -213,6 +216,8 @@ ensure_connector_mode () {
 
   # ensure it is one of the supported things
   case "$REACH_CONNECTOR_MODE" in
+    "ETH-live")
+      ;;
     "ETH-test-dockerized-geth")
       ;;
     "ETH-test-embedded-ganache")

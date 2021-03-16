@@ -221,7 +221,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       tys: Array<FAKE_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
       onlyIf: boolean, soloSend:boolean,
-      timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
+      timeout_delay: BigNumber | false,
+      sim_p: (fake: Recv) => Promise<SimRes>,
     ): Promise<Recv> => {
       void(hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
@@ -251,8 +252,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           data,
           value,
           from: address,
+          getOutput: (async (o_lab:string, o_ctc:any): Promise<any> => {
+            void(o_lab);
+            void(o_ctc);
+            throw Error(`FAKE does not support remote calls`);
+          }),
         }
-        const {prevSt, nextSt, txns} = sim_p(stubbedRecv);
+        const {prevSt, nextSt, txns} = await sim_p(stubbedRecv);
         if ( await checkStateTransition(label, ctcInfo.address, prevSt, nextSt) ) {
           debug(`${label} send ${funcNum} --- post succeeded`);
           transfer({networkAccount}, toAcct(ctcInfo.address), value);
@@ -332,11 +338,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`${label} recv ${funcNum} --- AT ${found_block}`);
           setLastBlock(found_block);
           const evt = b.event;
-          return { didTimeout: false,
-                   time: bigNumberify(found_block),
-                   data: evt.data,
-                   value: evt.value,
-                   from: evt.from };
+          return {
+            didTimeout: false,
+            time: bigNumberify(found_block),
+            data: evt.data,
+            value: evt.value,
+            from: evt.from,
+            getOutput: (async (o_lab:string, o_ctc:any): Promise<any> => {
+              void(o_lab);
+              void(o_ctc);
+              throw Error(`FAKE does not support remote calls`);
+            }),
+          };
         }
       }
 

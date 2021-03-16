@@ -77,6 +77,7 @@ to its full, canonical name. The canonical connector modes are:
 
 @js{
   'ETH-test-dockerized-geth'   // Default for ETH, ETH-test, and ETH-test-dockerized
+  'ETH-live'                   // Default for ETH-live
   'ETH-test-embedded-ganache'  // Default for ETH-test-embedded
   'FAKE-test-embedded-mock'    // Default for FAKE, FAKE-test, and FAKE-test-embedded
   'ALGO-test-dockerized-algod' // Default for ALGO, ALGO-test, and ALGO-test-dockerized
@@ -207,7 +208,7 @@ Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{a
 @js{
  acc.deploy(bin) => ctc }
 
-@index{acc.deploy} Returns a Reach @tech{contract} abstraction after kicking off the deploy of a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided.
+@index{acc.deploy} Returns a Reach @tech{contract} abstraction after starting the deployment of a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided.
 This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 This function does not block on the completion of deployment.
 To wait for deployment, see @reachin{ctc.getInfo}.
@@ -294,6 +295,25 @@ Returns a Promise that will only be resolved after the specified @tech{time delt
 The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
+
+@subsubsection[#:tag "ref-backend-js-stdlib-eth"]{Ethereum-specific Functions}
+
+When connected to an EVM-based consensus network, the standard library provides additional functionality.
+
+@(hrule)
+
+@(mint-define! '("setGasLimit"))
+@js{
+ acc.setGasLimit(n) => void }
+
+@index{acc.setGasLimit} Modifies the gas limit for all transactions originating from the given account.
+@jsin{n} must be a value that @jsin{bigNumberify} will accept.
+
+On EVM-based consensus networks, the Reach standard library will automatically estimate the required gas necessary to execute transactions, i.e. make @tech{publications}.
+However, sometimes this estimation process is inaccurate, especially when Reach programs interact with @tech{remote objects}.
+In those cases, it is sometimes useful to specify a particular gas limit.
+It is common on Ethereum to use gas limits like @jsin{5000000}.
+If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
 
 @subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
 

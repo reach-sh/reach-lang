@@ -1,0 +1,29 @@
+version: '3.4'
+x-app-base: &app-base
+  image: reachsh/reach-app-remote:latest
+services:
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:0.1
+  reach-app-remote-ETH-live:
+    <<: *app-base
+    environment:
+      - REACH_ISOLATED_NETWORK
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-live
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
+  reach-app-remote-ETH-test-dockerized-geth: &default-app
+    <<: *app-base
+    depends_on:
+      - ethereum-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+      - ETH_NODE_URI=http://ethereum-devnet:8545
+  reach-app-remote-ETH-test-embedded-ganache:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
+  reach-app-remote-: *default-app
+  reach-app-remote: *default-app

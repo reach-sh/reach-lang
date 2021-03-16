@@ -81,7 +81,8 @@ type ContractInfo = {
 type Digest = string // XXX
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, AnyETH_Ty>;
-type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
+type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
+  | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
 
 // For when you init the contract with the 1st message
 type ContractInitInfo = {
@@ -129,7 +130,9 @@ const connectorMode: ConnectorMode = getConnectorMode();
 // Note: ETH-browser is NOT considered isolated.
 const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
-  connectorMode.startsWith('ETH-test-embedded');
+  connectorMode.startsWith('ETH-test-embedded') ||
+  // @ts-ignore
+  process.env['REACH_ISOLATED_NETWORK'];
 
 type NetworkDesc =
   {type: 'uri', uri: string, network: string} |
@@ -433,6 +436,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return address;
   }
 
+  let gasLimit:BigNumber;
+  const setGasLimit = (ngl:any): void => {
+    gasLimit = bigNumberify(ngl); };
+
   const deploy = (bin: Backend): Contract => {
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
@@ -458,7 +465,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       (async () => {
         debug(`${shad}: deploying factory`);
-        const contract = await factory.deploy(...argsMay, { value });
+        const contract = await factory.deploy(...argsMay, { value, gasLimit });
         debug(`${shad}: deploying factory; done: ${contract.address}`);
         debug(`${shad}: waiting for receipt: ${contract.deployTransaction.hash}`);
         const deploy_r = await contract.deployTransaction.wait();
@@ -618,7 +625,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const callC = async (
       funcName: string, arg: any, value: BigNumber,
     ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
-      return (await getC())[funcName](arg, { value });
+      return (await getC())[funcName](arg, { value, gasLimit });
     };
 
     const getEventData = async (
@@ -816,10 +823,29 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`${shad}: ${label} recv ${ok_evt} --- MSG -- ${JSON.stringify(ok_vals)}`);
           const data = T_Tuple(out_tys).unmunge(ok_vals);
 
+          const getOutput = async (o_lab:String, o_ctc:any): Promise<any> => {
+            let dhead = `${shad}: ${label} recv ${ok_evt} --- getOutput: ${o_lab} ${JSON.stringify(o_ctc)}`;
+            debug(`${dhead}`);
+            const oe_evt = `oe_${o_lab}`;
+            const theBlock = ok_r.blockNumber;
+            dhead = `${dhead} oe(${JSON.stringify(oe_evt)})`;
+            const oe_e = (await getLogs(theBlock, theBlock, oe_evt))[0];
+            dhead = `${dhead} log(${JSON.stringify(oe_e)})`;
+            debug(`${dhead}`);
+            const oe_ed = (await getEventData(oe_evt, oe_e))[0];
+            dhead = `${dhead} data(${JSON.stringify(oe_ed)})`;
+            debug(`${dhead}`);
+            const oe_edu = o_ctc.unmunge(oe_ed);
+            dhead = `${dhead} unmunge(${JSON.stringify(oe_edu)})`;
+            debug(`${dhead}`);
+            return oe_edu;
+          };
+
+
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           return { didTimeout: false,
                    time: bigNumberify(ok_r.blockNumber),
-                   data,
+                   data, getOutput,
                    value: ok_t.value,
                    from: ok_t.from };
         }
@@ -852,7 +878,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
   };
 
-  return { deploy, attach, networkAccount, stdlib: compiledStdlib };
+  return { deploy, attach, networkAccount, setGasLimit, stdlib: compiledStdlib };
 };
 
 export const newAccountFromSecret = async (secret: string): Promise<Account> => {

@@ -124,6 +124,7 @@ data EvalError
   | Err_Default_Arg_Position
   | Err_IllegalEffPosition SLValTy
   | Err_Unused_Variables [(SrcLoc, SLVar)]
+  | Err_Remote_NotFun SLVar SLType
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -480,6 +481,8 @@ instance Show EvalError where
       "Effects cannot be bound, got: " <> show_sv v
     Err_Unused_Variables vars ->
       intercalate "\n" $ map (\ (at, v) -> "unused variable: " <> v <> " at " <> show at) vars
+    Err_Remote_NotFun k t ->
+      "Remote type not a function, " <> show k <> " has type " <> show t
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 
