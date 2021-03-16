@@ -300,6 +300,7 @@ instance DepthOf DLLargeArg where
     DLLA_Tuple as -> depthOf as
     DLLA_Obj m -> depthOf m
     DLLA_Data _ _ x -> depthOf x
+    DLLA_Struct kvs -> depthOf $ map snd kvs
 
 instance DepthOf DLExpr where
   depthOf = \case
@@ -429,9 +430,8 @@ solLargeArg' dv la =
     DLLA_Tuple as -> c <$> (zipWithM go ([0 ..] :: [Int]) as)
       where
         go i a = one (".elem" <> pretty i) <$> solArg a
-    DLLA_Obj m -> c <$> (mapM go $ M.toAscList m)
-      where
-        go (k, a) = one ("." <> pretty k) <$> solArg a
+    DLLA_Obj m ->
+      solLargeArg' dv $ DLLA_Struct $ M.toAscList m
     DLLA_Data _ vn vv -> do
       t <- solType $ largeArgTypeOf la
       vv' <- solArg vv
@@ -439,6 +439,9 @@ solLargeArg' dv la =
         [ one ".which" (solVariant t vn)
         , one ("._" <> pretty vn) vv'
         ]
+    DLLA_Struct kvs -> c <$> (mapM go kvs)
+      where
+        go (k, a) = one ("." <> pretty k) <$> solArg a
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
@@ -566,13 +569,17 @@ withArgLoc t =
       True -> AM_Memory
       False -> AM_Event
 
+solType_withArgLoc :: DLType -> App Doc
+solType_withArgLoc t =
+  (<> (withArgLoc t)) <$> solType t
+
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote at fs av f amta as) -> do
     av' <- solArg av
     as' <- mapM solArg as
-    dom <- mapM (solType . argTypeOf) as
+    dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
     let rng_ty = case pv of
           PV_Eff -> T_Null
           PV_Let _ dv ->
@@ -581,7 +588,7 @@ solCom = \case
               _ -> impossible $ "remote not tuple"
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
-    f' <- addInterface (pretty f) dom rng_ty'mem
+    f' <- addInterface (pretty f) dom'mem rng_ty'mem
     let eargs = f' : as'
     v_succ <- allocVar
     v_return <- allocVar

@@ -220,6 +220,8 @@ jsLargeArg = \case
   DLLA_Data _ vn vv -> do
     vv' <- jsArg vv
     return $ jsArray [jsString vn, vv']
+  DLLA_Struct kvs ->
+    jsLargeArg $ DLLA_Obj $ M.fromList kvs
 
 jsDigest :: AppT [DLArg]
 jsDigest as = do

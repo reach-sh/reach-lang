@@ -492,6 +492,12 @@ slToDL = \case
           return $ (,) x <$> y'
     denvl <- all_just <$> (mapM f $ M.toList fenv)
     return $ DLAE_Obj . M.fromList <$> denvl
+  SLV_Struct _ vs -> do
+    let go (k, v) = do
+          v' <- slToDL v
+          return $ (,) k <$> v'
+    mds <- all_just <$> mapM go vs
+    return $ DLAE_Struct <$> mds
   SLV_Clo _ _ _ _ _ -> no
   SLV_Data _ dt vn sv -> do
     msv <- slToDL sv
@@ -590,6 +596,10 @@ compileArgExpr = \case
   DLAE_Data t v ae -> do
     a <- compileArgExpr ae
     mk $ DLLA_Data t v a
+  DLAE_Struct kvs -> do
+    let go (k, v) = (,) k <$> compileArgExpr v
+    kvs' <- mapM go kvs
+    mk $ DLLA_Struct kvs'
   where
     mk la = do
       at <- withAt id
@@ -906,11 +916,15 @@ evalAsEnv obj = case obj of
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
-  SLV_Prim SLPrim_Struct ->
-    return $
+  SLV_Prim SLPrim_Struct -> return structValueEnv
+  SLV_Type (ST_Struct ts) ->
+    return $ structValueEnv <>
       M.fromList
-        [ ("length", retV $ public $ SLV_Prim $ SLPrim_struct_length)
+        [ ("fromTuple", retV $ public $ SLV_Prim $ SLPrim_Struct_fromTuple ts)
+        , ("fromObject", retV $ public $ SLV_Prim $ SLPrim_Struct_fromObject ts)
         ]
+  SLV_Struct _ kvs ->
+    return $ M.map (retV . public) $ M.fromList kvs
   SLV_DLVar obj_dv@(DLVar _ _ (T_Struct tml) _) ->
     return $ retDLVarl tml (DLA_Var obj_dv) Public
   SLV_Prim SLPrim_Tuple ->
@@ -1016,6 +1030,11 @@ evalAsEnv obj = case obj of
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
+        ]
+    structValueEnv :: SLObjEnv
+    structValueEnv = M.fromList $
+        [ ("toTuple", retV $ public $ SLV_Prim $ SLPrim_Struct_toTuple)
+        , ("toObject", retV $ public $ SLV_Prim $ SLPrim_Struct_toObject)
         ]
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
@@ -1486,6 +1505,9 @@ explodeTupleLike :: String -> SLVal -> App [SLVal]
 explodeTupleLike lab = \case
   SLV_Tuple _ vs -> return vs
   SLV_Array _ _ vs -> return vs
+  SLV_Struct _ kvs -> return $ map snd kvs
+  SLV_DLVar strdv@(DLVar _ _ (T_Struct kts) _) ->
+    mconcatMap (uncurry (flip (mkdv strdv DLE_ObjectRef))) $ kts
   SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) ->
     mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
   SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
@@ -1603,12 +1625,6 @@ evalPrim p sargs =
           retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
     SLPrim_Foldable -> expect_ Err_Prim_Foldable
-    SLPrim_struct_length -> do
-      at <- withAt id
-      one_arg >>= \case
-        SLV_DLVar (DLVar _ _ (T_Struct ts) _) ->
-          retV $ public $ SLV_Int at $ fromIntegral $ length ts
-        _ -> illegal_args
     SLPrim_tuple_length -> do
       at <- withAt id
       one_arg >>= \case
@@ -1825,11 +1841,32 @@ evalPrim p sargs =
             SLV_Tuple _ [ kv, tv ] -> do
               kbs <- mustBeBytes kv
               let k = bunpack kbs
+              -- XXX check valid id on k
               t <- expect_ty tv
               return $ ( k, t )
             _ -> illegal_args
-      ts <- mapM go as
-      retV $ (lvl, SLV_Type $ ST_Struct ts)
+      kts <- mapM go as
+      -- XXX check uniqueness
+      retV $ (lvl, SLV_Type $ ST_Struct kts)
+    SLPrim_Struct_fromTuple ts -> do
+      tv <- one_arg
+      at <- withAt id
+      let go (i, k) = (,) k <$> doArrRef_ tv (SLV_Int at i)
+      kvs <- mapM go $ zip [0..] $ map fst ts
+      return $ (lvl, SLV_Struct at kvs)
+    SLPrim_Struct_fromObject ts -> do
+      ov <- one_arg
+      at <- withAt id
+      let go k = (,) k <$> (snd <$> evalDot ov k)
+      kvs <- mapM go $ map fst ts
+      return $ (lvl, SLV_Struct at kvs)
+    SLPrim_Struct_toTuple -> do
+      at <- withAt id
+      (,) lvl <$> (SLV_Tuple at <$> (explodeTupleLike "Struct.asTuple" =<< one_arg))
+    SLPrim_Struct_toObject -> do
+      sv <- one_arg
+      at <- withAt id
+      (,) lvl <$> (SLV_Object at Nothing <$> (evalObjEnv =<< evalAsEnv sv))
     SLPrim_Tuple -> do
       vs <- mapM expect_ty $ map snd sargs
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
@@ -2656,6 +2693,7 @@ doArrRef_ arrv idxv = do
       case arrv of
         SLV_Array _ _ arrvs -> retVal idxi arrvs
         SLV_Tuple _ tupvs -> retVal idxi tupvs
+        SLV_Struct _ kvs -> retVal idxi $ map snd kvs
         SLV_DLVar adv@(DLVar _ _ (T_Struct ts) _) ->
           case fromIntegerMay idxi >>= atMay ts of
             Nothing ->

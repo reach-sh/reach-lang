@@ -91,6 +91,7 @@ instance Countable DLLargeArg where
     DLLA_Tuple as -> counts as
     DLLA_Obj as -> counts as
     DLLA_Data _ _ v -> counts v
+    DLLA_Struct kvs -> counts $ map snd kvs
 
 instance Countable DLExpr where
   counts = \case

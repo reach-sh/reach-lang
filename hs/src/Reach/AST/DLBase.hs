@@ -239,6 +239,7 @@ data DLLargeArg
   | DLLA_Tuple [DLArg]
   | DLLA_Obj (M.Map String DLArg)
   | DLLA_Data (M.Map SLVar DLType) String DLArg
+  | DLLA_Struct [(SLVar, DLArg)]
   deriving (Eq, Ord, Generic, Show)
 
 instance Pretty DLLargeArg where
@@ -247,6 +248,7 @@ instance Pretty DLLargeArg where
     DLLA_Tuple as -> brackets $ render_das as
     DLLA_Obj env -> render_obj env
     DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+    DLLA_Struct kvs -> "struct" <> brackets (render_das kvs)
 
 data DLArgExpr
   = DLAE_Arg DLArg
@@ -254,6 +256,7 @@ data DLArgExpr
   | DLAE_Tuple [DLArgExpr]
   | DLAE_Obj (M.Map SLVar DLArgExpr)
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
+  | DLAE_Struct [(SLVar, DLArgExpr)]
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
@@ -262,6 +265,7 @@ argExprToArgs = \case
   DLAE_Tuple aes -> many aes
   DLAE_Obj m -> many $ M.elems m
   DLAE_Data _ _ ae -> one ae
+  DLAE_Struct aes -> many $ map snd aes
   where
     one = argExprToArgs
     many = concatMap one
@@ -272,6 +276,7 @@ largeArgToArgExpr = \case
   DLLA_Tuple as -> DLAE_Tuple $ map DLAE_Arg as
   DLLA_Obj m -> DLAE_Obj $ M.map DLAE_Arg m
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
+  DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
 
 largeArgTypeOf :: DLLargeArg -> DLType
 largeArgTypeOf = argExprTypeOf . largeArgToArgExpr
@@ -283,6 +288,7 @@ argExprTypeOf = \case
   DLAE_Tuple as -> T_Tuple $ map argExprTypeOf as
   DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
   DLAE_Data t _ _ -> T_Data t
+  DLAE_Struct kvs -> T_Struct $ map (\(k, v) -> (,) k $ argExprTypeOf v) kvs
 
 data ClaimType
   = --- Verified on all paths

@@ -428,6 +428,7 @@ dlvOccurs env bindings de =
     DLE_LArg at (DLLA_Tuple as) -> _recs at as
     DLE_LArg at (DLLA_Obj as) -> _recs at $ map snd $ M.toList as
     DLE_LArg at (DLLA_Data _ _ a) -> _rec at a
+    DLE_LArg at (DLLA_Struct kvs) -> _recs at $ map snd kvs
     DLE_Impossible {} -> env
     DLE_PrimOp at _ as -> _recs at as
     DLE_ArrayRef at x y -> _recs at [x, y]
@@ -459,6 +460,8 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_LArg _ (DLLA_Obj env) ->
     curly $ commaSep (map (\(k, v) -> k <> ": " <> sub v) $ M.toList env)
   DLE_LArg _ (DLLA_Data _ _ a) -> sub a
+  DLE_LArg _ (DLLA_Struct as) -> "struct" <> bracket (commaSep (map go as))
+    where go (k, a) = bracket (k <> ", " <> sub a)
   d@(DLE_Impossible {}) -> ps d
   DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
     mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
@@ -964,6 +967,7 @@ smt_la at_de dla = do
     DLLA_Data _ vn vv -> do
       vv' <- smt_a at_de vv
       return $ smtApply (s ++ "_" ++ vn) [vv']
+    DLLA_Struct kvs -> cons $ map snd kvs
 
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e at_dv mdv de = do

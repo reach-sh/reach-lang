@@ -1,7 +1,11 @@
 'reach 0.1';
 
+const Posn = Struct([["x", UInt], ["y", UInt]]);
+const PosnO = Object({x: UInt, y: UInt});
+const PosnT = Tuple(UInt, UInt);
+
 const CoolThing = {
-  setX: Refine(Fun([UInt], Null), (([x]) => x > 2), ((_, _) => true)),
+  setX: Refine(Fun([Posn], Null), (([p]) => p.x > 2), ((_, _) => true)),
   getX: Fun([], Struct([ ["x", Refine(UInt, (x => x > 2))],
                          ["y", UInt],
         ])),
@@ -15,8 +19,7 @@ export const main = Reach.App(
     }),
     Participant('Bob', {
       getX: Fun([], UInt),
-      see: Fun([UInt, UInt, UInt, UInt, UInt,
-                Struct([["x", UInt], ["y", UInt]])],
+      see: Fun([UInt, UInt, UInt, UInt, UInt, Posn, PosnT, PosnO],
                Null),
     }),
   ],
@@ -34,8 +37,8 @@ export const main = Reach.App(
       assume(bx > 2); });
     B.publish(bx);
     require(bx > 2);
-    ctx.setX(bx);
-    cty.setX.pay(amt)(bx);
+    ctx.setX(Posn.fromObject({x: bx, y: 0}));
+    cty.setX.pay(amt)(Posn.fromTuple([bx, 1]));
     commit();
 
     A.publish();
@@ -47,7 +50,8 @@ export const main = Reach.App(
     commit();
 
     B.only(() => {
-      interact.see(r0.x, r0.y, r1[0], r1[1], amtr, r2); });
+      interact.see(r0.x, r0.y, r1[0], r1[1], amtr,
+        r0, Struct.toTuple(r1), Posn.toObject(r2)); });
     exit();
   }
 );

@@ -168,6 +168,7 @@ kgq_la ctxt mv = \case
   DLLA_Tuple as -> moreas as
   DLLA_Obj m -> moreas $ M.elems m
   DLLA_Data _ _ a -> onea a
+  DLLA_Struct kvs -> moreas $ map snd kvs
   where
     moreas = mconcatMap onea
     onea = kgq_a_onlym ctxt mv

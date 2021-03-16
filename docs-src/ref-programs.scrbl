@@ -818,6 +818,46 @@ However, some additional expressions are allowed.
 Inside of a @tech{consensus step}, @reachin{this} refers to the address of the participant that performed the @tech{consensus transfer}.
 This is useful when the @tech{consensus transfer} was initiated by a @reachin{race} expression.
 
+@subsubsection{@tt{transfer}}
+
+@(mint-define! '("transfer"))
+@reach{
+ transfer(10).to(Alice) }
+
+A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)}, where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to a natural number and @reachin{PART} is a @tech{participant} identifier, performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}. @reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}. A @tech{transfer expression} may only occur within a @tech{consensus step}.
+
+@subsubsection{@tt{require}}
+
+@(mint-define! '("require"))
+@reach{
+ require( claim, [msg] ) }
+
+@index{require} A @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
+This may only appear in a @tech{consensus step}.
+It accepts an optional bytes argument, which is included in any reported violation.
+
+@subsubsection{@tt{checkCommitment}}
+
+@(mint-define! '("checkCommitment"))
+@reach{
+ checkCommitment( commitment, salt, x ) }
+
+@index{checkCommitment} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
+This is used in a @tech{consensus step} after @reachin{makeCommitment} was used in a @tech{local step}.
+
+@subsubsection{Remote objects}
+
+@(minte-define! ("remote"))
+@reach{
+  const randomOracle =
+    remote( randomOracleAddr, {
+      getRandom: Fun([], UInt),
+    });
+  const randomVal = randomOracle.getRandom.pay(randomFee)();
+}
+
+XXX
+
 @subsubsection{Mappings: creation and modification}
 
 @(mint-define! '("Map"))
@@ -854,33 +894,6 @@ set, @reachin{s}, or @reachin{s.remove(ADDRESS)} to remove the @reachin{ADDRESS}
 Such modifications may only occur in a @tech{consensus step}.
 
 @reachin{s.member(ADDRESS)} will return a @reachin{Bool} representing whether the address is in the set.
-
-@subsubsection{@tt{transfer}}
-
-@(mint-define! '("transfer"))
-@reach{
- transfer(10).to(Alice) }
-
-A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)}, where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to a natural number and @reachin{PART} is a @tech{participant} identifier, performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}. @reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}. A @tech{transfer expression} may only occur within a @tech{consensus step}.
-
-@subsubsection{@tt{require}}
-
-@(mint-define! '("require"))
-@reach{
- require( claim, [msg] ) }
-
-@index{require} A @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
-This may only appear in a @tech{consensus step}.
-It accepts an optional bytes argument, which is included in any reported violation.
-
-@subsubsection{@tt{checkCommitment}}
-
-@(mint-define! '("checkCommitment"))
-@reach{
- checkCommitment( commitment, salt, x ) }
-
-@index{checkCommitment} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
-This is used in a @tech{consensus step} after @reachin{makeCommitment} was used in a @tech{local step}.
 
 @section[#:tag "ref-programs-compute"]{Computations}
 
@@ -1193,8 +1206,10 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
-  @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.
+  @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an @tech{object}.
   (Refer to @secref["ref-programs-objects"] for constructing objects.)}
+  @item{@(mint-define! '("Struct")) @reachin{Struct([[key_0, Type_0], ..., [key_N, Type_N]])}, which denotes a @tech{struct}.
+  (Refer to @secref["ref-programs-structs"] for constructing structs.)}
   @item{@(mint-define! '("Array")) @reachin{Array(Type_0, size)}, which denotes a statically-sized array.
   @reachin{Type_0} must be a type that can exist at runtime (i.e., not a @tech{function type}.)
   (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
@@ -1408,7 +1423,7 @@ Converts a @tech{tuple} of homogeneous values of the specific type into an @deft
  arr[3] }
 
 A @deftech{reference}, written @reachin{REF_EXPR[IDX_EXPR]},
-where @reachin{REF_EXPR} is an @tech{expression} that evaluates to an @tech{array} or a @tech{tuple}
+where @reachin{REF_EXPR} is an @tech{expression} that evaluates to an @tech{array}, a @tech{tuple}, or a @tech{struct}
 and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural number which is less than the size of the array,
 selects the element at the given index of the array.
 Indices start at zero.
@@ -1439,12 +1454,12 @@ Both may be abbreviated as @reachin{expr.length} where @reachin{expr} evaluates 
  Array.set(arr, idx, val);
  arr.set(idx, val); }
 
-@index{Tuple.set} @reachin{Tuple.set} Returns a new tuple identical to @reachin{tup},
+@index{Tuple.set} @reachin{Tuple.set} Returns a new @tech{tuple} identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
 
-@index{Array.set} @reachin{Array.set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
+@index{Array.set} @reachin{Array.set} Returns a new @tech{array} identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
-Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
+Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a @tech{tuple} or an @tech{array}.
 
 @subsubsection{Foldable operations}
 
@@ -1730,7 +1745,7 @@ The function @reachin{f} must satisfy the property, for all @reachin{z}, @reachi
   { [1 < 2 ? "one" : "two"]: 5 }
 }
 
-An @deftech{object literal},
+An @deftech{object},
 typically written @reachin{{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }},
 where @reachin{KEY_0} through @reachin{KEY_n} are @tech{identifiers} or @tech{string literal}s
 and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions},
@@ -1753,6 +1768,33 @@ these fields may be accompanied by additional fields specified afterwards.
 
 Shorthand for @reachin{{ x: x, z: 5}}, where @reachin{x} is any @tech{bound identifier}.
 
+@subsubsection[#:tag "ref-programs-structs"]{Structs}
+
+@reach{
+  const Posn = Struct([["x", UInt], ["y", UInt]]);
+  const p1 = Posn.fromObject({x: 1, y: 2});
+  const p2 = Posn.fromTuple([1, 2]);
+}
+
+A @deftech{struct} is a combination of a @tech{tuple} and an @tech{object}.
+It has named elements, like an @tech{object}, but is ordered like a @tech{tuple}, so its elements may be accessed by either name or position.
+@tech{Structs} exist for interfacing with non-Reach @tech{remote objects}, where both parties must agree to the runtime representation of the values.
+
+@index{Struct.fromTuple}
+A @tech{struct} instance may be constructed by calling the @reachin{fromTuple} method of a @tech{struct} type instance (like @reachin{Posn}) with a @tech{tuple} of the appropriate length.
+
+@index{Struct.fromObject}
+A @tech{struct} instance may be constructed by calling the @reachin{fromObject} method of a @tech{struct} type instance (like @reachin{Posn}) with an @tech{object} with the appropriate fields.
+
+@index{Struct.toTuple}
+@index{Struct.toObject}
+Structs may be converted into a corresponding @tech{tuple} or @tech{object} via the @reachin{toTuple} and @reachin{toObject} methods on the @reachin{Struct} value (as well as @tech{struct} type instances, like @reachin{Posn} in the example above):
+
+@reach{
+  assert(Posn.toTuple(p1)[0] == 1);
+  assert(Struct.toObject(p2).y == 2);
+}
+
 @subsubsection{Field reference}
 
 @reach{
@@ -1761,9 +1803,9 @@ Shorthand for @reachin{{ x: x, z: 5}}, where @reachin{x} is any @tech{bound iden
 
 An @deftech{object reference},
 written @reachin{OBJ.FIELD},
-where @reachin{OBJ} is an expression of type object,
+where @reachin{OBJ} is an expression that evaluates to an @tech{object} or a @tech{struct},
 and @reachin{FIELD} is a @tech{valid} @tech{identifier},
-accesses the FIELD @deftech{field} of object OBJ.
+accesses the @litchar{FIELD} @deftech{field} of object OBJ.
 
 @subsubsection{@tt{Object.set}}
 
@@ -1774,7 +1816,7 @@ accesses the FIELD @deftech{field} of object OBJ.
  { ...obj, [fld]: val };
 }
 
-@index{Object.set} Returns a new object identical to @reachin{obj},
+@index{Object.set} Returns a new @tech{object} identical to @reachin{obj},
 except that field @reachin{fld} is replaced with @reachin{val}.
 
 @subsubsection{@tt{Object.setIfUnset}}
@@ -1794,7 +1836,8 @@ except that field @reachin{fld} is @reachin{val} if @reachin{fld} is not already
  Object.has(obj, fld);
 }
 
-@index{Object.has} Returns a boolean indicating whether the object has the field @reachin{fld}. This is statically known.
+@index{Object.has} Returns a boolean indicating whether the @tech{object} has the field @reachin{fld}.
+This is statically known.
 
 @subsubsection[#:tag "ref-programs-data"]{Data}
 

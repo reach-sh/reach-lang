@@ -19,9 +19,9 @@ contract WeirdContract {
     getCount = 0;
   }
 
-  function setX(uint256 x) external payable {
+  function setX(posn memory p) external payable {
     setCount++;
-    _x = x;
+    _x = p.x;
     if ( setCount == 2 ) {
       amt = msg.value;
     }

@@ -571,8 +571,7 @@ cla = \case
       normal = cconcatbs $ map (\a -> (t, ca a)) as
   DLLA_Tuple as ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
-  DLLA_Obj m ->
-    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
+  DLLA_Obj m -> cla $ DLLA_Struct $ M.toAscList m
   DLLA_Data tm vt va -> do
     let mvti = List.find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
     let vti =
@@ -589,6 +588,8 @@ cla = \case
     cl $ DLL_Bytes zbs
     op "concat"
     check_concat_len dlen
+  DLLA_Struct kvs ->
+    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
 
 ce :: DLExpr -> App ()
 ce = \case

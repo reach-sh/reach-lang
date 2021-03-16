@@ -124,6 +124,7 @@ data SLVal
   | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
+  | SLV_Struct SrcLoc [(SLVar, SLVal)]
   | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
   | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
@@ -163,6 +164,9 @@ instance Pretty SLVal where
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+    SLV_Struct _ kvs ->
+      "struct" <> brackets (hsep $ punctuate comma $ map go kvs)
+      where go (k, v) = brackets $ hsep $ punctuate comma $ [ pretty k, pretty v]
     SLV_DLC c -> "<constant: " <> viaShow c <> ">"
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
@@ -384,7 +388,10 @@ data SLPrimitive
   | SLPrim_array_reduce
   | SLPrim_array_zip
   | SLPrim_Struct
-  | SLPrim_struct_length
+  | SLPrim_Struct_fromTuple [(SLVar, SLType)]
+  | SLPrim_Struct_fromObject [(SLVar, SLType)]
+  | SLPrim_Struct_toTuple
+  | SLPrim_Struct_toObject
   | SLPrim_Tuple
   | SLPrim_tuple_length
   | SLPrim_tuple_set
