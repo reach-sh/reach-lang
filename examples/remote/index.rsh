@@ -2,7 +2,9 @@
 
 const CoolThing = {
   setX: Refine(Fun([UInt], Null), (([x]) => x > 2), ((_, _) => true)),
-  getX: Fun([], Refine(UInt, (x => x > 2))),
+  getX: Fun([], Struct([ ["x", Refine(UInt, (x => x > 2))],
+                         ["y", UInt],
+        ])),
 };
 
 export const main = Reach.App(
@@ -13,7 +15,9 @@ export const main = Reach.App(
     }),
     Participant('Bob', {
       getX: Fun([], UInt),
-      see: Fun([UInt, UInt, UInt, UInt], Null),
+      see: Fun([UInt, UInt, UInt, UInt, UInt,
+                Struct([["x", UInt], ["y", UInt]])],
+               Null),
     }),
   ],
   (A, B) => {
@@ -35,15 +39,15 @@ export const main = Reach.App(
     commit();
 
     A.publish();
-    const x0 = ctx.getX();
-    const x1 = cty.getX.bill(amt / 2)();
-    const [ amtr, x2 ] = cty.getX.withBill()();
+    const r0 = ctx.getX();
+    const r1 = cty.getX.bill(amt / 2)();
+    const [ amtr, r2 ] = cty.getX.withBill()();
     transfer(amt / 2).to(B);
     transfer(amtr).to(A);
     commit();
 
     B.only(() => {
-      interact.see(x0, x1, amtr, x2); });
+      interact.see(r0.x, r0.y, r1[0], r1[1], amtr, r2); });
     exit();
   }
 );

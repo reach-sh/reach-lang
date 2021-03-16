@@ -2,6 +2,11 @@ pragma abicoder v2;
 
 pragma solidity ^0.8.0;
 
+struct posn {
+  uint256 x;
+  uint256 y;
+}
+
 contract WeirdContract {
   uint256 _x;
   uint256 setCount;
@@ -22,9 +27,10 @@ contract WeirdContract {
     }
   }
 
-  function getX() external payable returns (uint256 x) {
+  function getX() external payable returns (posn memory p) {
+    p.y = getCount;
     getCount++;
-    x = _x;
+    p.x = _x;
     if ( getCount == 2 ) {
       uint256 b = amt / 2;
       payable(msg.sender).transfer(b);

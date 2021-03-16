@@ -405,6 +405,7 @@ base_env =
     , ("array", SLV_Prim SLPrim_array)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
     , ("Object", SLV_Prim SLPrim_Object)
+    , ("Struct", SLV_Prim SLPrim_Struct)
     , ("Foldable", SLV_Prim SLPrim_Foldable)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("Refine", SLV_Prim SLPrim_Refine)
@@ -905,6 +906,13 @@ evalAsEnv obj = case obj of
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
+  SLV_Prim SLPrim_Struct ->
+    return $
+      M.fromList
+        [ ("length", retV $ public $ SLV_Prim $ SLPrim_struct_length)
+        ]
+  SLV_DLVar obj_dv@(DLVar _ _ (T_Struct tml) _) ->
+    return $ retDLVarl tml (DLA_Var obj_dv) Public
   SLV_Prim SLPrim_Tuple ->
     return $
       M.fromList
@@ -1021,15 +1029,16 @@ evalAsEnv obj = case obj of
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
     doApply f = evalApplyVals' f [(public obj)]
-    retDLVar tm obj_dla slvl = do
-      let retk field t = do
+    retDLVarl tml obj_dla slvl = do
+      let retk (field, t) = (,) field $ do
             at <- withAt id
             let mkv = DLVar at Nothing t
             let e = DLE_ObjectRef at obj_dla field
             dv <- ctxt_lift_expr mkv e
             let ansv = SLV_DLVar dv
             return $ (slvl, ansv)
-      M.mapWithKey retk tm
+      M.fromList $ map retk tml
+    retDLVar tm = retDLVarl $ M.toAscList tm
     retV = return
     retStdLib :: SLVar -> App SLSVal
     retStdLib n = (retV . public) =<< lookStdlib n
@@ -1594,6 +1603,12 @@ evalPrim p sargs =
           retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
     SLPrim_Foldable -> expect_ Err_Prim_Foldable
+    SLPrim_struct_length -> do
+      at <- withAt id
+      one_arg >>= \case
+        SLV_DLVar (DLVar _ _ (T_Struct ts) _) ->
+          retV $ public $ SLV_Int at $ fromIntegral $ length ts
+        _ -> illegal_args
     SLPrim_tuple_length -> do
       at <- withAt id
       one_arg >>= \case
@@ -1802,6 +1817,19 @@ evalPrim p sargs =
           at <- withAt id
           dv <- ctxt_lift_expr (DLVar at Nothing t) de
           return $ (lvl, SLV_DLVar dv)
+    SLPrim_Struct -> do
+      as <- one_arg >>= \case
+              SLV_Tuple _ x -> return x
+              _ -> illegal_args
+      let go = \case
+            SLV_Tuple _ [ kv, tv ] -> do
+              kbs <- mustBeBytes kv
+              let k = bunpack kbs
+              t <- expect_ty tv
+              return $ ( k, t )
+            _ -> illegal_args
+      ts <- mapM go as
+      retV $ (lvl, SLV_Type $ ST_Struct ts)
     SLPrim_Tuple -> do
       vs <- mapM expect_ty $ map snd sargs
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
@@ -2616,6 +2644,8 @@ doArrRef_ arrv idxv = do
         retRef t $ DLE_ArrayRef at' arr_dla idx_dla
   let retTupleRef t arr_dla idx =
         retRef t $ DLE_TupleRef at' arr_dla idx
+  let retObjectRef t arr_dla f =
+        retRef t $ DLE_ObjectRef at' arr_dla f
   let retVal idxi arrvs =
         case fromIntegerMay idxi >>= atMay arrvs of
           Nothing ->
@@ -2626,6 +2656,11 @@ doArrRef_ arrv idxv = do
       case arrv of
         SLV_Array _ _ arrvs -> retVal idxi arrvs
         SLV_Tuple _ tupvs -> retVal idxi tupvs
+        SLV_DLVar adv@(DLVar _ _ (T_Struct ts) _) ->
+          case fromIntegerMay idxi >>= atMay ts of
+            Nothing ->
+              expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
+            Just (k, t) -> retObjectRef t (DLA_Var adv) k
         SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
           case fromIntegerMay idxi >>= atMay ts of
             Nothing ->
@@ -3027,7 +3062,11 @@ typeToExpr = \case
   T_Tuple ts -> call "Tuple" $ map r ts
   T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
+  T_Struct ts -> call "Struct" $ [ arr $ map sg ts ]
   where
+    str x = JSStringLiteral a x
+    arr l = JSArrayLiteral a (map JSArrayElement l) a
+    sg (k, t) = arr [ (str k), r t ]
     call f es = JSCallExpression (var f) a (toJSCL es) a
     var = JSIdentifier a
     r = typeToExpr

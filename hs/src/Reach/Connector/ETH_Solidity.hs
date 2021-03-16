@@ -186,18 +186,9 @@ solArgSVSVar dv = "_a.svs." <> solRawVar dv
 solArgMsgVar :: DLVar -> Doc
 solArgMsgVar dv = "_a.msg." <> solRawVar dv
 
--- Note: This is really ugly, but not so so bad
-data DLType_hc
-  = T_OrderedObject [(SLVar, SolDLType)]
-  deriving (Eq, Ord)
-data SolDLType
-  = SDLT_hc DLType_hc
-  | SDLT DLType
-  deriving (Eq, Ord)
-
-vsToType :: [DLVar] -> DLType_hc
-vsToType vs = T_OrderedObject $ map go_ty vs
-  where go_ty v = (show (solRawVar v), SDLT $ varType v)
+vsToType :: [DLVar] -> DLType
+vsToType vs = T_Struct $ map go_ty vs
+  where go_ty v = (show (solRawVar v), varType v)
 
 --- Compiler
 
@@ -211,7 +202,6 @@ data SolCtxt = SolCtxt
   , ctxt_emit :: Doc
   , ctxt_typei :: IORef (M.Map DLType Int)
   , ctxt_typem :: IORef (M.Map DLType Doc)
-  , ctxt_typem_hc :: IORef (M.Map DLType_hc Doc)
   , ctxt_typed :: IORef (M.Map Int Doc)
   , ctxt_typef :: IORef (M.Map Int Doc)
   , ctxt_typeidx :: Counter
@@ -348,8 +338,6 @@ mkSolType ensure f t = do
   ensure t
   (fromMaybe (impossible "solType") . M.lookup t) <$> readCtxtIO f
 
-solType_hc :: AppT DLType_hc
-solType_hc = mkSolType ensureTypeDefined_hc ctxt_typem_hc
 solType :: AppT DLType
 solType = mkSolType ensureTypeDefined ctxt_typem
 
@@ -370,6 +358,7 @@ mustBeMem = \case
   T_Tuple {} -> True
   T_Object {} -> True
   T_Data {} -> True
+  T_Struct {} -> True
 
 data ArgMode
   = AM_Call
@@ -539,7 +528,7 @@ solHashStateSet svs = do
   let go (v, a) = solSet ("nsvs." <> solRawVar v) <$> solArg a
   svs' <- mapM go svs
   let svs_ty = vsToType $ map fst svs
-  svs_ty' <- solType_hc svs_ty
+  svs_ty' <- solType svs_ty
   let setl = [solDecl "nsvs" (svs_ty' <> " memory") <> semi] <> svs'
   return $ (setl, sete)
 
@@ -803,10 +792,10 @@ solCTail_top which svs msg mmsg ct = do
 
 solArgType :: [DLVar] -> [DLVar] -> App Doc
 solArgType svs msg = do
-  let svs_ty = SDLT_hc $ vsToType svs
-  let msg_ty = SDLT_hc $ vsToType msg
-  let arg_ty = T_OrderedObject $ [ ("svs", svs_ty), ("msg", msg_ty) ]
-  solType_hc arg_ty
+  let svs_ty = vsToType svs
+  let msg_ty = vsToType msg
+  let arg_ty = T_Struct $ [ ("svs", svs_ty), ("msg", msg_ty) ]
+  solType arg_ty
 
 solArgDefn_ :: Doc -> ArgMode -> [DLVar] -> [DLVar] -> App Doc
 solArgDefn_ name am svs msg = do
@@ -877,36 +866,6 @@ solHandlers :: CHandlers -> App Doc
 solHandlers (CHandlers hs) =
   vsep <$> (mapM (uncurry solHandler) $ M.toList hs)
 
-solDefineType_hc :: DLType_hc -> App ()
-solDefineType_hc = void . solDefineType_hc_
-
-solDefineType_hc_ :: DLType_hc -> App Doc
-solDefineType_hc_ t = case t of
-  T_OrderedObject ats -> do
-    atsn <- mapM (\(k,v) -> (,) (pretty k) <$> solType_ v) ats
-    (name, i) <- addName
-    let sp = solStruct name atsn
-    case sp of
-      -- XXX This really stinks
-      Nothing -> addMap "bool"
-      Just x -> do
-        addDef i x
-        return name
-  where
-    solType_ = \case
-      SDLT_hc x -> solType_hc x
-      SDLT x -> solType x
-    addMap d = do
-      modifyCtxtIO ctxt_typem_hc $ M.insert t d
-      return d
-    addId = (liftIO . incCounter) =<< (ctxt_typeidx <$> ask)
-    addName = do
-      i <- addId
-      let name = "T" <> pretty i
-      void $ addMap name
-      return $ (name, i)
-    addDef i d = modifyCtxtIO ctxt_typed $ M.insert i d
-
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
   T_Null -> base
@@ -941,14 +900,10 @@ solDefineType t = case t of
     i <- addId
     addFun i $ solFunction (solArraySet i) args ret body
   T_Tuple ats -> do
-    let ats' = map SDLT ats
-    let ats'' = (flip zip) ats' $ map (("elem" ++) . show) ([0 ..] :: [Int])
-    name <- solDefineType_hc_ $ T_OrderedObject ats''
-    addMap name
+    let ats' = (flip zip) ats $ map (("elem" ++) . show) ([0 ..] :: [Int])
+    addMap =<< doStruct ats'
   T_Object tm -> do
-    let tm' = map (\(k, v) -> (k, SDLT v)) $ M.toAscList tm
-    name <- solDefineType_hc_ $ T_OrderedObject tm'
-    addMap name
+    addMap =<< (doStruct $ M.toAscList tm)
   T_Data tm -> do
     tmn <- mapM solType tm
     --- XXX Try to use bytes and abi.decode; Why not right away? The
@@ -959,6 +914,7 @@ solDefineType t = case t of
     let enump = solEnum enumn $ map (pretty . fst) $ M.toAscList tmn
     let structp = fromMaybe (impossible "T_Data") $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
     addDef i $ vsep [enump, structp]
+  T_Struct ats -> void $ doStruct ats
   where
     base = impossible "base"
     addMap d = modifyCtxtIO ctxt_typem $ M.insert t d
@@ -973,6 +929,18 @@ solDefineType t = case t of
       return $ (name, i)
     addDef i d = modifyCtxtIO ctxt_typed $ M.insert i d
     addFun i f = modifyCtxtIO ctxt_typef $ M.insert i f
+    doStruct ats = do
+      atsn <- mapM (\(k,v) -> (,) (pretty k) <$> solType v) ats
+      (name, i) <- addName
+      let sp = solStruct name atsn
+      case sp of
+        -- XXX This really stinks
+        Nothing -> do
+          addMap "bool"
+          return "bool"
+        Just x -> do
+          addDef i x
+          return name
 
 mkEnsureTypeDefined :: (Ord a) => (a -> App ()) -> (SolCtxt -> IORef (M.Map a b)) -> a -> App ()
 mkEnsureTypeDefined define f t =
@@ -982,9 +950,6 @@ mkEnsureTypeDefined define f t =
 
 ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
-
-ensureTypeDefined_hc :: DLType_hc -> App ()
-ensureTypeDefined_hc = mkEnsureTypeDefined solDefineType_hc ctxt_typem_hc
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
@@ -1004,7 +969,6 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) = do
           , (T_Address, "address payable")
           ]
   ctxt_typem <- newIORef base_typem
-  ctxt_typem_hc <- newIORef mempty
   ctxt_typef <- newIORef mempty
   ctxt_typed <- newIORef mempty
   ctxt_typeidx <- newCounter 0

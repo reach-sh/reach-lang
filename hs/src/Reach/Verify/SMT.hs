@@ -1383,8 +1383,9 @@ _smtDefineTypes smt ts = do
             void $ SMT.defineFun smt inv_f [("x", Atom n)] (Atom "Bool") inv_defn
             let inv se = smtApply inv_f [se]
             return inv
-          T_Object tm -> do
-            let tml = M.toAscList tm
+          T_Object tm ->
+            bind_type (T_Struct $ M.toAscList tm) n
+          T_Struct tml -> do
             ts_nis <-
               mapM
                 (\(f, at) -> do

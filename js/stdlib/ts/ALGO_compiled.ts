@@ -17,6 +17,7 @@ import {
   CBR_Data,
   CBR_Array,
   CBR_Tuple,
+  CBR_Struct,
   CBR_Val,
 } from './CBR';
 import * as CBR from './CBR';
@@ -166,6 +167,30 @@ export const T_Tuple = (
   },
 });
 
+export const T_Struct = (
+  cos: Array<[string, ALGO_Ty<CBR_Val>]>,
+): ALGO_Ty<CBR_Struct> => ({
+  ...CBR.BT_Struct(cos),
+  netSize: (
+    cos.reduce((acc, co) => acc + co[1].netSize, 0)
+  ),
+  toNet: (bv: CBR_Struct): NV => {
+    const val = cos.map(([k, co]) => co.toNet(bv[k]));
+    return ethers.utils.concat(val);
+  },
+  // TODO: share more code w/ T_Array.fromNet
+  fromNet: (nv: NV): CBR_Struct => {
+    const obj: any = {};
+    let rest = nv;
+    for (const i in cos) {
+      const [k, co] = cos[i];
+      obj[k] = co.fromNet(rest.slice(0, co.netSize));
+      rest = rest.slice(co.netSize);
+    }
+    return obj;
+  },
+});
+
 export const T_Object = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Object> => {
@@ -244,7 +269,8 @@ export const typeDefs = {
   T_Object,
   T_Data,
   T_Array,
-  T_Tuple
+  T_Tuple,
+  T_Struct
 };
 
 export const stdlib = {

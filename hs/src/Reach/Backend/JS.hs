@@ -130,6 +130,12 @@ jsContract_ = \case
   T_Data m -> do
     m' <- mapM jsContract m
     return $ jsApply ("stdlib.T_Data") [jsObject m']
+  T_Struct as -> do
+    let go (k, t) = do
+          t' <- jsContract t
+          return $ jsArray [ jsString k, t' ]
+    as' <- mapM go as
+    return $ jsApply ("stdlib.T_Struct") $ [jsArray as']
 
 jsContract :: DLType -> App Doc
 jsContract t = do

@@ -12,6 +12,7 @@ export type CBR_Object = {[key: string]: CBR_Val};
 export type CBR_Data = [string, CBR_Val];
 export type CBR_Array = Array<CBR_Val>;
 export type CBR_Tuple = Array<CBR_Val>;
+export type CBR_Struct = {[key: string]: CBR_Val};
 
 export type CBR_Val =
   CBR_Null |
@@ -23,7 +24,8 @@ export type CBR_Val =
   CBR_Object |
   CBR_Data |
   CBR_Array |
-  CBR_Tuple ;
+  CBR_Tuple |
+  CBR_Struct;
 
 // UV = UserVal
 // BV = BackendVal
@@ -172,6 +174,25 @@ export const BT_Tuple = (ctcs: Array<BackendTy<CBR_Val>>): BackendTy<CBR_Tuple> 
 /** @example BV_Tuple([BT_UInt, BT_Bytes])([42, 'hello']) */
 export const BV_Tuple = (ctcs: Array<BackendTy<CBR_Val>>) => (val: unknown[]) => {
   return BT_Tuple(ctcs).canonicalize(val);
+};
+
+export const BT_Struct = (ctcs: Array<[string, BackendTy<CBR_Val>]>): BackendTy<CBR_Struct> => {
+  return {
+    name: `Struct([${ctcs.map(([k, ctc]) => ` [${k}, ${ctc.name}] `)}])`,
+    canonicalize: (arg: any): CBR_Struct => {
+      const obj: {
+        [key: string]: CBR_Val
+      } = {};
+      ctcs.forEach(([k, ctc], i) => {
+        obj[k] = ctc.canonicalize(Array.isArray(arg) ? arg[i] : arg[k]);
+      });
+      return obj;
+    },
+  };
+};
+
+export const BV_Struct = (ctcs: Array<[string, BackendTy<CBR_Val>]>) => (val:any) => {
+  return BT_Struct(ctcs).canonicalize(val);
 };
 
 export const BT_Object = (co: {

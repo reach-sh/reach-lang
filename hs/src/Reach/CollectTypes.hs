@@ -51,6 +51,7 @@ instance CollectsTypes DLType where
         T_Tuple elems -> cts elems
         T_Object m -> cts m
         T_Data m -> cts m
+        T_Struct elems -> cts $ map snd elems
 
 instance CollectsTypes IType where
   cts (IT_Fun dom rng) = cts dom <> cts rng

@@ -59,6 +59,7 @@ typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, DLType)]
 typeObjectTypes a =
   case argTypeOf a of
     T_Object m -> M.toAscList m
+    T_Struct ts -> ts
     _ -> impossible $ "should be obj"
 
 -- Algo specific stuff
@@ -81,6 +82,7 @@ typeSizeOf = \case
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + (maximum $ map typeSizeOf $ M.elems m)
+  T_Struct ts -> sum $ map (typeSizeOf . snd) ts
   where
     word = 8
 
@@ -327,6 +329,7 @@ ctobs = \case
   T_Tuple {} -> nop
   T_Object {} -> nop
   T_Data {} -> nop
+  T_Struct {} -> nop
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
@@ -340,6 +343,7 @@ cfrombs = \case
   T_Tuple {} -> nop
   T_Object {} -> nop
   T_Data {} -> nop
+  T_Struct {} -> nop
 
 tint :: SrcLoc -> Integer -> LT.Text
 tint at i = texty $ checkIntLiteralC at connect_algo i

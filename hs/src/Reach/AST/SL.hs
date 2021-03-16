@@ -33,6 +33,7 @@ data SLType
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
   | ST_Data (M.Map SLVar SLType)
+  | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
   | ST_Type SLType
   | ST_Refine SLType SLVal
@@ -57,6 +58,7 @@ instance Show SLType where
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
     ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
+    ST_Struct tys -> "Struct([" <> showTyList tys <> "])"
     ST_Fun (SLTypeFun tys ty Nothing Nothing) ->
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
     ST_Fun (SLTypeFun tys ty _ _) ->
@@ -79,6 +81,7 @@ st2dt = \case
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
   ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
   ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
+  ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
   ST_Type {} -> Nothing
   ST_Refine t _ -> st2dt t
@@ -92,9 +95,10 @@ dt2st = \case
   T_Digest -> ST_Digest
   T_Address -> ST_Address
   T_Array ty i -> ST_Array (dt2st ty) i
-  T_Tuple tys -> ST_Tuple (map dt2st tys)
-  T_Object tyMap -> ST_Object (M.map dt2st tyMap)
-  T_Data tyMap -> ST_Data (M.map dt2st tyMap)
+  T_Tuple tys -> ST_Tuple $ map dt2st tys
+  T_Object tyMap -> ST_Object $ M.map dt2st tyMap
+  T_Data tyMap -> ST_Data $ M.map dt2st tyMap
+  T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
@@ -379,6 +383,8 @@ data SLPrimitive
   | SLPrim_array_map
   | SLPrim_array_reduce
   | SLPrim_array_zip
+  | SLPrim_Struct
+  | SLPrim_struct_length
   | SLPrim_Tuple
   | SLPrim_tuple_length
   | SLPrim_tuple_set

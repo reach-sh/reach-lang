@@ -30,6 +30,7 @@ data DLType
   | T_Tuple [DLType]
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
+  | T_Struct [(SLVar, DLType)]
   deriving (Eq, Generic, Ord)
 
 maybeT :: DLType -> DLType
@@ -53,6 +54,11 @@ showTyMap = List.intercalate ", " . map showPair . M.toList
   where
     showPair (name, ty) = show name <> ": " <> show ty
 
+showTyList :: Show a => [(SLVar, a)] -> String
+showTyList = List.intercalate ", " . map showPair
+  where
+    showPair (name, ty) = "['" <> show name <> "', " <> show ty <> "]"
+
 instance Show DLType where
   show T_Null = "Null"
   show T_Bool = "Bool"
@@ -63,7 +69,8 @@ instance Show DLType where
   show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
   show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
   show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (T_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
+  show (T_Struct tys) = "Struct([" <> showTyList tys <> "])"
 
 instance Pretty DLType where
   pretty = viaShow

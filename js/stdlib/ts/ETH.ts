@@ -371,7 +371,7 @@ const stepTime = async () => {
 
 export const { addressEq, digest } = compiledStdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct } = typeDefs;
 
 export const { randomUInt, hasRandom } = makeRandom(32);
 

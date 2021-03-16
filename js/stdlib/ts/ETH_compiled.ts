@@ -16,6 +16,7 @@ import {
   CBR_Data,
   CBR_Array,
   CBR_Tuple,
+  CBR_Struct,
   CBR_Val,
 } from './CBR';
 import {
@@ -209,6 +210,36 @@ const V_Tuple = <T>(
   return T_Tuple(ctcs).canonicalize(val);
 }
 
+const T_Struct = <T>(
+  ctcs: Array<[string, ETH_Ty<CBR_Val, T>]>,
+): ETH_Ty<CBR_Struct, Array<T>> => ({
+  ...CBR.BT_Struct(ctcs),
+  defaultValue: (() => {
+    const obj: {[key: string]: CBR_Val} = {};
+    ctcs.forEach(([prop, co]) => {
+      obj[prop] = co.defaultValue;
+    });
+    return obj;
+  })(),
+  munge: (bv: CBR_Struct): any => {
+    if (ctcs.length == 0 ) {
+      return false;
+    } else {
+      return ctcs.map(([k, ctc]) => ctc.munge(bv[k]));
+    }
+  },
+  unmunge: (args: any): CBR_Struct => {
+    return V_Struct(ctcs)(ctcs.map(([k, ctc], i: number) => { void (k); return ctc.unmunge(args[i]); }));
+  },
+  paramType: `tuple(${ctcs.map(([k, ctc]) => { void (k); return ctc.paramType }).join(',')})`
+});
+
+const V_Struct = <T>(
+  ctcs: Array<[string, ETH_Ty<CBR_Val, T>]>,
+) => (val: any) => {
+  return T_Struct(ctcs).canonicalize(val);
+}
+
 const T_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ): ETH_Ty<CBR_Object, {[key: string]: T}> => ({
@@ -328,7 +359,8 @@ export const typeDefs = {
   T_Object,
   T_Data,
   T_Array,
-  T_Tuple
+  T_Tuple,
+  T_Struct
 };
 
 export const addressEq = shared.mkAddressEq(T_Address);
