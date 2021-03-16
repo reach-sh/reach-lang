@@ -1,7 +1,7 @@
 import waitPort from 'wait-port';
 import bent     from 'bent';
 
-export const mkRPC = opts => {
+export const mkRPC = async opts => {
   const defaults = {
     host:   'REACH_RPC_SERVER',
     port:   'REACH_RPC_PORT',
@@ -25,10 +25,6 @@ export const mkRPC = opts => {
   const call = bent(`https://${o.host}:${o.port}`, `POST`, `json`, 200, {
     'X-API-Key': o.apiKey,
   });
-
-  const rpcReady = async () => {
-    await waitPort({ host: o.host, port: parseInt(o.port, 10) });
-  };
 
   const rpc = async (m, ...args) => {
     const lab = `RPC ${m} ${JSON.stringify(args)}`
@@ -74,5 +70,7 @@ export const mkRPC = opts => {
     })());
   };
 
-  return { rpc, rpcReady, rpcCallbacks };
+  await waitPort({ host: o.host, port: parseInt(o.port, 10) });
+
+  return { rpc, rpcCallbacks };
 };
