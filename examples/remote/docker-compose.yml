@@ -20,10 +20,5 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  reach-app-remote-ETH-test-embedded-ganache:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
   reach-app-remote-: *default-app
   reach-app-remote: *default-app

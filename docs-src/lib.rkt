@@ -55,6 +55,19 @@
 (define (makefile . contents)
   (apply mint "makefile" contents))
 
+(define (make-tt-cat lab)
+  (define (tag x) (list lab x))
+  (define sty 'tt)
+  (define (ref x)
+    (link-element sty x (tag x)))
+  (define (def x)
+    (toc-target2-element #f (as-index (element sty x))
+      (tag x) (tt x)))
+  (values def ref))
+
+(define-values (defconmode conmode) (make-tt-cat 'conmode))
+(define-values (defenv envref) (make-tt-cat 'env))
+
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})
 (define RPS @emph{Rock, Paper, Scissors!})

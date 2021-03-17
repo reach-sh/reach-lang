@@ -123,7 +123,7 @@ This JavaScript code is similarly schematic and will be consistent across all of
 
 @item{Line 4 defines an asynchronous function that will be the body of our frontend.}
 
-@item{Line 5 loads the standard library dynamically based on the @envvar{REACH_CONNECTOR_MODE} environment variable.}
+@item{Line 5 loads the standard library dynamically based on the @envref{REACH_CONNECTOR_MODE} environment variable.}
 
 @item{Line 6 defines a quantity of @tech{network token}s as the starting balance for each test account.}
 
@@ -1397,9 +1397,9 @@ Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've staye
 
 @item{Lines 7 through 24 define the Reach private developer test network service for Algorand.}
 
-@item{Lines 25 through 73 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
+@item{Lines 25 through 63 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
 
-@item{We'll also add lines 73 through 77 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{We'll also add lines 64 through 69 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run
@@ -1407,7 +1407,7 @@ With these in place, we can run
 @cmd{docker-compose run WHICH}
 
 where @exec{WHICH} is @litchar{reach-app-tut-7-ETH-live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
-If we use the live version, then we have to define the environment variable @envvar{ETH_NODE_URI} as the URI of our Ethereum node.
+If we use the live version, then we have to define the environment variable @envref{ETH_NODE_URI} as the URI of our Ethereum node.
 
 We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of these variants:
 

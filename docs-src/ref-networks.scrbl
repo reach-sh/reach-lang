@@ -33,12 +33,10 @@ This means that Reach applications must not make externally observable effects u
 
 @itemlist[
 
-@item{@envvar{ETH_NODE_TYPE} may be either @litchar{in_memory_ganache}, to use an in memory instance of Ganache, or @litchar{uri} to use a URI.}
-
-@item{@envvar{ETH_NODE_URI} is used to contact the Ethereum node.
+@item{@defenv{ETH_NODE_URI} is used to contact the Ethereum node.
 It defaults to @litchar{http://localhost:8545}.}
 
-@item{@envvar{ETH_NODE_NETWORK} is used to name the Ethereum network.
+@item{@defenv{ETH_NODE_NETWORK} is used to name the Ethereum network.
 It defaults to @litchar{unspecified}.}
 
 ]
@@ -69,12 +67,12 @@ The connector provides a binding named @reachin{ALGO} to
 
 @itemlist[
 
-@item{@envvar{ALGO_TOKEN} is used as the API token for your @tt{algod}.}
-@item{@envvar{ALGO_SERVER} is used as the address of your @tt{algod}.}
-@item{@envvar{ALGO_PORT} is used as the port of your @tt{algod}.}
+@item{@defenv{ALGO_TOKEN} is used as the API token for your @tt{algod}.}
+@item{@defenv{ALGO_SERVER} is used as the address of your @tt{algod}.}
+@item{@defenv{ALGO_PORT} is used as the port of your @tt{algod}.}
 
-@item{@envvar{ALGO_INDEXER_TOKEN} is used as the API token for your @tt{indexer}.}
-@item{@envvar{ALGO_INDEXER_SERVER} is used as the address of your @tt{indexer}.}
-@item{@envvar{ALGO_INDEXER_PORT} is used as the port of your @tt{indexer}.}
+@item{@defenv{ALGO_INDEXER_TOKEN} is used as the API token for your @tt{indexer}.}
+@item{@defenv{ALGO_INDEXER_SERVER} is used as the address of your @tt{indexer}.}
+@item{@defenv{ALGO_INDEXER_PORT} is used as the port of your @tt{indexer}.}
 
 ]

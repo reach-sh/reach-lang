@@ -48,10 +48,6 @@ type Log = ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-// XXX: when using ganache: nvm use 12
-// ganache-core doesn't work with npm version 14 yet
-// https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
-
 type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 type Backend = {_Connectors: {ETH: {
   ABI: string,
@@ -130,21 +126,17 @@ const connectorMode: ConnectorMode = getConnectorMode();
 // Note: ETH-browser is NOT considered isolated.
 const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
-  connectorMode.startsWith('ETH-test-embedded') ||
   // @ts-ignore
   process.env['REACH_ISOLATED_NETWORK'];
 
 type NetworkDesc =
   {type: 'uri', uri: string, network: string} |
-  {type: 'embedded-ganache'} |
   {type: 'window'} |
   {type: 'skip'}
 
 const networkDesc: NetworkDesc =
-  connectorMode == 'ETH-test-embedded-ganache' ? {
-  type: 'embedded-ganache',
-} : (connectorMode == 'ETH-test-dockerized-geth' ||
-     connectorMode == 'ETH-live') ? {
+  (connectorMode == 'ETH-test-dockerized-geth' ||
+   connectorMode == 'ETH-live') ? {
   type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
@@ -270,16 +262,6 @@ const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> 
     const provider = new ethers.providers.JsonRpcProvider(networkDesc.uri);
     provider.pollingInterval = 500; // ms
     return provider;
-  } else if (networkDesc.type == 'embedded-ganache') {
-    throw Error(`Sorry, optional dependency ganache cannot be found.`)
-
-    // XXX delete the embedded-ganache network type?
-    // Nobody uses it and it seems to only cause issues.
-    // const { default: ganache } = await import('ganache-core');
-    // const default_balance_ether = 999999999;
-    // const ganachep = ganache.provider({ default_balance_ether });
-    // @ts-ignore
-    // return new ethers.providers.Web3Provider(ganachep);
   } else if (networkDesc.type == 'window') {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -915,7 +897,7 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
     // On isolated networks, the default account is assumed to be the faucet.
     // Furthermore, it is assumed that the faucet Signer is "unlocked",
     // so no further secrets need be provided in order to access its funds.
-    // This is true of reach-provided devnets & embedded ganache.
+    // This is true of reach-provided devnets.
     // TODO: allow the user to set the faucet via mnemnonic.
     return await getDefaultAccount();
   } else if (networkDesc.type === 'window') {

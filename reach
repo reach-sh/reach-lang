@@ -165,7 +165,6 @@ fatal_unrecognized_connector_mode() {
 ensure_connector_mode () {
   # Makes sure to set REACH_CONNECTOR_MODE to one of:
   # * ETH-test-dockerized-geth
-  # * ETH-test-embedded-ganache
   # * ETH-live
   # * FAKE-test-embedded-mock
   # * ALGO-test-dockerized-algod
@@ -187,9 +186,6 @@ ensure_connector_mode () {
       ;;
     "ETH-test-dockerized")
       REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
-      ;;
-    "ETH-test-embedded")
-      REACH_CONNECTOR_MODE="ETH-test-embedded-ganache"
       ;;
     "FAKE")
       REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
@@ -216,8 +212,6 @@ ensure_connector_mode () {
     "ETH-live")
       ;;
     "ETH-test-dockerized-geth")
-      ;;
-    "ETH-test-embedded-ganache")
       ;;
     "FAKE-test-embedded-mock")
       ;;
@@ -524,11 +518,6 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  ${SERVICE}-ETH-test-embedded-ganache:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
   ${SERVICE}-FAKE-test-embedded-mock:
     <<: *app-base
     environment:

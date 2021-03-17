@@ -276,8 +276,7 @@ And then Reach
 
 @item{builds a Docker image based on Reach's standard image for the package; and,}
 
-@item{runs the application connected to Reach's standard private Ethereum devnet image.
-(If you add @exec{REACH_CONNECTOR_MODE=ETH-test-embedded-ganache} to the command line, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead.)}
+@item{runs the application connected to Reach's standard private Ethereum devnet image.}
 
 ]
 

@@ -75,13 +75,14 @@ that might help you write code that is portable to multiple consensus networks.
 Expands a connector mode prefix
 to its full, canonical name. The canonical connector modes are:
 
-@js{
-  'ETH-test-dockerized-geth'   // Default for ETH, ETH-test, and ETH-test-dockerized
-  'ETH-live'                   // Default for ETH-live
-  'ETH-test-embedded-ganache'  // Default for ETH-test-embedded
-  'FAKE-test-embedded-mock'    // Default for FAKE, FAKE-test, and FAKE-test-embedded
-  'ALGO-test-dockerized-algod' // Default for ALGO, ALGO-test, and ALGO-test-dockerized
-}
+@itemize[
+
+@item{@conmode{ETH-live}}
+@item{@conmode{ETH-browser}}
+@item{@conmode{ETH-test-dockerized-geth}, for @jsin{'ETH'}, @jsin{'ETH-test'}, and @jsin{'ETH-test-dockerized'}.}
+@item{@conmode{ALGO-test-dockerized-algod}, for @jsin{'ALGO'}, @jsin{'ALGO-test'}, and @jsin{'ALGO-test-dockerized'}.}
+
+]
 
 @(hrule)
 
@@ -274,11 +275,9 @@ this is the current block number, represented as a @litchar{BigNumber}.
 }
 
 Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
-In @deftech{isolated testing modes}, which are @litchar{REACH_CONNECTOR_MODE}s
-@litchar{$NET-test-dockerized-$IMPL} and @litchar{$NET-test-embedded-$IMPL}
-for all valid @litchar{$NET} and @litchar{$IMPL},
-this will also force time to pass on the network,
-usually by sending trivial transactions.
+In @tech{isolated testing modes}, this will also force time to pass on the network, usually by sending trivial transactions.
+An @deftech{isolated testing modes} is a @envref{REACH_CONNECTOR_MODE} that matches
+@litchar{$NET-test-dockerized-$IMPL} for all valid @litchar{$NET} and @litchar{$IMPL}; or when @defenv{REACH_ISOLATED_NETWORK} is set.
 
 You may provide an optional @jsin{onProgress} callback, used for reporting progress,
 which may be called many times up until the specified @tech{time}.

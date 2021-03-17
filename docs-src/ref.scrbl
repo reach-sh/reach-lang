@@ -22,7 +22,8 @@ You can install Reach by running:
 @cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
 
 in your project repository.
-You can copy this file to other repositories or move it to a directory in your @envvar{PATH}, like @exec{~/bin}.
+You can copy this file to other repositories or move it to a directory in your @envref{PATH}, like @exec{~/bin}.
+(@defenv{PATH} is UNIX environment variable listing each of the directories that contain programs you can run in a shell session.)
 
 @margin-note{If you're using Windows, consult @seclink["guide-windows"]{the guide to using Reach on Windows}.}
 
@@ -34,7 +35,7 @@ However, all commands support the following options:
 
 @itemlist[
 
-@item{The environment variable @envvar{REACH_VERSION} signifies what @seclink["guide-versions"]{version of Reach} to use.}
+@item{The environment variable @defenv{REACH_VERSION} signifies what @seclink["guide-versions"]{version of Reach} to use.}
 
 ]
 
@@ -66,15 +67,6 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
 You can create template @exec{index.rsh} and @exec{index.mjs} files for a simple Reach app by running
 
 @cmd{reach init}
-
-@subsection[#:tag "ref-usage-hashes"]{@tt{reach hashes}}
-
-You can see which exact versions of Reach Docker images you are using by running
-
-@cmd{reach hashes}
-
-This is more precise, but less readable, than @exec{reach version},
-in that each hash refers to the git commit used to build the image.
 
 @subsection[#:tag "ref-usage-run"]{@tt{reach run}}
 
@@ -113,18 +105,19 @@ It then
 
 @itemlist[
   @item{
-    The environment variable @deftech{REACH_CONNECTOR_MODE} specifies which context to run in.
-    The default, if this variable is unset or empty, is @litchar{ETH-test-dockerized-geth}.
+    The environment variable @defenv{REACH_CONNECTOR_MODE} specifies which context to run in.
+    The default, if this variable is unset or empty, is @conmode{ETH-test-dockerized-geth}.
     The options are:
 
     @itemlist[
-      @item{@litchar{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envvar{ETH_NODE_URI}.}
-      @item{@litchar{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
-      @item{@litchar{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
+      @item{@defconmode{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envref{ETH_NODE_URI}.}
+      @item{@defconmode{ETH-browser}, which uses Ethereum via a browser extension, like MetaMask.}
+      @item{@defconmode{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
+      @item{@defconmode{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
     ]
   }
   @item{
-    The environment variable @deftech{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
+    The environment variable @defenv{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
   }
 ]
 
@@ -134,8 +127,8 @@ In the absence of these files, @exec{reach run} assumes a default behavior based
 @itemlist[
   @item{
     If a @litchar{Makefile} is present,
-    and if the @litchar{REACH_CONNECTOR_MODE} and @litchar{RUN_FROM_REACH} environment variables are unset or empty,
-    then @litchar{make run} will be invoked, with the @litchar{RUN_FROM_REACH} environment variable set to true.}
+    and if the @envref{REACH_CONNECTOR_MODE} and @defenv{RUN_FROM_REACH} environment variables are unset or empty,
+    then @litchar{make run} will be invoked, with the @envref{RUN_FROM_REACH} environment variable set to true.}
   @item{
     If a @litchar{Makefile}, @litchar{Dockerfile}, @litchar{package.json}, and @litchar{docker-compose.yml} are all present,
     then these files will be used. You can call @exec{reach scaffold} to persist the default versions of these files.}
@@ -189,7 +182,7 @@ It then
 
 @itemlist[
   @item{Compliles your program with Reach}
-  @item{Runs the appropriate devnet based on @exec{REACH_CONNECTOR_MODE}}
+  @item{Runs the appropriate devnet based on @envref{REACH_CONNECTOR_MODE}}
   @item{Mounts the current directory into @exec{/app/} in the @exec{reachsh/react-runner} Docker image and runs it.}
   @item{Runs (via @exec{react-runner}) a proxy server used to avoid CORS issues on some devnets}
 ]
@@ -198,7 +191,7 @@ It then
 
 @itemlist[
   @item{
-    The environment variable @exec{REACH_CONNECTOR_MODE} specifies which context to run in. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
+    The environment variable @envref{REACH_CONNECTOR_MODE} specifies which context to run in. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
 
     @itemlist[
       @item{@litchar{ETH}, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.}
@@ -206,7 +199,7 @@ It then
     ]
   }
   @item{
-    The environment variable @exec{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
+    The environment variable @envref{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
   }
 ]
 
@@ -222,15 +215,15 @@ You can run a private Reach devnet by executing
 
 @itemlist[
   @item{
-    The environment variable @exec{REACH_CONNECTOR_MODE} specifies which devnet to run. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
+    The environment variable @envref{REACH_CONNECTOR_MODE} specifies which devnet to run. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
 
     @itemlist[
-      @item{@litchar{ETH}, which runs an Ethereum devnet on localhost:8545}
-      @item{@litchar{ALGO}, which runs an Algorand devnet on localhost:4180 and an Algorand indexer on localhost:8980}
+      @item{@litchar{ETH}, which runs an Ethereum devnet on @tt{localhost:8545}}
+      @item{@litchar{ALGO}, which runs an Algorand devnet on @tt{localhost:4180} and an Algorand indexer on @tt{localhost:8980}}
     ]
   }
   @item{
-    The environment variable @exec{REACH_DEBUG} enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
+    The environment variable @envref{REACH_DEBUG} enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
   }
 ]
 
@@ -266,9 +259,13 @@ You can see what version of Reach you have installed by running
 
 @subsection[#:tag "ref-usage-hashes"]{@tt{reach hashes}}
 
-You can do a more specific version check of your Reach docker images by running
+You can see which exact versions of Reach Docker images you are using by running
 
 @cmd{reach hashes}
+
+This is more precise, but less readable, than @exec{reach version},
+in that each hash refers to the git commit used to build the image.
+
 
 @include-section["ref-model.scrbl"]
 @include-section["ref-programs.scrbl"]

@@ -3,7 +3,6 @@ export type Connector = 'ETH' | 'ALGO' | 'FAKE';
 
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
-  'ETH-test-embedded-ganache' |
   'ETH-live' |
   'ETH-browser' |
   'FAKE-test-embedded-mock' |
@@ -14,7 +13,6 @@ export type ConnectorMode =
 // e.g. ETH defaults to ETH-test-dockerized-geth
 const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-test-dockerized-geth',
-  'ETH-test-embedded-ganache',
   'ETH-live',
   'ETH-browser',
   'FAKE-test-embedded-mock',
