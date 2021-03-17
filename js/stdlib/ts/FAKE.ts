@@ -177,6 +177,10 @@ export const transfer = async (
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const { address } = networkAccount;
 
+  const selfAddress = (): Address => {
+    return address;
+  };
+
   const attach = (
     bin: Backend,
     infoP: ContractInfo | Promise<ContractInfo>
@@ -205,10 +209,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         throw Error(`I should be ${some_addr}, but am ${address}`);
       }
     };
-
-    const selfAddress = (): Address => {
-      return address;
-    }
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       // Don't wait from current time, wait from last_block
@@ -380,7 +380,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     });
   };
 
-  return { deploy, attach, networkAccount, stdlib: compiledStdlib };
+  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib };
 };
 
 const REACHY_RICH_P: Promise<Account> = (async () => {

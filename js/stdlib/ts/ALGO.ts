@@ -1198,7 +1198,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const deploy = (bin: Backend): ContractAttached => {
     return deferP(deployP(bin));
   };
-  return { deploy, attach, networkAccount, stdlib: compiledStdlib };
+  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib };
 };
 
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {

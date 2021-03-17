@@ -860,7 +860,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
   };
 
-  return { deploy, attach, networkAccount, setGasLimit, stdlib: compiledStdlib };
+  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib };
 };
 
 export const newAccountFromSecret = async (secret: string): Promise<Account> => {

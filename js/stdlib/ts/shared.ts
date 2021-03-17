@@ -63,6 +63,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
   deploy: (bin: Backend) => Contract,
   attach: (bin: Backend, ctc: ContractInfo | Promise<ContractInfo>) => Contract,
   stdlib: Object,
+  getAddress: () => string,
 }
 
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {
