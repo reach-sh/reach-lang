@@ -212,6 +212,16 @@ In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Rent-seeki
 
 @(WIP/XXX "rent-seeking")
 
+@section[#:tag "workshop-remote"]{Workshop: Remote Objects}
+
+@(workshop-deps "tut")
+
+In this workshop, we demonstrate interaction with a @tech{remote object} implemented externally to Reach.
+Rather than connect to an existing @tech{contract}, this example includes testing code to launch a bespoke @tech{contract} simply to demonstrate how remote interactions can occur.
+It may be representative of a @|DApp| that is implemented simultaneously in Reach and the low-level language of the chosen @tech{consensus network}, in this case Solidity.
+
+@(WIP/XXX "remote")
+
 @section[#:tag "workshop-oracle"]{Workshop: Oracle}
 
 @(workshop-deps "tut")

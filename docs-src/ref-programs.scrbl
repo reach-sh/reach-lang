@@ -847,7 +847,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 
 @subsubsection{Remote objects}
 
-@(minte-define! ("remote"))
+@(mint-define! '("remote"))
 @reach{
   const randomOracle =
     remote( randomOracleAddr, {
@@ -856,7 +856,45 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
   const randomVal = randomOracle.getRandom.pay(randomFee)();
 }
 
-XXX
+A @deftech{remote object} is representation of a foreign @tech{contract} in a Reach application.
+During a @tech{consensus step}, a Reach computation may consensually communicate with such an object via a prescribed interface.
+
+A @tech{remote object} is constructed by calling the @reachin{remote} function with an @tech{address} and an interface---an object where each key is bound to a @tech{function type}. For example:
+@reach{
+  const randomOracle =
+    remote( randomOracleAddr, {
+      getRandom: Fun([], UInt),
+    });
+  const token =
+    remote( tokenAddr, {
+      balanceOf: Fun([Address], UInt),
+      transferTo: Fun([UInt, Addres], Null),
+    });
+}
+
+Once constructed, the fields of a @tech{remote object} represent those remote contract interactions, referred to as @deftech{remote functions}.
+For example, @reachin{randomOracle.getRandom}, @reachin{token.balanceOf}, and @reachin{token.transferTo} are @tech{remote functions} in the example.
+
+A @tech{remote function} may be invoked by calling it with the appropriate arguments, whereupon it returns the specified output.
+In addition, a @tech{remote function} may be augmented with one of the following operations:
+
+@itemize[
+
+@item{@reachin{REMOTE_FUN.pay(AMT)} --- Returns a @tech{remote function} that receives @reachin{AMT} @tech{network tokens} @emph{from} the caller when it is called.}
+
+@item{@(mint-define! '("bill")) @reachin{REMOTE_FUN.bill(AMT)} --- Returns a @tech{remote function} that provides @reachin{AMT} @tech{network tokens} @emph{to} the caller when it returns.}
+
+@item{@(mint-define! '("withBill")) @reachin{REMOTE_FUN.withBill()} --- Returns a @tech{remote function} that provides some number of @tech{network tokens} @emph{to} the caller when it returns.
+The exact amount is returned from the invocation by wrapping the original result in a tuple, where the amount is the first element and the original result is the second element.
+For example,
+@reach{
+ const [ returned, randomValue ] =
+   randomOracle.getRandom.pay(stipend).withBill()();
+}
+might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use.
+This may not be used with @reachin{REMOTE_FUN.bill}.}
+
+]
 
 @subsubsection{Mappings: creation and modification}
 
@@ -1749,7 +1787,7 @@ An @deftech{object},
 typically written @reachin{{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }},
 where @reachin{KEY_0} through @reachin{KEY_n} are @tech{identifiers} or @tech{string literal}s
 and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions},
-is an @tech{expression} which evaluates to an @deftech{object}
+is an @tech{expression} which evaluates to an @tech{object}
 with fields @reachin{KEY_0} through @reachin{KEY_n}.
 
 Additional object literal syntax exists for convenience, such as:

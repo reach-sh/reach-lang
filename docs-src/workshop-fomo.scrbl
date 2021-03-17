@@ -83,7 +83,7 @@ You should write your answers in your Reach file (@tt{index.rsh}) as the @tech{p
 Let's compare your answers with ours:
 
 @itemlist[
-  @item{The @tech{deadline} will be represented with an @reachin{UInt}, as it is
+  @item{The deadline will be represented with an @reachin{UInt}, as it is
   a relative time delta signifying a change in block numbers.}
   @item{The @tt{ticketPrice} will be represented with an @reachin{UInt}}
   @item{The decision to buy a ticket will be represented by a function @reachin{Fun([UInt], Bool)}}

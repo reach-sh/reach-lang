@@ -66,7 +66,12 @@ For non-@tech{participant instances}, this also makes the @tech{participant} @de
 All subsequent @tech{publications} by a @tech{fixed} @tech{participant} must be from the @tech{fixed} @tech{account}.
 
 A @deftech{consensus step} is a graph of @tech{consensus computations} with a unique first computation.
-A @deftech{consensus computation} either binds @tech{consensus state}, @tech{asserts} a property of the @tech{consensus state}, performs a @tech{transfer}, selects between different next @tech{consensus computations}, or @deftech{commits} to the next @tech{step}.
+A @deftech{consensus computation} either binds @tech{consensus state},
+@tech{asserts} a property of the @tech{consensus state},
+performs a @tech{transfer},
+selects between different next @tech{consensus computations},
+communicates with another @tech{contract} (referred to as a @tech{remote object}),
+or @deftech{commits} to the next @tech{step}.
 
 An @deftech{assert}ion is either: a @deftech{knowledge assertion}, which is a claim that one @tech{honest} @tech{participant} cannot know something that another @tech{honest} @tech{participant} does know; a @deftech{static assertion}, which is an always-true formula; an @deftech{assumption}, which is a true formula if @tech{frontends} behave @tech{honest}ly; a @deftech{requirement}, which is a true formula if @tech{participants} behave @tech{honest}ly; or, a @deftech{possibility assertion}, which is a formula for which there exists some values that @tech{honest} @tech{participants} and @tech{frontends} could submit which results in the truth of the formula.
 An @deftech{honest} @tech{participant} is one that executes the @tech{steps} specified by the @|DApp|, while an @tech{honest} @tech{frontend} is one that only returns @tech{values} which ensure that all @tech{assumptions} evaluate to the boolean @reachin{true}.
