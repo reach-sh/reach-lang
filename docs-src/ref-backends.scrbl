@@ -204,6 +204,13 @@ Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{a
 @index{acc.networkAccount} Returns the @tech{connector}-specific @tech{account} specification of a Reach @tech{account} abstraction.
 
 @(hrule)
+@(mint-define! '("getAddress"))
+@js{
+  acc.getAddress() => string}
+
+@index{acc.getAddress} Returns the @tech{account}'s address as a string. The format of this string varies across @tech{connectors}.
+
+@(hrule)
 
 @(mint-define! '("deploy"))
 @js{
