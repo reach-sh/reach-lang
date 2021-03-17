@@ -191,9 +191,6 @@ ensure_connector_mode () {
     "ETH-test-embedded")
       REACH_CONNECTOR_MODE="ETH-test-embedded-ganache"
       ;;
-    "ETH-live")
-      REACH_CONNECTOR_MODE="ETH-live"
-      ;;
     "FAKE")
       REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
       ;;
