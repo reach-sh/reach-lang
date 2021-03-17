@@ -25,4 +25,4 @@ check:
 .PHONY: install
 install:
 	raco pkg install
-	cd ../py/ && make install # pygments-reach
+	cd ../pygments/ && make install # pygments-reach

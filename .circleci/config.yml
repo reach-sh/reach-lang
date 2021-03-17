@@ -105,7 +105,7 @@ jobs:
       - checkout
       - run:
           name: install pygments-reach
-          command: (cd py && make install)
+          command: (cd pygments && make install)
       - run:
           name: render docs
           command: (cd docs-src && make render)
