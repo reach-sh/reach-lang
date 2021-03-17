@@ -26,7 +26,7 @@ class App extends React.Component {
   }
   async componentDidMount() { // from mode: ConnectAccount
     const acc = await reach.getDefaultAccount();
-    const addr = await acc.networkAccount.getAddress();
+    const addr = await acc.getAddress();
     const balAtomic = await reach.balanceOf(acc);
     const bal = reach.formatCurrency(balAtomic, 4);
     try {
