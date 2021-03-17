@@ -338,7 +338,7 @@ do_init () {
 'reach ${REACH_VERSION_SHORT}';
 
 export const main = Reach.App(
-  {}, [['Alice', {}], ['Bob', {}]], (Alice, Bob) => {
+  {}, [Participant('Alice', {}), Participant('Bob', {})], (Alice, Bob) => {
     // ...
   }
 );
