@@ -1644,25 +1644,9 @@ Or, you can copy the @tt{index.rsh} file into a new directory and work from ther
 
 @(hrule)
 
-This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
-and some @reachexlink["tut-8/views" "views"].
-These details are not specific to Reach, and are fairly trivial,
-so we will not explain the specifics of those files.
-If you run this locally, you'll want to download those files.
-Your directory should look like:
-
-@verbatim{
-.
-├── index.css
-├── index.js
-├── index.rsh
-└── views
-    ├── AppViews.js
-    ├── AttacherViews.js
-    ├── DeployerViews.js
-    ├── PlayerViews.js
-    └── render.js
-}
+The following code is built on @link["https://hypotheticalrepository.io"]{this foundation;) we recommend you clone the foundation, 
+drop your index.rsh file into the src folder, and install reach in that src folder 
+before you continue with this tutorial.
 
 @(hrule)
 
@@ -1882,33 +1866,36 @@ and define some button handlers in order to attach to the deployed contract.
 Finally, we call a small helper function from @reachexlink{tut-8/views/render.js}
 to render our App component.
 
-@(hrule) @;; explain reach react and reach react-down
-
-As a convenience for running the React development server,
-you can call:
-
-@cmd{./reach react}
-
 @(hrule)
 
-To run the React development server with Algorand,
-you can call:
+Alright, now to run the application. To start with we'll compile the contract:
 
-@cmd{REACH_CONNECTOR_MODE=ALGO ./reach react}
+@cmd{./reach compile}
+
+And now we'll stand up a test network so that the frontend can deploy a contract to it: 
+
+@cmd{./reach devnet}
+
+Or to run an Algorand test network you can call:
+
+@cmd{REACH_CONNECTOR_MODE=ALGO ./reach devnet}
+
+Once the test network you chose is up and running, we'll start up the frontend with one of these two commands
+
+@cmd{yarn start}
+@cmd{npm start}
+
+Now the application should be accessible at 'http://localhost:3000' 
+Remember you'll need two different browsers with Metamask wallets installed and set up to test it out. Enjoy!
 
 @(hrule) @;; explain npm install
 
-If you'd like to instead use Reach in your own JavaScript project,
-you can call:
+If you'd like to use Reach in your own JavaScript project you can call this command to install it (and it can also be installed with yarn):
 
 @cmd{npm install @"@"reach-sh/stdlib}
 
 @margin-note{The Reach standard library is undergoing continual improvement and is updated often.
 If you are experiencing issues with the Node.js package, try updating!}
-
-As usual, you can compile your Reach program @litchar{index.rsh} to the @jsin{backend} build artifact @litchar{build/index.main.mjs} with:
-
-@cmd{./reach compile}
 
 @(hrule) @;; conclusion
 
