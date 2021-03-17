@@ -1644,7 +1644,7 @@ Or, you can copy the @tt{index.rsh} file into a new directory and work from ther
 
 @(hrule)
 
-The following code is built on @link["https://hypotheticalrepository.io"]{this foundation;) we recommend you clone the foundation, 
+The following code is built on @link["https://hypotheticalrepository.io"]{this foundation;} we recommend you clone the foundation, 
 drop your index.rsh file into the src folder, and install reach in that src folder 
 before you continue with this tutorial.
 
