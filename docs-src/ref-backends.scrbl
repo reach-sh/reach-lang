@@ -305,7 +305,7 @@ When connected to an EVM-based consensus network, the standard library provides 
 @js{
  acc.setGasLimit(n) => void }
 
-@index{acc.setGasLimit} Modifies the gas limit for all transactions originating from the given account.
+@index{acc.setGasLimit} Modifies the gas limit for each transaction originating from the given account for the rest of the program.
 @jsin{n} must be a value that @jsin{bigNumberify} will accept.
 
 On EVM-based consensus networks, the Reach standard library will automatically estimate the required gas necessary to execute transactions, i.e. make @tech{publications}.
