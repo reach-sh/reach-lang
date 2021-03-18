@@ -37,6 +37,7 @@ import Reach.Warning
       Deprecation(D_ParticipantTuples, D_SnakeToCamelCase) )
 import Data.Bifunctor (Bifunctor(bimap))
 import Data.Bool (bool)
+import Text.RE.TDFA ( (?=~), compileRegex, RE, matched )
 
 --- New Types
 
@@ -1577,6 +1578,9 @@ mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
   v -> expect_t v $ Err_Expected_Bytes
 
+structKeyRegex :: App RE
+structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -1839,17 +1843,24 @@ evalPrim p sargs =
       as <- one_arg >>= \case
               SLV_Tuple _ x -> return x
               _ -> illegal_args
+      regex <- structKeyRegex
+      seenKeysRef <- liftIO $ newIORef S.empty
       let go = \case
             SLV_Tuple _ [ kv, tv ] -> do
               kbs <- mustBeBytes kv
-              let k = bunpack kbs
-              -- XXX check valid id on k
+              k <- verifyStructId regex $ bunpack kbs
+              seenKeys <- liftIO $ readIORef seenKeysRef
+              when (S.member k seenKeys) $
+                expect_ $ Err_Struct_Key_Not_Unique (S.toList seenKeys) k
+              liftIO $ writeIORef seenKeysRef $ S.insert k seenKeys
               t <- expect_ty tv
-              return $ ( k, t )
+              return ( k, t )
             _ -> illegal_args
       kts <- mapM go as
-      -- XXX check uniqueness
       retV $ (lvl, SLV_Type $ ST_Struct kts)
+      where
+        verifyStructId r s =
+          bool (expect_ $ Err_Struct_Key_Invalid s) (return s) $ matched $ s ?=~ r
     SLPrim_Struct_fromTuple ts -> do
       tv <- one_arg
       at <- withAt id

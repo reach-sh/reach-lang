@@ -124,6 +124,8 @@ data EvalError
   | Err_IllegalEffPosition SLValTy
   | Err_Unused_Variables [(SrcLoc, SLVar)]
   | Err_Remote_NotFun SLVar SLType
+  | Err_Struct_Key_Invalid String
+  | Err_Struct_Key_Not_Unique [String] String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -480,6 +482,10 @@ instance Show EvalError where
       intercalate "\n" $ map (\ (at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
+    Err_Struct_Key_Invalid s ->
+      "Struct key `" <> s <> "` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*"
+    Err_Struct_Key_Not_Unique sk k ->
+      "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

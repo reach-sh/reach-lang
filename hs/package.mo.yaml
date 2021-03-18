@@ -43,6 +43,7 @@ dependencies:
 - pretty-simple
 - prettyprinter
 - process
+- regex
 - safe
 - scientific
 - search-algorithms
