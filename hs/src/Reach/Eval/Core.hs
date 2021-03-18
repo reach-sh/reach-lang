@@ -9,7 +9,7 @@ import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.IORef
-import Data.List (transpose, (\\), groupBy, unzip4)
+import Data.List (transpose, (\\), groupBy, unzip5)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -1182,10 +1182,10 @@ evalForm f args = do
           at <- withAt id
           case_args <-
             case args of
-              [w, x, y, z] -> return $ (w, x, y, z)
-              [w, x, z] -> return $ (w, x, default_pay, z)
+              [w, x, y, z] -> return $ ForkCase at w x y z
+              [w, x, z] -> return $ ForkCase at w x default_pay z
               _ -> illegal_args 4
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [(at, case_args)]) mtime
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [case_args]) mtime
         Just FM_Timeout -> do
           at <- withAt id
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args))
@@ -3125,22 +3125,10 @@ data CompiledForkCase = CompiledForkCase
   , cfc_msg_type_def :: [JSStatement]
   }
 
-forkCaseAt :: ForkCase -> SrcLoc
-forkCaseAt (at, (_, _, _, _)) = at
-
-forkCaseWho :: ForkCase -> JSExpression
-forkCaseWho (_, (who, _, _, _)) = who
-
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
 forkCaseSameParticipant l r = getWho l == getWho r
   where
-    getWho e = jse_expect_id (forkCaseAt e) (forkCaseWho e)
-
-indexed :: [a] -> [(Int, a)]
-indexed = aux 0
-  where
-    aux _ [] = []
-    aux n (h:t) = (n, h) : aux (n + 1) t
+    getWho e = jse_expect_id (fc_at e) (fc_who e)
 
 doFork :: [JSStatement] -> [ForkCase] -> Maybe (SrcLoc, [JSExpression]) -> App SLStmtRes
 doFork ks cases mtime = do
@@ -3157,9 +3145,10 @@ doFork ks cases mtime = do
   let thunkBlock b = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a $ JSStatementBlock a b a sp
   let oneParam p e = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne p) a ) a (JSExpressionStatement e sp)
   let callThunk e  = JSCallExpression e a JSLNil a
+  let indexed = zip [0..] :: [a] -> [(Int, a)]
   let go pcases = do
-        let (who_es, before_es, pay_es, after_es) = unzip4 $ map snd pcases
-        let ats = map fst pcases
+        let (ats, who_es, before_es, pay_es, after_es) =
+              unzip5 $ map (\ ForkCase {..} -> (fc_at, fc_who, fc_before, fc_pay, fc_after)) pcases
         let who_e = hdDie who_es
         let c_at  = hdDie ats
         let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp

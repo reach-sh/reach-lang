@@ -275,7 +275,14 @@ data SLForm
   | SLForm_wait
   deriving (Eq, Generic)
 
-type ForkCase = (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))
+data ForkCase = ForkCase {
+    fc_at :: SrcLoc,
+    fc_who :: JSExpression,
+    fc_before :: JSExpression,
+    fc_pay :: JSExpression,
+    fc_after :: JSExpression
+  }
+  deriving (Eq, Generic)
 
 data SLKwd
   = SLK_async
