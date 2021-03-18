@@ -271,3 +271,4 @@ in that each hash refers to the git commit used to build the image.
 @include-section["ref-programs.scrbl"]
 @include-section["ref-networks.scrbl"]
 @include-section["ref-backends.scrbl"]
+@include-section["ref-stdlib.scrbl"]
