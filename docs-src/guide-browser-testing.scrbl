@@ -2,6 +2,7 @@
 @(require "lib.rkt")
 
 @title[#:version reach-vers #:tag "guide-browser-testing"]{Testing Reach programs in the browser}
+@author[(author+email "Dan Burton" "dan@reach.sh")]
 
 Reach is designed to work securely in a browser-based Web app
 by leveraging browser-based wallets to sign transactions.

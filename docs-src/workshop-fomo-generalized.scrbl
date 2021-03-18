@@ -3,6 +3,7 @@
 
 @(define TAG "workshop-fomo-generalized")
 @title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out Generalized}
+@author[(author+email "Chris Nevers" "cnevers@reach.sh")]
 
 In this workshop, we will extend our @seclink["workshop-fomo"]{Fear of Missing Out application}
 with the ability to split the reward between the @tt{N} most recent Buyers.

@@ -3,6 +3,7 @@
 
 @(define TAG "workshop-fomo")
 @title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out}
+@author[(author+email "Chris Nevers" "cnevers@reach.sh")]
 
 In this workshop, we'll design an application that allows a Funder
 to create an auction where participants may purchase tickets.

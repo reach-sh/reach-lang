@@ -1605,6 +1605,7 @@ In @seclink["tut-8"]{the next step}, we'll replace this with a Web interface for
 @check:tf["False; Reach does not impose any constraints on what kind of frontend is attached to your Reach application."]{Reach helps you build automated tests for your decentralized application, but it doesn’t support building interactive user-interfaces.}
 
 @section[#:tag "tut-8"]{Web Interaction}
+@author[(author+email "Dan Burton" "dan@reach.sh")]
 @(mint-scope "tut-8")
 
 In the last section, we made @|RPS| run as a command-line application, without any changes to the Reach program.
