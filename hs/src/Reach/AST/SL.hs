@@ -259,7 +259,7 @@ data SLForm
   | SLForm_fork_partial
       { slf_at :: SrcLoc
       , slf_mode :: Maybe ForkMode
-      , slf_cases :: [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))]
+      , slf_cases :: [ForkCase]
       , slf_mtime :: Maybe (SrcLoc, [JSExpression])
       }
   | SLForm_parallel_reduce
@@ -273,6 +273,15 @@ data SLForm
       , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
       }
   | SLForm_wait
+  deriving (Eq, Generic)
+
+data ForkCase = ForkCase {
+    fc_at :: SrcLoc,
+    fc_who :: JSExpression,
+    fc_before :: JSExpression,
+    fc_pay :: JSExpression,
+    fc_after :: JSExpression
+  }
   deriving (Eq, Generic)
 
 data SLKwd

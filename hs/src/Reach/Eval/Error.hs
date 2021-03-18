@@ -111,7 +111,6 @@ data EvalError
   | Err_ToConsensus_WhenNoTimeout Bool
   | Err_Fork_ResultNotObject DLType
   | Err_Fork_ConsensusBadArrow JSExpression
-  | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   | Err_ParallelReduceIncomplete String
   | Err_ParallelReduceTimeRemainingArgs [JSExpression]
   | Err_Type_None SLVal
@@ -457,8 +456,6 @@ instance Show EvalError where
       "fork local result must be object with fields `msg` or `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->
       "fork consensus block should be arrow with zero or one parameters, but got something else"
-    Err_Fork_CaseAppearsTwice who at0 _at1 ->
-      "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
     Err_ParallelReduceTimeRemainingArgs args ->

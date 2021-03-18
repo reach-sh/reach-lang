@@ -427,7 +427,7 @@ fork()
 
 where:
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
-@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any time, and a @litchar{when} field, which must be a boolean;
+@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
 @reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
 the @reachin{timeout} parameter are as in an @tech{consensus transfer}.
@@ -438,7 +438,10 @@ If the @litchar{when} field is absent from the object returned from @reachin{PUB
 
 If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{() => 0}.
 
-The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}.
+The @reachin{.case} component may be repeated many times.
+
+The same @tech{participant} may specify multiple cases. In this situation, the order of the cases is significant.
+That is, a subsequent case will only be evaluated if the prior case's @tt{when} field is @reachin{false}.
 
 If the @tech{participant} specified by @reachin{PART_EXPR} is not already @tech{fixed} (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is @tech{fixed}, provided it is not a @tech{participant class}.
 
@@ -505,6 +508,8 @@ The sample @reachin{fork} statement linked to the @reachin{fork} keyword is roug
 }
 
 This pattern is tedious to write and error-prone, so the @reachin{fork} statement abbreviates it for Reach programmers.
+When a @tech{participant} specifies multiple cases, the @tt{msg} field of the participant will be wrapped with an additional
+variant signifying what case was chosen.
 
 @subsubsection{@tt{wait}}
 

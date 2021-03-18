@@ -1,1 +1,0 @@
-reachc: error: ./Err_Fork_CaseAppearsTwice.rsh:11:12:application: fork cases must be unique: "A" was defined previously at ./Err_Fork_CaseAppearsTwice.rsh:9:12:application

@@ -12,6 +12,7 @@ module Reach.Util
   , safeInit
   , dupeIORef
   , mapWithKeyM
+  , hdDie
   )
 where
 
@@ -45,6 +46,10 @@ maybeDie ec = do
     (ec == ExitSuccess)
     (do (exitWith ec))
   return ()
+
+hdDie :: [p] -> p
+hdDie (h:_) = h
+hdDie []    = impossible "hdDie"
 
 impossible :: HasCallStack => String -> b
 impossible msg = error $
