@@ -1,6 +1,6 @@
 #! /bin/sh
 # Usage: sbin/server-down.sh
-# (Run from tut-6-rpc)
+# (Run from tut-7-rpc)
 
 REACH_RPC_KEY=$(cat REACH_RPC_KEY.txt)
 export REACH_RPC_KEY

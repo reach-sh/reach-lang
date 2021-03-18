@@ -18,7 +18,7 @@ import * as backend from './build/index.main.mjs';
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
   const Player = (Who) => ({
-    ...stdlib.hasRandom,
+    ...stdlib.hasRandom, // <--- new!
     getHand: () => {
       const hand = Math.floor(Math.random() * 3);
       console.log(`${Who} played ${HAND[hand]}`);
@@ -26,9 +26,6 @@ import * as backend from './build/index.main.mjs';
     },
     seeOutcome: (outcome) => {
       console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
-    },
-    informTimeout: () => {
-      console.log(`${Who} observed a timeout`);
     },
   });
 
@@ -39,14 +36,8 @@ import * as backend from './build/index.main.mjs';
     }),
     backend.Bob(ctcBob, {
       ...Player('Bob'),
-      acceptWager: async (amt) => { // <-- async now
-        if ( Math.random() <= 0.5 ) {
-          for ( let i = 0; i < 10; i++ ) {
-            console.log(`  Bob takes his sweet time...`);
-            await stdlib.wait(1); }
-        } else {
-          console.log(`Bob accepts the wager of ${fmt(amt)}.`);
-        }
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
       },
     }),
   ]);

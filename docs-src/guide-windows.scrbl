@@ -22,6 +22,6 @@ The best way to get this set up on Windows is to
 
 At this point, you'll have your @link["https://code.visualstudio.com/download"]{VSCode} IDE set up with a terminal in your Linux distribution.
 
-You can now follow the instructions in the @seclink["install"]{reference manual on installation} or the @seclink["tut-0"]{first part of the tutorial} to download, install, and execute all Reach commands.
+You can now follow the instructions in the @seclink["install"]{reference manual on installation} or the @seclink["tut-1"]{first part of the tutorial} to download, install, and execute all Reach commands.
 
 @margin-note{You can @link["https://www.youtube.com/watch?v=wczwWvBdMTE"]{watch a five minute video} going through these steps on YouTube.}

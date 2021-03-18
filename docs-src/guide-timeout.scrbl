@@ -15,7 +15,7 @@ In contrast, decentralized applications must be careful designed with an eye tow
 There are two general strategies for dealing with non-participation: punishment and disincentivizing.
 
 @bold{Punishment.} The punishment strategy entails allowing the remaining participants of the application to take all of the assets that would have gone to the non-participator and splitting them.
-This is the strategy @seclink["tut-5"]{used in the tutorial}, where Alice's wager is lost if she fails to send her next publication.
+This is the strategy @seclink["tut-6"]{used in the tutorial}, where Alice's wager is lost if she fails to send her next publication.
 
 Punishment is a dangerous strategy, because it is difficult to know a priori what the threshold of non-participation is.
 If you estimate too low, then you will inappropriately punish parties that are honestly delayed.
@@ -25,7 +25,7 @@ This does, however, imply that the application must decide the deadline for a me
 
 @bold{Disincentivizing.} The disincentivizing strategy allows all participants to drop participation, but ensures that if they do so, they will punish themselves by forgoing some resource held in escrow by the application.
 This strategy is only effective if the escrow amount is significantly larger than the payout in a normal execution of the computation.
-For example, in the @seclink["tut-5"]{Rock, Paper, Scissors! tutorial}, we could have had each participant contribute something on the order of ten times that wager into the application, which would not be reimbursed unless the game ended.
+For example, in the @seclink["tut-6"]{Rock, Paper, Scissors! tutorial}, we could have had each participant contribute something on the order of ten times that wager into the application, which would not be reimbursed unless the game ended.
 
 Disincentivizing has the advantage of allowing all programs to eventually finish, but the downside of allowing one participant to disrupt all participants by refusing to continue, thereby locking away the escrows of all parties.
 It is, therefore, better to only use such incentives when combined with judicious timeouts and asymmetry in the program.

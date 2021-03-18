@@ -1,111 +1,60 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-
-  const isAlice = await ask(
-    `Are you Alice?`,
-    yesno
-  );
-  const who = isAlice ? 'Alice' : 'Bob';
-
-  console.log(`Starting Rock, Paper, Scissors! as ${who}`);
-
-  let acc = null;
-  const createAcc = await ask(
-    `Would you like to create an account? (only possible on devnet)`,
-    yesno
-  );
-  if (createAcc) {
-    acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
-  } else {
-    const secret = await ask(
-      `What is your account secret?`,
-      (x => x)
-    );
-    acc = await stdlib.newAccountFromSecret(secret);
-  }
-
-  let ctc = null;
-  const deployCtc = await ask(
-    `Do you want to deploy the contract? (y/n)`,
-    yesno
-  );
-  if (deployCtc) {
-    ctc = acc.deploy(backend);
-    const info = await ctc.getInfo();
-    console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
-  } else {
-    const info = await ask(
-      `Please paste the contract information:`,
-      JSON.parse
-    );
-    ctc = acc.attach(backend, info);
-  }
+  const startingBalance = stdlib.parseCurrency(10);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
-  const getBalance = async () => fmt(await stdlib.balanceOf(acc));
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
 
-  const before = await getBalance();
-  console.log(`Your balance is ${before}`);
-
-  const interact = { ...stdlib.hasRandom };
-
-  interact.informTimeout = () => {
-    console.log(`There was a timeout.`);
-    process.exit(1);
-  };
-
-  if (isAlice) {
-    const amt = await ask(
-      `How much do you want to wager?`,
-      stdlib.parseCurrency
-    );
-    interact.wager = amt;
-  } else {
-    interact.acceptWager = async (amt) => {
-      const accepted = await ask(
-        `Do you accept the wager of ${fmt(amt)}?`,
-        yesno
-      );
-      if (accepted) {
-        return;
-      } else {
-        process.exit(0);
-      }
-    };
-  }
+  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
-  const HANDS = {
-    'Rock': 0, 'R': 0, 'r': 0,
-    'Paper': 1, 'P': 1, 'p': 1,
-    'Scissors': 2, 'S': 2, 's': 2,
-  };
-  interact.getHand = async () => {
-    const hand = await ask(`What hand will you play?`, (x) => {
-      const hand = HANDS[x];
-      if ( hand == null ) {
-        throw Error(`Not a valid hand ${hand}`);
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
       }
       return hand;
-    });
-    console.log(`You played ${HAND[hand]}`);
-    return hand;
-  };
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
 
-  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
-  interact.seeOutcome = async (outcome) => {
-    console.log(`The outcome is: ${OUTCOME[outcome]}`);
-  };
+  await Promise.all([
+    backend.Alice(ctcAlice, {
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+    }),
+    backend.Bob(ctcBob, {
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
 
-  const part = isAlice ? backend.Alice : backend.Bob;
-  await part(ctc, interact);
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
 
-  const after = await getBalance();
-  console.log(`Your balance is now ${after}`);
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-  done();
 })();

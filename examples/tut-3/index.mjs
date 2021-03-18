@@ -4,13 +4,9 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(10);
+
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-
-  const fmt = (x) => stdlib.formatCurrency(x, 4);
-  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
-  const beforeAlice = await getBalance(accAlice);
-  const beforeBob = await getBalance(accBob);
 
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
@@ -29,22 +25,13 @@ import * as backend from './build/index.main.mjs';
   });
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
-      ...Player('Alice'),
-      wager: stdlib.parseCurrency(5),
-    }),
-    backend.Bob(ctcBob, {
-      ...Player('Bob'),
-      acceptWager: (amt) => {
-        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
-      },
-    }),
+    backend.Alice(
+      ctcAlice,
+      Player('Alice'),
+    ),
+    backend.Bob(
+      ctcBob,
+      Player('Bob'),
+    ),
   ]);
-
-  const afterAlice = await getBalance(accAlice);
-  const afterBob = await getBalance(accBob);
-
-  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
-  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
-
 })();

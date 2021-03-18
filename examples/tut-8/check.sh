@@ -7,9 +7,9 @@ docker-compose -f "$1" up -d alice bob || exit 1
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-docker attach tut-7_alice_1 < Alice.in > Alice.out &
+docker attach tut-8_alice_1 < Alice.in > Alice.out &
 APID=$!
-docker attach tut-7_bob_1 < Bob.in > Bob.out &
+docker attach tut-8_bob_1 < Bob.in > Bob.out &
 BPID=$!
 
 exec 3> Alice.in

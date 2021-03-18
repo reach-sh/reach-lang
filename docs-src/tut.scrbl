@@ -8,12 +8,12 @@ It contains everything you need to know to build and test this application and a
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
 On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
-If you're ready, click through to the @seclink["tut-0"]{first step}!
+If you're ready, click through to the @seclink["tut-1"]{first step}!
 
 @local-table-of-contents[#:style 'immediate-only]
 
-@section[#:tag "tut-0"]{Install and Initialize}
-@(mint-scope "tut-0")
+@section[#:tag "tut-1"]{Install and Initialize}
+@(mint-scope "tut-1")
 
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
@@ -55,10 +55,10 @@ You'll know that everything is in order if you can run
 
 @margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
 
-Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-1"]{write your first Reach application}!
+Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-2"]{write your first Reach application}!
 
-@section[#:tag "tut-1"]{Scaffolding and Setup}
-@(mint-scope "tut-1")
+@section[#:tag "tut-2"]{Scaffolding and Setup}
+@(mint-scope "tut-2")
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully-featured.
@@ -71,13 +71,13 @@ It doesn't matter where you put this file, but we recommend putting in the curre
 In all the subsequent code samples, we'll label the files based on the chapter of the tutorial you're reading.
 For example, start off by typing the following into @exec{index.rsh}:
 
-@reachex[#:show-lines? #t "tut-1/index.rsh"
+@reachex[#:show-lines? #t "tut-2/index.rsh"
          #:link #t]
 
 @margin-note{Did you notice that @reachin{export}, @reachin{const}, @reachin{exit}, and so on are links?
 In Reach code samples, you can click on the names of keywords and standard library functions to be brought to their documentation.}
 
-@margin-note{Did you notice that @reachexlink["tut-1/index.rsh"] was a link in the box above the code sample?
+@margin-note{Did you notice that @reachexlink["tut-2/index.rsh"] was a link in the box above the code sample?
 You can always click on these links to see the entire file in our @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} repository.}
 
 @margin-note{Did you notice the attractive clipboard icon on the top the right of that box?
@@ -107,7 +107,7 @@ Before we go too much further, let's create a similar shell for our JavaScript @
 Open a new file named @exec{index.mjs} and fill it with this:
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-1/index.mjs"
+         #:show-lines? #t "tut-2/index.mjs"
          #:link #t]
 
 @margin-note{Did you notice that @jsin{parseCurrency}, @jsin{newTestAccount}, @jsin{deploy}, and so on are links?
@@ -153,7 +153,7 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 
 @margin-note{The entire process that we just went through can be automated by running @cmd{./reach init} when you start your next project!}
 
-In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
+In @seclink["tut-3"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @(check:multi
   "2; Reach abstracts away the details of the underlying consensus network"
@@ -161,8 +161,8 @@ In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our
   "write a smart contract in Solidity, a backend in JavaScript using the Ethereum SDK, and a frontend in JavaScript, then use Reach to test and deploy it;"
   "write a program in Reach that generates a smart contract & a backend and a front-end in JavaScript, then use Reach to test and deploy it?")
 
-@section[#:tag "tut-2"]{Rock, Paper, and Scissors}
-@(mint-scope "tut-2")
+@section[#:tag "tut-3"]{Rock, Paper, and Scissors}
+@(mint-scope "tut-3")
 
 In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
@@ -174,7 +174,7 @@ We'll use a similar strategy for representing the three outcomes of the game: @l
 
 The first step is to change the Reach program to specify that Alice and Bob's frontends can be interacted with to get the move that they will play, and later informed of the outcome of the game.
 
-@reachex[#:show-lines? #t "tut-2/index.rsh"
+@reachex[#:show-lines? #t "tut-3/index.rsh"
          #:link #t
          'skip 12 25 "      // ..."]
 
@@ -191,7 +191,7 @@ Because of this line, @reachin{interact} in the rest of the program will be boun
 Before continuing with the Reach application, let's move over to the JavaScript interface and implement these methods in our @tech{frontend}.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-2/index.mjs"
+         #:show-lines? #t "tut-3/index.mjs"
          #:link #t
          'only 14 36 "  // ..."]
 
@@ -227,13 +227,13 @@ In our @tech{frontend}, we explicitly ran @reachin{backend.Alice} and @reachin{b
 When we did that, we were committing that particular JavaScript thread to be either Alice or Bob.
 In our game, whoever chose to run the Alice backend is the one that will go first.
 In other words, @bold{Alice goes first}.
-This will be more obvious at @seclink["tut-7"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
+This will be more obvious at @seclink["tut-8"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
 
 The game proceeds in three steps.
 
 First, Alice's backend interacts with her frontend, gets her hand, and publishes it.
 
-@reachex[#:show-lines? #t "tut-2/index.rsh"
+@reachex[#:show-lines? #t "tut-3/index.rsh"
          #:link #t
          'only 12 15 "      // ..."]
 
@@ -256,7 +256,7 @@ Once this happens, the code is in a "@tech{consensus step}" where all participan
 
 The next step is similar, in that Bob publishes his hand; however, we don't immediately commit the state, instead we compute the outcome of the game.
 
-@reachex[#:show-lines? #t "tut-2/index.rsh"
+@reachex[#:show-lines? #t "tut-3/index.rsh"
          #:link #t
          'only 17 22 "      // ..."]
 
@@ -272,7 +272,7 @@ Consider when @reachin{handA} is @reachin{0} (i.e., @litchar{Rock}) and @reachin
 
 Finally, we use the @tech{each} form to have each of the participants send the final outcome to their frontends.
 
-@reachex[#:show-lines? #t "tut-2/index.rsh"
+@reachex[#:show-lines? #t "tut-3/index.rsh"
          #:link #t
          'only 24 25 "      // ..."]
 
@@ -315,9 +315,9 @@ Alice is pretty good at @|RPS|!
 Indeed, this is where the name @tech{consensus network} comes from, as they enable these distributed, and untrusted, parties to come to a consensus, or agreement, about the intermediate states of a computation; and if they agree on the intermediate states, they will also agree on the output.
 That's why every time you run @exec{./reach run}, both Alice and Bob will see the same outcome!
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-2/index.rsh"] and @reachexlink["tut-2/index.mjs"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-3/index.rsh"] and @reachexlink["tut-3/index.mjs"] to make sure you copied everything down correctly!}
 
-In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
+In @seclink["tut-4"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
 
 @(check:many
   @list{2 and 3; Reach programs specify a two-way interface between the frontend and the backend via the @tech{participant interact interface}.}
@@ -333,8 +333,8 @@ In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because 
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;}
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.})
 
-@section[#:tag "tut-3"]{Bets and Wagers}
-@(mint-scope "tut-3")
+@section[#:tag "tut-4"]{Bets and Wagers}
+@(mint-scope "tut-4")
 
 Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -345,7 +345,7 @@ Since we're going to be having funds get transfered, we'll record the balances o
 We'll add this code in between account creation and contract deployment.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-3/index.mjs"
+         #:show-lines? #t "tut-4/index.mjs"
          #:link #t
          'only 5 13 "  // ..."]
 
@@ -362,7 +362,7 @@ We'll add this code in between account creation and contract deployment.
 Next, we'll update Alice's interface object to include her wager.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-3/index.mjs"
+         #:show-lines? #t "tut-4/index.mjs"
          #:link #t
          'only 32 35 "    // ..."]
 
@@ -378,7 +378,7 @@ This is an example of using a concrete value, rather than a function, in a @tech
 For Bob, we'll modify his interface to show the wager and immediately accept it by returning.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-3/index.mjs"
+         #:show-lines? #t "tut-4/index.mjs"
          #:link #t
          'only 36 41 "    // ..."]
 
@@ -391,7 +391,7 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 Finally, after the computation is over, we'll get the balance again and show a message summarizing the effect.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-3/index.mjs"
+         #:show-lines? #t "tut-4/index.mjs"
          #:link #t
          'only 44 48 "  // ..."]
 
@@ -410,7 +410,7 @@ Let's look at that now.
 
 First, we need to update the @tech{participant interact interface}.
 
-@reachex[#:show-lines? #t "tut-3/index.rsh"
+@reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
          'skip 18 41 "      // ..."]
 
@@ -429,7 +429,7 @@ and the second argument is the @tech{participant interact interface}. It's conve
 Each of the three parts of the application have to be updated to deal with the wager.
 Let's look at Alice's first step first.
 
-@reachex[#:show-lines? #t "tut-3/index.rsh"
+@reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
          'only 18 23 "      // ..."]
 
@@ -448,7 +448,7 @@ This is because the @tech{consensus network} needs to be able to verify that the
 
 Next, Bob needs to be shown the wager and given the opportunity to accept it and transfer his funds.
 
-@reachex[#:show-lines? #t "tut-3/index.rsh"
+@reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
          'only 25 29 "      // ..."]
 
@@ -465,7 +465,7 @@ The @|DApp| is now running in a @tech{consensus step} and
 the contract itself now holds twice the wager amount.
 Before, it would compute the outcome and then commit the state; but now, it needs to look at the outcome and use it to balance the account.
 
-@reachex[#:show-lines? #t "tut-3/index.rsh"
+@reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
          'only 31 38 "      // ..."]
 
@@ -543,10 +543,10 @@ The @seclink["guide-deploymode"]{guide section on deployment} discusses how to a
 
 Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-3/index.rsh"] and @reachexlink["tut-3/index.mjs"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-4/index.rsh"] and @reachexlink["tut-4/index.mjs"] to make sure you copied everything down correctly!}
 
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
-We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
+We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
 
 @(check:multi
   @list{2; the @reachin{pay} and @reachin{transfer} primitives do everything for you.}
@@ -554,8 +554,8 @@ We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch w
   "They don’t; you need to manage them explicitly in parallel to the Reach program;"
   @item{The @reachin{pay} primitive can be added to a @reachin{publish} primitive to send funds to the Reach program, which can then use the @reachin{transfer} primitive to send funds back to participants, and other addresses.})
 
-@section[#:tag "tut-4"]{Trust and Commitments}
-@(mint-scope "tut-4")
+@section[#:tag "tut-5"]{Trust and Commitments}
+@(mint-scope "tut-5")
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -579,7 +579,7 @@ It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend
 
 If we change Bob's code to the following:
 
-@reachex[#:show-lines? #t "tut-4-attack/index.rsh"
+@reachex[#:show-lines? #t "tut-5-attack/index.rsh"
          #:link #t
          'only 25 29 "      // ..."]
 
@@ -607,7 +607,7 @@ How would we know?
 Reach comes with an    @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
 We can instruct Reach to prove this theorem by adding these lines after computing the @reachin{outcome}:
 
-@reachex[#:show-lines? #t "tut-4-attack/index.rsh"
+@reachex[#:show-lines? #t "tut-5-attack/index.rsh"
          #:link #t
          'only 31 34 "      // ..."]
 
@@ -622,14 +622,14 @@ We can instruct Reach to prove this theorem by adding these lines after computin
 Before we had this line in the file, when we ran @exec{./reach run}, it would print out the message:
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "tut-3/index.txt"
+         #:show-lines? #t "tut-4/index.txt"
          #:link #t
          'only 2 7 "      // ..."]
 
 But now, it prints out
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "tut-4-attack/index.txt"
+         #:show-lines? #t "tut-5-attack/index.txt"
          #:link #t
          'only 2 7 "      // ..."]
 
@@ -653,7 +653,7 @@ We can see what these theorems do by deliberating inserting an error in the prog
 
 Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
-@reachex[#:show-lines? #t "tut-4-attack/index-bad.rsh"
+@reachex[#:show-lines? #t "tut-5-attack/index-bad.rsh"
          #:link #t
          'only 34 41 "      // ..."]
 
@@ -663,10 +663,10 @@ Let's change the computation of the payout and make it so that if Alice wins, th
 
 ]
 
-When we run @exec{./reach compile @reachexlink["tut-4-attack/index-bad.rsh"]}, it gives details about the error:
+When we run @exec{./reach compile @reachexlink["tut-5-attack/index-bad.rsh"]}, it gives details about the error:
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "tut-4-attack/index-bad.txt"
+         #:show-lines? #t "tut-5-attack/index-bad.txt"
          #:link #t
          'only 4 22 ""]
 
@@ -690,12 +690,12 @@ These kinds of @seclink["guide-assert"]{automatic verifications} are helpful for
 
 However, now let's add an @tech{assert}ion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
-We'll go back to the version of @reachexlink["tut-3/index.rsh"] from the last section, which has an @tech{honest} version of Bob.
+We'll go back to the version of @reachexlink["tut-4/index.rsh"] from the last section, which has an @tech{honest} version of Bob.
 (Click on the preceeding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a @tech{local step}:
 
-@reachex[#:show-lines? #t "tut-4-attack/index-fails.rsh"
+@reachex[#:show-lines? #t "tut-5-attack/index-fails.rsh"
          #:link #t
          'only 21 28 "      // ..."]
 
@@ -710,7 +710,7 @@ In many cases, this is not obvious and Reach's @seclink["guide-assert"]{automati
 When we run @exec{./reach run}, it reports that this assertion is false:
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "tut-4-attack/index-fails.txt"
+         #:show-lines? #t "tut-5-attack/index-fails.txt"
          #:link #t
          'only 3 5 ""]
 
@@ -726,7 +726,7 @@ Since we've been making lots of changes to the code, let's start fresh with a ne
 
 First, we'll define the rules of @|RPS| a little bit more abstractly, so we can separate the logic of the game from the details of the application:
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 1 7 "// ..."]
 
@@ -745,7 +745,7 @@ One way to check would be to implement a JavaScript @tech{frontend} that didn't 
 That's a typical way to debug and is possible with Reach.
 However, Reach allows us to write such test cases directly into the Reach program as verification assertions.
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 9 11 "// ..."]
 
@@ -758,13 +758,13 @@ However, Reach allows us to write such test cases directly into the Reach progra
 But, Reach's @seclink["guide-assert"]{automatic verification} allows us to express even more powerful statements about our program's behavior.
 For example, we can state that no matter what values are provided for @reachin{handA} and @reachin{handB}, @reachin{winner} will always provide a valid outcome:
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 13 15 "// ..."]
 
 And we can specify that whenever the same value is provided for both hands, no matter what it is, @reachin{winner} always returns @reachin{DRAW}:
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 17 18 "// ..."]
 
@@ -777,14 +777,14 @@ Let's continue the program by specifying the @tech{participant interact interfac
 These will be mostly the same as before, except that we will also expect that each @tech{frontend} can provide access to random numbers.
 We'll use these later on to protect Alice's hand.
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 20 23 "// ..."]
 
 The only line that is different is line 21, which includes @reachin{hasRandom}, from the Reach standard library, in the interface.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-4/index.mjs"
+         #:show-lines? #t "tut-5/index.mjs"
          #:link #t
          'only 20 30 "  // ..."]
 
@@ -801,7 +801,7 @@ We need Alice to be able to publish her hand, but also keep it secret.
 This is a job for a @link["https://en.wikipedia.org/wiki/Commitment_scheme"]{cryptographic commitment scheme}.
 Reach's standard library comes with @reachin{makeCommitment} to make this easier for you.
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 36 42 "      // ..."]
 
@@ -823,7 +823,7 @@ At this point, we can state the @tech{knowledge assertion} that Bob can't know e
 @margin-note{It is important to include the salt in the commitment, so that multiple commitments to the same value are not identical.
 Similarly, it is important not to share the salt until later, because if an attacker knows the set of possible values, they can enumerate them and compare with the result of the commitment and learn the value.}
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 44 50 "      // ..."]
 
@@ -839,7 +839,7 @@ Similarly, it is important not to share the salt until later, because if an atta
 
 We now return to Alice who can reveal her secrets.
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 52 55 "      // ..."]
 
@@ -856,7 +856,7 @@ This will always be the case with @tech{honest} participants, but dis@tech{hones
 
 The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes:
 
-@reachex[#:show-lines? #t "tut-4/index.rsh"
+@reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 57 68 "      // ..."]
 
@@ -896,11 +896,11 @@ Except now, behind the scenes, and without any changes to the frontend, Alice no
 When we compile this version of the application, Reach's @seclink["guide-assert"]{automatic formal verification} engine proves many theorems and protects us against a plethora of mistakes one might make when writing even a simple application like this.
 Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-4/index.rsh"] and @reachexlink["tut-4/index.mjs"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-5/index.rsh"] and @reachexlink["tut-5/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| is secure and doesn't contain any exploits for either Alice or Bob to guarantee a win.
 However, it still has a final category of mistake that is common in decentralized applications: @seclink["guide-timeout"]{non-participation}.
-We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
+We'll fix this in @seclink["tut-6"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
 @check:tf["False"]{Since blockchain programs run on a single, global, publicly-checked and certified consensus network, you don’t need to test them as much as normal software, which run on a wide variety of different platforms and operating systems.}
 
@@ -910,8 +910,8 @@ We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch w
 
 @check:tf["True"]{Reach provides tools for you to add custom verifications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.}
 
-@section[#:tag "tut-5"]{Timeouts and Participation}
-@(mint-scope "tut-5")
+@section[#:tag "tut-6"]{Timeouts and Participation}
+@(mint-scope "tut-6")
 
 In the last section, we removed a security vulnerability from @|RPS| that was a clear attack on the viability of the application.
 In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: @seclink["guide-timeout"]{non-participation}.
@@ -943,7 +943,7 @@ We'll integrate this mechanism into our version of @|RPS| and deliberately inser
 
 First, we'll modify the @tech{participant interact interface} to allow the @tech{frontend} to be informed that a timeout occurred.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 20 24 "// ..."]
 
@@ -957,13 +957,13 @@ We'll call this function when a timeout occurs.}
 We'll make a slight tweak to our JavaScript @tech{frontend} to be able to receive this message and display it on the console.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-5/index.mjs"
+         #:show-lines? #t "tut-6/index.mjs"
          #:link #t
          'only 20 33 "  // ..."]
 
 Back in the Reach program, we'll define an identifier at the top of our program to use a standard deadline throughout the program.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 32 33 "// ..."]
 
@@ -976,7 +976,7 @@ In many networks, like Ethereum, this number is a number of blocks.}
 
 Next, at the start of the Reach application, we'll define a helper function to inform each of the participants of the timeout by calling this new method.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 37 42 "    // ..."]
 
@@ -992,13 +992,13 @@ Next, at the start of the Reach application, we'll define a helper function to i
 
 We won't change Alice's first message, because there is no consequence to her non-participant: if she doesn't start the game, then no one is any worse off.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 46 47 "      // ..."]
 
 However, we will adjust Bob's first message, because if he fails to participate, then Alice's initial wager will be lost to her.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 54 56 "      // ..."]
 
@@ -1014,7 +1014,7 @@ This means that if Bob fails to publish his hand, then Alice will take her @tech
 
 We will add a similar timeout handler to Alice's second message.
 
-@reachex[#:show-lines? #t "tut-5/index.rsh"
+@reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
          'only 61 62 "      // ..."]
 
@@ -1029,7 +1029,7 @@ These are the only changes we need to make to the Reach program to make it robus
 Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout sometimes when Bob is supposed to accept the wager.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-5/index.mjs"
+         #:show-lines? #t "tut-6/index.mjs"
          #:link #t
          'only 35 51 "  // ..."]
 
@@ -1093,10 +1093,10 @@ Bob went from 10 to 9.9999.
 
 Of course, when you run, you may not get two of the three times ending in a timeout.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-5/index.rsh"] and @reachexlink["tut-5/index.mjs"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-6/index.rsh"] and @reachexlink["tut-6/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| is robust against either participant dropping from the game.
-In @seclink["tut-6"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
+In @seclink["tut-7"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
 
 @(check:multi
   "4; Reach empowers programmers to design the application with the business logic they want."
@@ -1106,8 +1106,8 @@ In @seclink["tut-6"]{the next step}, we'll extend the application to disallow dr
   "Alice is punished and the program proceeds as-if Bob were the winner;"
   @item{It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a @reachin{timeout} block to implement the (3) behavior.})
 
-@section[#:tag "tut-6"]{Play and Play Again}
-@(mint-scope "tut-6")
+@section[#:tag "tut-7"]{Play and Play Again}
+@(mint-scope "tut-7")
 
 In this section, we extend our application so that Alice and Bob will continue to play against each other until there is a clear winner, so if it is a draw they will continue playing.
 
@@ -1117,7 +1117,7 @@ Let's do that to get it out of the way and not distract from the main task of re
 We'll modify the @jsin{Player} interact object so that it will have a different @jsin{getHand} method.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-6/index.mjs"
+         #:show-lines? #t "tut-7/index.mjs"
          #:link #t
          'only 20 39 "  // ..."]
 
@@ -1133,7 +1133,7 @@ We also adjust Bob's @jsin{acceptWager} function to remove the timeout code, sin
 It's just a matter of reverting to the simpler version from before.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-6/index.mjs"
+         #:show-lines? #t "tut-7/index.mjs"
          #:link #t
          'only 41 52 "  // ..."]
 
@@ -1185,7 +1185,7 @@ But, now because the players may submit many hands, but should only  have a sing
 
 Let's make these changes now.
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 42 46 "      // ..."]
 
@@ -1195,7 +1195,7 @@ Let's make these changes now.
 
 ]
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 48 52 "      // ..."]
 
@@ -1224,7 +1224,7 @@ This is because all of the @tech{participants} must agree on the direction of co
 
 Here's what the structure looks like:
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 53 55 "      // ..."]
 
@@ -1240,7 +1240,7 @@ Here's what the structure looks like:
 
 Now, let's look at the body of the loop for the remaining steps, starting with Alice's commitment to her hand.
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 56 64 "        // ..."]
 
@@ -1252,13 +1252,13 @@ Now, let's look at the body of the loop for the remaining steps, starting with A
 
 ]
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 66 71 "        // ..."]
 
 Similarly, Bob's code is almost identical to the prior version, except that he's already accepted and paid the wager.
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 73 77 "        // ..."]
 
@@ -1266,7 +1266,7 @@ Alice's next step is actually identical, because she is still revealing her hand
 
 Next is the end of the loop.
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 79 80 "        // ..."]
 
@@ -1281,7 +1281,7 @@ Unlike most programming languages, Reach @bold{requires} that @reachin{continue}
 
 The rest of the program could be exactly the same as it was before, except now it occurs outside of the loop, but we will simplify it, because we know that the outcome can never be a draw.
 
-@reachex[#:show-lines? #t "tut-6/index.rsh"
+@reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t
          'only 82 88 "      // ..."]
 
@@ -1330,10 +1330,10 @@ Bob went from 10 to 14.9999.
 
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-6/index.rsh"] and @reachexlink["tut-6/index.mjs"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-7/index.rsh"] and @reachexlink["tut-7/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| will always result in a pay-out, which is much more fun for everyone.
-In @seclink["tut-7"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
+In @seclink["tut-8"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
 
 @(check:multi
   @list{2; Reach supports @reachin{while} loops.}
@@ -1348,8 +1348,8 @@ In @seclink["tut-7"]{the next step}, we'll show how to exit "testing" mode with 
   "The condition and the body of the loop must establish the invariant."
   "The negation of the condition and the invariant must establish any properties of the rest of the program.")
 
-@section[#:tag "tut-7"]{Interaction and Independence}
-@(mint-scope "tut-7")
+@section[#:tag "tut-8"]{Interaction and Independence}
+@(mint-scope "tut-8")
 
 In the last section, we made our @|RPS| run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
@@ -1379,25 +1379,25 @@ which will automatically generate the following files for us:
 ]
 
 We're going to leave the first two files unchanged.
-You can look at them at @reachexlink["tut-7/package.json"] and @reachexlink["tut-7/Dockerfile"], but the details aren't especially important.
+You can look at them at @reachexlink["tut-8/package.json"] and @reachexlink["tut-8/Dockerfile"], but the details aren't especially important.
 However, we'll customize the other two files.
 
-First, let's look at the @reachexlink["tut-7/docker-compose.yml"] file:
+First, let's look at the @reachexlink["tut-8/docker-compose.yml"] file:
 
 @reachex[#:mode yaml
-         #:show-lines? #t "tut-7/docker-compose.yml"
+         #:show-lines? #t "tut-8/docker-compose.yml"
          #:link #t]
 
 @itemlist[
 
 @item{Lines 2 and 3 define a service for starting our application.
-Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've stayed in the same directory througout the tutorial.}
+Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've stayed in the same directory througout the tutorial.}
 
 @item{Lines 5 and 6 define the Reach private developer test network service for Ethereum.}
 
 @item{Lines 7 through 24 define the Reach private developer test network service for Algorand.}
 
-@item{Lines 25 through 63 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
+@item{Lines 25 through 63 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
 
 @item{We'll also add lines 64 through 69 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
@@ -1406,13 +1406,13 @@ With these in place, we can run
 
 @cmd{docker-compose run WHICH}
 
-where @exec{WHICH} is @litchar{reach-app-tut-7-ETH-live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
+where @exec{WHICH} is @litchar{reach-app-tut-8-ETH-live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
 If we use the live version, then we have to define the environment variable @envref{ETH_NODE_URI} as the URI of our Ethereum node.
 
-We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of these variants:
+We'll modify the @reachexlink["tut-8/Makefile"] to have commands to run each of these variants:
 
 @reachex[#:mode makefile
-         #:show-lines? #t "tut-7/Makefile"
+         #:show-lines? #t "tut-8/Makefile"
          #:link #t
          'only 29 39 ""]
 
@@ -1425,7 +1425,7 @@ We'll start from scratch and show every line of the program again.
 You'll see a lot of similarity between this and the last version, but for completeness, we'll show every line.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 1 6       "  // ..."]
 
@@ -1439,7 +1439,7 @@ We'll see how these three functions are used below.}
 ]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 7 12 "  // ..."]
 
@@ -1452,7 +1452,7 @@ We'll see how these three functions are used below.}
 ]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 13 29 "  // ..."]
 
@@ -1467,7 +1467,7 @@ We'll see how these three functions are used below.}
 ]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 30 46 "  // ..."]
 
@@ -1482,42 +1482,42 @@ We'll see how these three functions are used below.}
 ]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 47 54 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 55 59 "  // ..."]
 
 First we define a timeout handler.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 60 79 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 80 97 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 98 102 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 103 111 "  // ..."]
 
@@ -1584,13 +1584,13 @@ Your balance is now 1009.9999}
 
 Of course, when you run the exact amounts and addresses may be different.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-7/index.rsh"], @reachexlink["tut-7/index.mjs"], @reachexlink["tut-7/package.json"], @reachexlink["tut-7/Dockerfile"], @reachexlink["tut-7/docker-compose.yml"], and @reachexlink["tut-7/Makefile"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-8/index.rsh"], @reachexlink["tut-8/index.mjs"], @reachexlink["tut-8/package.json"], @reachexlink["tut-8/Dockerfile"], @reachexlink["tut-8/docker-compose.yml"], and @reachexlink["tut-8/Makefile"] to make sure you copied everything down correctly!}
 
 @(hrule)
 
-If we were to edit @reachexlink["tut-7/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
 
-@margin-note{We may need to also change line 32 of @reachexlink["tut-7/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{10} to a higher number, like @reachin{30}.
+@margin-note{We may need to also change line 32 of @reachexlink["tut-8/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{10} to a higher number, like @reachin{30}.
 This is because Algorand does not support an input-enabled developer network that only runs rounds when transactions are present, so it is possible that timeouts will occur unexpectedly.
 We've commonly observed this on machines under heavy CPU load.}
 
@@ -1600,13 +1600,13 @@ Now our implementation of @|RPS| is finished!
 We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.
 
 In this step, we made a command-line interface for our Reach program.
-In @seclink["tut-8"]{the next step}, we'll replace this with a Web interface for the same Reach program.
+In @seclink["tut-9"]{the next step}, we'll replace this with a Web interface for the same Reach program.
 
 @check:tf["False; Reach does not impose any constraints on what kind of frontend is attached to your Reach application."]{Reach helps you build automated tests for your decentralized application, but it doesn’t support building interactive user-interfaces.}
 
-@section[#:tag "tut-8"]{Web Interaction}
+@section[#:tag "tut-9"]{Web Interaction}
 @author[(author+email "Dan Burton" "dan@reach.sh")]
-@(mint-scope "tut-8")
+@(mint-scope "tut-9")
 
 In the last section, we made @|RPS| run as a command-line application, without any changes to the Reach program.
 In this section, we again won't be making any changes to the Reach program.
@@ -1645,8 +1645,8 @@ Or, you can copy the @tt{index.rsh} file into a new directory and work from ther
 
 @(hrule)
 
-This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
-and some @reachexlink["tut-8/views" "views"].
+This code is supplemented with @reachexlink["tut-9/index.css" "index.css"]
+and some @reachexlink["tut-9/views" "views"].
 These details are not specific to Reach, and are fairly trivial,
 so we will not explain the specifics of those files.
 If you run this locally, you'll want to download those files.
@@ -1667,11 +1667,11 @@ Your directory should look like:
 
 @(hrule)
 
-We will focus on @reachexlink["tut-8/index.js"],
-because @reachexlink["tut-8/index.rsh"] is the same as previous sections.
+We will focus on @reachexlink["tut-9/index.js"],
+because @reachexlink["tut-9/index.rsh"] is the same as previous sections.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 1 9 "// ..."]
 
@@ -1687,7 +1687,7 @@ To run on Algorand, change the import on line 8.
 
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 10 14 "// ..."]
 
@@ -1699,53 +1699,53 @@ some corresponding to the enumerations we defined in Reach.
 We start defining @jsin{App} as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
 
-@exviewfigs["tut-8" "AppViews"
+@exviewfigs["tut-9" "AppViews"
   '["ConnectAccount" 19 28]]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 15 31 "// ..."]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 39 41 "// ..."]
 
 @itemlist[
- @item{On line 18, we initialize the component state to display @exviewref["tut-8" "ConnectAccount"].}
+ @item{On line 18, we initialize the component state to display @exviewref["tut-9" "ConnectAccount"].}
  @item{On lines 20 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
  @item{On line 21, we use @jsin{getDefaultAccount}, which accesses the default browser account.
   For example, when used with Ethereum, it can discover the currently-selected MetaMask account.}
  @item{On line 26, we use @jsin{getFaucet} to try and access the Reach developer testing network faucet.}
- @item{On line 27, if @jsin{getFaucet} was successful, we set the component state to display @exviewref["tut-8" "FundAccount"].}
- @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to @exviewref["tut-8" "DeployerOrAttacher"].}
- @item{On line 39, we render the appropriate view from @reachexlink{tut-8/views/AppViews.js}.}
+ @item{On line 27, if @jsin{getFaucet} was successful, we set the component state to display @exviewref["tut-9" "FundAccount"].}
+ @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to @exviewref["tut-9" "DeployerOrAttacher"].}
+ @item{On line 39, we render the appropriate view from @reachexlink{tut-9/views/AppViews.js}.}
 ]
 
-@exviewfigs["tut-8" "AppViews"
+@exviewfigs["tut-9" "AppViews"
   '["FundAccount" 30 54]]
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 32 36 " . // ..."]
 
 @itemlist[
   @item{On lines 32 thru 35, we define what happens when the user clicks the @litchar{Fund Account} button.}
   @item{On line 33, we transfer funds from the faucet to the user's account.}
-  @item{On line 34, we set the component state to display @exviewref["tut-8" "DeployerOrAttacher"].}
+  @item{On line 34, we set the component state to display @exviewref["tut-9" "DeployerOrAttacher"].}
   @item{On line 36, we define what to do when the user clicks the @litchar{Skip} button,
-   which is to set the component state to display @exviewref["tut-8" "DeployerOrAttacher"].}
+   which is to set the component state to display @exviewref["tut-9" "DeployerOrAttacher"].}
 ]
 
-@exviewfigs["tut-8" "AppViews"
+@exviewfigs["tut-9" "AppViews"
   '["DeployerOrAttacher" 56 78]]
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 37 38 "// ..."]
 
@@ -1757,36 +1757,36 @@ based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 Next, we will define @jsin{Player} as a React component,
 which will be extended by the specialized components for Alice and Bob.
 
-@exviewfigs["tut-8" "PlayerViews"
+@exviewfigs["tut-9" "PlayerViews"
   '["GetHand" 8 32]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for players, which we defined as:
 
-@reachex[#:show-lines? #t "tut-8/index.rsh"
+@reachex[#:show-lines? #t "tut-9/index.rsh"
          #:link #t
          'only 20 24 "// ..."]
 
 We will provide these callbacks via the React component directly.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 42 55 "// ..."]
 
 @itemlist[
  @item{On line 43, we provide the @jsin{random} callback}
  @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
- @item{On lines 45 thru 47, we set the component state to display @exviewref["tut-8" "GetHand"],
+ @item{On lines 45 thru 47, we set the component state to display @exviewref["tut-9" "GetHand"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On line 48, which occurs after the @jsin{Promise} is resolved,
-  we set the component state to display @exviewref["tut-8" "WaitingForResults"].}
+  we set the component state to display @exviewref["tut-9" "WaitingForResults"].}
  @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
-  which set the component state to display @exviewref["tut-8" "Done"] and @exviewref["tut-8" "Timeout"], respectively.}
+  which set the component state to display @exviewref["tut-9" "Done"] and @exviewref["tut-9" "Timeout"], respectively.}
  @item{On line 53, we define what happens when the user clicks @litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}:
   The @jsin{Promise} from line 45 is resolved.}
 ]
 
-@exviewfigs["tut-8" "PlayerViews"
+@exviewfigs["tut-9" "PlayerViews"
   '["WaitingForResults" 34 42]
   '["Done" 44 54]
   '["Timeout" 56 64]]
@@ -1797,13 +1797,13 @@ We will provide these callbacks via the React component directly.
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
 
-@exviewfigs["tut-8" "DeployerViews"
+@exviewfigs["tut-9" "DeployerViews"
   '["SetWager" 20 38]
   '["Deploy" 40 53]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
-@reachex[#:show-lines? #t "tut-8/index.rsh"
+@reachex[#:show-lines? #t "tut-9/index.rsh"
          #:link #t
          'only 25 27 "// ..."]
 
@@ -1811,38 +1811,38 @@ We will provide the @jsin{wager} value,
 and define some button handlers in order to trigger the deployment of the contract.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 56 72 "// ..."]
 
 @itemlist[
- @item{On line 59, we set the component state to display @exviewref["tut-8" "SetWager"].}
+ @item{On line 59, we set the component state to display @exviewref["tut-9" "SetWager"].}
  @item{On line 61, we define what to do when the user clicks the @litchar{Set Wager} button,
-  which is to set the component state to display @exviewref["tut-8" "Deploy"].}
+  which is to set the component state to display @exviewref["tut-9" "Deploy"].}
  @item{On lines 62 thru 69, we define what to do when the user clicks the @litchar{Deploy} button.}
  @item{On line 63, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
- @item{On line 64, we set the component state to display @exviewref["tut-8" "Deploying"].}
+ @item{On line 64, we set the component state to display @exviewref["tut-9" "Deploying"].}
  @item{On line 65, we set the @jsin{wager} property.}
  @item{On line 66, we start running the Reach program as Alice, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{On lines 67 and 68, we set the component state to display @exviewref["tut-8" "WaitingForAttacher"],
+ @item{On lines 67 and 68, we set the component state to display @exviewref["tut-9" "WaitingForAttacher"],
   which displays the deployed contract info as JSON.}
- @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
+ @item{On line 70, we render the appropriate view from @reachexlink{tut-9/views/DeployerViews.js}.}
 ]
 
-@exviewfigs["tut-8" "DeployerViews"
+@exviewfigs["tut-9" "DeployerViews"
   '["Deploying" 55 61]
   '["WaitingForAttacher" 63 90]]
 
 @(hrule) @;; Explain Attacher
 
-@exviewfigs["tut-8" "AttacherViews"
+@exviewfigs["tut-9" "AttacherViews"
   '["Attach" 18 39]
   '["Attaching" 41 49]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
-@reachex[#:show-lines? #t "tut-8/index.rsh"
+@reachex[#:show-lines? #t "tut-9/index.rsh"
          #:link #t
          'only 28 30 "// ..."]
 
@@ -1850,37 +1850,37 @@ We will provide the @jsin{acceptWager} callback,
 and define some button handlers in order to attach to the deployed contract.
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 73 95 "// ..."]
 
 @itemlist[
- @item{On line 76, we initialize the component state to display @exviewref["tut-8" "Attach"].}
+ @item{On line 76, we initialize the component state to display @exviewref["tut-9" "Attach"].}
  @item{On lines 78 thru 82, we define what happens when the user clicks the @litchar{Attach} button.}
  @item{On line 79, we call @jsin{acc.attach}}
- @item{On line 80, we set the component state to display @exviewref["tut-8" "Attaching"].}
+ @item{On line 80, we set the component state to display @exviewref["tut-9" "Attaching"].}
  @item{On line 81, we start running the Reach program as Bob, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
  @item{On lines 83 thru 88, we define the @jsin{acceptWager} callback.}
- @item{On lines 85 thru 87, we set the component state to display @exviewref["tut-8" "AcceptTerms"],
+ @item{On lines 85 thru 87, we set the component state to display @exviewref["tut-9" "AcceptTerms"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
-  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-8" "WaitingForTurn"].}
- @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
+  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-9" "WaitingForTurn"].}
+ @item{On line 93, we render the approprite view from @reachexlink{tut-9/views/AttacherViews.js}}
 ]
 
-@exviewfigs["tut-8" "AttacherViews"
+@exviewfigs["tut-9" "AttacherViews"
   '["AcceptTerms" 51 70]
   '["WaitingForTurn" 72 81]]
 
 @(hrule) @;; explain renderDOM
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t
          'only 96 96 "// ..."]
 
-Finally, we call a small helper function from @reachexlink{tut-8/views/render.js}
+Finally, we call a small helper function from @reachexlink{tut-9/views/render.js}
 to render our App component.
 
 @(hrule) @;; explain reach react and reach react-down
@@ -1926,30 +1926,30 @@ In @seclink["tut-9"]{the next section}, we'll summarize where we've gone and dir
 
 @check:tf["True"]{Reach accelerates your development with React by baking-in a React development server and the deployment process to test React programs locally.}
 
-@section[#:tag "tut-9"]{Onward and Further}
-@(mint-scope "tut-9")
+@section[#:tag "tut-10"]{Onward and Further}
+@(mint-scope "tut-10")
 
 Let's review what we've done through this tutorial:
 
 @itemlist[
 
-@item{In @seclink["tut-0"]{part zero}, we saw how Reach can be installed with one command on almost any system without any dependencies beyond what most developers have anyways.}
+@item{In @seclink["tut-1"]{part one}, we saw how Reach can be installed with one command on almost any system without any dependencies beyond what most developers have anyways.}
 
-@item{In @seclink["tut-1"]{part one}, we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen @tech{consensus network} into a couple lines and three key API calls.}
+@item{In @seclink["tut-2"]{part two}, we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen @tech{consensus network} into a couple lines and three key API calls.}
 
-@item{In @seclink["tut-2"]{part two}, we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.}
+@item{In @seclink["tut-3"]{part three}, we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.}
 
-@item{In @seclink["tut-3"]{part three}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
+@item{In @seclink["tut-4"]{part four}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
 
-@item{In @seclink["tut-4"]{part four}, we introduce you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
+@item{In @seclink["tut-5"]{part five}, we introduce you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
 
-@item{In @seclink["tut-5"]{part five}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
+@item{In @seclink["tut-6"]{part six}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
 
-@item{In @seclink["tut-6"]{part six}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
+@item{In @seclink["tut-7"]{part seven}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
 
-@item{In @seclink["tut-7"]{part seven}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
+@item{In @seclink["tut-8"]{part eight}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
 
-@item{In @seclink["tut-8"]{part eight}, we saw how to deploy your Reach program as a fully decentralized Web application.}
+@item{In @seclink["tut-9"]{part nine}, we saw how to deploy your Reach program as a fully decentralized Web application.}
 
 ]
 
@@ -1960,27 +1960,27 @@ Let's look at the final versions of our programs.
 
 First, let's look at the Reach program:
 
-@reachex[#:show-lines? #t "tut-7/index.rsh"
+@reachex[#:show-lines? #t "tut-8/index.rsh"
          #:link #t]
 
 Next, the JavaScript command-line frontend:
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t]
 
 And finally, the Web frontend:
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.js"
+         #:show-lines? #t "tut-9/index.js"
          #:link #t]
 
-We wrote @exloc["tut-7/index.rsh"] lines of Reach and two different frontends.
-Our command-line version is @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
-While our Web version is @exloc["tut-8/index.js"] lines of JavaScript, or @exloc["tut-8/index.rsh" "tut-8/index.js"] lines together.
+We wrote @exloc["tut-8/index.rsh"] lines of Reach and two different frontends.
+Our command-line version is @exloc["tut-8/index.mjs"] lines of JavaScript, or @exloc["tut-8/index.rsh" "tut-8/index.mjs"] lines together.
+While our Web version is @exloc["tut-9/index.js"] lines of JavaScript, or @exloc["tut-9/index.rsh" "tut-9/index.js"] lines together.
 
-Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), 1621 lines of TEAL (which you can look at here: @reachexlink["tut-7/build/index.main.mjs#L584"]), as well as @exloc["tut-7/build/index.main.mjs" -2108] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
-If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -482] lines ourselves and ensure that they are consistent and updated at every change to the application.
+Behind the scenes, Reach generated @exloc["tut-8/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-8/build/index.main.sol"]), 1621 lines of TEAL (which you can look at here: @reachexlink["tut-8/build/index.main.mjs#L584"]), as well as @exloc["tut-8/build/index.main.mjs" -2108] lines of JavaScript (which you can look at here: @reachexlink["tut-8/build/index.main.mjs"]).
+If we weren't using Reach, then we'd have to write these @exloc["tut-8/build/index.main.sol" "tut-8/build/index.main.mjs" -482] lines ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!
 

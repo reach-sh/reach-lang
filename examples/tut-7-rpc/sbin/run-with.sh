@@ -1,6 +1,6 @@
 #! /bin/sh
 # Usage: sbin/server-up.sh
-# (Run from tut-6-rpc)
+# (Run from tut-7-rpc)
 set -e
 
 CLIENT="$1"

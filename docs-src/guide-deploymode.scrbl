@@ -26,7 +26,7 @@ If the @tech{frontend} attempts to call @jsin{await ctc.getInfo()} too early, it
 For example, consider the @tech{frontend} in the seventh version of the @emph{Rock, Paper, Scissors!} tutorial:
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-7/index.mjs"
+         #:show-lines? #t "tut-8/index.mjs"
          #:link #t
          'only 23 33 "  // ..."]
 
@@ -38,12 +38,12 @@ For example, consider the @tech{frontend} in the seventh version of the @emph{Ro
 
 ]
 
-If @reachexlink["tut-7/index.rsh"] were defined to use @reachin{deployMode} @reachin{'firstMsg'}, then this call would @|deadlock|, because the contract information would not yet be available.
+If @reachexlink["tut-8/index.rsh"] were defined to use @reachin{deployMode} @reachin{'firstMsg'}, then this call would @|deadlock|, because the contract information would not yet be available.
 (Furthermore, the whole premise of this code, where on line 24, the user is asked if they will deploy, is unnecessary, because Alice would @emph{always} deploy.
 The code for the non-deploy case, line 33, would move to exclusively occur on Bob's branch.)
 Instead, the Reach application would need to introduce a new @reachin{interact} method called by Alice @emph{after} the first message to observe the contract information. 
 
-@reachex[#:show-lines? #t "tut-7/index.rsh"
+@reachex[#:show-lines? #t "tut-8/index.rsh"
          #:link #t
          'only 42 48 "    // ..."]
 
