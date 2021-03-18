@@ -15,6 +15,7 @@ module Reach.JSUtil
   , srcloc_src_only
   , mkCommaList
   , mkArrowParameterList
+  , mkCommaTrailingList
   , jsa
   )
 where
@@ -110,6 +111,9 @@ mkCommaList = aux . reverse
   where
     aux (h : t) = JSLCons (mkCommaList t) JSNoAnnot h
     aux [] = JSLNil
+
+mkCommaTrailingList :: [a] -> JSCommaTrailingList a
+mkCommaTrailingList xs = JSCTLComma (toJSCL xs) JSNoAnnot
 
 mkArrowParameterList :: [JSExpression] -> JSArrowParameterList
 mkArrowParameterList args = JSParenthesizedArrowParameterList JSNoAnnot (mkCommaList args) JSNoAnnot

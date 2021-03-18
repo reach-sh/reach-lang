@@ -259,7 +259,7 @@ data SLForm
   | SLForm_fork_partial
       { slf_at :: SrcLoc
       , slf_mode :: Maybe ForkMode
-      , slf_cases :: [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))]
+      , slf_cases :: [ForkCase]
       , slf_mtime :: Maybe (SrcLoc, [JSExpression])
       }
   | SLForm_parallel_reduce
@@ -274,6 +274,8 @@ data SLForm
       }
   | SLForm_wait
   deriving (Eq, Generic)
+
+type ForkCase = (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))
 
 data SLKwd
   = SLK_async

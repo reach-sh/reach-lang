@@ -9,7 +9,7 @@ import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.IORef
-import Data.List (transpose, (\\))
+import Data.List (transpose, (\\), groupBy, unzip4)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -35,6 +35,8 @@ import Reach.Warning
     ( emitWarning,
       Warning(W_Deprecated),
       Deprecation(D_ParticipantTuples, D_SnakeToCamelCase) )
+import Data.Bifunctor (Bifunctor(bimap))
+import Data.Bool (bool)
 
 --- New Types
 
@@ -3120,9 +3122,27 @@ data CompiledForkCase = CompiledForkCase
   , cfc_req_prop :: JSObjectProperty
   , cfc_switch_case :: JSSwitchParts
   , cfc_only :: JSStatement
+  , cfc_msg_type_def :: [JSStatement]
   }
 
-doFork :: [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, [JSExpression]) -> App SLStmtRes
+forkCaseAt :: ForkCase -> SrcLoc
+forkCaseAt (at, (_, _, _, _)) = at
+
+forkCaseWho :: ForkCase -> JSExpression
+forkCaseWho (_, (who, _, _, _)) = who
+
+forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
+forkCaseSameParticipant l r = getWho l == getWho r
+  where
+    getWho e = jse_expect_id (forkCaseAt e) (forkCaseWho e)
+
+indexed :: [a] -> [(Int, a)]
+indexed = aux 0
+  where
+    aux _ [] = []
+    aux n (h:t) = (n, h) : aux (n + 1) t
+
+doFork :: [JSStatement] -> [ForkCase] -> Maybe (SrcLoc, [JSExpression]) -> App SLStmtRes
 doFork ks cases mtime = do
   idx <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
@@ -3133,79 +3153,129 @@ doFork ks cases mtime = do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
-  let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
-  seenr <- liftIO $ newIORef (mempty :: M.Map SLPart SrcLoc)
-  let go (c_at, (who_e, before_e, pay_e, after_e)) = locAt c_at $ do
+  let thunkify e   = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
+  let thunkBlock b = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a $ JSStatementBlock a b a sp
+  let oneParam p e = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne p) a ) a (JSExpressionStatement e sp)
+  let callThunk e  = JSCallExpression e a JSLNil a
+  let go pcases = do
+        let (who_es, before_es, pay_es, after_es) = unzip4 $ map snd pcases
+        let ats = map fst pcases
+        let who_e = hdDie who_es
+        let c_at  = hdDie ats
+        let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
-        let who_s = bpack who
-        seen <- liftIO $ readIORef seenr
-        case M.lookup who_s seen of
-          Just prev_at ->
-            expect_ $ Err_Fork_CaseAppearsTwice who_s prev_at c_at
-          Nothing -> do
-            liftIO $ modifyIORef seenr (M.insert who_s c_at)
-        let var_i = who
-        let var_e = jid var_i
-        let mkobjp x = JSPropertyNameandValue (JSPropertyIdent a var_i) a [x]
-        let before_call_e = JSCallExpression before_e a JSLNil a
-        let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne $ before_e) a
-        (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
-        (_, (_, res_ty, _)) <-
-          case res_sv of
-            SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
-              captureLifts $
-                doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
-            _ -> impossible $ "not each"
-        isBound <- readSt $ M.member who_s . st_pdvs
-        res_ty_m <-
-          case res_ty of
-            T_Object m -> return $ m
-            _ -> expect_ $ Err_Fork_ResultNotObject res_ty
-        let resHas = flip M.member res_ty_m
-        let msg_ty = fromMaybe T_Null $ M.lookup "msg" res_ty_m
+        let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
+        let partCase n = who <> show n
+        let tv = jid "t"
+        let partMsgType = who <> "MsgType"
+        let ifOneCase t e = if length before_es == 1 then t else e
+        -- Generate:
+        -- const runAlice<N> = () => {
+        --   const res = before<N>();
+        --   const when = res.when || true;
+        --   const msg = res.msg || null;
+        --   return { ... res, when, msg: Alice<N>(msg) };
+        -- }
+        let makeRuns (n, (e_at, before_e)) = locAt e_at $ do
+              let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
+              (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
+              (_, (_, res_ty, _)) <-
+                case res_sv of
+                  SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
+                    captureLifts $
+                      doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
+                  _ -> impossible "not each"
+              res_ty_m <-
+                case res_ty of
+                  T_Object m -> return m
+                  _ -> expect_ $ Err_Fork_ResultNotObject res_ty
+              let resHas = flip M.member res_ty_m
+              let tDot field def =
+                    bool def (JSMemberDot tv a $ jid field) $ resHas field
+              let defWhen = defcon (jid "when") $ tDot "when" $ JSLiteral a "true"
+              let defMsg  = defcon (jid "msg") $ tDot "msg" $ JSLiteral a "null"
+              -- If there's one case, simply return message.
+              --  Otherwise, inject msg into variant representing which case executed
+              let msgExpr = ifOneCase "msg" $ partMsgType <> "." <> partCase n <> "(msg) "
+              let returnExpr = "({ ...t, when, msg: " <> msgExpr <> " })"
+              let stmts = [
+                    defcon tv $ callThunk before_e,
+                    defWhen, defMsg,
+                    JSReturn a (Just $ readJsExpr returnExpr) sp ]
+              let cloName = "run" <> partCase n
+              return (res_ty_m, cloName, thunkBlock stmts)
+
+        (res_ty_ms, beforeNames, beforeClosures) <- unzip3 <$> mapM makeRuns (indexed $ zip ats before_es)
+        -- Msg is either the type for a single case or variant of all possible case msgs
+        let msg_ty =
+              case res_ty_ms of
+                [t] -> lookupMsgTy t
+                _   -> T_Data $ M.fromList $ map (bimap partCase lookupMsgTy) $ indexed res_ty_ms
+        -- Generate:
+        --    const case_res0 = runAlice0(); ...
+        --    const res = case_res<N - 1>.when ? case_res<N - 1> : runAliceN();
+        let genCaseResStmts = aux 0
+              where
+                aux :: Int -> [String] -> [JSStatement]
+                aux 0 [h]   = [defcon res_e $ callThunk $ jid h]
+                aux 0 (h:t) = defcon (mkCaseRes 0) (callThunk $ jid h) : aux 1 t
+                aux n (h:t) =
+                  let prevRes = mkCaseRes $ n - 1 in
+                  let thisRes = if null t then res_e else mkCaseRes n in
+                  let cnd = JSMemberDot prevRes a (jid "when") in
+                  let e   = JSExpressionTernary cnd a prevRes a $ callThunk $ jid h in
+                  defcon thisRes e : aux (n + 1) t
+                aux _ []    = []
+                mkCaseRes :: Int -> JSExpression
+                mkCaseRes n = jid $ "case_res" <> show n
+
+        let cr_ss = genCaseResStmts beforeNames
         let this_eq_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
-        let req_e =
-              case isBound of
-                True -> this_eq_who
-                False -> JSLiteral a "true"
-        let cfc_req_prop = mkobjp $ thunkify req_e
-        let cfc_pay_prop = mkobjp $ pay_e
-        let cfc_data_def = mkobjp $ typeToExpr msg_ty
-        let when_de =
-              case resHas "when" of
-                True -> JSMemberDot res_e a (jid "when")
-                False -> JSLiteral a "true"
-        let msg_de =
-              case resHas "msg" of
-                True -> JSMemberDot res_e a (jid "msg")
-                False -> JSLiteral a "null"
-        let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne msg_de) a
-        let defcon l r =
-              JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
-        let only_body =
-              [ defcon res_e before_call_e
-              , defcon msg_e msg_vde
-              , defcon when_e when_de
-              ]
+        let who_s = bpack who
+        isBound <- readSt $ M.member who_s . st_pdvs
+        let req_e = bool (JSLiteral a "true") this_eq_who isBound
+        let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
+        let pay_obj_props = map (\ (i, e) -> mkobjp (partCase i) e) $ indexed pay_es
+        let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
+        let pay_cases = oneParam tv $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
+        let cfc_req_prop = mkobjp who $ thunkify req_e
+        let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
+        let (cfc_msg_type_def, tyExpr) =
+              case msg_ty of
+                T_Data {} -> let i = jid partMsgType in ([defcon i $ typeToExpr msg_ty], i)
+                ow -> ([], typeToExpr ow)
+        let cfc_data_def = mkobjp who tyExpr
+        let var_e = jid who
+        let res_msg = JSMemberDot res_e a (jid "msg")
+        let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne res_msg) a
+        let res_when = JSMemberDot res_e a (jid "when")
+        let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
+        let only_body = run_ss <> cr_ss <> [ defcon msg_e msg_vde, defcon when_e res_when ]
         isClass <- is_class who_s
         let who_is_this_ss =
               case (isBound, isClass) of
                 (True, _) ->
-                  [JSMethodCall (jid "assert") a (JSLOne $ this_eq_who) a sp]
+                  [JSMethodCall (jid "assert") a (JSLOne this_eq_who) a sp]
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
-        let getAfter = \case
-              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
-              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> return [defcon ae msg_e, s]
-              JSExpressionParen _ e _ -> getAfter e
-              _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
-        after_ss <- getAfter after_e
+        let getAfter (a_at, after_e) = locAt a_at $
+              case after_e of
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
+                JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> return [defcon ae msg_e, s]
+                JSExpressionParen _ e _ -> getAfter (a_at, e)
+                ow -> expect_ $ Err_Fork_ConsensusBadArrow ow
+        all_afters <- mapM getAfter $ zip ats after_es
+        let cases_switch_cases = map (\ (i, as) ->
+              JSCase a (jid $ partCase i) a as) $ indexed all_afters
+        let after_ss =
+              ifOneCase (concat all_afters) [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
         let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
-        return $ CompiledForkCase {..}
-  casel <- mapM go cases
+        locAt c_at $ return CompiledForkCase {..}
+  casel <- mapM go $ groupBy forkCaseSameParticipant cases
+  let cases_msg_type_def = concatMap cfc_msg_type_def casel
   let cases_data_def = map cfc_data_def casel
   let cases_parts = map cfc_part casel
   let cases_pay_props = map cfc_pay_prop casel
@@ -3232,7 +3302,7 @@ doFork ks cases mtime = do
   let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
   let req_ss = [JSExpressionStatement req_e sp]
   let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
-  let before_tc_ss = data_ss <> cases_onlys
+  let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   evalStmt $ exp_ss <> ks
