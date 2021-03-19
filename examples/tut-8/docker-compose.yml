@@ -37,17 +37,18 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  reach-app-tut-8-ALGO-test-dockerized-algod-local:
+  reach-app-tut-8-ALGO-live:
     <<: *app-base
     environment:
       - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
-      - ALGO_SERVER=http://host.docker.internal
-      - ALGO_PORT=4180
-      - ALGO_INDEXER_SERVER=http://host.docker.internal
-      - ALGO_INDEXER_PORT=8980
-    extra_hosts:
-      - 'host.docker.internal:172.17.0.1'
+      - REACH_CONNECTOR_MODE=ALGO-live
+      - ALGO_TOKEN
+      - ALGO_SERVER
+      - ALGO_PORT
+      - ALGO_INDEXER_TOKEN
+      - ALGO_INDEXER_SERVER
+      - ALGO_INDEXER_PORT
+      - ALGO_FAUCET_PASSPHRASE
   reach-app-tut-8-ALGO-test-dockerized-algod:
     <<: *app-base
     depends_on:

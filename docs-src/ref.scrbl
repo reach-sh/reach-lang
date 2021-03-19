@@ -113,6 +113,8 @@ It then
       @item{@defconmode{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envref{ETH_NODE_URI}.}
       @item{@defconmode{ETH-browser}, which uses Ethereum via a browser extension, like MetaMask.}
       @item{@defconmode{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
+      @item{@defconmode{ALGO-live}, which uses a live Algorand network node, specified by the environment variables documented in @seclink["ref-network-algo"]{the Algorand connector section}.}
+      @item{@defconmode{ALGO-browser}, which uses Algorand via a browser extension, like AlgoSigner.}
       @item{@defconmode{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
     ]
   }

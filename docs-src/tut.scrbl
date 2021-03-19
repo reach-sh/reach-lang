@@ -1397,9 +1397,9 @@ Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've staye
 
 @item{Lines 7 through 24 define the Reach private developer test network service for Algorand.}
 
-@item{Lines 25 through 63 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
+@item{Lines 25 through 64 define services that allow the application to be run with different networks; including line 25, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
 
-@item{We'll also add lines 64 through 69 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{We'll also add lines 65 through 70 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run

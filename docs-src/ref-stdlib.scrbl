@@ -58,6 +58,8 @@ to its full, canonical name. The canonical connector modes are:
 @item{@conmode{ETH-live}}
 @item{@conmode{ETH-browser}}
 @item{@conmode{ETH-test-dockerized-geth}, for @jsin{'ETH'}, @jsin{'ETH-test'}, and @jsin{'ETH-test-dockerized'}.}
+@item{@conmode{ALGO-live}}
+@item{@conmode{ALGO-browser}}
 @item{@conmode{ALGO-test-dockerized-algod}, for @jsin{'ALGO'}, @jsin{'ALGO-test'}, and @jsin{'ALGO-test-dockerized'}.}
 
 ]

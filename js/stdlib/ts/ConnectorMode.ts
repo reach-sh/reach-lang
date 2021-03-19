@@ -7,6 +7,7 @@ export type ConnectorMode =
   'ETH-browser' |
   'FAKE-test-embedded-mock' |
   'ALGO-test-dockerized-algod' |
+  'ALGO-live' |
   'ALGO-browser';
 
 // Order is significant, earlier = default for shared prefix
@@ -17,6 +18,7 @@ const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-browser',
   'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
+  'ALGO-live',
   'ALGO-browser',
 ];
 
