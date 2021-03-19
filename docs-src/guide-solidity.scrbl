@@ -8,7 +8,7 @@ However, mastering Reach development is a valuable skill for those developers wi
 But, when these developers read the Reach documentation, they are often at loss to see how what they're reading relates to what they already know.
 This article attempts to bridge that gap and help Solidity-style developers understand Reach.
 
-@margin-note{For the rest of this article, when we use the term "Solidity development", we're referring blockchain development without Reach and not literally only the programming language Solidity.
+@margin-note{For the rest of this article, when we use the term "Solidity development", we're referring to blockchain development without Reach and not literally only the programming language Solidity.
 For example, "Solidity development" includes @link["https://github.com/vyperlang/vyper"]{Vyper} developers, as well as users of tools like @link["https://www.trufflesuite.com"]{Truffle Suite}, @link["https://web3js.readthedocs.io/"]{web3.js}, and so on.
 We're talking about a paradigm of @|DApp| programming and not a specific tool.}
 
