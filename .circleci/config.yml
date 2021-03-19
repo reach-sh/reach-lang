@@ -233,8 +233,9 @@ workflows:
     jobs:
       - shellcheck:
           <<: *default-job-setup
-      - docker-lint:
-          <<: *default-job-setup
+      # Disabled, unless somehow we can use it w/ unpinned deps
+      # - docker-lint:
+      #     <<: *default-job-setup
 
   # TODO: re-enable / integrate with build-and-test
   # experimental-devnets:
