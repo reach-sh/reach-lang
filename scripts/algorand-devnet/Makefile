@@ -33,6 +33,7 @@ index-status:
 	@curl --verbose -s \
 		-H "X-Indexer-API-Token: reach-devnet" \
 		localhost:8980/v2/transactions?min-round=0
+#		localhost:8980/health
 
 # Intentionally not specifying deps for this because we don't
 # want to get into loops.

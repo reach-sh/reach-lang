@@ -1,5 +1,5 @@
 {
-    "Version": 12,
+    "Version": 15,
     "AccountsRebuildSynchronousMode": 1,
     "AnnounceParticipationKey": true,
     "Archival": true,
@@ -25,6 +25,7 @@
     "EnableAgreementTimeMetrics": false,
     "EnableAssembleStats": false,
     "EnableBlockService": false,
+    "EnableCatchupFromArchiveServers": false,
     "EnableDeveloperAPI": true,
     "EnableGossipBlockService": true,
     "EnableIncomingMessageFilter": false,
@@ -48,8 +49,11 @@
     "LogArchiveMaxAge": "",
     "LogArchiveName": "node.archive.log",
     "LogSizeLimit": 1073741824,
+    "MaxCatchpointDownloadDuration": 7200000000000,
     "MaxConnectionsPerIP": 30,
+    "MinCatchpointFileDownloadBytesPerSecond": 20480,
     "NetAddress": "",
+    "NetworkMessageTraceServer": "",
     "NetworkProtocolVersion": "",
     "NodeExporterListenAddress": ":9100",
     "NodeExporterPath": "./node_exporter",
@@ -75,5 +79,6 @@
     "TxSyncIntervalSeconds": 60,
     "TxSyncServeResponseSize": 1000000,
     "TxSyncTimeoutSeconds": 30,
-    "UseXForwardedForAddressField": ""
+    "UseXForwardedForAddressField": "",
+    "VerifiedTranscationsCacheSize": 30000
 }

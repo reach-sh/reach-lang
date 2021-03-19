@@ -159,7 +159,7 @@ render ts = tt
   where
     tt = LT.toStrict lt
     lt = LT.unlines lts
-    lts = "#pragma version 2" : (map LT.unwords $ peep_optimize $ DL.toList ts)
+    lts = "#pragma version 3" : (map LT.unwords $ peep_optimize $ DL.toList ts)
 
 data Shared = Shared
   { sFailedR :: IORef Bool
@@ -437,10 +437,10 @@ cprim = \case
       ca te
       op "||"
     [be, te, fe] -> do
-      ca be
-      ca te
       ca fe
-      op "ite"
+      ca te
+      ca be
+      op "select"
     _ -> impossible "ite args"
   where
     call o = \args -> do
@@ -531,12 +531,8 @@ doArrayRef at aa frombs ie = do
           Right x -> x
   case t of
     T_Bool -> do
-      case ie of
-        Left (DLA_Literal (DLL_Int _ ii)) | ii < 256 -> do
-          code "byteget" [texty ii]
-        _ -> do
-          ie'
-          op "byteget2"
+      ie'
+      op "getbyte"
       case frombs of
         True -> nop
         False -> ctobs T_Bool
@@ -603,14 +599,9 @@ ce = \case
     case t of
       T_Bool -> do
         ca aa
-        case ia of
-          DLA_Literal (DLL_Int _ ii) | ii < 256 -> do
-            ca va
-            code "byteset" [texty ii]
-          _ -> do
-            ca ia
-            ca va
-            op "byteset2"
+        ca ia
+        ca va
+        op "setbyte"
       _ -> do
         let tsz = typeSizeOf t
         let (before, after) =
@@ -743,7 +734,8 @@ doSwitch ck at dv csm = do
   let cm1 ((_vn, (mov, k)), vi) = do
         next_lab <- freshLabel
         ca $ DLA_Var dv
-        code "byteget" ["0"]
+        cl $ DLL_Int sb 0
+        op "getbyte"
         cl $ DLL_Int sb vi
         op "=="
         code "bz" [next_lab]

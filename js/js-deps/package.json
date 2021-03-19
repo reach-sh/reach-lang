@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@craco/craco": "^5.8.0",
-    "algosdk": "github:reach-sh/js-algorand-sdk#246538f",
+    "algosdk": "github:algorand/js-algorand-sdk#d7c9f8946bce78d41db247883622df569d643c0f",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.32",
     "express": "^4.17.1",

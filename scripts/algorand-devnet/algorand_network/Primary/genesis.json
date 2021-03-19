@@ -17,13 +17,13 @@
       }
     },
     {
-      "addr": "UONLY5GDZHTEJLV66JTN63EYTMDZPDN3P4RAKADNVHGTYMUCXNXWSHINZA",
+      "addr": "AKPXWX76NDAMFATCJVRBHUB2MDM5ROB3KZE43QUYD73XIP7WSZPYVIZ744",
       "comment": "FAUCET",
       "state": {
         "algo": 10000000000000000,
         "onl": 1,
-        "sel": "8709NcVHXFjkSmIFnf7CloKQT81Ay81AOoTZI6Qeels=",
-        "vote": "sqhms20lc5GcCGCSxC4Y7hi9atBadvaFsXSiFGxXYuc=",
+        "sel": "jHEXcucMZRwnAIemLhccGoRxmi17D5Oly+Q47nbQNC0=",
+        "vote": "PUbjDjUTvHBiPY32vpefAJe4Np5YglDd3gDnX/AsOcQ=",
         "voteKD": 10000,
         "voteLst": 3000000
       }
@@ -32,6 +32,6 @@
   "fees": "A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE",
   "id": "v1",
   "network": "devnet",
-  "proto": "https://github.com/algorandfoundation/specs/tree/3a83c4c743f8b17adfd73944b4319c25722a6782",
+  "proto": "https://github.com/algorandfoundation/specs/tree/ac2255d586c4474d4ebcf3809acccb59b7ef34ff",
   "rwd": "7777777777777777777777777777777777777777777777777774MSJUVU"
 }

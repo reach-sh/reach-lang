@@ -2,19 +2,32 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  autoconf=2.69-11 \
-  automake=1:1.15.1-3ubuntu2 \
-  bsdmainutils=11.1.2ubuntu1 \
-  build-essential=12.4ubuntu1 \
-  ca-certificates=20190110~18.04.1 \
-  git=1:2.17.1-1ubuntu0.7 \
-  libboost-all-dev=1.65.1.0ubuntu1 \
-  libtool=2.4.6-2 \
-  sqlite3=3.22.0-1ubuntu0.4 \
-  sudo=1.8.21p2-3ubuntu1.2 \
-  systemd=237-3ubuntu10.42 \
-  tzdata=2020a-0ubuntu0.18.04 \
-  wget=1.19.4-1ubuntu2.2 \
+#  autoconf=2.69-11 \
+#  automake=1:1.15.1-3ubuntu2 \
+#  bsdmainutils=11.1.2ubuntu1 \
+#  build-essential=12.4ubuntu1 \
+#  ca-certificates=20190110~18.04.1 \
+#  git=1:2.17.1-1ubuntu0.7 \
+#  libboost-all-dev=1.65.1.0ubuntu1 \
+#  libtool=2.4.6-2 \
+#  sqlite3=3.22.0-1ubuntu0.4 \
+#  sudo=1.8.21p2-3ubuntu1.2 \
+#  systemd=237-3ubuntu10.42 \
+#  tzdata=2020a-0ubuntu0.18.04 \
+#  wget=1.19.4-1ubuntu2.2 \
+  autoconf \
+  automake \
+  bsdmainutils \
+  build-essential \
+  ca-certificates \
+  git \
+  libboost-all-dev \
+  libtool \
+  sqlite3 \
+  sudo \
+  systemd \
+  tzdata \
+  wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -28,32 +41,45 @@ ENV PATH   $GOPATH/bin:$GOROOT/bin:$PATH
 ENV SRC_PARENT $GOPATH/src/github.com/algorand
 RUN mkdir -p $SRC_PARENT
 
-# algod
+### ALGOD
 WORKDIR $SRC_PARENT
-RUN git clone https://github.com/jeapostrophe/go-algorand
-WORKDIR $SRC_PARENT/go-algorand
-# RUN git checkout 595aa4722824be2bbad92ec367267584a87f29fe && ./scripts/configure_dev.sh && make install
+
+# algod release (doesn't work)
+ARG ALGO_VERSION=v2.5.1-beta
+RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/${ALGO_VERSION}.tar.gz && tar -xvf ${ALGO_VERSION}.tar.gz
+ARG ALGO_DIRVERSION=2.5.1-beta
+WORKDIR $SRC_PARENT/go-algorand-${ALGO_DIRVERSION}
 RUN ./scripts/configure_dev.sh
-RUN git fetch && git reset --hard 3bfd1918a5085b882d8af91b5bd8ca348b774d87
 RUN make install
-RUN git fetch && git reset --hard b61cf649
+COPY reach.patch .
+RUN patch -p1 < reach.patch
 RUN make install
 
-# indexer
+### INDEXER
 WORKDIR $SRC_PARENT
-RUN git clone https://github.com/algorand/indexer
-WORKDIR $SRC_PARENT/indexer
-RUN make
-RUN cp $SRC_PARENT/indexer/cmd/algorand-indexer/algorand-indexer $GOPATH/bin
 
-# debugger
+# indexer release (doesn't work)
+# ARG INDEXER_VERSION=2.2.1
+# RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
+# WORKDIR $SRC_PARENT/indexer-${INDEXER_VERSION}
+
+# indexer develop branch as of 2021-03-19
+RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout e54c4d97df60e2a6768abb3d97919f3412e58597
+WORKDIR $SRC_PARENT/indexer
+
+RUN make
+RUN cp cmd/algorand-indexer/algorand-indexer $GOPATH/bin
+
+### DEBUGGER
 WORKDIR /
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  software-properties-common=0.96.24.32.14 \
+  software-properties-common \
+#  software-properties-common=0.96.24.32.14 \
   && add-apt-repository -y ppa:plt/racket \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  racket=8.0+ppa1-5~bionic1 \
+  racket \
+#  racket=8.0+ppa1-5~bionic1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 COPY server.rkt /

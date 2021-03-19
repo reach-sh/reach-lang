@@ -1,0 +1,38 @@
+diff --git a/data/transactions/logic/eval.go b/data/transactions/logic/eval.go
+index 7809dd4c..a6f321e9 100644
+--- a/data/transactions/logic/eval.go
++++ b/data/transactions/logic/eval.go
+@@ -27,6 +27,7 @@ import (
+ 	"io"
+ 	"math"
+ 	"math/big"
++        "os"
+ 	"runtime"
+ 	"sort"
+ 	"strings"
+@@ -385,6 +386,11 @@ func eval(program []byte, cx *evalContext) (pass bool, err error) {
+ 	cx.stack = make([]stackValue, 0, 10)
+ 	cx.program = program
+ 
++	debugURL := os.Getenv("TEAL_DEBUGGER_URL")
++	if debugURL != "" {
++		cx.Debugger = &WebDebuggerHook{URL: debugURL}
++	}
++
+ 	if cx.Debugger != nil {
+ 		cx.debugState = makeDebugState(cx)
+ 		if err = cx.Debugger.Register(cx.refreshDebugState()); err != nil {
+@@ -1961,7 +1967,12 @@ func opSetByte(cx *evalContext) {
+ 		cx.err = errors.New("setbyte index > byte length")
+ 		return
+ 	}
+-	cx.stack[pprev].Bytes[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
++	// Modifies the bytes
++	// cx.stack[pprev].Bytes[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
++	// Makes a copy
++	newstr := append([]byte(nil), cx.stack[pprev].Bytes...)
++	newstr[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
++	cx.stack[pprev].Bytes = newstr
+ 	cx.stack = cx.stack[:prev]
+ }
+ 

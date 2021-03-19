@@ -18,7 +18,7 @@ export async function Alice(ctc, interact) {
   const v2 = await ctc.creationTime();
   const v0 = stdlib.protect(ctc0, interact.info, null);
   const v1 = stdlib.protect(ctc1, interact.request, null);
-  const txn1 = await (ctc.sendrecv('Alice', 1, 1, stdlib.checkedBigNumberify('./index.rsh:13:9:dot', stdlib.UInt_max, 0), [ctc1, ctc1], [v2, v1], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [ctc1], true, true, false, ((txn1) => {
+  const txn1 = await (ctc.sendrecv('Alice', 1, 1, stdlib.checkedBigNumberify('./index.rsh:13:9:dot', stdlib.UInt_max, 0), [ctc1, ctc1], [v2, v1], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [ctc1], true, true, false, (async (txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc6, [stdlib.checkedBigNumberify('./index.rsh:13:9:dot', stdlib.UInt_max, 0), v2]);
     sim_r.prevSt_noPrevTime = stdlib.digest(ctc7, [stdlib.checkedBigNumberify('./index.rsh:13:9:dot', stdlib.UInt_max, 0)]);
@@ -81,7 +81,7 @@ export async function Alice(ctc, interact) {
     msg: 'sender correct',
     who: 'Alice'
      });
-  const txn3 = await (ctc.sendrecv('Alice', 3, 1, stdlib.checkedBigNumberify('./index.rsh:23:9:dot', stdlib.UInt_max, 2), [ctc3, ctc1, ctc1, ctc0], [v5, v6, v19, v0], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [ctc0], true, true, false, ((txn3) => {
+  const txn3 = await (ctc.sendrecv('Alice', 3, 1, stdlib.checkedBigNumberify('./index.rsh:23:9:dot', stdlib.UInt_max, 2), [ctc3, ctc1, ctc1, ctc0], [v5, v6, v19, v0], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [ctc0], true, true, false, (async (txn3) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc4, [stdlib.checkedBigNumberify('./index.rsh:23:9:dot', stdlib.UInt_max, 2), v5, v6, v19]);
     sim_r.prevSt_noPrevTime = stdlib.digest(ctc5, [stdlib.checkedBigNumberify('./index.rsh:23:9:dot', stdlib.UInt_max, 2), v5, v6]);
@@ -173,7 +173,7 @@ export async function Bob(ctc, interact) {
     msg: 'want',
     who: 'Bob'
      });
-  const txn2 = await (ctc.sendrecv('Bob', 2, 0, stdlib.checkedBigNumberify('./index.rsh:18:9:dot', stdlib.UInt_max, 2), [ctc3, ctc0, ctc0], [v5, v6, v11], v6, [], true, true, false, ((txn2) => {
+  const txn2 = await (ctc.sendrecv('Bob', 2, 0, stdlib.checkedBigNumberify('./index.rsh:18:9:dot', stdlib.UInt_max, 2), [ctc3, ctc0, ctc0], [v5, v6, v11], v6, [], true, true, false, (async (txn2) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc4, [stdlib.checkedBigNumberify('./index.rsh:18:9:dot', stdlib.UInt_max, 1), v5, v6, v11]);
     sim_r.prevSt_noPrevTime = stdlib.digest(ctc5, [stdlib.checkedBigNumberify('./index.rsh:18:9:dot', stdlib.UInt_max, 1), v5, v6]);
@@ -251,7 +251,7 @@ export async function Bob(ctc, interact) {
    }
 
 const _ALGO = {
-  appApproval: `#pragma version 2
+  appApproval: `#pragma version 3
 // Check that we're an App
 txn TypeEnum
 int appl
@@ -326,7 +326,7 @@ done:
 int 1
 return
 `,
-  appApproval0: `#pragma version 2
+  appApproval0: `#pragma version 3
 // Check that we're an App
 txn TypeEnum
 int appl
@@ -376,7 +376,7 @@ done:
 int 1
 return
 `,
-  appClear: `#pragma version 2
+  appClear: `#pragma version 3
 // We're alone
 global GroupSize
 int 1
@@ -392,7 +392,7 @@ done:
 int 1
 return
 `,
-  ctc: `#pragma version 2
+  ctc: `#pragma version 3
 // Check size
 global GroupSize
 int 4
@@ -431,7 +431,7 @@ int 1
 return
 `,
   stepargs: [0, 89, 121, 249],
-  steps: [null, `#pragma version 2
+  steps: [null, `#pragma version 3
 // Handler 1
 // Check txnAppl
 gtxn 0 TypeEnum
@@ -540,7 +540,7 @@ assert
 done:
 int 1
 return
-`, `#pragma version 2
+`, `#pragma version 3
 // Handler 2
 // Check txnAppl
 gtxn 0 TypeEnum
@@ -654,7 +654,7 @@ assert
 done:
 int 1
 return
-`, `#pragma version 2
+`, `#pragma version 3
 // Handler 3
 // Check txnAppl
 gtxn 0 TypeEnum
@@ -804,7 +804,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T0",
+            "internalType": "struct T0",
             "name": "svs",
             "type": "tuple"
           },
@@ -816,13 +816,13 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T2",
+            "internalType": "struct T2",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct ReachContract.T3",
+        "internalType": "struct T3",
         "name": "_a",
         "type": "tuple"
       }
@@ -853,7 +853,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T1",
+            "internalType": "struct T1",
             "name": "svs",
             "type": "tuple"
           },
@@ -864,7 +864,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct ReachContract.T6",
+        "internalType": "struct T6",
         "name": "_a",
         "type": "tuple"
       }
@@ -895,7 +895,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T4",
+            "internalType": "struct T4",
             "name": "svs",
             "type": "tuple"
           },
@@ -907,13 +907,13 @@ const _ETH = {
                 "type": "uint8[128]"
               }
             ],
-            "internalType": "struct ReachContract.T7",
+            "internalType": "struct T7",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct ReachContract.T8",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -933,7 +933,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T0",
+            "internalType": "struct T0",
             "name": "svs",
             "type": "tuple"
           },
@@ -945,12 +945,12 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T2",
+            "internalType": "struct T2",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct ReachContract.T3",
+        "internalType": "struct T3",
         "name": "_a",
         "type": "tuple"
       }
@@ -982,7 +982,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T1",
+            "internalType": "struct T1",
             "name": "svs",
             "type": "tuple"
           },
@@ -992,7 +992,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct ReachContract.T6",
+        "internalType": "struct T6",
         "name": "_a",
         "type": "tuple"
       }
@@ -1024,7 +1024,7 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ReachContract.T4",
+            "internalType": "struct T4",
             "name": "svs",
             "type": "tuple"
           },
@@ -1036,12 +1036,12 @@ const _ETH = {
                 "type": "uint8[128]"
               }
             ],
-            "internalType": "struct ReachContract.T7",
+            "internalType": "struct T7",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct ReachContract.T8",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -1050,9 +1050,13 @@ const _ETH = {
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]`,
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461007a565b43815261003f61007a565b8151815260405161005790600090839060200161008d565b60408051601f1981840301815291905280516020909101206000555061009c9050565b6040518060200160405280600081525090565b91825251602082015260400190565b6104e5806100ab6000396000f3fe6080604052600436106100345760003560e01c80632438df70146100395780639532ef011461004e578063f512f77e14610061575b600080fd5b61004c61004736600461036e565b610074565b005b61004c61005c366004610357565b610158565b61004c61006f36600461037f565b610203565b604051610088906001908390602001610487565b6040516020818303038152906040528051906020012060001c600054146100ae57600080fd5b346020820135146100be57600080fd5b7f1ca594b20641191c893d80895212a20239e99e17b7304a35c096140ec34f22dd816040516100ed91906103f3565b60405180910390a16100fd6102f0565b61010a6020830183610336565b6001600160a01b031681526020808301358183015243604080840191909152516101399160029184910161049b565b60408051601f1981840301815291905280516020909101206000555050565b60405161016c906000908390602001610478565b6040516020818303038152906040528051906020012060001c6000541461019257600080fd5b341561019d57600080fd5b7ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166816040516101cc91906103dc565b60405180910390a16101dc6102f0565b3381526020808301358183015243604080840191909152516101399160019184910161049b565b604051610217906002908390602001610487565b6040516020818303038152906040528051906020012060001c6000541461023d57600080fd5b341561024857600080fd5b336102566020830183610336565b6001600160a01b03161461026957600080fd5b6102766020820182610336565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f193505050501580156102b1573d6000803e3d6000fd5b507f6ca511835aec60423a26d24cdbe1d3b53c20c6d05a3c891aed1744e1f97974bf816040516102e19190610423565b60405180910390a16000805533ff5b604051806060016040528060006001600160a01b0316815260200160008152602001600081525090565b80356001600160a01b038116811461033157600080fd5b919050565b600060208284031215610347578081fd5b6103508261031a565b9392505050565b600060408284031215610368578081fd5b50919050565b600060808284031215610368578081fd5b60006110608284031215610368578081fd5b6001600160a01b036103a28261031a565b16825260208181013590830152604090810135910152565b80516001600160a01b0316825260208082015190830152604090810151910152565b813581526020918201359181019190915260400190565b608081016104018284610391565b606083013580151580821461041557600080fd5b806060850152505092915050565b61106081016104328284610391565b60608201606084016000805b608081101561046e57823560ff8116808214610458578384fd5b855250602093840193929092019160010161043e565b5050505092915050565b91825235602082015260400190565b828152608081016103506020830184610391565b8281526080810161035060208301846103ba56fea2646970667358221220ca5a6032192d3775a1146d5d62e9682d04293b1865863e12d6eeb779b8ab383464736f6c63430008000033`,
+  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a16040805160208082018352438252825180820184526000808252925181528351808301849052905181850152835180820385018152606090910190935282519201919091209055610764806100826000396000f3fe6080604052600436106100385760003560e01c80632438df70146100445780639532ef0114610059578063f512f77e1461006c5761003f565b3661003f57005b600080fd5b610057610052366004610618565b61007f565b005b610057610067366004610601565b61023f565b61005761007a366004610629565b6103ca565b6040516100939060019083906020016106e9565b6040516020818303038152906040528051906020012060001c6000541461010d5760405162461bcd60e51b815260206004820152602360248201527f737461746520636865636b206174202e2f696e6465782e7273683a31383a393a604482015262191bdd60ea1b60648201526084015b60405180910390fd5b60008055346020820135146101805760405162461bcd60e51b815260206004820152603360248201527f282e2f696e6465782e7273683a31383a393a646f742c5b5d2c4a757374202270604482015272617920616d6f756e7420636f7272656374222960681b6064820152608401610104565b7f1ca594b20641191c893d80895212a20239e99e17b7304a35c096140ec34f22dd816040516101af9190610664565b60405180910390a16101e4604051806060016040528060006001600160a01b0316815260200160008152602001600081525090565b6101f160208301836105e0565b6001600160a01b03168152602080830135818301524360408084019190915251610220916002918491016106fd565b60408051601f1981840301815291905280516020909101206000555050565b60408051600060208201528235918101919091526060016040516020818303038152906040528051906020012060001c600054146102cb5760405162461bcd60e51b815260206004820152602360248201527f737461746520636865636b206174202e2f696e6465782e7273683a31333a393a604482015262191bdd60ea1b6064820152608401610104565b6000805534156103395760405162461bcd60e51b815260206004820152603360248201527f282e2f696e6465782e7273683a31333a393a646f742c5b5d2c4a757374202270604482015272617920616d6f756e7420636f7272656374222960681b6064820152608401610104565b6040805182358152602080840135908201527ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166910160405180910390a16103a3604051806060016040528060006001600160a01b0316815260200160008152602001600081525090565b338152602080830135818301524360408084019190915251610220916001918491016106fd565b6040516103de9060029083906020016106e9565b6040516020818303038152906040528051906020012060001c600054146104535760405162461bcd60e51b815260206004820152602360248201527f737461746520636865636b206174202e2f696e6465782e7273683a32333a393a604482015262191bdd60ea1b6064820152608401610104565b6000805534156104c15760405162461bcd60e51b815260206004820152603360248201527f282e2f696e6465782e7273683a32333a393a646f742c5b5d2c4a757374202270604482015272617920616d6f756e7420636f7272656374222960681b6064820152608401610104565b336104cf60208301836105e0565b6001600160a01b03161461053d5760405162461bcd60e51b815260206004820152602f60248201527f282e2f696e6465782e7273683a32333a393a646f742c5b5d2c4a75737420227360448201526e656e64657220636f7272656374222960881b6064820152608401610104565b61054a60208201826105e0565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610585573d6000803e3d6000fd5b507f6ca511835aec60423a26d24cdbe1d3b53c20c6d05a3c891aed1744e1f97974bf816040516105b59190610694565b60405180910390a16000805533ff5b80356001600160a01b03811681146105db57600080fd5b919050565b6000602082840312156105f1578081fd5b6105fa826105c4565b9392505050565b600060408284031215610612578081fd5b50919050565b600060808284031215610612578081fd5b60006110608284031215610612578081fd5b6001600160a01b0361064c826105c4565b16825260208181013590830152604090810135910152565b60808101610672828461063b565b606083013580151580821461068657600080fd5b806060850152505092915050565b61106081016106a3828461063b565b60608201606084016000805b60808110156106df57823560ff81168082146106c9578384fd5b85525060209384019392909201916001016106af565b5050505092915050565b828152608081016105fa602083018461063b565b828152608081016105fa602083018480516001600160a01b031682526020808201519083015260409081015191015256fea26469706673582212207aff95a1e1e9964c1fc60ea43e98b059ee4929d02f67070e27aa79183e737e9264736f6c63430008020033`,
   deployMode: `DM_constructor`
    };
 

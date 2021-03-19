@@ -49,3 +49,6 @@ You can close the loop by either:
 
 (The generated network stuff is committed to the repo,
 so you shouldn't actually have to go through this bootstrapping process.)
+
+You need to do this whenever you upgrade the algod version to get new protocol
+versions

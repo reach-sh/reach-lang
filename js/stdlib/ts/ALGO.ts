@@ -648,7 +648,7 @@ const [getIndexer, setIndexer] = replaceableThunk(async () => {
 export {setIndexer};
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please';
+const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
 const [getFaucet, setFaucet] = replaceableThunk(async () => {
   const browser = getBrowser();
   const FAUCET = algosdk.mnemonicToSecretKey(browser

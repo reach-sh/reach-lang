@@ -1,9 +1,7 @@
 // Automatically generated with Reach 0.1.2
 pragma abicoder v2;
 
-
 pragma solidity ^0.8.0;
-
 contract Stdlib {
   function safeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require((z = x + y) >= x, "add overflow"); }
@@ -18,12 +16,58 @@ contract Stdlib {
     unchecked { z = x - y; } }
   function unsafeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x * y; } }
+
+  function checkFunReturn(bool succ, bytes memory returnData, string memory errMsg) internal pure returns (bytes memory) {
+    if (succ) {
+      return returnData;
+    } else {
+      if (returnData.length > 0) {
+        assembly {
+          let returnData_size := mload(returnData)
+          revert(add(32, returnData), returnData_size)
+        }
+      } else {
+        revert(errMsg);
+      }
+    }
+  }
 }
+
+struct T0 {
+  uint256 v2;
+   }
+struct T1 {
+  address payable v5;
+  uint256 v6;
+  uint256 v11;
+   }
+struct T2 {
+  uint256 v6;
+   }
+struct T3 {
+  T0 svs;
+  T2 msg;
+   }
+struct T4 {
+  address payable v5;
+  uint256 v6;
+  uint256 v19;
+   }
+struct T6 {
+  T1 svs;
+  bool msg;
+   }
+struct T7 {
+  uint8[128] v23;
+   }
+struct T8 {
+  T4 svs;
+  T7 msg;
+   }
 
 
 contract ReachContract is Stdlib {
   uint256 current_state;
-  
   
   event e0();
   struct _F0 {
@@ -35,7 +79,7 @@ contract ReachContract is Stdlib {
     _f.v2 = uint256(block.number);
     
     
-    a0postsvs memory nsvs;
+    T0 memory nsvs;
     nsvs.v2 = _f.v2;
     current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
@@ -43,49 +87,18 @@ contract ReachContract is Stdlib {
   
   
   
+  event e1(T3 _a);
   
-  
-  
-  
-  
-  
-  
-  struct a2postsvs {
-    address payable v5;
-    uint256 v6;
-    uint256 v19;
-     }
-  
-  struct a1postsvs {
-    address payable v5;
-    uint256 v6;
-    uint256 v11;
-     }
-  
-  struct a0postsvs {
-    uint256 v2;
-     }
-  
-  
-  struct a1msg {
-    uint256 v6;
-     }
-  struct a1 {
-    a0postsvs svs;
-    a1msg msg;
-     }
-  event e1(a1 _a);
-  
-  function m1(a1 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))));
+  function m1(T3 calldata _a) external payable {
+    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))), 'state check at ./index.rsh:13:9:dot');
+    current_state = 0x0;
     
     
-    require(true && true);
-    
-    require((msg.value == uint256(0)));
-    require(true);
+    require(true && true, 'timeout check at ./index.rsh:13:9:dot');
+    require((msg.value == uint256(0)), '(./index.rsh:13:9:dot,[],Just "pay amount correct")');
+    require(true, '(./index.rsh:13:9:dot,[],Just "sender correct")');
     emit e1(_a);
-    a1postsvs memory nsvs;
+    T1 memory nsvs;
     nsvs.v5 = payable(msg.sender);
     nsvs.v6 = _a.msg.v6;
     nsvs.v11 = uint256(block.number);
@@ -93,22 +106,18 @@ contract ReachContract is Stdlib {
     
      }
   
+  event e2(T6 _a);
   
-  struct a2 {
-    a1postsvs svs;
-     }
-  event e2(a2 _a);
-  
-  function m2(a2 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))));
+  function m2(T6 calldata _a) external payable {
+    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))), 'state check at ./index.rsh:18:9:dot');
+    current_state = 0x0;
     
     
-    require(true && true);
-    
-    require((msg.value == _a.svs.v6));
-    require(true);
+    require(true && true, 'timeout check at ./index.rsh:18:9:dot');
+    require((msg.value == _a.svs.v6), '(./index.rsh:18:9:dot,[],Just "pay amount correct")');
+    require(true, '(./index.rsh:18:9:dot,[],Just "sender correct")');
     emit e2(_a);
-    a2postsvs memory nsvs;
+    T4 memory nsvs;
     nsvs.v5 = _a.svs.v5;
     nsvs.v6 = _a.svs.v6;
     nsvs.v19 = uint256(block.number);
@@ -116,25 +125,16 @@ contract ReachContract is Stdlib {
     
      }
   
+  event e3(T8 _a);
   
-  struct a3msg {
-    uint8[128] v23;
-     }
-  struct a3 {
-    a2postsvs svs;
-    a3msg msg;
-     }
-  event e3(a3 _a);
-  
-  function m3(a3 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))));
+  function m3(T8 calldata _a) external payable {
+    require(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))), 'state check at ./index.rsh:23:9:dot');
+    current_state = 0x0;
     
     
-    require(true && true);
-    
-    require((msg.value == uint256(0)));
-    
-    require((_a.svs.v5 == payable(msg.sender)));
+    require(true && true, 'timeout check at ./index.rsh:23:9:dot');
+    require((msg.value == uint256(0)), '(./index.rsh:23:9:dot,[],Just "pay amount correct")');
+    require((_a.svs.v5 == payable(msg.sender)), '(./index.rsh:23:9:dot,[],Just "sender correct")');
     _a.svs.v5.transfer(_a.svs.v6);
     emit e3(_a);
     current_state = 0x0;
@@ -143,4 +143,5 @@ contract ReachContract is Stdlib {
      }
   
   
+  receive () external payable {}
    }
