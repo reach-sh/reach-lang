@@ -64,8 +64,8 @@ typeObjectTypes a =
 
 -- Algo specific stuff
 
-udiv :: Integer -> Integer -> Integer
-udiv x y = z
+_udiv :: Integer -> Integer -> Integer
+_udiv x y = z
   where
     (q, d) = quotRem x y
     z = if d == 0 then q else q + 1
