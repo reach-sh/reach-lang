@@ -95,7 +95,8 @@ export const mkStdlibProxy = async (lib: any) => {
   const rpc_stdlib = {
     ...lib,
 
-    mkKont,
+    // XXX I don't believe this should be exposed.
+    // mkKont,
 
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
@@ -147,6 +148,12 @@ export const serveRpc = async (backend: any) => {
 
     deploy: async (id: string) =>
       contract.track(await account.id(id).deploy(backend)),
+
+    getAddress: async (id: string) =>
+      await account.id(id).getAddress(),
+
+    setGasLimit: async (id: string, ...args: any[]) =>
+      await account.id(id).setGasLimit(...args),
   };
 
   const rpc_ctc = {
@@ -290,7 +297,7 @@ export const serveRpc = async (backend: any) => {
       process.exit(1);
     }
 
-    const fq = resolve(f);
+    const fq = resolve(`./tls/${f}`);
 
     if (!existsSync(fq)) {
       console.error(`\nPath: ${fq} does not exist!\n`);

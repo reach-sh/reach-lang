@@ -2,11 +2,16 @@ import waitPort from 'wait-port';
 import bent     from 'bent';
 
 export const mkRPC = async opts => {
+  // XXX implement ref-backends-rpc-opts
   const defaults = {
     host:   'REACH_RPC_SERVER',
     port:   'REACH_RPC_PORT',
-    apiKey: 'REACH_RPC_KEY',
+    key:    'REACH_RPC_KEY',
   };
+
+  if ( process.env['REACH_RPC_TLS_REJECT_UNVERIFIED'] == '0' ) {
+    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+  }
 
   const r = (acc, k) =>
     Object.assign(acc, { [k]: process.env[defaults[k]] });
@@ -23,7 +28,7 @@ export const mkRPC = async opts => {
   });
 
   const call = bent(`https://${o.host}:${o.port}`, `POST`, `json`, 200, {
-    'X-API-Key': o.apiKey,
+    'X-API-Key': o.key,
   });
 
   const rpc = async (m, ...args) => {

@@ -12,6 +12,8 @@ if [ "x$CLIENT" = "x" ]; then
   exit 1
 fi
 
+docker rm -f "tut-7-rpc_client-${CLIENT}-only_1"
+
 echo
 echo "Running client ${CLIENT}..."
 docker-compose -f "docker-compose.yml" up --remove-orphans --force-recreate "client-${CLIENT}-only"

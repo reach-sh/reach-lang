@@ -23,10 +23,17 @@ run: test
 .PHONY: test
 test: build
 	echo 'FIXME'
-#	sbin/test-on.sh ETH  js py go
-#	sbin/test-on.sh ALGO js py go
+#	REACH_DEBUG=1 sbin/test-on.sh ETH  js py go
+#	REACH_DEBUG=1 sbin/test-on.sh ALGO js py go
 #	sbin/test-on.sh FAKE js py go
 
 .PHONY: run_old
 run_old: build
-	docker-compose -f "docker-compose.yml" up --remove-orphans reach-app-tut-7-rpc-server reach-app-tut-7-rpc
+	REACH_DEBUG=1 docker-compose -f "docker-compose.yml" up --remove-orphans reach-app-tut-7-rpc-server reach-app-tut-7-rpc
+
+.PHONY: build_js
+build_js:
+#	cd ../../js/js-deps && make build
+	cd ../../js/stdlib && make build
+	cd ../../js/runner && make build
+	cd ../../js/rpc-server && make build

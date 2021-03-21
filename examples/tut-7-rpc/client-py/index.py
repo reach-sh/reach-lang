@@ -1,24 +1,37 @@
 import json
 import os
-import random
 import requests
 import socket
 import time
 import urllib3
-from threading import Thread
 
+def mk_rpc(opts={}):
+    if not opts.get('host'):
+        opts['host'] = os.environ['REACH_RPC_SERVER']
+    host = opts['host']
+    if not opts.get('port'):
+        opts['port'] = os.environ['REACH_RPC_PORT']
+    port = opts['port']
+    if not opts.get('key'):
+        opts['key'] = os.environ['REACH_RPC_KEY']
+    key = opts['key']
+    if not opts.get('timeout'):
+        opts['timeout'] = os.environ.get('REACH_RPC_TIMEOUT')
+    if not opts.get('timeout'):
+        opts['timeout'] = 5.0
+    timeout = opts['timeout']
+    if not opts.get('verify'):
+        opts['verify'] = os.environ.get('REACH_RPC_TLS_REJECT_UNVERIFIED') != '0'
+    verify = opts['verify']
 
-# https://gist.github.com/butla/2d9a4c0f35ea47b7452156c96a4e7b12
-def wait_for_port(port, host='localhost', timeout=5.0):
-    """Wait until a port starts accepting TCP connections.
-    Args:
-        port (int): Port number.
-        host (str): Host address on which the port should exist.
-        timeout (float): In seconds. How long to wait before raising errors.
-    Raises:
-        TimeoutError: The port isn't accepting connections after time specified
-        in `timeout`.
-    """
+    if not verify:
+        urllib3.disable_warnings()
+        print('\n*** Warning! TLS verification disabled! ***\n')
+        print(' This is highly insecure in Real Life™ applications and must')
+        print(' only be permitted under controlled conditions (such as')
+        print(' during development).\n')
+
+    # From: https://gist.github.com/butla/2d9a4c0f35ea47b7452156c96a4e7b12
     start_time = time.perf_counter()
     while True:
         try:
@@ -28,28 +41,15 @@ def wait_for_port(port, host='localhost', timeout=5.0):
             time.sleep(0.01)
             if time.perf_counter() - start_time >= timeout:
                 raise TimeoutError('Waited too long for the port {} '
-                                   'on host {} to start accepting connections.'
+                                   'on host {} to accept connection.'
                                    .format(port, host)) from ex
-
-
-def mk_rpc(host=os.environ['REACH_RPC_SERVER'],
-           port=os.environ['REACH_RPC_PORT'],
-           akey=os.environ['REACH_RPC_KEY']):
-
-    verify = os.environ['REACH_RPC_TLS_REJECT_UNVERIFIED'] != '0'
-    if not verify:
-        urllib3.disable_warnings()
-        print('\n*** Warning! TLS verification disabled! ***\n')
-        print(' This is highly insecure in Real Life™ applications and must')
-        print(' only be permitted under controlled conditions (such as')
-        print(' during development).\n')
 
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
         print(lab)
         ans = requests.post('https://%s:%s%s' % (host, port, m),
                             json=[*args],
-                            headers={'X-API-Key': akey},
+                            headers={'X-API-Key': key},
                             verify=verify)
         ans.raise_for_status()
         print('%s ==> %s' % (lab, json.dumps(ans.json())))
@@ -72,13 +72,14 @@ def mk_rpc(host=os.environ['REACH_RPC_SERVER'],
             else:
                 raise Exception('Illegal callback return: %s' % json.dumps(p))
 
-    wait_for_port(port, host)
     return rpc, rpc_callbacks
 
 
-def main():
-    print('I am the client')
+import random
+from threading import Thread
 
+
+def main():
     rpc, rpc_callbacks = mk_rpc()
 
     starting_balance = rpc('/stdlib/parseCurrency', 10)
@@ -124,6 +125,8 @@ def main():
             '/backend/Alice',
             ctc_alice,
             dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
+    alice = Thread(target=play_alice)
+    alice.start()
 
     def play_bob():
         def acceptWager(amt):
@@ -133,11 +136,7 @@ def main():
             '/backend/Bob',
             ctc_bob,
             dict(acceptWager=acceptWager, **player('Bob')))
-
-    alice = Thread(target=play_alice)
     bob   = Thread(target=play_bob)
-
-    alice.start()
     bob.start()
 
     alice.join()

@@ -1037,12 +1037,30 @@ EOF
 server_compose () {
   # TODO: write this docker-compose file a better way
 
-  if $USE_EXISTING_DEVNET ; then
+  if [[ "$REACH_CONNECTOR_MODE" == *"live"* ]] ; then
+    DEPENDS_ON='
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
+      - ALGO_TOKEN
+      - ALGO_SERVER
+      - ALGO_PORT
+      - ALGO_INDEXER_TOKEN
+      - ALGO_INDEXER_SERVER
+      - ALGO_INDEXER_PORT
+      - ALGO_FAUCET_PASSPHRASE
+'
+  elif $USE_EXISTING_DEVNET ; then
     echo 'using existing devnet'
-    DEPENDS_ON=''
+    DEPENDS_ON='
+      - ETH_NODE_URI=http://ethereum-devnet:8545
+'
   else
     if $IS_ALGO ; then
       DEPENDS_ON='
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://algorand-devnet
+      - ALGO_INDEXER_PORT=8980
     # Does not technically depend on algorand-devnet.
     # This is just to get it to run both.
     depends_on:
@@ -1050,6 +1068,7 @@ server_compose () {
 '
     else
       DEPENDS_ON='
+      - ETH_NODE_URI=http://ethereum-devnet:8545
     # Does not technically depend on ethereum-devnet.
     # This is just to get it to run both.
     depends_on:
@@ -1057,7 +1076,6 @@ server_compose () {
 '
     fi
   fi
-  TLS_PATH='./tls/reach-server'
 
   cat<<EOF > docker-compose.yml.server
 version: '3.4'
@@ -1068,18 +1086,17 @@ services:
       - ./build:/app/build
       - ./tls:/app/tls
     ports:
-      - '3000:3000'
+      - '${REACH_RPC_PORT}:${REACH_RPC_PORT}'
     stdin_open: true
     tty: true
     environment:
       - REACH_DEBUG
-      - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
-      - ETH_NODE_URI=http://ethereum-devnet:8545
+      - REACH_RPC_PORT
       - REACH_RPC_KEY
-      - REACH_RPC_TLS_KEY=${TLS_PATH}.key
-      - REACH_RPC_TLS_CRT=${TLS_PATH}.crt
-      - REACH_RPC_TLS_PASSPHRASE=rpc-demo
+      - REACH_RPC_TLS_KEY
+      - REACH_RPC_TLS_CRT
+      - REACH_RPC_TLS_PASSPHRASE
 $DEPENDS_ON
   ethereum-devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
@@ -1107,7 +1124,7 @@ $DEPENDS_ON
 EOF
 
   REACH_RPC_KEY=${REACH_RPC_KEY} docker-compose -f docker-compose.yml.server "$@" || :
-  rm docker-compose.yml.server  
+  rm docker-compose.yml.server
 }
 
 do_server () {
@@ -1145,8 +1162,25 @@ do_server () {
     echo '==============================='
     echo
   fi
+  export REACH_RPC_KEY
+
+  if [ "x$REACH_RPC_PORT" = "x" ]; then
+    REACH_RPC_PORT=3000
+  fi
+  export REACH_RPC_PORT
 
   # TODO: auto-gen self-signed tls cert if not present
+  TLS_PATH='reach-server'
+  if [ "x${REACH_RPC_TLS_KEY}" = "x" ]; then
+    REACH_RPC_TLS_KEY=${TLS_PATH}.key
+  fi
+  if [ "x${REACH_RPC_TLS_CRT}" = "x" ]; then
+    REACH_RPC_TLS_CRT=${TLS_PATH}.crt
+  fi
+  if [ "x${REACH_RPC_TLS_PASSPHRASE}" = "x" ]; then
+    REACH_RPC_TLS_PASSPHRASE=rpc-demo
+  fi
+  export REACH_RPC_TLS_KEY REACH_RPC_TLS_CRT REACH_RPC_TLS_PASSPHRASE
 
   # All args are just forwarded to do_compile
   do_compile "$@"
@@ -1189,7 +1223,7 @@ do_usage () {
   echo "  down    --- halt any dockerized devnets for this app"
   echo "  scaffold -- set up Docker scaffolding for a simple app"
   echo "  react   --- run a simple react app"
-  echo "  server  --- run a simple reach RPC server"
+  echo "  server  --- run a simple Reach RPC server"
   echo "  devnet  --- run only the devnet"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"

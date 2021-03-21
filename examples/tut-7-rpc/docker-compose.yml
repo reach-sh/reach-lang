@@ -44,8 +44,8 @@ services:
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
-      - REACH_RPC_TLS_KEY=./tls/reach-server.key
-      - REACH_RPC_TLS_CRT=./tls/reach-server.crt
+      - REACH_RPC_TLS_KEY=reach-server.key
+      - REACH_RPC_TLS_CRT=reach-server.crt
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
   server-ALGO:
     <<: *server-base
@@ -60,8 +60,8 @@ services:
       - ALGO_INDEXER_SERVER=http://algorand-devnet
       - ALGO_INDEXER_PORT=8980
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
-      - REACH_RPC_TLS_KEY=./tls/reach-app-tut-7-rpc-server.key
-      - REACH_RPC_TLS_CRT=./tls/reach-app-tut-7-rpc-server.crt
+      - REACH_RPC_TLS_KEY=reach-app-tut-7-rpc-server.key
+      - REACH_RPC_TLS_CRT=reach-app-tut-7-rpc-server.crt
       - REACH_RPC_TLS_PASSPHRASE=rpc-demo
   reach-app-tut-7-rpc-server:
     <<: *default-server

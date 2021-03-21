@@ -16,12 +16,6 @@ import (
   "net/http"
 )
 
-
-type account   = string
-type contract  = string
-type bigNumber = map[string]interface {}
-
-
 func dieIf(err error) {
   if err != nil {
     log.Fatal(err)
@@ -29,21 +23,44 @@ func dieIf(err error) {
   }
 }
 
-
 func please(a interface{}, err error) interface{} {
   dieIf(err)
   return a
 }
 
-
-func mkRpc() (func(string, ...interface{}) interface{},
-              func(string, contract, map[string]interface{})) {
+func mkRpc(mopts ...map[string]string) (func(string, ...interface{}) interface{}, func(string, string, map[string]interface{})) {
+  opts := map[string]string {}
+  if len(mopts) > 0 {
+    opts = mopts[0]
+  }
 
   host := os.Getenv("REACH_RPC_SERVER")
+  if val, ok := opts["host"]; ok {
+    host = val
+  }
   port := os.Getenv("REACH_RPC_PORT")
+  if val, ok := opts["port"]; ok {
+    port = val
+  }
   key  := os.Getenv("REACH_RPC_KEY")
+  if val, ok := opts["key"]; ok {
+    key = val
+  }
+  timeouts := "5.0s"
+  if os.Getenv("REACH_RPC_TIMEOUT") != "" {
+    timeouts = os.Getenv("REACH_RPC_TIMEOUT")
+  }
+  if val, ok := opts["timeout"]; ok {
+    timeouts = val
+  }
+  skipVerify := false
+  if os.Getenv("REACH_RPC_TLS_REJECT_UNVERIFIED") != "" {
+    skipVerify = os.Getenv("REACH_RPC_TLS_REJECT_UNVERIFIED") == "0"
+  }
+  if val, ok := opts["verify"]; ok {
+    skipVerify = val == "0"
+  }
 
-  skipVerify := os.Getenv("REACH_RPC_TLS_REJECT_UNVERIFIED") == "0"
   if skipVerify {
     fmt.Printf("\n*** Warning! TLS verification disabled! ***\n\n")
     fmt.Printf(" This is highly insecure in Real Life™ applications and must\n")
@@ -52,7 +69,7 @@ func mkRpc() (func(string, ...interface{}) interface{},
   }
 
   // Wait for RPC server to become available
-  timeout := please(time.ParseDuration("5.0s")).(time.Duration)
+  timeout := please(time.ParseDuration(timeouts)).(time.Duration)
   began   := time.Now()
   for true {
     conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host, port), timeout)
@@ -108,7 +125,7 @@ func mkRpc() (func(string, ...interface{}) interface{},
     return ans
   }
 
-  rpcCallbacks := func(m string, arg contract, cbacks map[string]interface{}) {
+  rpcCallbacks := func(m string, arg string, cbacks map[string]interface{}) {
     vals  := make(map[string]interface{})
     meths := make(map[string]bool)
 
@@ -158,29 +175,30 @@ func mkRpc() (func(string, ...interface{}) interface{},
   return rpc, rpcCallbacks
 }
 
+type jsono = map[string]interface {}
 
 func main() {
   fmt.Println("I am the client")
   rpc, rpcCallbacks := mkRpc()
 
-  fmtc := func(i bigNumber) string {
+  fmtc := func(i jsono) string {
     return rpc("/stdlib/formatCurrency", i, 4).(string)
   }
 
-  getBalance := func(w account) string {
-    return fmtc(rpc("/stdlib/balanceOf", w).(bigNumber))
+  getBalance := func(w string) string {
+    return fmtc(rpc("/stdlib/balanceOf", w).(jsono))
   }
 
-  startingBalance := rpc("/stdlib/parseCurrency", 10).(bigNumber)
-  accAlice        := rpc("/stdlib/newTestAccount", startingBalance).(account)
-  accBob          := rpc("/stdlib/newTestAccount", startingBalance).(account)
+  startingBalance := rpc("/stdlib/parseCurrency", 10).(jsono)
+  accAlice        := rpc("/stdlib/newTestAccount", startingBalance).(string)
+  accBob          := rpc("/stdlib/newTestAccount", startingBalance).(string)
 
   beforeAlice     := getBalance(accAlice)
   beforeBob       := getBalance(accBob)
 
-  ctcAlice        := rpc("/acc/deploy",  accAlice).(contract)
+  ctcAlice        := rpc("/acc/deploy",  accAlice).(string)
   aliceInfo       := rpc("/ctc/getInfo", ctcAlice).(interface{})
-  ctcBob          := rpc("/acc/attach",  accBob, aliceInfo).(contract)
+  ctcBob          := rpc("/acc/attach",  accBob, aliceInfo).(string)
 
   HAND            := [3]string{"Rock", "Paper", "Scissors"}
   OUTCOME         := [3]string{"Bob wins", "Draw", "Alice wins"}
@@ -198,7 +216,7 @@ func main() {
       fmt.Printf("%s observed a timeout\n", who)
     }
 
-    seeOutcome := func(n bigNumber) {
+    seeOutcome := func(n jsono) {
       o := int(rpc("/stdlib/bigNumberToNumber", n).(float64))
       fmt.Printf("%s saw outcome %s\n", who, OUTCOME[o])
     }
@@ -218,7 +236,7 @@ func main() {
     defer wg.Done()
 
     d := player("Alice")
-    d["wager"] = rpc("/stdlib/parseCurrency", 5).(bigNumber)
+    d["wager"] = rpc("/stdlib/parseCurrency", 5).(jsono)
 
     rpcCallbacks("/backend/Alice", ctcAlice, d)
   }
@@ -227,7 +245,7 @@ func main() {
     defer wg.Done()
 
     d := player("Bob")
-    d["acceptWager"] = func(amt bigNumber) {
+    d["acceptWager"] = func(amt jsono) {
       fmt.Printf("Bob accepts the wager of %s\n", fmtc(amt))
     }
 

@@ -14,6 +14,7 @@ The following guides are available:
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
 @include-section["guide-solidity.scrbl"]
+@include-section["guide-rpc.scrbl"]
 @include-section["guide-assert.scrbl"]
 @include-section["guide-loop-invs.scrbl"]
 @include-section["guide-deploymode.scrbl"]
