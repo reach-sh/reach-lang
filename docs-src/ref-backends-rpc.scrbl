@@ -5,12 +5,12 @@
 
 The Reach RPC Server provides access to compiled JavaScript @tech{backends} via an @seclink["ref-backends-rpc-proto"]{HTTPS-accessible JSON-based RPC protocol}.
 The server allows @tech{frontends} to be written in any programming language.
-Reach provide client libraries for
+Reach provides client libraries for
 @seclink["ref-frontends-rpc-js"]{JavaScript},
 @seclink["ref-frontends-rpc-py"]{Python}, and
 @seclink["ref-frontends-rpc-go"]{Go}.
 It is easy to @seclink["ref-backends-rpc-client"]{implement a client library yourself}.
-An example @tech{frontend} writing using the Reach RPC Server is shown in the @seclink["tut-7-rpc"]{tutorial section on RPC-based frontends}.
+An example @tech{frontend} written using the Reach RPC Server is shown in the @seclink["tut-7-rpc"]{tutorial section on RPC-based frontends}.
 
 The command @cmd{reach server} starts an instance of the Reach RPC Server.
 
@@ -35,16 +35,16 @@ For example, @tt{/stdlib/newTestAccount} does not return an @tech{account} like 
 
 @item{@tt{/acc/$METHOD} where @tt{$METHOD} is a method of an @tech{account} representation of the @seclink["ref-frontends-js"]{JavaScript standard library}.
 
-All @tt{/acc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{account} @tech{RPC handle} returned by a prior @tech{RPC method} invocation; and, an method that accepts a @tech{backend} (like @tt{/acc/attach} (i.e. @jsin{acc.attach}) or @tt{/acc/deploy} (i.e. @jsin{acc.deploy}) does not accept a @tech{backend} argument, but has it implicitly provided by the Reach RPC Server.
+All @tt{/acc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{account} @tech{RPC handle} returned by a prior @tech{RPC method} invocation; and, a method that accepts a @tech{backend} (like @tt{/acc/attach} (i.e. @jsin{acc.attach}) or @tt{/acc/deploy} (i.e. @jsin{acc.deploy}) does not accept a @tech{backend} argument, but has it implicitly provided by the Reach RPC Server.
 
 Furthermore, those that produce @tech{contract} representations, instead produce @tech{contract} @tech{RPC handles}.
 For example, @tt{/acc/deploy} does not return a @tech{contract} representation like @jsin{acc.deploy}, but instead returns a @tech{contract} @tech{RPC handle}.
 
 }
 
-@item{@tt{/forget/ctc} accepts an @tech{contract} @tech{RPC handle} and deletes it from the Reach RPC Server's memory.}
+@item{@tt{/forget/ctc} accepts a @tech{contract} @tech{RPC handle} and deletes it from the Reach RPC Server's memory.}
 
-@item{@tt{/ctc/$METHOD} where @tt{$METHOD} is a method of an @tech{contract} representation of the @seclink["ref-frontends-js"]{JavaScript standard library}.
+@item{@tt{/ctc/$METHOD} where @tt{$METHOD} is a method of a @tech{contract} representation of the @seclink["ref-frontends-js"]{JavaScript standard library}.
 
 All @tt{/ctc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{contract} @tech{RPC handle} returned by a prior @tech{RPC method} invocation.
 
