@@ -340,7 +340,7 @@ const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
   return acc;
 });
 
-const stepTime = async () => {
+const stepTime = async (): Promise<TransactionReceipt> => {
   requireIsolatedNetwork('stepTime');
   const faucet = await getFaucet();
   const acc = await getDummyAccount();
@@ -389,7 +389,11 @@ export const transfer = async (
     throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
 
   debug(`sender.sendTransaction(${JSON.stringify(txn)})`);
-  return await sender.sendTransaction(txn);
+  const r = await (await sender.sendTransaction(txn)).wait();
+
+  assert(r !== null);
+
+  return fetchAndRejectInvalidReceiptFor(r.transactionHash);
 };
 
 
@@ -928,12 +932,12 @@ export const newTestAccount = async (startingBalance: any): Promise<Account> => 
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
   const acc = await createAccount();
-  const to = getAddr(acc);
+  const to = await getAddr(acc);
 
   try {
     debug(`newTestAccount awaiting transfer: ${to}`);
     await fundFromFaucet(acc, startingBalance);
-    debug(`newTestAccount got transfer: ${to}`);
+    debug(`newTestAccount got transfer: ${JSON.stringify(to)}`);
     return acc;
   } catch (e) {
     console.log(`newTestAccount: Trouble with account ${to}`);
