@@ -88,6 +88,11 @@ jobs:
           name: rebuild examples
           command: (cd examples && make clean-all build-all)
       - run:
+          name: pull algorand-devnet
+          command: |
+            docker pull reachsh/algorand-devnet:0.1
+            docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
+      - run:
           name: run examples
           command: (cd examples && make run-all)
           no_output_timeout: 3m
