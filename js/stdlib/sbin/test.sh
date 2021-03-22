@@ -17,6 +17,11 @@ cd test/stdlib-test || exit 1
 REACH=../../../../reach
 $REACH compile
 REACH_CONNECTOR_MODE=ETH $REACH run
+
+# TODO re-enable these once `reach` script is ready
+# REACH_CONNECTOR_MODE=ALGO $REACH run
+# REACH_CONNECTOR_MODE=FAKE $REACH run
+
 RESULT=$?
 $REACH down
 

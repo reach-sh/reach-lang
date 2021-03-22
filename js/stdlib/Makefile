@@ -33,14 +33,6 @@ build: package.json
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
-.PHONY: test
-test: build check clean-test
-	sbin/test.sh
-
-# TODO re-enable these once `reach` script is ready
-#	  && REACH_CONNECTOR_MODE=ALGO $(REACH) run \
-#	  && REACH_CONNECTOR_MODE=FAKE $(REACH) run \
-
 .PHONY: format
 format: package.json
 	npm run beautify
