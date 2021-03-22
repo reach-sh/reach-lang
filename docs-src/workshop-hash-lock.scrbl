@@ -244,11 +244,11 @@ Here's what we did:
          #:link #t]
 
 @itemlist[
- @item{Lines 10-13 have Alice declassify some of her values.}
- @item{Line 20 has Bob provide his password.}
+ @item{Lines 11-14 have Alice declassify some of her values.}
+ @item{Line 21 has Bob provide his password.}
 ]
 
-@margin-note{Did you notice that we didn't mention what line 4 is for?
+@margin-note{Did you notice that we didn't mention what line 5 is for?
 We'll discuss that in the next section; don't worry!}
 
 At this point, when we

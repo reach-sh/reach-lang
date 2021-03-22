@@ -1,14 +1,14 @@
 Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable("Bob", x/0)
+  of theorem unknowable("Bob", x/6)
   at ./unknowable.rsh:22:17:application
 
-  Bob could learn of x/0 via z/8.
+  Bob could learn of x/6 via z/14.
 
-  z/8 was published at ./unknowable.rsh:19:9:dot
-  ^ which contains info about v6 (defined at ./unknowable.rsh:16:22:application)
-  ^ which contains info about v5 (defined at ./unknowable.rsh:15:21:application)
-  ^ which contains info about x/0 (defined at ./unknowable.rsh:14:15:id)
+  z/14 was published at ./unknowable.rsh:19:9:dot
+  ^ which contains info about v12 (defined at ./unknowable.rsh:16:22:application)
+  ^ which contains info about v11 (defined at ./unknowable.rsh:15:21:application)
+  ^ which contains info about x/6 (defined at ./unknowable.rsh:14:15:id)
 
 Verifying for generic connector
   Verifying when ALL participants are honest

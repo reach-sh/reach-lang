@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 

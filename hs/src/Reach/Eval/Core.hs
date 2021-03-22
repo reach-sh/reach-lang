@@ -342,7 +342,6 @@ whenUsingStrict :: App () -> App ()
 whenUsingStrict e = useStrict >>= flip when e
 
 shouldNotTrackVariable :: (SrcLoc, SLVar) -> Bool
-shouldNotTrackVariable (SrcLoc _ _ (Just ReachStdLib), _) = True
 shouldNotTrackVariable (_, "main") = True
 shouldNotTrackVariable (_, "_") = True
 shouldNotTrackVariable _ = False
@@ -1161,8 +1160,8 @@ evalForm f args = do
             [(SLV_Object _ _ opts), (SLV_Tuple _ parts)] -> do
               at <- withAt id
               part_ios <- mapM make_partio parts
-              env <- (sco_cenv . e_sco) <$> ask
-              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_ios (parseJSArrowFormals at top_formals) top_s env
+              SLScope {..} <- e_sco <$> ask
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_ios (parseJSArrowFormals at top_formals) top_s (sco_cenv, sco_use_strict)
             _ -> expect_ $ Err_App_InvalidArgs args
         _ -> expect_ $ Err_App_InvalidArgs args
     SLForm_Part_Only who mv -> do

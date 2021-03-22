@@ -72,7 +72,7 @@ Here's what we wrote in our program:
 
 @reachex[#:show-lines? #t "workshop-relay/index.rsh"
          #:link #t
-         'only 5 7 "  // ..."]
+         'only 6 8 "  // ..."]
 
 We chose to represent the amount as a @reachin{UInt} field, which should be unsurprising.
 We then have two functions that take no arguments and return an @reachin{Address} which respectively return the Relay identity and the Bob identity.

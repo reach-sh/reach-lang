@@ -94,7 +94,7 @@ Our @tech{participant interact interface}, with the addition of some handy loggi
 
 @reachex[#:show-lines? #t "workshop-fomo/index.rsh"
          #:link #t
-         'only 3 21 "  // ..."]
+         'only 4 22 "  // ..."]
 
 
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholders for the actual value.

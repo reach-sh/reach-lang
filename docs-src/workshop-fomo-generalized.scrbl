@@ -53,7 +53,7 @@ specialize it when we compile.
 
 @reachex[#:show-lines? #t "workshop-fomo-generalized/index.rsh"
          #:link #t
-         'only 4 22 "  // ..."]
+         'only 5 23 "  // ..."]
 
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholders for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
