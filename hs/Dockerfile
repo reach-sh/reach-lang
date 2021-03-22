@@ -13,7 +13,7 @@ RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 FROM ethereum/solc:0.8.2 as solc
 
 FROM alpine:3.12 as dl-deps
-RUN apk add wget=1.20.3-r1 unzip=6.0-r8 --no-cache
+RUN apk add wget unzip --no-cache
 WORKDIR /z3
 ENV Z3_VER 4.8.10
 ENV Z3_SYS x64-ubuntu-18.04
@@ -24,8 +24,8 @@ RUN ln -s /z3/z3-${Z3_VER}-${Z3_SYS}/bin/z3 /z3/z3
 
 FROM ubuntu:18.04 as deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  libgmp10=2:6.1.2+dfsg-2 \
-  ca-certificates=20190110~18.04.1 \
+  libgmp10 \
+  ca-certificates \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
