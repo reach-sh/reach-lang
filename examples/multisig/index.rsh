@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 /*
   This is an abstraction of a multi-signature wallet.

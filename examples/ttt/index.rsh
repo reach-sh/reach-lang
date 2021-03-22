@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 // Tic Tac Toe
 const ROWS = 3;

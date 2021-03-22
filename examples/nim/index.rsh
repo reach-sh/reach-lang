@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 // Protocol
 const DELAY = 10; // in blocks

@@ -74,7 +74,7 @@ app_options =
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 
 compileDApp :: Connectors -> SLVal -> App CompiledDApp
-compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s top_env)) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
   at' <- withAt id
   idr <- e_id <$> ask
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
@@ -115,7 +115,6 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
         env0 <- locAt slcpi_at $ env_insert "interact" iov top_env_wps
         return $ (slcpi_who, env0)
   penvs <- M.fromList <$> mapM make_penvp part_ios
-  use_strict <- asks (sco_use_strict . e_sco)
   let sco =
         SLScope
           { sco_ret = Nothing
@@ -123,7 +122,7 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s t
           , sco_while_vars = Nothing
           , sco_penvs = penvs
           , sco_cenv = top_env_wps
-          , sco_use_strict = use_strict
+          , sco_use_strict = top_use_strict
           }
   setSt st_step
   doFluidSet FV_balance $ public $ SLV_Int at' 0

@@ -1,1 +1,1 @@
-reachc: error: ./Err_Invalid_Statement.rsh:65:30:id: Effects cannot be bound, got: <SLV_Form>
+reachc: error: ./Err_Invalid_Statement.rsh:67:30:id: Effects cannot be bound, got: <SLV_Form>

@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 const Common = {
   showWinner: Fun([Bool, Address, UInt], Null),

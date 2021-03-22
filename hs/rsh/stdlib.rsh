@@ -1,5 +1,7 @@
 'reach 0.1';
 
+'use strict';
+
 export function not (x) {
   return (x ? false : true); }
 export const boolEq = (x, y) => (x ? y : !y);
@@ -107,7 +109,7 @@ export const Object_setIfUnset = (o, k, dv) =>
 export const Array_empty =
   Array.iota(0);
 export const Array_replicate =
-  (sz, v) => Array.iota(sz).map(x => v);
+  (sz, v) => Array.iota(sz).map(_ => v);
 
 export const Foldable_forEach =
   (c, f) => c.reduce(null, (_, xe) => f(xe));
@@ -202,7 +204,7 @@ export const Foldable_product1 = (c) => () =>
   Foldable_product(c);
 
 export const sqrt = (y, k) =>
-  Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], a) =>
+  Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], _) =>
     (x < z)
       ? [ x, ((y / x + x) / 2) ]
       : [ z, x ]
@@ -258,6 +260,9 @@ export const fxint = (i) =>
 
 const fxi2int = (x) =>
   int(x.sign, x.i.i);
+
+// do not export, but count it as used in strict mode
+void fxi2int;
 
 export const fxrescale = (x, scale) => {
   if (x.i.scale == scale) {
@@ -353,6 +358,7 @@ const fxpowRatio = (x, numerator, denominator, precision, scalePrecision) => {
     return fxrescale(fxsub(acc, t), scalePrecision);
   });
 }
+void fxpowRatio;
 
 const getNumDenom = (value, precision) => {
   const [ numerator, denominator, _ ] =
@@ -383,6 +389,7 @@ const getNumDenom = (value, precision) => {
 
   return [ idiv(numerator, lo_), idiv(denominator, lo_) ];
 }
+void getNumDenom;
 
 export const fxpow = (base, power, precision, scalePrecision) => {
   const whole = fxfloor(power);

@@ -8,13 +8,13 @@ Verification failed:
   at ./overflow_con.rsh:14:17:application
 
   // Violation witness
+  const x/9 = 1;
+  //    ^ from evaluating interact("A")."get"() at ./overflow_con.rsh:9:40:application
   const dlc_UInt_max = 1;
   //    ^ from builtin at ./overflow_con.rsh:3:30:application
-  const x/3 = 1;
-  //    ^ from evaluating interact("A")."get"() at ./overflow_con.rsh:9:40:application
 
   // Theorem formalization
-  assert(x/3 <= (UInt.max - 1));
+  assert(x/9 <= (UInt.max - 1));
 
   Verifying when NO participants are honest
 Verification failed:

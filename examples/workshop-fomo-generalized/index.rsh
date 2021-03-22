@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 // FOMO Workshop generalized to last N winners
 const NUM_OF_WINNERS = 3;

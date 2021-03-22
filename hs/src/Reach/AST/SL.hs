@@ -406,7 +406,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLCompiledPartInfo] [JSExpression] JSStatement SLEnv
+  | SLPrim_App_Delay SrcLoc SLEnv [SLCompiledPartInfo] [JSExpression] JSStatement (SLEnv, Bool)
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal

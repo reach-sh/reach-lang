@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 const Player = {
   ask: Fun([], UInt),
@@ -15,10 +16,6 @@ function go(who, k) {
     .pay(amt)
     .timeout(DELAY, () => k());
   commit();
-}
-
-function gogo(who, kTim) {
-  return () => go(who, kTim);
 }
 
 function thrice(f, x) {

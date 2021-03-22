@@ -10,7 +10,7 @@ Verification failed:
   // Violation witness
 
   // Theorem formalization
-  possible(_x/3 < 0);
+  possible(_x/9 < 0);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

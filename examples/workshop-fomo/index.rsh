@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 const CommonInterface = {
   // Show the address of winner
