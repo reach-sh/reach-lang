@@ -1,4 +1,5 @@
 import { strict as assert } from 'assert';
+import * as rpc_server      from '@reach-sh/stdlib/rpc_server.mjs';
 import * as shared          from '@reach-sh/stdlib/shared.mjs';
 
 
@@ -495,12 +496,10 @@ export const mkConnectAccount = async (lib, accessor) =>
   });
 
 
-export const mkKont = async lib =>
+export const mkKont = async () =>
   describe('exposes a `mkKont` constructor which provides', async () => {
-    const { mkKont } = lib;
-
     await describe('an `id` function that', async () => {
-      const K = mkKont();
+      const K = rpc_server.mkKont();
 
       await it('raises an exception for untracked IDs', async () =>
         (await expect(() => K.id('no such ID'))
@@ -526,7 +525,7 @@ export const mkKont = async lib =>
         };
 
         await it('which index its `a` argument in `k`', async () => {
-          const K = mkKont();
+          const K = rpc_server.mkKont();
           const a = { foo: 'bar' };
           const i = await K.track(a);
 
@@ -540,7 +539,7 @@ export const mkKont = async lib =>
         await describe('where the nonce prefix', async () => {
           await it('always starts at 0', async () => {
             for (let l = 0; l < 100; l++) {
-              const K = mkKont();
+              const K = rpc_server.mkKont();
               const d = deconstructed(await K.track(null));
 
               expect(Number(d.pre))
@@ -549,7 +548,7 @@ export const mkKont = async lib =>
           });
 
           await it('is incremented by 1 for each entry `track`ed', async () => {
-            const K = mkKont();
+            const K = rpc_server.mkKont();
 
             for (let l = 0; l < 100; l++) {
               const d = deconstructed(await K.track(null));
@@ -562,7 +561,7 @@ export const mkKont = async lib =>
 
         await describe('where the random hex suffix is', async () => {
           await it('of length 48', async () => {
-            const K = mkKont();
+            const K = rpc_server.mkKont();
 
             for (let i = 100; i > 0; i--) {
               const d = deconstructed(await K.track(null));
@@ -573,7 +572,7 @@ export const mkKont = async lib =>
           });
 
           await it('guaranteed to be lowercase, non-0x hexadecimal', async () => {
-            const K     = mkKont();
+            const K     = rpc_server.mkKont();
             const isHex = s => /^[0-9a-f]+$/.test(s);
             const a     = deconstructed(await K.track(null));
 
@@ -593,7 +592,7 @@ export const mkKont = async lib =>
 
     await describe('a `replace` function that', async () => {
       await it('swaps the entry indexed by a given ID and returns the same ID', async () => {
-        const K = mkKont();
+        const K = rpc_server.mkKont();
         const a = 'first';
         const b = 'second';
         const i = await K.track(a);
@@ -609,7 +608,7 @@ export const mkKont = async lib =>
       });
 
       await it('raises an exception for untracked IDs', async () => {
-        const K              = mkKont();
+        const K              = rpc_server.mkKont();
         const [ ai, bi, ci ] = [ await K.track(1), await K.track(1), await K.track(1) ];
 
         K.forget(ai);
@@ -628,7 +627,7 @@ export const mkKont = async lib =>
 
     await describe('a `forget` function that', async () => {
       await it('clears a given index from `k`', async () => {
-        const K = mkKont();
+        const K = rpc_server.mkKont();
 
         const a = [ 'something', 'else' ];
         const b = { forget: 'me' };
@@ -668,7 +667,7 @@ export const mkKont = async lib =>
 
     await describe('a `was` namespace which exposes', async () => {
       await describe('an `untracked` function that can correctly', async () => {
-        const K = mkKont();
+        const K = rpc_server.mkKont();
 
         await it('identify exceptions raised due to untracked IDs', async () => {
           try {

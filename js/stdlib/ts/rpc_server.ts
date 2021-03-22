@@ -27,7 +27,7 @@ const withApiKey = () => {
 };
 
 
-const mkKont = () => {
+export const mkKont = () => {
   // TODO consider replacing stringly-typed exceptions with structured
   // descendants of `Error` base class
   const UNTRACKED = 'Untracked continuation ID:';
@@ -94,9 +94,6 @@ export const mkStdlibProxy = async (lib: any) => {
 
   const rpc_stdlib = {
     ...lib,
-
-    // XXX I don't believe this should be exposed.
-    // mkKont,
 
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),

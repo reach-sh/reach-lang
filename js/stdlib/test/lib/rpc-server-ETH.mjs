@@ -14,7 +14,8 @@ export const spec = async () => {
     await common.mkNewAccountFromSecret(rpc_stdlib, 14, sec);
     // TODO await common.mkNewAccountFromMnemonic(rpc_stdlib, 14, mon);
     await common.mkConnectAccount(rpc_stdlib, a => a);
-
-    await common.mkKont(rpc_stdlib);
   });
+
+  await common.describe('The `rpc_server` module', async () =>
+    await common.mkKont());
 };
