@@ -14,12 +14,12 @@ A client library for @link["https://golang.org"]{Go} for the @seclink["ref-backe
 The library provides the following bindings:
 
 @(hrule)
-@(mint-define! '("mkRpc"))
+@(mint-define! '("MkRpc"))
 @go{
-  rpc, rpcCallbacks := mkRpc(opts)
+  rpc, rpcCallbacks := MkRpc(opts)
 }
 
-@goin{mkRpc} accepts the @secref["ref-backends-rpc-opts"] as a @goin{map} and returns a two functions, traditionally called @goin{rpc} and @goin{rpcCallbacks}.
+@goin{MkRpc} accepts the @secref["ref-backends-rpc-opts"] as a @goin{map} and returns two functions, traditionally called @goin{rpc} and @goin{rpcCallbacks}.
 
 @(mint-define! '("rpc"))
 @goin{rpc} is a function that invokes a @tech{synchronous value RPC method}.
