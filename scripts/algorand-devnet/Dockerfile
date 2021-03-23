@@ -45,12 +45,10 @@ RUN mkdir -p $SRC_PARENT
 WORKDIR $SRC_PARENT
 
 # algod release (doesn't work)
-ARG ALGO_VERSION=v2.5.1-beta
-RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/${ALGO_VERSION}.tar.gz && tar -xvf ${ALGO_VERSION}.tar.gz
-ARG ALGO_DIRVERSION=2.5.1-beta
-WORKDIR $SRC_PARENT/go-algorand-${ALGO_DIRVERSION}
+ARG ALGO_VERSION=2.5.2-beta
+RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
+WORKDIR $SRC_PARENT/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev.sh
-RUN make install
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install

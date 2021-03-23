@@ -52,7 +52,7 @@ The DApp consists of one application, one contract-controlled escrow account, an
 During compilation, the connector produces intermediate outputs for each of these contracts.
 These contracts embed references to each through their template arguments, which is done automatically by the Reach standard library implementation.
 
-It relies on versions of @tt{algod} that support TEAL 3, such as the Algorand BetaNet as of mid-March 2021.
+It relies on versions of @tt{algod} that support TEAL 3, such as the Algorand BetaNet 2.5.2 release from mid-March 2021.
 It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
 
 Algorand uses the Keccak256 algorithm to perform @tech{digest}s.

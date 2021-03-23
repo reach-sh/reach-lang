@@ -22,17 +22,4 @@ index 7809dd4c..a6f321e9 100644
  	if cx.Debugger != nil {
  		cx.debugState = makeDebugState(cx)
  		if err = cx.Debugger.Register(cx.refreshDebugState()); err != nil {
-@@ -1961,7 +1967,12 @@ func opSetByte(cx *evalContext) {
- 		cx.err = errors.New("setbyte index > byte length")
- 		return
- 	}
--	cx.stack[pprev].Bytes[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
-+	// Modifies the bytes
-+	// cx.stack[pprev].Bytes[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
-+	// Makes a copy
-+	newstr := append([]byte(nil), cx.stack[pprev].Bytes...)
-+	newstr[cx.stack[prev].Uint] = byte(cx.stack[last].Uint)
-+	cx.stack[pprev].Bytes = newstr
- 	cx.stack = cx.stack[:prev]
- }
  
