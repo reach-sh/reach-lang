@@ -19,7 +19,7 @@ The library provides the following bindings:
   rpc, rpc_callbacks = mk_rpc(opts)
 }
 
-@pyin{mk_rpc} accepts the @secref["ref-backends-rpc-opts"] as a dictionary and returns a two functions, traditionally called @pyin{rpc} and @pyin{rpc_callbacks}.
+@pyin{mk_rpc} accepts the @secref["ref-backends-rpc-opts"] as a dictionary and returns two functions, traditionally called @pyin{rpc} and @pyin{rpc_callbacks}.
 
 @(mint-define! '("rpc"))
 @pyin{rpc} is a function that invokes a @tech{synchronous value RPC method}.
@@ -44,8 +44,8 @@ For example,
 
 @py{
   def showX(x):
-    print('Alice saw that X is %s'
-          % rpc('/stdlib/bigNumberToNumber', x))
+      print('Alice saw that X is %s'
+            % rpc('/stdlib/bigNumberToNumber', x))
 
   ms = { 'price': 10,
          'showX': showX,
