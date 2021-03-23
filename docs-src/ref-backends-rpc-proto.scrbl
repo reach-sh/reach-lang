@@ -48,7 +48,7 @@ A call to @jsin{formatCurrency("19283.1035819471", 4)} would be represented by t
 
 @(hrule)
 
-@deftech{Interactive RPC methods} consume arguments, including a specification of @tech{interactive RPC callbacks}, and produces an @tech{interactive RPC continuation}.
+@deftech{Interactive RPC methods} consume arguments, including a specification of @tech{interactive RPC callbacks}, and produce an @tech{interactive RPC continuation}.
 
 An @deftech{interactive RPC callback} is a key of a JSON object, bound to @jsin{true}, that indicates that the initiator of an @tech{interactive RPC method} responds to requests for further data during the execution of this call.
 
@@ -68,7 +68,7 @@ Clients may perform any @tech{RPC methods} while an @tech{interactive RPC method
 
 The server may re-use the same @tech{interactive RPC continuation} handle many times.
 
-For example, the execution of a @tech{backend} is a @tech{interactive RPC method}.
+For example, the execution of a @tech{backend} is an @tech{interactive RPC method}.
 An example interaction might be represented by the following HTTP session, with request lines indicated by @tt{+} and response lines indicated by @tt{-}:
 
 @verbatim{
