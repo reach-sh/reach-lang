@@ -6,7 +6,7 @@
 The main sequence of the tutorial uses the @seclink["ref-frontends-js"]{JavaScript frontend support library} to implement a frontend for our Reach program using JavaScript.
 But, Reach supports using any programming language through the @seclink["ref-backends-rpc"]{Reach RPC Server}.
 
-This tutorial walks through using this technique to implement an @|RPS| frontend in Python.
+This tutorial walks through using this technique to implement a @|RPS| frontend in Python.
 It is based on the frontend from @secref["tut-7"], so it does not include a text-based interface, or a Web interface, but uses the final version of the Reach code.
 
 XXX show the code in comparison to the JS, with JS first
