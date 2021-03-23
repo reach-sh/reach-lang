@@ -1,15 +1,19 @@
 REACH = ../../reach
 
+.PHONY: clean-client-lib-js
+clean-client-lib-js:
+	[ -d ./client-js/lib ] && rm -r ./client-js/lib || true
+
 .PHONY: clean
-clean:
+clean: clean-client-lib-js
 	rm -rf server/build/*.main.mjs
 
 server/build/%.main.mjs: server/%.rsh
 	$(REACH) compile $^ main
 
 .PHONY: client-lib-js
-client-lib-js:
-	cp -fr ../../js/rpc-client ./client-js
+client-lib-js: clean-client-lib-js
+	cp -r ../../rpc-client/js ./client-js/lib
 
 .PHONY: build
 build: server/build/index.main.mjs client-lib-js

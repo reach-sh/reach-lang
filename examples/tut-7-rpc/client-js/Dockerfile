@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY package.json /app/package.json
 
-# Note: the following COPY and RUN are unnecessary for end-users' programs but
+# The following COPY and RUN are unnecessary for most frontend authors but are
 # included here for Reach core development purposes
-COPY ./rpc-client /rpc-client
-RUN npm install --loglevel=verbose /rpc-client
+COPY ./lib /lib
+RUN npm install --loglevel=verbose /lib
 
 RUN npm install --loglevel=verbose
 
