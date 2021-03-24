@@ -1,0 +1,25 @@
+[
+	[
+		[0,0,0]
+		[0,0,0]
+		[0,0,0]
+	]
+	[
+		[0,0,0]
+		[0,0,0]
+		[0,0,0]
+	]
+	[
+		[0,0,0]
+		[0,0,0]
+		[0,0,0]
+	]
+]
+
+
+fee_realized = 
+[
+	[Array.iota(3).map((i) => board_mt[0][0][i] * fee[0][0][i]), Array.iota(3).map((i) => board_mt[0][1][i] * fee[0][1][i]), Array.iota(3).map((i) => board_mt[0][2][i] * fee[0][2][i])],
+	[Array.iota(3).map((i) => board_mt[1][0][i] * fee[1][0][i]), Array.iota(3).map((i) => board_mt[1][1][i] * fee[1][1][i]), Array.iota(3).map((i) => board_mt[1][1][i] * fee[0][2][i])],
+	[Array.iota(3).map((i) => board_mt[2][0][i] * fee[2][0][i]), Array.iota(3).map((i) => board_mt[2][1][i] * fee[2][1][i]), Array.iota(3).map((i) => board_mt[2][2][i] * fee[0][2][i])]
+]
