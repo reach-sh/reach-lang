@@ -36,11 +36,12 @@ algorand-indexer daemon \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
+  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable" &
+PID_IDX=$!
 
-# LOG="${ALGORAND_DATA}/node.log"
-# while ! [ -f "${LOG}" ] ; do sleep 1 ; done
-# tail -f "${LOG}" | grep compile
+LOG="${ALGORAND_DATA}/node.log"
+while ! [ -f "${LOG}" ] ; do sleep 1 ; done
+tail -f "${LOG}"
 
-kill "$PID_DBG" "$PID_ALGO"
-kill -9 "$PID_DBG" "$PID_ALGO"
+kill "$PID_DBG" "$PID_ALGO" "$PID_IDX"
+kill -9 "$PID_DBG" "$PID_ALGO" "$PID_IDX"
