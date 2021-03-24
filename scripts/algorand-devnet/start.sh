@@ -14,7 +14,7 @@ if [ "x$REACH_DEBUG" = "x" ] ; then
   echo Not starting debugger. To start, use REACH_DEBUG=1.
 else
   echo Starting debugger
-  (mkdir -p dbg && cd dbg && ../shdbg.sh) &
+  racket server.rkt &
   PID_DBG=$!
   export TEAL_DEBUGGER_URL=http://localhost:9392
 fi
@@ -36,14 +36,11 @@ algorand-indexer daemon \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable" &
-PID_IDX=$!
-
-/bin/bash
+  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
 
 # LOG="${ALGORAND_DATA}/node.log"
 # while ! [ -f "${LOG}" ] ; do sleep 1 ; done
 # tail -f "${LOG}" | grep compile
 
-kill "$PID_DBG" "$PID_ALGO" "$PID_IDX"
-kill -9 "$PID_DBG" "$PID_ALGO" "$PID_IDX"
+kill "$PID_DBG" "$PID_ALGO"
+kill -9 "$PID_DBG" "$PID_ALGO"
