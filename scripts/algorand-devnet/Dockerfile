@@ -43,19 +43,13 @@ RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM alpine:latest
 
-RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-
-RUN apk add --no-cache \
-  ca-certificates \
-  racket@testing
-
 WORKDIR /
 
 ### ALGOD & INDEXER
 COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /go/bin/goal /bin
 
 ### DEBUGGER
-COPY server.rkt /
+COPY shdbg.sh /
 
 ### Setup
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
