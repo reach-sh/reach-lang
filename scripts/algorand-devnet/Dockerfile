@@ -55,6 +55,7 @@ WORKDIR /
 COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /go/bin/goal /bin
 
 ### DEBUGGER
+RUN raco pkg install --auto web-server-lib
 COPY server.rkt /
 
 ### Setup
