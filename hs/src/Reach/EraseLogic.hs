@@ -165,8 +165,8 @@ instance Erase LLStep where
       return $ LLS_ToConsensus at send' recv' mtime'
 
 instance Erase LLProg where
-  el (LLProg at llo ps dli s) =
-    LLProg at llo ps dli <$> el s
+  el (LLProg at llo ps dli dex s) =
+    LLProg at llo ps dli dex <$> el s
 
 erase_logic :: LLProg -> IO LLProg
 erase_logic p = do

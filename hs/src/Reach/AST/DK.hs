@@ -84,13 +84,16 @@ instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a
 
 data DKProg
-  = DKProg SrcLoc DLOpts SLParts DLInit DKTail
+  = DKProg SrcLoc DLOpts SLParts DLInit [(SLVar, DLExportValue)] DKTail
 
 instance Pretty DKProg where
-  pretty (DKProg _at _ sps dli t) =
+  pretty (DKProg _at _ sps dli dex t) =
     "#lang dk" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
       <> pretty dli
+      <> hardline
+      <> viaShow dex
+      <> hardline
       <> pretty t

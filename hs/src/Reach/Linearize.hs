@@ -152,10 +152,10 @@ dk_ at = \case
   s Seq.:<| ks -> dk1 at ks s
 
 dekont :: DLProg -> IO DKProg
-dekont (DLProg at opts sps dli ss) = do
+dekont (DLProg at opts sps dli dex ss) = do
   let eRets = mempty
   flip runReaderT (DKEnv {..}) $
-    DKProg at opts sps dli <$> dk_ at ss
+    DKProg at opts sps dli dex <$> dk_ at ss
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -251,10 +251,10 @@ instance LiftCon DKTail where
     DK_Continue at asn -> return $ DK_Continue at asn
 
 liftcon :: DKProg -> IO DKProg
-liftcon (DKProg at opts sps dli k) = do
+liftcon (DKProg at opts sps dli dex k) = do
   let eLifts = Nothing
   flip runReaderT (LCEnv {..}) $
-    DKProg at opts sps dli <$> lc k
+    DKProg at opts sps dli dex <$> lc k
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -415,7 +415,7 @@ df_step = \case
   x -> df_com LLS_Com df_step x
 
 defluid :: DKProg -> IO LLProg
-defluid (DKProg at (DLOpts {..}) sps dli k) = do
+defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
@@ -425,7 +425,7 @@ defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let eFVE = mempty
   flip runReaderT (DFEnv {..}) $ do
     k' <- df_step k
-    return $ LLProg at opts' sps dli k'
+    return $ LLProg at opts' sps dli dex k'
 
 -- Stich it all together
 linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg

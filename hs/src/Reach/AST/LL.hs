@@ -78,17 +78,20 @@ instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
 data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit LLStep
+  = LLProg SrcLoc LLOpts SLParts DLInit [(SLVar, DLExportValue)] LLStep
   deriving (Eq)
 
 instance HasCounter LLProg where
-  getCounter (LLProg _ llo _ _ _) = getCounter llo
+  getCounter (LLProg _ llo _ _ _ _) = getCounter llo
 
 instance Pretty LLProg where
-  pretty (LLProg _at _ sps dli db) =
+  pretty (LLProg _at _ sps dli dex db) =
     "#lang ll" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
       <> pretty dli
+      <> hardline
+      <> viaShow dex
+      <> hardline
       <> pretty db

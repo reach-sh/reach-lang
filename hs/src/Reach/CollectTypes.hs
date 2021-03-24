@@ -134,7 +134,7 @@ instance CollectsTypes LLStep where
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli s) = cts ps <> cts dli <> cts s
+  cts (LLProg _ _ ps dli _ s) = cts ps <> cts dli <> cts s
 
 instance CollectsTypes PLVar where
   cts (PV_Eff) = mempty

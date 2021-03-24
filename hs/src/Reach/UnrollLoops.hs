@@ -179,8 +179,8 @@ instance Unroll LLStep where
       LLS_ToConsensus at send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
-  ul (LLProg at opts ps dli s) =
-    LLProg at opts ps dli <$> ul s
+  ul (LLProg at opts ps dli dex s) =
+    LLProg at opts ps dli dex <$> ul s
 
 instance Unroll CITail where
   ul = \case
@@ -201,8 +201,8 @@ instance Unroll CIHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CIProg where
-  ul (CPProg at hs) =
-    CPProg at <$> ul hs
+  ul (CPProg at dex hs) =
+    CPProg at dex <$> ul hs
 
 instance Unroll (EPPs a) where
   ul (EPPs m) = pure $ EPPs m

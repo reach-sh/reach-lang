@@ -560,7 +560,7 @@ be_s = \case
     return $ ok_l''m
 
 epp :: LLProg -> IO PIProg
-epp (LLProg at (LLOpts {..}) ps dli s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   -- Step 1: Analyze the program to compute basic blocks
   be_handlerc <- newCounter 1
   be_handlers <- newIORef mempty
@@ -581,7 +581,7 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
         let ce_flow = flow
         ce_vars <- newIORef mempty
         flip runReaderT (CEnv {..}) m
-  cp <- (CPProg at . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at dex . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

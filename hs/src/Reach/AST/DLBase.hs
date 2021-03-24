@@ -258,6 +258,11 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
 
+data DLExportValue
+  = DLEV_Arg DLArg
+  | DLEV_LArg DLLargeArg
+  deriving (Eq, Show)
+
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
   DLAE_Arg a -> [a]

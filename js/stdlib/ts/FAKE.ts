@@ -475,3 +475,5 @@ export function formatCurrency(amt: any, decimals: number = 0): string {
 }
 
 export const setFaucet = false; // XXX
+
+export const reachStdlib = compiledStdlib;

@@ -1165,3 +1165,5 @@ export function formatCurrency(amt: any, decimals: number = 18): string {
     return amtStr;
   }
 }
+
+export const reachStdlib = compiledStdlib;

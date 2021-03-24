@@ -73,8 +73,8 @@ app_options =
 
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 
-compileDApp :: Connectors -> SLVal -> App CompiledDApp
-compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+compileDApp :: Connectors -> [(SLVar, SLSSVal)] -> SLVal -> App CompiledDApp
+compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
   at' <- withAt id
   idr <- e_id <$> ask
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
@@ -143,21 +143,31 @@ compileDApp cns (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals top_s (
             evalStmt top_ss
   flip when doExit =<< readSt st_live
   let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
+  dlExports <- foldM (\ acc (k, v) -> maybe acc ((: acc) . (k,) ) <$> slToDLExportVal (sss_val v)) [] exports
   return $ \dli_maps final ->
     let dli = DLInit {..}
-     in DLProg at dlo sps dli final
-compileDApp _ topv =
+     in DLProg at dlo sps dli dlExports final
+compileDApp _ _ topv =
   expect_t topv $ Err_Top_NotApp
+
+getExports :: SLLibs -> [(SLVar, SLSSVal)]
+getExports =
+  M.foldr' (\ lib exs ->
+    M.toList (M.filter (\case
+      SLSSVal { sss_val = SLV_Prim SLPrim_App_Delay {} } -> False
+      _ -> True
+    ) lib) <> exs) []
 
 compileBundle_ :: Connectors -> JSBundle -> SLVar -> App CompiledDApp
 compileBundle_ cns (JSBundle mods) main = do
   libm <- evalLibs cns mods
+  let exports = getExports libm
   let exe = case mods of
         [] -> impossible $ "compileBundle: no files"
         ((x, _) : _) -> x
   let exe_ex = libm M.! exe
   topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
-  compileDApp cns topv
+  compileDApp cns exports topv
 
 compileBundle :: Connectors -> JSBundle -> SLVar -> IO DLProg
 compileBundle cns jsb main = do

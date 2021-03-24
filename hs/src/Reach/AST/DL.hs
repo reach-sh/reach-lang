@@ -196,17 +196,20 @@ instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit [(SLVar, DLExportValue)] DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where
-  getCounter (DLProg _ dlo _ _ _) = getCounter dlo
+  getCounter (DLProg _ dlo _ _ _ _) = getCounter dlo
 
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps dli ds) =
+  pretty (DLProg _at _ sps dli dex ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
       <> pretty dli
+      <> hardline
+      <> viaShow dex
+      <> hardline
       <> render_dls ds

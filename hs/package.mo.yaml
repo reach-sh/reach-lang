@@ -90,6 +90,7 @@ default-extensions:
 - ScopedTypeVariables
 - StrictData
 - TemplateHaskell
+- TupleSections
 - TypeApplications
 - TypeSynonymInstances
 

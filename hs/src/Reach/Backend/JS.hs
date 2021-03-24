@@ -698,8 +698,13 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
+jsExportValue :: DLExportValue -> App Doc
+jsExportValue = \case
+  DLEV_Arg a -> jsArg a
+  DLEV_LArg a -> jsLargeArg a
+
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) (CPProg _ dexports _)) = do
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
@@ -709,7 +714,11 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) _) = do
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
-  return $ vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
+  exportProps <- mapM (\ (k, v) -> do
+        vs <- jsExportValue v
+        return $ "    " <> pretty k <> " : " <> vs <> ",\n") dexports
+  let exportsp = "export const getExports = (stdlib) => {\n  return ({\n" <> hcat exportProps <> "  });\n};"
+  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 
 backend_js :: Backend
 backend_js outn crs pl = do

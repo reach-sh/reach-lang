@@ -56,7 +56,7 @@ compile copts = do
         let showp' :: (forall a. Pretty a => String -> a -> IO ())
             showp' = showp . T.pack
         dl <- compileBundle all_connectors djp which
-        let DLProg _ (DLOpts {..}) _ _ _ = dl
+        let DLProg _ (DLOpts {..}) _ _ _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
         showp "dl" dl
         ll <- linearize showp' dl

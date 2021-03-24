@@ -311,13 +311,13 @@ instance Optimize DLInit where
         }
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli s) = do
+  opt (LLProg at opts ps dli dex s) = do
     let SLParts m = ps
     let psl = M.keys m
     env0 <- liftIO $ mkEnv0 psl
     local (\_ -> env0) $
       focusa $
-        LLProg at opts ps <$> opt dli <*> opt s
+        LLProg at opts ps <$> opt dli <*> pure dex <*> opt s
 
 -- This is a bit of a hack...
 
@@ -355,8 +355,8 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
-  opt (CPProg at (CHandlers hs)) =
-    CPProg at . CHandlers <$> mapM (newScope . opt) hs
+  opt (CPProg at dex (CHandlers hs)) =
+    CPProg at dex . CHandlers <$> mapM (newScope . opt) hs
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
   opt (PLProg at plo dli epps cp) =

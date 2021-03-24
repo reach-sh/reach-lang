@@ -38,6 +38,7 @@ import Reach.Warning
 import Data.Bifunctor (Bifunctor(bimap))
 import Data.Bool (bool)
 import Text.RE.TDFA ( (?=~), compileRegex, RE, matched )
+import Data.Functor ((<&>))
 
 --- New Types
 
@@ -523,6 +524,61 @@ slToDL = \case
   SLV_ParticipantConstructor {} -> no
   SLV_Deprecated {} -> no
   where
+    yes = return . Just
+    no = return Nothing
+
+getExportValArg :: DLExportValue -> Maybe DLArg
+getExportValArg (DLEV_Arg a) = Just a
+getExportValArg _ = Nothing
+
+slToDLExportVal :: SLVal -> App (Maybe DLExportValue)
+slToDLExportVal = \case
+  SLV_Null _ _    -> lit DLL_Null
+  SLV_Bool _ b    -> lit $ DLL_Bool b
+  SLV_Int at i    -> lit $ DLL_Int at i
+  SLV_Bytes _ bs  -> lit $ DLL_Bytes bs
+  SLV_DLC c       -> arg $ DLA_Constant c
+  SLV_DLVar dv    -> arg $ DLA_Var dv
+  SLV_Array _ dt vs -> getDLArgs vs >>= yes . DLEV_LArg . DLLA_Array dt
+  SLV_Tuple _ vs    -> getDLArgs vs >>= yes . DLEV_LArg . DLLA_Tuple
+  SLV_Object _ _ fenv -> do
+    let f :: (SLVar, SLSSVal) -> App (Maybe (SLVar, DLArg))
+        f (x, y) = do
+          y' <- getDLArg $ sss_val y
+          return $ (,) x <$> y'
+    mapM f (M.toList fenv) >>=
+      (yes . DLEV_LArg . DLLA_Obj . M.fromList) . catMaybes
+  SLV_Struct _ vs -> do
+    let go (k, v) = do
+          v' <- slToDLExportVal v <&> maybe Nothing getExportValArg
+          return $ (,) k <$> v'
+    mds <- catMaybes <$> mapM go vs
+    yes $ DLEV_LArg $ DLLA_Struct mds
+  SLV_Data _ dt vn sv -> do
+    msv <- slToDLExportVal sv <&> maybe Nothing getExportValArg
+    return $ DLEV_LArg . DLLA_Data dt vn <$> msv
+  SLV_Participant _ who _ mdv -> do
+    pdvs <- readSt st_pdvs
+    case M.lookup who pdvs <|> mdv of
+      Just dv -> yes $ DLEV_Arg $ DLA_Var dv
+      Nothing -> no
+  SLV_Clo {} -> no
+  SLV_Type _ -> no
+  SLV_Connector _ -> no
+  SLV_RaceParticipant {} -> no
+  SLV_Anybody -> no
+  SLV_Prim {} -> no
+  SLV_Form {} -> no
+  SLV_Kwd {} -> no
+  SLV_MapCtor {} -> no
+  SLV_Map {} -> no
+  SLV_ParticipantConstructor {} -> no
+  SLV_Deprecated {} -> no
+  where
+    getDLArg v = slToDLExportVal v <&> maybe Nothing getExportValArg
+    getDLArgs vs = catMaybes <$> mapM getDLArg vs
+    lit = arg . DLA_Literal
+    arg = yes . DLEV_Arg
     yes = return . Just
     no = return Nothing
 

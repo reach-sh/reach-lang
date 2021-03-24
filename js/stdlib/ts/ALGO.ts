@@ -1376,3 +1376,5 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 
   return true;
 };
+
+export const reachStdlib = compiledStdlib;

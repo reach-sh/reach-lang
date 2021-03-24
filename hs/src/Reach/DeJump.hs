@@ -77,7 +77,7 @@ instance DeJump CIHandler where
 dejump :: PIProg -> IO PIProg
 dejump (PLProg at plo dli epps cp) = do
   let PLOpts {..} = plo
-  let CPProg cat (CHandlers hs) = cp
+  let CPProg cat dex (CHandlers hs) = cp
   let go h@(C_Loop {}) =
         -- XXX: We leave these unchanged because the ALGO backend uses an
         -- array rather than a map. It would be good to change that.
@@ -88,5 +88,5 @@ dejump (PLProg at plo dli epps cp) = do
         let e_idx = plo_counter
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  let cp' = CPProg cat (CHandlers hs')
+  let cp' = CPProg cat dex (CHandlers hs')
   return $ PLProg at plo dli epps cp'

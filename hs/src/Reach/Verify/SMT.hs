@@ -1444,7 +1444,7 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) s = lp
+  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) _ s = lp
   let initMapInfo (DLMapInfo {..}) = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = maybeT dlmi_ty

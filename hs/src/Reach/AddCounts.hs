@@ -120,7 +120,7 @@ ac_top x = do
 add_counts :: PIProg -> IO PLProg
 add_counts (PLProg at plo dli _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
-  let CPProg cat (CHandlers chs) = cp
+  let CPProg cat dex (CHandlers chs) = cp
   chs' <- mapM ac_top chs
-  let cp' = CPProg cat $ CHandlers chs'
+  let cp' = CPProg cat dex $ CHandlers chs'
   return $ PLProg at plo dli epps' cp'
