@@ -6,7 +6,14 @@ RUN apk add --no-cache \
   git \
   bash \
   patch \
-  libtool
+  libtool \
+  autoconf \
+  automake \
+  gcc \
+  boost-dev \
+  g++ \
+  shellcheck \
+  sqlite
 
 ENV SRC_PARENT $GOPATH/src/github.com/algorand
 
@@ -19,14 +26,6 @@ WORKDIR $SRC_PARENT/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
 COPY reach.patch .
 RUN patch -p1 < reach.patch
-RUN apk add --no-cache \
-  autoconf \
-  automake \
-  gcc \
-  boost-dev \
-  g++ \
-  shellcheck \
-  sqlite
 RUN make install
 
 ### INDEXER
@@ -43,11 +42,13 @@ RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM alpine:latest
 
+# This is for Racket
 RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
 RUN apk add --no-cache \
   ca-certificates \
-  racket@testing
+  racket@testing \
+  bash
 
 WORKDIR /
 
@@ -72,9 +73,6 @@ RUN /prime-algod.sh
 EXPOSE 9392
 EXPOSE 4180
 EXPOSE 8980
-
-RUN apk add --no-cache \
-  bash
 
 ENTRYPOINT ["/bin/bash", "/start.sh"]
 ARG REACH_GIT_HASH
