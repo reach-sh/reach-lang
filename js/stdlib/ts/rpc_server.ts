@@ -165,15 +165,23 @@ export const serveRpc = async (backend: any) => {
       `client ${req.ip}: ${req.method} ${req.originalUrl} ${JSON.stringify(req.body)}`;
 
     try {
+      debug(`Attempting to process request by ${client}`);
       await f(req, res);
+
     } catch (e) {
-      debug(`Witnessed exception triggered by ${client}: ${e.message}\n${e.stack}`);
+      debug(`!! Witnessed exception triggered by ${client}:\n  ${e.stack}`);
 
       const [ s, message ]
         = was.untracked(e) ? [ 404, String(e) ]
         :                    [ 500, 'Unspecified fault' ];
 
-      res.status(s).json({ message, request: req.body });
+      if (!res.headersSent) {
+        res.status(s).json({ message, request: req.body });
+        debug(`!! HTTP ${s}: "${message}" response sent to client`);
+      } else {
+        res.end();
+        debug(`!! Response already initiated; unable to send appropriate payload`);
+      }
     }
   })();
 
