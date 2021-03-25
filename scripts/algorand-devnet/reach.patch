@@ -1,5 +1,85 @@
+diff --git a/data/transactions/logic/debugger.go b/data/transactions/logic/debugger.go
+index 021a53fa..437f2020 100644
+--- a/data/transactions/logic/debugger.go
++++ b/data/transactions/logic/debugger.go
+@@ -17,6 +17,7 @@
+ package logic
+ 
+ import (
++        "bufio"
+ 	"bytes"
+ 	"crypto/sha256"
+ 	"encoding/base64"
+@@ -24,6 +25,7 @@ import (
+ 	"fmt"
+ 	"net/http"
+ 	"net/url"
++        "os"
+ 	"strings"
+ 
+ 	"github.com/algorand/go-algorand/config"
+@@ -49,6 +51,11 @@ type WebDebuggerHook struct {
+ 	URL string
+ }
+ 
++// DirDebuggerHook represents a directory to save log entries as JSON
++type DirDebuggerHook struct {
++	Dir string
++}
++
+ // PCOffset stores the mapping from a program counter value to an offset in the
+ // disassembly of the bytecode
+ type PCOffset struct {
+@@ -284,3 +291,47 @@ func (dbg *WebDebuggerHook) Update(state *DebugState) error {
+ func (dbg *WebDebuggerHook) Complete(state *DebugState) error {
+ 	return dbg.postState(state, "exec/complete")
+ }
++
++var dirRound = 0
++var dirStep = 0
++func (dbg *DirDebuggerHook) postState(state *DebugState, roundDone bool) error {
++        defer func () {
++          dirStep++
++          if roundDone {
++            dirRound++
++            dirStep = 0
++          }
++        }()
++
++        p := fmt.Sprintf("%s/%d-%d.json", dbg.Dir, dirRound, dirStep)
++        f, err := os.Create(p)
++        if err != nil {
++          return err
++        }
++        defer f.Close()
++
++        w := bufio.NewWriter(f)
++        defer w.Flush()
++        defer f.Sync()
++	enc := protocol.NewJSONEncoder(w)
++	err = enc.Encode(state)
++	if err != nil {
++		return err
++	}
++
++        return err
++}
++
++func (dbg *DirDebuggerHook) Register(state *DebugState) error {
++	return dbg.postState(state, false)
++}
++
++// Update sends state to remote debugger
++func (dbg *DirDebuggerHook) Update(state *DebugState) error {
++	return dbg.postState(state, false)
++}
++
++// Complete sends state to remote debugger
++func (dbg *DirDebuggerHook) Complete(state *DebugState) error {
++	return dbg.postState(state, true)
++}
 diff --git a/data/transactions/logic/eval.go b/data/transactions/logic/eval.go
-index 7809dd4c..a6f321e9 100644
+index e3b24ec4..7fc615fd 100644
 --- a/data/transactions/logic/eval.go
 +++ b/data/transactions/logic/eval.go
 @@ -27,6 +27,7 @@ import (
@@ -10,7 +90,7 @@ index 7809dd4c..a6f321e9 100644
  	"runtime"
  	"sort"
  	"strings"
-@@ -385,6 +386,11 @@ func eval(program []byte, cx *evalContext) (pass bool, err error) {
+@@ -385,6 +386,15 @@ func eval(program []byte, cx *evalContext) (pass bool, err error) {
  	cx.stack = make([]stackValue, 0, 10)
  	cx.program = program
  
@@ -18,8 +98,11 @@ index 7809dd4c..a6f321e9 100644
 +	if debugURL != "" {
 +		cx.Debugger = &WebDebuggerHook{URL: debugURL}
 +	}
++	debugDir := os.Getenv("TEAL_DEBUGGER_DIR")
++	if debugDir != "" {
++		cx.Debugger = &DirDebuggerHook{Dir: debugDir}
++	}
 +
  	if cx.Debugger != nil {
  		cx.debugState = makeDebugState(cx)
  		if err = cx.Debugger.Register(cx.refreshDebugState()); err != nil {
- 

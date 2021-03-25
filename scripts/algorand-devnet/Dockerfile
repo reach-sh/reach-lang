@@ -27,9 +27,6 @@ RUN ./scripts/configure_dev-deps.sh
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install
-COPY reach3.patch .
-RUN patch -N -p1 < reach3.patch
-RUN make install
 
 ### INDEXER
 WORKDIR $SRC_PARENT
