@@ -14,7 +14,7 @@ if [ "x$REACH_DEBUG" = "x" ] ; then
   echo Not starting debugger. To start, use REACH_DEBUG=1.
 else
   echo Starting debugger
-  racket server.rkt &
+  (cd /dbg && ./shdbg.sh) &
   PID_DBG=$!
   export TEAL_DEBUGGER_URL=http://localhost:9392
 fi
@@ -42,6 +42,8 @@ PID_IDX=$!
 LOG="${ALGORAND_DATA}/node.log"
 while ! [ -f "${LOG}" ] ; do sleep 1 ; done
 tail -f "${LOG}"
+
+wait "$PID_IDX"
 
 kill "$PID_DBG" "$PID_ALGO" "$PID_IDX"
 kill -9 "$PID_DBG" "$PID_ALGO" "$PID_IDX"

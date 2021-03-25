@@ -42,12 +42,7 @@ RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM alpine:latest
 
-# This is for Racket
-RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-
 RUN apk add --no-cache \
-  ca-certificates \
-  racket@testing \
   bash
 
 WORKDIR /
@@ -55,22 +50,23 @@ WORKDIR /
 ### ALGOD & INDEXER
 COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /go/bin/goal /bin
 
-### DEBUGGER
-RUN raco pkg install --auto web-server-lib
-COPY server.rkt /
-
 ### Setup
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=$ALGORAND_NETWORK/Primary
 COPY algorand_network/ $ALGORAND_NETWORK/
 COPY algorand_data/* $ALGORAND_DATA/
-COPY start.sh /
 
 # pre-run some stuff so that it starts up faster
 COPY prime-algod.sh /
 RUN /prime-algod.sh
 
-EXPOSE 9392
+### Our stuff
+COPY start.sh /
+
+### New debugger
+RUN mkdir /dbg
+COPY shdbg.sh /dbg
+
 EXPOSE 4180
 EXPOSE 8980
 
