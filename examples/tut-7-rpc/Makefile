@@ -43,9 +43,8 @@ run: test
 
 .PHONY: test
 test: build
-	echo 'FIXME'
-#	REACH_DEBUG=1 sbin/test-on.sh ETH  js py go
-#	REACH_DEBUG=1 sbin/test-on.sh ALGO js py go
+	REACH_DEBUG=1 sbin/test-on.sh ETH  js py go
+	REACH_DEBUG=1 sbin/test-on.sh ALGO js py go
 #	sbin/test-on.sh FAKE js py go
 
 .PHONY: run_old
