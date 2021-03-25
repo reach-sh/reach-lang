@@ -23,7 +23,7 @@ services:
     ports:
       - 9392
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -92,7 +92,7 @@ services:
 <span class="nt">17        ports</span><span class="p">:</span>
 <span class="l l-Scalar l-Scalar-Plain">18          - 9392</span>
 <span class="nt">19      algorand-postgres-db</span><span class="p">:</span>
-<span class="nt">20        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">postgres:11</span>
+<span class="nt">20        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">postgres:11-alpine</span>
 <span class="nt">21        environment</span><span class="p">:</span>
 <span class="l l-Scalar l-Scalar-Plain">22          - POSTGRES_USER=algogrand</span>
 <span class="l l-Scalar l-Scalar-Plain">23          - POSTGRES_PASSWORD=indexer</span>
