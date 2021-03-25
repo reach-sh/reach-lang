@@ -10,7 +10,6 @@ x-client-env: &client-env
     - REACH_RPC_PORT=3000
     - REACH_RPC_KEY
     - REACH_RPC_TLS_REJECT_UNVERIFIED=0
-    - NODE_TLS_REJECT_UNAUTHORIZED=0
   extra_hosts:
     - 'host.docker.internal:172.17.0.1'
 services:
@@ -82,14 +81,13 @@ services:
       - REACH_RPC_PORT=3000
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
 
-      # The following are highly insecure in Real Life™ applications and must
+      # The following is highly insecure in Real Life™ applications and must
       # only be used under controlled conditions (such as during development)
       #   See:
       # https://nodejs.org/api/cli.html#cli_node_tls_reject_unauthorized_value
       # https://2.python-requests.org/en/master/user/advanced/#ssl-cert-verification
       # https://golang.org/pkg/crypto/tls/#Config
       - REACH_RPC_TLS_REJECT_UNVERIFIED=0 # Default "on"
-      - NODE_TLS_REJECT_UNAUTHORIZED=0    # Default "on"
   client-only:
     <<: *client
     <<: *client-env

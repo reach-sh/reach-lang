@@ -93,7 +93,9 @@ If it is not present, the client library must default to the value of the enviro
 
 @item{@litchar{verify} --- This value determines whether to verify the TLS certificate of the Reach RPC Server instance.
 If it is not present, the client library must default to the value of the environment variable @defenv{REACH_RPC_TLS_REJECT_UNVERIFIED}.
-If that is not present, it must default to true.}
+If that is not present, it must default to true.
+
+To disable verification, set this value to the string: @litchar{"0"}; any other value will be considered to mean "enable".}
 
 @item{@litchar{timeout} --- This value sets the number of seconds to wait for the Reach RPC Server instance to respond to its first request.
 If it is not present, the client library must default to the value of the environment variable @defenv{REACH_RPC_TIMEOUT}.

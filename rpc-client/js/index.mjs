@@ -1,35 +1,33 @@
 import waitPort from 'wait-port';
 import bent     from 'bent';
 
-export const mkRPC = async opts => {
-  // XXX implement ref-backends-rpc-opts
-  const defaults = {
-    host:   'REACH_RPC_SERVER',
-    port:   'REACH_RPC_PORT',
-    key:    'REACH_RPC_KEY',
+export const mkRPC = async (opts = {}) => {
+
+  const optOf = (field, envvar, modifiers) => {
+    const mod = Object.assign({ def: undefined, f: x => x }, modifiers);
+    const opt = opts[field]         !== undefined ? mod.f(opts[field])
+              : process.env[envvar] !== undefined ? mod.f(process.env[envvar])
+              : mod.def;
+
+    if (opt === undefined) // `null` is acceptable here
+      throw new Error(`Mandatory configuration unset for: ${field}`);
+
+    return opt;
   };
 
-  if ( process.env['REACH_RPC_TLS_REJECT_UNVERIFIED'] == '0' ) {
+  const host    = optOf('host',    'REACH_RPC_SERVER');
+  const port    = optOf('port',    'REACH_RPC_PORT');
+  const key     = optOf('key',     'REACH_RPC_KEY');
+  const timeout = optOf('timeout', 'REACH_RPC_TIMEOUT',               { def: 5 });
+  const verify  = optOf('verify',  'REACH_RPC_TLS_REJECT_UNVERIFIED', { f:   x => x !== '0' });
+
+  if (!verify)
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
-  }
 
-  const r = (acc, k) =>
-    Object.assign(acc, { [k]: process.env[defaults[k]] });
-
-  const o = Object.assign(
-    Object.keys(defaults).reduce(r, {}),
-    opts);
-
-  Object.keys(o).forEach(k => {
-    if (!o[k]) {
-      throw new Error(`Neither \`opts.${k}\` nor ${defaults[k]} environment`
-                    + ` variable are configured!`);
-    }
+  const call = bent(`https://${host}:${port}`, `POST`, `json`, 200, {
+    'X-API-Key': key,
   });
 
-  const call = bent(`https://${o.host}:${o.port}`, `POST`, `json`, 200, {
-    'X-API-Key': o.key,
-  });
 
   const rpc = async (m, ...args) => {
     const lab = `RPC ${m} ${JSON.stringify(args)}`
@@ -38,6 +36,7 @@ export const mkRPC = async opts => {
     console.log(`${lab} ==> ${JSON.stringify(ans)}`);
     return ans;
   };
+
 
   const rpcCallbacks = async (m, arg, cbacks) => {
     const vals = {};
@@ -75,7 +74,8 @@ export const mkRPC = async opts => {
     })());
   };
 
-  await waitPort({ host: o.host, port: parseInt(o.port, 10) });
+
+  await waitPort({ host, port: parseInt(port, 10), timeout: timeout * 1000 });
 
   return { rpc, rpcCallbacks };
 };
