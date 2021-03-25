@@ -66,7 +66,8 @@ declare module 'algosdk' {
   }
 
   declare function makePaymentTxnWithSuggestedParams(
-      from: Address, to: Address, amount: number, closeRemainderTo: undefined,
+      from: Address, to: Address, amount: number,
+      closeRemainderTo: Address|undefined,
       note: Uint8Array, params: TxnParams
   ): Txn;
   declare type LogicArg = Uint8Array | string;
