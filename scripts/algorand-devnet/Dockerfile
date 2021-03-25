@@ -27,6 +27,9 @@ RUN ./scripts/configure_dev-deps.sh
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install
+COPY reach3.patch .
+RUN patch -N -p1 < reach3.patch
+RUN make install
 
 ### INDEXER
 WORKDIR $SRC_PARENT
@@ -62,10 +65,6 @@ RUN /prime-algod.sh
 
 ### Our stuff
 COPY start.sh /
-
-### New debugger
-RUN mkdir /dbg
-COPY shdbg.sh /dbg
 
 EXPOSE 4180
 EXPOSE 8980
