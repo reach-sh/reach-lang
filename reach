@@ -498,7 +498,7 @@ services:
     ports:
       - 9392
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -896,7 +896,7 @@ $DEPENDS_ON
       - '8980:8980'
       - '9392:9392'
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -1007,7 +1007,7 @@ services:
       - '8980:8980'
       - '9392:9392'
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -1099,7 +1099,7 @@ $DEPENDS_ON
       - '8980:8980'
       - '9392:9392'
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer

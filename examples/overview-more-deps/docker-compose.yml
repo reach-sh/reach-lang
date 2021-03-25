@@ -17,7 +17,7 @@ services:
     ports:
       - 9392
   algorand-postgres-db:
-    image: postgres:11
+    image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
