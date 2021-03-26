@@ -10,7 +10,7 @@ import (
 // This example imports a copied version of `reachrpc` directly from the
 // filesystem in order to remain in-sync with the repository's client code, but
 // frontend authors will normally import from GitHub like so:
-// import reachrpc "github.com/reach.sh/reach-lang/rpc-client/go"
+// import reachrpc "github.com/reach-sh/reach-lang/rpc-client/go"
 import "reachrpc"
 
 type jsono = map[string]interface {}
