@@ -154,6 +154,7 @@ You should start off by initializing your Reach program:
   (apply commandline @bold{@exec{$}} " " args))
 
 (define-runtime-path x "../examples/")
+(define-runtime-path rpc-client "../rpc-client/")
 (define-runtime-path images "./images/")
 
 (define (eximage path)
@@ -225,6 +226,7 @@ You should start off by initializing your Reach program:
   (define x-dir
     (match dir
       ["examples" x]
+      ["rpc-client" rpc-client]
       (error 'runtime-path "~a is not a declared runtime path" dir)))
   (define ((do-link lab) link-loc content)
     (define copy
