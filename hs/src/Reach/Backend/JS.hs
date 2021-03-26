@@ -710,14 +710,8 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
 
 jsExportValue :: DLinExportVal PILBlock -> App Doc
 jsExportValue = \case
-  DLEV_Arg a  -> do
-    let t = argTypeOf a
-    a' <- jsArg a
-    jsProtect "null" t a'
-  DLEV_LArg a -> do
-    let t = largeArgTypeOf a
-    a' <- jsLargeArg a
-    jsProtect "null" t a'
+  DLEV_Arg a  -> jsArg a
+  DLEV_LArg a -> jsLargeArg a
   DLEV_Fun args b -> do
     (tl, ret) <- jsBlock b
     (argDefs, tmps) <-

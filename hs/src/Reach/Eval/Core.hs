@@ -270,6 +270,9 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
+isSpecialBackendIdent :: [Char] -> Bool
+isSpecialBackendIdent = flip elem ["getExports"]
+
 -- | Certain idents are special and bypass the public/private
 -- enforced naming convention.
 isSpecialIdent :: SLVar -> Bool
@@ -2297,7 +2300,11 @@ evalPrim p sargs =
     makeParticipant ty = do
       at <- withAt id
       (n, interface) <- two_args
-      name <- return . SLV_Bytes (srclocOf n) =<< mustBeBytes n
+      namebs <- mustBeBytes n
+      let names = bunpack namebs
+      when (isSpecialBackendIdent names) $
+        expect_ $ Err_InvalidPartName names
+      let name = SLV_Bytes (srclocOf n) namebs
       objEnv <- mustBeObject interface
       retV $ (lvl, SLV_ParticipantConstructor $ ty at name objEnv)
 

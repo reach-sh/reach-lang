@@ -157,14 +157,15 @@ runDk = do
   flip runReaderT (DKEnv {..})
 
 dk_export :: SrcLoc -> DLExportVal -> IO (DLinExportVal DKBlock)
-dk_export at (DLEV_Fun args body) =
-  runDk $ DLEV_Fun args <$> dk_block at body
-dk_export _ (DLEV_Arg a)  = return $ DLEV_Arg a
-dk_export _ (DLEV_LArg a) = return $ DLEV_LArg a
+dk_export at = \case
+  DLEV_Fun args body ->
+    runDk $ DLEV_Fun args <$> dk_block at body
+  DLEV_Arg a  -> return $ DLEV_Arg a
+  DLEV_LArg a -> return $ DLEV_LArg a
 
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex ss) = do
-  dex' <- mapMapM (dk_export at) dex
+  dex' <- mapM (dk_export at) dex
   runDk $ DKProg at opts sps dli dex' <$> dk_ at ss
 
 -- Lift common things to the previous consensus
@@ -426,9 +427,10 @@ df_step = \case
 
 
 df_export :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
-df_export (DLEV_Fun args body) = DLEV_Fun args <$> df_bl body
-df_export (DLEV_Arg a) = return $ DLEV_Arg a
-df_export (DLEV_LArg a) = return $ DLEV_LArg a
+df_export = \case
+  DLEV_Fun args body -> DLEV_Fun args <$> df_bl body
+  DLEV_Arg a -> return $ DLEV_Arg a
+  DLEV_LArg a -> return $ DLEV_LArg a
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
@@ -440,7 +442,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let eFVMm = mempty
   let eFVE = mempty
   flip runReaderT (DFEnv {..}) $ do
-    dex' <- mapMapM df_export dex
+    dex' <- mapM df_export dex
     k' <- df_step k
     return $ LLProg at opts' sps dli dex' k'
 

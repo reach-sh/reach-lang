@@ -8,7 +8,6 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Sanitize
-import Reach.Util (mapMapM)
 
 type App = ReaderT Env IO
 
@@ -260,12 +259,13 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
     newScope $ DLinBlock at fs <$> opt b <*> opt a
 
 instance {-# OVERLAPPING #-} Optimize (DLinExportVal LLBlock) where
-  opt (DLEV_Arg a)   = DLEV_Arg   <$> opt a
-  opt (DLEV_LArg a)  = DLEV_LArg  <$> opt a
-  opt (DLEV_Fun a b) = DLEV_Fun a <$> opt b
+  opt = \case
+    DLEV_Arg a   -> DLEV_Arg   <$> opt a
+    DLEV_LArg a  -> DLEV_LArg  <$> opt a
+    DLEV_Fun a b -> DLEV_Fun a <$> opt b
 
 instance {-# OVERLAPPING #-} Optimize LLExports where
-  opt m = mapMapM opt m
+  opt m = mapM opt m
 
 instance Optimize LLConsensus where
   opt = \case

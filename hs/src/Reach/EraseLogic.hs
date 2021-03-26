@@ -172,12 +172,11 @@ instance Erase (DLinExportVal LLBlock) where
     DLEV_LArg a -> return $ DLEV_LArg a
 
 instance Erase LLExports where
-  el dex = sequence $ M.map el dex
+  el dex = mapM el dex
 
 instance Erase LLProg where
-  el (LLProg at llo ps dli dex s) = do
-    dex' <- el dex
-    LLProg at llo ps dli dex' <$> el s
+  el (LLProg at llo ps dli dex s) =
+    LLProg at llo ps dli <$> el dex <*> el s
 
 erase_logic :: LLProg -> IO LLProg
 erase_logic p = do

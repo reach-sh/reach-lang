@@ -14,7 +14,6 @@ module Reach.Util
   , mapWithKeyM
   , hdDie
   , mapValM
-  , mapMapM
   , justValues
   )
 where
@@ -94,9 +93,6 @@ mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscLis
 
 mapValM :: (Traversable t1, Monad m) => (t2 -> m b) -> t1 (a, t2) -> m (t1 (a, b))
 mapValM f = mapM (\ (k, v) -> do { v' <- f v; return (k, v')})
-
-mapMapM :: (Ord k, Monad f) => (t -> f a) -> M.Map k t -> f (M.Map k a)
-mapMapM f m = M.fromList <$> mapValM f (M.toList m)
 
 justValues :: [(a, Maybe b)] -> [(a, b)]
 justValues = foldr' (\ (k, mv) acc -> maybe acc ((: acc) . (k, )) mv) []

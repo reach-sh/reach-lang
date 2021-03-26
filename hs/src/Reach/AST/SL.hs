@@ -167,7 +167,7 @@ instance Pretty SLVal where
     SLV_Object _ (Just lab) _ -> pretty lab
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
-    SLV_CloTyped {} -> "<closure_typed>"
+    SLV_CloTyped {} -> "<typed closure>"
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_Struct _ kvs ->
       "struct" <> brackets (hsep $ punctuate comma $ map go kvs)
