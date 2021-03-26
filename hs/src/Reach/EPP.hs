@@ -559,6 +559,18 @@ be_s = \case
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs amt_v time_v mtime' ok_l'
     return $ ok_l''m
 
+
+mkexports :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
+mkexports (DLEV_Fun args (DLinBlock at sf ll a)) = do
+  let process = \case
+        DT_Return rat -> return $ return $ DT_Return rat
+        DT_Com m k -> return $ return $ DT_Com m k
+  body'' <- process ll
+  body' <- body''
+  return $ DLEV_Fun args (DLinBlock at sf body' a)
+mkexports (DLEV_Arg a)  = return $ DLEV_Arg a
+mkexports (DLEV_LArg a) = return $ DLEV_LArg a
+
 epp :: LLProg -> IO PIProg
 epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   -- Step 1: Analyze the program to compute basic blocks
@@ -581,7 +593,9 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
         let ce_flow = flow
         ce_vars <- newIORef mempty
         flip runReaderT (CEnv {..}) m
-  cp <- (CPProg at dex . CHandlers) <$> mapM mkh hs
+  dex' <- flip runReaderT (BEnv {..}) $
+            mapMapM mkexports dex
+  cp <- (CPProg at dex' . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

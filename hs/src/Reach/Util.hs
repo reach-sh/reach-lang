@@ -13,6 +13,9 @@ module Reach.Util
   , dupeIORef
   , mapWithKeyM
   , hdDie
+  , mapValM
+  , mapMapM
+  , justValues
   )
 where
 
@@ -26,6 +29,7 @@ import qualified Data.Text.Encoding as TE
 import GHC.Stack
 import System.Exit
 import Data.IORef (IORef, newIORef, readIORef)
+import Data.Foldable (foldr')
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
@@ -87,3 +91,12 @@ dupeIORef r = newIORef =<< readIORef r
 
 mapWithKeyM :: (Ord k, Monad m) => (k -> a -> m b) -> M.Map k a -> m (M.Map k b)
 mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscList m)
+
+mapValM :: (Traversable t1, Monad m) => (t2 -> m b) -> t1 (a, t2) -> m (t1 (a, b))
+mapValM f = mapM (\ (k, v) -> do { v' <- f v; return (k, v')})
+
+mapMapM :: (Ord k, Monad f) => (t -> f a) -> M.Map k t -> f (M.Map k a)
+mapMapM f m = M.fromList <$> mapValM f (M.toList m)
+
+justValues :: [(a, Maybe b)] -> [(a, b)]
+justValues = foldr' (\ (k, mv) acc -> maybe acc ((: acc) . (k, )) mv) []

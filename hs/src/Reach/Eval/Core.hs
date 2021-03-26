@@ -442,7 +442,7 @@ base_env =
       <> map (\t -> (show t, SLV_Kwd t)) allKeywords
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
-jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
+jsClo at name js env_ = SLV_Clo at $ SLClo (Just name) args body cloenv
   where
     -- Since we're generating closure, don't fuss about unused vars
     cloenv = SLCloEnv mempty env False
@@ -501,7 +501,8 @@ slToDL = \case
           return $ (,) k <$> v'
     mds <- all_just <$> mapM go vs
     return $ DLAE_Struct <$> mds
-  SLV_Clo _ _ _ _ _ -> no
+  SLV_Clo {} -> no
+  SLV_CloTyped {} -> no
   SLV_Data _ dt vn sv -> do
     msv <- slToDL sv
     return $ DLAE_Data dt vn <$> msv
@@ -527,11 +528,15 @@ slToDL = \case
     yes = return . Just
     no = return Nothing
 
-getExportValArg :: DLExportValue -> Maybe DLArg
+getExportValArg :: DLExportVal -> Maybe DLArg
 getExportValArg (DLEV_Arg a) = Just a
 getExportValArg _ = Nothing
 
-slToDLExportVal :: SLVal -> App (Maybe DLExportValue)
+expectDLVar :: DLArg -> DLVar
+expectDLVar (DLA_Var dv) = dv
+expectDLVar _ = impossible "expectDLVar"
+
+slToDLExportVal :: SLVal -> App (Maybe DLExportVal)
 slToDLExportVal = \case
   SLV_Null _ _    -> lit DLL_Null
   SLV_Bool _ b    -> lit $ DLL_Bool b
@@ -562,6 +567,14 @@ slToDLExportVal = \case
     case M.lookup who pdvs <|> mdv of
       Just dv -> yes $ DLEV_Arg $ DLA_Var dv
       Nothing -> no
+  SLV_CloTyped at sc@(SLClo _ args _ _) tf -> do
+    sargs <-
+      zipEq (Err_Apply_ArgCount at) (stf_dom tf) args >>=
+        mapM (\ (ty, _) -> public . SLV_DLVar
+          <$> (ctxt_mkvar . DLVar at Nothing =<< st2dte ty))
+    (_, dargs) <- assertRefinedArgs sargs at tf SLM_Module "export"
+    block <- evalPureClosureToBlock sc sargs =<< st2dte (stf_rng tf)
+    yes $ DLEV_Fun (map expectDLVar dargs) block
   SLV_Clo {} -> no
   SLV_Type _ -> no
   SLV_Connector _ -> no
@@ -884,8 +897,10 @@ infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
   SLV_Participant a who _ mdv ->
     SLV_Participant a who (Just v) mdv
-  SLV_Clo a _ e b c ->
-    SLV_Clo a (Just v) e b c
+  SLV_Clo a (SLClo _ e b c) ->
+    SLV_Clo a $ SLClo (Just v) e b c
+  SLV_CloTyped a (SLClo _ e b c) t ->
+    SLV_CloTyped a (SLClo (Just v) e b c) t
   SLV_DLVar (DLVar a _ t i) ->
     SLV_DLVar $ DLVar a (Just (at, v)) t i
   x -> x
@@ -2081,7 +2096,8 @@ evalPrim p sargs =
         mapM
           (\v ->
              case sss_val v of
-               SLV_Clo _ _ case_args _ _ -> return $ case_args
+               SLV_Clo _ (SLClo _ case_args _ _) -> return $ case_args
+               SLV_CloTyped _ (SLClo _ case_args _ _) _ -> return $ case_args
                ow ->
                  locAtf (flip getSrcLocOrDefault ow) $
                    expect_t ow $ Err_Decl_NotType "closure")
@@ -2176,9 +2192,15 @@ evalPrim p sargs =
     SLPrim_is -> do
       (x, y) <- two_args
       t <- expect_ty y
-      void $ typeCheck_s t x
-      at <- withAt id
-      return $ (lvl, SLV_Bool at True)
+      case t of
+        ST_Fun tf ->
+          case x of
+            SLV_Clo at clo -> return (lvl, SLV_CloTyped at clo tf)
+            _ -> expect_ $ Err_Decl_NotType "Fun" (x, Nothing)
+        _ -> do
+          void $ typeCheck_s t x
+          at <- withAt id
+          return $ (lvl, SLV_Bool at True)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       (av, ri) <- two_args
@@ -2281,22 +2303,27 @@ evalPrim p sargs =
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
+  (dom_tupv, dargs) <- assertRefinedArgs sargs iat (SLTypeFun {..}) mode lab
+  fs <- e_stack <$> ask
+  rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
+    mkexpr iat fs drng dargs
+  forM_ stf_post $ \rngp ->
+    applyRefinement ct rngp [dom_tupv, rng_v]
+  return rng_v
+
+assertRefinedArgs :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> App (SLVal, [DLArg])
+assertRefinedArgs sargs iat SLTypeFun {..} mode lab = do
   ensure_mode mode lab
   let argvs = map snd sargs
   arges <-
-    mapM (uncurry $ typeCheck_s)
+    mapM (uncurry typeCheck_s)
       =<< zipEq (Err_Apply_ArgCount iat) stf_dom argvs
   at <- withAt id
   let dom_tupv = SLV_Tuple at argvs
   forM_ stf_pre $ \domp ->
     applyRefinement CT_Assert domp [dom_tupv]
   dargs <- compileArgExprs arges
-  fs <- e_stack <$> ask
-  rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
-    mkexpr at fs drng dargs
-  forM_ stf_post $ \rngp ->
-    applyRefinement ct rngp [dom_tupv, rng_v]
-  return rng_v
+  return (dom_tupv, dargs)
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do
@@ -2326,88 +2353,93 @@ instDefaultArgs env err formals = \case
       env' <- evalDeclLHSs True env [(lhs, rhs)]
       instDefaultArgs env' err ft tl
 
+evalApplyClosureVals :: SrcLoc -> SLClo -> [SLSVal] -> App SLAppRes
+evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEnv {..}) randvs = do
+  ret <- ctxt_alloc
+  let body_at = srcloc_jsa "block" body_a clo_at
+  let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
+  let clo_sco =
+        (SLScope
+            { sco_ret = Just ret
+            , sco_must_ret = RS_MayBeEmpty
+            , sco_while_vars = Nothing
+            , sco_penvs = clo_penvs
+            , sco_cenv = clo_cenv
+            , sco_use_strict = clo_use_strict
+            })
+  m <- readSt st_mode
+  arg_env <-
+    locStMode (pure_mode m) $
+      locSco clo_sco $
+        instDefaultArgs mempty err formals randvs
+  at <- withAt id
+  clo_sco' <- locSco clo_sco $ sco_update arg_env
+  (body_lifts, (SLStmtRes clo_sco'' rs)) <-
+    captureLifts $
+      withFrame (SLC_CloApp at clo_at mname) $
+        locAt body_at $
+          locSco clo_sco' $
+            evalStmt body
+  let no_prompt (lvl, v) = do
+        let lifts' =
+              case body_lifts of
+                body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
+                  | the_ret_label == ret ->
+                    --- We don't check that the_val is v, because
+                    --- we're relying on the invariant that there
+                    --- was only one Return... this should be
+                    --- true, but if something changes in the
+                    --- future, this might be a place that an
+                    --- error could be introduced.
+                    body_lifts'
+                _ ->
+                  return $ DLS_Prompt body_at (Left ret) body_lifts
+        saveLifts lifts'
+        return $ SLAppRes clo_sco'' $ (lvl, v)
+  case rs of
+    [] -> no_prompt $ public $ SLV_Null body_at "clo app"
+    [(_, _, x, False)] -> no_prompt $ x
+    (_, _, (xlvl, xv), _) : more -> do
+      let msvs = map (\(_a, _b, c, _d) -> c) more
+      let mlvls = map fst msvs
+      let mvs = map snd msvs
+      let lvl = mconcat $ xlvl : mlvls
+      -- Note: This test might be too expensive, so try it
+      let all_same = False && all (== xv) mvs
+      case all_same of
+        True -> no_prompt $ (lvl, xv)
+        False -> do
+          let go (r_at, rmi, (_, rv), _) = do
+                (rlifts, (rty, rda)) <-
+                  captureLifts $ locAt r_at $ compileTypeOf rv
+                let retsm =
+                      case rmi of
+                        Nothing -> mempty
+                        Just ri -> M.singleton ri (rlifts, rda)
+                return $ (retsm, rty)
+          (retsms, tys) <- unzip <$> mapM go rs
+          let retsm = mconcat retsms
+          r_ty <- locAt body_at $ typeMeets_d tys
+          let dv = DLVar body_at Nothing r_ty ret
+          saveLift $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
+          return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
+
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals rator randvs =
   case rator of
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
-    SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv {..}) -> do
-      ret <- ctxt_alloc
-      let body_at = srcloc_jsa "block" body_a clo_at
-      let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
-      let clo_sco =
-            (SLScope
-               { sco_ret = Just ret
-               , sco_must_ret = RS_MayBeEmpty
-               , sco_while_vars = Nothing
-               , sco_penvs = clo_penvs
-               , sco_cenv = clo_cenv
-               , sco_use_strict = clo_use_strict
-               })
-      m <- readSt st_mode
-      arg_env <-
-        locStMode (pure_mode m) $
-          locSco clo_sco $
-            instDefaultArgs mempty err formals randvs
-      at <- withAt id
-      clo_sco' <- locSco clo_sco $ sco_update arg_env
-      (body_lifts, (SLStmtRes clo_sco'' rs)) <-
-        captureLifts $
-          withFrame (SLC_CloApp at clo_at mname) $
-            locAt body_at $
-              locSco clo_sco' $
-                evalStmt body
-      let no_prompt (lvl, v) = do
-            let lifts' =
-                  case body_lifts of
-                    body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
-                      | the_ret_label == ret ->
-                        --- We don't check that the_val is v, because
-                        --- we're relying on the invariant that there
-                        --- was only one Return... this should be
-                        --- true, but if something changes in the
-                        --- future, this might be a place that an
-                        --- error could be introduced.
-                        body_lifts'
-                    _ ->
-                      return $ DLS_Prompt body_at (Left ret) body_lifts
-            saveLifts lifts'
-            return $ SLAppRes clo_sco'' $ (lvl, v)
-      case rs of
-        [] -> no_prompt $ public $ SLV_Null body_at "clo app"
-        [(_, _, x, False)] -> no_prompt $ x
-        (_, _, (xlvl, xv), _) : more -> do
-          let msvs = map (\(_a, _b, c, _d) -> c) more
-          let mlvls = map fst msvs
-          let mvs = map snd msvs
-          let lvl = mconcat $ xlvl : mlvls
-          -- Note: This test might be too expensive, so try it
-          let all_same = False && all (== xv) mvs
-          case all_same of
-            True -> no_prompt $ (lvl, xv)
-            False -> do
-              let go (r_at, rmi, (_, rv), _) = do
-                    (rlifts, (rty, rda)) <-
-                      captureLifts $ locAt r_at $ compileTypeOf rv
-                    let retsm =
-                          case rmi of
-                            Nothing -> mempty
-                            Just ri -> M.singleton ri (rlifts, rda)
-                    return $ (retsm, rty)
-              (retsms, tys) <- unzip <$> mapM go rs
-              let retsm = mconcat retsms
-              r_ty <- locAt body_at $ typeMeets_d tys
-              let dv = DLVar body_at Nothing r_ty ret
-              saveLift $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
-              return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
+    SLV_Clo clo_at sc -> evalApplyClosureVals clo_at sc randvs
+    SLV_CloTyped clo_at sc _ -> evalApplyClosureVals clo_at sc randvs
     v -> expect_t v $ Err_Eval_NotApplicableVals
 
 evalApply :: SLVal -> [JSExpression] -> App SLSVal
 evalApply rator rands =
   case rator of
     SLV_Prim _ -> vals
-    SLV_Clo _ _ _ _ _ -> vals
+    SLV_Clo {} -> vals
+    SLV_CloTyped {} -> vals
     SLV_Form f -> evalForm f rands
     v -> do
       fs <- e_stack <$> ask
@@ -2601,7 +2633,7 @@ evalExpr e = case e of
             locAtf (srcloc_jsa "function name" na) $
               expect_ Err_Fun_NamesIllegal
       ce <- ask >>= sco_to_cloenv . e_sco
-      return $ public $ SLV_Clo at' fname formals body ce
+      return $ public $ SLV_Clo at' $ SLClo fname formals body ce
   JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
   JSMemberDot obj a field -> doDot obj a field
   JSMemberExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
@@ -2953,7 +2985,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
           locSco sco_only $ do
             only_arg <- snd <$> evalExpr only_synarg
             case only_arg of
-              only_clo@(SLV_Clo _ _ [] _ _) -> do
+              only_clo@(SLV_Clo _ (SLClo _ [] _ _)) -> do
                 SLAppRes sco' (_, only_v) <- evalApplyVals only_clo []
                 let penv' = (sco_penvs sco') M.! who
                 --- TODO: check less things
@@ -3540,17 +3572,26 @@ doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   let cont_das = DLAssignment cont_dam'
   saveLift $ DLS_Continue at cont_das
 
-evalPureExprToBlock :: JSExpression -> DLType -> App DLBlock
-evalPureExprToBlock e rest = do
+evalModeToBlock :: SLMode -> DLType -> App (a, SLVal) -> App DLBlock
+evalModeToBlock mode rest e = do
   at <- withAt id
   st <- readSt id
-  let pure_st = st {st_mode = SLM_ConsensusPure}
-  fs <- e_stack <$> ask
+  let pure_st = st {st_mode = mode }
+  fs <- asks e_stack
   (e_lifts, e_da) <-
     captureLifts $
       locSt pure_st $
-        compileCheckType rest =<< (snd <$> evalExpr e)
+        compileCheckType rest . snd =<< e
   return $ DLBlock at fs e_lifts e_da
+
+evalPureClosureToBlock :: SLClo -> [SLSVal] -> DLType -> App DLBlock
+evalPureClosureToBlock clo sargs rest = do
+  at <- withAt id
+  evalModeToBlock SLM_Module rest $ evalApplyVals' (SLV_Clo at clo) sargs
+
+evalPureExprToBlock :: JSExpression -> DLType -> App DLBlock
+evalPureExprToBlock e rest = do
+  evalModeToBlock SLM_ConsensusPure rest $ evalExpr e
 
 evalLValue :: JSExpression -> App SLLValue
 evalLValue = \case

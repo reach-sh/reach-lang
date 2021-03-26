@@ -116,6 +116,9 @@ data SLCloEnv
   }
   deriving (Eq, Generic)
 
+data SLClo = SLClo (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
+  deriving (Eq, Generic)
+
 data SLVal
   = SLV_Null SrcLoc String
   | SLV_Bool SrcLoc Bool
@@ -125,7 +128,8 @@ data SLVal
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Struct SrcLoc [(SLVar, SLVal)]
-  | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
+  | SLV_Clo SrcLoc SLClo
+  | SLV_CloTyped SrcLoc SLClo SLTypeFun
   | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
@@ -163,6 +167,7 @@ instance Pretty SLVal where
     SLV_Object _ (Just lab) _ -> pretty lab
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
+    SLV_CloTyped {} -> "<closure_typed>"
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_Struct _ kvs ->
       "struct" <> brackets (hsep $ punctuate comma $ map go kvs)
@@ -201,7 +206,8 @@ instance SrcLocOf SLVal where
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
     SLV_Object a _ _ -> a
-    SLV_Clo a _ _ _ _ -> a
+    SLV_Clo a _ -> a
+    SLV_CloTyped a _ _ -> a
     SLV_Data a _ _ _ -> a
     SLV_DLVar (DLVar a _ _ _) -> a
     SLV_Participant a _ _ _ -> a

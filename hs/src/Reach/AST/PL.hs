@@ -258,8 +258,10 @@ instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =
     render_obj m
 
+type CCExports a = DLinExports (DLinBlock a)
+
 data CPProg a
-  = CPProg SrcLoc [(SLVar, DLExportValue)] (CHandlers_ a)
+  = CPProg SrcLoc (CCExports a) (CHandlers_ a)
   deriving (Eq)
 
 type CIProg = CPProg PILVar

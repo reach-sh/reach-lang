@@ -422,11 +422,16 @@ jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlock :: AppT PILBlock
+jsBlockNewScope :: AppT PILBlock
+jsBlockNewScope b = do
+  (t', a') <- jsBlock b
+  return $ jsNewScope $ t' <> hardline <> jsReturn a'
+
+jsBlock :: DLinBlock PILVar -> App (Doc, Doc)
 jsBlock (DLinBlock _ _ t a) = do
   t' <- jsPLTail t
   a' <- jsArg a
-  return $ jsNewScope $ t' <> hardline <> jsReturn a'
+  return (t', a')
 
 data AsnMode
   = AM_While
@@ -600,7 +605,7 @@ jsETail = \case
             Just x -> x
     let newCtxt_tv = local (\e -> e {ctxt_timev = timev'})
     let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = Just (timev', cond, body, k)})
-    cond' <- jsBlock cond
+    cond' <- jsBlockNewScope cond
     body' <- newCtxt' $ jsETail body
     k' <- newCtxt_tv $ jsETail k
     (ctxt_simulate <$> ask) >>= \case
@@ -623,7 +628,7 @@ jsETail = \case
             Just (wtimev', wcond, wbody, wk) -> do
               let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
               asn_ <- jsAsn AM_ContinueInnerSim asn
-              wcond' <- jsBlock wcond
+              wcond' <- jsBlockNewScope wcond
               wbody' <- newCtxt $ jsETail wbody
               wk' <- newCtxt $ jsETail wk
               return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
@@ -636,11 +641,16 @@ jsETail = \case
       kp = jsETail k
       lp = jsPLTail l
 
-jsPart :: DLInit -> SLPart -> EIProg -> App Doc
-jsPart dli p (EPProg _ _ et) = do
+newJsContract :: App JSContracts
+newJsContract = do
   jsc_idx <- liftIO $ newCounter 0
   jsc_t2i <- liftIO $ newIORef mempty
   jsc_i2t <- liftIO $ newIORef mempty
+  return $ JSContracts {..}
+
+jsPart :: DLInit -> SLPart -> EIProg -> App Doc
+jsPart dli p (EPProg _ _ et) = do
+  JSContracts {..} <- newJsContract
   let ctxt_ctcs = Just $ JSContracts {..}
   let ctxt_who = p
   let ctxt_txn = 0
@@ -698,10 +708,45 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsExportValue :: DLExportValue -> App Doc
+jsExportValue :: DLinExportVal PILBlock -> App Doc
 jsExportValue = \case
-  DLEV_Arg a -> jsArg a
-  DLEV_LArg a -> jsLargeArg a
+  DLEV_Arg a  -> do
+    let t = argTypeOf a
+    a' <- jsArg a
+    jsProtect "null" t a'
+  DLEV_LArg a -> do
+    let t = largeArgTypeOf a
+    a' <- jsLargeArg a
+    jsProtect "null" t a'
+  DLEV_Fun args b -> do
+    (tl, ret) <- jsBlock b
+    (argDefs, tmps) <-
+      unzip <$> mapM (\ arg -> do
+        arg' <- jsVar arg
+        let tmp = "_" <> arg'
+        protected <- jsProtect "null" (varType arg) tmp
+        let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
+        return (def, tmp)) args
+    let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
+    let argList = parens $ hsep $ punctuate comma tmps
+    return $ argList <+> "=>" <+> jsBraces body
+
+jsExports :: CCExports PILVar -> App Doc
+jsExports exports = do
+  jsc <- newJsContract
+  local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
+    exportProps <- mapM (\ (k, v) -> do
+          vs <- jsExportValue v
+          return $ "    " <> pretty k <> " : " <> vs <> ",\n") $ M.toList exports
+    i2t' <- liftIO $ readIORef $ jsc_i2t jsc
+    let ctcs = vsep $ map snd $ M.toAscList i2t'
+    let body =
+          vsep
+            [ "const stdlib = s.reachStdlib;"
+            , ctcs
+            , " return " <> parens (braces $ hcat exportProps)]
+    return $ "export const getExports = (s) => {\n  " <> body <> " \n};"
+
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) (CPProg _ dexports _)) = do
@@ -714,10 +759,7 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) (CPProg _ dexports _)) = do
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
-  exportProps <- mapM (\ (k, v) -> do
-        vs <- jsExportValue v
-        return $ "    " <> pretty k <> " : " <> vs <> ",\n") dexports
-  let exportsp = "export const getExports = (stdlib) => {\n  return ({\n" <> hcat exportProps <> "  });\n};"
+  exportsp <- jsExports dexports
   return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 
 backend_js :: Backend

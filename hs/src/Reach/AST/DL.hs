@@ -195,8 +195,12 @@ data DLOpts = DLOpts
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
+type DLExportVal = DLinExportVal DLBlock
+
+type DLExports = DLinExports DLBlock
+
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit [(SLVar, DLExportValue)] DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where
@@ -210,6 +214,6 @@ instance Pretty DLProg where
       <> hardline
       <> pretty dli
       <> hardline
-      <> viaShow dex
+      <> pretty dex
       <> hardline
       <> render_dls ds

@@ -8,6 +8,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Sanitize
+import Reach.Util (mapMapM)
 
 type App = ReaderT Env IO
 
@@ -258,6 +259,14 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
   opt (DLinBlock at fs b a) =
     newScope $ DLinBlock at fs <$> opt b <*> opt a
 
+instance {-# OVERLAPPING #-} Optimize (DLinExportVal LLBlock) where
+  opt (DLEV_Arg a)   = DLEV_Arg   <$> opt a
+  opt (DLEV_LArg a)  = DLEV_LArg  <$> opt a
+  opt (DLEV_Fun a b) = DLEV_Fun a <$> opt b
+
+instance {-# OVERLAPPING #-} Optimize LLExports where
+  opt m = mapMapM opt m
+
 instance Optimize LLConsensus where
   opt = \case
     LLC_Com m k -> mkCom LLC_Com <$> opt m <*> opt k
@@ -317,7 +326,7 @@ instance Optimize LLProg where
     env0 <- liftIO $ mkEnv0 psl
     local (\_ -> env0) $
       focusa $
-        LLProg at opts ps <$> opt dli <*> pure dex <*> opt s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> opt s
 
 -- This is a bit of a hack...
 

@@ -77,8 +77,10 @@ data LLOpts = LLOpts
 instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
+type LLExports = DLinExports LLBlock
+
 data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit [(SLVar, DLExportValue)] LLStep
+  = LLProg SrcLoc LLOpts SLParts DLInit LLExports LLStep
   deriving (Eq)
 
 instance HasCounter LLProg where
@@ -92,6 +94,6 @@ instance Pretty LLProg where
       <> hardline
       <> pretty dli
       <> hardline
-      <> viaShow dex
+      <> pretty dex
       <> hardline
       <> pretty db

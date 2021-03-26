@@ -83,8 +83,10 @@ data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
 instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a
 
+type DKExports = DLinExports DKBlock
+
 data DKProg
-  = DKProg SrcLoc DLOpts SLParts DLInit [(SLVar, DLExportValue)] DKTail
+  = DKProg SrcLoc DLOpts SLParts DLInit DKExports DKTail
 
 instance Pretty DKProg where
   pretty (DKProg _at _ sps dli dex t) =
@@ -94,6 +96,6 @@ instance Pretty DKProg where
       <> hardline
       <> pretty dli
       <> hardline
-      <> viaShow dex
+      <> pretty dex
       <> hardline
       <> pretty t

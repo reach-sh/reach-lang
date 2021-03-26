@@ -5,6 +5,7 @@ import Data.IORef
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.CollectCounts
+import Reach.Util (mapMapM)
 
 data Env = Env
   {e_cs :: IORef Counts}
@@ -117,10 +118,20 @@ ac_top x = do
   e_cs <- newIORef $ mempty
   flip runReaderT (Env {..}) $ ac_ch x
 
+ac_ev :: DLinExportVal PILBlock -> IO (DLinExportVal PLBlock)
+ac_ev (DLEV_Arg a)   = return $ DLEV_Arg a
+ac_ev (DLEV_LArg a)  = return $ DLEV_LArg a
+ac_ev (DLEV_Fun a b) = do
+  e_cs <- newIORef $ mempty
+  flip runReaderT (Env {..}) $ do
+    ac_visit a
+    DLEV_Fun a <$> ac_bl b
+
 add_counts :: PIProg -> IO PLProg
 add_counts (PLProg at plo dli _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
   let CPProg cat dex (CHandlers chs) = cp
   chs' <- mapM ac_top chs
-  let cp' = CPProg cat dex $ CHandlers chs'
+  dex' <- mapMapM ac_ev dex
+  let cp' = CPProg cat dex' $ CHandlers chs'
   return $ PLProg at plo dli epps' cp'

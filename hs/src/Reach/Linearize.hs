@@ -151,11 +151,21 @@ dk_ at = \case
   Seq.Empty -> return $ DK_Stop at
   s Seq.:<| ks -> dk1 at ks s
 
+runDk :: ReaderT DKEnv m a -> m a
+runDk = do
+  let eRets = mempty
+  flip runReaderT (DKEnv {..})
+
+dk_export :: SrcLoc -> DLExportVal -> IO (DLinExportVal DKBlock)
+dk_export at (DLEV_Fun args body) =
+  runDk $ DLEV_Fun args <$> dk_block at body
+dk_export _ (DLEV_Arg a)  = return $ DLEV_Arg a
+dk_export _ (DLEV_LArg a) = return $ DLEV_LArg a
+
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex ss) = do
-  let eRets = mempty
-  flip runReaderT (DKEnv {..}) $
-    DKProg at opts sps dli dex <$> dk_ at ss
+  dex' <- mapMapM (dk_export at) dex
+  runDk $ DKProg at opts sps dli dex' <$> dk_ at ss
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -414,6 +424,12 @@ df_step = \case
     return $ LLS_ToConsensus at send recv' mtime'
   x -> df_com LLS_Com df_step x
 
+
+df_export :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
+df_export (DLEV_Fun args body) = DLEV_Fun args <$> df_bl body
+df_export (DLEV_Arg a) = return $ DLEV_Arg a
+df_export (DLEV_LArg a) = return $ DLEV_LArg a
+
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let llo_deployMode = dlo_deployMode
@@ -424,8 +440,9 @@ defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let eFVMm = mempty
   let eFVE = mempty
   flip runReaderT (DFEnv {..}) $ do
+    dex' <- mapMapM df_export dex
     k' <- df_step k
-    return $ LLProg at opts' sps dli dex k'
+    return $ LLProg at opts' sps dli dex' k'
 
 -- Stich it all together
 linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
