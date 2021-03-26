@@ -1138,11 +1138,11 @@ type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
-  let PLProg _at _plo _dli _ cpp = pl
+  let PLProg _at _plo _dli _ _ cpp = pl
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
-  let CPProg _at _ (CHandlers hm) = cpp
+  let CPProg _at (CHandlers hm) = cpp
   resr <- newIORef mempty
   sFailedR <- newIORef False
   let shared = Shared {..}

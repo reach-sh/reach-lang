@@ -725,7 +725,7 @@ jsExportValue = \case
     let argList = parens $ hsep $ punctuate comma tmps
     return $ argList <+> "=>" <+> jsBraces body
 
-jsExports :: CCExports PILVar -> App Doc
+jsExports :: PLExports PILVar -> App Doc
 jsExports exports = do
   jsc <- newJsContract
   local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
@@ -743,7 +743,7 @@ jsExports exports = do
 
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli (EPPs pm) (CPProg _ dexports _)) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _)) = do
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr

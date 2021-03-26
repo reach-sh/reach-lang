@@ -147,6 +147,12 @@ instance Unroll LLBlock where
   ul (DLinBlock at fs b a) =
     DLinBlock at fs <$> ul b <*> pure a
 
+instance Unroll (DLinExportVal LLBlock) where
+  ul = \case
+    DLEV_Fun a b -> DLEV_Fun a <$> ul b
+    DLEV_Arg a   -> return $ DLEV_Arg a
+    DLEV_LArg a  -> return $ DLEV_LArg a
+
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
@@ -201,15 +207,15 @@ instance Unroll CIHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CIProg where
-  ul (CPProg at dex hs) =
-    CPProg at dex <$> ul hs
+  ul (CPProg at hs) =
+    CPProg at <$> ul hs
 
 instance Unroll (EPPs a) where
   ul (EPPs m) = pure $ EPPs m
 
 instance Unroll PIProg where
-  ul (PLProg at opts dli ep cp) =
-    PLProg at opts dli <$> ul ep <*> ul cp
+  ul (PLProg at opts dli dex ep cp) =
+    PLProg at opts dli <$> ul dex <*> ul ep <*> ul cp
 
 unrollLoops :: (HasCounter a, Unroll a) => a -> IO a
 unrollLoops x = do

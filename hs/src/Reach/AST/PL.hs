@@ -258,16 +258,14 @@ instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =
     render_obj m
 
-type CCExports a = DLinExports (DLinBlock a)
-
 data CPProg a
-  = CPProg SrcLoc (CCExports a) (CHandlers_ a)
+  = CPProg SrcLoc (CHandlers_ a)
   deriving (Eq)
 
 type CIProg = CPProg PILVar
 
 instance Pretty a => Pretty (CPProg a) where
-  pretty (CPProg _ _ chs) = pretty chs
+  pretty (CPProg _ chs) = pretty chs
 
 newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)
@@ -288,20 +286,25 @@ data PLOpts = PLOpts
 instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
 
+
+type PLExports a = DLinExports (DLinBlock a)
+
 data PLinProg a
-  = PLProg SrcLoc PLOpts DLInit (EPPs a) (CPProg a)
+  = PLProg SrcLoc PLOpts DLInit (PLExports a) (EPPs a) (CPProg a)
   deriving (Eq)
 
 instance HasCounter (PLinProg a) where
-  getCounter (PLProg _ plo _ _ _) = getCounter plo
+  getCounter (PLProg _ plo _ _ _ _) = getCounter plo
 
 type PLProg = PLinProg PLVar
 
 type PIProg = PLinProg PILVar
 
 instance Pretty a => Pretty (PLinProg a) where
-  pretty (PLProg _ _ dli ps cp) =
+  pretty (PLProg _ _ dli dex ps cp) =
     "#lang pl" <> hardline
+      <> pretty dex
+      <> hardline
       <> pretty dli
       <> hardline
       <> pretty ps

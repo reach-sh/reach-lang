@@ -128,10 +128,10 @@ ac_ev = \case
       DLEV_Fun a <$> ac_bl b
 
 add_counts :: PIProg -> IO PLProg
-add_counts (PLProg at plo dli _epps cp) = do
+add_counts (PLProg at plo dli dex _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
-  let CPProg cat dex (CHandlers chs) = cp
+  let CPProg cat (CHandlers chs) = cp
   chs' <- mapM ac_top chs
   dex' <- mapM ac_ev dex
-  let cp' = CPProg cat dex' $ CHandlers chs'
-  return $ PLProg at plo dli epps' cp'
+  let cp' = CPProg cat $ CHandlers chs'
+  return $ PLProg at plo dli dex' epps' cp'

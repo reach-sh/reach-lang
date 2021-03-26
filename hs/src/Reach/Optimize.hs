@@ -258,14 +258,14 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
   opt (DLinBlock at fs b a) =
     newScope $ DLinBlock at fs <$> opt b <*> opt a
 
-instance {-# OVERLAPPING #-} Optimize (DLinExportVal LLBlock) where
+instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
   opt = \case
     DLEV_Arg a   -> DLEV_Arg   <$> opt a
     DLEV_LArg a  -> DLEV_LArg  <$> opt a
     DLEV_Fun a b -> DLEV_Fun a <$> opt b
 
 instance {-# OVERLAPPING #-} Optimize LLExports where
-  opt m = mapM opt m
+  opt = mapM opt
 
 instance Optimize LLConsensus where
   opt = \case
@@ -364,12 +364,12 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
-  opt (CPProg at dex (CHandlers hs)) =
-    CPProg at dex . CHandlers <$> mapM (newScope . opt) hs
+  opt (CPProg at (CHandlers hs)) =
+    CPProg at . CHandlers <$> mapM (newScope . opt) hs
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
-  opt (PLProg at plo dli epps cp) =
-    PLProg at plo dli epps <$> opt cp
+  opt (PLProg at plo dli dex epps cp) =
+    PLProg at plo dli <$> opt dex <*> pure epps <*> opt cp
 
 optimize :: Optimize a => a -> IO a
 optimize t = do
