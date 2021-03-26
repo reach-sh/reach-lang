@@ -48,7 +48,7 @@ build: server/build/index.main.mjs \
 	cd client-go && docker build -f Dockerfile --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
 	cd client-py && docker build \
 	  -f Dockerfile \
-	  --build-arg VERSION=$(VERSION) \
+	  --build-arg VERSION=$(shell cat ../../rpc-client/py/VERSION) \
 	  --tag=reachsh/reach-app-tut-7-rpc-client-py:latest .
 
 .PHONY: run
