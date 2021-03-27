@@ -11,7 +11,7 @@ A @link["https://www.python.org"]{Python} client library for the
   $ pip install --upgrade reach-rpc-client
 }
 
-Once installed, add the following import line to the Python file which will
+Once installed, add the following import line to your Python file which will
 connect to the @seclink{ref-backends-rpc}:
 @py{
   from reach_rpc import mk_rpc
