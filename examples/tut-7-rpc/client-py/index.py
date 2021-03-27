@@ -1,84 +1,11 @@
-import json
-import os
+# flake8: noqa
+
 import random
-import requests
-import socket
-import time
-import urllib3
 from threading import Thread
-
-
-# https://gist.github.com/butla/2d9a4c0f35ea47b7452156c96a4e7b12
-def wait_for_port(port, host='localhost', timeout=5.0):
-    """Wait until a port starts accepting TCP connections.
-    Args:
-        port (int): Port number.
-        host (str): Host address on which the port should exist.
-        timeout (float): In seconds. How long to wait before raising errors.
-    Raises:
-        TimeoutError: The port isn't accepting connections after time specified
-        in `timeout`.
-    """
-    start_time = time.perf_counter()
-    while True:
-        try:
-            with socket.create_connection((host, port), timeout=timeout):
-                break
-        except OSError as ex:
-            time.sleep(0.01)
-            if time.perf_counter() - start_time >= timeout:
-                raise TimeoutError('Waited too long for the port {} '
-                                   'on host {} to start accepting connections.'
-                                   .format(port, host)) from ex
-
-
-def mk_rpc(host=os.environ['REACH_RPC_SERVER'],
-           port=os.environ['REACH_RPC_PORT'],
-           akey=os.environ['REACH_RPC_KEY']):
-
-    verify = os.environ['REACH_RPC_TLS_REJECT_UNVERIFIED'] != '0'
-    if not verify:
-        urllib3.disable_warnings()
-        print('\n*** Warning! TLS verification disabled! ***\n')
-        print(' This is highly insecure in Real Life™ applications and must')
-        print(' only be permitted under controlled conditions (such as')
-        print(' during development).\n')
-
-    def rpc(m, *args):
-        lab = 'RPC %s %s' % (m, json.dumps([*args]))
-        print(lab)
-        ans = requests.post('https://%s:%s%s' % (host, port, m),
-                            json=[*args],
-                            headers={'X-API-Key': akey},
-                            verify=verify)
-        ans.raise_for_status()
-        print('%s ==> %s' % (lab, json.dumps(ans.json())))
-        return ans.json()
-
-    def rpc_callbacks(m, arg, cbacks):
-        vals  = {k: v    for k, v in cbacks.items() if not callable(v)}
-        meths = {k: True for k, v in cbacks.items() if     callable(v)}
-        p     = rpc(m, arg, vals, meths)
-
-        while True:
-            if p['t'] == 'Done':
-                return p
-
-            elif p['t'] == 'Kont':
-                cback = cbacks[p['m']]
-                ans   = cback(*p['args'])
-                p     = rpc('/kont', p['kid'], ans)
-
-            else:
-                raise Exception('Illegal callback return: %s' % json.dumps(p))
-
-    wait_for_port(port, host)
-    return rpc, rpc_callbacks
+from reach_rpc import mk_rpc
 
 
 def main():
-    print('I am the client')
-
     rpc, rpc_callbacks = mk_rpc()
 
     starting_balance = rpc('/stdlib/parseCurrency', 10)
@@ -125,6 +52,9 @@ def main():
             ctc_alice,
             dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
 
+    alice = Thread(target=play_alice)
+    alice.start()
+
     def play_bob():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
@@ -134,10 +64,7 @@ def main():
             ctc_bob,
             dict(acceptWager=acceptWager, **player('Bob')))
 
-    alice = Thread(target=play_alice)
-    bob   = Thread(target=play_bob)
-
-    alice.start()
+    bob = Thread(target=play_bob)
     bob.start()
 
     alice.join()
@@ -151,8 +78,6 @@ def main():
 
     rpc('/forget/acc', acc_alice, acc_bob)
     rpc('/forget/ctc', ctc_alice, ctc_bob)
-
-    # rpc('/stop')
 
 
 if __name__ == '__main__':

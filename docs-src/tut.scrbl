@@ -1992,9 +1992,13 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 
 @item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutae of Reach's features.}
 
+@item{Finally, you may like to repeat a portion of this tutorial, but using @seclink["tut-7-rpc"]{a language other than JavaScript}, like Python or Go!}
+
 ]
 
 No matter what you decide to read or work on next, we hope you'll join us on @(the-community-link).
 Once you join, message @litchar{@"@"team, I just completed the tutorial!} and we'll give you the @litchar{tutorial veteran} role, so you can more easily help others work through it!
 
 Thanks for spending your afternoon with us!
+
+@include-section["tut-7-rpc.scrbl"]

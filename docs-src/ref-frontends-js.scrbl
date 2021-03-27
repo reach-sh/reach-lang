@@ -1,15 +1,9 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "ref-stdlib" #:style 'toc]{Frontend Support}
+@title[#:version reach-vers #:tag "ref-frontends-js" #:style 'toc]{JavaScript}
 
-This section describes the libraries provided by Reach version @|reach-vers| to support developing @tech{frontends}.
-
-@local-table-of-contents[#:style 'immediate-only]
-
-@section[#:tag "ref-stdlib-js"]{JavaScript}
-
-The Reach standard library, @(mint-define! '("stdlib")) @jsin{stdlib}, is provided by either
+The Reach JavaScript standard library, @(mint-define! '("stdlib")) @jsin{stdlib}, is provided by either
 @itemlist[
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
@@ -19,7 +13,7 @@ The Reach standard library, @(mint-define! '("stdlib")) @jsin{stdlib}, is provid
 
 These libraries provide a standard interface that support developing @tech{frontends}.
 
-@subsection[#:tag "ref-stdlib-js-types"]{Types}
+@section[#:tag "ref-frontends-js-types"]{Types}
 
 The table below shows the JavaScript representation of each of the Reach types:
 @js{
@@ -39,7 +33,7 @@ The table below shows the JavaScript representation of each of the Reach types:
 
 For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt})} inhabitant @reachin{MInt.Some(42)} is represented as @reachin{['Some', 42]} in JavaScript.
 
-@subsection[#:tag "ref-stdlib-js-loader.mjs"]{@tt{loader.mjs}}
+@section[#:tag "ref-frontends-js-loader.mjs"]{@tt{loader.mjs}}
 
 The @tt{loader.mjs} module exports the following functions
 that might help you write code that is portable to multiple consensus networks.
@@ -94,7 +88,7 @@ Returns a Promise for a stlib based on the provided @jsin{connectorMode} string.
 You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
 
-@subsection[#:tag "ref-stdlib-js-acc"]{Accounts}
+@section[#:tag "ref-frontends-js-acc"]{Accounts}
 
 These functions create and interact with @tech{account} representations.
 
@@ -197,7 +191,7 @@ The returned Promise will only be resolved after the transfer completes.
 
 @jsin{bigNumberify} is transparently applied to the @jsin{amount} argument.
 
-@subsubsection[#:tag "ref-stdlib-js-acc-eth"]{Ethereum-specific}
+@subsection[#:tag "ref-frontends-js-acc-eth"]{Ethereum-specific}
 
 When connected to an EVM-based consensus network, the standard library provides additional functionality.
 
@@ -215,7 +209,7 @@ In those cases, it is sometimes useful to specify a particular gas limit.
 It is common on Ethereum to use gas limits like @jsin{5000000} in testing.
 If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
 
-@subsection[#:tag "ref-stdlib-js-ctc"]{Contracts}
+@section[#:tag "ref-frontends-js-ctc"]{Contracts}
 
 These functions create and interact with @tech{contract} representations.
 
@@ -250,7 +244,7 @@ Awaiting @reachin{getInfo} too early may cause your program to enter a state of 
 @index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument (or a Promise for ctcInfo) and the @jsin{bin} argument.
 This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 
-@subsection[#:tag "ref-stdlib-js-network"]{Network Utilities}
+@section[#:tag "ref-frontends-js-network"]{Network Utilities}
 
 These functions interact with the @tech{consensus network} itself.
 
@@ -290,7 +284,7 @@ The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
 
-@subsection[#:tag "ref-stdlib-js-utils"]{Utilities}
+@section[#:tag "ref-frontends-js-utils"]{Utilities}
 
 These functions operate on JavaScript representations of Reach values.
 
@@ -446,7 +440,7 @@ in the token's @tech{atomic unit}.
 
 @jsin{bigNumberify} is transparently applied to @jsin{formatCurrency}'s first argument.
 
-@subsection[#:tag "ref-stdlib-js-ask.mjs"]{@tt{ask.mjs}}
+@section[#:tag "ref-frontends-js-ask.mjs"]{@tt{ask.mjs}}
 
 The Reach JavaScript standard library also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
 

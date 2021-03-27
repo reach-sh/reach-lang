@@ -157,11 +157,11 @@ type ContractAttached = {
 // TODO
 type ContractOut = any;
 
-// XXX Add who the creator is to refund them
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
   creationRound: number,
   ApplicationID: number,
+  Deployer: Address,
 };
 
 // ctc[ALGO] = {
@@ -501,7 +501,8 @@ function must_be_supported(bin: Backend) {
   }
 }
 
-async function compileFor(bin: Backend, ApplicationID: number): Promise<CompiledBackend> {
+async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
+  const { ApplicationID, Deployer } = info;
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
 
@@ -512,6 +513,8 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
       'ApplicationID',
       T_UInt.toNet(bigNumberify(ApplicationID)),
       x);
+  const subst_creator = (x: string) =>
+    replaceAddr('Deployer', Deployer, x);
 
   const checkLen = (label:string, actual:number, expected:number): void => {
     if ( actual > expected ) {
@@ -522,7 +525,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   const MaxAppTotalArgLen = 2048;
   const MaxAppProgramLen = 1024;
 
-  const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
+  const ctc_bin = await compileTEAL('ctc_subst', subst_creator(subst_appid(ctc)));
   checkLen(`Escrow Contract`, ctc_bin.result.length, LogicSigMaxSize);
   const subst_ctc = (x: string) =>
     replaceAddr('ContractAddr', ctc_bin.hash, x);
@@ -749,11 +752,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
-    const ApplicationID = ctcInfo.ApplicationID;
+    const { Deployer, ApplicationID } = ctcInfo;
     let lastRound = ctcInfo.creationRound;
     debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
-    const bin_comp = await compileFor(bin, ApplicationID);
+    const bin_comp = await compileFor(bin, ctcInfo);
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
@@ -835,6 +838,14 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
               txn_nfo.amt.toNumber(),
               undefined, ui8z,
               params));
+        if ( isHalt ) {
+          txnFromContracts.push(
+            algosdk.makePaymentTxnWithSuggestedParams(
+              bin_comp.ctc.hash,
+              Deployer,
+              0, Deployer, ui8z,
+              params) );
+        }
         const totalFromFee =
           txnFromContracts.reduce(((sum: number, txn: Txn): number => sum + txn.fee), 0);
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
@@ -874,14 +885,16 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,
             thisAcc.addr,
-            0, undefined, ui8z,
+            0,
+            thisAcc.addr,
+            ui8z,
             params);
         debug(`${dhead} --- txnFromHandler = ${JSON.stringify(txnFromHandler)}`);
         const txnToHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
             handler.hash,
-            txnFromHandler.fee,
+            txnFromHandler.fee + raw_minimumBalance,
             undefined, ui8z,
             params);
         debug(`${dhead} --- txnToHandler = ${JSON.stringify(txnToHandler)}`);
@@ -1084,9 +1097,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const algob = bin._Connectors.ALGO;
 
     const { appApproval0, appClear } = algob;
+    const Deployer = thisAcc.addr;
 
     const appApproval0_subst =
-      replaceAddr('Deployer', thisAcc.addr, appApproval0);
+      replaceAddr('Deployer', Deployer, appApproval0);
     const appApproval0_bin =
       await compileTEAL('appApproval0', appApproval0_subst);
     const appClear_bin =
@@ -1107,7 +1121,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
-    const bin_comp = await compileFor(bin, ApplicationID);
+    const bin_comp = await compileFor(bin, { ApplicationID, Deployer, creationRound: 0 });
 
     const params = await getTxnParams();
     const txnUpdate =
@@ -1122,21 +1136,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         raw_minimumBalance,
         undefined, ui8z,
         params);
-    const txnToHandlers: Array<Txn> =
-      bin_comp.steps.flatMap((sc: CompileResultBytes|null): Array<Txn> => {
-        if ( ! sc) { return []; }
-        return [algosdk.makePaymentTxnWithSuggestedParams(
-          thisAcc.addr,
-          sc.hash,
-          raw_minimumBalance,
-          undefined, ui8z,
-          params)];
-    });
 
     const txns = [
       txnUpdate,
       txnToContract,
-      ...txnToHandlers,
     ];
     algosdk.assignGroupID(txns);
     regroup(thisAcc, txns);
@@ -1146,17 +1149,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const txnToContract_s =
       await signTxn(thisAcc, txnToContract);
 
-    // This is written a dumb way to make sure signatures happen one at a time.
-    // AlgoSigner errors if multiple sigs are trying to happen at the same time.
-    const txnToHandlers_s: Array<STX> = [];
-    for (const tx of txnToHandlers) {
-      txnToHandlers_s.push(await signTxn(thisAcc, tx));
-    }
-
     const txns_s = [
       txnUpdate_s,
       txnToContract_s,
-      ...txnToHandlers_s,
     ];
 
     let updateRes;
@@ -1168,7 +1163,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
     const creationRound = updateRes['confirmed-round'];
     const getInfo = async (): Promise<ContractInfo> =>
-      ({ ApplicationID, creationRound });
+      ({ ApplicationID, creationRound, Deployer });
 
     debug(`${shad} application created`);
     return await attachP(bin, getInfo());

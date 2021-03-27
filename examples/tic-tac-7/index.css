@@ -1,0 +1,269 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image: url("https://imgur.com/aLfgujc.png");
+    background-size: 500px 500px;
+    color: #c1a57c;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+        monospace;
+    color: #c1a57c;
+    background-color: black;
+    align-items: center;
+    justify-content: center;
+}
+.App {
+    text-align: center;
+}
+
+.App-header {
+    color: #c1a57c;
+    min-height: 1px;
+    /*background-repeat: no-repeat;*/
+    /*background-size: 2800px 1600px;*/
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+}
+
+.App-link {
+    color: #61dafb;
+}
+
+input[type="number"] {
+    font-size: 20px;
+    width: 100px;
+    color: #d1b58c;
+    padding:10px;
+    background-color: black;
+    border-image-source: url("https://imgur.com/Oz4JZlv.png");
+    border-image-width: 5;
+    border-image-slice: 183;
+    border-image-repeat: round;
+}
+
+button {
+    font-size: 24px;
+    /*font-family:Chalkboard;*/
+    background-image: url("https://imgur.com/5eD5R0x.png");
+    width: 250px;
+    height: 50px;
+    background-repeat: no-repeat;
+    background-size: 250px 50px;
+    background-color: rgba(0,0,0,0);
+    border: none;
+    padding: 10px;
+    color: black;
+    font-weight: bold;
+}
+
+#bullutin {
+    background-image: url("https://i.imgur.com/tUoqNrd.png");
+    background-repeat: no-repeat;
+    font-family: monospace;
+    background-size:cover;
+    height:379px;
+    width:1160px;
+    padding:50px;
+    justify-content: right;
+    align-items: right;
+
+}
+
+#numpad {
+    width: 50px;
+    height: 50px;
+    background-size: 50px 50px;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+/*textarea {
+    font-size: 20px;
+    color: #d1b58c;
+    background-color: black;
+    border-image-source: url("https://imgur.com/Oz4JZlv.png");
+    border-image-width: 5;
+    border-image-slice: 183;
+    border-image-repeat: round;
+    width:1080px;
+    overflow: hidden;
+    resize: none;
+}*/
+
+.ContractInfoA {
+    font-size: 20px;
+    color: #d1b58c;
+    background-color: black;
+    border-image-source: url("https://imgur.com/Oz4JZlv.png");
+    border-image-width: 5;
+    border-image-slice: 183;
+    border-image-repeat: round;
+    width: 1080px;
+    height: 175px;
+    padding: 24px;
+    overflow: hidden;
+    resize: none;
+}
+
+.ContractInfoD {
+    font-size: 20px;
+    color: #d1b58c;
+    /*background-color: red;*/
+    border-image-source: url("https://imgur.com/Oz4JZlv.png");
+    border-image-width: 5;
+    border-image-slice: 183;
+    border-image-repeat: round;
+    overflow: hidden;
+    resize: none;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    width: 100wh;
+    height: 175px;
+    padding: 24px;
+}
+
+.image-container {
+            display: flex;
+            flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        }
+
+.container {
+    height: 500px;
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+
+}
+.drop-targets {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+.box1 {
+    height: 100px;
+    width: 126px;
+    border:none;
+    margin-bottom: 85px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box2 {
+    height: 104px;
+    width: 130px;
+    border:none;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box3 {
+    height: 107px;
+    width: 134px;
+    border:none;
+    margin-top: 85px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box4 {
+    height: 92px;
+    width: 115px;
+    border:none;
+    margin-bottom: 60px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box5 {
+    height: 95px;
+    width: 119px;
+    border:none;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box6 {
+    height: 99px;
+    width: 123px;
+    border:none;
+    margin-top: 60px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box7 {
+    height: 84px;
+    width: 105px;
+    border:none;
+    margin-bottom: 60px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box8 {
+    height: 87px;
+    width: 109px;
+    border:none;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+.box9 {
+    height: 90px;
+    width: 113px;
+    border:none;
+    margin-top: 60px;
+    /* align items in the box */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.container {
+    height: 500px;
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

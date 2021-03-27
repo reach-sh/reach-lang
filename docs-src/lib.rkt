@@ -40,20 +40,20 @@
 (define reach-short-vers
   (string-join (list (v 'MAJOR) (v 'MINOR)) "."))
 
-(define (reach . contents)
-  (apply mint "reach" contents))
-(define (reachin . contents)
-  (apply mint #:inline? #t "reach" contents))
+(define (make-mints lang)
+  (define (reach . contents)
+    (apply mint lang contents))
+  (define (reachin . contents)
+    (apply mint #:inline? #t lang contents))
+  (values reach reachin))
 
-(define (js . contents)
-  (apply mint "javascript" contents))
-(define (jsin . contents)
-  (apply mint #:inline? #t "javascript" contents))
-
-(define (yaml . contents)
-  (apply mint "yaml" contents))
-(define (makefile . contents)
-  (apply mint "makefile" contents))
+(define-values (reach reachin) (make-mints "reach"))
+(define-values (js jsin) (make-mints "javascript"))
+(define-values (py pyin) (make-mints "python"))
+(define-values (go goin) (make-mints "go"))
+(define-values (yaml _yamlin) (make-mints "yaml"))
+(define-values (makefile _makefilein) (make-mints "makefile"))
+(define-values (shell _shellin) (make-mints "shell"))
 
 (define (make-tt-cat lab)
   (define (tag x) (list lab x))
@@ -155,6 +155,7 @@ You should start off by initializing your Reach program:
   (apply commandline @bold{@exec{$}} " " args))
 
 (define-runtime-path x "../examples/")
+(define-runtime-path rpc-client "../rpc-client/")
 (define-runtime-path images "./images/")
 
 (define (eximage path)
@@ -226,6 +227,7 @@ You should start off by initializing your Reach program:
   (define x-dir
     (match dir
       ["examples" x]
+      ["rpc-client" rpc-client]
       (error 'runtime-path "~a is not a declared runtime path" dir)))
   (define ((do-link lab) link-loc content)
     (define copy

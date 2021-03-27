@@ -2,6 +2,7 @@
 @(require "lib.rkt")
 
 @title[#:version reach-vers #:tag "top" #:style 'toc]{Pay-To-Play Tic-Tac-Toe Tutorial}
+@author[(author+email "squidKid-deluxe" "squid_kid@tutamail.com")]
 
 
 This tutorial walks through the creation of a Pay-to-Play Tic-Tac-Toe decentralized application using Reach.

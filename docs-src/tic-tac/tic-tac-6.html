@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"/><meta name="viewport" content="width=device-width, initial-scale=0.8"/><title>6&nbsp;Interaction and Independence</title><link rel="stylesheet" type="text/css" href="scribble.css" title="default"/><link rel="stylesheet" type="text/css" href="racket.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-style.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-racket.css" title="default"/><script type="text/javascript" src="scribble-common.js"></script><script type="text/javascript" src="manual-racket.js"></script><!--[if IE 6]><style type="text/css">.SIEHidden { overflow: hidden; }</style><![endif]--></head><body id="scribble-racket-lang-org"><div class="tocset"><div class="tocview"><div class="tocviewlist tocviewlisttopspace"><div class="tocviewtitle"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_0&quot;);">&#9660;</a></td><td></td><td><a href="index.html" class="tocviewlink" data-pltdoc="x">Pay-<wbr></wbr>To-<wbr></wbr>Play Tic-<wbr></wbr>Tac-<wbr></wbr>Toe Tutorial</a></td></tr></table></div><div class="tocviewsublistonly" style="display: block;" id="tocview_0"><table cellspacing="0" cellpadding="0"><tr><td align="right">1&nbsp;</td><td><a href="tic-tac-0.html" class="tocviewlink" data-pltdoc="x">Install and Initialize</a></td></tr><tr><td align="right">2&nbsp;</td><td><a href="tic-tac-1.html" class="tocviewlink" data-pltdoc="x">Scaffolding and Setup</a></td></tr><tr><td align="right">3&nbsp;</td><td><a href="tic-tac-2.html" class="tocviewlink" data-pltdoc="x">Tic-<wbr></wbr>Tac-<wbr></wbr>Toe</a></td></tr><tr><td align="right">4&nbsp;</td><td><a href="tic-tac-3.html" class="tocviewlink" data-pltdoc="x">Pay-<wbr></wbr>to-<wbr></wbr>Play</a></td></tr><tr><td align="right">5&nbsp;</td><td><a href="tic-tac-5.html" class="tocviewlink" data-pltdoc="x">Timeouts and Participation</a></td></tr><tr><td align="right">6&nbsp;</td><td><a href="" class="tocviewselflink" data-pltdoc="x">Interaction and Independence</a></td></tr><tr><td align="right">7&nbsp;</td><td><a href="tic-tac-7.html" class="tocviewlink" data-pltdoc="x">Web Interaction</a></td></tr><tr><td align="right">8&nbsp;</td><td><a href="algo.html" class="tocviewlink" data-pltdoc="x">Running on Algorand</a></td></tr><tr><td align="right">9&nbsp;</td><td><a href="trouble.html" class="tocviewlink" data-pltdoc="x">Troubleshooting</a></td></tr></table></div></div></div></div><div class="maincolumn"><div class="main"><div class="navsettop"><span class="navleft"><div class="nosearchform"></div>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tic-tac-5.html" title="backward to &quot;5 Timeouts and Participation&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="index.html" title="up to &quot;Pay-To-Play Tic-Tac-Toe Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tic-tac-7.html" title="forward to &quot;7 Web Interaction&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div><h3>6<tt>&nbsp;</tt><a name="(part._tic-tac-6)"></a>Interaction and Independence</h3><p>In the last section, we made our Tic-Tac-Toe run until there was a definitive winner.
+In this section, we won&rsquo;t be making any changes to the Reach program itself.
+Instead, we&rsquo;ll go under the covers of <span class="stt">reach run</span>, as well as build a version of our game that is interactive and can be played away from a private developer test network.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>In the past, when we&rsquo;ve run <span class="stt">./reach run</span>, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript <font class="badlink"><span class="techoutside"><span class="techinside">frontend</span></span></font> to the Reach standard library and a fresh instance of a private developer test network.
+Since in this section, we will customize this and build a non-automated version of Tic-Tac-Toe, as well as give the option to connect to a real Ethereum network.</p><p>We&rsquo;ll start by running</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">./reach scaffold</span></p><p>which will automatically generate the following files for us:</p><ul><li><p><span class="stt">package.json</span> &#8212;<wbr></wbr> A Node.js package file that connects our <span class="stt">index.mjs</span> to the Reach standard library.</p></li><li><p><span class="stt">Dockerfile</span> &#8212;<wbr></wbr> A Docker image script that builds our package efficiently and runs it.</p></li><li><p><span class="stt">docker-compose.yml</span> &#8212;<wbr></wbr> A Docker Compose script that connects our Docker image to a fresh instance of the Reach private developer test network.</p></li><li><p><span class="stt">Makefile</span> &#8212;<wbr></wbr> A <span class="stt">Makefile</span> that easily rebuilds and runs the Docker image.</p></li></ul><p>We&rsquo;re going to leave the first two files unchanged.
+You can look at them at <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/package.json"><span class="stt">tic-tac-5/package.json</span></a> and <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/Dockerfile"><span class="stt">tic-tac-5/Dockerfile</span></a>, but the details aren&rsquo;t especially important.
+However, we&rsquo;ll customize the other two files.</p><p>First, let&rsquo;s look at the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/docker-compose.yml"><span class="stt">tic-tac-5/docker-compose.yml</span></a> file:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/docker-compose.yml"><span class="stt">tic-tac-5/docker-compose.yml</span></a><button class="btn" data-clipboard-text="version: '3.4'
+x-app-base: &amp;app-base
+  image: reachsh/reach-app-tic-tac-5:latest
+services:
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:0.1
+  algorand-devnet:
+    image: reachsh/algorand-devnet:0.1
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - REACH_DEBUG
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - 9392
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+  reach-app-tic-tac-5-ETH-live:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-live
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
+  reach-app-tic-tac-5-ETH-test-dockerized-geth: &amp;default-app
+    &lt;&lt;: *app-base
+    depends_on:
+      - ethereum-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+      - ETH_NODE_URI=http://ethereum-devnet:8545
+  reach-app-tic-tac-5-ETH-test-embedded-ganache:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
+  reach-app-tic-tac-5-FAKE-test-embedded-mock:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
+  reach-app-tic-tac-5-ALGO-test-dockerized-algod-local:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://host.docker.internal
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://host.docker.internal
+      - ALGO_INDEXER_PORT=8980
+  reach-app-tic-tac-5-ALGO-test-dockerized-algod:
+    &lt;&lt;: *app-base
+    depends_on:
+      - algorand-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://algorand-devnet
+      - ALGO_INDEXER_PORT=8980
+  reach-app-tic-tac-5-: *default-app
+  reach-app-tic-tac-5: *default-app
+  # After this is new!
+  player: &amp;player
+    &lt;&lt;: *default-app
+    stdin_open: true
+  alice: *player
+  bob: *player"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="nt">1    version</span><span class="p">:</span> <span class="s">&#39;3.4&#39;</span>
+ <span class="nt">2    x-app-base</span><span class="p">:</span> <span class="nl">&amp;app-base</span>
+ <span class="nt">3      image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/reach-app-tic-tac-5:latest</span>
+ <span class="nt">4    services</span><span class="p">:</span>
+ <span class="nt">5      ethereum-devnet</span><span class="p">:</span>
+ <span class="nt">6        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/ethereum-devnet:0.1</span>
+ <span class="nt">7      algorand-devnet</span><span class="p">:</span>
+ <span class="nt">8        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/algorand-devnet:0.1</span>
+ <span class="nt">9        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">10          - algorand-postgres-db</span>
+<span class="l l-Scalar l-Scalar-Plain">11        environment</span><span class="p p-Indicator">:</span>
+<span class="l l-Scalar l-Scalar-Plain">12          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">13          - POSTGRES_HOST=algorand-postgres-db</span>
+<span class="l l-Scalar l-Scalar-Plain">14          - POSTGRES_USER=algogrand</span>
+<span class="l l-Scalar l-Scalar-Plain">15          - POSTGRES_PASSWORD=indexer</span>
+<span class="l l-Scalar l-Scalar-Plain">16          - POSTGRES_DB=pgdb</span>
+<span class="nt">17        ports</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">18          - 9392</span>
+<span class="nt">19      algorand-postgres-db</span><span class="p">:</span>
+<span class="nt">20        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">postgres:11</span>
+<span class="nt">21        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">22          - POSTGRES_USER=algogrand</span>
+<span class="l l-Scalar l-Scalar-Plain">23          - POSTGRES_PASSWORD=indexer</span>
+<span class="l l-Scalar l-Scalar-Plain">24          - POSTGRES_DB=pgdb</span>
+<span class="nt">25      reach-app-tic-tac-5-ETH-live</span><span class="p">:</span>
+<span class="nt">26        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">27        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">28          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">29          - REACH_CONNECTOR_MODE=ETH-live</span>
+<span class="l l-Scalar l-Scalar-Plain">30          - ETH_NODE_URI</span>
+<span class="l l-Scalar l-Scalar-Plain">31          - ETH_NODE_NETWORK</span>
+<span class="nt">32      reach-app-tic-tac-5-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
+<span class="nt">33        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">34        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">35          - ethereum-devnet</span>
+<span class="nt">36        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">37          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">38          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
+<span class="l l-Scalar l-Scalar-Plain">39          - ETH_NODE_URI=http://ethereum-devnet:8545</span>
+<span class="nt">40      reach-app-tic-tac-5-ETH-test-embedded-ganache</span><span class="p">:</span>
+<span class="nt">41        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">42        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">43          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">44          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
+<span class="nt">45      reach-app-tic-tac-5-FAKE-test-embedded-mock</span><span class="p">:</span>
+<span class="nt">46        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">47        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">48          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">49          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
+<span class="nt">50      reach-app-tic-tac-5-ALGO-test-dockerized-algod-local</span><span class="p">:</span>
+<span class="nt">51        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">52        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">53          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">54          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">55          - ALGO_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">56          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">57          - ALGO_INDEXER_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">58          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">59      reach-app-tic-tac-5-ALGO-test-dockerized-algod</span><span class="p">:</span>
+<span class="nt">60        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">61        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">62          - algorand-devnet</span>
+<span class="nt">63        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">64          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">65          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">66          - ALGO_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">67          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">68          - ALGO_INDEXER_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">69          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">70      reach-app-tic-tac-5-</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">71      reach-app-tic-tac-5</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="l l-Scalar l-Scalar-Plain">72</span>      <span class="c1"># After this is new!</span>
+<span class="nt">73      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
+<span class="nt">74        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">75        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">76      alice</span><span class="p">:</span> <span class="nv">*player</span>
+<span class="nt">77      bob</span><span class="p">:</span> <span class="nv">*player</span>
+</pre></div></div></p><ul><li><p>Lines 2 and 3 define a service for starting our application.
+Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tic-tac</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tic-tac-5</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory throughout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 7 through 24 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 25 through 73 define services that allow the application to be run with different networks; including line 24, which defines <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tic-tac-5-ETH-live</span><span class="hspace"></span></span> for connecting to a live network.</p></li><li><p>We&rsquo;ll also add lines 73 through 77 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">Alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tic-tac-5-ETH-live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">Alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
+If we use the live version, then we have to define the environment variable <span class="stt">ETH_NODE_URI</span> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/Makefile"><span class="stt">tic-tac-5/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/Makefile#L29-L39"><span class="stt">tic-tac-5/Makefile</span></a><button class="btn" data-clipboard-text=".PHONY: run-alice
+run-alice:
+	docker-compose run --rm alice
+
+.PHONY: run-bob
+run-bob:
+	docker-compose run --rm bob"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">...</span>    
+ <span class="nf">29    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">alice</span>
+ <span class="m">30</span>    run-alice:
+ <span class="m">31</span>    	docker-compose run --rm alice
+ <span class="m">32</span>    
+ <span class="m">33</span>    .PHONY: run-bob
+ <span class="m">34</span>    run-bob:
+ <span class="m">35</span>    	docker-compose run --rm bob
+</pre></div></div></p><p>However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
+Let&rsquo;s modify the JavaScript <font class="badlink"><span class="techoutside"><span class="techinside">frontend</span></span></font> and make them interactive.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We&rsquo;ll start from scratch and show every line of the program again.
+You&rsquo;ll see a lot of similarity between this and the last version, but for completeness, we&rsquo;ll show every line.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L1-L6"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import * as TTT from './build/index.main.mjs';
+import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
+
+
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="mi">1</span>    <font class="badlink"><span class="kr">import</span></font> <font class="badlink"><span class="o">*</span></font> <font class="badlink"><span class="nx">as</span></font> <font class="badlink"><span class="nx">stdlib_loader</span></font> <font class="badlink"><span class="nx">from</span></font> <span class="s1">&#39;@reach-sh/stdlib/loader.mjs&#39;</span><span class="p">;</span>
+ <span class="mi">2</span>    <font class="badlink"><span class="kr">import</span></font> <font class="badlink"><span class="o">*</span></font> <font class="badlink"><span class="nx">as</span></font> <font class="badlink"><span class="nx">TTT</span></font> <font class="badlink"><span class="nx">from</span></font> <span class="s1">&#39;./build/index.main.mjs&#39;</span><span class="p">;</span>
+ <span class="mi">3</span>    <font class="badlink"><span class="kr">import</span></font> <span class="p">{</span> <font class="badlink"><span class="nx">ask</span></font><span class="p">,</span> <font class="badlink"><span class="nx">yesno</span></font><span class="p">,</span> <font class="badlink"><span class="nx">done</span></font> <span class="p">}</span> <font class="badlink"><span class="nx">from</span></font> <span class="s1">&#39;@reach-sh/stdlib/ask.mjs&#39;</span><span class="p">;</span>
+ <span class="mi">4</span>    
+ <span class="mi">5</span>    
+ <span class="mi">6</span>    
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><ul><li><p>Lines 1 and 2 are the same as before: importing the standard library and the backend.</p></li><li><p>Line 3 is new and imports a helpful library for simple console applications called <span class="stt">ask.mjs</span> from the Reach standard library.
+We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L32-L35"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="  const isAlice = await ask(
+      `Are you Alice?`,
+      yesno
+  );"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">32</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">isAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ask</span></font><span class="p">(</span>
+<span class="mi">33</span>        <span class="sb">`Are you Alice?`</span><span class="p">,</span>
+<span class="mi">34</span>        <font class="badlink"><span class="nx">yesno</span></font>
+<span class="mi">35</span>    <span class="p">);</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><ul><li><p>Lines 32 through 35 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
+<code class="highlight"><font class="badlink"><span class="nx">ask</span></font></code> presents a prompt and collects a line of input until its argument does not error.
+<code class="highlight"><font class="badlink"><span class="nx">yesno</span></font></code> errors if it is not given "y" or "n".</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L48-L60"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="      );
+      let acc = await stdlib.newAccountFromSecret(secret);
+  }
+  const deployCtc = isAlice;
+  if (deployCtc) {
+      const amt = await ask(
+          `How much do you want to wager?`,
+          stdlib.parseCurrency
+      );
+      let wager = amt;
+      let ctc = acc.deploy(TTT);
+      const info = await ctc.getInfo();
+      console.log(`The contract is deployed as = ${JSON.stringify(info)}`);"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">48</span>        <span class="p">);</span>
+<span class="mi">49</span>        <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">newAccountFromSecret</span></font><span class="p">(</span><font class="badlink"><span class="nx">secret</span></font><span class="p">);</span>
+<span class="mi">50</span>    <span class="p">}</span>
+<span class="mi">51</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">deployCtc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">isAlice</span></font><span class="p">;</span>
+<span class="mi">52</span>    <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">deployCtc</span></font><span class="p">)</span> <span class="p">{</span>
+<span class="mi">53</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">amt</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ask</span></font><span class="p">(</span>
+<span class="mi">54</span>            <span class="sb">`How much do you want to wager?`</span><span class="p">,</span>
+<span class="mi">55</span>            <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font>
+<span class="mi">56</span>        <span class="p">);</span>
+<span class="mi">57</span>        <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">amt</span></font><span class="p">;</span>
+<span class="mi">58</span>        <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><font class="badlink"><span class="nx">deploy</span></font><span class="p">(</span><font class="badlink"><span class="nx">TTT</span></font><span class="p">);</span>
+<span class="mi">59</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">info</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ctc</span></font><span class="p">.</span><font class="badlink"><span class="nx">getInfo</span></font><span class="p">();</span>
+<span class="mi">60</span>        <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`The contract is deployed as = </span><span class="si">${</span><font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">stringify</span></font><span class="p">(</span><font class="badlink"><span class="nx">info</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><ul><li><p>Lines 48 through 60 present the user with the choice of creating a test account if they can or imputing a secret to load an existing account.</p></li><li><p>Line 53 creates the test account as before.</p></li><li><p>Line 59 loads the existing account.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L61-L77"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="  } else {
+      const info = await ask(
+          `Please paste the contract information:`,
+          JSON.parse
+      );
+      let ctc = acc.attach(TTT, info);
+  }
+
+  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
+  const getBalance = async () =&gt; fmt(await stdlib.balanceOf(acc));
+  const before = await getBalance();
+  console.log(`Your balance is ${before}`);
+
+  var interactWith = (name) =&gt; ({
+    ...stdlib.hasRandom,
+    informTimeout : () =&gt; {
+        console.log(`There was a timeout.`);"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">61</span>    <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
+<span class="mi">62</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">info</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ask</span></font><span class="p">(</span>
+<span class="mi">63</span>            <span class="sb">`Please paste the contract information:`</span><span class="p">,</span>
+<span class="mi">64</span>            <font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">parse</span></font>
+<span class="mi">65</span>        <span class="p">);</span>
+<span class="mi">66</span>        <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><font class="badlink"><span class="nx">attach</span></font><span class="p">(</span><font class="badlink"><span class="nx">TTT</span></font><span class="p">,</span> <font class="badlink"><span class="nx">info</span></font><span class="p">);</span>
+<span class="mi">67</span>    <span class="p">}</span>
+<span class="mi">68</span>    
+<span class="mi">69</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">fmt</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span> <span class="p">=&gt;</span> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">formatCurrency</span></font><span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+<span class="mi">70</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">getBalance</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">async</span></font> <span class="p">()</span> <span class="p">=&gt;</span> <font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">balanceOf</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc</span></font><span class="p">));</span>
+<span class="mi">71</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">before</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">();</span>
+<span class="mi">72</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Your balance is </span><span class="si">${</span><font class="badlink"><span class="nx">before</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">73</span>    
+<span class="mi">74</span>    <font class="badlink"><span class="kd">var</span></font> <font class="badlink"><span class="nx">interactWith</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">name</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">({</span>
+<span class="mi">75</span>      <span class="p">...</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">hasRandom</span></font><span class="p">,</span>
+<span class="mi">76</span>      <font class="badlink"><span class="nx">informTimeout</span></font> <font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">77</span>          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`There was a timeout.`</span><span class="p">);</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><ul><li><p>Lines 67 through 69 deploy the contract and print out public information (<code class="highlight"><font class="badlink"><span class="nx">ctc</span></font><span class="p">.</span><font class="badlink"><span class="nx">getInfo</span></font></code>) that can be given to the other player.</p></li><li><p>Lines 72 through 76 request, parse, and process this information.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L79-L82"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="    },
+    getWager: () =&gt; {
+      return wager;
+    },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">79</span>      <span class="p">},</span>
+<span class="mi">80</span>      <font class="badlink"><span class="nx">getWager</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">81</span>        <font class="badlink"><span class="k">return</span></font> <font class="badlink"><span class="nx">wager</span></font><span class="p">;</span>
+<span class="mi">82</span>      <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>Next we define a few helper functions and start the participant interaction interface.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L86-L89"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="            // localize the X and O boards
+            //return Math.floor( Math.random() * 9);
+            const xs = board.xs;
+            const os = board.os;"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">86</span>              <span class="c1">// localize the X and O boards</span>
+<span class="mi">87</span>              <span class="c1">//return Math.floor( Math.random() * 9);</span>
+<span class="mi">88</span>              <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">xs</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">board</span></font><span class="p">.</span><font class="badlink"><span class="nx">xs</span></font><span class="p">;</span>
+<span class="mi">89</span>              <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">os</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">board</span></font><span class="p">.</span><font class="badlink"><span class="nx">os</span></font><span class="p">;</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>First we define a timeout handler.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L112-L122"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="                    });
+                    console.log(`Which maps to ${choice}`);
+
+                // If the place is not already occupied..
+                if (xs[choice] + os[choice] == 0) {
+                    // Calculate the theoretical fee for that place
+                    fee = (wager / 16) * fee_mt[choice];
+                    console.log(`${name} chooses move ${choice} from board Above.`);
+                    console.log(`fee: ${fee / 10 ** 18} * 10**18`);
+                    // Return the place chosen to move to.
+                    return choice;"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">112</span>                      <span class="p">});</span>
+<span class="mi">113</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Which maps to </span><span class="si">${</span><font class="badlink"><span class="nx">choice</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">114</span>    
+<span class="mi">115</span>                  <span class="c1">// If the place is not already occupied..</span>
+<span class="mi">116</span>                  <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">xs</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">]</span> <font class="badlink"><span class="o">+</span></font> <font class="badlink"><span class="nx">os</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">]</span> <font class="badlink"><span class="o">==</span></font> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<span class="mi">117</span>                      <span class="c1">// Calculate the theoretical fee for that place</span>
+<span class="mi">118</span>                      <font class="badlink"><span class="nx">fee</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">/</span></font> <span class="mi">16</span><span class="p">)</span> <font class="badlink"><span class="o">*</span></font> <font class="badlink"><span class="nx">fee_mt</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">];</span>
+<span class="mi">119</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">name</span></font><span class="si">}</span><span class="sb"> chooses move </span><span class="si">${</span><font class="badlink"><span class="nx">choice</span></font><span class="si">}</span><span class="sb"> from board Above.`</span><span class="p">);</span>
+<span class="mi">120</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`fee: </span><span class="si">${</span><font class="badlink"><span class="nx">fee</span></font> <font class="badlink"><span class="o">/</span></font> <span class="mi">10</span> <font class="badlink"><span class="o">**</span></font> <span class="mi">18</span><span class="si">}</span><span class="sb"> * 10**18`</span><span class="p">);</span>
+<span class="mi">121</span>                      <span class="c1">// Return the place chosen to move to.</span>
+<span class="mi">122</span>                      <font class="badlink"><span class="k">return</span></font> <font class="badlink"><span class="nx">choice</span></font><span class="p">;</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>Then, we define the <code class="highlight"><font class="badlink"><span class="nx">acceptWager</span></font></code> method.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L83-L129"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="        getMove: async (board, fee_mt) =&gt; {
+            // Log that the player has chosen a move (they will very soon)
+            console.log(`${render(board)}\n${name}'s turn.`);
+            // localize the X and O boards
+            //return Math.floor( Math.random() * 9);
+            const xs = board.xs;
+            const os = board.os;
+            let fee = 0;
+            while (true) {
+                let choice = 99;
+                    // Prompt user for a position to take
+                    const POSITIONS = {
+                        &quot;7&quot;: 0,
+                        &quot;8&quot;: 1,
+                        &quot;9&quot;: 2,
+                        &quot;4&quot;: 3,
+                        &quot;5&quot;: 4,
+                        &quot;6&quot;: 5,
+                        &quot;1&quot;: 6,
+                        &quot;2&quot;: 7,
+                        &quot;3&quot;: 8,
+                    };
+                    choice = await ask(`${name} what position will you play?`, (x) =&gt; {
+                        console.log(`You played ${x}`);
+                        const position = POSITIONS[x];
+                        if (position == null) {
+                            throw Error(`Not a valid position ${position}`);
+                        }
+                        return position;
+                    });
+                    console.log(`Which maps to ${choice}`);
+
+                // If the place is not already occupied..
+                if (xs[choice] + os[choice] == 0) {
+                    // Calculate the theoretical fee for that place
+                    fee = (wager / 16) * fee_mt[choice];
+                    console.log(`${name} chooses move ${choice} from board Above.`);
+                    console.log(`fee: ${fee / 10 ** 18} * 10**18`);
+                    // Return the place chosen to move to.
+                    return choice;
+                } else {
+                    console.log(&quot;Invalid Choice Try Again&quot;)
+                }
+            }
+            // FIXME: This never happens.
+            throw Error(`impossible to make a move`);
+        },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">83</span>          <font class="badlink"><span class="nx">getMove</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">async</span></font> <span class="p">(</span><font class="badlink"><span class="nx">board</span></font><span class="p">,</span> <font class="badlink"><span class="nx">fee_mt</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">84</span>              <span class="c1">// Log that the player has chosen a move (they will very soon)</span>
+<span class="mi">85</span>              <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">render</span></font><span class="p">(</span><font class="badlink"><span class="nx">board</span></font><span class="p">)</span><span class="si">}</span><span class="err">\</span><span class="sb">n</span><span class="si">${</span><font class="badlink"><span class="nx">name</span></font><span class="si">}</span><span class="sb">&#39;s turn.`</span><span class="p">);</span>
+<span class="mi">86</span>              <span class="c1">// localize the X and O boards</span>
+<span class="mi">87</span>              <span class="c1">//return Math.floor( Math.random() * 9);</span>
+<span class="mi">88</span>              <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">xs</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">board</span></font><span class="p">.</span><font class="badlink"><span class="nx">xs</span></font><span class="p">;</span>
+<span class="mi">89</span>              <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">os</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">board</span></font><span class="p">.</span><font class="badlink"><span class="nx">os</span></font><span class="p">;</span>
+<span class="mi">90</span>              <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">fee</span></font> <font class="badlink"><span class="o">=</span></font> <span class="mi">0</span><span class="p">;</span>
+<span class="mi">91</span>              <font class="badlink"><span class="k">while</span></font> <span class="p">(</span><font class="badlink"><span class="kc">true</span></font><span class="p">)</span> <span class="p">{</span>
+<span class="mi">92</span>                  <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">choice</span></font> <font class="badlink"><span class="o">=</span></font> <span class="mi">99</span><span class="p">;</span>
+<span class="mi">93</span>                      <span class="c1">// Prompt user for a position to take</span>
+<span class="mi">94</span>                      <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">POSITIONS</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">{</span>
+<span class="mi">95</span>                          <span class="s2">"7"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">0</span><span class="p">,</span>
+<span class="mi">96</span>                          <span class="s2">"8"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">1</span><span class="p">,</span>
+<span class="mi">97</span>                          <span class="s2">"9"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">2</span><span class="p">,</span>
+<span class="mi">98</span>                          <span class="s2">"4"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">3</span><span class="p">,</span>
+<span class="mi">99</span>                          <span class="s2">"5"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">4</span><span class="p">,</span>
+<span class="mi">100</span>                          <span class="s2">"6"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">5</span><span class="p">,</span>
+<span class="mi">101</span>                          <span class="s2">"1"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">6</span><span class="p">,</span>
+<span class="mi">102</span>                          <span class="s2">"2"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">7</span><span class="p">,</span>
+<span class="mi">103</span>                          <span class="s2">"3"</span><font class="badlink"><span class="o">:</span></font> <span class="mi">8</span><span class="p">,</span>
+<span class="mi">104</span>                      <span class="p">};</span>
+<span class="mi">105</span>                      <font class="badlink"><span class="nx">choice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ask</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">name</span></font><span class="si">}</span><span class="sb"> what position will you play?`</span><span class="p">,</span> <span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">106</span>                          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`You played </span><span class="si">${</span><font class="badlink"><span class="nx">x</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">107</span>                          <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">position</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">POSITIONS</span></font><span class="p">[</span><font class="badlink"><span class="nx">x</span></font><span class="p">];</span>
+<span class="mi">108</span>                          <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">position</span></font> <font class="badlink"><span class="o">==</span></font> <font class="badlink"><span class="kc">null</span></font><span class="p">)</span> <span class="p">{</span>
+<span class="mi">109</span>                              <font class="badlink"><span class="k">throw</span></font> <font class="badlink"><span class="nb">Error</span></font><span class="p">(</span><span class="sb">`Not a valid position </span><span class="si">${</span><font class="badlink"><span class="nx">position</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">110</span>                          <span class="p">}</span>
+<span class="mi">111</span>                          <font class="badlink"><span class="k">return</span></font> <font class="badlink"><span class="nx">position</span></font><span class="p">;</span>
+<span class="mi">112</span>                      <span class="p">});</span>
+<span class="mi">113</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Which maps to </span><span class="si">${</span><font class="badlink"><span class="nx">choice</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">114</span>    
+<span class="mi">115</span>                  <span class="c1">// If the place is not already occupied..</span>
+<span class="mi">116</span>                  <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">xs</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">]</span> <font class="badlink"><span class="o">+</span></font> <font class="badlink"><span class="nx">os</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">]</span> <font class="badlink"><span class="o">==</span></font> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<span class="mi">117</span>                      <span class="c1">// Calculate the theoretical fee for that place</span>
+<span class="mi">118</span>                      <font class="badlink"><span class="nx">fee</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">/</span></font> <span class="mi">16</span><span class="p">)</span> <font class="badlink"><span class="o">*</span></font> <font class="badlink"><span class="nx">fee_mt</span></font><span class="p">[</span><font class="badlink"><span class="nx">choice</span></font><span class="p">];</span>
+<span class="mi">119</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">name</span></font><span class="si">}</span><span class="sb"> chooses move </span><span class="si">${</span><font class="badlink"><span class="nx">choice</span></font><span class="si">}</span><span class="sb"> from board Above.`</span><span class="p">);</span>
+<span class="mi">120</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`fee: </span><span class="si">${</span><font class="badlink"><span class="nx">fee</span></font> <font class="badlink"><span class="o">/</span></font> <span class="mi">10</span> <font class="badlink"><span class="o">**</span></font> <span class="mi">18</span><span class="si">}</span><span class="sb"> * 10**18`</span><span class="p">);</span>
+<span class="mi">121</span>                      <span class="c1">// Return the place chosen to move to.</span>
+<span class="mi">122</span>                      <font class="badlink"><span class="k">return</span></font> <font class="badlink"><span class="nx">choice</span></font><span class="p">;</span>
+<span class="mi">123</span>                  <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
+<span class="mi">124</span>                      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="s2">"Invalid Choice Try Again"</span><span class="p">)</span>
+<span class="mi">125</span>                  <span class="p">}</span>
+<span class="mi">126</span>              <span class="p">}</span>
+<span class="mi">127</span>              <span class="c1">// FIXME: This never happens.</span>
+<span class="mi">128</span>              <font class="badlink"><span class="k">throw</span></font> <font class="badlink"><span class="nb">Error</span></font><span class="p">(</span><span class="sb">`impossible to make a move`</span><span class="p">);</span>
+<span class="mi">129</span>          <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>Next, we define the shared <code class="highlight"><font class="badlink"><span class="nx">getMove</span></font></code> method.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L130-L132"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="    endsWith: (state) =&gt; {
+      console.log(`${name} sees the final state: ${render(state)}`);
+    },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">130</span>      <font class="badlink"><span class="nx">endsWith</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">state</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">131</span>        <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">name</span></font><span class="si">}</span><span class="sb"> sees the final state: </span><span class="si">${</span><font class="badlink"><span class="nx">render</span></font><span class="p">(</span><font class="badlink"><span class="nx">state</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">132</span>      <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>Finally, the <code class="highlight"><font class="badlink"><span class="nx">endsWith</span></font></code> method.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-5/index.mjs#L146-L152"><span class="stt">tic-tac-5/index.mjs</span></a><button class="btn" data-clipboard-text="  const part = isAlice ? TTT.A : TTT.B;
+  await Promise.all([part(ctc, interactWith(isAlice ? 'Alice' : 'Bob'))]);
+
+  console.log(`Alice went from ${startAlice} to ${await getBalance(alice)}`)
+  console.log(`Bob went from ${startBob} to ${await getBalance(bob)}`)
+  console.log(`Done!`);
+  process.exit(0);"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">146</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">part</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">isAlice</span></font> <font class="badlink"><span class="o">?</span></font> <font class="badlink"><span class="nx">TTT</span></font><span class="p">.</span><font class="badlink"><span class="nx">A</span></font> <font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">TTT</span></font><span class="p">.</span><font class="badlink"><span class="nx">B</span></font><span class="p">;</span>
+<span class="mi">147</span>    <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><font class="badlink"><span class="nx">all</span></font><span class="p">([</span><font class="badlink"><span class="nx">part</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctc</span></font><span class="p">,</span> <font class="badlink"><span class="nx">interactWith</span></font><span class="p">(</span><font class="badlink"><span class="nx">isAlice</span></font> <font class="badlink"><span class="o">?</span></font> <span class="s1">&#39;Alice&#39;</span> <font class="badlink"><span class="o">:</span></font> <span class="s1">&#39;Bob&#39;</span><span class="p">))]);</span>
+<span class="mi">148</span>    
+<span class="mi">149</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Alice went from </span><span class="si">${</span><font class="badlink"><span class="nx">startAlice</span></font><span class="si">}</span><span class="sb"> to </span><span class="si">${</span><font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">alice</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="mi">150</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Bob went from </span><span class="si">${</span><font class="badlink"><span class="nx">startBob</span></font><span class="si">}</span><span class="sb"> to </span><span class="si">${</span><font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">bob</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="mi">151</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Done!`</span><span class="p">);</span>
+<span class="mi">152</span>    <font class="badlink"><span class="nx">process</span></font><span class="p">.</span><font class="badlink"><span class="nx">exit</span></font><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div></div></p><p>Lastly, we choose the appropriate backend function and await its completion.</p><p>We can now run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make build</span></p><p>to rebuild the images, then</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make run-alice</span></p><p>in one terminal in this directory and</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make run-bob</span></p><p>in another terminal in this directory.</p><p>Here&rsquo;s an example run:</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ make run-alice</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">How much do you want to wager?</span></p></td></tr><tr><td><p><span class="stt">5</span></p></td></tr><tr><td><p><span class="stt">The contract is deployed as =</span></p></td></tr><tr><td><p><span class="stt">{</span></p></td></tr><tr><td><p><span class="stt">"address":"0xae5307E387792F5f5a9327bddfE65aFF0608D2dA",</span></p></td></tr><tr><td><p><span class="stt">"creation_block":3,</span></p></td></tr><tr><td><p><span class="stt">"creator":"0x4e9F2Bc2c8b0DDA3b35727F27Be3c8ea76CBcf58",</span></p></td></tr><tr><td><p><span class="stt">"transactionHash":"0x32d9117ff2ddaa101be0a0742dd6499b62025f3068e341cb8656efdcfc9050b3"</span></p></td></tr><tr><td><p><span class="stt">}</span></p></td></tr><tr><td><p><span class="stt">Your balance is 999.9999</span></p></td></tr><tr><td><p><span class="stt">Alice publishes wager of 5 ETH</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9556;&#9552;&#9552;&#9552;&#9574;&#9552;&#9552;&#9552;&#9574;&#9552;&#9552;&#9552;&#9559;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9568;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9571;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9568;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9571;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9562;&#9552;&#9552;&#9552;&#9577;&#9552;&#9552;&#9552;&#9577;&#9552;&#9552;&#9552;&#9565;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;</span></p></td></tr><tr><td><p><span class="stt">Alice's turn.</span></p></td></tr><tr><td><p><span class="stt">Alice what position will you play?</span></p></td></tr><tr><td><p><span class="stt">5</span></p></td></tr><tr><td><p><span class="stt">You played 5</span></p></td></tr><tr><td><p><span class="stt">Which maps to 4</span></p></td></tr><tr><td><p><span class="stt">Alice chooses move 4 from board Above.</span></p></td></tr><tr><td><p><span class="stt">fee: 1.25 * 10**18</span></p></td></tr></table></p><p>and</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ make run-bob</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">n</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Please paste the contract information:</span></p></td></tr><tr><td><p><span class="stt">{</span></p></td></tr><tr><td><p><span class="stt">"address":"0xae5307E387792F5f5a9327bddfE65aFF0608D2dA",</span></p></td></tr><tr><td><p><span class="stt">"creation_block":3,</span></p></td></tr><tr><td><p><span class="stt">"creator":"0x4e9F2Bc2c8b0DDA3b35727F27Be3c8ea76CBcf58",</span></p></td></tr><tr><td><p><span class="stt">"transactionHash":"0x32d9117ff2ddaa101be0a0742dd6499b62025f3068e341cb8656efdcfc9050b3"</span></p></td></tr><tr><td><p><span class="stt">}</span></p></td></tr><tr><td><p><span class="stt">Your balance is 1000</span></p></td></tr><tr><td><p><span class="stt">Do you accept the wager of 5?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9556;&#9552;&#9552;&#9552;&#9574;&#9552;&#9552;&#9552;&#9574;&#9552;&#9552;&#9552;&#9559;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9568;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9571;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553; X &#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9568;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9580;&#9552;&#9552;&#9552;&#9571;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span><span class="hspace">&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9553;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="stt">&#9562;&#9552;&#9552;&#9552;&#9577;&#9552;&#9552;&#9552;&#9577;&#9552;&#9552;&#9552;&#9565;</span></p></td></tr><tr><td><p><span class="stt"></span><span class="hspace">&nbsp;</span></p></td></tr><tr><td><p><span class="stt">Bob's turn.</span></p></td></tr><tr><td><p><span class="stt">Bob what position will you play?</span></p></td></tr></table></p><p>Of course, when you run the exact amounts and addresses may be different.</p><blockquote class="refpara"><blockquote class="refcolumn"><blockquote class="refcontent"><p>If your version isn&rsquo;t working, look at the complete versions of the files mentioned in this chapter (GitHub) to make sure you copied everything down correctly!</p></blockquote></blockquote></blockquote><p>If we were to edit <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tic-tac-6/docker-compose.yml"><span class="stt">tic-tac-6/docker-compose.yml</span></a>, and move the <span class="RktInBG"><span class="hspace"></span><span class="RktIn">&amp;default-app</span><span class="hspace"></span></span> on line 24 to line 51, then instead of running on Ethereum, we&rsquo;d be able to test and run our application on Algorand.</p><p>Now our implementation of Tic-Tac-Toe is finished!
+We are protected against timeouts, and we can run interactively on non-test networks.</p><p>In this step, we made a command-line interface for our Reach program.
+In <a href="tic-tac-7.html" data-pltdoc="x">the next step</a>, we&rsquo;ll replace this with a Web interface for the same Reach program.</p><p><a href="index.html" data-pltdoc="x">Main menu</a></p><div class="navsetbottom"><span class="navleft"><div class="nosearchform"></div>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tic-tac-5.html" title="backward to &quot;5 Timeouts and Participation&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="index.html" title="up to &quot;Pay-To-Play Tic-Tac-Toe Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tic-tac-7.html" title="forward to &quot;7 Web Interaction&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div></div></div><div id="contextindicator">&nbsp;</div></body></html>

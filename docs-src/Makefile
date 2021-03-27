@@ -20,7 +20,7 @@ clean:
 .PHONY: check
 check:
 	ag --ignore Makefile xxx
-	grep -v -e reach -e javascript scribble.log
+	grep -v -e reach -e javascript -e go -e python -e makefile scribble.log
 
 .PHONY: install
 install:

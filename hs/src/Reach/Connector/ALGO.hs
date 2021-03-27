@@ -857,7 +857,21 @@ ct = \case
       (isHalt, check_nextSt) =
         case msvs of
           --- XXX fix this so it makes sure it is zero bytes
-          Nothing -> (True, return ())
+          Nothing -> (True, halttxn)
+            where
+              halttxn = do
+                txni <- talloc
+                code "gtxn" [texty txni, "TypeEnum"]
+                code "int" ["pay"]
+                eq_or_fail
+                comment $ "We don't check the receiver"
+                code "gtxn" [texty txni, "Amount"]
+                cl $ DLL_Int sb 0
+                eq_or_fail
+                code "gtxn" [texty txni, "Sender"]
+                code "byte" [tContractAddr]
+                cfrombs T_Address
+                eq_or_fail
           Just svs -> (False, ck)
             where
               ck = do
@@ -1067,6 +1081,9 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             eq_or_fail
             code "gtxn" [texty txnToHandler, "Amount"]
             code "gtxn" [texty txnFromHandler, "Fee"]
+            -- XXX get from SDK or use min_balance opcode
+            cl $ DLL_Int sb $ 100000
+            op "+"
             eq_or_fail
 
             comment "Check txnToContract"
@@ -1094,7 +1111,9 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
             readArg argPrevSt
             eq_or_fail
 
-            --- XXX close remainder to is deployer if halts, zero otherwise
+            code "txn" ["CloseRemainderTo"]
+            code "gtxn" [texty txnToHandler, "Sender"]
+            eq_or_fail
 
             comment "Run body"
             ct_k body $ do
@@ -1171,13 +1190,6 @@ compile_algo disp pl = do
   let stepargs = Aeson.Number 0 : stepargs_
   modifyIORef resr $ M.insert "steps" $ aarray steps
   modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
-  let howManySteps =
-        length $
-          filter
-            (\case
-               Aeson.String _ -> True
-               _ -> False)
-            steps
   let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
@@ -1191,9 +1203,8 @@ compile_algo disp pl = do
     code "txn" ["ApplicationID"]
     code "bz" ["init"]
     code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ 2 + howManySteps
+    cl $ DLL_Int sb $ 2
     eq_or_fail
-    --- XXX can we constrain the other txns to transfer the correct amount?
     code "txn" ["OnCompletion"]
     code "int" ["UpdateApplication"]
     eq_or_fail
@@ -1247,7 +1258,6 @@ compile_algo disp pl = do
       cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
-    --- XXX we don't actually need halts
     app_global_put keyHalts $ do
       readArg argHalts
       cfrombs T_Bool
@@ -1272,7 +1282,6 @@ compile_algo disp pl = do
     cl $ DLL_Bool $ True
     eq_or_fail
     code "b" ["done"]
-  -- XXX ctc needs to allow deployer to get back minimum balance
   ctcm <- simple $ do
     comment "Check size"
     code "global" ["GroupSize"]
@@ -1293,8 +1302,20 @@ compile_algo disp pl = do
     code "int" ["pay"]
     eq_or_fail
     check_rekeyto
-    code "txn" ["CloseRemainderTo"]
+    -- If we are the last one in the group and it's a halt, then we must close
+    -- to creator
     code "global" ["ZeroAddress"]
+    code "byte" [tDeployer]
+    code "global" ["GroupSize"]
+    cl $ DLL_Int sb $ 1
+    op "-"
+    code "txn" ["GroupIndex"]
+    op "=="
+    readArg argHalts
+    cfrombs T_Bool
+    op "&&"
+    op "select"
+    code "txn" ["CloseRemainderTo"]
     eq_or_fail
     code "txn" ["GroupIndex"]
     cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
