@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-149147406-2"></script><script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-149147406-2');</script><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script><script src="tooltips.js"></script><script src="reach-pre.js"></script><link rel="stylesheet" href="tooltips.css"><link rel="stylesheet" href="reach.css"><link rel="stylesheet" href="minted.css"><link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png"><link rel="manifest" href="/favicon/site.webmanifest"><meta http-equiv="content-type" content="text/html; charset=utf-8"/><meta name="viewport" content="width=device-width, initial-scale=0.8"/><title>2.11&nbsp;Rock, Paper, Scissors in Python</title><link rel="stylesheet" type="text/css" href="scribble.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-style.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-racket.css" title="default"/><script type="text/javascript" src="scribble-common.js"></script><script type="text/javascript" src="manual-racket.js"></script><!--[if IE 6]><style type="text/css">.SIEHidden { overflow: hidden; }</style><![endif]--></head><body id="scribble-racket-lang-org"><div class="tocset"><div class="tocview"><div class="tocviewlist tocviewlisttopspace"><div class="tocviewtitle"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_0&quot;);">&#9658;</a></td><td></td><td><a href="index.html" class="tocviewlink" data-pltdoc="x">Reach:<span class="mywbr"> &nbsp;</span> The Safest and Easiest DApp Programming Language</a></td></tr></table></div><div class="tocviewsublisttop" style="display: none;" id="tocview_0"><table cellspacing="0" cellpadding="0"><tr><td align="right">1&nbsp;</td><td><a href="overview.html" class="tocviewlink" data-pltdoc="x">Overview</a></td></tr><tr><td align="right">2&nbsp;</td><td><a href="tut.html" class="tocviewselflink" data-pltdoc="x">Tutorial</a></td></tr><tr><td align="right">3&nbsp;</td><td><a href="guide.html" class="tocviewlink" data-pltdoc="x">Guide</a></td></tr><tr><td align="right">4&nbsp;</td><td><a href="workshop.html" class="tocviewlink" data-pltdoc="x">Workshop</a></td></tr><tr><td align="right">5&nbsp;</td><td><a href="ref.html" class="tocviewlink" data-pltdoc="x">Reference</a></td></tr><tr><td align="right"></td><td><a href="doc-index.html" class="tocviewlink" data-pltdoc="x">Index</a></td></tr></table></div></div><div class="tocviewlist"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_1&quot;);">&#9660;</a></td><td>2&nbsp;</td><td><a href="tut.html" class="tocviewlink" data-pltdoc="x">Tutorial</a></td></tr></table><div class="tocviewsublistbottom" style="display: block;" id="tocview_1"><table cellspacing="0" cellpadding="0"><tr><td align="right">2.1&nbsp;</td><td><a href="tut-1.html" class="tocviewlink" data-pltdoc="x">Install and Initialize</a></td></tr><tr><td align="right">2.2&nbsp;</td><td><a href="tut-2.html" class="tocviewlink" data-pltdoc="x">Scaffolding and Setup</a></td></tr><tr><td align="right">2.3&nbsp;</td><td><a href="tut-3.html" class="tocviewlink" data-pltdoc="x">Rock, Paper, and Scissors</a></td></tr><tr><td align="right">2.4&nbsp;</td><td><a href="tut-4.html" class="tocviewlink" data-pltdoc="x">Bets and Wagers</a></td></tr><tr><td align="right">2.5&nbsp;</td><td><a href="tut-5.html" class="tocviewlink" data-pltdoc="x">Trust and Commitments</a></td></tr><tr><td align="right">2.6&nbsp;</td><td><a href="tut-6.html" class="tocviewlink" data-pltdoc="x">Timeouts and Participation</a></td></tr><tr><td align="right">2.7&nbsp;</td><td><a href="tut-7.html" class="tocviewlink" data-pltdoc="x">Play and Play Again</a></td></tr><tr><td align="right">2.8&nbsp;</td><td><a href="tut-8.html" class="tocviewlink" data-pltdoc="x">Interaction and Independence</a></td></tr><tr><td align="right">2.9&nbsp;</td><td><a href="tut-9.html" class="tocviewlink" data-pltdoc="x">Web Interaction</a></td></tr><tr><td align="right">2.10&nbsp;</td><td><a href="tut-10.html" class="tocviewlink" data-pltdoc="x">Onward and Further</a></td></tr><tr><td align="right">2.11&nbsp;</td><td><a href="" class="tocviewselflink" data-pltdoc="x">Rock, Paper, Scissors in Python</a></td></tr></table></div></div></div></div><div class="maincolumn"><div class="main"><div class="versionbox"><span class="version">0.1.2</span></div><div class="navsettop"><span class="navleft"><form class="searchform"><input class="searchbox" id="searchbox" type="text" tabindex="1" placeholder="...search docs..." title="Enter a search string to search the Reach documentation" onkeypress="return reach_DoSearch(event, this);"></form>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tut-10.html" title="backward to &quot;2.10 Onward and Further&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="tut.html" title="up to &quot;2 Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="guide.html" title="forward to &quot;3 Guide&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div><h4>2.11<tt>&nbsp;</tt><a name="(part._tut-7-rpc)"></a>Rock, Paper, Scissors in Python</h4><div class="SAuthorListBox"><span class="SAuthorList"><p class="author">Matt Audesse &lt;<a href="mailto:matt@reach.sh">matt@reach.sh</a>&gt;</p></span></div><p>The main sequence of the tutorial uses the
+<a href="ref-frontends-js.html" data-pltdoc="x">JavaScript frontend support library</a> to implement
+a frontend for our Reach program using JavaScript.
+But, Reach supports using any programming language through the
+<a href="ref-backends-rpc.html" data-pltdoc="x">Reach RPC Server</a>.</p><p>This tutorial walks through using this technique to implement a <span class="emph">Rock, Paper, Scissors!</span> frontend
+in Python.
+It is based on the frontend from <a href="tut-7.html" data-pltdoc="x">Play and Play Again</a>, so it does not include a
+text-based interface, or a Web interface, but uses the final version of the
+Reach code.</p><p>Below we will compare the <a href="tut-7.html" data-pltdoc="x">Play and Play Again</a> JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> with the
+equivalent Python code communicating via RPC, section by section.</p><p>First we need to install the library from the command line:
+<div class="highlight"><pre><span></span>$ pip install --upgrade reach-rpc-client
+</pre></div></p><p>Next, the necessary imports and program body:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L1-L5"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+
+(async () =&gt; {
+  const stdlib = await loadStdlib();"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="mi">1</span>    <a href="ref-programs-module.html#%28reach._%28%28import%29%29%29" class="kd" data-pltdoc="x">import</a> <span class="p">{</span> <font class="badlink"><span class="nx">loadStdlib</span></font> <span class="p">}</span> <a href="ref-programs-module.html#%28reach._%28%28from%29%29%29" class="kd" data-pltdoc="x">from</a> <span class="s1">&#39;@reach-sh/stdlib&#39;</span><span class="p">;</span>
+ <span class="mi">2</span>    <a href="ref-programs-module.html#%28reach._%28%28import%29%29%29" class="kd" data-pltdoc="x">import</a> <a href="ref-programs-compute.html#%28reach._%28%28%2A%29%29%29" class="o" data-pltdoc="x">*</a> <font class="badlink"><span class="kd">as</span></font> <font class="badlink"><span class="nx">backend</span></font> <a href="ref-programs-module.html#%28reach._%28%28from%29%29%29" class="kd" data-pltdoc="x">from</a> <span class="s1">&#39;./build/index.main.mjs&#39;</span><span class="p">;</span>
+ <span class="mi">3</span>    
+ <span class="mi">4</span>    <span class="p">(</span><font class="badlink"><span class="nx">async</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
+ <span class="mi">5</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">stdlib</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">loadStdlib</span></font><span class="p">();</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L1-L10"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="mi">1</span>    <span class="err">#</span> <font class="badlink"><span class="nx">flake8</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">noqa</span></font>
+ <span class="mi">2</span>    
+ <span class="mi">3</span>    <a href="ref-programs-module.html#%28reach._%28%28import%29%29%29" class="kd" data-pltdoc="x">import</a> <font class="badlink"><span class="nx">random</span></font>
+ <span class="mi">4</span>    <a href="ref-programs-module.html#%28reach._%28%28from%29%29%29" class="kd" data-pltdoc="x">from</a> <font class="badlink"><span class="nx">threading</span></font> <a href="ref-programs-module.html#%28reach._%28%28import%29%29%29" class="kd" data-pltdoc="x">import</a> <font class="badlink"><span class="nx">Thread</span></font>
+ <span class="mi">5</span>    <a href="ref-programs-module.html#%28reach._%28%28from%29%29%29" class="kd" data-pltdoc="x">from</a> <font class="badlink"><span class="nx">reach_rpc</span></font> <a href="ref-programs-module.html#%28reach._%28%28import%29%29%29" class="kd" data-pltdoc="x">import</a> <font class="badlink"><span class="nx">mk_rpc</span></font>
+ <span class="mi">6</span>    
+ <span class="mi">7</span>    
+ <span class="mi">8</span>    <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">main</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
+ <span class="mi">9</span>        <font class="badlink"><span class="nx">rpc</span></font><span class="p">,</span> <font class="badlink"><span class="nx">rpc_callbacks</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">mk_rpc</span></font><span class="p">()</span>
+<span class="mi">10</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p>Rather than importing <code class="highlight"><font class="badlink"><span class="nx">loadStdlib</span></font></code> and <code class="highlight"><a href="ref-backends-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a></code> as with the
+JavaScript version, the Python frontend instead plucks <code class="highlight"><span class="n">mk_rpc</span></code> from its
+supporting <code class="highlight"><span class="n">reach_rpc</span></code> library.
+It is unnecessary for an RPC <span style="font-style: italic">frontend</span> to import a <a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a>
+because the <a href="ref-backends-rpc.html" data-pltdoc="x">Reach RPC Server</a> handles doing so instead.</p><p>The Python version also borrows functionality from the <code class="highlight"><span class="n">random</span></code> and
+<code class="highlight"><span class="n">threading</span></code> libraries.
+These will be necessary when providing callable methods in the
+<a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a> it offers the RPC server.</p><p>On line 9 the Python program binds <code class="highlight"><span class="n">rpc</span></code> and <code class="highlight"><span class="n">rpc_callbacks</span></code> out of
+<code class="highlight"><span class="n">mk_rpc</span></code>.
+These two functions are the only tools we will need to communicate with the
+RPC server.
+See <a href="ref-frontends-rpc-py.html" data-pltdoc="x">Python (RPC)</a> for more details on how they work.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Next, we define our Alice and Bob accounts and pre-fund them each with a
+starting balance of <span class="stt">10</span>.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L6-L9"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const startingBalance = stdlib.parseCurrency(10);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+ <span class="mi">6</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">startingBalance</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+ <span class="mi">7</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">accAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">newTestAccount</span></font><span class="p">(</span><font class="badlink"><span class="nx">startingBalance</span></font><span class="p">);</span>
+ <span class="mi">8</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">accBob</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">newTestAccount</span></font><span class="p">(</span><font class="badlink"><span class="nx">startingBalance</span></font><span class="p">);</span>
+ <span class="mi">9</span>    
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L11-L14"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    starting_balance = rpc('/stdlib/parseCurrency', 10)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">11</span>        <font class="badlink"><span class="nx">starting_balance</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/parseCurrency&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="mi">12</span>        <font class="badlink"><span class="nx">acc_alice</span></font>        <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/newTestAccount&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">starting_balance</span></font><span class="p">)</span>
+<span class="mi">13</span>        <font class="badlink"><span class="nx">acc_bob</span></font>          <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/newTestAccount&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">starting_balance</span></font><span class="p">)</span>
+<span class="mi">14</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p>Translating code which uses the
+<a href="ref-frontends-js.html" data-pltdoc="x">JavaScript frontend support library</a> to its
+<a href="ref-frontends-rpc-py.html" data-pltdoc="x">Python RPC</a> equivalent is a simple matter of
+specifying the corresponding RPC method (e.g.
+<span class="stt"></span><span class="stt">&rsquo;</span><span class="stt">/stdlib/newTestAccount</span><span class="stt">&rsquo;</span><span class="stt"></span>), and supplying the same arguments thereafter.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara">Now we define two helper functions and use them to query Alice and Bob&rsquo;s
+beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L10-L14"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) =&gt; fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">10</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">fmt</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">formatCurrency</span></font><span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+<span class="mi">11</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">getBalance</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">async</span></font> <span class="p">(</span><font class="badlink"><span class="nx">who</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">balanceOf</span></font><span class="p">(</span><font class="badlink"><span class="nx">who</span></font><span class="p">));</span>
+<span class="mi">12</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">beforeAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">accAlice</span></font><span class="p">);</span>
+<span class="mi">13</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">beforeBob</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">accBob</span></font><span class="p">);</span>
+<span class="mi">14</span>    
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L15-L23"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">15</span>        <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">16</span>            <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/formatCurrency&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">x</span></font><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="mi">17</span>    
+<span class="mi">18</span>        <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">w</span></font><span class="p">)</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">19</span>            <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/balanceOf&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">w</span></font><span class="p">))</span>
+<span class="mi">20</span>    
+<span class="mi">21</span>        <font class="badlink"><span class="nx">before_alice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc_alice</span></font><span class="p">)</span>
+<span class="mi">22</span>        <font class="badlink"><span class="nx">before_bob</span></font>   <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc_bob</span></font><span class="p">)</span>
+<span class="mi">23</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Deploying and attaching to contracts works slightly differently over RPC:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L15-L17"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">15</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">ctcAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">accAlice</span></font><span class="p">.</span><font class="badlink"><span class="nx">deploy</span></font><span class="p">(</span><font class="badlink"><span class="nx">backend</span></font><span class="p">);</span>
+<span class="mi">16</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">ctcBob</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">accBob</span></font><span class="p">.</span><font class="badlink"><span class="nx">attach</span></font><span class="p">(</span><font class="badlink"><span class="nx">backend</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">.</span><font class="badlink"><span class="nx">getInfo</span></font><span class="p">());</span>
+<span class="mi">17</span>    
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L24-L26"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_bob      = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">24</span>        <font class="badlink"><span class="nx">ctc_alice</span></font>    <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/acc/deploy&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">acc_alice</span></font><span class="p">)</span>
+<span class="mi">25</span>        <font class="badlink"><span class="nx">ctc_bob</span></font>      <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/acc/attach&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">acc_bob</span></font><span class="p">,</span> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/ctc/getInfo&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">ctc_alice</span></font><span class="p">))</span>
+<span class="mi">26</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p>As previously mentioned, it is the responsibility of the
+<a href="ref-backends-rpc.html" data-pltdoc="x">Reach RPC Server</a> (rather than that of the <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a>
+communicating over RPC) to interface with the <a href="ref-model.html#%28tech._dapp%29" class="techoutside" data-pltdoc="x"><span class="techinside">DApp</span></a>&rsquo;s <a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a>, so that
+argument is absent in the Python version shown above.
+Instead, Alice&rsquo;s <a href="ref-model.html#%28tech._account%29" class="techoutside" data-pltdoc="x"><span class="techinside">account</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> alone is sufficient for her to
+deploy, and only Bob&rsquo;s <a href="ref-model.html#%28tech._account%29" class="techoutside" data-pltdoc="x"><span class="techinside">account</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> and Alice&rsquo;s
+<a href="ref-model.html#%28tech._contract%29" class="techoutside" data-pltdoc="x"><span class="techinside">contract</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> are necessary for Bob to attach.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><code class="highlight"><span class="n">HAND</span></code> and <code class="highlight"><span class="n">OUTCOME</span></code> only differ syntactically from their JavaScript
+equivalents:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L18-L19"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">18</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">HAND</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Rock&#39;</span><span class="p">,</span> <span class="s1">&#39;Paper&#39;</span><span class="p">,</span> <span class="s1">&#39;Scissors&#39;</span><span class="p">];</span>
+<span class="mi">19</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">OUTCOME</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Bob wins&#39;</span><span class="p">,</span> <span class="s1">&#39;Draw&#39;</span><span class="p">,</span> <span class="s1">&#39;Alice wins&#39;</span><span class="p">];</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L27-L29"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">27</span>        <font class="badlink"><span class="nx">HAND</span></font>         <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Rock&#39;</span><span class="p">,</span> <span class="s1">&#39;Paper&#39;</span><span class="p">,</span> <span class="s1">&#39;Scissors&#39;</span><span class="p">]</span>
+<span class="mi">28</span>        <font class="badlink"><span class="nx">OUTCOME</span></font>      <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Bob wins&#39;</span><span class="p">,</span> <span class="s1">&#39;Draw&#39;</span><span class="p">,</span> <span class="s1">&#39;Alice wins&#39;</span><span class="p">]</span>
+<span class="mi">29</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Even <a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a> definitions remain largely the same:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L20-L32"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const Player = (Who) =&gt; ({
+    ...stdlib.hasRandom,
+    getHand: async () =&gt; { // &lt;-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() &lt;= 0.01 ) {
+        for ( let i = 0; i &lt; 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">20</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">Player</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">Who</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">({</span>
+<span class="mi">21</span>        <span class="p">...</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><a href="ref-programs-compute.html#%28reach._%28%28has.Random%29%29%29" class="nb" data-pltdoc="x">hasRandom</a><span class="p">,</span>
+<span class="mi">22</span>        <font class="badlink"><span class="nx">getHand</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">async</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span> <span class="c1">// &lt;-- async now</span>
+<span class="mi">23</span>          <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">hand</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nb">Math</span></font><span class="p">.</span><font class="badlink"><span class="nx">floor</span></font><span class="p">(</span><font class="badlink"><span class="nb">Math</span></font><span class="p">.</span><font class="badlink"><span class="nx">random</span></font><span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28%2A%29%29%29" class="o" data-pltdoc="x">*</a> <span class="mi">3</span><span class="p">);</span>
+<span class="mi">24</span>          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">Who</span></font><span class="si">}</span><span class="sb"> played </span><span class="si">${</span><font class="badlink"><span class="nx">HAND</span></font><span class="p">[</span><font class="badlink"><span class="nx">hand</span></font><span class="p">]</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">25</span>          <a href="ref-programs-compute.html#%28reach._%28%28if%29%29%29" class="k" data-pltdoc="x">if</a> <span class="p">(</span> <font class="badlink"><span class="nb">Math</span></font><span class="p">.</span><font class="badlink"><span class="nx">random</span></font><span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3c._~3d%29%29%29" class="o" data-pltdoc="x">&lt;=</a> <span class="mf">0.01</span> <span class="p">)</span> <span class="p">{</span>
+<span class="mi">26</span>            <font class="badlink"><span class="k">for</span></font> <span class="p">(</span> <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">i</span></font> <font class="badlink"><span class="o">=</span></font> <span class="mi">0</span><span class="p">;</span> <font class="badlink"><span class="nx">i</span></font> <a href="ref-programs-compute.html#%28reach._%28%28~3c%29%29%29" class="o" data-pltdoc="x">&lt;</a> <span class="mi">10</span><span class="p">;</span> <font class="badlink"><span class="nx">i</span></font><font class="badlink"><span class="o">++</span></font> <span class="p">)</span> <span class="p">{</span>
+<span class="mi">27</span>              <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`  </span><span class="si">${</span><font class="badlink"><span class="nx">Who</span></font><span class="si">}</span><span class="sb"> takes their sweet time sending it back...`</span><span class="p">);</span>
+<span class="mi">28</span>              <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><a href="ref-programs-step.html#%28reach._%28%28wait%29%29%29" class="nx" data-pltdoc="x">wait</a><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="mi">29</span>            <span class="p">}</span>
+<span class="mi">30</span>          <span class="p">}</span>
+<span class="mi">31</span>          <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <font class="badlink"><span class="nx">hand</span></font><span class="p">;</span>
+<span class="mi">32</span>        <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L30-L35"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">30</span>        <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">player</span></font><span class="p">(</span><font class="badlink"><span class="nx">who</span></font><span class="p">)</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">31</span>            <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">getHand</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">32</span>                <font class="badlink"><span class="nx">hand</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">random</span></font><span class="p">.</span><font class="badlink"><span class="nx">randint</span></font><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="mi">33</span>                <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;%s played %s&#39;</span> <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <span class="p">(</span><font class="badlink"><span class="nx">who</span></font><span class="p">,</span> <font class="badlink"><span class="nx">HAND</span></font><span class="p">[</span><font class="badlink"><span class="nx">hand</span></font><span class="p">]))</span>
+<span class="mi">34</span>                <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <font class="badlink"><span class="nx">hand</span></font>
+<span class="mi">35</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p>Here, both the JavaScript and Python <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontends</span></a> begin declaring a
+reusable "player constructor".
+This constructor represents those fields which are common to both Alice and
+Bob&rsquo;s <a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interfaces</span></a>.</p><p>The JavaScript code explicitly includes <code class="highlight"><span class="p">...</span><a href="ref-frontends-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><font class="badlink"><span class="nx">hasRandom</span></font></code> itself, but
+the Python code can instead direct the RPC server to append it to the interface
+by including <code class="highlight"><span class="s1">&#39;stdlib.hasRandom&#39;</span><span class="p">:</span> <font class="badlink"><span class="kc">True</span></font></code> as a field in the constructor&rsquo;s
+<a href="#py-return">return value</a>.</p><p>Next, they each define a <code class="highlight"><span class="n">getHand</span></code> function which randomly selects an
+element from the previously defined <code class="highlight"><span class="n">HAND</span></code> set and returns it to the
+<a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a>.
+This function will be passed as a callable method of the interface later.</p><p>The Python version does not mimic the JavaScript&rsquo;s occasional "pause behavior",
+although it easily could with a few extra lines of code.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><code class="highlight"><span class="n">informTimeout</span></code> requires no subsequent <a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a> interaction and is
+accordingly easily to implement in either language:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L36-L38"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="    informTimeout: () =&gt; {
+      console.log(`${Who} observed a timeout`);
+    },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">36</span>        <font class="badlink"><span class="nx">informTimeout</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
+<span class="mi">37</span>          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">Who</span></font><span class="si">}</span><span class="sb"> observed a timeout`</span><span class="p">);</span>
+<span class="mi">38</span>        <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L36-L38"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def informTimeout():
+            print('%s observed a timeout' % who)
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">36</span>            <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">informTimeout</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">37</span>                <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;%s observed a timeout&#39;</span> <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <font class="badlink"><span class="nx">who</span></font><span class="p">)</span>
+<span class="mi">38</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><a name="py-return"></a><span></span>
+The same is true of <code class="highlight"><span class="n">seeOutcome</span></code>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L33-L35"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="    seeOutcome: (outcome) =&gt; {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">33</span>        <font class="badlink"><span class="nx">seeOutcome</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">outcome</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
+<span class="mi">34</span>          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">Who</span></font><span class="si">}</span><span class="sb"> saw outcome </span><span class="si">${</span><font class="badlink"><span class="nx">OUTCOME</span></font><span class="p">[</span><font class="badlink"><span class="nx">outcome</span></font><span class="p">]</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="mi">35</span>        <span class="p">},</span>
+<span class="p">..</span>    <span class="c1">// ...</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L39-L48"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">39</span>            <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">seeOutcome</span></font><span class="p">(</span><font class="badlink"><span class="nx">n</span></font><span class="p">)</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">40</span>                <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;%s saw outcome %s&#39;</span>
+<span class="mi">41</span>                      <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <span class="p">(</span><font class="badlink"><span class="nx">who</span></font><span class="p">,</span> <font class="badlink"><span class="nx">OUTCOME</span></font><span class="p">[</span><font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/bigNumberToNumber&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">n</span></font><span class="p">)]))</span>
+<span class="mi">42</span>    
+<span class="mi">43</span>            <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <span class="p">{</span><span class="s1">&#39;stdlib.hasRandom&#39;</span><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">True</span></font><span class="p">,</span>
+<span class="mi">44</span>                    <span class="s1">&#39;getHand&#39;</span><font class="badlink"><span class="o">:</span></font>          <font class="badlink"><span class="nx">getHand</span></font><span class="p">,</span>
+<span class="mi">45</span>                    <span class="s1">&#39;informTimeout&#39;</span><font class="badlink"><span class="o">:</span></font>    <font class="badlink"><span class="nx">informTimeout</span></font><span class="p">,</span>
+<span class="mi">46</span>                    <span class="s1">&#39;seeOutcome&#39;</span><font class="badlink"><span class="o">:</span></font>       <font class="badlink"><span class="nx">seeOutcome</span></font><span class="p">,</span>
+<span class="mi">47</span>                    <span class="p">}</span>
+<span class="mi">48</span>    
+<span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+</pre></div></div></p><p>At the end of the Python code we return a <code class="highlight"><font class="badlink"><span class="nb">dict</span></font></code> that represents those
+fields which are common to both Alice and Bob&rsquo;s
+<a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interfaces</span></a>.</p><p>Again, <code class="highlight"><span class="s1">&#39;stdlib.hasRandom&#39;</span><span class="p">:</span> <font class="badlink"><span class="kc">True</span></font></code> has special significance when
+communicating via RPC: it instructs the server to append this signature on the
+receiving end.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Finally, we proceed to the most interesting part of the program and use the
+code we have built up thus far to actually play a game of <span class="emph">Rock, Paper, Scissors!</span>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L41-L60"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  await Promise.all([
+    backend.Alice(ctcAlice, {
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+    }),
+    backend.Bob(ctcBob, {
+      ...Player('Bob'),
+      acceptWager: (amt) =&gt; {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
+<span class="mi">41</span>      <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><a href="ref-programs-compute.html#%28reach._%28%28all%29%29%29" class="nx" data-pltdoc="x">all</a><span class="p">([</span>
+<span class="mi">42</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Alice</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">,</span> <span class="p">{</span>
+<span class="mi">43</span>          <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">),</span>
+<span class="mi">44</span>          <font class="badlink"><span class="nx">wager</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font><span class="p">(</span><span class="mi">5</span><span class="p">),</span>
+<span class="mi">45</span>        <span class="p">}),</span>
+<span class="mi">46</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Bob</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcBob</span></font><span class="p">,</span> <span class="p">{</span>
+<span class="mi">47</span>          <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span>
+<span class="mi">48</span>          <font class="badlink"><span class="nx">acceptWager</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
+<span class="mi">49</span>            <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Bob accepts the wager of </span><span class="si">${</span><font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span><span class="si">}</span><span class="sb">.`</span><span class="p">);</span>
+<span class="mi">50</span>          <span class="p">},</span>
+<span class="mi">51</span>        <span class="p">}),</span>
+<span class="mi">52</span>      <span class="p">]);</span>
+<span class="mi">53</span>    
+<span class="mi">54</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">afterAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">accAlice</span></font><span class="p">);</span>
+<span class="mi">55</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">afterBob</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">accBob</span></font><span class="p">);</span>
+<span class="mi">56</span>    
+<span class="mi">57</span>      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Alice went from </span><span class="si">${</span><font class="badlink"><span class="nx">beforeAlice</span></font><span class="si">}</span><span class="sb"> to </span><span class="si">${</span><font class="badlink"><span class="nx">afterAlice</span></font><span class="si">}</span><span class="sb">.`</span><span class="p">);</span>
+<span class="mi">58</span>      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Bob went from </span><span class="si">${</span><font class="badlink"><span class="nx">beforeBob</span></font><span class="si">}</span><span class="sb"> to </span><span class="si">${</span><font class="badlink"><span class="nx">afterBob</span></font><span class="si">}</span><span class="sb">.`</span><span class="p">);</span>
+<span class="mi">59</span>    
+<span class="mi">60</span>    <span class="p">})();</span>
+</pre></div>
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L49-L84"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice, ctc_bob)
+
+
+if __name__ == '__main__':
+    main()"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
+<span class="mi">49</span>        <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">play_alice</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">50</span>            <font class="badlink"><span class="nx">rpc_callbacks</span></font><span class="p">(</span>
+<span class="mi">51</span>                <span class="s1">&#39;/backend/Alice&#39;</span><span class="p">,</span>
+<span class="mi">52</span>                <font class="badlink"><span class="nx">ctc_alice</span></font><span class="p">,</span>
+<span class="mi">53</span>                <font class="badlink"><span class="nx">dict</span></font><span class="p">(</span><font class="badlink"><span class="nx">wager</span></font><font class="badlink"><span class="o">=</span></font><font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/stdlib/parseCurrency&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <font class="badlink"><span class="o">**</span></font><font class="badlink"><span class="nx">player</span></font><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">)))</span>
+<span class="mi">54</span>    
+<span class="mi">55</span>        <font class="badlink"><span class="nx">alice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">Thread</span></font><span class="p">(</span><font class="badlink"><span class="nx">target</span></font><font class="badlink"><span class="o">=</span></font><font class="badlink"><span class="nx">play_alice</span></font><span class="p">)</span>
+<span class="mi">56</span>        <font class="badlink"><span class="nx">alice</span></font><span class="p">.</span><font class="badlink"><span class="nx">start</span></font><span class="p">()</span>
+<span class="mi">57</span>    
+<span class="mi">58</span>        <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">play_bob</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">59</span>            <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">acceptWager</span></font><span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">60</span>                <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;Bob accepts the wager of %s&#39;</span> <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">))</span>
+<span class="mi">61</span>    
+<span class="mi">62</span>            <font class="badlink"><span class="nx">rpc_callbacks</span></font><span class="p">(</span>
+<span class="mi">63</span>                <span class="s1">&#39;/backend/Bob&#39;</span><span class="p">,</span>
+<span class="mi">64</span>                <font class="badlink"><span class="nx">ctc_bob</span></font><span class="p">,</span>
+<span class="mi">65</span>                <font class="badlink"><span class="nx">dict</span></font><span class="p">(</span><font class="badlink"><span class="nx">acceptWager</span></font><font class="badlink"><span class="o">=</span></font><font class="badlink"><span class="nx">acceptWager</span></font><span class="p">,</span> <font class="badlink"><span class="o">**</span></font><font class="badlink"><span class="nx">player</span></font><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">)))</span>
+<span class="mi">66</span>    
+<span class="mi">67</span>        <font class="badlink"><span class="nx">bob</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">Thread</span></font><span class="p">(</span><font class="badlink"><span class="nx">target</span></font><font class="badlink"><span class="o">=</span></font><font class="badlink"><span class="nx">play_bob</span></font><span class="p">)</span>
+<span class="mi">68</span>        <font class="badlink"><span class="nx">bob</span></font><span class="p">.</span><font class="badlink"><span class="nx">start</span></font><span class="p">()</span>
+<span class="mi">69</span>    
+<span class="mi">70</span>        <font class="badlink"><span class="nx">alice</span></font><span class="p">.</span><font class="badlink"><span class="nx">join</span></font><span class="p">()</span>
+<span class="mi">71</span>        <font class="badlink"><span class="nx">bob</span></font><span class="p">.</span><font class="badlink"><span class="nx">join</span></font><span class="p">()</span>
+<span class="mi">72</span>    
+<span class="mi">73</span>        <font class="badlink"><span class="nx">after_alice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc_alice</span></font><span class="p">)</span>
+<span class="mi">74</span>        <font class="badlink"><span class="nx">after_bob</span></font>   <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc_bob</span></font><span class="p">)</span>
+<span class="mi">75</span>    
+<span class="mi">76</span>        <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;Alice went from %s to %s&#39;</span> <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <span class="p">(</span><font class="badlink"><span class="nx">before_alice</span></font><span class="p">,</span> <font class="badlink"><span class="nx">after_alice</span></font><span class="p">))</span>
+<span class="mi">77</span>        <font class="badlink"><span class="nx">print</span></font><span class="p">(</span><span class="s1">&#39;  Bob went from %s to %s&#39;</span> <a href="ref-programs-compute.html#%28reach._%28%28~25%29%29%29" class="o" data-pltdoc="x">%</a> <span class="p">(</span><font class="badlink"><span class="nx">before_bob</span></font><span class="p">,</span>   <font class="badlink"><span class="nx">after_bob</span></font><span class="p">))</span>
+<span class="mi">78</span>    
+<span class="mi">79</span>        <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/forget/acc&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">acc_alice</span></font><span class="p">,</span> <font class="badlink"><span class="nx">acc_bob</span></font><span class="p">)</span>
+<span class="mi">80</span>        <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/forget/ctc&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">ctc_alice</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctc_bob</span></font><span class="p">)</span>
+<span class="mi">81</span>    
+<span class="mi">82</span>    
+<span class="mi">83</span>    <a href="ref-programs-compute.html#%28reach._%28%28if%29%29%29" class="k" data-pltdoc="x">if</a> <font class="badlink"><span class="nx">__name__</span></font> <a href="ref-programs-compute.html#%28reach._%28%28~3d~3d%29%29%29" class="o" data-pltdoc="x">==</a> <span class="s1">&#39;__main__&#39;</span><font class="badlink"><span class="o">:</span></font>
+<span class="mi">84</span>        <font class="badlink"><span class="nx">main</span></font><span class="p">()</span>
+</pre></div></div></p><p>In the Python version we create a function called <code class="highlight"><span class="n">play_alice</span></code> and spawn
+it as a concurrent thread, which begins running in the background on line 56.</p><p><code class="highlight"><span class="n">play_alice</span></code> sends Alice&rsquo;s <a href="ref-model.html#%28tech._contract%29" class="techoutside" data-pltdoc="x"><span class="techinside">contract</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> and her
+<a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a> to the server with <code class="highlight"><span class="n">rpc_callbacks</span></code>.
+The interface includes methods and values created by <code class="highlight"><span class="n">player</span><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">)</span></code>,
+and adds an additional <code class="highlight"><span class="n">wager</span></code> value which is set to the result of
+<code class="highlight"><span class="n">rpc</span><span class="p">(</span><span class="s1">&#39;/stdlib/parseCurrency&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span></code>.</p><p>Bob&rsquo;s interface is likewise defined and spawned as another thread, which also
+begins running concurrently on line 68.
+In Bob&rsquo;s case we add an <code class="highlight"><span class="n">acceptWager</span></code> method instead of another value to
+his <a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a>.</p><p>Calling <code class="highlight"><font class="badlink"><span class="o">.</span></font><span class="n">join</span><span class="p">()</span></code> on <code class="highlight"><span class="n">alice</span></code> and <code class="highlight"><span class="n">bob</span></code> instructs the main thread
+to wait until both child threads have run to completion, signifying the end of
+the <span class="emph">Rock, Paper, Scissors!</span> game.
+At this point we again collect each player&rsquo;s remaining balance and print them
+to the console.
+Each player&rsquo;s child thread will have already printed their success/failure
+result to the screen prior to reaching this step, because that is how we encoded
+their <code class="highlight"><span class="n">seeOutcome</span></code> methods.</p><p>All that remains is to release Alice and Bob&rsquo;s <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handles</span></a> from the
+server&rsquo;s memory on lines 79 and 80 with the <span class="stt">/forget/acc</span> and
+<span class="stt">/forget/ctc</span> methods, then instruct the Python process&rsquo; interpreter to
+invoke our <code class="highlight"><span class="n">main</span></code> function.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>This tutorial uses Python to demonstrate how RPC <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontends</span></a> are
+built in Reach, but it is similarly easy to write RPC <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontends</span></a> in other
+languages, such as with the <a href="ref-frontends-rpc-js.html" data-pltdoc="x">JavaScript (RPC)</a> and
+<a href="ref-frontends-rpc-go.html" data-pltdoc="x">Go (RPC)</a> libraries.</p><div class="navsetbottom"><span class="navleft"><form class="searchform"><input class="searchbox" id="searchbox" type="text" tabindex="1" placeholder="...search docs..." title="Enter a search string to search the Reach documentation" onkeypress="return reach_DoSearch(event, this);"></form>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tut-10.html" title="backward to &quot;2.10 Onward and Further&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="tut.html" title="up to &quot;2 Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="guide.html" title="forward to &quot;3 Guide&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div></div></div><div id="contextindicator">&nbsp;</div><script src="reach-post.js"></script></body></html>
