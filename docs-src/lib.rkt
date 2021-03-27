@@ -53,6 +53,7 @@
 (define-values (go goin) (make-mints "go"))
 (define-values (yaml _yamlin) (make-mints "yaml"))
 (define-values (makefile _makefilein) (make-mints "makefile"))
+(define-values (shell _shellin) (make-mints "shell"))
 
 (define (make-tt-cat lab)
   (define (tag x) (list lab x))
