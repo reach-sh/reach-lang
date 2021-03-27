@@ -5,8 +5,14 @@
 
 @margin-note{This frontend library relies on the @seclink["ref-backends-rpc"]{Reach RPC Server}.}
 
-A client library for @link["https://www.javascript.com"]{JavaScript} for the @seclink["ref-backends-rpc"]{Reach RPC protocol} is provided by:
+A @link["https://www.javascript.com"]{JavaScript} client library for the
+@seclink["ref-backends-rpc"]{Reach RPC protocol} may be installed by running:
+@shell{
+  $ npm install --save @"@"reach-sh/rpc-client
+}
 
+Once installed, add the following import line to the JavaScript file which will
+connect to the @seclink{ref-backends-rpc}:
 @js{
   import { mkRPC } from '@"@"reach-sh/rpc-client';
 }
@@ -23,8 +29,8 @@ The library provides the following bindings:
 
 @(mint-define! '("rpc"))
 @jsin{rpc} is a function that invokes a @tech{synchronous value RPC method}.
-It takes a string, naming the @tech{RPC method}, and some JSON objects to provide as arguments.
-It returns a Promise of a single JSON object as the result.
+It takes a string, naming the @tech{RPC method}, and some JSON values to provide as arguments.
+It returns a Promise of a single JSON value as the result.
 
 For example,
 
@@ -32,12 +38,12 @@ For example,
   await rpc(`/stdlib/formatCurrency`, i, 4);
 }
 
-calls @jsin{formatCurrency} with some object @jsin{i} and @jsin{4}.
+calls @jsin{formatCurrency} with some value @jsin{i} and @jsin{4}.
 
 @(mint-define! '("rpcCallbacks"))
 @jsin{rpcCallbacks} is a function that invokes an @tech{interactive RPC method}, such as for a @tech{backend}.
-It takes a string, naming the @tech{RPC method}, a JSON object as an argument, and dictionary from strings to JSON objects or @jsin{async} functions.
-The functions will be provided as @tech{interactive RPC callbacks} to the @tech{RPC method} and should expect JSON objects as arguments and return a Promise of a JSON object as a result.
+It takes a string, naming the @tech{RPC method}, a JSON value as an argument, and dictionary from strings to JSON values or @jsin{async} functions.
+The functions will be provided as @tech{interactive RPC callbacks} to the @tech{RPC method} and should expect JSON values as arguments and return a Promise of a JSON value as a result.
 It returns a Promise that does not contain a value.
 
 For example,
