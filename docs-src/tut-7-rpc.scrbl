@@ -1,7 +1,10 @@
 #lang scribble/manual
-@(require "lib.rkt")
+@(require scribble/core
+          scribble/html-properties
+          "lib.rkt")
 
 @title[#:version reach-vers #:tag "tut-7-rpc" #:style 'toc]{Rock, Paper, Scissors in Python}
+@author[(author+email "Matt Audesse" "matt@reach.sh")]
 
 @(define py-impl "tut-7-rpc/client-py/index.py")
 @(define js-impl "tut-7/index.mjs")
@@ -20,7 +23,13 @@ Reach code.
 
 Below we will compare the @secref["tut-7"] JavaScript @tech{frontend} with the
 equivalent Python code communicating via RPC, section by section.
-First come the necessary imports and program body:
+
+First we need to install the library from the command line:
+@shell{
+  $ pip install --upgrade reach-rpc-client
+}
+
+Next, the necessary imports and program body:
 
 @reachex[#:show-lines? #t js-impl #:link #t 'only 1 5  "// ..."]
 @reachex[#:show-lines? #t py-impl #:link #t 'only 1 10  "# ..."]
@@ -29,7 +38,7 @@ Rather than importing @jsin{loadStdlib} and @jsin{backend} as with the
 JavaScript version, the Python frontend instead plucks @pyin{mk_rpc} from its
 supporting @pyin{reach_rpc} library.
 It is unnecessary for an RPC @italic{frontend} to import a @tech{backend}
-because the RPC @italic{server} handles doing so instead.
+because the @seclink{ref-backends-rpc} handles doing so instead.
 
 The Python version also borrows functionality from the @pyin{random} and
 @pyin{threading} libraries.
@@ -40,10 +49,12 @@ On line 9 the Python program binds @pyin{rpc} and @pyin{rpc_callbacks} out of
 @pyin{mk_rpc}.
 These two functions are the only tools we will need to communicate with the
 RPC server.
+See @seclink{ref-frontends-rpc-py} for more details on how they work.
+
 
 @(hrule)
 
-Next we define our Alice and Bob accounts and pre-fund them each with a
+Next, we define our Alice and Bob accounts and pre-fund them each with a
 starting balance of @tt{10}.
 
 @reachex[#:show-lines? #t js-impl #:link #t 'only 6  9  "// ..."]
@@ -69,10 +80,10 @@ Deploying and attaching to contracts works slightly differently over RPC:
 @reachex[#:show-lines? #t js-impl #:link #t 'only 15 17 "// ..."]
 @reachex[#:show-lines? #t py-impl #:link #t 'only 24 26  "# ..."]
 
-As previously mentioned, it is the responsibility of the RPC @italic{server}
-(rather than that of the @tech{frontend} communicating over RPC) to interface
-with the @|DApp|'s @tech{backend}, so that argument is absent in the Python
-version shown above.
+As previously mentioned, it is the responsibility of the
+@seclink{ref-backends-rpc} (rather than that of the @tech{frontend}
+communicating over RPC) to interface with the @|DApp|'s @tech{backend}, so that
+argument is absent in the Python version shown above.
 Instead, Alice's @tech{account} @tech{RPC handle} alone is sufficient for her to
 deploy, and only Bob's @tech{account} @tech{RPC handle} and Alice's
 @tech{contract} @tech{RPC handle} are necessary for Bob to attach.
@@ -100,7 +111,7 @@ Bob's @tech{participant interact interfaces}.
 The JavaScript code explicitly includes @jsin{...stdlib.hasRandom} itself, but
 the Python code can instead direct the RPC server to append it to the interface
 by including @pyin{'stdlib.hasRandom': True} as a field in the constructor's
-return value (see below).
+@link["#py-return"]{return value}.
 
 Next, they each define a @pyin{getHand} function which randomly selects an
 element from the previously defined @pyin{HAND} set and returns it to the
@@ -120,6 +131,7 @@ accordingly easily to implement in either language:
 
 @(hrule)
 
+@(element (make-style #f (list (url-anchor "py-return"))) '())
 The same is true of @pyin{seeOutcome}:
 
 @reachex[#:show-lines? #t js-impl #:link #t 'only 33 35 "// ..."]
@@ -130,7 +142,7 @@ fields which are common to both Alice and Bob's
 @tech{participant interact interfaces}.
 
 Again, @pyin{'stdlib.hasRandom': True} has special significance when
-communicating via RPC; it instructs the server to append this signature on the
+communicating via RPC: it instructs the server to append this signature on the
 receiving end.
 
 @(hrule)
@@ -169,7 +181,9 @@ server's memory on lines 79 and 80 with the @tt{/forget/acc} and
 @tt{/forget/ctc} methods, then instruct the Python process' interpreter to
 invoke our @pyin{main} function.
 
-@italic{This tutorial uses Python to demonstrate how RPC @tech{frontends} are
+@(hrule)
+
+This tutorial uses Python to demonstrate how RPC @tech{frontends} are
 built in Reach, but it is similarly easy to write RPC @tech{frontends} in other
 languages, such as with the @seclink{ref-frontends-rpc-js} and
-@seclink{ref-frontends-rpc-go} libraries.}
+@seclink{ref-frontends-rpc-go} libraries.
