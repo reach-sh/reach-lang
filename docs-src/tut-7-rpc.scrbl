@@ -24,8 +24,8 @@ Reach code.
 Below we will compare the @secref["tut-7"] JavaScript @tech{frontend} with the
 equivalent Python code communicating via RPC, section by section.
 
-First we need to install the library from the command line:
-@shell{
+First, we need to install the library from the command line:
+@cmd{
   $ pip install --upgrade reach-rpc-client
 }
 

@@ -7,7 +7,7 @@
 
 A @link["https://www.python.org"]{Python} client library for the
 @seclink["ref-backends-rpc"]{Reach RPC protocol} may be installed by running:
-@shell{
+@cmd{
   $ pip install --upgrade reach-rpc-client
 }
 
