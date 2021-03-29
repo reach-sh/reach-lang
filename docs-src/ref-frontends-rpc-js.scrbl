@@ -8,7 +8,7 @@
 A @link["https://www.javascript.com"]{JavaScript} client library for the
 @seclink["ref-backends-rpc"]{Reach RPC protocol} may be installed by running:
 @cmd{
-  $ npm install --save @"@"reach-sh/rpc-client
+  npm install --save @"@"reach-sh/rpc-client
 }
 
 Once installed, add the following import line to your JavaScript file which will

@@ -26,7 +26,7 @@ equivalent Python code communicating via RPC, section by section.
 
 First, we need to install the library from the command line:
 @cmd{
-  $ pip install --upgrade reach-rpc-client
+  pip install --upgrade reach-rpc-client
 }
 
 Next, the necessary imports and program body:

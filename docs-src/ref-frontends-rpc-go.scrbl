@@ -8,7 +8,7 @@
 A @link["https://golang.org"]{Go} client library for the
 @seclink["ref-backends-rpc"]{Reach RPC protocol} may be installed by running:
 @cmd{
-  $ go get github.com/reach-sh/reach-lang/rpc-client/go
+  go get github.com/reach-sh/reach-lang/rpc-client/go
 }
 
 Once installed, add the following import line to your Go file which will connect
