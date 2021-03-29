@@ -26,7 +26,10 @@ func please(a interface{}, err error) interface{} {
   return a
 }
 
-func Mk(mopts ...map[string]string) (func(string, ...interface{}) interface{}, func(string, string, map[string]interface{})) {
+type sigRpc          = func(string, ...interface{}) interface{}
+type sigRpcCallbacks = func(string, string, map[string]interface{})
+
+func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
   opts := map[string]string {}
   if len(mopts) > 0 {
     opts = mopts[0]
