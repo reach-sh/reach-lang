@@ -1356,13 +1356,13 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   void(ctcInfo);
   void(backend);
 
+  // Indexer:
   // XXX verify contract was deployed at creationRound
-  // XXX verify something about ApplicationId
 
-  // XXX (above) attach creator info to ContractInfo
+  // /v2/application/{ApplicationId}
   // XXX verify creator was the one that deployed the contract
-
   // XXX verify deployed contract code matches backend
+  // XXX check schema
 
   // (after deployMode:firstMsg is implemented)
   // XXX (above) attach initial args to ContractInfo

@@ -63,7 +63,7 @@ instance Subst DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> subst fa
-    DLE_Remote at fs av m amta as -> DLE_Remote at fs <$> subst av <*> pure m <*> subst amta <*> subst as
+    DLE_Remote at rng rfm fs av m amta as -> DLE_Remote at rng rfm fs <$> subst av <*> pure m <*> subst amta <*> subst as
 
 instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
   subst = \case

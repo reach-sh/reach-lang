@@ -323,7 +323,7 @@ instance DepthOf DLExpr where
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> depthOf [x, y]
     DLE_MapDel _ _ x -> depthOf x
-    DLE_Remote _ _ av _ amta as -> add1 $ depthOf $ av : amta : as
+    DLE_Remote _ _ _ _ av _ amta as -> add1 $ depthOf $ av : amta : as
     where
       add1 m = (+) 1 <$> m
 
@@ -576,7 +576,7 @@ solType_withArgLoc t =
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f amta as) -> do
+  DL_Let _ pv (DLE_Remote at _ _ fs av f amta as) -> do
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as

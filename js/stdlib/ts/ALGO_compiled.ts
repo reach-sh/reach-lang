@@ -273,10 +273,23 @@ export const typeDefs = {
   T_Struct
 };
 
+const remoteApply = (ctc: any, addr: CBR_Address, method: string, pay: CBR_UInt, args: Array<any>, dom: any, rng: any, fs: any): Promise<any> => {
+  void ctc;
+  void addr;
+  void method;
+  void pay;
+  void args;
+  void dom;
+  void rng;
+  void fs;
+  throw Error(`Algorand does not support remoteApply`);
+};
+
 export const stdlib = {
   ...shared,
   ...typeDefs,
   addressEq,
   digest,
   UInt_max,
+  remoteApply,
 };

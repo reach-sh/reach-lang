@@ -2124,7 +2124,7 @@ evalPrim p sargs =
       at <- withAt id
       return $ (lvl, SLV_Bool at True)
     SLPrim_remote -> do
-      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
+      ensure_modes remote_modes "remote"
       (av, ri) <- two_args
       aa <- compileCheckType T_Address av
       rm_ <- mustBeObject_ ri
@@ -2138,19 +2138,20 @@ evalPrim p sargs =
       om <- mapWithKeyM go rm
       return $ (lvl, SLV_Object at Nothing om)
     SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) -> do
-      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote pay"
+      ensure_modes remote_modes "remote pay"
       payv <- one_arg
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing)
     SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) -> do
-      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
+      ensure_modes remote_modes "remote bill"
       billv <- one_arg
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Just billv) Nothing)
     SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
-      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
+      ensure_modes remote_modes "remote withBill"
       zero_args
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just Nothing) Nothing)
     SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
-      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
+      ensure_modes remote_modes "remote"
+      this_mode <- readSt st_mode
       at <- withAt id
       let zero = SLV_Int at 0
       let amtv = fromMaybe zero mpay
@@ -2158,12 +2159,24 @@ evalPrim p sargs =
       doAssertBalance amtv PLE
       doBalanceUpdate SUB amtv
       let SLTypeFun dom rng pre post = stf
+      drng <- st2dte rng
       let rng' = ST_Tuple [ ST_UInt, rng ]
       let post' = flip fmap post $ \postv ->
                     jsClo at "post" "(dom, [_, rng]) => post(dom, rng)" $
                       M.fromList [ ("post", postv) ]
       let stf' = SLTypeFun dom rng' pre post'
-      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
+      let bad = impossible $ "remotef"
+      let good_local = (SLM_LocalStep, RF_Local)
+      let good_con = (SLM_ConsensusStep, RF_Consensus)
+      let (call_mode, call_tag) =
+            case this_mode of
+              SLM_Module -> bad
+              SLM_Step -> bad
+              SLM_LocalStep -> good_local
+              SLM_LocalPure -> good_local
+              SLM_ConsensusStep -> good_con
+              SLM_ConsensusPure -> good_con
+      res' <- doInteractiveCall sargs rat stf' call_mode "remote" (CT_Assume True) (\_ fs _drng' dargs -> DLE_Remote at drng call_tag fs aa m amta dargs)
       apdvv <- doArrRef_ res' zero
       doBalanceUpdate ADD apdvv
       res <- doArrRef_ res' $ SLV_Int at 1

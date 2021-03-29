@@ -446,7 +446,7 @@ dlvOccurs env bindings de =
     DLE_MapRef at _ fa -> _rec at fa
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
-    DLE_Remote at _ av _ amta as -> _recs at $ av : amta : as
+    DLE_Remote at _ _ _ av _ amta as -> _recs at $ av : amta : as
   where
     _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
@@ -487,7 +487,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
   DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
   DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
-  DLE_Remote _ _ av f amta as -> "remote(" <> show av <> ")." <> f <> ".pay" <> paren (sub amta) <> args as
+  DLE_Remote _ _ rfm _ av f amta as -> "remote(" <> show av <> ", " <> show rfm <> ")." <> f <> ".pay" <> paren (sub amta) <> args as
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -1044,7 +1044,7 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Just na
     DLE_MapDel at mpv fa ->
       smtMapUpdate at mpv fa $ Nothing
-    DLE_Remote at _ _ _ _ _ ->
+    DLE_Remote at _ _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
   where
     bo = O_Expr de

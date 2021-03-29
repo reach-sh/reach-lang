@@ -328,6 +328,16 @@ instance IsPure a => IsPure (Seq.Seq a) where
 instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
+data RFMode
+  = RF_Local
+  | RF_Consensus
+  deriving (Eq, Ord, Generic, Show)
+
+instance Pretty RFMode where
+  pretty = \case
+    RF_Local -> "local"
+    RF_Consensus -> "consensus"
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -348,7 +358,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLArg [DLArg]
+  | DLE_Remote SrcLoc DLType RFMode [SLCtxtFrame] DLArg String DLArg [DLArg]
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -378,7 +388,7 @@ instance Pretty DLExpr where
       DLE_MapSet _ mv kv nv ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
       DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
-      DLE_Remote _ _ av m amta as -> "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <> parens (render_das as)
+      DLE_Remote _ _ rfm _ av m amta as -> "remote(" <> pretty rfm <> "," <+> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <> parens (render_das as)
 
 instance IsPure DLExpr where
   isPure = \case
