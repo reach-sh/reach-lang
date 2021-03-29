@@ -259,16 +259,16 @@ data DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
 
 data DLinExportVal a
-  = DLEV_Arg DLArg
-  | DLEV_LArg DLLargeArg
-  | DLEV_Fun [DLVar] a
+  = DLEV_Arg SrcLoc DLArg
+  | DLEV_LArg SrcLoc DLLargeArg
+  | DLEV_Fun SrcLoc [DLVar] a
   deriving (Eq)
 
 instance Pretty a => Pretty (DLinExportVal a) where
   pretty = \case
-    DLEV_Fun args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
-    DLEV_Arg a -> pretty a
-    DLEV_LArg a -> pretty a
+    DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
+    DLEV_Arg _ a -> pretty a
+    DLEV_LArg _ a -> pretty a
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case

@@ -119,13 +119,13 @@ ac_top x = do
 
 ac_ev :: DLinExportVal PILBlock -> IO (DLinExportVal PLBlock)
 ac_ev = \case
-  DLEV_Arg a  -> return $ DLEV_Arg a
-  DLEV_LArg a -> return $ DLEV_LArg a
-  DLEV_Fun a b -> do
+  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_LArg at a -> return $ DLEV_LArg at a
+  DLEV_Fun at a b -> do
     e_cs <- newIORef $ mempty
     flip runReaderT (Env {..}) $ do
       ac_visit a
-      DLEV_Fun a <$> ac_bl b
+      DLEV_Fun at a <$> ac_bl b
 
 add_counts :: PIProg -> IO PLProg
 add_counts (PLProg at plo dli dex _epps cp) = do

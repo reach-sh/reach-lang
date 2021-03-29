@@ -69,6 +69,9 @@ instance CollectsTypes DLVar where
 instance CollectsTypes DLArg where
   cts a = cts (argTypeOf a)
 
+instance CollectsTypes DLLargeArg where
+  cts a = cts (largeArgTypeOf a)
+
 instance CollectsTypes DLExpr where
   cts (DLE_Arg _ a) = cts a
   cts (DLE_LArg _ la) = cts $ largeArgTypeOf la
@@ -118,6 +121,12 @@ instance CollectsTypes a => CollectsTypes (DLinTail a) where
 instance CollectsTypes a => CollectsTypes (DLinBlock a) where
   cts (DLinBlock _ _ k a) = cts k <> cts a
 
+instance CollectsTypes (DLinExportVal LLBlock) where
+  cts = \case
+    DLEV_Arg _ a  -> cts a
+    DLEV_LArg _ a -> cts a
+    DLEV_Fun _ a b  -> cts a <> cts b
+
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
@@ -134,7 +143,7 @@ instance CollectsTypes LLStep where
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli _ s) = cts ps <> cts dli <> cts s
+  cts (LLProg _ _ ps dli dex s) = cts ps <> cts dli <> cts dex <> cts s
 
 instance CollectsTypes PLVar where
   cts (PV_Eff) = mempty

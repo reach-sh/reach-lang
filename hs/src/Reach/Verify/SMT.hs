@@ -121,6 +121,7 @@ data BindingOrigin
   | O_Assignment
   | O_SwitchCase SLVar
   | O_ReduceVar
+  | O_Export
   deriving (Eq)
 
 instance Show BindingOrigin where
@@ -141,6 +142,7 @@ instance Show BindingOrigin where
       O_Assignment -> "loop variable"
       O_SwitchCase vn -> "switch case " <> vn
       O_ReduceVar -> "map reduction"
+      O_Export -> "export"
     where
       sp :: Pretty a => a -> String
       sp = show . pretty
@@ -1429,6 +1431,14 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
+smt_export :: DLinExportVal LLBlock -> App SExpr
+smt_export = \case
+  DLEV_Arg at a  -> smt_a at a
+  DLEV_LArg at a -> smt_la at a
+  DLEV_Fun at args body -> do
+    forM_ args $ flip (pathAddUnbound at) O_Export . Just
+    smt_block body
+
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
   let mcs = case mc of
@@ -1444,7 +1454,7 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) _ s = lp
+  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) dex s = lp
   let initMapInfo (DLMapInfo {..}) = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = maybeT dlmi_ty
@@ -1484,7 +1494,8 @@ _verify_smt mc ctxt_vst smt lp = do
     mapM_ definePIE $ M.toList pies_m
     let smt_s_top mode = do
           liftIO $ putStrLn $ "  Verifying when " <> show (pretty mode)
-          local (\e -> e {ctxt_modem = Just mode}) $
+          local (\e -> e {ctxt_modem = Just mode}) $ do
+            forM_ dex $ ctxtNewScope . freshAddrs . smt_export
             ctxtNewScope $ freshAddrs $ smt_s s
     let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
     mapM_ smt_s_top ms

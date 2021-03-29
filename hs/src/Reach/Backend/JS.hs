@@ -710,9 +710,9 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
 
 jsExportValue :: DLinExportVal PILBlock -> App Doc
 jsExportValue = \case
-  DLEV_Arg a  -> jsArg a
-  DLEV_LArg a -> jsLargeArg a
-  DLEV_Fun args b -> do
+  DLEV_Arg _ a  -> jsArg a
+  DLEV_LArg _ a -> jsLargeArg a
+  DLEV_Fun _ args b -> do
     (tl, ret) <- jsBlock b
     (argDefs, tmps) <-
       unzip <$> mapM (\ arg -> do

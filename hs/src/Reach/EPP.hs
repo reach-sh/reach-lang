@@ -562,11 +562,11 @@ be_s = \case
 
 mkexports :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
 mkexports = \case
-  DLEV_Fun args (DLinBlock at sf ll a) -> do
-    let body' = dtReplace DT_Com (DT_Return at) ll
-    return $ DLEV_Fun args (DLinBlock at sf body' a)
-  DLEV_Arg a  -> return $ DLEV_Arg a
-  DLEV_LArg a -> return $ DLEV_LArg a
+  DLEV_Fun at args (DLinBlock bat sf ll a) -> do
+    let body' = dtReplace DT_Com (DT_Return bat) ll
+    return $ DLEV_Fun at args (DLinBlock bat sf body' a)
+  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 epp :: LLProg -> IO PIProg
 epp (LLProg at (LLOpts {..}) ps dli dex s) = do

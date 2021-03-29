@@ -166,10 +166,10 @@ instance Erase LLStep where
 
 instance Erase (DLinExportVal LLBlock) where
   el = \case
-    DLEV_Fun args body ->
-      DLEV_Fun <$> mapM el args <*> el body
-    DLEV_Arg a  -> return $ DLEV_Arg a
-    DLEV_LArg a -> return $ DLEV_LArg a
+    DLEV_Fun at args body ->
+      DLEV_Fun at <$> mapM el args <*> el body
+    DLEV_Arg at a  -> return $ DLEV_Arg at a
+    DLEV_LArg at a -> return $ DLEV_LArg at a
 
 instance Erase LLExports where
   el dex = mapM el dex

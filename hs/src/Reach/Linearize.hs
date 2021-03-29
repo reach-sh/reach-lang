@@ -156,16 +156,16 @@ runDk = do
   let eRets = mempty
   flip runReaderT (DKEnv {..})
 
-dk_export :: SrcLoc -> DLExportVal -> IO (DLinExportVal DKBlock)
-dk_export at = \case
-  DLEV_Fun args body ->
-    runDk $ DLEV_Fun args <$> dk_block at body
-  DLEV_Arg a  -> return $ DLEV_Arg a
-  DLEV_LArg a -> return $ DLEV_LArg a
+dk_export :: DLExportVal -> IO (DLinExportVal DKBlock)
+dk_export = \case
+  DLEV_Fun at args body ->
+    runDk $ DLEV_Fun at args <$> dk_block at body
+  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex ss) = do
-  dex' <- mapM (dk_export at) dex
+  dex' <- mapM dk_export dex
   runDk $ DKProg at opts sps dli dex' <$> dk_ at ss
 
 -- Lift common things to the previous consensus
@@ -246,6 +246,19 @@ instance LiftCon z => LiftCon (b, c, d, e, z) where
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
 
+instance LiftCon a => LiftCon (DLinExportVal a) where
+  lc = \case
+    DLEV_Fun at a b -> DLEV_Fun at a <$> lc b
+    DLEV_Arg at a -> return $ DLEV_Arg at a
+    DLEV_LArg at a -> return $ DLEV_LArg at a
+
+instance LiftCon DKBlock where
+  lc (DKBlock at sf b a) =
+    DKBlock at sf <$> lc b <*> pure a
+
+instance LiftCon DKExports where
+  lc = mapM lc
+
 instance LiftCon DKTail where
   lc = \case
     DK_Com m k -> doLift m (lc k)
@@ -265,7 +278,7 @@ liftcon :: DKProg -> IO DKProg
 liftcon (DKProg at opts sps dli dex k) = do
   let eLifts = Nothing
   flip runReaderT (LCEnv {..}) $
-    DKProg at opts sps dli dex <$> lc k
+    DKProg at opts sps dli <$> lc dex <*> lc k
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -428,9 +441,9 @@ df_step = \case
 
 df_export :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
 df_export = \case
-  DLEV_Fun args body -> DLEV_Fun args <$> df_bl body
-  DLEV_Arg a -> return $ DLEV_Arg a
-  DLEV_LArg a -> return $ DLEV_LArg a
+  DLEV_Fun at args body -> DLEV_Fun at args <$> df_bl body
+  DLEV_Arg at a -> return $ DLEV_Arg at a
+  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex k) = do

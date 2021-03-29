@@ -149,9 +149,9 @@ instance Unroll LLBlock where
 
 instance Unroll (DLinExportVal LLBlock) where
   ul = \case
-    DLEV_Fun a b -> DLEV_Fun a <$> ul b
-    DLEV_Arg a   -> return $ DLEV_Arg a
-    DLEV_LArg a  -> return $ DLEV_LArg a
+    DLEV_Fun at a b -> DLEV_Fun at a <$> ul b
+    DLEV_Arg at a   -> return $ DLEV_Arg at a
+    DLEV_LArg at a  -> return $ DLEV_LArg at a
 
 instance Unroll LLConsensus where
   ul = \case
