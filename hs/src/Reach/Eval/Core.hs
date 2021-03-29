@@ -535,8 +535,8 @@ getExportValArg :: DLExportVal -> Maybe DLArg
 getExportValArg (DLEV_Arg _ a) = Just a
 getExportValArg _ = Nothing
 
-expectDLVar :: DLArg -> DLVar
-expectDLVar (DLA_Var dv) = dv
+expectDLVar :: SLVal -> DLVar
+expectDLVar (SLV_DLVar dv) = dv
 expectDLVar _ = impossible "expectDLVar"
 
 slToDLExportVal :: SLVal -> App (Maybe DLExportVal)
@@ -575,9 +575,8 @@ slToDLExportVal = \case
       zipEq (Err_Apply_ArgCount at) (stf_dom tf) args >>=
         mapM (\ (ty, _) -> public . SLV_DLVar
           <$> (ctxt_mkvar . DLVar at Nothing =<< st2dte ty))
-    (_, dargs) <- assertRefinedArgs sargs at tf SLM_Module "export"
-    block <- evalPureClosureToBlock sc sargs =<< st2dte (stf_rng tf)
-    yes $ DLEV_Fun at (map expectDLVar dargs) block
+    block <- evalPureClosureToBlock sc sargs (Just tf) =<< st2dte (stf_rng tf)
+    yes $ DLEV_Fun at (map (expectDLVar . snd) sargs) block
   SLV_Clo {} -> no
   SLV_Type _ -> no
   SLV_Connector _ -> no
@@ -2310,7 +2309,9 @@ evalPrim p sargs =
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
-  (dom_tupv, dargs) <- assertRefinedArgs sargs iat (SLTypeFun {..}) mode lab
+  ensure_mode mode lab
+  (dom_tupv, arges) <- assertRefinedArgs sargs iat (SLTypeFun {..})
+  dargs <- compileArgExprs arges
   fs <- e_stack <$> ask
   rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
     mkexpr iat fs drng dargs
@@ -2318,9 +2319,8 @@ doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
     applyRefinement ct rngp [dom_tupv, rng_v]
   return rng_v
 
-assertRefinedArgs :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> App (SLVal, [DLArg])
-assertRefinedArgs sargs iat SLTypeFun {..} mode lab = do
-  ensure_mode mode lab
+assertRefinedArgs :: [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
+assertRefinedArgs sargs iat SLTypeFun {..} = do
   let argvs = map snd sargs
   arges <-
     mapM (uncurry typeCheck_s)
@@ -2329,8 +2329,7 @@ assertRefinedArgs sargs iat SLTypeFun {..} mode lab = do
   let dom_tupv = SLV_Tuple at argvs
   forM_ stf_pre $ \domp ->
     applyRefinement CT_Assert domp [dom_tupv]
-  dargs <- compileArgExprs arges
-  return (dom_tupv, dargs)
+  return (dom_tupv, arges)
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do
@@ -2438,7 +2437,12 @@ evalApplyVals rator randvs =
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
     SLV_Clo clo_at sc -> evalApplyClosureVals clo_at sc randvs
-    SLV_CloTyped clo_at sc _ -> evalApplyClosureVals clo_at sc randvs
+    SLV_CloTyped clo_at sc tf -> do
+      at <- withAt id
+      let isDLVar = \case { SLV_DLVar _ -> True; _ -> False } . snd
+      unless (all isDLVar randvs) $
+        void $ assertRefinedArgs randvs at tf
+      evalApplyClosureVals clo_at sc randvs
     v -> expect_t v $ Err_Eval_NotApplicableVals
 
 evalApply :: SLVal -> [JSExpression] -> App SLSVal
@@ -3591,10 +3595,11 @@ evalModeToBlock mode rest e = do
         compileCheckType rest . snd =<< e
   return $ DLBlock at fs e_lifts e_da
 
-evalPureClosureToBlock :: SLClo -> [SLSVal] -> DLType -> App DLBlock
-evalPureClosureToBlock clo sargs rest = do
+evalPureClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLBlock
+evalPureClosureToBlock clo sargs mtf rest = do
   at <- withAt id
-  evalModeToBlock SLM_Module rest $ evalApplyVals' (SLV_Clo at clo) sargs
+  let sv = maybe (SLV_Clo at clo) (SLV_CloTyped at clo) mtf
+  evalModeToBlock SLM_Module rest $ evalApplyVals' sv sargs
 
 evalPureExprToBlock :: JSExpression -> DLType -> App DLBlock
 evalPureExprToBlock e rest = do

@@ -731,7 +731,7 @@ jsExports exports = do
   local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
     exportProps <- mapM (\ (k, v) -> do
           vs <- jsExportValue v
-          return $ "    " <> pretty k <> " : " <> vs <> ",\n") $ M.toList exports
+          return $ hardline <> "    " <> pretty k <> " : " <> vs <> ",") $ M.toList exports
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let body =
