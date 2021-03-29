@@ -55,7 +55,4 @@ pure_mode (SLM_LocalStep) = SLM_LocalPure
 pure_mode (SLM_ConsensusStep) = SLM_ConsensusPure
 pure_mode ow = ow
 
-remote_modes :: [SLMode]
-remote_modes = [SLM_ConsensusStep, SLM_ConsensusPure, SLM_LocalStep, SLM_LocalPure]
-
 type SLPartDVars = M.Map SLPart DLVar

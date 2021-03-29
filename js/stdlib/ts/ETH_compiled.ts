@@ -365,17 +365,10 @@ export const typeDefs = {
 
 export const addressEq = shared.mkAddressEq(T_Address);
 
-const remoteApply = (ctc: any, addr: CBR_Address, method: string, pay: CBR_UInt, args: Array<any>, dom: any, rng: any, fs: any): Promise<any> => {
-  const rctc = new ethers.Contract(addr, abi, acc);
-  const res = await rctc[method]( ...args_m, { value: pay });
-  return [ bill, res ];
-};
-
 export const stdlib = {
   ...shared,
   ...typeDefs,
   addressEq,
   digest,
   UInt_max,
-  remoteApply,
 };

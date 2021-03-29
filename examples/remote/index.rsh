@@ -7,24 +7,18 @@ const PosnT = Tuple(UInt, UInt);
 
 const CoolThing = {
   setX: Refine(Fun([Posn], Null), (([p]) => p.x > 2), ((_, _) => true)),
-  getX: Fun([], Refine(Posn, (p => p.x > 2))),
-  getXv: Fun([], Posn),
-  incY: Fun([], Null),
-};
-
-const Common = {
-  seeXv: Fun([Posn], Null),
+  getX: Fun([], Struct([ ["x", Refine(UInt, (x => x > 2))],
+                         ["y", UInt],
+        ])),
 };
 
 export const main = Reach.App(
   {},
   [ Participant('Alice', {
-      ...Common,
       getAddr: Fun([], Address),
       getCT: Fun([], Tuple(UInt, Address)),
     }),
     Participant('Bob', {
-      ...Common,
       getX: Fun([], UInt),
       see: Fun([UInt, UInt, UInt, UInt, UInt, Posn, PosnT, PosnO],
                Null),
@@ -33,8 +27,6 @@ export const main = Reach.App(
   (A, B) => {
     A.only(() => {
       const ctxa = declassify(interact.getAddr());
-      const cta = remote(ctxa, CoolThing);
-      cta.incY();
       const [amt, ctya] = declassify(interact.getCT()); });
     A.publish(ctxa, amt, ctya).pay(amt);
     const ctx = remote(ctxa, CoolThing);
@@ -43,8 +35,6 @@ export const main = Reach.App(
 
     B.only(() => {
       const bx = declassify(interact.getX());
-      interact.seeXv(ctx.getXv());
-      ctx.incY.pay(amt)();
       assume(bx > 2); });
     B.publish(bx);
     require(bx > 2);
@@ -60,8 +50,6 @@ export const main = Reach.App(
     transfer(amtr).to(A);
     commit();
 
-    A.only(() => {
-      interact.seeXv(cty.getXv()); });
     B.only(() => {
       interact.see(r0.x, r0.y, r1[0], r1[1], amtr,
         r0, Struct.toTuple(r1), Posn.toObject(r2)); });

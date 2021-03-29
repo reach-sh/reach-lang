@@ -216,7 +216,7 @@ kgq_e ctxt mv = \case
   DLE_MapSet _ mpv _ va ->
     knows ctxt (P_Map mpv) $ all_points va
   DLE_MapDel {} -> mempty
-  DLE_Remote _ _ _ _ av _ amta as ->
+  DLE_Remote _ _ av _ amta as ->
     kgq_la ctxt mv $ DLLA_Tuple $ av : amta : as
 
 kgq_m :: KCtxt -> LLCommon -> IO ()

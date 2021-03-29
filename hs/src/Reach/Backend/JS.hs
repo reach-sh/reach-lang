@@ -344,14 +344,6 @@ jsExpr = \case
   DLE_MapDel _ mpv fa -> do
     fa' <- jsArg fa
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
-  DLE_Remote at rng RF_Local fs av m amta as -> do
-    fs' <- jsAssertInfo at fs Nothing
-    av' <- jsArg av
-    amta' <- jsArg amta
-    as' <- jsArray <$> mapM jsArg as
-    dom' <- jsArray <$> mapM (jsContract . argTypeOf) as
-    rng' <- jsContract rng
-    return $ "await" <+> jsApply "stdlib.remoteApply" [ "ctc", av', jsString m, amta', as', dom', rng', fs' ]
   DLE_Remote {} ->
     impossible "jsExpr remote"
 
@@ -373,7 +365,7 @@ jsEmitSwitch iter _at ov csm = do
 jsCom :: AppT PILCommon
 jsCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote _ _ RF_Consensus _ _ _ _ _) ->
+  DL_Let _ pv (DLE_Remote {}) ->
     case pv of
       Nothing -> mempty
       Just dv -> do
