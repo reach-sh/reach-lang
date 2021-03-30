@@ -480,91 +480,67 @@ typeMeets_d = \case
   xt : more -> typeMeet_d xt =<< typeMeets_d more
 
 slToDL :: SLVal -> App (Maybe DLArgExpr)
-slToDL = \case
-  SLV_Null _ _ -> yes $ DLAE_Arg $ DLA_Literal $ DLL_Null
-  SLV_Bool _ b -> yes $ DLAE_Arg $ DLA_Literal $ DLL_Bool b
-  SLV_Int at i -> yes $ DLAE_Arg $ DLA_Literal $ DLL_Int at i
-  SLV_Bytes _ bs -> yes $ DLAE_Arg $ DLA_Literal $ DLL_Bytes bs
-  SLV_Array _ dt vs -> do
-    mds <- all_just <$> mapM slToDL vs
-    return $ DLAE_Array dt <$> mds
-  SLV_Tuple _ vs -> do
-    mds <- all_just <$> mapM slToDL vs
-    return $ DLAE_Tuple <$> mds
-  SLV_Object _ _ fenv -> do
-    let f :: (SLVar, SLSSVal) -> App (Maybe (SLVar, DLArgExpr))
-        f (x, y) = do
-          y' <- slToDL $ sss_val y
-          return $ (,) x <$> y'
-    denvl <- all_just <$> (mapM f $ M.toList fenv)
-    return $ DLAE_Obj . M.fromList <$> denvl
-  SLV_Struct _ vs -> do
-    let go (k, v) = do
-          v' <- slToDL v
-          return $ (,) k <$> v'
-    mds <- all_just <$> mapM go vs
-    return $ DLAE_Struct <$> mds
-  SLV_Clo {} -> no
-  SLV_CloTyped {} -> no
-  SLV_Data _ dt vn sv -> do
-    msv <- slToDL sv
-    return $ DLAE_Data dt vn <$> msv
-  SLV_DLC c -> yes $ DLAE_Arg $ DLA_Constant c
-  SLV_DLVar dv -> yes $ DLAE_Arg $ DLA_Var dv
-  SLV_Type _ -> no
-  SLV_Connector _ -> no
-  SLV_Participant _ who _ mdv -> do
-    pdvs <- readSt st_pdvs
-    case (M.lookup who pdvs) <|> mdv of
-      Just dv -> yes $ DLAE_Arg $ DLA_Var dv
-      Nothing -> no
-  SLV_RaceParticipant {} -> no
-  SLV_Anybody -> no
-  SLV_Prim {} -> no
-  SLV_Form {} -> no
-  SLV_Kwd {} -> no
-  SLV_MapCtor {} -> no
-  SLV_Map {} -> no
-  SLV_ParticipantConstructor {} -> no
-  SLV_Deprecated {} -> no
-  where
-    yes = return . Just
-    no = return Nothing
+slToDL v = slToDLV v <&> maybe Nothing dlvToDL
 
-getExportValArg :: DLExportVal -> Maybe DLArg
-getExportValArg (DLEV_Arg _ a) = Just a
-getExportValArg _ = Nothing
+dlvToDL :: DLValue -> Maybe DLArgExpr
+dlvToDL = \case
+  DLV_Arg _ a  -> return $ DLAE_Arg a
+  DLV_Array _ dt mdvs -> DLAE_Array dt <$> all_just (map rec mdvs)
+  DLV_Tuple _ mdvs -> DLAE_Tuple <$> all_just (map rec mdvs)
+  DLV_Obj _ menv -> DLAE_Obj . M.fromList <$> all_just (map recAssoc $ M.toList menv)
+  DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
+  DLV_Data _ t s mdv -> DLAE_Data t s <$> rec mdv
+  _ -> Nothing
+  where
+    rec  = maybe Nothing dlvToDL
+    recAssoc (k, v) = (,) k <$> rec v
+
+slToDLExportVal :: SLVal -> App (Maybe DLExportVal)
+slToDLExportVal v = slToDLV v <&> maybe Nothing dlvToEV
+
+dlvToEV :: DLValue -> Maybe DLExportVal
+dlvToEV = \case
+  DLV_Arg at a  -> return $ DLEV_Arg at a
+  DLV_Fun at args b -> return $ DLEV_Fun at args b
+  DLV_Array at dt mdvs -> return $ DLEV_LArg at $ DLLA_Array dt (recs mdvs)
+  DLV_Tuple at mdvs -> return $ DLEV_LArg at $ DLLA_Tuple (recs mdvs)
+  DLV_Obj at menv ->
+    return $ DLEV_LArg at $ DLLA_Obj $ M.fromList $ mapMaybe recAssoc $ M.toList menv
+  DLV_Data at t s mdv -> DLEV_LArg at . DLLA_Data t s <$> rec mdv
+  DLV_Struct at mdvs -> return $ DLEV_LArg at $ DLLA_Struct $ mapMaybe recAssoc mdvs
+  where
+    rec = maybe Nothing getDLVArg
+    recs = mapMaybe rec
+    recAssoc (k, v) = (,) k <$> rec v
+
+
+getDLVArg :: DLValue -> Maybe DLArg
+getDLVArg (DLV_Arg _ a) = Just a
+getDLVArg _ = Nothing
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar (SLV_DLVar dv) = dv
 expectDLVar _ = impossible "expectDLVar"
 
-slToDLExportVal :: SLVal -> App (Maybe DLExportVal)
-slToDLExportVal = \case
+slToDLV :: SLVal -> App (Maybe DLValue)
+slToDLV = \case
   SLV_Null at _   -> lit at DLL_Null
   SLV_Bool at b   -> lit at $ DLL_Bool b
   SLV_Int at i    -> lit at $ DLL_Int at i
   SLV_Bytes at bs -> lit at $ DLL_Bytes bs
   SLV_DLC c       -> arg srcloc_builtin $ DLA_Constant c
   SLV_DLVar dv    -> arg (srclocOf dv) $ DLA_Var dv
-  SLV_Array at dt vs -> getDLArgs vs >>= yes . DLEV_LArg at . DLLA_Array dt
-  SLV_Tuple at vs    -> getDLArgs vs >>= yes . DLEV_LArg at . DLLA_Tuple
+  SLV_Array at dt vs -> recs vs >>= yes . DLV_Array at dt
+  SLV_Tuple at vs    -> recs vs >>= yes . DLV_Tuple at
   SLV_Object at _ fenv -> do
-    let f :: (SLVar, SLSSVal) -> App (Maybe (SLVar, DLArg))
-        f (x, y) = do
-          y' <- getDLArg $ sss_val y
-          return $ (,) x <$> y'
-    mapM f (M.toList fenv) >>=
-      (yes . DLEV_LArg at . DLLA_Obj . M.fromList) . catMaybes
+    env' <- mapM (slToDLV . sss_val) fenv
+    yes $ DLV_Obj at env'
   SLV_Struct at vs -> do
-    let go (k, v) = do
-          v' <- slToDLExportVal v <&> maybe Nothing getExportValArg
-          return $ (,) k <$> v'
-    mds <- catMaybes <$> mapM go vs
-    yes $ DLEV_LArg at $ DLLA_Struct mds
+    mds <- mapM slToDLV $ M.fromList vs
+    yes $ DLV_Struct at $ M.toList mds
   SLV_Data at dt vn sv -> do
-    msv <- slToDLExportVal sv <&> maybe Nothing getExportValArg
-    return $ DLEV_LArg at . DLLA_Data dt vn <$> msv
+    msv <- slToDLV sv
+    yes $ DLV_Data at dt vn msv
   SLV_Participant at who _ mdv -> do
     pdvs <- readSt st_pdvs
     case M.lookup who pdvs <|> mdv of
@@ -576,7 +552,7 @@ slToDLExportVal = \case
         mapM (\ (ty, _) -> public . SLV_DLVar
           <$> (ctxt_mkvar . DLVar at Nothing =<< st2dte ty))
     block <- evalPureClosureToBlock sc sargs (Just tf) =<< st2dte (stf_rng tf)
-    yes $ DLEV_Fun at (map (expectDLVar . snd) sargs) block
+    yes $ DLV_Fun at (map (expectDLVar . snd) sargs) block
   SLV_Clo {} -> no
   SLV_Type _ -> no
   SLV_Connector _ -> no
@@ -590,10 +566,9 @@ slToDLExportVal = \case
   SLV_ParticipantConstructor {} -> no
   SLV_Deprecated {} -> no
   where
-    getDLArg v = slToDLExportVal v <&> maybe Nothing getExportValArg
-    getDLArgs vs = catMaybes <$> mapM getDLArg vs
+    recs = mapM slToDLV
     lit at = arg at . DLA_Literal
-    arg at = yes . DLEV_Arg at
+    arg at = yes . DLV_Arg at
     yes = return . Just
     no = return Nothing
 
