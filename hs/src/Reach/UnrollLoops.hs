@@ -186,7 +186,7 @@ instance Unroll LLStep where
 
 instance Unroll LLProg where
   ul (LLProg at opts ps dli dex s) =
-    LLProg at opts ps dli dex <$> ul s
+    LLProg at opts ps dli <$> ul dex <*> ul s
 
 instance Unroll CITail where
   ul = \case
