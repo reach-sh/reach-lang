@@ -192,8 +192,6 @@ data DLValue
   | DLV_Data SrcLoc (M.Map SLVar DLType) String (Maybe DLValue)
   | DLV_Struct SrcLoc [(SLVar, (Maybe DLValue))]
 
--- data DLLValue
-
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyArithmetic :: Bool

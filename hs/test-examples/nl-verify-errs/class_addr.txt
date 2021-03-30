@@ -7,9 +7,9 @@ Verification failed:
   at ./class_addr.rsh:16:14:application
 
   // Violation witness
-  const C/30 = Address!val!0;
+  const C/34 = Address!val!0;
   //    ^ from builtin at ./class_addr.rsh:4:12:application
-  const C/31 = Address!val!1;
+  const C/35 = Address!val!1;
   //    ^ from builtin at ./class_addr.rsh:4:12:application
 
   // Theorem formalization

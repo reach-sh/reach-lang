@@ -2285,11 +2285,12 @@ evalPrim p sargs =
 doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
   ensure_mode mode lab
+  at <- withAt id
   (dom_tupv, arges) <- assertRefinedArgs sargs iat (SLTypeFun {..})
   dargs <- compileArgExprs arges
   fs <- e_stack <$> ask
   rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
-    mkexpr iat fs drng dargs
+    mkexpr at fs drng dargs
   forM_ stf_post $ \rngp ->
     applyRefinement ct rngp [dom_tupv, rng_v]
   return rng_v
