@@ -2,7 +2,7 @@
 jobs:
   "build-and-test":
     docker:
-      auth:
+    - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "reachsh/reach-circle:0.1.2"
@@ -87,7 +87,7 @@ jobs:
         template: basic_fail_1
   "docker-lint":
     docker:
-      auth:
+    - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
@@ -106,7 +106,7 @@ jobs:
         template: basic_fail_1
   "docs-deploy":
     docker:
-      auth:
+    - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "circleci/node:9.9.0"
@@ -144,7 +144,7 @@ jobs:
         template: basic_fail_1
   "docs-render":
     docker:
-      auth:
+    - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "reachsh/reach-circle:0.1.2"
@@ -175,7 +175,7 @@ jobs:
         template: basic_fail_1
   shellcheck:
     docker:
-      auth:
+    - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "cimg/base:stable"
@@ -196,13 +196,17 @@ version: 2.1
 workflows:
   "build-and-test":
     jobs:
-      "build-and-test":
+    - "build-and-test":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
   docs:
     jobs:
-      "docs-deploy":
+    - "docs-render":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+    - "docs-deploy":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -211,13 +215,9 @@ workflows:
             only: master
         requires:
         - "docs-render"
-      "docs-render":
-        context:
-        - "reachdevbot-on-dockerhub"
-        - "circleci-on-slack"
   lint:
     jobs:
-      shellcheck:
+    - shellcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

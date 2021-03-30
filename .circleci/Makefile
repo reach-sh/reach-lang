@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := validate
 
 .PHONY: compare
 compare:
@@ -14,10 +14,24 @@ build:
 	  | tee config.yml
 	@echo
 
-.PHONY: watch
-watch:
+.PHONY: validate
+validate: build
+	@circleci config validate config.yml
+
+.PHONY: do-watch
+do-watch:
 	@clear
+	@echo "Changes to config.dhall will trigger the \`$(TARGET)\` target"
+	@echo
 	@while inotifywait -e modify config.dhall; do \
 	  clear; \
-	  $(MAKE) -s build; \
+	  $(MAKE) -s $(TARGET); \
 	  done
+
+.PHONY: watch
+watch:
+	@TARGET=build $(MAKE) -s do-watch
+
+.PHONY: watch-validate
+watch-validate:
+	@TARGET=validate $(MAKE) -s do-watch

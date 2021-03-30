@@ -19,10 +19,6 @@ let docker-image =
   ∧ docker-creds
 
 
-let default-job-setup =
-  { context = [ "reachdevbot-on-dockerhub", "circleci-on-slack" ]}
-
-
 {------------------------------------------------------------------------------}
 
 let Run =
@@ -110,14 +106,14 @@ let slack/notify
 let dockerized-job-with
   = λ(image : Text)
   → λ(steps : List Step)
-  → { docker = docker-image // { image }
+  → { docker = [ docker-image // { image } ]
     , steps
     }
 
 
 let dockerized-job
   = λ(steps : List Step)
-  → { docker = docker-image
+  → { docker = [ docker-image ]
     , steps
     }
 
@@ -260,13 +256,29 @@ let jobs =
   }
 
 
+let JobEntry =
+  { Type    = { context  : List Text
+              , requires : Optional (List Text)
+              , filters  : Optional { branches : { only : Text }}
+              }
+  , default = { context  = [ "reachdevbot-on-dockerhub", "circleci-on-slack" ]
+              , requires = None (List Text)
+              , filters  = None { branches : { only : Text }}
+              }
+  }
+
+
+let entry-docs-deploy =
+  JobEntry::{ requires = Some [ "docs-render" ]
+            , filters  = Some { branches = { only = "master" }}
+            }
+
+
 let workflows =
-  { build-and-test = { jobs = { build-and-test = default-job-setup }}
-  , lint           = { jobs = { shellcheck     = default-job-setup }}
-  , docs           = { jobs = { docs-render    = default-job-setup
-                              , docs-deploy    = default-job-setup
-                                  ∧ { requires = [ "docs-render" ]
-                                    , filters  = { branches = { only = "master" }}}}}
+  { build-and-test = { jobs = [ [ { mapKey = "build-and-test", mapValue = JobEntry.default  } ] ] }
+  , lint           = { jobs = [ [ { mapKey = "shellcheck",     mapValue = JobEntry.default  } ] ] }
+  , docs           = { jobs = [ [ { mapKey = "docs-render",    mapValue = JobEntry.default  } ]
+                              , [ { mapKey = "docs-deploy",    mapValue = entry-docs-deploy } ] ] }
   }
 
 
