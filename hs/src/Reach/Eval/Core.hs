@@ -513,14 +513,15 @@ dlvToEV = \case
     recs = mapMaybe rec
     recAssoc (k, v) = (,) k <$> rec v
 
-
 getDLVArg :: DLValue -> Maybe DLArg
-getDLVArg (DLV_Arg _ a) = Just a
-getDLVArg _ = Nothing
+getDLVArg = \case
+  DLV_Arg _ a -> Just a
+  _ -> Nothing
 
 expectDLVar :: SLVal -> DLVar
-expectDLVar (SLV_DLVar dv) = dv
-expectDLVar _ = impossible "expectDLVar"
+expectDLVar = \case
+  SLV_DLVar dv -> dv
+  _ -> impossible "expectDLVar"
 
 slToDLV :: SLVal -> App (Maybe DLValue)
 slToDLV = \case

@@ -7,6 +7,7 @@ import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.SL
+import Reach.AST.DL (DLBlock)
 
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)
@@ -56,3 +57,12 @@ pure_mode (SLM_ConsensusStep) = SLM_ConsensusPure
 pure_mode ow = ow
 
 type SLPartDVars = M.Map SLPart DLVar
+
+data DLValue
+  = DLV_Arg SrcLoc DLArg
+  | DLV_Fun SrcLoc [DLVar] DLBlock
+  | DLV_Array SrcLoc DLType [Maybe DLValue]
+  | DLV_Tuple SrcLoc [Maybe DLValue]
+  | DLV_Obj SrcLoc (M.Map SLVar (Maybe DLValue))
+  | DLV_Data SrcLoc (M.Map SLVar DLType) String (Maybe DLValue)
+  | DLV_Struct SrcLoc [(SLVar, (Maybe DLValue))]

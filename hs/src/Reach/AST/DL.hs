@@ -183,15 +183,6 @@ data DLBlock
 instance Pretty DLBlock where
   pretty (DLBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
-data DLValue
-  = DLV_Arg SrcLoc DLArg
-  | DLV_Fun SrcLoc [DLVar] DLBlock
-  | DLV_Array SrcLoc DLType [Maybe DLValue]
-  | DLV_Tuple SrcLoc [Maybe DLValue]
-  | DLV_Obj SrcLoc (M.Map SLVar (Maybe DLValue))
-  | DLV_Data SrcLoc (M.Map SLVar DLType) String (Maybe DLValue)
-  | DLV_Struct SrcLoc [(SLVar, (Maybe DLValue))]
-
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyArithmetic :: Bool
