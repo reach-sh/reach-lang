@@ -13,7 +13,6 @@ module Reach.Util
   , dupeIORef
   , mapWithKeyM
   , hdDie
-  , mapValM
   , justValues
   )
 where
@@ -90,9 +89,6 @@ dupeIORef r = newIORef =<< readIORef r
 
 mapWithKeyM :: (Ord k, Monad m) => (k -> a -> m b) -> M.Map k a -> m (M.Map k b)
 mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscList m)
-
-mapValM :: (Traversable t1, Monad m) => (t2 -> m b) -> t1 (a, t2) -> m (t1 (a, b))
-mapValM f = mapM (\ (k, v) -> do { v' <- f v; return (k, v')})
 
 justValues :: [(a, Maybe b)] -> [(a, b)]
 justValues = foldr' (\ (k, mv) acc -> maybe acc ((: acc) . (k, )) mv) []
