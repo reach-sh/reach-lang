@@ -1356,6 +1356,8 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   void(ctcInfo);
   void(backend);
 
+  console.log(`WARNING: Reach's Algorand connector does not verify the contract information provided is correct, so you must trust the provider.`);
+
   // XXX verify contract was deployed at creationRound
   // XXX verify something about ApplicationId
 
