@@ -17,7 +17,8 @@ For example, if a Reach program contains a participant named @reachin{'A'} in th
 The @jsin{ctc} argument is the result of a call to the functions @jsin{acc.deploy} or @jsin{acc.attach} provided by the @seclink["ref-frontends-js"]{JavaScript frontend support library}.
 
 The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
-The values in this object must match those specified by the @seclink["ref-frontends-js-types"]{JavaScript frontend support library}.
+The types of values this object contains must match those specified
+@seclink["ref-frontends-js-types"]{on this list}.
 
 The JavaScript backend also provides an export named @jsin{_version}, which is a string representation of the Reach version used to compile the program.
 For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
