@@ -29,6 +29,15 @@ The values in this object must match those specified by the @seclink["ref-stdlib
 The JavaScript backend also provides an export named @jsin{_version}, which is a string representation of the Reach version used to compile the program.
 For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
 
+The backend also provides a function, @(mint-define! '("getExports")) @jsin{getExports}, which exposes the exports of a Reach program.
+This function receives the standard library as an argument and returns an object with all the exports. For example, if a Reach program
+exported a variable @tt{x}, i.e. @reachin{export const x = 5}, the frontend could access the value in the following manner:
+
+@js{
+   const stdlib = await loadStdlib();
+   backend.getExports(stdlib).x; // 5
+}
+
 Finally, the backend will provide an export named @jsin{_Connectors}, which is an opaque object representing the @tech{connectors} this app was compiled to.
 
 @subsection[#:tag "ref-backend-js-guarantees"]{Guarantees}

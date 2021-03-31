@@ -113,6 +113,9 @@ For example:
 
 An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by other @tech{modules}.
 
+Exports are also exposed to the frontend via @jsin{getExports}. Functions are only exposed
+if they are typed, that is, if they are constructed with @reachin{is}.
+
 @subsubsection[#:tag "ref-programs-import"]{@tt{import}}
 
 @(mint-define! '("import"))
