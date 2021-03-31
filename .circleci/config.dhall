@@ -145,9 +145,9 @@ let build-and-test = dockerized-job
       , "hs/.stack_work"
       ]
 
-  , run "clean hs"      "cd hs && make hs-clean"
-  , run "build hs"      "cd hs && make hs-build"
-  , run "test hs (xml)" "cd hs && make hs-test-xml"
+  , run                 "clean hs"      "cd hs && make hs-clean"
+  , run                 "build hs"      "cd hs && make hs-build"
+  , runWithin "20m"     "test hs (xml)" "cd hs && make hs-test-xml"
   , store_test_results  "hs/test-reports"
 
   , run "check hs"      "cd hs && make hs-check"
