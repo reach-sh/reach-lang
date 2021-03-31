@@ -117,21 +117,26 @@ ac_top x = do
   e_cs <- newIORef $ mempty
   flip runReaderT (Env {..}) $ ac_ch x
 
-ac_ev :: DLinExportVal PILBlock -> IO (DLinExportVal PLBlock)
+ac_ev :: DLinExportVal PILBlock -> App (DLinExportVal PLBlock)
 ac_ev = \case
   DLEV_Arg at a  -> return $ DLEV_Arg at a
   DLEV_LArg at a -> return $ DLEV_LArg at a
   DLEV_Fun at a b -> do
+    ac_visit a
+    DLEV_Fun at a <$> ac_bl b
+
+ac_eb :: DLExportinBlock PILVar -> IO (DLExportinBlock PLVar)
+ac_eb = \case
+  DLExportinBlock b a -> do
     e_cs <- newIORef $ mempty
     flip runReaderT (Env {..}) $ do
-      ac_visit a
-      DLEV_Fun at a <$> ac_bl b
+      DLExportinBlock <$> ac_lt b <*> ac_ev a
 
 add_counts :: PIProg -> IO PLProg
 add_counts (PLProg at plo dli dex _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
   let CPProg cat (CHandlers chs) = cp
   chs' <- mapM ac_top chs
-  dex' <- mapM ac_ev dex
+  dex' <- mapM ac_eb dex
   let cp' = CPProg cat $ CHandlers chs'
   return $ PLProg at plo dli dex' epps' cp'

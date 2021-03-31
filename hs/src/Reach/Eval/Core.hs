@@ -492,31 +492,75 @@ dlvToDL = \case
   DLV_Data _ t s mdv -> DLAE_Data t s <$> rec mdv
   _ -> Nothing
   where
-    rec  = maybe Nothing dlvToDL
+    rec  = dlvToDL
     recAssoc (k, v) = (,) k <$> rec v
 
-slToDLExportVal :: SLVal -> App (Maybe DLExportVal)
-slToDLExportVal v = slToDLV v <&> maybe Nothing dlvToEV
+slToDLExportVal :: SLVal -> App (Maybe DLExportBlock)
+slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . Just))
 
-dlvToEV :: DLValue -> Maybe DLExportVal
+dlvToEV :: DLValue -> App DLExportBlock
 dlvToEV = \case
-  DLV_Arg at a  -> return $ DLEV_Arg at a
-  DLV_Fun at args b -> return $ DLEV_Fun at args b
-  DLV_Array at dt mdvs -> return $ DLEV_LArg at $ DLLA_Array dt (recs mdvs)
-  DLV_Tuple at mdvs -> return $ DLEV_LArg at $ DLLA_Tuple (recs mdvs)
-  DLV_Obj at menv ->
-    return $ DLEV_LArg at $ DLLA_Obj $ M.fromList $ mapMaybe recAssoc $ M.toList menv
-  DLV_Data at t s mdv -> DLEV_LArg at . DLLA_Data t s <$> rec mdv
-  DLV_Struct at mdvs -> return $ DLEV_LArg at $ DLLA_Struct $ mapMaybe recAssoc mdvs
+  DLV_Arg at a -> return $ DLExportBlock Seq.empty $ DLEV_Arg at a
+  DLV_Fun at a b -> return $ DLExportBlock Seq.empty $ DLEV_Fun at a b
+  DLV_Array at dt mdvs -> do
+    evs <- mapM dlvToEV mdvs
+    dargs <- collectRets evs
+    let ty = T_Array dt $ fromIntegral $ length mdvs
+    let le = DLE_LArg at $ DLLA_Array dt dargs
+    (ev, assign) <- mkAssign at ty le
+    let block = collectStmts evs Seq.|> assign
+    return $ DLExportBlock block ev
+  DLV_Tuple at mdvs -> do
+    evs <- mapM dlvToEV mdvs
+    dargs <- collectRets evs
+    let ty = T_Tuple $ map argTypeOf dargs
+    let le = DLE_LArg at $ DLLA_Tuple dargs
+    (ev, assign) <- mkAssign at ty le
+    let block = collectStmts evs Seq.|> assign
+    return $ DLExportBlock block ev
+  DLV_Data at env s dv -> do
+    dev <- dlvToEV dv
+    darg <- collectRet dev
+    let ty = T_Data env
+    let le = DLE_LArg at $ DLLA_Data env s darg
+    (ev, assign) <- mkAssign at ty le
+    let block = collectStmt dev Seq.|> assign
+    return $ DLExportBlock block ev
+  DLV_Obj at env -> do
+    dev <- mapM dlvToEV env
+    argEnv <- mapM collectRet dev
+    let ty = T_Object $ M.map argTypeOf argEnv
+    let le = DLE_LArg at $ DLLA_Obj argEnv
+    (ev, assign) <- mkAssign at ty le
+    let assigns = collectStmts $ map snd $ M.toList dev
+    let block = assigns Seq.|> assign
+    return $ DLExportBlock block ev
+  DLV_Struct at env -> do
+    dev <- mapM (\ (k, v) -> (k, ) <$> dlvToEV v) env
+    argEnv <- mapM collectRet $ M.fromList dev
+    let ty = T_Struct $ M.toList $ M.map argTypeOf argEnv
+    let le = DLE_LArg at $ DLLA_Obj argEnv
+    (ev, assign) <- mkAssign at ty le
+    let assigns = collectStmts $ map snd $ dev
+    let block = assigns Seq.|> assign
+    return $ DLExportBlock block ev
   where
-    rec = maybe Nothing getDLVArg
-    recs = mapMaybe rec
-    recAssoc (k, v) = (,) k <$> rec v
+    collectStmt (DLExportBlock s _) = s
+    collectStmts xs = foldr' ((Seq.><) . collectStmt) Seq.empty xs
+    collectRet (DLExportBlock _ r) = getExportValArg r
+    collectRets xs  = mapM collectRet xs
+    mkAssign at ty la = do
+        dv <- ctxt_mkvar $ DLVar at Nothing ty
+        let da = DLA_Var dv
+        let ev = DLEV_Arg at da
+        let block = DLS_Let at (Just dv) la
+        return (ev, block)
 
-getDLVArg :: DLValue -> Maybe DLArg
-getDLVArg = \case
-  DLV_Arg _ a -> Just a
-  _ -> Nothing
+
+getExportValArg :: DLExportVal -> App DLArg
+getExportValArg = \case
+  DLEV_Arg _ a -> return a
+  ow -> expect_ $ Err_Export_Element ow
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar = \case
@@ -531,17 +575,21 @@ slToDLV = \case
   SLV_Bytes at bs -> lit at $ DLL_Bytes bs
   SLV_DLC c       -> arg srcloc_builtin $ DLA_Constant c
   SLV_DLVar dv    -> arg (srclocOf dv) $ DLA_Var dv
-  SLV_Array at dt vs -> recs vs >>= yes . DLV_Array at dt
-  SLV_Tuple at vs    -> recs vs >>= yes . DLV_Tuple at
+  SLV_Array at dt vs -> do
+    fmap (DLV_Array at dt) . all_just <$> recs vs
+  SLV_Tuple at vs    ->
+    fmap (DLV_Tuple at) . all_just <$> recs vs
   SLV_Object at _ fenv -> do
     env' <- mapM (slToDLV . sss_val) fenv
-    yes $ DLV_Obj at env'
+    let env'' = all_just $ map (\ (k, v) -> (,) k <$> v) $ M.toList env'
+    return $ DLV_Obj at . M.fromList <$> env''
   SLV_Struct at vs -> do
     mds <- mapM slToDLV $ M.fromList vs
-    yes $ DLV_Struct at $ M.toList mds
+    let mds' = all_just $ map (\ (k, v) -> (,) k <$> v) $ M.toList mds
+    return $ DLV_Struct at <$> mds'
   SLV_Data at dt vn sv -> do
     msv <- slToDLV sv
-    yes $ DLV_Data at dt vn msv
+    return $ DLV_Data at dt vn <$> msv
   SLV_Participant at who _ mdv -> do
     pdvs <- readSt st_pdvs
     case M.lookup who pdvs <|> mdv of

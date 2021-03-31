@@ -197,7 +197,14 @@ instance HasCounter DLOpts where
 
 type DLExportVal = DLinExportVal DLBlock
 
-type DLExports = DLinExports DLBlock
+data DLExportBlock =
+  DLExportBlock DLStmts (DLinExportVal DLBlock)
+
+instance Pretty DLExportBlock where
+  pretty = \case
+    DLExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+
+type DLExports = M.Map SLVar DLExportBlock
 
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLStmts

@@ -142,6 +142,9 @@ instance CollectsTypes LLStep where
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
+instance CollectsTypes (DLExportinBlock LLVar) where
+  cts (DLExportinBlock s r) = cts s <> cts r
+
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps dli dex s) = cts ps <> cts dli <> cts dex <> cts s
 

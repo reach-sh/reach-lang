@@ -152,7 +152,8 @@ compileDApp _ _ topv =
 getExports :: SLLibs -> App DLExports
 getExports libs = do
   let getLibExports lib = justValues . M.toList <$> mapM (slToDLExportVal . sss_val) lib
-  M.fromList <$> concatMapM (getLibExports . snd) (M.toList libs)
+  M.fromList <$> concatMapM (getLibExports . snd)
+    (filter ((/= ReachStdLib) . fst) $ M.toList libs)
 
 compileBundle_ :: Connectors -> JSBundle -> SLVar -> App CompiledDApp
 compileBundle_ cns (JSBundle mods) main = do

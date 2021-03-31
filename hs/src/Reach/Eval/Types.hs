@@ -61,8 +61,8 @@ type SLPartDVars = M.Map SLPart DLVar
 data DLValue
   = DLV_Arg SrcLoc DLArg
   | DLV_Fun SrcLoc [DLVar] DLBlock
-  | DLV_Array SrcLoc DLType [Maybe DLValue]
-  | DLV_Tuple SrcLoc [Maybe DLValue]
-  | DLV_Obj SrcLoc (M.Map SLVar (Maybe DLValue))
-  | DLV_Data SrcLoc (M.Map SLVar DLType) String (Maybe DLValue)
-  | DLV_Struct SrcLoc [(SLVar, (Maybe DLValue))]
+  | DLV_Array SrcLoc DLType [DLValue]
+  | DLV_Tuple SrcLoc [DLValue]
+  | DLV_Obj SrcLoc (M.Map SLVar DLValue)
+  | DLV_Data SrcLoc (M.Map SLVar DLType) String DLValue
+  | DLV_Struct SrcLoc [(SLVar, DLValue)]

@@ -1431,13 +1431,19 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-smt_export :: DLinExportVal LLBlock -> App SExpr
-smt_export = \case
+smt_ev :: DLinExportVal LLBlock -> App SExpr
+smt_ev = \case
   DLEV_Arg at a  -> smt_a at a
   DLEV_LArg at a -> smt_la at a
   DLEV_Fun at args body -> do
     forM_ args $ flip (pathAddUnbound at) O_Export . Just
     smt_block body
+
+smt_eb :: DLExportinBlock LLVar -> App SExpr
+smt_eb = \case
+  DLExportinBlock s r -> do
+    _ <- smt_l s
+    smt_ev r
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
@@ -1495,7 +1501,7 @@ _verify_smt mc ctxt_vst smt lp = do
     let smt_s_top mode = do
           liftIO $ putStrLn $ "  Verifying when " <> show (pretty mode)
           local (\e -> e {ctxt_modem = Just mode}) $ do
-            forM_ dex $ ctxtNewScope . freshAddrs . smt_export
+            forM_ dex $ ctxtNewScope . freshAddrs . smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
     let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
     mapM_ smt_s_top ms

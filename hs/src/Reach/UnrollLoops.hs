@@ -153,6 +153,10 @@ instance Unroll (DLinExportVal LLBlock) where
     DLEV_Arg at a   -> return $ DLEV_Arg at a
     DLEV_LArg at a  -> return $ DLEV_LArg at a
 
+instance Unroll (DLExportinBlock LLVar) where
+  ul = \case
+    DLExportinBlock s r -> DLExportinBlock <$> ul s <*> ul r
+
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k

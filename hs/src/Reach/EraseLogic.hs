@@ -171,6 +171,10 @@ instance Erase (DLinExportVal LLBlock) where
     DLEV_Arg at a  -> return $ DLEV_Arg at a
     DLEV_LArg at a -> return $ DLEV_LArg at a
 
+instance Erase (DLExportinBlock LLVar) where
+  el = \case
+    DLExportinBlock s r -> DLExportinBlock s <$> el r
+
 instance Erase LLExports where
   el dex = mapM el dex
 

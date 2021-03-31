@@ -20,6 +20,7 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
+import Reach.AST.DL (DLBlock)
 
 data LookupCtx
   = -- Signifies the user referencing a variable from a ctxt (:: String).
@@ -127,6 +128,7 @@ data EvalError
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidPartName String
+  | Err_Export_Element (DLinExportVal DLBlock)
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -489,6 +491,8 @@ instance Show EvalError where
       "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
     Err_InvalidPartName n ->
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
+    Err_Export_Element e ->
+      "Invalid expression in export value: " <> show (pretty e)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

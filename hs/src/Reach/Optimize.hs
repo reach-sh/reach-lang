@@ -264,6 +264,10 @@ instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
     DLEV_LArg at a  -> DLEV_LArg at <$> opt a
     DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
 
+instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLExportinBlock a) where
+  opt = \case
+    DLExportinBlock b r -> DLExportinBlock <$> opt b <*> opt r
+
 instance {-# OVERLAPPING #-} Optimize LLExports where
   opt = mapM opt
 

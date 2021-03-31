@@ -264,6 +264,12 @@ data DLinExportVal a
   | DLEV_Fun SrcLoc [DLVar] a
   deriving (Eq)
 
+instance SrcLocOf (DLinExportVal a) where
+  srclocOf = \case
+    DLEV_Arg a _ -> a
+    DLEV_LArg a _ -> a
+    DLEV_Fun a _ _ -> a
+
 instance Pretty a => Pretty (DLinExportVal a) where
   pretty = \case
     DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
@@ -521,7 +527,15 @@ data DLinBlock a
 instance Pretty a => Pretty (DLinBlock a) where
   pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
 
-type DLinExports a = M.Map SLVar (DLinExportVal a)
+data DLExportinBlock a =
+  DLExportinBlock (DLinTail a) (DLinExportVal (DLinBlock a))
+  deriving (Eq)
+
+instance Pretty a => Pretty (DLExportinBlock a) where
+  pretty = \case
+    DLExportinBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
+
+type DLinExports a = M.Map SLVar (DLExportinBlock a)
 
 data FluidVar
   = FV_balance

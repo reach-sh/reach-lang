@@ -287,10 +287,8 @@ instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
 
 
-type PLExports a = DLinExports (DLinBlock a)
-
 data PLinProg a
-  = PLProg SrcLoc PLOpts DLInit (PLExports a) (EPPs a) (CPProg a)
+  = PLProg SrcLoc PLOpts DLInit (DLinExports a) (EPPs a) (CPProg a)
   deriving (Eq)
 
 instance HasCounter (PLinProg a) where

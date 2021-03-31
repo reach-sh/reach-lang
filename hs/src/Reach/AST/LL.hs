@@ -77,7 +77,7 @@ data LLOpts = LLOpts
 instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
-type LLExports = DLinExports LLBlock
+type LLExports = DLinExports LLVar
 
 data LLProg
   = LLProg SrcLoc LLOpts SLParts DLInit LLExports LLStep

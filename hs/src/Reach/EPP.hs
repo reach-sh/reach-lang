@@ -560,13 +560,19 @@ be_s = \case
     return $ ok_l''m
 
 
-mkexports :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
-mkexports = \case
+mk_ev :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
+mk_ev = \case
   DLEV_Fun at args (DLinBlock bat sf ll a) -> do
     let body' = dtReplace DT_Com (DT_Return bat) ll
     return $ DLEV_Fun at args (DLinBlock bat sf body' a)
   DLEV_Arg at a  -> return $ DLEV_Arg at a
   DLEV_LArg at a -> return $ DLEV_LArg at a
+
+mk_eb :: DLExportinBlock LLVar -> BApp (DLExportinBlock PILVar)
+mk_eb = \case
+  DLExportinBlock ll r -> do
+    let body' = dtReplace DT_Com (DT_Return $ srclocOf r) ll
+    DLExportinBlock body' <$> mk_ev r
 
 epp :: LLProg -> IO PIProg
 epp (LLProg at (LLOpts {..}) ps dli dex s) = do
@@ -591,7 +597,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
         ce_vars <- newIORef mempty
         flip runReaderT (CEnv {..}) m
   dex' <- flip runReaderT (BEnv {..}) $
-            mapM mkexports dex
+            mapM mk_eb dex
   cp <- (CPProg at . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps

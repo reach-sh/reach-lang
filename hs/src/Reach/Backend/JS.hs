@@ -725,12 +725,22 @@ jsExportValue = \case
     let argList = parens $ hsep $ punctuate comma tmps
     return $ argList <+> "=>" <+> jsBraces body
 
-jsExports :: PLExports PILVar -> App Doc
+jsExportBlock :: DLExportinBlock PILVar -> App Doc
+jsExportBlock = \case
+  -- Process flattened large arg
+  DLExportinBlock b@DT_Com {} (DLEV_Arg at a) -> do
+    (tl, ret) <- jsBlock (DLinBlock at [] b a)
+    let body = tl <> hardline <> jsReturn ret
+    let noArgs = parens ""
+    return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
+  DLExportinBlock _ ev -> jsExportValue ev
+
+jsExports :: DLinExports PILVar -> App Doc
 jsExports exports = do
   jsc <- newJsContract
   local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
     exportProps <- mapM (\ (k, v) -> do
-          vs <- jsExportValue v
+          vs <- jsExportBlock v
           return $ hardline <> "    " <> pretty k <> " : " <> vs <> ",") $ M.toList exports
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
     let ctcs = vsep $ map snd $ M.toAscList i2t'
