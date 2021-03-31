@@ -574,22 +574,26 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
-  //debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
+const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+  debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
   let res;
   try {
     res = await query.do();
   } catch (e) {
     throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
   }
+  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
+  return res;
+};
+
+const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+  const res = await doQuery_(dhead, query);
 
   if ( res.transactions.length == 0 ) {
-    // debug(`${dhead} --- RESULT = empty`);
     // XXX Look at the round in res and wait for a new round
     return null;
   }
 
-  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
   const txn = res.transactions[0];
 
   return txn;
@@ -1351,25 +1355,61 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
-// XXX: implement this
-export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
-  void(ctcInfo);
-  void(backend);
+export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<true> => {
+  const { ApplicationID, Deployer, creationRound } = info;
+  const compiled = await compileFor(bin, info);
+  const { appApproval, appClear } = compiled;
 
-  console.log(`WARNING: Reach's Algorand connector does not verify the contract information provided is correct, so you must trust the provider.`);
+  let dhead = `verifyContract`;
 
-  // XXX verify contract was deployed at creationRound
-  // XXX verify something about ApplicationId
+  const chk = (p: boolean, msg: string) => {
+    if ( !p ) {
+      throw Error(`verifyContract failed: ${msg}`);
+    }
+  };
+  const chkeq = (a: any, e:any, msg:string) => {
+    const as = JSON.stringify(a);
+    const es = JSON.stringify(e);
+    chk(as === es, `${msg}: expected ${es}, got ${as}`);
+  };
 
-  // XXX (above) attach creator info to ContractInfo
-  // XXX verify creator was the one that deployed the contract
+  const client = await getAlgodClient();
+  const appInfo = await client.getApplicationByID(ApplicationID).do();
+  const appInfo_p = appInfo['params'];
+  debug(`${dhead} -- appInfo_p = ${JSON.stringify(appInfo_p)}`);
+  const indexer = await getIndexer();
+  const cquery = indexer.searchForTransactions()
+    .applicationID(ApplicationID)
+    .txType('appl')
+    .round(creationRound);
+  let ctxn = null;
+  while ( ! ctxn ) {
+    const cres = await doQuery_(dhead, cquery);
+    if ( cres['current-round'] < creationRound ) {
+      debug(`${dhead} -- waiting for creationRound`);
+      await Timeout.set(1000);
+      continue;
+    }
+    ctxn = cres.transactions[0];
+  }
+  debug(`${dhead} -- ctxn = ${JSON.stringify(ctxn)}`);
+  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
-  // XXX verify deployed contract code matches backend
+  chk(ctxn, `Cannot query for creationRound accuracy`);
+  chk(appInfo_p, `Cannot lookup ApplicationId`);
+  chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
+  chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
+  chkeq(appInfo_p['creator'], Deployer, `Deployer does not match contract information`);
 
-  // (after deployMode:firstMsg is implemented)
-  // XXX (above) attach initial args to ContractInfo
-  // XXX verify contract storage matches expectations based on initial args
-  // (don't bother checking ctc balance at creationRound, the ctc enforces this)
+  const catxn = ctxn['application-transaction'];
+  chkeq(catxn['approval-program'], appInfo_p['approval-program'], `creationRound Approval program`);
+  chkeq(catxn['clear-state-program'], appInfo_p['clear-state-program'], `creationRound ClearState program`);
+  chkeq(catxn['on-completion'], 'update', `creationRound on-completion`);
+  chkeq(ctxn['sender'], Deployer, `creationRound Deployer`);
+
+  // Note: (after deployMode:firstMsg is implemented)
+  // 1. (above) attach initial args to ContractInfo
+  // 2. verify contract storage matches expectations based on initial args
 
   return true;
 };

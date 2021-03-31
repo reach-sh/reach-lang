@@ -133,6 +133,7 @@ declare module 'algosdk' {
     compile(code: String): ApiCall<CompileResult>
     // XXX
     dryrun(req: any): ApiCall<any>
+    getApplicationByID(id: number): ApiCall<any>
   }
 
   declare class Indexer {
