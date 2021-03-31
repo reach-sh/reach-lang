@@ -42,7 +42,6 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
       'newAccountFromAlgoSigner',
       'setAlgoSigner',
       'setAlgodClient',
-      'setBrowser',
       'setIndexer',
       'setSignStrategy',
       'setWaitPort',
