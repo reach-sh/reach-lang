@@ -188,16 +188,6 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const [getWaitPort, setWaitPort] = replaceableThunk(() => true);
 export { setWaitPort };
 
-const [getBrowser, setBrowserRaw] = replaceableThunk(() => false);
-const setBrowser = (b: boolean) => {
-  if (b) {
-    // When in browser, we cannot waitPort
-    setWaitPort(false);
-  }
-  setBrowserRaw(b);
-};
-export { setBrowser };
-
 type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
 
 const [getSignStrategy, setSignStrategy] = replaceableThunk<SignStrategy>(() => 'mnemonic');
@@ -218,7 +208,7 @@ export { setAlgoSigner };
 if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
   // Yes, this is dumb. TODO something better
   || process.env.REACH_CONNECTOR_MODE === 'ETH-browser') {
-  setBrowser(true);
+  setWaitPort(false);
 }
 
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
@@ -618,18 +608,11 @@ export const { randomUInt, hasRandom } = makeRandom(8);
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
-  const browser = getBrowser();
-  const token = browser
-    ? {'X-Algo-API-Token': rawDefaultToken}
-    : process.env.ALGO_TOKEN || rawDefaultToken;
-  const server = browser
-    ? '/algod'
-    : process.env.ALGO_SERVER || 'http://localhost';
-  const port = browser
-    ? ''
-    : process.env.ALGO_PORT || '4180';
+  const token = process.env.ALGO_TOKEN || rawDefaultToken;
+  const server = process.env.ALGO_SERVER || 'http://localhost';
+  const port = process.env.ALGO_PORT || '4180';
 
-  if (!browser) await wait1port(server, port);
+  await wait1port(server, port);
   return new algosdk.Algodv2(token, server, port);
 });
 
@@ -637,16 +620,9 @@ export {setAlgodClient};
 
 const [getIndexer, setIndexer] = replaceableThunk(async () => {
   debug(`setting indexer to default`);
-  const browser = getBrowser();
-  const itoken = browser
-    ? rawDefaultItoken
-    : process.env.ALGO_INDEXER_TOKEN || rawDefaultItoken;
-  const iserver = browser
-    ? '/indexer'
-    : process.env.ALGO_INDEXER_SERVER || 'http://localhost';
-  const iport = browser
-    ? ''
-    : process.env.ALGO_INDEXER_PORT || 8980;
+  const itoken = process.env.ALGO_INDEXER_TOKEN || rawDefaultItoken;
+  const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
+  const iport = process.env.ALGO_INDEXER_PORT || '8980';
 
   await wait1port(iserver, iport);
   return new algosdk.Indexer(itoken, iserver, iport);
@@ -657,10 +633,8 @@ export {setIndexer};
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
 const [getFaucet, setFaucet] = replaceableThunk(async () => {
-  const browser = getBrowser();
-  const FAUCET = algosdk.mnemonicToSecretKey(browser
-    ? rawFaucetDefaultMnemonic
-    : process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
+  const FAUCET = algosdk.mnemonicToSecretKey(
+    process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
   );
   return await connectAccount(FAUCET);
 });
