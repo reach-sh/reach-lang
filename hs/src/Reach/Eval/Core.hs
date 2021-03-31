@@ -502,7 +502,7 @@ dlvToEV :: DLValue -> App DLExportBlock
 dlvToEV = \case
   DLV_Arg at a -> return $ DLExportBlock Seq.empty $ DLEV_Arg at a
   DLV_Fun at a b -> return $ DLExportBlock Seq.empty $ DLEV_Fun at a b
-  DLV_Array at dt mdvs -> do
+  DLV_Array at dt mdvs -> locAt at $ do
     evs <- mapM dlvToEV mdvs
     dargs <- collectRets evs
     let ty = T_Array dt $ fromIntegral $ length mdvs
@@ -510,7 +510,7 @@ dlvToEV = \case
     (ev, assign) <- mkAssign at ty le
     let block = collectStmts evs Seq.|> assign
     return $ DLExportBlock block ev
-  DLV_Tuple at mdvs -> do
+  DLV_Tuple at mdvs -> locAt at $ do
     evs <- mapM dlvToEV mdvs
     dargs <- collectRets evs
     let ty = T_Tuple $ map argTypeOf dargs
@@ -518,7 +518,7 @@ dlvToEV = \case
     (ev, assign) <- mkAssign at ty le
     let block = collectStmts evs Seq.|> assign
     return $ DLExportBlock block ev
-  DLV_Data at env s dv -> do
+  DLV_Data at env s dv -> locAt at $ do
     dev <- dlvToEV dv
     darg <- collectRet dev
     let ty = T_Data env
@@ -526,7 +526,7 @@ dlvToEV = \case
     (ev, assign) <- mkAssign at ty le
     let block = collectStmt dev Seq.|> assign
     return $ DLExportBlock block ev
-  DLV_Obj at env -> do
+  DLV_Obj at env -> locAt at $ do
     dev <- mapM dlvToEV env
     argEnv <- mapM collectRet dev
     let ty = T_Object $ M.map argTypeOf argEnv
@@ -535,7 +535,7 @@ dlvToEV = \case
     let assigns = collectStmts $ map snd $ M.toList dev
     let block = assigns Seq.|> assign
     return $ DLExportBlock block ev
-  DLV_Struct at env -> do
+  DLV_Struct at env -> locAt at $ do
     dev <- mapM (\ (k, v) -> (k, ) <$> dlvToEV v) env
     argEnv <- mapM collectRet $ M.fromList dev
     let ty = T_Struct $ M.toList $ M.map argTypeOf argEnv
@@ -560,7 +560,7 @@ dlvToEV = \case
 getExportValArg :: DLExportVal -> App DLArg
 getExportValArg = \case
   DLEV_Arg _ a -> return a
-  ow -> expect_ $ Err_Export_Element ow
+  _ -> expect_ $ Err_Export_FunElem
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar = \case
