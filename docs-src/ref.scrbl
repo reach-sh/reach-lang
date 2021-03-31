@@ -186,7 +186,6 @@ It then
   @item{Compliles your program with Reach}
   @item{Runs the appropriate devnet based on @envref{REACH_CONNECTOR_MODE}}
   @item{Mounts the current directory into @exec{/app/} in the @exec{reachsh/react-runner} Docker image and runs it.}
-  @item{Runs (via @exec{react-runner}) a proxy server used to avoid CORS issues on some devnets}
 ]
 
 @exec{reach react} supports the following options:
@@ -230,14 +229,6 @@ You can run a private Reach devnet by executing
     The environment variable @envref{REACH_DEBUG} enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
   }
 ]
-
-The @jsin{'@"@"reach-sh/stdlib'} library, when working with Algorand,
-sends requests to localhost:3000/algod when running in the browser,
-to avoid CORS issues.
-When using @exec{reach devnet} instead of @exec{reach react} to start your Algorand devnet,
-you are expected to also run a proxy server from localhost:3000/algod to localhost:4180.
-For an example of something similar to this,
-see @link["https://github.com/reach-sh/reach-lang/blob/master/js/react-runner/craco.config.js"]{react-runner's use of craco}.
 
 @subsection[#:tag "ref-usage-server"]{@tt{reach server}}
 
