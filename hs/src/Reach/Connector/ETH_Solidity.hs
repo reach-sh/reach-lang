@@ -42,7 +42,7 @@ dontWriteSol :: Bool
 dontWriteSol = False
 
 includeRequireMsg :: Bool
-includeRequireMsg = True
+includeRequireMsg = False
 
 maxDepth :: Int
 maxDepth = 15

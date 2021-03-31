@@ -157,11 +157,11 @@ type ContractAttached = {
 // TODO
 type ContractOut = any;
 
-// XXX Add who the creator is to refund them
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
   creationRound: number,
   ApplicationID: number,
+  Deployer: Address,
 };
 
 // ctc[ALGO] = {
@@ -501,7 +501,8 @@ function must_be_supported(bin: Backend) {
   }
 }
 
-async function compileFor(bin: Backend, ApplicationID: number): Promise<CompiledBackend> {
+async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
+  const { ApplicationID, Deployer } = info;
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
 
@@ -512,6 +513,8 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
       'ApplicationID',
       T_UInt.toNet(bigNumberify(ApplicationID)),
       x);
+  const subst_creator = (x: string) =>
+    replaceAddr('Deployer', Deployer, x);
 
   const checkLen = (label:string, actual:number, expected:number): void => {
     if ( actual > expected ) {
@@ -522,7 +525,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   const MaxAppTotalArgLen = 2048;
   const MaxAppProgramLen = 1024;
 
-  const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
+  const ctc_bin = await compileTEAL('ctc_subst', subst_creator(subst_appid(ctc)));
   checkLen(`Escrow Contract`, ctc_bin.result.length, LogicSigMaxSize);
   const subst_ctc = (x: string) =>
     replaceAddr('ContractAddr', ctc_bin.hash, x);
@@ -571,22 +574,26 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
-  //debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
+const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+  debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
   let res;
   try {
     res = await query.do();
   } catch (e) {
     throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
   }
+  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
+  return res;
+};
+
+const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+  const res = await doQuery_(dhead, query);
 
   if ( res.transactions.length == 0 ) {
-    // debug(`${dhead} --- RESULT = empty`);
     // XXX Look at the round in res and wait for a new round
     return null;
   }
 
-  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
   const txn = res.transactions[0];
 
   return txn;
@@ -749,11 +756,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
-    const ApplicationID = ctcInfo.ApplicationID;
+    const { Deployer, ApplicationID } = ctcInfo;
     let lastRound = ctcInfo.creationRound;
     debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
-    const bin_comp = await compileFor(bin, ApplicationID);
+    const bin_comp = await compileFor(bin, ctcInfo);
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
@@ -835,6 +842,14 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
               txn_nfo.amt.toNumber(),
               undefined, ui8z,
               params));
+        if ( isHalt ) {
+          txnFromContracts.push(
+            algosdk.makePaymentTxnWithSuggestedParams(
+              bin_comp.ctc.hash,
+              Deployer,
+              0, Deployer, ui8z,
+              params) );
+        }
         const totalFromFee =
           txnFromContracts.reduce(((sum: number, txn: Txn): number => sum + txn.fee), 0);
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
@@ -874,14 +889,16 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,
             thisAcc.addr,
-            0, undefined, ui8z,
+            0,
+            thisAcc.addr,
+            ui8z,
             params);
         debug(`${dhead} --- txnFromHandler = ${JSON.stringify(txnFromHandler)}`);
         const txnToHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
             handler.hash,
-            txnFromHandler.fee,
+            txnFromHandler.fee + raw_minimumBalance,
             undefined, ui8z,
             params);
         debug(`${dhead} --- txnToHandler = ${JSON.stringify(txnToHandler)}`);
@@ -1084,9 +1101,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const algob = bin._Connectors.ALGO;
 
     const { appApproval0, appClear } = algob;
+    const Deployer = thisAcc.addr;
 
     const appApproval0_subst =
-      replaceAddr('Deployer', thisAcc.addr, appApproval0);
+      replaceAddr('Deployer', Deployer, appApproval0);
     const appApproval0_bin =
       await compileTEAL('appApproval0', appApproval0_subst);
     const appClear_bin =
@@ -1107,7 +1125,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
-    const bin_comp = await compileFor(bin, ApplicationID);
+    const bin_comp = await compileFor(bin, { ApplicationID, Deployer, creationRound: 0 });
 
     const params = await getTxnParams();
     const txnUpdate =
@@ -1122,21 +1140,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         raw_minimumBalance,
         undefined, ui8z,
         params);
-    const txnToHandlers: Array<Txn> =
-      bin_comp.steps.flatMap((sc: CompileResultBytes|null): Array<Txn> => {
-        if ( ! sc) { return []; }
-        return [algosdk.makePaymentTxnWithSuggestedParams(
-          thisAcc.addr,
-          sc.hash,
-          raw_minimumBalance,
-          undefined, ui8z,
-          params)];
-    });
 
     const txns = [
       txnUpdate,
       txnToContract,
-      ...txnToHandlers,
     ];
     algosdk.assignGroupID(txns);
     regroup(thisAcc, txns);
@@ -1146,17 +1153,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const txnToContract_s =
       await signTxn(thisAcc, txnToContract);
 
-    // This is written a dumb way to make sure signatures happen one at a time.
-    // AlgoSigner errors if multiple sigs are trying to happen at the same time.
-    const txnToHandlers_s: Array<STX> = [];
-    for (const tx of txnToHandlers) {
-      txnToHandlers_s.push(await signTxn(thisAcc, tx));
-    }
-
     const txns_s = [
       txnUpdate_s,
       txnToContract_s,
-      ...txnToHandlers_s,
     ];
 
     let updateRes;
@@ -1168,7 +1167,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
     const creationRound = updateRes['confirmed-round'];
     const getInfo = async (): Promise<ContractInfo> =>
-      ({ ApplicationID, creationRound });
+      ({ ApplicationID, creationRound, Deployer });
 
     debug(`${shad} application created`);
     return await attachP(bin, getInfo());
@@ -1356,23 +1355,61 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
-// XXX: implement this
-export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
-  void(ctcInfo);
-  void(backend);
+export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<true> => {
+  const { ApplicationID, Deployer, creationRound } = info;
+  const compiled = await compileFor(bin, info);
+  const { appApproval, appClear } = compiled;
 
-  // XXX verify contract was deployed at creationRound
-  // XXX verify something about ApplicationId
+  let dhead = `verifyContract`;
 
-  // XXX (above) attach creator info to ContractInfo
-  // XXX verify creator was the one that deployed the contract
+  const chk = (p: boolean, msg: string) => {
+    if ( !p ) {
+      throw Error(`verifyContract failed: ${msg}`);
+    }
+  };
+  const chkeq = (a: any, e:any, msg:string) => {
+    const as = JSON.stringify(a);
+    const es = JSON.stringify(e);
+    chk(as === es, `${msg}: expected ${es}, got ${as}`);
+  };
 
-  // XXX verify deployed contract code matches backend
+  const client = await getAlgodClient();
+  const appInfo = await client.getApplicationByID(ApplicationID).do();
+  const appInfo_p = appInfo['params'];
+  debug(`${dhead} -- appInfo_p = ${JSON.stringify(appInfo_p)}`);
+  const indexer = await getIndexer();
+  const cquery = indexer.searchForTransactions()
+    .applicationID(ApplicationID)
+    .txType('appl')
+    .round(creationRound);
+  let ctxn = null;
+  while ( ! ctxn ) {
+    const cres = await doQuery_(dhead, cquery);
+    if ( cres['current-round'] < creationRound ) {
+      debug(`${dhead} -- waiting for creationRound`);
+      await Timeout.set(1000);
+      continue;
+    }
+    ctxn = cres.transactions[0];
+  }
+  debug(`${dhead} -- ctxn = ${JSON.stringify(ctxn)}`);
+  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
-  // (after deployMode:firstMsg is implemented)
-  // XXX (above) attach initial args to ContractInfo
-  // XXX verify contract storage matches expectations based on initial args
-  // (don't bother checking ctc balance at creationRound, the ctc enforces this)
+  chk(ctxn, `Cannot query for creationRound accuracy`);
+  chk(appInfo_p, `Cannot lookup ApplicationId`);
+  chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
+  chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
+  chkeq(appInfo_p['creator'], Deployer, `Deployer does not match contract information`);
+
+  const catxn = ctxn['application-transaction'];
+  chkeq(catxn['approval-program'], appInfo_p['approval-program'], `creationRound Approval program`);
+  chkeq(catxn['clear-state-program'], appInfo_p['clear-state-program'], `creationRound ClearState program`);
+  chkeq(catxn['on-completion'], 'update', `creationRound on-completion`);
+  chkeq(ctxn['sender'], Deployer, `creationRound Deployer`);
+
+  // Note: (after deployMode:firstMsg is implemented)
+  // 1. (above) attach initial args to ContractInfo
+  // 2. verify contract storage matches expectations based on initial args
 
   return true;
 };

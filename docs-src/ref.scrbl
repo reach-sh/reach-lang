@@ -192,6 +192,8 @@ It then
 @exec{reach react} supports the following options:
 
 @itemlist[
+  @item{@DFlag{use-existing-devnet} --- Does not start a new devnet, but assumes that @exec{reach devnet} is already running and connects to it.}
+
   @item{
     The environment variable @envref{REACH_CONNECTOR_MODE} specifies which context to run in. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
 
@@ -237,6 +239,44 @@ you are expected to also run a proxy server from localhost:3000/algod to localho
 For an example of something similar to this,
 see @link["https://github.com/reach-sh/reach-lang/blob/master/js/react-runner/craco.config.js"]{react-runner's use of craco}.
 
+@subsection[#:tag "ref-usage-server"]{@tt{reach server}}
+
+The sub-command
+
+@cmd{reach server}
+
+starts an instance of the @seclink["ref-backends-rpc"]{Reach RPC Server} using all of the same options and defaults as @exec{reach run}.
+
+@exec{reach server} supports the following options:
+
+@itemlist[
+
+  @item{@DFlag{use-existing-devnet} --- Does not start a new devnet, but assumes that @exec{reach devnet} is already running and connects to it.
+  Ignored if @envvar{REACH_CONNECTOR_MODE} includes @litchar{live}.}
+
+  @item{The environment variable @envvar{REACH_RPC_KEY} is used to determine the RPC server key.
+If it is not defined, then a value will be randomly generated.
+In either case, the key will be displayed to the console upon start-up.
+  }
+
+  @item{The environment variable @envvar{REACH_RPC_PORT} is used to determine which port to bind to.
+  It defaults to @litchar{3000}.
+  }
+
+  @item{The environment variable @defenv{REACH_RPC_TLS_KEY} is used to determine the path to the TLS @tt{key} file, which must be in the @tt{./tls} directory.
+  It defaults to @litchar{reach-server.key}.
+  }
+
+  @item{The environment variable @defenv{REACH_RPC_TLS_CRT} is used to determine the path to the TLS @tt{crt} file, which must be in the @tt{./tls} directory.
+  It defaults to @litchar{reach-server.crt}.
+  }
+
+  @item{The environment variable @defenv{REACH_RPC_TLS_PASSPHRASE} is used to determine the TLS passphrase.
+  It defaults to @litchar{rpc-demo}.
+  }
+
+]
+
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
 You can upgrade your Reach installation by executing
@@ -273,4 +313,4 @@ in that each hash refers to the git commit used to build the image.
 @include-section["ref-programs.scrbl"]
 @include-section["ref-networks.scrbl"]
 @include-section["ref-backends.scrbl"]
-@include-section["ref-stdlib.scrbl"]
+@include-section["ref-frontends.scrbl"]

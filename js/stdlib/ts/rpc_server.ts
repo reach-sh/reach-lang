@@ -27,7 +27,7 @@ const withApiKey = () => {
 };
 
 
-const mkKont = () => {
+export const mkKont = () => {
   // TODO consider replacing stringly-typed exceptions with structured
   // descendants of `Error` base class
   const UNTRACKED = 'Untracked continuation ID:';
@@ -95,8 +95,6 @@ export const mkStdlibProxy = async (lib: any) => {
   const rpc_stdlib = {
     ...lib,
 
-    mkKont,
-
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
 
@@ -147,6 +145,12 @@ export const serveRpc = async (backend: any) => {
 
     deploy: async (id: string) =>
       contract.track(await account.id(id).deploy(backend)),
+
+    getAddress: async (id: string) =>
+      await account.id(id).getAddress(),
+
+    setGasLimit: async (id: string, ...args: any[]) =>
+      await account.id(id).setGasLimit(...args),
   };
 
   const rpc_ctc = {
@@ -161,15 +165,23 @@ export const serveRpc = async (backend: any) => {
       `client ${req.ip}: ${req.method} ${req.originalUrl} ${JSON.stringify(req.body)}`;
 
     try {
+      debug(`Attempting to process request by ${client}`);
       await f(req, res);
+
     } catch (e) {
-      debug(`Witnessed exception triggered by ${client}: ${e.message}\n${e.stack}`);
+      debug(`!! Witnessed exception triggered by ${client}:\n  ${e.stack}`);
 
       const [ s, message ]
         = was.untracked(e) ? [ 404, String(e) ]
         :                    [ 500, 'Unspecified fault' ];
 
-      res.status(s).json({ message, request: req.body });
+      if (!res.headersSent) {
+        res.status(s).json({ message, request: req.body });
+        debug(`!! HTTP ${s}: "${message}" response sent to client`);
+      } else {
+        res.end();
+        debug(`!! Response already initiated; unable to send appropriate payload`);
+      }
     }
   })();
 
@@ -290,7 +302,7 @@ export const serveRpc = async (backend: any) => {
       process.exit(1);
     }
 
-    const fq = resolve(f);
+    const fq = resolve(`./tls/${f}`);
 
     if (!existsSync(fq)) {
       console.error(`\nPath: ${fq} does not exist!\n`);
