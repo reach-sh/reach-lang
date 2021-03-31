@@ -40,6 +40,7 @@ let Step =
   | checkout
   | setup_remote_docker
   | jq/install
+  | shellcheck/install
   >
 
 
@@ -230,6 +231,7 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
 
 let shellcheck = dockerized-job-with "cimg/base:stable"
   [ Step.checkout
+  , Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify
   ]

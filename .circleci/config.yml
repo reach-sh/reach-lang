@@ -181,6 +181,7 @@ jobs:
       image: "cimg/base:stable"
     steps:
     - checkout
+    - shellcheck/install
     - run:
         command: "make sh-lint"
         name: Run shellcheck
