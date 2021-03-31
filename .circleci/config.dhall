@@ -16,7 +16,7 @@ let docker-creds =
 
 let docker-image =
     { image = "reachsh/reach-circle:0.1.2" }
-  ∧ docker-creds
+  /\ docker-creds
 
 
 {------------------------------------------------------------------------------}
@@ -47,53 +47,53 @@ let Step =
 {------------------------------------------------------------------------------}
 
 let runWithin
-  = λ(no_output_timeout : Text)
-  → λ(name              : Text)
-  → λ(command           : Text)
-  → Step.Run { run = Run::{ name, command, no_output_timeout }}
+   = \(no_output_timeout : Text)
+  -> \(name              : Text)
+  -> \(command           : Text)
+  -> Step.Run { run = Run::{ name, command, no_output_timeout }}
 
 
 let run
-  = λ(name    : Text)
-  → λ(command : Text)
-  → Step.Run { run = Run::{ name, command }}
+   = \(name    : Text)
+  -> \(command : Text)
+  -> Step.Run { run = Run::{ name, command }}
 
 
 let restore_cache
-  = λ(keys : List Text)
-  → Step.RestoreCache { restore_cache = { keys }}
+   = \(keys : List Text)
+  -> Step.RestoreCache { restore_cache = { keys }}
 
 
 let save_cache
-  = λ(key   : Text)
-  → λ(paths : List Text)
-  → Step.SaveCache { save_cache = { key, paths }}
+   = \(key   : Text)
+  -> \(paths : List Text)
+  -> Step.SaveCache { save_cache = { key, paths }}
 
 
 let store_test_results
-  = λ(path : Text)
-  → Step.StoreTestResults { store_test_results = { path }}
+   = \(path : Text)
+  -> Step.StoreTestResults { store_test_results = { path }}
 
 
 let store_artifacts
-  = λ(path : Text)
-  → Step.StoreArtifacts { store_artifacts = { path }}
+   = \(path : Text)
+  -> Step.StoreArtifacts { store_artifacts = { path }}
 
 
 let persist_to_workspace
-  = λ(root  : Text)
-  → λ(paths : List Text)
-  → Step.PersistToWorkspace { persist_to_workspace = { root, paths }}
+   = \(root  : Text)
+  -> \(paths : List Text)
+  -> Step.PersistToWorkspace { persist_to_workspace = { root, paths }}
 
 
 let attach_workspace
-  = λ(at : Text)
-  → Step.AttachWorkspace { attach_workspace = { at }}
+   = \(at : Text)
+  -> Step.AttachWorkspace { attach_workspace = { at }}
 
 
 let add_ssh_keys
-  = λ(fingerprints : List Text)
-  → Step.AddSSHKeys { add_ssh_keys = { fingerprints }}
+   = \(fingerprints : List Text)
+  -> Step.AddSSHKeys { add_ssh_keys = { fingerprints }}
 
 
 let slack/notify
@@ -105,18 +105,18 @@ let slack/notify
 {------------------------------------------------------------------------------}
 
 let dockerized-job-with
-  = λ(image : Text)
-  → λ(steps : List Step)
-  → { docker = [ docker-image // { image } ]
-    , steps
-    }
+   = \(image : Text)
+  -> \(steps : List Step)
+  -> { docker = [ docker-image // { image } ]
+     , steps
+     }
 
 
 let dockerized-job
-  = λ(steps : List Step)
-  → { docker = [ docker-image ]
-    , steps
-    }
+   = \(steps : List Step)
+  -> { docker = [ docker-image ]
+     , steps
+     }
 
 
 {------------------------------------------------------------------------------}
