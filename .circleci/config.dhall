@@ -124,8 +124,8 @@ let build-and-test = dockerized-job
   [ Step.checkout
 
   , run "install mo" ''
-      curl -sSL https://git.io/get-mo -o mo
-        && chmod +x mo
+      curl -sSL https://git.io/get-mo -o mo \
+        && chmod +x mo \
         && mv mo /usr/local/bin
       ''
 

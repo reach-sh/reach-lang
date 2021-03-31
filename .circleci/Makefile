@@ -17,6 +17,7 @@ build:
 .PHONY: validate
 validate: build
 	@circleci config validate config.yml
+	@echo
 
 .PHONY: do-watch
 do-watch:
