@@ -1991,7 +1991,7 @@ evalPrim p sargs =
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
         CT_Assume False -> some_good [SLM_LocalStep]
-        CT_Assume True -> some_good [SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure]
+        CT_Assume True -> good
         CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure]
         CT_Assert -> good
         CT_Possible -> good
@@ -2283,7 +2283,7 @@ doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> Clai
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
   ensure_mode mode lab
   at <- withAt id
-  (dom_tupv, arges) <- assertRefinedArgs sargs iat (SLTypeFun {..})
+  (dom_tupv, arges) <- assertRefinedArgs CT_Assert sargs iat (SLTypeFun {..})
   dargs <- compileArgExprs arges
   fs <- e_stack <$> ask
   rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
@@ -2292,8 +2292,8 @@ doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
     applyRefinement ct rngp [dom_tupv, rng_v]
   return rng_v
 
-assertRefinedArgs :: [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
-assertRefinedArgs sargs iat SLTypeFun {..} = do
+assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
+assertRefinedArgs ct sargs iat SLTypeFun {..} = do
   let argvs = map snd sargs
   arges <-
     mapM (uncurry typeCheck_s)
@@ -2301,7 +2301,7 @@ assertRefinedArgs sargs iat SLTypeFun {..} = do
   at <- withAt id
   let dom_tupv = SLV_Tuple at argvs
   forM_ stf_pre $ \domp ->
-    applyRefinement CT_Assert domp [dom_tupv]
+    applyRefinement ct domp [dom_tupv]
   return (dom_tupv, arges)
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
@@ -2413,13 +2413,11 @@ evalApplyVals rator randvs =
     SLV_CloTyped clo_at sc tf -> do
       at <- withAt id
       let isDLVar = \case { SLV_DLVar _ -> True; _ -> False } . snd
-      case all isDLVar randvs of
-        True  -> evalApplyClosureVals clo_at sc randvs
-        False -> do
-          (dom_tupv, _) <- assertRefinedArgs randvs at tf
-          res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
-          forM_ (stf_post tf) $ flip (applyRefinement CT_Assert) [dom_tupv, ret_v]
-          return res
+      let ct = if all isDLVar randvs then CT_Assume True else CT_Assert
+      (dom_tupv, _) <- assertRefinedArgs ct randvs at tf
+      res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
+      forM_ (stf_post tf) $ flip (applyRefinement ct) [dom_tupv, ret_v]
+      return res
     v -> expect_t v $ Err_Eval_NotApplicableVals
 
 evalApply :: SLVal -> [JSExpression] -> App SLSVal

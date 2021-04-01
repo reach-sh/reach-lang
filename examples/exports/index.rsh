@@ -10,22 +10,29 @@ export const o = {
   }
 }
 
-const add1_impl = (x) => {
-  assert(0 == x - x);
-  return x + 1;
+const add1_impl = (x) => x + 1;
+
+export const add1 = is(add1_impl, Fun([UInt], UInt));
+
+const sumMul2_impl = (x, y) => {
+  assert (x < y);
+  return (x >= y)
+    ? 0
+    : ((x + y) * 2);
 }
 
-const add1_ty = Refine(
-  Fun([UInt], UInt),
-  (([x]) => x < 10),
-  (([x], z) => x + 1 == z)
+const sumMul2_ty = Refine(
+  Fun([UInt, UInt], UInt),
+  (([x, y]) => x < y),
+  (([x, y], z) => x + y < z)
 );
 
-export const add1= is(add1_impl, add1_ty);
+export const sumMul2 = is(sumMul2_impl, sumMul2_ty);
 
 export const main = Reach.App(
   { verifyPerConnector: true },
   [Participant('Alice', {}), Participant('Bob', {})],
   (Alice, Bob) => {
     assert(add1(9) == 10);
+    assert(sumMul2(1, 2) == 6);
     exit(); });

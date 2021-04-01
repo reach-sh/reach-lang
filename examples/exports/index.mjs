@@ -37,6 +37,8 @@ const equals = (a, b) => {
 
   console.assert(equals(exports.add1(1), b(2)), "add1(1) did not return 2", []);
 
+  console.assert(equals(exports.sumMul2(1, 2), b(6)), "sumMul2(1, 2) returns 6", []);
+
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasRandom
