@@ -9,19 +9,4 @@ module.exports = {
       util: path.resolve(__dirname, './node_modules/util'),
     },
   },
-  devServer: {
-    allowedHosts: [
-      'localhost',
-    ],
-    proxy: {
-      '/algod': {
-        target: 'http://algorand-devnet:4180',
-        pathRewrite: {'^/algod': ''}
-      },
-      '/indexer': {
-        target: 'http://algorand-devnet:8980',
-        pathRewrite: {'^/indexer': ''}
-      },
-    },
-  },
 };
