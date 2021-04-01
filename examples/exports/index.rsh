@@ -10,11 +10,22 @@ export const o = {
   }
 }
 
-export const add1_impl = (x) => x + 1;
+const add1_impl = (x) => {
+  assert(0 == x - x);
+  return x + 1;
+}
 
-export const add1= is(add1_impl, Fun([UInt], UInt));
+const add1_ty = Refine(
+  Fun([UInt], UInt),
+  (([x]) => x < 10),
+  (([x], z) => x + 1 == z)
+);
+
+export const add1= is(add1_impl, add1_ty);
 
 export const main = Reach.App(
-  {}, [Participant('Alice', {}), Participant('Bob', {})], (Alice, Bob) => {
-    assert(add1(1) == 2);
+  { verifyPerConnector: true },
+  [Participant('Alice', {}), Participant('Bob', {})],
+  (Alice, Bob) => {
+    assert(add1(9) == 10);
     exit(); });

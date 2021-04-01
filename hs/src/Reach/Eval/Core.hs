@@ -2413,9 +2413,13 @@ evalApplyVals rator randvs =
     SLV_CloTyped clo_at sc tf -> do
       at <- withAt id
       let isDLVar = \case { SLV_DLVar _ -> True; _ -> False } . snd
-      unless (all isDLVar randvs) $
-        void $ assertRefinedArgs randvs at tf
-      evalApplyClosureVals clo_at sc randvs
+      case all isDLVar randvs of
+        True  -> evalApplyClosureVals clo_at sc randvs
+        False -> do
+          (dom_tupv, _) <- assertRefinedArgs randvs at tf
+          res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
+          forM_ (stf_post tf) $ flip (applyRefinement CT_Assert) [dom_tupv, ret_v]
+          return res
     v -> expect_t v $ Err_Eval_NotApplicableVals
 
 evalApply :: SLVal -> [JSExpression] -> App SLSVal
