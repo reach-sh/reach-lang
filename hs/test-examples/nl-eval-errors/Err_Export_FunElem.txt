@@ -1,1 +1,0 @@
-reachc: error: ./Err_Export_FunElem.rsh:5:18:tuple: An exported container may not have functions as elements.

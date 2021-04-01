@@ -127,7 +127,6 @@ data EvalError
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidPartName String
-  | Err_Export_FunElem
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -490,8 +489,6 @@ instance Show EvalError where
       "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
     Err_InvalidPartName n ->
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
-    Err_Export_FunElem ->
-      "An exported container may not have functions as elements."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

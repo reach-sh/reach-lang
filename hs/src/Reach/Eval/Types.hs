@@ -66,3 +66,13 @@ data DLValue
   | DLV_Obj SrcLoc (M.Map SLVar DLValue)
   | DLV_Data SrcLoc (M.Map SLVar DLType) String DLValue
   | DLV_Struct SrcLoc [(SLVar, DLValue)]
+
+instance SrcLocOf DLValue where
+  srclocOf = \case
+    DLV_Arg at _ -> at
+    DLV_Fun at _ _ -> at
+    DLV_Array at _ _ -> at
+    DLV_Tuple at _ -> at
+    DLV_Obj at _ -> at
+    DLV_Data at _ _ _ -> at
+    DLV_Struct at _ -> at

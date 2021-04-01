@@ -485,82 +485,30 @@ slToDL v = slToDLV v <&> maybe Nothing dlvToDL
 dlvToDL :: DLValue -> Maybe DLArgExpr
 dlvToDL = \case
   DLV_Arg _ a  -> return $ DLAE_Arg a
-  DLV_Array _ dt mdvs -> DLAE_Array dt <$> all_just (map rec mdvs)
-  DLV_Tuple _ mdvs -> DLAE_Tuple <$> all_just (map rec mdvs)
+  DLV_Array _ dt mdvs -> DLAE_Array dt <$> all_just (map dlvToDL mdvs)
+  DLV_Tuple _ mdvs -> DLAE_Tuple <$> all_just (map dlvToDL mdvs)
   DLV_Obj _ menv -> DLAE_Obj . M.fromList <$> all_just (map recAssoc $ M.toList menv)
   DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
-  DLV_Data _ t s mdv -> DLAE_Data t s <$> rec mdv
+  DLV_Data _ t s mdv -> DLAE_Data t s <$> dlvToDL mdv
   _ -> Nothing
   where
-    rec  = dlvToDL
-    recAssoc (k, v) = (,) k <$> rec v
+    recAssoc (k, v) = (,) k <$> dlvToDL v
 
 slToDLExportVal :: SLVal -> App (Maybe DLExportBlock)
 slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . Just))
 
 dlvToEV :: DLValue -> App DLExportBlock
 dlvToEV = \case
-  DLV_Arg at a -> return $ DLExportBlock Seq.empty $ DLEV_Arg at a
-  DLV_Fun at a b -> return $ DLExportBlock Seq.empty $ DLEV_Fun at a b
-  DLV_Array at dt mdvs -> locAt at $ do
-    evs <- mapM dlvToEV mdvs
-    dargs <- collectRets evs
-    let ty = T_Array dt $ fromIntegral $ length mdvs
-    let le = DLE_LArg at $ DLLA_Array dt dargs
-    (ev, assign) <- mkAssign at ty le
-    let block = collectStmts evs Seq.|> assign
-    return $ DLExportBlock block ev
-  DLV_Tuple at mdvs -> locAt at $ do
-    evs <- mapM dlvToEV mdvs
-    dargs <- collectRets evs
-    let ty = T_Tuple $ map argTypeOf dargs
-    let le = DLE_LArg at $ DLLA_Tuple dargs
-    (ev, assign) <- mkAssign at ty le
-    let block = collectStmts evs Seq.|> assign
-    return $ DLExportBlock block ev
-  DLV_Data at env s dv -> locAt at $ do
-    dev <- dlvToEV dv
-    darg <- collectRet dev
-    let ty = T_Data env
-    let le = DLE_LArg at $ DLLA_Data env s darg
-    (ev, assign) <- mkAssign at ty le
-    let block = collectStmt dev Seq.|> assign
-    return $ DLExportBlock block ev
-  DLV_Obj at env -> locAt at $ do
-    dev <- mapM dlvToEV env
-    argEnv <- mapM collectRet dev
-    let ty = T_Object $ M.map argTypeOf argEnv
-    let le = DLE_LArg at $ DLLA_Obj argEnv
-    (ev, assign) <- mkAssign at ty le
-    let assigns = collectStmts $ map snd $ M.toList dev
-    let block = assigns Seq.|> assign
-    return $ DLExportBlock block ev
-  DLV_Struct at env -> locAt at $ do
-    dev <- mapM (\ (k, v) -> (k, ) <$> dlvToEV v) env
-    argEnv <- mapM collectRet $ M.fromList dev
-    let ty = T_Struct $ M.toList $ M.map argTypeOf argEnv
-    let le = DLE_LArg at $ DLLA_Obj argEnv
-    (ev, assign) <- mkAssign at ty le
-    let assigns = collectStmts $ map snd $ dev
-    let block = assigns Seq.|> assign
-    return $ DLExportBlock block ev
+  DLV_Arg at a   -> retMt $ DLEV_Arg at a
+  DLV_Fun at a b -> retMt $ DLEV_Fun at a b
+  ow ->
+    case dlvToDL ow of
+      Nothing -> impossible "dlvToEV"
+      Just i  -> do
+        (stmts, da) <- captureLifts $ compileArgExpr i
+        return $ DLExportBlock stmts $ DLEV_Arg (srclocOf ow) da
   where
-    collectStmt (DLExportBlock s _) = s
-    collectStmts xs = foldr' ((Seq.><) . collectStmt) Seq.empty xs
-    collectRet (DLExportBlock _ r) = getExportValArg r
-    collectRets xs  = mapM collectRet xs
-    mkAssign at ty la = do
-        dv <- ctxt_mkvar $ DLVar at Nothing ty
-        let da = DLA_Var dv
-        let ev = DLEV_Arg at da
-        let block = DLS_Let at (Just dv) la
-        return (ev, block)
-
-
-getExportValArg :: DLExportVal -> App DLArg
-getExportValArg = \case
-  DLEV_Arg _ a -> return a
-  _ -> expect_ $ Err_Export_FunElem
+    retMt = return . DLExportBlock Seq.empty
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar = \case
