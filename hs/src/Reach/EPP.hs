@@ -566,7 +566,6 @@ mk_ev = \case
     let body' = dtReplace DT_Com (DT_Return bat) ll
     return $ DLEV_Fun at args (DLinBlock bat sf body' a)
   DLEV_Arg at a  -> return $ DLEV_Arg at a
-  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 mk_eb :: DLExportinBlock LLVar -> BApp (DLExportinBlock PILVar)
 mk_eb = \case

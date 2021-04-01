@@ -1434,7 +1434,6 @@ _smtDefineTypes smt ts = do
 smt_ev :: DLinExportVal LLBlock -> App SExpr
 smt_ev = \case
   DLEV_Arg at a  -> smt_a at a
-  DLEV_LArg at a -> smt_la at a
   DLEV_Fun at args body -> do
     forM_ args $ flip (pathAddUnbound at) O_Export . Just
     smt_block body

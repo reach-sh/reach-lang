@@ -169,7 +169,6 @@ instance Erase (DLinExportVal LLBlock) where
     DLEV_Fun at args body ->
       DLEV_Fun at <$> mapM el args <*> el body
     DLEV_Arg at a  -> DLEV_Arg at <$> el a
-    DLEV_LArg at a -> return $ DLEV_LArg at a
 
 instance Erase (DLExportinBlock LLVar) where
   el = \case

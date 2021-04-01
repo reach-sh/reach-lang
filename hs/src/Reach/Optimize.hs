@@ -261,7 +261,6 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
 instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
   opt = \case
     DLEV_Arg at a   -> DLEV_Arg  at <$> opt a
-    DLEV_LArg at a  -> DLEV_LArg at <$> opt a
     DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLExportinBlock a) where

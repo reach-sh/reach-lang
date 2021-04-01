@@ -124,7 +124,6 @@ instance CollectsTypes a => CollectsTypes (DLinBlock a) where
 instance CollectsTypes (DLinExportVal LLBlock) where
   cts = \case
     DLEV_Arg _ a  -> cts a
-    DLEV_LArg _ a -> cts a
     DLEV_Fun _ a b  -> cts a <> cts b
 
 instance CollectsTypes LLConsensus where

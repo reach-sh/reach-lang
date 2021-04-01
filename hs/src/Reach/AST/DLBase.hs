@@ -260,21 +260,18 @@ data DLArgExpr
 
 data DLinExportVal a
   = DLEV_Arg SrcLoc DLArg
-  | DLEV_LArg SrcLoc DLLargeArg
   | DLEV_Fun SrcLoc [DLVar] a
   deriving (Eq)
 
 instance SrcLocOf (DLinExportVal a) where
   srclocOf = \case
     DLEV_Arg a _ -> a
-    DLEV_LArg a _ -> a
     DLEV_Fun a _ _ -> a
 
 instance Pretty a => Pretty (DLinExportVal a) where
   pretty = \case
     DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
     DLEV_Arg _ a -> pretty a
-    DLEV_LArg _ a -> pretty a
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case

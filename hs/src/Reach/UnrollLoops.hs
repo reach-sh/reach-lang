@@ -151,7 +151,6 @@ instance Unroll (DLinExportVal LLBlock) where
   ul = \case
     DLEV_Fun at a b -> DLEV_Fun at a <$> ul b
     DLEV_Arg at a   -> return $ DLEV_Arg at a
-    DLEV_LArg at a  -> return $ DLEV_LArg at a
 
 instance Unroll (DLExportinBlock LLVar) where
   ul = \case

@@ -161,7 +161,6 @@ dk_ev = \case
   DLEV_Fun at args body ->
     DLEV_Fun at args <$> dk_block at body
   DLEV_Arg at a  -> return $ DLEV_Arg at a
-  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 dk_eb :: DLExportBlock -> IO DKExportBlock
 dk_eb = \case
@@ -259,7 +258,6 @@ instance LiftCon a => LiftCon (DLinExportVal a) where
   lc = \case
     DLEV_Fun at a b -> DLEV_Fun at a <$> lc b
     DLEV_Arg at a -> return $ DLEV_Arg at a
-    DLEV_LArg at a -> return $ DLEV_LArg at a
 
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
@@ -452,7 +450,6 @@ df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
 df_ev = \case
   DLEV_Fun at args body -> DLEV_Fun at args <$> df_bl body
   DLEV_Arg at a -> return $ DLEV_Arg at a
-  DLEV_LArg at a -> return $ DLEV_LArg at a
 
 df_eb :: DKExportBlock -> DFApp (DLExportinBlock LLVar)
 df_eb = \case
