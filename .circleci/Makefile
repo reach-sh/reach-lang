@@ -1,7 +1,14 @@
 .DEFAULT_GOAL := validate
 
+.PHONY: gather-examples
+gather-examples:
+	@echo "Gathing examples..."
+	@./gather-examples.hs
+	@echo
+
 .PHONY: build
-build:
+build: gather-examples
+# TODO forward failed compilation exit code
 	@dhall-to-yaml \
 	  --generated-comment \
 	  --explain \
@@ -17,12 +24,14 @@ validate: build
 .PHONY: do-watch
 do-watch:
 	@clear
-	@echo "Changes to config.dhall will trigger the \`$(TARGET)\` target"
+	@echo "Changes will trigger the \`$(TARGET)\` target"
 	@echo
-	@while inotifywait -e modify config.dhall; do \
-	  clear; \
-	  $(MAKE) -s $(TARGET); \
-	  done
+	@while inotifywait -e modify \
+	    Makefile \
+	    .gitignore \
+	    config.dhall \
+	    gather-examples.hs \
+	  ; do clear; $(MAKE) -s $(TARGET); done
 
 .PHONY: watch
 watch:

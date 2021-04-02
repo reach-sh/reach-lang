@@ -1,18 +1,29 @@
-let version = 2.1
+let Prelude =
+  https://prelude.dhall-lang.org/v20.1.0/package.dhall
+  sha256:26b0ef498663d269e4dc6a82b0ee289ec565d683ef4c00d0ebdd25333a5a3c98
+
+let Map = Prelude.Map.Type
+let map = Prelude.List.map
 
 
-let orbs =
-  { slack      = "circleci/slack@4.1.1"
-  , shellcheck = "circleci/shellcheck@2.2.0"
-  , jq         = "circleci/jq@2.2.0"
-  }
+let KeyVal
+   = \(K : Type)
+  -> \(V : Type)
+  -> { mapKey : K, mapValue : V }
 
+let `:=`
+   = \(V : Type)
+  -> \(k : Text)
+  -> \(v : V)
+  -> { mapKey = k, mapValue = v }
+
+
+{------------------------------------------------------------------------------}
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
            , password = "$DOCKER_PASSWORD"
            }}
-
 
 let docker-image =
     { image = "reachsh/reach-circle:0.1.2" }
@@ -22,23 +33,46 @@ let docker-image =
 {------------------------------------------------------------------------------}
 
 let Run =
-  { Type    = { name : Text, command : Text, no_output_timeout : Text }
-  , default = { no_output_timeout = "10m" }
+  { default = { no_output_timeout = "10m" }
+  , Type    = { name              : Text
+              , command           : Text
+              , no_output_timeout : Text
+              }
   }
 
 
 let Step =
-  < SlackNotifyOnFail  : { slack/notify         : { event        : Text, template : Text }}
-  | SaveCache          : { save_cache           : { key          : Text, paths    : List Text }}
-  | PersistToWorkspace : { persist_to_workspace : { root         : Text, paths    : List Text }}
-  | RestoreCache       : { restore_cache        : { keys         : List Text }}
-  | StoreTestResults   : { store_test_results   : { path         : Text }}
-  | StoreArtifacts     : { store_artifacts      : { path         : Text }}
-  | AttachWorkspace    : { attach_workspace     : { at           : Text }}
-  | AddSSHKeys         : { add_ssh_keys         : { fingerprints : List Text }}
-  | Run                : { run                  : Run.Type }
+  < SlackNotifyOnFail
+      : { slack/notify : { event : Text, template : Text }}
+
+  | SaveCache
+      : { save_cache : { key : Text, paths : List Text }}
+
+  | PersistToWorkspace
+      : { persist_to_workspace : { root : Text, paths : List Text }}
+
+  | RestoreCache
+      : { restore_cache : { keys : List Text }}
+
+  | StoreTestResults
+      : { store_test_results : { path : Text }}
+
+  | StoreArtifacts
+      : { store_artifacts : { path : Text }}
+
+  | AttachWorkspace
+      : { attach_workspace : { at : Text }}
+
+  | AddSSHKeys
+      : { add_ssh_keys : { fingerprints : List Text }}
+
+  | SetupRemoteDocker
+      : { setup_remote_docker : { docker_layer_caching : Bool }}
+
+  | Run
+      : { run : Run.Type }
+
   | checkout
-  | setup_remote_docker
   | jq/install
   | shellcheck/install
   >
@@ -96,6 +130,11 @@ let add_ssh_keys
   -> Step.AddSSHKeys { add_ssh_keys = { fingerprints }}
 
 
+let setup_remote_docker
+   = \(docker_layer_caching : Bool)
+  -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
+
+
 let slack/notify
   = Step.SlackNotifyOnFail { slack/notify = { event    = "fail"
                                             , template = "basic_fail_1"
@@ -103,6 +142,14 @@ let slack/notify
 
 
 {------------------------------------------------------------------------------}
+
+let DockerizedJob =
+  { docker : List { auth  : { password : Text, username : Text }
+                  , image : Text
+                  }
+  , steps  : List Step
+  }
+
 
 let dockerized-job-with
    = \(image : Text)
@@ -145,19 +192,18 @@ let build-and-test = dockerized-job
       , "hs/.stack_work"
       ]
 
-  , run                 "clean hs"      "cd hs && make hs-clean"
-  , run                 "build hs"      "cd hs && make hs-build"
-  , runWithin "20m"     "test hs (xml)" "cd hs && make hs-test-xml"
-  , store_test_results  "hs/test-reports"
+  , run                "clean hs"      "cd hs && make hs-clean"
+  , run                "build hs"      "cd hs && make hs-build"
+  , runWithin "20m"    "test hs (xml)" "cd hs && make hs-test-xml"
+  , store_test_results "hs/test-reports"
 
-  , run "check hs"      "cd hs && make hs-check"
-  , store_artifacts     "hs/stan.html"
+  , run "check hs"     "cd hs && make hs-check"
+  , store_artifacts    "hs/stan.html"
 
-  , Step.setup_remote_docker
+  , setup_remote_docker False -- TODO toggle caching on: True
+
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
-
   , run "build and test js"     "cd js && make build test"
-
   , run "rebuild examples"      "cd examples && make clean-all build-all"
 
   , run "pull algorand-devnet" ''
@@ -165,12 +211,8 @@ let build-and-test = dockerized-job
       docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
       ''
 
-  , runWithin "3m" "run examples" "cd examples && make run-all"
-
   , Step.jq/install
-
   , run "Is dockerhub up to date?" "scripts/docker-check.sh || echo 'XXX allowed to fail'"
-
   , slack/notify
   ]
 
@@ -249,44 +291,74 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 {------------------------------------------------------------------------------}
 
+let mk-example-job
+   = \(directory : Text)
+  -> let j = dockerized-job
+      [ Step.checkout
+      , setup_remote_docker False -- TODO toggle caching on: True
+      , runWithin "5m" "run ${directory}" "cd examples && ./one.sh run ${directory}"
+      , Step.jq/install
+      , slack/notify
+      ]
+    in `:=` DockerizedJob directory j
+
+
 let jobs =
-  { build-and-test
-  , docs-render
-  , docs-deploy
-  , shellcheck
-  , docker-lint
-  }
+  [ `:=` DockerizedJob "build-and-test" build-and-test
+  , `:=` DockerizedJob "docs-render"    docs-render
+  , `:=` DockerizedJob "docs-deploy"    docs-deploy
+  , `:=` DockerizedJob "shellcheck"     shellcheck
+  , `:=` DockerizedJob "docker-lint"    docker-lint
+  ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
-let JobEntry =
-  { Type    = { context  : List Text
-              , requires : Optional (List Text)
-              , filters  : Optional { branches : { only : Text }}
-              }
-  , default = { context  = [ "reachdevbot-on-dockerhub", "circleci-on-slack" ]
-              , requires = None (List Text)
-              , filters  = None { branches : { only : Text }}
-              }
-  }
-
-
-let entry-docs-deploy =
-  JobEntry::{ requires = Some [ "docs-render" ]
-            , filters  = Some { branches = { only = "master" }}
-            }
-
+{------------------------------------------------------------------------------}
 
 let workflows =
-  { build-and-test = { jobs = [ [ { mapKey = "build-and-test", mapValue = JobEntry.default  } ] ] }
-  , lint           = { jobs = [ [ { mapKey = "shellcheck",     mapValue = JobEntry.default  } ] ] }
-  , docs           = { jobs = [ [ { mapKey = "docs-render",    mapValue = JobEntry.default  } ]
-                              , [ { mapKey = "docs-deploy",    mapValue = entry-docs-deploy } ] ] }
-  }
+  let T =
+    { Type    = { context  : List Text
+                , requires : Optional (List Text)
+                , filters  : Optional { branches : { only : Text }}
+                }
+    , default = { context  = [ "reachdevbot-on-dockerhub", "circleci-on-slack" ]
+                , requires = None (List Text)
+                , filters  = None { branches : { only : Text }}
+                }
+    }
+
+  let `=:=` = `:=` T.Type
+
+  let entry-docs-deploy =
+    T::{ requires = Some [ "docs-render" ]
+       , filters  = Some { branches = { only = "master" }}
+       }
+
+  let mk-example
+     = \(directory : Text)
+    -> [ `=:=` directory T::{ requires = Some [ "build-and-test" ] } ]
+
+  let lint =
+    { jobs = [[ `=:=` "shellcheck" T.default ]] }
+
+  let docs = { jobs =
+    [ [ `=:=` "docs-render" T.default  ]
+    , [ `=:=` "docs-deploy" entry-docs-deploy ]
+    ]}
+
+  let build-and-test = { jobs =
+    [[ `=:=` "build-and-test" T.default ]]
+    # map Text (Map Text T.Type) mk-example ./examples.dhall
+    }
+
+  in { lint, docs, build-and-test }
 
 
-in
-  { version
-  , orbs
-  , jobs
-  , workflows
+{------------------------------------------------------------------------------}
+
+let orbs =
+  { slack      = "circleci/slack@4.1.1"
+  , shellcheck = "circleci/shellcheck@2.2.0"
+  , jq         = "circleci/jq@2.2.0"
   }
+
+in { version = 2.1, jobs , workflows, orbs }

@@ -1,2 +1,6 @@
 .history
-orig.dhall
+
+*.hi
+*.o
+
+gather-examples
