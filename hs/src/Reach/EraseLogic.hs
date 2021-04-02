@@ -164,9 +164,25 @@ instance Erase LLStep where
       send' <- traverse viaCount send
       return $ LLS_ToConsensus at send' recv' mtime'
 
+instance Erase (DLinExportVal LLBlock) where
+  el = \case
+    DLEV_Fun at args body ->
+      DLEV_Fun at <$> mapM el args <*> el body
+    DLEV_Arg at a  -> DLEV_Arg at <$> el a
+
+instance Erase (DLExportinBlock LLVar) where
+  el = \case
+    DLExportinBlock s r -> do
+      r' <- el r
+      s' <- el s
+      return $ DLExportinBlock s' r'
+
+instance Erase LLExports where
+  el dex = mapM el dex
+
 instance Erase LLProg where
-  el (LLProg at llo ps dli s) =
-    LLProg at llo ps dli <$> el s
+  el (LLProg at llo ps dli dex s) =
+    LLProg at llo ps dli <$> el dex <*> el s
 
 erase_logic :: LLProg -> IO LLProg
 erase_logic p = do

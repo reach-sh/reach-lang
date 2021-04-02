@@ -195,18 +195,32 @@ data DLOpts = DLOpts
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
+type DLExportVal = DLinExportVal DLBlock
+
+data DLExportBlock =
+  DLExportBlock DLStmts (DLinExportVal DLBlock)
+
+instance Pretty DLExportBlock where
+  pretty = \case
+    DLExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+
+type DLExports = M.Map SLVar DLExportBlock
+
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where
-  getCounter (DLProg _ dlo _ _ _) = getCounter dlo
+  getCounter (DLProg _ dlo _ _ _ _) = getCounter dlo
 
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps dli ds) =
+  pretty (DLProg _at _ sps dli dex ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
       <> pretty dli
+      <> hardline
+      <> pretty dex
+      <> hardline
       <> render_dls ds

@@ -126,6 +126,7 @@ data EvalError
   | Err_Remote_NotFun SLVar SLType
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
+  | Err_InvalidPartName String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -486,6 +487,8 @@ instance Show EvalError where
       "Struct key `" <> s <> "` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*"
     Err_Struct_Key_Not_Unique sk k ->
       "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
+    Err_InvalidPartName n ->
+      "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

@@ -559,8 +559,22 @@ be_s = \case
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs amt_v time_v mtime' ok_l'
     return $ ok_l''m
 
+
+mk_ev :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
+mk_ev = \case
+  DLEV_Fun at args (DLinBlock bat sf ll a) -> do
+    let body' = dtReplace DT_Com (DT_Return bat) ll
+    return $ DLEV_Fun at args (DLinBlock bat sf body' a)
+  DLEV_Arg at a  -> return $ DLEV_Arg at a
+
+mk_eb :: DLExportinBlock LLVar -> BApp (DLExportinBlock PILVar)
+mk_eb = \case
+  DLExportinBlock ll r -> do
+    let body' = dtReplace DT_Com (DT_Return $ srclocOf r) ll
+    DLExportinBlock body' <$> mk_ev r
+
 epp :: LLProg -> IO PIProg
-epp (LLProg at (LLOpts {..}) ps dli s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   -- Step 1: Analyze the program to compute basic blocks
   be_handlerc <- newCounter 1
   be_handlers <- newIORef mempty
@@ -581,6 +595,8 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
         let ce_flow = flow
         ce_vars <- newIORef mempty
         flip runReaderT (CEnv {..}) m
+  dex' <- flip runReaderT (BEnv {..}) $
+            mapM mk_eb dex
   cp <- (CPProg at . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
@@ -595,4 +611,4 @@ epp (LLProg at (LLOpts {..}) ps dli s) = do
   let plo_deployMode = llo_deployMode
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter
-  return $ PLProg at (PLOpts {..}) dli pps cp
+  return $ PLProg at (PLOpts {..}) dli dex' pps cp

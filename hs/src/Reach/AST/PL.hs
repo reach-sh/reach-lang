@@ -286,20 +286,23 @@ data PLOpts = PLOpts
 instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
 
+
 data PLinProg a
-  = PLProg SrcLoc PLOpts DLInit (EPPs a) (CPProg a)
+  = PLProg SrcLoc PLOpts DLInit (DLinExports a) (EPPs a) (CPProg a)
   deriving (Eq)
 
 instance HasCounter (PLinProg a) where
-  getCounter (PLProg _ plo _ _ _) = getCounter plo
+  getCounter (PLProg _ plo _ _ _ _) = getCounter plo
 
 type PLProg = PLinProg PLVar
 
 type PIProg = PLinProg PILVar
 
 instance Pretty a => Pretty (PLinProg a) where
-  pretty (PLProg _ _ dli ps cp) =
+  pretty (PLProg _ _ dli dex ps cp) =
     "#lang pl" <> hardline
+      <> pretty dex
+      <> hardline
       <> pretty dli
       <> hardline
       <> pretty ps

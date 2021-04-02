@@ -83,14 +83,26 @@ data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
 instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a
 
+data DKExportBlock = DKExportBlock DKBlock (DLinExportVal DKBlock)
+  deriving (Eq)
+
+instance Pretty DKExportBlock where
+  pretty = \case
+    DKExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+
+type DKExports = M.Map SLVar DKExportBlock
+
 data DKProg
-  = DKProg SrcLoc DLOpts SLParts DLInit DKTail
+  = DKProg SrcLoc DLOpts SLParts DLInit DKExports DKTail
 
 instance Pretty DKProg where
-  pretty (DKProg _at _ sps dli t) =
+  pretty (DKProg _at _ sps dli dex t) =
     "#lang dk" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
       <> pretty dli
+      <> hardline
+      <> pretty dex
+      <> hardline
       <> pretty t

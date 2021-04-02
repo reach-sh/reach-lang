@@ -151,11 +151,30 @@ dk_ at = \case
   Seq.Empty -> return $ DK_Stop at
   s Seq.:<| ks -> dk1 at ks s
 
-dekont :: DLProg -> IO DKProg
-dekont (DLProg at opts sps dli ss) = do
+runDk :: ReaderT DKEnv m a -> m a
+runDk = do
   let eRets = mempty
-  flip runReaderT (DKEnv {..}) $
-    DKProg at opts sps dli <$> dk_ at ss
+  flip runReaderT (DKEnv {..})
+
+dk_ev :: DLExportVal -> DKApp (DLinExportVal DKBlock)
+dk_ev = \case
+  DLEV_Fun at args body ->
+    DLEV_Fun at args <$> dk_block at body
+  DLEV_Arg at a  -> return $ DLEV_Arg at a
+
+dk_eb :: DLExportBlock -> IO DKExportBlock
+dk_eb = \case
+  DLExportBlock s r ->
+    runDk $ do
+      let at = srclocOf r
+      s' <- dk_block at $ DLBlock at [] s $ DLA_Literal DLL_Null
+      r' <- dk_ev r
+      return $ DKExportBlock s' r'
+
+dekont :: DLProg -> IO DKProg
+dekont (DLProg at opts sps dli dex ss) = do
+  dex' <- mapM dk_eb dex
+  runDk $ DKProg at opts sps dli dex' <$> dk_ at ss
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -235,6 +254,22 @@ instance LiftCon z => LiftCon (b, c, d, e, z) where
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
 
+instance LiftCon a => LiftCon (DLinExportVal a) where
+  lc = \case
+    DLEV_Fun at a b -> DLEV_Fun at a <$> lc b
+    DLEV_Arg at a -> return $ DLEV_Arg at a
+
+instance LiftCon DKBlock where
+  lc (DKBlock at sf b a) =
+    DKBlock at sf <$> lc b <*> pure a
+
+instance LiftCon DKExportBlock where
+  lc = \case
+    DKExportBlock s r -> DKExportBlock <$> lc s <*> lc r
+
+instance LiftCon DKExports where
+  lc = mapM lc
+
 instance LiftCon DKTail where
   lc = \case
     DK_Com m k -> doLift m (lc k)
@@ -251,10 +286,10 @@ instance LiftCon DKTail where
     DK_Continue at asn -> return $ DK_Continue at asn
 
 liftcon :: DKProg -> IO DKProg
-liftcon (DKProg at opts sps dli k) = do
+liftcon (DKProg at opts sps dli dex k) = do
   let eLifts = Nothing
   flip runReaderT (LCEnv {..}) $
-    DKProg at opts sps dli <$> lc k
+    DKProg at opts sps dli <$> lc dex <*> lc k
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -346,11 +381,7 @@ df_com mkk back = \case
 
 df_bl :: DKBlock -> DFApp LLBlock
 df_bl (DKBlock at fs t a) =
-  DLinBlock at fs <$> go t <*> pure a
-  where
-    go = \case
-      DK_Stop sat -> return $ DT_Return sat
-      x -> df_com DT_Com go x
+  DLinBlock at fs <$> df_t t <*> pure a
 
 df_t :: DKTail -> DFApp LLTail
 df_t = \case
@@ -414,8 +445,19 @@ df_step = \case
     return $ LLS_ToConsensus at send recv' mtime'
   x -> df_com LLS_Com df_step x
 
+
+df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
+df_ev = \case
+  DLEV_Fun at args body -> DLEV_Fun at args <$> df_bl body
+  DLEV_Arg at a -> return $ DLEV_Arg at a
+
+df_eb :: DKExportBlock -> DFApp (DLExportinBlock LLVar)
+df_eb = \case
+  DKExportBlock (DKBlock _ _ l _) r ->
+    DLExportinBlock <$> df_t l <*> df_ev r
+
 defluid :: DKProg -> IO LLProg
-defluid (DKProg at (DLOpts {..}) sps dli k) = do
+defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
@@ -424,8 +466,9 @@ defluid (DKProg at (DLOpts {..}) sps dli k) = do
   let eFVMm = mempty
   let eFVE = mempty
   flip runReaderT (DFEnv {..}) $ do
+    dex' <- mapM df_eb dex
     k' <- df_step k
-    return $ LLProg at opts' sps dli k'
+    return $ LLProg at opts' sps dli dex' k'
 
 -- Stich it all together
 linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg

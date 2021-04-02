@@ -258,6 +258,21 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
 
+data DLinExportVal a
+  = DLEV_Arg SrcLoc DLArg
+  | DLEV_Fun SrcLoc [DLVar] a
+  deriving (Eq)
+
+instance SrcLocOf (DLinExportVal a) where
+  srclocOf = \case
+    DLEV_Arg a _ -> a
+    DLEV_Fun a _ _ -> a
+
+instance Pretty a => Pretty (DLinExportVal a) where
+  pretty = \case
+    DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
+    DLEV_Arg _ a -> pretty a
+
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
   DLAE_Arg a -> [a]
@@ -508,6 +523,16 @@ data DLinBlock a
 
 instance Pretty a => Pretty (DLinBlock a) where
   pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
+
+data DLExportinBlock a =
+  DLExportinBlock (DLinTail a) (DLinExportVal (DLinBlock a))
+  deriving (Eq)
+
+instance Pretty a => Pretty (DLExportinBlock a) where
+  pretty = \case
+    DLExportinBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
+
+type DLinExports a = M.Map SLVar (DLExportinBlock a)
 
 data FluidVar
   = FV_balance

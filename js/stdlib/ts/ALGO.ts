@@ -1387,3 +1387,5 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
   return true;
 };
+
+export const reachStdlib = compiledStdlib;
