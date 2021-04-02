@@ -7,7 +7,7 @@
 
 This tutorial walks through the creation of a Pay-To-Play Tic-Tac-Toe decentralized application using Reach.
 Pay-To-Play Tic-Tac-Toe is a game very similar to regular Tic-Tac-Toe, except that each place on the board has a fee that is calculated by the number of 'wins' attainable in the chosen space.
-It contains everything you need to know to build and test this application and assumes no prior experience with blockchain development of any kind.
+This workshop includes everything you need to know to build and test this application. It assumes no prior experience with blockchain development.
 
 To dive in, click to go to the @seclink["tic-tac-0"]{first step}!
 
@@ -20,38 +20,28 @@ To dive in, click to go to the @seclink["tic-tac-0"]{first step}!
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{Make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
 
-@margin-note{You probably already have @exec{Make} installed.
-For example, OS X and many other POSIX systems come with @exec{Make}, but some versions of Linux do not include it by default and will require you to install it.
-If you're on Ubuntu, you can run @exec{sudo apt install make} to get it.}
+@margin-note{You probably already have @exec{make} installed.
+For example, OS X and many other POSIX systems come with @exec{make}, but some versions of Linux do not include it by default and will require you to install it.
+If you're on Ubuntu, you can run @exec{sudo apt install make} to get it.
 
-You'll know that you have everything installed if you can run the following three commands without errors
+You'll know that you have everything installed if you can run the following three commands without errors:
 
-@cmd{Make --version}
+@cmd{make --version}
 
 @cmd{docker --version}
 
 @cmd{docker-compose --version}
 
-Once you've confirmed that they are installed, choose a directory for this project. We recommend
+Once you've confirmed that they are installed, choose a directory for this project. We recommend @cmd{mkdir -p ~/reach/tic-tac && cd ~/reach/tic-tac}.
 
-@cmd{mkdir -p ~/reach/tic-tac && cd ~/reach/tic-tac}
+Next, install Reach by downloading it from @hyperlink["https://GitHub.com/reach-sh/reach-lang"]{GitHub} by running @cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}.
 
-Next, install Reach by downloading it from      @hyperlink["https://GitHub.com/reach-sh/reach-lang"]{GitHub} by running
-
-@cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
-
-You'll know that the download worked if you can run
-
-@cmd{./reach version}
+You'll know that the download worked if you can run @cmd{./reach version}.
 
 Since Reach is Dockerized, when you first use it, you'll need to download the images it uses.
-This will happen automatically when you first use it, but you can do it manually now by running
+This will happen automatically when you first use it, but you can do it manually now by running @cmd{./reach update}.
 
-@cmd{./reach update}
-
-You'll know that everything is in order if you can run
-
-@cmd{./reach compile --help}
+You'll know that everything is in order if you can run @cmd{./reach compile --help}.
 
 
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tic-tac-1"]{write your first Reach application}!
@@ -66,7 +56,7 @@ In this tutorial, we'll be building a version of Tic-Tac-Toe where two players, 
 We'll start simple and slowly make the application more full-featured.
 
 You should follow along by copying each part of the program and seeing how things go.
-You may find it beneficial to type each line out, rather than copying & pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
+You may find it beneficial to type each line out, rather than copying and pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
 
 Let's start by creating a file named @exec{index.rsh}.
 It doesn't matter where you put this file, but we recommend putting in the current directory, which would be @exec{~/reach/tic-tac} if you're following along exactly.
@@ -76,7 +66,6 @@ For example, start off by typing the following into @exec{index.rsh}:
 
 @reachex[#:show-lines? #t "tic-tac-1/index.rsh"
          #:link #t]
-
 
 
 This is just a shell of a program that doesn't do much, but it has a few important components.
@@ -90,7 +79,6 @@ You'll always have this at the top of every program.}
 When you compile, this is what the compiler will look at.}
 
 @item{Line 6 specifies the two participants to this application, @emph{Alice} and @emph{Bob}.}
-
 
 ]
 
@@ -133,9 +121,7 @@ This will only work on the Reach-provided developer testing network.}
 
 ]
 
-This is now enough for Reach to compile and run our program. Let's try by running
-
-@cmd{./reach run}
+This is now enough for Reach to compile and run our program. Let's try by running @cmd{./reach run}.
 
 Reach should now build and launch a Docker container for this application.
 Since the application doesn't do anything, you'll just see a lot of diagnostic messages though, so that's not very exciting.
@@ -145,21 +131,6 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 In @seclink["tic-tac-2"]{the next step}, we'll implement the logic of Tic-Tac-Toe and our application will start doing something!
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @section[#:tag "tic-tac-2"]{Tic-Tac-Toe}
 @(mint-scope "tic-tac-2")
@@ -172,7 +143,6 @@ We have to decide how to represent the hands of the game.
 
 The first step is to add the global variables for the Tic-Tac-Toe implementation in the Reach program.
 First, we'll add the board variables.
-
 
 @reachex[#:show-lines? #t "tic-tac-2/index.rsh"
          #:link #t
@@ -216,7 +186,6 @@ Next, we'll add a few of the winning functions.
 @item{The function on lines 45-48 returns true if the game is over because someone won or a draw occurred.}
 
 ]
-
 
 Once that is done, we'll add the functions used for making moves.
 
@@ -279,7 +248,7 @@ Before continuing with the Reach application, let's move over to the JavaScript 
 
 ]
 
-Then, let's add some wagering related variables to our frontend.
+Then, let's add some wagering-related variables to our frontend.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-2/index.mjs"
@@ -346,7 +315,6 @@ After that, modify the interaction promises from line 66-75 to include @litchar{
          #:link #t
          'only 67 70 "  // ..."]
 
-
 To finish off the JavaScript frontend, we will add a few @litchar{console.log()} statements to the end of the program.
 
 @reachex[#:mode js
@@ -354,10 +322,7 @@ To finish off the JavaScript frontend, we will add a few @litchar{console.log()}
          #:link #t
          'only 72 75 "  // ..."]
 
-
 There should be nothing interesting or controversial about these implementations; that's the point of Reach: we get to just write normal business logic without worrying about the details of the @tech{consensus network} and decentralized application.
-
-
 
 Now, let's go back to the Reach program and look inside of the body of the program for what actions Alice and Bob take.
 
@@ -367,14 +332,13 @@ First, both parties get a random number from 0-1 from the JavaScript:
          #:link #t
          'only 85 104 "      // ..."]
 
-Then, the reach script calculates the player to go first:
+Then, the Reach script calculates the player to go first:
 
 @reachex[#:show-lines? #t "tic-tac-2/index.rsh"
          #:link #t
          'only 105 105"      // ..."]
 
 The game proceeds in two ongoing steps.
-
 
 @reachex[#:show-lines? #t "tic-tac-2/index.rsh"
          #:link #t
@@ -395,7 +359,6 @@ Then, once the game is over, we compute the outcome of the game and pay each pla
          #:link #t
          'only 129 135 "      // ..."]
 
-
 @itemlist[
 
 @item{Lines 129 through 132 compute the pot for each party.}
@@ -403,9 +366,6 @@ Then, once the game is over, we compute the outcome of the game and pay each pla
 @item{Lines 133 through 134 pay each player.}
 
 ]
-
-
-
 
 Finally, we use the @tech{each} form to have each of the participants send the final outcome to their frontends.
 
@@ -419,9 +379,7 @@ Finally, we use the @tech{each} form to have each of the participants send the f
 
 ]
 
-At this point, we can run the program and see its output by running
-
-@cmd{./reach run}
+At this point, we can run the program and see its output by running @cmd{./reach run}.
 
 @margin-note{If your version isn't working, look at the complete versions of the index.rsh and index.mjs files to make sure you copied everything down correctly!}
 
@@ -433,24 +391,20 @@ It's because Ethereum transactions cost "gas" to run.
 
 If we had shown all the decimals, they'd look like this:
 
-
 @verbatim{
 Alice went from 10 to 14.999999999999687163.
 Bob went from 10 to 4.999999999999978229.
 }
-
 
 Why does Alice win slightly less than Bob when she wins?
 She has to pay to @tech{deploy} the contract, because she calls acc.deploy in her @tech{frontend}.
 
 The @seclink["guide-deploymode"]{guide section on deployment} discusses how to avoid this difference.}
 
-
 @margin-note{If your version isn't working, look at the complete versions of index.rsh and index.mjs to make sure you copied everything down correctly!}
 
-
 Since the players act randomly, the results will be different every time.
-When I ran the program, this is the final output I got:
+Running this program, the outcome is as follows:
 
 @verbatim{
 Bob sees the final state: 
@@ -473,48 +427,29 @@ Alice sees the final state:
 
 Alice went from 100 to 104.9999
 Bob went from 100 to 94.9999
-Done! 
+Done!
 }
 
 Alice is pretty good at Tic-Tac-Toe!
 
-@tech{Consensus networks} in general, and Reach specifically, guarantee that all participants agree on the outcome of their decentralized computation.
-Indeed, this is where the name @tech{consensus network} comes from, as they enable these distributed, and untrusted, parties to come to a consensus, or agreement, about the intermediate states of a computation; and if they agree on the intermediate states, they will also agree on the output.
-That's why every time you run @exec{./reach run}, both Alice and Bob will see the same outcome!
+@tech{Consensus networks} in general (and Reach specifically) guarantee that all participants agree on the outcome of their decentralized computation.
+Indeed, this is where the name @tech{consensus network} comes from. They enable these distributed, and untrusted, parties to come to an agreement (or "consensus") about the intermediate states of a computation; and if they agree on the intermediate states, they will also agree on the output.
+That's why, every time you run @exec{./reach run}, both Alice and Bob will see the same outcome.
 
-In the @seclink["tic-tac-3"]{next section}, we'll add Pay-To-Play to our Tic-Tac-Toe engine.
-
+In the @seclink["tic-tac-3"]{next section}, we'll add "pay-to-play" functionality to the tic-tac-toe engine.
 
 @seclink["top"]{Main menu}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@section[#:tag "tic-tac-3"]{Pay-To-Play}
+@section[#:tag "tic-tac-3"]{Pay-to-Play}
 @(mint-scope "tic-tac-3")
 
-Before now, the whole idea of implementing Pay-To-Play on our Tic-Tac-Toe engine has been skipped over.
+In this section, we will add pay-to-play functionality to our game!
 
-However, in this section, we will add Pay-To-Play to our game!
-
-The first thing that we have to do is add the fee matrix and a few fee handlers to the Reach script so that it can access them for the fee calculations.
+The first thing we have to do is add the fee matrix and a few fee handlers to the Reach script so it can access them for fee calculations.
 
 @reachex[#:show-lines? #t "tic-tac-3/index.rsh"
          #:link #t
          'only 11 18 "      // ..."]
-
 
 @itemlist[
 
@@ -526,32 +461,31 @@ The first thing that we have to do is add the fee matrix and a few fee handlers 
 
 ]
 
-Then, we pass the fee_mt variable to interact.getMove, so that the JS code can print the fee for the given move.
+Then, we pass the fee_mt variable to interact.getMove, so that the JavaScript code can print the fee for the given move.
 
 @reachex[#:show-lines? #t "tic-tac-3/index.rsh"
          #:link #t
          'only 61 61 "      // ..."]
 
-Once that is done, we then have to modify what we tell the Reach program we will be passing to the JS getMove function.
-
+Once that is done, we have to modify what we tell the Reach program we'll be passing to the JavaScript getMove function.
 
 @reachex[#:show-lines? #t "tic-tac-3/index.rsh"
          #:link #t
          'only 78 78 "      // ..."]
 
-and add in the @litchar{Fees} type
+and add in the @litchar{Fees} type...
 
 @reachex[#:show-lines? #t "tic-tac-3/index.rsh"
          #:link #t
          'only 3 3 "      // ..."]
 
-Then, actually modify what the players pay.
+Next, we'll actually modify what players pay.
 
 @reachex[#:show-lines? #t "tic-tac-3/index.rsh"
          #:link #t
          'only 136 153 "      // ..."]
 
-Now, the Reach file is fully set up for the Pay-To-Play function. Since this is done, we must now move on to editing the JS side of the DApp.
+Now, the Reach file is fully set up for pay-to-play functionality. Since this is done, we'll move on to editing the JavaScript side of the app.
 
 The only thing to change is the getMove function:
 
@@ -559,12 +493,11 @@ The only thing to change is the getMove function:
          #:link #t
          'only 50 65 "      // ..."]
 
-
-Once that is complete, Pay-To-Play has successfully been implemented on your Tic-Tac-Toe DApp!
-The only visible difference in the output of the game will be that the final balances will no longer be exactly 5 ETH (or ALGO, depending on which REACH_CONNECTOR_MODE you are running on) different from the starting balances.
+With that, you've incorporated pay-to-play functionality into your app!
+The only visible difference in the output of the game is that the final balances will no longer be exactly 5 ETH (or ALGO, depending on which REACH_CONNECTOR_MODE you're running on) different from the starting balances.
 
 Since the players act randomly, the results will be different every time.
-When I ran the program, this is the output I got:
+Running this program, the outcome is as follows:
 
 @verbatim{
 Bob sees the final board: 
@@ -590,25 +523,9 @@ Bob went from 1000 to 997.1874.
 Done!
 }
 
-Now that our game is fully implemented, however, it turns out there is a fatal flaw in it! Read the @seclink["tic-tac-5"]{next section} to find out why.
-
+Our game is fully implemented, but there's a fatal flaw! Read the @seclink["tic-tac-5"]{next section} to find out why.
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @section[#:tag "tic-tac-5"]{Timeouts and Participation}
 @(mint-scope "tic-tac-5")
@@ -617,35 +534,27 @@ In this section, we'll focus on a subtle issue that is important and unique to d
 
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.
 
-In traditional client-server programs, like a Web server, this would be the case of a client not sending any more requests to the server, or the server stopping sending responses to the client.
+In traditional client-server programs, like a web server, this would be the case of a client not sending any more requests to the server, or the server stopping sending responses to the client.
 In these sorts of traditional programs, non-participation is an exceptional circumstance that normally leads to an error message for clients and, at most, a log entry for servers.
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
 
-In contrast, decentralized applications must be carefully designed with an eye towards their behavior in the face of non-participation.
-For example, consider what happens in our Tic-Tac-Toe game if after Alice has paid her wager, Bob never accepts and the application doesn't continue.
-In this case, Alice's @tech{network tokens} would be locked inside of the @tech{contract} and lost to her.
-Similarly, if after Bob accepted and paid his wager, Alice stopped participating and never submitted her hand, then both their funds would be locked away forever.
-In each of these cases, both parties would be greatly hurt and their fear of that outcome would introduce an additional cost to transacting, which would lower the value they got from participating in the application.
-Of course, in a situation like Tic-Tac-Toe this is unlikely to be an important matter, but recall that Tic-Tac-Toe is a microcosm of decentralized application design.
+In contrast, decentralized applications must be designed with an eye for non-participation. What happens if Alice has pays her wager, but Bob never accepts? Alice's @tech{network tokens} would be locked inside of the @tech{contract} and lost to her.
+Similarly, if Alice never submits her hand after Bob accepts and pays his wager, both their funds would be locked away forever.
 
-@margin-note{Technically, in the first case, when Bob fails to start the application, Alice is not locked away from her funds: since Bob's identity is not fixed until after his first message, she could start another instance of the game as the Bob role and then she'd win all of the funds, less any transaction costs of the @tech{consensus network}.
-In the second case, however, there would be no recourse for either party.}
+@margin-note{Technically, in the first case, when Bob fails to start the application, Alice is not locked away from her funds. Since Bob's identity is not fixed until after his first message, she could start another instance of the game as the Bob role and win all of the funds (minus transaction costs of the @tech{consensus network}). In the second case, however, there would be no recourse for either party.}
 
 In the rest of this section, we'll discuss how Reach helps address non-participation.
 For a longer discussion, refer to @seclink["guide-timeout"]{the guide chapter on non-participation}.
 
-
-
 In Reach, non-participation is handled through a "timeout" mechanism whereby each @tech{consensus transfer} can be paired with a @tech{step} that occurs for all @tech{participants} if the @tech{originator} of the @tech{consensus transfer} fails to make the required @tech{publication} before a particular @tech{time}.
-We'll integrate this mechanism into our version of Tic-Tac-Toe.
+We'll integrate this mechanism into our version of tic-tac-toe.
 
 First, we'll modify the @tech{participant interact interface} to allow the @tech{frontend} to be informed that a timeout occurred.
 
 @reachex[#:mode js #:show-lines? #t "tic-tac-4/index.rsh"
          #:link #t
          'only 80 80 "      // ..."]
-
 
 @itemlist[
 
@@ -668,11 +577,10 @@ Back in the Reach program, we'll define an identifier at the top of our program 
          #:link #t
          'only 88 88 "      // ..."]
 
-
 @itemlist[
 
 @item{Line 88 defines the deadline as 240 @tech{time delta} units, which are an abstraction of the underlying notion of @tech{time} in the @tech{consensus network}.
-In many networks, like Ethereum, this number is a number of blocks.}
+In many networks (including Ethereum) this refers to a number of blocks.}
 
 ]
 
@@ -692,11 +600,9 @@ Next, at the start of the Reach application, we'll define a helper function to i
 
 ]
 
-We won't change Alice's first message, because there is no consequence to her as a non-participant: if she doesn't start the game, then no one is any worse off.
+We won't change Alice's first message, because there is no consequence to her as a non-participant. If she doesn't start the game, then no one is any worse off.
 
-
-
-However, we will adjust Bob's first message, because if he fails to participate, then Alice's initial wager will be lost to her.
+However, we'll adjust Bob's first message. If he fails to participate, then Alice's initial wager will be lost to her.
 
 @reachex[#:mode js #:show-lines? #t "tic-tac-4/index.rsh"
          #:link #t
@@ -714,47 +620,29 @@ This means that if Bob fails to publish his hand, then Alice will take her @tech
 
 We will add a similar timeout handler to Alice's second message.
 
-
-
 But in this case, Bob will be able to claim all of the funds if Alice doesn't participate.
 You might think that it would be "fair" for Alice's funds to be returned to Alice and Bob's to Bob.
 However, if we implemented it that way, then Alice would be wise to always timeout if she were going to lose, which she knows will happen, because she knows her hand and Bob's hand.
 
 These are the only changes we need to make to the Reach program to make it robust against non-participation: seven lines!
 
-
-If you where to run the program and see what happens, there would be no noticeable difference from the last chapter, but when we implement the next part, @seclink["tic-tac-6"]{Interaction and Independence}, you would be able to timeout the game.
+If you were to run the program and see what happens, there would be no noticeable difference from the last chapter, but when we implement the next part, @seclink["tic-tac-6"]{Interaction and Independence}, you would be able to timeout the game.
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
-
-
-
-
-
 
 @section[#:tag "tic-tac-6"]{Interaction and Independence}
 @(mint-scope "tic-tac-6")
 
-In the last section, we made our Tic-Tac-Toe run until there was a definitive winner.
+In the last section, we made our tic-tac-toe run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
-Instead, we'll go under the covers of @exec{reach run}, as well as build a version of our game that is interactive and can be played away from a private developer test network.
+Instead, we'll take a peek under the hood of @exec{reach run}, as well as build an interactive version of the game that can be played away from a private developer test network.
 
 @(hrule)
 
 In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a fresh instance of a private developer test network.
-Since in this section, we will customize this and build a non-automated version of Tic-Tac-Toe, as well as give the option to connect to a real Ethereum network.
+Since we'll customize this, build a non-automated version of tic-tac-toe, and create the option of connecting to a real Ethereum network. we'll start by running @cmd{./reach scaffold}.
 
-We'll start by running
-
-@cmd{./reach scaffold}
-
-which will automatically generate the following files for us:
+This will automatically generate the following files for us:
 
 @itemlist[
 
@@ -789,14 +677,10 @@ Your line 3 will say @litchar{tic-tac}, rather than @litchar{tic-tac-5}, if you'
 
 @item{Lines 25 through 73 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tic-tac-5-ETH-live} for connecting to a live network.}
 
-@item{We'll also add lines 73 through 77 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{Alice} and @litchar{bob}.}
+@item{We'll also add lines 73 through 77 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{Alice} and @litchar{Bob}.}
 ]
 
-With these in place, we can run
-
-@cmd{docker-compose run WHICH}
-
-where @exec{WHICH} is @litchar{reach-app-tic-tac-5-ETH-live} for a live instance, or @litchar{Alice} or @litchar{bob} for a test instance.
+With these in place, we can run @cmd{docker-compose run WHICH} where @exec{WHICH} is @litchar{reach-app-tic-tac-5-ETH-live} for either a live instance or @litchar{Alice} or @litchar{Bob} for a test instance.
 If we use the live version, then we have to define the environment variable @envvar{ETH_NODE_URI} as the URI of our Ethereum node.
 
 We'll modify the @reachexlink["tic-tac-5/Makefile"] to have commands to run each of these variants:
@@ -812,7 +696,7 @@ Let's modify the JavaScript @tech{frontend} and make them interactive.
 @(hrule)
 
 We'll start from scratch and show every line of the program again.
-You'll see a lot of similarity between this and the last version, but for completeness, we'll show every line.
+You'll see a lot of similarity between this and the last version but, for completeness, we'll show every line.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-5/index.mjs"
@@ -874,7 +758,7 @@ We'll see how these three functions are used below.}
          #:link #t
          'only 79 82 "  // ..."]
 
-Next we define a few helper functions and start the participant interaction interface.
+Next, we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-5/index.mjs"
@@ -911,23 +795,9 @@ Finally, the @jsin{endsWith} method.
 
 Lastly, we choose the appropriate backend function and await its completion.
 
-
-We can now run
-
-@cmd{make build}
-
-to rebuild the images, then
-
-@cmd{make run-alice}
-
-in one terminal in this directory and
-
-@cmd{make run-bob}
-
-in another terminal in this directory.
+We can now run @cmd{make build} to rebuild the images, then @cmd{make run-alice} in one terminal in this directory and @cmd{make run-bob} in another.
 
 Here's an example run:
-
 
 @verbatim{
 $ make run-alice
@@ -956,11 +826,11 @@ Alice publishes wager of 5 ETH
     ╚═══╩═══╩═══╝
 
 Alice's turn.
-Alice what position will you play?
+Alice, what position will you play?
 5
 You played 5
 Which maps to 4
-Alice chooses move 4 from board Above.
+Alice chooses move 4 from board above.
 fee: 1.25 * 10**18
 }
 
@@ -970,7 +840,7 @@ and
 $ make run-bob
 Are you Alice?
 n
-Would you like to create an account? (only possible on devnet)
+Would you like to create an account? (Only possible on devnet.)
 y
 Please paste the contract information:
 {
@@ -992,54 +862,46 @@ y
     ╚═══╩═══╩═══╝
 
 Bob's turn.
-Bob what position will you play?
+Bob, what position will you play?
 }
 
 Of course, when you run the exact amounts and addresses may be different.
 
-@margin-note{If your version isn't working, look at the complete versions of the files mentioned in this chapter (GitHub) to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of the files mentioned in this chapter (see GitHub) to make sure you copied everything down correctly!}
 
-
-If we were to edit @reachexlink["tic-tac-6/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+If we were to edit @reachexlink["tic-tac-6/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, we'd be able to test and run our application on Algorand instead of Ethereum.
 
 Now our implementation of Tic-Tac-Toe is finished!
-We are protected against timeouts, and we can run interactively on non-test networks.
+We are protected against timeouts and we can run interactively on non-test networks.
 
 In this step, we made a command-line interface for our Reach program.
-In @seclink["tic-tac-7"]{the next step}, we'll replace this with a Web interface for the same Reach program.
-
+In @seclink["tic-tac-7"]{the next step}, we'll replace this with a web interface for the same Reach program.
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
 
 @section[#:tag "tic-tac-7"]{Web Interaction}
 @(mint-scope "tic-tac-7")
 
-In the last section, we made Tic-Tac-Toe run as a command-line application, without any changes to the Reach program.
+In the last section, we made tic-tac-toe run as a command-line application, without any changes to the Reach program.
 In this section, we again won't be making any changes to the Reach program.
-Instead, we'll replace the command-line interface with a Web interface.
+Instead, we'll replace the command-line interface with a web interface.
 
-We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the same principles apply to any Web framework.
+We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the same principles apply to any web framework.
 
 @margin-note{If you've never used React before, here are some basics about how it works:
 @itemlist[
 @item{React programs are JavaScript programs that use a special library that allows you to mix HTML inside of the body of your JavaScript.}
-@item{React has a special compiler that combines a bundle of JavaScript programs, and all their dependencies, into one large file that can be deployed on a static Web server.
+@item{React has a special compiler that combines a bundle of JavaScript programs, and all their dependencies, into one large file that can be deployed on a static web server.
 This is called "packing".}
-@item{When you're developing and testing with React, you run a special development Web server that watches updates this packed file every time you modify your source files, so you don't have to constantly run the compiler.}
+@item{When you're developing and testing with React, you run a special development web server that watches updates this packed file every time you modify your source files, so you don't have to constantly run the compiler.}
 @item{Reach automates the process of starting this development server for you when you run @exec{./reach react} and gives you access to it at @tt{http://localhost:3000/}.}
 ]}
 
 Similarly, in this tutorial, we assume that we will be deploying (and testing) with Ethereum.
-Reach Web applications rely on the Web browser to provide access to a consensus network account and its associated wallet.
+Reach web applications rely on the web browser to provide access to a consensus network account and its associated wallet.
 On Ethereum, the standard wallet is @link["https://metamask.io"]{MetaMask}.
 If you want to test this code, you'll need to install it and set it up.
-Furthermore, MetaMask does not support multiple active accounts, so if you want to test Tic-Tac-Toe locally, you'll need to have two separate browser instances: one to act as Alice and another to act as Bob.
+Furthermore, MetaMask does not support multiple active accounts, so if you want to test the game locally, you'll need to have two separate browser instances: one to act as Alice and another to act as Bob.
 
 @(hrule)
 
@@ -1057,11 +919,10 @@ Or, you can copy the @tt{index.rsh} file into a new directory and work from ther
 
 @(hrule)
 
-This code is supplemented with @reachexlink["tic-tac-7/index.css" "index.css"]
-and some @reachexlink["tic-tac-7/views" "views"].
-These details are not specific to Reach, and are fairly trivial,
-so we will not explain the specifics of those files.
+This code is supplemented with @reachexlink["tic-tac-7/index.css" "index.css"] and some @reachexlink["tic-tac-7/views" "views"].
+These details are not specific to Reach, and are fairly trivial, so we will not explain the specifics of those files.
 If you run this locally, you'll want to download those files.
+
 Your directory should look like:
 
 @verbatim{
@@ -1079,8 +940,7 @@ Your directory should look like:
 
 @(hrule)
 
-We will focus on @reachexlink["tic-tac-7/index.js"],
-because @reachexlink["tic-tac-7/index.rsh"] is the same as previous sections.
+We will focus on @reachexlink["tic-tac-7/index.js"] because @reachexlink["tic-tac-7/index.rsh"] is the same as previous sections.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-7/index.js"
@@ -1097,20 +957,16 @@ To run on Algorand, change the import on line 8.
 
 @reachin{import * as reach from '@"@"reach-sh/stdlib/ALGO'}
 
-
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-7/index.js"
          #:link #t
          'only 10 45 "// ..."]
 
-On these lines we define a few helpful constants and defaults for later,
-some corresponding to the enumerations we defined in Reach.
+On these lines we define a few helpful constants and defaults for later, some corresponding to the enumerations we defined in Reach.
 
 @(hrule) @;; Explain App
 
-We start defining @jsin{App} as a React component,
-and tell it what to do once it mounts, which is the React term for starting.
-
+We start defining @jsin{App} as a React component, and tell it what to do once it mounts, which is the React term for starting.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-7/index.js"
@@ -1139,8 +995,7 @@ and tell it what to do once it mounts, which is the React term for starting.
 
  @;; Explain Player
 
-Next, we will define @jsin{Player} as a React component,
-which will be extended by the specialized components for Alice and Bob.
+Next, we will define @jsin{Player} as a React component, which will be extended by the specialized components for Alice and Bob.
 
 @exviewfigs["tic-tac-7" "PlayerViews"
   '["GetHand" 8 32]]
@@ -1173,21 +1028,19 @@ We will provide these callbacks via the React component directly.
 @(hrule) @;; explain Deployer
 
 @;; TODO: rename Deployer->Alice, Attacher->Bob
-Next, we will define @jsin{Deployer} as a React component for Alice,
-which extends @jsin{Player}.
+Next, we will define @jsin{Deployer} as a React component for Alice, which extends @jsin{Player}.
 
 @exviewfigs["tic-tac-7" "DeployerViews"
   '["SetWager" 20 38]
   '["Deploy" 40 53]]
 
-Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
+Our web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
 @reachex[#:show-lines? #t "tic-tac-7/index.rsh"
          #:link #t
          'only 78 80 "// ..."]
 
-We will provide the @jsin{wager} value,
-and define some button handlers in order to trigger the deployment of the contract.
+We will provide the @jsin{wager} value, and define some button handlers in order to trigger the deployment of the contract.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-7/index.js"
@@ -1196,17 +1049,14 @@ and define some button handlers in order to trigger the deployment of the contra
 
 @itemlist[
  @item{On line 249, we set the component state to display @exviewref["tic-tac-7" "SetWager"].}
- @item{On line 250, we define what to do when the user clicks the @litchar{Set Wager} button,
-  which is to set the component state to display @exviewref["tic-tac-7" "Deploy"].}
- @item{On lines 260 thru 277, we define what to do when the user clicks the @litchar{Deploy} button. @itemlist[
+ @item{On line 250, we define what to do when the user clicks the @litchar{Set Wager} button which is to set the component state to display @exviewref["tic-tac-7" "Deploy"].}
+ @item{On lines 260 thru 277, we define what to do when the user clicks the @litchar{Deploy} button.
  @item{On line 261, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
  @item{On line 263, we set the component state to display @exviewref["tic-tac-7" "Deploying"].}
  @item{On line 266, we set the @jsin{wager} property.}
- @item{On line 271, we start running the Reach program as Alice, using the @jsin{this} React component
-  as the @tech{participant interact interface} object.}
+ @item{On line 271, we start running the Reach program as Alice, using the @jsin{this} React component as the @tech{participant interact interface} object.}
 
- @item{On lines 274 and 275, we set the component state to display @exviewref["tic-tac-7" "WaitingForAttacher"],
-  which displays the deployed contract info as JSON.}]}
+ @item{On lines 274 and 275, we set the component state to display @exviewref["tic-tac-7" "WaitingForAttacher"] which displays the deployed contract info as JSON.}]}
  @item{On line 281, we render the appropriate view from @reachexlink{tic-tac-7/views/DeployerViews.js}.}
 ]
 
@@ -1226,8 +1076,7 @@ Our web frontend needs to implement the @tech{participant interact interface} fo
          #:link #t
          'only 81 83 "// ..."]
 
-We will provide the @jsin{acceptWager} callback,
-and define some button handlers in order to attach to the deployed contract.
+We will provide the @jsin{acceptWager} callback, and define some button handlers in order to attach to the deployed contract.
 
 @reachex[#:mode js
          #:show-lines? #t "tic-tac-7/index.js"
@@ -1236,14 +1085,12 @@ and define some button handlers in order to attach to the deployed contract.
 
 @itemlist[
  @item{On line 291, we initialize the component state to display @exviewref["tic-tac-7" "Attach"].}
- @item{On lines 295 thru 321, we define what happens when the user clicks the @litchar{Attach} button. @itemlist[
+ @item{On lines 295 thru 321, we define what happens when the user clicks the @litchar{Attach} button.
  @item{On line 296, we call @jsin{acc.attach}}
  @item{On line 298, we set the component state to display @exviewref["tic-tac-7" "Attaching"].}
- @item{On line 300, we start running the Reach program as Bob, using the @jsin{this} React component
-  as the @tech{participant interact interface} object.}]}
- @item{On lines 304 thru 314, we define the @jsin{acceptWager} callback. @itemlist[
- @item{On lines 308 thru 312, we set the component state to display @exviewref["tic-tac-7" "AcceptTerms"],
-  and wait for a @jsin{Promise} which can be resolved via user interaction.}]}
+ @item{On line 300, we start running the Reach program as Bob, using the @jsin{this} React component as the @tech{participant interact interface} object.}]}
+ @item{On lines 304 thru 314, we define the @jsin{acceptWager} callback.
+ @item{On lines 308 thru 312, we set the component state to display @exviewref["tic-tac-7" "AcceptTerms"] and wait for a @jsin{Promise} which can be resolved via user interaction.}]}
  @item{On lines 316 thru 321, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
   the @jsin{Promise} from line 307 is resolved, and we set the component state to display @exviewref["tic-tac-7" "WaitingForTurn"].}
   
@@ -1261,13 +1108,11 @@ and define some button handlers in order to attach to the deployed contract.
          #:link #t
          'only 330 330 "// ..."]
 
-Finally, we call a small helper function from @reachexlink{tic-tac-7/views/render.js}
-to render our App component.
+Finally, we call a small helper function from @reachexlink{tic-tac-7/views/render.js} to render our app component.
 
 @(hrule) @;; explain reach react and reach react-down
 
-As a convenience for running the React development server,
-you can call:
+As a convenience for running the React development server, you can call:
 
 @cmd{./reach react}
 
@@ -1277,13 +1122,11 @@ To run the React development server with Algorand, take a look at the @seclink["
 
 @(hrule) @;; explain npm install
 
-If you'd like to instead use Reach in your own JavaScript project,
-you can call:
+If you'd like to instead use Reach in your own JavaScript project, you can call:
 
 @cmd{npm install @"@"reach-sh/stdlib}
 
-@margin-note{The Reach standard library is undergoing continual improvement and is updated often.
-If you are experiencing issues with the Node.js package, try updating!}
+@margin-note{The Reach standard library is undergoing continual improvement and is updated often. If you are experiencing issues with the Node.js package, try updating!}
 
 As usual, you can compile your Reach program @litchar{index.rsh} to the @jsin{backend} build artifact @litchar{build/index.main.mjs} with:
 
@@ -1291,50 +1134,28 @@ As usual, you can compile your Reach program @litchar{index.rsh} to the @jsin{ba
 
 @(hrule) @;; conclusion
 
-Now our implementation of Tic-Tac-Toe is live in the browser!
-We can leverage callbacks in the @tech{participant interact interface} to display to and gather information from the user,
-through any Web UI framework of our choice.
+Now our implementation of tic-tac-toe is live in the browser!
+We can leverage callbacks in the @tech{participant interact interface} to display to and gather information from the user, through the web UI framework of our choice.
 
-If we wanted to deploy this application to the world, then we would take the static files that React produces and host them on a Web server.
-These files embed your compiled Reach program, so there's nothing more to do than provide them to the world.
+If we wanted to deploy this application to the world, then we would take the static files that React produces and host them on a web server. These files embed your compiled Reach program, so there's nothing left to do.
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
-
-
-
 
 @section[#:tag "algo"]{Running on Algorand}
 
 To run a Reach application on Algorand, a few changes are needed.
 
-For a CLI DApp, the only thing needed to change from ETH to ALGO is to run the usual command with
-
-@exec{REACH_CONNECTOR_MODE=ALGO}
-
-before the @exec{./reach} keyword.
+For a CLI dApp, the only thing needed to change from ETH to ALGO is to run the usual command with @exec{REACH_CONNECTOR_MODE=ALGO} before the @exec{./reach} keyword.
 
 @margin-note{If you wanted to directly set the connection mode to ETH, just replace the @exec{ALGO} in the command with @exec{ETH}}
 
+@(hrule)
+
+In the web app, however, you must change the import of @exec{import * as reach from "reach-sh/stdlib/ETH";} to @exec{import * as reach from "reach-sh/stdlib/ALGO";}.
 
 @(hrule)
 
-In the web app, however, you must change the import of
-
-@exec{import * as reach from "reach-sh/stdlib/ETH";}
-
-to
-
-@exec{import * as reach from "reach-sh/stdlib/ALGO";}
-
-@(hrule)
-
-For both CLI and web DApps, beware of the byte limit!
+For both CLI and web dApps, beware of the byte limit!
 Algorand currently does not support compiled consensus calculations larger than 1000 bytes.
 This can be particularly problematic when attempting to create more complex games with Reach.
 For now, applications larger than the 1000 byte limit must be compiled and run with Ethereum.
@@ -1382,20 +1203,9 @@ is an inefficient method of calculating the equivalent
 }
 }
 
-
-
-
 ]
 
 @seclink["top"]{Main menu}
-
-
-
-
-
-
-
-
 
 @section[#:tag "trouble"]{Troubleshooting}
 
@@ -1403,7 +1213,7 @@ There are a few things that might go wrong with your Reach code that may not be 
 
 @itemlist[
 
-@item{If, when running a react development server, you see an error like the following
+@item{If, when running a React development server, you see an error like the following
 
 @verbatim{
     ERROR: Cannot start service dev-server:
@@ -1422,7 +1232,7 @@ then type @exec{sudo docker ps} into your command-line and find the container th
 and type @exec{sudo docker stop <container id>}.}
 
 
-@item{When running any @exec{./reach} command, if an error like the following pops up
+@item{When running any @exec{./reach} command, if an error like the following pops up:
 
 @verbatim{
     docker: Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock
@@ -1431,8 +1241,8 @@ and type @exec{sudo docker stop <container id>}.}
 then try using @exec{sudo} before the @exec{./reach} command.
 } 
 
-@item{When running a react server on ETH, if MetaMask and/or the browser console shows that there is an incorrect transaction nonce, please go into MetaMask > Settings > Advanced and reset your account.}
+@item{When running a React server on ETH, if MetaMask and/or the browser console shows that there is an incorrect transaction nonce, please go into MetaMask > Settings > Advanced and reset your account.}
 
-@item{If an error other than the two mentioned above pops up, please check that you have correctly copied the code from the @hyperlink["https://www.github.com/squidKid-deluxe/reach--tic-tac-toe"]{GitHub}}
+@item{If an error other than the two mentioned above pops up, please check that you have correctly copied the code from @hyperlink["https://www.github.com/squidKid-deluxe/reach--tic-tac-toe"]{GitHub}}.
 
 ]
