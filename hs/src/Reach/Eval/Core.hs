@@ -548,7 +548,7 @@ slToDLV = \case
       zipEq (Err_Apply_ArgCount at) (stf_dom tf) args >>=
         mapM (\ (ty, _) -> public . SLV_DLVar
           <$> (ctxt_mkvar . DLVar at Nothing =<< st2dte ty))
-    block <- evalPureClosureToBlock SLM_Exporting sc sargs (Just tf) =<< st2dte (stf_rng tf)
+    block <- evalExportClosureToBlock sc sargs (Just tf) =<< st2dte (stf_rng tf)
     yes $ DLV_Fun at (map (expectDLVar . snd) sargs) block
   SLV_Clo {} -> no
   SLV_Type _ -> no
@@ -744,7 +744,6 @@ sco_update_and_mod imode addl_env env_mod =
     c :: SLScope -> App SLScope
     c = h $ \case
       SLM_Module -> c_mod
-      SLM_Exporting -> c_mod
       SLM_Step -> c_mod
       SLM_LocalStep -> return
       SLM_LocalPure -> return
@@ -753,7 +752,6 @@ sco_update_and_mod imode addl_env env_mod =
     ps :: SLScope -> App SLScope
     ps = h $ \case
       SLM_Module -> return
-      SLM_Exporting -> return
       SLM_Step -> ps_all_mod
       SLM_LocalStep -> ps_one_mod
       SLM_LocalPure -> ps_one_mod
@@ -2406,7 +2404,10 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
           return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
-evalApplyVals rator randvs =
+evalApplyVals = evalApplyValsAux False
+
+evalApplyValsAux :: Bool -> SLVal -> [SLSVal] -> App SLAppRes
+evalApplyValsAux assumePrecondition rator randvs =
   case rator of
     SLV_Prim p -> do
       sco <- e_sco <$> ask
@@ -2414,11 +2415,7 @@ evalApplyVals rator randvs =
     SLV_Clo clo_at sc -> evalApplyClosureVals clo_at sc randvs
     SLV_CloTyped clo_at sc tf -> do
       at <- withAt id
-      m <- readSt st_mode
-      let isDLVar = \case { SLV_DLVar _ -> True; _ -> False } . snd
-      -- If we are defining an exported function (SLM_Exporting)
-      -- Then we can only assume information about the arguments.
-      let ct = if all isDLVar randvs && m == SLM_Exporting then CT_Assume True else CT_Assert
+      let ct = if assumePrecondition then CT_Assume True else CT_Assert
       (dom_tupv, _) <- assertRefinedArgs ct randvs at tf
       res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
       forM_ (stf_post tf) $ flip (applyRefinement CT_Assert) [dom_tupv, ret_v]
@@ -2430,12 +2427,7 @@ evalApply rator rands =
   case rator of
     SLV_Prim _ -> vals
     SLV_Clo {} -> vals
-    SLV_CloTyped {} ->
-      -- If we are applying a typed closure within an exported function,
-      -- we can make assertions about our current mode's arguments.
-      readSt st_mode >>= \case
-        SLM_Exporting -> locStMode SLM_Module vals
-        _ -> vals
+    SLV_CloTyped {} -> vals
     SLV_Form f -> evalForm f rands
     v -> do
       fs <- e_stack <$> ask
@@ -2531,7 +2523,6 @@ evalId_ lab x = do
   m <- readSt st_mode
   let (elab, env) = case m of
         SLM_Module -> s
-        SLM_Exporting -> s
         SLM_Step -> s
         SLM_LocalStep -> l
         SLM_LocalPure -> l
@@ -3581,11 +3572,13 @@ evalModeToBlock mode rest e = do
         compileCheckType rest . snd =<< e
   return $ DLBlock at fs e_lifts e_da
 
-evalPureClosureToBlock :: SLMode -> SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLBlock
-evalPureClosureToBlock m clo sargs mtf rest = do
+evalExportClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLBlock
+evalExportClosureToBlock clo sargs mtf rest = do
   at <- withAt id
   let sv = maybe (SLV_Clo at clo) (SLV_CloTyped at clo) mtf
-  evalModeToBlock m rest $ evalApplyVals' sv sargs
+  evalModeToBlock SLM_Module rest $ do
+    SLAppRes _ val <- evalApplyValsAux True sv sargs
+    return val
 
 evalPureExprToBlock :: JSExpression -> DLType -> App DLBlock
 evalPureExprToBlock e rest = do
