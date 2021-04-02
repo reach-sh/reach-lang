@@ -204,7 +204,6 @@ let build-and-test = dockerized-job
 
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
   , run "build and test js"     "cd js && make build test"
-  , run "rebuild examples"      "cd examples && make clean-all build-all"
 
   , run "pull algorand-devnet" ''
       docker pull reachsh/algorand-devnet:0.1
@@ -213,7 +212,7 @@ let build-and-test = dockerized-job
 
   , Step.jq/install
   , run "Is dockerhub up to date?" "scripts/docker-check.sh || echo 'XXX allowed to fail'"
-  , slack/notify
+  -- , slack/notify TODO re-enable
   ]
 
 
@@ -291,16 +290,37 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 {------------------------------------------------------------------------------}
 
-let mk-example-job
+let mk-job-example-rebuild
    = \(directory : Text)
   -> let j = dockerized-job
       [ Step.checkout
       , setup_remote_docker False -- TODO toggle caching on: True
-      , runWithin "5m" "run ${directory}" "cd examples && ./one.sh run ${directory}"
+
+      , run "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
+      , run "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
+
+      , save_cache
+          "rebuild-${directory}-{{ .Revision }}"
+          [ "/examples/${directory}" ]
+
       , Step.jq/install
-      , slack/notify
+      -- , slack/notify TODO re-enable
       ]
-    in `:=` DockerizedJob directory j
+    in `:=` DockerizedJob "rebuild-${directory}" j
+
+let mk-job-example-run
+   = \(directory : Text)
+  -> let j = dockerized-job
+      [ Step.checkout
+      , setup_remote_docker False -- TODO toggle caching on: True
+
+      , restore_cache [ "rebuild-${directory}-{{ .Revision }}" ]
+      , runWithin "5m" "run ${directory}" "cd examples && ./one.sh run ${directory}"
+
+      , Step.jq/install
+      -- , slack/notify TODO re-enable
+      ]
+    in `:=` DockerizedJob "run-${directory}" j
 
 
 let jobs =
@@ -309,7 +329,9 @@ let jobs =
   , `:=` DockerizedJob "docs-deploy"    docs-deploy
   , `:=` DockerizedJob "shellcheck"     shellcheck
   , `:=` DockerizedJob "docker-lint"    docker-lint
-  ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
+  ]
+  # map Text (KeyVal Text DockerizedJob) mk-job-example-rebuild ./examples.dhall
+  # map Text (KeyVal Text DockerizedJob) mk-job-example-run     ./examples.dhall
 
 
 {------------------------------------------------------------------------------}
@@ -328,26 +350,31 @@ let workflows =
 
   let `=:=` = `:=` T.Type
 
-  let entry-docs-deploy =
+  let wf-docs-deploy =
     T::{ requires = Some [ "docs-render" ]
        , filters  = Some { branches = { only = "master" }}
        }
 
-  let mk-example
+  let mk-wf-example-rebuild
      = \(directory : Text)
-    -> [ `=:=` directory T::{ requires = Some [ "build-and-test" ] } ]
+    -> [ `=:=` "rebuild-${directory}" T::{ requires = Some [ "build-and-test" ] } ]
+
+  let mk-wf-example-run
+     = \(directory : Text)
+    -> [ `=:=` "run-${directory}" T::{ requires = Some [ "rebuild-${directory}" ] } ]
 
   let lint =
     { jobs = [[ `=:=` "shellcheck" T.default ]] }
 
   let docs = { jobs =
     [ [ `=:=` "docs-render" T.default  ]
-    , [ `=:=` "docs-deploy" entry-docs-deploy ]
+    , [ `=:=` "docs-deploy" wf-docs-deploy ]
     ]}
 
   let build-and-test = { jobs =
     [[ `=:=` "build-and-test" T.default ]]
-    # map Text (Map Text T.Type) mk-example ./examples.dhall
+    # map Text (Map Text T.Type) mk-wf-example-rebuild ./examples.dhall
+    # map Text (Map Text T.Type) mk-wf-example-run     ./examples.dhall
     }
 
   in { lint, docs, build-and-test }
