@@ -30,9 +30,14 @@ const sumMul2_ty = Refine(
 export const sumMul2 = is(sumMul2_impl, sumMul2_ty);
 
 export const main = Reach.App(
-  { verifyPerConnector: true },
-  [Participant('Alice', {}), Participant('Bob', {})],
+  { },
+  [Participant('Alice', { x:UInt, y:UInt }), Participant('Bob', {})],
   (Alice, Bob) => {
     assert(add1(9) == 10);
-    assert(sumMul2(1, 2) == 6);
+    Alice.only(() => {
+      const x = declassify(interact.x);
+      const y = declassify(interact.y);
+      assume(x < y);
+      assert(sumMul2(x, y) > x + y);
+    })
     exit(); });

@@ -2412,11 +2412,11 @@ evalApplyVals rator randvs =
     SLV_Clo clo_at sc -> evalApplyClosureVals clo_at sc randvs
     SLV_CloTyped clo_at sc tf -> do
       at <- withAt id
-      let isDLVar = \case { SLV_DLVar _ -> True; _ -> False } . snd
-      let ct = if all isDLVar randvs then CT_Assume True else CT_Assert
+      m <- readSt st_mode
+      let ct = if m == SLM_Module then CT_Assume True else CT_Assert
       (dom_tupv, _) <- assertRefinedArgs ct randvs at tf
       res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
-      forM_ (stf_post tf) $ flip (applyRefinement ct) [dom_tupv, ret_v]
+      forM_ (stf_post tf) $ flip (applyRefinement CT_Assert) [dom_tupv, ret_v]
       return res
     v -> expect_t v $ Err_Eval_NotApplicableVals
 
