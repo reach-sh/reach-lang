@@ -5,7 +5,7 @@
 @author[(author+email "squidKid-deluxe" "squid_kid@tutamail.com")]
 
 
-This tutorial walks through the creation of a Pay-to-Play Tic-Tac-Toe decentralized application using Reach.
+This tutorial walks through the creation of a Pay-To-Play Tic-Tac-Toe decentralized application using Reach.
 Pay-To-Play Tic-Tac-Toe is a game very similar to regular Tic-Tac-Toe, except that each place on the board has a fee that is calculated by how many 'wins' can be made by utilizing chosen place.
 It contains everything you need to know to build and test this application and assumes no prior experience with blockchain development of any kind.
 
@@ -17,16 +17,16 @@ To dive in, click to go to the @seclink["tic-tac-0"]{first step}!
 @section[#:tag "tic-tac-0"]{Install and Initialize}
 @(mint-scope "tic-tac-0")
 
-Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
+Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{Make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
 
-@margin-note{You probably already have @exec{make} installed.
-For example, OS X and many other POSIX systems come with @exec{make}, but some versions of Linux do not include it by default and will require you to install it.
-If you're on Ubuntu, you can run @exec{sudo apt install make} to get it.}
+@margin-note{You probably already have @exec{Make} installed.
+For example, OS X and many other POSIX systems come with @exec{Make}, but some versions of Linux do not include it by default and will require you to install it.
+If you're on Ubuntu, you can run @exec{sudo apt install Make} to get it.}
 
 You'll know that you have everything installed if you can run the following three commands without errors
 
-@cmd{make --version}
+@cmd{Make --version}
 
 @cmd{docker --version}
 
@@ -502,7 +502,7 @@ In the @seclink["tic-tac-3"]{next section}, we'll add Pay-To-Play to our Tic-Tac
 
 
 
-@section[#:tag "tic-tac-3"]{Pay-to-Play}
+@section[#:tag "tic-tac-3"]{Pay-To-Play}
 @(mint-scope "tic-tac-3")
 
 Before now, the whole idea of implementing Pay-To-Play on our Tic-Tac-Toe engine has been skipped over.
@@ -560,7 +560,7 @@ The only thing to change is the getMove function:
          'only 50 65 "      // ..."]
 
 
-Once that is complete, Pay-to-Play has successfully been implemented on your Tic-Tac-Toe DApp!
+Once that is complete, Pay-To-Play has successfully been implemented on your Tic-Tac-Toe DApp!
 The only visible difference in the output of the game will be that the final balances will no longer be exactly 5 ETH (or ALGO, depending on which REACH_CONNECTOR_MODE you are running on) different from the starting balances.
 
 Since the players act randomly, the results will be different every time.
