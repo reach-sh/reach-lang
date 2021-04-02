@@ -17,6 +17,8 @@ type SLValTy = (SLVal, Maybe DLType)
 data SLMode
   = --- The top-level of a module, before the App starts
     SLM_Module
+    --- The scope while declaring an exported function, whose arguments cannot be known.
+  | SLM_Exporting
   | --- The app starts in a "step"
     SLM_Step
   | --- An "only" moves from "step" to "local step" and then to "step" again, where x = live
@@ -30,6 +32,7 @@ data SLMode
 instance Show SLMode where
   show = \case
     SLM_Module -> "module"
+    SLM_Exporting -> "exporting"
     SLM_Step -> "step"
     SLM_LocalStep -> "local step"
     SLM_LocalPure -> "local pure"

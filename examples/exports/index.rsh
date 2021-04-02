@@ -29,6 +29,12 @@ const sumMul2_ty = Refine(
 
 export const sumMul2 = is(sumMul2_impl, sumMul2_ty);
 
+export const foo_impl = (x, y) => {
+  return sumMul2(x, y);
+}
+
+export const foo = is(foo_impl, Refine( Fun([UInt, UInt], UInt), (([x, y]) => x < y), (_, _) => true ));
+
 export const main = Reach.App(
   { },
   [Participant('Alice', { x:UInt, y:UInt }), Participant('Bob', {})],
