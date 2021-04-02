@@ -135,6 +135,14 @@ let setup_remote_docker
   -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
 
 
+let install_mo =
+  run "install mo" ''
+      curl -sSL https://git.io/get-mo -o mo \
+        && chmod +x mo \
+        && mv mo /usr/local/bin
+      ''
+
+
 let slack/notify
   = Step.SlackNotifyOnFail { slack/notify = { event    = "fail"
                                             , template = "basic_fail_1"
@@ -170,12 +178,7 @@ let dockerized-job
 
 let build-and-test = dockerized-job
   [ Step.checkout
-
-  , run "install mo" ''
-      curl -sSL https://git.io/get-mo -o mo \
-        && chmod +x mo \
-        && mv mo /usr/local/bin
-      ''
+  , install_mo
 
   , run "hs package.yaml" "cd hs && make package.yaml"
   , restore_cache
@@ -190,6 +193,7 @@ let build-and-test = dockerized-job
       "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
       [ "/root/.stack"
       , "hs/.stack_work"
+      , "hs/.stack-work"
       ]
 
   , run                "clean hs"      "cd hs && make hs-clean"
@@ -199,6 +203,12 @@ let build-and-test = dockerized-job
 
   , run "check hs"     "cd hs && make hs-check"
   , store_artifacts    "hs/stan.html"
+
+  , save_cache
+      "hs-{{ .Revision }}"
+      [ "/root/.stack"
+      , "hs/.stack-work"
+      ]
 
   , setup_remote_docker False -- TODO toggle caching on: True
 
@@ -290,37 +300,23 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 {------------------------------------------------------------------------------}
 
-let mk-job-example-rebuild
+let mk-example-job
    = \(directory : Text)
   -> let j = dockerized-job
       [ Step.checkout
+      , install_mo
+      , restore_cache [ "hs-{{ .Revision }}" ]
+
       , setup_remote_docker False -- TODO toggle caching on: True
 
-      , run "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
-      , run "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
-
-      , save_cache
-          "rebuild-${directory}-{{ .Revision }}"
-          [ "/examples/${directory}" ]
+      , run            "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
+      , run            "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
+      , runWithin "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
 
       , Step.jq/install
       -- , slack/notify TODO re-enable
       ]
-    in `:=` DockerizedJob "rebuild-${directory}" j
-
-let mk-job-example-run
-   = \(directory : Text)
-  -> let j = dockerized-job
-      [ Step.checkout
-      , setup_remote_docker False -- TODO toggle caching on: True
-
-      , restore_cache [ "rebuild-${directory}-{{ .Revision }}" ]
-      , runWithin "5m" "run ${directory}" "cd examples && ./one.sh run ${directory}"
-
-      , Step.jq/install
-      -- , slack/notify TODO re-enable
-      ]
-    in `:=` DockerizedJob "run-${directory}" j
+    in `:=` DockerizedJob directory j
 
 
 let jobs =
@@ -329,9 +325,7 @@ let jobs =
   , `:=` DockerizedJob "docs-deploy"    docs-deploy
   , `:=` DockerizedJob "shellcheck"     shellcheck
   , `:=` DockerizedJob "docker-lint"    docker-lint
-  ]
-  # map Text (KeyVal Text DockerizedJob) mk-job-example-rebuild ./examples.dhall
-  # map Text (KeyVal Text DockerizedJob) mk-job-example-run     ./examples.dhall
+  ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
 {------------------------------------------------------------------------------}
@@ -355,13 +349,9 @@ let workflows =
        , filters  = Some { branches = { only = "master" }}
        }
 
-  let mk-wf-example-rebuild
+  let mk-example-wf
      = \(directory : Text)
-    -> [ `=:=` "rebuild-${directory}" T::{ requires = Some [ "build-and-test" ] } ]
-
-  let mk-wf-example-run
-     = \(directory : Text)
-    -> [ `=:=` "run-${directory}" T::{ requires = Some [ "rebuild-${directory}" ] } ]
+    -> [ `=:=` directory T::{ requires = Some [ "build-and-test" ] } ]
 
   let lint =
     { jobs = [[ `=:=` "shellcheck" T.default ]] }
@@ -373,8 +363,7 @@ let workflows =
 
   let build-and-test = { jobs =
     [[ `=:=` "build-and-test" T.default ]]
-    # map Text (Map Text T.Type) mk-wf-example-rebuild ./examples.dhall
-    # map Text (Map Text T.Type) mk-wf-example-run     ./examples.dhall
+    # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 
   in { lint, docs, build-and-test }
