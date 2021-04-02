@@ -41,7 +41,9 @@ const equals = (a, b) => {
 
   await Promise.all([
     backend.Alice(ctcAlice, {
-      ...stdlib.hasRandom
+      ...stdlib.hasRandom,
+      x: 1,
+      y: 2,
     }),
     backend.Bob(ctcBob, {
       ...stdlib.hasRandom
