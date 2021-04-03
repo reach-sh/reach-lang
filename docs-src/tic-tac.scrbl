@@ -7,7 +7,7 @@
 
 This tutorial walks through the creation of a Pay-To-Play Tic-Tac-Toe decentralized application using Reach.
 Pay-To-Play Tic-Tac-Toe is a game very similar to regular Tic-Tac-Toe, except that each place on the board has a fee that is calculated by the number of 'wins' attainable in the chosen space.
-This workshop includes everything you need to know to build and test this application. It assumes no prior experience with blockchain development.
+This tutorial includes everything you need to know to build and test this application. It assumes no prior experience with blockchain development.
 
 To dive in, click to go to the @seclink["tic-tac-0"]{first step}!
 
