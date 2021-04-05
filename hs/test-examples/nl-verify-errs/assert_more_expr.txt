@@ -8,13 +8,13 @@ Verification failed:
   at ./assert_more_expr.rsh:7:11:application call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   // Violation witness
-  const _x1/9 = 0;
+  const _x1/21 = 0;
   //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:8:32:application
-  const _x2/10 = 1;
+  const _x2/22 = 1;
   //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:9:32:application
 
   // Theorem formalization
-  assert((_x1/9 + _x2/10) == (_x1/9 * 2));
+  assert((_x1/21 + _x2/22) == (_x1/21 * 2));
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

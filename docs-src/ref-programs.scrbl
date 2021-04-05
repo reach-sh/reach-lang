@@ -2266,6 +2266,10 @@ use the @reachin{+} and @reachin{-} unary operators to declare integers instead 
 
 @index{ine} @reachin{ine(x, y)} determines whether @tt{x} is not equal to @tt{y}.
 
+@index{imax} @reachin{imax(x, y)} returns the larger of two @reachin{Int}s.
+
+@index{abs} @reachin{abs(i)} returns the absolute value of an @reachin{Int}. The return value is of type @reachin{UInt}.
+
 @subsubsection{Fixed-Point Numbers}
 
 @reachin{FixedPoint} is defined by
@@ -2406,7 +2410,7 @@ In an application without any @tech{participant class}es, @reachin{Anybody} inst
 
 @index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
 declarations within the current scope. If a variable is declared, but never used, there will
-be a error emitted at compile time.
+be an error emitted at compile time.
 
 @deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
 For example, normally Reach will permit expressions like the following to be evaluated:
@@ -2441,4 +2445,104 @@ The correct way to write a program like this in @tech{strict mode} is to use @re
 
   void foo(MObj.Some({ b : true }));
   void foo(MObj.None()); }
+
+@subsubsection{Intervals}
+
+An @reachin{Interval} is defined by
+
+@(mint-define! '("Interval"))
+@reach{
+  export const Interval = Tuple(IntervalType, Int, Int, IntervalType); }
+
+where @reachin{IntervalType} is defined by
+
+@(mint-define! '("IntervalType"))
+@reach{
+  export const [ isIntervalType, Closed, Open ] = mkEnum(2);
+  export const IntervalType = Refine(UInt, isIntervalType);  }
+
+@subsubsub*section{Constructors}
+
+An interval may be constructed with its tuple notation or by function:
+
+@reach{
+  // Representing [-10, +10)
+  const i1 = [Closed, -10, +10, Open];
+  const i2 = interval(Closed, -10, +10, Open);
+  const i3 = intervalCO(-10, +10); }
+
+For convenience, Reach provides a number of functions for constructing intervals:
+
+@index{interval} @reachin{interval(IntervalType, Int, Int, IntervalType)} constructs an interval where the first and second argument
+represent the left endpoint and whether it's open or closed; the third and fourth argument represent the right endpoint and whether it's open or closed.
+
+@index{intervalCC} @reachin{intervalCC(l, r)} constructs a closed interval from two endpoints of type @reachin{Int}.
+
+@index{intervalCO} @reachin{intervalCO(l, r)} constructs a half-open interval from two endpoints of type @reachin{Int} where the left endpoint is closed and the right endpoint is open.
+
+@index{intervalOC} @reachin{intervalOC(l, r)} constructs a half-open interval from two endpoints of type @reachin{Int} where the left endpoint is open and the right endpoint is closed.
+
+@index{intervalOO} @reachin{intervalOO(l, r)} constructs an open interval from two endpoints of type @reachin{Int}.
+
+@subsubsub*section{Accessors}
+
+@index{leftEndpoint} @reachin{leftEndpoint(i)} will return the @reachin{Int} that represents the left endpoint of an interval.
+
+@index{rightEndpoint} @reachin{rightEndpoint(i)} will return the @reachin{Int} that represents the right endpoint of an interval.
+
+@subsubsub*section{Relational Operations}
+
+Intervals may be compared with the following functions:
+
+@index{intervalEq} @reachin{intervalEq(l, r)} tests whether the intervals are equal.
+
+@index{intervalNe} @reachin{intervalNe(l, r)} tests whether the intervals are not equal.
+
+@index{intervalLt} @reachin{intervalLt(l, r)} tests whether the left interval is less than the right interval.
+
+@index{intervalLte} @reachin{intervalLte(l, r)} tests whether the left interval is less than or equal to the right interval.
+
+@index{intervalGt} @reachin{intervalGt(l, r)} tests whether the left interval is greater than the right interval.
+
+@index{intervalGte} @reachin{intervalGte(l, r)} tests whether the left interval is greater than or equal to the right interval.
+
+@subsubsub*section{Arithmetic Operations}
+
+@index{intervalAdd} @reachin{intervalAdd(l, r)} adds the two intervals.
+
+@index{intervalSub} @reachin{intervalSub(l, r)} subtracts the two intervals.
+
+@index{intervalMul} @reachin{intervalMul(l, r)} multiplies the two intervals.
+
+@index{intervalDiv} @reachin{intervalDiv(l, r)} divides the two intervals.
+
+@subsubsub*section{Other Operations}
+
+@(mint-define! '("intervalIntersection"))
+@reach{
+  const i1 = intervalOO(+3, +11); // (+3, +11)
+  const i2 = intervalCC(+7, +9);  // [+7, +9]
+  intervalIntersection(i1, i2);   // [+7, +11)  }
+
+@index{intervalIntersection} @reachin{intervalIntersection(x, y)} returns the intersection of two intervals.
+
+@(mint-define! '("intervalUnion"))
+@reach{
+  const i1 = intervalOO(+3, +9);  // (+3, +9)
+  const i2 = intervalCC(+7, +11); // [+7, +11]
+  intervalUnion(i1, i2);          // (+3, +11]  }
+
+@index{intervalUnion} @reachin{intervalUnion(x, y)} returns the union of two intervals.
+
+@(mint-define! '("intervalWidth"))
+@reach{
+  intervalWidth(intervalCC(+4, +45)); // +41 }
+
+@index{intervalWidth} @reachin{intervalWidth(i)} returns the width of an interval.
+
+@(mint-define! '("intervalAbs"))
+@reach{
+  intervalAbs(intervalCC(+1, +10)); // +10 }
+
+@index{intervalAbs} @reachin{intervalAbs(i)} returns the absolute value of an interval.
 
