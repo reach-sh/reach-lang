@@ -1,13 +1,7 @@
 Verifying knowledge assertions
-Verification failed:
-  of theorem unknowable("Bob", handA/25)
-  at ./index-fails.rsh:25:17:application
-
-  Bob knows of handA/25 because it is published.
-
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 17 theorems; 1 failures. :'(
+Checked 40 theorems; No failures!

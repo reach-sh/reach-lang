@@ -1057,7 +1057,7 @@ evalAsEnv obj = case obj of
           [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
   _ -> expect_t obj $ Err_Eval_NotObject
   where
-    foldableMethods = ["forEach", "min", "max", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
+    foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
     foldableObjectEnv :: [(SLVar, App SLSVal)]
     foldableObjectEnv = map (\m -> (m, delayStdlib $ "Foldable_" <> m <> "1")) foldableMethods
     foldableValueEnv :: [(SLVar, App SLSVal)]

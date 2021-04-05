@@ -1,0 +1,7 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Creator" is honest
+  Verifying when ONLY "Owner" is honest
+Checked 25 theorems; No failures!

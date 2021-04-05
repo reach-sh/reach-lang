@@ -11,9 +11,9 @@ Verification failed:
   //    ^ from interaction at ./multiple_binding_locations.rsh:4:12:application
 
   // Theorem formalization
-  const x/10 = interact_A_x - 4;
+  const x/22 = interact_A_x - 4;
   //    ^ would be 0
-  assert((x/10 + x/10) == 4);
+  assert((x/22 + x/22) == 4);
 
   Verifying when NO participants are honest
 Verification failed:

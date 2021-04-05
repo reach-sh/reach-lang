@@ -116,13 +116,19 @@ export const Foldable_forEach =
 export const Foldable_forEach1 =
   (c) => (f) => Foldable_forEach(c, f);
 
-export const Foldable_min =
-  (c) => c.reduce(UInt.max, (acc, x) =>
-    (x < acc) ? x : acc);
+const Foldable_mostRecentMatch =
+  (start, c, f) => c.reduce(start, (acc, x) => (f(x, acc) ? x : acc));
+
+void Foldable_mostRecentMatch;
+
+export const Foldable_min = (c) =>
+  (c.length > 0)
+    ? Foldable_mostRecentMatch(c[1], c, lt)
+    : 0;
+
 export const Foldable_min1 = (c) => () => Foldable_min(c);
 
-export const Foldable_max =
-  (c) => c.reduce(0, (acc, x) => (x > acc) ? x : acc);
+export const Foldable_max  = (c) => Foldable_mostRecentMatch(0, c, gt);
 export const Foldable_max1 = (c) => () => Foldable_max(c);
 
 export const Foldable_any =
@@ -220,6 +226,8 @@ export const Neg = false;
 export const minus = (x) => ({ i: x.i, sign: !x.sign });
 export const plus = (x) => x;
 
+export const abs = (x) => x.i;
+
 export const igt = (x, y) => {
   const t = [ x.sign, y.sign ];
   return (
@@ -249,6 +257,17 @@ export const isub = (x, y) => iadd (x, int(!y.sign, y.i));
 export const imul = (x, y) => int(x.sign == y.sign, x.i * y.i);
 export const idiv = (x, y) => int(x.sign == y.sign, x.i / y.i);
 export const imod = (x, y) => isub(x, imul(idiv(x, y), y));
+export const imax = (x, y) => igt(x, y) ? x : y;
+
+export const Foldable_imin = (c) =>
+  (c.length > 0)
+    ? Foldable_mostRecentMatch(c[1], c, ilt)
+    : 0;
+
+export const Foldable_imin1 = (c) => () => Foldable_imin(c);
+
+export const Foldable_imax  = (c) => Foldable_mostRecentMatch(+0, c, igt);
+export const Foldable_imax1 = (c) => () => Foldable_imax(c);
 
 export const FixedPoint = Object({ sign: Bool, i: Object({ scale: UInt, i: UInt }) });
 
@@ -435,3 +454,98 @@ export const Set = () => ({
     }
   },
 })
+
+// Intervals
+
+export const [isIntervalType, Closed, Open] = makeEnum(2);
+
+export const IntervalType = Refine(UInt, isIntervalType);
+
+export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
+
+export const interval = (lb, a, b, rb) => [lb, a, b, rb];
+export const intervalOO = (x, y) => interval(Open, x, y, Open);
+export const intervalOC = (x, y) => interval(Open, x, y, Closed);
+export const intervalCO = (x, y) => interval(Closed, x, y, Open);
+export const intervalCC = (x, y) => interval(Closed, x, y, Closed);
+
+export const leftEndpoint  = ([_, a, _, _]) => a;
+export const rightEndpoint = ([_, _, b, _]) => b;
+
+export const intervalEmpty = [Open, +0, +0, Open];
+
+export const intervalEq  = (x, y) => x == y;
+export const intervalLt  = (x, y) => ilt(rightEndpoint(x), leftEndpoint(y));
+export const intervalLte = (x, y) => intervalLt(x, y) || intervalEq(x, y);
+export const intervalGt  = (x, y) => !intervalLte(x, y);
+export const intervalGte = (x, y) => !intervalLt(x, y);
+export const intervalNeq = (x, y) => !intervalEq(x, y);
+
+const maxEndpoint = ([ab, a], [bb, b]) =>
+  igt(a, b)
+    ? [ab, a]
+    : [bb, b];
+
+void maxEndpoint;
+
+const minEndpoint = ([ab, a], [bb, b]) =>
+  ilt(a, b)
+    ? [ab, a]
+    : [bb, b];
+
+void minEndpoint;
+
+export const intervalIntersection = (x, y) => {
+  const [ ab, a, b, bb ] = x;
+  const [ cb, c, d, db ] = y;
+  if (igt(a, d) || igt(c, b)) {
+    return intervalEmpty
+  } else {
+    const [ lb, ml ] = maxEndpoint( [ab, a], [cb, c] );
+    const [ rb, mr ] = maxEndpoint( [bb, b], [db, d] );
+    return [ lb, ml, mr, rb ];
+  }
+}
+
+export const intervalUnion = (x, y) => {
+  const [ ab, a, b, bb ] = x;
+  const [ cb, c, d, db ] = y;
+  const [ lb, ml ] = minEndpoint( [ab, a], [cb, c] );
+  const [ rb, mr ] = maxEndpoint( [bb, b], [db, d] );
+  return [ lb, ml, mr, rb ];
+}
+
+export const intervalWidth = (x) => {
+  const [_, a, b, _] = x;
+  return isub(b, a);
+}
+
+export const intervalAbs = (x) => {
+  const [ _, a, b, _ ] = x;
+  return imax(+ abs(a), + abs(b));
+}
+
+export const intervalAdd = (x, y) => {
+  const [ _, a, b, _ ] = x;
+  const [ _, c, d, _ ] = y;
+  return intervalCC( iadd(a, c), iadd(b, d) );
+}
+
+export const intervalSub = (x, y) => {
+  const [ _, a, b, _ ] = x;
+  const [ _, c, d, _ ] = y;
+  return intervalCC( isub(a, d), isub(b, c) );
+}
+
+const intervalOpAux = (x, y, f) => {
+  const [ _, a, b, _ ] = x;
+  const [ _, c, d, _ ] = y;
+  const arr = array(Int, [ f(a, c), f(a, d), f(b, c), f(b, d) ]);
+  return intervalCC( Array.imin(arr) , Array.imax(arr) );
+}
+
+void intervalOpAux;
+
+export const intervalMul = (x, y) => intervalOpAux(x, y, imul);
+
+export const intervalDiv = (x, y) => intervalOpAux(x, y, idiv);

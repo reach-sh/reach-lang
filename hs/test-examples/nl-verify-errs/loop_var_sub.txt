@@ -7,13 +7,13 @@ Verification failed:
   at ./loop_var_sub.rsh:13:7:invariant
 
   // Violation witness
-  const balance/32 = 0;
+  const balance/44 = 0;
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/14 = [0, false];
+  const x/26 = [0, false];
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
 
   // Theorem formalization
-  invariant((balance/32 + 1) == [(x/14[0] + 2), x/14[1]][0]);
+  invariant((balance/44 + 1) == [(x/26[0] + 2), x/26[1]][0]);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -22,15 +22,15 @@ Verification failed:
   at ./loop_var_sub.rsh:13:7:invariant
 
   // Violation witness
-  const v20 = 1;
+  const v32 = 1;
   //    ^ from a dishonest payment from "A" at ./loop_var_sub.rsh:16:11:dot
-  const balance/32 = 0;
+  const balance/44 = 0;
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/14 = [0, false];
+  const x/26 = [0, false];
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
 
   // Theorem formalization
-  invariant((balance/32 + v20) == [(x/14[0] + 2), x/14[1]][0]);
+  invariant((balance/44 + v32) == [(x/26[0] + 2), x/26[1]][0]);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -39,13 +39,13 @@ Verification failed:
   at ./loop_var_sub.rsh:13:7:invariant
 
   // Violation witness
-  const balance/32 = 0;
+  const balance/44 = 0;
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/14 = [0, false];
+  const x/26 = [0, false];
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
 
   // Theorem formalization
-  invariant((balance/32 + 1) == [(x/14[0] + 2), x/14[1]][0]);
+  invariant((balance/44 + 1) == [(x/26[0] + 2), x/26[1]][0]);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -54,14 +54,14 @@ Verification failed:
   at ./loop_var_sub.rsh:13:7:invariant
 
   // Violation witness
-  const v20 = 1;
+  const v32 = 1;
   //    ^ from a dishonest payment from "A" at ./loop_var_sub.rsh:16:11:dot
-  const balance/32 = 0;
+  const balance/44 = 0;
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/14 = [0, false];
+  const x/26 = [0, false];
   //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
 
   // Theorem formalization
-  invariant((balance/32 + v20) == [(x/14[0] + 2), x/14[1]][0]);
+  invariant((balance/44 + v32) == [(x/26[0] + 2), x/26[1]][0]);
 
 Checked 16 theorems; 4 failures. :'(
