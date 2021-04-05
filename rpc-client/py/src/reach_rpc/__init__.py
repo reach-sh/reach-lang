@@ -22,7 +22,7 @@ def mk_rpc(opts={}):
     host    = opt_of('host',    'REACH_RPC_SERVER')
     port    = opt_of('port',    'REACH_RPC_PORT')
     key     = opt_of('key',     'REACH_RPC_KEY')
-    timeout = opt_of('timeout', 'REACH_RPC_TIMEOUT',               default=5.0)
+    timeout = opt_of('timeout', 'REACH_RPC_TIMEOUT',               f=int, default=5)
     verify  = opt_of('verify',  'REACH_RPC_TLS_REJECT_UNVERIFIED', f=lambda x: x != '0')
 
     if not verify:
