@@ -18,7 +18,7 @@ let `:=`
   -> { mapKey = k, mapValue = v }
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -30,7 +30,7 @@ let docker-image =
   /\ docker-creds
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let Run =
   { default = { no_output_timeout = "10m" }
@@ -78,9 +78,9 @@ let Step =
   >
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
-let runWithin
+let runT
    = \(no_output_timeout : Text)
   -> \(name              : Text)
   -> \(command           : Text)
@@ -149,7 +149,7 @@ let slack/notify
                                             }}
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let DockerizedJob =
   { docker : List { auth  : { password : Text, username : Text }
@@ -174,7 +174,7 @@ let dockerized-job
      }
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let build-and-test = dockerized-job
   [ Step.checkout
@@ -196,9 +196,9 @@ let build-and-test = dockerized-job
       , "hs/.stack-work"
       ]
 
-  , run                "clean hs"      "cd hs && make hs-clean"
-  , run                "build hs"      "cd hs && make hs-build"
-  , runWithin "20m"    "test hs (xml)" "cd hs && make hs-test-xml"
+  , run                "clean hs"        "cd hs && make hs-clean"
+  , run                "build hs"        "cd hs && make hs-build"
+  , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
   , store_test_results "hs/test-reports"
 
   , run "check hs"     "cd hs && make hs-check"
@@ -298,7 +298,7 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
   ]
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let mk-example-job
    = \(directory : Text)
@@ -309,9 +309,9 @@ let mk-example-job
 
       , setup_remote_docker False -- TODO toggle caching on: True
 
-      , run            "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
-      , run            "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
-      , runWithin "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
+      , run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
+      , run       "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
+      , runT "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
 
       , Step.jq/install
       -- , slack/notify TODO re-enable
@@ -328,7 +328,7 @@ let jobs =
   ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let workflows =
   let T =
@@ -369,7 +369,7 @@ let workflows =
   in { lint, docs, build-and-test }
 
 
-{------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
 
 let orbs =
   { slack      = "circleci/slack@4.1.1"
