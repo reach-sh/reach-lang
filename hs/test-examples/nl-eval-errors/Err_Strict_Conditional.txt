@@ -1,0 +1,1 @@
+reachc: error: ./Err_Strict_Conditional.rsh:9:19:?:: Strict mode expects conditional values to be of type `Bool`, but received: 1

@@ -127,6 +127,7 @@ data EvalError
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidPartName String
+  | Err_Strict_Conditional SLVal
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -489,6 +490,8 @@ instance Show EvalError where
       "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
     Err_InvalidPartName n ->
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
+    Err_Strict_Conditional v ->
+      "Strict mode expects conditional values to be of type `Bool`, but received: " <> show (pretty v)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

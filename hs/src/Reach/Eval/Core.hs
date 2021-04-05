@@ -2721,9 +2721,13 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
           saveLift $ DLS_Prompt at' (Right (ans_dv, mempty)) $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
     _ -> do
-      let (n_at', ne, oe) = case cv of
-            SLV_Bool _ False -> (f_at', fe, te)
-            _ -> (t_at', te, fe)
+      (n_at', ne, oe) <- case cv of
+            SLV_Bool _ False -> return (f_at', fe, te)
+            SLV_Bool _ True  -> return (t_at', te, fe)
+            _ -> do
+              useStrict >>= \case
+                True  -> expect_ $ Err_Strict_Conditional cv
+                False -> return (t_at', te, fe)
       whenUsingStrict $ ignoreAll $ evalExpr oe
       lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
 
@@ -3714,9 +3718,13 @@ evalStmt = \case
           mergeSt st_f
           retSeqn ir ks_ne
         _ -> do
-          let (n_at', ns, os) = case cv of
-                SLV_Bool _ False -> (f_at', fs, ts)
-                _ -> (t_at', ts, fs)
+          (n_at', ns, os) <- case cv of
+                SLV_Bool _ False -> return (f_at', fs, ts)
+                SLV_Bool _ True  -> return (t_at', ts, fs)
+                _ -> do
+                  useStrict >>= \case
+                    True  -> expect_ $ Err_Strict_Conditional cv
+                    False -> return (t_at', ts, fs)
           whenUsingStrict $ ignoreAll $ evalStmt [os]
           nr <- locAt n_at' $ evalStmt [ns]
           retSeqn nr ks_ne
