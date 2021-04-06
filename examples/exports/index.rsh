@@ -23,8 +23,8 @@ const sumMul2_impl = (x, y) => {
 
 const sumMul2_ty = Refine(
   Fun([UInt, UInt], UInt),
-  (([x, y]) => x < y),
-  (([x, y], z) => x + y < z)
+  (([x, y]) => x < y), (([x, y], z) => x + y < z),
+  [ "first arg must be less than second arg" , "result must be larger than sum of args" ]
 );
 
 export const sumMul2 = is(sumMul2_impl, sumMul2_ty);

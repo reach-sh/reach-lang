@@ -586,14 +586,14 @@ typeCheck_d ty val = do
   void $ typeMeet_d val_ty ty
   return res
 
-applyRefinement :: ClaimType -> SLVal -> [SLVal] -> App ()
-applyRefinement ct p args = do
+applyRefinement :: ClaimType -> SLVal -> [SLVal] -> Maybe SLVal -> App ()
+applyRefinement ct p args mmsg = do
   pres <- evalApplyVals' p $ map public args
-  void $ evalPrim (SLPrim_claim ct) [pres]
+  void $ evalPrim (SLPrim_claim ct) $ pres : catMaybes [public <$> mmsg]
 
 applyType :: ClaimType -> SLVal -> SLType -> App ()
 applyType ct v = \case
-  ST_Refine _ p -> applyRefinement ct p [v]
+  ST_Refine _ p msg -> applyRefinement ct p [v] msg
   _ -> return ()
 
 typeCheck_s :: SLType -> SLVal -> App DLArgExpr
@@ -1642,7 +1642,7 @@ evalPrim p sargs =
       case map snd sargs of
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] -> do
           dom <- mapM expect_ty dom_arr
-          retV $ (lvl, SLV_Type $ ST_Fun (SLTypeFun dom rng Nothing Nothing))
+          retV $ (lvl, SLV_Type $ ST_Fun (SLTypeFun dom rng Nothing Nothing Nothing Nothing))
         _ -> illegal_args
     SLPrim_is_type -> do
       at <- withAt id
@@ -2145,7 +2145,12 @@ evalPrim p sargs =
       t <- first_arg >>= expect_ty
       t' <- case t of
         ST_Fun (SLTypeFun {..}) -> do
-          (_, domp2, rngp2) <- three_args
+          (_, domp2, rngp2, mmsgs) <- three_mfourth_args
+          let (domp_msg, rngp_msg) =
+                case mmsgs of
+                  Just (SLV_Tuple _ (dm:rm:_)) -> (Just dm, Just rm)
+                  Just (SLV_Tuple _ (dm:_))    -> (Just dm, Nothing)
+                  _                            -> (Nothing, Nothing)
           let domp = case stf_pre of
                 Nothing -> domp2
                 Just domp1 ->
@@ -2154,14 +2159,17 @@ evalPrim p sargs =
                 Nothing -> rngp2
                 Just rngp1 ->
                   mkClo "(dom, rng) => (rngp1(dom, rng) && rngp2(dom, rng))" $ M.fromList [("rngp1", rngp1), ("rngp2", rngp2)]
-          return $ ST_Fun $ SLTypeFun stf_dom stf_rng (Just domp) (Just rngp)
-        ST_Refine ot valp1 -> do
-          (_, valp2) <- two_args
+          return $ ST_Fun $ SLTypeFun stf_dom stf_rng (Just domp) (Just rngp) domp_msg rngp_msg
+        ST_Refine ot valp1 mmsg1 -> do
+          (_, valp2, mmsg2) <- two_mthree_args
           let valp = mkClo "(x) => (valp1(x) && val1p2(x))" $ M.fromList [("valp1", valp1), ("valp2", valp2)]
-          return $ ST_Refine ot valp
+          mmsg <- mapM mustBeBytes (catMaybes [mmsg1, mmsg2]) >>= \case
+                      [] -> return $ Nothing
+                      ow -> return $ Just $ SLV_Bytes at $ B.intercalate " and " ow
+          return $ ST_Refine ot valp mmsg
         _ -> do
-          (_, valp2) <- two_args
-          return $ ST_Refine t valp2
+          (_, valp2, mmsg) <- two_mthree_args
+          return $ ST_Refine t valp2 mmsg
       return $ public $ SLV_Type t'
     SLPrim_is -> do
       (x, y) <- two_args
@@ -2209,12 +2217,12 @@ evalPrim p sargs =
       amta <- compileCheckType T_UInt amtv
       doAssertBalance amtv PLE
       doBalanceUpdate SUB amtv
-      let SLTypeFun dom rng pre post = stf
+      let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple [ ST_UInt, rng ]
       let post' = flip fmap post $ \postv ->
                     jsClo at "post" "(dom, [_, rng]) => post(dom, rng)" $
                       M.fromList [ ("post", postv) ]
-      let stf' = SLTypeFun dom rng' pre post'
+      let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
       res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
       apdvv <- doArrRef_ res' zero
       doBalanceUpdate ADD apdvv
@@ -2254,6 +2262,14 @@ evalPrim p sargs =
     three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args
+    two_mthree_args = case args of
+      [x, y]    -> return (x, y, Nothing)
+      [x, y, z] -> return (x, y, Just z)
+      _ -> illegal_args
+    three_mfourth_args = case args of
+      [x, y, z]    -> return (x, y, z, Nothing)
+      [x, y, z, a] -> return (x, y, z, Just a)
+      _ -> illegal_args
     mustBeObject_ = \case
       SLV_Object _ _ m -> return m
       ow ->
@@ -2289,7 +2305,7 @@ doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
   rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
     mkexpr at fs drng dargs
   forM_ stf_post $ \rngp ->
-    applyRefinement ct rngp [dom_tupv, rng_v]
+    applyRefinement ct rngp [dom_tupv, rng_v] stf_post_msg
   return rng_v
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
@@ -2301,7 +2317,7 @@ assertRefinedArgs ct sargs iat SLTypeFun {..} = do
   at <- withAt id
   let dom_tupv = SLV_Tuple at argvs
   forM_ stf_pre $ \domp ->
-    applyRefinement ct domp [dom_tupv]
+    applyRefinement ct domp [dom_tupv] stf_pre_msg
   return (dom_tupv, arges)
 
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
@@ -2418,7 +2434,8 @@ evalApplyValsAux assumePrecondition rator randvs =
       let ct = if assumePrecondition then CT_Assume True else CT_Assert
       (dom_tupv, _) <- assertRefinedArgs ct randvs at tf
       res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
-      forM_ (stf_post tf) $ flip (applyRefinement CT_Assert) [dom_tupv, ret_v]
+      forM_ (stf_post tf) $ \rngp ->
+        applyRefinement CT_Assert rngp [dom_tupv, ret_v] (stf_post_msg tf)
       return res
     v -> expect_t v $ Err_Eval_NotApplicableVals
 

@@ -36,14 +36,16 @@ data SLType
   | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
   | ST_Type SLType
-  | ST_Refine SLType SLVal
+  | ST_Refine SLType SLVal (Maybe SLVal)
   deriving (Eq, Generic)
 
 data SLTypeFun = SLTypeFun
   { stf_dom :: [SLType]
   , stf_rng :: SLType
   , stf_pre :: Maybe SLVal
-  , stf_post :: Maybe SLVal }
+  , stf_post :: Maybe SLVal
+  , stf_pre_msg :: Maybe SLVal
+  , stf_post_msg :: Maybe SLVal }
   deriving (Eq, Generic)
 
 instance Show SLType where
@@ -59,12 +61,12 @@ instance Show SLType where
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
     ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
     ST_Struct tys -> "Struct([" <> showTyList tys <> "])"
-    ST_Fun (SLTypeFun tys ty Nothing Nothing) ->
+    ST_Fun (SLTypeFun tys ty Nothing Nothing Nothing Nothing) ->
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
-    ST_Fun (SLTypeFun tys ty _ _) ->
+    ST_Fun (SLTypeFun tys ty _ _ _ _) ->
       "Refine(Fun([" <> showTys tys <> "], " <> show ty <> "), ...., ....)"
     ST_Type ty -> "Type(" <> show ty <> ")"
-    ST_Refine ty _ -> "Refine(" <> show ty <> ", ....)"
+    ST_Refine ty _ _ -> "Refine(" <> show ty <> ", ....)"
 
 instance Pretty SLType where
   pretty = viaShow
@@ -84,7 +86,7 @@ st2dt = \case
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
   ST_Type {} -> Nothing
-  ST_Refine t _ -> st2dt t
+  ST_Refine t _ _ -> st2dt t
 
 dt2st :: DLType -> SLType
 dt2st = \case
