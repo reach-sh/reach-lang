@@ -33,6 +33,9 @@ jobs:
         name: "run abstract-simul"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "algorand-placeholder":
     docker:
     - auth:
@@ -66,6 +69,9 @@ jobs:
         name: "run algorand-placeholder"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   argz:
     docker:
     - auth:
@@ -99,6 +105,9 @@ jobs:
         name: run argz
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "build-and-test":
     docker:
     - auth:
@@ -180,6 +189,9 @@ jobs:
         command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
         name: "Is dockerhub up to date?"
         no_output_timeout: 10m
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "chicken-fork":
     docker:
     - auth:
@@ -213,6 +225,9 @@ jobs:
         name: "run chicken-fork"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "chicken-parallel":
     docker:
     - auth:
@@ -246,6 +261,9 @@ jobs:
         name: "run chicken-parallel"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "chicken-race":
     docker:
     - auth:
@@ -279,6 +297,9 @@ jobs:
         name: "run chicken-race"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "docker-lint":
     docker:
     - auth:
@@ -367,6 +388,42 @@ jobs:
     - slack/notify:
         event: fail
         template: basic_fail_1
+  exports:
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "reachsh/reach-circle:0.1.2"
+    steps:
+    - checkout
+    - run:
+        command: |
+          curl -sSL https://git.io/get-mo -o mo \
+            && chmod +x mo \
+            && mv mo /usr/local/bin
+        name: install mo
+        no_output_timeout: 10m
+    - restore_cache:
+        keys:
+        - "hs-{{ .Revision }}"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: "cd examples && ./one.sh clean exports"
+        name: clean exports
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build exports"
+        name: rebuild exports
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run exports"
+        name: run exports
+        no_output_timeout: 5m
+    - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "maybe-send":
     docker:
     - auth:
@@ -400,6 +457,9 @@ jobs:
         name: "run maybe-send"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "multiple-pr-case":
     docker:
     - auth:
@@ -433,6 +493,9 @@ jobs:
         name: "run multiple-pr-case"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   multisig:
     docker:
     - auth:
@@ -466,6 +529,9 @@ jobs:
         name: run multisig
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "nft-dumb":
     docker:
     - auth:
@@ -499,6 +565,9 @@ jobs:
         name: "run nft-dumb"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   nim:
     docker:
     - auth:
@@ -532,6 +601,9 @@ jobs:
         name: run nim
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "object-digest":
     docker:
     - auth:
@@ -565,6 +637,9 @@ jobs:
         name: "run object-digest"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   overview:
     docker:
     - auth:
@@ -598,6 +673,9 @@ jobs:
         name: run overview
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "overview-more-deps":
     docker:
     - auth:
@@ -631,6 +709,9 @@ jobs:
         name: "run overview-more-deps"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "overview-react":
     docker:
     - auth:
@@ -664,6 +745,9 @@ jobs:
         name: "run overview-react"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "own-addr":
     docker:
     - auth:
@@ -697,6 +781,9 @@ jobs:
         name: "run own-addr"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "popularity-contest":
     docker:
     - auth:
@@ -730,6 +817,9 @@ jobs:
         name: "run popularity-contest"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   race:
     docker:
     - auth:
@@ -763,6 +853,9 @@ jobs:
         name: run race
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   raffle:
     docker:
     - auth:
@@ -796,6 +889,9 @@ jobs:
         name: run raffle
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   remote:
     docker:
     - auth:
@@ -829,6 +925,9 @@ jobs:
         name: run remote
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "rent-seeking":
     docker:
     - auth:
@@ -862,6 +961,9 @@ jobs:
         name: "run rent-seeking"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   rental:
     docker:
     - auth:
@@ -895,6 +997,9 @@ jobs:
         name: run rental
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "secured-loan":
     docker:
     - auth:
@@ -928,6 +1033,9 @@ jobs:
         name: "run secured-loan"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   shellcheck:
     docker:
     - auth:
@@ -977,6 +1085,9 @@ jobs:
         name: run timeoutception
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   ttt:
     docker:
     - auth:
@@ -1010,6 +1121,9 @@ jobs:
         name: run ttt
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-2":
     docker:
     - auth:
@@ -1043,6 +1157,9 @@ jobs:
         name: "run tut-2"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-3":
     docker:
     - auth:
@@ -1076,6 +1193,9 @@ jobs:
         name: "run tut-3"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-4":
     docker:
     - auth:
@@ -1109,6 +1229,9 @@ jobs:
         name: "run tut-4"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-5":
     docker:
     - auth:
@@ -1142,6 +1265,9 @@ jobs:
         name: "run tut-5"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-5-attack":
     docker:
     - auth:
@@ -1175,6 +1301,9 @@ jobs:
         name: "run tut-5-attack"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-6":
     docker:
     - auth:
@@ -1208,6 +1337,9 @@ jobs:
         name: "run tut-6"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-7":
     docker:
     - auth:
@@ -1241,6 +1373,9 @@ jobs:
         name: "run tut-7"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-7-array":
     docker:
     - auth:
@@ -1274,6 +1409,9 @@ jobs:
         name: "run tut-7-array"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-7-rpc":
     docker:
     - auth:
@@ -1307,6 +1445,9 @@ jobs:
         name: "run tut-7-rpc"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-8":
     docker:
     - auth:
@@ -1340,6 +1481,9 @@ jobs:
         name: "run tut-8"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "tut-9":
     docker:
     - auth:
@@ -1373,6 +1517,9 @@ jobs:
         name: "run tut-9"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   variable_transfers:
     docker:
     - auth:
@@ -1406,6 +1553,9 @@ jobs:
         name: run variable_transfers
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "workshop-fomo":
     docker:
     - auth:
@@ -1439,6 +1589,9 @@ jobs:
         name: "run workshop-fomo"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "workshop-fomo-generalized":
     docker:
     - auth:
@@ -1472,6 +1625,9 @@ jobs:
         name: "run workshop-fomo-generalized"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "workshop-hash-lock":
     docker:
     - auth:
@@ -1505,6 +1661,9 @@ jobs:
         name: "run workshop-hash-lock"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "workshop-relay":
     docker:
     - auth:
@@ -1538,6 +1697,9 @@ jobs:
         name: "run workshop-relay"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
   "workshop-trust-fund":
     docker:
     - auth:
@@ -1571,6 +1733,9 @@ jobs:
         name: "run workshop-trust-fund"
         no_output_timeout: 5m
     - jq/install
+    - slack/notify:
+        event: fail
+        template: basic_fail_1
 orbs:
   jq: "circleci/jq@2.2.0"
   shellcheck: "circleci/shellcheck@2.2.0"
@@ -1758,6 +1923,12 @@ workflows:
         requires:
         - "build-and-test"
     - race:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-and-test"
+    - exports:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

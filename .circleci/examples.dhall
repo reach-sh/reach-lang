@@ -29,6 +29,7 @@
 , "object-digest"
 , "rental"
 , "race"
+, "exports"
 , "tut-8"
 , "timeoutception"
 , "chicken-parallel"

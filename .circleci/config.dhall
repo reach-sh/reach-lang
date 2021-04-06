@@ -222,7 +222,7 @@ let build-and-test = dockerized-job
 
   , Step.jq/install
   , run "Is dockerhub up to date?" "scripts/docker-check.sh || echo 'XXX allowed to fail'"
-  -- , slack/notify TODO re-enable
+  , slack/notify
   ]
 
 
@@ -314,7 +314,7 @@ let mk-example-job
       , runT "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
 
       , Step.jq/install
-      -- , slack/notify TODO re-enable
+      , slack/notify
       ]
     in `:=` DockerizedJob directory j
 
