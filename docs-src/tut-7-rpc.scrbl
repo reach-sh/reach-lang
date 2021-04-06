@@ -183,6 +183,312 @@ invoke our @pyin{main} function.
 
 @(hrule)
 
+The code we have just built is complete but still requires some configuration
+before it may run successfully.
+The necessary settings are outlined in @seclink{ref-backends-rpc-opts}, and by
+convention there are two ways in which @tech{frontends} may supply them:
+
+@itemlist[
+@item{as a @pyin{dict} argument to @pyin{mk_rpc}}
+@item{as shell environment variables}
+]
+
+You may choose whichever best suits your use case.
+Combining both methods is also possible, but settings supplied as arguments to
+@pyin{mk_rpc} are given priority over settings defined as environment
+variables.
+
+Returning to line 9 of the @tt{index.py} example above, we could instead run
+the @tech{frontend} like so:
+
+@py{
+def main():
+    rpc, rpc_callbacks = mk_rpc(dict(
+        host    = 'some-host.lan',
+        port    = '3000',
+        verify  = '0', # `0` may only be used during development!
+        timeout = '7',
+        key     = 'USE-YOUR-OWN-PRESHARED-KEY',
+    ))
+}
+
+Or, from the command line:
+
+@verbatim{
+$ REACH_RPC_SERVER=some-host.lan \
+  REACH_RPC_PORT=3000 \
+  REACH_RPC_TLS_REJECT_UNVERIFIED=0 \
+  REACH_RPC_TIMEOUT=7 \
+  REACH_RPC_KEY=USE-YOUR-OWN-PRESHARED-KEY \
+  python index.py
+}
+
+Either way would result in the same runtime configuration.
+
+A game of @|RPS| built with our Python code will look like this (edited for
+legibility):
+
+@shell{
+*** Warning! TLS verification disabled! ***
+
+ This is highly insecure in Real Life™ applications and must
+ only be permitted under controlled conditions (such as
+ during development).
+
+RPC /stdlib/parseCurrency [10]
+RPC /stdlib/parseCurrency [10]
+  ==> {"type": "BigNumber", "hex": "0x8ac7230489e80000"}
+
+RPC /stdlib/newTestAccount
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}]
+RPC /stdlib/newTestAccount
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}]
+  ==> "0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"
+
+RPC /stdlib/newTestAccount
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}]
+RPC /stdlib/newTestAccount
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}]
+  ==> "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+
+RPC /stdlib/balanceOf
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+RPC /stdlib/balanceOf
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+  ==> {"type": "BigNumber", "hex": "0x8ac7230489e80000"}
+
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}, 4]
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}, 4]
+  ==> "10"
+
+RPC /stdlib/balanceOf
+      ["1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"]
+RPC /stdlib/balanceOf
+      ["1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"]
+  ==> {"type": "BigNumber", "hex": "0x8ac7230489e80000"}
+
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}, 4]
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x8ac7230489e80000"}, 4]
+  ==> "10"
+
+RPC /acc/deploy
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+RPC /acc/deploy
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+  ==> "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+
+RPC /ctc/getInfo
+      ["0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"]
+RPC /ctc/getInfo
+      ["0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"]
+  ==> { "address":         "0x9000E6747Be7403bDA8D380F5E453eCa068A720B"
+      , "creation_block":  3
+      , "creator":         "0xCEB4bD4b5bf49a2c6b560d66A7f3f0ee060F4521"
+      , "transactionHash": "0x5c8b43ea5a01f58362ed6360e67bb09ac6507..."
+      }
+
+RPC /acc/attach
+      [ "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+      , { "address":         "0x9000E6747Be7403bDA8D380F5E453eCa068A720B"
+        , "creation_block":  3
+        , "creator":         "0xCEB4bD4b5bf49a2c6b560d66A7f3f0ee060F4521"
+        , "transactionHash": "0x5c8b43ea5a01f58362ed6360e67bb09ac6507..."
+        }
+      ]
+RPC /acc/attach
+      [ "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+      , { "address":         "0x9000E6747Be7403bDA8D380F5E453eCa068A720B"
+        , "creation_block":  3
+        , "creator":         "0xCEB4bD4b5bf49a2c6b560d66A7f3f0ee060F4521"
+        , "transactionHash": "0x5c8b43ea5a01f58362ed6360e67bb09ac6507..."
+        }
+      ]
+  ==> "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+
+RPC /stdlib/parseCurrency [5]
+
+RPC /backend/Bob
+      [ "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+      , { "stdlib.hasRandom": true }
+      , { "acceptWager":      true
+        , "getHand":          true
+        , "informTimeout":    true
+        , "seeOutcome":       true
+        }
+      ]
+
+RPC /stdlib/parseCurrency [5]
+  ==> {"type": "BigNumber", "hex": "0x4563918244f40000"}
+
+RPC /backend/Alice
+    [ "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+    , { "wager": { "type": "BigNumber", "hex": "0x4563918244f40000" }
+      , "stdlib.hasRandom": true
+      }
+    , { "getHand":          true
+      , "informTimeout":    true
+      , "seeOutcome":       true
+      }
+    ]
+
+
+RPC /backend/Bob
+      [ "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+      , { "stdlib.hasRandom": true }
+      , { "acceptWager":      true
+        , "getHand":          true
+        , "informTimeout":    true
+        , "seeOutcome":       true
+        }
+      ]
+  ==> { "t":    "Kont"
+      , "kid":  "0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de"
+      , "m":    "acceptWager"
+      , "args": [{ "type": "BigNumber", "hex": "0x4563918244f40000" }]
+      }
+
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x4563918244f40000"}, 4]
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x4563918244f40000"}, 4]
+  ==> "5"
+
+Bob accepts the wager of 5
+
+RPC /kont ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", null]
+
+RPC /backend/Alice
+      [ "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+      , { "wager": { "type": "BigNumber", "hex": "0x4563918244f40000" }
+        , "stdlib.hasRandom": true
+        }
+      , { "getHand":          true
+        , "informTimeout":    true
+        , "seeOutcome":       true
+        }
+      ]
+  ==> { "t":    "Kont"
+      , "kid":  "1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9"
+      , "m":    "getHand"
+      , "args": []
+      }
+
+Alice played Scissors
+
+RPC /kont ["1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9", 2]
+
+RPC /kont
+      ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", null]
+  ==> { "t":    "Kont"
+      , "kid":  "0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de"
+      , "m":    "getHand"
+      , "args": []
+      }
+
+Bob played Rock
+
+RPC /kont ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", 0]
+RPC /kont ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", 0]
+  ==> { "t":    "Kont"
+      , "kid":  "0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de"
+      , "m":    "seeOutcome"
+      , "args": [{ "type": "BigNumber", "hex": "0x00" }]
+      }
+
+RPC /stdlib/bigNumberToNumber [{"type": "BigNumber", "hex": "0x00"}]
+
+RPC /kont ["1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9", 2]
+  ==> { "t":    "Kont"
+      , "kid":  "1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9"
+      , "m":    "seeOutcome"
+      , "args": [{ "type": "BigNumber", "hex": "0x00" }]
+      }
+
+RPC /stdlib/bigNumberToNumber [{"type": "BigNumber", "hex": "0x00"}]
+RPC /stdlib/bigNumberToNumber [{"type": "BigNumber", "hex": "0x00"}]
+  ==> 0
+
+Bob saw outcome Bob wins
+
+RPC /kont ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", null]
+
+RPC /stdlib/bigNumberToNumber [{"type": "BigNumber", "hex": "0x00"}]
+  ==> 0
+
+Alice saw outcome Bob wins
+
+RPC /kont ["1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9", null]
+
+RPC /kont
+      ["0_75962d0a956ae6583baeb5d36f9d4b995ce9101a5a9ac0de", null]
+  ==> {"t": "Done"}
+
+RPC /kont
+      ["1_0cfd582d41b4c6b9cc2687620dc6618ad01f0c9a154ad0e9", null]
+  ==> {"t": "Done"}
+
+RPC /stdlib/balanceOf
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+RPC /stdlib/balanceOf
+      ["0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"]
+  ==> {"type": "BigNumber", "hex": "0x4563918244e0d9dc"}
+
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x4563918244e0d9dc"}, 4]
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0x4563918244e0d9dc"}, 4]
+  ==> "4.9999"
+
+RPC /stdlib/balanceOf
+      ["1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"]
+RPC /stdlib/balanceOf
+      ["1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"]
+  ==> {"type": "BigNumber", "hex": "0xd02ab486cedaf45f"}
+
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0xd02ab486cedaf45f"}, 4]
+RPC /stdlib/formatCurrency
+      [{"type": "BigNumber", "hex": "0xd02ab486cedaf45f"}, 4]
+  ==> "14.9999"
+
+Alice went from 10 to 4.9999
+  Bob went from 10 to 14.9999
+
+RPC /forget/acc
+      [ "0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"
+      , "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+      ]
+RPC /forget/acc
+      [ "0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"
+      , "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+      ]
+  ==> { "deleted":
+        [ "0_bd13cd604ce025f3ec001087c2e918a842dcc944161ec3e6"
+        , "1_4bccb92055b56c7cba1db3044588dc7d20c4451677c0a973"
+        ]
+      }
+
+RPC /forget/ctc
+      [ "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+      , "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+      ]
+RPC /forget/ctc
+      [ "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+      , "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+      ]
+  ==> { "deleted":
+        [ "0_c1e52c08c9290a009f8525b180d5637316837e549d398d97"
+        , "1_c5b17579d5914f9adf551c1da110445fa00fb18a78e97817"
+        ]
+      }
+}
+
+@(hrule)
+
 This tutorial uses Python to demonstrate how RPC @tech{frontends} are
 built in Reach, but it is similarly easy to write RPC @tech{frontends} in other
 languages, such as with the @seclink{ref-frontends-rpc-js} and
