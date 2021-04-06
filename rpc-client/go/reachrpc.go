@@ -47,7 +47,7 @@ func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
   if val, ok := opts["key"]; ok {
     key = val
   }
-  timeouts := "5.0s"
+  timeouts := "5"
   if os.Getenv("REACH_RPC_TIMEOUT") != "" {
     timeouts = os.Getenv("REACH_RPC_TIMEOUT")
   }
@@ -70,7 +70,7 @@ func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
   }
 
   // Wait for RPC server to become available
-  timeout := please(time.ParseDuration(timeouts)).(time.Duration)
+  timeout := please(time.ParseDuration(fmt.Sprintf("%ss", timeouts))).(time.Duration)
   began   := time.Now()
   for true {
     conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host, port), timeout)
