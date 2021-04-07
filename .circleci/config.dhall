@@ -43,7 +43,7 @@ let Run =
 
 let Step =
   < SlackNotifyOnFail
-      : { slack/notify : { event : Text, template : Text }}
+      : { slack/notify : { event : Text, template : Text, branch_pattern : Text }}
 
   | SaveCache
       : { save_cache : { key : Text, paths : List Text }}
@@ -144,9 +144,11 @@ let install_mo =
 
 
 let slack/notify
-  = Step.SlackNotifyOnFail { slack/notify = { event    = "fail"
-                                            , template = "basic_fail_1"
-                                            }}
+  = Step.SlackNotifyOnFail { slack/notify =
+    { event          = "fail"
+    , template       = "basic_fail_1"
+    , branch_pattern = "master,gh-pages"
+    }}
 
 
 --------------------------------------------------------------------------------
@@ -372,7 +374,7 @@ let workflows =
 --------------------------------------------------------------------------------
 
 let orbs =
-  { slack      = "circleci/slack@4.1.1"
+  { slack      = "circleci/slack@4.3.3"
   , shellcheck = "circleci/shellcheck@2.2.0"
   , jq         = "circleci/jq@2.2.0"
   }
