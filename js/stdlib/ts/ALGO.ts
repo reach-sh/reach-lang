@@ -667,7 +667,7 @@ const [getFaucet, setFaucet] = replaceableThunk(async () => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
   );
-  return await connectAccount(FAUCET);
+  return await connectAccount(FAUCET, "Faucet");
 });
 
 export {getFaucet, setFaucet};
@@ -739,10 +739,11 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
   }
 }
 
-export const connectAccount = async (networkAccount: NetworkAccount) => {
+export const connectAccount = async (networkAccount: NetworkAccount, _label: string) => {
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
+  const label = _label || shad;
   const pks = T_Address.canonicalize(thisAcc);
   debug(`${shad}: connectAccount`);
 
@@ -774,7 +775,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     };
 
     const sendrecv = async (
-      label: string,
       funcNum: number,
       evt_cnt: number,
       hasLastTime: (BigNumber | false),
@@ -793,7 +793,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         args.splice(ltidx, 1);
       }
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
+        await recv(funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -972,7 +972,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     };
 
     const recv = async (
-      label: string,
       funcNum: number,
       evt_cnt: number,
       tys: Array<AnyALGO_Ty>,
@@ -1214,9 +1213,9 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 
-export const createAccount = async () => {
+export const createAccount = async (label: string) => {
   const networkAccount = algosdk.generateAccount();
-  return await connectAccount(networkAccount);
+  return await connectAccount(networkAccount, label);
 };
 
 export const fundFromFaucet = async (account: Account, value: any) => {
@@ -1224,8 +1223,8 @@ export const fundFromFaucet = async (account: Account, value: any) => {
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: any) => {
-  const account = await createAccount();
+export const newTestAccount = async (startingBalance: any, label: string) => {
+  const account = await createAccount(label);
   if (getDEBUG()) { await showBalance('before', account.networkAccount); }
   await fundFromFaucet(account, startingBalance);
   if (getDEBUG()) { await showBalance('after', account.networkAccount); }
@@ -1281,7 +1280,7 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
 
 // XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
 // AlgoSigner does not expose a "currently-selected account"
-export async function getDefaultAccount(): Promise<Account> {
+export async function getDefaultAccount(label: string): Promise<Account> {
   if (!window.prompt) {
     throw Error(`Cannot prompt the user for default account with window.prompt`);
   }
@@ -1290,17 +1289,17 @@ export async function getDefaultAccount(): Promise<Account> {
     const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
     if (mnemonic) {
       debug(`Creating account from user-provided mnemonic`);
-      return await newAccountFromMnemonic(mnemonic);
+      return await newAccountFromMnemonic(mnemonic, label);
     } else {
       debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
-      return await createAccount();
+      return await createAccount(label);
     }
   } else if (signStrategy === 'AlgoSigner') {
     const ledger = 'Reach Devnet'; // XXX decide how to support other ledgers
     const AlgoSigner = await getAlgoSigner();
     const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
     if (!addr) { throw Error(`No address provided`); }
-    return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
+    return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger, label);
   } else if (signStrategy === 'MyAlgo') {
     throw Error(`MyAlgo wallet support is not yet implemented`);
   } else {
@@ -1311,20 +1310,20 @@ export async function getDefaultAccount(): Promise<Account> {
 /**
  * @param mnemonic 25 words, space-separated
  */
-export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
-  return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
+export const newAccountFromMnemonic = async (mnemonic: string, label: string): Promise<Account> => {
+  return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic), label);
 };
 
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-export const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
+export const newAccountFromSecret = async (secret: string | Uint8Array, label: string): Promise<Account> => {
   const sk = ethers.utils.arrayify(secret);
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
-  return await newAccountFromMnemonic(mnemonic);
+  return await newAccountFromMnemonic(mnemonic, label);
 };
 
-export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSigner, ledger: string) => {
+export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSigner, ledger: string, label: string) => {
   if (!AlgoSigner) {
     throw Error(`AlgoSigner is falsy`);
   }
@@ -1336,7 +1335,7 @@ export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSig
     throw Error(`Address ${addr} not found in AlgoSigner accounts`);
   }
   let networkAccount = {addr, AlgoSigner};
-  return await connectAccount(networkAccount);
+  return await connectAccount(networkAccount, label);
 };
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());

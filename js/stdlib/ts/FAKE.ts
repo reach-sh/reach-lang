@@ -174,8 +174,9 @@ export const transfer = async (
   BLOCKS.push(block);
 };
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+export const connectAccount = async (networkAccount: NetworkAccount, _label: string): Promise<Account> => {
   const { address } = networkAccount;
+  const label = _label || address.substring(2, 6);
 
   const selfAddress = (): Address => {
     return address;
@@ -216,7 +217,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number,
+      funcNum: number, evt_cnt: number,
       hasLastTime: (BigNumber | false),
       tys: Array<FAKE_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
@@ -226,7 +227,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ): Promise<Recv> => {
       void(hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
+        await recv(funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -306,7 +307,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, funcNum: number, ok_cnt: number, out_tys: Array<FAKE_Ty>,
+      funcNum: number, ok_cnt: number, out_tys: Array<FAKE_Ty>,
       waitIfNotPresent: boolean, timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
@@ -384,7 +385,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 const REACHY_RICH_P: Promise<Account> = (async () => {
-  return await connectAccount({address: T_Address.defaultValue});
+  return await connectAccount({address: T_Address.defaultValue}, "Faucet");
 })();
 
 export async function getDefaultAccount(): Promise<Account> {
@@ -395,18 +396,18 @@ export async function getFaucet(): Promise<Account> {
   return REACHY_RICH_P;
 }
 
-export const newTestAccount = async (startingBalance: any) => {
-  const account = await createAccount();
+export const newTestAccount = async (startingBalance: any, label: string) => {
+  const account = await createAccount(label);
   debug(`new account: ${account.networkAccount.address}`);
   await fundFromFaucet(account, startingBalance);
   return account;
 };
 
-export const createAccount = async () => {
+export const createAccount = async (label: string) => {
   // Create account without any starting balance
   const networkAccount = makeAccount();
   debug(`createAccount: ${networkAccount.address}`);
-  return await connectAccount(networkAccount);
+  return await connectAccount(networkAccount, label);
 }
 
 export function getNetworkTime() {

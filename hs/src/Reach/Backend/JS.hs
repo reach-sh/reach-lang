@@ -513,7 +513,6 @@ jsETail = \case
     let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
     fs_ok' <- withCtxt $ jsFromSpec fs_ok
     let k_defp = msg_vs_defp <> amt_defp <> time_defp <> fs_ok'
-    whop <- jsCon =<< ((DLL_Bytes . ctxt_who) <$> ask)
     k_ok' <- withCtxt $ jsETail k_ok
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-
@@ -533,8 +532,7 @@ jsETail = \case
     let recvp =
           jsApply
             "ctc.recv"
-            [ whop
-            , pretty which
+            [ pretty which
             , pretty $ length msg_vs
             , jsArray msg_ctcs
             , "false"
@@ -569,8 +567,7 @@ jsETail = \case
             let sendp =
                   jsApply
                     "ctc.sendrecv"
-                    [ whop
-                    , pretty which
+                    [ pretty which
                     , pretty (length msg_vs)
                     , last_timev'
                     , jsArray msgts

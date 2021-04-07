@@ -41,14 +41,14 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   getInfo: () => Promise<ContractInfo>,
   creationTime: () => Promise<BigNumber>,
   sendrecv: (
-    label: string, funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
+    funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
     tys: Array<ConnectorTy>,
     args: Array<any>, value: BigNumber, out_tys: Array<ConnectorTy>,
     onlyIf: boolean, soloSend: boolean,
     timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress>>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (
-    label: string, okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
+    okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
     waitIfNotPresent: boolean,
     timeout_delay: BigNumber | false,
   ) => Promise<IRecv<RawAddress>>,
