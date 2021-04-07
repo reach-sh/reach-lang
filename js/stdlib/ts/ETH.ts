@@ -336,7 +336,7 @@ const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgr
 const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  const acc = await connectAccount(networkAccount);
+  const acc = await connectAccount(networkAccount, "Dummy");
   return acc;
 });
 
@@ -397,7 +397,7 @@ export const transfer = async (
 };
 
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+export const connectAccount = async (networkAccount: NetworkAccount, _label: string): Promise<Account> => {
   // @ts-ignore // TODO
   if (networkAccount.getAddress && !networkAccount.address) {
     // @ts-ignore
@@ -409,6 +409,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const address = await getAddr({networkAccount});
   if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
+  const label = _label || shad;
 
   const iam = (some_addr: Address): Address => {
     if (some_addr == address) {
@@ -483,7 +484,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           throw Error(`Cannot wait yet; contract is not actually deployed`);
         },
         sendrecv: async (
-          label: string, funcNum: number, evt_cnt: number,
+          funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
           tys: Array<AnyETH_Ty>,
           args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
@@ -513,7 +514,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          return await impl.recv(label, funcNum, evt_cnt, out_tys, false,timeout_delay);
+          return await impl.recv(funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
         getInfo: async () => {
           // Danger: deadlock possible
@@ -639,7 +640,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: number, evt_cnt: number,
+      funcNum: number, evt_cnt: number,
       hasLastTime: (BigNumber | false), tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
@@ -647,7 +648,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ): Promise<Recv> => {
       void(hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv_impl(label, funcNum, out_tys, waitIfNotPresent, timeout_delay);
+        await recv_impl(funcNum, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -735,19 +736,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
+      funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
       tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(sim_p);
-      return await sendrecv_impl(label, funcNum, evt_cnt, hasLastTime, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
+      return await sendrecv_impl(funcNum, evt_cnt, hasLastTime, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv_impl = async (
-      label: string, okNum: number, out_tys: Array<AnyETH_Ty>,
+      okNum: number, out_tys: Array<AnyETH_Ty>,
       waitIfNotPresent: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
@@ -842,11 +843,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, okNum: number, ok_cnt: number, out_tys: Array<AnyETH_Ty>,
+      okNum: number, ok_cnt: number, out_tys: Array<AnyETH_Ty>,
       waitIfNotPresent: boolean, timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
-      return await recv_impl(label, okNum, out_tys, waitIfNotPresent, timeout_delay);
+      return await recv_impl(okNum, out_tys, waitIfNotPresent, timeout_delay);
     };
 
     const wait = async (delta: BigNumber) => {
@@ -867,31 +868,31 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib };
 };
 
-export const newAccountFromSecret = async (secret: string): Promise<Account> => {
+export const newAccountFromSecret = async (secret: string, label: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = (new ethers.Wallet(secret)).connect(provider);
-  const acc = await connectAccount(networkAccount);
+  const acc = await connectAccount(networkAccount, label);
   return acc;
 };
 
-export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
+export const newAccountFromMnemonic = async (phrase: string, label: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
-  const acc = await connectAccount(networkAccount);
+  const acc = await connectAccount(networkAccount, label);
   return acc;
 };
 
-export const getDefaultAccount = memoizeThunk(async (): Promise<Account> => {
+export const getDefaultAccount = async (label: string): Promise<Account> => {
   debug(`getDefaultAccount`);
   if (isIsolatedNetwork || networkDesc.type == 'window') {
     const provider = await getProvider();
     // TODO: teach ts what the specialized type of provider is in this branch
     // @ts-ignore
     const signer: Signer = provider.getSigner();
-    return await connectAccount(signer);
+    return await connectAccount(signer, label);
   }
   throw Error(`Default account not available for REACH_CONNECTOR_MODE=${connectorMode}`);
-});
+};
 
 // TODO: Should users be able to access this directly?
 // TODO: define a faucet on Ropsten & other testnets?
@@ -903,24 +904,24 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
     // so no further secrets need be provided in order to access its funds.
     // This is true of reach-provided devnets.
     // TODO: allow the user to set the faucet via mnemnonic.
-    return await getDefaultAccount();
+    return await getDefaultAccount("Faucet");
   } else if (networkDesc.type === 'window') {
     // @ts-ignore // 0x539 = 1337
     if (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539') {
       // XXX this is a hacky way of checking if we're on a devnet
       // XXX only localhost:8545 is supported
       const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-      return await connectAccount(p.getSigner());
+      return await connectAccount(p.getSigner(), "Faucet");
     }
   }
   throw Error(`getFaucet not supported in this context.`)
 });
 
-export const createAccount = async () => {
+export const createAccount = async (label: string) => {
   debug(`createAccount with 0 balance.`);
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  return await connectAccount(networkAccount);
+  return await connectAccount(networkAccount, label);
 }
 
 export const fundFromFaucet = async (account: AccountTransferable, value: any) => {
@@ -928,10 +929,10 @@ export const fundFromFaucet = async (account: AccountTransferable, value: any) =
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: any): Promise<Account> => {
+export const newTestAccount = async (startingBalance: any, label: string): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
-  const acc = await createAccount();
+  const acc = await createAccount(label);
   const to = await getAddr(acc);
 
   try {
