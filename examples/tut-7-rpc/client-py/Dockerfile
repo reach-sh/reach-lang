@@ -18,5 +18,5 @@ RUN        . /app/venv/bin/activate \
 
 COPY       index.py /app/
 
-ENTRYPOINT ["/app/venv/bin/python"]
+ENTRYPOINT ["/app/venv/bin/python", "-u"]
 CMD        ["index.py"]

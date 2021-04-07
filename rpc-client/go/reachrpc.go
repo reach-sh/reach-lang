@@ -88,6 +88,12 @@ func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
     }
   }
 
+  debug := func(s string) {
+    if os.Getenv("REACH_DEBUG") != "" {
+      fmt.Printf(s)
+    }
+  }
+
   rpc := func(m string, args ...interface{}) (interface{}) {
     var ans   interface{}
     var jargs string
@@ -99,7 +105,7 @@ func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
     }
 
     lab  := fmt.Sprintf("RPC %s %s\n", m, jargs)
-    fmt.Printf(lab)
+    debug(lab)
 
     uri  := fmt.Sprintf("https://%s:%s%s", host, port, m)
     tls  := &tls.Config     { InsecureSkipVerify: skipVerify, }
@@ -121,7 +127,7 @@ func Mk(mopts ...map[string]string) (sigRpc, sigRpcCallbacks) {
 
     dieIf(json.Unmarshal(body, &ans))
 
-    fmt.Printf("%s ==> %s\n", lab, string(body))
+    debug(fmt.Sprintf("%s ==> %s\n", lab, string(body)))
 
     return ans
   }

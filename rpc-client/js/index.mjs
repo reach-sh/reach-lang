@@ -28,12 +28,15 @@ export const mkRPC = async (opts = {}) => {
     'X-API-Key': key,
   });
 
+  const debug = s =>
+    process.env.REACH_DEBUG && console.log(s);
+
 
   const rpc = async (m, ...args) => {
     const lab = `RPC ${m} ${JSON.stringify(args)}`
-    console.log(`${lab}`);
+    debug(`${lab}`);
     const ans = await call(m, args);
-    console.log(`${lab} ==> ${JSON.stringify(ans)}`);
+    debug(`${lab} ==> ${JSON.stringify(ans)}`);
     return ans;
   };
 

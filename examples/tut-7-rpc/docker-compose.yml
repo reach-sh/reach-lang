@@ -6,6 +6,7 @@ x-server-base: &server-base
     - ./server/tls:/app/tls
 x-client-env: &client-env
   environment:
+    - REACH_DEBUG
     - REACH_RPC_SERVER=host.docker.internal
     - REACH_RPC_PORT=3000
     - REACH_RPC_KEY
