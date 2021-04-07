@@ -10,6 +10,12 @@ import ethers from 'ethers';
 import url from 'url';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
+import msgpack from '@msgpack/msgpack';
+
+// XXX: uncomment this import as needed for debugging in browser
+// @ts-ignore
+// import algosdk__src__transaction from 'algosdk/src/transaction';
+
 const {Buffer} = buffer;
 
 import {
@@ -182,6 +188,10 @@ type ContractInfo = {
 // ****************************************************************************
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
+  if (!(a instanceof Uint8Array)) {
+    console.log(a);
+    throw Error(`Expected Uint8Array, got ${a}`);
+  }
   return Buffer.from(a).toString(enc);
 }
 
@@ -341,16 +351,23 @@ function regroup(thisAcc: NetworkAccount, txns: Array<Txn>): Array<TXN> {
       .map(x => unclean_for_AlgoSigner(x));
 
     // console.log(`deployP: group`);
+    // console.log(txns[0].group);
     // console.log(Buffer.from(txns[0].group, 'base64').toString('base64'));
+    // console.log({...txns[0]});
 
     algosdk.assignGroupID(roundtrip_txns);
+
     // console.log(`deploy: roundtrip group`);
     // console.log(Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64'));
 
     const group = roundtrip_txns[0].group;
+    // The same thing, but more paranoid:
+    // const group = Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64');
     for (const txn of txns) {
       txn.group = group;
     }
+    // console.log({...txns[0]});
+
     return roundtrip_txns;
   } else {
     return txns;
@@ -387,6 +404,13 @@ function unclean_for_AlgoSigner(txnOrig: any) {
       txn.appArgs = tempArgs;
     }
   }
+
+  // Note: this part is not copy/pasted from AlgoSigner,
+  // and isn't even strictly necessary,
+  // but it is nice for getting the same signatures from algosdk & AlgoSigner
+  if ('group' in txn) {
+    txn.group = new Uint8Array(Buffer.from(txn.group, 'base64'));
+  }
   return txn;
 }
 
@@ -394,14 +418,30 @@ const clean_for_AlgoSigner = (txnOrig: any) => {
   // Make a copy with just the properties, because reasons
   const txn = {...txnOrig};
 
-  // Weirdly, AlgoSigner *requires* the note to be a string
-  if (txn.note) {
-    txn.note = uint8ArrayToStr(txn.note, 'utf8');
-  }
-  // Also weirdly:
+  // AlgoSigner does weird things with fees if you don't specify flatFee
+  txn.flatFee = true;
+
   // "Creation of PaymentTx has extra or invalid fields: name,tag,appArgs."
   delete txn.name;
   delete txn.tag;
+
+  // uncaught (in promise) lease must be a Uint8Array.
+  // it is... but how about we just delete it instead
+  // This is presumed safe when lease is empty
+  if (txn.lease instanceof Uint8Array && txn.lease.length === 0) {
+    delete txn.lease;
+  } else {
+    console.log(txn.lease);
+    throw Error(`Impossible: non-empty lease`);
+  }
+
+  // Creation of ApplTx has extra or invalid fields: nonParticipation
+  if (!txn.nonParticipation) {
+    delete txn.nonParticipation;
+  } else {
+    throw Error(`Impossible: expected falsy nonParticipation, got: ${txn.nonParticipation}`);
+  }
+
   // "Creation of ApplTx has extra or invalid fields: name,tag."
   if (txn.type !== 'appl') {
     delete txn.appArgs;
@@ -410,44 +450,35 @@ const clean_for_AlgoSigner = (txnOrig: any) => {
       if (txn.appArgs.length === 0) {
         txn.appArgs = [];
       } else {
-        // This seems wrong, but it works...
-        // XXX The morally correct thing to do would be to msgpack unparse
-        txn.appArgs = [uint8ArrayToStr(txn.appArgs, 'base64')];
+        txn.appArgs = txn.appArgs.map((arg: Uint8Array) => uint8ArrayToStr(arg, 'base64'));
       }
     }
   }
 
   // Validation failed for transaction because of invalid properties [from,to]
-  if (txn.from && txn.from.publicKey) {
-    txn.from = algosdk.encodeAddress(txn.from.publicKey);
-  }
-  if (txn.to && txn.to.publicKey) {
-    txn.to = algosdk.encodeAddress(txn.to.publicKey);
-  }
-  // Uncaught (in promise) First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
-  // No idea what it's talking about, but probably GenesisHash?
-  if (txn.genesisHash) {
-    if (typeof txn.genesisHash !== 'string') {
-      txn.genesisHash = uint8ArrayToStr(txn.genesisHash, 'base64');
+  // closeRemainderTo can cause an error w/ js-algorand-sdk addr parsing
+  for (const field of ['from', 'to', 'closeRemainderTo']) {
+    if (txn[field] && txn[field].publicKey) {
+      txn[field] = algosdk.encodeAddress(txn[field].publicKey);
     }
   }
-  console.log({genesisHash: txn.genesisHash});
-  // uncaught (in promise) lease must be a Uint8Array.
-  delete txn.lease; // it is... but how about we just delete it instead
 
-  // Some more uint8Array BS
-  if (txn.appApprovalProgram) {
-    txn.appApprovalProgram = uint8ArrayToStr(txn.appApprovalProgram, 'base64');
-  }
-  if (txn.appClearProgram) {
-    txn.appClearProgram = uint8ArrayToStr(txn.appClearProgram, 'base64');
-  }
-  if (txn.group) {
-    txn.group = uint8ArrayToStr(txn.group, 'base64');
+  // Weirdly, AlgoSigner *requires* the note to be a string
+  // note is the only field that needs to be utf8-encoded, so far...
+  for (const field of ['note']) {
+    if (txn[field] && typeof txn[field] !== 'string') {
+      txn[field] = uint8ArrayToStr(txn[field], 'utf8');
+    }
   }
 
-  // AlgoSigner does weird things with fees if you don't specify flatFee
-  txn.flatFee = true;
+  // Uncaught (in promise) First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
+  // No idea what it's talking about, but probably GenesisHash?
+  // And some more uint8Array BS
+  for (const field of ['genesisHash', 'appApprovalProgram', 'appClearProgram', 'group']) {
+    if (txn[field] && typeof txn[field] !== 'string') {
+      txn[field] = uint8ArrayToStr(txn[field], 'base64');
+    }
+  }
 
   return txn;
 };
@@ -658,7 +689,7 @@ export const transfer = async (from: Account, to: Account, value: any): Promise<
 
 async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Promise<STX> {
   const {sk, AlgoSigner} = networkAccount;
-  if (sk) {
+  if (sk && !AlgoSigner) {
     const tx = txnOrig.signTxn(sk);
     const ret = {
       tx,
@@ -670,9 +701,8 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
     // TODO: clean up txn before signing
     const txn = clean_for_AlgoSigner(txnOrig);
 
-    // XXX the following comment is dead code that was previously used for debugging purposes.
-    // It is left here for now because it might be useful later.
-    // But this should eventually be deleted
+    // Note: don't delete the following,
+    // it is extremely useful for debugging when stuff changes wrt AlgoSigner/algosdk clashes
 
     // if (sk) {
     //   const re_tx = txnOrig.signTxn ? txnOrig : new algosdk__src__transaction.Transaction(txnOrig);
@@ -683,7 +713,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
     //     tx: sk_tx,
     //     txID: re_tx.txID().toString(),
     //     lastRound: txnOrig.lastRound,
-    //   }
+    //   };
     //   console.log('signed sk_ret');
     //   console.log({txID: sk_ret.txID});
     //   console.log(msgpack.decode(sk_ret.tx));
@@ -699,9 +729,10 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
       lastRound: txnOrig.lastRound,
     };
 
-    // debug('signed AlgoSigner')
-    // debug({txID: ret.txID});
-    // debug(msgpack.decode(ret.tx));
+    // XXX switch debug to console.log for nicer browser output
+    debug('signed AlgoSigner');
+    debug({txID: ret.txID});
+    debug(msgpack.decode(ret.tx));
     return ret;
   } else {
     throw Error(`networkAccount has neither sk nor AlgoSigner: ${JSON.stringify(networkAccount)}`);
