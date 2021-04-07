@@ -45,15 +45,19 @@ def mk_rpc(opts={}):
                                    'on host {} to accept connection.'
                                    .format(port, host)) from ex
 
+    def debug(s):
+        if os.environ.get('REACH_DEBUG') is not None:
+            print(s)
+
     def rpc(m, *args):
         lab = 'RPC %s %s' % (m, json.dumps([*args]))
-        print(lab)
+        debug(lab)
         ans = requests.post('https://%s:%s%s' % (host, port, m),
                             json    = [*args],
                             headers = {'X-API-Key': key},
                             verify  = verify)
         ans.raise_for_status()
-        print('%s ==> %s' % (lab, json.dumps(ans.json())))
+        debug('%s ==> %s' % (lab, json.dumps(ans.json())))
         return ans.json()
 
     def rpc_callbacks(m, arg, cbacks):

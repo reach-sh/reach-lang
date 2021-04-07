@@ -17,7 +17,6 @@ type jsono = map[string]interface {}
 
 
 func main() {
-  fmt.Println("I am the client")
   rpc, rpcCallbacks := reachrpc.Mk()
 
   fmtc := func(i jsono) string {
