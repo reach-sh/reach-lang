@@ -12,8 +12,9 @@ import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import msgpack from '@msgpack/msgpack';
 
+// XXX: uncomment this import as needed for debugging in browser
 // @ts-ignore
-import algosdk__src__transaction from 'algosdk/src/transaction';
+// import algosdk__src__transaction from 'algosdk/src/transaction';
 
 const {Buffer} = buffer;
 
@@ -703,7 +704,6 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
     // Note: don't delete the following,
     // it is extremely useful for debugging when stuff changes wrt AlgoSigner/algosdk clashes
 
-    void(algosdk__src__transaction); // The below uses this
     // if (sk) {
     //   const re_tx = txnOrig.signTxn ? txnOrig : new algosdk__src__transaction.Transaction(txnOrig);
     //   re_tx.group = txnOrig.group;
