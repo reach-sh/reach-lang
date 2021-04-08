@@ -187,6 +187,10 @@ jobs:
         name: "build ethereum-devnet"
         no_output_timeout: 10m
     - run:
+        command: "cd js && make check"
+        name: check package.json
+        no_output_timeout: 10m
+    - run:
         command: "cd js && make build"
         name: build js
         no_output_timeout: 10m
@@ -194,7 +198,7 @@ jobs:
         command: |
           mkdir -p /tmp/build-core
           docker save reachsh/runner:0.1 | gzip > /tmp/build-core/runner.tar.gz
-        name: stash runner image
+        name: "stash `build-core` workspace artifacts"
         no_output_timeout: 10m
     - persist_to_workspace:
         paths:
@@ -1306,8 +1310,11 @@ jobs:
             && mv mo /usr/local/bin
         name: install mo
         no_output_timeout: 10m
+    - restore_cache:
+        keys:
+        - "hs-{{ .Revision }}"
     - run:
-        command: "cd js && make test"
+        command: "cd js/stdlib && make clean-test && sbin/test.sh"
         name: test js
         no_output_timeout: 10m
     - jq/install

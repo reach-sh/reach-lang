@@ -9,7 +9,7 @@ let VERSION = env:VERSION as Text
 
 -- TODO use `VERSION` instead of hard-coded "0.1" once corresponding XXX
 --   RE: `REACH_DEFAULT_VERSION` in `reach` script has been completed
-let runner-image = "reachsh/runner:0.1"
+let image-runner = "reachsh/runner:0.1"
 
 
 let KeyVal
@@ -145,6 +145,7 @@ let setup_remote_docker
   -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
 
 
+-- TODO better consolidate this between job definitions
 let install_mo =
   run "install mo" ''
       curl -sSL https://git.io/get-mo -o mo \
@@ -227,11 +228,13 @@ let build-core = dockerized-job-with-reach-circle
   , setup_remote_docker False -- TODO toggle caching on: True
 
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
-  , run "build js"              "cd js && make build"
 
-  , run "stash runner image" ''
+  , run "check package.json" "cd js && make check"
+  , run "build js"           "cd js && make build"
+
+  , run "stash `build-core` workspace artifacts" ''
       mkdir -p /tmp/build-core
-      docker save ${runner-image} | gzip > /tmp/build-core/runner.tar.gz
+      docker save ${image-runner} | gzip > /tmp/build-core/runner.tar.gz
       ''
   -- TODO alleviate cache time penalty by putting `reachc` in here too?
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
@@ -264,7 +267,10 @@ let test-hs = dockerized-job-with-reach-circle
 
 let test-js = dockerized-job-with-reach-circle-and-runner
   [ install_mo
-  , run "test js" "cd js && make test"
+  , restore_cache [ "hs-{{ .Revision }}" ]
+
+  , run "test js" "cd js/stdlib && make clean-test && sbin/test.sh"
+
   , Step.jq/install
   , slack/notify
   ]
