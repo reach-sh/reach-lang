@@ -24,8 +24,13 @@ type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
 
 type LLRets = M.Map Int LLRetRHS
 
+data Handler = Handler
+  { hV :: DLVar
+  , hS :: DLStmts }
+
 data DKEnv = DKEnv
-  {eRets :: LLRets}
+  { eRets :: LLRets
+  , eExnHandler :: Maybe Handler }
 
 lookupRet :: Int -> DKApp (Maybe LLRetRHS)
 lookupRet r = do
@@ -138,6 +143,16 @@ dk1 at_top ks s =
     DLS_FluidSet {} -> com
     DLS_FluidRef {} -> com
     DLS_MapReduce {} -> com
+    DLS_Throw at dv -> do
+      handler <- asks eExnHandler
+      case handler of
+        Nothing -> impossible "dk: encountered `throw` without an exception handler"
+        Just h  -> do
+          com'' (DKC_Let at (Just $ hV h) $ DLE_Arg at dv) $ hS h
+    DLS_Try at e hv hs ->
+      local (\ env ->
+        env { eExnHandler = Just (Handler hv (hs <> ks)) })
+          $ dk_ at (e <> ks)
   where
     com :: DKApp DKTail
     com = com' =<< dkc s
@@ -154,6 +169,7 @@ dk_ at = \case
 runDk :: ReaderT DKEnv m a -> m a
 runDk = do
   let eRets = mempty
+  let eExnHandler = Nothing
   flip runReaderT (DKEnv {..})
 
 dk_ev :: DLExportVal -> DKApp (DLinExportVal DKBlock)

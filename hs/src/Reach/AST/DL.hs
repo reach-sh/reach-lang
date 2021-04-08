@@ -64,6 +64,8 @@ data DLStmt
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
   | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
+  | DLS_Throw SrcLoc DLArg
+  | DLS_Try SrcLoc DLStmts DLVar DLStmts
   deriving (Eq, Generic)
 
 instance Pretty DLStmt where
@@ -108,6 +110,8 @@ instance Pretty DLStmt where
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
       DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
+      DLS_Throw _ dv -> "throw" <+> pretty dv
+      DLS_Try _ e hv hs -> "try" <+> render_dls e <+> "catch" <+> parens (pretty hv) <+> render_dls hs
     where
       ns x = render_nest $ render_dls x
 
@@ -132,6 +136,8 @@ instance SrcLocOf DLStmt where
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
     DLS_MapReduce a _ _ _ _ _ _ _ -> a
+    DLS_Throw a _ -> a
+    DLS_Try a _ _ _ -> a
 
 instance IsPure DLStmt where
   isPure = \case
@@ -151,6 +157,8 @@ instance IsPure DLStmt where
     DLS_FluidSet {} -> False
     DLS_FluidRef {} -> True
     DLS_MapReduce {} -> True
+    DLS_Throw {} -> False
+    DLS_Try {} -> True
 
 instance IsLocal DLStmt where
   isLocal = \case
@@ -170,6 +178,8 @@ instance IsLocal DLStmt where
     DLS_FluidSet {} -> True
     DLS_FluidRef {} -> True
     DLS_MapReduce {} -> True
+    DLS_Throw {} -> True
+    DLS_Try {} -> True
 
 type DLStmts = Seq.Seq DLStmt
 

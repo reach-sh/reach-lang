@@ -199,6 +199,7 @@ compileBundle cns jsb main = do
   me_id <- newCounter 0
   me_ms <- newIORef mempty
   e_unused_variables <- newIORef mempty
+  e_exn <- newIORef $ ExnEnv False Nothing Nothing
   let e_mape = MapEnv {..}
   mkprog <-
     flip runReaderT (Env {..}) $

@@ -128,6 +128,8 @@ data EvalError
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidPartName String
   | Err_Strict_Conditional SLVal
+  | Err_Try_Type_Mismatch DLType DLType
+  | Err_Throw_No_Catch
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -171,7 +173,7 @@ showStateDiff x y =
       y
       st_mode
       (\xMode yMode ->
-         unwords ["Expected to be in ", show yMode, ", but in ", show xMode <> "."])
+         unwords ["Expected to be in", show yMode, ", but in", show xMode <> "."])
     <> showDiff
       x
       y
@@ -492,6 +494,10 @@ instance Show EvalError where
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
     Err_Strict_Conditional v ->
       "Strict mode expects conditional values to be of type `Bool`, but received: " <> show (pretty v)
+    Err_Try_Type_Mismatch expect actual ->
+      "Every expression thrown within a `try` block must be of the same type. Expected " <> show (pretty expect) <> ", but received: " <> show (pretty actual)
+    Err_Throw_No_Catch ->
+      "`throw` statements may only occur inside of `try/catch` blocks."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 
