@@ -1255,6 +1255,13 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - run:
+        command: |
+          curl -sSL https://git.io/get-mo -o mo \
+            && chmod +x mo \
+            && mv mo /usr/local/bin
+        name: install mo
+        no_output_timeout: 10m
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
@@ -1291,6 +1298,13 @@ jobs:
         command: |
           zcat /tmp/build-core/runner.tar.gz | docker load
         name: attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: |
+          curl -sSL https://git.io/get-mo -o mo \
+            && chmod +x mo \
+            && mv mo /usr/local/bin
+        name: install mo
         no_output_timeout: 10m
     - run:
         command: "cd js && make test"

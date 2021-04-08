@@ -248,7 +248,8 @@ let build-core = dockerized-job-with-reach-circle
 
 
 let test-hs = dockerized-job-with-reach-circle
-  [ restore_cache [ "hs-{{ .Revision }}" ]
+  [ install_mo
+  , restore_cache [ "hs-{{ .Revision }}" ]
 
   , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
   , store_test_results "hs/test-reports"
@@ -262,7 +263,8 @@ let test-hs = dockerized-job-with-reach-circle
 
 
 let test-js = dockerized-job-with-reach-circle-and-runner
-  [ run "test js" "cd js && make test"
+  [ install_mo
+  , run "test js" "cd js && make test"
   , Step.jq/install
   , slack/notify
   ]
