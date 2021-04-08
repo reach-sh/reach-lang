@@ -227,7 +227,7 @@ let build-core = dockerized-job-with-reach-circle
 
   , run "stash runner image" ''
       mkdir -p /tmp/build-core
-      docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz"
+      docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
       ''
   -- TODO alleviate cache time penalty by putting `reachc` in here too?
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]

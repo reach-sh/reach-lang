@@ -193,7 +193,7 @@ jobs:
     - run:
         command: |
           mkdir -p /tmp/build-core
-          docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz"
+          docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
         name: stash runner image
         no_output_timeout: 10m
     - persist_to_workspace:
