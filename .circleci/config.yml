@@ -187,12 +187,12 @@ jobs:
         name: "build ethereum-devnet"
         no_output_timeout: 10m
     - run:
-        command: "cd js && make check"
-        name: check package.json
-        no_output_timeout: 10m
-    - run:
         command: "cd js && make build"
         name: build js
+        no_output_timeout: 10m
+    - run:
+        command: "cd js/stdlib && make check"
+        name: check js/stdlib/package.json
         no_output_timeout: 10m
     - run:
         command: |

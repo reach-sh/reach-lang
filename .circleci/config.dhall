@@ -229,8 +229,8 @@ let build-core = dockerized-job-with-reach-circle
 
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
 
-  , run "check package.json" "cd js && make check"
-  , run "build js"           "cd js && make build"
+  , run "build js"                     "cd js && make build"
+  , run "check js/stdlib/package.json" "cd js/stdlib && make check"
 
   , run "stash `build-core` workspace artifacts" ''
       mkdir -p /tmp/build-core
