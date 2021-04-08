@@ -5,6 +5,8 @@ let Prelude =
 let Map = Prelude.Map.Type
 let map = Prelude.List.map
 
+let VERSION = env:VERSION as Text
+
 
 let KeyVal
    = \(K : Type)
@@ -20,14 +22,18 @@ let `:=`
 
 --------------------------------------------------------------------------------
 
+let reach-circle =
+  "reachsh/reach-circle:${VERSION}"
+
+
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
            , password = "$DOCKER_PASSWORD"
            }}
 
-let docker-image =
-    { image = "reachsh/reach-circle:0.1.2" }
-  /\ docker-creds
+
+let default-docker-image =
+    { image = reach-circle } /\ docker-creds
 
 
 --------------------------------------------------------------------------------
@@ -164,23 +170,31 @@ let DockerizedJob =
 let dockerized-job-with
    = \(image : Text)
   -> \(steps : List Step)
-  -> { docker = [ docker-image // { image } ]
-     , steps
+  -> { docker = [ default-docker-image // { image } ]
+     , steps  = [ Step.checkout ] # steps
      }
 
 
-let dockerized-job
+let dockerized-job-with-reach-circle
    = \(steps : List Step)
-  -> { docker = [ docker-image ]
-     , steps
-     }
+  -> dockerized-job-with reach-circle steps
+
+
+let dockerized-job-with-reach-circle-and-runner
+   = \(steps : List Step)
+  -> let s = [ attach_workspace    "/tmp/build-core"
+             , setup_remote_docker False -- TODO toggle caching on: True
+             , run "attach runner image" ''
+                 zcat /tmp/build-core/runner.tar.gz | docker load
+                 ''
+             ] # steps
+      in dockerized-job-with-reach-circle s
 
 
 --------------------------------------------------------------------------------
 
-let build-and-test = dockerized-job
-  [ Step.checkout
-  , install_mo
+let build-core = dockerized-job-with-reach-circle
+  [ install_mo
 
   , run "hs package.yaml" "cd hs && make package.yaml"
   , restore_cache
@@ -198,14 +212,8 @@ let build-and-test = dockerized-job
       , "hs/.stack-work"
       ]
 
-  , run                "clean hs"        "cd hs && make hs-clean"
-  , run                "build hs"        "cd hs && make hs-build"
-  , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
-  , store_test_results "hs/test-reports"
-
-  , run "check hs"     "cd hs && make hs-check"
-  , store_artifacts    "hs/stan.html"
-
+  , run "clean hs" "cd hs && make hs-clean"
+  , run "build hs" "cd hs && make hs-build"
   , save_cache
       "hs-{{ .Revision }}"
       [ "/root/.stack"
@@ -215,7 +223,14 @@ let build-and-test = dockerized-job
   , setup_remote_docker False -- TODO toggle caching on: True
 
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
-  , run "build and test js"     "cd js && make build test"
+  , run "build js"              "cd js && make build"
+
+  , run "stash runner image" ''
+      mkdir -p /tmp/build-core
+      docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz"
+      ''
+  -- TODO alleviate cache time penalty by putting `reachc` in here too?
+  , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
 
   , run "pull algorand-devnet" ''
       docker pull reachsh/algorand-devnet:0.1
@@ -228,10 +243,29 @@ let build-and-test = dockerized-job
   ]
 
 
-let docs-render = dockerized-job
-  [ Step.checkout
+let test-hs = dockerized-job-with-reach-circle
+  [ restore_cache [ "hs-{{ .Revision }}" ]
 
-  , run "install pygments-reach" "cd pygments && make install"
+  , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
+  , store_test_results "hs/test-reports"
+
+  , run  "check hs"    "cd hs && make hs-check"
+  , store_artifacts    "hs/stan.html"
+
+  , Step.jq/install
+  , slack/notify
+  ]
+
+
+let test-js = dockerized-job-with-reach-circle-and-runner
+  [ run "test js" "cd js && make test"
+  , Step.jq/install
+  , slack/notify
+  ]
+
+
+let docs-render = dockerized-job-with-reach-circle
+  [ run "install pygments-reach" "cd pygments && make install"
   , run "render docs"            "cd docs-src && make render"
   , store_artifacts "docs/"
 
@@ -247,8 +281,7 @@ let docs-render = dockerized-job
 
 
 let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
-  [ Step.checkout
-  , attach_workspace "/tmp/docs_workspace"
+  [ attach_workspace "/tmp/docs_workspace"
 
   -- gh-pages@3.0.0, not 3.1.0, because:
   -- https://github.com/tschaub/gh-pages/issues/354#issuecomment-647801438
@@ -283,17 +316,14 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
 
 
 let shellcheck = dockerized-job-with "cimg/base:stable"
-  [ Step.checkout
-  , Step.shellcheck/install
+  [ Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify
   ]
 
 
 let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
-  [ Step.checkout
-
-  , run "install make, bash, curl, and jq" "apk add make bash curl jq"
+  [ run "install make, bash, curl, and jq" "apk add make bash curl jq"
   , run "run hadolint"                     "make docker-lint"
 
   , slack/notify
@@ -304,12 +334,9 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 let mk-example-job
    = \(directory : Text)
-  -> let j = dockerized-job
-      [ Step.checkout
-      , install_mo
+  -> let j = dockerized-job-with-reach-circle-and-runner
+      [ install_mo
       , restore_cache [ "hs-{{ .Revision }}" ]
-
-      , setup_remote_docker False -- TODO toggle caching on: True
 
       , run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
       , run       "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
@@ -322,12 +349,15 @@ let mk-example-job
 
 
 let jobs =
-  [ `:=` DockerizedJob "build-and-test" build-and-test
-  , `:=` DockerizedJob "docs-render"    docs-render
-  , `:=` DockerizedJob "docs-deploy"    docs-deploy
-  , `:=` DockerizedJob "shellcheck"     shellcheck
-  , `:=` DockerizedJob "docker-lint"    docker-lint
-  ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
+  let `=:=` = `:=` DockerizedJob
+   in [ `=:=` "build-core"  build-core
+      , `=:=` "docs-render" docs-render
+      , `=:=` "docs-deploy" docs-deploy
+      , `=:=` "shellcheck"  shellcheck
+      , `=:=` "docker-lint" docker-lint
+      , `=:=` "test-hs"     test-hs
+      , `=:=` "test-js"     test-js
+      ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
 --------------------------------------------------------------------------------
@@ -351,9 +381,12 @@ let workflows =
        , filters  = Some { branches = { only = "master" }}
        }
 
+  let requires-build-core =
+    T::{ requires = Some [ "build-core" ] }
+
   let mk-example-wf
      = \(directory : Text)
-    -> [ `=:=` directory T::{ requires = Some [ "build-and-test" ] } ]
+    -> [ `=:=` directory requires-build-core ]
 
   let lint =
     { jobs = [[ `=:=` "shellcheck" T.default ]] }
@@ -364,8 +397,10 @@ let workflows =
     ]}
 
   let build-and-test = { jobs =
-    [[ `=:=` "build-and-test" T.default ]]
-    # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
+    [ [ `=:=` "build-core" T.default           ]
+    , [ `=:=` "test-hs"    requires-build-core ]
+    , [ `=:=` "test-js"    requires-build-core ]
+    ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 
   in { lint, docs, build-and-test }

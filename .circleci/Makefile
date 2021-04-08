@@ -9,7 +9,7 @@ gather-examples:
 .PHONY: build
 build: gather-examples
 # TODO forward failed compilation exit code
-	@dhall-to-yaml \
+	@. ../VERSION && export VERSION && dhall-to-yaml \
 	  --generated-comment \
 	  --explain \
 	  --file ./config.dhall \

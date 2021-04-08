@@ -1,3 +1,5 @@
+# vi: ft=dockerfile
+
 FROM ethereum/solc:0.8.2 as solc
 
 FROM alpine:3 as dl-deps

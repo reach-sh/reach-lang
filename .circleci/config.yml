@@ -8,6 +8,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -18,8 +27,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean abstract-simul"
         name: "clean abstract-simul"
@@ -45,6 +52,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -55,8 +71,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean algorand-placeholder"
         name: "clean algorand-placeholder"
@@ -82,6 +96,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -92,8 +115,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean argz"
         name: clean argz
@@ -111,7 +132,7 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
-  "build-and-test":
+  "build-core":
     docker:
     - auth:
         password: $DOCKER_PASSWORD
@@ -154,18 +175,6 @@ jobs:
         command: "cd hs && make hs-build"
         name: build hs
         no_output_timeout: 10m
-    - run:
-        command: "cd hs && make hs-test-xml"
-        name: "test hs (xml)"
-        no_output_timeout: 20m
-    - store_test_results:
-        path: "hs/test-reports"
-    - run:
-        command: "cd hs && make hs-check"
-        name: check hs
-        no_output_timeout: 10m
-    - store_artifacts:
-        path: hs/stan.html
     - save_cache:
         key: "hs-{{ .Revision }}"
         paths:
@@ -178,9 +187,19 @@ jobs:
         name: "build ethereum-devnet"
         no_output_timeout: 10m
     - run:
-        command: "cd js && make build test"
-        name: build and test js
+        command: "cd js && make build"
+        name: build js
         no_output_timeout: 10m
+    - run:
+        command: |
+          mkdir -p /tmp/build-core
+          docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz"
+        name: stash runner image
+        no_output_timeout: 10m
+    - persist_to_workspace:
+        paths:
+        - runner.tar.gz
+        root: "/tmp/build-core"
     - run:
         command: |
           docker pull reachsh/algorand-devnet:0.1
@@ -204,6 +223,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -214,8 +242,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean chicken-fork"
         name: "clean chicken-fork"
@@ -241,6 +267,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -251,8 +286,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean chicken-parallel"
         name: "clean chicken-parallel"
@@ -278,6 +311,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -288,8 +330,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean chicken-race"
         name: "clean chicken-race"
@@ -406,6 +446,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -416,8 +465,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean exports"
         name: clean exports
@@ -443,6 +490,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -453,8 +509,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean maybe-send"
         name: "clean maybe-send"
@@ -480,6 +534,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -490,8 +553,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean multiple-pr-case"
         name: "clean multiple-pr-case"
@@ -517,6 +578,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -527,8 +597,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean multisig"
         name: clean multisig
@@ -554,6 +622,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -564,8 +641,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean nft-dumb"
         name: "clean nft-dumb"
@@ -591,6 +666,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -601,8 +685,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean nim"
         name: clean nim
@@ -628,6 +710,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -638,8 +729,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean object-digest"
         name: "clean object-digest"
@@ -665,6 +754,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -675,8 +773,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean overview"
         name: clean overview
@@ -702,6 +798,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -712,8 +817,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean overview-more-deps"
         name: "clean overview-more-deps"
@@ -739,6 +842,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -749,8 +861,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean overview-react"
         name: "clean overview-react"
@@ -776,6 +886,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -786,8 +905,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean own-addr"
         name: "clean own-addr"
@@ -813,6 +930,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -823,8 +949,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean popularity-contest"
         name: "clean popularity-contest"
@@ -850,6 +974,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -860,8 +993,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean race"
         name: clean race
@@ -887,6 +1018,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -897,8 +1037,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean raffle"
         name: clean raffle
@@ -924,6 +1062,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -934,8 +1081,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean remote"
         name: clean remote
@@ -961,6 +1106,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -971,8 +1125,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean rent-seeking"
         name: "clean rent-seeking"
@@ -998,6 +1150,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1008,8 +1169,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean rental"
         name: clean rental
@@ -1035,6 +1194,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1045,8 +1213,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean secured-loan"
         name: "clean secured-loan"
@@ -1081,6 +1247,60 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "test-hs":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "reachsh/reach-circle:0.1.2"
+    steps:
+    - checkout
+    - restore_cache:
+        keys:
+        - "hs-{{ .Revision }}"
+    - run:
+        command: "cd hs && make hs-test-xml"
+        name: "test hs (xml)"
+        no_output_timeout: 20m
+    - store_test_results:
+        path: "hs/test-reports"
+    - run:
+        command: "cd hs && make hs-check"
+        name: check hs
+        no_output_timeout: 10m
+    - store_artifacts:
+        path: hs/stan.html
+    - jq/install
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "test-js":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "reachsh/reach-circle:0.1.2"
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd js && make test"
+        name: test js
+        no_output_timeout: 10m
+    - jq/install
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   timeoutception:
     docker:
     - auth:
@@ -1089,6 +1309,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1099,8 +1328,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean timeoutception"
         name: clean timeoutception
@@ -1126,6 +1353,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1136,8 +1372,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean ttt"
         name: clean ttt
@@ -1163,6 +1397,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1173,8 +1416,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-2"
         name: "clean tut-2"
@@ -1200,6 +1441,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1210,8 +1460,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-3"
         name: "clean tut-3"
@@ -1237,6 +1485,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1247,8 +1504,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-4"
         name: "clean tut-4"
@@ -1274,6 +1529,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1284,8 +1548,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-5"
         name: "clean tut-5"
@@ -1311,6 +1573,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1321,8 +1592,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-5-attack"
         name: "clean tut-5-attack"
@@ -1348,6 +1617,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1358,8 +1636,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-6"
         name: "clean tut-6"
@@ -1385,6 +1661,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1395,8 +1680,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-7"
         name: "clean tut-7"
@@ -1422,6 +1705,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1432,8 +1724,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-7-array"
         name: "clean tut-7-array"
@@ -1459,6 +1749,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1469,8 +1768,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-7-rpc"
         name: "clean tut-7-rpc"
@@ -1496,6 +1793,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1506,8 +1812,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-8"
         name: "clean tut-8"
@@ -1533,6 +1837,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1543,8 +1856,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean tut-9"
         name: "clean tut-9"
@@ -1570,6 +1881,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1580,8 +1900,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean variable_transfers"
         name: clean variable_transfers
@@ -1607,6 +1925,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1617,8 +1944,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo"
         name: "clean workshop-fomo"
@@ -1644,6 +1969,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1654,8 +1988,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo-generalized"
         name: "clean workshop-fomo-generalized"
@@ -1681,6 +2013,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1691,8 +2032,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean workshop-hash-lock"
         name: "clean workshop-hash-lock"
@@ -1718,6 +2057,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1728,8 +2076,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean workshop-relay"
         name: "clean workshop-relay"
@@ -1755,6 +2101,15 @@ jobs:
       image: "reachsh/reach-circle:0.1.2"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+        name: attach runner image
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -1765,8 +2120,6 @@ jobs:
     - restore_cache:
         keys:
         - "hs-{{ .Revision }}"
-    - setup_remote_docker:
-        docker_layer_caching: false
     - run:
         command: "cd examples && ./one.sh clean workshop-trust-fund"
         name: "clean workshop-trust-fund"
@@ -1792,268 +2145,280 @@ version: 2.1
 workflows:
   "build-and-test":
     jobs:
-    - "build-and-test":
+    - "build-core":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
+    - "test-hs":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "test-js":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - "algorand-placeholder":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - nim:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "workshop-hash-lock":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - ttt:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "nft-dumb":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "own-addr":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "workshop-fomo-generalized":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-5-attack":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "overview-react":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - multisig:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - variable_transfers:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "chicken-fork":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "overview-more-deps":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-7-array":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - raffle:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "workshop-relay":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - remote:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "popularity-contest":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "secured-loan":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-2":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "workshop-trust-fund":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-4":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-3":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-9":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "workshop-fomo":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "multiple-pr-case":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-5":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "object-digest":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - rental:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - race:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - exports:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-8":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - timeoutception:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "chicken-parallel":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-6":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - argz:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-7-rpc":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - overview:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "maybe-send":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "tut-7":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "abstract-simul":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "rent-seeking":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
     - "chicken-race":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
         requires:
-        - "build-and-test"
+        - "build-core"
   docs:
     jobs:
     - "docs-render":
