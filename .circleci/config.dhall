@@ -7,6 +7,10 @@ let map = Prelude.List.map
 
 let VERSION = env:VERSION as Text
 
+-- TODO use `VERSION` instead of hard-coded "0.1" once corresponding XXX
+--   RE: `REACH_DEFAULT_VERSION` in `reach` script has been completed
+let runner-image = "reachsh/runner:0.1"
+
 
 let KeyVal
    = \(K : Type)
@@ -227,7 +231,7 @@ let build-core = dockerized-job-with-reach-circle
 
   , run "stash runner image" ''
       mkdir -p /tmp/build-core
-      docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
+      docker save ${runner-image} | gzip > /tmp/build-core/runner.tar.gz
       ''
   -- TODO alleviate cache time penalty by putting `reachc` in here too?
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
