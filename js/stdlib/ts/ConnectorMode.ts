@@ -1,11 +1,10 @@
 import {process} from './shim';
-export type Connector = 'ETH' | 'ALGO' | 'FAKE';
+export type Connector = 'ETH' | 'ALGO';
 
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
   'ETH-live' |
   'ETH-browser' |
-  'FAKE-test-embedded-mock' |
   'ALGO-test-dockerized-algod' |
   'ALGO-live' |
   'ALGO-browser';
@@ -16,14 +15,13 @@ const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-test-dockerized-geth',
   'ETH-live',
   'ETH-browser',
-  'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
   'ALGO-live',
   'ALGO-browser',
 ];
 
 function isKnownConnector(s: string): s is Connector {
-  return (s === 'ETH' || s === 'ALGO' || s === 'FAKE');
+  return (s === 'ETH' || s === 'ALGO');
 }
 
 const connectorModeDefaults: {[key: string]: ConnectorMode} = {};

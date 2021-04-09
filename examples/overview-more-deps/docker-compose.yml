@@ -37,11 +37,6 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  reach-app-over-FAKE-test-embedded-mock:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
   reach-app-over-ALGO-test-dockerized-algod-local:
     <<: *app-base
     environment:

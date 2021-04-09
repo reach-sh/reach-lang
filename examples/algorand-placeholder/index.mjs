@@ -9,12 +9,12 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
   const proportionalToAlgo = (x) => stdlib.parseCurrency(
     connector === 'ETH' ? x / 1000
       : connector === 'ALGO' ? x
-      : x * 5 // Disclaimer: this is pretend; FAKE has no worth
+      : x * 5
   );
 
   const startingBalance = proportionalToAlgo(1000);
 
-  const decimals = connector === 'FAKE' ? 0 : 2;
+  const decimals = 2;
   const showCurrency = (amt) =>
         `${stdlib.formatCurrency(amt, decimals)} ${stdlib.standardUnit}`;
   const logBalance = async (who, acc) => {

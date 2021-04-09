@@ -7,7 +7,6 @@ The Reach JavaScript standard library, @(mint-define! '("stdlib")) @jsin{stdlib}
 @itemlist[
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
- @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}; or,}
  @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
 ]
 
@@ -76,7 +75,7 @@ If the variable is missing or empty, it will return the canonicalized form of @j
 
 Returns the first piece of @jsin{getConnectorMode()},
 which indicates the abbreviated name of the network being connected to.
-Connectors are one of the following: @jsin{['ETH', 'FAKE', 'ALGO']}.
+Connectors are one of the following: @jsin{['ETH', 'ALGO']}.
 
 @(hrule)
 @(mint-define! '("loadStdLib"))
@@ -261,7 +260,7 @@ These functions interact with the @tech{consensus network} itself.
 }
 
 Returns a Promise for the current consensus network @tech{time}.
-For @litchar{ETH}, @litchar{ALGO}, and @litchar{FAKE},
+For @litchar{ETH} and @litchar{ALGO},
 this is the current block number, represented as a @litchar{BigNumber}.
 
 @(hrule)

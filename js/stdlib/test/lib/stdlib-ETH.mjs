@@ -1,6 +1,5 @@
 import * as ETH    from '@reach-sh/stdlib/ETH.mjs';
 import * as ALGO   from '@reach-sh/stdlib/ALGO.mjs';
-import * as FAKE   from '@reach-sh/stdlib/FAKE.mjs';
 import * as common from './common.mjs';
 
 const { describe, it, expect } = common;
@@ -47,11 +46,8 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
       'setWaitPort',
     ];
 
-    const FAKE_extra_exports = [];
-
     for (const [otherName, otherStdlib, otherExtraExports] of [
         ['ALGO', ALGO, ALGO_extra_exports],
-        ['FAKE', FAKE, FAKE_extra_exports],
       ]) {
 
       const otherStdlibExports = Object.keys(otherStdlib).sort();

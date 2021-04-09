@@ -166,7 +166,6 @@ ensure_connector_mode () {
   # Makes sure to set REACH_CONNECTOR_MODE to one of:
   # * ETH-test-dockerized-geth
   # * ETH-live
-  # * FAKE-test-embedded-mock
   # * ALGO-test-dockerized-algod
   # $WHAT-$WHERE-$HOW-$HOW_WHERE
   # (or error)
@@ -187,15 +186,6 @@ ensure_connector_mode () {
     "ETH-test-dockerized")
       REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
-    "FAKE")
-      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
-      ;;
-    "FAKE-test")
-      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
-      ;;
-    "FAKE-test-embedded")
-      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
-      ;;
     "ALGO")
       REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
@@ -212,8 +202,6 @@ ensure_connector_mode () {
     "ETH-live")
       ;;
     "ETH-test-dockerized-geth")
-      ;;
-    "FAKE-test-embedded-mock")
       ;;
     "ALGO-test-dockerized-algod")
       ;;
@@ -518,11 +506,6 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  ${SERVICE}-FAKE-test-embedded-mock:
-    <<: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
   ${SERVICE}-ALGO-live:
     <<: *app-base
     environment:
@@ -857,7 +840,6 @@ react_compose () {
       - ethereum-devnet
 '
         ;;
-      # TODO: FAKE?
     esac
   fi
   cat<<EOF > docker-compose.yml.react
@@ -922,7 +904,6 @@ ensure_connector_mode_browser () {
   # $WHAT-$WHERE
 
   # TODO: distinguish between BLAH-browser-dockerized and browser-remote
-  # TODO: FAKE-browser
 
   # Expand defaults
   REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE:-ETH}
@@ -967,7 +948,6 @@ do_react () {
         USE_EXISTING_DEVNET=true
       fi
       ;;
-    # TODO: FAKE?
   esac
 
   # All args are just forwarded to do_compile
@@ -1028,7 +1008,6 @@ EOF
     DEVNET_NAME=ethereum-devnet
     ;;
 
-  # TODO: FAKE "devnet"?
   esac
 
   docker-compose -f docker-compose.yml.devnet run --service-ports --rm "${DEVNET_NAME}"

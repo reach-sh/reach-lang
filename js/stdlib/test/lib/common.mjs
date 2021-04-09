@@ -425,8 +425,6 @@ export const mkT_AddressCanonicalize = (lib, a, accessor, fields, expected) =>
 
 // TODO ALGO currently fails with:
 //   `Error: Please use newAccountFromAlgoSigner instead`
-// TODO FAKE currently fails with:
-//    `Error: null`
 export const mkGetDefaultAccount = async lib =>
   describe('exposes a `getDefaultAccount` function which', async () => {
     const { getDefaultAccount, newTestAccount, bigNumberify, balanceOf, transfer } = lib;
@@ -445,8 +443,6 @@ export const mkGetDefaultAccount = async lib =>
 
 // TODO ALGO currently fails with:
 //    `Error: invalid arrayify value`
-// TODO FAKE currently fails with:
-//    `TypeError: newAccountFromSecret is not a function`
 export const mkNewAccountFromSecret = async (lib, pow, sec) =>
   describe('exposes a `newAccountFromSecret` function which', async () => {
     const { bigNumberify, newTestAccount, newAccountFromSecret, transfer, balanceOf } = lib;
