@@ -1,10 +1,11 @@
 'reach 0.1';
 
-const f = () => {
-  const obj = {x: 0};
-  throw obj;
+const f = (x, o) => {
+  with (o) {
+    void x;
+  }
 }
 
 export const main = Reach.App(
-  {}, [], () => { return f(); }
+  {}, [], () => { return f(1, 2); }
 );

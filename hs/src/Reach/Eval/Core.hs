@@ -3926,7 +3926,9 @@ evalStmt = \case
     curSt <- readSt id
     exn_ref <- asks e_exn
     exn <- liftIO $ readIORef exn_ref
+    -- Ensure we are throwing inside of a `try` block
     unless (e_exn_in_throw exn) $ expect_ Err_Throw_No_Catch
+    -- Set or ensure the type that this `try` block is expected to catch
     case e_exn_ty exn of
       Nothing -> liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_ty = Just dv_ty })
       Just ty
@@ -3934,10 +3936,9 @@ evalStmt = \case
         | otherwise   -> return ()
     saveLift =<< withAt (`DLS_Throw` dv)
     liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_st = Just curSt })
-    sco <- asks e_sco
     st <- asks e_st
     liftIO $ modifyIORef st (\ s -> s { st_live = False })
-    return $ SLStmtRes sco []
+    asks (SLStmtRes . e_sco) <*> pure []
   ((JSTry try_a (JSBlock _ stmts _) [JSCatch _ _ ce _ (JSBlock _ handler _)] _) : ks) -> do
     locAtf (srcloc_jsa "try" try_a) $ do
       at <- withAt id
@@ -3949,27 +3950,31 @@ evalStmt = \case
           , e_exn_st = Nothing}
       let locTry = local (\e -> e { e_exn = exn_env_ref })
       -- Process try block
-      (try_stmts, try_ret) <- captureLifts $ locTry $ evalStmt stmts
+      SLRes try_stmts try_st try_ret <- captureRes $ locTry $ evalStmt stmts
       exn_env <- liftIO $ readIORef exn_env_ref
       case exn_env of
         -- Get the type of thrown/caught expression & the state during throw
-        ExnEnv { e_exn_ty = Just arg_ty, e_exn_st = Just handler_st } -> do
+        ExnEnv { e_exn_ty = Just arg_ty, e_exn_st = Just thrown_st } -> do
             -- Bind `catch` argument before evaluating handler
             handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
             handler_env <- evalDeclLHS True Public mempty (SLV_DLVar handler_arg) ce
             sco <- asks e_sco
             let sco_env' = handler_env `M.union` sco_cenv sco
             -- Eval handler
-            (handler_stmts, handle_ret) <-
-              captureLifts $
-                locSt handler_st $
+            SLRes handler_stmts handler_st handler_ret <-
+              locSt thrown_st $
+                captureRes $
                   locSco (sco { sco_cenv = sco_env' }) $
                     evalStmt handler
+            -- Ensure the successful try block and catch block end with compatible states
+            setSt try_st
+            mergeSt handler_st
             saveLift $ DLS_Try at try_stmts handler_arg handler_stmts
-            retSeqn handle_ret ks
+            retSeqn handler_ret ks
         -- If there were no `throw`s in try block, ignore handler
         _ -> do
           saveLifts try_stmts
+          setSt try_st
           retSeqn try_ret ks
   (s@(JSTry a _ _ _) : _) -> illegal a s "try"
   ((JSVariable var_a while_decls _vsp) : var_ks) -> do
