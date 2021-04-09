@@ -1529,7 +1529,7 @@ We can now run
 
 @cmd{make build}
 
-to rebuilt the images, then
+to rebuild the images, then
 
 @cmd{make run-alice}
 
