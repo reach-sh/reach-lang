@@ -1194,7 +1194,7 @@ evaluates to @reachin{4}, but
 
 is erroneous, because the identifier @reachin{x} is not bound outside the @tech{block statement}.
 
-@subsubsection{Try...Catch statements}
+@subsubsection{Try/Catch & Throw Statements}
 
 @reach{
   try {
@@ -1203,7 +1203,9 @@ is erroneous, because the identifier @reachin{x} is not bound outside the @tech{
     transfer(v).to(A); }}
 
 A @deftech{try statement}, written @reachin{try BLOCK catch (VAR) BLOCK}, allows a block
-of code to execute with a specified handler should an exception be thrown. A @deftech{throw statement},
+of code to execute with a specified handler should an exception be thrown.
+
+A @deftech{throw statement},
 written @reachin{throw EXPR}, will transfer control flow to the exception handler, binding @tt{EXPR}
 to @tt{VAR}. Any value that is able to exist at runtime may be thrown. For example, @reachin{Int}s
 and @reachin{Array}s are valid values to throw, but a function is not.

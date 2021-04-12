@@ -143,12 +143,12 @@ dk1 at_top ks s =
     DLS_FluidSet {} -> com
     DLS_FluidRef {} -> com
     DLS_MapReduce {} -> com
-    DLS_Throw at dv -> do
+    DLS_Throw at da -> do
       handler <- asks eExnHandler
       case handler of
         Nothing -> impossible "dk: encountered `throw` without an exception handler"
-        Just h  -> do
-          com'' (DKC_Let at (Just $ hV h) $ DLE_Arg at dv) $ hS h
+        Just h  ->
+          com'' (DKC_Let at (Just $ hV h) $ DLE_Arg at da) $ hS h
     DLS_Try at e hv hs ->
       local (\ env ->
         env { eExnHandler = Just (Handler hv (hs <> ks)) })

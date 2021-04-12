@@ -3936,6 +3936,7 @@ evalStmt = \case
         | otherwise   -> return ()
     saveLift =<< withAt (`DLS_Throw` dv)
     liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_st = Just curSt })
+    forM_ (e_exn_st exn) mergeSt
     st <- asks e_st
     liftIO $ modifyIORef st (\ s -> s { st_live = False })
     asks (SLStmtRes . e_sco) <*> pure []
@@ -3947,7 +3948,7 @@ evalStmt = \case
         liftIO $ newIORef $ ExnEnv
           { e_exn_in_throw = True
           , e_exn_ty = Nothing
-          , e_exn_st = Nothing}
+          , e_exn_st = Nothing }
       let locTry = local (\e -> e { e_exn = exn_env_ref })
       -- Process try block
       SLRes try_stmts try_st try_ret <- captureRes $ locTry $ evalStmt stmts
@@ -3956,21 +3957,24 @@ evalStmt = \case
         -- Get the type of thrown/caught expression & the state during throw
         ExnEnv { e_exn_ty = Just arg_ty, e_exn_st = Just thrown_st } -> do
             -- Bind `catch` argument before evaluating handler
-            handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
-            handler_env <- evalDeclLHS True Public mempty (SLV_DLVar handler_arg) ce
             sco <- asks e_sco
-            let sco_env' = handler_env `M.union` sco_cenv sco
+            handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
+            handler_env <- evalDeclLHS True Public (sco_cenv sco) (SLV_DLVar handler_arg) ce
             -- Eval handler
-            SLRes handler_stmts handler_st handler_ret <-
+            SLRes handler_stmts handler_st (SLStmtRes _ handler_res) <-
               locSt thrown_st $
                 captureRes $
-                  locSco (sco { sco_cenv = sco_env' }) $
+                  locSco (sco { sco_cenv = handler_env }) $
                     evalStmt handler
+            saveLift $ DLS_Try at try_stmts handler_arg handler_stmts
+            -- Coalesce the try and handler returns
+            let levelHelp = SLStmtRes sco . map (\(ra, rb, rc, _) -> (ra, rb, rc, True))
+            let SLStmtRes _ try_res = try_ret
+            ret <- combineStmtRes Public (levelHelp handler_res) try_st (levelHelp try_res)
             -- Ensure the successful try block and catch block end with compatible states
             setSt try_st
             mergeSt handler_st
-            saveLift $ DLS_Try at try_stmts handler_arg handler_stmts
-            retSeqn handler_ret ks
+            retSeqn ret ks
         -- If there were no `throw`s in try block, ignore handler
         _ -> do
           saveLifts try_stmts

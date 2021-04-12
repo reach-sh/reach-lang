@@ -47,4 +47,8 @@ export const main =
         commit();
       }
 
+      each([A], () => {
+        interact.show(5);
+      });
+
     });

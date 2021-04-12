@@ -9,9 +9,13 @@ const returnsFromCatch = () => {
   }
 }
 
-const returnsFromTry = () => {
+const returnsFromTry = (x) => {
   try {
-    return true;
+    if (x < x) {
+      throw false;
+    } else {
+      return true;
+    }
   } catch (e) {
     return false;
   }
@@ -20,8 +24,14 @@ const returnsFromTry = () => {
 export const main =
   Reach.App(
     {},
-    [Participant('A', {})],
+    [Participant('A', { x: UInt })],
     (A) => {
+      A.only(() => {
+        const x = declassify(interact.x);
+      });
+      A.publish(x);
+
       assert(returnsFromCatch());
-      assert(returnsFromTry());
+      assert(returnsFromTry(x), "return from try");
+      commit();
     });
