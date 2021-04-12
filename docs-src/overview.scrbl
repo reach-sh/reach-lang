@@ -8,7 +8,7 @@ This is an informal overview of Reach and the structure of a Reach program.
 The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a @seclink["tut"]{tutorial} or a @seclink["ref"]{reference}.
 When you're ready to really begin a project, you can start with one of those, or @seclink["workshop"]{the workshop}.
 
-If you have experience with blockchain development using existing tools, we recommend reading this article and @seclink["guide-solidity"]{a comparision with other development platforms}.
+If you have experience with blockchain development using existing tools, we recommend reading this article and @seclink["guide-solidity"]{a comparison with other development platforms}.
 
 @margin-note{A recording of a live workshop that goes over this material is @link["https://www.youtube.com/watch?v=1jmi8XdOvD4"]{available on YouTube}.}
 
