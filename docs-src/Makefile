@@ -26,3 +26,14 @@ check:
 install:
 	raco pkg install
 	cd ../pygments/ && make install # pygments-reach
+
+.PHONY: watch-render
+watch-render:
+	@command -v inotifywait >/dev/null \
+	  || (echo 'Unable to find `inotifywait`' && exit 1)
+	@while inotifywait -e modify -r .; \
+	  do clear \
+	   ; date \
+	   ; echo 'Re-rendering docs...' \
+	   ; $(MAKE) -s render \
+	   ; done
