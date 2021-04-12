@@ -173,6 +173,7 @@ instance Optimize DLExpr where
     DLE_Digest at as -> DLE_Digest at <$> opt as
     DLE_Claim at fs t a m -> DLE_Claim at fs t <$> opt a <*> (pure $ m)
     DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
+    DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
@@ -365,7 +366,7 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler_ a) where
   opt = \case
     C_Handler {..} -> do
-      C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_amtv ch_timev <$> opt ch_body
+      C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev <$> opt ch_body
     C_Loop {..} -> do
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 

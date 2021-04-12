@@ -62,6 +62,7 @@ instance Sanitize DLExpr where
     DLE_Digest _ as -> DLE_Digest sb (sani as)
     DLE_Claim _ fs ct a mm -> DLE_Claim sb fs ct (sani a) mm
     DLE_Transfer _ x y z -> DLE_Transfer sb (sani x) (sani y) (sani z)
+    DLE_CheckPay _ x y z -> DLE_CheckPay sb x (sani y) (sani z)
     DLE_Wait _ x -> DLE_Wait sb (sani x)
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
@@ -118,7 +119,7 @@ instance Sanitize DLSend where
   sani (DLSend {..}) = DLSend ds_isClass (sani ds_msg) (sani ds_pay) (sani ds_when)
 
 instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLRecv a) where
-  sani (DLRecv {..}) = DLRecv dr_from dr_msg (sani dr_pay) dr_time (sani dr_k)
+  sani (DLRecv {..}) = DLRecv dr_from dr_msg dr_time (sani dr_k)
 
 instance Sanitize LLStep where
   sani = \case

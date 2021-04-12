@@ -98,7 +98,7 @@ import * as fs from 'fs';
   const amtB = stdlib.parseCurrency(2);
 
   await doSwap(zorkmid, amtA, gil, amtB);
-  await doSwap(gil, amtA, zorkmid, amtB);
+  await doSwap(gil, amtB, zorkmid, amtA);
 
   // It would be cool to support ETH without going through WETH
   // const eth = { addr: false, sym: 'ETH', balanceOf: stdlib.balanceOf };

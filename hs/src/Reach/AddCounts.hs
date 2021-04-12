@@ -110,7 +110,7 @@ ac_ch = \case
     return $ C_Loop cl_at cl_svs cl_vars body'
   C_Handler {..} -> do
     ch_body' <- ac_ct ch_body
-    return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_amtv ch_timev ch_body'
+    return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
 ac_top :: CIHandler -> IO CHandler
 ac_top x = do

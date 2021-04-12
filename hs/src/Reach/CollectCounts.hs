@@ -109,6 +109,7 @@ instance Countable DLExpr where
     DLE_Digest _ as -> counts as
     DLE_Claim _ _ _ a _ -> counts a
     DLE_Transfer _ x y z -> counts [x, y] <> counts z
+    DLE_CheckPay _ _ y z -> counts y <> counts z
     DLE_Wait _ a -> counts a
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa

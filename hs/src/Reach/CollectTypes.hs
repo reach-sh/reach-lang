@@ -88,6 +88,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_Digest _ as) = cts as
   cts (DLE_Claim _ _ _ a _) = cts a
   cts (DLE_Transfer _ x y z) = cts x <> cts y <> cts z
+  cts (DLE_CheckPay _ _ y z) = cts y <> cts z
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
   cts (DLE_MapRef _ _ fa) = cts fa
@@ -146,7 +147,7 @@ instance CollectsTypes DLSend where
   cts (DLSend {..}) = cts ds_msg <> cts ds_pay <> cts ds_when
 
 instance CollectsTypes a => CollectsTypes (DLRecv a) where
-  cts (DLRecv {..}) = cts dr_from <> cts dr_msg <> cts dr_pay <> cts dr_time <> cts dr_k
+  cts (DLRecv {..}) = cts dr_from <> cts dr_msg <> cts dr_time <> cts dr_k
 
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
@@ -178,7 +179,7 @@ instance CollectsTypes PLLetCat where
   cts _ = mempty
 
 instance CollectsTypes CHandler where
-  cts (C_Handler _ int last_timev fs _ svs msg amtv timev body) = cts int <> cts last_timev <> cts fs <> cts svs <> cts msg <> cts amtv <> cts timev <> cts body
+  cts (C_Handler _ int last_timev fs _ svs msg timev body) = cts int <> cts last_timev <> cts fs <> cts svs <> cts msg <> cts timev <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
 
 instance CollectsTypes CHandlers where

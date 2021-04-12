@@ -13,7 +13,7 @@ import {
   add,
   assert,
   bigNumberify,
-  debug,
+  debug, debugo,
   eq,
   ge,
   getDEBUG,
@@ -79,7 +79,7 @@ type ContractInfo = {
   init?: ContractInitInfo,
 };
 
-type Digest = string // XXX
+type Digest = string
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
@@ -401,6 +401,19 @@ export const transfer = async (
   return fetchAndRejectInvalidReceiptFor(r.transactionHash);
 };
 
+const ERC20_ABI = [
+  { "constant": false,
+    "inputs": [ { "name": "_spender",
+                  "type": "address" },
+                { "name": "_value",
+                  "type": "uint256" } ],
+    "name": "approve",
+    "outputs": [ { "name": "",
+                   "type": "bool" } ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function" }
+];
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
@@ -604,7 +617,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const getC = (() => {
       let _ethersC: ethers.Contract | null = null;
-      return async () => {
+      return async (): Promise<ethers.Contract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
         await verifyContract(info, bin);
@@ -617,10 +630,53 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     })();
 
+    const doCall = async (
+      dhead: string,
+      ctc: ethers.Contract,
+      funcName: string,
+      args: Array<any>,
+      value: BigNumber,
+    ): Promise<void> => {
+      const dpre = { dhead, ctc, funcName, args, value };
+      debugo({...dpre, step: `pre call`});
+      const rt = await ctc[funcName](...args, { value, gasLimit });
+      debugo({...dpre, rt, step: `pre wait`});
+      const rm = await rt.wait();
+      debugo({...dpre, rt, rm, step: `pre receipt`});
+      assert(rm !== null);
+      const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
+      debugo({...dpre, rt, rm, ro, step: `post receipt`});
+      // ro's blockNumber might be interesting
+      void(ro);
+    };
+
     const callC = async (
-      funcName: string, arg: any, value: BigNumber,
-    ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
-      return (await getC())[funcName](arg, { value, gasLimit });
+      dhead: string, funcName: string, arg: any, pay: PayAmt,
+    ): Promise<void> => {
+      const [ value, toks ] = pay;
+      const ethersC = await getC();
+      const zero = bigNumberify(0);
+      const actualCall = async () =>
+        await doCall(dhead, ethersC, funcName, [arg], value);
+      const callTok = async (tok:Token, amt:BigNumber) => {
+        // @ts-ignore
+        const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
+        await doCall(dhead, tokCtc, "approve", [ethersC.address, amt], zero); }
+      const maybePayTok = async (i:number) => {
+        if ( i < toks.length ) {
+          const [amt, tok] = toks[i];
+          await callTok(tok, amt);
+          try {
+            await maybePayTok(i+1);
+          } catch (e) {
+            await callTok(tok, zero);
+            throw e;
+          }
+        } else {
+          await actualCall();
+        }
+      };
+      await maybePayTok(0);
     };
 
     const getEventData = async (
@@ -666,69 +722,49 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
 
-      debug(shad, ':', label, 'send', funcName, timeout_delay, '--- SEND --- ARGS', args);
+      const dhead = [shad, label, 'send', funcName, timeout_delay, 'SEND'];
+      debug([...dhead, 'ARGS' args]);
       const [ args_svs, args_msg ] = argsSplit(args, evt_cnt );
       const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
       // @ts-ignore XXX
       const arg_ty = T_Tuple([T_Tuple(tys_svs), T_Tuple(tys_msg)]);
       const arg = arg_ty.munge([args_svs, args_msg]);
 
-      debug(shad, ':', label, 'send', funcName, timeout_delay, '--- START ---', arg);
+      debug([...dhead, 'START', arg]);
       const lastBlock = await getLastBlock();
       let block_send_attempt = lastBlock;
       let block_repeat_count = 0;
       while (!timeout_delay || lt(block_send_attempt, add(lastBlock, timeout_delay))) {
-        let r_maybe: TransactionReceipt | null = null;
-
-        debug(shad, ':', label, 'send', funcName, timeout_delay, `--- TRY`);
+        debug([...dhead, 'TRY']);
         try {
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- SEND ARG ---`, arg, `---`, value);
-
-          const r_fn = await callC(funcName, arg, pay);
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- POST CALL`);
-
-          r_maybe = await r_fn.wait();
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- POST WAIT`);
-
-          assert(r_maybe !== null);
-          const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- OKAY`);
-
-          // XXX It might be a little dangerous to rely on the polling to just work
-
-          // It may be the case that the next line could speed things up?
-          // last_block = ok_r.blockNumber;
-          // XXX ^ but do not globally mutate lastBlock.
-          // wait relies on lastBlock to refer to the last ctc event
-          void(ok_r);
-
+          debug(`${dhead} ARG ${JSON.stringify(arg)} ${JSON.stringify(pay)}`);
+          await callC(dhead, funcName, arg, pay);
         } catch (e) {
-
           if ( ! soloSend ) {
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- SKIPPING (`, e, `)`);
+            debug([...dhead, `SKIPPING`, e]);
           } else {
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- ERROR:`, e.stack);
+            debug([...dhead, `ERROR`, e.stack]);
 
-          // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
-          await Timeout.set(1);
-          const current_block = await getNetworkTimeNumber();
-          if (current_block == block_send_attempt) {
-            block_repeat_count++;
-          }
-          block_send_attempt = current_block;
-          if ( /* timeout_delay && */ block_repeat_count > 32) {
-            if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
-              let error = e;
-              while (error.error) { error = error.error; }
-              console.log(`impossible: The message you are trying to send appears to be invalid.`);
-              console.log(error);
+            // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
+            await Timeout.set(1);
+            const current_block = await getNetworkTimeNumber();
+            if (current_block == block_send_attempt) {
+              block_repeat_count++;
             }
-            console.log(`args:`);
-            console.log(arg);
-            throw Error(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
-          }
-          debug(shad, ':', label, 'send', funcName, timeout_delay, `--- TRY FAIL ---`, lastBlock, current_block, block_repeat_count, block_send_attempt);
-          continue;
+            block_send_attempt = current_block;
+            if ( /* timeout_delay && */ block_repeat_count > 32) {
+              if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
+                let error = e;
+                while (error.error) { error = error.error; }
+                console.log(`impossible: The message you are trying to send appears to be invalid.`);
+                console.log(error);
+              }
+              console.log(`args:`);
+              console.log(arg);
+              throw Error(`${dhead} REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
+            }
+            debug([...dhead], `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt]);
+            continue;
           }
         }
 
@@ -739,7 +775,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       // think that there is a timeout and then we'll wait forever for
       // the timeout message.
 
-      debug(shad, ':', label, 'send', funcName, timeout_delay, `--- FAIL/TIMEOUT`);
+      debug([...dhead, `FAIL/TIMEOUT`]);
       return {didTimeout: true};
     };
 
@@ -818,30 +854,31 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(shad, ':', label, 'recv', ok_evt, `--- MSG --`, ok_vals);
           const data = T_Tuple(out_tys).unmunge(ok_vals);
 
-          const getOutput = async (o_lab:String, o_ctc:any): Promise<any> => {
-            let dhead = [shad, ":", label, "recv", ok_evt, "--- getOutput:", o_lab, o_ctc]
-            debug(...dhead);
-            const oe_evt = `oe_${o_lab}`;
+          const getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
+            let dhead = [shad, label, 'recv', ok_evt, '--- getLog', l_evt, l_ctc];
+            debug(dhead);
             const theBlock = ok_r.blockNumber;
-            dhead = [...dhead, "oe(", oe_evt, ")"];
-            const oe_e = (await getLogs(theBlock, theBlock, oe_evt))[0];
-            dhead = [...dhead, "log(", oe_e, ")"];
-            debug(...dhead);
-            const oe_ed = (await getEventData(oe_evt, oe_e))[0];
-            dhead = [...dhead, "data(", oe_ed, ")"];
-            debug(...dhead);
-            const oe_edu = o_ctc.unmunge(oe_ed);
-            dhead = [...dhead, "unmunge(", oe_edu, ")"];
-            debug(...dhead);
-            return oe_edu;
+            const l_e = (await getLogs(theBlock, theBlock, l_evt))[0];
+            dhead = [...dhead, 'log', l_e];
+            debug(dhead);
+            const l_ed = (await getEventData(l_evt, l_e))[0];
+            dhead = [...dhead, 'data', l_ed];
+            debug(dhead);
+            const l_edu = l_ctc.unmunge(l_ed);
+            dhead = [...dhead, 'unmunge', l_edu];
+            debug(dhead);
+            return l_edu;
           };
+          const getOutput = (o_lab:string, o_ctc:any): Promise<any> =>
+            getLog(`oe_${o_lab}`, o_ctc);
 
-          debug(shad, ':', label, 'recv', ok_evt, timeout_delay, '--- OKAY ---', ok_vals);
-          const { value, from } = ok_t;
-          const pay = [ value, [] ]; // XXX
-          return { didTimeout: false,
-                   time: bigNumberify(ok_r.blockNumber),
-                   data, getOutput, pay, from };
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
+          const { from } = ok_t;
+          return {
+            data, getOutput, from,
+            didTimeout: false,
+            time: bigNumberify(ok_r.blockNumber),
+          };
         }
       }
 

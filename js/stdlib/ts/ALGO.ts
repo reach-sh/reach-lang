@@ -20,7 +20,9 @@ const {Buffer} = buffer;
 
 import {
   CurrencyAmount, OnProgress, WPArgs,
+  IAccount, IContract, IRecv, ISimRes, ISimTxn,
   debug, getDEBUG,
+  assert,
   isBigNumber, bigNumberify, bigNumberToNumber,
   argsSlice,
   makeRandom,
@@ -30,7 +32,14 @@ import {
 } from './CBR';
 import waitPort from 'wait-port';
 import { replaceableThunk } from './shared_impl';
-import { stdlib as compiledStdlib, ALGO_Ty, NV, typeDefs } from './ALGO_compiled';
+import {
+  Token,
+  PayAmt,
+  ALGO_Ty,
+  NV,
+  stdlib as compiledStdlib,
+  typeDefs
+} from './ALGO_compiled';
 import { process, window } from './shim';
 export * from './shared';
 
@@ -105,9 +114,6 @@ type CompileResultBytes = {
 };
 
 type NetworkAccount = Wallet;
-type Account = {
-  networkAccount: NetworkAccount,
-};
 
 type Backend = {_Connectors: {ALGO: {
   appApproval0: string,
@@ -119,49 +125,12 @@ type Backend = {_Connectors: {ALGO: {
   unsupported: boolean,
 }}};
 
-type Digest = BigNumber;
-type SimRes = {
-  prevSt: Digest,
-  prevSt_noPrevTime: Digest,
-  txns: Array<SimTxn>,
-  nextSt: Digest,
-  nextSt_noTime: Digest,
-  isHalt : boolean,
-};
-type SimTxn = {
-  to: string,
-  amt: BigNumber,
-};
-
 type CompiledBackend = {
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
   ctc: CompileResultBytes,
   steps: Array<CompileResultBytes|null>,
 };
-
-type Recv = {
-  didTimeout: false,
-  data: Array<ContractOut>,
-  time: BigNumber,
-  value: BigNumber,
-  from: string,
-  getOutput: (o_lab:string, o_ctc:any) => Promise<any>,
-} | { didTimeout: true };
-
-type ContractAttached = {
-  getInfo: () => Promise<ContractInfo>,
-  creationTime: () => Promise<BigNumber>,
-  sendrecv: (...argz: any) => Promise<Recv>,
-  recv: (...argz: any) => Promise<Recv>,
-  wait: (...argz: any) => any,
-  iam: (some_addr: any) => any,
-  selfAddress: () => CBR_Address, // Not RawAddress!
-  stdlib: Object,
-};
-
-// TODO
-type ContractOut = any;
 
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
@@ -170,18 +139,12 @@ type ContractInfo = {
   Deployer: Address,
 };
 
-// ctc[ALGO] = {
-//   address: string
-//   appId: confirmedTxn.TransactionResults.CreatedAppIndex; // ?
-//   creationRound: int // bigint?
-//   logic_sig: LogicSig
-//
-//   // internal fields
-//   // * not required to call acc.attach(bin, ctc)
-//   // * required by backend
-//   sendrecv: function
-//   recv: function
-// }
+type Digest = BigNumber
+type Recv = IRecv<Address>
+type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
+type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
+type SimRes = ISimRes<Digest, Address, Token>
+type SimTxn = ISimTxn<Address, Token>
 
 // ****************************************************************************
 // Helpers
@@ -620,12 +583,6 @@ const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
   return txn;
 };
 
-const showBalance = async (note: string, networkAccount: NetworkAccount) => {
-  const bal = await balanceOf({ networkAccount });
-  const showBal = formatCurrency(bal, 2);
-  console.log('%s: balance: %s algos', note, showBal);
-};
-
 // ****************************************************************************
 // Common Interface Exports
 // ****************************************************************************
@@ -663,7 +620,7 @@ export {setIndexer};
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
-const [getFaucet, setFaucet] = replaceableThunk(async () => {
+const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
   );
@@ -739,7 +696,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
   }
 }
 
-export const connectAccount = async (networkAccount: NetworkAccount) => {
+export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -759,7 +716,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     }
   };
 
-  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
+  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
     const { Deployer, ApplicationID } = ctcInfo;
@@ -780,11 +737,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       hasLastTime: (BigNumber | false),
       tys: Array<AnyALGO_Ty>,
       args: Array<any>,
-      value: BigNumber,
+      pay: PayAmt,
       out_tys: Array<AnyALGO_Ty>,
       onlyIf: boolean,
       soloSend: boolean,
-      timeout_delay: undefined | BigNumber,
+      timeout_delay: false | BigNumber,
       sim_p: (fake: Recv) => Promise<SimRes>,
     ): Promise<Recv> => {
       if ( hasLastTime !== false ) {
@@ -797,6 +754,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
+
+      // XXX support tokens on ALGO
+      const [ value, toks ] = pay;
+      assert(toks.length, 0);
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
@@ -982,7 +943,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       evt_cnt: number,
       tys: Array<AnyALGO_Ty>,
       waitIfNotPresent: boolean,
-      timeout_delay: undefined | BigNumber,
+      timeout_delay: false | BigNumber,
     ): Promise<Recv> => {
       // Ignoring this, because no ALGO dev node
       void(waitIfNotPresent);
@@ -1095,7 +1056,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           didTimeout: false,
           data: args_un,
           time: bigNumberify(lastRound),
-          value, from, getOutput,
+          from, getOutput,
         };
       }
     };
@@ -1105,7 +1066,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     return { getInfo, creationTime, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
   };
 
-  const deployP = async (bin: Backend): Promise<ContractAttached> => {
+  const deployP = async (bin: Backend): Promise<Contract> => {
     must_be_supported(bin);
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
@@ -1184,15 +1145,18 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   };
 
   /**
-   * @description Push await down into the functions of a ContractAttached
-   * @param implP A promise of an implementation of ContractAttached
+   * @description Push await down into the functions of a Contract
+   * @param implP A promise of an implementation of Contract
    */
-  const deferP = (implP: Promise<ContractAttached>): ContractAttached => {
+  const deferP = (implP: Promise<Contract>): Contract => {
     return {
       getInfo: async () => (await implP).getInfo(),
       creationTime: async () => (await implP).creationTime(),
+      // @ts-ignore
       sendrecv: async (...args: any) => (await implP).sendrecv(...args),
+      // @ts-ignore
       recv: async (...args: any) => (await implP).recv(...args),
+      // @ts-ignore
       wait: async(...args: any) => (await implP).wait(...args),
       iam, // doesn't need to await the implP
       selfAddress, // doesn't need to await the implP
@@ -1200,11 +1164,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     };
   };
 
-  const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): ContractAttached => {
+  const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
     return deferP(attachP(bin, ctcInfoP));
   };
 
-  const deploy = (bin: Backend): ContractAttached => {
+  const deploy = (bin: Backend): Contract => {
     return deferP(deployP(bin));
   };
 
@@ -1226,7 +1190,7 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 
-export const createAccount = async () => {
+export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
   return await connectAccount(networkAccount);
 };
@@ -1238,9 +1202,7 @@ export const fundFromFaucet = async (account: Account, value: any) => {
 
 export const newTestAccount = async (startingBalance: any) => {
   const account = await createAccount();
-  if (getDEBUG()) { await showBalance('before', account.networkAccount); }
   await fundFromFaucet(account, startingBalance);
-  if (getDEBUG()) { await showBalance('after', account.networkAccount); }
   return account;
 };
 

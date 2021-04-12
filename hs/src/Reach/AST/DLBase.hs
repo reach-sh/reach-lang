@@ -360,6 +360,7 @@ data DLExpr
   | DLE_Digest SrcLoc [DLArg]
   | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
   | DLE_Transfer SrcLoc DLArg DLArg (Maybe DLArg)
+  | DLE_CheckPay SrcLoc [SLCtxtFrame] DLArg (Maybe DLArg)
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
@@ -388,6 +389,7 @@ instance Pretty DLExpr where
       DLE_Digest _ as -> "digest" <> parens (render_das as)
       DLE_Claim _ _ ct a m -> prettyClaim ct a m
       DLE_Transfer _ who da mtok -> prettyTransfer who da mtok
+      DLE_CheckPay _ _ da mtok -> "checkPay" <> parens ( pretty da <> ", " <> pretty mtok )
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
       DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
@@ -418,6 +420,7 @@ instance IsPure DLExpr where
         CT_Require -> False
         CT_Unknowable {} -> True
     DLE_Transfer {} -> False
+    DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> False
     DLE_MapRef {} -> True
@@ -441,6 +444,7 @@ instance IsLocal DLExpr where
     DLE_Digest {} -> True
     DLE_Claim {} -> True
     DLE_Transfer {} -> False
+    DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> True
     DLE_MapRef {} -> True
@@ -547,6 +551,7 @@ instance Pretty DLPayAmt where
       , ("ks", pretty pa_ks)
       ])
 
+-- XXX delete this
 data DLPayVar = DLPayVar
   { pv_net :: DLVar
   , pv_ks :: [(DLVar, DLArg)] }
@@ -578,7 +583,6 @@ instance Pretty DLSend where
 data DLRecv a = DLRecv
   { dr_from :: DLVar
   , dr_msg :: [DLVar]
-  , dr_pay :: DLPayVar
   , dr_time :: DLVar
   , dr_k :: a }
   deriving (Eq, Generic)
@@ -588,10 +592,8 @@ instance Pretty a => Pretty (DLRecv a) where
     ".recv" <> parens (render_obj $ M.fromList $
       [ ("from"::String, pretty dr_from)
       , ("msg", pretty dr_msg)
-      , ("pay", pretty dr_pay)
       , ("time", pretty dr_time)
-      , ("k", render_nest (pretty dr_k))
-      ])
+      ]) <> render_nest (pretty dr_k)
 
 data FluidVar
   = FV_balance Int

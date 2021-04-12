@@ -318,6 +318,7 @@ instance DepthOf DLExpr where
     DLE_Digest _ as -> add1 $ depthOf as
     DLE_Claim _ _ _ a _ -> depthOf a
     DLE_Transfer _ x y z -> max <$> depthOf [x, y] <*> depthOf z
+    DLE_CheckPay _ _ y z -> max <$> depthOf y <*> depthOf z
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
@@ -482,8 +483,6 @@ solExpr sp = \case
   DLE_Digest _ args -> do
     args' <- mapM solArg args
     return $ (solHash $ args') <> sp
-  DLE_Transfer _ who amt mtok ->
-    spa $ solTransfer who amt mtok
   DLE_Claim at fs ct a mmsg -> spa check
     where
       check = case ct of
@@ -493,6 +492,20 @@ solExpr sp = \case
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
       require = solRequire (show (at, fs, mmsg)) <$> solArg a
+  DLE_Transfer _ who amt mtok ->
+    spa $ solTransfer who amt mtok
+  DLE_CheckPay at fs amt mtok -> do
+    let require :: String -> Doc -> App Doc
+        require msg e = spa $ return $ solRequire (show (at, fs, msg)) e
+    amt' <- solArg amt
+    case mtok of
+      Nothing -> do
+        cmp <- solEq "msg.value" amt'
+        require "verify network token pay amount" cmp
+      Just tok -> do
+        tok' <- solArg tok
+        require "verify non-network token pay amount" $
+          solApply "checkPayAmt" [ "msg.sender", tok', amt' ]
   DLE_Wait {} -> return emptyDoc
   DLE_PartSet _ _ a -> spa $ solArg a
   DLE_MapRef _ mpv fa -> do
@@ -789,27 +802,17 @@ solFrame i sim = do
       let frame_declp = (framei <+> "memory _f") <> semi
       return $ (frame_defp, frame_declp)
 
-solCTail_top :: Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> Maybe DLPayVar -> CTail -> App (Doc, Doc, Doc)
-solCTail_top which svs msg mmsg mpv ct = do
+solCTail_top :: Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> CTail -> App (Doc, Doc, Doc)
+solCTail_top which svs msg mmsg ct = do
   let svsm = M.fromList $ map (\v -> (v, solArgSVSVar v)) svs
   let msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) msg
   let emitp = case mmsg of
         Just _ -> solEventEmit which
         Nothing -> emptyDoc
   extendVarMap $ svsm <> msgm
-  let go_pv_k v a = do
-        addMemVar v
-        a' <- solArg a
-        let de' = solApply "readPayAmt" [ "msg.sender", a' ]
-        return $ solSet (solMemVar v) de'
   ct' <- local (\e -> e { ctxt_emit = emitp
                         , ctxt_handler_num = which }) $ do
-            payAmts <-
-              case mpv of
-                Nothing -> return emptyDoc
-                Just DLPayVar {..} -> vsep <$> mapM (uncurry go_pv_k) pv_ks
-            ct' <- solCTail ct
-            return $ payAmts <> ct'
+            solCTail ct
   mvars <- readMemVars
   (frameDefn, frameDecl) <- solFrame which mvars
   return (frameDefn, frameDecl, ct')
@@ -832,14 +835,13 @@ solArgDefn = solArgDefn_ "_a"
 solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
-    C_Handler at interval last_timemv from prev svs msg amtv timev ct -> do
+    C_Handler at interval last_timemv from prev svs msg timev ct -> do
       let checkMsg s = s <> " check at " <> show at
-      let DLPayVar {..} = amtv
       let fromm = M.singleton from "payable(msg.sender)"
-      let given_mm = M.fromList [(pv_net, "msg.value"), (timev, solBlockNumber)]
+      let given_mm = M.fromList [(timev, solBlockNumber)]
       extendVarMap $ given_mm <> fromm
       timev' <- solVar timev
-      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) (Just amtv) ct
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
       evtDefn <- solEvent which svs msg
       let ret = "payable"
       plo <- ctxt_plo <$> ask
@@ -880,7 +882,7 @@ solHandler which h = freshVarMap $
 
     C_Loop _at svs lcmsg ct -> do
       let msg = lcmsg
-      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing Nothing ct
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing ct
       argDefn <- solArgDefn AM_Memory svs msg
       let ret = "internal"
       let body = vsep [frameDecl, ctp]

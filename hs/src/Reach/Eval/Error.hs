@@ -133,6 +133,7 @@ data EvalError
   | Err_Try_Type_Mismatch DLType DLType
   | Err_Throw_No_Catch
   | Err_Token_NotOnFirst
+  | Err_Token_OnCtor
   | Err_Token_InWhile
   deriving (Eq, Generic)
 
@@ -513,7 +514,9 @@ instance Show EvalError where
       "`throw` statements may only occur inside of `try/catch` blocks."
 =======
     Err_Token_NotOnFirst ->
-      "Token published on message that is not first message"
+      "Token published on message that is not first message, which Reach cannot track, yet."
+    Err_Token_OnCtor ->
+      "Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens."
     Err_Token_InWhile ->
       "Token published within while"
 >>>>>>> 535460ea (pre-test, pre-algo)

@@ -325,6 +325,8 @@ jsExpr = \case
                   , ("tok", mtok')
                   ]
             ]
+  DLE_CheckPay {} ->
+    mempty
   DLE_Wait _ amt -> do
     amt' <- jsArg amt
     (ctxt_simulate <$> ask) >>= \case
@@ -518,7 +520,7 @@ jsETail = \case
             , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
             , "sim_r.isHalt =" <+> isHalt' <> semi
             ]
-  ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out amtv timev mto k_ok -> do
+  ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out timev mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
     let withCtxt =
@@ -530,12 +532,10 @@ jsETail = \case
                  })
     txn <- withCtxt jsTxn
     let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
-    amtv' <- jsPayVar amtv
-    let amt_defp = "const" <+> amtv' <+> "=" <+> txn <> ".pay" <> semi <> hardline
     timev' <- jsVar timev
     let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
     fs_ok' <- withCtxt $ jsFromSpec fs_ok
-    let k_defp = msg_vs_defp <> amt_defp <> time_defp <> fs_ok'
+    let k_defp = msg_vs_defp <> time_defp <> fs_ok'
     k_ok' <- withCtxt $ jsETail k_ok
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-

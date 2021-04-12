@@ -509,7 +509,7 @@ be_s = \case
     k' <- be_s k
     return $ ee_only at who l =<< k'
   LLS_ToConsensus at send recv mtime -> do
-    let DLRecv from_v msg_vs amt_v time_v (last_time_mv, ok_c) = recv
+    let DLRecv from_v msg_vs time_v (last_time_mv, ok_c) = recv
     prev <- be_which <$> ask
     signalMore
     which <- newHandler "ToConsensus"
@@ -539,7 +539,6 @@ be_s = \case
           $ do
             fg_use $ int_ok
             fg_use $ last_time_mv
-            be_pv $ amt_v
             fg_defn $ from_v : time_v : msg_vs
             be_c ok_c
     fg_child which
@@ -549,7 +548,7 @@ be_s = \case
       udvs <- readVars
       let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
       let ok_c'' = foldl' add_udv_def ok_c' udvs
-      return $ C_Handler at int_ok last_time_mv from_v prev svs msg_vs amt_v time_v ok_c''
+      return $ C_Handler at int_ok last_time_mv from_v prev svs msg_vs time_v ok_c''
     -- It is only a solo send if we are the only sender AND we are not a
     -- class
     let soloSend0 = (M.size send) == 1
@@ -564,7 +563,7 @@ be_s = \case
               svs <- ee_readMustReceive which
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs amt_v time_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs time_v mtime' ok_l'
     return $ ok_l''m
 
 

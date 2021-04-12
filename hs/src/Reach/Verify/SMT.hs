@@ -111,7 +111,6 @@ instance Pretty VerifyMode where
 data BindingOrigin
   = O_Join SLPart Bool
   | O_Msg SLPart (Maybe DLArg)
-  | O_Pay SLPart (Maybe DLArg)
   | O_ClassJoin SLPart
   | O_ToConsensus
   | O_BuiltIn
@@ -129,10 +128,8 @@ instance Show BindingOrigin where
     case bo of
       O_Join who False -> "a dishonest join from " ++ sp who
       O_Msg who Nothing -> "a dishonest message from " ++ sp who
-      O_Pay who Nothing -> "a dishonest payment from " ++ sp who
       O_Join who True -> "an honest join from " ++ sp who
       O_Msg who (Just what) -> "an honest message from " ++ sp who ++ " of " ++ sp what
-      O_Pay who (Just amt) -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
       O_ClassJoin who -> "a join by a class member of " <> sp who
       O_ToConsensus -> "a consensus transfer"
       O_BuiltIn -> "builtin"
@@ -201,6 +198,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_addrs :: M.Map SLPart DLVar
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
   , ctxt_inv_mode :: BlockMode
+  , ctxt_pay_amt :: Maybe (SExpr, SExpr)
   }
 
 ctxt_mode :: App VerifyMode
@@ -330,20 +328,19 @@ smtPrimOp p dargs =
       case dargs of
         [ DLA_Literal (DLL_Bytes pn)
           , DLA_Literal (DLL_Bool isClass)
-          , DLA_Literal (DLL_Int _ addrNum)
           ] -> \_ ->
             case isClass of
               False ->
                 return $ Atom $ smtAddress pn
               True -> do
-                should <- shouldSimulate pn
-                case should of
+                shouldSimulate pn >>= \case
                   True ->
                     Atom <$> smtCurrentAddress pn
                   False -> do
-                    let addrVar = "classAddr" <> show addrNum
-                    smtDeclare_v addrVar T_Address
-                    return $ Atom addrVar
+                    ai <- smt_alloc_id
+                    let av = "classAddr" <> show ai
+                    smtDeclare_v av T_Address
+                    return $ Atom av
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
@@ -444,6 +441,7 @@ dlvOccurs env bindings de =
     DLE_Digest at as -> _recs at as
     DLE_Claim at _ _ a _ -> _rec at a
     DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
+    DLE_CheckPay at _ y z -> _recs_ (_rec at y) at z
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
     DLE_MapRef at _ fa -> _rec at fa
@@ -486,6 +484,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_Digest _ as -> "digest" <> args as
   DLE_Claim _ _ ty a m -> show ty <> paren (commaSep [sub a, show m])
   DLE_Transfer _ x y z -> "transfer" <> paren (sub y <> ", " <> msub z) <> ".to" <> paren (sub x)
+  DLE_CheckPay _ _ y z -> "checkPay" <> paren (sub y <> ", " <> msub z)
   DLE_Wait _ a -> "wait" <> paren (sub a)
   DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
@@ -1018,19 +1017,21 @@ smt_e at_dv mdv de = do
       bound at $ smtApply "digest" [args']
     DLE_Claim at f ct ca mmsg -> do
       ca' <- smt_a at ca
-      let check_m = verify1 at f (TClaim ct) ca' mmsg
-      let assert_m = smtAssertCtxt ca'
-      case ct of
-        CT_Assert -> check_m
-        CT_Assume _ -> assert_m
-        CT_Require ->
-          ctxt_mode >>= \case
-            VM_Honest -> check_m
-            VM_Dishonest {} -> assert_m
-        CT_Possible -> check_m
-        CT_Unknowable {} -> mempty
+      doClaim at f ct ca' mmsg
     DLE_Transfer {} ->
       mempty
+    DLE_CheckPay at f amta mtok -> do
+      (pv_net, pv_ks) <- fromMaybe (impossible "no ctxt_pay_amt") <$> (ctxt_pay_amt <$> ask)
+      amta' <- smt_a at amta
+      paya' <- case mtok of
+        Nothing -> return $ pv_net
+        Just tok -> do
+          tok' <- smt_a at tok
+          return $ smtApply "select" [ pv_ks, tok' ]
+      let ca' = smtEq amta' paya'
+      let msg_ = maybe "" (const "non-") mtok
+      let mmsg = Just $ msg_ <> "network token pay amount"
+      doClaim at f CT_Require ca' mmsg
     DLE_Wait {} ->
       mempty
     DLE_PartSet at who a -> do
@@ -1056,6 +1057,18 @@ smt_e at_dv mdv de = do
   where
     bo = O_Expr de
     bound at = pathAddBound at mdv bo (Just de)
+    doClaim at f ct ca' mmsg = do
+      let check_m = verify1 at f (TClaim ct) ca' mmsg
+      let assert_m = smtAssertCtxt ca'
+      case ct of
+        CT_Assert -> check_m
+        CT_Assume _ -> assert_m
+        CT_Require ->
+          ctxt_mode >>= \case
+            VM_Honest -> check_m
+            VM_Dishonest {} -> assert_m
+        CT_Possible -> check_m
+        CT_Unknowable {} -> mempty
 
 data SwitchMode
   = SM_Local
@@ -1196,11 +1209,15 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
     DLAssignment asnm = asn
     def1 dv = pathAddUnbound at (Just dv) O_Assignment
 
+smt_alloc_id :: App Int
+smt_alloc_id = do
+  idxr <- ctxt_idx <$> ask
+  liftIO $ incCounter idxr
+
 freshAddrs :: App a -> App a
 freshAddrs m = do
-  idxr <- ctxt_idx <$> ask
   let go (DLVar at lab t _) = do
-        dv <- DLVar at lab t <$> (liftIO $ incCounter idxr)
+        dv <- DLVar at lab t <$> smt_alloc_id
         pathAddUnbound at (Just dv) O_BuiltIn
         return dv
   addrs' <- mapM go =<< (ctxt_addrs <$> ask)
@@ -1252,7 +1269,7 @@ smt_s = \case
   LLS_Stop _at -> mempty
   LLS_Only _at who loc k -> smt_lm who loc <> smt_s k
   LLS_ToConsensus at send recv mtime -> do
-    let DLRecv whov msgvs amtv timev (last_timemv, next_n) = recv
+    let DLRecv whov msgvs timev (last_timemv, next_n) = recv
     timev' <- smt_v at timev
     let timeout = case mtime of
           Nothing -> mempty
@@ -1282,14 +1299,30 @@ smt_s = \case
                         pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from')
                   _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
           let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
-          let bind_amt v a = maybe_pathAdd v (O_Pay from Nothing) (O_Pay from $ Just a) (Just $ DLE_Arg at a) =<< (smt_a at a)
-          let bind_amts = do
-                let DLPayAmt {..} = amta
-                let DLPayVar {..} = amtv
-                bind_amt pv_net pa_net
-                let mf = map fst
-                zipWithM_ bind_amt (mf pv_ks) (mf pa_ks)
-          let this_case = bind_from <> bind_msg <> bind_amts <> after
+          let bind_amt m = do
+                let mki f = ((<>) ("pv_" <> f) . show) <$> smt_alloc_id
+                pv_net <- mki "net"
+                let pv_net' = Atom pv_net
+                pv_ks <- mki "ks"
+                let pv_ks' = Atom pv_ks
+                pv_tok <- mki "tok"
+                let pv_tok' = Atom pv_tok
+                smt <- ctxt_smt <$> ask
+                liftIO $ void $ SMT.declare smt pv_net $ Atom "UInt"
+                smtTypeInv T_UInt $ pv_net'
+                liftIO $ void $ SMT.declare smt pv_tok $ Atom "Token"
+                smtTypeInv T_Token $ pv_tok'
+                liftIO $ void $ SMT.declare smt pv_ks $ smtApply "Array" [ Atom "Token", Atom "UInt" ]
+                smtTypeInv T_UInt $ smtApply "select" [ pv_ks', pv_tok' ]
+                let one v a = smtAssert =<< (smtEq v <$> smt_a at a)
+                when should $ do
+                  let DLPayAmt {..} = amta
+                  one pv_net' pa_net
+                  forM_ pa_ks $ \(ka, kt) -> do
+                    kt' <- smt_a at kt
+                    one (smtApply "select" [ pv_ks', kt' ]) ka
+                local (\e -> e { ctxt_pay_amt = Just (pv_net', pv_ks') }) m
+          let this_case = bind_from <> bind_msg <> bind_amt after
           when' <- smt_a at whena
           case should of
             True -> do
@@ -1487,6 +1520,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_modem = Nothing
   let ctxt_smt = smt
   let ctxt_idx = llo_counter
+  let ctxt_pay_amt = Nothing
   flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c

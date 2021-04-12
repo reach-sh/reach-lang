@@ -68,7 +68,6 @@ data ETail_ a
              )
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_out :: [DLVar]
-      , et_tc_from_amtv :: DLPayVar
       , et_tc_from_timev :: DLVar
       , et_tc_from_mtime :: (Maybe ([DLArg], (ETail_ a)))
       , et_tc_cons :: (ETail_ a)
@@ -104,7 +103,7 @@ instance Pretty a => Pretty (ETail_ a) where
             Nothing -> emptyDoc
             Just svs -> pretty svs
           whichp = viaShow which
-      ET_ToConsensus _ fs prev last_timev which msend msg out amtv timev mtime k ->
+      ET_ToConsensus _ fs prev last_timev which msend msg out timev mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -118,7 +117,6 @@ instance Pretty a => Pretty (ETail_ a) where
                      , ("which", pretty which)
                      , ("msg", (cm $ map pretty msg))
                      , ("out", (cm $ map pretty out))
-                     , ("amtv", pretty amtv)
                      , ("timev", pretty timev)
                      ])
               <> hardline
@@ -207,7 +205,6 @@ data CHandler_ a
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
-      , ch_amtv :: DLPayVar
       , ch_timev :: DLVar
       , ch_body :: (CTail_ a)
       }
@@ -224,7 +221,7 @@ type CHandler = CHandler_ PLVar
 type CIHandler = CHandler_ PILVar
 
 instance Pretty a => Pretty (CHandler_ a) where
-  pretty (C_Handler _ int last_timev fs last_i svs msg amtv timev body) =
+  pretty (C_Handler _ int last_timev fs last_i svs msg timev body) =
     pbrackets
       [ pretty fs
       , pretty int
@@ -234,7 +231,6 @@ instance Pretty a => Pretty (CHandler_ a) where
       , pretty (map varType svs)
       , pretty msg
       , pretty (map varType msg)
-      , pretty amtv
       , "timev = " <> pretty timev
       , render_nest $ pretty body
       ]

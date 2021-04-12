@@ -3111,20 +3111,12 @@ doOnly sco ((who, vas), only_at, only_cloenv, only_synarg) = locAt only_at $ do
 doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do
   isClass <- is_class who
-  --- XXX Remove this and just use the main counter in SMT
-  addrNum <-
-    case isClass of
-      False -> return $ 0
-      True -> ctxt_alloc
-  Env {..} <- ask
+  at <- withAt id
   ctxt_lift_expr
-    (DLVar e_at Nothing T_Address)
-    (DLE_PrimOp
-       e_at
-       SELF_ADDRESS
+    (DLVar at Nothing T_Address)
+    (DLE_PrimOp at SELF_ADDRESS
        [ DLA_Literal (DLL_Bytes who)
        , DLA_Literal (DLL_Bool isClass)
-       , DLA_Literal (DLL_Int e_at $ fromIntegral addrNum)
        ])
 
 all_just :: [Maybe a] -> Maybe [a]
@@ -3249,24 +3241,21 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
         _ <- locSt st_pure $ evalApplyVals' req_rator [public bv]
         mapM_ (doBalanceInit . Just . DLA_Var) toks
         amt <- compilePayAmt_ amt_e
-        let checkAmt pa = do
-              pv <- ctxt_mkvar $ DLVar at Nothing T_UInt
-              let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar pv)] []
-              cmp_v <- locSt st_pure $ evalApplyArgs' cmp_rator [pa]
-              _ <-
-                locSt st_pure $
-                  evalApplyVals req_rator $
-                  [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
-              return $ pv
-        let allocPayVar (DLPayAmt {..}) = do
-              pv_net <- checkAmt pa_net
-              doBalanceUpdate Nothing ADD (SLV_DLVar pv_net)
-              let go (pa, ta) = do
-                    doBalanceUpdate (Just ta) ADD =<< argToSV pa
-                    flip (,) ta <$> checkAmt pa
-              pv_ks <- mapM go pa_ks
-              return $ DLPayVar {..}
-        dr_pay <- allocPayVar amt
+        case amt of
+          DLPayAmt _ (_:_) ->
+            unless (st_after_ctor st) $
+              expect_ $ Err_Token_OnCtor
+          _ ->
+            return ()
+        fs <- e_stack <$> ask
+        let checkPayAmt1 mtok pa = do
+              sv <- argToSV pa
+              doBalanceUpdate mtok ADD sv
+              ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
+        let checkPayAmt (DLPayAmt {..}) = do
+              checkPayAmt1 Nothing pa_net
+              forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
+        checkPayAmt amt
         let check_repeat whoc_v repeat_dv = do
               repeat_cmp_v <-
                 evalPrimOp ADDRESS_EQ $

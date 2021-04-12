@@ -731,6 +731,8 @@ ce = \case
     code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
+  DLE_CheckPay {} ->
+    xxx "ALGO CheckPay"
   DLE_Claim at fs t a mmsg -> do
     comment $ texty mmsg
     comment $ texty $ unsafeRedactAbsStr $ show at
@@ -1060,7 +1062,7 @@ runApp eShared eWhich eLets emTimev m = do
 -- limit by taking the last one and tuple-izing it
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev body) =
+ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
   let svs = dvdeletem last_timemv svs_
    in fmap Just $
         fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
@@ -1069,14 +1071,11 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
           let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
           let argCount = fromIntegral argFirstUser + length args
           let eLets1 = M.insert from lookup_sender eLets0
-          let DLPayVar {..} = amtv
-          let lookup_txn_value = do
+          let _lookup_txn_value = do
                 code "gtxn" [texty txnToContract, "Amount"]
                 lookup_fee_amount
                 op "-"
-          let eLets2_ = M.insert pv_net lookup_txn_value eLets1
-          let go_pv_k (pv, _XXX_ta) = M.insert pv lookup_txn_value
-          let eLets2 = foldr go_pv_k eLets2_ pv_ks
+          let eLets2 = eLets1 -- XXX
           let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
           let eLets4 = case last_timemv of
                 Nothing -> eLets3

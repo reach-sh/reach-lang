@@ -58,11 +58,10 @@ contract Stdlib {
 
   function readPayAmt(address sender, address payable token) internal returns (uint256 amt) {
     amt = tokenAllowance(token, sender, address(this));
-    checkPayAmt(sender, token, amt);
+    require(checkPayAmt(sender, token, amt));
   }
 
-  // XXX Arrange compiler to call this instead
-  function checkPayAmt(address sender, address payable token, uint256 amt) internal {
-    require(tokenTransferFrom(token, sender, address(this), amt));
+  function checkPayAmt(address sender, address payable token, uint256 amt) internal returns (bool) {
+    return tokenTransferFrom(token, sender, address(this), amt);
   }
 }

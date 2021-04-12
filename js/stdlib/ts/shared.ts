@@ -25,16 +25,12 @@ export type WPArgs = {
   timeout: number,
 }
 
-export type PayVar =
-  [ BigNumber, Array<BigNumber> ];
-
 export type MkPayAmt<Token> =
   [ BigNumber, Array<[BigNumber, Token]> ];
 
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
   data: Array<any>,
-  pay: PayVar,
   from: RawAddress,
   time: BigNumber,
   getOutput: (o_lab:string, o_ctc:any) => Promise<any>,
@@ -68,7 +64,7 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
-  attach: (bin: Backend, ctc: ContractInfo | Promise<ContractInfo>) => Contract,
+  attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => Contract,
   stdlib: Object,
   getAddress: () => string,
 }
@@ -79,8 +75,10 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
 
 export type ISimRes<Digest, RawAddress, Token> = {
   prevSt: Digest,
+  prevSt_noPrevTime: Digest,
   txns: Array<ISimTxn<RawAddress, Token>>,
   nextSt: Digest,
+  nextSt_noTime: Digest,
   isHalt : boolean,
 };
 
@@ -145,6 +143,11 @@ export const debug = (...msgs: any) => {
         : msg);
     // Print objects for indentation, colors, etc...
     console.log(new Date(), `DEBUG:`, ...betterMsgs);
+  }
+};
+export const debugo = (msg: any) => {
+  if (getDEBUG()) {
+    console.log([new Date(), `DEBUG`, msg]);
   }
 };
 
