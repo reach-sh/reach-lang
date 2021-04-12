@@ -74,7 +74,6 @@ type NetworkAccount = {
 type ContractInfo = {
   address: Address,
   creation_block: number,
-  creator: Address,
   transactionHash?: Hash,
   init?: ContractInitInfo,
 };
@@ -478,7 +477,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const info: ContractInfo = {
           address: contract.address,
           creation_block: deploy_r.blockNumber,
-          creator: address,
           transactionHash: deploy_r.transactionHash,
           init,
         };
@@ -1025,7 +1023,7 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
 // Throws an Error if any verifications fail
 export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const { address, creation_block, init, creator } = ctcInfo;
+  const { address, creation_block, init } = ctcInfo;
   const { argsMay } = initOrDefaultArgs(init);
   const factory = new ethers.ContractFactory(ABI, Bytecode);
   debug('verifyContract:', address)
@@ -1125,9 +1123,6 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   // We are not checking the balance or the contract storage, because we know
   // that the code is correct and we know that the code mandates the way that
   // those things are initialized
-
-  // XXX check that the deployment was by the creator
-  void(creator);
 
   return true;
 };
