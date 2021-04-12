@@ -180,11 +180,11 @@ The first step is to change the Reach program to specify that Alice and Bob's fr
 
 @itemlist[
 
-@item{Lines 3 through 5 defines a @tech{participant interact interface} that will be shared between the two players.
+@item{Lines 3 through 5 define a @tech{participant interact interface} that will be shared between the two players.
 In this case, it provides two methods: @reachin{getHand}, which returns a number; and @reachin{seeOutcome}, which receives a number.}
 
 @item{Line 10 uses this interface for both participants.
-Because of this line, @reachin{interact} in the rest of the program will be bound to an object with methods corresponding to the these actions, which will connect to the @tech{frontend} of the corresponding participant.}
+Because of this line, @reachin{interact} in the rest of the program will be bound to an object with methods corresponding to these actions, which will connect to the @tech{frontend} of the corresponding participant.}
 
 ]
 
@@ -1619,7 +1619,7 @@ We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the s
 @item{React programs are JavaScript programs that use a special library that allows you to mix HTML inside of the body of your JavaScript.}
 @item{React has a special compiler that combines a bundle of JavaScript programs, and all their dependencies, into one large file that can be deployed on a static Web server.
 This is called "packing".}
-@item{When you're developing and testing with React, you run a special development Web server that watches updates this packed file every time you modify your source files, so you don't have to constantly run the compiler.}
+@item{When you're developing and testing with React, you run a special development web server that watches and updates this packed file every time you modify a source file, so you don't have to constantly run the compiler.}
 @item{Reach automates the process of starting this development server for you when you run @exec{./reach react} and gives you access to it at @tt{http://localhost:3000/}.}
 ]}
 
