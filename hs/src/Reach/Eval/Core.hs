@@ -9,7 +9,7 @@ import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.IORef
-import Data.List (transpose, (\\), groupBy, unzip5)
+import Data.List (transpose, (\\), groupBy, unzip5, elemIndex)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -404,7 +404,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
+    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance 0)
     , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
     , ("Digest", SLV_Type ST_Digest)
     , ("Null", SLV_Type ST_Null)
@@ -412,6 +412,7 @@ base_env =
     , ("UInt", SLV_Type ST_UInt)
     , ("Bytes", SLV_Prim SLPrim_Bytes)
     , ("Address", SLV_Type ST_Address)
+    , ("Token", SLV_Type ST_Token)
     , ("forall", SLV_Prim SLPrim_forall)
     , ("Data", SLV_Prim SLPrim_Data)
     , ("Array", SLV_Prim SLPrim_Array)
@@ -709,7 +710,7 @@ ensure_while_invariant msg =
 ensure_can_wait :: App ()
 ensure_can_wait = do
   dm <- dlo_deployMode . e_dlo <$> ask
-  readSt st_after_first >>= \case
+  readSt st_after_ctor >>= \case
     True -> return ()
     False -> expect_ $ Err_Eval_IllegalWait dm
 
@@ -1409,7 +1410,7 @@ evalPolyEq lvl x y =
       at <- withAt id
       let lengthEquals = SLV_Bool at $ length ls == length rs
       elemEquals <- andMapEq ls rs
-      andVal <- lengthEquals /\ elemEquals
+      andVal <- evalAnd lengthEquals elemEquals
       return (lvl, andVal)
     (SLV_Tuple _ ls, SLV_Tuple _ rs) -> do
       elemEquals <- andMapEq ls rs
@@ -1427,14 +1428,15 @@ evalPolyEq lvl x y =
       at <- withAt id
       (lty, la) <- compileTypeOf l
       (rty, ra) <- compileTypeOf r
-      let make_var = do
-            dv <- ctxt_lift_expr (DLVar at Nothing T_Bool) (DLE_PrimOp at PEQ [la, ra])
+      let make_var pop = do
+            dv <- ctxt_lift_expr (DLVar at Nothing T_Bool) (DLE_PrimOp at pop [la, ra])
             return $ (lvl, SLV_DLVar dv)
       case (lty, rty) of
         (T_Null, T_Null) -> retBool True
-        (T_UInt, T_UInt) -> make_var
-        (T_Digest, T_Digest) -> make_var
-        (T_Address, T_Address) -> make_var
+        (T_UInt, T_UInt) -> make_var PEQ
+        (T_Digest, T_Digest) -> make_var DIGEST_EQ
+        (T_Address, T_Address) -> make_var ADDRESS_EQ
+        (T_Token, T_Token) -> make_var TOKEN_EQ
         (T_Bool, T_Bool) -> do
           notR <- evalPrimOp IF_THEN_ELSE [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
           evalPrimOp IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
@@ -1445,19 +1447,8 @@ evalPolyEq lvl x y =
   where
     andMapEq ls rs = do
       xs <- zipWithM (\l r -> snd <$> evalPolyEq lvl l r) ls rs
-      case xs of
-        [] -> return $ SLV_Bool srcloc_builtin True
-        h : t -> foldrM (/\) h t
+      foldrM evalAnd (SLV_Bool srcloc_builtin True) xs
     -- Logical and for SL bool values
-    (/\) (SLV_Bool bAt l) (SLV_Bool _ r) = return $ SLV_Bool bAt $ l && r
-    (/\) l@SLV_DLVar {} r@SLV_DLVar {} =
-      snd <$> evalPrimOp IF_THEN_ELSE [(lvl, l), (lvl, r), public $ SLV_Bool srcloc_builtin False]
-    (/\) (SLV_Bool bAt False) _ = return $ SLV_Bool bAt False
-    (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return $ r
-    -- Flip args & process
-    (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
-    -- Values not supported
-    (/\) _ _ = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar"
     hashAndCmp :: SLSVal -> SLSVal -> App SLSVal
     hashAndCmp l r = do
       l' <- getHash l
@@ -1474,6 +1465,31 @@ evalPolyEq lvl x y =
       at <- withAt id
       return $ (lvl, SLV_Bool at v)
 
+evalAnd :: SLVal -> SLVal -> App SLVal
+evalAnd l r =
+  case (l, r) of
+    (SLV_Bool bAt lb, SLV_Bool _ rb) ->
+      return $ SLV_Bool bAt $ lb && rb
+    (SLV_DLVar {}, SLV_DLVar {}) ->
+      snd <$> evalPrimOp IF_THEN_ELSE [(Public, l), (Public, r), public $ SLV_Bool srcloc_builtin False]
+    (SLV_Bool bAt False, _) -> return $ SLV_Bool bAt False
+    (SLV_Bool _ True, SLV_DLVar {}) -> return $ r
+    (SLV_DLVar _, SLV_Bool {}) -> evalAnd r l
+    _ -> impossible $ "evalAnd expecting SLV_Bool or SLV_DLVar"
+
+evalAndMap :: (SLVal -> App SLVal) -> [SLVal] -> App SLVal
+evalAndMap f = \case
+  [] -> return $ SLV_Bool srcloc_builtin True
+  h : t -> do
+    h' <- f h
+    t' <- evalAndMap f t
+    evalAnd h' t'
+
+evalAllDistinct :: [SLVal] -> App SLVal
+evalAllDistinct = \case
+  [] -> withAt $ flip SLV_Bool True
+  (v:vs) -> evalAndMap (\v' -> snd <$> (evalNeg =<< (snd <$> evalPolyEq Public v v'))) vs
+
 evalITE :: SecurityLevel -> SLVal -> SLVal -> SLVal -> App SLSVal
 evalITE lvl c t f = do
   at <- withAt id
@@ -1482,6 +1498,10 @@ evalITE lvl c t f = do
   fa <- compileCheckType tt f
   dv <- ctxt_lift_expr (DLVar at Nothing tt) (DLE_PrimOp at IF_THEN_ELSE [ca, ta, fa])
   return $ (lvl, SLV_DLVar dv)
+
+evalNeg :: SLVal -> App SLSVal
+evalNeg v = evalITE Public v (b False) (b True)
+  where b = SLV_Bool srcloc_builtin
 
 evalPrimOp :: PrimOp -> [SLSVal] -> App SLSVal
 evalPrimOp p sargs = do
@@ -1508,6 +1528,7 @@ evalPrimOp p sargs = do
         _ -> expect_ $ Err_Apply_ArgCount at 3 (length args)
     DIGEST_EQ -> make_var args
     ADDRESS_EQ -> make_var args
+    TOKEN_EQ -> make_var args
     -- FIXME fromIntegral may overflow the Int
     LSH -> nn2n (\a b -> shift a (fromIntegral b))
     RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
@@ -1616,16 +1637,46 @@ doFluidSet fv ssv = do
   da <- compileCheckType (fluidVarType fv) sv
   saveLift $ DLS_FluidSet at fv da
 
-doAssertBalance :: SLVal -> PrimOp -> App ()
-doAssertBalance lhs op = do
+lookupBalanceFV :: Maybe DLArg -> App FluidVar
+lookupBalanceFV mtok = do
+  toks <- readSt st_toks
+  let i =
+        case mtok of
+          Nothing -> 0
+          Just (DLA_Var v) ->
+            case elemIndex v toks of
+              Nothing ->
+                impossible $ "lookupBalanceFV on non-tok"
+              Just x -> 1 + x
+          _ -> impossible $ "lookupBalanceFV on non-DLA_Var"
+  return $ FV_balance i
+
+doBalanceInit :: Maybe DLArg -> App ()
+doBalanceInit mtok = do
+  at <- withAt id
+  b <- lookupBalanceFV mtok
+  doFluidSet b $ public $ SLV_Int at 0
+
+doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
+doBalanceAssert mtok lhs op msg = do
   at <- withAt id
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
-  balance_v <- doFluidRef FV_balance
+  b <- lookupBalanceFV mtok
+  balance_v <- doFluidRef b
   cmp_v <- evalApplyVals' cmp_rator [balance_v]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   void $
     evalApplyVals' ass_rator $
-      [cmp_v, public $ SLV_Bytes at "balance assertion"]
+      [cmp_v, public $ SLV_Bytes at msg]
+
+doBalanceUpdate :: Maybe DLArg -> PrimOp -> SLVal -> App ()
+doBalanceUpdate mtok op rhs = do
+  at <- withAt id
+  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
+  b <- lookupBalanceFV mtok
+  balance_v <- doFluidRef b
+  balance_v' <- evalApplyVals' up_rator [balance_v]
+  doFluidSet b balance_v'
 
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
 doArrayBoundsCheck sz idxv = do
@@ -1634,14 +1685,6 @@ doArrayBoundsCheck sz idxv = do
   void $
     evalApplyVals' (SLV_Prim $ SLPrim_claim CT_Assert) $
       [cmp_v, public $ SLV_Bytes at "array bounds check"]
-
-doBalanceUpdate :: PrimOp -> SLVal -> App ()
-doBalanceUpdate op rhs = do
-  at <- withAt id
-  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
-  balance_v <- doFluidRef FV_balance
-  balance_v' <- evalApplyVals' up_rator [balance_v]
-  doFluidSet FV_balance balance_v'
 
 mustBeBytes :: SLVal -> App B.ByteString
 mustBeBytes = \case
@@ -2022,28 +2065,30 @@ evalPrim p sargs =
         CT_Assert -> good
         CT_Possible -> good
         CT_Unknowable {} -> impossible "unknowable"
-    SLPrim_transfer ->
-      mapM ensure_public sargs >>= \case
-        [amt_sv] -> do
-          at <- withAt id
-          let transferToPrim = SLV_Prim (SLPrim_transfer_amt_to amt_sv)
-          return $
-            public $
-              SLV_Object at (Just "transfer") $
-                M.fromList [("to", SLSSVal srcloc_builtin Public transferToPrim)]
-        _ -> illegal_args
-    SLPrim_transfer_amt_to amt_sv -> do
+    SLPrim_transfer -> do
+      at <- withAt id
+      pay_sv <-
+        case args of
+          [a] -> return $ a
+          [a, b] -> return $ SLV_Tuple at [ SLV_Tuple at [ a, b ] ]
+          _ -> illegal_args
+      let transferToPrim = SLV_Prim (SLPrim_transfer_amt_to pay_sv)
+      return $
+        public $
+          SLV_Object at (Just "transfer") $
+            M.fromList [("to", SLSSVal srcloc_builtin Public transferToPrim)]
+    SLPrim_transfer_amt_to pay_sv -> do
       at <- withAt id
       ensure_mode SLM_ConsensusStep "transfer"
-      amt_dla <- compileCheckType T_UInt amt_sv
-      doAssertBalance amt_sv PLE
-      let convert = compileCheckType T_Address
-      who_dla <-
-        case map snd sargs of
-          [one] -> convert one
-          _ -> illegal_args
-      saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla
-      doBalanceUpdate SUB amt_sv
+      who_a <- compileCheckType T_Address =<< one_arg
+      DLPayAmt {..} <- compilePayAmt pay_sv
+      let one amt_a mtok_a = do
+            amt_sv <- argToSV amt_a
+            doBalanceAssert mtok_a amt_sv PLE "balance sufficient for transfer"
+            saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_a amt_a mtok_a
+            doBalanceUpdate mtok_a SUB amt_sv
+      one pa_net Nothing
+      forM_ pa_ks $ \(a, t) -> one a $ Just t
       return $ public $ SLV_Null at "transfer.to"
     SLPrim_exit -> do
       zero_args
@@ -2236,13 +2281,14 @@ evalPrim p sargs =
       zero_args
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just Nothing) Nothing)
     SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
+      -- XXX support tokens
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at 0
       let amtv = fromMaybe zero mpay
       amta <- compileCheckType T_UInt amtv
-      doAssertBalance amtv PLE
-      doBalanceUpdate SUB amtv
+      doBalanceAssert Nothing amtv PLE "balance sufficient for payment to remote object"
+      doBalanceUpdate Nothing SUB amtv
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple [ ST_UInt, rng ]
       let post' = flip fmap post $ \postv ->
@@ -2251,7 +2297,7 @@ evalPrim p sargs =
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
       res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
       apdvv <- doArrRef_ res' zero
-      doBalanceUpdate ADD apdvv
+      doBalanceUpdate Nothing ADD apdvv
       res <- doArrRef_ res' $ SLV_Int at 1
       case fromMaybe (Just $ zero) mbill of
         Nothing -> return $ public res'
@@ -2350,6 +2396,28 @@ evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do
   SLAppRes _ val <- evalApplyVals rator randvs
   return $ val
+
+litToSV :: DLLiteral -> App SLVal
+litToSV = \case
+  DLL_Null -> withAt $ flip SLV_Null "litToSV"
+  DLL_Bool b -> withAt $ flip SLV_Bool b
+  DLL_Int a i -> return $ SLV_Int a i
+  DLL_Bytes bs -> withAt $ flip SLV_Bytes bs
+
+argToSV :: DLArg -> App SLVal
+argToSV = \case
+  DLA_Var dv -> return $ SLV_DLVar dv
+  DLA_Constant dc -> return $ SLV_DLC dc
+  DLA_Literal l -> litToSV l
+  a@(DLA_Interact {}) -> alloc a
+  where
+    alloc a = do
+      at <- withAt id
+      SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing $ argTypeOf a) (DLE_Arg at a)
+
+evalApplyArgs' :: SLVal -> [DLArg] -> App SLSVal
+evalApplyArgs' rator randas =
+  evalApplyVals' rator =<< mapM (liftM public . argToSV) randas
 
 instDefaultArgs :: SLEnv -> EvalError -> [JSExpression] -> [SLSVal] -> App SLEnv
 instDefaultArgs env err formals = \case
@@ -3072,6 +3140,32 @@ getBindingOrigin :: [DLArg] -> Maybe (SrcLoc, SLVar)
 getBindingOrigin [DLA_Var (DLVar _ b _ _)] = b
 getBindingOrigin _ = Nothing
 
+compilePayAmt :: SLVal -> App DLPayAmt
+compilePayAmt v = do
+  at <- withAt id
+  (t, ae) <- typeOf v
+  case (t, ae) of
+    (T_UInt, _) -> do
+      a <- compileArgExpr ae
+      return $ DLPayAmt a []
+    (T_Tuple ts, DLAE_Tuple aes) -> do
+      let go sa = \case
+            (T_UInt, gae) ->
+              case sa of
+                (False, DLPayAmt _ tks) -> do
+                  a <- compileArgExpr gae
+                  return $ (True, DLPayAmt a tks)
+                _ -> do
+                  expect_ $ Err_Pay_DoubleNetworkToken
+            (T_Tuple [ T_UInt, T_Token ], DLAE_Tuple [ amt_ae, token_ae ]) -> do
+              amt_a <- compileArgExpr amt_ae
+              token_a <- compileArgExpr token_ae
+              let (seenNet, DLPayAmt nts tks) = sa
+              return $ (seenNet, (DLPayAmt nts $ ((amt_a, token_a) : tks)))
+            _ -> expect_t v $ Err_Pay_Type
+      snd <$> (foldM go (False, DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+    _ -> expect_t v $ Err_Pay_Type
+
 doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
 doToConsensus ks whos vas msg amt_e when_e mtime = do
   at <- withAt id
@@ -3083,6 +3177,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   let ctepee t e = compileCheckType t =<< ensure_public =<< evalExpr e
   -- We go back to the original env from before the to-consensus step
   -- Handle sending
+  let compilePayAmt_ e = compilePayAmt =<< ensure_public =<< evalExpr e
   let tc_send1 who = do
         let st_lpure = st {st_mode = SLM_LocalPure}
         (only_lifts, res) <-
@@ -3090,28 +3185,29 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
             locSt st_lpure $
               captureLifts $ do
                 let repeat_dv = M.lookup who pdvs
-                isClass <- is_class who
-                msg_das <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
-                amt_da <- ctepee T_UInt amt_e
-                when_da <- ctepee T_Bool when_e
-                return (repeat_dv, isClass, msg_das, amt_da, when_da)
+                ds_isClass <- is_class who
+                ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
+                ds_pay <- compilePayAmt_ amt_e
+                ds_when <- ctepee T_Bool when_e
+                return (repeat_dv, DLSend {..})
         saveLift $ DLS_Only at who only_lifts
         return $ res
-  tc_send' <- sequence $ M.fromSet tc_send1 whos
-  let tc_send = fmap (\(_, a, b, c, d) -> (a, b, c, d)) tc_send'
-  let msg_dass = fmap (\(_, _, b, _, _) -> b) tc_send'
+  tc_send'0 <- sequence $ M.fromSet tc_send1 whos
+  let tc_send' = tc_send'0
+  let tc_send = fmap snd tc_send'
+  let msg_dass = fmap ds_msg tc_send
   let msg_dass_t = transpose $ M.elems $ msg_dass
   let get_msg_t = typeMeets_d . map argTypeOf
   msg_ts <- mapM get_msg_t msg_dass_t
-  let mrepeat_dvs = all_just $ M.elems $ M.map (\(x, _, _, _, _) -> x) tc_send'
+  let mrepeat_dvs = all_just $ M.elems $ M.map fst tc_send'
   -- Handle receiving / consensus
-  winner_dv <- ctxt_mkvar $ DLVar at Nothing T_Address
+  dr_from <- ctxt_mkvar $ DLVar at Nothing T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   whosc <- mapM (\w -> (,) w <$> is_class w) $ S.toList whos
   (who_env_mod, pdvs_recv) <-
     case whosc of
       [(who, False)] -> do
-        let who_dv = fromMaybe winner_dv (M.lookup who pdvs)
+        let who_dv = fromMaybe dr_from (M.lookup who pdvs)
         let pdvs' = M.insert who who_dv pdvs
         let add_who_env env =
               case vas of
@@ -3125,32 +3221,56 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
         return $ (add_who_env, pdvs')
       _ -> do
         return $ (return, pdvs)
+  let mkmsg v t = ctxt_mkvar $ DLVar at (getBindingOrigin v) t
+  dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
+  let toks = filter ((==) T_Token . varType) dr_msg
+  unless (null toks) $ do
+    when (st_after_first st) $
+      expect_ $ Err_Token_NotOnFirst
+    sco <- e_sco <$> ask
+    when (isJust $ sco_while_vars sco) $
+      expect_ $ Err_Token_InWhile
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
+          , st_toks = st_toks st <> toks
           }
-  msg_dvs <- mapM (\(v, t) -> ctxt_mkvar (DLVar at (getBindingOrigin v) t)) $ zip msg_dass_t msg_ts
-  msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
-  let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar winner_dv))
+  msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
+  let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar dr_from))
   let recv_env = msg_env
   (tc_recv, k_st, k_cr) <- do
     SLRes conlifts k_st (mktc_recv, k_cr) <- captureRes $ do
       setSt st_recv
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
-        amt_dv <- ctxt_mkvar $ DLVar at Nothing T_UInt
-        let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
-        cmp_v <- locSt st_pure $ evalApply cmp_rator [amt_e]
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
-        _ <-
-          locSt st_pure $
-            evalApplyVals req_rator $
-              [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
+        bv <- evalAllDistinct $ map SLV_DLVar toks
+        _ <- locSt st_pure $ evalApplyVals' req_rator [public bv]
+        mapM_ (doBalanceInit . Just . DLA_Var) toks
+        amt <- compilePayAmt_ amt_e
+        let checkAmt pa = do
+              pv <- ctxt_mkvar $ DLVar at Nothing T_UInt
+              let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar pv)] []
+              cmp_v <- locSt st_pure $ evalApplyArgs' cmp_rator [pa]
+              _ <-
+                locSt st_pure $
+                  evalApplyVals req_rator $
+                  [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
+              return $ pv
+        let allocPayVar (DLPayAmt {..}) = do
+              pv_net <- checkAmt pa_net
+              doBalanceUpdate Nothing ADD (SLV_DLVar pv_net)
+              let go (pa, ta) = do
+                    doBalanceUpdate (Just ta) ADD =<< argToSV pa
+                    flip (,) ta <$> checkAmt pa
+              pv_ks <- mapM go pa_ks
+              return $ DLPayVar {..}
+        dr_pay <- allocPayVar amt
         let check_repeat whoc_v repeat_dv = do
               repeat_cmp_v <-
                 evalPrimOp ADDRESS_EQ $
-                  map (public . SLV_DLVar) [repeat_dv, winner_dv]
+                  map (public . SLV_DLVar) [repeat_dv, dr_from]
               evalPrimOp IF_THEN_ELSE $
                 [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
         whoc_v <-
@@ -3164,29 +3284,29 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
           locSt st_pure $
             evalApplyVals' req_rator $
               [whoc_v, public $ SLV_Bytes at $ "sender correct"]
-        doBalanceUpdate ADD (SLV_DLVar amt_dv)
-        time_dv <- ctxt_mkvar $ DLVar at Nothing T_UInt
-        doFluidSet FV_thisConsensusTime $ public $ SLV_DLVar time_dv
+        dr_time <- ctxt_mkvar $ DLVar at Nothing T_UInt
+        doFluidSet FV_thisConsensusTime $ public $ SLV_DLVar dr_time
         k_cr <- evalStmt ks
-        let mktc_recv x = (winner_dv, msg_dvs, amt_dv, time_dv, x)
+        let mktc_recv dr_k = DLRecv {..}
         return $ (mktc_recv, k_cr)
     return $ (mktc_recv conlifts, k_st, k_cr)
   -- Handle timeout
   let not_true_send = \case
-        (_, (_, _, _, _, DLA_Literal (DLL_Bool True))) -> False
-        (_, (_, _, _, _, _)) -> True
+        DLA_Literal (DLL_Bool True) -> False
+        _ -> True
   let not_all_true_send =
-        getAny $ mconcat $ map (Any . not_true_send) (M.toList tc_send')
+        getAny $ mconcat $ map (Any . not_true_send) (M.elems $ M.map ds_when tc_send)
   let mustHaveTimeout = S.null whos || not_all_true_send
-  let timeout_ignore_okay1 = \case
-        (_, (_, _, _, _, DLA_Literal (DLL_Bool True))) -> True
-        (_, (_, True, _, _, when_da)) ->
-          case when_da of
-            DLA_Literal (DLL_Bool False) -> False
-            _ -> True
-        _ -> False
+  let timeout_ignore_okay1 (DLSend {..}) =
+        case (ds_isClass, ds_when) of
+          (_, DLA_Literal (DLL_Bool True)) -> True
+          (True, when_da) ->
+            case when_da of
+              DLA_Literal (DLL_Bool False) -> False
+              _ -> True
+          _ -> False
   let timeout_ignore_okay =
-        getAny $ mconcat $ map (Any . timeout_ignore_okay1) (M.toList tc_send')
+        getAny $ mconcat $ map (Any . timeout_ignore_okay1) (M.elems tc_send)
   let mustHaveTimeoutNoMatterWhat = not $ timeout_ignore_okay
   (tc_mtime, fcr) <-
     case mtime of
@@ -3231,6 +3351,7 @@ typeToExpr = \case
   T_Bytes i -> call "Bytes" [ie i]
   T_Digest -> var "Digest"
   T_Address -> var "Address"
+  T_Token -> var "Token"
   T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts
   T_Object m -> call "Object" [rm m]
@@ -3549,6 +3670,7 @@ findStmtTrampoline = \case
     setSt $
       st
         { st_mode = SLM_Step
+        , st_after_ctor = True
         , st_after_first = True
         }
     let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
@@ -3565,7 +3687,9 @@ doExit = do
   ensure_live "exit"
   at <- withAt id
   let zero = SLV_Int at 0
-  doAssertBalance zero PEQ
+  let one mtok = doBalanceAssert mtok zero PEQ "balance zero at application exit"
+  one Nothing
+  mapM_ (one . Just . DLA_Var) =<< readSt st_toks
   saveLift $ DLS_Stop at
   st <- readSt id
   setSt $ st {st_live = False}

@@ -29,6 +29,7 @@ data SLType
   | ST_Bytes Integer
   | ST_Digest
   | ST_Address
+  | ST_Token
   | ST_Array SLType Integer
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
@@ -56,6 +57,7 @@ instance Show SLType where
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
+    ST_Token -> "Token"
     ST_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
@@ -79,6 +81,7 @@ st2dt = \case
   ST_Bytes i -> pure $ T_Bytes i
   ST_Digest -> pure T_Digest
   ST_Address -> pure T_Address
+  ST_Token -> pure T_Token
   ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
   ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
@@ -96,6 +99,7 @@ dt2st = \case
   T_Bytes i -> ST_Bytes i
   T_Digest -> ST_Digest
   T_Address -> ST_Address
+  T_Token -> ST_Token
   T_Array ty i -> ST_Array (dt2st ty) i
   T_Tuple tys -> ST_Tuple $ map dt2st tys
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
@@ -359,6 +363,7 @@ primOpType PGT = ([T_UInt, T_UInt], T_Bool)
 primOpType IF_THEN_ELSE = impossible "ite type"
 primOpType DIGEST_EQ = ([T_Digest, T_Digest], T_Bool)
 primOpType ADDRESS_EQ = ([T_Address, T_Address], T_Bool)
+primOpType TOKEN_EQ = ([T_Token, T_Token], T_Bool)
 primOpType LSH = ([T_UInt, T_UInt], T_UInt)
 primOpType RSH = ([T_UInt, T_UInt], T_UInt)
 primOpType BAND = ([T_UInt, T_UInt], T_UInt)

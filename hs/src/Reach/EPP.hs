@@ -486,6 +486,13 @@ be_c = \case
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
 
+be_pv :: DLPayVar -> BApp ()
+be_pv (DLPayVar {..}) = do
+  fg_defn pv_net
+  forM_ pv_ks $ \(v, a) -> do
+    fg_defn v
+    fg_use a
+
 be_s :: LLStep -> BApp (EApp EITail)
 be_s = \case
   LLS_Com c k -> do
@@ -502,7 +509,7 @@ be_s = \case
     k' <- be_s k
     return $ ee_only at who l =<< k'
   LLS_ToConsensus at send recv mtime -> do
-    let (last_time_mv, from_v, msg_vs, amt_v, time_v, ok_c) = recv
+    let DLRecv from_v msg_vs amt_v time_v (last_time_mv, ok_c) = recv
     prev <- be_which <$> ask
     signalMore
     which <- newHandler "ToConsensus"
@@ -532,7 +539,8 @@ be_s = \case
           $ do
             fg_use $ int_ok
             fg_use $ last_time_mv
-            fg_defn $ from_v : amt_v : time_v : msg_vs
+            be_pv $ amt_v
+            fg_defn $ from_v : time_v : msg_vs
             be_c ok_c
     fg_child which
     setHandler which $ do
@@ -545,16 +553,16 @@ be_s = \case
     -- It is only a solo send if we are the only sender AND we are not a
     -- class
     let soloSend0 = (M.size send) == 1
-    let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _) -> All isClass) $ M.elems send
+    let soloSend1 = not $ getAll $ mconcatMap (All . ds_isClass) $ M.elems send
     let soloSend = soloSend0 && soloSend1
     let ok_l''m = do
           ok_l' <- ok_l'm
           who <- ee_who <$> ask
           mfrom <- case M.lookup who send of
             Nothing -> return $ Nothing
-            Just (_isClass, from_as, amt_a, when_a) -> do
+            Just (DLSend {..}) -> do
               svs <- ee_readMustReceive which
-              return $ Just (from_as, amt_a, when_a, svs, soloSend)
+              return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs amt_v time_v mtime' ok_l'
     return $ ok_l''m

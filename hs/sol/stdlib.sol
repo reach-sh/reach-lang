@@ -1,3 +1,9 @@
+interface IERC20 {
+    function allowance(address owner, address spender) external view returns (uint256);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+}
+
 contract Stdlib {
   function safeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require((z = x + y) >= x, "add overflow"); }
@@ -26,5 +32,37 @@ contract Stdlib {
         revert(errMsg);
       }
     }
+  }
+
+  function tokenAllowance(address payable token, address owner, address spender) internal returns (uint256 amt) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.allowance.selector, owner, spender));
+    checkFunReturn(ok, ret, 'token.allowance');
+    amt = abi.decode(ret, (uint256));
+  }
+
+  function tokenTransferFrom(address payable token, address sender, address recipient, uint256 amt) internal returns (bool res) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transferFrom.selector, sender, recipient, amt));
+    checkFunReturn(ok, ret, 'token.transferFrom');
+    res = abi.decode(ret, (bool));
+  }
+
+  function tokenTransfer(address payable token, address recipient, uint256 amt) internal returns (bool res) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transfer.selector, recipient, amt));
+    checkFunReturn(ok, ret, 'token.transfer');
+    res = abi.decode(ret, (bool));
+  }
+
+  function safeTokenTransfer(address payable token, address recipient, uint256 amt) internal {
+    require(tokenTransfer(token, recipient, amt));
+  }
+
+  function readPayAmt(address sender, address payable token) internal returns (uint256 amt) {
+    amt = tokenAllowance(token, sender, address(this));
+    checkPayAmt(sender, token, amt);
+  }
+
+  // XXX Arrange compiler to call this instead
+  function checkPayAmt(address sender, address payable token, uint256 amt) internal {
+    require(tokenTransferFrom(token, sender, address(this), amt));
   }
 }

@@ -78,6 +78,7 @@ typeSizeOf = \case
   T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
+  T_Token -> typeSizeOf $ T_UInt
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
@@ -325,6 +326,7 @@ ctobs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
+  T_Token -> ctobs T_UInt
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -339,6 +341,7 @@ cfrombs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
+  T_Token -> cfrombs T_UInt
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -406,6 +409,7 @@ cprim = \case
   BXOR -> call "^"
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
+  TOKEN_EQ -> call "=="
   IF_THEN_ELSE -> \case
     [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
       ca be
@@ -694,7 +698,7 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer _ who amt -> do
+  DLE_Transfer _ who amt Nothing -> do
     txni <- talloc
     code "gtxn" [texty txni, "TypeEnum"]
     code "int" ["pay"]
@@ -706,6 +710,24 @@ ce = \case
     ca amt
     eq_or_fail
     code "gtxn" [texty txni, "Sender"]
+    code "byte" [tContractAddr]
+    cfrombs T_Address
+    eq_or_fail
+  DLE_Transfer _ who amt (Just tok) -> do
+    txni <- talloc
+    code "gtxn" [texty txni, "TypeEnum"]
+    code "int" ["axfer"]
+    eq_or_fail
+    code "gtxn" [texty txni, "XferAsset"]
+    ca tok
+    eq_or_fail
+    code "gtxn" [texty txni, "AssetReceiver"]
+    ca who
+    eq_or_fail
+    code "gtxn" [texty txni, "AssetAmount"]
+    ca amt
+    eq_or_fail
+    code "gtxn" [texty txni, "AssetSender"]
     code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
@@ -1047,11 +1069,14 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev bod
           let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
           let argCount = fromIntegral argFirstUser + length args
           let eLets1 = M.insert from lookup_sender eLets0
+          let DLPayVar {..} = amtv
           let lookup_txn_value = do
                 code "gtxn" [texty txnToContract, "Amount"]
                 lookup_fee_amount
                 op "-"
-          let eLets2 = M.insert amtv lookup_txn_value eLets1
+          let eLets2_ = M.insert pv_net lookup_txn_value eLets1
+          let go_pv_k (pv, _XXX_ta) = M.insert pv lookup_txn_value
+          let eLets2 = foldr go_pv_k eLets2_ pv_ks
           let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
           let eLets4 = case last_timemv of
                 Nothing -> eLets3
@@ -1299,6 +1324,7 @@ compile_algo disp pl = do
     comment "Don't check anything else, because app does"
     comment "Check us"
     code "txn" ["TypeEnum"]
+    -- XXX generalize for assets
     code "int" ["pay"]
     eq_or_fail
     check_rekeyto
@@ -1315,6 +1341,7 @@ compile_algo disp pl = do
     cfrombs T_Bool
     op "&&"
     op "select"
+    -- XXX generalize for assetcloseto
     code "txn" ["CloseRemainderTo"]
     eq_or_fail
     code "txn" ["GroupIndex"]

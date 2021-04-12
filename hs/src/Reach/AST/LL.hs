@@ -53,8 +53,8 @@ data LLStep
   | LLS_Only SrcLoc SLPart LLTail LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
-      , lls_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , lls_tc_recv :: (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, LLConsensus)
+      , lls_tc_send :: M.Map SLPart DLSend
+      , lls_tc_recv :: DLRecv (Maybe DLVar, LLConsensus)
       , lls_tc_mtime :: Maybe (DLArg, LLStep)
       }
   deriving (Eq)
@@ -65,7 +65,7 @@ instance Pretty LLStep where
     LLS_Stop _at -> prettyStop
     LLS_Only _at who onlys k -> prettyOnlyK who onlys k
     LLS_ToConsensus {..} ->
-      prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
+      prettyToConsensus__ lls_tc_send lls_tc_recv lls_tc_mtime
 
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode

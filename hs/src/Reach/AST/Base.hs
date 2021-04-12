@@ -193,6 +193,7 @@ data PrimOp
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
+  | TOKEN_EQ
   | SELF_ADDRESS
   | LSH
   | RSH
@@ -216,6 +217,7 @@ instance Pretty PrimOp where
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
+    TOKEN_EQ -> "=="
     SELF_ADDRESS -> "selfAddress"
     LSH -> "<<"
     RSH -> ">>"

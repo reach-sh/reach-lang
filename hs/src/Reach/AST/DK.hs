@@ -44,8 +44,8 @@ data DKTail
   | DK_Only SrcLoc SLPart DKTail DKTail
   | DK_ToConsensus
       { dk_tc_at :: SrcLoc
-      , dk_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , dk_tc_recv :: (DLVar, [DLVar], DLVar, DLVar, DKTail)
+      , dk_tc_send :: M.Map SLPart DLSend
+      , dk_tc_recv :: DLRecv DKTail
       , dk_tc_mtime :: Maybe (DLArg, DKTail)
       }
   | DK_If SrcLoc DLArg DKTail DKTail
@@ -68,7 +68,7 @@ instance Pretty DKTail where
     DK_Stop _ -> prettyStop
     DK_Only _ who body k -> prettyOnlyK who body k
     DK_ToConsensus {..} ->
-      prettyToConsensus_ pretty pretty dk_tc_send dk_tc_recv dk_tc_mtime
+      prettyToConsensus__ dk_tc_send dk_tc_recv dk_tc_mtime
     DK_If _at ca t f -> prettyIfp ca t f
     DK_Switch _at ov csm -> prettySwitch ov csm
     DK_FromConsensus _at _ret_at k ->

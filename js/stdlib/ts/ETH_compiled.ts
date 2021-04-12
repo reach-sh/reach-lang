@@ -23,7 +23,6 @@ import {
   labelMaps,
 } from './shared_impl';
 
-
 type BigNumber = ethers.BigNumber;
 
 const BigNumber = ethers.BigNumber;
@@ -349,6 +348,13 @@ const V_Data = <T>(
   return T_Data(co).canonicalize(val);
 };
 
+export const addressEq = shared.mkAddressEq(T_Address);
+
+const T_Token = T_Address;
+export const tokenEq = addressEq;
+export type Token = CBR_Address;
+export type PayAmt = shared.MkPayAmt<Token>;
+
 export const typeDefs = {
   T_Null,
   T_Bool,
@@ -356,6 +362,7 @@ export const typeDefs = {
   T_Bytes,
   T_Address,
   T_Digest,
+  T_Token,
   T_Object,
   T_Data,
   T_Array,
@@ -363,12 +370,11 @@ export const typeDefs = {
   T_Struct
 };
 
-export const addressEq = shared.mkAddressEq(T_Address);
-
 export const stdlib = {
   ...shared,
   ...typeDefs,
   addressEq,
+  tokenEq,
   digest,
   UInt_max,
 };

@@ -155,10 +155,10 @@ instance Erase LLStep where
       l' <- el l
       return $ LLS_Only at p l' k'
     LLS_ToConsensus at send recv mtime -> do
-      let (lt_mv, from_v, msg_vs, amt_v, time_v, c) = recv
+      let (lt_mv, c) = dr_k recv
       c' <- el c
       lt_mv' <- viaCount lt_mv
-      let recv' = (lt_mv', from_v, msg_vs, amt_v, time_v, c')
+      let recv' = recv { dr_k = (lt_mv', c') }
       let mel (d, s) = (,) <$> el d <*> el s
       mtime' <- traverse mel mtime
       send' <- traverse viaCount send

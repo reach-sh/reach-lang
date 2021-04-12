@@ -317,7 +317,7 @@ instance DepthOf DLExpr where
     DLE_Interact _ _ _ _ _ as -> depthOf as
     DLE_Digest _ as -> add1 $ depthOf as
     DLE_Claim _ _ _ a _ -> depthOf a
-    DLE_Transfer _ x y -> depthOf [x, y]
+    DLE_Transfer _ x y z -> max <$> depthOf [x, y] <*> depthOf z
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
@@ -355,6 +355,7 @@ mustBeMem = \case
   T_Bytes _ -> True
   T_Digest -> False
   T_Address -> False
+  T_Token -> False
   T_Array {} -> True
   T_Tuple {} -> True
   T_Object {} -> True
@@ -411,6 +412,7 @@ solPrimApply = \case
     _ -> impossible $ "emitSol: ITE wrong args"
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
+  TOKEN_EQ -> binOp "=="
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -480,8 +482,8 @@ solExpr sp = \case
   DLE_Digest _ args -> do
     args' <- mapM solArg args
     return $ (solHash $ args') <> sp
-  DLE_Transfer _ who amt ->
-    spa $ solTransfer who amt
+  DLE_Transfer _ who amt mtok ->
+    spa $ solTransfer who amt mtok
   DLE_Claim at fs ct a mmsg -> spa check
     where
       check = case ct of
@@ -509,11 +511,16 @@ solExpr sp = \case
   where
     spa m = (<> sp) <$> m
 
-solTransfer :: DLArg -> DLArg -> App Doc
-solTransfer who amt = do
+solTransfer :: DLArg -> DLArg -> Maybe DLArg -> App Doc
+solTransfer who amt mtok = do
   who' <- solArg who
   amt' <- solArg amt
-  return $ who' <> "." <> solApply "transfer" [amt']
+  case mtok of
+    Nothing ->
+      return $ who' <> "." <> solApply "transfer" [amt']
+    Just tok -> do
+      tok' <- solArg tok
+      return $ solApply "safeTokenTransfer" [ tok', who', amt' ]
 
 solEvent :: Int -> [DLVar] -> [DLVar] -> App Doc
 solEvent which svs msg = do
@@ -782,17 +789,27 @@ solFrame i sim = do
       let frame_declp = (framei <+> "memory _f") <> semi
       return $ (frame_defp, frame_declp)
 
-solCTail_top :: Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> CTail -> App (Doc, Doc, Doc)
-solCTail_top which svs msg mmsg ct = do
+solCTail_top :: Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> Maybe DLPayVar -> CTail -> App (Doc, Doc, Doc)
+solCTail_top which svs msg mmsg mpv ct = do
   let svsm = M.fromList $ map (\v -> (v, solArgSVSVar v)) svs
   let msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) msg
   let emitp = case mmsg of
         Just _ -> solEventEmit which
         Nothing -> emptyDoc
   extendVarMap $ svsm <> msgm
+  let go_pv_k v a = do
+        addMemVar v
+        a' <- solArg a
+        let de' = solApply "readPayAmt" [ "msg.sender", a' ]
+        return $ solSet (solMemVar v) de'
   ct' <- local (\e -> e { ctxt_emit = emitp
-                        , ctxt_handler_num = which }) $
-            solCTail ct
+                        , ctxt_handler_num = which }) $ do
+            payAmts <-
+              case mpv of
+                Nothing -> return emptyDoc
+                Just DLPayVar {..} -> vsep <$> mapM (uncurry go_pv_k) pv_ks
+            ct' <- solCTail ct
+            return $ payAmts <> ct'
   mvars <- readMemVars
   (frameDefn, frameDecl) <- solFrame which mvars
   return (frameDefn, frameDecl, ct')
@@ -816,12 +833,13 @@ solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
     C_Handler at interval last_timemv from prev svs msg amtv timev ct -> do
-      let fromm = M.singleton from "payable(msg.sender)"
-      let given_mm = M.fromList [(amtv, "msg.value"), (timev, solBlockNumber)]
       let checkMsg s = s <> " check at " <> show at
+      let DLPayVar {..} = amtv
+      let fromm = M.singleton from "payable(msg.sender)"
+      let given_mm = M.fromList [(pv_net, "msg.value"), (timev, solBlockNumber)]
       extendVarMap $ given_mm <> fromm
       timev' <- solVar timev
-      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) (Just amtv) ct
       evtDefn <- solEvent which svs msg
       let ret = "payable"
       plo <- ctxt_plo <$> ask
@@ -862,7 +880,7 @@ solHandler which h = freshVarMap $
 
     C_Loop _at svs lcmsg ct -> do
       let msg = lcmsg
-      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing ct
+      (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg Nothing Nothing ct
       argDefn <- solArgDefn AM_Memory svs msg
       let ret = "internal"
       let body = vsep [frameDecl, ctp]
@@ -882,6 +900,7 @@ solDefineType t = case t of
     addMap $ "uint8[" <> pretty sz <> "]"
   T_Digest -> base
   T_Address -> base
+  T_Token -> base
   T_Array _ 0 -> do
     addMap "bool"
   T_Array et sz -> do
@@ -974,6 +993,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
           , (T_UInt, "uint256")
           , (T_Digest, "uint256")
           , (T_Address, "address payable")
+          , (T_Token, "address payable")
           ]
   ctxt_typem <- newIORef base_typem
   ctxt_typef <- newIORef mempty

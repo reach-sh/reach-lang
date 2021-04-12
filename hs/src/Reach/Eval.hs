@@ -31,6 +31,7 @@ app_default_opts idxr cns =
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
     , dlo_counter = idxr
+    , dlo_bals = 1
     }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
@@ -95,7 +96,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals
   let top_viargs = map (\(i, pv) -> (i, infectWithId_sls at' i pv)) top_vargs
   let top_rvargs = map (second $ (sls_sss at)) top_viargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
-  let st_after_first0 =
+  let st_after_ctor0 =
         case dlo_deployMode dlo of
           DM_constructor -> True
           DM_firstMsg -> False
@@ -104,7 +105,9 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals
           { st_mode = SLM_Step
           , st_live = True
           , st_pdvs = mempty
-          , st_after_first = st_after_first0
+          , st_after_ctor = st_after_ctor0
+          , st_after_first = False
+          , st_toks = mempty
           }
   let classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass]
   let ios = M.fromList $ [(slcpi_who, slcpi_io) | SLCompiledPartInfo {..} <- part_ios]
@@ -125,7 +128,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals
           , sco_use_strict = top_use_strict
           }
   setSt st_step
-  doFluidSet FV_balance $ public $ SLV_Int at' 0
+  doBalanceInit Nothing
   dli_ctimem <- do
     let no = return $ Nothing
     let yes = do
@@ -143,9 +146,11 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals
             evalStmt top_ss
   flip when doExit =<< readSt st_live
   let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
+  fin_toks <- readSt st_toks
+  let dlo' = dlo { dlo_bals = 1 + length fin_toks }
   return $ \dli_maps final ->
     let dli = DLInit {..}
-     in DLProg at dlo sps dli exports final
+     in DLProg at dlo' sps dli exports final
 compileDApp _ _ topv =
   expect_t topv $ Err_Top_NotApp
 
@@ -178,6 +183,8 @@ compileBundle cns jsb main = do
           , st_live = False
           , st_pdvs = mempty
           , st_after_first = False
+          , st_after_ctor = False
+          , st_toks = mempty
           }
   let e_dlo = app_default_opts e_id $ M.keys cns
   let e_classes = mempty

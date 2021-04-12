@@ -31,7 +31,13 @@ import {
   memoizeThunk, replaceableThunk
 } from './shared_impl';
 export * from './shared';
-import { AnyETH_Ty, stdlib as compiledStdlib, typeDefs } from './ETH_compiled';
+import {
+  Token,
+  PayAmt,
+  AnyETH_Ty,
+  stdlib as compiledStdlib,
+  typeDefs
+} from './ETH_compiled';
 
 
 // ****************************************************************************
@@ -55,7 +61,6 @@ type Backend = {_Connectors: {ETH: {
   deployMode: DeployMode
 }}};
 
-
 // TODO: a wrapper obj with smart constructor?
 type Address = string;
 
@@ -76,7 +81,7 @@ type ContractInfo = {
 
 type Digest = string // XXX
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Digest, Address, AnyETH_Ty>;
+type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
 
@@ -466,6 +471,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         };
         resolveInfo(info);
       })();
+
       return attach(bin, infoP);
     };
 
@@ -487,7 +493,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
           tys: Array<AnyETH_Ty>,
-          args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+          args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
           onlyIf: boolean, soloSend: boolean,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
@@ -498,6 +504,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           void(hasLastTime);
           void(tys);
           void(out_tys);
+          const [ value, toks ] = pay;
 
           // The following must be true for the first sendrecv.
           try {
@@ -505,6 +512,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             assert(soloSend, true);
             assert(eq(funcNum, 1));
             assert(!timeout_delay);
+            assert(toks.length, 0);
           } catch (e) {
             throw Error(`impossible: Deferred deploy sendrecv assumptions violated.\n${e}`);
           }
@@ -642,7 +650,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv_impl = async (
       funcNum: number, evt_cnt: number,
       hasLastTime: (BigNumber | false), tys: Array<AnyETH_Ty>,
-      args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+      args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
@@ -676,7 +684,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         try {
           debug(shad, ':', label, 'send', funcName, timeout_delay, `--- SEND ARG ---`, arg, `---`, value);
 
-          const r_fn = await callC(funcName, arg, value);
+          const r_fn = await callC(funcName, arg, pay);
           debug(shad, ':', label, 'send', funcName, timeout_delay, `--- POST CALL`);
 
           r_maybe = await r_fn.wait();
@@ -738,12 +746,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
       tys: Array<AnyETH_Ty>,
-      args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+      args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(sim_p);
-      return await sendrecv_impl(funcNum, evt_cnt, hasLastTime, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
+      return await sendrecv_impl(funcNum, evt_cnt, hasLastTime, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
@@ -828,13 +836,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             return oe_edu;
           };
 
-
           debug(shad, ':', label, 'recv', ok_evt, timeout_delay, '--- OKAY ---', ok_vals);
+          const { value, from } = ok_t;
+          const pay = [ value, [] ]; // XXX
           return { didTimeout: false,
                    time: bigNumberify(ok_r.blockNumber),
-                   data, getOutput,
-                   value: ok_t.value,
-                   from: ok_t.from };
+                   data, getOutput, pay, from };
         }
       }
 
@@ -982,23 +989,13 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
 export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
   const { address, creation_block, init, creator } = ctcInfo;
-  const { argsMay, value } = initOrDefaultArgs(init);
+  const { argsMay } = initOrDefaultArgs(init);
   const factory = new ethers.ContractFactory(ABI, Bytecode);
   debug('verifyContract:', address)
   debug(ctcInfo);
 
   const provider = await getProvider();
   const now = await getNetworkTimeNumber();
-
-  const {chainId} = await provider.getNetwork();
-  // TODO: allow user to specify lenient verification? (for chains we don't know about)
-  const lenient = [
-    152709604825713, // https://kovan2.arbitrum.io/rpc
-    // XXX ^ this will probably change over time
-  ].includes(chainId);
-  if (lenient) {
-    debug('verifyContract: using lenient contract verification for chainId=', chainId);
-  }
 
   const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
   debug('verifyContract: checking logs for', deployEvent, '...');
@@ -1088,39 +1085,12 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
     }
   }
 
-  // It's tedious to write the next sections w/ lenience, so just skip them.
-  // Checking balance & storage at certain old block #s is not supported by some backends.
-  if (lenient) return true;
+  // We are not checking the balance or the contract storage, because we know
+  // that the code is correct and we know that the code mandates the way that
+  // those things are initialized
 
-  debug(`verifyContract: checking balance...`);
-  const bal = await provider.getBalance(address, creation_block);
-  // bal is allowed to exceed expectations, for example,
-  // if someone spuriously transferred extra money to the contract
-  if (!ge(bal, value)) {
-    console.log('bal expected: ' + value);
-    console.log('bal actual  : ' + bal);
-    throw Error(`Contract initial balance does not match expected initial balance`);
-  }
-
-  debug(`verifyContract: checking contract storage...`);
-  if (isNone(argsMay)) {
-    const st = await provider.getStorageAt(address, 0, creation_block);
-    const expectedSt =
-      // @ts-ignore XXX
-      digest(T_Tuple([T_UInt, T_UInt]),
-            [T_UInt.canonicalize(0),
-             T_UInt.canonicalize(creation_block)]);
-    if (st !== expectedSt) {
-      console.log('st expected: ' + expectedSt);
-      console.log('st actual  : ' + st);
-      throw Error(`Contract initial state does not match expected initial state.`);
-    }
-  } else {
-    // TODO: figure out freeVars using creator and args
-    void(creator);
-    // const expectedSt = keccak256(1, creation_block, ...freeVars)
-    // if st !== expectedSt throw Error
-  }
+  // XXX check that the deployment was by the creator
+  void(creator);
 
   return true;
 };

@@ -121,17 +121,16 @@ dk1 at_top ks s =
     DLS_Only at who ss ->
       DK_Only at who <$> dk_ at ss <*> dk_ at ks
     DLS_ToConsensus at send recv mtime -> do
-      let (winner_dv, msg, amtv, timev, cs) = recv
-      let cs' = dk_ at (cs <> ks)
-      let recv' =
-            (\x -> (winner_dv, msg, amtv, timev, x)) <$> cs'
+      let cs = dr_k recv
+      cs' <- dk_ at (cs <> ks)
+      let recv' = recv { dr_k = cs' }
       let mtime' =
             case mtime of
               Just (delay_da, time_ss) ->
                 (\x y -> Just (x, y)) <$> pure delay_da <*> dk_ at (time_ss <> ks)
               Nothing ->
                 return $ Nothing
-      DK_ToConsensus at send <$> recv' <*> mtime'
+      DK_ToConsensus at send recv' <$> mtime'
     DLS_FromConsensus at ss ->
       DK_FromConsensus at at_top <$> dk_ at (ss <> ks)
     DLS_While at asn inv_b cond_b body -> do
@@ -264,8 +263,8 @@ instance LiftCon a => LiftCon (Maybe a) where
 instance LiftCon z => LiftCon (a, z) where
   lc (a, z) = (\z' -> (a, z')) <$> lc z
 
-instance LiftCon z => LiftCon (b, c, d, e, z) where
-  lc (b, c, d, e, z) = (\z' -> (b, c, d, e, z')) <$> lc z
+instance LiftCon z => LiftCon (DLRecv z) where
+  lc r = (\z' -> r { dr_k = z' }) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
@@ -318,6 +317,7 @@ data DFEnv = DFEnv
   { eCounterR :: Counter
   , eFVMm :: Maybe FVMap
   , eFVE :: FluidEnv
+  , eFVs :: [FluidVar]
   }
 
 allocVar :: (Int -> a) -> DFApp a
@@ -413,6 +413,7 @@ df_con = \case
     where
       cm1 (dv', c) = (\x -> (dv', x)) <$> df_con c
   DK_While at asn inv cond body k -> do
+    fvs <- eFVs <$> ask
     let go fv = do
           r <- fluidRefm fv
           case r of
@@ -420,7 +421,7 @@ df_con = \case
             Just _ -> do
               dv <- allocVar $ DLVar at (Just (srcloc_builtin, show $ pretty fv)) (fluidVarType fv)
               return $ Just (fv, dv)
-    fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
+    fvm <- M.fromList <$> catMaybes <$> mapM go fvs
     let body_fvs' = df_con =<< unpackFVMap at body
     --- Note: The invariant and condition can't return
     let block b = df_bl =<< block_unpackFVMap at b
@@ -445,13 +446,13 @@ df_step = \case
   DK_Stop at -> return $ LLS_Stop at
   DK_Only at who body k -> LLS_Only at who <$> df_t body <*> df_step k
   DK_ToConsensus at send recv mtime -> do
-    let (b, c, d, e, k) = recv
+    let k = dr_k recv
     let cvt = \case
           DLA_Var v -> v
           _ -> impossible $ "lct not a variable"
     ltv <- fmap (cvt . snd) <$> fluidRefm FV_lastConsensusTime
     k' <- df_con k
-    let recv' = (ltv, b, c, d, e, k')
+    let recv' = recv { dr_k = (ltv, k') }
     mtime' <-
       case mtime of
         Nothing -> return $ Nothing
@@ -481,6 +482,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex k) = do
   let eCounterR = llo_counter
   let eFVMm = mempty
   let eFVE = mempty
+  let eFVs = allFluidVars dlo_bals
   flip runReaderT (DFEnv {..}) $ do
     dex' <- mapM df_eb dex
     k' <- df_step k

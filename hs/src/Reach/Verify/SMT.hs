@@ -325,6 +325,7 @@ smtPrimOp p dargs =
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
+    TOKEN_EQ -> app "="
     SELF_ADDRESS ->
       case dargs of
         [ DLA_Literal (DLL_Bytes pn)
@@ -442,7 +443,7 @@ dlvOccurs env bindings de =
     DLE_Interact at _ _ _ _ as -> _recs at as
     DLE_Digest at as -> _recs at as
     DLE_Claim at _ _ a _ -> _rec at a
-    DLE_Transfer at x y -> _recs at [x, y]
+    DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
     DLE_MapRef at _ fa -> _rec at fa
@@ -450,7 +451,8 @@ dlvOccurs env bindings de =
     DLE_MapDel at _ fa -> _rec at fa
     DLE_Remote at _ av _ amta as -> _recs at $ av : amta : as
   where
-    _recs at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env as
+    _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
+    _recs = _recs_ env
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
 
 displayDLAsJs :: M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
@@ -483,7 +485,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_Interact _ _ pv f _ as -> "interact(" <> show pv <> ")." <> f <> args as
   DLE_Digest _ as -> "digest" <> args as
   DLE_Claim _ _ ty a m -> show ty <> paren (commaSep [sub a, show m])
-  DLE_Transfer _ x y -> "transfer" <> paren (sub y) <> ".to" <> paren (sub x)
+  DLE_Transfer _ x y z -> "transfer" <> paren (sub y <> ", " <> msub z) <> ".to" <> paren (sub x)
   DLE_Wait _ a -> "wait" <> paren (sub a)
   DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
@@ -504,6 +506,9 @@ displayDLAsJs v2dv inlineCtxt nested = \case
         Just (Right de) -> displayDLAsJs v2dv inlineCtxt True de
         Just (Left s) -> s
     sub e = ps e
+    msub = \case
+      Nothing -> "false"
+      Just x -> sub x
 
 displaySexpAsJs :: Bool -> SExpr -> String
 displaySexpAsJs nested s =
@@ -1247,7 +1252,7 @@ smt_s = \case
   LLS_Stop _at -> mempty
   LLS_Only _at who loc k -> smt_lm who loc <> smt_s k
   LLS_ToConsensus at send recv mtime -> do
-    let (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
+    let DLRecv whov msgvs amtv timev (last_timemv, next_n) = recv
     timev' <- smt_v at timev
     let timeout = case mtime of
           Nothing -> mempty
@@ -1260,7 +1265,7 @@ smt_s = \case
               last_timev' <- smt_v at last_timev
               smtAssertCtxt $ uint256_lt last_timev' timev'
     let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
-    let go (from, (isClass, msgas, amta, whena)) = do
+    let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
           let maybe_pathAdd v bo_no bo_yes mde se =
                 case should of
@@ -1277,8 +1282,14 @@ smt_s = \case
                         pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from')
                   _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
           let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
-          let bind_amt = maybe_pathAdd amtv (O_Pay from Nothing) (O_Pay from $ Just amta) (Just $ DLE_Arg at amta) =<< (smt_a at amta)
-          let this_case = bind_from <> bind_msg <> bind_amt <> after
+          let bind_amt v a = maybe_pathAdd v (O_Pay from Nothing) (O_Pay from $ Just a) (Just $ DLE_Arg at a) =<< (smt_a at a)
+          let bind_amts = do
+                let DLPayAmt {..} = amta
+                let DLPayVar {..} = amtv
+                bind_amt pv_net pa_net
+                let mf = map fst
+                zipWithM_ bind_amt (mf pv_ks) (mf pa_ks)
+          let this_case = bind_from <> bind_msg <> bind_amts <> after
           when' <- smt_a at whena
           case should of
             True -> do
@@ -1333,6 +1344,7 @@ _smtDefineTypes smt ts = do
          , (T_UInt, ("UInt", uint256_inv))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
+         , (T_Token, ("Token", none))
          ])
   let base = impossible "default"
   let bind_type :: DLType -> String -> IO SMTTypeInv
@@ -1344,6 +1356,7 @@ _smtDefineTypes smt ts = do
           T_Bytes {} -> base
           T_Digest -> base
           T_Address -> base
+          T_Token -> base
           T_Array et sz -> do
             tni <- type_name et
             let tn = fst tni

@@ -117,6 +117,7 @@ jsContract_ = \case
     return $ jsApply "stdlib.T_Bytes" [sz']
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
+  T_Token -> return $ "stdlib.T_Token"
   T_Array t sz -> do
     t' <- jsContract t
     sz' <- jsCon (DLL_Int sb sz)
@@ -253,6 +254,7 @@ jsPrimApply = \case
   --  BYTES_EQ -> jsApply "stdlib.bytesEq"
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
+  TOKEN_EQ -> jsApply "stdlib.tokenEq"
 
 jsExpr :: AppT DLExpr
 jsExpr = \case
@@ -303,19 +305,24 @@ jsExpr = \case
         a' <- jsArg a
         ai' <- jsAssertInfo at fs mmsg
         return $ jsApply "stdlib.assert" $ [a', ai']
-  DLE_Transfer _ who amt ->
+  DLE_Transfer _ who amt mtok ->
     (ctxt_simulate <$> ask) >>= \case
       False -> mempty
       True -> do
         who' <- jsArg who
         amt' <- jsArg amt
+        mtok' <-
+          case mtok of
+            Nothing -> return $ "undefined"
+            Just a -> jsArg a
         return $
           jsApply
             "sim_r.txns.push"
             [ jsObject $
                 M.fromList $
                   [ ("to" :: String, who')
-                  , ("amt" :: String, amt')
+                  , ("amt", amt')
+                  , ("tok", mtok')
                   ]
             ]
   DLE_Wait _ amt -> do
@@ -466,6 +473,22 @@ jsFromSpec v = do
   txn <- jsTxn
   return $ "const" <+> v' <+> "=" <+> txn <> ".from" <> semi <> hardline
 
+jsPayVar :: AppT DLPayVar
+jsPayVar (DLPayVar {..}) = do
+  net' <- jsVar pv_net
+  ks' <- jsArray <$> (mapM jsVar $ map fst pv_ks)
+  return $ jsArray [ net', ks' ]
+
+jsPayAmt :: AppT DLPayAmt
+jsPayAmt (DLPayAmt {..}) = do
+  net' <- jsArg pa_net
+  let go a t = do
+        a' <- jsArg a
+        t' <- jsArg t
+        return $ jsArray [ a', t' ]
+  ks' <- jsArray <$> (mapM (uncurry go) pa_ks)
+  return $ jsArray $ [ net', ks' ]
+
 jsETail :: AppT EITail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
@@ -507,8 +530,8 @@ jsETail = \case
                  })
     txn <- withCtxt jsTxn
     let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
-    amtv' <- jsVar amtv
-    let amt_defp = "const" <+> amtv' <+> "=" <+> txn <> ".value" <> semi <> hardline
+    amtv' <- jsPayVar amtv
+    let amt_defp = "const" <+> amtv' <+> "=" <+> txn <> ".pay" <> semi <> hardline
     timev' <- jsVar timev
     let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
     fs_ok' <- withCtxt $ jsFromSpec fs_ok
@@ -543,7 +566,7 @@ jsETail = \case
         case from_me of
           Just (args, amt, whena, svs, soloSend) -> do
             let svs_as = map DLA_Var svs
-            amtp <- jsArg amt
+            amtp <- jsPayAmt amt
             let svs_noPrevTime = dvdeletem last_timemv svs
             let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
             let withSim = local (\e -> e {ctxt_simulate = True})

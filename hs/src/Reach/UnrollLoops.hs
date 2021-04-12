@@ -176,8 +176,8 @@ instance Unroll a => Unroll (M.Map k a) where
 instance Unroll a => Unroll (Maybe a) where
   ul = mapM ul
 
-instance Unroll k => Unroll (a, b, c, d, e, k) where
-  ul (a, b, c, d, e, k) = (\k' -> (a, b, c, d, e, k')) <$> ul k
+instance Unroll a => Unroll (DLRecv a) where
+  ul r = (\k' -> r { dr_k = k' }) <$> ul (dr_k r)
 
 instance Unroll LLStep where
   ul = \case

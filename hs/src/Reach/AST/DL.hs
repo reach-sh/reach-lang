@@ -48,8 +48,8 @@ data DLStmt
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
-      , dls_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , dls_tc_recv :: (DLVar, [DLVar], DLVar, DLVar, DLStmts)
+      , dls_tc_send :: M.Map SLPart DLSend
+      , dls_tc_recv :: DLRecv DLStmts
       , dls_tc_mtime :: Maybe (DLArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts
@@ -98,7 +98,7 @@ instance Pretty DLStmt where
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
-        prettyToConsensus_ render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
+        prettyToConsensus__ dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -199,6 +199,7 @@ data DLOpts = DLOpts
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
+  , dlo_bals :: Int
   }
   deriving (Eq, Generic)
 

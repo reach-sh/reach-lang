@@ -61,7 +61,7 @@ instance Sanitize DLExpr where
     DLE_Interact _ fs p m t as -> DLE_Interact sb fs p m t (sani as)
     DLE_Digest _ as -> DLE_Digest sb (sani as)
     DLE_Claim _ fs ct a mm -> DLE_Claim sb fs ct (sani a) mm
-    DLE_Transfer _ x y -> DLE_Transfer sb (sani x) (sani y)
+    DLE_Transfer _ x y z -> DLE_Transfer sb (sani x) (sani y) (sani z)
     DLE_Wait _ x -> DLE_Wait sb (sani x)
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
@@ -108,8 +108,17 @@ instance Sanitize LLConsensus where
     LLC_FromConsensus _ _ s -> LLC_FromConsensus sb sb (sani s)
     LLC_Only _ p l k -> LLC_Only sb p (sani l) (sani k)
 
-instance {-# OVERLAPPING #-} (Sanitize a, Sanitize b, Sanitize c, Sanitize d, Sanitize e, Sanitize f) => Sanitize (a, b, c, d, e, f) where
-  sani (a, b, c, d, e, f) = (sani a, sani b, sani c, sani d, sani e, sani f)
+instance Sanitize DLPayAmt where
+  sani (DLPayAmt {..}) = DLPayAmt pa_net (sani pa_ks)
+
+instance Sanitize DLPayVar where
+  sani (DLPayVar {..}) = DLPayVar pv_net (sani pv_ks)
+
+instance Sanitize DLSend where
+  sani (DLSend {..}) = DLSend ds_isClass (sani ds_msg) (sani ds_pay) (sani ds_when)
+
+instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLRecv a) where
+  sani (DLRecv {..}) = DLRecv dr_from dr_msg (sani dr_pay) dr_time (sani dr_k)
 
 instance Sanitize LLStep where
   sani = \case

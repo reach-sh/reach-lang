@@ -64,11 +64,11 @@ data ETail_ a
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
-             Maybe ([DLArg], DLArg, DLArg, [DLVar], Bool)
+             Maybe ([DLArg], DLPayAmt, DLArg, [DLVar], Bool)
              )
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_out :: [DLVar]
-      , et_tc_from_amtv :: DLVar
+      , et_tc_from_amtv :: DLPayVar
       , et_tc_from_timev :: DLVar
       , et_tc_from_mtime :: (Maybe ([DLArg], (ETail_ a)))
       , et_tc_cons :: (ETail_ a)
@@ -207,7 +207,7 @@ data CHandler_ a
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
-      , ch_amtv :: DLVar
+      , ch_amtv :: DLPayVar
       , ch_timev :: DLVar
       , ch_body :: (CTail_ a)
       }

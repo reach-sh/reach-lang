@@ -172,7 +172,7 @@ instance Optimize DLExpr where
     DLE_Interact at fs p m t as -> DLE_Interact at fs p m t <$> opt as
     DLE_Digest at as -> DLE_Digest at <$> opt as
     DLE_Claim at fs t a m -> DLE_Claim at fs t <$> opt a <*> (pure $ m)
-    DLE_Transfer at t a -> DLE_Transfer at <$> opt t <*> opt a
+    DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
@@ -293,10 +293,13 @@ opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt d) <*> (newScope $ opt s))
 
-opt_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
-opt_send (p, (isClass, args, amta, whena)) =
+instance Optimize DLPayAmt where
+  opt (DLPayAmt {..}) = DLPayAmt <$> opt pa_net <*> opt pa_ks
+
+opt_send :: AppT (SLPart, DLSend)
+opt_send (p, DLSend isClass args amta whena) =
   focusp p $
-    (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> opt args <*> opt amta <*> opt whena)
+    (,) p <$> (DLSend isClass <$> opt args <*> opt amta <*> opt whena)
 
 instance Optimize LLStep where
   opt = \case
@@ -308,9 +311,9 @@ instance Optimize LLStep where
       LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
       where
         send' = M.fromList <$> mapM opt_send (M.toList send)
-        (last_timev, winner_dv, msg, amtv, timev, cons) = recv
+        (last_timev, cons) = dr_k recv
         cons' = newScope $ focusc $ opt cons
-        recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt last_timev <*> cons'
+        recv' = (\k -> recv { dr_k = k }) <$> ((,) <$> opt last_timev <*> cons')
         mtime' = opt_mtime mtime
 
 instance Optimize DLInit where

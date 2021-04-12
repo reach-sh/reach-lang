@@ -47,6 +47,7 @@ instance CollectsTypes DLType where
         T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty
+        T_Token -> mempty
         T_Array e _ -> cts e
         T_Tuple elems -> cts elems
         T_Object m -> cts m
@@ -86,7 +87,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as
   cts (DLE_Digest _ as) = cts as
   cts (DLE_Claim _ _ _ a _) = cts a
-  cts (DLE_Transfer _ x y) = cts x <> cts y
+  cts (DLE_Transfer _ x y z) = cts x <> cts y <> cts z
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
   cts (DLE_MapRef _ _ fa) = cts fa
@@ -134,6 +135,18 @@ instance CollectsTypes LLConsensus where
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
   cts (LLC_Only _ _ l s) = cts l <> cts s
+
+instance CollectsTypes DLPayAmt where
+  cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks
+
+instance CollectsTypes DLPayVar where
+  cts (DLPayVar {..}) = cts pv_net <> cts pv_ks
+
+instance CollectsTypes DLSend where
+  cts (DLSend {..}) = cts ds_msg <> cts ds_pay <> cts ds_when
+
+instance CollectsTypes a => CollectsTypes (DLRecv a) where
+  cts (DLRecv {..}) = cts dr_from <> cts dr_msg <> cts dr_pay <> cts dr_time <> cts dr_k
 
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k

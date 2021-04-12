@@ -205,7 +205,7 @@ kgq_e ctxt mv = \case
             where
               query_one what =
                 query ctxt at f mmsg who $ all_points what
-  DLE_Transfer _ _ amt ->
+  DLE_Transfer _ _ amt _ ->
     kgq_a_all ctxt amt
   DLE_Wait _ amt ->
     kgq_a_all ctxt amt
@@ -294,6 +294,19 @@ kgq_n ctxt = \case
     kgq_l (ctxt_restrict ctxt who) loc
       >> kgq_n ctxt k
 
+kgq_pv :: KCtxt -> DLPayVar -> IO ()
+kgq_pv ctxt (DLPayVar {..}) = do
+  let one = kgq_a_all ctxt . DLA_Var
+  one pv_net
+  mapM_ (one . fst) pv_ks
+
+kgq_pa :: KCtxt -> DLPayVar -> DLPayAmt -> IO ()
+kgq_pa ctxt (DLPayVar {..}) (DLPayAmt {..}) = do
+  let one = kgq_a_only ctxt
+  one pv_net pa_net
+  let mf = map fst
+  mapM_ (uncurry one) $ zip (mf pv_ks) (mf pa_ks)
+
 kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
@@ -305,16 +318,16 @@ kgq_s ctxt = \case
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
     where
-      (_last_timev, whov, msgvs, amtv, timev, next_n) = recv
+      DLRecv whov msgvs amtv timev (_last_timev, next_n) = recv
       common =
         kgq_a_all ctxt (DLA_Var whov)
-          >> kgq_a_all ctxt (DLA_Var amtv)
+          >> kgq_pv ctxt amtv
           >> kgq_a_all ctxt (DLA_Var timev)
           >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
           >> kgq_n ctxt next_n
-      go (_, (_, msgas, amta, whena)) =
+      go (_, DLSend _ msgas amta whena) = do
         mapM_ (uncurry (kgq_a_only ctxt)) (zip msgvs msgas)
-          >> kgq_a_only ctxt amtv amta
+          >> kgq_pa ctxt amtv amta
           -- This is a bit suspicious: we can't necessarily know what the value
           -- of this is just because of things being published, because they
           -- might be dishonest

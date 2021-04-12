@@ -1,0 +1,12 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
+Checked 47 theorems; No failures!
+XXX algo remote
+XXX algo remote
+XXX algo remote
+XXX algo remote
+XXX algo remote

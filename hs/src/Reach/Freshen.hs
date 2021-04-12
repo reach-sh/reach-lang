@@ -73,7 +73,7 @@ instance Freshen DLExpr where
     DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> fu f
     DLE_Digest at as -> DLE_Digest at <$> fu as
     DLE_Claim a b c d e -> DLE_Claim a b c <$> fu d <*> pure e
-    DLE_Transfer at x y -> DLE_Transfer at <$> fu x <*> fu y
+    DLE_Transfer at x y z -> DLE_Transfer at <$> fu x <*> fu y <*> fu z
     DLE_Wait at x -> DLE_Wait at <$> fu x
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa

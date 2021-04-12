@@ -54,9 +54,11 @@ data SLState = SLState
   { --- A function call may modify the mode
     st_mode :: SLMode
   , st_live :: Bool
+  , st_after_ctor :: Bool
   , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
+  , st_toks :: [DLVar]
   }
   deriving (Eq, Show)
 

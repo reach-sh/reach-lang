@@ -38,6 +38,8 @@ data EvalError
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
   | Err_ToConsensus_NoTimeoutBlock
+  | Err_Pay_DoubleNetworkToken
+  | Err_Pay_Type SLValTy
   | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
@@ -130,6 +132,8 @@ data EvalError
   | Err_Strict_Conditional SLVal
   | Err_Try_Type_Mismatch DLType DLType
   | Err_Throw_No_Catch
+  | Err_Token_NotOnFirst
+  | Err_Token_InWhile
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -186,6 +190,15 @@ showStateDiff x y =
     <> showDiff
       x
       y
+      st_after_ctor
+      (\xAfter yAfter ->
+         case (xAfter, yAfter) of
+           (False, True) -> "Expected a constructing publication to have been made by this point."
+           (True, False) -> "Expected no constructing publication to have been made by this point."
+           _ -> impossible "expected st_after_ctor to differ.")
+    <> showDiff
+      x
+      y
       st_after_first
       (\xAfter yAfter ->
          case (xAfter, yAfter) of
@@ -200,6 +213,7 @@ showStateDiff x y =
          let showParts = intercalate ", " . map (show . fst) . M.toList
           in "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
                <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
+    -- XXX tokens
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
@@ -272,6 +286,10 @@ instance Show EvalError where
                   _ -> ": the second argument should have no arguments"
               _ -> ": the second argument should be an arrow, but got something else"
           _ -> ": expected one argument or two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
+    Err_Pay_DoubleNetworkToken ->
+      "Pay amount contains multiple network token amounts, but only one is allowed"
+    Err_Pay_Type sv ->
+      "Pay amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: " <> show_sv sv
     Err_App_Interact_NotFirstOrder ty ->
       "Invalid interact specification. Expected first-order type, got: "
         <> show ty
@@ -488,10 +506,17 @@ instance Show EvalError where
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
     Err_Strict_Conditional v ->
       "Strict mode expects conditional values to be of type `Bool`, but received: " <> show (pretty v)
+<<<<<<< HEAD
     Err_Try_Type_Mismatch expect actual ->
       "Every expression thrown within a `try` block must be of the same type. Expected " <> show (pretty expect) <> ", but received: " <> show (pretty actual)
     Err_Throw_No_Catch ->
       "`throw` statements may only occur inside of `try/catch` blocks."
+=======
+    Err_Token_NotOnFirst ->
+      "Token published on message that is not first message"
+    Err_Token_InWhile ->
+      "Token published within while"
+>>>>>>> 535460ea (pre-test, pre-algo)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

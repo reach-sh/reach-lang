@@ -108,7 +108,7 @@ instance Countable DLExpr where
     DLE_Interact _ _ _ _ _ as -> counts as
     DLE_Digest _ as -> counts as
     DLE_Claim _ _ _ a _ -> counts a
-    DLE_Transfer _ x y -> counts [x, y]
+    DLE_Transfer _ x y z -> counts [x, y] <> counts z
     DLE_Wait _ a -> counts a
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
@@ -121,3 +121,9 @@ instance Countable DLAssignment where
 
 instance Countable a => Countable (CInterval a) where
   counts (CBetween from to) = counts from <> counts to
+
+instance Countable DLPayAmt where
+  counts (DLPayAmt {..}) = counts pa_net <> counts pa_ks
+
+instance Countable DLSend where
+  counts (DLSend {..}) = counts ds_msg <> counts ds_pay <> counts ds_when

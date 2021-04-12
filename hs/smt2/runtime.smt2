@@ -60,3 +60,11 @@
 ;;  (forall ((x Address) (y Address))
 ;;          (=> (not (= x y))
 ;;              (not (= (Address_toBytes x) (Address_toBytes y))))))
+
+(declare-sort Token 0)
+
+(declare-fun Token_toBytes (Token) Bytes)
+;; (assert
+;;  (forall ((x Token) (y Token))
+;;          (=> (not (= x y))
+;;              (not (= (Token_toBytes x) (Token_toBytes y))))))

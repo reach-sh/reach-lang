@@ -53,9 +53,9 @@ prettyContinue cont_da =
 prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc
 prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m)
 
-prettyTransfer :: Pretty a => a -> a -> Doc
-prettyTransfer who da =
-  "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who)
+prettyTransfer :: Pretty a => a -> a -> Maybe a -> Doc
+prettyTransfer who da mta =
+  "transfer." <> parens (pretty da <> ", " <> pretty mta) <> ".to" <> parens (pretty who)
 
 prettyStop :: Doc
 prettyStop = "exit" <> parens (emptyDoc) <> semi
@@ -69,6 +69,26 @@ prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => 
 prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
+
+prettyToConsensus__ :: (Pretty a, Pretty b, Pretty s, Pretty d, Pretty k2) => M.Map s a -> b -> Maybe (d, k2) -> Doc
+prettyToConsensus__ send recv mtime =
+  "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <> send' <> recv')
+  where
+    mtime' = prettyTimeout mtime
+    send' = prettySends send <> hardline
+    recv' = pretty recv <> hardline
+
+prettySends :: Pretty a => Pretty b => M.Map a b -> Doc
+prettySends send = concatWith (surround hardline) (map go $ M.toList send)
+  where
+    go (p, s) =
+      ".case" <> parens (pretty p) <> pretty s
+
+prettyTimeout :: Pretty d => Pretty k2 => Maybe (d, k2) -> Doc
+prettyTimeout = \case
+  Nothing -> emptyDoc
+  Just (delaya, tbody) ->
+    ".timeout" <> parens (hsep $ punctuate comma $ [pretty delaya, render_nest (pretty tbody)]) <> hardline
 
 prettyToConsensus_ :: Pretty c => Pretty d => Pretty s => (a -> Doc) -> (b -> Doc) -> M.Map s (Bool, [d], d, d) -> (c, [c], c, c, a) -> (Maybe (d, b)) -> Doc
 prettyToConsensus_ fa fb send (win, msg, amtv, tv, body) mtime =
@@ -88,11 +108,10 @@ prettyToConsensus fa fb send (ltv, win, msg, amtv, tv, body) mtime =
   where
     go (p, (isClass, args, amta, whena)) =
       ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty isClass, prettyl args, pretty amta, pretty whena])
-    mtime' =
-      case mtime of
-        Nothing -> emptyDoc
-        Just (delaya, tbody) ->
-          ".timeout" <> parens (hsep $ punctuate comma $ [pretty delaya, render_nest (fb tbody)]) <> hardline
+    mtime' = case mtime of
+      Nothing -> emptyDoc
+      Just (delaya, tbody) ->
+        ".timeout" <> parens (hsep $ punctuate comma $ [pretty delaya, render_nest (fb tbody)]) <> hardline
 
 prettyCommit :: Doc
 prettyCommit = "commit();"

@@ -25,10 +25,16 @@ export type WPArgs = {
   timeout: number,
 }
 
+export type PayVar =
+  [ BigNumber, Array<BigNumber> ];
+
+export type MkPayAmt<Token> =
+  [ BigNumber, Array<[BigNumber, Token]> ];
+
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
   data: Array<any>,
-  value: BigNumber,
+  pay: PayVar,
   from: RawAddress,
   time: BigNumber,
   getOutput: (o_lab:string, o_ctc:any) => Promise<any>,
@@ -38,15 +44,15 @@ export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
   didTimeout: true
 }
 
-export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyBackendTy> = {
+export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
   creationTime: () => Promise<BigNumber>,
   sendrecv: (
     funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
     tys: Array<ConnectorTy>,
-    args: Array<any>, value: BigNumber, out_tys: Array<ConnectorTy>,
+    args: Array<any>, value: MkPayAmt<Token>, out_tys: Array<ConnectorTy>,
     onlyIf: boolean, soloSend: boolean,
-    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress>>,
+    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress, Token>>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (
     okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
@@ -71,16 +77,17 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Digest, RawAddress> = {
+export type ISimRes<Digest, RawAddress, Token> = {
   prevSt: Digest,
-  txns: Array<ISimTxn<RawAddress>>,
+  txns: Array<ISimTxn<RawAddress, Token>>,
   nextSt: Digest,
   isHalt : boolean,
 };
 
-export type ISimTxn<RawAddress> = {
+export type ISimTxn<RawAddress, Token> = {
   to: RawAddress,
   amt: BigNumber,
+  tok: false | Token,
 };
 
 export type CurrencyAmount = string | number | BigNumber
