@@ -475,12 +475,6 @@ jsFromSpec v = do
   txn <- jsTxn
   return $ "const" <+> v' <+> "=" <+> txn <> ".from" <> semi <> hardline
 
-jsPayVar :: AppT DLPayVar
-jsPayVar (DLPayVar {..}) = do
-  net' <- jsVar pv_net
-  ks' <- jsArray <$> (mapM jsVar $ map fst pv_ks)
-  return $ jsArray [ net', ks' ]
-
 jsPayAmt :: AppT DLPayAmt
 jsPayAmt (DLPayAmt {..}) = do
   net' <- jsArg pa_net

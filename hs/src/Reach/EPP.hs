@@ -486,13 +486,6 @@ be_c = \case
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
 
-be_pv :: DLPayVar -> BApp ()
-be_pv (DLPayVar {..}) = do
-  fg_defn pv_net
-  forM_ pv_ks $ \(v, a) -> do
-    fg_defn v
-    fg_use a
-
 be_s :: LLStep -> BApp (EApp EITail)
 be_s = \case
   LLS_Com c k -> do

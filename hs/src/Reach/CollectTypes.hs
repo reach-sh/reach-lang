@@ -140,9 +140,6 @@ instance CollectsTypes LLConsensus where
 instance CollectsTypes DLPayAmt where
   cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks
 
-instance CollectsTypes DLPayVar where
-  cts (DLPayVar {..}) = cts pv_net <> cts pv_ks
-
 instance CollectsTypes DLSend where
   cts (DLSend {..}) = cts ds_msg <> cts ds_pay <> cts ds_when
 

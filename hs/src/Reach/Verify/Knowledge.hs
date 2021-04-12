@@ -296,12 +296,6 @@ kgq_n ctxt = \case
     kgq_l (ctxt_restrict ctxt who) loc
       >> kgq_n ctxt k
 
-kgq_pv :: KCtxt -> DLPayVar -> IO ()
-kgq_pv ctxt (DLPayVar {..}) = do
-  let one = kgq_a_all ctxt . DLA_Var
-  one pv_net
-  mapM_ (one . fst) pv_ks
-
 kgq_pa :: KCtxt -> DLPayAmt -> IO ()
 kgq_pa ctxt (DLPayAmt {..}) = do
   let one = kgq_a_all ctxt

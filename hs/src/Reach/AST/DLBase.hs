@@ -551,19 +551,6 @@ instance Pretty DLPayAmt where
       , ("ks", pretty pa_ks)
       ])
 
--- XXX delete this
-data DLPayVar = DLPayVar
-  { pv_net :: DLVar
-  , pv_ks :: [(DLVar, DLArg)] }
-  deriving (Eq, Generic)
-
-instance Pretty DLPayVar where
-  pretty (DLPayVar {..}) =
-    "payvar" <> parens (render_obj $ M.fromList $
-      [ ("net"::String, pretty pv_net)
-      , ("ks", pretty pv_ks)
-      ])
-
 data DLSend = DLSend
   { ds_isClass :: Bool
   , ds_msg :: [DLArg]

@@ -112,9 +112,6 @@ instance Sanitize LLConsensus where
 instance Sanitize DLPayAmt where
   sani (DLPayAmt {..}) = DLPayAmt pa_net (sani pa_ks)
 
-instance Sanitize DLPayVar where
-  sani (DLPayVar {..}) = DLPayVar pv_net (sani pv_ks)
-
 instance Sanitize DLSend where
   sani (DLSend {..}) = DLSend ds_isClass (sani ds_msg) (sani ds_pay) (sani ds_when)
 
