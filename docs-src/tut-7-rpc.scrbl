@@ -323,7 +323,7 @@ $ REACH_RPC_SERVER=127.0.0.1 \
   REACH_RPC_PORT=3000 \
   REACH_RPC_KEY=YOUR-PRESHARED-KEY \
   REACH_RPC_TLS_REJECT_UNVERIFIED=0 \
-  python3 ./index.py
+  python3 -u ./index.py
 
 *** Warning! TLS verification disabled! ***
 
