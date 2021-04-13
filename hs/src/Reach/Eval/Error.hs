@@ -507,19 +507,16 @@ instance Show EvalError where
       "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
     Err_Strict_Conditional v ->
       "Strict mode expects conditional values to be of type `Bool`, but received: " <> show (pretty v)
-<<<<<<< HEAD
     Err_Try_Type_Mismatch expect actual ->
       "Every expression thrown within a `try` block must be of the same type. Expected " <> show (pretty expect) <> ", but received: " <> show (pretty actual)
     Err_Throw_No_Catch ->
       "`throw` statements may only occur inside of `try/catch` blocks."
-=======
     Err_Token_NotOnFirst ->
       "Token published on message that is not first message, which Reach cannot track, yet."
     Err_Token_OnCtor ->
       "Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens."
     Err_Token_InWhile ->
       "Token published within while"
->>>>>>> 535460ea (pre-test, pre-algo)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

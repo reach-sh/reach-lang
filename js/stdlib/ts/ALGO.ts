@@ -146,9 +146,7 @@ type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
 type SimRes = ISimRes<Digest, Address, Token>
 type SimTxn = ISimTxn<Address, Token>
 
-// ****************************************************************************
 // Helpers
-// ****************************************************************************
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   if (!(a instanceof Uint8Array)) {
@@ -755,9 +753,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return await doRecv(true);
       }
 
-      // XXX support tokens on ALGO
       const [ value, toks ] = pay;
-      assert(toks.length, 0);
+      assert(toks.length == 0, `XXX Algorand Connector does not support tokens`);
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;

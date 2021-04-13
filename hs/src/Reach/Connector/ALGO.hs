@@ -174,6 +174,7 @@ data Env = Env
   , eLabelR :: IORef Int
   , eOutputR :: IORef TEALs
   , eTxnsR :: IORef TxnIdx
+  , eFromTxns :: IORef [TxnIdx]
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
@@ -263,10 +264,10 @@ store_let dv small cgen m = do
   Env {..} <- ask
   local
     (\e ->
-       e
-         { eLets = M.insert dv cgen eLets
-         , eLetSmalls = M.insert dv small eLetSmalls
-         })
+      e
+        { eLets = M.insert dv cgen eLets
+          , eLetSmalls = M.insert dv small eLetSmalls
+        })
     $ m
 
 letSmall :: DLVar -> App Bool
@@ -304,13 +305,15 @@ salloc fm = do
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
-talloc :: App TxnIdx
-talloc = do
+talloc :: Bool -> App TxnIdx
+talloc isFrom = do
   Env {..} <- ask
-  liftIO $ modifyIORef eTxnsR (1 +)
+  liftIO $ modifyIORef eTxnsR $ (+) 1
   txni <- liftIO $ readIORef eTxnsR
   when (txni > 15) $ do
     bad "too many txns"
+  when isFrom $
+    liftIO $ modifyIORef eFromTxns $ (:) txni
   return txni
 
 how_many_txns :: App TxnIdx
@@ -567,8 +570,8 @@ cla = \case
           Nothing -> normal
           Just x -> cl $ DLL_Bytes x
       _ -> normal
-    where
-      normal = cconcatbs $ map (\a -> (t, ca a)) as
+      where
+        normal = cconcatbs $ map (\a -> (t, ca a)) as
   DLLA_Tuple as ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLLA_Obj m -> cla $ DLLA_Struct $ M.toAscList m
@@ -698,41 +701,61 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer _ who amt Nothing -> do
-    txni <- talloc
+  DLE_Transfer _ who amt mtok -> do
+    txni <- talloc True
+    (vTypeEnum, fReceiver, fAmount, fSender) <-
+      case mtok of
+        Nothing ->
+          return ("pay", "Receiver", "Amount", "Sender")
+        Just tok -> do
+          code "gtxn" [texty txni, "XferAsset"]
+          ca tok
+          eq_or_fail
+          return ("axfer", "AssetReceiver", "AssetAmount", "AssetSender")
     code "gtxn" [texty txni, "TypeEnum"]
-    code "int" ["pay"]
+    code "int" [vTypeEnum]
     eq_or_fail
-    code "gtxn" [texty txni, "Receiver"]
+    code "gtxn" [texty txni, fReceiver]
     ca who
+    cfrombs T_Address
     eq_or_fail
-    code "gtxn" [texty txni, "Amount"]
+    code "gtxn" [texty txni, fAmount]
     ca amt
     eq_or_fail
-    code "gtxn" [texty txni, "Sender"]
+    code "gtxn" [texty txni, fSender]
     code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
-  DLE_Transfer _ who amt (Just tok) -> do
-    txni <- talloc
+  DLE_CheckPay at fs amt mtok -> do
+    comment $ "CheckPay"
+    comment $ texty $ unsafeRedactAbsStr $ show at
+    comment $ texty $ unsafeRedactAbsStr $ show fs
+    txni <- talloc False
+    (vTypeEnum, fReceiver, fAmount, rmFee, _fSender::String) <-
+      case mtok of
+        Nothing ->
+          return ("pay", "Receiver", "Amount", True, "Sender")
+        Just tok -> do
+          code "gtxn" [texty txni, "XferAsset"]
+          ca tok
+          eq_or_fail
+          return ("axfer", "AssetReceiver", "AssetAmount", False, "AssetSender")
     code "gtxn" [texty txni, "TypeEnum"]
-    code "int" ["axfer"]
+    code "int" [vTypeEnum]
     eq_or_fail
-    code "gtxn" [texty txni, "XferAsset"]
-    ca tok
-    eq_or_fail
-    code "gtxn" [texty txni, "AssetReceiver"]
-    ca who
-    eq_or_fail
-    code "gtxn" [texty txni, "AssetAmount"]
-    ca amt
-    eq_or_fail
-    code "gtxn" [texty txni, "AssetSender"]
+    code "gtxn" [texty txni, fReceiver]
     code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
-  DLE_CheckPay {} ->
-    xxx "ALGO CheckPay"
+    code "gtxn" [texty txni, fAmount]
+    when rmFee $ do
+      lookup_fee_amount
+      op "-"
+    ca amt
+    eq_or_fail
+    -- NOTE: We don't care who the sender is... this means that you can get
+    -- other people to pay for you if you want.
+    -- code "gtxn" [texty txni, fSender]
   DLE_Claim at fs t a mmsg -> do
     comment $ texty mmsg
     comment $ texty $ unsafeRedactAbsStr $ show at
@@ -743,8 +766,8 @@ ce = \case
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-    where
-      check = ca a >> or_fail
+      where
+        check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef {} -> xxx "algo mapref"
@@ -877,14 +900,14 @@ ct = \case
     check_nextSt
     halt_should_be isHalt
     finalize
-    where
-      (isHalt, check_nextSt) =
-        case msvs of
-          --- XXX fix this so it makes sure it is zero bytes
+      where
+        (isHalt, check_nextSt) =
+          case msvs of
+            --- XXX fix this so it makes sure it is zero bytes
           Nothing -> (True, halttxn)
             where
               halttxn = do
-                txni <- talloc
+                txni <- talloc True
                 code "gtxn" [texty txni, "TypeEnum"]
                 code "int" ["pay"]
                 eq_or_fail
@@ -908,10 +931,10 @@ ct = \case
                         case v == timev || a == DLA_Var timev of
                           True -> more'
                           False -> a : more'
-                        where
-                          more' = delete_timev more
+                          where
+                            more' = delete_timev more
                 let svs' = delete_timev svs
-                -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
+                    -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
                 cstate (HM_Set which) svs'
                 readArg argNextSt
                 eq_or_fail
@@ -990,11 +1013,8 @@ txnToHandler = txnAppl + 1
 txnFromHandler :: Word8
 txnFromHandler = txnToHandler + 1
 
-txnToContract :: Word8
-txnToContract = txnFromHandler + 1
-
-txnFromContract0 :: Word8
-txnFromContract0 = txnToContract + 1
+txnUser0 :: Word8
+txnUser0 = txnFromHandler + 1
 
 -- Args:
 -- 0   : Previous state
@@ -1029,7 +1049,7 @@ readArg which =
   code "gtxna" [texty txnAppl, "ApplicationArgs", texty which]
 
 lookup_sender :: App ()
-lookup_sender = code "gtxn" [texty txnToContract, "Sender"]
+lookup_sender = code "gtxn" [texty txnAppl, "Sender"]
 
 lookup_last :: App ()
 lookup_last = readArg argLast >> cfrombs T_UInt
@@ -1049,11 +1069,12 @@ runApp eShared eWhich eLets emTimev m = do
   eOutputR <- newIORef mempty
   let eHP = 0
   let eSP = 255
-  eTxnsR <- newIORef $ txnFromContract0 - 1
+  eTxnsR <- newIORef $ txnUser0 - 1
   let eVars = mempty
   -- Everything initial is small
   let eLetSmalls = M.map (\_ -> True) eLets
   let eFinalize = return ()
+  eFromTxns <- newIORef $ mempty
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
@@ -1065,23 +1086,18 @@ ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
   let svs = dvdeletem last_timemv svs_
    in fmap Just $
-        fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-          let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
-          let args = svs <> msg
-          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
-          let argCount = fromIntegral argFirstUser + length args
-          let eLets1 = M.insert from lookup_sender eLets0
-          let _lookup_txn_value = do
-                code "gtxn" [texty txnToContract, "Amount"]
-                lookup_fee_amount
-                op "-"
-          let eLets2 = eLets1 -- XXX
-          let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
-          let eLets4 = case last_timemv of
-                Nothing -> eLets3
-                Just x -> M.insert x lookup_last eLets3
-          let eLets = eLets4
-          runApp eShared eWhich eLets (Just timev) $ do
+     fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
+       let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
+       let args = svs <> msg
+       let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
+       let argCount = fromIntegral argFirstUser + length args
+       let eLets1 = M.insert from lookup_sender eLets0
+       let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
+       let eLets3 = case last_timemv of
+                      Nothing -> eLets2
+                      Just x -> M.insert x lookup_last eLets2
+       let eLets = eLets3
+       runApp eShared eWhich eLets (Just timev) $ do
             comment ("Handler " <> texty eWhich)
             comment "Check txnAppl"
             code "gtxn" [texty txnAppl, "TypeEnum"]
@@ -1108,14 +1124,6 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
             -- XXX get from SDK or use min_balance opcode
             cl $ DLL_Int sb $ 100000
             op "+"
-            eq_or_fail
-
-            comment "Check txnToContract"
-            code "gtxn" [texty txnToContract, "TypeEnum"]
-            code "int" ["pay"]
-            eq_or_fail
-            code "gtxn" [texty txnToContract, "Receiver"]
-            code "byte" [tContractAddr]
             eq_or_fail
 
             comment "Check txnFromHandler (us)"
@@ -1148,7 +1156,8 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
               eq_or_fail
 
               lookup_fee_amount
-              csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
+              -- XXX only the FromContract ones
+              csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnUser0 .. txns]
               eq_or_fail
 
               comment "Check time limits"
@@ -1202,8 +1211,8 @@ compile_algo disp pl = do
         disp lab t
         return
           ( Aeson.String t
-          , Aeson.Number $ fromInteger az
-          , do
+            , Aeson.Number $ fromInteger az
+            , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
               op "=="
@@ -1256,7 +1265,7 @@ compile_algo disp pl = do
     check_rekeyto
     comment "Check that everyone's here"
     code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnUser0
     op ">="
     or_fail
     comment "Check txnAppl (us)"
@@ -1309,7 +1318,7 @@ compile_algo disp pl = do
   ctcm <- simple $ do
     comment "Check size"
     code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnUser0
     op ">="
     or_fail
     comment "Check txnAppl"
@@ -1344,7 +1353,7 @@ compile_algo disp pl = do
     code "txn" ["CloseRemainderTo"]
     eq_or_fail
     code "txn" ["GroupIndex"]
-    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnUser0
     op ">="
     or_fail
     code "b" ["done"]
@@ -1355,7 +1364,7 @@ compile_algo disp pl = do
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
   let res1 = M.insert "unsupported" (Aeson.Bool sFailed) res0
-  -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
+      -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
   return $ Aeson.Object $ HM.fromList $ M.toList res1
 
 connect_algo :: Connector

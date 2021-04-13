@@ -394,8 +394,7 @@ export const transfer = async (
 
   debug('sender.sendTransaction(', txn, ')');
   const r = await (await sender.sendTransaction(txn)).wait();
-
-  assert(r !== null);
+  assert(r !== null, `transfer receipt wait null`);
 
   return fetchAndRejectInvalidReceiptFor(r.transactionHash);
 };
@@ -519,11 +518,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           // The following must be true for the first sendrecv.
           try {
-            assert(onlyIf, true);
-            assert(soloSend, true);
-            assert(eq(funcNum, 1));
-            assert(!timeout_delay);
-            assert(toks.length, 0);
+            assert(onlyIf, `verifyContract: onlyIf must be true`);
+            assert(soloSend, `verifyContract: soloSend must be true`);
+            assert(eq(funcNum, 1), `verifyContract: funcNum must be 1`);
+            assert(!timeout_delay, `verifyContract: no timeout`);
+            assert(toks.length == 0, `verifyContract: no tokens`);
           } catch (e) {
             throw Error(`impossible: Deferred deploy sendrecv assumptions violated.\n${e}`);
           }
@@ -641,7 +640,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       debugo({...dpre, rt, step: `pre wait`});
       const rm = await rt.wait();
       debugo({...dpre, rt, rm, step: `pre receipt`});
-      assert(rm !== null);
+      assert(rm !== null, `contract invocation receipt wait null`);
       const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
       debugo({...dpre, rt, rm, ro, step: `post receipt`});
       // ro's blockNumber might be interesting

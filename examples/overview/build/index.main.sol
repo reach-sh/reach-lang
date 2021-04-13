@@ -1,7 +1,13 @@
 // Automatically generated with Reach 0.1.2
 pragma abicoder v2;
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.2;
+interface IERC20 {
+    function allowance(address owner, address spender) external view returns (uint256);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+}
+
 contract Stdlib {
   function safeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require((z = x + y) >= x, "add overflow"); }
@@ -31,34 +37,65 @@ contract Stdlib {
       }
     }
   }
+
+  function tokenAllowance(address payable token, address owner, address spender) internal returns (uint256 amt) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.allowance.selector, owner, spender));
+    checkFunReturn(ok, ret, 'token.allowance');
+    amt = abi.decode(ret, (uint256));
+  }
+
+  function tokenTransferFrom(address payable token, address sender, address recipient, uint256 amt) internal returns (bool res) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transferFrom.selector, sender, recipient, amt));
+    checkFunReturn(ok, ret, 'token.transferFrom');
+    res = abi.decode(ret, (bool));
+  }
+
+  function tokenTransfer(address payable token, address recipient, uint256 amt) internal returns (bool res) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transfer.selector, recipient, amt));
+    checkFunReturn(ok, ret, 'token.transfer');
+    res = abi.decode(ret, (bool));
+  }
+
+  function safeTokenTransfer(address payable token, address recipient, uint256 amt) internal {
+    require(tokenTransfer(token, recipient, amt));
+  }
+
+  function readPayAmt(address sender, address payable token) internal returns (uint256 amt) {
+    amt = tokenAllowance(token, sender, address(this));
+    require(checkPayAmt(sender, token, amt));
+  }
+
+  function checkPayAmt(address sender, address payable token, uint256 amt) internal returns (bool) {
+    return tokenTransferFrom(token, sender, address(this), amt);
+  }
 }
 
 struct T0 {
-  uint256 v2;
+  uint256 v20;
    }
 struct T1 {
-  address payable v5;
-  uint256 v6;
-  uint256 v11;
+  address payable v23;
+  uint256 v24;
+  uint256 v27;
    }
 struct T2 {
-  uint256 v6;
+  uint256 v24;
    }
 struct T3 {
   T0 svs;
   T2 msg;
    }
 struct T4 {
-  address payable v5;
-  uint256 v6;
-  uint256 v19;
+  address payable v23;
+  uint256 v24;
+  uint256 v33;
    }
 struct T6 {
   T1 svs;
   bool msg;
    }
 struct T7 {
-  uint8[128] v23;
+  uint8[128] v37;
    }
 struct T8 {
   T4 svs;
@@ -71,16 +108,16 @@ contract ReachContract is Stdlib {
   
   event e0();
   struct _F0 {
-    uint256 v2;
+    uint256 v20;
      }
   constructor() payable {
     emit e0();
     _F0 memory _f;
-    _f.v2 = uint256(block.number);
+    _f.v20 = uint256(block.number);
     
     
     T0 memory nsvs;
-    nsvs.v2 = _f.v2;
+    nsvs.v20 = _f.v20;
     current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
      }
@@ -90,18 +127,19 @@ contract ReachContract is Stdlib {
   event e1(T3 _a);
   
   function m1(T3 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))), 'state check at ./index.rsh:13:9:dot');
+    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))));
     current_state = 0x0;
     
     
-    require(true && true, 'timeout check at ./index.rsh:13:9:dot');
-    require((msg.value == uint256(0)), '(./index.rsh:13:9:dot,[],Just "pay amount correct")');
-    require(true, '(./index.rsh:13:9:dot,[],Just "sender correct")');
+    require(true && true);
+    require(true);
+    require(msg.value == uint256(0));
+    require(true);
     emit e1(_a);
     T1 memory nsvs;
-    nsvs.v5 = payable(msg.sender);
-    nsvs.v6 = _a.msg.v6;
-    nsvs.v11 = uint256(block.number);
+    nsvs.v23 = payable(msg.sender);
+    nsvs.v24 = _a.msg.v24;
+    nsvs.v27 = uint256(block.number);
     current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
     
      }
@@ -109,18 +147,19 @@ contract ReachContract is Stdlib {
   event e2(T6 _a);
   
   function m2(T6 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))), 'state check at ./index.rsh:18:9:dot');
+    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))));
     current_state = 0x0;
     
     
-    require(true && true, 'timeout check at ./index.rsh:18:9:dot');
-    require((msg.value == _a.svs.v6), '(./index.rsh:18:9:dot,[],Just "pay amount correct")');
-    require(true, '(./index.rsh:18:9:dot,[],Just "sender correct")');
+    require(true && true);
+    require(true);
+    require(msg.value == _a.svs.v24);
+    require(true);
     emit e2(_a);
     T4 memory nsvs;
-    nsvs.v5 = _a.svs.v5;
-    nsvs.v6 = _a.svs.v6;
-    nsvs.v19 = uint256(block.number);
+    nsvs.v23 = _a.svs.v23;
+    nsvs.v24 = _a.svs.v24;
+    nsvs.v33 = uint256(block.number);
     current_state = uint256(keccak256(abi.encode(uint256(2), nsvs)));
     
      }
@@ -128,14 +167,15 @@ contract ReachContract is Stdlib {
   event e3(T8 _a);
   
   function m3(T8 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))), 'state check at ./index.rsh:23:9:dot');
+    require(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))));
     current_state = 0x0;
     
     
-    require(true && true, 'timeout check at ./index.rsh:23:9:dot');
-    require((msg.value == uint256(0)), '(./index.rsh:23:9:dot,[],Just "pay amount correct")');
-    require((_a.svs.v5 == payable(msg.sender)), '(./index.rsh:23:9:dot,[],Just "sender correct")');
-    _a.svs.v5.transfer(_a.svs.v6);
+    require(true && true);
+    require(true);
+    require(msg.value == uint256(0));
+    require((_a.svs.v23 == payable(msg.sender)));
+    _a.svs.v23.transfer(_a.svs.v24);
     emit e3(_a);
     current_state = 0x0;
     selfdestruct(payable(msg.sender));
