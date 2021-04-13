@@ -44,6 +44,12 @@ import Data.Functor ((<&>))
 
 type App = ReaderT Env IO
 
+data ExnEnv = ExnEnv
+  { e_exn_in_throw :: Bool
+  , e_exn_ty :: Maybe DLType
+  , e_exn_st :: Maybe SLState
+  , e_exn_mode :: SLMode }
+
 data Env = Env
   { e_id :: Counter
   , e_who :: Maybe SLPart
@@ -59,6 +65,7 @@ data Env = Env
   , e_mape :: MapEnv
   , e_while_invariant :: Bool
   , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
+  , e_exn :: IORef ExnEnv
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -3915,7 +3922,67 @@ evalStmt = \case
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"
       locAtf (srcloc_after_semi "switch" a sp) $ retSeqn fr ks_ne
-  (s@(JSThrow a _ _) : _) -> illegal a s "throw"
+  ((JSThrow a e _) : _) -> do
+    (dv_ty, dv) <- locAtf (srcloc_jsa "throw" a) (evalExpr e) >>= compileTypeOf . snd
+    curSt <- readSt id
+    exn_ref <- asks e_exn
+    exn <- liftIO $ readIORef exn_ref
+    -- Ensure we are throwing inside of a `try` block
+    unless (e_exn_in_throw exn) $ expect_ Err_Throw_No_Catch
+    -- Set or ensure the type that this `try` block is expected to catch
+    case e_exn_ty exn of
+      Nothing -> liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_ty = Just dv_ty })
+      Just ty
+        | ty /= dv_ty -> expect_ $ Err_Try_Type_Mismatch ty dv_ty
+        | otherwise   -> return ()
+    saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ e_exn_mode exn)
+    liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_st = Just curSt })
+    forM_ (e_exn_st exn) mergeSt
+    st <- asks e_st
+    liftIO $ modifyIORef st (\ s -> s { st_live = False })
+    asks (SLStmtRes . e_sco) <*> pure []
+  ((JSTry try_a (JSBlock _ stmts _) [JSCatch _ _ ce _ (JSBlock _ handler _)] _) : ks) -> do
+    locAtf (srcloc_jsa "try" try_a) $ do
+      at <- withAt id
+      mode <- readSt st_mode
+      -- Create fresh exception environment
+      exn_env_ref <-
+        liftIO $ newIORef $ ExnEnv
+          { e_exn_in_throw = True
+          , e_exn_ty = Nothing
+          , e_exn_st = Nothing
+          , e_exn_mode = mode  }
+      let locTry = local (\e -> e { e_exn = exn_env_ref })
+      -- Process try block
+      SLRes try_stmts try_st try_ret <- captureRes $ locTry $ evalStmt stmts
+      exn_env <- liftIO $ readIORef exn_env_ref
+      case exn_env of
+        -- Get the type of thrown/caught expression & the state during throw
+        ExnEnv { e_exn_ty = Just arg_ty, e_exn_st = Just thrown_st } -> do
+            -- Bind `catch` argument before evaluating handler
+            sco <- asks e_sco
+            handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
+            handler_env <- evalDeclLHS True Public (sco_cenv sco) (SLV_DLVar handler_arg) ce
+            -- Eval handler
+            SLRes handler_stmts handler_st (SLStmtRes _ handler_res) <-
+              locSt thrown_st $
+                captureRes $
+                  locSco (sco { sco_cenv = handler_env }) $
+                    evalStmt handler
+            saveLift $ DLS_Try at try_stmts handler_arg handler_stmts
+            -- Coalesce the try and handler returns
+            let levelHelp = SLStmtRes sco . map (\(ra, rb, rc, _) -> (ra, rb, rc, True))
+            let SLStmtRes _ try_res = try_ret
+            ret <- combineStmtRes Public (levelHelp handler_res) try_st (levelHelp try_res)
+            -- Ensure the successful try block and catch block end with compatible states
+            setSt try_st
+            mergeSt handler_st
+            retSeqn ret ks
+        -- If there were no `throw`s in try block, ignore handler
+        _ -> do
+          saveLifts try_stmts
+          setSt try_st
+          retSeqn try_ret ks
   (s@(JSTry a _ _ _) : _) -> illegal a s "try"
   ((JSVariable var_a while_decls _vsp) : var_ks) -> do
     locAtf (srcloc_jsa "var" var_a) $
