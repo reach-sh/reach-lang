@@ -94,7 +94,7 @@ These functions create and interact with @tech{account} representations.
 @(hrule)
 @(mint-define! '("getDefaultAccount"))
 @js{
- getDefaultAccount(?label: string) => Promise<acc> }
+ getDefaultAccount() => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for a "default" @tech{account} on the @tech{consensus network}.
 The meaning of "default account" varies between contexts.
@@ -104,43 +104,40 @@ When running in node.js while connected to one of reach's standard devnets,
 the default account will be connected to a faucet on the devnet.
 This promise will be rejected with an exception
 if no sensible default account can be accessed for the current context.
-A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
 @(hrule)
 @(mint-define! '("newAccountFromSecret"))
 @js{
- newAccountFromSecret(secret: string, ?label: string) => Promise<acc> }
+ newAccountFromSecret(secret: string) => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given secret.
-The details of the secret encoding are specified uniquely to the @tech{consensus network}. A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
+The details of the secret encoding are specified uniquely to the @tech{consensus network}.
 
 
 @(hrule)
 @(mint-define! '("newAccountFromMnemonic"))
 @js{
- newAccountFromMnemonic(phrase: string, ?label: string) => Promise<acc> }
+ newAccountFromMnemonic(phrase: string) => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
-The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}. A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
+The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}.
 
 
 @(hrule)
 @(mint-define! '("newTestAccount"))
 @js{
- newTestAccount(balance, ?label) => Promise<acc> }
+ newTestAccount(balance) => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
-A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
 @jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
 
 @(hrule)
 @(mint-define! '("createAccount"))
 @js{
-  createAccount(?label) => Promise<acc> }
+  createAccount() => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network}. The account will have an empty balance of @tech{network tokens}.
-A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
 @(hrule)
 @(mint-define! '("fundFromFaucet"))
@@ -154,10 +151,9 @@ Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstra
 @(hrule)
 @(mint-define! '("connectAccount"))
 @js{
- connectAccount(networkAccount, ?label) => Promise<acc> }
+ connectAccount(networkAccount) => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
-A @tt{label} that distinguishes the account may optionally be provided to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
 @js{
     // network => networkAccount type
@@ -177,6 +173,13 @@ A @tt{label} that distinguishes the account may optionally be provided to use in
   acc.getAddress() => string}
 
 @index{acc.getAddress} Returns the @tech{account}'s address as a string. The format of this string varies across @tech{connectors}.
+
+@(hrule)
+@(mint-define! '("setDebugLabel"))
+@js{
+  acc.setDebugLabel(string) => acc }
+
+@index{acc.setDebugLabel} An @tech{account} may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the @tech{account} address will be used.
 
 @(hrule)
 @(mint-define! '("balanceOf"))

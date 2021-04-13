@@ -336,7 +336,7 @@ const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgr
 const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  const acc = await connectAccount(networkAccount, "Dummy");
+  const acc = await connectAccount(networkAccount);
   return acc;
 });
 
@@ -397,7 +397,7 @@ export const transfer = async (
 };
 
 
-export const connectAccount = async (networkAccount: NetworkAccount, _label: string): Promise<Account> => {
+export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
   if (networkAccount.getAddress && !networkAccount.address) {
     // @ts-ignore
@@ -409,7 +409,7 @@ export const connectAccount = async (networkAccount: NetworkAccount, _label: str
   const address = await getAddr({networkAccount});
   if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
-  const label = _label || shad;
+  let label = shad;
 
   const iam = (some_addr: Address): Address => {
     if (some_addr == address) {
@@ -865,31 +865,37 @@ export const connectAccount = async (networkAccount: NetworkAccount, _label: str
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
   };
 
-  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib };
+  function setDebugLabel(newLabel: string): Account {
+    label = newLabel;
+    // @ts-ignore
+    return this;
+  }
+
+  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel };
 };
 
-export const newAccountFromSecret = async (secret: string, label: string): Promise<Account> => {
+export const newAccountFromSecret = async (secret: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = (new ethers.Wallet(secret)).connect(provider);
-  const acc = await connectAccount(networkAccount, label);
+  const acc = await connectAccount(networkAccount);
   return acc;
 };
 
-export const newAccountFromMnemonic = async (phrase: string, label: string): Promise<Account> => {
+export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
-  const acc = await connectAccount(networkAccount, label);
+  const acc = await connectAccount(networkAccount);
   return acc;
 };
 
-export const getDefaultAccount = async (label: string): Promise<Account> => {
+export const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);
   if (isIsolatedNetwork || networkDesc.type == 'window') {
     const provider = await getProvider();
     // TODO: teach ts what the specialized type of provider is in this branch
     // @ts-ignore
     const signer: Signer = provider.getSigner();
-    return await connectAccount(signer, label);
+    return await connectAccount(signer);
   }
   throw Error(`Default account not available for REACH_CONNECTOR_MODE=${connectorMode}`);
 };
@@ -904,24 +910,24 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
     // so no further secrets need be provided in order to access its funds.
     // This is true of reach-provided devnets.
     // TODO: allow the user to set the faucet via mnemnonic.
-    return await getDefaultAccount("Faucet");
+    return await getDefaultAccount();
   } else if (networkDesc.type === 'window') {
     // @ts-ignore // 0x539 = 1337
     if (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539') {
       // XXX this is a hacky way of checking if we're on a devnet
       // XXX only localhost:8545 is supported
       const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-      return await connectAccount(p.getSigner(), "Faucet");
+      return await connectAccount(p.getSigner());
     }
   }
   throw Error(`getFaucet not supported in this context.`)
 });
 
-export const createAccount = async (label: string) => {
+export const createAccount = async () => {
   debug(`createAccount with 0 balance.`);
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  return await connectAccount(networkAccount, label);
+  return await connectAccount(networkAccount);
 }
 
 export const fundFromFaucet = async (account: AccountTransferable, value: any) => {
@@ -929,10 +935,10 @@ export const fundFromFaucet = async (account: AccountTransferable, value: any) =
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: any, label: string): Promise<Account> => {
+export const newTestAccount = async (startingBalance: any): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
-  const acc = await createAccount(label);
+  const acc = await createAccount();
   const to = await getAddr(acc);
 
   try {
