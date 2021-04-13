@@ -47,7 +47,8 @@ type App = ReaderT Env IO
 data ExnEnv = ExnEnv
   { e_exn_in_throw :: Bool
   , e_exn_ty :: Maybe DLType
-  , e_exn_st :: Maybe SLState }
+  , e_exn_st :: Maybe SLState
+  , e_exn_mode :: SLMode }
 
 data Env = Env
   { e_id :: Counter
@@ -3934,7 +3935,7 @@ evalStmt = \case
       Just ty
         | ty /= dv_ty -> expect_ $ Err_Try_Type_Mismatch ty dv_ty
         | otherwise   -> return ()
-    saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ st_mode curSt)
+    saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ e_exn_mode exn)
     liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_st = Just curSt })
     forM_ (e_exn_st exn) mergeSt
     st <- asks e_st
@@ -3943,12 +3944,14 @@ evalStmt = \case
   ((JSTry try_a (JSBlock _ stmts _) [JSCatch _ _ ce _ (JSBlock _ handler _)] _) : ks) -> do
     locAtf (srcloc_jsa "try" try_a) $ do
       at <- withAt id
+      mode <- readSt st_mode
       -- Create fresh exception environment
       exn_env_ref <-
         liftIO $ newIORef $ ExnEnv
           { e_exn_in_throw = True
           , e_exn_ty = Nothing
-          , e_exn_st = Nothing }
+          , e_exn_st = Nothing
+          , e_exn_mode = mode  }
       let locTry = local (\e -> e { e_exn = exn_env_ref })
       -- Process try block
       SLRes try_stmts try_st try_ret <- captureRes $ locTry $ evalStmt stmts
