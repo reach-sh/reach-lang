@@ -1894,7 +1894,7 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
-  variable_transfers:
+  variable-transfers:
     docker:
     - auth:
         password: $DOCKER_PASSWORD
@@ -1922,16 +1922,16 @@ jobs:
         keys:
         - "hs-{{ .Revision }}"
     - run:
-        command: "cd examples && ./one.sh clean variable_transfers"
-        name: clean variable_transfers
+        command: "cd examples && ./one.sh clean variable-transfers"
+        name: clean variable-transfers
         no_output_timeout: 10m
     - run:
-        command: "cd examples && ./one.sh build variable_transfers"
-        name: rebuild variable_transfers
+        command: "cd examples && ./one.sh build variable-transfers"
+        name: rebuild variable-transfers
         no_output_timeout: 10m
     - run:
-        command: "cd examples && ./one.sh run variable_transfers"
-        name: run variable_transfers
+        command: "cd examples && ./one.sh run variable-transfers"
+        name: run variable-transfers
         no_output_timeout: 5m
     - jq/install
     - slack/notify:
@@ -2242,7 +2242,7 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
-    - variable_transfers:
+    - variable-transfers:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

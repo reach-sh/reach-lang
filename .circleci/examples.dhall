@@ -9,7 +9,7 @@
 , "tut-5-attack"
 , "overview-react"
 , "multisig"
-, "variable_transfers"
+, "variable-transfers"
 , "chicken-fork"
 , "overview-more-deps"
 , "tut-7-array"
