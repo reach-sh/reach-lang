@@ -36,6 +36,18 @@ instance Show SLMode where
     SLM_ConsensusStep -> "consensus step"
     SLM_ConsensusPure -> "consensus pure"
 
+isConsensusStep :: SLMode -> Bool
+isConsensusStep = \case
+  SLM_ConsensusStep -> True
+  SLM_ConsensusPure -> True
+  _ -> False
+
+isLocalStep :: SLMode -> Bool
+isLocalStep = \case
+  SLM_LocalStep -> True
+  SLM_LocalPure -> True
+  _ -> False
+
 --- A state represents the state of the protocol, so it is returned
 --- out of a function call.
 data SLState = SLState

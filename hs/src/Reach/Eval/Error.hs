@@ -218,14 +218,6 @@ getIllegalModeSuggestion :: SLMode -> [SLMode] -> String
 getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expected mode"
 getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
-    isConsensusStep = \case
-      SLM_ConsensusStep -> True
-      SLM_ConsensusPure -> True
-      _ -> False
-    isLocalStep = \case
-      SLM_LocalStep -> True
-      SLM_LocalPure -> True
-      _ -> False
     get = \case
       (SLM_Module, _) -> "create a `React.App`"
       (s, SLM_Step)

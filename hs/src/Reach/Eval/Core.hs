@@ -3934,7 +3934,7 @@ evalStmt = \case
       Just ty
         | ty /= dv_ty -> expect_ $ Err_Try_Type_Mismatch ty dv_ty
         | otherwise   -> return ()
-    saveLift =<< withAt (`DLS_Throw` dv)
+    saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ st_mode curSt)
     liftIO $ modifyIORef exn_ref (\ ex -> ex { e_exn_st = Just curSt })
     forM_ (e_exn_st exn) mergeSt
     st <- asks e_st
