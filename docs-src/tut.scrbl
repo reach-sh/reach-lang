@@ -1619,7 +1619,7 @@ We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the s
 @item{React programs are JavaScript programs that use a special library that allows you to mix HTML inside of the body of your JavaScript.}
 @item{React has a special compiler that combines a bundle of JavaScript programs, and all their dependencies, into one large file that can be deployed on a static Web server.
 This is called "packing".}
-@item{When you're developing and testing with React, you run a special development web server that watches and updates this packed file every time you modify a source file, so you don't have to constantly run the compiler.}
+@item{When you're developing and testing with React, you run a special development Web server that watches and updates this packed file every time you modify a source file, so you don't have to constantly run the compiler.}
 @item{Reach automates the process of starting this development server for you when you run @exec{./reach react} and gives you access to it at @tt{http://localhost:3000/}.}
 ]}
 
