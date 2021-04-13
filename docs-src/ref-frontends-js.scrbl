@@ -10,6 +10,13 @@ The Reach JavaScript standard library, @(mint-define! '("stdlib")) @jsin{stdlib}
  @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
 ]
 
+These modules are available in the @link["https://www.npmjs.com/package/@reach-sh/stdlib"]{@tt{@"@"reach-sh/stdlib}} @link["https://www.npmjs.com/"]{@tt{npm}} package, which you can install via:
+@cmd{
+npm install @"@"reach-sh/stdlib
+}
+Although, if you use @exec{reach run}, you don't need to install this package, because @exec{reach} automatically manages your standard library install behind the scenes.
+You only need to install the package directly if you are running your frontend without @exec{reach} or using a tool like @link["https://webpack.js.org/"]{webpack} for deployment.
+
 These libraries provide a standard interface that support developing @tech{frontends}.
 
 @section[#:tag "ref-frontends-js-types"]{Types}
