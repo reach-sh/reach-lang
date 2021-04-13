@@ -1,9 +1,4 @@
-// ****************************************************************************
-// standard library for Javascript users
-// ****************************************************************************
-
-// XXX: do not import any types from algosdk; instead copy/paste them below
-// XXX: can stop doing this workaround once @types/algosdk is shippable
+// XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
 import ethers from 'ethers';
@@ -12,7 +7,7 @@ import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import msgpack from '@msgpack/msgpack';
 
-// XXX: uncomment this import as needed for debugging in browser
+// DEBUG: uncomment this for debugging in browser
 // @ts-ignore
 // import algosdk__src__transaction from 'algosdk/src/transaction';
 
@@ -71,7 +66,7 @@ type AlgoSigner = {
 // because this also includes AlgoSigner
 type Wallet = {
     addr: Address,
-    sk?: SecretKey, // TODO: describe length? (64)
+    sk?: SecretKey,
     AlgoSigner?: AlgoSigner,
   }
 type SignedTxn = Uint8Array;
@@ -100,9 +95,6 @@ type TxnInfo = {
     'confirmed-round': number,
     'application-index'?: number,
   }
-// type AcctInfo = {
-//     amount: number // bignumber?
-//   }
 type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,

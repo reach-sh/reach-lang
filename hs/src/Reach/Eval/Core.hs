@@ -3112,11 +3112,13 @@ doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do
   isClass <- is_class who
   at <- withAt id
+  nonce <- ctxt_alloc
   ctxt_lift_expr
     (DLVar at Nothing T_Address)
     (DLE_PrimOp at SELF_ADDRESS
        [ DLA_Literal (DLL_Bytes who)
        , DLA_Literal (DLL_Bool isClass)
+       , DLA_Literal (DLL_Int at $ fromIntegral nonce)
        ])
 
 all_just :: [Maybe a] -> Maybe [a]
@@ -3142,20 +3144,22 @@ compilePayAmt v = do
       return $ DLPayAmt a []
     (T_Tuple ts, DLAE_Tuple aes) -> do
       let go sa = \case
-            (T_UInt, gae) ->
-              case sa of
-                (False, DLPayAmt _ tks) -> do
-                  a <- compileArgExpr gae
-                  return $ (True, DLPayAmt a tks)
-                _ -> do
-                  expect_ $ Err_Pay_DoubleNetworkToken
+            (T_UInt, gae) -> do
+              let ((seenNet, sks), DLPayAmt _ tks) = sa
+              when seenNet $
+                expect_ $ Err_Pay_DoubleNetworkToken
+              a <- compileArgExpr gae
+              return $ ((True, sks), DLPayAmt a tks)
             (T_Tuple [ T_UInt, T_Token ], DLAE_Tuple [ amt_ae, token_ae ]) -> do
+              let ((seenNet, sks), DLPayAmt nts tks) = sa
               amt_a <- compileArgExpr amt_ae
               token_a <- compileArgExpr token_ae
-              let (seenNet, DLPayAmt nts tks) = sa
-              return $ (seenNet, (DLPayAmt nts $ ((amt_a, token_a) : tks)))
+              when (token_a `elem` sks) $ do
+                expect_ $ Err_Pay_DoubleToken
+              let sks' = token_a : sks
+              return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
             _ -> expect_t v $ Err_Pay_Type
-      snd <$> (foldM go (False, DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+      snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
     _ -> expect_t v $ Err_Pay_Type
 
 doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
@@ -3217,16 +3221,17 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
   let toks = filter ((==) T_Token . varType) dr_msg
   unless (null toks) $ do
-    when (st_after_first st) $
-      expect_ $ Err_Token_NotOnFirst
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
       expect_ $ Err_Token_InWhile
+    when (st_after_first st) $
+      expect_ $ Err_Token_NotOnFirst
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
           , st_toks = st_toks st <> toks
+          , st_after_first = True
           }
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
   let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar dr_from))
@@ -3660,7 +3665,6 @@ findStmtTrampoline = \case
       st
         { st_mode = SLM_Step
         , st_after_ctor = True
-        , st_after_first = True
         }
     let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
     (steplifts, cr) <-

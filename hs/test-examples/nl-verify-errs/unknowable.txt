@@ -3,11 +3,11 @@ Verification failed:
   of theorem unknowable("Bob", x/18)
   at ./unknowable.rsh:22:17:application
 
-  Bob could learn of x/18 via z/26.
+  Bob could learn of x/18 via z/27.
 
-  z/26 was published at ./unknowable.rsh:19:9:dot
-  ^ which contains info about v24 (defined at ./unknowable.rsh:16:22:application)
-  ^ which contains info about v23 (defined at ./unknowable.rsh:15:21:application)
+  z/27 was published at ./unknowable.rsh:19:9:dot
+  ^ which contains info about v25 (defined at ./unknowable.rsh:16:22:application)
+  ^ which contains info about v24 (defined at ./unknowable.rsh:15:21:application)
   ^ which contains info about x/18 (defined at ./unknowable.rsh:14:15:id)
 
 Verifying for generic connector
@@ -15,4 +15,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 7 theorems; 1 failures. :'(
+Checked 8 theorems; 1 failures. :'(

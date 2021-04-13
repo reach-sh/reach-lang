@@ -8,13 +8,13 @@ Verification failed:
   at ./overflow.rsh:12:17:application
 
   // Violation witness
-  const x/21 = 1;
+  const x/22 = 1;
   //    ^ from evaluating interact("A")."get"() at ./overflow.rsh:9:40:application
   const dlc_UInt_max = 1;
   //    ^ from builtin at ./overflow.rsh:3:30:application
 
   // Theorem formalization
-  assert(x/21 <= (UInt.max - 1));
+  assert(x/22 <= (UInt.max - 1));
 
   Verifying when NO participants are honest
 Verification failed:
@@ -32,4 +32,4 @@ Verification failed:
   at ./overflow.rsh:12:17:application
 
   (details omitted on repeat)
-Checked 11 theorems; 3 failures. :'(
+Checked 12 theorems; 3 failures. :'(

@@ -328,6 +328,7 @@ smtPrimOp p dargs =
       case dargs of
         [ DLA_Literal (DLL_Bytes pn)
           , DLA_Literal (DLL_Bool isClass)
+          , _
           ] -> \_ ->
             case isClass of
               False ->

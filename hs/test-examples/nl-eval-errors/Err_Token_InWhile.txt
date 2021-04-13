@@ -1,0 +1,1 @@
+reachc: error: ./Err_Token_InWhile.rsh:20:11:dot: Token published within while, which Reach cannot track, yet.

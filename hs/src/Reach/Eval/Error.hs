@@ -39,6 +39,7 @@ data EvalError
   | Err_ToConsensus_TimeoutArgs [JSExpression]
   | Err_ToConsensus_NoTimeoutBlock
   | Err_Pay_DoubleNetworkToken
+  | Err_Pay_DoubleToken
   | Err_Pay_Type SLValTy
   | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidOption SLVar [SLVar]
@@ -287,6 +288,8 @@ instance Show EvalError where
                   _ -> ": the second argument should have no arguments"
               _ -> ": the second argument should be an arrow, but got something else"
           _ -> ": expected one argument or two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
+    Err_Pay_DoubleToken ->
+      "Pay amount contains multiple non-network token amounts for the same token, but only one is allowed"
     Err_Pay_DoubleNetworkToken ->
       "Pay amount contains multiple network token amounts, but only one is allowed"
     Err_Pay_Type sv ->
@@ -516,7 +519,7 @@ instance Show EvalError where
     Err_Token_OnCtor ->
       "Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens."
     Err_Token_InWhile ->
-      "Token published within while"
+      "Token published within while, which Reach cannot track, yet."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

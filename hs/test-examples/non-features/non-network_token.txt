@@ -1,1 +1,1 @@
-reachc: error: ./non-network_token.rsh:10:28:id ref: Invalid unbound identifier in expression: Token. Did you mean: ["Open","Bool","Bytes","Closed","Fun"]
+reachc: error: ./non-network_token.rsh:8:12:application: Invalid participant spec

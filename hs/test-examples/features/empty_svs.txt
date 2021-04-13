@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when ONLY "A" is honest
   Verifying when ONLY "B" is honest
   Verifying when ONLY "C" is honest
-Checked 11 theorems; No failures!
+Checked 14 theorems; No failures!

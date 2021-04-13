@@ -4,6 +4,6 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Manager" is honest
   Verifying when ONLY "User" is honest
-Checked 25 theorems; No failures!
+Checked 27 theorems; No failures!
 XXX algo mapref
 XXX algo mapset

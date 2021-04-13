@@ -1,3 +1,4 @@
 reachc: error: ./Err_Eval_IncompatibleStates.rsh:6:15:application: incompatible states:
 The expected state of the program varies between branches because:
+  * Expected a publication to have been made by this point.
   * The number of active participants vary between states:  vs "A". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?

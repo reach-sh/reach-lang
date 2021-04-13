@@ -1,0 +1,1 @@
+reachc: error: ./Err_Token_OnCtor.rsh:14:9:dot: Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens.

@@ -7,14 +7,14 @@ Verification failed:
   at ./class_addr.rsh:16:14:application
 
   // Violation witness
-  const C/42 = Address!val!0;
+  const C/38 = Address!val!0;
   //    ^ from builtin at ./class_addr.rsh:4:12:application
-  const C/43 = Address!val!1;
+  const C/42 = Address!val!1;
   //    ^ from builtin at ./class_addr.rsh:4:12:application
 
   // Theorem formalization
-  require(selfAddress(""C"", #t, 19) == selfAddress(""C"", #t, 29));
+  require(selfAddress(""C"", #t, 19) == selfAddress(""C"", #t, 27));
 
   Verifying when NO participants are honest
   Verifying when ONLY "C" is honest
-Checked 8 theorems; 1 failures. :'(
+Checked 10 theorems; 1 failures. :'(
