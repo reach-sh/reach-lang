@@ -290,7 +290,7 @@ const sendAndConfirm = async (
   const untilRound = lastRound;
   const req = (await getAlgodClient()).sendRawTransaction(sendme);
   // @ts-ignore XXX
-  debug(`sendAndConfirm: ${base64ify(req.txnBytesToPost)}`);
+  debug('sendAndConfirm:', base64ify(req.txnBytesToPost));
   try {
     await req.do();
   } catch (e) {
@@ -302,7 +302,7 @@ const sendAndConfirm = async (
 
 // Backend
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
-  debug(`compile ${label}`);
+  debug('compile', label);
   let s, r;
   try {
     r = await (await getAlgodClient()).compile(code).do();
@@ -313,10 +313,10 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   }
 
   if ( s == 200 ) {
-    debug(`compile ${label} succeeded: ${JSON.stringify(r)}`);
+    debug('compile',  label, 'succeeded:', r);
     r.src = code;
     r.result = new Uint8Array(Buffer.from(r.result, 'base64'));
-    // debug(`compile transformed: ${JSON.stringify(r)}`);
+    // debug('compile transformed:', r);
     return r;
   } else {
     throw Error(`compile ${label} failed: ${s}: ${JSON.stringify(r)}`);
@@ -327,7 +327,7 @@ const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   while (true) {
     const params = await (await getAlgodClient()).getTransactionParams().do();
-    debug(`fillTxn: got params: ${JSON.stringify(params)}`);
+    debug('fillTxn: got params:', params);
     if (params.firstRound !== 0) {
       return params;
     }
@@ -596,14 +596,14 @@ const format_failed_request = (e: any) => {
 };
 
 const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
-  debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
+  debug(dhead, '--- QUERY =', query);
   let res;
   try {
     res = await query.do();
   } catch (e) {
     throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
   }
-  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
+  debug(dhead, '--- RESULT =', res);
   return res;
 };
 
@@ -722,7 +722,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
     debug('AlgoSigner.sign ...');
     const stx_obj = await AlgoSigner.sign(txn);
     debug('...signed');
-    debug({stx_obj});
+    debug(stx_obj);
     const ret = {
       tx: Buffer.from(stx_obj.blob, 'base64'),
       txID: stx_obj.txID,
@@ -745,7 +745,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const shad = thisAcc.addr.substring(2, 6);
   let label = shad;
   const pks = T_Address.canonicalize(thisAcc);
-  debug(`${shad}: connectAccount`);
+  debug(shad, ': connectAccount');
 
   const selfAddress = (): CBR_Address => {
     return pks;
@@ -764,7 +764,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const getInfo = async () => ctcInfo;
     const { Deployer, ApplicationID } = ctcInfo;
     let lastRound = ctcInfo.creationRound;
-    debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
+    debug(shad, ': attach', ApplicationID, 'created at', lastRound);
 
     const bin_comp = await compileFor(bin, ctcInfo);
     await verifyContract(ctcInfo, bin);
@@ -800,7 +800,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
-      debug(`${dhead} --- START`);
+      debug(dhead, '--- START');
 
       const handler = bin_comp.steps[funcNum];
       if ( ! handler ) {
@@ -819,7 +819,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }),
       };
       const sim_r = await sim_p( fake_res );
-      debug(`${dhead} --- SIMULATE ${JSON.stringify(sim_r)}`);
+      debug(dhead , '--- SIMULATE', sim_r);
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
 
@@ -830,12 +830,12 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           const tdn = Math.min(1000, timeout_delay.toNumber());
           params.lastRound = lastRound + tdn;
           if ( params.firstRound > params.lastRound ) {
-            debug(`${dhead} --- FAIL/TIMEOUT`);
+            debug(dhead, '--- FAIL/TIMEOUT');
             return {didTimeout: true};
           }
         }
 
-        debug(`${dhead} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
+        debug(dhead, '--- ASSEMBLE w/', params);
 
         const txnFromContracts =
           sim_txns.map(
@@ -857,15 +857,15 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
         const totalFromFee =
           txnFromContracts.reduce(((sum: number, txn: Txn): number => sum + txn.fee), 0);
-        debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
+        debug(dhead, '--- totalFromFee =', totalFromFee);
 
-        debug(`${dhead} --- isHalt = ${JSON.stringify(isHalt)}`);
+        debug(dhead, '--- isHalt =', isHalt);
 
         const actual_args =
           [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
         [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
-      debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
+      debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
       safe_args.forEach((x) => {
@@ -876,10 +876,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
       });
       const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
-      debug(`${dhead} --- PREPARE: ${JSON.stringify(safe_args.map(ui8h))}`);
+      debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
 
       const handler_sig = algosdk.makeLogicSig(handler.result, []);
-      debug(`${dhead} --- PREPARED`);
+      debug(dhead, '--- PREPARED');
 
         const whichAppl =
           isHalt ?
@@ -898,7 +898,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             thisAcc.addr,
             ui8z,
             params);
-        debug(`${dhead} --- txnFromHandler = ${JSON.stringify(txnFromHandler)}`);
+        debug(dhead, '--- txnFromHandler =', txnFromHandler);
         const txnToHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
@@ -906,7 +906,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             txnFromHandler.fee + raw_minimumBalance,
             undefined, ui8z,
             params);
-        debug(`${dhead} --- txnToHandler = ${JSON.stringify(txnToHandler)}`);
+        debug(dhead, '--- txnToHandler =', txnToHandler);
         const txnToContract =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
@@ -935,7 +935,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         const txnAppl_s = await sign_me(txnAppl);
         const txnFromHandler_s = signLSTO(txnFromHandler, handler_sig);
-        // debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s)}`);
+        // debug('txnFromHandler_s:', base64ify(txnFromHandler_s));
         const txnToHandler_s = await sign_me(txnToHandler);
         const txnToContract_s = await sign_me(txnToContract);
         const txnFromContracts_s =
@@ -949,21 +949,27 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           ...txnFromContracts_s,
         ];
 
-        debug(`${dhead} --- SEND: ${txns_s.length}`);
+        debug(dhead, '--- SEND:', txns_s.length);
         let res;
         try {
           res = await sendAndConfirm( txns_s );
 
           // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-          debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
+          debug(dhead, '--- SUCCESS:', res);
         } catch (e) {
-          const handle_error =
-            (!soloSend) ? debug : ((x:string) => { throw Error(x); });
 
           if ( e.type == 'sendRawTransaction' ) {
-            handle_error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
+            if (!soloSend) {
+              debug(dhead, '--- FAIL:', format_failed_request(e.e));
+            } else {
+              throw Error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
+            }
           } else {
-            handle_error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
+            if (!soloSend) {
+              debug(dhead, '--- FAIL:', e);
+            } else {
+              throw Error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
+            }
           }
         }
 
@@ -983,7 +989,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
-      debug(`${dhead} --- START`);
+      debug(dhead, '--- START');
 
       const handler = bin_comp.steps[funcNum];
       if ( ! handler ) {
@@ -1017,7 +1023,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           await Timeout.set(2000);
           continue;
         }
-        debug(`${dhead} --- htxn = ${JSON.stringify(htxn)}`);
+        debug(dhead, '--- htxn =', htxn);
 
         const theRound = htxn['confirmed-round'];
         let query = indexer.searchForTransactions()
@@ -1029,41 +1035,41 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           // XXX This is probably really bad
           continue;
         }
-        debug(`${dhead} --- txn = ${JSON.stringify(txn)}`);
+        debug(dhead, '--- txn =', txn);
 
         const ctc_args: Array<string> =
           txn['application-transaction']['application-args'];
-        debug(`${dhead} --- ctc_args = ${JSON.stringify(ctc_args)}`);
+        debug(dhead, '--- ctc_args =', ctc_args);
 
         const args = argsSlice(ctc_args, evt_cnt);
-        debug(`${dhead} --- args = ${JSON.stringify(args)}`);
+        debug(dhead, '--- args =', args);
 
         /** @description base64->hex->arrayify */
         const reNetify = (x: string): NV => {
           const s: string = Buffer.from(x, 'base64').toString('hex');
-          debug(`${dhead} --- reNetify(${x}) = ${s}`);
+          debug(dhead, '--- reNetify(', x, ') = ', s);
           return ethers.utils.arrayify('0x' + s);
         };
 
-        debug(`${dhead} --- tys = ${JSON.stringify(tys)}`);
+        debug(dhead, '--- tys =', tys);
 
         const args_un =
             args.map((x, i) => tys[i].fromNet(reNetify(x)));
-        debug(`${dhead} --- args_un = ${JSON.stringify(args_un)}`);
+        debug(dhead, '--- args_un =', args_un);
 
         const totalFromFee =
           T_UInt.fromNet(reNetify(ctc_args[3]));
-        debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
+        debug(dhead, '--- totalFromFee =', totalFromFee);
 
         const fromAddr =
           htxn['payment-transaction'].receiver;
         const from =
           T_Address.canonicalize({addr: fromAddr});
-        debug(`${dhead} --- from = ${JSON.stringify(from)} = ${fromAddr}`);
+        debug(dhead, '--- from =', from, '=', fromAddr);
 
         const oldLastRound = lastRound;
         lastRound = theRound;
-        debug(`${dhead} --- updating round from ${oldLastRound} to ${lastRound}`);
+        debug(dhead, '--- updating round from', oldLastRound, 'to', lastRound);
 
         // XXX ideally we'd get the whole transaction group before and not need to do this.
         const ptxn =
@@ -1077,7 +1083,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const value =
           bigNumberify(ptxn['payment-transaction'].amount)
             .sub(totalFromFee);
-        debug(`${dhead} --- value = ${JSON.stringify(value)}`);
+        debug(dhead, '--- value =', value);
 
         const getOutput = (o_lab:String, o_ctc:any): Promise<any> => {
           void(o_lab);
@@ -1101,7 +1107,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
   const deployP = async (bin: Backend): Promise<ContractAttached> => {
     must_be_supported(bin);
-    debug(`${shad} deploy`);
+    debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
 
     const { appApproval0, appClear } = algob;
@@ -1173,7 +1179,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const getInfo = async (): Promise<ContractInfo> =>
       ({ ApplicationID, creationRound, Deployer });
 
-    debug(`${shad} application created`);
+    debug(shad, 'application created');
     return await attachP(bin, getInfo());
   };
 
@@ -1351,18 +1357,18 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
   const onProg = onProgress || (() => {});
   let currentTime = await getNetworkTime();
   while (currentTime.lt(targetTime)) {
-    debug(`waitUntilTime: iteration: ${currentTime} -> ${targetTime}`);
+    debug('waitUntilTime: iteration:', currentTime, '->', targetTime);
     const status = await (await getAlgodClient()).statusAfterBlock(currentTime.toNumber()).do();
     currentTime = bigNumberify(status['last-round']);
     onProg({currentTime, targetTime});
   }
-  debug(`waitUntilTime: ended: ${currentTime} -> ${targetTime}`);
+  debug('waitUntilTime: ended:', currentTime, '->', targetTime);
   return currentTime;
 };
 
 export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
-  debug(`wait: delta=${delta} now=${now}, until=${now.add(delta)}`);
+  debug('wait: delta=', delta, 'now=', now, 'until=', now.add(delta));
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
@@ -1387,7 +1393,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   const client = await getAlgodClient();
   const appInfo = await client.getApplicationByID(ApplicationID).do();
   const appInfo_p = appInfo['params'];
-  debug(`${dhead} -- appInfo_p = ${JSON.stringify(appInfo_p)}`);
+  debug(dhead, '-- appInfo_p =', appInfo_p);
   const indexer = await getIndexer();
   const cquery = indexer.searchForTransactions()
     .applicationID(ApplicationID)
@@ -1397,13 +1403,13 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   while ( ! ctxn ) {
     const cres = await doQuery_(dhead, cquery);
     if ( cres['current-round'] < creationRound ) {
-      debug(`${dhead} -- waiting for creationRound`);
+      debug(dhead, '-- waiting for creationRound');
       await Timeout.set(1000);
       continue;
     }
     ctxn = cres.transactions[0];
   }
-  debug(`${dhead} -- ctxn = ${JSON.stringify(ctxn)}`);
+  debug(dhead, '-- ctxn =', ctxn);
   const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
   chk(ctxn, `Cannot query for creationRound accuracy`);

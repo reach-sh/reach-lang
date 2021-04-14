@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import ethers from 'ethers';
 import { CBR_Address } from './CBR';
+import util from 'util';
 
 // ****************************************************************************
 // Type Definitions
@@ -128,9 +129,15 @@ export const setDEBUG = (b: boolean) => {
 
 export const getDEBUG = (): boolean => { return DEBUG; };
 
-export const debug = (msg: any) => {
+export const debug = (...msgs: any) => {
   if (getDEBUG()) {
-    console.log(`[${(new Date()).toISOString()}] DEBUG: ${msg}`);
+    // Print arrays/objects in full instead of the default depth of 2
+    const betterMsgs = msgs.map((msg: any) =>
+      ["object", "array"].includes(typeof msg)
+        ? util.inspect(msg, false, null, true)
+        : msg);
+    // Print objects for indentation, colors, etc...
+    console.log(new Date(), `DEBUG:`, ...betterMsgs);
   }
 };
 
@@ -176,11 +183,11 @@ export const stringToHex = (x:string): string =>
 
 export const makeDigest = (prep: any) => (t:any, v:any) => {
   const args = [t, v];
-  debug(`digest(${JSON.stringify(args)}) =>`);
+  debug('digest(', args, ') =>');
   const kekCat = prep(t, v);
-  debug(`digest(${JSON.stringify(args)}) => internal(${hexlify(kekCat)})`);
+  debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
   const r = ethers.utils.keccak256(kekCat);
-  debug(`keccak(${JSON.stringify(args)}) => internal(${hexlify(kekCat)} => ${JSON.stringify(r)}`);
+  debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };
 
@@ -199,7 +206,7 @@ export const bigNumberToHex = (u: num, size: number = 32) => {
 };
 
 export const bytesEq = (x: any, y: any): boolean => {
-  debug(`bytesEq '${x}' '${y}'`);
+  debug('bytesEq(', x, ',', y, ')');
   return forceHex(x) === forceHex(y); };
 
 export const digestEq = bytesEq;
