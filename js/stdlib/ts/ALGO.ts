@@ -722,7 +722,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
     debug('AlgoSigner.sign ...');
     const stx_obj = await AlgoSigner.sign(txn);
     debug('...signed');
-    debug(stx_obj);
+    debug({stx_obj});
     const ret = {
       tx: Buffer.from(stx_obj.blob, 'base64'),
       txID: stx_obj.txID,
