@@ -38,10 +38,7 @@ import {
 import { process, window } from './shim';
 export * from './shared';
 
-
-// ****************************************************************************
 // Type Definitions
-// ****************************************************************************
 
 type BigNumber = ethers.BigNumber;
 
@@ -198,7 +195,7 @@ async function wait1port(theServer: string, thePort: string | number) {
 const getLastRound = async (): Promise<Round> =>
   (await (await getAlgodClient()).status().do())['last-round'];
 
-const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<TxnInfo> => {
+export const waitForConfirmation = async (txId: TxId, untilRound: number|undefined): Promise<TxnInfo> => {
   const algodClient = await getAlgodClient();
   let lastRound: null | number = null;
   do {
@@ -212,7 +209,7 @@ const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<TxnI
     if (confirmedRound && confirmedRound > 0) {
       return pendingInfo;
     }
-  } while (lastRound < untilRound);
+  } while (!untilRound || lastRound < untilRound);
 
   throw { type: 'waitForConfirmation', txId, untilRound, lastRound };
 };
@@ -276,7 +273,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   }
 };
 
-const getTxnParams = async (): Promise<TxnParams> => {
+export const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   while (true) {
     const params = await (await getAlgodClient()).getTransactionParams().do();
@@ -584,7 +581,7 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Byt
 export const { randomUInt, hasRandom } = makeRandom(8);
 
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
-const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
+export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
   const token = process.env.ALGO_TOKEN || rawDefaultToken;
   const server = process.env.ALGO_SERVER || 'http://localhost';
@@ -594,9 +591,7 @@ const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   return new algosdk.Algodv2(token, server, port);
 });
 
-export {setAlgodClient};
-
-const [getIndexer, setIndexer] = replaceableThunk(async () => {
+export const [getIndexer, setIndexer] = replaceableThunk(async () => {
   debug(`setting indexer to default`);
   const itoken = process.env.ALGO_INDEXER_TOKEN || rawDefaultItoken;
   const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
@@ -605,8 +600,6 @@ const [getIndexer, setIndexer] = replaceableThunk(async () => {
   await wait1port(iserver, iport);
   return new algosdk.Indexer(itoken, iserver, iport);
 });
-
-export {setIndexer};
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
