@@ -245,6 +245,7 @@ data ParallelReduceMode
   | PRM_Case
   | PRM_Timeout
   | PRM_TimeRemaining
+  | PRM_ThrowTimeout
   deriving (Eq, Generic, Show)
 
 data SLForm

@@ -112,7 +112,7 @@ data EvalError
   | Err_Fork_ResultNotObject DLType
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_ParallelReduceIncomplete String
-  | Err_ParallelReduceTimeRemainingArgs [JSExpression]
+  | Err_ParallelReduceBranchArgs String Int [JSExpression]
   | Err_Type_None SLVal
   | Err_Type_NotDT SLType
   | Err_Type_NotApplicable SLType
@@ -456,8 +456,10 @@ instance Show EvalError where
       "fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
-    Err_ParallelReduceTimeRemainingArgs args ->
-      "The `timeRemaining` branch of `parallelReduce` expects 1 argument, but received " <> show (length args)
+    Err_ParallelReduceBranchArgs b n args ->
+      let numArgs = length args in
+      let arguments = if n == 1 then "argument" else "arguments" in
+      "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->

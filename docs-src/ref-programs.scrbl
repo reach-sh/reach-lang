@@ -793,6 +793,27 @@ which will expand to:
     race(...Participants).publish();
     return [ x, y, z ]; }) }
 
+@subsubsub*section{@tt{.throwTimeout}}
+
+@reachin{.throwTimeout} is a shorthand that will throw the accumulator as an exception when a @tech{timeout} occurs.
+Therefore, a @reachin{parallelReduce} that uses this branch must be inside of a @tech{try statement}. For example,
+
+@(mint-define! '("throwTimeout"))
+@reach{
+  try {
+    const [ x, y, z ] =
+      parallelReduce([ 1, 2, 3 ])
+      ...
+      .throwTimeout(deadline)
+  } catch (e) { ... } }
+
+ will expand @reachin{throwTimeout} to:
+
+@reach{
+  .timeout(deadline, () => {
+    throw [ x, y, z ]; }) }
+
+
 @(hrule)
 
 A @tech{parallel reduce statement} is essentially an abbreviation of pattern of a @reachin{while} loop combined with a @reachin{fork} statement that you could write yourself.

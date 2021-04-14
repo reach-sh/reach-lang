@@ -960,6 +960,7 @@ evalAsEnv obj = case obj of
           <> go "case" PRM_Case
           <> gom "timeout" PRM_Timeout pr_mtime
           <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
+          <> gom "throwTimeout" PRM_ThrowTimeout pr_mtime
     where
       gom key mode me =
         case me of
@@ -1257,22 +1258,17 @@ evalForm f args = do
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime
         Just PRM_Case ->
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime
-        Just PRM_Timeout ->
-          retV $
-            public $
-              SLV_Form $
-                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
-                  makeTimeoutArgs PRM_Timeout aa
-        Just PRM_TimeRemaining ->
-          retV $
-            public $
-              SLV_Form $
-                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
-                  makeTimeoutArgs PRM_TimeRemaining aa
+        Just PRM_Timeout -> retTimeout PRM_Timeout aa
+        Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
+        Just PRM_ThrowTimeout  -> retTimeout PRM_ThrowTimeout aa
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
       where
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
+        retTimeout prm aa =
+          retV $ public $ SLV_Form $
+            SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
+              makeTimeoutArgs prm aa
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -3435,25 +3431,28 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
       Nothing -> return fork_e0
       Just (mode, t_at, args) ->
         case (mode, args) of
+          (PRM_ThrowTimeout, [t_e]) ->
+            callTimeout [t_e, thunk $ block [ JSThrow ta lhs semi ]]
           (PRM_TimeRemaining, [t_e]) -> do
-            let semi = JSSemiAuto
             let dot o f = JSCallExpressionDot o ta f
             let publish = dot (jid "Anybody") $ jid "publish"
             let pubApp = call publish []
-            let noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
             let bodys =
                   [ JSExpressionStatement pubApp semi
-                  , JSReturn ta (Just lhs) semi
-                  ]
-            let block = JSStatementBlock ta bodys ta semi
-            let thunk = JSArrowExpression noArgs ta block
-            return $ call (JSMemberDot fork_e0 ta timeOutId) [t_e, thunk]
-          (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceTimeRemainingArgs args
+                  , JSReturn ta (Just lhs) semi ]
+            callTimeout [t_e, thunk $ block bodys]
           (PRM_Timeout, t_es) -> return $ call (JSMemberDot fork_e0 ta timeOutId) t_es
+          (PRM_ThrowTimeout, _)  -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
+          (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
           _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
         where
+          semi = JSSemiAuto
           timeOutId = jid "timeout"
           call f es = JSCallExpression f ta (toJSCL es) ta
+          callTimeout = return . call (JSMemberDot fork_e0 ta timeOutId)
+          block bodys = JSStatementBlock ta bodys ta semi
+          noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
+          thunk = JSArrowExpression noArgs ta
           ta = ao t_at
   let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
         where
@@ -3962,12 +3961,13 @@ evalStmt = \case
             -- Bind `catch` argument before evaluating handler
             sco <- asks e_sco
             handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
-            handler_env <- evalDeclLHS True Public (sco_cenv sco) (SLV_DLVar handler_arg) ce
+            handler_env <- evalDeclLHS True Public mempty (SLV_DLVar handler_arg) ce
+            sco' <- sco_update handler_env
             -- Eval handler
             SLRes handler_stmts handler_st (SLStmtRes _ handler_res) <-
               locSt thrown_st $
-                captureRes $
-                  locSco (sco { sco_cenv = handler_env }) $
+                locSco sco' $
+                  captureRes $
                     evalStmt handler
             saveLift $ DLS_Try at try_stmts handler_arg handler_stmts
             -- Coalesce the try and handler returns
