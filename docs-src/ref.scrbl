@@ -260,8 +260,13 @@ starts an instance of the @seclink["ref-backends-rpc"]{Reach RPC Server} using a
   Ignored if @envvar{REACH_CONNECTOR_MODE} includes @litchar{live}.}
 
   @item{The environment variable @envvar{REACH_RPC_KEY} is used to determine the RPC server key.
-If it is not defined, then a value will be randomly generated.
-In either case, the key will be displayed to the console upon start-up.
+  If not defined, it defaults to @litchar{opensesame}, and a warning will
+  appear in the console stating that the development key is being used.
+
+  In a production context this key must be kept secret, and it should be
+  randomly generated with a suitably strong method, such as:
+
+  @cmd{head -c 24 /dev/urandom | base64}
   }
 
   @item{The environment variable @envvar{REACH_RPC_PORT} is used to determine which port to bind to.
@@ -281,6 +286,32 @@ In either case, the key will be displayed to the console upon start-up.
   }
 
 ]
+
+@subsection[#:tag "ref-usage-rpc-dev"]{@tt{reach rpc-dev}}
+
+The sub-command
+
+@cmd{reach rpc-dev CMD}
+
+is a convenient means of launching a pre-configured RPC @tech{frontend} which
+is suitable for development purposes.
+
+
+@exec{reach rpc-dev CMD} invokes @exec{CMD} with the following environment
+variables:
+
+@itemlist[
+  @item{@envvar{REACH_RPC_SERVER} defaults to @litchar{127.0.0.1} if not defined.}
+  @item{@envvar{REACH_RPC_PORT} defaults to @litchar{3000} if not defined.}
+  @item{@envvar{REACH_RPC_KEY} defaults to @litchar{opensesame} if not defined.}
+  @item{@envvar{REACH_RPC_TLS_REJECT_UNVERIFIED} defaults to @litchar{0} if not
+        defined and will cause the frontend to emit a warning about
+        TLS verification being disabled.}
+]
+
+Consider this example from the @seclink{tut-7-rpc} tutorial:
+@cmd{reach rpc-dev python3 -u ./index.py}
+
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
