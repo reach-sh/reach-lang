@@ -9,6 +9,7 @@
  -}
 
 import Control.Monad      (filterM)
+import Data.List          (sort)
 import Dhall              (embed, inject)
 import Dhall.Pretty       (prettyExpr)
 import System.Directory   (listDirectory, doesDirectoryExist)
@@ -28,4 +29,4 @@ main = do
   examples <- listDirectory (circleci <> "/../examples")
           >>= filterM (\d -> doesDirectoryExist $ circleci <> "/../examples/" <> d)
 
-  writeFile (circleci <> "/examples.dhall") $ render examples
+  writeFile (circleci <> "/examples.dhall") $ render $ sort examples

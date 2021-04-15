@@ -1,20 +1,24 @@
 .DEFAULT_GOAL := validate
+LTS := lts-17.8
 
-.PHONY: gather-examples
-gather-examples:
+examples.dhall: gather-examples.hs ../examples
 	@echo "Gathing examples..."
 	@./gather-examples.hs
 	@echo
 
-.PHONY: build
-build: gather-examples
-# TODO forward failed compilation exit code
-	@. ../VERSION && export VERSION && dhall-to-yaml \
+.PHONY: install-dhall
+install-dhall:
+	stack --resolver ${LTS} build dhall-yaml
+
+config.yml: install-dhall examples.dhall
+	@. ../VERSION && export VERSION && stack --resolver ${LTS} exec -- dhall-to-yaml \
 	  --generated-comment \
 	  --explain \
 	  --file ./config.dhall \
-	  | tee config.yml
-	@echo
+	  > $@
+
+.PHONY: build
+build: config.yml
 
 .PHONY: validate
 validate: build
