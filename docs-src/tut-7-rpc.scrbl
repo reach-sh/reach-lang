@@ -188,14 +188,12 @@ First you will need to copy the @tt{index.rsh} file you used for @seclink{tut-7}
 into the directory where you saved @tt{index.py}.
 
 Now open a terminal in that directory and type:
-@verbatim{
-  $ ./reach server
-}
+@cmd{./reach server}
 
 @margin-note{
-Deploying your @|DApp| into production requires obtaining a certificate which
-is specific to your DNS domain and which has been signed by a certificate
-authority such as
+Deploying your @|DApp| into production with the RPC server requires obtaining a
+certificate which is specific to your DNS domain and which has been signed by a
+certificate authority such as
 @link["https://letsencrypt.org/getting-started/"]{Let's Encrypt}.
 
 Users who are ready to go live should consult the @seclink{ref-usage-server}
@@ -203,11 +201,11 @@ reference section for configuration details.
 }
 
 This will launch an RPC server using the development @tech{API key}
-@tt{"opensesame"} and a premade TLS certificate.
+@tt{"opensesame"} and a TLS certificate designed for testing.
 
 The server is now awaiting connections.
 
-Open another terminal in the same directory and use @tt{./reach rpc-dev} to
+Open another terminal in the same directory and use @exec{./reach rpc-dev} to
 play a game of @|RPS|:
 
 @margin-note{
@@ -242,8 +240,8 @@ system directories.
 You may replay as many times as you would like by pressing @tt{"up"} once then
 @tt{"return"} on your keyboard in this terminal.
 
-When you are done type @tt{"control+c"}, then @tt{"./reach down"} in the first
-terminal, and then @tt{"deactivate"} in the second.
+When you are done type @litchar{Ctrl-C} then @exec{./reach down} in the first
+terminal, and then @exec{deactivate} in the second.
 
 Well done! You have just reimplemented @seclink{tut-7} in Python.
 
