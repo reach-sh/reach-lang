@@ -7,7 +7,7 @@ The Reach JavaScript standard library, @(mint-define! '("stdlib")) @jsin{stdlib}
 @itemlist[
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
- @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
+ @item{the @jsin{async} function @jsin{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
 ]
 
 These modules are available in the @link["https://www.npmjs.com/package/@reach-sh/stdlib"]{@tt{@"@"reach-sh/stdlib}} @link["https://www.npmjs.com/"]{@tt{npm}} package, which you can install via:
@@ -85,14 +85,26 @@ which indicates the abbreviated name of the network being connected to.
 Connectors are one of the following: @jsin{['ETH', 'ALGO']}.
 
 @(hrule)
-@(mint-define! '("loadStdLib"))
+@(mint-define! '("loadStdlib"))
 @js{
-  loadStdlib(connectorMode) => Promise<stdlib>
+  loadStdlib(env) => Promise<stdlib>
 }
 
-Returns a Promise for a stlib based on the provided @jsin{connectorMode} string.
-You may omit the @jsin{connectorMode} argument, in which case
-@jsin{getConnectorMode()} will be used to select the correct stdlib.
+@index{loadStdlib} Returns a Promise for a stlib based on the provided @jsin{env} string or map.
+In environments where the reach stdlib has implicit access to @jsin{process.env},
+you may omit the @jsin{env} argument, in which case @jsin{process.env} will be used.
+
+If the reach stdlib is being used with javascript bundlers like webpack
+-- as it is with React, for example --
+then the reach stdlib does not have implicit access to @jsin{process.env}.
+In such scenarios, we recommend that you call this function like so:
+
+@js{
+  const reach = await loadStdlib(process.env);
+}
+
+You may instead pass in the string @litchar{'ETH'} or the string @litchar{'ALGO'}
+to select the desired stdlib directly.
 
 @section[#:tag "ref-frontends-js-acc"]{Accounts}
 

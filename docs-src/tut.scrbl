@@ -1683,8 +1683,20 @@ On line 8, we import the @reachin{stdlib} as @reachin{reach}.
 
 To run on Algorand, change the import on line 8.
 
-@reachin{import * as reach from '@"@"reach-sh/stdlib/ALGO'}
+@jsin{import * as reach from '@"@"reach-sh/stdlib/ALGO'}
 
+@margin-note{
+If you would like to use @jsin{loadStdlib},
+you should call it like so:
+
+@jsin{const reach = await loadStdlib(process.env)}
+
+React compiles the reach stdlib in such a way that
+it does not have direct access to the environment variables
+which are used to select the desired stdlib.
+This is why you need to pass @jsin{process.env} as an argument
+to achieve the desired effect.
+}
 
 @reachex[#:mode js
          #:show-lines? #t "tut-9/index.js"

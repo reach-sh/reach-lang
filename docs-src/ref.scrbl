@@ -206,7 +206,21 @@ It then
   }
 ]
 
-@exec{reach react} does not respect the same scaffolded files as @exec{reach run}. If you would like a more customized browser-based project, we recommend that you simply use @exec{reach compile}, and use your own preferred setup for the project. The compiled @exec{build/index.main.mjs} JavaScript file and the @exec{'@"@"reach-sh/stdlib'} JavaScript library may be used in any JavaScript project like any other JavaScript file and library, respectively.
+When using @jsin{loadStdlib} in conjunction with @exec{reach react},
+be sure to pass in @jsin{process.env} as its argument.
+See @jsin{loadStdlib} for details.
+
+@exec{reach react} does not respect the same scaffolded files as @exec{reach run}.
+It is just a simplified tool to give you a taste of web programming with reach.
+If you would like access to more customizations on a browser-based project,
+such as custom environment variables,
+custom JavaScript dependencies,
+or using other JavaScript frameworks like Angular,
+we recommend that you simply use @exec{reach compile},
+and use your own preferred JavaScript setup for the project.
+The compiled @exec{build/index.main.mjs} JavaScript file
+and the @exec{'@"@"reach-sh/stdlib'} JavaScript library
+may be used in any JavaScript project like any other JavaScript file and library, respectively.
 
 @subsection[#:tag "ref-usage-devnet"]{@tt{reach devnet}}
 
