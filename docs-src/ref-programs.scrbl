@@ -359,7 +359,8 @@ The @reachin{timeout} component must be included if @reachin{when} is not static
 This ensures that your clients will eventually complete the program.
 If a @tech{consensus transfer} is a guaranteed race between non-class @tech{participants} and a @tech{participant class} that @emph{may} attempt to transfer (i.e. @reachin{when} is not statically @reachin{false}), then a @reachin{timeout} may be explicitly omitted by writing @reachin{.timeout(false)}.
 
-@reachin{.throwTimeout} may be used in place of @reachin{.timeout}. It accepts a @tt{DELAY_EXPR} and an @tt{EXPR}, which will be thrown if a timeout should occur.
+@reachin{.throwTimeout} may be used in place of @reachin{.timeout}. It accepts a @reachin{DELAY_EXPR} and an @reachin{EXPR}, which will be thrown if a timeout should occur.
+If an @reachin{EXPR} is not provided, then @reachin{null} will be thrown.
 If a @tech{consensus transfer} uses @reachin{.throwTimeout}, it must be within a @tech{try statement}.
 
 If a @tech{consensus transfer} specifies a single @tech{participant}, which has not yet been @tech{fixed} in the application and is not a @tech{participant class}, then this statement does so; therefore, after it the @reachin{PART} may be used as an @tech{address}.
