@@ -933,6 +933,7 @@ evalAsEnv obj = case obj of
           <> gom "pay" TCM_Pay mpay
           <> gom "when" TCM_When mwhen
           <> gom "timeout" TCM_Timeout mtime
+          <> gom "throwTimeout" TCM_ThrowTimeout mtime
     where
       gom key mode me =
         case me of
@@ -945,6 +946,7 @@ evalAsEnv obj = case obj of
       M.fromList $
         go "case" FM_Case
           <> gom "timeout" FM_Timeout mtime
+          <> gom "throwTimeout" FM_ThrowTimeout mtime
     where
       gom key mode me =
         case me of
@@ -1242,6 +1244,16 @@ evalForm f args = do
         Just FM_Timeout -> do
           at <- withAt id
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args))
+        Just FM_ThrowTimeout -> do
+          at <- withAt id
+          (d, arg) <- case args of
+                    [d]    -> return (d, JSLiteral JSNoAnnot "null")
+                    [d, x] -> return (d, x)
+                    _   -> illegal_args 2
+          let ta = srcloc2annot at
+          let throwS = JSArrowExpression (JSParenthesizedArrowParameterList ta JSLNil ta) ta $
+                          JSThrow ta arg JSSemiAuto
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS]))
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
     SLForm_parallel_reduce -> do
       at <- withAt id
@@ -1293,6 +1305,17 @@ evalForm f args = do
               [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] -> return $ (at, de, Just (jsStmtToBlock dt_s))
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $ Just x
+        Just TCM_ThrowTimeout -> do
+          at <- withAt id
+          let ta = srcloc2annot at
+          (de, x) <-
+            case args of
+              [de]    -> return (de, JSLiteral ta "null")
+              [de, e] -> return (de, e)
+              _ -> illegal_args 2
+          let throwS = JSThrow ta x JSSemiAuto
+          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $
+            Just (at, de,  Just (jsStmtToBlock throwS))
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
     SLForm_each -> do

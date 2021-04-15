@@ -232,11 +232,13 @@ data ToConsensusMode
   | TCM_Pay
   | TCM_When
   | TCM_Timeout
+  | TCM_ThrowTimeout
   deriving (Eq, Generic, Show)
 
 data ForkMode
   = FM_Case
   | FM_Timeout
+  | FM_ThrowTimeout
   deriving (Eq, Generic, Show)
 
 data ParallelReduceMode

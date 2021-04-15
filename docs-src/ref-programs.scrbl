@@ -359,6 +359,9 @@ The @reachin{timeout} component must be included if @reachin{when} is not static
 This ensures that your clients will eventually complete the program.
 If a @tech{consensus transfer} is a guaranteed race between non-class @tech{participants} and a @tech{participant class} that @emph{may} attempt to transfer (i.e. @reachin{when} is not statically @reachin{false}), then a @reachin{timeout} may be explicitly omitted by writing @reachin{.timeout(false)}.
 
+@reachin{.throwTimeout} may be used in place of @reachin{.timeout}. It accepts a @tt{DELAY_EXPR} and an @tt{EXPR}, which will be thrown if a timeout should occur.
+If a @tech{consensus transfer} uses @reachin{.throwTimeout}, it must be within a @tech{try statement}.
+
 If a @tech{consensus transfer} specifies a single @tech{participant}, which has not yet been @tech{fixed} in the application and is not a @tech{participant class}, then this statement does so; therefore, after it the @reachin{PART} may be used as an @tech{address}.
 
 If a @tech{consensus transfer} specificies a single @tech{participant class}, then all members of that class will attempt to perform the transfer, but only one will succeed.
@@ -433,7 +436,7 @@ where:
 @reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
 @reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
-the @reachin{timeout} parameter are as in an @tech{consensus transfer}.
+the @reachin{timeout} and @reachin{throwTimeout} parameter are as in an @tech{consensus transfer}.
 
 If the @litchar{msg} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{null}.
 

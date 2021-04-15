@@ -1,1 +1,1 @@
-reachc: error: ./foreign_to_reach.rsh:12:26:dot: exposeAs is not a field of <SLV_Form>. Did you mean: ["when","timeout"]
+reachc: error: ./foreign_to_reach.rsh:12:26:dot: exposeAs is not a field of <SLV_Form>. Did you mean: ["when","timeout","throwTimeout"]
