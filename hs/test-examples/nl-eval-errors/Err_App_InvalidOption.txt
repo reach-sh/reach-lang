@@ -1,1 +1,1 @@
-reachc: error: ./Err_App_InvalidOption.rsh:4:14:property binding: deploMode is not a valid app option. Did you mean: ["deployMode","connectors","explicitState","verifyArithmetic","verifyPerConnector"]
+reachc: error: ./Err_App_InvalidOption.rsh:4:14:property binding: deploMode is not a valid app option. Did you mean: ["deployMode","connectors","verifyArithmetic","verifyPerConnector"]

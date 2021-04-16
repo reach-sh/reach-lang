@@ -29,7 +29,6 @@ app_default_opts idxr cns =
     { dlo_deployMode = DM_constructor
     , dlo_verifyArithmetic = False
     , dlo_verifyPerConnector = False
-    , dlo_explicitState = False
     , dlo_connectors = cns
     , dlo_counter = idxr
     , dlo_bals = 1
@@ -41,7 +40,6 @@ app_options =
     [ ("deployMode", opt_deployMode)
     , ("verifyArithmetic", opt_bool (\ opts b -> opts {dlo_verifyArithmetic = b}))
     , ("verifyPerConnector", opt_bool (\ opts b -> opts {dlo_verifyPerConnector = b}))
-    , ("explicitState", opt_bool (\ opts b -> opts {dlo_explicitState = b}))
     , ("connectors", opt_connectors)
     ]
   where

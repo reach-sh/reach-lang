@@ -261,6 +261,18 @@ data ColorGraphs = ColorGraph {
   varGraph  :: M.Map DLVar Int }
   deriving (Eq)
 
+instance Pretty ColorGraphs where
+  pretty = \case
+    ColorGraph tg vg ->
+      "type graph:" <+> pretty tg <> hardline <>
+      "var graph:" <+> prettyVarGraph vg
+    where
+    prettyVarGraph g =
+      let rows = map (\ (v, i) ->
+            "  " <> viaShow v <> ": " <> viaShow (varType v) <> " - " <> viaShow i)
+            $ M.toList g in
+      braces $ hardline <> vsep rows
+
 data CPProg a
   = CPProg SrcLoc (CHandlers_ a)
   deriving (Eq)
@@ -282,7 +294,6 @@ instance Pretty a => Pretty (EPPs a) where
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
   , plo_verifyArithmetic :: Bool
-  , plo_explicitState :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

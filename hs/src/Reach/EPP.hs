@@ -615,5 +615,4 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   let plo_deployMode = llo_deployMode
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter
-  let plo_explicitState = llo_explicitState
   return $ PLProg at (PLOpts {..}) dli dex' pps cp
