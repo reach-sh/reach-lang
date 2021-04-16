@@ -201,13 +201,16 @@ system directories.
 @cmd{pip install --upgrade reach-rpc-client}
 
 Then use @exec{./reach rpc-run} to play a game of @|RPS|:
+@cmd{./reach rpc-run python3 -u ./index.py}
+
 @margin-note{
 Consult the @seclink{ref-usage-rpc-run} reference section for more details on
 how this sub-command works.
 }
-@verbatim{
-$ ./reach rpc-run python3 -u ./index.py
 
+It's output will be the same as the @seclink{tut-7} version of the frontend:
+
+@verbatim{
 Bob accepts the wager of 5
 Alice played Rock
 Bob played Paper
