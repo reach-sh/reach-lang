@@ -37,13 +37,17 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
     ];
 
     const ALGO_extra_exports = [
+      'getAlgodClient',
+      'getIndexer',
       'getSignStrategy',
+      'getTxnParams',
       'newAccountFromAlgoSigner',
       'setAlgoSigner',
       'setAlgodClient',
       'setIndexer',
       'setSignStrategy',
       'setWaitPort',
+      'waitForConfirmation',
     ];
 
     for (const [otherName, otherStdlib, otherExtraExports] of [
