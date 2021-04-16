@@ -16,7 +16,6 @@ import           Data.Ord             (comparing)
 import           Reach.AST.DLBase     (DLType, DLVar, varType)
 import           Reach.AST.PL
 import           Reach.Util           (impossible)
--- import Reach.Texty (pretty)
 
 
 type DLVarS = S.Set DLVar
@@ -91,7 +90,6 @@ makeInterferenceGraph :: M.Map Int CIHandler -> App ()
 makeInterferenceGraph hs = do
   let handlers = map snd $ M.toDescList hs
   let allTypes = concatMap getTypes handlers
-  -- interGraph <- liftIO $ newIORef mempty
   forM_ allTypes $ \ ty -> do
     g <- asks e_ti
     liftIO $ modifyIORef g $ M.insert ty M.empty
@@ -146,15 +144,12 @@ colorProgram (PLProg at plo dli dex epps (CPProg cat _ (CHandlers handlers))) = 
   ty_x_cg <- forM (M.toList ti) $ colorVarsWithType ty_x_vars
   let typeGraph   = M.map maximum $ M.fromList ty_x_cg
   let varGraph    = M.unions $ map snd ty_x_cg
-  -- liftIO $ putStrLn $ "typeGraph: " <> show (pretty typeGraph)
   let colorGraphs = ColorGraph { typeGraph, varGraph }
   return $ PLProg at plo dli dex epps $ CPProg cat colorGraphs (CHandlers handlers)
   where
     colorVarsWithType :: TypeXVars -> (DLType, InterferenceGraph) -> IO (DLType, M.Map DLVar Int)
     colorVarsWithType ty_x_vars (ty, typeGraph) = do
         tgRef <- newIORef typeGraph
-        -- liftIO $ putStrLn $ show ty <> " interference: " <> show (pretty typeGraph)
         let varsWithTy = fromMaybe S.empty $ M.lookup ty ty_x_vars
         colors <- color varsWithTy tgRef mempty
-        -- liftIO $ putStrLn $ show ty <> " colors: " <> show (pretty colors)
         return (ty, colors)
