@@ -299,6 +299,39 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
 An @deftech{each} @tech{local step} statement can be written as @reachin{each(PART_TUPLE () => BLOCK)}, where @reachin{PART_TUPLE} is a tuple of @tech{participants} and @reachin{BLOCK} is a @tech{block}.
 It is an abbreviation of many @tech{local step} statements that could have been written with @reachin{only}.
 
+@subsubsection{Pay Amounts}
+
+A @deftech{pay amount} is either:
+@itemlist[
+@item{An integer, denoting an amount of @tech{network tokens}; or,}
+
+@item{A tuple of @tech{token amounts}.}
+]
+
+A @deftech{token amount} is either:
+@itemlist[
+@item{An integer, denoting an amount of @tech{network tokens}; or,}
+
+@item{A tuple with two elements, where the first is an integer, denoting an amount of @tech{non-network tokens}, and the second is @reachin{Token}, specifying a particular @tech{non-network token}.}
+]
+
+For example, these are all @tech{pay amounts}:
+@reach{
+0
+5
+[ 5 ]
+[ 5, [ 2, gil ] ]
+[ [ 2, gil ], 5 ]
+[ 5, [ 2, gil ], [ 8, zorkmids ] ]
+}
+
+It is @tech{invalid} for a @tech{pay amount} to specify an amount of tokens multiple times.
+For examples, these are @tech{invalid} @tech{pay amounts}:
+@reach{
+[ 1, 2 ]
+[ [2, gil], [1, gil] ]
+}
+
 @subsubsection{@tt{publish}, @tt{pay}, @tt{when}, and @tt{timeout}}
 
 @(mint-define! '("publish") '("pay") '("when") '("timeout"))
@@ -321,7 +354,7 @@ It is an abbreviation of many @tech{local step} statements that could have been 
 A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
 @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
-@reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens},
+@reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to a @tech{pay amount},
 @reachin{WHEN_EXPR} is a @tech{public} @tech{expression} evaluating to a boolean and determines if the @tech{consensus transfer} takes place,
 @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number,
 @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
@@ -435,7 +468,7 @@ fork()
 where:
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
 @reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
-@reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
+@reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns a @tech{pay amount};
 @reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
 the @reachin{timeout} and @reachin{throwTimeout} parameter are as in an @tech{consensus transfer}.
 
@@ -928,6 +961,10 @@ might be the way to communicate with a random oracle that receives a conservativ
 This may not be used with @reachin{REMOTE_FUN.bill}.}
 
 ]
+
+@margin-note{
+  Remote objects do not yet support interacting with @tech{non-network tokens}.
+}
 
 @subsubsection{Mappings: creation and modification}
 

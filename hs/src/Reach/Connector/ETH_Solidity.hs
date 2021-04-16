@@ -643,6 +643,8 @@ solCom = \case
           case includeRequireMsg of
             True -> unsafeRedactAbsStr $ show (at, fs, ("remote " <> f <> " failed"))
             False -> ""
+    -- XXX we could assert that the balances of all our tokens is the same as
+    -- it was before
     return $ vsep $
       [ solSet ("uint256" <+> v_before) e_before
       , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [ e_data ] <> semi
@@ -785,6 +787,7 @@ solCTail = \case
     emit' <- ctxt_emit <$> ask
     return $ vsep $ [emit'] <> setl <> [solSet ("current_state") sete]
   CT_From _ _ (FI_Halt _XXX_toks) -> do
+    -- XXX we could "selfdestruct" our token holdings
     emit' <- ctxt_emit <$> ask
     return $
       vsep
