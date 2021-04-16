@@ -104,10 +104,4 @@ const shouldFail = async (fp) => {
   await doSwap(zorkmid, amtA, gil, amtB, false);
   await doSwap(gil, amtB, zorkmid, amtA, false);
   await doSwap(zorkmid, amtA, gil, amtB, true);
-
-  // It would be cool to support ETH without going through WETH
-  // const eth = { addr: false, sym: 'ETH', balanceOf: stdlib.balanceOf };
-  // await doSwap(eth, amtA, gil, amtB);
-  // await doSwap(zorkmid, amtA, eth, amtB);
-
 })();
