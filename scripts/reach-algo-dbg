@@ -5,7 +5,12 @@
 # --> show step
 # Some day, make this interactive and imitate
 # https://justine.lol/blinkenlights/index.html
-CONT="${1}_algorand-devnet_1"
+SUFFIX="_algorand-devnet_1"
+if [ "x${1}" = "x" ] ; then
+  docker container ls --format '{{.Names}}' | grep "${SUFFIX}" | sed "s/${SUFFIX}\$//"
+  exit 0
+fi
+CONT="${1}${SUFFIX}"
 if [ "x${2}" = "x" ] ; then
   docker container exec "${CONT}" ls -1 /dbg | sort -t - -k1,1n -k2,2n
 else
@@ -16,7 +21,7 @@ else
   # comment out if you need these
   # cat "${TMP}" | jq .globals
   # cat "${TMP}" | jq .scratch
-  # cat "${TMP}" | jq .txngroup
+  cat "${TMP}" | jq .txngroup
   jq -r .disasm "${TMP}" | bat -n --highlight-line "${line}"
   cat "${TMP}" | jq .stack
 fi
