@@ -2102,6 +2102,53 @@ jobs:
           branch_pattern: "master,gh-pages"
           event: fail
           template: basic_fail_1
+  weird-swap:
+    docker:
+      - auth:
+          password: "$DOCKER_PASSWORD"
+          username: "$DOCKER_LOGIN"
+        image: reachsh/reach-circle:0.1.2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/build-core
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          command: |
+            zcat /tmp/build-core/runner.tar.gz | docker load
+            docker tag reachsh/runner:latest reachsh/runner:0.1.2
+            docker tag reachsh/runner:latest reachsh/runner:0.1
+            docker tag reachsh/runner:latest reachsh/runner:0
+          name: attach runner image
+          no_output_timeout: "10m"
+      - run:
+          command: |
+            curl -sSL https://git.io/get-mo -o mo \
+              && chmod +x mo \
+              && mv mo /usr/local/bin
+          name: install mo
+          no_output_timeout: "10m"
+      - restore_cache:
+          keys:
+            - "hs-{{ .Revision }}"
+      - run:
+          command: "cd examples && ./one.sh clean weird-swap"
+          name: clean weird-swap
+          no_output_timeout: "10m"
+      - run:
+          command: "cd examples && ./one.sh build weird-swap"
+          name: rebuild weird-swap
+          no_output_timeout: "10m"
+      - run:
+          command: "cd examples && ./one.sh run weird-swap"
+          name: run weird-swap
+          no_output_timeout: "5m"
+      - jq/install
+      - slack/notify:
+          branch_pattern: "master,gh-pages"
+          event: fail
+          template: basic_fail_1
   workshop-fomo:
     docker:
       - auth:
@@ -2590,6 +2637,12 @@ workflows:
           requires:
             - build-core
       - variable-transfers:
+          context:
+            - reachdevbot-on-dockerhub
+            - circleci-on-slack
+          requires:
+            - build-core
+      - weird-swap:
           context:
             - reachdevbot-on-dockerhub
             - circleci-on-slack

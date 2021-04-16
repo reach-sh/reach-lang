@@ -38,6 +38,7 @@
 , "tut-8"
 , "tut-9"
 , "variable-transfers"
+, "weird-swap"
 , "workshop-fomo"
 , "workshop-fomo-generalized"
 , "workshop-hash-lock"
