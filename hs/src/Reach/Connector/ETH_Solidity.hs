@@ -34,6 +34,7 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Reach.Interference (colorProgram)
 
 --- Debugging tools
 
@@ -1156,6 +1157,8 @@ connect_eth = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
+          ig <- colorProgram pil
+          conShowP moutn "sol.colors" ig
           pl <- add_counts pil
           conShowP moutn "sol.pl" pl
           (cinfo, sol) <- solPLProg pl
