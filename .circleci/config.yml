@@ -176,50 +176,6 @@ jobs:
           branch_pattern: "master,gh-pages"
           event: fail
           template: basic_fail_1
-  build:
-    docker:
-      - auth:
-          password: "$DOCKER_PASSWORD"
-          username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /tmp/build-core
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          command: |
-            zcat /tmp/build-core/runner.tar.gz | docker load
-          name: attach runner image
-          no_output_timeout: "10m"
-      - run:
-          command: |
-            curl -sSL https://git.io/get-mo -o mo \
-              && chmod +x mo \
-              && mv mo /usr/local/bin
-          name: install mo
-          no_output_timeout: "10m"
-      - restore_cache:
-          keys:
-            - "hs-{{ .Revision }}"
-      - run:
-          command: "cd examples && ./one.sh clean build"
-          name: clean build
-          no_output_timeout: "10m"
-      - run:
-          command: "cd examples && ./one.sh build build"
-          name: rebuild build
-          no_output_timeout: "10m"
-      - run:
-          command: "cd examples && ./one.sh run build"
-          name: run build
-          no_output_timeout: "5m"
-      - jq/install
-      - slack/notify:
-          branch_pattern: "master,gh-pages"
-          event: fail
-          template: basic_fail_1
   build-core:
     docker:
       - auth:
@@ -2026,50 +1982,6 @@ jobs:
           branch_pattern: "master,gh-pages"
           event: fail
           template: basic_fail_1
-  variable_transfers:
-    docker:
-      - auth:
-          password: "$DOCKER_PASSWORD"
-          username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /tmp/build-core
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          command: |
-            zcat /tmp/build-core/runner.tar.gz | docker load
-          name: attach runner image
-          no_output_timeout: "10m"
-      - run:
-          command: |
-            curl -sSL https://git.io/get-mo -o mo \
-              && chmod +x mo \
-              && mv mo /usr/local/bin
-          name: install mo
-          no_output_timeout: "10m"
-      - restore_cache:
-          keys:
-            - "hs-{{ .Revision }}"
-      - run:
-          command: "cd examples && ./one.sh clean variable_transfers"
-          name: clean variable_transfers
-          no_output_timeout: "10m"
-      - run:
-          command: "cd examples && ./one.sh build variable_transfers"
-          name: rebuild variable_transfers
-          no_output_timeout: "10m"
-      - run:
-          command: "cd examples && ./one.sh run variable_transfers"
-          name: run variable_transfers
-          no_output_timeout: "5m"
-      - jq/install
-      - slack/notify:
-          branch_pattern: "master,gh-pages"
-          event: fail
-          template: basic_fail_1
   workshop-fomo:
     docker:
       - auth:
@@ -2338,12 +2250,6 @@ workflows:
             - circleci-on-slack
           requires:
             - build-core
-      - build:
-          context:
-            - reachdevbot-on-dockerhub
-            - circleci-on-slack
-          requires:
-            - build-core
       - chicken-fork:
           context:
             - reachdevbot-on-dockerhub
@@ -2549,12 +2455,6 @@ workflows:
           requires:
             - build-core
       - variable-transfers:
-          context:
-            - reachdevbot-on-dockerhub
-            - circleci-on-slack
-          requires:
-            - build-core
-      - variable_transfers:
           context:
             - reachdevbot-on-dockerhub
             - circleci-on-slack
