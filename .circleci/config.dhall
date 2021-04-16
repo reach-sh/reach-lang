@@ -191,6 +191,7 @@ let dockerized-job-with-reach-circle-and-runner
              , setup_remote_docker False -- TODO toggle caching on: True
              , run "attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
+                 docker tag reachsh/runner:0.1 reachsh/runner:latest
                  ''
              ] # steps
       in dockerized-job-with-reach-circle s
