@@ -545,7 +545,9 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=CFX-experimental
+      - CFX_DEBUG
       - CFX_NODE_URI=http://host.docker.internal:12537
+      - CFX_NETWORK_ID=999
   ${SERVICE}-: *default-app
   ${SERVICE}: *default-app
 EOF

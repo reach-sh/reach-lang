@@ -1,5 +1,5 @@
 import {process} from './shim';
-export type Connector = 'ETH' | 'ALGO';
+export type Connector = 'ETH' | 'ALGO' | 'CFX';
 
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
@@ -7,7 +7,8 @@ export type ConnectorMode =
   'ETH-browser' |
   'ALGO-test-dockerized-algod' |
   'ALGO-live' |
-  'ALGO-browser';
+  'ALGO-browser' |
+  'CFX-experimental';
 
 // Order is significant, earlier = default for shared prefix
 // e.g. ETH defaults to ETH-test-dockerized-geth
@@ -18,10 +19,11 @@ const knownConnectorModes: Array<ConnectorMode> = [
   'ALGO-test-dockerized-algod',
   'ALGO-live',
   'ALGO-browser',
+  'CFX-experimental',
 ];
 
 function isKnownConnector(s: string): s is Connector {
-  return (s === 'ETH' || s === 'ALGO');
+  return (s === 'ETH' || s === 'ALGO' || s === 'CFX');
 }
 
 const connectorModeDefaults: {[key: string]: ConnectorMode} = {};
