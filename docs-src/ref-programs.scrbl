@@ -1290,6 +1290,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bytes")) @reachin{Bytes(length)}, which denotes a string of bytes of length at most @reachin{length}.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
+  @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
@@ -2166,9 +2167,11 @@ The exact algorithm used depends on the @tech{connector}.
 
 @(mint-define! '("balance"))
 @reach{
- balance() }
+ balance();
+ balance(gil); }
 
 The @deftech{balance} primitive returns the balance of the @tech{contract} @tech{account} for the @|DApp|.
+It takes an optional @tech{non-network token} value, in which case it returns the balance of the given token.
 
 @subsubsection{@tt{lastConsensusTime}}
 

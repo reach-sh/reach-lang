@@ -30,6 +30,7 @@ The table below shows the JavaScript representation of each of the Reach types:
  Bytes     => 'string'
  Digest    => 'BigNumber'
  Address   => NetworkAccount
+ Token     => Address on ETH; UInt on ALGO
  Array     => array
  Tuple     => array
  Object    => object
@@ -210,11 +211,13 @@ Returns a Promise for the balance of @tech{network tokens} held by the @tech{acc
 @(hrule)
 @(mint-define! '("transfer"))
 @js{
- transfer(from:acc, to:acc, amount) => Promise<void> }
+ transfer(from:acc, to:acc, amount, token) => Promise<void> }
 
-Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
+Performs a transfer of @jsin{amount} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
-The returned Promise will only be resolved after the transfer completes.
+If @jsin{token} is provided, then the transfer is of @tech{network tokens};
+otherwise, it is of the designated @tech{non-network token}.
+The returned @jsin{Promise} will only be resolved after the transfer completes.
 
 @jsin{bigNumberify} is transparently applied to the @jsin{amount} argument.
 

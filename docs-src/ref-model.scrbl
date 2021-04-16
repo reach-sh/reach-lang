@@ -19,11 +19,14 @@ When the computation terminates, all @tech{participants} agree on the outcome, b
 
 At the start of a Reach computation, the set of @tech{participants} is not necessarily known and can evolve throughout the execution of the application.
 
-A @deftech{consensus network} is a network protocol with a @tech{network token}, a set of @tech{accounts}, a set of @tech{contracts}, and a @tech{time}.
+A @deftech{consensus network} is a network protocol with a @tech{network token}, a set of @tech{non-network tokens}, a set of @tech{accounts}, a set of @tech{contracts}, and a @tech{time}.
 A @deftech{network token} is an opaque unit of account.
+A @deftech{non-network token} is an opaque unit of account;
+typical @tech{consensus networks} allow the set of @tech{non-network tokens} to grow over time and be issued by @tech{accounts}.
 A @tech{consensus network}'s @deftech{time} is some monotonically increasing discrete value from a totally ordered set.
 A @deftech{time delta} represents the difference between two points in @tech{time} as a discrete number of @tech{time} units.
-@tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} between @tech{accounts}. An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
+@tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} and @tech{non-network tokens} between @tech{accounts}.
+An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
 @tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}.
 The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach.
 

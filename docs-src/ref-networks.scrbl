@@ -18,6 +18,8 @@ use exactly one word of on-chain state, while each piece of @tech{consensus stat
 Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 256-bits.
 
+@tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
+
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
 
@@ -58,7 +60,14 @@ It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publicat
 Algorand uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 64-bits.
 
-This connector does not support different @reachin{deployMode}s and treats them all as @reachin{constructor}.
+@tech{Non-network tokens} are compiled to @link["https://developer.algorand.org/docs/features/asa/"]{Algorand Standard Assets} (ASAs).
+Reach programs that use @tech{non-network tokens} deployed on Algorand are inherently vulnerable to a denial-of-service attack due the ability of Algorand accounts to "opt-out" of a token.
+For example, if a program has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
+(An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
+You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
+We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
+
+This connector does not support different @reachin{deployMode}s and treats them all as @reachin{'constructor'}.
 
 The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.
