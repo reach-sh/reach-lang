@@ -5,10 +5,10 @@ let Prelude =
 let Map = Prelude.Map.Type
 let map = Prelude.List.map
 
-let MAJOR = env:MAJOR as Text
-let MINOR = env:MINOR as Text
-let PATCH = env:PATCH as Text
-let VERSION = env:VERSION as Text
+let MAJOR         = env:MAJOR   as Text
+let MINOR         = env:MINOR   as Text
+let PATCH         = env:PATCH   as Text
+let VERSION       = env:VERSION as Text
 let VERSION_SHORT = "${MAJOR}.${MINOR}"
 
 let KeyVal
@@ -22,18 +22,28 @@ let `:=`
   -> \(v : V)
   -> { mapKey = k, mapValue = v }
 
+
 --------------------------------------------------------------------------------
 
-let docker-image = \(i : Text) -> \(v : Text) -> "reachsh/${i}:${v}"
+let docker-image
+   = \(i : Text)
+  -> \(v : Text)
+  -> "reachsh/${i}:${v}"
 
-let docker-tag1 = \(i : Text) -> \(o : Text) ->
-  "docker tag ${i} ${o}"
-let docker-tag = \(i : Text) -> \(v : Text) ->
-  docker-tag1 (docker-image i "latest") (docker-image i v)
-let docker-tag-all = \(i : Text) ->
-  (docker-tag i "${MAJOR}.${MINOR}.${PATCH}")
-  ++ "\n" ++ docker-tag i "${MAJOR}.${MINOR}"
-  ++ "\n" ++ (docker-tag i "${MAJOR}")
+let docker-tag1
+   = \(i : Text)
+  -> \(o : Text)
+  -> "docker tag ${i} ${o}"
+
+let docker-tag
+   = \(i : Text)
+  -> \(v : Text)
+  -> docker-tag1 (docker-image i "latest") (docker-image i v)
+
+let docker-tag-all
+  = \(i : Text) -> docker-tag i "${MAJOR}.${MINOR}.${PATCH}"
+        ++ "\n" ++ docker-tag i "${MAJOR}.${MINOR}"
+        ++ "\n" ++ docker-tag i "${MAJOR}"
 
 let reach-circle = docker-image "reach-circle" VERSION
 
@@ -44,7 +54,7 @@ let docker-creds =
 
 
 let default-docker-image =
-    { image = reach-circle } /\ docker-creds
+  { image = reach-circle } /\ docker-creds
 
 
 --------------------------------------------------------------------------------
@@ -195,7 +205,7 @@ let dockerized-job-with-reach-circle
 let dockerized-job-with-reach-circle-and-runner
    = \(steps : List Step)
   -> let s = [ attach_workspace    "/tmp/build-core"
-             , setup_remote_docker False -- TODO toggle caching on: True
+             , setup_remote_docker True
              , run "attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
                  ${docker-tag-all "runner"}
@@ -233,7 +243,7 @@ let build-core = dockerized-job-with-reach-circle
       , "hs/.stack-work"
       ]
 
-  , setup_remote_docker False -- TODO toggle caching on: True
+  , setup_remote_docker True
 
   , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
 
