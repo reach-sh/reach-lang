@@ -167,6 +167,7 @@ let mk_install_mo
   -> run "install mo" ''
       curl -sSL https://git.io/get-mo -o mo \
         && chmod +x mo \
+        && mkdir -p ${destination}
         && mv mo ${destination}
       ''
 
