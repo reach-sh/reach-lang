@@ -1,24 +1,10 @@
 .DEFAULT_GOAL := validate
-LTS := lts-17.8
-
-examples.dhall: gather-examples.hs ../examples
-	@echo "Gathing examples..."
-	@./gather-examples.hs
-	@echo
-
-.PHONY: install-dhall
-install-dhall:
-	stack --resolver ${LTS} build dhall-yaml
-
-config.yml: install-dhall examples.dhall
-	@. ../VERSION && export MAJOR MINOR PATCH VERSION && stack --resolver ${LTS} exec -- dhall-to-yaml \
-	  --generated-comment \
-	  --explain \
-	  --file ./config.dhall \
-	  > $@
 
 .PHONY: build
-build: config.yml
+build:
+	@echo "(Re-)building..."
+	@. ../VERSION && export MAJOR MINOR PATCH VERSION && ./rebuild.hs
+	@echo
 
 .PHONY: validate
 validate: build
@@ -34,7 +20,7 @@ do-watch:
 	    Makefile \
 	    .gitignore \
 	    config.dhall \
-	    gather-examples.hs \
+	    rebuild.hs \
 	  ; do clear; $(MAKE) -s $(TARGET); done
 
 .PHONY: watch
