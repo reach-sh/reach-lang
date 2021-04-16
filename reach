@@ -1013,7 +1013,7 @@ EOF
   docker-compose -f docker-compose.yml.devnet run --service-ports --rm "${DEVNET_NAME}"
 }
 
-server_compose () {
+rpc_server_compose () {
   # TODO: write this docker-compose file a better way
 
   case "$REACH_CONNECTOR_MODE" in
@@ -1209,17 +1209,53 @@ RPC_DEFAULT_KEY=opensesame
 TLS_DEFAULT_PASSPHRASE=rpc-demo
 TLS_SAN=reach-server
 
-do_rpc_dev () {
+do_rpc_run () {
+  # Preserve `cmd` portion of `reach rpc-run cmd` since `reach rpc-server`
+  # intercepts it
+  cmd=$(printf '%s ' "$@")
+
+  "$REACH" rpc-server &
+  spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
+
   [ "x$REACH_RPC_SERVER"                = "x" ] && REACH_RPC_SERVER=127.0.0.1
   [ "x$REACH_RPC_PORT"                  = "x" ] && REACH_RPC_PORT=3000
   [ "x$REACH_RPC_KEY"                   = "x" ] && REACH_RPC_KEY="$RPC_DEFAULT_KEY"
   [ "x$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
-
   export REACH_RPC_SERVER REACH_RPC_PORT REACH_RPC_KEY REACH_RPC_TLS_REJECT_UNVERIFIED
-  "$@"
+
+  # Be patient while rpc-server comes online...
+  i=0
+  s=0
+  while [ "$i" -lt 30 ]; do
+    sleep 1
+    i=$((i+1))
+    s=$(curl \
+      --http1.1 \
+      -sk \
+      -o /dev/null \
+      -w '%{http_code}' \
+      -H "X-API-Key: $REACH_RPC_KEY" \
+      -X POST \
+      "https://$REACH_RPC_SERVER:$REACH_RPC_PORT/health")
+
+    [ "$s" -eq 200 ] && break
+  done
+
+  killbg () {
+    echo
+    pkill -TERM -P "$spid"
+    do_down
+  }
+
+  [ ! "$s" -eq 200 ] \
+    && killbg \
+    && echo "RPC server returned HTTP $s after $i seconds" \
+    && exit 1
+
+  sh -c "$cmd"; killbg
 }
 
-do_server () {
+do_rpc_server () {
   ensure_connector_mode
   # TODO: less copy/paste duplication from do_react
   # TODO: check for different ports based on REACH_CONNECTOR_MODE
@@ -1286,13 +1322,13 @@ do_server () {
   # All args are just forwarded to do_compile
   do_compile "$@"
 
-  server_compose run --service-ports --rm rpc-server
+  rpc_server_compose run --service-ports --rm rpc-server
   exit 0
 }
 
-do_server_down () {
+do_rpc_server_down () {
   USE_EXISTING_DEVNET=false
-  server_compose down
+  rpc_server_compose down
   exit 0
 }
 
@@ -1317,21 +1353,21 @@ do_hashes () {
 do_usage () {
   echo "Usage: reach COMMAND"
   echo " where COMMAND is one of"
-  echo "  compile --- compile an app"
-  echo "  clean   --- delete compiled artifacts"
-  echo "  init    --- set up source files for a simple app"
-  echo "  run     --- run a simple app"
-  echo "  down    --- halt any dockerized devnets for this app"
-  echo "  scaffold -- set up Docker scaffolding for a simple app"
-  echo "  react   --- run a simple react app"
-  echo "  server  --- run a simple Reach RPC server"
-  echo "  rpc-dev --- run an RPC frontend with development configuration"
-  echo "  devnet  --- run only the devnet"
-  echo "  upgrade --- upgrade Reach"
-  echo "  update  --- update Reach Docker images"
-  echo "  version --- display version"
-  echo "  hashes  --- display git hashes used to build each Docker image"
-  echo "  help    --- show this info"
+  echo "  compile     --- compile an app"
+  echo "  clean       --- delete compiled artifacts"
+  echo "  init        --- set up source files for a simple app"
+  echo "  run         --- run a simple app"
+  echo "  down        --- halt any dockerized devnets for this app"
+  echo "  scaffold    --- set up Docker scaffolding for a simple app"
+  echo "  react       --- run a simple react app"
+  echo "  rpc-server  --- run a simple Reach RPC server"
+  echo "  rpc-run     --- run an RPC server + frontend with development configuration"
+  echo "  devnet      --- run only the devnet"
+  echo "  upgrade     --- upgrade Reach"
+  echo "  update      --- update Reach Docker images"
+  echo "  version     --- display version"
+  echo "  hashes      --- display git hashes used to build each Docker image"
+  echo "  help        --- show this info"
 }
 
 SUBCOMMAND=$1
@@ -1356,14 +1392,14 @@ case ${SUBCOMMAND} in
     react-down)
         do_react_down "$@"
         ;;
-    server)
-        do_server "$@"
+    rpc-server)
+        do_rpc_server "$@"
         ;;
-    server-down)
-        do_server_down "$@"
+    rpc-server-down)
+        do_rpc_server_down "$@"
         ;;
-    rpc-dev)
-        do_rpc_dev "$@"
+    rpc-run)
+        do_rpc_run "$@"
         ;;
     init)
         do_init "$@"

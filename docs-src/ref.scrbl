@@ -244,15 +244,15 @@ You can run a private Reach devnet by executing
   }
 ]
 
-@subsection[#:tag "ref-usage-server"]{@tt{reach server}}
+@subsection[#:tag "ref-usage-rpc-server"]{@tt{reach rpc-server}}
 
 The sub-command
 
-@cmd{reach server}
+@cmd{reach rpc-server}
 
 starts an instance of the @seclink["ref-backends-rpc"]{Reach RPC Server} using all of the same options and defaults as @exec{reach run}.
 
-@exec{reach server} supports the following options:
+@exec{reach rpc-server} supports the following options:
 
 @itemlist[
 
@@ -287,30 +287,20 @@ starts an instance of the @seclink["ref-backends-rpc"]{Reach RPC Server} using a
 
 ]
 
-@subsection[#:tag "ref-usage-rpc-dev"]{@tt{reach rpc-dev}}
+@subsection[#:tag "ref-usage-rpc-run"]{@tt{reach rpc-run}}
 
 The sub-command
 
-@cmd{reach rpc-dev CMD}
+@cmd{reach rpc-run CMD}
 
-is a convenient means of launching a pre-configured RPC @tech{frontend} which
-is suitable for development purposes.
-
-
-@exec{reach rpc-dev CMD} invokes @exec{CMD} with the following environment
-variables:
-
-@itemlist[
-  @item{@envvar{REACH_RPC_SERVER} defaults to @litchar{127.0.0.1} if not defined.}
-  @item{@envvar{REACH_RPC_PORT} defaults to @litchar{3000} if not defined.}
-  @item{@envvar{REACH_RPC_KEY} defaults to @litchar{opensesame} if not defined.}
-  @item{@envvar{REACH_RPC_TLS_REJECT_UNVERIFIED} defaults to @litchar{0} if not
-        defined and will cause the frontend to emit a warning about
-        TLS verification being disabled.}
-]
+is a convenient means of launching a pre-configured RPC server and
+@tech{frontend} which are suitable for development purposes.
+It uses a @envvar{REACH_RPC_KEY} value of @litchar{opensesame} (the standard
+development API key), and sets @envvar{REACH_RPC_TLS_REJECT_UNVERIFIED} to
+@litchar{0}.
 
 Consider this example from the @seclink{tut-7-rpc} tutorial:
-@cmd{reach rpc-dev python3 -u ./index.py}
+@cmd{reach rpc-run python3 -u ./index.py}
 
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}

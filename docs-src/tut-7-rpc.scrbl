@@ -187,37 +187,26 @@ running it.
 First you will need to copy the @tt{index.rsh} file you used for @seclink{tut-7}
 into the directory where you saved @tt{index.py}.
 
-Now open a terminal in that directory and type:
-@cmd{./reach server}
-
+Next, open a terminal in that directory and install the Reach Python RPC
+client:
+@cmd{([ -d ./venv ] || python3 -m venv ./venv) && source ./venv/bin/activate}
 @margin-note{
-Deploying your @|DApp| into production with the RPC server requires obtaining a
-certificate which is specific to your DNS domain and which has been signed by a
-certificate authority such as
-@link["https://letsencrypt.org/getting-started/"]{Let's Encrypt}.
+What is this @tt{"venv"} thing?
 
-Users who are ready to go live should consult the @seclink{ref-usage-server}
-reference section for configuration details.
+A Python
+@link["https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment"]{venv}
+is a "virtual environment" that sandboxes dependencies to avoid cluttering your
+system directories.
 }
+@cmd{pip install --upgrade reach-rpc-client}
 
-This will launch an RPC server using the development @tech{API key}
-@tt{"opensesame"} and a TLS certificate designed for testing.
-
-The server is now awaiting connections.
-
-Open another terminal in the same directory and use @exec{./reach rpc-dev} to
-play a game of @|RPS|:
-
+Then use @exec{./reach rpc-run} to play a game of @|RPS|:
 @margin-note{
-Consult the @seclink{ref-usage-rpc-dev} reference section for more details on
+Consult the @seclink{ref-usage-rpc-run} reference section for more details on
 how this sub-command works.
 }
-
 @verbatim{
-$ [ -d ./venv ] || python3 -m venv ./venv
-$ source ./venv/bin/activate
-$ pip install --upgrade reach-rpc-client
-$ ./reach rpc-dev python3 -u ./index.py
+$ ./reach rpc-run python3 -u ./index.py
 
 Bob accepts the wager of 5
 Alice played Rock
@@ -228,20 +217,19 @@ Alice went from 10 to 4.9999
   Bob went from 10 to 14.9999
 }
 
+This will launch an RPC server using the development @tech{API key}
+@tt{"opensesame"} and a TLS certificate designed for testing.
 @margin-note{
-What is this @tt{"venv"} thing?
+Deploying your @|DApp| into production with the RPC server requires obtaining a
+certificate which is specific to your DNS domain and which has been signed by a
+certificate authority such as
+@link["https://letsencrypt.org/getting-started/"]{Let's Encrypt}.
 
-A Python
-@link["https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment"]{venv}
-is a "virtual environment" that sandboxes dependencies to avoid cluttering your
-system directories.
+Users who are ready to go live should consult the @seclink{ref-usage-rpc-server}
+reference section for configuration details.
 }
 
-You may replay as many times as you would like by pressing @tt{"up"} once then
-@tt{"return"} on your keyboard in this terminal.
-
-When you are done type @litchar{Ctrl-C} then @exec{./reach down} in the first
-terminal, and then @exec{deactivate} in the second.
+When you are done, type @exec{deactivate} to exit your @tt{venv}.
 
 Well done! You have just reimplemented @seclink{tut-7} in Python.
 
