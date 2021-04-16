@@ -162,13 +162,17 @@ let setup_remote_docker
   -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
 
 
--- TODO better consolidate this between job definitions
-let install_mo =
-  run "install mo" ''
+let mk_install_mo
+   = \(destination : Text)
+  -> run "install mo" ''
       curl -sSL https://git.io/get-mo -o mo \
         && chmod +x mo \
-        && mv mo /usr/local/bin
+        && mv mo ${destination}
       ''
+
+-- TODO better consolidate this between job definitions
+let install_mo_user_local_bin          = mk_install_mo "/usr/local/bin"
+let install_mo_home_circleci_local_bin = mk_install_mo "/home/circleci/.local/bin"
 
 
 let slack/notify
@@ -218,7 +222,7 @@ let dockerized-job-with-reach-circle-and-runner
 
 let build-reach-circle = dockerized-job-with "cimg/base:stable"
   [ setup_remote_docker True
-  , install_mo
+  , install_mo_home_circleci_local_bin
   , run "Rebuild Docker image: ${reach-circle}" ''
       cd hs && make build-circle-docker
       ${docker-tag-all "reach-circle"}
@@ -228,7 +232,7 @@ let build-reach-circle = dockerized-job-with "cimg/base:stable"
 
 
 let build-core = dockerized-job-with-reach-circle
-  [ install_mo
+  [ install_mo_user_local_bin
 
   , run "hs package.yaml" "cd hs && make package.yaml"
   , restore_cache
@@ -280,7 +284,7 @@ let build-core = dockerized-job-with-reach-circle
 
 
 let test-hs = dockerized-job-with-reach-circle
-  [ install_mo
+  [ install_mo_user_local_bin
   , restore_cache [ "hs-{{ .Revision }}" ]
 
   , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
@@ -295,7 +299,7 @@ let test-hs = dockerized-job-with-reach-circle
 
 
 let test-js = dockerized-job-with-reach-circle-and-runner
-  [ install_mo
+  [ install_mo_user_local_bin
   , restore_cache [ "hs-{{ .Revision }}" ]
 
   , run "test js" "cd js/stdlib && make clean-test && sbin/test.sh"
@@ -376,7 +380,7 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 let mk-example-job
    = \(directory : Text)
   -> let j = dockerized-job-with-reach-circle-and-runner
-      [ install_mo
+      [ install_mo_user_local_bin
       , restore_cache [ "hs-{{ .Revision }}" ]
 
       , run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"

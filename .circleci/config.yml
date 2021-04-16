@@ -289,7 +289,7 @@ jobs:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
             && chmod +x mo \
-            && mv mo /usr/local/bin
+            && mv mo /home/circleci/.local/bin
         name: install mo
         no_output_timeout: 10m
     - run:
