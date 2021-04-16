@@ -44,6 +44,7 @@ import {
   stdlib as compiledEthStdlib,
   typeDefs as ethTypeDefs,
 } from './ETH_compiled';
+import { ConnectorMode } from './ConnectorMode';
 
 // ****************************************************************************
 // Type Definitions
@@ -1254,7 +1255,7 @@ export const standardUnit = 'CFX';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'Drip';
 
-const connectorMode: string = 'CFX'; // XXX
+export const connectorMode: ConnectorMode = 'CFX-experimental'; // XXX
 const isIsolatedNetwork: boolean = true; // XXX
 
 async function verifyContract(...args: any): Promise<true> {
