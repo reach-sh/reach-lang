@@ -24,6 +24,7 @@ export const main = Reach.App(
     B.publish(tokenB, amtB)
      .pay([ [amtB, tokenB] ])
      .timeout(time, () => {
+       // closeToks(A, [tokenA])
        A.publish();
        transfer(balance(tokenA), tokenA).to(A);
        commit();
@@ -35,6 +36,7 @@ export const main = Reach.App(
       const ok = declassify(interact.confirm(tokenB, amtB)); });
     A.publish(ok)
      .timeout(time, () => {
+       // closeToks(B, [tokenA, tokenB])
        B.publish();
        transfer(balance(tokenA), tokenA).to(B);
        transfer(balance(tokenB), tokenB).to(B);
