@@ -9,6 +9,7 @@ let MAJOR = env:MAJOR as Text
 let MINOR = env:MINOR as Text
 let PATCH = env:PATCH as Text
 let VERSION = env:VERSION as Text
+let VERSION_SHORT = "${MAJOR}.${MINOR}"
 
 let KeyVal
    = \(K : Type)
@@ -23,16 +24,18 @@ let `:=`
 
 --------------------------------------------------------------------------------
 
-let docker-image_ = \(i : Text) -> \(v : Text) -> "reachsh/${i}:${v}"
-let docker-image = \(i : Text) ->
-  docker-image_ i "${MAJOR}.${MINOR}"
-let docker-images = \(i : Text) ->
-  (docker-image_ i "${MAJOR}.${MINOR}")
-  ++ " " ++ (docker-image_ i "latest")
-  ++ " " ++ (docker-image_ i "${MAJOR}.${MINOR}.${PATCH}")
-  ++ " " ++ (docker-image_ i "${MAJOR}")
+let docker-image = \(i : Text) -> \(v : Text) -> "reachsh/${i}:${v}"
 
-let reach-circle = docker-image "reach-circle"
+let docker-tag1 = \(i : Text) -> \(o : Text) ->
+  "docker tag ${i} ${o}"
+let docker-tag = \(i : Text) -> \(v : Text) ->
+  docker-tag1 (docker-image i "latest") (docker-image i v)
+let docker-tag-all = \(i : Text) ->
+  (docker-tag i "${MAJOR}.${MINOR}.${PATCH}")
+  ++ "\n" ++ docker-tag i "${MAJOR}.${MINOR}"
+  ++ "\n" ++ (docker-tag i "${MAJOR}")
+
+let reach-circle = docker-image "reach-circle" VERSION
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -195,7 +198,7 @@ let dockerized-job-with-reach-circle-and-runner
              , setup_remote_docker False -- TODO toggle caching on: True
              , run "attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
-                 docker tag ${docker-images "runner"}
+                 ${docker-tag-all "runner"}
                  ''
              ] # steps
       in dockerized-job-with-reach-circle s
@@ -239,14 +242,14 @@ let build-core = dockerized-job-with-reach-circle
 
   , run "stash `build-core` workspace artifacts" ''
       mkdir -p /tmp/build-core
-      docker save ${docker-image "runner"} | gzip > /tmp/build-core/runner.tar.gz
+      docker save ${docker-image "runner" "latest"} | gzip > /tmp/build-core/runner.tar.gz
       ''
   -- TODO alleviate cache time penalty by putting `reachc` in here too?
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
 
   , run "pull algorand-devnet" ''
-      docker pull ${docker-image "algorand-devnet"}
-      docker run --entrypoint /bin/sh ${docker-image "algorand-devnet"} -c 'echo $REACH_GIT_HASH'
+      docker pull ${docker-image "algorand-devnet" VERSION_SHORT}
+      docker run --entrypoint /bin/sh ${docker-image "algorand-devnet" VERSION_SHORT} -c 'echo $REACH_GIT_HASH'
       ''
 
   , Step.jq/install
