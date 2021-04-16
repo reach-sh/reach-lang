@@ -603,6 +603,7 @@ It accepts an optional bytes argument, which is included in any reported violati
  closeTo( Who, after ) }
 
 @index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
+The @reachin{after} argument is optional.
 
 @section[#:tag "ref-programs-local"]{Local Steps}
 
