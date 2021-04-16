@@ -275,6 +275,35 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "build-reach-circle":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable"
+    steps:
+    - checkout
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        command: |
+          curl -sSL https://git.io/get-mo -o mo \
+            && chmod +x mo \
+            && mv mo /usr/local/bin
+        name: install mo
+        no_output_timeout: 10m
+    - run:
+        command: |
+          cd hs && make build-circle-docker
+          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0.1.2
+          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0.1
+          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0
+        name: "Rebuild Docker image: reachsh/reach-circle:0.1.2"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "chicken-fork":
     docker:
     - auth:
@@ -2392,10 +2421,16 @@ version: 2.1
 workflows:
   "build-and-test":
     jobs:
+    - "build-reach-circle":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
     - "build-core":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
+        requires:
+        - "build-reach-circle"
     - "test-hs":
         context:
         - "reachdevbot-on-dockerhub"

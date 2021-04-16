@@ -216,6 +216,17 @@ let dockerized-job-with-reach-circle-and-runner
 
 --------------------------------------------------------------------------------
 
+let build-reach-circle = dockerized-job-with "cimg/base:stable"
+  [ setup_remote_docker True
+  , install_mo
+  , run "Rebuild Docker image: ${reach-circle}" ''
+      cd hs && make build-circle-docker
+      ${docker-tag-all "reach-circle"}
+      ''
+  , slack/notify
+  ]
+
+
 let build-core = dockerized-job-with-reach-circle
   [ install_mo
 
@@ -380,13 +391,14 @@ let mk-example-job
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
-   in [ `=:=` "build-core"  build-core
-      , `=:=` "docs-render" docs-render
-      , `=:=` "docs-deploy" docs-deploy
-      , `=:=` "shellcheck"  shellcheck
-      , `=:=` "docker-lint" docker-lint
-      , `=:=` "test-hs"     test-hs
-      , `=:=` "test-js"     test-js
+   in [ `=:=` "build-reach-circle" build-reach-circle
+      , `=:=` "build-core"         build-core
+      , `=:=` "docs-render"        docs-render
+      , `=:=` "docs-deploy"        docs-deploy
+      , `=:=` "shellcheck"         shellcheck
+      , `=:=` "docker-lint"        docker-lint
+      , `=:=` "test-hs"            test-hs
+      , `=:=` "test-js"            test-js
       ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
@@ -411,6 +423,9 @@ let workflows =
        , filters  = Some { branches = { only = "master" }}
        }
 
+  let requires-build-reach-circle =
+    T::{ requires = Some [ "build-reach-circle" ] }
+
   let requires-build-core =
     T::{ requires = Some [ "build-core" ] }
 
@@ -427,9 +442,10 @@ let workflows =
     ]}
 
   let build-and-test = { jobs =
-    [ [ `=:=` "build-core" T.default           ]
-    , [ `=:=` "test-hs"    requires-build-core ]
-    , [ `=:=` "test-js"    requires-build-core ]
+    [ [ `=:=` "build-reach-circle" T.default                   ]
+    , [ `=:=` "build-core"         requires-build-reach-circle ]
+    , [ `=:=` "test-hs"            requires-build-core         ]
+    , [ `=:=` "test-js"            requires-build-core         ]
     ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 
