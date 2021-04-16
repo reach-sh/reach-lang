@@ -198,6 +198,9 @@ ensure_connector_mode () {
     "ALGO-test-dockerized")
       REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
+    "CFX")
+      REACH_CONNECTOR_MODE="CFX-experimental"
+      ;;
   esac
 
   # ensure it is one of the supported things
@@ -209,6 +212,8 @@ ensure_connector_mode () {
     "ALGO-live")
       ;;
     "ALGO-test-dockerized-algod")
+      ;;
+    "CFX-experimental")
       ;;
     *)
       fatal_unrecognized_connector_mode
@@ -540,6 +545,12 @@ services:
       - ALGO_PORT=4180
       - ALGO_INDEXER_SERVER=http://algorand-devnet
       - ALGO_INDEXER_PORT=8980
+  ${SERVICE}-CFX-experimental:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-experimental
+      - CFX_NODE_URI=http://host.docker.internal:12537
   ${SERVICE}-: *default-app
   ${SERVICE}: *default-app
 EOF
