@@ -224,7 +224,7 @@ let dockerized-job-with-reach-circle-and-runner
 let build-reach-circle = dockerized-job-with "cimg/base:stable"
   [ setup_remote_docker True
   , install_mo_home_circleci_local_bin
-  , run "Rebuild Docker image: ${reach-circle}" ''
+  , runT "60m" "Rebuild Docker image: ${reach-circle}" ''
       cd hs && make build-circle-docker
       ${docker-tag-all "reach-circle"}
       ''

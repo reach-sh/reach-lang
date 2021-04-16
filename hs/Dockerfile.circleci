@@ -3,7 +3,7 @@
 FROM ethereum/solc:0.8.2 as solc
 
 FROM alpine:3 as dl-deps
-RUN apk add wget=1.20.3-r1 unzip=6.0-r8 --no-cache
+RUN apk add wget=1.21.1-r1 unzip=6.0-r8 --no-cache
 
 WORKDIR /z3
 ENV Z3_VER 4.8.10
@@ -20,12 +20,12 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   aha=0.4.10.6-4 \
   containerd=1.3.3-0ubuntu1~18.04.4 \
-  curl=7.58.0-2ubuntu3.12 \
+  curl=7.58.0-2ubuntu3.13 \
   docker-compose=1.17.1-2 \
   docker.io=19.03.6-0ubuntu1~18.04.3 \
   gcc=4:7.4.0-1ubuntu2.3 \
-  git=1:2.17.1-1ubuntu0.7 \
-  gnupg=2.2.4-1ubuntu1.3 \
+  git=1:2.17.1-1ubuntu0.8 \
+  gnupg=2.2.4-1ubuntu1.4 \
   libc6-dev=2.27-3ubuntu1.4 \
   libcairo2=1.15.10-2ubuntu0.1 \
   libffi-dev=3.2.1-8 \
@@ -47,7 +47,7 @@ RUN apt-get update \
   zlib1g-dev=1:1.2.11.dfsg-0ubuntu2 \
   && add-apt-repository -y ppa:plt/racket \
   && apt-get update \
-  && apt-get install -y racket=8.0+ppa1-5~bionic1 --no-install-recommends \
+  && apt-get install -y racket=8.0+ppa1-6~bionic1 --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
