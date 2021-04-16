@@ -18,6 +18,11 @@ data StmtAnnot = StmtAnnot
   }
   deriving (Eq, Generic, Show)
 
+instance Pretty StmtAnnot where
+  pretty (StmtAnnot {..}) = h sa_pure "pure" <> h sa_local "local"
+    where
+      h x s = if x then " " <> s else ""
+
 instance Semigroup StmtAnnot where
   (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
 
@@ -79,8 +84,8 @@ instance Pretty DLStmt where
             pretty e <> semi
       DLS_ArrayMap _ ans x a f -> prettyMap ans x a f
       DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
-      DLS_If _ ca _ ts fs ->
-        prettyIf ca (render_dls ts) (render_dls fs)
+      DLS_If _ ca sa ts fs ->
+        prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
       DLS_Switch _ ov _ csm ->
         prettySwitch ov csm
       DLS_Return _ ret sv ->
@@ -151,7 +156,7 @@ instance IsPure DLStmt where
     DLS_Stop {} -> False
     DLS_Only _ _ ss -> isPure ss
     DLS_ToConsensus {} -> False
-    DLS_FromConsensus _ ss -> isPure ss
+    DLS_FromConsensus {} -> False
     DLS_While {} -> False
     DLS_Continue {} -> False
     DLS_FluidSet {} -> False
@@ -172,7 +177,7 @@ instance IsLocal DLStmt where
     DLS_Stop {} -> False
     DLS_Only {} -> False
     DLS_ToConsensus {} -> False
-    DLS_FromConsensus _ ss -> isLocal ss
+    DLS_FromConsensus {} -> False
     DLS_While {} -> False
     DLS_Continue {} -> False
     DLS_FluidSet {} -> True
