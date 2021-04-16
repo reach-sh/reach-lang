@@ -11,7 +11,7 @@ install-dhall:
 	stack --resolver ${LTS} build dhall-yaml
 
 config.yml: install-dhall examples.dhall
-	@. ../VERSION && export VERSION && stack --resolver ${LTS} exec -- dhall-to-yaml \
+	@. ../VERSION && export MAJOR MINOR PATCH VERSION && stack --resolver ${LTS} exec -- dhall-to-yaml \
 	  --generated-comment \
 	  --explain \
 	  --file ./config.dhall \

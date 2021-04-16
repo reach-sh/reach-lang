@@ -5,7 +5,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -15,7 +15,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -50,7 +50,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -60,7 +60,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -95,7 +95,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -105,7 +105,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -140,7 +140,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -150,7 +150,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -185,7 +185,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - run:
@@ -272,7 +272,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -282,7 +282,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -317,7 +317,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -327,7 +327,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -362,7 +362,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -372,7 +372,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -466,7 +466,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - run:
@@ -498,7 +498,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -508,7 +508,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -543,7 +543,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -553,7 +553,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -588,7 +588,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -598,7 +598,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -633,7 +633,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -643,7 +643,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -678,7 +678,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -688,7 +688,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -723,7 +723,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -733,7 +733,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -768,7 +768,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -778,7 +778,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -813,7 +813,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -823,7 +823,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -858,7 +858,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -868,7 +868,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -903,7 +903,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -913,7 +913,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -948,7 +948,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -958,7 +958,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -993,7 +993,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1003,7 +1003,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1038,7 +1038,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1048,7 +1048,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1083,7 +1083,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1093,7 +1093,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1128,7 +1128,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1138,7 +1138,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1173,7 +1173,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1183,7 +1183,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1218,7 +1218,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1228,7 +1228,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1263,7 +1263,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1273,7 +1273,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1325,7 +1325,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - run:
@@ -1360,7 +1360,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1370,7 +1370,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1397,7 +1397,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1407,7 +1407,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1442,7 +1442,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1452,7 +1452,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1487,7 +1487,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1497,7 +1497,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1532,7 +1532,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1542,7 +1542,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1577,7 +1577,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1587,7 +1587,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1622,7 +1622,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1632,7 +1632,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1667,7 +1667,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1677,7 +1677,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1712,7 +1712,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1722,7 +1722,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1757,7 +1757,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1767,7 +1767,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1802,7 +1802,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1812,7 +1812,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1847,7 +1847,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1857,7 +1857,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1892,7 +1892,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1902,7 +1902,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1937,7 +1937,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1947,7 +1947,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -1982,7 +1982,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -1992,7 +1992,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -2027,7 +2027,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -2037,7 +2037,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -2072,7 +2072,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -2082,7 +2082,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -2117,7 +2117,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -2127,7 +2127,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -2162,7 +2162,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -2172,7 +2172,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:
@@ -2207,7 +2207,7 @@ jobs:
       - auth:
           password: "$DOCKER_PASSWORD"
           username: "$DOCKER_LOGIN"
-        image: reachsh/reach-circle:0.1.2
+        image: reachsh/reach-circle:0.1
     steps:
       - checkout
       - attach_workspace:
@@ -2217,7 +2217,7 @@ jobs:
       - run:
           command: |
             zcat /tmp/build-core/runner.tar.gz | docker load
-            docker tag reachsh/runner:0.1 reachsh/runner:latest
+            docker tag reachsh/runner:0.1 reachsh/runner:latest reachsh/runner:0.1.2 reachsh/runner:0
           name: attach runner image
           no_output_timeout: "10m"
       - run:

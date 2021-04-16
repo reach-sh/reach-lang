@@ -5,12 +5,10 @@ let Prelude =
 let Map = Prelude.Map.Type
 let map = Prelude.List.map
 
+let MAJOR = env:MAJOR as Text
+let MINOR = env:MINOR as Text
+let PATCH = env:PATCH as Text
 let VERSION = env:VERSION as Text
-
--- TODO use `VERSION` instead of hard-coded "0.1" once corresponding XXX
---   RE: `REACH_DEFAULT_VERSION` in `reach` script has been completed
-let image-runner = "reachsh/runner:0.1"
-
 
 let KeyVal
    = \(K : Type)
@@ -23,12 +21,18 @@ let `:=`
   -> \(v : V)
   -> { mapKey = k, mapValue = v }
 
-
 --------------------------------------------------------------------------------
 
-let reach-circle =
-  "reachsh/reach-circle:${VERSION}"
+let docker-image_ = \(i : Text) -> \(v : Text) -> "reachsh/${i}:${v}"
+let docker-image = \(i : Text) ->
+  docker-image_ i "${MAJOR}.${MINOR}"
+let docker-images = \(i : Text) ->
+  (docker-image_ i "${MAJOR}.${MINOR}")
+  ++ " " ++ (docker-image_ i "latest")
+  ++ " " ++ (docker-image_ i "${MAJOR}.${MINOR}.${PATCH}")
+  ++ " " ++ (docker-image_ i "${MAJOR}")
 
+let reach-circle = docker-image "reach-circle"
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -191,7 +195,7 @@ let dockerized-job-with-reach-circle-and-runner
              , setup_remote_docker False -- TODO toggle caching on: True
              , run "attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
-                 docker tag reachsh/runner:0.1 reachsh/runner:latest
+                 docker tag ${docker-images "runner"}
                  ''
              ] # steps
       in dockerized-job-with-reach-circle s
@@ -235,14 +239,14 @@ let build-core = dockerized-job-with-reach-circle
 
   , run "stash `build-core` workspace artifacts" ''
       mkdir -p /tmp/build-core
-      docker save ${image-runner} | gzip > /tmp/build-core/runner.tar.gz
+      docker save ${docker-image "runner"} | gzip > /tmp/build-core/runner.tar.gz
       ''
   -- TODO alleviate cache time penalty by putting `reachc` in here too?
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
 
   , run "pull algorand-devnet" ''
-      docker pull reachsh/algorand-devnet:0.1
-      docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
+      docker pull ${docker-image "algorand-devnet"}
+      docker run --entrypoint /bin/sh ${docker-image "algorand-devnet"} -c 'echo $REACH_GIT_HASH'
       ''
 
   , Step.jq/install
