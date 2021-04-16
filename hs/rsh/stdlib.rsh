@@ -64,13 +64,6 @@ export function makeCommitment (interact, x) {
 export function checkCommitment (commitment, salt, x) {
   return require(commitment == digest(salt, x)); }
 
-export function closeTo(Who, after) {
-  Who.publish();
-  transfer(balance()).to(Who);
-  commit();
-  after();
-  exit(); }
-
 export const fail = () => assume(false);
 
 export const Either = (A, B) => Data({
@@ -208,6 +201,27 @@ export const Foldable_product = (c) =>
   c.reduce(1, (acc, x) => acc * x);
 export const Foldable_product1 = (c) => () =>
   Foldable_product(c);
+
+// After Foldable
+
+export function closeToks(Who, toks, after = (() => null)) {
+  Who.publish();
+  transfer(balance()).to(Who);
+  const atoks = array(Token, toks);
+  Foldable_forEach(atoks, (tok) => transfer(balance(tok), tok).to(Who));
+  commit();
+  after();
+  exit(); };
+
+export function closeTo(Who, after = (() => null)) {
+  // closeToks(Who, [], after); };
+  Who.publish();
+  transfer(balance()).to(Who);
+  commit();
+  after();
+  exit(); };
+
+// Math
 
 export const sqrt = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], _) =>

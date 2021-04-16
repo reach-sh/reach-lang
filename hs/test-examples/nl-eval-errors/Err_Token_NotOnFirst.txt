@@ -1,1 +1,0 @@
-reachc: error: ./Err_Token_NotOnFirst.rsh:17:9:dot: Token published on message that is not first message, which Reach cannot track, yet.

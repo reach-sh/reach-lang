@@ -1637,18 +1637,19 @@ doFluidSet fv ssv = do
   da <- compileCheckType (fluidVarType fv) sv
   saveLift $ DLS_FluidSet at fv da
 
-lookupBalanceFV :: Maybe DLArg -> App FluidVar
+lookupBalanceFV :: HasCallStack => Maybe DLArg -> App FluidVar
 lookupBalanceFV mtok = do
   toks <- readSt st_toks
+  let msg = "given " <> show mtok <> ", looking in: " <> show toks
   let i =
         case mtok of
           Nothing -> 0
           Just (DLA_Var v) ->
             case elemIndex v toks of
               Nothing ->
-                impossible $ "lookupBalanceFV on non-tok"
+                impossible $ "lookupBalanceFV on non-tok: " <> msg
               Just x -> 1 + x
-          _ -> impossible $ "lookupBalanceFV on non-DLA_Var"
+          _ -> impossible $ "lookupBalanceFV on non-DLA_Var: " <> msg
   return $ FV_balance i
 
 doBalanceInit :: Maybe DLArg -> App ()
@@ -3233,8 +3234,6 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
       expect_ $ Err_Token_InWhile
-    when (st_after_first st) $
-      expect_ $ Err_Token_NotOnFirst
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
