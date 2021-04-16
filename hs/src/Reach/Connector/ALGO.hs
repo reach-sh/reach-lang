@@ -168,13 +168,30 @@ data Shared = Shared
 
 type Lets = M.Map DLVar (App ())
 
+data TxnKind
+  = TK_In
+  | TK_Out
+  | TK_Init
+  deriving (Eq, Show, Ord)
+
+data TxnInfo = TxnInfo
+  { ti_idx :: TxnIdx
+  , ti_kind :: TxnKind
+  }
+  deriving (Eq, Show, Ord)
+
+ti_from :: TxnInfo -> Bool
+ti_from = flip elem [TK_Out, TK_Init] . ti_kind
+ti_init :: TxnInfo -> Bool
+ti_init = (==) TK_Init . ti_kind
+
 data Env = Env
   { eShared :: Shared
   , eWhich :: Int
   , eLabelR :: IORef Int
   , eOutputR :: IORef TEALs
   , eTxnsR :: IORef TxnIdx
-  , eFromTxns :: IORef [TxnIdx]
+  , eTxns :: IORef [TxnInfo]
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
@@ -305,21 +322,33 @@ salloc fm = do
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
-talloc :: Bool -> App TxnIdx
-talloc isFrom = do
+talloc :: TxnKind -> App TxnIdx
+talloc tk = do
   Env {..} <- ask
   liftIO $ modifyIORef eTxnsR $ (+) 1
   txni <- liftIO $ readIORef eTxnsR
   when (txni > 15) $ do
     bad "too many txns"
-  when isFrom $
-    liftIO $ modifyIORef eFromTxns $ (:) txni
+  let ti = TxnInfo txni tk
+  liftIO $ modifyIORef eTxns $ (:) ti
   return txni
 
 how_many_txns :: App TxnIdx
 how_many_txns = do
   Env {..} <- ask
   liftIO $ readIORef eTxnsR
+
+txn_infos :: App [TxnInfo]
+txn_infos = do
+  Env {..} <- ask
+  liftIO $ readIORef eTxns
+
+from_txns :: App [TxnIdx]
+from_txns = (map ti_idx . filter ti_from) <$> txn_infos
+
+init_txns :: App [TxnIdx]
+init_txns = (map ti_idx . filter ti_init) <$> txn_infos
+
 
 ctobs :: DLType -> App ()
 ctobs = \case
@@ -701,36 +730,16 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer _ who amt mtok -> do
-    txni <- talloc True
-    (vTypeEnum, fReceiver, fAmount, fSender) <-
-      case mtok of
-        Nothing ->
-          return ("pay", "Receiver", "Amount", "Sender")
-        Just tok -> do
-          code "gtxn" [texty txni, "XferAsset"]
-          ca tok
-          eq_or_fail
-          return ("axfer", "AssetReceiver", "AssetAmount", "AssetSender")
-    code "gtxn" [texty txni, "TypeEnum"]
-    code "int" [vTypeEnum]
-    eq_or_fail
-    code "gtxn" [texty txni, fReceiver]
-    ca who
-    cfrombs T_Address
-    eq_or_fail
-    code "gtxn" [texty txni, fAmount]
-    ca amt
-    eq_or_fail
-    code "gtxn" [texty txni, fSender]
-    code "byte" [tContractAddr]
-    cfrombs T_Address
-    eq_or_fail
+  DLE_Transfer at who amt mtok -> do
+    doTransfer TK_Out at (ca who) amt mtok
+  DLE_TokenInit at tok -> do
+    comment $ "Initializing token"
+    doTransfer TK_Init at (code "byte" [tContractAddr]) (DLA_Literal $ DLL_Int sb 0) (Just tok)
   DLE_CheckPay at fs amt mtok -> do
     comment $ "CheckPay"
     comment $ texty $ unsafeRedactAbsStr $ show at
     comment $ texty $ unsafeRedactAbsStr $ show fs
-    txni <- talloc False
+    txni <- talloc TK_In
     (vTypeEnum, fReceiver, fAmount, rmFee, _fSender::String) <-
       case mtok of
         Nothing ->
@@ -739,7 +748,7 @@ ce = \case
           code "gtxn" [texty txni, "XferAsset"]
           ca tok
           eq_or_fail
-          return ("axfer", "AssetReceiver", "AssetAmount", False, "AssetSender")
+          return ("axfer", "AssetReceiver", "AssetAmount", False, "Sender")
     code "gtxn" [texty txni, "TypeEnum"]
     code "int" [vTypeEnum]
     eq_or_fail
@@ -774,6 +783,33 @@ ce = \case
   DLE_MapSet {} -> xxx "algo mapset"
   DLE_MapDel {} -> xxx "algo mapdel"
   DLE_Remote {} -> xxx "algo remote"
+
+doTransfer :: TxnKind -> SrcLoc -> App () -> DLArg -> Maybe DLArg -> App ()
+doTransfer tk _at cwho amt mtok = do
+    txni <- talloc tk
+    (vTypeEnum, fReceiver, fAmount, fSender) <-
+      case mtok of
+        Nothing ->
+          return ("pay", "Receiver", "Amount", "Sender")
+        Just tok -> do
+          code "gtxn" [texty txni, "XferAsset"]
+          ca tok
+          eq_or_fail
+          return ("axfer", "AssetReceiver", "AssetAmount", "Sender")
+    code "gtxn" [texty txni, "TypeEnum"]
+    code "int" [vTypeEnum]
+    eq_or_fail
+    code "gtxn" [texty txni, fReceiver]
+    cwho
+    cfrombs T_Address
+    eq_or_fail
+    code "gtxn" [texty txni, fAmount]
+    ca amt
+    eq_or_fail
+    code "gtxn" [texty txni, fSender]
+    code "byte" [tContractAddr]
+    cfrombs T_Address
+    eq_or_fail
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
@@ -904,22 +940,34 @@ ct = \case
         (isHalt, check_nextSt) =
           case msvs of
             --- XXX fix this so it makes sure it is zero bytes
-          Nothing -> (True, halttxn)
+          FI_Halt toks -> (True, forM_ toks close_asset >> close_escrow)
             where
-              halttxn = do
-                txni <- talloc True
+              close_asset tok =
+                close "axfer" "AssetAmount" "Sender" "AssetCloseTo" $ \txni -> do
+                  code "gtxn" [texty txni, "XferAsset"]
+                  ca tok
+                  eq_or_fail
+              close_escrow =
+                close "pay" "Amount" "Sender" "CloseRemainderTo" $ const $ return ()
+              close vTypeEnum fAmount fSender fCloseTo (extra::TxnIdx -> App ()) = do
+                txni <- talloc TK_Out
+                extra txni
                 code "gtxn" [texty txni, "TypeEnum"]
-                code "int" ["pay"]
+                code "int" [vTypeEnum]
                 eq_or_fail
                 comment $ "We don't check the receiver"
-                code "gtxn" [texty txni, "Amount"]
+                code "gtxn" [texty txni, fAmount]
                 cl $ DLL_Int sb 0
                 eq_or_fail
-                code "gtxn" [texty txni, "Sender"]
+                code "gtxn" [texty txni, fSender]
                 code "byte" [tContractAddr]
                 cfrombs T_Address
                 eq_or_fail
-          Just svs -> (False, ck)
+                code "gtxn" [texty txni, fCloseTo]
+                code "byte" [tDeployer]
+                cfrombs T_Address
+                eq_or_fail
+          FI_Continue svs -> (False, ck)
             where
               ck = do
                 Env {..} <- ask
@@ -1057,6 +1105,10 @@ lookup_last = readArg argLast >> cfrombs T_UInt
 lookup_fee_amount :: App ()
 lookup_fee_amount = readArg argFeeAmount >> cfrombs T_UInt
 
+-- XXX get from SDK or use min_balance opcode
+minimumBalance_l :: DLLiteral
+minimumBalance_l = DLL_Int sb $ 100000
+
 std_footer :: App ()
 std_footer = do
   label "done"
@@ -1074,7 +1126,7 @@ runApp eShared eWhich eLets emTimev m = do
   -- Everything initial is small
   let eLetSmalls = M.map (\_ -> True) eLets
   let eFinalize = return ()
-  eFromTxns <- newIORef $ mempty
+  eTxns <- newIORef $ mempty
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
@@ -1121,8 +1173,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
             eq_or_fail
             code "gtxn" [texty txnToHandler, "Amount"]
             code "gtxn" [texty txnFromHandler, "Fee"]
-            -- XXX get from SDK or use min_balance opcode
-            cl $ DLL_Int sb $ 100000
+            cl $ minimumBalance_l
             op "+"
             eq_or_fail
 
@@ -1156,8 +1207,15 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
               eq_or_fail
 
               lookup_fee_amount
-              -- XXX only the FromContract ones
-              csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnUser0 .. txns]
+              fts <- from_txns
+              its <- init_txns
+              let ftfees = flip map fts (\i -> code "gtxn" [ texty i, "Fee" ])
+              let itfee = do
+                    cl $ minimumBalance_l
+                    cl $ DLL_Int sb $ fromIntegral $ length its
+                    op "*"
+              let itfees = if null its then [] else [ itfee ]
+              csum_ $ itfees <> ftfees
               eq_or_fail
 
               comment "Check time limits"
@@ -1329,29 +1387,18 @@ compile_algo disp pl = do
     code "byte" [tApplicationID]
     cfrombs T_UInt
     eq_or_fail
+    -- XXX we might not need any of this stuff except the appid check
     comment "Don't check anything else, because app does"
     comment "Check us"
     code "txn" ["TypeEnum"]
-    -- XXX generalize for assets
     code "int" ["pay"]
-    eq_or_fail
-    check_rekeyto
-    -- If we are the last one in the group and it's a halt, then we must close
-    -- to creator
-    code "global" ["ZeroAddress"]
-    code "byte" [tDeployer]
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ 1
-    op "-"
-    code "txn" ["GroupIndex"]
     op "=="
-    readArg argHalts
-    cfrombs T_Bool
-    op "&&"
-    op "select"
-    -- XXX generalize for assetcloseto
-    code "txn" ["CloseRemainderTo"]
-    eq_or_fail
+    code "int" ["axfer"]
+    op "dup2"
+    op "=="
+    op "||"
+    or_fail
+    check_rekeyto
     code "txn" ["GroupIndex"]
     cl $ DLL_Int sb $ fromIntegral $ txnUser0
     op ">="

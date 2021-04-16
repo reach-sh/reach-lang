@@ -50,9 +50,12 @@ jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
 jsApply :: Doc -> [Doc] -> Doc
 jsApply f args = f <> parens (hcat $ punctuate (comma <> space) args)
 
+jsFunction_ :: Doc -> [Doc] -> Doc -> Doc
+jsFunction_ name args body =
+  "function" <+> jsApply name args <+> jsBraces body <> semi
+
 jsFunction :: Doc -> [Doc] -> Doc -> Doc
-jsFunction name args body =
-  "async function" <+> jsApply name args <+> jsBraces body
+jsFunction name args body = "async" <+> jsFunction_ name args body
 
 jsWhile :: Doc -> Doc -> Doc
 jsWhile cond body = "while" <+> parens cond <+> jsBraces body
@@ -64,9 +67,9 @@ jsIf :: Doc -> Doc -> Doc -> Doc
 jsIf cap ttp ftp = "if" <+> parens cap <+> jsBraces ttp <> hardline <> "else" <+> jsBraces ftp
 
 jsBraces :: Doc -> Doc
-jsBraces body = braces (nest 2 $ hardline <> body <> space)
+jsBraces body = braces (nest 2 $ hardline <> body)
 
-jsObject :: Pretty k => M.Map k (Doc) -> Doc
+jsObject :: Pretty k => M.Map k Doc -> Doc
 jsObject m = jsBraces $ vsep $ punctuate comma $ map jsObjField $ M.toList m
   where
     jsObjField (k, v) = pretty k <> ":" <+> v
@@ -256,6 +259,11 @@ jsPrimApply = \case
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
 
+jsArg_m :: AppT (Maybe DLArg)
+jsArg_m = \case
+  Nothing -> return $ "undefined"
+  Just a -> jsArg a
+
 jsExpr :: AppT DLExpr
 jsExpr = \case
   DLE_Arg _ a ->
@@ -311,22 +319,32 @@ jsExpr = \case
       True -> do
         who' <- jsArg who
         amt' <- jsArg amt
-        mtok' <-
-          case mtok of
-            Nothing -> return $ "undefined"
-            Just a -> jsArg a
-        return $
-          jsApply
-            "sim_r.txns.push"
-            [ jsObject $
-                M.fromList $
-                  [ ("to" :: String, who')
-                  , ("amt", amt')
-                  , ("tok", mtok')
-                  ]
+        mtok' <- jsArg_m mtok
+        return $ jsSimTxn "from" $
+          [ ("to", who')
+          , ("amt", amt')
+          , ("tok", mtok')
+          ]
+  DLE_TokenInit _ tok -> do
+    (ctxt_simulate <$> ask) >>= \case
+      False -> mempty
+      True -> do
+        zero' <- jsCon $ DLL_Int sb 0
+        tok' <- jsArg tok
+        return $ jsSimTxn "init" $
+          [ ("amt", zero')
+          , ("tok", tok')
+          ]
+  DLE_CheckPay _ _ amt mtok -> do
+    (ctxt_simulate <$> ask) >>= \case
+      False -> mempty
+      True -> do
+        amt' <- jsArg amt
+        mtok' <- jsArg_m mtok
+        return $ jsSimTxn "to" $
+            [ ("amt", amt')
+            , ("tok", mtok')
             ]
-  DLE_CheckPay {} ->
-    mempty
   DLE_Wait _ amt -> do
     amt' <- jsArg amt
     (ctxt_simulate <$> ask) >>= \case
@@ -485,6 +503,11 @@ jsPayAmt (DLPayAmt {..}) = do
   ks' <- jsArray <$> (mapM (uncurry go) pa_ks)
   return $ jsArray $ [ net', ks' ]
 
+jsSimTxn :: String -> [(String, Doc)] -> Doc
+jsSimTxn kind kvs =
+  jsApply "sim_r.txns.push" $
+    [ jsObject $ M.fromList $ [ ("kind", jsString kind) ] <> kvs ]
+
 jsETail :: AppT EITail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
@@ -499,21 +522,27 @@ jsETail = \case
       False -> jsETail k
       True -> do
         let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
-        (nextSt', nextSt_noTime', isHalt') <-
-          case msvs of
-            Nothing ->
-              --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
-              (,,) <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
-            Just svs -> do
-              timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
-              let svs' = dvdeletep timev svs
-              (,,) <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
-        return $
-          vsep
-            [ "sim_r.nextSt =" <+> nextSt' <> semi
-            , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
-            , "sim_r.isHalt =" <+> isHalt' <> semi
-            ]
+        let common extra nextSt' nextSt_noTime' isHalt' =
+              vsep $
+                extra <>
+                [ "sim_r.nextSt =" <+> nextSt' <> semi
+                , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
+                , "sim_r.isHalt =" <+> isHalt' <> semi
+                ]
+        case msvs of
+          FI_Halt toks -> do
+            --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
+            let close mtok = do
+                  mtok' <- jsArg_m mtok
+                  return $ jsSimTxn "halt" [("tok", mtok')]
+            let close_escrow = close Nothing
+            let close_asset = close . Just
+            closes <- (<>) <$> forM toks close_asset <*> ((\x->[x]) <$> close_escrow)
+            common closes <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
+          FI_Continue svs -> do
+            timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
+            let svs' = dvdeletep timev svs
+            common [] <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
   ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out timev mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
@@ -752,18 +781,15 @@ jsExports :: DLinExports PILVar -> App Doc
 jsExports exports = do
   jsc <- newJsContract
   local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
-    exportProps <- mapM (\ (k, v) -> do
-          vs <- jsExportBlock v
-          return $ hardline <> "    " <> pretty k <> " : " <> vs <> ",") $ M.toList exports
+    exportM <- mapM jsExportBlock exports
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
-    let ctcs = vsep $ map snd $ M.toAscList i2t'
+    let ctcs = map snd $ M.toAscList i2t'
     let body =
-          vsep
-            [ "const stdlib = s.reachStdlib;"
-            , ctcs
-            , " return " <> parens (braces $ hcat exportProps)]
-    return $ "export const getExports = (s) => {\n  " <> body <> " \n};"
-
+          vsep $
+            [ "const stdlib = s.reachStdlib" <> semi ]
+            <> ctcs
+            <> [ jsReturn (jsObject exportM) ]
+    return $ "export" <+> jsFunction_ "getExports" ["s"] body
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _)) = do

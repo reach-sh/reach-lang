@@ -442,6 +442,7 @@ dlvOccurs env bindings de =
     DLE_Digest at as -> _recs at as
     DLE_Claim at _ _ a _ -> _rec at a
     DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
+    DLE_TokenInit at x -> _rec at x
     DLE_CheckPay at _ y z -> _recs_ (_rec at y) at z
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
@@ -485,6 +486,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_Digest _ as -> "digest" <> args as
   DLE_Claim _ _ ty a m -> show ty <> paren (commaSep [sub a, show m])
   DLE_Transfer _ x y z -> "transfer" <> paren (sub y <> ", " <> msub z) <> ".to" <> paren (sub x)
+  DLE_TokenInit _ x -> "tokenInit" <> paren (sub x)
   DLE_CheckPay _ _ y z -> "checkPay" <> paren (sub y <> ", " <> msub z)
   DLE_Wait _ a -> "wait" <> paren (sub a)
   DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
@@ -1020,6 +1022,8 @@ smt_e at_dv mdv de = do
       ca' <- smt_a at ca
       doClaim at f ct ca' mmsg
     DLE_Transfer {} ->
+      mempty
+    DLE_TokenInit {} ->
       mempty
     DLE_CheckPay at f amta mtok -> do
       (pv_net, pv_ks) <- fromMaybe (impossible "no ctxt_pay_amt") <$> (ctxt_pay_amt <$> ask)

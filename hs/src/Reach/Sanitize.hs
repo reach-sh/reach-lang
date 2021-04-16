@@ -62,6 +62,7 @@ instance Sanitize DLExpr where
     DLE_Digest _ as -> DLE_Digest sb (sani as)
     DLE_Claim _ fs ct a mm -> DLE_Claim sb fs ct (sani a) mm
     DLE_Transfer _ x y z -> DLE_Transfer sb (sani x) (sani y) (sani z)
+    DLE_TokenInit _ x -> DLE_TokenInit sb (sani x)
     DLE_CheckPay _ x y z -> DLE_CheckPay sb x (sani y) (sani z)
     DLE_Wait _ x -> DLE_Wait sb (sani x)
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)

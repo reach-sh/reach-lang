@@ -207,6 +207,8 @@ kgq_e ctxt mv = \case
                 query ctxt at f mmsg who $ all_points what
   DLE_Transfer _ _ amt _ ->
     kgq_a_all ctxt amt
+  DLE_TokenInit _ tok ->
+    kgq_a_all ctxt tok
   DLE_CheckPay _ _ amt _ ->
     kgq_a_all ctxt amt
   DLE_Wait _ amt ->

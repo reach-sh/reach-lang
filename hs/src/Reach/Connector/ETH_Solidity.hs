@@ -318,6 +318,7 @@ instance DepthOf DLExpr where
     DLE_Digest _ as -> add1 $ depthOf as
     DLE_Claim _ _ _ a _ -> depthOf a
     DLE_Transfer _ x y z -> max <$> depthOf [x, y] <*> depthOf z
+    DLE_TokenInit _ x -> depthOf x
     DLE_CheckPay _ _ y z -> max <$> depthOf y <*> depthOf z
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
@@ -494,6 +495,7 @@ solExpr sp = \case
       require = solRequire (show (at, fs, mmsg)) <$> solArg a
   DLE_Transfer _ who amt mtok ->
     spa $ solTransfer who amt mtok
+  DLE_TokenInit {} -> return emptyDoc
   DLE_CheckPay at fs amt mtok -> do
     let require :: String -> Doc -> App Doc
         require msg e = spa $ return $ solRequire (show (at, fs, msg)) e
@@ -778,11 +780,11 @@ solCTail = \case
         [ emit'
         , argDefn <> semi
         ] <> svs' <> asn' <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ _XXX_which (Just svs) -> do
+  CT_From _ _XXX_which (FI_Continue svs) -> do
     (setl, sete) <- solHashStateSet svs
     emit' <- ctxt_emit <$> ask
     return $ vsep $ [emit'] <> setl <> [solSet ("current_state") sete]
-  CT_From _ _ Nothing -> do
+  CT_From _ _ (FI_Halt _XXX_toks) -> do
     emit' <- ctxt_emit <$> ask
     return $
       vsep
@@ -1022,7 +1024,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
               let dli' = vsep $ ctimem'
               (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList csvs_)
               let csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-              consbody <- withC $ solCTail (CT_From at 0 (Just csvs_m))
+              consbody <- withC $ solCTail (CT_From at 0 (FI_Continue csvs_m))
               let evtBody = solApply (solMsg_evt (0::Int)) []
               let evtEmit = "emit" <+> evtBody <> semi
               let evtDefn = "event" <+> evtBody <> semi

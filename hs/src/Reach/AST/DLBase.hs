@@ -360,6 +360,7 @@ data DLExpr
   | DLE_Digest SrcLoc [DLArg]
   | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
   | DLE_Transfer SrcLoc DLArg DLArg (Maybe DLArg)
+  | DLE_TokenInit SrcLoc DLArg
   | DLE_CheckPay SrcLoc [SLCtxtFrame] DLArg (Maybe DLArg)
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
@@ -389,6 +390,7 @@ instance Pretty DLExpr where
       DLE_Digest _ as -> "digest" <> parens (render_das as)
       DLE_Claim _ _ ct a m -> prettyClaim ct a m
       DLE_Transfer _ who da mtok -> prettyTransfer who da mtok
+      DLE_TokenInit _ tok -> "tokenInit" <> parens ( pretty tok )
       DLE_CheckPay _ _ da mtok -> "checkPay" <> parens ( pretty da <> ", " <> pretty mtok )
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
@@ -420,6 +422,7 @@ instance IsPure DLExpr where
         CT_Require -> False
         CT_Unknowable {} -> True
     DLE_Transfer {} -> False
+    DLE_TokenInit {} -> False
     DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> False
@@ -444,6 +447,7 @@ instance IsLocal DLExpr where
     DLE_Digest {} -> True
     DLE_Claim {} -> True
     DLE_Transfer {} -> False
+    DLE_TokenInit {} -> False
     DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> True

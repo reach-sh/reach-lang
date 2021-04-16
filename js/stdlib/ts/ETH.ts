@@ -13,7 +13,7 @@ import {
   add,
   assert,
   bigNumberify,
-  debug, debugo,
+  debug,
   eq,
   ge,
   getDEBUG,
@@ -379,24 +379,57 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   throw Error(`address missing. Got: ${networkAccount}`);
 };
 
+const doTxn = async (
+  dhead: any,
+  tp: Promise<any>,
+): Promise<void> => {
+  debug({...dhead, step: `pre call`});
+  const rt = await tp;
+  debug({...dhead, rt, step: `pre wait`});
+  const rm = await rt.wait();
+  debug({...dhead, rt, rm, step: `pre receipt`});
+  assert(rm !== null, `receipt wait null`);
+  const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
+  debug({...dhead, rt, rm, ro, step: `post receipt`});
+  // ro's blockNumber might be interesting
+  void(ro);
+};
+
+const doCall = async (
+  dhead: any,
+  ctc: ethers.Contract,
+  funcName: string,
+  args: Array<any>,
+  value: BigNumber,
+  gasLimit: BigNumber|undefined,
+): Promise<void> => {
+  const dpre = { ...dhead, ctc, funcName, args, value };
+  debug({...dpre, step: `pre call`});
+  return await doTxn(
+    dpre,
+    ctc[funcName](...args, { value, gasLimit }));
+};
+
 /** @description Arg order follows "src before dst" convention */
 export const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
-  value: any
+  value: any,
+  token: Token|false = false,
 ): Promise<any> => {
   const sender = from.networkAccount;
   const receiver = getAddr(to);
-  const txn = { to: receiver, value: bigNumberify(value) };
+  const valueb = bigNumberify(value);
 
-  if (!sender || !sender.sendTransaction)
-    throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
-
-  debug('sender.sendTransaction(', txn, ')');
-  const r = await (await sender.sendTransaction(txn)).wait();
-  assert(r !== null, `transfer receipt wait null`);
-
-  return fetchAndRejectInvalidReceiptFor(r.transactionHash);
+  const dhead = {kind:'transfer'};
+  if ( ! token ) {
+    const txn = { to: receiver, value: valueb };
+    debug('sender.sendTransaction(', txn, ')');
+    return await doTxn(dhead, sender.sendTransaction(txn));
+  } else {
+    const tokCtc = new ethers.Contract(token, ERC20_ABI, sender);
+    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), undefined);
+  }
 };
 
 const ERC20_ABI = [
@@ -406,6 +439,17 @@ const ERC20_ABI = [
                 { "name": "_value",
                   "type": "uint256" } ],
     "name": "approve",
+    "outputs": [ { "name": "",
+                   "type": "bool" } ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function" },
+  { "constant": false,
+    "inputs": [ { "name": "_recipient",
+                  "type": "address" },
+                { "name": "_amount",
+                  "type": "uint256" } ],
+    "name": "transfer",
     "outputs": [ { "name": "",
                    "type": "bool" } ],
     "payable": false,
@@ -627,38 +671,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     })();
 
-    const doCall = async (
-      dhead: string,
-      ctc: ethers.Contract,
-      funcName: string,
-      args: Array<any>,
-      value: BigNumber,
-    ): Promise<void> => {
-      const dpre = { dhead, ctc, funcName, args, value };
-      debugo({...dpre, step: `pre call`});
-      const rt = await ctc[funcName](...args, { value, gasLimit });
-      debugo({...dpre, rt, step: `pre wait`});
-      const rm = await rt.wait();
-      debugo({...dpre, rt, rm, step: `pre receipt`});
-      assert(rm !== null, `contract invocation receipt wait null`);
-      const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
-      debugo({...dpre, rt, rm, ro, step: `post receipt`});
-      // ro's blockNumber might be interesting
-      void(ro);
-    };
-
     const callC = async (
-      dhead: string, funcName: string, arg: any, pay: PayAmt,
+      dhead: any, funcName: string, arg: any, pay: PayAmt,
     ): Promise<void> => {
       const [ value, toks ] = pay;
       const ethersC = await getC();
       const zero = bigNumberify(0);
       const actualCall = async () =>
-        await doCall(dhead, ethersC, funcName, [arg], value);
+        await doCall(dhead, ethersC, funcName, [arg], value, undefined);
       const callTok = async (tok:Token, amt:BigNumber) => {
         // @ts-ignore
         const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-        await doCall(dhead, tokCtc, "approve", [ethersC.address, amt], zero); }
+        await doCall(dhead, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit); }
       const maybePayTok = async (i:number) => {
         if ( i < toks.length ) {
           const [amt, tok] = toks[i];
@@ -720,7 +744,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
 
       const dhead = [shad, label, 'send', funcName, timeout_delay, 'SEND'];
-      debug([...dhead, 'ARGS' args]);
+      debug([...dhead, 'ARGS', args]);
       const [ args_svs, args_msg ] = argsSplit(args, evt_cnt );
       const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
       // @ts-ignore XXX
@@ -734,7 +758,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       while (!timeout_delay || lt(block_send_attempt, add(lastBlock, timeout_delay))) {
         debug([...dhead, 'TRY']);
         try {
-          debug(`${dhead} ARG ${JSON.stringify(arg)} ${JSON.stringify(pay)}`);
+          debug([...dhead, 'ARG', arg, pay]);
           await callC(dhead, funcName, arg, pay);
         } catch (e) {
           if ( ! soloSend ) {
@@ -760,7 +784,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               console.log(arg);
               throw Error(`${dhead} REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
             }
-            debug([...dhead], `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt]);
+            debug([...dhead, `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt]);
             continue;
           }
         }

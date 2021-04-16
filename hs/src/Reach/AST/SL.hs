@@ -444,6 +444,7 @@ data SLPrimitive
   | SLPrim_is
   | SLPrim_remote
   | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Maybe SLVal)) (Maybe RemoteFunMode)
+  | SLPrim_balance
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

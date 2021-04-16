@@ -109,6 +109,7 @@ instance Countable DLExpr where
     DLE_Digest _ as -> counts as
     DLE_Claim _ _ _ a _ -> counts a
     DLE_Transfer _ x y z -> counts [x, y] <> counts z
+    DLE_TokenInit _ x -> counts x
     DLE_CheckPay _ _ y z -> counts y <> counts z
     DLE_Wait _ a -> counts a
     DLE_PartSet _ _ a -> counts a
@@ -128,3 +129,8 @@ instance Countable DLPayAmt where
 
 instance Countable DLSend where
   counts (DLSend {..}) = counts ds_msg <> counts ds_pay <> counts ds_when
+
+instance Countable FromInfo where
+  counts = \case
+    FI_Continue svs -> counts svs
+    FI_Halt toks -> counts toks

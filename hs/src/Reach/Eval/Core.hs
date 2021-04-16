@@ -404,7 +404,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance 0)
+    , ("balance", SLV_Prim $ SLPrim_balance)
     , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
     , ("Digest", SLV_Type ST_Digest)
     , ("Null", SLV_Type ST_Null)
@@ -1701,6 +1701,12 @@ evalPrim p sargs =
       at <- withAt id
       ps <- mapM slvParticipant_part $ map snd sargs
       retV $ (lvl, SLV_RaceParticipant at $ S.fromList ps)
+    SLPrim_balance -> do
+      fv <- case args of
+              [] -> lookupBalanceFV Nothing
+              [v] -> lookupBalanceFV . Just =<< compileCheckType T_Token v
+              _ -> illegal_args
+      doFluidRef fv
     SLPrim_fluid_read fv -> doFluidRef fv
     SLPrim_lastConsensusTime -> do
       ensure_can_wait
@@ -2081,8 +2087,11 @@ evalPrim p sargs =
       at <- withAt id
       ensure_mode SLM_ConsensusStep "transfer"
       who_a <- compileCheckType T_Address =<< one_arg
+      let staticallyZero = \case
+            DLA_Literal (DLL_Int _ 0) -> True
+            _ -> False
       DLPayAmt {..} <- compilePayAmt pay_sv
-      let one amt_a mtok_a = do
+      let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
             amt_sv <- argToSV amt_a
             doBalanceAssert mtok_a amt_sv PLE "balance sufficient for transfer"
             saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_a amt_a mtok_a
@@ -3244,23 +3253,23 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
         bv <- evalAllDistinct $ map SLV_DLVar toks
         _ <- locSt st_pure $ evalApplyVals' req_rator [public bv]
-        mapM_ (doBalanceInit . Just . DLA_Var) toks
-        amt <- compilePayAmt_ amt_e
-        case amt of
-          DLPayAmt _ (_:_) ->
-            unless (st_after_ctor st) $
-              expect_ $ Err_Token_OnCtor
-          _ ->
-            return ()
+        DLPayAmt {..} <- compilePayAmt_ amt_e
+        unless (null pa_ks) $
+          unless (st_after_ctor st) $
+            expect_ $ Err_Token_OnCtor
         fs <- e_stack <$> ask
         let checkPayAmt1 mtok pa = do
               sv <- argToSV pa
               doBalanceUpdate mtok ADD sv
               ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
-        let checkPayAmt (DLPayAmt {..}) = do
-              checkPayAmt1 Nothing pa_net
-              forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
-        checkPayAmt amt
+        -- We ensure that the network payment is first
+        checkPayAmt1 Nothing pa_net
+        -- because it may need to pay the fee to initialize these tokens
+        -- (on Algorand)
+        forM_ (map DLA_Var toks) $ \tok -> do
+          doBalanceInit $ Just tok
+          ctxt_lift_eff $ DLE_TokenInit at tok
+        forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
         let check_repeat whoc_v repeat_dv = do
               repeat_cmp_v <-
                 evalPrimOp ADDRESS_EQ $

@@ -70,6 +70,15 @@ declare module 'algosdk' {
       closeRemainderTo: Address|undefined,
       note: Uint8Array, params: TxnParams
   ): Txn;
+  declare function makeAssetTransferTxnWithSuggestedParams(
+      from: Address, to: Address,
+      closeRemainderTo: Address|undefined,
+      revocationTarget: Address|undefined,
+      amount: number,
+      note: Uint8Array,
+      id: number,
+      params: TxnParams
+  ): Txn;
   declare type LogicArg = Uint8Array | string;
   declare function makeLogicSig(
     program: Uint8Array,

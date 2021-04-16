@@ -1,17 +1,13 @@
 module Reach.EPP (epp) where
 
--- import Control.Monad
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
--- import Data.List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Set as S
--- import Reach.Optimize
-
 import Debug.Trace
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -167,6 +163,7 @@ data BEnv = BEnv
   , be_more :: IORef Bool
   , be_loop :: Maybe Int
   , be_output_vs :: IORef [DLVar]
+  , be_toks :: [DLArg]
   }
 
 type BApp = ReaderT BEnv IO
@@ -391,7 +388,12 @@ instance OnlyHalts LLStep where
 be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
 be_c = \case
   LLC_Com c k -> do
-    (k'c, k'l) <- be_c k
+    let toks =
+          case c of
+            DL_Let _ _ (DLE_TokenInit _ toka) -> [ toka ]
+            _ -> []
+    let remember_toks = local (\e -> e { be_toks = toks <> be_toks e })
+    (k'c, k'l) <- remember_toks $ be_c k
     c'c <- be_m c
     return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com c <$> k'l)
   LLC_Only at who l k -> do
@@ -422,11 +424,12 @@ be_c = \case
       captureMore $
         local (\e -> e {be_interval = default_interval}) $
           be_s s
+    toks <- be_toks <$> ask
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case more of
-            True -> Just $ map (\x -> (x, DLA_Var x)) svs
-            False -> Nothing
+            True -> FI_Continue $ map (\x -> (x, DLA_Var x)) svs
+            False -> FI_Halt toks
     let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
     let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
@@ -584,6 +587,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   let be_which = 0
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
+  let be_toks = mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   hs <- readIORef be_handlers
   -- Step 2: Solve the flow graph

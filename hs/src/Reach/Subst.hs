@@ -58,6 +58,7 @@ instance Subst DLExpr where
     DLE_Digest at as -> DLE_Digest at <$> subst as
     DLE_Claim a b c d e -> DLE_Claim a b c <$> subst d <*> pure e
     DLE_Transfer at x y z -> DLE_Transfer at <$> subst x <*> subst y <*> subst z
+    DLE_TokenInit at x -> DLE_TokenInit at <$> subst x
     DLE_CheckPay at x y z -> DLE_CheckPay at x <$> subst y <*> subst z
     DLE_Wait at x -> DLE_Wait at <$> subst x
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
@@ -91,6 +92,11 @@ instance {-# OVERLAPPING #-} Subst (DLinBlock a) where
 
 instance Subst DLAssignment where
   subst (DLAssignment m) = DLAssignment <$> subst m
+
+instance Subst FromInfo where
+  subst = \case
+    FI_Continue svs -> FI_Continue <$> subst svs
+    FI_Halt toks -> FI_Halt <$> subst toks
 
 instance {-# OVERLAPPING #-} Subst (CTail_ a) where
   subst = \case

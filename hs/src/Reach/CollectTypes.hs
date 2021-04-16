@@ -88,6 +88,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_Digest _ as) = cts as
   cts (DLE_Claim _ _ _ a _) = cts a
   cts (DLE_Transfer _ x y z) = cts x <> cts y <> cts z
+  cts (DLE_TokenInit _ x) = cts x
   cts (DLE_CheckPay _ _ y z) = cts y <> cts z
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
@@ -161,6 +162,11 @@ instance CollectsTypes LLProg where
 instance CollectsTypes PLVar where
   cts (PV_Eff) = mempty
   cts (PV_Let _ x) = cts x
+
+instance CollectsTypes FromInfo where
+  cts = \case
+    FI_Continue svs -> cts svs
+    FI_Halt toks -> cts toks
 
 instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k

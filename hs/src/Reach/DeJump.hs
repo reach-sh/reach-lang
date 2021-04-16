@@ -35,7 +35,9 @@ djs :: Subst a => a -> App a
 djs x = flip subst_ x . e_rho <$> ask
 
 djs_fi :: FromInfo -> App FromInfo
-djs_fi = mapM (mapM go)
+djs_fi = \case
+  FI_Halt toks -> FI_Halt <$> mapM djs toks
+  FI_Continue svs -> FI_Continue <$> mapM go svs
   where
     go (v, a) = (,) v <$> djs a
 

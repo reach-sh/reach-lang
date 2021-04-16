@@ -173,6 +173,7 @@ instance Optimize DLExpr where
     DLE_Digest at as -> DLE_Digest at <$> opt as
     DLE_Claim at fs t a m -> DLE_Claim at fs t <$> opt a <*> (pure $ m)
     DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
+    DLE_TokenInit at t -> DLE_TokenInit at <$> opt t
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
@@ -342,12 +343,15 @@ instance Extract PLVar where
     PV_Eff -> Nothing
     PV_Let _ v -> Just v
 
-opt_masn :: AppT (Maybe [(DLVar, DLArg)])
-opt_masn = \case
-  Nothing -> return $ Nothing
-  Just x -> Just <$> mapM go x
+opt_svs :: AppT [(DLVar, DLArg)]
+opt_svs = mapM go
   where
     go (v, a) = (\x -> (v, x)) <$> opt a
+
+instance Optimize FromInfo where
+  opt = \case
+    FI_Continue svs -> FI_Continue <$> opt_svs svs
+    FI_Halt toks -> FI_Halt <$> opt toks
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a) where
   opt = \case
@@ -358,8 +362,8 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a
       CT_Switch at ov <$> mapM cm1 csm
       where
         cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
-    CT_From at w mvs ->
-      CT_From at w <$> opt_masn mvs
+    CT_From at w fi ->
+      CT_From at w <$> opt fi
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
 

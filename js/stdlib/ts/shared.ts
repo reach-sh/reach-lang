@@ -84,9 +84,17 @@ export type ISimRes<Digest, RawAddress, Token> = {
 };
 
 export type ISimTxn<RawAddress, Token> = {
+  kind: "to"|"init",
+  amt: BigNumber,
+  tok: Token|undefined,
+} | {
+  kind: "from",
   to: RawAddress,
   amt: BigNumber,
-  tok: false | Token,
+  tok: Token|undefined,
+} | {
+  kind: "halt",
+  tok: Token|undefined,
 };
 
 export type CurrencyAmount = string | number | BigNumber
@@ -142,13 +150,9 @@ export const debug = (...msgs: any) => {
       ["object", "array"].includes(typeof msg)
         ? util.inspect(msg, false, null, true)
         : msg);
+    void(betterMsgs);
     // Print objects for indentation, colors, etc...
-    console.log(new Date(), `DEBUG:`, ...betterMsgs);
-  }
-};
-export const debugo = (msg: any) => {
-  if (getDEBUG()) {
-    console.log([new Date(), `DEBUG`, msg]);
+    console.log(new Date(), `DEBUG:`, ...msgs);
   }
 };
 
