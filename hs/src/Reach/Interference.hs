@@ -10,7 +10,7 @@ import qualified Data.Set             as S
 
 import           Control.Monad        (forM)
 import           Control.Monad.Extra  (mconcatMapM)
-import           Data.Foldable        (maximumBy)
+import           Safe.Foldable        (maximumByMay)
 import           Data.List            ((\\))
 import           Data.Ord             (comparing)
 import           Reach.AST.DLBase     (DLType, DLVar, varType)
@@ -119,9 +119,11 @@ color s gInter asn0 = do
           [] -> return ()
           cw -> do
             cw_ws <- mapM compute_sat cw
-            let (v, sv) = maximumBy cmp_sizes cw_ws
-            writeIORef w $ cw \\ [v]
-            f v sv
+            case maximumByMay cmp_sizes cw_ws of
+              Nothing -> impossible "color: maximumByMay"
+              Just (v, sv) -> do
+                writeIORef w $ cw \\ [v]
+                f v sv
   let tryToAssign v sv = \case
         [] -> error $ "no color opts"
         c0 : cols ->
