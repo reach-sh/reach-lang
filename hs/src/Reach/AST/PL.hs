@@ -256,14 +256,19 @@ instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =
     render_obj m
 
+data ColorGraphs = ColorGraph {
+  typeGraph :: M.Map DLType Int,
+  varGraph  :: M.Map DLVar Int }
+  deriving (Eq)
+
 data CPProg a
-  = CPProg SrcLoc (CHandlers_ a)
+  = CPProg SrcLoc ColorGraphs (CHandlers_ a)
   deriving (Eq)
 
 type CIProg = CPProg PILVar
 
 instance Pretty a => Pretty (CPProg a) where
-  pretty (CPProg _ chs) = pretty chs
+  pretty (CPProg _ _ chs) = pretty chs
 
 newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)

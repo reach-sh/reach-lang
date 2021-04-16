@@ -792,7 +792,7 @@ jsExports exports = do
     return $ "export" <+> jsFunction_ "getExports" ["s"] body
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _)) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _ _)) = do
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr

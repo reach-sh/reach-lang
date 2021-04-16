@@ -18,6 +18,7 @@ import Reach.Parser
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
+import Reach.Interference (colorProgram)
 
 data CompilerOpts = CompilerOpts
   { output :: T.Text -> String
@@ -71,9 +72,10 @@ compile copts = do
         showp "el" el
         pil <- epp el
         showp "pil" pil
-        let runConnector c = (,) (conName c) <$> conGen c woutnMay pil
+        cpil <- colorProgram pil
+        let runConnector c = (,) (conName c) <$> conGen c woutnMay cpil
         crs <- HM.fromList <$> mapM runConnector connectors
-        backend_js woutn crs pil
+        backend_js woutn crs cpil
         return ()
   mapM_ compile1 $ tops copts
   return ()
