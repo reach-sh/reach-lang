@@ -21,6 +21,7 @@
     "ethers": "^5.0.32",
     "express": "^4.17.1",
     "hi-base32": "^0.5.0",
+    "js-conflux-sdk": "^1.5.15",
     "wait-port": "^0.2.9"
   },
   "repository": {
