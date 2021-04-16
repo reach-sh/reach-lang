@@ -1640,16 +1640,15 @@ doFluidSet fv ssv = do
 lookupBalanceFV :: HasCallStack => Maybe DLArg -> App FluidVar
 lookupBalanceFV mtok = do
   toks <- readSt st_toks
-  let msg = "given " <> show mtok <> ", looking in: " <> show toks
-  let i =
-        case mtok of
-          Nothing -> 0
-          Just (DLA_Var v) ->
-            case elemIndex v toks of
-              Nothing ->
-                impossible $ "lookupBalanceFV on non-tok: " <> msg
-              Just x -> 1 + x
-          _ -> impossible $ "lookupBalanceFV on non-DLA_Var: " <> msg
+  let bad = expect_ $ Err_Token_DynamicRef
+  i <-
+    case mtok of
+      Nothing -> return $ 0
+      Just (DLA_Var v) ->
+        case elemIndex v toks of
+          Nothing -> bad
+          Just x -> return $ 1 + x
+      _ -> bad
   return $ FV_balance i
 
 doBalanceInit :: Maybe DLArg -> App ()

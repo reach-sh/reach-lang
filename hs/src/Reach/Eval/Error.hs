@@ -135,6 +135,7 @@ data EvalError
   | Err_Throw_No_Catch
   | Err_Token_OnCtor
   | Err_Token_InWhile
+  | Err_Token_DynamicRef
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -517,6 +518,8 @@ instance Show EvalError where
       "Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens."
     Err_Token_InWhile ->
       "Token published within while, which Reach cannot track, yet."
+    Err_Token_DynamicRef ->
+      "Token reference based on dynamic computation, which Reach cannot track, yet."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
 

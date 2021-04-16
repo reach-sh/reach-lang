@@ -1,0 +1,6 @@
+reachc: error: reach standard library:211:52:application: Token reference based on dynamic computation, which Reach cannot track, yet.
+Trace:
+  in "f" from (reach standard library:211:33:function exp) at (reach standard library:108:40:application)
+  in [unknown function] from (reach standard library:108:36:function exp) at (reach standard library:108:21:application)
+  in "Foldable_forEach" from (reach standard library:108:10:function exp) at (reach standard library:211:19:application)
+  in "closeToks" from (reach standard library:207:8:function exp) at (./Err_Token_DynamicRef.rsh:17:14:application)
