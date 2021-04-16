@@ -4,6 +4,9 @@ import * as providers from './cfxers_providers';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 
+// XXX Convenience export, may want to rethink
+export { cfxsdk };
+
 // This file immitates the ethers.js API
 
 // Recursively stringify BigNumbers
