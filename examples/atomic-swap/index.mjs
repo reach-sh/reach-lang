@@ -26,12 +26,7 @@ const shouldFail = async (fp) => {
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-  if ( conn === 'ETH' ) {
-    console.log(`Setting gasLimit on ETH`);
-    const myGasLimit = 5000000;
-    accAlice.setGasLimit(myGasLimit);
-    accBob.setGasLimit(myGasLimit);
-  } else if ( conn == 'ALGO' ) {
+  if ( conn == 'ALGO' ) {
     console.log(`Demonstrating need to opt-in on ALGO`);
     await shouldFail(async () => await zorkmid.mint(accAlice, startingBalance));
     console.log(`Opt-ing in on ALGO`);

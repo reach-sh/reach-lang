@@ -11,14 +11,12 @@ export default async function (name, sym) {
   const accCreator = await stdlib.newTestAccount(startingBalance);
 
   const ETH_launchToken = async () => {
-    const myGasLimit = 5000000;
-    accCreator.setGasLimit(myGasLimit);
     const remoteCtc = ETHcompiled["contracts"]["contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser"];
     const remoteABI = remoteCtc["abi"];
     const remoteBytecode = remoteCtc["bin"];
     const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
     console.log(`${sym}: deploy`);
-    const contract = await factory.deploy(name, sym, { gasLimit: myGasLimit });
+    const contract = await factory.deploy(name, sym);
     console.log(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
     const deploy_r = await contract.deployTransaction.wait();
     console.log(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
@@ -27,14 +25,13 @@ export default async function (name, sym) {
     const mint = async (accTo, amt) => {
       const to = accTo.networkAccount.address;
       console.log(`${sym}: minting ${amt} ${sym} for ${to}`);
-      const fn = await contract["mint"](to, amt, { gasLimit: myGasLimit });
+      const fn = await contract["mint"](to, amt);
       console.log(`${sym}: mint: wait`);
       await fn.wait();
     };
     const balanceOf = async (acc) => {
       const addr = acc.networkAccount.address;
-      const res = await contract["balanceOf"](addr);
-      return res;
+      return await contract["balanceOf"](addr);
     };
     return { name, sym, id, mint, balanceOf };
   };
