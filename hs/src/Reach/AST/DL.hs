@@ -202,6 +202,7 @@ data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyArithmetic :: Bool
   , dlo_verifyPerConnector :: Bool
+  , dlo_explicitState :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
   , dlo_bals :: Int

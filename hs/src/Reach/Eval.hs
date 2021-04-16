@@ -29,6 +29,7 @@ app_default_opts idxr cns =
     { dlo_deployMode = DM_constructor
     , dlo_verifyArithmetic = False
     , dlo_verifyPerConnector = False
+    , dlo_explicitState = False
     , dlo_connectors = cns
     , dlo_counter = idxr
     , dlo_bals = 1
@@ -38,18 +39,15 @@ app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options =
   M.fromList
     [ ("deployMode", opt_deployMode)
-    , ("verifyArithmetic", opt_verifyArithmetic)
-    , ("verifyPerConnector", opt_verifyPerConnector)
+    , ("verifyArithmetic", opt_bool (\ opts b -> opts {dlo_verifyArithmetic = b}))
+    , ("verifyPerConnector", opt_bool (\ opts b -> opts {dlo_verifyPerConnector = b}))
+    , ("explicitState", opt_bool (\ opts b -> opts {dlo_explicitState = b}))
     , ("connectors", opt_connectors)
     ]
   where
-    opt_verifyPerConnector opts v =
+    opt_bool f opts v =
       case v of
-        SLV_Bool _ b -> Right $ opts {dlo_verifyPerConnector = b}
-        _ -> Left $ "expected boolean"
-    opt_verifyArithmetic opts v =
-      case v of
-        SLV_Bool _ b -> Right $ opts {dlo_verifyArithmetic = b}
+        SLV_Bool _ b -> Right $ f opts b
         _ -> Left $ "expected boolean"
     opt_connectors opts v =
       case v of

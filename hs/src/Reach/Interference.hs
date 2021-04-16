@@ -134,8 +134,8 @@ color s gInter asn0 = do
   color_loop
   readIORef asnr
 
-colorProgram :: PIProg -> IO PIProg
-colorProgram (PLProg at plo dli dex epps (CPProg cat _ (CHandlers handlers))) = do
+colorProgram :: PIProg -> IO ColorGraphs
+colorProgram (PLProg _ _ _ _ _ (CPProg _ (CHandlers handlers))) = do
   e_tv <- newIORef mempty
   e_ti <- newIORef mempty
   flip runReaderT (Env {..}) $ makeInterferenceGraph handlers
@@ -144,8 +144,7 @@ colorProgram (PLProg at plo dli dex epps (CPProg cat _ (CHandlers handlers))) = 
   ty_x_cg <- forM (M.toList ti) $ colorVarsWithType ty_x_vars
   let typeGraph   = M.map maximum $ M.fromList ty_x_cg
   let varGraph    = M.unions $ map snd ty_x_cg
-  let colorGraphs = ColorGraph { typeGraph, varGraph }
-  return $ PLProg at plo dli dex epps $ CPProg cat colorGraphs (CHandlers handlers)
+  return ColorGraph { typeGraph, varGraph }
   where
     colorVarsWithType :: TypeXVars -> (DLType, InterferenceGraph) -> IO (DLType, M.Map DLVar Int)
     colorVarsWithType ty_x_vars (ty, typeGraph) = do

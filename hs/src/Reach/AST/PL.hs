@@ -262,13 +262,13 @@ data ColorGraphs = ColorGraph {
   deriving (Eq)
 
 data CPProg a
-  = CPProg SrcLoc ColorGraphs (CHandlers_ a)
+  = CPProg SrcLoc (CHandlers_ a)
   deriving (Eq)
 
 type CIProg = CPProg PILVar
 
 instance Pretty a => Pretty (CPProg a) where
-  pretty (CPProg _ _ chs) = pretty chs
+  pretty (CPProg _ chs) = pretty chs
 
 newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)
@@ -282,6 +282,7 @@ instance Pretty a => Pretty (EPPs a) where
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
   , plo_verifyArithmetic :: Bool
+  , plo_explicitState :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

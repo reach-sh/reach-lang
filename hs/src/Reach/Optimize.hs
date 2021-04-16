@@ -375,8 +375,8 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
-  opt (CPProg at cg (CHandlers hs)) =
-    CPProg at cg . CHandlers <$> mapM (newScope . opt) hs
+  opt (CPProg at (CHandlers hs)) =
+    CPProg at . CHandlers <$> mapM (newScope . opt) hs
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
   opt (PLProg at plo dli dex epps cp) =

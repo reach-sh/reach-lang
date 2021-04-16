@@ -985,7 +985,7 @@ ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at _ hs)) = do
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   let ctxt_emit = emptyDoc

@@ -601,7 +601,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
         flip runReaderT (CEnv {..}) m
   dex' <- flip runReaderT (BEnv {..}) $
             mapM mk_eb dex
-  cp <- (CPProg at (ColorGraph mempty mempty) . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do
@@ -615,4 +615,5 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   let plo_deployMode = llo_deployMode
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter
+  let plo_explicitState = llo_explicitState
   return $ PLProg at (PLOpts {..}) dli dex' pps cp

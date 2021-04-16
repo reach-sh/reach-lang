@@ -210,8 +210,8 @@ instance Unroll CIHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CIProg where
-  ul (CPProg at cg hs) =
-    CPProg at cg <$> ul hs
+  ul (CPProg at hs) =
+    CPProg at <$> ul hs
 
 instance Unroll (EPPs a) where
   ul (EPPs m) = pure $ EPPs m

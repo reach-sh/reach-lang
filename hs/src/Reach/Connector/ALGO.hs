@@ -1252,7 +1252,7 @@ compile_algo disp pl = do
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
-  let CPProg _at _ (CHandlers hm) = cpp
+  let CPProg _at (CHandlers hm) = cpp
   resr <- newIORef mempty
   sFailedR <- newIORef False
   let shared = Shared {..}
