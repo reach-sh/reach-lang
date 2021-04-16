@@ -215,7 +215,7 @@ Returns a Promise for the balance of @tech{network tokens} held by the @tech{acc
 
 Performs a transfer of @jsin{amount} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
-If @jsin{token} is provided, then the transfer is of @tech{network tokens};
+If @jsin{token} is not provided, then the transfer is of @tech{network tokens};
 otherwise, it is of the designated @tech{non-network token}.
 The returned @jsin{Promise} will only be resolved after the transfer completes.
 

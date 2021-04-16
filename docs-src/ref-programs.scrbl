@@ -888,9 +888,21 @@ This is useful when the @tech{consensus transfer} was initiated by a @reachin{ra
 
 @(mint-define! '("transfer"))
 @reach{
- transfer(10).to(Alice) }
+ transfer(10).to(Alice);
+ transfer(2, gil).to(Alice); }
 
-A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)}, where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to a natural number and @reachin{PART} is a @tech{participant} identifier, performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}. @reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}. A @tech{transfer expression} may only occur within a @tech{consensus step}.
+A @deftech{transfer expression},
+written @reachin{transfer(AMOUNT_EXPR).to(PART)},
+where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to an unsigned integer, and
+@reachin{PART} is a @tech{participant} identifier,
+performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}.
+@reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}.
+
+A @tech{transfer expression} may also be written @reachin{transfer(AMOUNT_EXPR, TOKEN_EXPR).to(PART)},
+where @reachin{TOKEN_EXPR} is a @reachin{Token},
+which @tech{transfers} @tech{non-network tokens} of the specified type.
+
+A @tech{transfer expression} may only occur within a @tech{consensus step}.
 
 @subsubsection{@tt{require}}
 
