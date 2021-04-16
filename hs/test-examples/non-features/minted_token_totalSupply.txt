@@ -1,1 +1,1 @@
-reachc: error: ./minted_token_totalSupply.rsh:14:7:id ref: Invalid unbound identifier in expression: MintedToken. Did you mean: ["Token","FixedPoint","closeToks","interval","intervalCC"]
+reachc: error: ./minted_token_totalSupply.rsh:14:7:id ref: Invalid unbound identifier in expression: MintedToken. Did you mean: ["Token","FixedPoint","interval","intervalCC","intervalCO"]

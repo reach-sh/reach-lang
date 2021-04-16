@@ -204,15 +204,6 @@ export const Foldable_product1 = (c) => () =>
 
 // After Foldable
 
-export function closeToks(Who, toks, after = (() => null)) {
-  Who.publish();
-  transfer(balance()).to(Who);
-  const atoks = array(Token, toks);
-  Foldable_forEach(atoks, (tok) => transfer(balance(tok), tok).to(Who));
-  commit();
-  after();
-  exit(); };
-
 export function closeTo(Who, after = (() => null)) {
   // closeToks(Who, [], after); };
   Who.publish();
