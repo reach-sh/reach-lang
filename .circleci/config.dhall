@@ -316,8 +316,8 @@ let docs-render = dockerized-job-with cimage-base
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
         && sudo apt install -y --no-install-recommends \
-          racket=8.0+ppa1-5~bionic1 \
-          python3-setuptools=39.0.1-2
+          racket \
+          python3-setuptools
       ''
 
   , run "Install `scribble` and `pygments-reach`" "cd docs-src && make install"
