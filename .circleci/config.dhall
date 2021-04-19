@@ -320,8 +320,8 @@ let docs-render = dockerized-job-with cimage-base
           python3-setuptools
       ''
 
-  , run "Install `scribble` and `pygments-reach`" "cd docs-src && make install"
-  , run "Render docs"                             "cd docs-src && make render"
+  , run "Install `pygments-reach`" "cd pygments && make install"
+  , run "Render docs"              "cd docs-src && make render"
   , store_artifacts "docs/"
 
   , run "Copy docs to workspace" ''

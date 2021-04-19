@@ -531,8 +531,8 @@ jobs:
         name: "Install `racket` and `python3-setuptools`"
         no_output_timeout: 10m
     - run:
-        command: "cd docs-src && make install"
-        name: "Install `scribble` and `pygments-reach`"
+        command: "cd pygments && make install"
+        name: "Install `pygments-reach`"
         no_output_timeout: 10m
     - run:
         command: "cd docs-src && make render"
