@@ -312,10 +312,11 @@ let test-js = dockerized-job-with-reach-circle-and-runner
 
 
 let docs-render = dockerized-job-with cimage-base
-  [ run "Install `racket` and `python3-setuptools`" ''
+  [ run "Install dependencies" ''
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
         && sudo apt install -y --no-install-recommends \
+          libfontconfig1 \
           racket \
           python3-setuptools
       ''
