@@ -46,6 +46,7 @@ let docker-tag-all
         ++ "\n" ++ docker-tag i "${MAJOR}"
 
 let reach-circle = docker-image "reach-circle" VERSION
+let cimage-base  = "cimg/base:stable-18.04"
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -221,7 +222,7 @@ let dockerized-job-with-reach-circle-and-runner
 
 --------------------------------------------------------------------------------
 
-let build-reach-circle = dockerized-job-with "cimg/base:stable"
+let build-reach-circle = dockerized-job-with cimage-base
   [ setup_remote_docker True
   , install_mo_home_circleci_local_bin
   , runT "60m" "Rebuild Docker image: ${reach-circle}" ''
@@ -310,7 +311,7 @@ let test-js = dockerized-job-with-reach-circle-and-runner
   ]
 
 
-let docs-render = dockerized-job-with "cimg/base:stable"
+let docs-render = dockerized-job-with cimage-base
   [ run "Install `racket` and `python3-setuptools`" ''
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
@@ -369,7 +370,7 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
   ]
 
 
-let shellcheck = dockerized-job-with "cimg/base:stable"
+let shellcheck = dockerized-job-with cimage-base
   [ Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify

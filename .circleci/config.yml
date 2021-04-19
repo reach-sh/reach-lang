@@ -285,7 +285,7 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "cimg/base:stable"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - setup_remote_docker:
@@ -518,7 +518,7 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "cimg/base:stable"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - run:
@@ -1423,7 +1423,7 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "cimg/base:stable"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - shellcheck/install
