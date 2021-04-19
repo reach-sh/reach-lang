@@ -256,22 +256,25 @@ instance Pretty a => Pretty (CHandlers_ a) where
   pretty (CHandlers m) =
     render_obj m
 
-data ColorGraphs = ColorGraph {
-  typeGraph :: M.Map DLType Int,
-  varGraph  :: M.Map DLVar Int }
+data ColorGraphs = ColorGraph
+  { typeGraph :: M.Map DLType Int
+  , varGraph :: M.Map DLVar Int
+  }
   deriving (Eq)
 
 instance Pretty ColorGraphs where
   pretty = \case
     ColorGraph tg vg ->
-      "type graph:" <+> pretty tg <> hardline <>
-      "var graph:" <+> prettyVarGraph vg
+      "type graph:" <+> pretty tg <> hardline
+        <> "var graph:" <+> prettyVarGraph vg
     where
-    prettyVarGraph g =
-      let rows = map (\ (v, i) ->
-            "  " <> viaShow v <> ": " <> viaShow (varType v) <> " - " <> viaShow i)
-            $ M.toList g in
-      braces $ hardline <> vsep rows
+      prettyVarGraph g =
+        let rows =
+              map
+                (\(v, i) ->
+                   "  " <> viaShow v <> ": " <> viaShow (varType v) <> " - " <> viaShow i)
+                $ M.toList g
+         in braces $ hardline <> vsep rows
 
 data CPProg a
   = CPProg SrcLoc (CHandlers_ a)
@@ -300,7 +303,6 @@ data PLOpts = PLOpts
 
 instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
-
 
 data PLinProg a
   = PLProg SrcLoc PLOpts DLInit (DLinExports a) (EPPs a) (CPProg a)

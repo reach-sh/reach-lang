@@ -137,7 +137,7 @@ jsContract_ = \case
   T_Struct as -> do
     let go (k, t) = do
           t' <- jsContract t
-          return $ jsArray [ jsString k, t' ]
+          return $ jsArray [jsString k, t']
     as' <- mapM go as
     return $ jsApply ("stdlib.T_Struct") $ [jsArray as']
 
@@ -320,28 +320,31 @@ jsExpr = \case
         who' <- jsArg who
         amt' <- jsArg amt
         mtok' <- jsArg_m mtok
-        return $ jsSimTxn "from" $
-          [ ("to", who')
-          , ("amt", amt')
-          , ("tok", mtok')
-          ]
+        return $
+          jsSimTxn "from" $
+            [ ("to", who')
+            , ("amt", amt')
+            , ("tok", mtok')
+            ]
   DLE_TokenInit _ tok -> do
     (ctxt_simulate <$> ask) >>= \case
       False -> mempty
       True -> do
         zero' <- jsCon $ DLL_Int sb 0
         tok' <- jsArg tok
-        return $ jsSimTxn "init" $
-          [ ("amt", zero')
-          , ("tok", tok')
-          ]
+        return $
+          jsSimTxn "init" $
+            [ ("amt", zero')
+            , ("tok", tok')
+            ]
   DLE_CheckPay _ _ amt mtok -> do
     (ctxt_simulate <$> ask) >>= \case
       False -> mempty
       True -> do
         amt' <- jsArg amt
         mtok' <- jsArg_m mtok
-        return $ jsSimTxn "to" $
+        return $
+          jsSimTxn "to" $
             [ ("amt", amt')
             , ("tok", mtok')
             ]
@@ -399,7 +402,7 @@ jsCom = \case
         dv' <- jsVar dv
         txn' <- jsTxn
         dvt' <- jsContract $ varType dv
-        return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [ squotes dv', dvt' ]
+        return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [squotes dv', dvt']
   DL_Let _ (Just dv) de -> do
     dv' <- jsVar dv
     de' <- jsExpr de
@@ -499,14 +502,14 @@ jsPayAmt (DLPayAmt {..}) = do
   let go a t = do
         a' <- jsArg a
         t' <- jsArg t
-        return $ jsArray [ a', t' ]
+        return $ jsArray [a', t']
   ks' <- jsArray <$> (mapM (uncurry go) pa_ks)
-  return $ jsArray $ [ net', ks' ]
+  return $ jsArray $ [net', ks']
 
 jsSimTxn :: String -> [(String, Doc)] -> Doc
 jsSimTxn kind kvs =
   jsApply "sim_r.txns.push" $
-    [ jsObject $ M.fromList $ [ ("kind", jsString kind) ] <> kvs ]
+    [jsObject $ M.fromList $ [("kind", jsString kind)] <> kvs]
 
 jsETail :: AppT EITail
 jsETail = \case
@@ -524,11 +527,11 @@ jsETail = \case
         let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
         let common extra nextSt' nextSt_noTime' isHalt' =
               vsep $
-                extra <>
-                [ "sim_r.nextSt =" <+> nextSt' <> semi
-                , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
-                , "sim_r.isHalt =" <+> isHalt' <> semi
-                ]
+                extra
+                  <> [ "sim_r.nextSt =" <+> nextSt' <> semi
+                     , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
+                     , "sim_r.isHalt =" <+> isHalt' <> semi
+                     ]
         case msvs of
           FI_Halt toks -> do
             --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
@@ -537,7 +540,7 @@ jsETail = \case
                   return $ jsSimTxn "halt" [("tok", mtok')]
             let close_escrow = close Nothing
             let close_asset = close . Just
-            closes <- (<>) <$> forM toks close_asset <*> ((\x->[x]) <$> close_escrow)
+            closes <- (<>) <$> forM toks close_asset <*> ((\x -> [x]) <$> close_escrow)
             common closes <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
           FI_Continue svs -> do
             timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
@@ -753,16 +756,19 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
 
 jsExportValue :: DLinExportVal PILBlock -> App Doc
 jsExportValue = \case
-  DLEV_Arg _ a  -> jsArg a
+  DLEV_Arg _ a -> jsArg a
   DLEV_Fun _ args b -> do
     (tl, ret) <- jsBlock b
     (argDefs, tmps) <-
-      unzip <$> mapM (\ arg -> do
-        arg' <- jsVar arg
-        let tmp = "_" <> arg'
-        protected <- jsProtect "null" (varType arg) tmp
-        let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
-        return (def, tmp)) args
+      unzip
+        <$> mapM
+          (\arg -> do
+             arg' <- jsVar arg
+             let tmp = "_" <> arg'
+             protected <- jsProtect "null" (varType arg) tmp
+             let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
+             return (def, tmp))
+          args
     let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
     let argList = parens $ hsep $ punctuate comma tmps
     return $ argList <+> "=>" <+> jsBraces body
@@ -780,15 +786,15 @@ jsExportBlock = \case
 jsExports :: DLinExports PILVar -> App Doc
 jsExports exports = do
   jsc <- newJsContract
-  local (\ c -> c { ctxt_ctcs = Just jsc}) $ do
+  local (\c -> c {ctxt_ctcs = Just jsc}) $ do
     exportM <- mapM jsExportBlock exports
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
     let ctcs = map snd $ M.toAscList i2t'
     let body =
           vsep $
-            [ "const stdlib = s.reachStdlib" <> semi ]
-            <> ctcs
-            <> [ jsReturn (jsObject exportM) ]
+            ["const stdlib = s.reachStdlib" <> semi]
+              <> ctcs
+              <> [jsReturn (jsObject exportM)]
     return $ "export" <+> jsFunction_ "getExports" ["s"] body
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc

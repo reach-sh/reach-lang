@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DK
 import Reach.AST.DL
@@ -15,7 +16,6 @@ import Reach.AST.LL
 import Reach.Counter
 import Reach.Texty
 import Reach.Util
-import GHC.Stack (HasCallStack)
 
 -- Remove returns, duplicate continuations, and transform into dk
 type DKApp = ReaderT DKEnv IO
@@ -26,11 +26,13 @@ type LLRets = M.Map Int LLRetRHS
 
 data Handler = Handler
   { hV :: DLVar
-  , hS :: DLStmts }
+  , hS :: DLStmts
+  }
 
 data DKEnv = DKEnv
   { eRets :: LLRets
-  , eExnHandler :: Maybe Handler }
+  , eExnHandler :: Maybe Handler
+  }
 
 lookupRet :: Int -> DKApp (Maybe LLRetRHS)
 lookupRet r = do
@@ -123,7 +125,7 @@ dk1 at_top ks s =
     DLS_ToConsensus at send recv mtime -> do
       let cs = dr_k recv
       cs' <- dk_ at (cs <> ks)
-      let recv' = recv { dr_k = cs' }
+      let recv' = recv {dr_k = cs'}
       let mtime' =
             case mtime of
               Just (delay_da, time_ss) ->
@@ -146,12 +148,13 @@ dk1 at_top ks s =
       handler <- asks eExnHandler
       case handler of
         Nothing -> impossible "dk: encountered `throw` without an exception handler"
-        Just h  ->
+        Just h ->
           com'' (DKC_Let at (Just $ hV h) $ DLE_Arg at da) $ hS h
     DLS_Try at e hv hs ->
-      local (\ env ->
-        env { eExnHandler = Just (Handler hv (hs <> ks)) })
-          $ dk_ at (e <> ks)
+      local
+        (\env ->
+           env {eExnHandler = Just (Handler hv (hs <> ks))})
+        $ dk_ at (e <> ks)
   where
     com :: DKApp DKTail
     com = com' =<< dkc s
@@ -175,7 +178,7 @@ dk_ev :: DLExportVal -> DKApp (DLinExportVal DKBlock)
 dk_ev = \case
   DLEV_Fun at args body ->
     DLEV_Fun at args <$> dk_block at body
-  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_Arg at a -> return $ DLEV_Arg at a
 
 dk_eb :: DLExportBlock -> IO DKExportBlock
 dk_eb = \case
@@ -264,7 +267,7 @@ instance LiftCon z => LiftCon (a, z) where
   lc (a, z) = (\z' -> (a, z')) <$> lc z
 
 instance LiftCon z => LiftCon (DLRecv z) where
-  lc r = (\z' -> r { dr_k = z' }) <$> lc (dr_k r)
+  lc r = (\z' -> r {dr_k = z'}) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
@@ -452,7 +455,7 @@ df_step = \case
           _ -> impossible $ "lct not a variable"
     ltv <- fmap (cvt . snd) <$> fluidRefm FV_lastConsensusTime
     k' <- df_con k
-    let recv' = recv { dr_k = (ltv, k') }
+    let recv' = recv {dr_k = (ltv, k')}
     mtime' <-
       case mtime of
         Nothing -> return $ Nothing
@@ -461,7 +464,6 @@ df_step = \case
           return $ Just (ta, tk')
     return $ LLS_ToConsensus at send recv' mtime'
   x -> df_com LLS_Com df_step x
-
 
 df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
 df_ev = \case

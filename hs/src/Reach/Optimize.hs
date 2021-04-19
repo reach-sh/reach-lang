@@ -155,7 +155,8 @@ instance Optimize DLLargeArg where
     DLLA_Obj m -> DLLA_Obj <$> opt m
     DLLA_Data t vn vv -> DLLA_Data t vn <$> opt vv
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
-      where go (k, v) = (,) k <$> opt v
+      where
+        go (k, v) = (,) k <$> opt v
 
 instance Optimize DLExpr where
   opt = \case
@@ -262,7 +263,7 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBloc
 
 instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
   opt = \case
-    DLEV_Arg at a   -> DLEV_Arg  at <$> opt a
+    DLEV_Arg at a -> DLEV_Arg at <$> opt a
     DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLExportinBlock a) where
@@ -315,7 +316,7 @@ instance Optimize LLStep where
         send' = M.fromList <$> mapM opt_send (M.toList send)
         (last_timev, cons) = dr_k recv
         cons' = newScope $ focusc $ opt cons
-        recv' = (\k -> recv { dr_k = k }) <$> ((,) <$> opt last_timev <*> cons')
+        recv' = (\k -> recv {dr_k = k}) <$> ((,) <$> opt last_timev <*> cons')
         mtime' = opt_mtime mtime
 
 instance Optimize DLInit where

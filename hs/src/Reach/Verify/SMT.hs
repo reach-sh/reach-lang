@@ -465,7 +465,8 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     curly $ commaSep (map (\(k, v) -> k <> ": " <> sub v) $ M.toList env)
   DLE_LArg _ (DLLA_Data _ _ a) -> sub a
   DLE_LArg _ (DLLA_Struct as) -> "struct" <> bracket (commaSep (map go as))
-    where go (k, a) = bracket (k <> ", " <> sub a)
+    where
+      go (k, a) = bracket (k <> ", " <> sub a)
   d@(DLE_Impossible {}) -> ps d
   DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
     mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
@@ -1032,7 +1033,7 @@ smt_e at_dv mdv de = do
         Nothing -> return $ pv_net
         Just tok -> do
           tok' <- smt_a at tok
-          return $ smtApply "select" [ pv_ks, tok' ]
+          return $ smtApply "select" [pv_ks, tok']
       let ca' = smtEq amta' paya'
       let msg_ = maybe "" (const "non-") mtok
       let mmsg = Just $ msg_ <> "network token pay amount"
@@ -1317,16 +1318,16 @@ smt_s = \case
                 smtTypeInv T_UInt $ pv_net'
                 liftIO $ void $ SMT.declare smt pv_tok $ Atom "Token"
                 smtTypeInv T_Token $ pv_tok'
-                liftIO $ void $ SMT.declare smt pv_ks $ smtApply "Array" [ Atom "Token", Atom "UInt" ]
-                smtTypeInv T_UInt $ smtApply "select" [ pv_ks', pv_tok' ]
+                liftIO $ void $ SMT.declare smt pv_ks $ smtApply "Array" [Atom "Token", Atom "UInt"]
+                smtTypeInv T_UInt $ smtApply "select" [pv_ks', pv_tok']
                 let one v a = smtAssert =<< (smtEq v <$> smt_a at a)
                 when should $ do
                   let DLPayAmt {..} = amta
                   one pv_net' pa_net
                   forM_ pa_ks $ \(ka, kt) -> do
                     kt' <- smt_a at kt
-                    one (smtApply "select" [ pv_ks', kt' ]) ka
-                local (\e -> e { ctxt_pay_amt = Just (pv_net', pv_ks') }) m
+                    one (smtApply "select" [pv_ks', kt']) ka
+                local (\e -> e {ctxt_pay_amt = Just (pv_net', pv_ks')}) m
           let this_case = bind_from <> bind_msg <> bind_amt after
           when' <- smt_a at whena
           case should of
@@ -1484,7 +1485,7 @@ _smtDefineTypes smt ts = do
 
 smt_ev :: DLinExportVal LLBlock -> App SExpr
 smt_ev = \case
-  DLEV_Arg at a  -> smt_a at a
+  DLEV_Arg at a -> smt_a at a
   DLEV_Fun at args body -> do
     forM_ args $ flip (pathAddUnbound at) O_Export . Just
     smt_block body

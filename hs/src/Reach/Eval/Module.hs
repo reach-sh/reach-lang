@@ -62,11 +62,11 @@ evalExportClause env (JSExportClause _ escl _) =
 
 trackImports :: SLEnv -> App ()
 trackImports env =
-  forM_ (M.toList env) $ \ (k, v) -> trackVariable (sss_at v, k)
+  forM_ (M.toList env) $ \(k, v) -> trackVariable (sss_at v, k)
 
 markExports :: SLEnv -> App ()
 markExports env =
-  forM_ (M.toList env) $ \ (k, v) -> markVarUsed (sss_at v, k)
+  forM_ (M.toList env) $ \(k, v) -> markVarUsed (sss_at v, k)
 
 evalTopBody :: SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> App SLEnv
 evalTopBody libm env exenv = \case
@@ -149,9 +149,10 @@ evalLib cns (src, body) libm = do
             | (trimQuotes hs) == versionHeader ->
               ((srcloc_after_semi "header" a sp at), j)
           _ -> expect_thrown at (Err_NoHeader body)
-  exenv <- locAt prev_at $
-    locUseStrict False $
-      evalTopBody libm stdlib_env mt_env body'
+  exenv <-
+    locAt prev_at $
+      locUseStrict False $
+        evalTopBody libm stdlib_env mt_env body'
   return $ M.insert src exenv libm
 
 evalLibs :: Connectors -> [SLMod] -> App SLLibs

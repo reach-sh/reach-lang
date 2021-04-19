@@ -390,8 +390,8 @@ instance Pretty DLExpr where
       DLE_Digest _ as -> "digest" <> parens (render_das as)
       DLE_Claim _ _ ct a m -> prettyClaim ct a m
       DLE_Transfer _ who da mtok -> prettyTransfer who da mtok
-      DLE_TokenInit _ tok -> "tokenInit" <> parens ( pretty tok )
-      DLE_CheckPay _ _ da mtok -> "checkPay" <> parens ( pretty da <> ", " <> pretty mtok )
+      DLE_TokenInit _ tok -> "tokenInit" <> parens (pretty tok)
+      DLE_CheckPay _ _ da mtok -> "checkPay" <> parens (pretty da <> ", " <> pretty mtok)
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
       DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
@@ -533,8 +533,8 @@ data DLinBlock a
 instance Pretty a => Pretty (DLinBlock a) where
   pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
 
-data DLExportinBlock a =
-  DLExportinBlock (DLinTail a) (DLinExportVal (DLinBlock a))
+data DLExportinBlock a
+  = DLExportinBlock (DLinTail a) (DLinExportVal (DLinBlock a))
   deriving (Eq)
 
 instance Pretty a => Pretty (DLExportinBlock a) where
@@ -545,46 +545,59 @@ type DLinExports a = M.Map SLVar (DLExportinBlock a)
 
 data DLPayAmt = DLPayAmt
   { pa_net :: DLArg
-  , pa_ks :: [(DLArg, DLArg)] }
+  , pa_ks :: [(DLArg, DLArg)]
+  }
   deriving (Eq, Generic)
 
 instance Pretty DLPayAmt where
   pretty (DLPayAmt {..}) =
-    "payamt" <> parens (render_obj $ M.fromList $
-      [ ("net"::String, pretty pa_net)
-      , ("ks", pretty pa_ks)
-      ])
+    "payamt"
+      <> parens
+        (render_obj $
+           M.fromList $
+             [ ("net" :: String, pretty pa_net)
+             , ("ks", pretty pa_ks)
+             ])
 
 data DLSend = DLSend
   { ds_isClass :: Bool
   , ds_msg :: [DLArg]
   , ds_pay :: DLPayAmt
-  , ds_when :: DLArg }
+  , ds_when :: DLArg
+  }
   deriving (Eq, Generic)
 
 instance Pretty DLSend where
   pretty (DLSend {..}) =
-    ".send" <> parens (render_obj $ M.fromList $
-      [ ("isClass"::String, pretty ds_isClass)
-      , ("msg", pretty ds_msg)
-      , ("pay", pretty ds_pay)
-      , ("when", pretty ds_when)
-      ])
+    ".send"
+      <> parens
+        (render_obj $
+           M.fromList $
+             [ ("isClass" :: String, pretty ds_isClass)
+             , ("msg", pretty ds_msg)
+             , ("pay", pretty ds_pay)
+             , ("when", pretty ds_when)
+             ])
 
 data DLRecv a = DLRecv
   { dr_from :: DLVar
   , dr_msg :: [DLVar]
   , dr_time :: DLVar
-  , dr_k :: a }
+  , dr_k :: a
+  }
   deriving (Eq, Generic)
 
 instance Pretty a => Pretty (DLRecv a) where
   pretty (DLRecv {..}) =
-    ".recv" <> parens (render_obj $ M.fromList $
-      [ ("from"::String, pretty dr_from)
-      , ("msg", pretty dr_msg)
-      , ("time", pretty dr_time)
-      ]) <> render_nest (pretty dr_k)
+    ".recv"
+      <> parens
+        (render_obj $
+           M.fromList $
+             [ ("from" :: String, pretty dr_from)
+             , ("msg", pretty dr_msg)
+             , ("time", pretty dr_time)
+             ])
+      <> render_nest (pretty dr_k)
 
 data FluidVar
   = FV_balance Int
@@ -608,7 +621,8 @@ allFluidVars :: Int -> [FluidVar]
 allFluidVars bals =
   [ FV_thisConsensusTime
   , FV_lastConsensusTime
-  ] <> map FV_balance [0..(bals + 1)]
+  ]
+    <> map FV_balance [0 .. (bals + 1)]
 
 class HasCounter a where
   getCounter :: a -> Counter

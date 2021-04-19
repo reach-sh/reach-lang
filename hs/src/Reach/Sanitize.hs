@@ -44,7 +44,8 @@ instance Sanitize DLLargeArg where
     DLLA_Obj m -> DLLA_Obj (sani m)
     DLLA_Data t v va -> DLLA_Data t v (sani va)
     DLLA_Struct kvs -> DLLA_Struct $ map go kvs
-      where go (k, v) = (,) k (sani v)
+      where
+        go (k, v) = (,) k (sani v)
 
 instance Sanitize DLExpr where
   sani = \case

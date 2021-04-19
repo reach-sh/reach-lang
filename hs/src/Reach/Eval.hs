@@ -38,8 +38,8 @@ app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options =
   M.fromList
     [ ("deployMode", opt_deployMode)
-    , ("verifyArithmetic", opt_bool (\ opts b -> opts {dlo_verifyArithmetic = b}))
-    , ("verifyPerConnector", opt_bool (\ opts b -> opts {dlo_verifyPerConnector = b}))
+    , ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
+    , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
     , ("connectors", opt_connectors)
     ]
   where
@@ -143,7 +143,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts part_ios top_formals
   flip when doExit =<< readSt st_live
   let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
   fin_toks <- readSt st_toks
-  let dlo' = dlo { dlo_bals = 1 + length fin_toks }
+  let dlo' = dlo {dlo_bals = 1 + length fin_toks}
   return $ \dli_maps final ->
     let dli = DLInit {..}
      in DLProg at dlo' sps dli exports final
@@ -153,8 +153,10 @@ compileDApp _ _ topv =
 getExports :: SLLibs -> App DLExports
 getExports libs = do
   let getLibExports lib = justValues . M.toList <$> mapM (slToDLExportVal . sss_val) lib
-  M.fromList <$> concatMapM (getLibExports . snd)
-    (filter ((/= ReachStdLib) . fst) $ M.toList libs)
+  M.fromList
+    <$> concatMapM
+      (getLibExports . snd)
+      (filter ((/= ReachStdLib) . fst) $ M.toList libs)
 
 compileBundle_ :: Connectors -> JSBundle -> SLVar -> App CompiledDApp
 compileBundle_ cns (JSBundle mods) main = do
@@ -214,5 +216,5 @@ compileBundle cns jsb main = do
   return $ mkprog ms' final
   where
     reportUnusedVars [] = return ()
-    reportUnusedVars l@(h:_) =
+    reportUnusedVars l@(h : _) =
       expect_throw Nothing (fst h) $ Err_Unused_Variables l

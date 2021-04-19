@@ -5,9 +5,9 @@ module Reach.Eval.Types where
 import qualified Data.Map.Strict as M
 import Generics.Deriving
 import Reach.AST.Base
+import Reach.AST.DL (DLBlock)
 import Reach.AST.DLBase
 import Reach.AST.SL
-import Reach.AST.DL (DLBlock)
 
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)

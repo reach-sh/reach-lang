@@ -215,7 +215,8 @@ showStateDiff x y =
          let showParts = intercalate ", " . map (show . fst) . M.toList
           in "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
                <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
-    -- XXX tokens
+
+-- XXX tokens
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
@@ -479,9 +480,9 @@ instance Show EvalError where
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
     Err_ParallelReduceBranchArgs b n args ->
-      let numArgs = length args in
-      let arguments = if n == 1 then "argument" else "arguments" in
-      "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
+      let numArgs = length args
+       in let arguments = if n == 1 then "argument" else "arguments"
+           in "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->
@@ -499,7 +500,7 @@ instance Show EvalError where
     Err_IllegalEffPosition v ->
       "Effects cannot be bound, got: " <> show_sv v
     Err_Unused_Variables vars ->
-      intercalate "\n" $ map (\ (at, v) -> "unused variable: " <> v <> " at " <> show at) vars
+      intercalate "\n" $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
     Err_Struct_Key_Invalid s ->
@@ -522,4 +523,3 @@ instance Show EvalError where
       "Token reference based on dynamic computation, which Reach cannot track, yet."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
-

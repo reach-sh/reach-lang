@@ -390,9 +390,9 @@ be_c = \case
   LLC_Com c k -> do
     let toks =
           case c of
-            DL_Let _ _ (DLE_TokenInit _ toka) -> [ toka ]
+            DL_Let _ _ (DLE_TokenInit _ toka) -> [toka]
             _ -> []
-    let remember_toks = local (\e -> e { be_toks = toks <> be_toks e })
+    let remember_toks = local (\e -> e {be_toks = toks <> be_toks e})
     (k'c, k'l) <- remember_toks $ be_c k
     c'c <- be_m c
     return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com c <$> k'l)
@@ -562,13 +562,12 @@ be_s = \case
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs time_v mtime' ok_l'
     return $ ok_l''m
 
-
 mk_ev :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
 mk_ev = \case
   DLEV_Fun at args (DLinBlock bat sf ll a) -> do
     let body' = dtReplace DT_Com (DT_Return bat) ll
     return $ DLEV_Fun at args (DLinBlock bat sf body' a)
-  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_Arg at a -> return $ DLEV_Arg at a
 
 mk_eb :: DLExportinBlock LLVar -> BApp (DLExportinBlock PILVar)
 mk_eb = \case
@@ -599,8 +598,9 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
         let ce_flow = flow
         ce_vars <- newIORef mempty
         flip runReaderT (CEnv {..}) m
-  dex' <- flip runReaderT (BEnv {..}) $
-            mapM mk_eb dex
+  dex' <-
+    flip runReaderT (BEnv {..}) $
+      mapM mk_eb dex
   cp <- (CPProg at . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps

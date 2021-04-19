@@ -27,8 +27,8 @@ import Reach.Connector
 import Reach.DeJump
 import Reach.Optimize
 import Reach.Texty (pretty)
-import Reach.UnsafeUtil
 import Reach.UnrollLoops
+import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
@@ -182,6 +182,7 @@ data TxnInfo = TxnInfo
 
 ti_from :: TxnInfo -> Bool
 ti_from = flip elem [TK_Out, TK_Init] . ti_kind
+
 ti_init :: TxnInfo -> Bool
 ti_init = (==) TK_Init . ti_kind
 
@@ -206,7 +207,7 @@ type App = ReaderT Env IO
 withFresh :: App m -> App m
 withFresh m = do
   eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
-  local (\e -> e { eTxnsR = eTxnsR' }) m
+  local (\e -> e {eTxnsR = eTxnsR'}) m
 
 output :: TEAL -> App ()
 output t = do
@@ -281,10 +282,10 @@ store_let dv small cgen m = do
   Env {..} <- ask
   local
     (\e ->
-      e
-        { eLets = M.insert dv cgen eLets
-          , eLetSmalls = M.insert dv small eLetSmalls
-        })
+       e
+         { eLets = M.insert dv cgen eLets
+         , eLetSmalls = M.insert dv small eLetSmalls
+         })
     $ m
 
 letSmall :: DLVar -> App Bool
@@ -348,7 +349,6 @@ from_txns = (map ti_idx . filter ti_from) <$> txn_infos
 
 init_txns :: App [TxnIdx]
 init_txns = (map ti_idx . filter ti_init) <$> txn_infos
-
 
 ctobs :: DLType -> App ()
 ctobs = \case
@@ -599,8 +599,8 @@ cla = \case
           Nothing -> normal
           Just x -> cl $ DLL_Bytes x
       _ -> normal
-      where
-        normal = cconcatbs $ map (\a -> (t, ca a)) as
+    where
+      normal = cconcatbs $ map (\a -> (t, ca a)) as
   DLLA_Tuple as ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLLA_Obj m -> cla $ DLLA_Struct $ M.toAscList m
@@ -740,7 +740,7 @@ ce = \case
     comment $ texty $ unsafeRedactAbsStr $ show at
     comment $ texty $ unsafeRedactAbsStr $ show fs
     txni <- talloc TK_In
-    (vTypeEnum, fReceiver, fAmount, rmFee, _fSender::String) <-
+    (vTypeEnum, fReceiver, fAmount, rmFee, _fSender :: String) <-
       case mtok of
         Nothing ->
           return ("pay", "Receiver", "Amount", True, "Sender")
@@ -762,9 +762,9 @@ ce = \case
       op "-"
     ca amt
     eq_or_fail
-    -- NOTE: We don't care who the sender is... this means that you can get
-    -- other people to pay for you if you want.
-    -- code "gtxn" [texty txni, fSender]
+  -- NOTE: We don't care who the sender is... this means that you can get
+  -- other people to pay for you if you want.
+  -- code "gtxn" [texty txni, fSender]
   DLE_Claim at fs t a mmsg -> do
     comment $ texty mmsg
     comment $ texty $ unsafeRedactAbsStr $ show at
@@ -775,8 +775,8 @@ ce = \case
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-      where
-        check = ca a >> or_fail
+    where
+      check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef {} -> xxx "algo mapref"
@@ -786,30 +786,30 @@ ce = \case
 
 doTransfer :: TxnKind -> SrcLoc -> App () -> DLArg -> Maybe DLArg -> App ()
 doTransfer tk _at cwho amt mtok = do
-    txni <- talloc tk
-    (vTypeEnum, fReceiver, fAmount, fSender) <-
-      case mtok of
-        Nothing ->
-          return ("pay", "Receiver", "Amount", "Sender")
-        Just tok -> do
-          code "gtxn" [texty txni, "XferAsset"]
-          ca tok
-          eq_or_fail
-          return ("axfer", "AssetReceiver", "AssetAmount", "Sender")
-    code "gtxn" [texty txni, "TypeEnum"]
-    code "int" [vTypeEnum]
-    eq_or_fail
-    code "gtxn" [texty txni, fReceiver]
-    cwho
-    cfrombs T_Address
-    eq_or_fail
-    code "gtxn" [texty txni, fAmount]
-    ca amt
-    eq_or_fail
-    code "gtxn" [texty txni, fSender]
-    code "byte" [tContractAddr]
-    cfrombs T_Address
-    eq_or_fail
+  txni <- talloc tk
+  (vTypeEnum, fReceiver, fAmount, fSender) <-
+    case mtok of
+      Nothing ->
+        return ("pay", "Receiver", "Amount", "Sender")
+      Just tok -> do
+        code "gtxn" [texty txni, "XferAsset"]
+        ca tok
+        eq_or_fail
+        return ("axfer", "AssetReceiver", "AssetAmount", "Sender")
+  code "gtxn" [texty txni, "TypeEnum"]
+  code "int" [vTypeEnum]
+  eq_or_fail
+  code "gtxn" [texty txni, fReceiver]
+  cwho
+  cfrombs T_Address
+  eq_or_fail
+  code "gtxn" [texty txni, fAmount]
+  ca amt
+  eq_or_fail
+  code "gtxn" [texty txni, fSender]
+  code "byte" [tContractAddr]
+  cfrombs T_Address
+  eq_or_fail
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
@@ -936,10 +936,10 @@ ct = \case
     check_nextSt
     halt_should_be isHalt
     finalize
-      where
-        (isHalt, check_nextSt) =
-          case msvs of
-            --- XXX fix this so it makes sure it is zero bytes
+    where
+      (isHalt, check_nextSt) =
+        case msvs of
+          --- XXX fix this so it makes sure it is zero bytes
           FI_Halt toks -> (True, forM_ toks close_asset >> close_escrow)
             where
               close_asset tok =
@@ -949,7 +949,7 @@ ct = \case
                   eq_or_fail
               close_escrow =
                 close "pay" "Amount" "Sender" "CloseRemainderTo" $ const $ return ()
-              close vTypeEnum fAmount fSender fCloseTo (extra::TxnIdx -> App ()) = do
+              close vTypeEnum fAmount fSender fCloseTo (extra :: TxnIdx -> App ()) = do
                 txni <- talloc TK_Out
                 extra txni
                 code "gtxn" [texty txni, "TypeEnum"]
@@ -979,10 +979,10 @@ ct = \case
                         case v == timev || a == DLA_Var timev of
                           True -> more'
                           False -> a : more'
-                          where
-                            more' = delete_timev more
+                        where
+                          more' = delete_timev more
                 let svs' = delete_timev svs
-                    -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
+                -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
                 cstate (HM_Set which) svs'
                 readArg argNextSt
                 eq_or_fail
@@ -993,7 +993,7 @@ finalize = do
   m
 
 ct_k :: CTail -> App () -> App ()
-ct_k t k = local (\e -> e { eFinalize = k }) $ ct t
+ct_k t k = local (\e -> e {eFinalize = k}) $ ct t
 
 data HashMode
   = HM_Set Int
@@ -1138,18 +1138,18 @@ ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
   let svs = dvdeletem last_timemv svs_
    in fmap Just $
-     fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-       let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
-       let args = svs <> msg
-       let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
-       let argCount = fromIntegral argFirstUser + length args
-       let eLets1 = M.insert from lookup_sender eLets0
-       let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
-       let eLets3 = case last_timemv of
-                      Nothing -> eLets2
-                      Just x -> M.insert x lookup_last eLets2
-       let eLets = eLets3
-       runApp eShared eWhich eLets (Just timev) $ do
+        fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
+          let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
+          let args = svs <> msg
+          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
+          let argCount = fromIntegral argFirstUser + length args
+          let eLets1 = M.insert from lookup_sender eLets0
+          let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
+          let eLets3 = case last_timemv of
+                Nothing -> eLets2
+                Just x -> M.insert x lookup_last eLets2
+          let eLets = eLets3
+          runApp eShared eWhich eLets (Just timev) $ do
             comment ("Handler " <> texty eWhich)
             comment "Check txnAppl"
             code "gtxn" [texty txnAppl, "TypeEnum"]
@@ -1209,12 +1209,12 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
               lookup_fee_amount
               fts <- from_txns
               its <- init_txns
-              let ftfees = flip map fts (\i -> code "gtxn" [ texty i, "Fee" ])
+              let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
               let itfee = do
                     cl $ minimumBalance_l
                     cl $ DLL_Int sb $ fromIntegral $ length its
                     op "*"
-              let itfees = if null its then [] else [ itfee ]
+              let itfees = if null its then [] else [itfee]
               csum_ $ itfees <> ftfees
               eq_or_fail
 
@@ -1269,8 +1269,8 @@ compile_algo disp pl = do
         disp lab t
         return
           ( Aeson.String t
-            , Aeson.Number $ fromInteger az
-            , do
+          , Aeson.Number $ fromInteger az
+          , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
               op "=="
@@ -1411,7 +1411,7 @@ compile_algo disp pl = do
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
   let res1 = M.insert "unsupported" (Aeson.Bool sFailed) res0
-      -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
+  -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
   return $ Aeson.Object $ HM.fromList $ M.toList res1
 
 connect_algo :: Connector

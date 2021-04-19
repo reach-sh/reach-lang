@@ -150,7 +150,7 @@ instance Unroll LLBlock where
 instance Unroll (DLinExportVal LLBlock) where
   ul = \case
     DLEV_Fun at a b -> DLEV_Fun at a <$> ul b
-    DLEV_Arg at a   -> return $ DLEV_Arg at a
+    DLEV_Arg at a -> return $ DLEV_Arg at a
 
 instance Unroll (DLExportinBlock LLVar) where
   ul = \case
@@ -177,7 +177,7 @@ instance Unroll a => Unroll (Maybe a) where
   ul = mapM ul
 
 instance Unroll a => Unroll (DLRecv a) where
-  ul r = (\k' -> r { dr_k = k' }) <$> ul (dr_k r)
+  ul r = (\k' -> r {dr_k = k'}) <$> ul (dr_k r)
 
 instance Unroll LLStep where
   ul = \case

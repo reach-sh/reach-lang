@@ -213,8 +213,8 @@ instance HasCounter DLOpts where
 
 type DLExportVal = DLinExportVal DLBlock
 
-data DLExportBlock =
-  DLExportBlock DLStmts (DLinExportVal DLBlock)
+data DLExportBlock
+  = DLExportBlock DLStmts (DLinExportVal DLBlock)
 
 instance Pretty DLExportBlock where
   pretty = \case

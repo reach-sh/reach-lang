@@ -158,7 +158,7 @@ instance Erase LLStep where
       let (lt_mv, c) = dr_k recv
       c' <- el c
       lt_mv' <- viaCount lt_mv
-      let recv' = recv { dr_k = (lt_mv', c') }
+      let recv' = recv {dr_k = (lt_mv', c')}
       let mel (d, s) = (,) <$> el d <*> el s
       mtime' <- traverse mel mtime
       send' <- traverse viaCount send
@@ -168,7 +168,7 @@ instance Erase (DLinExportVal LLBlock) where
   el = \case
     DLEV_Fun at args body ->
       DLEV_Fun at <$> mapM el args <*> el body
-    DLEV_Arg at a  -> DLEV_Arg at <$> el a
+    DLEV_Arg at a -> DLEV_Arg at <$> el a
 
 instance Erase (DLExportinBlock LLVar) where
   el = \case

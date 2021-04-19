@@ -46,7 +46,8 @@ data SLTypeFun = SLTypeFun
   , stf_pre :: Maybe SLVal
   , stf_post :: Maybe SLVal
   , stf_pre_msg :: Maybe SLVal
-  , stf_post_msg :: Maybe SLVal }
+  , stf_post_msg :: Maybe SLVal
+  }
   deriving (Eq, Generic)
 
 instance Show SLType where
@@ -114,11 +115,10 @@ st2it t = case t of
 
 type SLPartEnvs = M.Map SLPart SLEnv
 
-data SLCloEnv
-  = SLCloEnv {
-    clo_penvs :: SLPartEnvs,
-    clo_cenv :: SLEnv,
-    clo_use_strict :: Bool
+data SLCloEnv = SLCloEnv
+  { clo_penvs :: SLPartEnvs
+  , clo_cenv :: SLEnv
+  , clo_use_strict :: Bool
   }
   deriving (Eq, Generic)
 
@@ -177,7 +177,8 @@ instance Pretty SLVal where
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_Struct _ kvs ->
       "struct" <> brackets (hsep $ punctuate comma $ map go kvs)
-      where go (k, v) = brackets $ hsep $ punctuate comma $ [ pretty k, pretty v]
+      where
+        go (k, v) = brackets $ hsep $ punctuate comma $ [pretty k, pretty v]
     SLV_DLC c -> "<constant: " <> viaShow c <> ">"
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
@@ -290,12 +291,12 @@ data SLForm
   | SLForm_wait
   deriving (Eq, Generic)
 
-data ForkCase = ForkCase {
-    fc_at :: SrcLoc,
-    fc_who :: JSExpression,
-    fc_before :: JSExpression,
-    fc_pay :: JSExpression,
-    fc_after :: JSExpression
+data ForkCase = ForkCase
+  { fc_at :: SrcLoc
+  , fc_who :: JSExpression
+  , fc_before :: JSExpression
+  , fc_pay :: JSExpression
+  , fc_after :: JSExpression
   }
   deriving (Eq, Generic)
 

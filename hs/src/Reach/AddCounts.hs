@@ -119,7 +119,7 @@ ac_top x = do
 
 ac_ev :: DLinExportVal PILBlock -> App (DLinExportVal PLBlock)
 ac_ev = \case
-  DLEV_Arg at a  -> return $ DLEV_Arg at a
+  DLEV_Arg at a -> return $ DLEV_Arg at a
   DLEV_Fun at a b -> do
     ac_visit a
     DLEV_Fun at a <$> ac_bl b
