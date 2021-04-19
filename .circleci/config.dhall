@@ -316,7 +316,10 @@ let docs-render = dockerized-job-with cimage-base
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
         && sudo apt install -y --no-install-recommends \
+          libcairo2 \
           libfontconfig1 \
+          libjpeg62 \
+          libpangocairo-1.0 \
           racket \
           python3-setuptools
       ''
