@@ -34,4 +34,5 @@ extra-deps:
     commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
     # ^ from branch "reach-1"
   - git: https://github.com/google/ormolu.git
-    commit: f16c62c18db1b328ee481c781171ea61f354ff70
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
+    # ^ from branch "gfork"

@@ -116,15 +116,15 @@ packages:
     commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
 - completed:
     name: ormolu
-    version: 0.1.2.0
+    version: 0.1.4.1
     git: https://github.com/google/ormolu.git
     pantry-tree:
-      size: 78156
-      sha256: a030dc542ed61d259984b086957113932d8ed7199698e4791243072d6a1c6583
-    commit: f16c62c18db1b328ee481c781171ea61f354ff70
+      size: 80957
+      sha256: e022d2c07cee18b2d280dd490ad687be6d8b5152a9d8eb27c42b21d827177a77
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
   original:
     git: https://github.com/google/ormolu.git
-    commit: f16c62c18db1b328ee481c781171ea61f354ff70
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
 snapshots:
 - completed:
     size: 563103
