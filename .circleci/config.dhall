@@ -320,7 +320,7 @@ let docs-render = dockerized-job-with cimage-base
           python3-setuptools
       ''
 
-  , run "Install `pygments-reach`" "cd pygments && make install"
+  , run "Install `pygments-reach`" "cd pygments && sudo make install"
   , run "Render docs"              "cd docs-src && make render"
   , store_artifacts "docs/"
 

@@ -531,7 +531,7 @@ jobs:
         name: "Install `racket` and `python3-setuptools`"
         no_output_timeout: 10m
     - run:
-        command: "cd pygments && make install"
+        command: "cd pygments && sudo make install"
         name: "Install `pygments-reach`"
         no_output_timeout: 10m
     - run:
