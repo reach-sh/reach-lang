@@ -12,16 +12,21 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-  if ( conn == 'ALGO' ) {
+  if ( conn == 'ETH' ) {
+    const myGasLimit = 5000000;
+    accAlice.setGasLimit(myGasLimit);
+    accBob.setGasLimit(myGasLimit);
+  } else if ( conn == 'ALGO' ) {
     await stdlib.transfer(accAlice, accAlice, 0, zorkmid.id);
     await stdlib.transfer(accAlice, accAlice, 0, gil.id);
     await stdlib.transfer(accBob, accBob, 0, zorkmid.id);
     await stdlib.transfer(accBob, accBob, 0, gil.id);
   }
 
-  await zorkmid.mint(accAlice, startingBalance);
-  await zorkmid.mint(accAlice, startingBalance);
-  await gil.mint(accBob, startingBalance);
+  for ( const acc of [ accAlice, accBob ] ) {
+    await zorkmid.mint(acc, startingBalance.mul(2));
+    await gil.mint(acc, startingBalance.mul(2));
+  }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const doSwap = async (tokenA, amtA, tokenB, amtB, trusted) => {

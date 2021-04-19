@@ -496,6 +496,7 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-live
+      - REACH_ISOLATED_NETWORK
       - ETH_NODE_URI
       - ETH_NODE_NETWORK
   ${SERVICE}-ETH-test-dockerized-geth: &default-app
@@ -511,6 +512,7 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ALGO-live
+      - REACH_ISOLATED_NETWORK
       - ALGO_TOKEN
       - ALGO_SERVER
       - ALGO_PORT
@@ -856,8 +858,10 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE
+      - REACH_ISOLATED_NETWORK
       - REACT_APP_REACH_DEBUG=${REACH_DEBUG}
       - REACT_APP_REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
+      - REACT_APP_REACH_ISOLATED_NETWORK=${REACH_ISOLATED_NETWORK}
 $DEPENDS_ON
   ethereum-devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
@@ -1078,6 +1082,7 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
+      - REACH_ISOLATED_NETWORK
       - REACH_RPC_PORT
       - REACH_RPC_KEY
       - REACH_RPC_TLS_KEY
