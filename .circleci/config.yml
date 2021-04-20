@@ -197,99 +197,13 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
-    steps:
-    - checkout
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        name: install mo
-        no_output_timeout: 10m
-    - run:
-        command: "cd hs && make package.yaml"
-        name: hs package.yaml
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-        - "hs-2-{{ checksum \"hs/stack.yaml\" }}"
-        - "hs-2-"
-        - "hs-"
-    - run:
-        command: "cd hs && make hs-deps"
-        name: install hs dependencies
-        no_output_timeout: 10m
-    - save_cache:
-        key: "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-        paths:
-        - /root/.stack
-        - hs/.stack_work
-        - "hs/.stack-work"
-    - run:
-        command: "cd hs && make hs-clean"
-        name: clean hs
-        no_output_timeout: 10m
-    - run:
-        command: "cd hs && make hs-build"
-        name: build hs
-        no_output_timeout: 10m
-    - save_cache:
-        key: "hs-{{ .Revision }}"
-        paths:
-        - /root/.stack
-        - "hs/.stack-work"
-    - setup_remote_docker:
-        docker_layer_caching: true
-    - run:
-        command: "cd scripts/ethereum-devnet && make build"
-        name: "build ethereum-devnet"
-        no_output_timeout: 10m
-    - run:
-        command: "cd js && make build"
-        name: build js
-        no_output_timeout: 10m
-    - run:
-        command: "cd js/stdlib && make check"
-        name: check js/stdlib/package.json
-        no_output_timeout: 10m
-    - run:
-        command: |
-          mkdir -p /tmp/build-core
-          docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
-        name: "stash `build-core` workspace artifacts"
-        no_output_timeout: 10m
-    - persist_to_workspace:
-        paths:
-        - runner.tar.gz
-        root: "/tmp/build-core"
-    - run:
-        command: |
-          docker pull reachsh/algorand-devnet:0.1
-          docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
-        name: "pull algorand-devnet"
-        no_output_timeout: 10m
-    - jq/install
-    - run:
-        command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
-        name: "Is dockerhub up to date?"
-        no_output_timeout: 10m
-    - slack/notify:
-        branch_pattern: "master,gh-pages"
-        event: fail
-        template: basic_fail_1
-  "build-reach-circle":
-    docker:
-    - auth:
-        password: $DOCKER_PASSWORD
-        username: $DOCKER_LOGIN
       image: "cimg/base:stable-18.04"
     steps:
     - checkout
-    - setup_remote_docker:
-        docker_layer_caching: true
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
     - run:
         command: |
           curl -sSL https://git.io/get-mo -o mo \
@@ -300,12 +214,114 @@ jobs:
         no_output_timeout: 10m
     - run:
         command: |
-          cd hs && make build-circle-docker
-          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0.1.2
-          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0.1
-          docker tag reachsh/reach-circle:latest reachsh/reach-circle:0
-        name: "Rebuild Docker image: reachsh/reach-circle:0.1.2"
-        no_output_timeout: 60m
+          curl -Lo ~/.local/bin/solc \
+            https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux
+        name: "Install `solc`"
+        no_output_timeout: 10m
+    - run:
+        command: |
+          curl -Lo /tmp/z3.zip \
+               https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
+            && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
+             | cat > ~/.local/bin/z3
+        name: "Install `z3`"
+        no_output_timeout: 10m
+    - run:
+        command: |
+          sudo apt update && sudo apt install \
+              g++ \
+              gcc \
+              git \
+              gnupg \
+              libc6-dev \
+              libffi-dev \
+              libgmp-dev \
+              libtinfo-dev \
+              make \
+              netbase \
+              xz-utils \
+              zlib1g-dev \
+            && curl -L https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+        name: "Install `stack`"
+        no_output_timeout: 10m
+    - run:
+        command: "chmod +x ~/.local/bin/*"
+        name: "chmod +x ~/.local/bin/*"
+        no_output_timeout: 10m
+    - run:
+        command: "cd hs && make package.yaml"
+        name: Generate package.yaml
+        no_output_timeout: 10m
+    - restore_cache:
+        keys:
+        - "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+        - "hs-2-{{ checksum \"hs/stack.yaml\" }}"
+        - "hs-2-"
+        - "hs-"
+    - run:
+        command: "cd hs && make hs-deps"
+        name: Install hs dependencies
+        no_output_timeout: 10m
+    - save_cache:
+        key: "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+        paths:
+        - /root/.stack
+        - hs/.stack_work
+        - "hs/.stack-work"
+    - run:
+        command: "cd hs && make hs-clean"
+        name: Clean hs
+        no_output_timeout: 10m
+    - run:
+        command: "cd hs && make hs-build"
+        name: Build hs
+        no_output_timeout: 10m
+    - run:
+        command: "cd hs && stack install"
+        name: "Install `reachc`"
+        no_output_timeout: 10m
+    - save_cache:
+        key: "hs-{{ .Revision }}"
+        paths:
+        - /root/.stack
+        - "hs/.stack-work"
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        command: "cd scripts/ethereum-devnet && make build"
+        name: "Build ethereum-devnet"
+        no_output_timeout: 10m
+    - run:
+        command: "cd js && make build"
+        name: Build js
+        no_output_timeout: 10m
+    - run:
+        command: "cd js/stdlib && make check"
+        name: Check js/stdlib/package.json
+        no_output_timeout: 10m
+    - run:
+        command: |
+          mkdir -p /tmp/build-core/bin
+          cp ~/.local/bin/* /tmp/build-core/bin
+          docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
+        name: "Stash `build-core` workspace artifacts"
+        no_output_timeout: 10m
+    - persist_to_workspace:
+        paths:
+        - runner.tar.gz
+        - bin
+        root: "/tmp/build-core"
+    - run:
+        command: |
+          docker pull reachsh/algorand-devnet:0.1
+          docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
+        name: "Pull algorand-devnet"
+        no_output_timeout: 10m
+    - jq/install
+    - run:
+        command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
+        name: "Is dockerhub up to date?"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2483,16 +2499,10 @@ version: 2.1
 workflows:
   "build-and-test":
     jobs:
-    - "build-reach-circle":
-        context:
-        - "reachdevbot-on-dockerhub"
-        - "circleci-on-slack"
     - "build-core":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
-        requires:
-        - "build-reach-circle"
     - "test-hs":
         context:
         - "reachdevbot-on-dockerhub"

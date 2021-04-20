@@ -46,7 +46,7 @@ let docker-tag-all
         ++ "\n" ++ docker-tag i "${MAJOR}"
 
 let reach-circle = docker-image "reach-circle" VERSION
-let cimage-base  = "cimg/base:stable-18.04"
+let cimg-base    = "cimg/base:stable-18.04"
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -222,21 +222,46 @@ let dockerized-job-with-reach-circle-and-runner
 
 --------------------------------------------------------------------------------
 
-let build-reach-circle = dockerized-job-with cimage-base
-  [ setup_remote_docker True
+let V_SOLC = "v0.8.2"
+let V_Z3   = "4.8.10"
+let S_Z3   = "x64-ubuntu-18.04"
+
+let build-core = dockerized-job-with cimg-base
+  [ run "mkdir -p ~/.local/bin" "mkdir -p ~/.local/bin"
   , install_mo_home_circleci_local_bin
-  , runT "60m" "Rebuild Docker image: ${reach-circle}" ''
-      cd hs && make build-circle-docker
-      ${docker-tag-all "reach-circle"}
+
+  , run "Install `solc`" ''
+      curl -Lo ~/.local/bin/solc \
+        https://github.com/ethereum/solidity/releases/download/${V_SOLC}/solc-static-linux
       ''
-  , slack/notify
-  ]
 
+  , run "Install `z3`" ''
+      curl -Lo /tmp/z3.zip \
+           https://github.com/Z3Prover/z3/releases/download/z3-${V_Z3}/z3-${V_Z3}-${S_Z3}.zip \
+        && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
+         | cat > ~/.local/bin/z3
+      ''
 
-let build-core = dockerized-job-with-reach-circle
-  [ install_mo_user_local_bin
+  , run "Install `stack`" ''
+      sudo apt update && sudo apt install \
+          g++ \
+          gcc \
+          git \
+          gnupg \
+          libc6-dev \
+          libffi-dev \
+          libgmp-dev \
+          libtinfo-dev \
+          make \
+          netbase \
+          xz-utils \
+          zlib1g-dev \
+        && curl -L https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+      ''
 
-  , run "hs package.yaml" "cd hs && make package.yaml"
+  , run "chmod +x ~/.local/bin/*" "chmod +x ~/.local/bin/*"
+
+  , run "Generate package.yaml" "cd hs && make package.yaml"
   , restore_cache
       [ "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
       , "hs-2-{{ checksum \"hs/stack.yaml\" }}"
@@ -244,7 +269,7 @@ let build-core = dockerized-job-with-reach-circle
       , "hs-"
       ]
 
-  , run "install hs dependencies" "cd hs && make hs-deps"
+  , run "Install hs dependencies" "cd hs && make hs-deps"
   , save_cache
       "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
       [ "/root/.stack"
@@ -252,8 +277,9 @@ let build-core = dockerized-job-with-reach-circle
       , "hs/.stack-work"
       ]
 
-  , run "clean hs" "cd hs && make hs-clean"
-  , run "build hs" "cd hs && make hs-build"
+  , run "Clean hs"         "cd hs && make hs-clean"
+  , run "Build hs"         "cd hs && make hs-build"
+  , run "Install `reachc`" "cd hs && stack install"
   , save_cache
       "hs-{{ .Revision }}"
       [ "/root/.stack"
@@ -262,19 +288,19 @@ let build-core = dockerized-job-with-reach-circle
 
   , setup_remote_docker True
 
-  , run "build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
+  , run "Build ethereum-devnet" "cd scripts/ethereum-devnet && make build"
 
-  , run "build js"                     "cd js && make build"
-  , run "check js/stdlib/package.json" "cd js/stdlib && make check"
+  , run "Build js"                     "cd js && make build"
+  , run "Check js/stdlib/package.json" "cd js/stdlib && make check"
 
-  , run "stash `build-core` workspace artifacts" ''
-      mkdir -p /tmp/build-core
+  , run "Stash `build-core` workspace artifacts" ''
+      mkdir -p /tmp/build-core/bin
+      cp ~/.local/bin/* /tmp/build-core/bin
       docker save ${docker-image "runner" "latest"} | gzip > /tmp/build-core/runner.tar.gz
       ''
-  -- TODO alleviate cache time penalty by putting `reachc` in here too?
-  , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz" ]
+  , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz", "bin" ]
 
-  , run "pull algorand-devnet" ''
+  , run "Pull algorand-devnet" ''
       docker pull ${docker-image "algorand-devnet" VERSION_SHORT}
       docker run --entrypoint /bin/sh ${docker-image "algorand-devnet" VERSION_SHORT} -c 'echo $REACH_GIT_HASH'
       ''
@@ -311,7 +337,7 @@ let test-js = dockerized-job-with-reach-circle-and-runner
   ]
 
 
-let docs-render = dockerized-job-with cimage-base
+let docs-render = dockerized-job-with cimg-base
   [ run "Install dependencies" ''
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
@@ -374,7 +400,7 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
   ]
 
 
-let shellcheck = dockerized-job-with cimage-base
+let shellcheck = dockerized-job-with cimg-base
   [ Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify
@@ -409,8 +435,7 @@ let mk-example-job
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
-   in [ `=:=` "build-reach-circle" build-reach-circle
-      , `=:=` "build-core"         build-core
+   in [ `=:=` "build-core"         build-core
       , `=:=` "docs-render"        docs-render
       , `=:=` "docs-deploy"        docs-deploy
       , `=:=` "shellcheck"         shellcheck
@@ -441,9 +466,6 @@ let workflows =
        , filters  = Some { branches = { only = "master" }}
        }
 
-  let requires-build-reach-circle =
-    T::{ requires = Some [ "build-reach-circle" ] }
-
   let requires-build-core =
     T::{ requires = Some [ "build-core" ] }
 
@@ -460,10 +482,9 @@ let workflows =
     ]}
 
   let build-and-test = { jobs =
-    [ [ `=:=` "build-reach-circle" T.default                   ]
-    , [ `=:=` "build-core"         requires-build-reach-circle ]
-    , [ `=:=` "test-hs"            requires-build-core         ]
-    , [ `=:=` "test-js"            requires-build-core         ]
+    [ [ `=:=` "build-core" T.default           ]
+    , [ `=:=` "test-hs"    requires-build-core ]
+    , [ `=:=` "test-js"    requires-build-core ]
     ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 
