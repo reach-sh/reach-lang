@@ -214,13 +214,13 @@ jobs:
         no_output_timeout: 10m
     - run:
         command: |
-          curl -Lo ~/.local/bin/solc \
+          curl -sSLo ~/.local/bin/solc \
             https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux
         name: "Install `solc`"
         no_output_timeout: 10m
     - run:
         command: |
-          curl -Lo /tmp/z3.zip \
+          curl -sSLo /tmp/z3.zip \
                https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
             && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
              | cat > ~/.local/bin/z3
@@ -241,7 +241,7 @@ jobs:
               netbase \
               xz-utils \
               zlib1g-dev \
-            && curl -L https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+            && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
         name: "Install `stack`"
         no_output_timeout: 10m
     - run:
@@ -254,19 +254,15 @@ jobs:
         no_output_timeout: 10m
     - restore_cache:
         keys:
-        - "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-        - "hs-2-{{ checksum \"hs/stack.yaml\" }}"
-        - "hs-2-"
-        - "hs-"
+        - "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
     - run:
         command: "cd hs && make hs-deps"
         name: Install hs dependencies
         no_output_timeout: 10m
     - save_cache:
-        key: "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+        key: "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
         paths:
-        - /root/.stack
-        - hs/.stack_work
+        - ~/.stack
         - "hs/.stack-work"
     - run:
         command: "cd hs && make hs-clean"

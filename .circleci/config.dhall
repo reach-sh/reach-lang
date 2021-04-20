@@ -226,17 +226,20 @@ let V_SOLC = "v0.8.2"
 let V_Z3   = "4.8.10"
 let S_Z3   = "x64-ubuntu-18.04"
 
+let CACHE_DEPS_HS =
+  "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+
 let build-core = dockerized-job-with cimg-base
   [ run "mkdir -p ~/.local/bin" "mkdir -p ~/.local/bin"
   , install_mo_home_circleci_local_bin
 
   , run "Install `solc`" ''
-      curl -Lo ~/.local/bin/solc \
+      curl -sSLo ~/.local/bin/solc \
         https://github.com/ethereum/solidity/releases/download/${V_SOLC}/solc-static-linux
       ''
 
   , run "Install `z3`" ''
-      curl -Lo /tmp/z3.zip \
+      curl -sSLo /tmp/z3.zip \
            https://github.com/Z3Prover/z3/releases/download/z3-${V_Z3}/z3-${V_Z3}-${S_Z3}.zip \
         && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
          | cat > ~/.local/bin/z3
@@ -256,26 +259,16 @@ let build-core = dockerized-job-with cimg-base
           netbase \
           xz-utils \
           zlib1g-dev \
-        && curl -L https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+        && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
       ''
 
   , run "chmod +x ~/.local/bin/*" "chmod +x ~/.local/bin/*"
 
   , run "Generate package.yaml" "cd hs && make package.yaml"
-  , restore_cache
-      [ "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-      , "hs-2-{{ checksum \"hs/stack.yaml\" }}"
-      , "hs-2-"
-      , "hs-"
-      ]
 
-  , run "Install hs dependencies" "cd hs && make hs-deps"
-  , save_cache
-      "hs-2-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-      [ "/root/.stack"
-      , "hs/.stack_work"
-      , "hs/.stack-work"
-      ]
+  , restore_cache [ CACHE_DEPS_HS ]
+  , run "Install hs dependencies"   "cd hs && make hs-deps"
+  , save_cache      CACHE_DEPS_HS   [ "~/.stack", "hs/.stack-work" ]
 
   , run "Clean hs"         "cd hs && make hs-clean"
   , run "Build hs"         "cd hs && make hs-build"
