@@ -242,7 +242,10 @@ do_compile () {
     }
 
     ID=$(do_whoami)
-    if [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
+    if [ "$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
+        ~/.local/bin/reachc "$@"
+
+    elif [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
         export STACK_YAML="${HS}/stack.yaml"
         export REACHC_ID=${ID}
         REACHC_HASH="$("${HS}/../scripts/git-hash.sh")"
@@ -255,6 +258,7 @@ do_compile () {
         else
           reachc_dev "$@"
         fi
+
     else
         docker run \
           --rm \
