@@ -265,19 +265,25 @@ jobs:
     - run:
         command: |
           sudo apt update && sudo apt install \
-              g++ \
-              gcc \
-              git \
-              gnupg \
-              libc6-dev \
-              libffi-dev \
-              libgmp-dev \
-              libtinfo-dev \
-              make \
-              netbase \
-              xz-utils \
-              zlib1g-dev \
-            && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+            g++ \
+            gcc \
+            git \
+            gnupg \
+            libc6-dev \
+            libffi-dev \
+            libgmp-dev \
+            libtinfo-dev \
+            make \
+            netbase \
+            xz-utils \
+            zlib1g-dev
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Install `stack` dependencies"
+        no_output_timeout: 10m
+    - run:
+        command: |
+          curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Install `stack`"
@@ -336,11 +342,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Install `reachc`"
         no_output_timeout: 10m
-    - save_cache:
-        key: "hs-{{ .Revision }}"
-        paths:
-        - /home/circleci/.stack
-        - "hs/.stack-work"
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1735,9 +1736,28 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "cp /tmp/build-core/bin/* ~/.local/bin"
         no_output_timeout: 10m
+    - run:
+        command: |
+          sudo apt update && sudo apt install \
+            g++ \
+            gcc \
+            git \
+            gnupg \
+            libc6-dev \
+            libffi-dev \
+            libgmp-dev \
+            libtinfo-dev \
+            make \
+            netbase \
+            xz-utils \
+            zlib1g-dev
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Install `stack` dependencies"
+        no_output_timeout: 10m
     - restore_cache:
         keys:
-        - "hs-{{ .Revision }}"
+        - "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
     - run:
         command: "cd hs && make hs-test-xml"
         environment:

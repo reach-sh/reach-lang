@@ -172,6 +172,23 @@ let mkdir_bin =
       "mkdir -p ~/.local/bin"
 
 
+let install_stack_deps = run "Install `stack` dependencies" ''
+  sudo apt update && sudo apt install \
+    g++ \
+    gcc \
+    git \
+    gnupg \
+    libc6-dev \
+    libffi-dev \
+    libgmp-dev \
+    libtinfo-dev \
+    make \
+    netbase \
+    xz-utils \
+    zlib1g-dev
+  ''
+
+
 let slack/notify
   = Step.SlackNotifyOnFail { slack/notify =
     { event          = "fail"
@@ -249,21 +266,9 @@ let build-core = dockerized-job
          | cat > ~/.local/bin/z3
       ''
 
+  , install_stack_deps
   , run "Install `stack`" ''
-      sudo apt update && sudo apt install \
-          g++ \
-          gcc \
-          git \
-          gnupg \
-          libc6-dev \
-          libffi-dev \
-          libgmp-dev \
-          libtinfo-dev \
-          make \
-          netbase \
-          xz-utils \
-          zlib1g-dev \
-        && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+      curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
       ''
 
   , run "chmod +x ~/.local/bin/*"
@@ -286,12 +291,6 @@ let build-core = dockerized-job
   , run "Clean hs"         "cd hs && make hs-clean"
   , run "Build hs"         "cd hs && make hs-build"
   , run "Install `reachc`" "cd hs && stack install"
-
-  , save_cache
-      "hs-{{ .Revision }}"
-      [ "/home/circleci/.stack"
-      , "hs/.stack-work"
-      ]
 
   , setup_remote_docker True
 
@@ -323,7 +322,8 @@ let build-core = dockerized-job
 
 
 let test-hs = dockerized-job-with-build-core-bins
-  [ restore_cache [ "hs-{{ .Revision }}" ]
+  [ install_stack_deps
+  , restore_cache [ CACHE_DEPS_HS ]
 
   , runT "20m"         "Test hs (xml)"   "cd hs && make hs-test-xml"
   , store_test_results "hs/test-reports"
