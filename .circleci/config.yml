@@ -5,11 +5,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -22,19 +34,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean abstract-simul"
         environment:
@@ -53,7 +52,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run abstract-simul"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -63,11 +61,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -80,19 +90,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean algorand-placeholder"
         environment:
@@ -111,7 +108,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run algorand-placeholder"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -121,11 +117,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -138,19 +146,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean argz"
         environment:
@@ -169,7 +164,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run argz
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -179,11 +173,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -196,19 +202,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean atomic-swap"
         environment:
@@ -227,7 +220,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run atomic-swap"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -247,14 +239,10 @@ jobs:
         name: "mkdir -p ~/.local/bin"
         no_output_timeout: 10m
     - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /home/circleci/.local/bin \
-            && mv mo /home/circleci/.local/bin
+        command: "curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: install mo
+        name: "Install `mo`"
         no_output_timeout: 10m
     - run:
         command: |
@@ -351,7 +339,7 @@ jobs:
     - save_cache:
         key: "hs-{{ .Revision }}"
         paths:
-        - /root/.stack
+        - /home/circleci/.stack
         - "hs/.stack-work"
     - setup_remote_docker:
         docker_layer_caching: true
@@ -375,9 +363,11 @@ jobs:
         no_output_timeout: 10m
     - run:
         command: |
+          sudo apt install tree
           mkdir -p /tmp/build-core/bin
           cp ~/.local/bin/* /tmp/build-core/bin
           docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
+          tree /tmp/build-core
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Stash `build-core` workspace artifacts"
@@ -390,12 +380,14 @@ jobs:
     - run:
         command: |
           docker pull reachsh/algorand-devnet:0.1
-          docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
+          docker run \
+            --entrypoint /bin/sh \
+            reachsh/algorand-devnet:0.1 \
+            -c 'echo $REACH_GIT_HASH'
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Pull algorand-devnet"
         no_output_timeout: 10m
-    - jq/install
     - run:
         command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
         environment:
@@ -411,11 +403,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -428,19 +432,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-fork"
         environment:
@@ -459,7 +450,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run chicken-fork"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -469,11 +459,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -486,19 +488,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-parallel"
         environment:
@@ -517,7 +506,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run chicken-parallel"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -527,11 +515,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -544,19 +544,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-race"
         environment:
@@ -575,7 +562,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run chicken-race"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -705,11 +691,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -722,19 +720,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean exports"
         environment:
@@ -753,7 +738,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run exports
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -763,11 +747,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -780,19 +776,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean maybe-send"
         environment:
@@ -811,7 +794,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run maybe-send"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -821,11 +803,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -838,19 +832,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean multiple-pr-case"
         environment:
@@ -869,7 +850,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run multiple-pr-case"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -879,11 +859,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -896,19 +888,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean multisig"
         environment:
@@ -927,7 +906,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run multisig
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -937,11 +915,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -954,19 +944,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean nft-dumb"
         environment:
@@ -985,7 +962,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run nft-dumb"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -995,11 +971,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1012,19 +1000,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean nim"
         environment:
@@ -1043,7 +1018,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run nim
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1053,11 +1027,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1070,19 +1056,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean object-digest"
         environment:
@@ -1101,7 +1074,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run object-digest"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1111,11 +1083,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1128,19 +1112,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview"
         environment:
@@ -1159,7 +1130,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run overview
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1169,11 +1139,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1186,19 +1168,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview-more-deps"
         environment:
@@ -1217,7 +1186,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run overview-more-deps"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1227,11 +1195,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1244,19 +1224,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview-react"
         environment:
@@ -1275,7 +1242,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run overview-react"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1285,11 +1251,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1302,19 +1280,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean own-addr"
         environment:
@@ -1333,7 +1298,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run own-addr"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1343,11 +1307,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1360,19 +1336,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean popularity-contest"
         environment:
@@ -1391,7 +1354,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run popularity-contest"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1401,11 +1363,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1418,19 +1392,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean race"
         environment:
@@ -1449,7 +1410,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run race
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1459,11 +1419,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1476,19 +1448,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean raffle"
         environment:
@@ -1507,7 +1466,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run raffle
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1517,11 +1475,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1534,19 +1504,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean remote"
         environment:
@@ -1565,7 +1522,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run remote
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1575,11 +1531,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1592,19 +1560,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean rent-seeking"
         environment:
@@ -1623,7 +1578,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run rent-seeking"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1633,11 +1587,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1650,19 +1616,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean rental"
         environment:
@@ -1681,7 +1634,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run rental
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1691,11 +1643,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1708,19 +1672,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean secured-loan"
         environment:
@@ -1739,7 +1690,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run secured-loan"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1768,18 +1718,22 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
     - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
+        command: "mkdir -p ~/.local/bin"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: install mo
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
         no_output_timeout: 10m
     - restore_cache:
         keys:
@@ -1788,7 +1742,7 @@ jobs:
         command: "cd hs && make hs-test-xml"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "test hs (xml)"
+        name: "Test hs (xml)"
         no_output_timeout: 20m
     - store_test_results:
         path: "hs/test-reports"
@@ -1800,7 +1754,6 @@ jobs:
         no_output_timeout: 10m
     - store_artifacts:
         path: hs/stan.html
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1810,11 +1763,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1826,16 +1791,6 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
-        no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
         no_output_timeout: 10m
     - restore_cache:
         keys:
@@ -1846,7 +1801,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: test js
         no_output_timeout: 10m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1856,11 +1810,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1873,19 +1839,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean timeoutception"
         environment:
@@ -1904,7 +1857,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run timeoutception
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1914,11 +1866,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1931,19 +1895,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean ttt"
         environment:
@@ -1962,7 +1913,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: run ttt
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1972,11 +1922,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -1989,19 +1951,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-2"
         environment:
@@ -2020,7 +1969,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-2"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2030,11 +1978,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2047,19 +2007,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-3"
         environment:
@@ -2078,7 +2025,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-3"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2088,11 +2034,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2105,19 +2063,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-4"
         environment:
@@ -2136,7 +2081,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-4"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2146,11 +2090,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2163,19 +2119,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-5"
         environment:
@@ -2194,7 +2137,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-5"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2204,11 +2146,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2221,19 +2175,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-5-attack"
         environment:
@@ -2252,7 +2193,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-5-attack"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2262,11 +2202,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2279,19 +2231,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-6"
         environment:
@@ -2310,7 +2249,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-6"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2320,11 +2258,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2337,19 +2287,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7"
         environment:
@@ -2368,7 +2305,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-7"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2378,11 +2314,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2395,19 +2343,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7-array"
         environment:
@@ -2426,7 +2361,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-7-array"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2436,11 +2370,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2453,19 +2399,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7-rpc"
         environment:
@@ -2484,7 +2417,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-7-rpc"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2494,11 +2426,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2511,19 +2455,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-8"
         environment:
@@ -2542,7 +2473,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-8"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2552,11 +2482,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2569,19 +2511,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-9"
         environment:
@@ -2600,7 +2529,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run tut-9"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2610,11 +2538,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2627,19 +2567,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean variable-transfers"
         environment:
@@ -2658,7 +2585,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run variable-transfers"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2668,11 +2594,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2685,19 +2623,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean weird-swap"
         environment:
@@ -2716,7 +2641,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run weird-swap"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2726,11 +2650,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2743,19 +2679,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo"
         environment:
@@ -2774,7 +2697,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run workshop-fomo"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2784,11 +2706,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2801,19 +2735,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo-generalized"
         environment:
@@ -2832,7 +2753,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run workshop-fomo-generalized"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2842,11 +2762,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2859,19 +2791,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-hash-lock"
         environment:
@@ -2890,7 +2809,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run workshop-hash-lock"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2900,11 +2818,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2917,19 +2847,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-relay"
         environment:
@@ -2948,7 +2865,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run workshop-relay"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2958,11 +2874,23 @@ jobs:
     - auth:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
-      image: "reachsh/reach-circle:0.1.2"
+      image: "cimg/base:stable-18.04"
     steps:
     - checkout
     - attach_workspace:
         at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
     - setup_remote_docker:
         docker_layer_caching: true
     - run:
@@ -2975,19 +2903,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
-    - run:
-        command: |
-          curl -sSL https://git.io/get-mo -o mo \
-            && chmod +x mo \
-            && mkdir -p /usr/local/bin \
-            && mv mo /usr/local/bin
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: install mo
-        no_output_timeout: 10m
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-trust-fund"
         environment:
@@ -3006,7 +2921,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "run workshop-trust-fund"
         no_output_timeout: 5m
-    - jq/install
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail

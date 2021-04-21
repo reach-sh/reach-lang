@@ -45,8 +45,7 @@ let docker-tag-all
         ++ "\n" ++ docker-tag i "${MAJOR}.${MINOR}"
         ++ "\n" ++ docker-tag i "${MAJOR}"
 
-let reach-circle = docker-image "reach-circle" VERSION
-let cimg-base    = "cimg/base:stable-18.04"
+let cimg-base = "cimg/base:stable-18.04"
 
 let docker-creds =
   { auth = { username = "$DOCKER_LOGIN"
@@ -55,7 +54,7 @@ let docker-creds =
 
 
 let default-docker-image =
-  { image = reach-circle } /\ docker-creds
+  { image = cimg-base } /\ docker-creds
 
 
 --------------------------------------------------------------------------------
@@ -168,18 +167,9 @@ let setup_remote_docker
   -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
 
 
-let mk_install_mo
-   = \(destination : Text)
-  -> run "install mo" ''
-      curl -sSL https://git.io/get-mo -o mo \
-        && chmod +x mo \
-        && mkdir -p ${destination} \
-        && mv mo ${destination}
-      ''
-
--- TODO better consolidate this between job definitions
-let install_mo_user_local_bin          = mk_install_mo "/usr/local/bin"
-let install_mo_home_circleci_local_bin = mk_install_mo "/home/circleci/.local/bin"
+let mkdir_bin =
+  run "mkdir -p ~/.local/bin"
+      "mkdir -p ~/.local/bin"
 
 
 let slack/notify
@@ -208,21 +198,30 @@ let dockerized-job-with
      }
 
 
-let dockerized-job-with-reach-circle
+let dockerized-job
    = \(steps : List Step)
-  -> dockerized-job-with reach-circle steps
+  -> dockerized-job-with cimg-base steps
 
 
-let dockerized-job-with-reach-circle-and-runner
+let dockerized-job-with-build-core-bins
    = \(steps : List Step)
-  -> let s = [ attach_workspace    "/tmp/build-core"
-             , setup_remote_docker True
+  -> let s = [ attach_workspace "/tmp/build-core"
+             , mkdir_bin
+             , run "cp /tmp/build-core/bin/* ~/.local/bin"
+                   "cp /tmp/build-core/bin/* ~/.local/bin"
+             ] # steps
+      in dockerized-job s
+
+
+let dockerized-job-with-build-core-bins-and-runner
+   = \(steps : List Step)
+  -> let s = [ setup_remote_docker True
              , run "attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
                  ${docker-tag-all "runner"}
                  ''
              ] # steps
-      in dockerized-job-with-reach-circle s
+      in dockerized-job-with-build-core-bins s
 
 
 --------------------------------------------------------------------------------
@@ -234,9 +233,9 @@ let S_Z3   = "x64-ubuntu-18.04"
 let CACHE_DEPS_HS =
   "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
 
-let build-core = dockerized-job-with cimg-base
-  [ run "mkdir -p ~/.local/bin" "mkdir -p ~/.local/bin"
-  , install_mo_home_circleci_local_bin
+let build-core = dockerized-job
+  [ mkdir_bin
+  , run "Install `mo`" "curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
 
   , run "Install `solc`" ''
       curl -sSLo ~/.local/bin/solc \
@@ -267,7 +266,8 @@ let build-core = dockerized-job-with cimg-base
         && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
       ''
 
-  , run "chmod +x ~/.local/bin/*" "chmod +x ~/.local/bin/*"
+  , run "chmod +x ~/.local/bin/*"
+        "chmod +x ~/.local/bin/*"
 
   , run "Generate package.yaml" "cd hs && make package.yaml"
 
@@ -286,9 +286,10 @@ let build-core = dockerized-job-with cimg-base
   , run "Clean hs"         "cd hs && make hs-clean"
   , run "Build hs"         "cd hs && make hs-build"
   , run "Install `reachc`" "cd hs && stack install"
+
   , save_cache
       "hs-{{ .Revision }}"
-      [ "/root/.stack"
+      [ "/home/circleci/.stack"
       , "hs/.stack-work"
       ]
 
@@ -300,50 +301,50 @@ let build-core = dockerized-job-with cimg-base
   , run "Check js/stdlib/package.json" "cd js/stdlib && make check"
 
   , run "Stash `build-core` workspace artifacts" ''
+      sudo apt install tree
       mkdir -p /tmp/build-core/bin
       cp ~/.local/bin/* /tmp/build-core/bin
       docker save ${docker-image "runner" "latest"} | gzip > /tmp/build-core/runner.tar.gz
+      tree /tmp/build-core
       ''
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz", "bin" ]
 
   , run "Pull algorand-devnet" ''
       docker pull ${docker-image "algorand-devnet" VERSION_SHORT}
-      docker run --entrypoint /bin/sh ${docker-image "algorand-devnet" VERSION_SHORT} -c 'echo $REACH_GIT_HASH'
+      docker run \
+        --entrypoint /bin/sh \
+        ${docker-image "algorand-devnet" VERSION_SHORT} \
+        -c 'echo $REACH_GIT_HASH'
       ''
 
-  , Step.jq/install
   , run "Is dockerhub up to date?" "scripts/docker-check.sh || echo 'XXX allowed to fail'"
   , slack/notify
   ]
 
 
-let test-hs = dockerized-job-with-reach-circle
-  [ install_mo_user_local_bin
-  , restore_cache [ "hs-{{ .Revision }}" ]
+let test-hs = dockerized-job-with-build-core-bins
+  [ restore_cache [ "hs-{{ .Revision }}" ]
 
-  , runT "20m"         "test hs (xml)"   "cd hs && make hs-test-xml"
+  , runT "20m"         "Test hs (xml)"   "cd hs && make hs-test-xml"
   , store_test_results "hs/test-reports"
 
   , run  "check hs"    "cd hs && make hs-check"
   , store_artifacts    "hs/stan.html"
 
-  , Step.jq/install
   , slack/notify
   ]
 
 
-let test-js = dockerized-job-with-reach-circle-and-runner
-  [ install_mo_user_local_bin
-  , restore_cache [ "hs-{{ .Revision }}" ]
+let test-js = dockerized-job-with-build-core-bins-and-runner
+  [ restore_cache [ "hs-{{ .Revision }}" ]
 
   , run "test js" "cd js/stdlib && make clean-test && sbin/test.sh"
 
-  , Step.jq/install
   , slack/notify
   ]
 
 
-let docs-render = dockerized-job-with cimg-base
+let docs-render = dockerized-job
   [ run "Install dependencies" ''
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
@@ -406,7 +407,7 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
   ]
 
 
-let shellcheck = dockerized-job-with cimg-base
+let shellcheck = dockerized-job
   [ Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify
@@ -425,15 +426,11 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 let mk-example-job
    = \(directory : Text)
-  -> let j = dockerized-job-with-reach-circle-and-runner
-      [ install_mo_user_local_bin
-      , restore_cache [ "hs-{{ .Revision }}" ]
-
-      , run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
+  -> let j = dockerized-job-with-build-core-bins-and-runner
+      [ run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
       , run       "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
       , runT "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
 
-      , Step.jq/install
       , slack/notify
       ]
     in `:=` DockerizedJob directory j
@@ -441,13 +438,13 @@ let mk-example-job
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
-   in [ `=:=` "build-core"         build-core
-      , `=:=` "docs-render"        docs-render
-      , `=:=` "docs-deploy"        docs-deploy
-      , `=:=` "shellcheck"         shellcheck
-      , `=:=` "docker-lint"        docker-lint
-      , `=:=` "test-hs"            test-hs
-      , `=:=` "test-js"            test-js
+   in [ `=:=` "build-core"  build-core
+      , `=:=` "docs-render" docs-render
+      , `=:=` "docs-deploy" docs-deploy
+      , `=:=` "shellcheck"  shellcheck
+      , `=:=` "docker-lint" docker-lint
+      , `=:=` "test-hs"     test-hs
+      , `=:=` "test-js"     test-js
       ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
@@ -483,9 +480,9 @@ let workflows =
     { jobs = [[ `=:=` "shellcheck" T.default ]] }
 
   let docs = { jobs =
-    [ [ `=:=` "docs-render" T.default  ]
+    [ [ `=:=` "docs-render" T.default      ]
     , [ `=:=` "docs-deploy" wf-docs-deploy ]
-    ]}
+    ] }
 
   let build-and-test = { jobs =
     [ [ `=:=` "build-core" T.default           ]
