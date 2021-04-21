@@ -364,11 +364,9 @@ jobs:
         no_output_timeout: 10m
     - run:
         command: |
-          sudo apt install tree
           mkdir -p /tmp/build-core/bin
           cp ~/.local/bin/* /tmp/build-core/bin
           docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
-          tree /tmp/build-core
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Stash `build-core` workspace artifacts"
@@ -1754,6 +1752,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Install `stack` dependencies"
+        no_output_timeout: 10m
+    - run:
+        command: "cd hs && make package.yaml"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Generate package.yaml
         no_output_timeout: 10m
     - restore_cache:
         keys:

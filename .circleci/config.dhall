@@ -300,11 +300,9 @@ let build-core = dockerized-job
   , run "Check js/stdlib/package.json" "cd js/stdlib && make check"
 
   , run "Stash `build-core` workspace artifacts" ''
-      sudo apt install tree
       mkdir -p /tmp/build-core/bin
       cp ~/.local/bin/* /tmp/build-core/bin
       docker save ${docker-image "runner" "latest"} | gzip > /tmp/build-core/runner.tar.gz
-      tree /tmp/build-core
       ''
   , persist_to_workspace "/tmp/build-core" [ "runner.tar.gz", "bin" ]
 
@@ -323,6 +321,7 @@ let build-core = dockerized-job
 
 let test-hs = dockerized-job-with-build-core-bins
   [ install_stack_deps
+  , run "Generate package.yaml" "cd hs && make package.yaml"
   , restore_cache [ CACHE_DEPS_HS ]
 
   , runT "20m"         "Test hs (xml)"   "cd hs && make hs-test-xml"
