@@ -333,7 +333,9 @@ instance DepthOf DLExpr where
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> depthOf [x, y]
     DLE_MapDel _ _ x -> depthOf x
-    DLE_Remote _ _ av _ amta as -> add1 $ depthOf $ av : amta : as
+    DLE_Remote _ _ av _ (DLPayAmt net ks) as ->
+      add1 $ depthOf $ av : net :
+        concatMap (\ (a, b) -> [a, b]) ks <> as
     where
       add1 m = (+) 1 <$> m
 
@@ -607,7 +609,7 @@ solType_withArgLoc t =
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f amta as) -> do
+  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net _ks) as) -> do
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
@@ -626,7 +628,18 @@ solCom = \case
     v_before <- allocVar
     -- Note: Not checking that the address is really a contract and not doing
     -- exactly what OpenZeppelin does
-    amta' <- solArg amta
+    amta' <- solArg net
+    ks' <- mapM (\ (amt, ty) -> (,) <$> solArg amt <*> solArg ty) _ks
+    ks_before <- mapM (\ (amt, ty) -> do
+      return $ "tokenApprove(" <> ty <> ", " <> av' <> ", " <> amt <>");") ks'
+    ks_after <- mapM (\ (_, ty) -> do
+        -- Remove authorization and check it was used
+        let allowance = "tokenAllowance(" <> ty <> ", address(this), " <> av' <> ")"
+        eq <- solEq allowance "0"
+        return $ vsep [
+          solRequire "remote transferred approved funds" eq <> semi,
+          "tokenApprove(" <> ty <> ", " <> av' <> ", 0)" <> semi]
+        ) ks'
     let call' = ".call{value:" <+> amta' <> "}"
     let meBalance = "address(this).balance"
     pv' <- case pv of
@@ -656,10 +669,12 @@ solCom = \case
     -- it was before
     return $
       vsep $
+        ks_before <>
         [ solSet ("uint256" <+> v_before) e_before
         , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
         , solApply "checkFunReturn" [v_succ, v_return, solString err_msg] <> semi
         ]
+          <> ks_after
           <> pv'
   DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv

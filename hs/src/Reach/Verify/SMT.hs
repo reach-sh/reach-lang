@@ -449,7 +449,7 @@ dlvOccurs env bindings de =
     DLE_MapRef at _ fa -> _rec at fa
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
-    DLE_Remote at _ av _ amta as -> _recs at $ av : amta : as
+    DLE_Remote at _ av _ (DLPayAmt net ks) as -> _recs at (av : net : concatMap (\(a, b) -> [a, b]) ks <>  as)
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -494,7 +494,9 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
   DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
   DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
-  DLE_Remote _ _ av f amta as -> "remote(" <> show av <> ")." <> f <> ".pay" <> paren (sub amta) <> args as
+  DLE_Remote _ _ av f (DLPayAmt net ks) as -> "remote(" <> show av <> ")." <> f <> ".pay"
+    <> paren (commaSep [sub net, bracket $ concatMap (\(a, t) -> commaSep [sub a, sub t]) ks])
+    <> args as
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))

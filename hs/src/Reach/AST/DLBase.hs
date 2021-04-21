@@ -367,7 +367,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLArg [DLArg]
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg]
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -547,7 +547,7 @@ data DLPayAmt = DLPayAmt
   { pa_net :: DLArg
   , pa_ks :: [(DLArg, DLArg)]
   }
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Ord)
 
 instance Pretty DLPayAmt where
   pretty (DLPayAmt {..}) =

@@ -1710,6 +1710,12 @@ mustBeBytes = \case
 structKeyRegex :: App RE
 structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
 
+tokenPay :: Maybe DLArg -> DLArg -> B.ByteString -> ReaderT Env IO ()
+tokenPay mtok_a amt_a msg = do
+  amt_sv <- argToSV amt_a
+  doBalanceAssert mtok_a amt_sv PLE msg
+  doBalanceUpdate mtok_a SUB amt_sv
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -2109,10 +2115,8 @@ evalPrim p sargs =
             _ -> False
       DLPayAmt {..} <- compilePayAmt pay_sv
       let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
-            amt_sv <- argToSV amt_a
-            doBalanceAssert mtok_a amt_sv PLE "balance sufficient for transfer"
+            tokenPay mtok_a amt_a "balance sufficient for transfer"
             saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_a amt_a mtok_a
-            doBalanceUpdate mtok_a SUB amt_sv
       one pa_net Nothing
       forM_ pa_ks $ \(a, t) -> one a $ Just t
       return $ public $ SLV_Null at "transfer.to"
@@ -2315,16 +2319,17 @@ evalPrim p sargs =
       at <- withAt id
       let zero = SLV_Int at 0
       let amtv = fromMaybe zero mpay
-      amta <- compileCheckType T_UInt amtv
-      doBalanceAssert Nothing amtv PLE "balance sufficient for payment to remote object"
-      doBalanceUpdate Nothing SUB amtv
+      pamt <- compilePayAmt amtv
+      tokenPay Nothing (pa_net pamt) "balance sufficient for payment to remote object"
+      forM_ (pa_ks pamt) $ \ (a, t) -> do
+        tokenPay (Just t) a "balance sufficient for payment to remote object"
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple [ST_UInt, rng]
       let post' = flip fmap post $ \postv ->
             jsClo at "post" "(dom, [_, rng]) => post(dom, rng)" $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
+      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m pamt dargs)
       apdvv <- doArrRef_ res' zero
       doBalanceUpdate Nothing ADD apdvv
       res <- doArrRef_ res' $ SLV_Int at 1

@@ -220,8 +220,9 @@ kgq_e ctxt mv = \case
   DLE_MapSet _ mpv _ va ->
     knows ctxt (P_Map mpv) $ all_points va
   DLE_MapDel {} -> mempty
-  DLE_Remote _ _ av _ amta as ->
-    kgq_la ctxt mv $ DLLA_Tuple $ av : amta : as
+  DLE_Remote _ _ av _ pamt as -> do
+    kgq_pa ctxt pamt
+    kgq_la ctxt mv $ DLLA_Tuple $ av : as
 
 kgq_m :: KCtxt -> LLCommon -> IO ()
 kgq_m ctxt = \case

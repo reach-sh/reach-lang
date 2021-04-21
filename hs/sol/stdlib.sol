@@ -2,6 +2,7 @@ interface IERC20 {
     function allowance(address owner, address spender) external view returns (uint256);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function transfer(address recipient, uint256 amount) external returns (bool);
+    function approve(address spender, address value) external returns (bool);
 }
 
 contract Stdlib {
@@ -63,5 +64,11 @@ contract Stdlib {
 
   function checkPayAmt(address sender, address payable token, uint256 amt) internal returns (bool) {
     return tokenTransferFrom(token, sender, address(this), amt);
+  }
+
+  function tokenApprove(address payable token, address spender, uint256 amt) internal returns (bool res) {
+    (bool ok, bytes memory ret) = token.call{value: uint256(0) }(abi.encodeWithSelector(IERC20.approve.selector, spender, amt));
+    checkFunReturn(ok, ret, 'token.approve');
+    res = abi.decode(ret, (bool));
   }
 }

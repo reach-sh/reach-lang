@@ -43,6 +43,12 @@ instance Subst DLLargeArg where
       where
         go (k, v) = (,) k <$> subst v
 
+instance Subst DLPayAmt where
+  subst = \case
+    DLPayAmt net ks ->
+      DLPayAmt <$> subst net <*>
+        mapM (\ (amt, ty) -> (,) <$> subst amt <*> subst ty) ks
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -66,7 +72,7 @@ instance Subst DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> subst fa
-    DLE_Remote at fs av m amta as -> DLE_Remote at fs <$> subst av <*> pure m <*> subst amta <*> subst as
+    DLE_Remote at fs av m pamt as -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as
 
 instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
   subst = \case
