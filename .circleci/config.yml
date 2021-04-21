@@ -18,6 +18,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -26,6 +28,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -33,14 +37,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean abstract-simul"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean abstract-simul"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build abstract-simul"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild abstract-simul"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run abstract-simul"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run abstract-simul"
         no_output_timeout: 5m
     - jq/install
@@ -66,6 +76,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -74,6 +86,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -81,14 +95,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean algorand-placeholder"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean algorand-placeholder"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build algorand-placeholder"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild algorand-placeholder"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run algorand-placeholder"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run algorand-placeholder"
         no_output_timeout: 5m
     - jq/install
@@ -114,6 +134,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -122,6 +144,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -129,14 +153,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean argz"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean argz
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build argz"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild argz
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run argz"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run argz
         no_output_timeout: 5m
     - jq/install
@@ -162,6 +192,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -170,6 +202,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -177,14 +211,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean atomic-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean atomic-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build atomic-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild atomic-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run atomic-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run atomic-swap"
         no_output_timeout: 5m
     - jq/install
@@ -202,6 +242,8 @@ jobs:
     - checkout
     - run:
         command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "mkdir -p ~/.local/bin"
         no_output_timeout: 10m
     - run:
@@ -210,12 +252,16 @@ jobs:
             && chmod +x mo \
             && mkdir -p /home/circleci/.local/bin \
             && mv mo /home/circleci/.local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - run:
         command: |
           curl -sSLo ~/.local/bin/solc \
             https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Install `solc`"
         no_output_timeout: 10m
     - run:
@@ -224,6 +270,8 @@ jobs:
                https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
             && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
              | cat > ~/.local/bin/z3
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Install `z3`"
         no_output_timeout: 10m
     - run:
@@ -242,21 +290,40 @@ jobs:
               xz-utils \
               zlib1g-dev \
             && curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Install `stack`"
         no_output_timeout: 10m
     - run:
         command: "chmod +x ~/.local/bin/*"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "chmod +x ~/.local/bin/*"
         no_output_timeout: 10m
     - run:
         command: "cd hs && make package.yaml"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Generate package.yaml
+        no_output_timeout: 10m
+    - run:
+        command: |
+            sudo echo 'LC_ALL=en_US.UTF-8' >> /etc/environment
+            sudo echo 'en_US.UTF-8 UTF-8'  >> /etc/locale.gen
+            sudo echo 'LANG=en_US.UTF-8'    > /etc/locale.conf
+
+            sudo locale-gen en_US.UTF-8
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Reset locale
         no_output_timeout: 10m
     - restore_cache:
         keys:
         - "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
     - run:
         command: "cd hs && make hs-deps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Install hs dependencies
         no_output_timeout: 10m
     - save_cache:
@@ -266,14 +333,20 @@ jobs:
         - "hs/.stack-work"
     - run:
         command: "cd hs && make hs-clean"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Clean hs
         no_output_timeout: 10m
     - run:
         command: "cd hs && make hs-build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Build hs
         no_output_timeout: 10m
     - run:
         command: "cd hs && stack install"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Install `reachc`"
         no_output_timeout: 10m
     - save_cache:
@@ -285,14 +358,20 @@ jobs:
         docker_layer_caching: true
     - run:
         command: "cd scripts/ethereum-devnet && make build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Build ethereum-devnet"
         no_output_timeout: 10m
     - run:
         command: "cd js && make build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Build js
         no_output_timeout: 10m
     - run:
         command: "cd js/stdlib && make check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Check js/stdlib/package.json
         no_output_timeout: 10m
     - run:
@@ -300,6 +379,8 @@ jobs:
           mkdir -p /tmp/build-core/bin
           cp ~/.local/bin/* /tmp/build-core/bin
           docker save reachsh/runner:latest | gzip > /tmp/build-core/runner.tar.gz
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Stash `build-core` workspace artifacts"
         no_output_timeout: 10m
     - persist_to_workspace:
@@ -311,11 +392,15 @@ jobs:
         command: |
           docker pull reachsh/algorand-devnet:0.1
           docker run --entrypoint /bin/sh reachsh/algorand-devnet:0.1 -c 'echo $REACH_GIT_HASH'
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Pull algorand-devnet"
         no_output_timeout: 10m
     - jq/install
     - run:
         command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Is dockerhub up to date?"
         no_output_timeout: 10m
     - slack/notify:
@@ -340,6 +425,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -348,6 +435,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -355,14 +444,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-fork"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean chicken-fork"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-fork"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild chicken-fork"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-fork"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run chicken-fork"
         no_output_timeout: 5m
     - jq/install
@@ -388,6 +483,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -396,6 +493,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -403,14 +502,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-parallel"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean chicken-parallel"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-parallel"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild chicken-parallel"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-parallel"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run chicken-parallel"
         no_output_timeout: 5m
     - jq/install
@@ -436,6 +541,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -444,6 +551,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -451,14 +560,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean chicken-race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean chicken-race"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild chicken-race"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run chicken-race"
         no_output_timeout: 5m
     - jq/install
@@ -476,10 +591,14 @@ jobs:
     - checkout
     - run:
         command: apk add make bash curl jq
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "install make, bash, curl, and jq"
         no_output_timeout: 10m
     - run:
         command: "make docker-lint"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run hadolint
         no_output_timeout: 10m
     - slack/notify:
@@ -503,6 +622,8 @@ jobs:
           # git config user.name "ci-build"
           git config user.email "devbot@reach.sh"
           git config user.name "reachdevbot"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Install and configure dependencies
         no_output_timeout: 10m
     - add_ssh_keys:
@@ -519,6 +640,8 @@ jobs:
           # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
           git diff-index --quiet HEAD || git commit -m "[ci skip] docs for $CIRCLE_SHA1"
           git push origin gh-pages
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Deploy docs to gh-pages branch"
         no_output_timeout: 10m
     - slack/notify:
@@ -544,14 +667,20 @@ jobs:
               libpangocairo-1.0 \
               racket \
               python3-setuptools
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Install dependencies
         no_output_timeout: 10m
     - run:
         command: "cd pygments && sudo make install"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "Install `pygments-reach`"
         no_output_timeout: 10m
     - run:
         command: "cd docs-src && make render"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Render docs
         no_output_timeout: 10m
     - store_artifacts:
@@ -560,6 +689,8 @@ jobs:
         command: |
           mkdir -p /tmp/docs_workspace
           cp -r docs /tmp/docs_workspace/
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Copy docs to workspace
         no_output_timeout: 10m
     - persist_to_workspace:
@@ -588,6 +719,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -596,6 +729,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -603,14 +738,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean exports"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean exports
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build exports"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild exports
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run exports"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run exports
         no_output_timeout: 5m
     - jq/install
@@ -636,6 +777,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -644,6 +787,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -651,14 +796,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean maybe-send"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean maybe-send"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build maybe-send"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild maybe-send"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run maybe-send"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run maybe-send"
         no_output_timeout: 5m
     - jq/install
@@ -684,6 +835,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -692,6 +845,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -699,14 +854,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean multiple-pr-case"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean multiple-pr-case"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build multiple-pr-case"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild multiple-pr-case"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run multiple-pr-case"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run multiple-pr-case"
         no_output_timeout: 5m
     - jq/install
@@ -732,6 +893,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -740,6 +903,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -747,14 +912,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean multisig"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean multisig
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build multisig"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild multisig
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run multisig"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run multisig
         no_output_timeout: 5m
     - jq/install
@@ -780,6 +951,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -788,6 +961,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -795,14 +970,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean nft-dumb"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean nft-dumb"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build nft-dumb"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild nft-dumb"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run nft-dumb"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run nft-dumb"
         no_output_timeout: 5m
     - jq/install
@@ -828,6 +1009,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -836,6 +1019,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -843,14 +1028,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean nim"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean nim
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build nim"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild nim
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run nim"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run nim
         no_output_timeout: 5m
     - jq/install
@@ -876,6 +1067,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -884,6 +1077,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -891,14 +1086,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean object-digest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean object-digest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build object-digest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild object-digest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run object-digest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run object-digest"
         no_output_timeout: 5m
     - jq/install
@@ -924,6 +1125,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -932,6 +1135,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -939,14 +1144,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean overview
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild overview
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run overview
         no_output_timeout: 5m
     - jq/install
@@ -972,6 +1183,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -980,6 +1193,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -987,14 +1202,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview-more-deps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean overview-more-deps"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview-more-deps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild overview-more-deps"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview-more-deps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run overview-more-deps"
         no_output_timeout: 5m
     - jq/install
@@ -1020,6 +1241,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1028,6 +1251,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1035,14 +1260,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean overview-react"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean overview-react"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview-react"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild overview-react"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview-react"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run overview-react"
         no_output_timeout: 5m
     - jq/install
@@ -1068,6 +1299,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1076,6 +1309,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1083,14 +1318,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean own-addr"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean own-addr"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build own-addr"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild own-addr"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run own-addr"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run own-addr"
         no_output_timeout: 5m
     - jq/install
@@ -1116,6 +1357,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1124,6 +1367,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1131,14 +1376,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean popularity-contest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean popularity-contest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build popularity-contest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild popularity-contest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run popularity-contest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run popularity-contest"
         no_output_timeout: 5m
     - jq/install
@@ -1164,6 +1415,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1172,6 +1425,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1179,14 +1434,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean race
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild race
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run race
         no_output_timeout: 5m
     - jq/install
@@ -1212,6 +1473,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1220,6 +1483,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1227,14 +1492,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean raffle"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean raffle
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build raffle"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild raffle
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run raffle"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run raffle
         no_output_timeout: 5m
     - jq/install
@@ -1260,6 +1531,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1268,6 +1541,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1275,14 +1550,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean remote"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean remote
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build remote"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild remote
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run remote"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run remote
         no_output_timeout: 5m
     - jq/install
@@ -1308,6 +1589,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1316,6 +1599,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1323,14 +1608,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean rent-seeking"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean rent-seeking"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build rent-seeking"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild rent-seeking"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run rent-seeking"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run rent-seeking"
         no_output_timeout: 5m
     - jq/install
@@ -1356,6 +1647,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1364,6 +1657,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1371,14 +1666,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean rental"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean rental
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build rental"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild rental
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run rental"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run rental
         no_output_timeout: 5m
     - jq/install
@@ -1404,6 +1705,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1412,6 +1715,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1419,14 +1724,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean secured-loan"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean secured-loan"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build secured-loan"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild secured-loan"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run secured-loan"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run secured-loan"
         no_output_timeout: 5m
     - jq/install
@@ -1445,6 +1756,8 @@ jobs:
     - shellcheck/install
     - run:
         command: "make sh-lint"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: Run shellcheck
         no_output_timeout: 10m
     - slack/notify:
@@ -1465,6 +1778,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1472,12 +1787,16 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd hs && make hs-test-xml"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "test hs (xml)"
         no_output_timeout: 20m
     - store_test_results:
         path: "hs/test-reports"
     - run:
         command: "cd hs && make hs-check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: check hs
         no_output_timeout: 10m
     - store_artifacts:
@@ -1505,6 +1824,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1513,6 +1834,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1520,6 +1843,8 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd js/stdlib && make clean-test && sbin/test.sh"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: test js
         no_output_timeout: 10m
     - jq/install
@@ -1545,6 +1870,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1553,6 +1880,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1560,14 +1889,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean timeoutception"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean timeoutception
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build timeoutception"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild timeoutception
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run timeoutception"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run timeoutception
         no_output_timeout: 5m
     - jq/install
@@ -1593,6 +1928,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1601,6 +1938,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1608,14 +1947,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean ttt"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: clean ttt
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build ttt"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: rebuild ttt
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run ttt"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: run ttt
         no_output_timeout: 5m
     - jq/install
@@ -1641,6 +1986,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1649,6 +1996,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1656,14 +2005,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-2"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-2"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-2"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-2"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-2"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-2"
         no_output_timeout: 5m
     - jq/install
@@ -1689,6 +2044,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1697,6 +2054,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1704,14 +2063,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-3"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-3"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-3"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-3"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-3"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-3"
         no_output_timeout: 5m
     - jq/install
@@ -1737,6 +2102,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1745,6 +2112,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1752,14 +2121,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-4"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-4"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-4"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-4"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-4"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-4"
         no_output_timeout: 5m
     - jq/install
@@ -1785,6 +2160,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1793,6 +2170,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1800,14 +2179,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-5"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-5"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-5"
         no_output_timeout: 5m
     - jq/install
@@ -1833,6 +2218,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1841,6 +2228,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1848,14 +2237,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-5-attack"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-5-attack"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-5-attack"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-5-attack"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-5-attack"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-5-attack"
         no_output_timeout: 5m
     - jq/install
@@ -1881,6 +2276,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1889,6 +2286,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1896,14 +2295,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-6"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-6"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-6"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-6"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-6"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-6"
         no_output_timeout: 5m
     - jq/install
@@ -1929,6 +2334,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1937,6 +2344,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1944,14 +2353,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-7"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-7"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-7"
         no_output_timeout: 5m
     - jq/install
@@ -1977,6 +2392,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -1985,6 +2402,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -1992,14 +2411,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7-array"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-7-array"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7-array"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-7-array"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7-array"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-7-array"
         no_output_timeout: 5m
     - jq/install
@@ -2025,6 +2450,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2033,6 +2460,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2040,14 +2469,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-7-rpc"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-7-rpc"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7-rpc"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-7-rpc"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7-rpc"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-7-rpc"
         no_output_timeout: 5m
     - jq/install
@@ -2073,6 +2508,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2081,6 +2518,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2088,14 +2527,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-8"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-8"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-8"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-8"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-8"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-8"
         no_output_timeout: 5m
     - jq/install
@@ -2121,6 +2566,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2129,6 +2576,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2136,14 +2585,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean tut-9"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean tut-9"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-9"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild tut-9"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-9"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run tut-9"
         no_output_timeout: 5m
     - jq/install
@@ -2169,6 +2624,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2177,6 +2634,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2184,14 +2643,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean variable-transfers"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean variable-transfers"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build variable-transfers"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild variable-transfers"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run variable-transfers"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run variable-transfers"
         no_output_timeout: 5m
     - jq/install
@@ -2217,6 +2682,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2225,6 +2692,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2232,14 +2701,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean weird-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean weird-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build weird-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild weird-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run weird-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run weird-swap"
         no_output_timeout: 5m
     - jq/install
@@ -2265,6 +2740,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2273,6 +2750,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2280,14 +2759,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean workshop-fomo"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-fomo"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild workshop-fomo"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-fomo"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run workshop-fomo"
         no_output_timeout: 5m
     - jq/install
@@ -2313,6 +2798,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2321,6 +2808,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2328,14 +2817,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo-generalized"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean workshop-fomo-generalized"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-fomo-generalized"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild workshop-fomo-generalized"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-fomo-generalized"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run workshop-fomo-generalized"
         no_output_timeout: 5m
     - jq/install
@@ -2361,6 +2856,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2369,6 +2866,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2376,14 +2875,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-hash-lock"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean workshop-hash-lock"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-hash-lock"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild workshop-hash-lock"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-hash-lock"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run workshop-hash-lock"
         no_output_timeout: 5m
     - jq/install
@@ -2409,6 +2914,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2417,6 +2924,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2424,14 +2933,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-relay"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean workshop-relay"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-relay"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild workshop-relay"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-relay"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run workshop-relay"
         no_output_timeout: 5m
     - jq/install
@@ -2457,6 +2972,8 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0.1.2
           docker tag reachsh/runner:latest reachsh/runner:0.1
           docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: attach runner image
         no_output_timeout: 10m
     - run:
@@ -2465,6 +2982,8 @@ jobs:
             && chmod +x mo \
             && mkdir -p /usr/local/bin \
             && mv mo /usr/local/bin
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: install mo
         no_output_timeout: 10m
     - restore_cache:
@@ -2472,14 +2991,20 @@ jobs:
         - "hs-{{ .Revision }}"
     - run:
         command: "cd examples && ./one.sh clean workshop-trust-fund"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "clean workshop-trust-fund"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-trust-fund"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "rebuild workshop-trust-fund"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-trust-fund"
+        environment:
+          LC_ALL: "en_US.UTF-8"
         name: "run workshop-trust-fund"
         no_output_timeout: 5m
     - jq/install

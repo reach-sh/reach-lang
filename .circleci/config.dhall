@@ -61,12 +61,17 @@ let default-docker-image =
 --------------------------------------------------------------------------------
 
 let Run =
-  { default = { no_output_timeout = "10m" }
-  , Type    = { name              : Text
-              , command           : Text
-              , no_output_timeout : Text
-              }
-  }
+  let T =
+    { name              : Text
+    , command           : Text
+    , no_output_timeout : Text
+    , environment       : Map Text Text
+    }
+
+  let environment =
+    [ `:=` Text "LC_ALL" "en_US.UTF-8" ]
+
+  in { Type = T, default = { environment, no_output_timeout = "10m" }}
 
 
 let Step =
@@ -265,6 +270,15 @@ let build-core = dockerized-job-with cimg-base
   , run "chmod +x ~/.local/bin/*" "chmod +x ~/.local/bin/*"
 
   , run "Generate package.yaml" "cd hs && make package.yaml"
+
+  -- https://github.com/reach-sh/reach-lang/blob/4742f3c/hs/Dockerfile.circleci#L79
+  , run "Reset locale" ''
+      sudo echo 'LC_ALL=en_US.UTF-8' >> /etc/environment
+      sudo echo 'en_US.UTF-8 UTF-8'  >> /etc/locale.gen
+      sudo echo 'LANG=en_US.UTF-8'    > /etc/locale.conf
+
+      sudo locale-gen en_US.UTF-8
+    ''
 
   , restore_cache [ CACHE_DEPS_HS ]
   , run "Install hs dependencies"   "cd hs && make hs-deps"
