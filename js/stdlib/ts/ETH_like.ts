@@ -1,53 +1,23 @@
 import * as cfxsdk from 'js-conflux-sdk';
 import * as cfxers from './cfxers';
-import {BigNumber} from 'ethers';
+import {TypeDefs} from './classy_TypeDefs';
+import {CFX_TypeDefs} from './classy_TypeDefs_ETH_like';
+// import {BigNumber} from 'ethers';
 
-// idk why VSCode says this is a parse error
-export abstract class Nonsense { }
-
-export abstract class TypeDef {
+export interface ReachStdlib_Opts {
+  readonly REACH_DEBUG?: boolean
+  readonly REACH_CONNECTOR_MODE?: string
 }
 
-export abstract class TypeDefs {
-  abstract readonly T_UInt: TypeDef
-  abstract readonly T_Address: TypeDef
+export interface ETH_Like_Opts extends ReachStdlib_Opts {
+  readonly ethers?: any
+  readonly provider?: any
 }
 
-export abstract class ETH_TypeDef<T> extends TypeDef {
-  abstract canonicalize(uv: unknown): T
-}
-
-class ETH_T_UInt extends ETH_TypeDef<BigNumber> {
-  canonicalize(uv: unknown): BigNumber {
-    // XXX
-    return uv as BigNumber;
-  }
-}
-
-class ETH_T_Address extends ETH_TypeDef<string> {
-  canonicalize(uv: unknown): string {
-    // XXX
-    return uv as string;
-  }
-}
-
-class CFX_T_Address extends ETH_TypeDef<string> {
-  canonicalize(uv: unknown): string {
-    // XXX
-    return uv as string;
-  }
-}
-
-export abstract class ETH_Like_TypeDefs extends TypeDefs {
-  readonly T_UInt = new ETH_T_UInt()
-}
-
-export class ETH_TypeDefs extends ETH_Like_TypeDefs {
-  readonly T_Address: ETH_TypeDef<string> = new ETH_T_Address();
-}
-
-export class CFX_TypeDefs extends ETH_Like_TypeDefs {
-  readonly T_Address: ETH_TypeDef<string> = new CFX_T_Address();
+export interface CFX_Opts extends ETH_Like_Opts {
+  readonly CFX_DEBUG?: boolean
+  readonly CFX_NODE_URI?: string
+  readonly CFX_NETWORK_ID?: string | number
 }
 
 export abstract class ReachStdlib {
@@ -64,6 +34,16 @@ export abstract class ReachStdlib {
     }
     this.opts = opts;
   }
+
+  /** @deprecated */
+  setDEBUG(b: boolean) {
+    if (typeof b !== 'boolean') throw Error(`setDEBUG expects a boolean, got: '${b}'`);
+    // XXX We are turning a blind eye to mutation for now,
+    // but later should delete setDEBUG and only set it via the opts.
+    // @ts-ignore
+    this.opts.REACH_DEBUG = b;
+  }
+
 }
 
 export abstract class ETH_Like<Provider> extends ReachStdlib {
@@ -82,22 +62,6 @@ export abstract class ETH_Like<Provider> extends ReachStdlib {
     this.opts = super.opts;
   }
 
-}
-
-export interface ReachStdlib_Opts {
-  REACH_DEBUG?: boolean
-  REACH_CONNECTOR_MODE?: string
-}
-
-export interface ETH_Like_Opts extends ReachStdlib_Opts{
-  ethers?: any
-  provider?: any
-}
-
-export interface CFX_Opts extends ETH_Like_Opts {
-  CFX_DEBUG?: boolean
-  CFX_NODE_URI?: string
-  CFX_NETWORK_ID?: string | number
 }
 
 export class CFX extends ETH_Like<cfxers.providers.Provider> {
@@ -123,9 +87,8 @@ export class CFX extends ETH_Like<cfxers.providers.Provider> {
       ...opts,
     });
     this.opts = super.opts;
-    // this.conflux = this.provider.conflux;
   }
 
 }
 
-const cfx = new CFX();
+// const cfx = new CFX();
