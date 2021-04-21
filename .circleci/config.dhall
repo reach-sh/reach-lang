@@ -273,11 +273,10 @@ let build-core = dockerized-job-with cimg-base
 
   -- https://github.com/reach-sh/reach-lang/blob/4742f3c/hs/Dockerfile.circleci#L79
   , run "Reset locale" ''
-      sudo echo 'LC_ALL=en_US.UTF-8' >> /etc/environment
-      sudo echo 'en_US.UTF-8 UTF-8'  >> /etc/locale.gen
-      sudo echo 'LANG=en_US.UTF-8'    > /etc/locale.conf
-
-      sudo locale-gen en_US.UTF-8
+      sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
+               && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
+               && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
+               && locale-gen en_US.UTF-8'
     ''
 
   , restore_cache [ CACHE_DEPS_HS ]
