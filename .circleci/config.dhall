@@ -110,6 +110,18 @@ let Step =
   >
 
 
+-- https://circleci.com/docs/2.0/configuration-reference/#docker-executor
+let ResourceClass =
+  <  small
+  |  medium
+  | `medium+`
+  |  large
+  |  xlarge
+  | `2xlarge`
+  | `2xlarge+`
+  >
+
+
 --------------------------------------------------------------------------------
 
 let runT
@@ -200,45 +212,51 @@ let slack/notify
 --------------------------------------------------------------------------------
 
 let DockerizedJob =
-  { docker : List { auth  : { password : Text, username : Text }
-                  , image : Text
-                  }
-  , steps  : List Step
+  { docker         : List { auth  : { password : Text, username : Text }
+                          , image : Text
+                          }
+  , steps          : List Step
+  , resource_class : ResourceClass
   }
 
 
 let dockerized-job-with
    = \(image : Text)
+  -> \(class : ResourceClass)
   -> \(steps : List Step)
-  -> { docker = [ default-docker-image // { image } ]
-     , steps  = [ Step.checkout ] # steps
+  -> { docker         = [ default-docker-image // { image } ]
+     , steps          = [ Step.checkout ] # steps
+     , resource_class = class
      }
 
 
 let dockerized-job
-   = \(steps : List Step)
-  -> dockerized-job-with cimg-base steps
+   = \(class : ResourceClass)
+  -> \(steps : List Step)
+  -> dockerized-job-with cimg-base class steps
 
 
 let dockerized-job-with-build-core-bins
-   = \(steps : List Step)
+   = \(class : ResourceClass)
+  -> \(steps : List Step)
   -> let s = [ attach_workspace "/tmp/build-core"
              , mkdir_bin
              , run "cp /tmp/build-core/bin/* ~/.local/bin"
                    "cp /tmp/build-core/bin/* ~/.local/bin"
              ] # steps
-      in dockerized-job s
+      in dockerized-job class s
 
 
 let dockerized-job-with-build-core-bins-and-runner
-   = \(steps : List Step)
+   = \(class : ResourceClass)
+  -> \(steps : List Step)
   -> let s = [ setup_remote_docker True
              , run "Attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
                  ${docker-tag-all "runner"}
                  ''
              ] # steps
-      in dockerized-job-with-build-core-bins s
+      in dockerized-job-with-build-core-bins class s
 
 
 --------------------------------------------------------------------------------
@@ -250,7 +268,7 @@ let S_Z3   = "x64-ubuntu-18.04"
 let CACHE_DEPS_HS =
   "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
 
-let build-core = dockerized-job
+let build-core = dockerized-job ResourceClass.medium
   [ mkdir_bin
   , run "Install `mo`" "curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
 
@@ -319,7 +337,7 @@ let build-core = dockerized-job
   ]
 
 
-let test-hs = dockerized-job-with-build-core-bins
+let test-hs = dockerized-job-with-build-core-bins ResourceClass.small
   [ install_stack_deps
   , run "Generate package.yaml" "cd hs && make package.yaml"
   , restore_cache [ CACHE_DEPS_HS ]
@@ -334,7 +352,7 @@ let test-hs = dockerized-job-with-build-core-bins
   ]
 
 
-let test-js = dockerized-job-with-build-core-bins-and-runner
+let test-js = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
   [ restore_cache [ "hs-{{ .Revision }}" ]
 
   , run "Test js" "cd js/stdlib && make clean-test && sbin/test.sh"
@@ -343,7 +361,7 @@ let test-js = dockerized-job-with-build-core-bins-and-runner
   ]
 
 
-let docs-render = dockerized-job
+let docs-render = dockerized-job ResourceClass.small
   [ run "Install dependencies" ''
       sudo add-apt-repository -y ppa:plt/racket \
         && sudo apt update \
@@ -371,7 +389,7 @@ let docs-render = dockerized-job
   ]
 
 
-let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
+let docs-deploy = dockerized-job-with "circleci/node:9.9.0" ResourceClass.small
   [ attach_workspace "/tmp/docs_workspace"
 
   -- gh-pages@3.0.0, not 3.1.0, because:
@@ -406,14 +424,16 @@ let docs-deploy = dockerized-job-with "circleci/node:9.9.0"
   ]
 
 
-let shellcheck = dockerized-job
+let shellcheck = dockerized-job ResourceClass.small
   [ Step.shellcheck/install
   , run "Run shellcheck" "make sh-lint"
   , slack/notify
   ]
 
 
-let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
+let docker-lint = dockerized-job-with
+  "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
+  ResourceClass.small
   [ run "Install dependencies" "apk add make bash curl jq"
   , run "Run hadolint"         "make docker-lint"
   , slack/notify
@@ -424,7 +444,7 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 
 let mk-example-job
    = \(directory : Text)
-  -> let j = dockerized-job-with-build-core-bins-and-runner
+  -> let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
       [ run       "Clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
       , run       "Rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
       , runT "5m" "Run ${directory}"     "cd examples && ./one.sh run ${directory}"
