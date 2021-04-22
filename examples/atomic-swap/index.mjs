@@ -40,9 +40,8 @@ const shouldFail = async (fp) => {
     await stdlib.transfer(accBob, accBob, 0, gil.id);
   }
 
-  await zorkmid.mint(accAlice, startingBalance);
-  await zorkmid.mint(accAlice, startingBalance);
-  await gil.mint(accBob, startingBalance);
+  await zorkmid.mint(accAlice, startingBalance.mul(2));
+  await gil.mint(accBob, startingBalance.mul(2));
 
   if ( conn == 'ALGO' ) {
     console.log(`Demonstrating opt-out on ALGO`);
