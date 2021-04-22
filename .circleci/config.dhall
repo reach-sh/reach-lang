@@ -337,7 +337,7 @@ let build-core = dockerized-job ResourceClass.medium
   ]
 
 
-let test-hs = dockerized-job-with-build-core-bins ResourceClass.small
+let test-hs = dockerized-job-with-build-core-bins ResourceClass.medium
   [ install_stack_deps
   , run "Generate package.yaml" "cd hs && make package.yaml"
   , restore_cache [ CACHE_DEPS_HS ]
