@@ -96,7 +96,7 @@ It would be very surprising if you choose the exact same names as us in your cod
 We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, @reachin{Bytes}.
 There's nothing necessarily wrong with this option, but we did not choose it because it is hard to decide exactly how long to make it, but we are satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
 
-At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholder like @jsin{42} or something for the actual value.
+At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain definitions of these values, although you may want to use a placeholder like @jsin{42} or something for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
 @(drstep-cc TAG)
