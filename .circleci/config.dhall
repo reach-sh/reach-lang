@@ -233,7 +233,7 @@ let dockerized-job-with-build-core-bins
 let dockerized-job-with-build-core-bins-and-runner
    = \(steps : List Step)
   -> let s = [ setup_remote_docker True
-             , run "attach runner image" ''
+             , run "Attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
                  ${docker-tag-all "runner"}
                  ''
@@ -327,7 +327,7 @@ let test-hs = dockerized-job-with-build-core-bins
   , runT "20m"         "Test hs (xml)"   "cd hs && make hs-test-xml"
   , store_test_results "hs/test-reports"
 
-  , run  "check hs"    "cd hs && make hs-check"
+  , run  "Check hs"    "cd hs && make hs-check"
   , store_artifacts    "hs/stan.html"
 
   , slack/notify
@@ -337,7 +337,7 @@ let test-hs = dockerized-job-with-build-core-bins
 let test-js = dockerized-job-with-build-core-bins-and-runner
   [ restore_cache [ "hs-{{ .Revision }}" ]
 
-  , run "test js" "cd js/stdlib && make clean-test && sbin/test.sh"
+  , run "Test js" "cd js/stdlib && make clean-test && sbin/test.sh"
 
   , slack/notify
   ]
@@ -414,9 +414,8 @@ let shellcheck = dockerized-job
 
 
 let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
-  [ run "install make, bash, curl, and jq" "apk add make bash curl jq"
-  , run "run hadolint"                     "make docker-lint"
-
+  [ run "Install dependencies" "apk add make bash curl jq"
+  , run "Run hadolint"         "make docker-lint"
   , slack/notify
   ]
 
@@ -426,9 +425,9 @@ let docker-lint = dockerized-job-with "hadolint/hadolint:v1.18.0-6-ga0d655d-alpi
 let mk-example-job
    = \(directory : Text)
   -> let j = dockerized-job-with-build-core-bins-and-runner
-      [ run       "clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
-      , run       "rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
-      , runT "5m" "run ${directory}"     "cd examples && ./one.sh run ${directory}"
+      [ run       "Clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
+      , run       "Rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
+      , runT "5m" "Run ${directory}"     "cd examples && ./one.sh run ${directory}"
 
       , slack/notify
       ]

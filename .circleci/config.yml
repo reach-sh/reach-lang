@@ -32,25 +32,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean abstract-simul"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean abstract-simul"
+        name: "Clean abstract-simul"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build abstract-simul"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild abstract-simul"
+        name: "Rebuild abstract-simul"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run abstract-simul"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run abstract-simul"
+        name: "Run abstract-simul"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -88,25 +88,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean algorand-placeholder"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean algorand-placeholder"
+        name: "Clean algorand-placeholder"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build algorand-placeholder"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild algorand-placeholder"
+        name: "Rebuild algorand-placeholder"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run algorand-placeholder"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run algorand-placeholder"
+        name: "Run algorand-placeholder"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -144,25 +144,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean argz"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean argz
+        name: Clean argz
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build argz"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild argz
+        name: Rebuild argz
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run argz"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run argz
+        name: Run argz
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -200,25 +200,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean atomic-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean atomic-swap"
+        name: "Clean atomic-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build atomic-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild atomic-swap"
+        name: "Rebuild atomic-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run atomic-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run atomic-swap"
+        name: "Run atomic-swap"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -429,25 +429,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean chicken-fork"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean chicken-fork"
+        name: "Clean chicken-fork"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-fork"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild chicken-fork"
+        name: "Rebuild chicken-fork"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-fork"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run chicken-fork"
+        name: "Run chicken-fork"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -485,25 +485,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean chicken-parallel"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean chicken-parallel"
+        name: "Clean chicken-parallel"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-parallel"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild chicken-parallel"
+        name: "Rebuild chicken-parallel"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-parallel"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run chicken-parallel"
+        name: "Run chicken-parallel"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -541,25 +541,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean chicken-race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean chicken-race"
+        name: "Clean chicken-race"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build chicken-race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild chicken-race"
+        name: "Rebuild chicken-race"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run chicken-race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run chicken-race"
+        name: "Run chicken-race"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -577,13 +577,13 @@ jobs:
         command: apk add make bash curl jq
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "install make, bash, curl, and jq"
+        name: Install dependencies
         no_output_timeout: 10m
     - run:
         command: "make docker-lint"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run hadolint
+        name: Run hadolint
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -717,25 +717,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean exports"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean exports
+        name: Clean exports
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build exports"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild exports
+        name: Rebuild exports
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run exports"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run exports
+        name: Run exports
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -773,25 +773,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean maybe-send"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean maybe-send"
+        name: "Clean maybe-send"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build maybe-send"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild maybe-send"
+        name: "Rebuild maybe-send"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run maybe-send"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run maybe-send"
+        name: "Run maybe-send"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -829,25 +829,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean multiple-pr-case"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean multiple-pr-case"
+        name: "Clean multiple-pr-case"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build multiple-pr-case"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild multiple-pr-case"
+        name: "Rebuild multiple-pr-case"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run multiple-pr-case"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run multiple-pr-case"
+        name: "Run multiple-pr-case"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -885,25 +885,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean multisig"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean multisig
+        name: Clean multisig
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build multisig"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild multisig
+        name: Rebuild multisig
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run multisig"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run multisig
+        name: Run multisig
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -941,25 +941,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean nft-dumb"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean nft-dumb"
+        name: "Clean nft-dumb"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build nft-dumb"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild nft-dumb"
+        name: "Rebuild nft-dumb"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run nft-dumb"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run nft-dumb"
+        name: "Run nft-dumb"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -997,25 +997,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean nim"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean nim
+        name: Clean nim
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build nim"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild nim
+        name: Rebuild nim
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run nim"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run nim
+        name: Run nim
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1053,25 +1053,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean object-digest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean object-digest"
+        name: "Clean object-digest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build object-digest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild object-digest"
+        name: "Rebuild object-digest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run object-digest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run object-digest"
+        name: "Run object-digest"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1109,25 +1109,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean overview"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean overview
+        name: Clean overview
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild overview
+        name: Rebuild overview
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run overview
+        name: Run overview
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1165,25 +1165,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean overview-more-deps"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean overview-more-deps"
+        name: "Clean overview-more-deps"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview-more-deps"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild overview-more-deps"
+        name: "Rebuild overview-more-deps"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview-more-deps"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run overview-more-deps"
+        name: "Run overview-more-deps"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1221,25 +1221,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean overview-react"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean overview-react"
+        name: "Clean overview-react"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build overview-react"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild overview-react"
+        name: "Rebuild overview-react"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run overview-react"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run overview-react"
+        name: "Run overview-react"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1277,25 +1277,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean own-addr"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean own-addr"
+        name: "Clean own-addr"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build own-addr"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild own-addr"
+        name: "Rebuild own-addr"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run own-addr"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run own-addr"
+        name: "Run own-addr"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1333,25 +1333,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean popularity-contest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean popularity-contest"
+        name: "Clean popularity-contest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build popularity-contest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild popularity-contest"
+        name: "Rebuild popularity-contest"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run popularity-contest"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run popularity-contest"
+        name: "Run popularity-contest"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1389,25 +1389,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean race
+        name: Clean race
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild race
+        name: Rebuild race
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run race"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run race
+        name: Run race
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1445,25 +1445,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean raffle"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean raffle
+        name: Clean raffle
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build raffle"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild raffle
+        name: Rebuild raffle
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run raffle"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run raffle
+        name: Run raffle
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1501,25 +1501,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean remote"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean remote
+        name: Clean remote
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build remote"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild remote
+        name: Rebuild remote
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run remote"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run remote
+        name: Run remote
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1557,25 +1557,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean rent-seeking"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean rent-seeking"
+        name: "Clean rent-seeking"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build rent-seeking"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild rent-seeking"
+        name: "Rebuild rent-seeking"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run rent-seeking"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run rent-seeking"
+        name: "Run rent-seeking"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1613,25 +1613,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean rental"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean rental
+        name: Clean rental
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build rental"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild rental
+        name: Rebuild rental
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run rental"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run rental
+        name: Run rental
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1669,25 +1669,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean secured-loan"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean secured-loan"
+        name: "Clean secured-loan"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build secured-loan"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild secured-loan"
+        name: "Rebuild secured-loan"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run secured-loan"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run secured-loan"
+        name: "Run secured-loan"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1774,7 +1774,7 @@ jobs:
         command: "cd hs && make hs-check"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: check hs
+        name: Check hs
         no_output_timeout: 10m
     - store_artifacts:
         path: hs/stan.html
@@ -1814,7 +1814,7 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - restore_cache:
         keys:
@@ -1823,7 +1823,7 @@ jobs:
         command: "cd js/stdlib && make clean-test && sbin/test.sh"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: test js
+        name: Test js
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1861,25 +1861,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean timeoutception"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean timeoutception
+        name: Clean timeoutception
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build timeoutception"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild timeoutception
+        name: Rebuild timeoutception
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run timeoutception"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run timeoutception
+        name: Run timeoutception
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1917,25 +1917,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean ttt"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: clean ttt
+        name: Clean ttt
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build ttt"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: rebuild ttt
+        name: Rebuild ttt
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run ttt"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: run ttt
+        name: Run ttt
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1973,25 +1973,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-2"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-2"
+        name: "Clean tut-2"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-2"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-2"
+        name: "Rebuild tut-2"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-2"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-2"
+        name: "Run tut-2"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2029,25 +2029,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-3"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-3"
+        name: "Clean tut-3"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-3"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-3"
+        name: "Rebuild tut-3"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-3"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-3"
+        name: "Run tut-3"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2085,25 +2085,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-4"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-4"
+        name: "Clean tut-4"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-4"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-4"
+        name: "Rebuild tut-4"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-4"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-4"
+        name: "Run tut-4"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2141,25 +2141,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-5"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-5"
+        name: "Clean tut-5"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-5"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-5"
+        name: "Rebuild tut-5"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-5"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-5"
+        name: "Run tut-5"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2197,25 +2197,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-5-attack"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-5-attack"
+        name: "Clean tut-5-attack"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-5-attack"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-5-attack"
+        name: "Rebuild tut-5-attack"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-5-attack"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-5-attack"
+        name: "Run tut-5-attack"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2253,25 +2253,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-6"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-6"
+        name: "Clean tut-6"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-6"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-6"
+        name: "Rebuild tut-6"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-6"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-6"
+        name: "Run tut-6"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2309,25 +2309,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-7"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-7"
+        name: "Clean tut-7"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-7"
+        name: "Rebuild tut-7"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-7"
+        name: "Run tut-7"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2365,25 +2365,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-7-array"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-7-array"
+        name: "Clean tut-7-array"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7-array"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-7-array"
+        name: "Rebuild tut-7-array"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7-array"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-7-array"
+        name: "Run tut-7-array"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2421,25 +2421,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-7-rpc"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-7-rpc"
+        name: "Clean tut-7-rpc"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-7-rpc"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-7-rpc"
+        name: "Rebuild tut-7-rpc"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-7-rpc"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-7-rpc"
+        name: "Run tut-7-rpc"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2477,25 +2477,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-8"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-8"
+        name: "Clean tut-8"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-8"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-8"
+        name: "Rebuild tut-8"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-8"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-8"
+        name: "Run tut-8"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2533,25 +2533,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean tut-9"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean tut-9"
+        name: "Clean tut-9"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build tut-9"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild tut-9"
+        name: "Rebuild tut-9"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run tut-9"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run tut-9"
+        name: "Run tut-9"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2589,25 +2589,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean variable-transfers"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean variable-transfers"
+        name: "Clean variable-transfers"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build variable-transfers"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild variable-transfers"
+        name: "Rebuild variable-transfers"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run variable-transfers"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run variable-transfers"
+        name: "Run variable-transfers"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2645,25 +2645,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean weird-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean weird-swap"
+        name: "Clean weird-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build weird-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild weird-swap"
+        name: "Rebuild weird-swap"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run weird-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run weird-swap"
+        name: "Run weird-swap"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2701,25 +2701,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean workshop-fomo"
+        name: "Clean workshop-fomo"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-fomo"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild workshop-fomo"
+        name: "Rebuild workshop-fomo"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-fomo"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run workshop-fomo"
+        name: "Run workshop-fomo"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2757,25 +2757,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean workshop-fomo-generalized"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean workshop-fomo-generalized"
+        name: "Clean workshop-fomo-generalized"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-fomo-generalized"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild workshop-fomo-generalized"
+        name: "Rebuild workshop-fomo-generalized"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-fomo-generalized"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run workshop-fomo-generalized"
+        name: "Run workshop-fomo-generalized"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2813,25 +2813,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean workshop-hash-lock"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean workshop-hash-lock"
+        name: "Clean workshop-hash-lock"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-hash-lock"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild workshop-hash-lock"
+        name: "Rebuild workshop-hash-lock"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-hash-lock"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run workshop-hash-lock"
+        name: "Run workshop-hash-lock"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2869,25 +2869,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean workshop-relay"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean workshop-relay"
+        name: "Clean workshop-relay"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-relay"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild workshop-relay"
+        name: "Rebuild workshop-relay"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-relay"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run workshop-relay"
+        name: "Run workshop-relay"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2925,25 +2925,25 @@ jobs:
           docker tag reachsh/runner:latest reachsh/runner:0
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: attach runner image
+        name: Attach runner image
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh clean workshop-trust-fund"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "clean workshop-trust-fund"
+        name: "Clean workshop-trust-fund"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh build workshop-trust-fund"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "rebuild workshop-trust-fund"
+        name: "Rebuild workshop-trust-fund"
         no_output_timeout: 10m
     - run:
         command: "cd examples && ./one.sh run workshop-trust-fund"
         environment:
           LC_ALL: "en_US.UTF-8"
-        name: "run workshop-trust-fund"
+        name: "Run workshop-trust-fund"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
