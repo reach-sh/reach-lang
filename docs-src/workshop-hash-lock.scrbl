@@ -13,7 +13,7 @@ This is a useful way for a payer to show that they have funds and have committed
 @(drstep-pr TAG)
 
 The first step in any program design is to perform problem analysis and determine what information is relevant to the problem.
-When writting decentralized applications in Reach, this information analysis includes an analysis of the set of @tech{participants} involved in a computation.
+When writing decentralized applications in Reach, this information analysis includes an analysis of the set of @tech{participants} involved in a computation.
 
 In this case, let's ask the questions:
 @itemlist[
