@@ -250,7 +250,7 @@ let dockerized-job-with-build-core-bins
 let dockerized-job-with-build-core-bins-and-runner
    = \(class : ResourceClass)
   -> \(steps : List Step)
-  -> let s = [ setup_remote_docker True
+  -> let s = [ setup_remote_docker False
              , run "Attach runner image" ''
                  zcat /tmp/build-core/runner.tar.gz | docker load
                  ${docker-tag-all "runner"}
