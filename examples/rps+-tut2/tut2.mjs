@@ -87,15 +87,13 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     const deadline = await ask(
       'How many blocks until a timeout?', (x) => x);
     interact.DEADLINE = deadline;
-    interact.firstBatch = await getBatch();
   } else {
-    interact.acceptGame = async (wager, deadline) => {
+    interact.acceptWager = async (wager, deadline) => {
       const accepted = await ask(
         `Do you accept the wager of ${fmt(wager)}? with the deadline of ${deadline} blocks`,
         yesno
       );
       if (accepted) {
-        interact.firstBatch = await getBatch();
         return;
       } else {
         process.exit(0);

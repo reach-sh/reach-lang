@@ -43,7 +43,6 @@ const batchWinner = (handsA, handsB) =>
 
 const Player =
       { ...hasRandom,
-        //firstBatch: Array(UInt, batchSize),
         getHand: Fun([], UInt),
         getBatch: Fun([], Array(UInt, batchSize)),
         seeOutcome: Fun([UInt], Null),
@@ -57,7 +56,6 @@ const Bob =
       { ...Player,
         acceptWager: Fun([UInt, UInt], Null) };
 
-//const DEADLINE = 150;
 export const main =
   Reach.App(
     {},
@@ -70,7 +68,7 @@ export const main =
       A.only(() => {
         const wager = declassify(interact.wager); 
         const DEADLINE = declassify(interact.DEADLINE);
-        const _AFirstBatch = interact.getBatch();//interact.firstBatch;
+        const _AFirstBatch = interact.getBatch();
         const [_AFirstBatchCommitment, _AFirstBatchSalt] = makeCommitment(interact, _AFirstBatch);
         const AFirstCommit = declassify(_AFirstBatchCommitment);
       });
@@ -130,7 +128,7 @@ export const main =
           [outcome, round] = [batchWinner(second, first), round + 1];
           continue; 
         } else {
-          const [first, second] = doRound(B,A,round);
+          const [first, second] = doRound(A,B,round);
           [outcome, round] = [batchWinner(first, second), round + 1];
           continue; 
         }

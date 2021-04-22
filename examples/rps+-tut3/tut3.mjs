@@ -1,10 +1,10 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import * as stdlib from '@reach-sh/stdlib/ALGO.mjs'
+//import * as stdlib from '@reach-sh/stdlib/ALGO.mjs'
 import * as backend from './build/tut3.main.mjs';
 import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = await loadStdlib(process.env);
 
   const isAlice = await ask(
     `Are you Alice?`,

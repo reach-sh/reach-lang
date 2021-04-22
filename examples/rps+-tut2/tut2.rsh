@@ -43,7 +43,6 @@ const batchWinner = (handsA, handsB) =>
 
 const Player =
       { ...hasRandom,
-        firstBatch: Array(UInt, batchSize),
         getHand: Fun([], UInt),
         getBatch: Fun([], Array(UInt, batchSize)),
         seeOutcome: Fun([UInt], Null),
@@ -55,9 +54,8 @@ const Alice =
          };
 const Bob =
       { ...Player,
-        acceptWager: Fun([UInt], Null) };
+        acceptWager: Fun([UInt, UInt], Null) };
 
-//const DEADLINE = 150;
 export const main =
   Reach.App(
     {},
@@ -70,7 +68,7 @@ export const main =
       A.only(() => {
         const wager = declassify(interact.wager); 
         const DEADLINE = declassify(interact.DEADLINE);
-        const _AFirstBatch = interact.firstBatch;
+        const _AFirstBatch = interact.getBatch();
         const [_AFirstBatchCommitment, _AFirstBatchSalt] = makeCommitment(interact, _AFirstBatch);
         const AFirstCommit = declassify(_AFirstBatchCommitment);
       });
@@ -81,8 +79,8 @@ export const main =
 
       unknowable(B, A(_AFirstBatchSalt, _AFirstBatch))
       B.only(() => {
-        interact.acceptWager(wager); 
-        const BFirstBatch = declassify(interact.firstBatch);
+        interact.acceptWager(wager, DEADLINE); 
+        const BFirstBatch = declassify(interact.getBatch());
       });
       B.publish(BFirstBatch)
         .pay(wager)
@@ -122,7 +120,7 @@ export const main =
           .timeout(DEADLINE, () => closeTo(B, informTimeout));
         checkCommitment(commitA, saltA, BatchA);
 
-        outcome = batchWinner(AFirstBatch, BFirstBatch);
+        outcome = batchWinner(BatchA, BatchB);
         continue; }
 
       assert(outcome == A_WINS || outcome == B_WINS);

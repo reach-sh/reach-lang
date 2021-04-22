@@ -1,6 +1,6 @@
 https://github.com/nicholasburka/rps-gui/blob/vuecli/reach/tut2/seriousrps_tutorial2.md
 
-In this section, we'll make the cost distribution more equal between participants, by modifying our while loop. The first player in any round has two transactions, in order to commit their hand secretly and reveal it after the second player's hand has published. It would be more fair if the first person to play rotated, to distribute these costs. We can't rotate this for the initial deployment transactions, but we can rotate during the DRAW while loop. We can do this using if/else blocks, and rotating who goes first based on whether it's an even or odd round.
+In this section, we'll make the cost distribution more equal between participants by modifying our while loop. The first player in any round has two transactions: the first commits their hand secretly and the second reveals their hand after the second player's hand has published. It would be more fair if the first person to play rotated each round to distribute these costs. We can do this using if/else blocks, and rotating who goes first based on whether it's an even or odd round.
 
 ```
 var [outcome, round] = [batchWinner(AFirstBatch, BFirstBatch), 0];
@@ -30,7 +30,7 @@ while ( outcome == DRAW ) {
       .timeout(DEADLINE, () => closeTo(A, informTimeout));
     checkCommitment(commitB, saltB, BatchB);
 
-    [outcome, round] = [batchWinner(AFirstBatch, BFirstBatch), round + 1];
+    [outcome, round] = [batchWinner(BatchA, BatchB), round + 1];
     continue; 
   } else {
     commit();
@@ -56,16 +56,15 @@ while ( outcome == DRAW ) {
       .timeout(DEADLINE, () => closeTo(B, informTimeout));
     checkCommitment(commitA, saltA, BatchA);
 
-    [outcome, round] = [batchWinner(AFirstBatch, BFirstBatch), round + 1];
+    [outcome, round] = [batchWinner(BatchA, BatchB), round + 1];
     continue; 
   }
  }
 ```
 - Line 1 adds the 'round' loop variable and initializes it at 0
-- Line 4 specifies that the following code block should run if the round is an even number. Evenness is determined by calculating the remainder of the rond number when divided by 2, using the modulo % operator.
-- At the end of each block, we calculate the outcome and increment the round.
+- Line 4 specifies that the following code block should run if the round is an even number. Evenness is determined by calculating the remainder of the round number when divided by 2, using the modulo % operator.
 
-Bob goes first in the loop, because Alice paid an extra transaction already. The code is long, because we simply copy and pasted the logic for each round and changed the participant ordering. It's more concise to define a function doRound within our while loop, in which we pass each participant as input within the if/else blocks:
+Bob goes first in the loop, because Alice paid an extra transaction already. The code is long, because we simply copy and pasted the logic for each round and changed the participant ordering. It's more concise to define a function doRound within our while loop, which we pass each participant in within the if/else blocks:
 
 ```
 var [outcome, round] = [batchWinner(AFirstBatch, BFirstBatch), 0];
@@ -98,18 +97,18 @@ while ( outcome == DRAW ) {
     return [BatchFirst, BatchSecond]
   }
   if (round % 2 == 0) {
-    const [first, second] = doRound(B,A,round);
+    const [first, second] = doRound(B,A);
     [outcome, round] = [batchWinner(second, first), round + 1];
     continue; 
   } else {
-    const [first, second] = doRound(B,A,round);
+    const [first, second] = doRound(A,B);
     [outcome, round] = [batchWinner(first, second), round + 1];
     continue; 
   }
  }
 ```
-- In Lines 4-27, we define a function doRound which takes a Participant Interface 'First' and Participant Interface 'Second'. Once these participant variables are available to the function, all we need to do is write the logic for a round of RPS. 
-- Lines 29-30 & 33-34 take the result of the round and input it in the correct order to batchWinner to compute the outcome.
+- In Lines 4-27, we define a function doRound which takes a Participant Interface 'First' and a Participant Interface 'Second'. Then we pass these participants through the logic of an RPS round.
+- Lines 29-30 & 33-34 take the results of the round and input them in the correct order to batchWinner to compute the outcome. In even numbered rounds, Bob goes first (and pays two transaction fees); in odd rounds Alice goes first.
 
 We don't have to modify our CLI, since our interface function declarations remain the same.
 

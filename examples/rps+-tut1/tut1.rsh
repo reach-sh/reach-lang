@@ -19,7 +19,6 @@ forall(UInt, (hand) =>
 
 const Player =
       { ...hasRandom,
-        firstHand: UInt,
         getHand: Fun([], UInt),
         seeOutcome: Fun([UInt], Null),
         informTimeout: Fun([], Null) };
@@ -30,9 +29,8 @@ const Alice =
          };
 const Bob =
       { ...Player,
-        acceptWager: Fun([UInt], Null) };
+        acceptWager: Fun([UInt, UInt], Null) };
 
-//const DEADLINE = 150;
 export const main =
   Reach.App(
     {},
@@ -45,7 +43,7 @@ export const main =
       A.only(() => {
         const wager = declassify(interact.wager); 
         const DEADLINE = declassify(interact.DEADLINE);
-        const _AFirstHand = interact.firstHand;
+        const _AFirstHand = interact.getHand();
         const [_AFirstHandCommitment, _AFirstHandSalt] = makeCommitment(interact, _AFirstHand);
         const AFirstCommit = declassify(_AFirstHandCommitment);
       });
@@ -57,7 +55,7 @@ export const main =
       unknowable(B, A(_AFirstHandSalt, _AFirstHand))
       B.only(() => {
         interact.acceptWager(wager, DEADLINE); 
-        const BFirstHand = declassify(interact.firstHand);
+        const BFirstHand = declassify(interact.getHand());
       });
       B.publish(BFirstHand)
         .pay(wager)

@@ -57,7 +57,7 @@ export const main =
       A.only(() => {
         const wager = declassify(interact.wager); 
         const DEADLINE = declassify(interact.DEADLINE);
-        const _AFirstBatch = interact.getBatch();//interact.firstBatch;
+        const _AFirstBatch = interact.getBatch();
         const [_AFirstBatchCommitment, _AFirstBatchSalt] = makeCommitment(interact, _AFirstBatch);
         const AFirstCommit = declassify(_AFirstBatchCommitment);
       });
