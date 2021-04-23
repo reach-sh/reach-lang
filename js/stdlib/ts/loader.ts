@@ -1,7 +1,7 @@
 import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
-import * as stdlib_CFX from './CFX';
-// import * as stdlib_ETH_like from './ETH_like';
+// import * as stdlib_CFX from './CFX';
+import * as stdlib_ETH_like from './ETH_like';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
 import {process, window} from './shim';
 
@@ -10,10 +10,10 @@ export {getConnectorMode, getConnector};
 // XXX make an interface for Stdlib, return Promise<Stdlib>
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Promise<any> {
+export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): any {
   if (!connectorModeOrEnv) {
     // @ts-ignore // XXX why doesn't TS understand that Env satisfies {[key: string}: string} ?
-    return await loadStdlib(process.env);
+    return loadStdlib(process.env);
   }
   let connectorModeStr: string;
   if (typeof connectorModeOrEnv === 'string') {
@@ -28,13 +28,13 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
   }
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);
-  // const env = typeof connectorModeOrEnv !== 'string' ? connectorModeOrEnv : {}
+  const env = typeof connectorModeOrEnv !== 'string' ? connectorModeOrEnv : {}
   let stdlib;
   switch (connector) {
     case 'ETH': stdlib = stdlib_ETH; break;
     case 'ALGO': stdlib = stdlib_ALGO; break;
-    case 'CFX': stdlib = stdlib_CFX; break;
-    // case 'CFX': stdlib = new stdlib_ETH_like.CFX(env); break;
+    // case 'CFX': stdlib = stdlib_CFX; break;
+    case 'CFX': stdlib = new stdlib_ETH_like.CFX(env); break;
     default: throw Error(`impossible: unknown connector ${connector}`);
   }
   if (connectorModeOrEnv && typeof connectorModeOrEnv !== 'string') {

@@ -9,14 +9,15 @@ export abstract class TypeDefs {
   abstract readonly T_Null: A_T_Null
   abstract readonly T_Bool: A_T_Bool
   abstract readonly T_UInt: A_T_UInt
-  abstract readonly T_Bytes: (size: number) => A_T_Bytes
   abstract readonly T_Digest: A_T_Digest
   abstract readonly T_Address: A_T_Address
-  abstract readonly T_Array: (td: TypeDef, size: number) => A_T_Array
-  abstract readonly T_Tuple: (tds: TypeDef[]) => A_T_Tuple
-  abstract readonly T_Struct: (namedTds: [string, TypeDef][]) => A_T_Struct
-  abstract readonly T_Object: (tdMap: {[key: string]: TypeDef}) => A_T_Object
-  abstract readonly T_Data: (tdMap: {[key: string]: TypeDef}) => A_T_Data
+  abstract readonly T_Token: A_T_Token
+  abstract T_Bytes(size: number): A_T_Bytes
+  abstract T_Array(td: TypeDef, size: number): A_T_Array
+  abstract T_Tuple(tds: TypeDef[]): A_T_Tuple
+  abstract T_Struct(namedTds: [string, TypeDef][]): A_T_Struct
+  abstract T_Object(tdMap: {[key: string]: TypeDef}): A_T_Object
+  abstract T_Data(tdMap: {[key: string]: TypeDef}): A_T_Data
 }
 
 export class A_T_Null extends TypeDef {
@@ -40,7 +41,8 @@ export class A_T_Bool extends TypeDef {
   }
 }
 
-export class A_T_UInt extends TypeDef {
+export abstract class A_T_UInt extends TypeDef {
+  abstract readonly width: number
   name = 'UInt'
   canonicalize(uv: unknown): BigNumber {
     try {
@@ -100,22 +102,21 @@ export class A_T_Digest extends TypeDef {
   }
 }
 
-export class A_T_Address extends TypeDef {
-  name = 'Address'
+abstract class StringyTypeDef extends TypeDef {
   canonicalize(uv: unknown): string {
     if (typeof uv !== 'string') {
-      throw Error(`Address must be a string, but got: ${JSON.stringify(uv)}`);
-
-    // XXX these do not apply to CFX. move them into ETH/ALGO
-    // } else if (val.slice(0, 2) !== '0x') {
-    //   throw Error(`Address must start with 0x, but got: ${JSON.stringify(val)}`);
-    // } else if (!ethers.utils.isHexString(val)) {
-    //   throw Error(`Address must be a valid hex string, but got: ${JSON.stringify(val)}`);
-
+      throw Error(`${this.name} must be a string, but got: ${JSON.stringify(uv)}`);
     }
-
     return uv;
   }
+}
+
+export class A_T_Address extends StringyTypeDef {
+  name = 'Address'
+}
+
+export class A_T_Token extends StringyTypeDef {
+  name = 'Token'
 }
 
 export class A_T_Array extends TypeDef {

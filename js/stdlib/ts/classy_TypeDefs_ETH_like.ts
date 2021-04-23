@@ -1,13 +1,15 @@
-import ethers, { BigNumber } from 'ethers';
+import ethers from 'ethers';
 import * as shared from './shared';
 import {
   TypeDef,
+  TypeDefs,
   A_T_Null,
   A_T_Bool,
   A_T_UInt,
   A_T_Bytes,
   A_T_Digest,
   A_T_Address,
+  A_T_Token,
   A_T_Array,
   A_T_Tuple,
   A_T_Struct,
@@ -15,6 +17,9 @@ import {
   A_T_Data,
 } from './classy_TypeDefs';
 import { labelMaps } from './shared_impl';
+
+type BigNumber = ethers.BigNumber;
+const BigNumber = ethers.BigNumber;
 
 export abstract class ETH_TypeDef<BV, NV> extends TypeDef {
   abstract readonly paramType: string
@@ -51,6 +56,7 @@ export class T_Bool extends A_T_Bool implements ETH_TypeDef<boolean, boolean> {
 }
 
 export class T_UInt extends A_T_UInt implements ETH_TypeDef<BigNumber, BigNumber> {
+  width = 32
   paramType = 'uint256'
   defaultValue = ethers.BigNumber.from(0)
   munge(bv: BigNumber): BigNumber {
@@ -143,6 +149,11 @@ export class ETH_T_Address extends A_T_Address implements ETH_TypeDef<string, st
   unmunge(uv: unknown): string {
     return this.canonicalize(uv);
   }
+}
+
+export class ETH_T_Token extends ETH_T_Address implements A_T_Token {
+  // T_Token on ETH is ETH_T_Address in all but name
+  name = 'Token'
 }
 
 export class T_Array<T> extends A_T_Array implements ETH_TypeDef<T[], unknown[]> {
@@ -346,4 +357,19 @@ export class T_Data extends A_T_Data implements ETH_TypeDef<[string, unknown], u
     const val = uv[i + 1];
     return this.canonicalize([label, tdMap[label].unmunge(val)]);
   }
+}
+
+export class ETH_TypeDefs extends TypeDefs {
+  readonly T_Null = new T_Null()
+  readonly T_Bool = new T_Bool()
+  readonly T_UInt = new T_UInt()
+  readonly T_Digest = new T_Digest()
+  readonly T_Address = new ETH_T_Address()
+  readonly T_Token = new ETH_T_Token()
+  T_Bytes(size: number) { return new T_Bytes(size) }
+  T_Array<T>(td: ETH_TypeDef<T, unknown>, size: number) { return new T_Array(td, size) }
+  T_Tuple(tds: ETH_TypeDef<unknown, unknown>[]) {return new T_Tuple(tds) }
+  T_Struct(namedTds: [string, ETH_TypeDef<unknown, unknown>][]) { return new T_Struct(namedTds) }
+  T_Object(tdMap: {[key: string]: ETH_TypeDef<unknown, unknown>}) { return new T_Object(tdMap) }
+  T_Data(tdMap: {[key: string]: ETH_TypeDef<unknown, unknown>}) { return new T_Data(tdMap) }
 }
