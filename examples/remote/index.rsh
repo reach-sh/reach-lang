@@ -18,8 +18,8 @@ export const main = Reach.App(
   [ Participant('Alice', {
       getAddr: Fun([], Address),
       getCT: Fun([], Tuple(UInt, Address)),
-      getTok: Fun([], Token),
-      checkBal: Fun([], Null),
+      getGIL: Fun([], Token),
+      getZMD: Fun([], Token),
     }),
     Participant('Bob', {
       getX: Fun([], UInt),
@@ -48,35 +48,42 @@ export const main = Reach.App(
     A.publish();
     const r0 = ctx.getX();
     const r1 = cty.getX.bill(amt / 2)();
-    // Todo make no args = []
-    const [ amtr, _, r2 ] = cty.getX.withBill([])();
+    const [ amtr, _, r2 ] = cty.getX.withBill()();
     transfer(amt / 2).to(B);
     transfer(amtr).to(A);
     commit();
 
+
+    // Test transferring non-network tokens to and from a remote ctc
+
     A.only(() => {
-      const tok = declassify(interact.getTok());
-      interact.checkBal(); });
-    A.publish(tok).pay([ [amt, tok] ]);
+      const gil = declassify(interact.getGIL());
+      const zmd = declassify(interact.getZMD());
+      assume(gil != zmd); });
+
+    A.publish(gil, zmd)
+     .pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
     commit();
 
-    // The balance is in contract!
-    A.only(() => {
-      interact.checkBal(); });
     A.publish();
-
-    ctx.payFn.pay([ [amt, tok] ])(tok);
+    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has x gil, x zmd
     commit();
 
     B.publish();
+    ctx.bilFn.bill([ [amt, gil] ])(gil);  // CTC has 2x gil, x zmd
+    transfer(amt, gil).to(B);             // CTC has x gil, x zmd
+    commit();
 
-    // ctx.bilFn.bill([ [amt, tok] ])(tok);
-    // transfer(amt, tok).to(B);
+    A.publish();
+    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has 0 gil, x zmd
+    commit();
 
-    // [ UInt, Array (N, [UInt, Token] ), returnValue ]
-    const [ netTokAmt, [ nonNetTokAmt ], _ ] = ctx.bilFn.withBill([ tok ])(tok);
-    transfer(netTokAmt).to(B);
-    transfer(nonNetTokAmt, tok).to(B);
+    B.publish();
+    const [ netRecv, [ gilRecv ], _ ] = ctx.bilFn.withBill([ gil ])(gil);
+    transfer(netRecv).to(B);      // CTC has x gil, x zmd
+    transfer(gilRecv, gil).to(B); // CTC has 0 gil, x zmd
+    transfer(amt, zmd).to(B);     // CTC has 0 gil, 0 zmd
+
 
     commit();
 

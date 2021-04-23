@@ -1727,7 +1727,7 @@ getWithBillTokens mbill = do
           | all (== T_Token) ts -> do
             tas' <- mapM compileArgExpr tas
             return (ST_Tuple $ map (const ST_UInt) ts, tas')
-        _ -> impossible "throw error regarding type of tuple"
+        _ -> expect_ $ Err_WithBill_Type ty
     _ -> return (ST_Null, [])
 
 
@@ -2326,7 +2326,8 @@ evalPrim p sargs =
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing)
     SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
-      nonNetToks <- one_arg
+      at <- withAt id
+      nonNetToks <- zero_mone_arg $ SLV_Tuple at []
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing)
     SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
       -- XXX support tokens
@@ -2334,49 +2335,48 @@ evalPrim p sargs =
       at <- withAt id
       let zero = SLV_Int at 0
       let amtv = fromMaybe zero mpay
-      pamt <- compilePayAmt TT_Pay amtv
-      tokenPay Nothing (pa_net pamt) "balance sufficient for payment to remote object"
-      forM_ (pa_ks pamt) $ \ (a, t) -> do
+      payAmt <- compilePayAmt TT_Pay amtv
+      tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
+      forM_ (pa_ks payAmt) $ \ (a, t) -> do
         tokenPay (Just t) a "balance sufficient for payment to remote object"
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
-      (nnTokType, nnToksInOrder) <- getWithBillTokens mbill
-      let rng' = ST_Tuple [ST_UInt, nnTokType, rng]
+      (nnToksBilledType, nnToksBilledRecv) <- getWithBillTokens mbill
+      let rng' = ST_Tuple [ST_UInt, nnToksBilledType, rng]
       let post' = flip fmap post $ \postv ->
             jsClo at "post" "(dom, [_, _, rng]) => post(dom, rng)" $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      bill <- case fromMaybe (Left zero) mbill of
+      mBillAmt <- case fromMaybe (Left zero) mbill of
                     Left _  -> return Nothing
                     Right v -> compilePayAmt TT_Bill v <&> Just
-      let nnTokPayments = maybe [] pa_ks bill
+      let nnToksBilled = maybe [] pa_ks mBillAmt
       nnTokReceived <- ctxt_mkvar $ DLVar at Nothing $
-                          case nnTokType of
+                          case nnToksBilledType of
                             ST_Null -> T_Null
                             ST_Tuple ts -> T_Tuple $ map (const T_UInt) ts
                             t -> impossible $ "Type of non-network tokens recieved is not [UInt]: " <> show (pretty t)
       allTokens <- fmap DLA_Var <$> readSt st_toks
-      liftIO $ putStrLn $ "allTokens: " <> show allTokens
-      liftIO $ putStrLn $ "nnToksInOrder: " <> show nnToksInOrder
-      let withBill = DLWithBill nnTokReceived nnToksInOrder (allTokens \\ nnToksInOrder)
+      let nnToksBilledZero =
+            (\\) allTokens $ case fromMaybe (Right zero) mbill of
+                              Left _  -> nnToksBilledRecv
+                              Right _ -> map snd nnToksBilled
+      let withBill = DLWithBill nnTokReceived nnToksBilledRecv nnToksBilledZero
       res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True)
-                (\_ fs _ dargs -> DLE_Remote at fs aa m pamt dargs nnTokPayments withBill)
+                (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs nnToksBilled withBill)
       apdvv <- doArrRef_ res' zero
       doBalanceUpdate Nothing ADD apdvv
       nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
-      forM_ (zip nnToksInOrder [0..length nnToksInOrder]) $ \ (t, i) -> do
-        ar <- doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
-        doBalanceUpdate (Just t) ADD ar
       res <- doArrRef_ res' $ SLV_Int at 2
       case fromMaybe (Right zero) mbill of
-        -- With Bill
         Left _ -> do
+          forM_ (zip nnToksBilledRecv [0..length nnToksBilledRecv]) $ \ (t, i) -> do
+            doBalanceUpdate (Just t) ADD =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
           return $ public res'
-        -- No bill/specific amount
         _ -> do
-          let bill' = fromMaybe (DLPayAmt (DLA_Literal $ DLL_Int at 0) []) bill
-          sv <- argToSV $ pa_net $ bill'
+          let billAmt = fromMaybe (DLPayAmt (DLA_Literal $ DLL_Int at 0) []) mBillAmt
+          sv <- argToSV $ pa_net billAmt
           -- Update balance of non-network tokens received
-          forM_ (pa_ks bill') $ \ (a, t) -> do
+          forM_ (pa_ks billAmt) $ \ (a, t) -> do
             a' <- argToSV a
             doBalanceUpdate (Just t) ADD a'
           -- Ensure we're paid expected network tokens
@@ -2403,6 +2403,10 @@ evalPrim p sargs =
     first_arg = case args of
       x : _ -> return $ x
       _ -> illegal_args
+    zero_mone_arg def = case args of
+      [x] -> return x
+      []  -> return def
+      _   -> illegal_args
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args

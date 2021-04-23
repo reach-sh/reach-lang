@@ -38,6 +38,11 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const gil = await launchToken("gil", "GIL");
   await gil.mint(accAlice, startingBalance);
   await gil.mint(accAlice, startingBalance);
+
+  const zorkmid = await launchToken("zorkmid", "ZMD");
+  await zorkmid.mint(accAlice, startingBalance);
+  await zorkmid.mint(accAlice, startingBalance);
+
   const amt = stdlib.parseCurrency(0.1);
 
   // const firstAllowed = await gil.allowance(remoteAddr);
@@ -51,7 +56,8 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
     backend.Alice(ctcAlice, {
       getAddr: (() => remoteAddr),
       getCT: (() => [ amt, remoteAddr ]),
-      getTok: (() => gil.id),
+      getGIL: (() => gil.id),
+      getZMD: (() => zorkmid.id),
       checkBal: (async () => {
         const bal = await gil.balanceOf(accAlice);
         console.log(`GIL Bal: ${bal}`)

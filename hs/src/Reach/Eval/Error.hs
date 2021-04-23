@@ -136,6 +136,7 @@ data EvalError
   | Err_Token_OnCtor
   | Err_Token_InWhile
   | Err_Token_DynamicRef
+  | Err_WithBill_Type DLType
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -521,5 +522,7 @@ instance Show EvalError where
       "Token published within while, which Reach cannot track, yet."
     Err_Token_DynamicRef ->
       "Token reference based on dynamic computation, which Reach cannot track, yet."
+    Err_WithBill_Type ty ->
+      "`withBill` expects no arguments or a Tuple of Tokens, but received: " <> show (pretty ty)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
