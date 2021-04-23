@@ -116,7 +116,7 @@ instance Countable DLExpr where
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts [fa, na]
     DLE_MapDel _ _ fa -> counts fa
-    DLE_Remote _ _ av _ pamt as -> counts (av : as) <> counts pamt
+    DLE_Remote _ _ av _ pamt as bill _ -> counts (av : as) <> counts pamt <> counts bill
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

@@ -345,6 +345,12 @@ instance IsPure a => IsPure (Seq.Seq a) where
 instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
+data DLWithBill = DLWithBill
+  { amts_recv :: DLVar
+  , tok_billed :: [DLArg]
+  , tok_not_billed :: [DLArg] }
+  deriving (Eq, Ord, Show)
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -367,7 +373,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg]
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] [(DLArg, DLArg)] DLWithBill
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -398,7 +404,10 @@ instance Pretty DLExpr where
       DLE_MapSet _ mv kv nv ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
       DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
-      DLE_Remote _ _ av m amta as -> "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <> parens (render_das as)
+      DLE_Remote _ _ av m amta as bill (DLWithBill _ nonNetTokRecv _) ->
+        "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
+        parens (render_das as) <> ".nonNetworkBill" <> parens (render_das bill) <>
+        ".withBill" <> parens (render_das nonNetTokRecv)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -551,13 +560,7 @@ data DLPayAmt = DLPayAmt
 
 instance Pretty DLPayAmt where
   pretty (DLPayAmt {..}) =
-    "payamt"
-      <> parens
-        (render_obj $
-           M.fromList $
-             [ ("net" :: String, pretty pa_net)
-             , ("ks", pretty pa_ks)
-             ])
+    brackets $ pretty pa_net <> ", " <> render_das pa_ks
 
 data DLSend = DLSend
   { ds_isClass :: Bool

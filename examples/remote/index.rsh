@@ -1,5 +1,4 @@
 'reach 0.1';
-'use strict';
 
 const Posn = Struct([["x", UInt], ["y", UInt]]);
 const PosnO = Object({x: UInt, y: UInt});
@@ -10,6 +9,8 @@ const CoolThing = {
   getX: Fun([], Struct([ ["x", Refine(UInt, (x => x > 2))],
                          ["y", UInt],
         ])),
+  payFn: Fun([Token], Null),
+  bilFn: Fun([Token], Null),
 };
 
 export const main = Reach.App(
@@ -17,6 +18,8 @@ export const main = Reach.App(
   [ Participant('Alice', {
       getAddr: Fun([], Address),
       getCT: Fun([], Tuple(UInt, Address)),
+      getTok: Fun([], Token),
+      checkBal: Fun([], Null),
     }),
     Participant('Bob', {
       getX: Fun([], UInt),
@@ -45,9 +48,36 @@ export const main = Reach.App(
     A.publish();
     const r0 = ctx.getX();
     const r1 = cty.getX.bill(amt / 2)();
-    const [ amtr, r2 ] = cty.getX.withBill()();
+    // Todo make no args = []
+    const [ amtr, _, r2 ] = cty.getX.withBill([])();
     transfer(amt / 2).to(B);
     transfer(amtr).to(A);
+    commit();
+
+    A.only(() => {
+      const tok = declassify(interact.getTok());
+      interact.checkBal(); });
+    A.publish(tok).pay([ [amt, tok] ]);
+    commit();
+
+    // The balance is in contract!
+    A.only(() => {
+      interact.checkBal(); });
+    A.publish();
+
+    ctx.payFn.pay([ [amt, tok] ])(tok);
+    commit();
+
+    B.publish();
+
+    // ctx.bilFn.bill([ [amt, tok] ])(tok);
+    // transfer(amt, tok).to(B);
+
+    // [ UInt, Array (N, [UInt, Token] ), returnValue ]
+    const [ netTokAmt, [ nonNetTokAmt ], _ ] = ctx.bilFn.withBill([ tok ])(tok);
+    transfer(netTokAmt).to(B);
+    transfer(nonNetTokAmt, tok).to(B);
+
     commit();
 
     B.only(() => {

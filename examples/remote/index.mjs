@@ -2,11 +2,12 @@ import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 import ethers from 'ethers';
 import * as fs from 'fs';
+import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
 
-  const startingBalance = stdlib.parseCurrency(1);
+  const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
@@ -34,11 +35,27 @@ import * as fs from 'fs';
   console.log(`Bob attaches to the Reach DApp.`);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
+  const gil = await launchToken("gil", "GIL");
+  await gil.mint(accAlice, startingBalance);
+  await gil.mint(accAlice, startingBalance);
   const amt = stdlib.parseCurrency(0.1);
+
+  // const firstAllowed = await gil.allowance(remoteAddr);
+  // console.log(`Allowed ${accAlice.networkAccount.address} ${firstAllowed}`);
+  // console.log(`Approving ${accAlice.networkAccount.address} ${amt}`);
+  // await gil.approve(remoteAddr, amt);
+  // const allowed = await gil.allowance(remoteAddr);
+  // console.log(`Allowed ${accAlice.networkAccount.address} ${allowed}`);
+
   await Promise.all([
     backend.Alice(ctcAlice, {
       getAddr: (() => remoteAddr),
       getCT: (() => [ amt, remoteAddr ]),
+      getTok: (() => gil.id),
+      checkBal: (async () => {
+        const bal = await gil.balanceOf(accAlice);
+        console.log(`GIL Bal: ${bal}`)
+      })
     }),
     backend.Bob(ctcBob, {
       getX: (() => 4),

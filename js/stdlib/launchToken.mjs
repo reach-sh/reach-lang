@@ -33,7 +33,14 @@ export default async function (name, sym) {
       const addr = acc.networkAccount.address;
       return await contract["balanceOf"](addr);
     };
-    return { name, sym, id, mint, balanceOf };
+    const approve = async (spenderAddress, amt) => {
+      await contract['approve'](spenderAddress, amt);
+    };
+    const allowance = async (spender) => {
+      const oAddr = accCreator.networkAccount.address;
+      return await contract['allowance'](oAddr, spender);
+    };
+    return { name, sym, id, mint, balanceOf, approve, allowance };
   };
 
   const ALGO_launchToken = async () => {

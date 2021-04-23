@@ -449,11 +449,13 @@ dlvOccurs env bindings de =
     DLE_MapRef at _ fa -> _rec at fa
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
-    DLE_Remote at _ av _ (DLPayAmt net ks) as -> _recs at (av : net : concatMap (\(a, b) -> [a, b]) ks <>  as)
+    DLE_Remote at _ av _ (DLPayAmt net ks) as bill (DLWithBill _ nonNetTokRecv _) ->
+      _recs at (av : net : pairList ks <> as <> pairList bill <> nonNetTokRecv)
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
     _rec at a = dlvOccurs env bindings $ DLE_Arg at a
+    pairList = concatMap (\(a, b) -> [a, b])
 
 displayDLAsJs :: M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
 displayDLAsJs v2dv inlineCtxt nested = \case
@@ -494,8 +496,10 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
   DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
   DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
-  DLE_Remote _ _ av f (DLPayAmt net ks) as -> "remote(" <> show av <> ")." <> f <> ".pay"
-    <> paren (commaSep [sub net, bracket $ concatMap (\(a, t) -> commaSep [sub a, sub t]) ks])
+  DLE_Remote _ _ av f (DLPayAmt net ks) as bill (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
+    <> paren (commaSep [sub net, subPair ks])
+    <> ".nonNetworkBill" <> paren (subPair bill)
+    <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
   where
     commaSep = List.intercalate ", "
@@ -505,6 +509,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     curly e = "{" <> e <> "}"
     paren e = "(" <> e <> ")"
     bracket e = "[" <> e <> "]"
+    subPair = bracket . concatMap (\(a, t) -> commaSep [sub a, sub t])
     sub (DLA_Var v) =
       case getVarName v `List.lookup` inlineCtxt of
         Nothing -> show v
@@ -1060,7 +1065,7 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Just na
     DLE_MapDel at mpv fa ->
       smtMapUpdate at mpv fa $ Nothing
-    DLE_Remote at _ _ _ _ _ ->
+    DLE_Remote at _ _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
   where
     bo = O_Expr de

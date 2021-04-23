@@ -2,7 +2,7 @@ REACH = ../../reach
 
 .PHONY: clean
 clean:
-	rm -rf build/*.main.mjs build/*.sol.json
+	rm -rf build
 
 build/%.main.mjs: %.rsh
 	$(REACH) compile $^ main
