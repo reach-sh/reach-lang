@@ -977,10 +977,6 @@ This operation may not be used with @reachin{REMOTE_FUN.bill}.}
 
 ]
 
-@margin-note{
-  Remote objects do not yet support interacting with @tech{non-network tokens}.
-}
-
 @subsubsection{Mappings: creation and modification}
 
 @(mint-define! '("Map"))

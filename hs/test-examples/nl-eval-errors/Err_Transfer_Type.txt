@@ -1,0 +1,1 @@
+reachc: error: ./Err_Transfer_Type.rsh:14:9:dot: Pay amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: Tuple(UInt, Tuple(UInt))
