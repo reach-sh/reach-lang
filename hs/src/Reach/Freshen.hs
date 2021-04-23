@@ -82,7 +82,7 @@ instance Freshen DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> fu fa
-    DLE_Remote at fs av m pamt as bill nonNetTokRecv -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> fu bill <*> pure nonNetTokRecv
+    DLE_Remote at fs av m pamt as bill wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> fu bill <*> pure wbill
 
 instance {-# OVERLAPS #-} Freshen LLCommon where
   fu = \case

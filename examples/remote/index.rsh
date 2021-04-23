@@ -1,4 +1,5 @@
 'reach 0.1';
+'use strict';
 
 const Posn = Struct([["x", UInt], ["y", UInt]]);
 const PosnO = Object({x: UInt, y: UInt});

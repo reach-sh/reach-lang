@@ -45,23 +45,12 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
   const amt = stdlib.parseCurrency(0.1);
 
-  // const firstAllowed = await gil.allowance(remoteAddr);
-  // console.log(`Allowed ${accAlice.networkAccount.address} ${firstAllowed}`);
-  // console.log(`Approving ${accAlice.networkAccount.address} ${amt}`);
-  // await gil.approve(remoteAddr, amt);
-  // const allowed = await gil.allowance(remoteAddr);
-  // console.log(`Allowed ${accAlice.networkAccount.address} ${allowed}`);
-
   await Promise.all([
     backend.Alice(ctcAlice, {
       getAddr: (() => remoteAddr),
       getCT: (() => [ amt, remoteAddr ]),
       getGIL: (() => gil.id),
       getZMD: (() => zorkmid.id),
-      checkBal: (async () => {
-        const bal = await gil.balanceOf(accAlice);
-        console.log(`GIL Bal: ${bal}`)
-      })
     }),
     backend.Bob(ctcBob, {
       getX: (() => 4),

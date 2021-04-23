@@ -43,7 +43,7 @@ dontWriteSol :: Bool
 dontWriteSol = False
 
 includeRequireMsg :: Bool
-includeRequireMsg = True
+includeRequireMsg = False
 
 maxDepth :: Int
 maxDepth = 15
@@ -631,6 +631,7 @@ solCom = \case
     -- exactly what OpenZeppelin does
     netTokPaid <- solArg net
     ks' <- mapM (\ (amt, ty) -> (,) <$> solArg amt <*> solArg ty) ks
+    let getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
     nonNetTokApprovals <- mapM (\ (amt, ty) -> do
       let approve = solApply "tokenApprove" [ty, av', amt]
       return $ solRequire "Approving remote ctc to transfer tokens" approve <> semi) ks'
@@ -641,13 +642,12 @@ solCom = \case
         let req = solRequire "Ensure remote ctc transferred approved funds" eq <> semi
         return $ vsep [ req ]) ks'
     bill' <- mapM (\ (amt, ty) -> (,) <$> solArg amt <*> solArg ty) bill
-    (getExpectedNonNetTokBals, checkExpectedNonNetTokBals) <- unzip <$> mapM (\ (amt, ty) -> do
+    (getExpectedNonNetTokBals, checkExpectedNonNetTokBals) <- unzip <$> mapM (\ (amt, tok) -> do
         balBefore <- allocVar
         -- Track non-network token balance before remote call
-        let balance = solApply "tokenBalanceOf" [ty, "address(this)"]
-        let s1 = solSet ("uint256" <+> balBefore) balance
+        let s1 = solSet ("uint256" <+> balBefore) $ getBalance tok
         -- After remote call, check if we got paid expected amount
-        sub <- solPrimApply SUB [ balance, balBefore ]
+        sub <- solPrimApply SUB [ getBalance tok, balBefore ]
         s2 <- solRequire "remote transferred non-network tokens" <$> solEq sub amt
         return (s1, s2 <> semi)
       ) bill'
@@ -659,10 +659,9 @@ solCom = \case
         tv_before <- allocVar
         tokArg <- solArg tok
         -- Get balances of non-network tokens before call
-        let getBalance = solApply "tokenBalanceOf" [tokArg, "address(this)"]
-        let s1 = solSet ("uint256" <+> tv_before) getBalance
+        let s1 = solSet ("uint256" <+> tv_before) $ getBalance tokArg
         -- Get balances of non-network tokens after call
-        tokRecv <- solPrimApply SUB [getBalance, tv_before]
+        tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
         let s2 = solSet (nnTokRecv <> ".elem" <> pretty i) tokRecv
         return (s1, s2)
       ) (zip nonNetTokRecv [0..])
@@ -673,10 +672,9 @@ solCom = \case
         tv_before <- allocVar
         tokArg <- solArg tok
         paid <- maybe (return "0") solArg $ M.lookup tok nonNetToksPayAmt
-        let getBalance = solApply "tokenBalanceOf" [tokArg, "address(this)"]
-        sub <- solPrimApply SUB [getBalance, paid]
+        sub <- solPrimApply SUB [getBalance tokArg, paid]
         let s1 = solSet ("uint256" <+> tv_before) sub
-        tokRecv <- solPrimApply SUB [getBalance, tv_before]
+        tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
         s2 <- solRequire "remote did not transfer unexpected non-network tokens" <$> solEq tokRecv "0"
         return (s1, s2 <> semi)
       ) nnTokRecvZero

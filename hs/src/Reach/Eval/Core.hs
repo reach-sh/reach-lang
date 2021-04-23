@@ -40,7 +40,6 @@ import Reach.Warning
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
-import Reach.Texty (pretty)
 
 --- New Types
 
@@ -2354,7 +2353,7 @@ evalPrim p sargs =
                           case nnToksBilledType of
                             ST_Null -> T_Null
                             ST_Tuple ts -> T_Tuple $ map (const T_UInt) ts
-                            t -> impossible $ "Type of non-network tokens recieved is not [UInt]: " <> show (pretty t)
+                            _ -> impossible "Type of non-network tokens recieved is not [UInt]"
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksBilledZero =
             (\\) allTokens $ case fromMaybe (Right zero) mbill of
