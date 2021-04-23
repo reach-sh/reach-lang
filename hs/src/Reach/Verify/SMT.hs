@@ -449,8 +449,8 @@ dlvOccurs env bindings de =
     DLE_MapRef at _ fa -> _rec at fa
     DLE_MapSet at _ fa na -> _recs at [fa, na]
     DLE_MapDel at _ fa -> _rec at fa
-    DLE_Remote at _ av _ (DLPayAmt net ks) as bill (DLWithBill _ nonNetTokRecv _) ->
-      _recs at (av : net : pairList ks <> as <> pairList bill <> nonNetTokRecv)
+    DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
+      _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -496,9 +496,8 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
   DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
   DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
-  DLE_Remote _ _ av f (DLPayAmt net ks) as bill (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
+  DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
     <> paren (commaSep [sub net, subPair ks])
-    <> ".nonNetworkBill" <> paren (subPair bill)
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
   where
@@ -1065,7 +1064,7 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Just na
     DLE_MapDel at mpv fa ->
       smtMapUpdate at mpv fa $ Nothing
-    DLE_Remote at _ _ _ _ _ _ _ ->
+    DLE_Remote at _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
   where
     bo = O_Expr de

@@ -373,7 +373,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] [(DLArg, DLArg)] DLWithBill
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -404,10 +404,9 @@ instance Pretty DLExpr where
       DLE_MapSet _ mv kv nv ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
       DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
-      DLE_Remote _ _ av m amta as bill (DLWithBill _ nonNetTokRecv _) ->
+      DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
         "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
-        parens (render_das as) <> ".nonNetworkBill" <> parens (render_das bill) <>
-        ".withBill" <> parens (render_das nonNetTokRecv)
+        parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
 
 instance IsPure DLExpr where
   isPure = \case

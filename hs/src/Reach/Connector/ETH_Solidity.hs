@@ -333,9 +333,9 @@ instance DepthOf DLExpr where
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> depthOf [x, y]
     DLE_MapDel _ _ x -> depthOf x
-    DLE_Remote _ _ av _ (DLPayAmt net ks) as bill _ ->
+    DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
       add1 $ depthOf $ av : net :
-        pairList ks <> pairList bill <> as
+        pairList ks <> as
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\ (a, b) -> [a, b])
@@ -610,7 +610,7 @@ solType_withArgLoc t =
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as bill (DLWithBill nnTokRecvVar nonNetTokRecv nnTokRecvZero )) -> do
+  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nnTokRecvVar nonNetTokRecv nnTokRecvZero )) -> do
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
@@ -641,16 +641,6 @@ solCom = \case
         eq <- solEq allowance "0"
         let req = solRequire "Ensure remote ctc transferred approved funds" eq <> semi
         return $ vsep [ req ]) ks'
-    bill' <- mapM (\ (amt, ty) -> (,) <$> solArg amt <*> solArg ty) bill
-    (getExpectedNonNetTokBals, checkExpectedNonNetTokBals) <- unzip <$> mapM (\ (amt, tok) -> do
-        balBefore <- allocVar
-        -- Track non-network token balance before remote call
-        let s1 = solSet ("uint256" <+> balBefore) $ getBalance tok
-        -- After remote call, check if we got paid expected amount
-        sub <- solPrimApply SUB [ getBalance tok, balBefore ]
-        s2 <- solRequire "remote transferred non-network tokens" <$> solEq sub amt
-        return (s1, s2 <> semi)
-      ) bill'
     -- This is for when we don't know how much non-net tokens we will receive. i.e. `withBill`
     -- The amount of non-network tokens received will be stored in this tuple: nnTokRecvVar
     addMemVar nnTokRecvVar
@@ -710,7 +700,6 @@ solCom = \case
     return $
       vsep $
         nonNetTokApprovals <>
-        getExpectedNonNetTokBals <>
         getDynamicNonNetTokBals <>
         getUnexpectedNonNetTokBals <>
         [ solSet ("uint256" <+> v_before) e_before
@@ -719,7 +708,6 @@ solCom = \case
         ]
           <> checkUnexpectedNonNetTokBals
           <> setDynamicNonNetTokBals
-          <> checkExpectedNonNetTokBals
           <> checkNonNetTokAllowances
           <> pv'
   DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
