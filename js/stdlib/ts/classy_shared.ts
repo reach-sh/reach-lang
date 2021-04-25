@@ -12,25 +12,115 @@ type num = number | BigNumber
 const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
 
-export abstract class ReachStdlib {
-  abstract readonly typeDefs: TypeDefs
-  abstract readonly standardUnit: string
+// TODO
+export type Backend = {
+  _Connectors: {
+    ETH: {
+      ABI: string,
+      Bytecode: string,
+    }
+  }
+}
+// The CBR for these is always string
+// TODO: cut down the type params
+export type Token = string
+export type RawAddress = string
+export type Digest = string
+
+export interface CompiledStdlib {
+  // TODO
+}
+
+export interface ICtcInfo {}
+
+export interface ICtc<ConnectorTy extends TypeDef> {
+  getInfo: () => Promise<ICtcInfo>,
+  creationTime: () => Promise<BigNumber>,
+  sendrecv: (
+    funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
+    tys: Array<ConnectorTy>,
+    args: Array<any>, value: shared.MkPayAmt<Token>, out_tys: Array<ConnectorTy>,
+    onlyIf: boolean, soloSend: boolean,
+    timeout_delay: BigNumber | false, sim_p: (fake: shared.IRecv<RawAddress>) => Promise<shared.ISimRes<Digest, RawAddress, Token>>,
+  ) => Promise<shared.IRecv<string>>,
+  recv: (
+    okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
+    waitIfNotPresent: boolean,
+    timeout_delay: BigNumber | false,
+  ) => Promise<shared.IRecv<RawAddress>>,
+  wait: (delta: BigNumber) => Promise<BigNumber>,
+  iam: (some_addr: RawAddress) => RawAddress,
+  selfAddress: () => string,
+  stdlib: Object,
+}
+
+export interface IAcc<ConnectorTy extends TypeDef> {
+  networkAccount: unknown
+  address: string
+  stdlib: CompiledStdlib
+
+  deploy(bin: Backend): ICtc<ConnectorTy>
+  attach(bin: Backend, info: unknown): ICtc<ConnectorTy>
+  iam(addr: string): string
+  /** @deprecated just use acc.address */
+  getAddress(): string
+  // TODO: just construct it with the right debug label
+  setDebugLabel(newLabel: string): this
+}
+
+export abstract class ReachStdlib<ConnectorTy extends TypeDef> implements CompiledStdlib {
+  // misc network-specific impls
   // TODO: revisit the digest/prepForDigest point of abstraction
+  abstract readonly typeDefs: TypeDefs
   abstract prepForDigest(t: TypeDef, v: unknown): BytesLike
   abstract tokenEq(x: unknown, y: unknown): boolean
+
+  // Account
+  abstract newAccountFromSecret(secret: string): Promise<IAcc<ConnectorTy>>;
+  abstract newAccountFromMnemonic(mnemonic: string): Promise<IAcc<ConnectorTy>>;
+  abstract connectAccount(networkAccount: unknown): Promise<IAcc<ConnectorTy>>;
+  abstract getFaucet(): Promise<IAcc<ConnectorTy>>
+  abstract getDefaultAccount(): Promise<IAcc<ConnectorTy>>
+  abstract transfer(from: IAcc<ConnectorTy>, to: IAcc<ConnectorTy>, value: unknown, token?: any): Promise<unknown>
+  abstract fundFromFaucet(acc: IAcc<ConnectorTy>, value: unknown, token?: any): Promise<unknown>
+  abstract createAccount(): Promise<IAcc<ConnectorTy>>
+  abstract newTestAccount(startingBalance: unknown): Promise<IAcc<ConnectorTy>>
+
+  // Currency
+  abstract readonly standardUnit: string
+  abstract readonly atomicUnit: string
+  abstract parseCurrency(amt: shared.CurrencyAmount): BigNumber
+  abstract formatCurrency(amt: any, decimals?: number): string
 
   readonly opts: ReachStdlib_Opts;
   constructor(opts: ReachStdlib_Opts = {}) {
     opts = {
+      // XXX REACH_DEBUG from env will be stringy...
       REACH_DEBUG: false,
       REACH_CONNECTOR_MODE: 'ETH',
       ...opts,
     }
     this.opts = opts;
     // XXX We are turning a blind eye to mutation for now,
-    // but later should delete setDEBUG and only set it via the opts.
+    // but later should delete setDEBUG and only initialize it via the opts.
     if (opts.REACH_DEBUG) this.setDEBUG(true);
   }
+  // Type Defs
+  // This is annoying but I haven't learned how to do mixins w/ ts yet
+  get T_Null() { return this.typeDefs.T_Null; }
+  get T_Bool() { return this.typeDefs.T_Bool; }
+  get T_UInt() { return this.typeDefs.T_UInt; }
+  get T_Digest() { return this.typeDefs.T_Digest; }
+  get T_Address() { return this.typeDefs.T_Address; }
+  get T_Token() { return this.typeDefs.T_Token; }
+  T_Bytes(size: number) { return this.typeDefs.T_Bytes(size); }
+  T_Array(td: TypeDef, size: number) { return this.typeDefs.T_Array(td, size); }
+  T_Tuple(tds: TypeDef[]) { return this.typeDefs.T_Tuple(tds); }
+  T_Struct(namedTds: [string, TypeDef][]) { return this.typeDefs.T_Struct(namedTds); }
+  T_Object(tdMap: {[key: string]: TypeDef}) { return this.typeDefs.T_Object(tdMap); }
+  T_Data(tdMap: {[key: string]: TypeDef}) { return this.typeDefs.T_Data(tdMap); }
+  get UInt_max() { return this.typeDefs.T_UInt.maxValue; }
+
   /** @deprecated */
   setDEBUG(b: boolean): void { return shared.setDEBUG(b); }
   /** @deprecated */

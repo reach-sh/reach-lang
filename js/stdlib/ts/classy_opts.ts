@@ -1,6 +1,8 @@
 export interface ReachStdlib_Opts {
   readonly REACH_DEBUG?: boolean
   readonly REACH_CONNECTOR_MODE?: string
+  readonly REACH_FAUCET_SECRET?: string
+  readonly REACH_FAUCET_MNEMONIC?: string
 }
 
 export interface ETH_Like_Opts extends ReachStdlib_Opts {

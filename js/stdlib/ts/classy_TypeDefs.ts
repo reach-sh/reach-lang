@@ -43,6 +43,7 @@ export class A_T_Bool extends TypeDef {
 
 export abstract class A_T_UInt extends TypeDef {
   abstract readonly width: number
+  get maxValue(): BigNumber { return ethers.BigNumber.from(2).pow(this.width * 8).sub(1) };
   name = 'UInt'
   canonicalize(uv: unknown): BigNumber {
     try {
