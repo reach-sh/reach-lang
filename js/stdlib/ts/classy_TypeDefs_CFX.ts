@@ -5,8 +5,9 @@ import { A_T_Address } from './classy_TypeDefs';
 function assertCfxAddress(s: string, prefix: string) {
   if (!s.startsWith(`${prefix}:`)) throw Error(`Expected address '${s}' to start with prefix '${prefix}'`);
   // +1 for the colon after the prefix
-  const expectedLength = prefix.length + 1 + 42;
-  if (s.length !== expectedLength) throw Error(`Expected address string '${s}' to be length ${expectedLength}, but it was ${s.length}.`);
+  const expectedLength = 42;
+  const unprefixed = s.split(':').slice(-1)[0];
+  if (unprefixed.length !== expectedLength) throw Error(`Expected address string '${s}' to be length ${expectedLength}, but it was ${s.length}.`);
   // TODO: more CFX address verification. Check the chechsum?
 }
 
@@ -19,7 +20,7 @@ export class CFX_T_Address extends ETH_T_Address {
     // TODO: support other networkIds
     // TODO: once we support mainnet & others, it's not just `net${networkId}` anymore
     if (networkId !== 999) throw Error(`XXX netId !== 999`);
-    this.prefix = `net${networkId}`;
+    this.prefix = `NET${networkId}`;
     // TODO: default value based on netId.
     // (requires figuring out a checksum which includes netId)
     // A random address.
@@ -28,7 +29,8 @@ export class CFX_T_Address extends ETH_T_Address {
   // TODO: more checking for correct CFX address format
   // Possibly: conversion from ETH-style address
   canonicalize(uv: string): string {
-    const unwrapped = unwrapAddress(uv) || uv;
+    // TODO: are there better choices re: upper case?
+    const unwrapped = (unwrapAddress(uv) || uv).toUpperCase();
     assertCfxAddress(uv, this.prefix);
     if (typeof unwrapped !== 'string') throw Error(`Expected address, but got ${uv}`);
     return unwrapped;

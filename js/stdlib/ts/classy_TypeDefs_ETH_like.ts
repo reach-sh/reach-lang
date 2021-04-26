@@ -214,9 +214,10 @@ export class T_Tuple extends A_T_Tuple implements ETH_TypeDef<unknown[], unknown
     }
   }
   unmunge(uv: unknown) {
-    if (!Array.isArray(uv)) throw Error(`Expected NV of tuple to be array, but got ${uv}`);
+    const uva = uv === false ? [] : uv as unknown[];
+    if (!Array.isArray(uva)) throw Error(`Expected NV of tuple to be array or false, but got ${uv}`);
     const {tds} = this;
-    return this.canonicalize(tds.map((td, i) => td.unmunge(uv[i])));
+    return this.canonicalize(tds.map((td, i) => td.unmunge(uva[i])));
   }
 }
 

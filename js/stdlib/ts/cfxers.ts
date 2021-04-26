@@ -199,8 +199,11 @@ export class Wallet {
 
   async sendTransaction(txn: any): Promise<{
     transactionHash: string,
-    wait: () => Promise<{transactionHash: string,
-  }>}> {
+    wait: () => Promise<{
+      from: string
+      transactionHash: string
+    }>
+  }> {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
@@ -217,7 +220,7 @@ export class Wallet {
         // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
         // @ts-ignore
         await transactionHashP.executed();
-        return {transactionHash};
+        return {from, transactionHash};
       },
     }
   }

@@ -174,6 +174,13 @@ export class ECtc extends Addressed implements ICtc<AnyETH_Ty> {
     this.stdlib.debug(`lastBlock from`, this._lastBlock, `to`, n);
     this._lastBlock = n;
   }
+  updateLast(o: {blockNumber?: number}): void {
+    if (!o.blockNumber) {
+      console.log(o);
+      throw Error(`Expected blockNumber in ${Object.keys(o)}`);
+    }
+    this.setLastBlock(o.blockNumber);
+  };
   async _waitUntilTime(targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> {
     const {stdlib} = this;
     targetTime = stdlib.bigNumberify(targetTime);
@@ -282,12 +289,119 @@ export class ECtc extends Addressed implements ICtc<AnyETH_Ty> {
     waitIfNotPresent: boolean,
     timeout_delay: BigNumber | false,
   ): Promise<Recv> {
-    // XXX
-    void(okNum);
-    void(out_tys);
-    void(waitIfNotPresent);
-    void(timeout_delay);
-    throw Error(`TODO _recv_impl`);
+    const {stdlib, bin, attacher} = this;
+    const {T_Tuple} = stdlib.typeDefs;
+    const isFirstMsgDeploy = (okNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
+    const lastBlock = await this._getLastBlock();
+    const ok_evt = `e${okNum}`;
+    stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, timeout_delay, `--- START`);
+
+    // look after the last block
+    const block_poll_start_init: number =
+      lastBlock + (isFirstMsgDeploy ? 0 : 1);
+    let block_poll_start: number = block_poll_start_init;
+    let block_poll_end = block_poll_start;
+    while (!timeout_delay || stdlib.lt(block_poll_start, stdlib.add(lastBlock, timeout_delay))) {
+      stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, `--- GET`, block_poll_start, block_poll_end);
+      const es = await this._getLogs(block_poll_start, block_poll_end, ok_evt);
+      if (es.length == 0) {
+        stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, timeout_delay, `--- RETRY`);
+        block_poll_start = block_poll_end;
+
+        await Timeout.set(1);
+        block_poll_end = await stdlib.getNetworkTimeNumber();
+        if ( waitIfNotPresent && block_poll_start == block_poll_end ) {
+          await this._waitUntilTime(stdlib.bigNumberify(block_poll_end + 1));
+        }
+        if ( block_poll_start <= lastBlock ) {
+          block_poll_start = block_poll_start_init; }
+
+        continue;
+      } else {
+        stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, timeout_delay, `--- OKAY`);
+
+        const ok_e = es[0];
+        const ok_r = await stdlib.fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
+        void(ok_r);
+        const ok_t = await attacher.provider.getTransaction(ok_e.transactionHash);
+        // The .gas field doesn't exist on this anymore, apparently?
+        // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
+
+        if (ok_t.blockNumber) {
+          stdlib.assert(ok_t.blockNumber === ok_r.blockNumber,
+            'recept & transaction block numbers should match');
+          if (ok_e.blockNumber) {
+            stdlib.assert(ok_t.blockNumber === ok_e.blockNumber,
+              'event & transaction block numbers should match');
+          }
+        } else {
+          // XXX For some reason ok_t sometimes doesn't have blockNumber
+          console.log(`WARNING: no blockNumber on transaction.`);
+          console.log(ok_t);
+        }
+
+        stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, `--- AT`, ok_r.blockNumber);
+        this.updateLast(ok_r);
+        const ok_ed = await this._getEventData(ok_evt, ok_e);
+        stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, `--- DATA --`, ok_ed);
+        const ok_vals = ok_ed[0][1];
+
+        stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, `--- MSG --`, ok_vals);
+        // TODO: correct specialized typing on T_Tuple args for ETH_like stdlib
+        const data = (T_Tuple(out_tys) as unknown as ETH_TypeDef<unknown[], unknown>).unmunge(ok_vals);
+
+        const getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
+          let dhead = [attacher.shad, attacher.label, 'recv', ok_evt, '--- getLog', l_evt, l_ctc];
+          stdlib.debug(dhead);
+          const theBlock = ok_r.blockNumber;
+          const l_e = (await this._getLogs(theBlock, theBlock, l_evt))[0];
+          dhead = [...dhead, 'log', l_e];
+          stdlib.debug(dhead);
+          const l_ed = (await this._getEventData(l_evt, l_e))[0];
+          dhead = [...dhead, 'data', l_ed];
+          stdlib.debug(dhead);
+          const l_edu = l_ctc.unmunge(l_ed);
+          dhead = [...dhead, 'unmunge', l_edu];
+          stdlib.debug(dhead);
+          return l_edu;
+        };
+        const getOutput = (o_lab:string, o_ctc:any): Promise<any> =>
+          getLog(`oe_${o_lab}`, o_ctc);
+
+        stdlib.debug(`${attacher.shad}: ${attacher.label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
+        const { from } = ok_t;
+        return {
+          data, getOutput, from,
+          didTimeout: false,
+          time: stdlib.bigNumberify(ok_r.blockNumber),
+        };
+      }
+    }
+
+    stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, timeout_delay, '--- TIMEOUT');
+    return {didTimeout: true} ;
+  }
+  private async _getEventData(
+    ok_evt: string, ok_e: ILog
+  ): Promise<Array<any>> {
+    const ethersC = await this._getC();
+    const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
+    const { args } = ethersC.interface.parseLog(ok_e);
+    return ok_args_abi.map(a => args[a.name]);
+  }
+  private async _getLogs(
+    fromBlock: number, toBlock: number, ok_evt: string,
+  ): Promise<ILog[]> {
+    const {attacher} = this;
+    if ( fromBlock > toBlock ) { return []; }
+    const ethersC = await this._getC();
+    return await attacher.provider.getLogs({
+      fromBlock,
+      toBlock,
+      address: ethersC.address,
+      topics: [ethersC.interface.getEventTopic(ok_evt)],
+    });
+
   }
   private async _callC(
     dhead: any, funcName: string, arg: any, pay: PayAmt,
@@ -340,6 +454,7 @@ export class ECtc extends Addressed implements ICtc<AnyETH_Ty> {
 }
 
 interface EthersContract {
+  interface: real_ethers.utils.Interface;
   address: string
 }
 export class EAcc implements IAcc<AnyETH_Ty> {
@@ -438,15 +553,33 @@ export class EAcc implements IAcc<AnyETH_Ty> {
 export interface INetAcc {
   address?: string
   getAddress?(): string|Promise<string>
-  sendTransaction(...args: any): Promise<{wait: () => Promise<IReceipt>}>
+  sendTransaction(...args: any): Promise<{wait: () => Promise<ITransaction>}>
 }
 
 export interface IReceipt {
   transactionHash: string
+  blockNumber: number
+  from: string
   status?: unknown
 }
 
+export interface ITransaction {
+  transactionHash: string
+  blockNumber?: number
+  from: string
+}
+
+export interface ILog {
+  blockNumber: number
+  transactionHash: string
+  topics: string[]
+  data: string
+}
+
 export interface IProvider {
+  getBalance(addr: string): Promise<BigNumber>;
+  getLogs(arg0: { fromBlock: number; toBlock: number; address: string; topics: string[]; }): Promise<ILog[]>
+  getTransaction(transactionHash: string): Promise<ITransaction>
   on(evt: string, onBlock: (currentTimeNum: number | BigNumber) => unknown): void
   off(evt: string, onBlock: (currentTimeNum: number | BigNumber) => unknown): void
   getBlockNumber(): Promise<number>
@@ -545,7 +678,13 @@ export abstract class ETH_Like<
   async getDefaultAccount(): Promise<EAcc> {
     throw Error(`TODO: getDefaultAccount`);
   }
-  async transfer(from: EAcc, to: EAcc, value: unknown, token?: unknown): Promise<IReceipt> {
+  async balanceOf(acc: EAcc): Promise<BigNumber> {
+    const addr = acc.address;
+    if (!addr) throw Error(`Address missing, can't get balance of: '${acc.address}`);
+    const provider = await this.getProvider();
+    return this.bigNumberify(await provider.getBalance(addr));
+  }
+  async transfer(from: EAcc, to: EAcc, value: unknown, token?: unknown): Promise<ITransaction> {
     const sender = from.networkAccount;
     const receiver = to.address;
     const valueb = this.bigNumberify(value);
@@ -661,7 +800,7 @@ export abstract class ETH_Like<
     }
     return this._dummyAccount;
   }
-  async stepTime(): Promise<IReceipt> {
+  async stepTime(): Promise<ITransaction> {
     this.requireIsolatedNetwork('stepTime');
     const faucet = await this.getFaucet();
     const acc = await this.getDummyAccount();
@@ -673,7 +812,7 @@ export abstract class ETH_Like<
   }
   private async doTxn(
     dhead: object,
-    tp: Promise<{wait: () => Promise<IReceipt>}>,
+    tp: Promise<{wait: () => Promise<ITransaction>}>,
   ): Promise<IReceipt> {
     this.debug({...dhead, step: `pre call`});
     const rt = await tp;
@@ -687,7 +826,7 @@ export abstract class ETH_Like<
     return ro;
   }
 
-  private async fetchAndRejectInvalidReceiptFor(txHash: string) {
+  async fetchAndRejectInvalidReceiptFor(txHash: string): Promise<IReceipt> {
     const provider = await this.getProvider();
     const r = await provider.getTransactionReceipt(txHash);
     return await this.rejectInvalidReceiptFor(txHash, r);

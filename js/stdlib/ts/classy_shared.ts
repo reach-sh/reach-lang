@@ -12,12 +12,14 @@ type num = number | BigNumber
 const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
 
-// TODO
+// TODO: ALGO
+type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 export type Backend = {
   _Connectors: {
     ETH: {
       ABI: string,
       Bytecode: string,
+      deployMode: DeployMode,
     }
   }
 }
@@ -85,6 +87,7 @@ export abstract class ReachStdlib<ConnectorTy extends TypeDef> implements Compil
   abstract fundFromFaucet(acc: IAcc<ConnectorTy>, value: unknown, token?: any): Promise<unknown>
   abstract createAccount(): Promise<IAcc<ConnectorTy>>
   abstract newTestAccount(startingBalance: unknown): Promise<IAcc<ConnectorTy>>
+  abstract balanceOf(acc: IAcc<ConnectorTy>): Promise<BigNumber>
 
   // Currency
   abstract readonly standardUnit: string
