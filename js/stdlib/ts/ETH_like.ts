@@ -344,8 +344,9 @@ export class ECtc extends Addressed implements ICtc<AnyETH_Ty> {
           }
         } else {
           // XXX For some reason ok_t sometimes doesn't have blockNumber
-          console.log(`WARNING: no blockNumber on transaction.`);
-          console.log(ok_t);
+          // console.log(`WARNING: no blockNumber on transaction.`);
+          // console.log(ok_t);
+          // ^ Disabled warning b/c this always happens on CFX
         }
 
         stdlib.debug(attacher.shad, ':', attacher.label, 'recv', ok_evt, `--- AT`, ok_r.blockNumber);
