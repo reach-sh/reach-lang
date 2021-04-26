@@ -2,9 +2,9 @@ import cfxsdk from 'js-conflux-sdk';
 import real_ethers from 'ethers';
 import * as cfxers from './cfxers';
 import { ReachStdlib, IAcc, ICtc, ICtcInfo, Backend, Token } from './classy_shared';
-import { CFX_Opts, ETH_Like_Opts } from './classy_opts';
+import { CFX_Opts, ETH_Like_Opts, ETH_Opts } from './classy_opts';
 import { CFX_TypeDefs } from './classy_TypeDefs_CFX';
-import { ETH_TypeDef } from './classy_TypeDefs_ETH_like';
+import { ETH_TypeDef, ETH_TypeDefs } from './classy_TypeDefs_ETH_like';
 import { CurrencyAmount, IRecv, OnProgress } from './shared';
 import { ConnectorMode, getConnectorMode } from './ConnectorMode';
 import Timeout from 'await-timeout';
@@ -15,6 +15,14 @@ type AnyETH_Ty = ETH_TypeDef<unknown, unknown>;
 type Address = string
 type Recv = IRecv<Address>
 type PayAmt = [BigNumber, [BigNumber, Token][]]
+type Hash = string
+type ContractInfo = {
+  address: Address,
+  creation_block: number,
+  transactionHash?: Hash,
+  init?: ContractInitInfo,
+};
+
 
 const ERC20_ABI = [
   { "constant": false,
@@ -564,7 +572,7 @@ export interface IReceipt {
 }
 
 export interface ITransaction {
-  transactionHash: string
+  transactionHash?: string
   blockNumber?: number
   from: string
 }
@@ -826,7 +834,8 @@ export abstract class ETH_Like<
     return ro;
   }
 
-  async fetchAndRejectInvalidReceiptFor(txHash: string): Promise<IReceipt> {
+  async fetchAndRejectInvalidReceiptFor(txHash?: string): Promise<IReceipt> {
+    if (typeof txHash !== 'string') throw Error(`Expected txHash, got '${txHash}'`);
     const provider = await this.getProvider();
     const r = await provider.getTransactionReceipt(txHash);
     return await this.rejectInvalidReceiptFor(txHash, r);
@@ -863,6 +872,137 @@ export function parseNetworkId(opts: CFX_Opts) {
   return opts.networkId
     || (opts.CFX_NETWORK_ID && parseInt(opts.CFX_NETWORK_ID.toString()))
     || CFX.DEFAULT_CFX_NETWORK_ID;
+}
+
+export class ETH extends ETH_Like<real_ethers.providers.Provider, real_ethers.Wallet> {
+  static readonly DEFAULT_ETH_NODE_URI = 'http://localhost:8545'
+  readonly standardUnit = 'ETH';
+  readonly atomicUnit = 'WEI';
+  readonly typeDefs: ETH_TypeDefs;
+  constructor(opts: ETH_Opts) {
+    super({
+      ethers: real_ethers,
+      provider: new real_ethers.providers.JsonRpcProvider(
+        opts.ETH_NODE_URI || ETH.DEFAULT_ETH_NODE_URI
+      ),
+      ...opts,
+    });
+    this.typeDefs = new ETH_TypeDefs();
+  }
+
+  async _getDefaultFaucet(): Promise<EAcc> {
+    const provider = await this.getProvider();
+    // TODO: teach ts what the specialized type of provider is in this branch
+    const signer = (provider as real_ethers.providers.StaticJsonRpcProvider).getSigner();
+    // TODO: this signer can't do all of the things a Wallet can...
+    // Should we embed the ETH signer's secret in the code, like we do with CFX?
+    return await this.connectAccount(signer as unknown as real_ethers.Wallet);
+  }
+  async verifyContract(ctcInfo: ContractInfo, backend: Backend): Promise<true> {
+    const { ABI, Bytecode } = backend._Connectors.ETH;
+    const { address, creation_block, init } = ctcInfo;
+    const { argsMay } = initOrDefaultArgs(init);
+    const factory = new this.ethers.ContractFactory(ABI, Bytecode);
+    this.debug('verifyContract:', address)
+    this.debug(ctcInfo);
+
+    const provider = await this.getProvider();
+    const now = await this.getNetworkTimeNumber();
+
+    const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
+    this.debug('verifyContract: checking logs for', deployEvent, '...');
+    // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
+    // "Keep in mind that many backends will discard old events"
+    // TODO: find another way to validate creation block if much time has passed?
+    const logs = await provider.getLogs({
+      fromBlock: creation_block,
+      toBlock: now,
+      address: address,
+      topics: [factory.interface.getEventTopic(deployEvent)],
+    });
+    if (logs.length < 1) {
+      throw Error(`Contract was claimed to be deployed at ${creation_block},`
+      + ` but the current block is ${now} and it hasn't been deployed yet.`
+      );
+    }
+
+    const log = logs[0];
+    if (log.blockNumber !== creation_block) {
+      throw Error(
+        `Contract was deployed at blockNumber ${log.blockNumber},`
+        + ` but was claimed to be deployed at ${creation_block}.`
+      );
+    }
+
+    this.debug(`verifyContract: checking code...`)
+    // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
+    // We can safely getCode at the current block;
+    // Reach programs don't change their ETH code over time.
+    const actual = await provider.getCode(address);
+
+    // XXX should this also pass {value}, like factory.deploy() does?
+    const deployData = factory.getDeployTransaction(...argsMay).data;
+    if (typeof deployData !== 'string') {
+      // TODO: could also be Ethers.utils.bytes, apparently? Or undefined... why?
+      throw Error(`Impossible: deployData is not string ${deployData}`);
+    }
+    if (!deployData.startsWith(backend._Connectors.ETH.Bytecode)) {
+      throw Error(`Impossible: contract with args is not prefixed by backend Bytecode`);
+    }
+
+    // FIXME this is based on empirical observation, feels hacky
+    // deployData looks like this: [init][setup][body][teardown]
+    // actual looks like this:     [init][body]
+    // XXX the labels "init", "setup", and "teardown" are probably misleading
+    // FIXME: for 0-arg contract deploys, it appears that:
+    // * "init" is of length 13
+    // * "setup" is not consistent in content, but is of length 156
+    // * "teardown" is of length 0
+    // FIXME: for n-arg contract deploys, it appears that:
+    // * "init" is of length 13
+    // * "setup" is of length >= 0 (and probably >= 156)
+    // * "teardown" is of length >= 0
+    const initLen = 13;
+    const setupLen = 156;
+    const expected = deployData.slice(0, initLen) + deployData.slice(initLen + setupLen);
+
+    if (expected.length <= 0) {
+      throw Error(`Impossible: contract expectation is empty`);
+    }
+
+    if (actual !== expected) {
+      // FIXME: Empirical observation says that 0-arg contract deploys
+      // should === expected. However, this is fragile (?), so it's ok
+      // to only pass the next check.
+
+      // FIXME: the 13-char header is also fragile, but we're just
+      // running with that assumption for now.
+
+      const deployNoInit = deployData.slice(initLen);
+      const actualNoInit = actual.slice(initLen);
+      if (actualNoInit.length === 0 || !deployNoInit.includes(actualNoInit)) {
+        // FIXME: this display is not so helful for the n-arg contract deploy case.
+        const displayLen = 60;
+        console.log('--------------------------------------------');
+        console.log('expected start: ' + expected.slice(0, displayLen));
+        console.log('actual   start: ' + actual.slice(0, displayLen));
+        console.log('--------------------------------------------');
+        console.log('expected   end: ' + expected.slice(expected.length - displayLen));
+        console.log('actual     end: ' + actual.slice(actual.length - displayLen));
+        console.log('--------------------------------------------');
+        console.log('expected   len: ' + expected.length);
+        console.log('actual     len: ' + actual.length);
+        console.log('--------------------------------------------');
+        throw Error(`Contract bytecode does not match expected bytecode.`);
+      }
+    }
+
+    // We are not checking the balance or the contract storage, because we know
+    // that the code is correct and we know that the code mandates the way that
+    // those things are initialized
+
+    return true;
+  }
 }
 
 export class CFX extends ETH_Like<cfxers.providers.Provider, cfxers.Wallet> {
