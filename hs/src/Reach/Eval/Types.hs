@@ -90,3 +90,11 @@ instance SrcLocOf DLValue where
     DLV_Obj at _ -> at
     DLV_Data at _ _ _ -> at
     DLV_Struct at _ -> at
+
+data TransferType
+  = TT_Pay
+  | TT_Bill
+  deriving (Eq, Generic)
+
+instance Show TransferType where
+  show k = drop 3 $ conNameOf k

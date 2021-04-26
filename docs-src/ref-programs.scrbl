@@ -959,25 +959,30 @@ In addition, a @tech{remote function} may be augmented with one of the following
 
 @itemize[
 
-@item{@reachin{REMOTE_FUN.pay(AMT)} --- Returns a @tech{remote function} that receives @reachin{AMT} @tech{network tokens} @emph{from} the caller when it is called.}
+@item{@reachin{REMOTE_FUN.pay(AMT)} --- Returns a @tech{remote function} that receives a @tech{pay amount}, @reachin{AMT}, @emph{from} the caller when it is called.}
 
-@item{@(mint-define! '("bill")) @reachin{REMOTE_FUN.bill(AMT)} --- Returns a @tech{remote function} that provides @reachin{AMT} @tech{network tokens} @emph{to} the caller when it returns.}
+@item{@(mint-define! '("bill")) @reachin{REMOTE_FUN.bill(AMT)} --- Returns a @tech{remote function} that provides a @tech{pay amount}, @reachin{AMT}, @emph{to} the caller when it returns.}
 
-@item{@(mint-define! '("withBill")) @reachin{REMOTE_FUN.withBill()} --- Returns a @tech{remote function} that provides some number of @tech{network tokens} @emph{to} the caller when it returns.
-The exact amount is returned from the invocation by wrapping the original result in a tuple, where the amount is the first element and the original result is the second element.
+@item{@(mint-define! '("withBill")) @reachin{REMOTE_FUN.withBill()} --- Returns a @tech{remote function} that provides some number of @tech{network tokens} and, possibly, @tech{non-network tokens} @emph{to} the caller when it returns.
+The exact amount is returned from the invocation by wrapping the original result in a tuple.
+
+If the remote contract is not expected to return @tech{non-network tokens} then a pair is returned, where the amount of @tech{network tokens} received is the first element, and the original result is the second element.
+
+If the remote contract is expected to return @tech{non-network tokens} then a triple is returned, where the amount of @tech{network tokens} received
+is the first element, a tuple of the @tech{non-network tokens} received is the second element, and the original result is the third element.
+If the caller expects to receive @tech{non-network tokens}, they must provide a tuple of tokens as an argument to @reachin{withBill}. The ordering of
+tokens in the argument is reserved when returning the amounts received.
 For example,
+
 @reach{
- const [ returned, randomValue ] =
-   randomOracle.getRandom.pay(stipend).withBill()();
+ const [ returned, [gilRecv, zmdRecv], randomValue ] =
+   randomOracle.getRandom.pay(stipend).withBill([gil, zmd])();
 }
-might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use.
-This may not be used with @reachin{REMOTE_FUN.bill}.}
+
+might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of @tt{GIL} and @tt{ZMD}.
+This operation may not be used with @reachin{REMOTE_FUN.bill}.}
 
 ]
-
-@margin-note{
-  Remote objects do not yet support interacting with @tech{non-network tokens}.
-}
 
 @subsubsection{Mappings: creation and modification}
 

@@ -333,9 +333,12 @@ instance DepthOf DLExpr where
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> depthOf [x, y]
     DLE_MapDel _ _ x -> depthOf x
-    DLE_Remote _ _ av _ amta as -> add1 $ depthOf $ av : amta : as
+    DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
+      add1 $ depthOf $ av : net :
+        pairList ks <> as
     where
       add1 m = (+) 1 <$> m
+      pairList = concatMap (\ (a, b) -> [a, b])
 
 solVar :: AppT DLVar
 solVar v = do
@@ -607,7 +610,7 @@ solType_withArgLoc t =
 solCom :: AppT PLCommon
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f amta as) -> do
+  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nnTokRecvVar nonNetTokRecv nnTokRecvZero )) -> do
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
@@ -615,7 +618,8 @@ solCom = \case
           PV_Eff -> T_Null
           PV_Let _ dv ->
             case varType dv of
-              T_Tuple [_, x] -> x
+              T_Tuple [_, _, x] -> x
+              T_Tuple [_, x]    -> x
               _ -> impossible $ "remote not tuple"
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
@@ -626,28 +630,70 @@ solCom = \case
     v_before <- allocVar
     -- Note: Not checking that the address is really a contract and not doing
     -- exactly what OpenZeppelin does
-    amta' <- solArg amta
-    let call' = ".call{value:" <+> amta' <> "}"
+    netTokPaid <- solArg net
+    ks' <- mapM (\ (amt, ty) -> (,) <$> solArg amt <*> solArg ty) ks
+    let getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
+    nonNetTokApprovals <- mapM (\ (amt, ty) -> do
+      let approve = solApply "tokenApprove" [ty, av', amt]
+      return $ solRequire "Approving remote ctc to transfer tokens" approve <> semi) ks'
+    checkNonNetTokAllowances <- mapM (\ (_, ty) -> do
+        -- Ensure that the remote ctc transfered the approved funds
+        let allowance = solApply "tokenAllowance" [ty, "address(this)", av']
+        eq <- solEq allowance "0"
+        let req = solRequire "Ensure remote ctc transferred approved funds" eq <> semi
+        return $ vsep [ req ]) ks'
+    -- This is for when we don't know how much non-net tokens we will receive. i.e. `withBill`
+    -- The amount of non-network tokens received will be stored in this tuple: nnTokRecvVar
+    addMemVar nnTokRecvVar
+    let nnTokRecv = solMemVar nnTokRecvVar
+    (getDynamicNonNetTokBals, setDynamicNonNetTokBals) <- unzip <$> mapM (\ (tok, i :: Int) -> do
+        tv_before <- allocVar
+        tokArg <- solArg tok
+        -- Get balances of non-network tokens before call
+        let s1 = solSet ("uint256" <+> tv_before) $ getBalance tokArg
+        -- Get balances of non-network tokens after call
+        tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
+        let s2 = solSet (nnTokRecv <> ".elem" <> pretty i) tokRecv
+        return (s1, s2)
+      ) (zip nonNetTokRecv [0..])
+    let nonNetToksPayAmt = foldr' (\ (a, t) acc -> M.insert t a acc) M.empty ks
+    -- Ensure that the non-net tokens we are NOT expecting to receive
+    -- do not have a change in balance
+    (getUnexpectedNonNetTokBals, checkUnexpectedNonNetTokBals) <- unzip <$> mapM (\ tok -> do
+        tv_before <- allocVar
+        tokArg <- solArg tok
+        paid <- maybe (return "0") solArg $ M.lookup tok nonNetToksPayAmt
+        sub <- solPrimApply SUB [getBalance tokArg, paid]
+        let s1 = solSet ("uint256" <+> tv_before) sub
+        tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
+        s2 <- solRequire "remote did not transfer unexpected non-network tokens" <$> solEq tokRecv "0"
+        return (s1, s2 <> semi)
+      ) nnTokRecvZero
+    let call' = ".call{value:" <+> netTokPaid <> "}"
     let meBalance = "address(this).balance"
+    let billOffset :: Int -> Doc
+        billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
     pv' <- case pv of
       PV_Eff -> return []
       PV_Let _ dv -> do
         addMemVar dv
         sub' <- solPrimApply SUB [meBalance, v_before]
         let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
+        -- Non-network tokens received from remote call
+        let nnsub'l = [solSet (solMemVar dv <> ".elem1") nnTokRecv | not (null nonNetTokRecv)]
         dv_ty' <- solType $ varType dv
         let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
         addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
         let logl = ["emit" <+> go solMemVar ""]
         case rng_ty of
           T_Null ->
-            return $ sub'l <> logl
+            return $ sub'l <> nnsub'l <> logl
           _ -> do
             let de' = solApply "abi.decode" [v_return, parens rng_ty']
-            let de'l = [solSet (solMemVar dv <> ".elem1") de']
-            return $ sub'l <> de'l <> logl
+            let de'l = [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
+            return $ sub'l <> nnsub'l <> de'l <> logl
     let e_data = solApply "abi.encodeWithSelector" eargs
-    e_before <- solPrimApply SUB [meBalance, amta']
+    e_before <- solPrimApply SUB [meBalance, netTokPaid]
     let err_msg =
           case includeRequireMsg of
             True -> unsafeRedactAbsStr $ show (at, fs, ("remote " <> f <> " failed"))
@@ -656,10 +702,16 @@ solCom = \case
     -- it was before
     return $
       vsep $
+        nonNetTokApprovals <>
+        getDynamicNonNetTokBals <>
+        getUnexpectedNonNetTokBals <>
         [ solSet ("uint256" <+> v_before) e_before
         , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
         , solApply "checkFunReturn" [v_succ, v_return, solString err_msg] <> semi
         ]
+          <> checkUnexpectedNonNetTokBals
+          <> setDynamicNonNetTokBals
+          <> checkNonNetTokAllowances
           <> pv'
   DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv

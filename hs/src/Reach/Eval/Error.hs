@@ -38,9 +38,9 @@ data EvalError
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
   | Err_ToConsensus_NoTimeoutBlock
-  | Err_Pay_DoubleNetworkToken
-  | Err_Pay_DoubleToken
-  | Err_Pay_Type SLValTy
+  | Err_Transfer_DoubleNetworkToken TransferType
+  | Err_Transfer_DoubleToken TransferType
+  | Err_Transfer_Type TransferType SLValTy
   | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
@@ -136,6 +136,7 @@ data EvalError
   | Err_Token_OnCtor
   | Err_Token_InWhile
   | Err_Token_DynamicRef
+  | Err_WithBill_Type DLType
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -289,12 +290,12 @@ instance Show EvalError where
                   _ -> ": the second argument should have no arguments"
               _ -> ": the second argument should be an arrow, but got something else"
           _ -> ": expected one argument or two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
-    Err_Pay_DoubleToken ->
-      "Pay amount contains multiple non-network token amounts for the same token, but only one is allowed"
-    Err_Pay_DoubleNetworkToken ->
-      "Pay amount contains multiple network token amounts, but only one is allowed"
-    Err_Pay_Type sv ->
-      "Pay amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: " <> show_sv sv
+    Err_Transfer_DoubleToken tt ->
+      show tt <> " amount contains multiple non-network token amounts for the same token, but only one is allowed"
+    Err_Transfer_DoubleNetworkToken tt ->
+      show tt <> " amount contains multiple network token amounts, but only one is allowed"
+    Err_Transfer_Type tt sv ->
+      show tt <> " amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: " <> show_sv sv
     Err_App_Interact_NotFirstOrder ty ->
       "Invalid interact specification. Expected first-order type, got: "
         <> show ty
@@ -521,5 +522,7 @@ instance Show EvalError where
       "Token published within while, which Reach cannot track, yet."
     Err_Token_DynamicRef ->
       "Token reference based on dynamic computation, which Reach cannot track, yet."
+    Err_WithBill_Type ty ->
+      "`withBill` expects no arguments or a Tuple of Tokens, but received: " <> show (pretty ty)
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

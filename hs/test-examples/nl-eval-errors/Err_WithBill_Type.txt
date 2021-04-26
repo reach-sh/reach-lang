@@ -1,0 +1,1 @@
+reachc: error: ./Err_WithBill_Type.rsh:13:24:application: `withBill` expects no arguments or a Tuple of Tokens, but received: UInt

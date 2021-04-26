@@ -444,7 +444,7 @@ data SLPrimitive
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
-  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Maybe SLVal)) (Maybe RemoteFunMode)
+  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
   | SLPrim_balance
   deriving (Eq, Generic)
 

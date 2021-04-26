@@ -2,11 +2,12 @@ import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 import ethers from 'ethers';
 import * as fs from 'fs';
+import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
 
-  const startingBalance = stdlib.parseCurrency(1);
+  const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
@@ -34,11 +35,22 @@ import * as fs from 'fs';
   console.log(`Bob attaches to the Reach DApp.`);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
+  const gil = await launchToken("gil", "GIL");
+  await gil.mint(accAlice, startingBalance);
+  await gil.mint(accAlice, startingBalance);
+
+  const zorkmid = await launchToken("zorkmid", "ZMD");
+  await zorkmid.mint(accAlice, startingBalance);
+  await zorkmid.mint(accAlice, startingBalance);
+
   const amt = stdlib.parseCurrency(0.1);
+
   await Promise.all([
     backend.Alice(ctcAlice, {
       getAddr: (() => remoteAddr),
       getCT: (() => [ amt, remoteAddr ]),
+      getGIL: (() => gil.id),
+      getZMD: (() => zorkmid.id),
     }),
     backend.Bob(ctcBob, {
       getX: (() => 4),

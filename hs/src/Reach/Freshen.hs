@@ -82,7 +82,7 @@ instance Freshen DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> fu fa
-    DLE_Remote at fs av m amta as -> DLE_Remote at fs <$> fu av <*> pure m <*> fu amta <*> fu as
+    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
 
 instance {-# OVERLAPS #-} Freshen LLCommon where
   fu = \case
@@ -118,6 +118,11 @@ instance {-# OVERLAPS #-} Freshen LLCommon where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
+
+instance Freshen DLPayAmt where
+  fu = \case
+    DLPayAmt net ks ->
+      DLPayAmt <$> fu net <*> mapM (\ (amt, ty) -> (,) <$> fu amt <*> fu ty) ks
 
 instance {-# OVERLAPS #-} Freshen LLTail where
   fu = \case

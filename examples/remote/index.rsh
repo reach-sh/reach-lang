@@ -10,6 +10,8 @@ const CoolThing = {
   getX: Fun([], Struct([ ["x", Refine(UInt, (x => x > 2))],
                          ["y", UInt],
         ])),
+  payFn: Fun([Token], Null),
+  bilFn: Fun([Token], Null),
 };
 
 export const main = Reach.App(
@@ -17,6 +19,8 @@ export const main = Reach.App(
   [ Participant('Alice', {
       getAddr: Fun([], Address),
       getCT: Fun([], Tuple(UInt, Address)),
+      getGIL: Fun([], Token),
+      getZMD: Fun([], Token),
     }),
     Participant('Bob', {
       getX: Fun([], UInt),
@@ -48,6 +52,40 @@ export const main = Reach.App(
     const [ amtr, r2 ] = cty.getX.withBill()();
     transfer(amt / 2).to(B);
     transfer(amtr).to(A);
+    commit();
+
+
+    // Test transferring non-network tokens to and from a remote ctc
+
+    A.only(() => {
+      const gil = declassify(interact.getGIL());
+      const zmd = declassify(interact.getZMD());
+      assume(gil != zmd); });
+
+    A.publish(gil, zmd)
+     .pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
+    commit();
+
+    A.publish();
+    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has x gil, x zmd
+    commit();
+
+    B.publish();
+    ctx.bilFn.bill([ [amt, gil] ])(gil);  // CTC has 2x gil, x zmd
+    transfer(amt, gil).to(B);             // CTC has x gil, x zmd
+    commit();
+
+    A.publish();
+    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has 0 gil, x zmd
+    commit();
+
+    B.publish();
+    const [ netRecv, [ gilRecv ], _ ] = ctx.bilFn.withBill([ gil ])(gil);
+    transfer(netRecv).to(B);      // CTC has x gil, x zmd
+    transfer(gilRecv, gil).to(B); // CTC has 0 gil, x zmd
+    transfer(amt, zmd).to(B);     // CTC has 0 gil, 0 zmd
+
+
     commit();
 
     B.only(() => {

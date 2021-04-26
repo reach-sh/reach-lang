@@ -1710,6 +1710,29 @@ mustBeBytes = \case
 structKeyRegex :: App RE
 structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
 
+tokenPay :: Maybe DLArg -> DLArg -> B.ByteString -> ReaderT Env IO ()
+tokenPay mtok_a amt_a msg = do
+  amt_sv <- argToSV amt_a
+  doBalanceAssert mtok_a amt_sv PLE msg
+  doBalanceUpdate mtok_a SUB amt_sv
+
+getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (SLType, [DLArg])
+getBillTokens mbill billAmt = do
+  case mbill of
+    Just (Left arg) -> do
+      (ty, ae) <- typeOf arg
+      case (ty, ae) of
+        (T_Tuple ts, DLAE_Tuple tas)
+          | all (== T_Token) ts -> do
+            tas' <- mapM compileArgExpr tas
+            return (ST_Tuple $ map (const ST_UInt) ts, tas')
+        _ -> expect_ $ Err_WithBill_Type ty
+    Just (Right _) -> do
+      let nnBilled = pa_ks billAmt
+      return (ST_Tuple $ map (const ST_UInt) nnBilled, map snd nnBilled)
+    _ -> return (ST_Null, [])
+
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -2107,12 +2130,10 @@ evalPrim p sargs =
       let staticallyZero = \case
             DLA_Literal (DLL_Int _ 0) -> True
             _ -> False
-      DLPayAmt {..} <- compilePayAmt pay_sv
+      DLPayAmt {..} <- compilePayAmt TT_Pay pay_sv
       let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
-            amt_sv <- argToSV amt_a
-            doBalanceAssert mtok_a amt_sv PLE "balance sufficient for transfer"
+            tokenPay mtok_a amt_a "balance sufficient for transfer"
             saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_a amt_a mtok_a
-            doBalanceUpdate mtok_a SUB amt_sv
       one pa_net Nothing
       forM_ pa_ks $ \(a, t) -> one a $ Just t
       return $ public $ SLV_Null at "transfer.to"
@@ -2304,34 +2325,72 @@ evalPrim p sargs =
     SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
       billv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Just billv) Nothing)
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing)
     SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
-      zero_args
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just Nothing) Nothing)
+      at <- withAt id
+      nonNetToks <- zero_mone_arg $ SLV_Tuple at []
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing)
     SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
-      -- XXX support tokens
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at 0
       let amtv = fromMaybe zero mpay
-      amta <- compileCheckType T_UInt amtv
-      doBalanceAssert Nothing amtv PLE "balance sufficient for payment to remote object"
-      doBalanceUpdate Nothing SUB amtv
+      payAmt <- compilePayAmt TT_Pay amtv
+      tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
+      forM_ (pa_ks payAmt) $ \ (a, t) -> do
+        tokenPay (Just t) a "balance sufficient for payment to remote object"
+      billAmt <- case fromMaybe (Left zero) mbill of
+                    Left _  -> return $ DLPayAmt (DLA_Literal $ DLL_Int at 0) []
+                    Right v -> compilePayAmt TT_Bill v
+      (nnToksBilledType, nnToksBilledRecv) <- getBillTokens mbill billAmt
+      let shouldRetNNToks = case fromMaybe (Right zero) mbill of
+                              Left (SLV_Tuple _ ts) -> not $ null ts
+                              _ -> False
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
-      let rng' = ST_Tuple [ST_UInt, rng]
+      let rng' = ST_Tuple $ if shouldRetNNToks then [ST_UInt, nnToksBilledType, rng] else [ST_UInt, rng]
+      let postArg = if shouldRetNNToks then "(dom, [_, _, rng])" else "(dom, [_, rng])"
       let post' = flip fmap post $ \postv ->
-            jsClo at "post" "(dom, [_, rng]) => post(dom, rng)" $
+            jsClo at "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True) (\_ fs _ dargs -> DLE_Remote at fs aa m amta dargs)
-      apdvv <- doArrRef_ res' zero
+      nnTokReceived <- ctxt_mkvar $ DLVar at Nothing $
+                          case nnToksBilledType of
+                            ST_Null -> T_Null
+                            ST_Tuple ts -> T_Tuple $ map (const T_UInt) ts
+                            _ -> impossible "Type of non-network tokens recieved is not [UInt]"
+      allTokens <- fmap DLA_Var <$> readSt st_toks
+      let nnToksNotBilled = allTokens \\ nnToksBilledRecv
+      let withBill = DLWithBill nnTokReceived (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
+      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True)
+                (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
+      let getRemoteResults = do
+            apdvv <- doArrRef_ res' zero
+            case shouldRetNNToks of
+              True -> do
+                nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
+                res <- doArrRef_ res' $ SLV_Int at 2
+                return (apdvv, res, Just nnTokAmts)
+              False -> do
+                res <- doArrRef_ res' $ SLV_Int at 1
+                return (apdvv, res, Nothing)
+      (apdvv, res, mNonNetToksRecv) <- getRemoteResults
+      let withNonNetRecv f = case mNonNetToksRecv of { Nothing -> return (); Just t -> f t }
       doBalanceUpdate Nothing ADD apdvv
-      res <- doArrRef_ res' $ SLV_Int at 1
-      case fromMaybe (Just $ zero) mbill of
-        Nothing -> return $ public res'
-        Just epdvv -> do
-          cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op PEQ) [public epdvv, public apdvv]
+      case fromMaybe (Right zero) mbill of
+        Left _ -> do
+          forM_ (zip nnToksBilledRecv [0..length nnToksBilledRecv]) $ \ (t, i) ->
+            withNonNetRecv $ \ nnTokAmts -> do
+              doBalanceUpdate (Just t) ADD
+                =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
+          return $ public res'
+        _ -> do
+          sv <- argToSV $ pa_net billAmt
+          forM_ (pa_ks billAmt) $ \ (a, t) -> do
+            a' <- argToSV a
+            doBalanceUpdate (Just t) ADD a'
+          -- Ensure we're paid expected network tokens
+          cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op PEQ) [public sv, public apdvv]
           void $
             evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Assume True) $
               [cmp_v, public $ SLV_Bytes at "remote bill check"]
@@ -2354,6 +2413,10 @@ evalPrim p sargs =
     first_arg = case args of
       x : _ -> return $ x
       _ -> illegal_args
+    zero_mone_arg def = case args of
+      [x] -> return x
+      []  -> return def
+      _   -> illegal_args
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args
@@ -3166,8 +3229,8 @@ getBindingOrigin :: [DLArg] -> Maybe (SrcLoc, SLVar)
 getBindingOrigin [DLA_Var (DLVar _ b _ _)] = b
 getBindingOrigin _ = Nothing
 
-compilePayAmt :: SLVal -> App DLPayAmt
-compilePayAmt v = do
+compilePayAmt :: TransferType -> SLVal -> App DLPayAmt
+compilePayAmt tt v = do
   at <- withAt id
   (t, ae) <- typeOf v
   case (t, ae) of
@@ -3179,7 +3242,7 @@ compilePayAmt v = do
             (T_UInt, gae) -> do
               let ((seenNet, sks), DLPayAmt _ tks) = sa
               when seenNet $
-                expect_ $ Err_Pay_DoubleNetworkToken
+                expect_ $ Err_Transfer_DoubleNetworkToken tt
               a <- compileArgExpr gae
               return $ ((True, sks), DLPayAmt a tks)
             (T_Tuple [T_UInt, T_Token], DLAE_Tuple [amt_ae, token_ae]) -> do
@@ -3187,12 +3250,13 @@ compilePayAmt v = do
               amt_a <- compileArgExpr amt_ae
               token_a <- compileArgExpr token_ae
               when (token_a `elem` sks) $ do
-                expect_ $ Err_Pay_DoubleToken
+                expect_ $ Err_Transfer_DoubleToken tt
               let sks' = token_a : sks
               return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
-            _ -> expect_t v $ Err_Pay_Type
+            _ -> expect_t v $ Err_Transfer_Type tt
       snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
-    _ -> expect_t v $ Err_Pay_Type
+    _ -> expect_t v $ Err_Transfer_Type tt
+
 
 doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
 doToConsensus ks whos vas msg amt_e when_e mtime = do
@@ -3205,7 +3269,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   let ctepee t e = compileCheckType t =<< ensure_public =<< evalExpr e
   -- We go back to the original env from before the to-consensus step
   -- Handle sending
-  let compilePayAmt_ e = compilePayAmt =<< ensure_public =<< evalExpr e
+  let compilePayAmt_ e = compilePayAmt TT_Pay =<< ensure_public =<< evalExpr e
   let tc_send1 who = do
         let st_lpure = st {st_mode = SLM_LocalPure}
         (only_lifts, res) <-
