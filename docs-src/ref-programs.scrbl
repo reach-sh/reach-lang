@@ -963,10 +963,17 @@ In addition, a @tech{remote function} may be augmented with one of the following
 
 @item{@(mint-define! '("bill")) @reachin{REMOTE_FUN.bill(AMT)} --- Returns a @tech{remote function} that provides a @tech{pay amount}, @reachin{AMT}, @emph{to} the caller when it returns.}
 
-@item{@(mint-define! '("withBill")) @reachin{REMOTE_FUN.withBill()} --- Returns a @tech{remote function} that provides some number of @tech{network tokens} and @tech{non-network tokens} @emph{to} the caller when it returns.
-The exact amount is returned from the invocation by wrapping the original result in a tuple, where the amount of @tech{network tokens} received  is the first element, a tuple of the @tech{non-network tokens} received is the second element, and the original result is the third element.
-If the caller expects to receive @tech{non-network tokens}, they must provide a tuple of tokens as an argument to @reachin{withBill}. The ordering of tokens in the argument is reserved when returning the amounts received.
+@item{@(mint-define! '("withBill")) @reachin{REMOTE_FUN.withBill()} --- Returns a @tech{remote function} that provides some number of @tech{network tokens} and, possibly, @tech{non-network tokens} @emph{to} the caller when it returns.
+The exact amount is returned from the invocation by wrapping the original result in a tuple.
+
+If the remote contract is not expected to return @tech{non-network tokens} then a pair is returned, where the amount of @tech{network tokens} received is the first element, and the original result is the second element.
+
+If the remote contract is expected to return @tech{non-network tokens} then a triple is returned, where the amount of @tech{network tokens} received
+is the first element, a tuple of the @tech{non-network tokens} received is the second element, and the original result is the third element.
+If the caller expects to receive @tech{non-network tokens}, they must provide a tuple of tokens as an argument to @reachin{withBill}. The ordering of
+tokens in the argument is reserved when returning the amounts received.
 For example,
+
 @reach{
  const [ returned, [gilRecv, zmdRecv], randomValue ] =
    randomOracle.getRandom.pay(stipend).withBill([gil, zmd])();

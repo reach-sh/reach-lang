@@ -1716,8 +1716,8 @@ tokenPay mtok_a amt_a msg = do
   doBalanceAssert mtok_a amt_sv PLE msg
   doBalanceUpdate mtok_a SUB amt_sv
 
-getWithBillTokens :: Maybe (Either SLVal SLVal) -> Maybe DLPayAmt -> App (SLType, [DLArg])
-getWithBillTokens mbill billAmt = do
+getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (SLType, [DLArg])
+getBillTokens mbill billAmt = do
   case mbill of
     Just (Left arg) -> do
       (ty, ae) <- typeOf arg
@@ -1728,7 +1728,7 @@ getWithBillTokens mbill billAmt = do
             return (ST_Tuple $ map (const ST_UInt) ts, tas')
         _ -> expect_ $ Err_WithBill_Type ty
     Just (Right _) -> do
-      let nnBilled = maybe [] pa_ks billAmt
+      let nnBilled = pa_ks billAmt
       return (ST_Tuple $ map (const ST_UInt) nnBilled, map snd nnBilled)
     _ -> return (ST_Null, [])
 
@@ -2332,7 +2332,6 @@ evalPrim p sargs =
       nonNetToks <- zero_mone_arg $ SLV_Tuple at []
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing)
     SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
-      -- XXX support tokens
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at 0
@@ -2341,51 +2340,54 @@ evalPrim p sargs =
       tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
       forM_ (pa_ks payAmt) $ \ (a, t) -> do
         tokenPay (Just t) a "balance sufficient for payment to remote object"
+      billAmt <- case fromMaybe (Left zero) mbill of
+                    Left _  -> return $ DLPayAmt (DLA_Literal $ DLL_Int at 0) []
+                    Right v -> compilePayAmt TT_Bill v
+      (nnToksBilledType, nnToksBilledRecv) <- getBillTokens mbill billAmt
+      let shouldRetNNToks = case fromMaybe (Right zero) mbill of
+                              Left (SLV_Tuple _ ts) -> not $ null ts
+                              _ -> False
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
-      mBillAmt <- case fromMaybe (Left zero) mbill of
-                    Left _  -> return Nothing
-                    Right v -> compilePayAmt TT_Bill v <&> Just
-      (nnToksBilledType, nnToksBilledRecv) <- getWithBillTokens mbill mBillAmt
-      let rng' = ST_Tuple [ST_UInt, nnToksBilledType, rng]
+      let rng' = ST_Tuple $ if shouldRetNNToks then [ST_UInt, nnToksBilledType, rng] else [ST_UInt, rng]
+      let postArg = if shouldRetNNToks then "(dom, [_, _, rng])" else "(dom, [_, rng])"
       let post' = flip fmap post $ \postv ->
-            jsClo at "post" "(dom, [_, _, rng]) => post(dom, rng)" $
+            jsClo at "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      let nnToksBilled = maybe [] pa_ks mBillAmt
       nnTokReceived <- ctxt_mkvar $ DLVar at Nothing $
                           case nnToksBilledType of
                             ST_Null -> T_Null
                             ST_Tuple ts -> T_Tuple $ map (const T_UInt) ts
                             _ -> impossible "Type of non-network tokens recieved is not [UInt]"
       allTokens <- fmap DLA_Var <$> readSt st_toks
-      let nnToksBilledZero =
-            (\\) allTokens $ case fromMaybe (Right zero) mbill of
-                              Left _  -> nnToksBilledRecv
-                              Right _ -> map snd nnToksBilled
-      let withBill = DLWithBill nnTokReceived nnToksBilledRecv nnToksBilledZero
+      let nnToksNotBilled = allTokens \\ nnToksBilledRecv
+      let withBill = DLWithBill nnTokReceived (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
       res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True)
                 (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
-      apdvv <- doArrRef_ res' zero
+      let getRemoteResults = do
+            apdvv <- doArrRef_ res' zero
+            case shouldRetNNToks of
+              True -> do
+                nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
+                res <- doArrRef_ res' $ SLV_Int at 2
+                return (apdvv, res, Just nnTokAmts)
+              False -> do
+                res <- doArrRef_ res' $ SLV_Int at 1
+                return (apdvv, res, Nothing)
+      (apdvv, res, mNonNetToksRecv) <- getRemoteResults
+      let withNonNetRecv f = case mNonNetToksRecv of { Nothing -> return (); Just t -> f t }
       doBalanceUpdate Nothing ADD apdvv
-      nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
-      res <- doArrRef_ res' $ SLV_Int at 2
       case fromMaybe (Right zero) mbill of
         Left _ -> do
-          forM_ (zip nnToksBilledRecv [0..length nnToksBilledRecv]) $ \ (t, i) -> do
-            doBalanceUpdate (Just t) ADD =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
+          forM_ (zip nnToksBilledRecv [0..length nnToksBilledRecv]) $ \ (t, i) ->
+            withNonNetRecv $ \ nnTokAmts -> do
+              doBalanceUpdate (Just t) ADD
+                =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
           return $ public res'
         _ -> do
-          let billAmt = fromMaybe (DLPayAmt (DLA_Literal $ DLL_Int at 0) []) mBillAmt
           sv <- argToSV $ pa_net billAmt
-          let nnBilled = pa_ks billAmt
-          forM_ (zip nnBilled [0..length nnBilled]) $ \ ((a, t), i) -> do
+          forM_ (pa_ks billAmt) $ \ (a, t) -> do
             a' <- argToSV a
-            -- Ensure we're paid expected non-network tokens
-            ar <- doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
-            cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op PEQ) [public a', public ar]
-            void $ evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Assume True)
-                  [cmp_v, public $ SLV_Bytes at "remote bill check"]
-            -- Update balance of non-network tokens received
             doBalanceUpdate (Just t) ADD a'
           -- Ensure we're paid expected network tokens
           cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op PEQ) [public sv, public apdvv]

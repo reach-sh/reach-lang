@@ -49,7 +49,7 @@ export const main = Reach.App(
     A.publish();
     const r0 = ctx.getX();
     const r1 = cty.getX.bill(amt / 2)();
-    const [ amtr, _, r2 ] = cty.getX.withBill()();
+    const [ amtr, r2 ] = cty.getX.withBill()();
     transfer(amt / 2).to(B);
     transfer(amtr).to(A);
     commit();

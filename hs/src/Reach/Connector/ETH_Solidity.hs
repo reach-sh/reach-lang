@@ -619,6 +619,7 @@ solCom = \case
           PV_Let _ dv ->
             case varType dv of
               T_Tuple [_, _, x] -> x
+              T_Tuple [_, x]    -> x
               _ -> impossible $ "remote not tuple"
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
@@ -670,6 +671,8 @@ solCom = \case
       ) nnTokRecvZero
     let call' = ".call{value:" <+> netTokPaid <> "}"
     let meBalance = "address(this).balance"
+    let billOffset :: Int -> Doc
+        billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
     pv' <- case pv of
       PV_Eff -> return []
       PV_Let _ dv -> do
@@ -677,7 +680,7 @@ solCom = \case
         sub' <- solPrimApply SUB [meBalance, v_before]
         let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
         -- Non-network tokens received from remote call
-        let nnsub'l = [solSet (solMemVar dv <> ".elem1") nnTokRecv]
+        let nnsub'l = [solSet (solMemVar dv <> ".elem1") nnTokRecv | not (null nonNetTokRecv)]
         dv_ty' <- solType $ varType dv
         let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
         addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
@@ -687,7 +690,7 @@ solCom = \case
             return $ sub'l <> nnsub'l <> logl
           _ -> do
             let de' = solApply "abi.decode" [v_return, parens rng_ty']
-            let de'l = [solSet (solMemVar dv <> ".elem2") de']
+            let de'l = [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
             return $ sub'l <> nnsub'l <> de'l <> logl
     let e_data = solApply "abi.encodeWithSelector" eargs
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
