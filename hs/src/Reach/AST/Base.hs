@@ -2,6 +2,7 @@
 
 module Reach.AST.Base where
 
+import Control.Applicative ((<|>))
 import Control.DeepSeq (NFData)
 import Data.Aeson (encode)
 import Data.Aeson.Types (ToJSON)
@@ -34,11 +35,7 @@ data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
 -- but can fall back on the right if info is absent from the left.
 instance Semigroup SrcLoc where
   SrcLoc mlab mpos msrc <> SrcLoc mlab' mpos' msrc' =
-    SrcLoc (firstJust mlab mlab') (firstJust mpos mpos') (firstJust msrc msrc')
-    where
-      firstJust (Just x) _ = Just x
-      firstJust _ (Just y) = Just y
-      firstJust Nothing Nothing = Nothing
+    SrcLoc (mlab <|> mlab') (mpos <|> mpos') (msrc <|> msrc')
 
 instance Monoid SrcLoc where
   mempty = SrcLoc Nothing Nothing Nothing

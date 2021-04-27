@@ -38,6 +38,7 @@ dependencies:
 - memory
 - mtl
 - optparse-applicative
+- parsec
 - parsec-numbers
 - pretty-show
 - pretty-simple

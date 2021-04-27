@@ -1,12 +1,14 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
+  , spec_importsource
   , test_compileBundle_errs
   )
 where
 
 import Data.Proxy
 import Reach.Eval.Error
+import Reach.Eval.ImportSource
 import Reach.Parser
 import Reach.Test.Util
 import Test.Hspec
@@ -58,3 +60,29 @@ spec_examples_cover_ParserError =
       , "Err_Parse_NotModule"
       , "Err_Parse_JSIdentNone"
       ]
+
+spec_importsource :: Spec
+spec_importsource = do
+  describe "Module `Reach.Eval.ImportSource`" $ do
+
+    describe "exports a `from` function which" $ do
+      it "can distinguish local imports" $ do
+        let f = "../examples/nim/index-abstract.rsh"
+        from f `shouldBe` ImportLocal f
+
+      describe "can distinguish remote GitHub imports" $ do
+        it "in long-form" $ do
+          from "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+            `shouldBe` ImportRemoteGit
+                (GitHub (HostGitAcct "reach-sh")
+                        (HostGitRepo "reach-lang")
+                        (HostGitRef  "6c3dd0f"))
+                (Just "examples/exports/index.rsh")
+
+        it "(by default) when no host is specified" $ do
+          from "@reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+            `shouldBe` ImportRemoteGit
+                (GitHub (HostGitAcct "reach-sh")
+                        (HostGitRepo "reach-lang")
+                        (HostGitRef  "6c3dd0f"))
+                (Just "examples/exports/index.rsh")
