@@ -2379,7 +2379,7 @@ evalPrim p sargs =
       doBalanceUpdate Nothing ADD apdvv
       case fromMaybe (Right zero) mbill of
         Left _ -> do
-          forM_ (zip nnToksBilledRecv [0..length nnToksBilledRecv]) $ \ (t, i) ->
+          forM_ (zip nnToksBilledRecv [0.. length nnToksBilledRecv - 1]) $ \ (t, i) ->
             withNonNetRecv $ \ nnTokAmts -> do
               doBalanceUpdate (Just t) ADD
                 =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
