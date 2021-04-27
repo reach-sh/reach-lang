@@ -92,3 +92,7 @@ gen-reach: stack
 	stack build --fast :gen-reach
 	stack exec gen-reach > sbin/reach
 	chmod +x sbin/reach
+
+.PHONY: ghcid
+ghcid: stack
+	ghcid --target=reach:test:reach-test -T "Main.main"

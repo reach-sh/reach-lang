@@ -1,0 +1,4 @@
+:set -isrc
+:set -itest
+:set -iapp
+:load Main
