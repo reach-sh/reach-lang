@@ -37,8 +37,8 @@ reach.setSignStrategy('AlgoSigner');
 The AlgoSigner strategy will prompt the user for their account address,
 and will use AlgoSigner to sign transactions.
 
-Reach requires features of TEAL 3 which are not yet available on Algorand MainNet.
-Reach programs can be run on a development network, like the one created by @exec{reach run}. For AlgoSigner to work with a development network, it must be configured appropriately. Here's how to configure AlgoSigner for the Reach Devnet:
+When Reach programs are run on a development network, like the one created by @exec{reach run}, AlgoSigner must be configured appropriately.
+Here's how to configure AlgoSigner for the Reach Devnet:
 
 @itemlist[
  @item{@link["https://chrome.google.com/webstore/detail/algosigner/kmmolakhbgdlpkjkcjkebenjheonagdm"]{Install the extension}}

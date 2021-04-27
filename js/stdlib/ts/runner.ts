@@ -1,6 +1,7 @@
 import { loadStdlib } from './loader';
+import {envDefault} from './shared';
 
-const mountDir = process.env.REACH_RUNNER_MOUNT_DIR || '.';
+const mountDir = envDefault(process.env.REACH_RUNNER_MOUNT_DIR, '.');
 
 // TODO: an interface for stdlib
 type Stdlib = any;

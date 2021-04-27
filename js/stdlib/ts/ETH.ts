@@ -6,14 +6,13 @@ import Timeout from 'await-timeout';
 import ethers, { Signer } from 'ethers';
 import http from 'http';
 import url from 'url';
-import waitPort from 'wait-port';
 import {window, process} from './shim';
 import { ConnectorMode, getConnectorMode } from './ConnectorMode';
 import {
   add,
   assert,
   bigNumberify,
-  debug,
+  debug, envDefault,
   eq,
   ge,
   getDEBUG,
@@ -23,7 +22,6 @@ import {
   IContract,
   IRecv,
   OnProgress,
-  WPArgs,
   makeRandom,
   argsSplit,
 } from './shared';
@@ -38,7 +36,7 @@ import {
   stdlib as compiledStdlib,
   typeDefs
 } from './ETH_compiled';
-
+import waitPort from './waitPort';
 
 // ****************************************************************************
 // Type Definitions
@@ -142,38 +140,18 @@ const networkDesc: NetworkDesc =
   (connectorMode == 'ETH-test-dockerized-geth' ||
    connectorMode == 'ETH-live') ? {
   type: 'uri',
-  uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
-  network: process.env.ETH_NODE_NETWORK || 'unspecified',
+  uri: envDefault(process.env.ETH_NODE_URI, 'http://localhost:8545'),
+  network: envDefault(process.env.ETH_NODE_NETWORK, 'unspecified'),
 } : connectorMode == 'ETH-browser' ? {
   type: 'window',
 } : {
   type: 'skip',
 };
 
-const protocolPort = {
-  'https:': 443,
-  'http:': 80,
-};
-
 const getPortConnection = memoizeThunk(async () => {
   debug('getPortConnection');
   if (networkDesc.type != 'uri') { return; }
-  const { hostname, port, protocol } = url.parse(networkDesc.uri);
-  if (!(protocol === 'http:' || protocol === 'https:')) {
-    throw Error(`Unsupported protocol ${protocol}`);
-  }
-  const args: WPArgs = {
-    host: hostname || undefined,
-    port: (port && parseInt(port, 10)) || protocolPort[protocol],
-    output: 'silent',
-    timeout: 1000 * 60 * 1,
-  }
-  debug('waitPort');
-  if (getDEBUG()) {
-    console.log(args)
-  }
-  await waitPort(args);
-  debug('waitPort complete');
+  await waitPort(networkDesc.uri);
 });
 
 // XXX: doesn't even retry, just returns the first attempt

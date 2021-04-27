@@ -1,4 +1,5 @@
 import {process} from './shim';
+import {envDefault} from './shared';
 export type Connector = 'ETH' | 'ALGO';
 
 export type ConnectorMode =
@@ -47,7 +48,7 @@ export function canonicalizeConnectorMode(connectorMode: string): ConnectorMode 
 }
 
 export function getConnectorMode(): ConnectorMode {
-  const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
+  const connectorMode = envDefault(process.env.REACH_CONNECTOR_MODE, 'ETH');
   return canonicalizeConnectorMode(connectorMode);
 }
 

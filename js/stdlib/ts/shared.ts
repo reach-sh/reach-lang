@@ -133,6 +133,9 @@ const forceHex = (x: string): string =>
 // Utility exports
 // ****************************************************************************
 
+export const envDefault = (v: string|undefined|null, d: any): any =>
+  (v === undefined || v === null) ? d : v;
+
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
     DEBUG = b;

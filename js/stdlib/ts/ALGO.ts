@@ -2,7 +2,6 @@
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
 import ethers from 'ethers';
-import url from 'url';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import msgpack from '@msgpack/msgpack';
@@ -14,9 +13,9 @@ import msgpack from '@msgpack/msgpack';
 const {Buffer} = buffer;
 
 import {
-  CurrencyAmount, OnProgress, WPArgs,
+  CurrencyAmount, OnProgress,
   IAccount, IContract, IRecv, ISimRes, ISimTxn,
-  debug, getDEBUG, assert,
+  debug, assert, envDefault,
   isBigNumber, bigNumberify, bigNumberToNumber,
   argsSlice,
   makeRandom,
@@ -24,7 +23,7 @@ import {
 import {
   CBR_Address, CBR_Val,
 } from './CBR';
-import waitPort from 'wait-port';
+import waitPort from './waitPort';
 import { replaceableThunk } from './shared_impl';
 import {
   Token,
@@ -147,6 +146,10 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 
 const [getWaitPort, setWaitPort] = replaceableThunk(() => true);
 export { setWaitPort };
+async function wait1port(server: string, port: string | number) {
+  if (!getWaitPort()) return;
+  return await waitPort(server, port);
+};
 
 type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
 
@@ -173,24 +176,6 @@ if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
 
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
-
-async function wait1port(theServer: string, thePort: string | number) {
-  if (!getWaitPort()) return;
-  thePort = typeof thePort === 'string' ? parseInt(thePort, 10) : thePort;
-  const {hostname} = url.parse(theServer);
-  const args: WPArgs = {
-    host: hostname || undefined,
-    port: thePort,
-    output: 'silent',
-    timeout: 1000 * 60 * 1,
-  };
-  debug('wait1port');
-  if (getDEBUG()) {
-    console.log(args);
-  }
-  debug('waitPort complete');
-  return await waitPort(args);
-}
 
 const getLastRound = async (): Promise<Round> =>
   (await (await getAlgodClient()).status().do())['last-round'];
@@ -582,20 +567,18 @@ export const { randomUInt, hasRandom } = makeRandom(8);
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
-  const token = process.env.ALGO_TOKEN || rawDefaultToken;
-  const server = process.env.ALGO_SERVER || 'http://localhost';
-  const port = process.env.ALGO_PORT || '4180';
-
+  const token = envDefault(process.env.ALGO_TOKEN, rawDefaultToken);
+  const server = envDefault(process.env.ALGO_SERVER, 'http://localhost');
+  const port = envDefault(process.env.ALGO_PORT, '4180');
   await wait1port(server, port);
   return new algosdk.Algodv2(token, server, port);
 });
 
 export const [getIndexer, setIndexer] = replaceableThunk(async () => {
   debug(`setting indexer to default`);
-  const itoken = process.env.ALGO_INDEXER_TOKEN || rawDefaultItoken;
-  const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
-  const iport = process.env.ALGO_INDEXER_PORT || '8980';
-
+  const itoken = envDefault(process.env.ALGO_INDEXER_TOKEN, rawDefaultItoken);
+  const iserver = envDefault(process.env.ALGO_INDEXER_SERVER, 'http://localhost');
+  const iport = envDefault(process.env.ALGO_INDEXER_PORT, '8980');
   await wait1port(iserver, iport);
   return new algosdk.Indexer(itoken, iserver, iport);
 });
@@ -604,7 +587,7 @@ export const [getIndexer, setIndexer] = replaceableThunk(async () => {
 const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
 const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
-    process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic,
+    envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
   return await connectAccount(FAUCET);
 });
