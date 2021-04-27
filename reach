@@ -189,6 +189,9 @@ ensure_connector_mode () {
     "ALGO")
       REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
+    "ALGO-live")
+      REACH_CONNECTOR_MODE="ALGO-live"
+      ;;
     "ALGO-test")
       REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
@@ -202,6 +205,8 @@ ensure_connector_mode () {
     "ETH-live")
       ;;
     "ETH-test-dockerized-geth")
+      ;;
+    "ALGO-live")
       ;;
     "ALGO-test-dockerized-algod")
       ;;
