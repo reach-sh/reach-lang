@@ -44,4 +44,4 @@ Verification failed:
   at ./index-bad.rsh:45:11:application
 
   (details omitted on repeat)
-Checked 23 theorems; 4 failures. :'(
+Checked 19 theorems; 4 failures. :'(

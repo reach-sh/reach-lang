@@ -1,3 +1,3 @@
-reachc: error: ./interact.rsh:9:9:const: Invalid name shadowing. Identifier 'interact' is already bound at ./interact.rsh:6:23:obj. It cannot be bound again at ./interact.rsh:9:15:id
+reachc: error: ./interact.rsh:9:9:const: Invalid name shadowing. Identifier 'interact' is already bound at ./interact.rsh:4:12:application. It cannot be bound again at ./interact.rsh:9:15:id
 Trace:
   in [unknown function] from (./interact.rsh:8:17:function exp) at (./interact.rsh:8:13:application)

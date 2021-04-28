@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Pollster" is honest
   Verifying when ONLY "Voter" is honest
-Checked 37 theorems; No failures!
+Checked 29 theorems; No failures!

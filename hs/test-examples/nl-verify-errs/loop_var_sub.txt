@@ -60,4 +60,4 @@ Verification failed:
   // Theorem formalization
   invariant((balance(0)/42 + 1) == [(x/24[0] + 2), x/24[1]][0]);
 
-Checked 18 theorems; 4 failures. :'(
+Checked 15 theorems; 4 failures. :'(
