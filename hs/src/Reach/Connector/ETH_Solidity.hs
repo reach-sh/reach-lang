@@ -41,7 +41,7 @@ import System.Process
 
 --- You can turn this to True and manually change the Solidity file
 dontWriteSol :: Bool
-dontWriteSol = True
+dontWriteSol = False
 
 includeRequireMsg :: Bool
 includeRequireMsg = False
@@ -1171,7 +1171,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
           let tgo v (k, t) = do
                 let vk_ = bunpack v <> "_" <> k
                 let vk = pretty $ vk_
-                t' <- solType t
+                t' <- solType_ t
                 let ret = "external view returns" <+> parens t'
                 let mlf m mk =
                       case M.lookup mk m of
