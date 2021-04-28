@@ -1,0 +1,1 @@
+reachc: error: ./Err_View_DuplicateView.rsh:compileDApp: Duplicated view name: "NFT"
