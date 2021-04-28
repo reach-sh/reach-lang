@@ -564,28 +564,227 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Byt
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
+export const [getLedger, setLedger] = replaceableThunk<string|undefined>(() => DEFAULT_ALGO_LEDGER);
+function getLedgerFromAlgoSigner(AlgoSigner: AlgoSigner) {
+  // XXX: get AlgoSigner to tell us what Ledger is "currently selected"
+  // since that ability doesn't actually exist, we operate based off of setLedger()
+  void(AlgoSigner);
+  return getLedger();
+}
+
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
-  const token = envDefault(process.env.ALGO_TOKEN, rawDefaultToken);
-  const server = envDefault(process.env.ALGO_SERVER, 'http://localhost');
-  const port = envDefault(process.env.ALGO_PORT, '4180');
-  await wait1port(server, port);
-  return new algosdk.Algodv2(token, server, port);
+  const {
+    ALGO_SERVER,
+    ALGO_PORT,
+    ALGO_TOKEN,
+  } = envDefaultsALGO(process.env);
+  await wait1port(ALGO_SERVER, ALGO_PORT);
+  return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 });
 
 export const [getIndexer, setIndexer] = replaceableThunk(async () => {
   debug(`setting indexer to default`);
-  const itoken = envDefault(process.env.ALGO_INDEXER_TOKEN, rawDefaultItoken);
-  const iserver = envDefault(process.env.ALGO_INDEXER_SERVER, 'http://localhost');
-  const iport = envDefault(process.env.ALGO_INDEXER_PORT, '8980');
-  await wait1port(iserver, iport);
-  return new algosdk.Indexer(itoken, iserver, iport);
+  const {
+    ALGO_INDEXER_SERVER,
+    ALGO_INDEXER_PORT,
+    ALGO_INDEXER_TOKEN,
+  } = envDefaultsALGO(process.env);
+  await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN);
 });
+
+interface ALGO_Provider {
+  algodClient: algosdk.Algodv2,
+  indexer: algosdk.Indexer,
+  ledger?: string
+}
+
+export async function getProvider(): Promise<ALGO_Provider> {
+  return {
+    algodClient: await getAlgodClient(),
+    indexer: await getIndexer(),
+    ledger: getLedger(),
+  }
+}
+export async function setProvider(provider: ALGO_Provider|Promise<ALGO_Provider>): Promise<void> {
+  provider = await provider;
+  // XXX doesn't waitPort these, because these are opaque to us.
+  // should we do something similar where we wait for /health to give us a 200 response?
+  setAlgodClient((async () => provider.algodClient)());
+  setIndexer((async () => provider.indexer)());
+  setLedger(provider.ledger);
+}
+
+interface ALGO_ProviderEnv {
+  // ALGO_LEDGER may be undefined under some circumstances,
+  // but AlgoSigner codepaths will error if it is undefined.
+  ALGO_LEDGER: string|undefined
+  ALGO_SERVER: string
+  ALGO_PORT: string
+  ALGO_TOKEN: string
+  ALGO_INDEXER_SERVER: string
+  ALGO_INDEXER_PORT: string
+  ALGO_INDEXER_TOKEN: string
+}
+
+const localhostProviderEnv: ALGO_ProviderEnv = {
+  ALGO_LEDGER: 'Reach Devnet',
+  ALGO_SERVER: 'http://localhost',
+  ALGO_PORT: '4180',
+  ALGO_TOKEN: rawDefaultToken,
+  ALGO_INDEXER_SERVER: 'http://localhost',
+  ALGO_INDEXER_PORT: '8980',
+  ALGO_INDEXER_TOKEN: rawDefaultItoken,
+}
+
+const DEFAULT_ALGO_LEDGER = localhostProviderEnv.ALGO_LEDGER;
+const DEFAULT_ALGO_SERVER = localhostProviderEnv.ALGO_SERVER;
+const DEFAULT_ALGO_PORT = localhostProviderEnv.ALGO_PORT;
+const DEFAULT_ALGO_TOKEN = localhostProviderEnv.ALGO_TOKEN;
+const DEFAULT_ALGO_INDEXER_SERVER = localhostProviderEnv.ALGO_INDEXER_SERVER;
+const DEFAULT_ALGO_INDEXER_PORT = localhostProviderEnv.ALGO_INDEXER_PORT;
+const DEFAULT_ALGO_INDEXER_TOKEN = localhostProviderEnv.ALGO_INDEXER_TOKEN;
+
+
+function serverLooksLikeRandlabs(server: string): boolean {
+  return server.toLowerCase().includes('algoexplorerapi.io');
+}
+
+function envDefaultALGOPort(port: string|undefined, defaultPort: string, server: string): string {
+  // Some simple guessing
+  return port !== undefined ? port
+    : serverLooksLikeRandlabs(server) ? ''
+    : defaultPort;
+}
+
+function envDefaultALGOToken(token: string|undefined, defaultToken: string, server: string, port: string): string {
+  // Some simple guessing
+  // port is not currently used for this guessing, but could be in the future
+  void(port);
+  return token !== undefined ? token
+    : serverLooksLikeRandlabs(server) ? ''
+    : defaultToken;
+}
+
+function guessRandlabsLedger(server?: string): string|undefined {
+  if (server === undefined) return undefined;
+  server = server.toLowerCase();
+  if (server.startsWith('https://algoexplorerapi.io')) {
+    return 'MainNet';
+  } else if (server.startsWith('https://testnet.algoexplorerapi.io')) {
+    return 'TestNet';
+  } else if (server.startsWith('https://betanet.algoexplorerapi.io')) {
+    return 'BetaNet';
+  }
+  return undefined;
+}
+
+function envDefaultALGOLedger(ledger: string|undefined, defaultLedger: string|undefined, server: string, port: string): string|undefined {
+  // Some simple guessing
+  // port is not currently used for this guessing, but could be in the future
+  void(port);
+  return ledger !== undefined ? ledger
+    : serverLooksLikeRandlabs(server) ? guessRandlabsLedger(ledger)
+    : defaultLedger;
+}
+
+function envDefaultsALGO(env: Partial<ALGO_ProviderEnv>): ALGO_ProviderEnv {
+  const ALGO_SERVER = envDefault(env.ALGO_SERVER, DEFAULT_ALGO_SERVER);
+  const ALGO_PORT = envDefaultALGOPort(env.ALGO_PORT, DEFAULT_ALGO_PORT, ALGO_SERVER);
+  const ALGO_TOKEN = envDefaultALGOToken(env.ALGO_TOKEN, DEFAULT_ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
+  const ALGO_LEDGER = envDefaultALGOLedger(env.ALGO_LEDGER, DEFAULT_ALGO_LEDGER, ALGO_SERVER, ALGO_PORT);
+
+  const ALGO_INDEXER_SERVER = envDefault(env.ALGO_INDEXER_SERVER, DEFAULT_ALGO_INDEXER_SERVER);
+  const ALGO_INDEXER_PORT = envDefaultALGOPort(env.ALGO_INDEXER_PORT, DEFAULT_ALGO_INDEXER_PORT, ALGO_INDEXER_SERVER);
+  const ALGO_INDEXER_TOKEN = envDefaultALGOToken(env.ALGO_TOKEN, DEFAULT_ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+
+  return {
+    ALGO_LEDGER,
+    ALGO_SERVER,
+    ALGO_PORT,
+    ALGO_TOKEN,
+    ALGO_INDEXER_SERVER,
+    ALGO_INDEXER_PORT,
+    ALGO_INDEXER_TOKEN,
+  }
+}
+
+export function setProviderByEnv(env: Partial<ALGO_ProviderEnv>): void {
+  // Note: This doesn't just immediately call setProviderByEnv,
+  // because here we can actually take the opportunity to wait1port.
+  const {
+    ALGO_LEDGER,
+    ALGO_SERVER,
+    ALGO_PORT,
+    ALGO_TOKEN,
+    ALGO_INDEXER_SERVER,
+    ALGO_INDEXER_PORT,
+    ALGO_INDEXER_TOKEN,
+  } = envDefaultsALGO(env);
+
+  setAlgodClient((async () => {
+    await wait1port(ALGO_SERVER, ALGO_PORT);
+    return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
+  })());
+  setIndexer((async () => {
+    await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+    return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  })());
+  setLedger(ALGO_LEDGER);
+}
+
+type WhichNetExternal
+  = 'MainNet'
+  | 'TestNet'
+  | 'BetaNet'
+
+type ProviderName
+  = WhichNetExternal
+  | 'LocalHost'
+  | 'randlabs/MainNet'
+  | 'randlabs/TestNet'
+  | 'randlabs/BetaNet'
+
+function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ALGO_ProviderEnv {
+  const prefix = ALGO_LEDGER === 'MainNet' ? '' : `${ALGO_LEDGER.toLowerCase()}.`;
+  const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
+  return {
+    ALGO_LEDGER,
+    ALGO_SERVER: RANDLABS_BASE,
+    ALGO_PORT: '',
+    ALGO_TOKEN: '',
+    ALGO_INDEXER_SERVER: `${RANDLABS_BASE}/idx2`,
+    ALGO_INDEXER_PORT: '',
+    ALGO_INDEXER_TOKEN: '',
+  }
+}
+
+export function providerEnvByName(providerName: ProviderName): ALGO_ProviderEnv {
+  switch (providerName) {
+    case 'MainNet': return randlabsProviderEnv('MainNet');
+    case 'TestNet': return randlabsProviderEnv('TestNet');
+    case 'BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'randlabs/MainNet': return randlabsProviderEnv('MainNet');
+    case 'randlabs/TestNet': return randlabsProviderEnv('TestNet');
+    case 'randlabs/BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'LocalHost': return localhostProviderEnv;
+    default: throw Error(`Unrecognized provider name: ${providerName}`);
+  }
+}
+
+export function setProviderByName(providerName: ProviderName): void {
+  return setProviderByEnv(providerEnvByName(providerName));
+}
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
 const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
+  const ledger = getLedger();
+  if (ledger !== localhostProviderEnv.ALGO_LEDGER) {
+    throw Error(`Cannot automatically use faucet for ledger '${ledger}'; if you want to use a custom faucet, use setFaucet`);
+  }
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
@@ -1270,8 +1469,9 @@ export async function getDefaultAccount(): Promise<Account> {
       return await createAccount();
     }
   } else if (signStrategy === 'AlgoSigner') {
-    const ledger = 'Reach Devnet'; // XXX decide how to support other ledgers
     const AlgoSigner = await getAlgoSigner();
+    const ledger = getLedgerFromAlgoSigner(AlgoSigner);
+    if (ledger === undefined) throw Error(`Ledger is undefined; this is required by AlgoSigner`);
     const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
     if (!addr) { throw Error(`No address provided`); }
     return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
