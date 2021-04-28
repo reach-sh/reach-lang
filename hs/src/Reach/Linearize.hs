@@ -428,8 +428,11 @@ df_con = \case
     let body_fvs' = df_con =<< unpackFVMap at body
     --- Note: The invariant and condition can't return
     let block b = df_bl =<< block_unpackFVMap at b
-    withWhileFVMap fvm $
-      LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs' <*> (df_con =<< unpackFVMap at k)
+    (k', makeWhile) <- withWhileFVMap fvm $ do
+        k' <- unpackFVMap at k
+        mk <- LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs'
+        return (k', mk)
+    return . makeWhile =<< df_con k'
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap asn
   DK_Only at who body k ->
