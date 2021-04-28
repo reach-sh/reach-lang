@@ -572,27 +572,27 @@ function getLedgerFromAlgoSigner(AlgoSigner: AlgoSigner) {
   return getLedger();
 }
 
+async function waitIndexerFromEnv(env: ALGO_ProviderEnv): Promise<algosdk.Indexer> {
+  const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
+  await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+}
+
+async function waitAlgodClientFromEnv(env: ALGO_ProviderEnv): Promise<algosdk.Algodv2> {
+  const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
+  await wait1port(ALGO_SERVER, ALGO_PORT);
+  return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
+}
+
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
-  const {
-    ALGO_SERVER,
-    ALGO_PORT,
-    ALGO_TOKEN,
-  } = envDefaultsALGO(process.env);
-  await wait1port(ALGO_SERVER, ALGO_PORT);
-  return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
+  return await waitAlgodClientFromEnv(envDefaultsALGO(process.env));
 });
 
 export const [getIndexer, setIndexer] = replaceableThunk(async () => {
   debug(`setting indexer to default`);
-  const {
-    ALGO_INDEXER_SERVER,
-    ALGO_INDEXER_PORT,
-    ALGO_INDEXER_TOKEN,
-  } = envDefaultsALGO(process.env);
-  await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-  return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN);
+  return await waitIndexerFromEnv(envDefaultsALGO(process.env));
 });
 
 interface ALGO_Provider {
@@ -646,7 +646,6 @@ const DEFAULT_ALGO_TOKEN = localhostProviderEnv.ALGO_TOKEN;
 const DEFAULT_ALGO_INDEXER_SERVER = localhostProviderEnv.ALGO_INDEXER_SERVER;
 const DEFAULT_ALGO_INDEXER_PORT = localhostProviderEnv.ALGO_INDEXER_PORT;
 const DEFAULT_ALGO_INDEXER_TOKEN = localhostProviderEnv.ALGO_INDEXER_TOKEN;
-
 
 function serverLooksLikeRandlabs(server: string): boolean {
   return server.toLowerCase().includes('algoexplorerapi.io');
@@ -714,25 +713,11 @@ function envDefaultsALGO(env: Partial<ALGO_ProviderEnv>): ALGO_ProviderEnv {
 export function setProviderByEnv(env: Partial<ALGO_ProviderEnv>): void {
   // Note: This doesn't just immediately call setProviderByEnv,
   // because here we can actually take the opportunity to wait1port.
-  const {
-    ALGO_LEDGER,
-    ALGO_SERVER,
-    ALGO_PORT,
-    ALGO_TOKEN,
-    ALGO_INDEXER_SERVER,
-    ALGO_INDEXER_PORT,
-    ALGO_INDEXER_TOKEN,
-  } = envDefaultsALGO(env);
+  const fullEnv = envDefaultsALGO(env);
 
-  setAlgodClient((async () => {
-    await wait1port(ALGO_SERVER, ALGO_PORT);
-    return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
-  })());
-  setIndexer((async () => {
-    await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-    return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-  })());
-  setLedger(ALGO_LEDGER);
+  setAlgodClient(waitAlgodClientFromEnv(fullEnv));
+  setIndexer(waitIndexerFromEnv(fullEnv));
+  setLedger(fullEnv.ALGO_LEDGER);
 }
 
 type WhichNetExternal
