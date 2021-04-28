@@ -1,3 +1,5 @@
+{- ORMOLU_DISABLE -}
+
 module Reach.Eval.ImportSource
   ( ImportSource(..)
   , HostGit(..)
