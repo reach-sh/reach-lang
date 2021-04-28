@@ -572,13 +572,13 @@ function getLedgerFromAlgoSigner(AlgoSigner: AlgoSigner) {
   return getLedger();
 }
 
-async function waitIndexerFromEnv(env: ALGO_ProviderEnv): Promise<algosdk.Indexer> {
+async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
   await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
 }
 
-async function waitAlgodClientFromEnv(env: ALGO_ProviderEnv): Promise<algosdk.Algodv2> {
+async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
   await wait1port(ALGO_SERVER, ALGO_PORT);
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
@@ -617,7 +617,7 @@ export async function setProvider(provider: ALGO_Provider|Promise<ALGO_Provider>
   setLedger(provider.ledger);
 }
 
-interface ALGO_ProviderEnv {
+export interface ProviderEnv {
   // ALGO_LEDGER may be undefined under some circumstances,
   // but AlgoSigner codepaths will error if it is undefined.
   ALGO_LEDGER: string|undefined
@@ -629,7 +629,7 @@ interface ALGO_ProviderEnv {
   ALGO_INDEXER_TOKEN: string
 }
 
-const localhostProviderEnv: ALGO_ProviderEnv = {
+const localhostProviderEnv: ProviderEnv = {
   ALGO_LEDGER: 'Reach Devnet',
   ALGO_SERVER: 'http://localhost',
   ALGO_PORT: '4180',
@@ -689,7 +689,7 @@ function envDefaultALGOLedger(ledger: string|undefined, defaultLedger: string|un
     : defaultLedger;
 }
 
-function envDefaultsALGO(env: Partial<ALGO_ProviderEnv>): ALGO_ProviderEnv {
+function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
   const ALGO_SERVER = envDefault(env.ALGO_SERVER, DEFAULT_ALGO_SERVER);
   const ALGO_PORT = envDefaultALGOPort(env.ALGO_PORT, DEFAULT_ALGO_PORT, ALGO_SERVER);
   const ALGO_TOKEN = envDefaultALGOToken(env.ALGO_TOKEN, DEFAULT_ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
@@ -710,7 +710,7 @@ function envDefaultsALGO(env: Partial<ALGO_ProviderEnv>): ALGO_ProviderEnv {
   }
 }
 
-export function setProviderByEnv(env: Partial<ALGO_ProviderEnv>): void {
+export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   // Note: This doesn't just immediately call setProviderByEnv,
   // because here we can actually take the opportunity to wait1port.
   const fullEnv = envDefaultsALGO(env);
@@ -725,14 +725,14 @@ type WhichNetExternal
   | 'TestNet'
   | 'BetaNet'
 
-type ProviderName
+export type ProviderName
   = WhichNetExternal
   | 'LocalHost'
   | 'randlabs/MainNet'
   | 'randlabs/TestNet'
   | 'randlabs/BetaNet'
 
-function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ALGO_ProviderEnv {
+function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ProviderEnv {
   const prefix = ALGO_LEDGER === 'MainNet' ? '' : `${ALGO_LEDGER.toLowerCase()}.`;
   const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
   return {
@@ -746,7 +746,7 @@ function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ALGO_ProviderEnv {
   }
 }
 
-export function providerEnvByName(providerName: ProviderName): ALGO_ProviderEnv {
+export function providerEnvByName(providerName: ProviderName): ProviderEnv {
   switch (providerName) {
     case 'MainNet': return randlabsProviderEnv('MainNet');
     case 'TestNet': return randlabsProviderEnv('TestNet');

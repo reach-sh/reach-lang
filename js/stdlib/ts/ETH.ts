@@ -339,7 +339,34 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Byt
 
 export const { randomUInt, hasRandom } = makeRandom(32);
 
-export {setProvider};
+export {getProvider, setProvider};
+
+// TODO: more providers 'by name'
+export type ProviderName
+  = 'LocalHost'
+  | 'Window'
+
+// TODO
+export interface ProviderEnv {
+}
+
+// TODO
+export function setProviderByEnv(env: ProviderEnv): void {
+  void(env);
+  throw Error(`setProviderByEnv not yet supported on ETH`);
+}
+
+// TODO
+export function setProviderByName(providerName: ProviderName): void  {
+  void(providerName);
+  throw Error(`setProviderByName not yet supported on ETH`);
+}
+
+// TODO
+export function providerEnvByName(providerName: ProviderName): void {
+  void(providerName);
+  throw Error(`providerEnvByName not yet supported on ETH`);
+}
 
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
