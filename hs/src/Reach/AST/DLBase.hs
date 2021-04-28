@@ -374,6 +374,7 @@ data DLExpr
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
+  | DLE_ViewIs SrcLoc SLPart SLVar DLArg
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -407,6 +408,7 @@ instance Pretty DLExpr where
       DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
         "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
         parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
+      DLE_ViewIs _ v k a -> "view(" <> pretty v <> ")." <> pretty k <> ".is(" <> pretty a <> ")"
 
 instance IsPure DLExpr where
   isPure = \case
@@ -438,6 +440,7 @@ instance IsPure DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
     DLE_Remote {} -> False
+    DLE_ViewIs {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -463,6 +466,7 @@ instance IsLocal DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
     DLE_Remote {} -> False
+    DLE_ViewIs {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -628,3 +632,6 @@ allFluidVars bals =
 
 class HasCounter a where
   getCounter :: a -> Counter
+
+type DLViews = M.Map SLPart (M.Map SLVar DLType)
+

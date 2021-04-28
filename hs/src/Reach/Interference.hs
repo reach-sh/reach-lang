@@ -48,7 +48,7 @@ updateInterferenceGraph g k vs =
 
 getWrittenVars :: CTail_ a -> [DLVar]
 getWrittenVars = \case
-  CT_From _ _ fi -> case fi of
+  CT_From _ _ _ fi -> case fi of
     FI_Continue vs -> map fst vs
     _ -> []
   CT_Com _ t -> getWrittenVars t
@@ -146,7 +146,7 @@ color s gInter asn0 = do
   readIORef asnr
 
 colorProgram :: PIProg -> IO ColorGraphs
-colorProgram (PLProg _ _ _ _ _ (CPProg _ (CHandlers handlers))) = do
+colorProgram (PLProg _ _ _ _ _ (CPProg _ _ (CHandlers handlers))) = do
   e_tv <- newIORef mempty
   e_ti <- newIORef mempty
   flip runReaderT (Env {..}) $ makeInterferenceGraph handlers

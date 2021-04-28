@@ -3,6 +3,8 @@ module Reach.Util
   , bunpack
   , lbpack
   , lbunpack
+  , b2t
+  , s2t
   , impossible
   , trimQuotes
   , fromIntegerMay
@@ -31,10 +33,16 @@ import System.Exit
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
-bpack = TE.encodeUtf8 . T.pack
+bpack = TE.encodeUtf8 . s2t
+
+s2t :: String -> T.Text
+s2t = T.pack
 
 bunpack :: ByteString -> String
-bunpack = T.unpack . TE.decodeUtf8
+bunpack = T.unpack . b2t
+
+b2t :: ByteString -> T.Text
+b2t = TE.decodeUtf8
 
 lbpack :: String -> BL.ByteString
 lbpack = BL.fromStrict . bpack

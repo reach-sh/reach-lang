@@ -10,14 +10,18 @@ export const main =
       ParticipantClass('Owner', {
         newOwner: Fun([], Address),
         showOwner: Fun([UInt, Address], Null),
-      })
+      }),
+      View('NFT', {
+        owner: Address,
+      }),
     ],
-    (Creator, Owner) => {
+    (Creator, Owner, vNFT) => {
       Creator.only(() => {
         const id = declassify(interact.getId()); });
       Creator.publish(id);
 
       var owner = Creator;
+      { vNFT.owner.is(owner); };
       invariant(balance() == 0);
       while ( true ) {
         commit();

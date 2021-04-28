@@ -223,14 +223,14 @@ instance Pretty DLExportBlock where
 type DLExports = M.Map SLVar DLExportBlock
 
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLViews DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where
-  getCounter (DLProg _ dlo _ _ _ _) = getCounter dlo
+  getCounter (DLProg _ dlo _ _ _ _ _) = getCounter dlo
 
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps dli dex ds) =
+  pretty (DLProg _at _ sps dli dex dvs ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
@@ -238,5 +238,7 @@ instance Pretty DLProg where
       <> pretty dli
       <> hardline
       <> pretty dex
+      <> hardline
+      <> pretty dvs
       <> hardline
       <> render_dls ds

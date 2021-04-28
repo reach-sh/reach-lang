@@ -3,6 +3,7 @@ module Reach.CollectCounts
   , Counts (..)
   , Countable
   , counts
+  , countsl
   , countsS
   , get_count
   , count_rms
@@ -44,8 +45,11 @@ count_rmm = count_rms . maybeToList
 counts_nzs :: Counts -> [DLVar]
 counts_nzs (Counts cs) = M.keys cs
 
+countsl :: Countable a => a -> [DLVar]
+countsl = counts_nzs . counts
+
 countsS :: Countable a => a -> S.Set DLVar
-countsS = S.fromList . counts_nzs . counts
+countsS = S.fromList . countsl
 
 class Countable a where
   counts :: a -> Counts
@@ -117,6 +121,7 @@ instance Countable DLExpr where
     DLE_MapSet _ _ fa na -> counts [fa, na]
     DLE_MapDel _ _ fa -> counts fa
     DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
+    DLE_ViewIs _ _ _ a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
@@ -134,3 +139,7 @@ instance Countable FromInfo where
   counts = \case
     FI_Continue svs -> counts svs
     FI_Halt toks -> counts toks
+
+instance Countable ViewSave where
+  counts = \case
+    ViewSave _ svs -> counts svs

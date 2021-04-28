@@ -95,9 +95,10 @@ ac_ct = \case
     csm' <- ac_csm ac_ct csm
     ac_visit $ v
     return $ CT_Switch at v csm'
-  CT_From at w fi -> do
+  CT_From at w v fi -> do
+    ac_visit $ v
     ac_visit $ fi
-    return $ CT_From at w fi
+    return $ CT_From at w v fi
   CT_Jump at which svs asn -> do
     ac_visit $ svs
     ac_visit $ asn
@@ -134,8 +135,8 @@ ac_eb = \case
 add_counts :: PIProg -> IO PLProg
 add_counts (PLProg at plo dli dex _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
-  let CPProg cat (CHandlers chs) = cp
+  let CPProg cat vi (CHandlers chs) = cp
   chs' <- mapM ac_top chs
   dex' <- mapM ac_eb dex
-  let cp' = CPProg cat $ CHandlers chs'
+  let cp' = CPProg cat vi $ CHandlers chs'
   return $ PLProg at plo dli dex' epps' cp'

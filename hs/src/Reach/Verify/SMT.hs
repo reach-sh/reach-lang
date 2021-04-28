@@ -410,8 +410,7 @@ set_to_seq = Seq.fromList . S.toList
 
 -- Log every occurence of dlvars so we know what is used how many times
 dlvOccurs :: [String] -> BindingEnv -> DLExpr -> [String]
-dlvOccurs env bindings de =
-  case de of
+dlvOccurs env bindings = \case
     DLE_Arg _ (DLA_Var dv) ->
       case v `List.elem` env of
         -- If we already expanded, mark that we've seen var again and go home
@@ -451,6 +450,7 @@ dlvOccurs env bindings de =
     DLE_MapDel at _ fa -> _rec at fa
     DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
       _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
+    DLE_ViewIs at _ _ a -> _rec at a
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -500,6 +500,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
+  DLE_ViewIs _ v k a -> "view(" <> show v <> ")." <> show k <> ".is(" <> sub a <> ")"
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -1066,6 +1067,8 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Nothing
     DLE_Remote at _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
+    DLE_ViewIs {} ->
+      mempty
   where
     bo = O_Expr de
     bound at = pathAddBound at mdv bo (Just de)
@@ -1517,7 +1520,7 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) dex s = lp
+  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) dex _dvs s = lp
   let initMapInfo (DLMapInfo {..}) = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = maybeT dlmi_ty

@@ -17,8 +17,9 @@ data Env = Env
   }
 
 type App = ReaderT Env IO
+type AppT a = a -> App a
 
-allocVar :: DLVar -> App DLVar
+allocVar :: AppT DLVar
 allocVar (DLVar at s t _) = do
   Env {..} <- ask
   idx <- liftIO $ incCounter e_idx
@@ -31,18 +32,23 @@ getLoop w = do
     Just (C_Loop {..}) -> return $ cl_body
     _ -> impossible $ "no loop"
 
-djs :: Subst a => a -> App a
+djs :: Subst a => AppT a
 djs x = flip subst_ x . e_rho <$> ask
 
-djs_fi :: FromInfo -> App FromInfo
+djs_asnLike :: AppT [(DLVar, DLArg)]
+djs_asnLike = mapM $ \(v, a) -> (,) v <$> djs a
+
+djs_fi :: AppT FromInfo
 djs_fi = \case
   FI_Halt toks -> FI_Halt <$> mapM djs toks
-  FI_Continue svs -> FI_Continue <$> mapM go svs
-  where
-    go (v, a) = (,) v <$> djs a
+  FI_Continue svs -> FI_Continue <$> djs_asnLike svs
+
+djs_vs :: AppT ViewSave
+djs_vs = \case
+  ViewSave i svs -> ViewSave i <$> djs_asnLike svs
 
 class DeJump a where
-  dj :: a -> App a
+  dj :: AppT a
 
 instance (Subst b, DeJump a) => DeJump (M.Map k (b, a)) where
   dj = mapM (\(x, y) -> (,) <$> djs x <*> dj y)
@@ -52,7 +58,7 @@ instance DeJump CITail where
     CT_Com m k -> CT_Com <$> djs m <*> dj k
     CT_If at c t f -> CT_If at <$> djs c <*> dj t <*> dj f
     CT_Switch at ov csm -> CT_Switch at <$> djs ov <*> dj csm
-    CT_From at w fi -> CT_From at w <$> djs_fi fi
+    CT_From at w v fi -> CT_From at w <$> djs_vs v <*> djs_fi fi
     CT_Jump at dst _ (DLAssignment asnm) -> do
       t <- getLoop dst
       rho <- e_rho <$> ask
@@ -79,7 +85,7 @@ instance DeJump CIHandler where
 dejump :: PIProg -> IO PIProg
 dejump (PLProg at plo dli dex epps cp) = do
   let PLOpts {..} = plo
-  let CPProg cat (CHandlers hs) = cp
+  let CPProg cat vi (CHandlers hs) = cp
   let go h@(C_Loop {}) =
         -- XXX: We leave these unchanged because the ALGO backend uses an
         -- array rather than a map. It would be good to change that.
@@ -90,5 +96,5 @@ dejump (PLProg at plo dli dex epps cp) = do
         let e_idx = plo_counter
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  let cp' = CPProg cat (CHandlers hs')
+  let cp' = CPProg cat vi (CHandlers hs')
   return $ PLProg at plo dli dex epps cp'

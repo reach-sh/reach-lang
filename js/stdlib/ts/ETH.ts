@@ -18,12 +18,14 @@ import {
   getDEBUG,
   lt,
   CurrencyAmount,
+  IBackend,
   IAccount,
   IContract,
   IRecv,
   OnProgress,
   makeRandom,
   argsSplit,
+  objectMap,
 } from './shared';
 import {
   memoizeThunk, replaceableThunk
@@ -53,10 +55,11 @@ type Log = ethers.providers.Log;
 // node --unhandled-rejections=strict
 
 type DeployMode = 'DM_firstMsg' | 'DM_constructor';
-type Backend = {_Connectors: {ETH: {
+type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   ABI: string,
   Bytecode: string,
-  deployMode: DeployMode
+  deployMode: DeployMode,
+  views: {[key: string]: {[key: string]: string}},
 }}};
 
 // TODO: a wrapper obj with smart constructor?
@@ -544,19 +547,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const attachDeferDeploy = (): Contract => {
+      const not_yet = (which:string) => (...args: any[]): any => {
+        void(args);
+        throw Error(`Cannot ${which} yet; contract is not actually deployed`);
+      };
       // impl starts with a shim that deploys on first sendrecv,
       // then replaces itself with the real impl once deployed.
       let impl: Contract = {
-        recv: async (...args) => {
-          void(args);
-          throw Error(`Cannot recv yet; contract is not actually deployed`);
-        },
-        wait: async (...args) => {
-          // Wait times are relative to contract events
-          // Wait without an initial contract event is nonsense
-          void(args);
-          throw Error(`Cannot wait yet; contract is not actually deployed`);
-        },
+        recv: not_yet(`recv`),
+        // Wait times are relative to contract events
+        // Wait without an initial contract event is nonsense
+        wait: not_yet(`wait`),
         sendrecv: async (
           funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
@@ -565,7 +566,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           onlyIf: boolean, soloSend: boolean,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
-          debug(shad, ':', label, 'sendrecv m', funcNum, '(deferred deploy)');
+          debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
           void(evt_cnt);
           void(sim_p);
           // TODO: munge/unmunge roundtrip?
@@ -600,6 +601,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
         iam,
         selfAddress,
+        getViews: not_yet(`getViews`),
         stdlib: compiledStdlib,
       };
       // Return a wrapper around the impl. This obj and its fields do not mutate,
@@ -612,6 +614,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         creationTime: (...args) => impl.creationTime(...args),
         iam: (...args) => impl.iam(...args),
         selfAddress: (...args) => impl.selfAddress(...args),
+        getViews: (...args) => impl.getViews(...args),
         stdlib: compiledStdlib,
       }
     }
@@ -941,10 +944,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return p;
     }
 
-    const creationTime = (async () => bigNumberify((await getInfo()).creation_block));
+    const creationTime = async () =>
+      bigNumberify((await getInfo()).creation_block);
+
+    const views_ctcsm = bin._getViews({reachStdlib: compiledStdlib});
+    const views_namesm = bin._Connectors.ETH.views;
+    const getView1 = (v:string, k:string, ctc: AnyETH_Ty) =>
+      async (): Promise<any> => {
+        const ethersC = await getC();
+        const vkn = views_namesm[v][k];
+        const val = await ethersC[vkn]();
+        return ctc.unmunge(val);
+    };
+    const getViews = () =>
+      objectMap(views_ctcsm, ((v:string, vm:{[key:string]: AnyETH_Ty}) =>
+        objectMap(vm, ((k:string, ctc: AnyETH_Ty) =>
+          getView1(v, k, ctc)))));
 
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
 
   function setDebugLabel(newLabel: string): Account {

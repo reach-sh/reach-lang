@@ -73,6 +73,7 @@ instance Subst DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> subst fa
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
+    DLE_ViewIs at v k a -> DLE_ViewIs at v k <$> subst a
 
 instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
   subst = \case
@@ -105,12 +106,16 @@ instance Subst FromInfo where
     FI_Continue svs -> FI_Continue <$> subst svs
     FI_Halt toks -> FI_Halt <$> subst toks
 
+instance Subst ViewSave where
+  subst = \case
+    ViewSave i svs -> ViewSave i <$> subst svs
+
 instance {-# OVERLAPPING #-} Subst (CTail_ a) where
   subst = \case
     CT_Com m k -> CT_Com <$> subst m <*> subst k
     CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f
     CT_Switch at v csm -> CT_Switch at <$> subst v <*> subst csm
-    CT_From at which msvs -> CT_From at which <$> subst msvs
+    CT_From at which vi msvs -> CT_From at which <$> subst vi <*> subst msvs
     CT_Jump at which svs asn -> CT_Jump at which <$> subst svs <*> subst asn
 
 subst_ :: Subst a => SubstEnv -> a -> a

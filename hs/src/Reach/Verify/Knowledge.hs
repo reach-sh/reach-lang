@@ -223,6 +223,7 @@ kgq_e ctxt mv = \case
   DLE_Remote _ _ av _ pamt as _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
+  DLE_ViewIs {} -> mempty
 
 kgq_m :: KCtxt -> LLCommon -> IO ()
 kgq_m ctxt = \case
@@ -340,7 +341,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts psm) _dli _ s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts psm) _dli _ _ s) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys psm
   llr <- newIORefRef 0

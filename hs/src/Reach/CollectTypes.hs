@@ -96,6 +96,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_MapSet _ _ fa na) = cts [fa, na]
   cts (DLE_MapDel _ _ fa) = cts fa
   cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
+  cts (DLE_ViewIs _ _ _ a) = cts $ a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
@@ -157,7 +158,8 @@ instance CollectsTypes (DLExportinBlock LLVar) where
   cts (DLExportinBlock s r) = cts s <> cts r
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex s) = cts ps <> cts dli <> cts dex <> cts s
+  cts (LLProg _ _ ps dli dex dvs s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts s
 
 instance CollectsTypes PLVar where
   cts (PV_Eff) = mempty
@@ -168,11 +170,15 @@ instance CollectsTypes FromInfo where
     FI_Continue svs -> cts svs
     FI_Halt toks -> cts toks
 
+instance CollectsTypes ViewSave where
+  cts = \case
+    ViewSave _ svs -> cts svs
+
 instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
-  cts (CT_From _ _ msvs) = cts msvs
+  cts (CT_From _ _ vs msvs) = cts vs <> cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
 
 instance CollectsTypes a => CollectsTypes (CInterval a) where

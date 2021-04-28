@@ -134,8 +134,7 @@ data SLVal
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Struct SrcLoc [(SLVar, SLVal)]
-  | SLV_Clo SrcLoc SLClo
-  | SLV_CloTyped SrcLoc SLClo SLTypeFun
+  | SLV_Clo SrcLoc (Maybe SLTypeFun) SLClo
   | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
@@ -156,7 +155,7 @@ data SLVal
   | SLV_Kwd SLKwd
   | SLV_MapCtor SLType
   | SLV_Map DLMVar
-  | SLV_ParticipantConstructor SLParticipantType
+  | SLV_AppArg SLAppArg
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
@@ -173,7 +172,6 @@ instance Pretty SLVal where
     SLV_Object _ (Just lab) _ -> pretty lab
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
-    SLV_CloTyped {} -> "<typed closure>"
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_Struct _ kvs ->
       "struct" <> brackets (hsep $ punctuate comma $ map go kvs)
@@ -192,17 +190,9 @@ instance Pretty SLVal where
     SLV_Kwd k -> pretty k
     SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
-    SLV_ParticipantConstructor p -> pretty p
+    SLV_AppArg p -> pretty p
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
-
-instance Pretty SLParticipantType where
-  pretty p =
-    case p of
-      SLP_Participant _ n e -> pp "Participant" n e
-      SLP_ParticipantClass _ n e -> pp "ParticipantClass" n e
-    where
-      pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -213,21 +203,65 @@ instance SrcLocOf SLVal where
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
     SLV_Object a _ _ -> a
-    SLV_Clo a _ -> a
-    SLV_CloTyped a _ _ -> a
+    SLV_Struct a _ -> a
+    SLV_Clo a _ _ -> a
     SLV_Data a _ _ _ -> a
+    SLV_DLC _ -> def
     SLV_DLVar (DLVar a _ _ _) -> a
+    SLV_Type {} -> def
+    SLV_Connector _ -> def
     SLV_Participant a _ _ _ -> a
-    _ -> srcloc_builtin
+    SLV_RaceParticipant a _ -> a
+    SLV_Anybody -> def
+    SLV_Prim _ -> def
+    SLV_Form _ -> def
+    SLV_Kwd _ -> def
+    SLV_MapCtor {} -> def
+    SLV_Map _ -> def
+    SLV_AppArg a -> srclocOf a
+    SLV_Deprecated _ v -> srclocOf v
+    where
+      def = srcloc_builtin
 
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
 
-data SLParticipantType
-  = SLP_Participant SrcLoc SLVal SLVal
-  | SLP_ParticipantClass SrcLoc SLVal SLVal
+newtype SLInterface = SLInterface (M.Map SLVar SLType)
   deriving (Eq, Generic)
+
+instance Pretty SLInterface where
+  pretty (SLInterface m) = render_obj m
+
+data SLViewInfo
+  = SLViewInfo SrcLoc SLPart SLInterface
+  deriving (Eq, Generic)
+
+instance SrcLocOf SLViewInfo where
+  srclocOf (SLViewInfo a _ _) = a
+
+instance Pretty SLViewInfo where
+  pretty (SLViewInfo _ n v) =
+    "View" <> "(" <> pretty n <> ", " <> pretty v <> ")"
+
+data SLAppArg
+  = SLA_Participant SrcLoc Bool SLPart SLInterface
+  | SLA_View SLViewInfo
+  deriving (Eq, Generic)
+
+instance SrcLocOf SLAppArg where
+  srclocOf = \case
+    SLA_Participant a _ _ _ -> a
+    SLA_View vi -> srclocOf vi
+
+instance Pretty SLAppArg where
+  pretty p =
+    case p of
+      SLA_Participant _ icb n e -> pp ("Participant" <> ic icb) n e
+      SLA_View vi -> pretty vi
+    where
+      ic b = if b then "Class" else ""
+      pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 data SLLValue
   = SLLV_MapRef SrcLoc DLMVar DLArg
@@ -371,14 +405,20 @@ primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
 
-data SLCompiledPartInfo = SLCompiledPartInfo
-  { slcpi_at :: SrcLoc
-  , slcpi_isClass :: Bool
-  , slcpi_who :: SLPart
-  , slcpi_io :: SLSSVal
-  , slcpi_ienv :: InteractEnv
-  , slcpi_lifts :: DLStmts
-  }
+data SLCompiledPartInfo
+  = SLCompiledPartInfo
+    { slcpi_at :: SrcLoc
+    , slcpi_isClass :: Bool
+    , slcpi_who :: SLPart
+    , slcpi_io :: SLSSVal
+    , slcpi_ienv :: InteractEnv
+    , slcpi_lifts :: DLStmts
+    }
+  deriving (Eq, Generic)
+
+data SLAppArgV
+  = SLAV_Participant SLCompiledPartInfo
+  | SLAV_View SLViewInfo
   deriving (Eq, Generic)
 
 data RemoteFunMode
@@ -423,7 +463,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLCompiledPartInfo] [JSExpression] JSStatement (SLEnv, Bool)
+  | SLPrim_App_Delay SrcLoc SLEnv [SLAppArgV] [JSExpression] JSStatement (SLEnv, Bool)
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -441,11 +481,13 @@ data SLPrimitive
   | SLPrim_MapReduce
   | SLPrim_Participant
   | SLPrim_ParticipantClass
+  | SLPrim_View
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
   | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
   | SLPrim_balance
+  | SLPrim_viewis SrcLoc SLPart SLVar SLType
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

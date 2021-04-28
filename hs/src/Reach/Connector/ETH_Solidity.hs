@@ -3,6 +3,7 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
 
 import Control.Monad
+import Control.Monad.Except
 import Control.Monad.Reader
 import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
@@ -14,7 +15,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -40,7 +41,7 @@ import System.Process
 
 --- You can turn this to True and manually change the Solidity file
 dontWriteSol :: Bool
-dontWriteSol = False
+dontWriteSol = True
 
 includeRequireMsg :: Bool
 includeRequireMsg = False
@@ -60,7 +61,7 @@ solNum :: Show n => n -> Doc
 solNum i = pretty $ "uint256(" ++ show i ++ ")"
 
 solBraces :: Doc -> Doc
-solBraces body = braces (nest 2 $ hardline <> body <> space)
+solBraces body = braces (nest 2 $ hardline <> body)
 
 data SolFunctionLike
   = SFL_Constructor
@@ -163,8 +164,11 @@ solMapRef mpv = pretty mpv <> "_ref"
 solBlockNumber :: Doc
 solBlockNumber = "uint256(block.number)"
 
+solEncode :: [Doc] -> Doc
+solEncode = solApply "abi.encode"
+
 solHash :: [Doc] -> Doc
-solHash a = solApply "uint256" [solApply "keccak256" [solApply "abi.encode" a]]
+solHash a = solApply "uint256" [solApply "keccak256" [solEncode a]]
 
 solArraySet :: Int -> Doc
 solArraySet i = "array_set" <> pretty i
@@ -211,6 +215,7 @@ data SolCtxt = SolCtxt
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map DLVar Doc)
+  , ctxt_hasViews :: Bool
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -336,6 +341,7 @@ instance DepthOf DLExpr where
     DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
       add1 $ depthOf $ av : net :
         pairList ks <> as
+    DLE_ViewIs _ _ _ a -> add1 $ depthOf a
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\ (a, b) -> [a, b])
@@ -352,8 +358,15 @@ mkSolType ensure f t = do
   ensure t
   (fromMaybe (impossible "solType") . M.lookup t) <$> readCtxtIO f
 
+solType_ :: AppT DLType
+solType_ = mkSolType ensureTypeDefined ctxt_typem
+
 solType :: AppT DLType
-solType = mkSolType ensureTypeDefined ctxt_typem
+solType t = do
+  t' <- solType_ t
+  case t' == "address" of
+    True -> return $ t' <+> "payable"
+    False -> return $ t'
 
 solTypeI :: DLType -> App Int
 solTypeI t = do
@@ -535,6 +548,7 @@ solExpr sp = \case
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
+  DLE_ViewIs {} -> impossible "viewis"
   where
     spa m = (<> sp) <$> m
 
@@ -850,19 +864,32 @@ solCTail = \case
           <> svs'
           <> asn'
           <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ _XXX_which (FI_Continue svs) -> do
+  CT_From _ _ (ViewSave vi vvs) (FI_Continue svs) -> do
     (setl, sete) <- solHashStateSet svs
     emit' <- ctxt_emit <$> ask
-    return $ vsep $ [emit'] <> setl <> [solSet ("current_state") sete]
-  CT_From _ _ (FI_Halt _XXX_toks) -> do
-    -- XXX we could "selfdestruct" our token holdings
+    viewl <-
+      (ctxt_hasViews <$> ask) >>= \case
+        False -> return []
+        True -> do
+          let vi' = solNum vi
+          vvs' <- mapM solArg $ map snd vvs
+          return [ solSet "current_view_i" vi'
+                 , solSet "current_view_bs" $ solEncode vvs' ]
+    return $ vsep $ [emit'] <> viewl <> setl <> [solSet ("current_state") sete]
+  CT_From _ _ _ (FI_Halt _toks) -> do
+    -- XXX we could "selfdestruct" our token holdings, based on _toks
     emit' <- ctxt_emit <$> ask
+    hv <- ctxt_hasViews <$> ask
+    let mviewl =
+          case hv of
+            False -> []
+            True -> [ solSet "current_view_i" "0x0"
+                    , "delete current_view_bs;" ]
     return $
-      vsep
-        [ emit'
-        , solSet ("current_state") ("0x0")
-        , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
-        ]
+      vsep $
+        [ emit', solSet "current_state" "0x0" ]
+        <> mviewl
+        <> [ solApply "selfdestruct" ["payable(msg.sender)"] <> semi ]
 
 solFrame :: Int -> S.Set DLVar -> App (Doc, Doc)
 solFrame i sim = do
@@ -947,16 +974,22 @@ solHandler which h = freshVarMap $
             last_timev' <- solVar last_timev
             let check sign mv =
                   case mv of
-                    [] -> return "true"
+                    [] -> return Nothing
                     mvs -> do
                       mvs' <- mapM solArg mvs
                       let go_sum x y = solPrimApply ADD [x, y]
                       sum' <- foldlM go_sum last_timev' mvs'
-                      solPrimApply (if sign then PGE else PLT) [timev', sum']
+                      Just <$> solPrimApply (if sign then PGE else PLT) [timev', sum']
             let CBetween ifrom ito = interval
             int_fromp <- check True ifrom
             int_top <- check False ito
-            return $ solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
+            let req x = solRequire (checkMsg "timeout") x <> semi
+            return $
+              case (int_fromp, int_top) of
+                (Just x, Just y) -> req (solBinOp "&&" x y)
+                (Just x, _) -> req x
+                (_, Just y) -> req y
+                _ -> emptyDoc
       let body = vsep [hashCheck, frameDecl, timeoutCheck, ctp]
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
@@ -1060,7 +1093,7 @@ ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   let ctxt_emit = emptyDoc
@@ -1074,8 +1107,8 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
           , (T_Bool, "bool")
           , (T_UInt, "uint256")
           , (T_Digest, "uint256")
-          , (T_Address, "address payable")
-          , (T_Token, "address payable")
+          , (T_Address, "address")
+          , (T_Token, "address")
           ]
   ctxt_typem <- newIORef base_typem
   ctxt_typef <- newIORef mempty
@@ -1085,6 +1118,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
   let ctxt_plo = plo
+  let ctxt_hasViews = isJust mvi
   flip runReaderT (SolCtxt {..}) $ do
     consp <-
       case plo_deployMode of
@@ -1102,7 +1136,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
           let dli' = vsep $ ctimem'
           (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList csvs_)
           let csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-          consbody <- withC $ solCTail (CT_From at 0 (FI_Continue csvs_m))
+          consbody <- withC $ solCTail (CT_From at 0 (ViewSave 0 []) (FI_Continue csvs_m))
           let evtBody = solApply (solMsg_evt (0 :: Int)) []
           let evtEmit = "emit" <+> evtBody <> semi
           let evtDefn = "event" <+> evtBody <> semi
@@ -1112,7 +1146,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
         DM_firstMsg ->
           return $ emptyDoc
     let map_defn (mpv, DLMapInfo {..}) = do
-          let keyTy = "address"
+          keyTy <- solType_ T_Address
           let mt = maybeT dlmi_ty
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]
@@ -1129,7 +1163,42 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
               , ref_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    let state_defn = vsep $ ["uint256 current_state;"] <> map_defns
+    (view_json, view_defns) <-
+      case mvi of
+        Nothing -> return (mempty, [])
+        Just (vs, vi) -> do
+          let vst = [ "uint256 current_view_i;", "bytes current_view_bs;" ]
+          let tgo v (k, t) = do
+                let vk_ = bunpack v <> "_" <> k
+                let vk = pretty $ vk_
+                t' <- solType t
+                let ret = "external view returns" <+> parens t'
+                let mlf m mk =
+                      case M.lookup mk m of
+                        Just x -> x
+                        Nothing -> impossible "sol view defn"
+                let igo (i, ViewInfo vvs vim) = freshVarMap $ do
+                      let a = mlf (mlf vim v) k
+                      c' <- solEq "current_view_i" $ solNum i
+                      let h = parens . hsep . punctuate ","
+                      vvts <- mapM (solType_ . varType) vvs
+                      let vvs' = h vvts
+                      let vdef vv = solDecl (solRawVar vv)
+                      let de' = solSet (h $ zipWith vdef vvs vvts) $ solApply "abi.decode" [ "current_view_bs", vvs' ]
+                      extendVarMap $ M.fromList $ map (\vv->(vv, solRawVar vv)) $ vvs
+                      ret' <- ("return" <+>) <$> solArg a
+                      return $ solWhen c' $ vsep [ de', ret' <> semi ]
+                body' <- mapM igo $ M.toAscList vi
+                let body'' = vsep $ body' <> [ solRequire "invalid view_i" "false" <> semi ]
+                return $ (,) (s2t k, Aeson.String $ s2t vk_) $
+                  solFunction vk [] ret body''
+          let vgo (v, tm) = do
+                (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
+                return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs
+          (o_vs, vfns) <- unzip <$> (mapM vgo $ M.toAscList vs)
+          return $ (,) o_vs $ "" : vst <> vfns
+    let state_defn = vsep $
+          ["uint256 current_state;"] <> map_defns <> view_defns
     hs' <- solHandlers hs
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
     typedsp <- getm ctxt_typed
@@ -1140,7 +1209,9 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at hs)) = do
     let defp = "receive () external payable {}"
     let ctcbody = vsep $ [state_defn, consp, typefsp, outputsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
-    let cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
+    let cinfo = HM.fromList $
+          [ ("deployMode", Aeson.String $ T.pack $ show plo_deployMode)
+          , ("views", Aeson.object view_json ) ]
     let preamble =
           vsep
             [ "// Automatically generated with Reach" <+> (pretty versionStr)
@@ -1175,50 +1246,36 @@ instance FromJSON CompiledSolRec where
       Nothing ->
         impossible "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: ConnectorInfoMap -> Value -> Either String ConnectorInfo
-extract cinfo v = case fromJSON v of
-  Error e -> Left e
-  Success CompiledSolRec {..} ->
-    case eitherDecode (LB.pack (T.unpack csrAbi)) of
-      Left e -> Left e
-      Right (csrAbi_parsed :: Value) ->
-        Right $
-          Aeson.Object $
-            HM.union
-              (HM.fromList
-                 [ ("ABI", Aeson.String csrAbi_pretty)
-                 , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                   ("Bytecode", Aeson.String $ "0x" <> csrCode)
-                 ])
-              cinfo
-        where
-          csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
-          cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
+extract :: ConnectorInfoMap -> Value -> Except String ConnectorInfo
+extract cinfo v = do
+  let liftResult = \case
+        Error x -> Left x
+        Success y -> Right y
+  CompiledSolRec {..} <- liftEither $ liftResult $ fromJSON v
+  (csrAbi_parsed :: Value) <- liftEither $
+    eitherDecode (LB.pack (T.unpack csrAbi))
+  let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
+  let csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
+  return $
+    Aeson.Object $
+      HM.union
+        (HM.fromList $
+          [ ("ABI", Aeson.String csrAbi_pretty)
+          , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+          ])
+        cinfo
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
   (ec, stdout, stderr) <-
     readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
   let show_output = "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr ++ "\n"
+  let bad msg = impossible $ "solc failed:\n" ++ show_output ++ msg
   case ec of
-    ExitFailure _ -> impossible $ "solc failed:\n" ++ show_output
+    ExitFailure _ -> bad ""
     ExitSuccess ->
-      case (eitherDecode $ LB.pack stdout) of
-        Right v ->
-          case extract cinfo v of
-            Right cr -> return cr
-            Left err ->
-              impossible $
-                "failed to extract valid output from solc:\n" ++ show_output
-                  ++ "Decode:\n"
-                  ++ err
-                  ++ "\n"
-        Left err ->
-          impossible $
-            "solc failed to produce valid output:\n" ++ show_output
-              ++ "Decode:\n"
-              ++ err
-              ++ "\n"
+      either bad return $ runExcept $
+        extract cinfo =<< (liftEither $ eitherDecode $ LB.pack stdout)
 
 connect_eth :: Connector
 connect_eth = Connector {..}

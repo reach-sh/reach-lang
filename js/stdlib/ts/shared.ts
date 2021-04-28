@@ -16,6 +16,10 @@ type BigNumber = ethers.BigNumber;
 
 type num = BigNumber | number
 
+export type IBackend<ConnectorTy extends AnyBackendTy> = {
+  _getViews: (stdlib:Object) => {[key: string]: {[key: string]: ConnectorTy}},
+};
+
 export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
 
 export type WPArgs = {
@@ -58,6 +62,7 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
   selfAddress: () => CBR_Address, // Not RawAddress!
+  getViews: () => {[key: string]: {[key: string]: (() => Promise<any>)}},
   stdlib: Object,
 };
 
@@ -277,6 +282,12 @@ export const mapRef = (m: any, f: any): any => {
     return ['Some', v];
   }
 };
+
+export const objectMap = <A,B>(object: {[key:string]: A}, mapFn: ((k:string, a:A) => B)): {[key:string]: B} =>
+  Object.keys(object).reduce(function(result: {[key:string]: B}, key:string) {
+    result[key] = mapFn(key, object[key])
+    return result;
+  }, {});
 
 // XXX this doesn't really belong here, but hard to relocate due to dep on bytesEq
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}

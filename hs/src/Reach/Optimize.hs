@@ -163,7 +163,13 @@ instance Optimize DLExpr where
     DLE_Arg at a -> DLE_Arg at <$> opt a
     DLE_LArg at a -> DLE_LArg at <$> opt a
     DLE_Impossible at lab -> return $ DLE_Impossible at lab
-    DLE_PrimOp at p as -> DLE_PrimOp at p <$> opt as
+    DLE_PrimOp at p as -> do
+      as' <- opt as
+      let meh = return $ DLE_PrimOp at p as'
+      case (p, as') of
+        (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
+          return $ DLE_Arg at $ if c then t else f
+        _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
@@ -172,7 +178,13 @@ instance Optimize DLExpr where
     DLE_ObjectRef at o k -> DLE_ObjectRef at <$> opt o <*> pure k
     DLE_Interact at fs p m t as -> DLE_Interact at fs p m t <$> opt as
     DLE_Digest at as -> DLE_Digest at <$> opt as
-    DLE_Claim at fs t a m -> DLE_Claim at fs t <$> opt a <*> (pure $ m)
+    DLE_Claim at fs t a m -> do
+      a' <- opt a
+      case a' of
+        DLA_Literal (DLL_Bool True) ->
+          return $ DLE_Arg at $ DLA_Literal $ DLL_Null
+        _ ->
+          return $ DLE_Claim at fs t a' m
     DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
     DLE_TokenInit at t -> DLE_TokenInit at <$> opt t
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
@@ -182,6 +194,7 @@ instance Optimize DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
+    DLE_ViewIs at k n a -> DLE_ViewIs at k n <$> opt a
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
@@ -329,13 +342,13 @@ instance Optimize DLInit where
         }
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex s) = do
+  opt (LLProg at opts ps dli dex dvs s) = do
     let SLParts m = ps
     let psl = M.keys m
     env0 <- liftIO $ mkEnv0 psl
     local (\_ -> env0) $
       focusa $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> opt s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> opt s
 
 -- This is a bit of a hack...
 
@@ -345,14 +358,16 @@ instance Extract PLVar where
     PV_Let _ v -> Just v
 
 opt_svs :: AppT [(DLVar, DLArg)]
-opt_svs = mapM go
-  where
-    go (v, a) = (\x -> (v, x)) <$> opt a
+opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
 
 instance Optimize FromInfo where
   opt = \case
     FI_Continue svs -> FI_Continue <$> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
+
+instance Optimize ViewSave where
+  opt = \case
+    ViewSave i svs -> ViewSave i <$> opt_svs svs
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a) where
   opt = \case
@@ -363,8 +378,8 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a
       CT_Switch at ov <$> mapM cm1 csm
       where
         cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
-    CT_From at w fi ->
-      CT_From at w <$> opt fi
+    CT_From at w v fi ->
+      CT_From at w <$> opt v <*> opt fi
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
 
@@ -375,9 +390,12 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler
     C_Loop {..} -> do
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 
+instance Optimize ViewInfo where
+  opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
+
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
-  opt (CPProg at (CHandlers hs)) =
-    CPProg at . CHandlers <$> mapM (newScope . opt) hs
+  opt (CPProg at vi (CHandlers hs)) =
+    CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
 
 instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
   opt (PLProg at plo dli dex epps cp) =

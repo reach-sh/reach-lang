@@ -783,6 +783,7 @@ ce = \case
   DLE_MapSet {} -> xxx "algo mapset"
   DLE_MapDel {} -> xxx "algo mapdel"
   DLE_Remote {} -> xxx "algo remote"
+  DLE_ViewIs {} -> impossible "viewis"
 
 doTransfer :: TxnKind -> SrcLoc -> App () -> DLArg -> Maybe DLArg -> App ()
 doTransfer tk _at cwho amt mtok = do
@@ -932,7 +933,7 @@ ct = \case
     doSwitch (withFresh . ct) at dv csm
   CT_Jump {} ->
     impossible $ "continue after dejump"
-  CT_From _ which msvs -> do
+  CT_From _ which _XXXvi msvs -> do
     check_nextSt
     halt_should_be isHalt
     finalize
@@ -1252,7 +1253,7 @@ compile_algo disp pl = do
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
-  let CPProg _at (CHandlers hm) = cpp
+  let CPProg _at _XXXvi (CHandlers hm) = cpp
   resr <- newIORef mempty
   sFailedR <- newIORef False
   let shared = Shared {..}

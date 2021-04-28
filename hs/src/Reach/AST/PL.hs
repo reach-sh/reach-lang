@@ -168,11 +168,19 @@ instance Pretty a => Pretty (EPProg_ a) where
   pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
 
+data ViewSave
+  = ViewSave Int [(DLVar, DLArg)]
+  deriving (Eq)
+
+instance Pretty ViewSave where
+  pretty (ViewSave vi svs) =
+    pform "viewsave" (pretty vi <> "," <+> pretty svs)
+
 data CTail_ a
   = CT_Com (DLinStmt a) (CTail_ a)
   | CT_If SrcLoc DLArg (CTail_ a) (CTail_ a)
   | CT_Switch SrcLoc DLVar (SwitchCases (CTail_ a))
-  | CT_From SrcLoc Int FromInfo
+  | CT_From SrcLoc Int ViewSave FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
@@ -180,7 +188,7 @@ instance Pretty a => Pretty (CTail_ a) where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
-  pretty (CT_From _ which fi) = pform "from" $ pretty which <> "," <+> pretty fi
+  pretty (CT_From _ which vi fi) = pform "from" $ pretty which <> "," <+> pretty vi <> "," <+> pretty fi
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
       args = pretty which <+> pretty vars <+> pretty assignment
@@ -276,14 +284,27 @@ instance Pretty ColorGraphs where
                 $ M.toList g
          in braces $ hardline <> vsep rows
 
+type ViewsInfo = M.Map SLPart (M.Map SLVar DLArg)
+
+data ViewInfo = ViewInfo [DLVar] ViewsInfo
+  deriving (Eq)
+
+instance Pretty ViewInfo where
+  pretty (ViewInfo vs vi) =
+    pform "view" (pretty vs <+> pretty vi)
+
+type ViewInfos = M.Map Int ViewInfo
+
+type CPViews = DLViews
+
 data CPProg a
-  = CPProg SrcLoc (CHandlers_ a)
+  = CPProg SrcLoc (Maybe (CPViews, ViewInfos)) (CHandlers_ a)
   deriving (Eq)
 
 type CIProg = CPProg PILVar
 
 instance Pretty a => Pretty (CPProg a) where
-  pretty (CPProg _ chs) = pretty chs
+  pretty (CPProg _ vis chs) = "views:" <+> pretty vis <> hardline <> pretty chs
 
 newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
   deriving (Eq)

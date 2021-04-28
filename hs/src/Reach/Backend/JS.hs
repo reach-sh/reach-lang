@@ -374,8 +374,8 @@ jsExpr = \case
   DLE_MapDel _ mpv fa -> do
     fa' <- jsArg fa
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
-  DLE_Remote {} ->
-    impossible "jsExpr remote"
+  DLE_Remote {} -> impossible "remote"
+  DLE_ViewIs {} -> impossible "viewis"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -696,8 +696,8 @@ newJsContract = do
 
 jsPart :: DLInit -> SLPart -> EIProg -> App Doc
 jsPart dli p (EPProg _ _ et) = do
-  JSContracts {..} <- newJsContract
-  let ctxt_ctcs = Just $ JSContracts {..}
+  jsc@(JSContracts {..}) <- newJsContract
+  let ctxt_ctcs = Just jsc
   let ctxt_who = p
   let ctxt_txn = 0
   let ctxt_while = Nothing
@@ -783,22 +783,33 @@ jsExportBlock = \case
     return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
   DLExportinBlock _ ev -> jsExportValue ev
 
-jsExports :: DLinExports PILVar -> App Doc
-jsExports exports = do
+jsFunctionWStdlib :: Doc -> App Doc -> App Doc
+jsFunctionWStdlib name mbody = do
   jsc <- newJsContract
   local (\c -> c {ctxt_ctcs = Just jsc}) $ do
-    exportM <- mapM jsExportBlock exports
+    body <- mbody
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
     let ctcs = map snd $ M.toAscList i2t'
-    let body =
-          vsep $
-            ["const stdlib = s.reachStdlib" <> semi]
-              <> ctcs
-              <> [jsReturn (jsObject exportM)]
-    return $ "export" <+> jsFunction_ "getExports" ["s"] body
+    return $ (<+>) "export" $ jsFunction_ name ["s"] $
+      vsep $ ["const stdlib = s.reachStdlib" <> semi]
+        <> ctcs
+        <> [body]
+
+jsExports :: DLinExports PILVar -> App Doc
+jsExports exports =
+  jsFunctionWStdlib "getExport" $ do
+    exportM <- mapM jsExportBlock exports
+    return $ jsReturn $ jsObject exportM
+
+jsViews :: Maybe (CPViews, ViewInfos) -> App Doc
+jsViews mcv = do
+  jsFunctionWStdlib "_getViews" $ do
+    let cvs = fromMaybe mempty $ fmap fst mcv
+    let toObj fv o = jsObject <$> mapM fv o
+    jsReturn <$> toObj (toObj jsContract) cvs
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _)) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
@@ -809,7 +820,8 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _)) = do
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
   exportsp <- jsExports dexports
-  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
+  viewsp <- jsViews vi
+  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : viewsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 
 backend_js :: Backend
 backend_js outn crs pl = do

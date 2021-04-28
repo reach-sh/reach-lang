@@ -16,6 +16,7 @@ import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
+import Reach.Optimize
 import Reach.Texty
 import Reach.Util
 
@@ -164,6 +165,9 @@ data BEnv = BEnv
   , be_loop :: Maybe Int
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
+  , be_viewc :: Counter
+  , be_viewr :: IORef ViewInfos
+  , be_views :: ViewsInfo
   }
 
 type BApp = ReaderT BEnv IO
@@ -233,6 +237,34 @@ fg_child child = do
 fg_jump :: Int -> BApp ()
 fg_jump dst = do
   fg_record $ \f -> f {fid_jumps = S.insert dst $ fid_jumps f}
+
+-- Views
+isViewIs :: LLCommon -> Bool
+isViewIs = \case
+  DL_Let _ _ (DLE_ViewIs {}) -> True
+  _ -> False
+
+recordView :: LLCommon -> BApp a -> BApp a
+recordView (DL_Let _ _ (DLE_ViewIs _ v f a)) =
+  local (\e -> e { be_views = modv $ be_views e})
+  where
+    modv = mAdjust mempty v modf
+    modf = M.insert f a
+    mAdjust d k m = flip M.alter k $ Just . m . fromMaybe d
+recordView _ = impossible "recordView not called on isViewIs"
+
+asnLike :: [DLVar] -> [(DLVar, DLArg)]
+asnLike = map (\x -> (x, DLA_Var x))
+
+assignView :: BApp ViewSave
+assignView = do
+  BEnv {..} <- ask
+  let vs = countsl be_views
+  let vi = ViewInfo vs be_views
+  i <- liftIO $ incCounter be_viewc
+  let vis = ViewSave i $ asnLike vs
+  liftIO $ modifyIORef be_viewr $ M.insert i vi
+  return $ vis
 
 -- Read flow
 data CEnv = CEnv
@@ -387,6 +419,8 @@ instance OnlyHalts LLStep where
 
 be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
 be_c = \case
+  LLC_Com c k | isViewIs c ->
+    recordView c $ be_c k
   LLC_Com c k -> do
     let toks =
           case c of
@@ -420,17 +454,19 @@ be_c = \case
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     which <- be_which <$> ask
+    vis <- assignView
     (more, s'l) <-
       captureMore $
-        local (\e -> e {be_interval = default_interval}) $
+        local (\e -> e {be_interval = default_interval}) $ do
+          fg_use $ vis
           be_s s
     toks <- be_toks <$> ask
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case more of
-            True -> FI_Continue $ map (\x -> (x, DLA_Var x)) svs
+            True -> FI_Continue $ asnLike svs
             False -> FI_Halt toks
-    let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
+    let cm = CT_From at1 which vis <$> mkfrom_info ce_readMustSave
     let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
@@ -473,7 +509,8 @@ be_c = \case
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'
     setHandler this_loop $ do
       loop_svs <- ce_readMustReceive this_loop
-      C_Loop at loop_svs loop_vars <$> loop_top
+      loopc <- (liftIO . optimize) =<< loop_top
+      return $ C_Loop at loop_svs loop_vars loopc
     fg_jump $ this_loop
     let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
     let lm = ET_While at asn cond <$> body'l <*> k'l
@@ -491,6 +528,8 @@ be_c = \case
 
 be_s :: LLStep -> BApp (EApp EITail)
 be_s = \case
+  LLS_Com c k | isViewIs c ->
+    recordView c $ be_s k
   LLS_Com c k -> do
     int <- be_interval <$> ask
     let int' =
@@ -576,7 +615,7 @@ mk_eb = \case
     DLExportinBlock body' <$> mk_ev r
 
 epp :: LLProg -> IO PIProg
-epp (LLProg at (LLOpts {..}) ps dli dex s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   -- Step 1: Analyze the program to compute basic blocks
   be_handlerc <- newCounter 1
   be_handlers <- newIORef mempty
@@ -587,8 +626,13 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
+  be_viewc <- newCounter 1
+  be_viewr <- newIORef mempty
+  let be_views = mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  vm <- readIORef be_viewr
   hs <- readIORef be_handlers
+  let mvm = if M.null dvs then Nothing else Just (dvs, vm)
   -- Step 2: Solve the flow graph
   flowi <- readIORef be_flowr
   let flowi' = M.map (const mempty) hs
@@ -601,7 +645,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex s) = do
   dex' <-
     flip runReaderT (BEnv {..}) $
       mapM mk_eb dex
-  cp <- (CPProg at . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at mvm . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

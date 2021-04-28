@@ -14,7 +14,7 @@ const {Buffer} = buffer;
 
 import {
   CurrencyAmount, OnProgress,
-  IAccount, IContract, IRecv, ISimRes, ISimTxn,
+  IBackend, IAccount, IContract, IRecv, ISimRes, ISimTxn,
   debug, assert, envDefault,
   isBigNumber, bigNumberify, bigNumberToNumber,
   argsSlice,
@@ -103,7 +103,7 @@ type CompileResultBytes = {
 
 type NetworkAccount = Wallet;
 
-type Backend = {_Connectors: {ALGO: {
+type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   appApproval0: string,
   appApproval: string,
   appClear: string,
@@ -1244,9 +1244,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
-    const creationTime = async () => bigNumberify((await getInfo()).creationRound);
+    const creationTime = async () =>
+      bigNumberify((await getInfo()).creationRound);
 
-    return { getInfo, creationTime, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
+    const getViews = () => {
+      throw Error(`Algorand does not support views`);
+    };
+
+    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {
@@ -1344,6 +1349,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       wait: async(...args: any) => (await implP).wait(...args),
       iam, // doesn't need to await the implP
       selfAddress, // doesn't need to await the implP
+      // @ts-ignore
+      getViews: async(...args: any) => (await implP).getViews(...args),
       stdlib: compiledStdlib,
     };
   };

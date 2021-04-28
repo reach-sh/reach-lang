@@ -143,6 +143,12 @@ srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 class SrcLocOf a where
   srclocOf :: a -> SrcLoc
 
+srclocOf_ :: SrcLocOf a => SrcLoc -> a -> SrcLoc
+srclocOf_ def v = a'
+  where
+    a = srclocOf v
+    a' = if a == srcloc_builtin then def else a
+
 --- Security Levels
 data SecurityLevel
   = Secret

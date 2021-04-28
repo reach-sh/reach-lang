@@ -71,6 +71,7 @@ instance Sanitize DLExpr where
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
     DLE_MapDel _ mv fa -> DLE_MapDel sb mv (sani fa)
     DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) wbill
+    DLE_ViewIs _ v k a -> DLE_ViewIs sb v k (sani a)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
@@ -127,10 +128,19 @@ instance Sanitize LLStep where
     LLS_Only _ p l s -> LLS_Only sb p (sani l) (sani s)
     LLS_ToConsensus _ send recv mtime -> LLS_ToConsensus sb (sani send) (sani recv) (sani mtime)
 
+instance Sanitize FromInfo where
+  sani = \case
+    FI_Continue svs -> FI_Continue $ sani svs
+    FI_Halt toks -> FI_Halt $ sani toks
+
+instance Sanitize ViewSave where
+  sani = \case
+    ViewSave i svs -> ViewSave i $ sani svs
+
 instance {-# OVERLAPPING #-} Sanitize a => Sanitize (CTail_ a) where
   sani = \case
     CT_Com m k -> CT_Com (sani m) (sani k)
     CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)
     CT_Switch _ x b -> CT_Switch sb x (sani b)
-    CT_From _ w vs -> CT_From sb w vs
+    CT_From _ w vi vs -> CT_From sb w (sani vi) (sani vs)
     CT_Jump _ a b c -> CT_Jump sb a b (sani c)

@@ -137,6 +137,7 @@ data EvalError
   | Err_Token_InWhile
   | Err_Token_DynamicRef
   | Err_WithBill_Type DLType
+  | Err_View_DuplicateView SLPart
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -271,7 +272,7 @@ instance Show EvalError where
       -- FIXME explain why null is expected
       "Invalid block result type. Expected Null, got " <> show ty
     Err_Block_Variable ->
-      "Invalid `var` syntax. (Double check your syntax for while?)"
+      "Invalid `var` syntax. (Double check your `while` syntax)"
     Err_Block_While ->
       "Invalid `while` syntax"
     Err_CannotReturn ->
@@ -524,5 +525,7 @@ instance Show EvalError where
       "Token reference based on dynamic computation, which Reach cannot track, yet."
     Err_WithBill_Type ty ->
       "`withBill` expects no arguments or a Tuple of Tokens, but received: " <> show (pretty ty)
+    Err_View_DuplicateView n ->
+      "Duplicated view name: " <> show n
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
