@@ -797,7 +797,7 @@ jsFunctionWStdlib name mbody = do
 
 jsExports :: DLinExports PILVar -> App Doc
 jsExports exports =
-  jsFunctionWStdlib "getExport" $ do
+  jsFunctionWStdlib "getExports" $ do
     exportM <- mapM jsExportBlock exports
     return $ jsReturn $ jsObject exportM
 
