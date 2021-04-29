@@ -6,59 +6,73 @@ module Reach.Eval.ImportSource
   , HostGitAcct(..)
   , HostGitRef(..)
   , HostGitRepo(..)
-  , from
+  , HostGitDir(..)
+  , HostGitFile(..)
+  , importSource
   ) where
 
 import Text.Parsec
-import Reach.Util (uncurry3)
+import System.FilePath (isValid)
+import Reach.Util      (uncurry5)
 
 
-newtype HostGitAcct = HostGitAcct String deriving (Eq, Show)
-newtype HostGitRepo = HostGitRepo String deriving (Eq, Show)
-newtype HostGitRef  = HostGitRef  String deriving (Eq, Show)
+newtype HostGitAcct = HostGitAcct  String    deriving (Eq, Show)
+newtype HostGitRepo = HostGitRepo  String    deriving (Eq, Show)
+newtype HostGitRef  = HostGitRef   String    deriving (Eq, Show)
+newtype HostGitDir  = HostGitDir  [FilePath] deriving (Eq, Show)
+newtype HostGitFile = HostGitFile  FilePath  deriving (Eq, Show)
 
 data HostGit
-  = GitHub    HostGitAcct HostGitRepo HostGitRef
-  | BitBucket HostGitAcct HostGitRepo HostGitRef
+  = GitHub    HostGitAcct HostGitRepo HostGitRef HostGitDir HostGitFile
+  | BitBucket HostGitAcct HostGitRepo HostGitRef HostGitDir HostGitFile
   deriving (Eq, Show)
 
 
 data ImportSource
   = ImportLocal     FilePath
-  | ImportRemoteGit HostGit (Maybe FilePath)
+  | ImportRemoteGit HostGit
   deriving (Eq, Show)
 
 -- @github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh
 
 
-mostHosts :: Parsec String () (HostGitAcct, HostGitRepo, HostGitRef)
+mostHosts :: Parsec String () (HostGitAcct, HostGitRepo, HostGitRef, HostGitDir, HostGitFile)
 mostHosts = do
-  _ <- notFollowedBy (char ':')
-  (,,) <$> (HostGitAcct <$> manyTill anyChar (char '/'))
-       <*> (HostGitRepo <$> manyTill anyChar (char '#'))
-       <*> (HostGitRef  <$> manyTill anyChar (char '/'))
+  (,,,,) <$> (HostGitAcct <$> manyTill (allowed "host account") (char '/'))
+         <*> (HostGitRepo <$> manyTill (allowed "repo")         (char '#'))
+         <*> (HostGitRef  <$> manyTill (allowed "ref")          (char '/'))
+         <*> (HostGitDir  <$> many dir)
+         <*> (HostGitFile <$> (filename <|> pure "index.rsh"))
 
+ where
+  allowed t = alphaNum <|> oneOf "-_."
+    <?> "valid git " <> t <> " character (alphanumeric, -, _, .)"
 
-bitbucket :: Parsec String () HostGit
-bitbucket = fmap (uncurry3 BitBucket) $ string "bitbucket.org:" *> mostHosts
+  dir = try $ manyTill (allowed "directory") (char '/')
 
-
-github :: Parsec String () HostGit
-github = fmap (uncurry3 GitHub) $ (optional $ string "github.com:") *> mostHosts
-
-
-gitHost :: Parsec String () HostGit
-gitHost = bitbucket <|> github
+  filename = do
+    n <- manyTill (allowed "file") (try . lookAhead $ string ".rsh" <* eof)
+    pure $ n <> ".rsh"
 
 
 remoteGit :: Parsec FilePath () ImportSource
 remoteGit = do
+  let h |?| p   = uncurry5 h <$> p; infixr 3 |?|
+      bitbucket = BitBucket |?|      (try $ string "bitbucket.org:") *> mostHosts
+      github    = GitHub    |?| (optional $ string    "github.com:") *> mostHosts
+
   _ <- string "@"
-  g <- gitHost
-  f <- manyTill anyChar eof
-  pure $ ImportRemoteGit g (Just f)
+  h <- bitbucket <|> github <?> "git host"
+
+  pure $ ImportRemoteGit h
 
 
-from :: FilePath -> ImportSource
-from p = either (const $ ImportLocal p) id
-  $ runParser remoteGit () "" p
+localPath :: Parsec FilePath () ImportSource
+localPath = do
+  p <- manyTill anyChar eof
+  if isValid p then pure $ ImportLocal p
+               else fail $ "Invalid local path: " <> p
+
+
+importSource :: FilePath -> Either ParseError ImportSource
+importSource = runParser (remoteGit <|> localPath) () ""

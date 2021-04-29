@@ -1,11 +1,13 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
-  , spec_importsource
+  , spec_ImportSource
   , test_compileBundle_errs
+  , main
   )
 where
 
+import Data.Either (isLeft)
 import Data.Proxy
 import Reach.Eval.Error
 import Reach.Eval.ImportSource
@@ -22,7 +24,6 @@ spec_examples_cover_EvalError =
   mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
   where
     p = Proxy @EvalError
-    -- TODO: exceptions = []
     exceptions =
       [ "Err_App_InvalidArgs"
       , "Err_CannotReturn" -- most attempts were not valid js
@@ -53,7 +54,6 @@ spec_examples_cover_ParserError =
   mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
   where
     p = Proxy @ParserError
-    -- TODO: exceptions = []
     exceptions =
       [ "Err_Parser_Arrow_NoFormals" -- (=> e) didn't work
       , "Err_Parse_IllegalLiteral" -- undefined didn't work
@@ -61,28 +61,34 @@ spec_examples_cover_ParserError =
       , "Err_Parse_JSIdentNone"
       ]
 
-spec_importsource :: Spec
-spec_importsource = do
-  describe "Module `Reach.Eval.ImportSource`" $ do
+spec_ImportSource :: Spec
+spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
 
-    describe "exports a `from` function which" $ do
-      it "can distinguish local imports" $ do
-        let f = "../examples/nim/index-abstract.rsh"
-        from f `shouldBe` ImportLocal f
+  describe "exports an `importSource` function which" $ do
+    it "can distinguish local imports" $ do
+      let f = "./examples/nim/index-abstract.rsh"
+          n = "@bork"
+      importSource f `shouldBe` (Right $ ImportLocal f)
+      isLeft (importSource n) `shouldBe` True
 
-      describe "can distinguish remote GitHub imports" $ do
-        it "in long-form" $ do
-          from "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-            `shouldBe` ImportRemoteGit
-                (GitHub (HostGitAcct "reach-sh")
-                        (HostGitRepo "reach-lang")
-                        (HostGitRef  "6c3dd0f"))
-                (Just "examples/exports/index.rsh")
+    describe "can distinguish remote GitHub imports" $ do
+      it "in long-form" $ do
+        importSource "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+          `shouldBe` (Right $ ImportRemoteGit $ GitHub
+            (HostGitAcct "reach-sh")
+            (HostGitRepo "reach-lang")
+            (HostGitRef  "6c3dd0f")
+            (HostGitDir  [ "examples", "exports" ])
+            (HostGitFile "index.rsh"))
 
-        it "(by default) when no host is specified" $ do
-          from "@reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-            `shouldBe` ImportRemoteGit
-                (GitHub (HostGitAcct "reach-sh")
-                        (HostGitRepo "reach-lang")
-                        (HostGitRef  "6c3dd0f"))
-                (Just "examples/exports/index.rsh")
+      it "(by default) when no host is specified" $ do
+        importSource "@reach-sh/reach-lang#6c3dd0f/module.rsh"
+          `shouldBe` (Right $ ImportRemoteGit $ GitHub
+            (HostGitAcct "reach-sh")
+            (HostGitRepo "reach-lang")
+            (HostGitRef  "6c3dd0f")
+            (HostGitDir  [])
+            (HostGitFile "module.rsh"))
+
+main :: IO ()
+main = hspec spec_ImportSource

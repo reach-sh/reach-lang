@@ -18,6 +18,8 @@ module Reach.Util
   , justValues
   , Top(..)
   , uncurry3
+  , uncurry4
+  , uncurry5
   )
 where
 
@@ -110,3 +112,9 @@ data Top
 
 uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
 uncurry3 f (a, b, c) = f a b c
+
+uncurry4 :: (a -> b -> c -> d -> e) -> (a, b, c, d) -> e
+uncurry4 f (a, b, c, d) = f a b c d
+
+uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
+uncurry5 f (a, b, c, d, e) = f a b c d e

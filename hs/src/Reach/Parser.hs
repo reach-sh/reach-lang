@@ -27,6 +27,7 @@ import Language.JavaScript.Parser.AST hiding (showStripped)
 import Language.JavaScript.Parser.Lexer
 import Reach.AST.Base
 import Reach.EmbeddedFiles
+import Reach.Eval.ImportSource
 import Reach.JSUtil
 import Reach.Texty
 import Reach.UnsafeUtil
@@ -35,6 +36,7 @@ import System.Directory
 import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
+import qualified Text.Parsec as P
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -49,6 +51,7 @@ data ParserError
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
+  | Err_Parse_InvalidImportSource FilePath P.ParseError
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 --- FIXME implement a custom show that is useful
@@ -77,6 +80,8 @@ instance Show ParserError where
     "Invalid import: dotdot path imports are not supported: " <> fp
   show (Err_Parse_NotModule ast) =
     "Not a module: " <> (take 256 $ show ast)
+  show (Err_Parse_InvalidImportSource fp e) =
+    "Invalid import: " <> fp <> "\n" <> show e
 
 --- Helpers
 parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
@@ -181,7 +186,17 @@ gatherDeps_ast at fmr = \case
   j ->
     expect_thrown at (Err_Parse_NotModule j)
 
-updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> ParserError) -> (a -> IO b) -> IO c
+updatePartialAvoidCycles
+  :: Ord a
+  => SrcLoc                -- ^ at
+  -> IORef (BundleMap a b) -- ^ fmr
+  -> Maybe a               -- ^ mfrom
+  -> [a]                   -- ^ def_a
+  -> (() -> IO a)          -- ^ get_key
+  -> (a -> c)              -- ^ ret_key
+  -> (a -> ParserError)    -- ^ err_key
+  -> (a -> IO b)           -- ^ proc_key
+  -> IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
@@ -192,7 +207,7 @@ updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = d
       content <- proc_key key
       (dm', fm') <- readIORef fmr
       let fm'' = (M.insert key (Just content) fm')
-          add_key ml = Just $ key : (maybe [] (\x -> x) ml)
+          add_key ml = Just $ key : (maybe [] id ml)
           dm'' = case mfrom of
             Just from -> (M.alter add_key from dm')
             Nothing -> dm'
@@ -233,22 +248,43 @@ data GatherContext = GatherTop | GatherNotTop
 
 gatherDeps_file :: GatherContext -> SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
 gatherDeps_file gctxt at fmr src_rel =
-  updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
+  updatePartialAvoidCycles
+    at
+    fmr
+    (gatherDeps_from at)
+    [ReachStdLib]
+    get_key
+    ret_key
+    Err_Parse_CyclicImport
+    proc_key
+
   where
-    get_key () = do
-      src_abs <- makeAbsolute src_rel
-      reRel <- makeRelativeToCurrentDirectory src_abs
-      when (gctxt == GatherNotTop) $ do
-        when (isAbsolute src_rel) $ do
-          expect_thrown at (Err_Parse_ImportAbsolute src_rel)
-        when ("../" `isPrefixOf` reRel) $ do
-          expect_thrown at (Err_Parse_ImportDotDot src_rel)
-      return $ ReachSourceFile src_abs
-    ret_key (ReachSourceFile x) = x
-    ret_key (ReachStdLib) = no_stdlib
     no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
-    err_key x = Err_Parse_CyclicImport x
-    proc_key (ReachStdLib) = no_stdlib
+
+    get_key () = case importSource src_rel of
+      Left e ->
+        expect_thrown at (Err_Parse_InvalidImportSource src_rel e)
+
+      Right (ImportLocal src_rel') -> do
+        src_abs <- makeAbsolute src_rel'
+        reRel   <- makeRelativeToCurrentDirectory src_abs
+
+        when (gctxt == GatherNotTop) $ do
+          when (isAbsolute src_rel')
+            $ expect_thrown at (Err_Parse_ImportAbsolute src_rel')
+
+          when ("../" `isPrefixOf` reRel)
+            $ expect_thrown at (Err_Parse_ImportDotDot src_rel')
+
+        pure $ ReachSourceFile src_abs
+
+      Right (ImportRemoteGit _) ->
+        pure $ ReachSourceFile "TODO"
+
+    ret_key (ReachSourceFile x) = x
+    ret_key ReachStdLib         = no_stdlib
+
+    proc_key ReachStdLib                   = no_stdlib
     proc_key src@(ReachSourceFile src_abs) = do
       let at' = srcloc_src src
       setLocaleEncoding utf8

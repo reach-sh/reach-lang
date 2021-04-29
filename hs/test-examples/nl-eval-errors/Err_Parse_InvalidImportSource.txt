@@ -1,0 +1,4 @@
+reachc: error: ./Err_Parse_InvalidImportSource.rsh:3:8:import bare: Invalid import: @bork
+(line 1, column 6):
+unexpected end of input
+expecting "/" or valid git host account character (alphanumeric, -, _, .)
