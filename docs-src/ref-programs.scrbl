@@ -1346,7 +1346,9 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}.}
-  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.}
+  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.
+  The domain of a function is @tech{negative position}.
+  The range of a function is @tech{positive position}.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
   @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an @tech{object}.
@@ -1359,7 +1361,9 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
   @item{@(mint-define! '("Refine")) @reachin{Refine(Type_0, Predicate, ?Message)}, where @reachin{Predicate} is a unary function returning a boolean, which denotes a @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement type}, that is instances of @reachin{Type_0} that satisfy @reachin{Predicate}.
-  When a refinement type appears in a negative position of a @reachin{Fun} (such as in a @tech{participant interact interface}), it introduces an @reachin{assert}; while when it is in a positive position, it introduces an @reachin{assume}. @reachin{Message} is an optional string to display if the predicate fails verification.
+  When a refinement type appears in a @deftech{negative position} (such as in a @reachin{is} or in the domain of a @reachin{Fun} of a @tech{participant interact interface}), it introduces an @reachin{assert};
+  while when it is in a @deftech{positive position}, it introduces an @reachin{assume}.
+  @reachin{Message} is an optional string to display if the predicate fails verification.
 
   For example, if @reachin{f} had type @reach{Fun([Refine(UInt, (x => x < 5))], Refine(UInt, (x => x > 10)))}
 
@@ -1370,7 +1374,9 @@ Reach's @deftech{type}s are represented with programs by the following identifie
     const z = f(y);
     assume(z > 10);}}
  @item{@reachin{Refine(Type_0, PreCondition, PostCondition, ?Messages)}, where @reachin{Type_0} is a @tech{function type}, @reachin{PreCondition} is a unary function that accepts a tuple of the domain and returns a boolean, and @reachin{PostCondition} is a binary function that accepts a tuple of the domain and the range and returns a boolean, denotes a @tech{function type} with a @link["https://en.wikipedia.org/wiki/Precondition"]{precondition} and @link["https://en.wikipedia.org/wiki/Postcondition"]{postcondition}.
- Preconditions are enforced with @reachin{assert} and postconditions are enforced with @reachin{assume}. @reachin{Messages} is an optional two-tuple of @reachin{Bytes}. The first message will be displayed when the precondition fails verification and the second when the postcondition fails verification.
+ Preconditions are enforced with @reachin{assert} and postconditions are enforced with @reachin{assume}.
+ @reachin{Messages} is an optional two-tuple of @reachin{Bytes}.
+ The first message will be displayed when the precondition fails verification and the second when the postcondition fails verification.
 
  For example, @reachin{Refine(Fun([UInt, UInt], UInt), ([x, y] => x < y), (([x, y], z) => x + y < z))} is a function that requires its second argument to be larger than its first and its result to be larger than its input.}
 ]
@@ -1391,7 +1397,7 @@ The @reachin{isType} function returns @reachin{true} if its argument is a type.
 Any expression satisfying @reachin{isType} is compiled away and does not exist at runtime.
 
 The @reachin{is} function returns @reachin{true} if its first argument satisfies the type of the second argument.
-This is considered a negative position for @reachin{Refine}.
+This is considered a @tech{negative position} for @reachin{Refine}.
 
 @subsubsection{Literal values}
 
