@@ -302,6 +302,15 @@ development API key), and sets @envvar{REACH_RPC_TLS_REJECT_UNVERIFIED} to
 Consider this example from the @seclink{tut-7-rpc} tutorial:
 @cmd{reach rpc-run python3 -u ./index.py}
 
+@subsection[#:tag "ref-usage-docker-reset"]{@tt{reach docker-reset}}
+
+You can easily kill and rm all docker images by executing
+
+@cmd{reach docker-reset}
+
+This can be a useful thing to try if your docker images fail to pick up updates, stop responding to requests, or otherwise misbehave.
+This command is a loose approximation of "turning docker off and on again."
+It will affect all docker images on your machine.
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
