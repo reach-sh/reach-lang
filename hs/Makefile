@@ -103,4 +103,5 @@ gen-reach: stack
 
 .PHONY: ghcid
 ghcid: stack
-	ghcid --target=reach:test:reach-test -T "Main.main"
+	@# ghcid --target=reach:test:reach-test -T "Main.main"
+	ghcid --target=reach:test:reach-test -T "Reach.Test_Eval.main"
