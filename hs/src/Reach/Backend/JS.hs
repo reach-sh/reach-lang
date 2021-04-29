@@ -85,11 +85,14 @@ data JSContracts = JSContracts
   , jsc_i2t :: IORef (M.Map Int Doc)
   }
 
+newtype JSCtxtWhile
+  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, PILBlock, EITail, EITail))
+
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
   , ctxt_simulate :: Bool
-  , ctxt_while :: Maybe (Maybe DLVar, PILBlock, EITail, EITail)
+  , ctxt_while :: JSCtxtWhile
   , ctxt_timev :: Maybe DLVar
   , ctxt_ctcs :: Maybe JSContracts
   }
@@ -650,7 +653,8 @@ jsETail = \case
             Nothing -> impossible "no timev in while"
             Just x -> x
     let newCtxt_tv = local (\e -> e {ctxt_timev = timev'})
-    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = Just (timev', cond, body, k)})
+    oldWhile <- ctxt_while <$> ask
+    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = JSCtxtWhile $ Just (oldWhile, timev', cond, body, k)})
     cond' <- jsBlockNewScope cond
     body' <- newCtxt' $ jsETail body
     k' <- newCtxt_tv $ jsETail k
@@ -670,13 +674,15 @@ jsETail = \case
           return $ asn_ <> hardline <> "continue" <> semi
         True ->
           (ctxt_while <$> ask) >>= \case
-            Nothing -> impossible "continue not in while"
-            Just (wtimev', wcond, wbody, wk) -> do
+            JSCtxtWhile Nothing -> impossible "continue not in while"
+            JSCtxtWhile (Just (woldWhile, wtimev', wcond, wbody, wk)) -> do
               let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
+              let newCtxt_noWhile = newCtxt . local (\e -> e { ctxt_while = JSCtxtWhile Nothing })
+              let newCtxt_oldWhile = newCtxt . local (\e -> e { ctxt_while = woldWhile })
               asn_ <- jsAsn AM_ContinueInnerSim asn
               wcond' <- jsBlockNewScope wcond
-              wbody' <- newCtxt $ jsETail wbody
-              wk' <- newCtxt $ jsETail wk
+              wbody' <- newCtxt_noWhile $ jsETail wbody
+              wk' <- newCtxt_oldWhile $ jsETail wk
               return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
     return $ asn'o <> hardline <> asn'i
   ET_ConsensusOnly _at l k ->
@@ -700,7 +706,7 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
   let ctxt_txn = 0
-  let ctxt_while = Nothing
+  let ctxt_while = JSCtxtWhile Nothing
   let ctxt_simulate = False
   let ctxt_timev = Nothing
   local (const JSCtxt {..}) $ do
@@ -829,7 +835,7 @@ backend_js outn crs pl = do
   let ctxt_who = "Module"
   let ctxt_txn = 0
   let ctxt_simulate = False
-  let ctxt_while = Nothing
+  let ctxt_while = JSCtxtWhile Nothing
   let ctxt_timev = Nothing
   let ctxt_ctcs = Nothing
   d <-
