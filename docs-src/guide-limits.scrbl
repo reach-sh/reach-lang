@@ -10,12 +10,12 @@ We welcome your contributions on @link["https://github.com/reach-sh/reach-lang"]
 
 @(hrule)
 @bold{Connectors.} Foremost, Reach is a @tech{consensus network}-agnostic language, so one of our highest priorities is supporting a wide variety of platforms, including layer-2 abstractions over other layer-1 networks.
-Presently, we have a robust @seclink["ref-network-eth"]{Ethereum backend} and are working on an @seclink["ref-network-algo"]{Algorand backend}.
+Presently, we have a robust @seclink["ref-network-eth"]{Ethereum backend} and @seclink["ref-network-algo"]{Algorand backend}.
 
 @(hrule)
 @bold{Backends.} Presently, Reach has a robust @tech{backend} for JavaScript that is well-suited for client-facing applications and JavaScript servers.
 However, we believe that many decentralized application developers would like to make use of languages like Go and Rust for their participants.
-We are building a Go backend as a prototype of how to build a backend for a statically typed language.
+Presently, this can be accomplished via the @secref["ref-backends-rpc"], but we'd like to build a dedicated backend for languages like these.
 
 @(hrule)
 @bold{Computation.} Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like @tech{arrow expressions}, free-form objects, destructuring bindings, robust @reachin{import} and @reachin{export} specificiers, and so on.
@@ -31,8 +31,8 @@ In the longer term, we intend to introduce verification promises that constrain 
 @bold{Infrastructure.} We intend to build a package system for Reach to allow for sharing composable decentralized applications.
 
 @(hrule)
-@bold{Network Integration.} Since Reach is @tech{consensus network}-agnostic, it is not possible for Reach programs to directly integrate with network-specific features, such as other contracts on Ethereum or @link["https://developer.algorand.org/docs/features/asa/"]{standard assets} on Algorand.
-We intend to support these through network selection options with Reach programs and a @link["https://en.wikipedia.org/wiki/Gradual_typing"]{gradual typing}-style protection mechanism to characterize the verifiable properties of the foreign resources.
+@bold{Network Integration.} Since Reach is @tech{consensus network}-agnostic, it is not possible for Reach programs to directly integrate with network-specific features, such as observing the blockhash on Ethereum.
+Reach programs can instead interact with these low-level details of their chosen consensus network via @tech{remote object} interaction.
 
 @(hrule)
 @bold{Communication.}
