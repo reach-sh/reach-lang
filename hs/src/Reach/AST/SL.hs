@@ -278,6 +278,7 @@ data ForkMode
   = FM_Case
   | FM_Timeout
   | FM_ThrowTimeout
+  | FM_NonNetworkPay
   deriving (Eq, Generic, Show)
 
 data ParallelReduceMode
@@ -287,6 +288,7 @@ data ParallelReduceMode
   | PRM_Timeout
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
+  | PRM_NonNetworkPay
   deriving (Eq, Generic, Show)
 
 data SLForm
@@ -311,6 +313,7 @@ data SLForm
       , slf_mode :: Maybe ForkMode
       , slf_cases :: [ForkCase]
       , slf_mtime :: Maybe (SrcLoc, [JSExpression])
+      , slf_mnntpay :: Maybe JSExpression
       }
   | SLForm_parallel_reduce
   | SLForm_parallel_reduce_partial
@@ -321,6 +324,7 @@ data SLForm
       , slpr_mwhile :: Maybe JSExpression
       , slpr_cases :: [(SrcLoc, [JSExpression])]
       , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
+      , slpr_mpay :: Maybe JSExpression
       }
   | SLForm_wait
   deriving (Eq, Generic)

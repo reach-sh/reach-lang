@@ -40,6 +40,9 @@ import Reach.Warning
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
+import Reach.Texty (pretty)
+import Data.Sequence (mapWithIndex)
+import Data.List (intercalate)
 
 --- New Types
 
@@ -949,20 +952,21 @@ evalAsEnv obj = case obj of
           Just _ -> []
       go key mode =
         [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mwhen mtime))]
-  SLV_Form (SLForm_fork_partial fat Nothing cases mtime) ->
+  SLV_Form (SLForm_fork_partial fat Nothing cases mtime mpay) ->
     return $
       M.fromList $
         go "case" FM_Case
           <> gom "timeout" FM_Timeout mtime
           <> gom "throwTimeout" FM_ThrowTimeout mtime
+          <> gom "nonNetworkPay" FM_NonNetworkPay mpay
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime))]
-  SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime) ->
+        [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime mpay))]
+  SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay) ->
     return $
       M.fromList $
         gom "invariant" PRM_Invariant pr_minv
@@ -971,13 +975,14 @@ evalAsEnv obj = case obj of
           <> gom "timeout" PRM_Timeout pr_mtime
           <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
           <> gom "throwTimeout" PRM_ThrowTimeout pr_mtime
+          <> gom "nonNetworkPay" PRM_NonNetworkPay pr_mpay
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime))]
+        [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay))]
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
@@ -1228,8 +1233,8 @@ evalForm f args = do
     SLForm_fork -> do
       zero_args
       at <- withAt id
-      retV $ public $ SLV_Form $ SLForm_fork_partial at Nothing [] Nothing
-    SLForm_fork_partial fat mmode cases mtime ->
+      retV $ public $ SLV_Form $ SLForm_fork_partial at Nothing [] Nothing Nothing
+    SLForm_fork_partial fat mmode cases mtime mpay ->
       case mmode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
@@ -1241,10 +1246,10 @@ evalForm f args = do
               [w, x, y, z] -> return $ ForkCase at w x y z
               [w, x, z] -> return $ ForkCase at w x default_pay z
               _ -> illegal_args 4
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [case_args]) mtime
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [case_args]) mtime mpay
         Just FM_Timeout -> do
           at <- withAt id
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args))
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args)) mpay
         Just FM_ThrowTimeout -> do
           at <- withAt id
           (d, arg) <- case args of
@@ -1255,23 +1260,31 @@ evalForm f args = do
           let throwS =
                 JSArrowExpression (JSParenthesizedArrowParameterList ta JSLNil ta) ta $
                   JSThrow ta arg JSSemiAuto
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS]))
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS])) mpay
+        Just FM_NonNetworkPay -> do
+          nnts <- case args of
+            [toks] -> return toks
+            _ -> illegal_args 1
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases mtime (Just nnts)
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
     SLForm_parallel_reduce -> do
       at <- withAt id
       x <- one_arg
-      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing
-    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime -> do
+      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing Nothing
+    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay -> do
       aa <- withAt $ \at -> (at, args)
       case pr_mode of
         Just PRM_Invariant -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just x) pr_mwhile pr_cases pr_mtime
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just x) pr_mwhile pr_cases pr_mtime pr_mpay
         Just PRM_While -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime pr_mpay
         Just PRM_Case ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime pr_mpay
+        Just PRM_NonNetworkPay -> do
+          x <- one_arg
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime (Just x)
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
@@ -1283,8 +1296,8 @@ evalForm f args = do
           retV $
             public $
               SLV_Form $
-                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases $
-                  makeTimeoutArgs prm aa
+                SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases
+                  (makeTimeoutArgs prm aa) pr_mpay
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -3484,11 +3497,12 @@ forkCaseSameParticipant l r = getWho l == getWho r
   where
     getWho e = jse_expect_id (fc_at e) (fc_who e)
 
-doFork :: [JSStatement] -> [ForkCase] -> Maybe (SrcLoc, [JSExpression]) -> App SLStmtRes
-doFork ks cases mtime = do
+doFork :: [JSStatement] -> [ForkCase] -> Maybe (SrcLoc, [JSExpression]) -> Maybe JSExpression -> App SLStmtRes
+doFork ks cases mtime mnntpay = do
   idx <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
-  a <- withAt srcloc2annot
+  at <- withAt id
+  let a = srcloc2annot at
   let jid = JSIdentifier a
   let sp = JSSemi a
   let fd_e = jid (fid "data")
@@ -3637,8 +3651,25 @@ doFork ks cases mtime = do
   let race_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
   let tc_pub_e = JSCallExpression (JSMemberDot race_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
+  -- START: Non-network token pay
+  let network_pay_var = jid "networkTokenPay"
+  let nnts = case mnntpay of
+            Just (JSArrayLiteral _ ts _) -> map (jse_expect_id at) $ jsa_flatten ts
+            _ -> []
+  let nnts_js = map (\ i ->
+        JSArrayLiteral a [ JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid "_") ] a)
+        [0..length nnts]
+  let nnts_ret = toList $ mapWithIndex (\ i nnt ->
+        JSArrayLiteral a [
+          JSArrayElement (jid $ "amt" <> show i)
+          , JSArrayElement (jid $ show $ pretty nnt)] a) (Seq.fromList nnts)
+  let pay_var tl = JSArrayLiteral a (intercalate [JSArrayComma a] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) a
   let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
-  let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_e) a
+  let noArgs = JSParenthesizedArrowParameterList a JSLNil a
+  let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp, JSReturn a (Just (pay_var nnts_ret)) sp]
+  let pay_call = JSCallExpression (JSArrowExpression noArgs a (JSStatementBlock a pay_ss a sp)) a JSLNil a
+  let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_call) a
+  -- END: Non-network token pay
   let tc_time_e =
         case mtime of
           Nothing -> tc_pay_e
@@ -3655,8 +3686,8 @@ doFork ks cases mtime = do
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   evalStmt $ exp_ss <> ks
 
-doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> App [JSStatement]
-doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = locAt pr_at $ do
+doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> Maybe JSExpression -> App [JSStatement]
+doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr_mpay = locAt pr_at $ do
   idx <- ctxt_alloc
   let prid x = ".pr" <> (show idx) <> "." <> x
   case pr_mode of
@@ -3675,6 +3706,7 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
+  let call ta f es = JSCallExpression f ta (toJSCL es) ta
   fork_e1 <-
     case pr_mtime of
       Nothing -> return fork_e0
@@ -3685,29 +3717,33 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = 
           (PRM_TimeRemaining, [t_e]) -> do
             let dot o f = JSCallExpressionDot o ta f
             let publish = dot (jid "Anybody") $ jid "publish"
-            let pubApp = call publish []
+            let pubApp = call ta publish []
             let bodys =
                   [ JSExpressionStatement pubApp semi
                   , JSReturn ta (Just lhs) semi
                   ]
             callTimeout [t_e, thunk $ block bodys]
-          (PRM_Timeout, t_es) -> return $ call (JSMemberDot fork_e0 ta timeOutId) t_es
+          (PRM_Timeout, t_es) -> return $ call ta (JSMemberDot fork_e0 ta timeOutId) t_es
           (PRM_ThrowTimeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
           (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
           _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
         where
           semi = JSSemiAuto
           timeOutId = jid "timeout"
-          call f es = JSCallExpression f ta (toJSCL es) ta
-          callTimeout = return . call (JSMemberDot fork_e0 ta timeOutId)
+          callTimeout = return . call ta (JSMemberDot fork_e0 ta timeOutId)
           block bodys = JSStatementBlock ta bodys ta semi
           noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
           thunk = JSArrowExpression noArgs ta
           ta = ao t_at
+  fork_e2 <-
+    case pr_mpay of
+      Nothing -> return fork_e1
+      Just toks ->
+        return $ call a (JSMemberDot fork_e1 a $ jid "nonNetworkPay") [toks]
   let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
         where
           ca = ao case_at
-  let fork_e = foldl' forkcase fork_e1 pr_cases
+  let fork_e = foldl' forkcase fork_e2 pr_cases
   let fork_arr_e = JSFunctionExpression a JSIdentNone a JSLNil a (JSBlock a [JSExpressionStatement fork_e sp] a)
   let call_e = JSCallExpression fork_arr_e a JSLNil a
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
@@ -3766,8 +3802,8 @@ findStmtTrampoline = \case
     let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
     let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
     doToConsensus ks whos vas msg amt whene mtime
-  SLV_Form (SLForm_fork_partial f_at Nothing cases mtime) -> Just $ \_ ks ->
-    locAt f_at $ doFork ks cases mtime
+  SLV_Form (SLForm_fork_partial f_at Nothing cases mtime mnntpay) -> Just $ \_ ks ->
+    locAt f_at $ doFork ks cases mtime mnntpay
   SLV_Prim SLPrim_committed -> Just $ \_ ks -> do
     ensure_mode SLM_ConsensusStep "commit"
     sco <- e_sco <$> ask
@@ -3921,7 +3957,7 @@ evalStmt = \case
       (rhs_lvl, rhs_v) <- evalExpr rhs
       case rhs_v of
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
-          pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime
+          pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
         _ -> do
           addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs

@@ -1,0 +1,15 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Creator" is honest
+  Verifying when ONLY "Owner" is honest
+Checked 55 theorems; No failures!
+reachc: The compiler has encountered an internal error:
+
+  6 lookup_let v189 not in v36, v62, v63, v179, v182, v192
+
+This error indicates a problem with the Reach compiler, not your program. Please report this error, along with the pertinent program, to the Reach team as soon as possible so we can fix it.
+
+Open an issue at: https://github.com/reach-sh/reach-lang/issues
+

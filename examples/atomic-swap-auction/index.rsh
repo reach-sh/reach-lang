@@ -1,0 +1,70 @@
+'reach 0.1';
+'use strict';
+
+const common = {
+  showOutcome: Fun([Maybe(Address)], Null)
+};
+
+export const main = Reach.App(
+  { connectors: [ETH] },
+  [ Participant('Auctioneer', {
+      ...common,
+      getSwap: Fun([], Tuple(Token, UInt, Token, UInt, UInt)),
+      showAuctionStart: Fun([], Null),
+    }),
+    ParticipantClass('Bidder', {
+      ...common,
+      getBid: Fun([UInt], Maybe(UInt)),
+      showBid: Fun([Bool, Maybe(UInt)], Null),
+    }),
+  ],
+  (Auctioneer, Bidder) => {
+
+    Auctioneer.only(() => {
+      const [ tokA, amtA, tokB, reservePrice, timeout ] = declassify(interact.getSwap());
+      assume(tokA != tokB);
+    });
+    Auctioneer
+      .publish(tokA, amtA, tokB, reservePrice, timeout)
+      .pay([ [amtA, tokA ]]);
+
+    var [dealMade, price, winner ] = [false, 0, Auctioneer];
+    invariant(balance(tokA) == amtA && (dealMade ? balance(tokB) == price : balance(tokB) == 0));
+    while (!dealMade) {
+
+      const [ timeRemaining, keepGoing ] = makeDeadline(timeout);
+
+      const [ highestBidder, isFirstBid, currentPrice ] =
+        parallelReduce([ Auctioneer, true, reservePrice ])
+          .invariant(balance(tokA) == amtA && balance(tokB) == (isFirstBid ? 0 : currentPrice))
+          .while(keepGoing())
+          .nonNetworkPay([ tokB ])
+          .case(Bidder,
+            (() => {
+              const mbid = highestBidder != this
+                ? declassify(interact.getBid(currentPrice))
+                : Maybe(UInt).None();
+              return ({
+                when: maybe(mbid, false, ((b) => b > currentPrice)),
+                msg : fromSome(mbid, 0)
+              });
+            }),
+            ((bid) => [ 0, [bid, tokB] ]),
+            ((bid) => {
+              require(bid > currentPrice);
+              if (!isFirstBid) {
+                transfer(currentPrice, tokB).to(highestBidder); }
+              return [ this, false, bid ];
+            }))
+          .timeRemaining(timeRemaining());
+
+      [dealMade, price, winner] = [!isFirstBid, currentPrice, highestBidder ];
+      continue;
+    }
+
+    transfer(amtA, tokA).to(winner);
+    transfer(price, tokB).to(Auctioneer);
+    transfer(balance()).to(Auctioneer);
+    commit();
+  }
+);
