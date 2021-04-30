@@ -304,13 +304,13 @@ Consider this example from the @seclink{tut-7-rpc} tutorial:
 
 @subsection[#:tag "ref-usage-docker-reset"]{@tt{reach docker-reset}}
 
-You can easily kill and rm all docker images by executing
+You can easily kill and rm all docker containers by executing
 
 @cmd{reach docker-reset}
 
-This can be a useful thing to try if your docker images fail to pick up updates, stop responding to requests, or otherwise misbehave.
+This can be a useful thing to try if your docker containers stop responding to requests or otherwise misbehave.
 This command is a loose approximation of "turning docker off and on again."
-It will affect all docker images on your machine.
+It will affect all docker containers on your machine.
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
