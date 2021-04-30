@@ -19,9 +19,7 @@ import {
   lt,
   CurrencyAmount,
   IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
-  IAccount,
-  IContract,
-  IRecv,
+  IAccount, IContract, IRecv, deferContract,
   OnProgress,
   makeRandom,
   argsSplit,
@@ -548,17 +546,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const attachDeferDeploy = (): Contract => {
-      const not_yet = (which:string) => (...args: any[]): any => {
-        void(args);
-        throw Error(`Cannot ${which} yet; contract is not actually deployed`);
-      };
-      // impl starts with a shim that deploys on first sendrecv,
-      // then replaces itself with the real impl once deployed.
-      let impl: Contract = {
-        recv: not_yet(`recv`),
-        // Wait times are relative to contract events
-        // Wait without an initial contract event is nonsense
-        wait: not_yet(`wait`),
+      let setImpl:any;
+      const implP: Promise<Contract> =
+        new Promise((resolve) => { setImpl = resolve; });
+      const implNow = {
+        stdlib: compiledStdlib,
         sendrecv: async (
           funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
@@ -588,36 +580,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
 
           // shim impl is replaced with real impl
-          impl = performDeploy({args: [[0], args], value});
+          setImpl(performDeploy({args: [[0], args], value}));
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
           return await impl.recv(funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
-        getInfo: async () => {
-          // Danger: deadlock possible
-          return await infoP;
-        },
-        creationTime: (async () => bigNumberify((await infoP).creation_block)),
-        // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
-        iam,
-        selfAddress,
-        getViews: not_yet(`getViews`),
-        stdlib: compiledStdlib,
       };
-      // Return a wrapper around the impl. This obj and its fields do not mutate,
-      // but the fields are closures around a mutating ref to impl.
-      return {
-        sendrecv: (...args) => impl.sendrecv(...args),
-        recv: (...args) => impl.recv(...args),
-        wait: (...args) => impl.wait(...args),
-        getInfo: (...args) => impl.getInfo(...args),
-        creationTime: (...args) => impl.creationTime(...args),
-        iam: (...args) => impl.iam(...args),
-        selfAddress: (...args) => impl.selfAddress(...args),
-        getViews: (...args) => impl.getViews(...args),
-        stdlib: compiledStdlib,
-      }
+      const impl: Contract = deferContract(implP, implNow);
+      return impl;
     }
 
     switch (bin._Connectors.ETH.deployMode) {
