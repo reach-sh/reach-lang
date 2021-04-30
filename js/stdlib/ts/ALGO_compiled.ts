@@ -79,7 +79,7 @@ const stringyNet = {
   fromNet: (nv: NV): CBR_Bytes => (
     ethers.utils.toUtf8String(nv)
   ),
-}
+};
 
 /** @description For hex strings representing bytes */
 const bytestringyNet = {

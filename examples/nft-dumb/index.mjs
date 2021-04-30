@@ -11,17 +11,13 @@ import * as backend from './build/index.main.mjs';
 
   const ctcAlice = accAlice.deploy(backend);
 
-  let externalViewer = async () => null;
-  if ( loader.getConnector() === 'ETH' ) {
-    const accEve = await stdlib.newTestAccount(startingBalance);
-    const ctcEve = accEve.attach(backend, ctcAlice.getInfo());
-
-    externalViewer = async () => {
-      console.log(`Eve sees who the owner is...`);
-      const owner = await ctcEve.getViews().NFT.owner();
-      console.log(`...it is ${owner}`);
-    };
-  }
+  const accEve = await stdlib.newTestAccount(startingBalance);
+  const ctcEve = accEve.attach(backend, ctcAlice.getInfo());
+  const externalViewer = async () => {
+    console.log(`Eve sees who the owner is...`);
+    const owner = await ctcEve.getViews().NFT.owner();
+    console.log(`...it is ${owner}`);
+  };
 
   const everyone = [
     [' Alice', accAlice],
@@ -31,20 +27,20 @@ import * as backend from './build/index.main.mjs';
   const randomArrayRef = (arr) =>
     arr[Math.floor(Math.random() * arr.length)];
 
-  let trades = 0;
+  let trades = 3;
   const makeOwner = (acc, who) => {
     const ctc = acc.attach(backend, ctcAlice.getInfo());
     const others = everyone.filter(x => x[0] !== who);
     return backend.Owner(ctc, {
       newOwner: (async () => {
         await externalViewer();
-        if ( trades == 10 ) {
+        if ( trades == 0 ) {
           console.log(`${who} stops`);
           process.exit(0);
         }
         const next = randomArrayRef(others);
         console.log(`${who} trades to ${next[0]}`);
-        trades++;
+        trades--;
         return next[1];
       }),
       showOwner: ((id, owner) => {

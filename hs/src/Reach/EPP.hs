@@ -467,7 +467,7 @@ be_c = \case
             True -> FI_Continue $ asnLike svs
             False -> FI_Halt toks
     let cm = CT_From at1 which vis <$> mkfrom_info ce_readMustSave
-    let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
+    let lm = ET_FromConsensus at1 which vis <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLinBlock cond_at _ cond_l cond_a = cond

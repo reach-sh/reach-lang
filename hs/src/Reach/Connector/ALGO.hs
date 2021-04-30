@@ -62,6 +62,13 @@ typeObjectTypes a =
     T_Struct ts -> ts
     _ -> impossible $ "should be obj"
 
+-- Algorand constants
+
+algoMaxTxGroupSize :: TxnIdx
+algoMaxTxGroupSize = 16
+algoMaxAppBytesValueLen :: Integer
+algoMaxAppBytesValueLen = 64
+
 -- Algo specific stuff
 
 _udiv :: Integer -> Integer -> Integer
@@ -200,6 +207,7 @@ data Env = Env
   , eLetSmalls :: M.Map DLVar Bool
   , emTimev :: Maybe DLVar
   , eFinalize :: App ()
+  , eViewLen :: IORef Integer
   }
 
 type App = ReaderT Env IO
@@ -328,7 +336,7 @@ talloc tk = do
   Env {..} <- ask
   liftIO $ modifyIORef eTxnsR $ (+) 1
   txni <- liftIO $ readIORef eTxnsR
-  when (txni > 15) $ do
+  when (txni >= algoMaxTxGroupSize) $ do
     bad "too many txns"
   let ti = TxnInfo txni tk
   liftIO $ modifyIORef eTxns $ (:) ti
@@ -933,11 +941,26 @@ ct = \case
     doSwitch (withFresh . ct) at dv csm
   CT_Jump {} ->
     impossible $ "continue after dejump"
-  CT_From _ which _XXXvi msvs -> do
+  CT_From at which vis msvs -> do
+    check_view
     check_nextSt
     halt_should_be isHalt
     finalize
     where
+      check_view = do
+        let ViewSave vwhich vvs = vis
+        let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
+        let la = DLLA_Tuple $ vconcat vwhich vvs
+        let lat = largeArgTypeOf la
+        let sz = typeSizeOf lat
+        when (sz >= algoMaxAppBytesValueLen) $
+          bad $ "View is too large: " <> texty sz
+        rememberViewSize sz
+        comment $ "check view bs"
+        cla la
+        ctobs lat
+        readArg argView
+        eq_or_fail
       (isHalt, check_nextSt) =
         case msvs of
           --- XXX fix this so it makes sure it is zero bytes
@@ -1044,6 +1067,9 @@ keyHalts = "h"
 keyState :: B.ByteString
 keyState = "s"
 
+keyView :: B.ByteString
+keyView = "v"
+
 keyLast :: B.ByteString
 keyLast = "l"
 
@@ -1068,12 +1094,14 @@ txnUser0 = txnFromHandler + 1
 -- Args:
 -- 0   : Previous state
 -- 1   : Next state
--- 2   : Handler halts
--- 3   : Fee amount
--- 4   : Last round
--- 5.. : Handler arguments
-stdArgTypes :: [DLType]
-stdArgTypes = [T_Digest, T_Digest, T_Bool, T_UInt, T_UInt]
+-- 2   : View bytes
+-- 3   : Handler halts
+-- 4   : Fee amount
+-- 5   : Last round
+-- 6.. : Handler arguments
+stdArgTypes :: Integer -> [DLType]
+stdArgTypes vbs =
+  [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt]
 
 argPrevSt :: Word8
 argPrevSt = 0
@@ -1081,8 +1109,11 @@ argPrevSt = 0
 argNextSt :: Word8
 argNextSt = argPrevSt + 1
 
+argView :: Word8
+argView = argNextSt + 1
+
 argHalts :: Word8
-argHalts = argNextSt + 1
+argHalts = argView + 1
 
 argFeeAmount :: Word8
 argFeeAmount = argHalts + 1
@@ -1116,8 +1147,8 @@ std_footer = do
   cl $ DLL_Int sb 1
   op "return"
 
-runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
-runApp eShared eWhich eLets emTimev m = do
+runApp :: Shared -> Int -> Lets -> Maybe DLVar -> IORef Integer -> App () -> IO TEALs
+runApp eShared eWhich eLets emTimev eViewLen m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
@@ -1131,119 +1162,127 @@ runApp eShared eWhich eLets emTimev m = do
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
--- XXX This Integer could also include the number of arguments, because there's
--- a limit to that too and/or we could ensure that it was always under the
--- limit by taking the last one and tuple-izing it
-ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
+rememberViewSize :: Integer -> App ()
+rememberViewSize n = do
+  r <- eViewLen <$> ask
+  liftIO $ modifyIORef r $ max n
+
+ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) =
+ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = do
   let svs = dvdeletem last_timemv svs_
-   in fmap Just $
-        fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-          let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
-          let args = svs <> msg
-          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
-          let argCount = fromIntegral argFirstUser + length args
-          let eLets1 = M.insert from lookup_sender eLets0
-          let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
-          let eLets3 = case last_timemv of
-                Nothing -> eLets2
-                Just x -> M.insert x lookup_last eLets2
-          let eLets = eLets3
-          runApp eShared eWhich eLets (Just timev) $ do
-            comment ("Handler " <> texty eWhich)
-            comment "Check txnAppl"
-            code "gtxn" [texty txnAppl, "TypeEnum"]
-            code "int" ["appl"]
-            eq_or_fail
-            code "gtxn" [texty txnAppl, "ApplicationID"]
-            --- XXX Make this int
-            code "byte" [tApplicationID]
-            cfrombs T_UInt
-            eq_or_fail
-            code "gtxn" [texty txnAppl, "NumAppArgs"]
-            cl $ DLL_Int sb $ fromIntegral $ argCount
-            eq_or_fail
+  let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
+  let args = svs <> msg
+  let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
+  let argCount = fromIntegral argFirstUser + length args
+  let eLets1 = M.insert from lookup_sender eLets0
+  let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
+  let eLets3 = case last_timemv of
+        Nothing -> eLets2
+        Just x -> M.insert x lookup_last eLets2
+  let eLets = eLets3
+  eViewLen <- newIORef 0
+  cbs <-
+    runApp eShared eWhich eLets (Just timev) eViewLen $ do
+      comment ("Handler " <> texty eWhich)
+      comment "Check txnAppl"
+      code "gtxn" [texty txnAppl, "TypeEnum"]
+      code "int" ["appl"]
+      eq_or_fail
+      code "gtxn" [texty txnAppl, "ApplicationID"]
+      --- XXX Make this int
+      code "byte" [tApplicationID]
+      cfrombs T_UInt
+      eq_or_fail
+      code "gtxn" [texty txnAppl, "NumAppArgs"]
+      cl $ DLL_Int sb $ fromIntegral $ argCount
+      eq_or_fail
 
-            comment "Check txnToHandler"
-            code "gtxn" [texty txnToHandler, "TypeEnum"]
-            code "int" ["pay"]
-            eq_or_fail
-            code "gtxn" [texty txnToHandler, "Receiver"]
-            code "txn" ["Sender"]
-            eq_or_fail
-            code "gtxn" [texty txnToHandler, "Amount"]
-            code "gtxn" [texty txnFromHandler, "Fee"]
-            cl $ minimumBalance_l
-            op "+"
-            eq_or_fail
+      comment "Check txnToHandler"
+      code "gtxn" [texty txnToHandler, "TypeEnum"]
+      code "int" ["pay"]
+      eq_or_fail
+      code "gtxn" [texty txnToHandler, "Receiver"]
+      code "txn" ["Sender"]
+      eq_or_fail
+      code "gtxn" [texty txnToHandler, "Amount"]
+      code "gtxn" [texty txnFromHandler, "Fee"]
+      cl $ minimumBalance_l
+      op "+"
+      eq_or_fail
 
-            comment "Check txnFromHandler (us)"
-            code "txn" ["GroupIndex"]
-            cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
-            eq_or_fail
-            code "txn" ["TypeEnum"]
-            code "int" ["pay"]
-            eq_or_fail
-            code "txn" ["Amount"]
-            cl $ DLL_Int sb $ 0
-            eq_or_fail
-            code "txn" ["Receiver"]
-            code "gtxn" [texty txnToHandler, "Sender"]
-            eq_or_fail
-            cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
-            readArg argPrevSt
-            eq_or_fail
+      comment "Check txnFromHandler (us)"
+      code "txn" ["GroupIndex"]
+      cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
+      eq_or_fail
+      code "txn" ["TypeEnum"]
+      code "int" ["pay"]
+      eq_or_fail
+      code "txn" ["Amount"]
+      cl $ DLL_Int sb $ 0
+      eq_or_fail
+      code "txn" ["Receiver"]
+      code "gtxn" [texty txnToHandler, "Sender"]
+      eq_or_fail
+      cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
+      readArg argPrevSt
+      eq_or_fail
 
-            code "txn" ["CloseRemainderTo"]
-            code "gtxn" [texty txnToHandler, "Sender"]
-            eq_or_fail
+      code "txn" ["CloseRemainderTo"]
+      code "gtxn" [texty txnToHandler, "Sender"]
+      eq_or_fail
 
-            comment "Run body"
-            ct_k body $ do
-              txns <- how_many_txns
-              comment "Check GroupSize"
-              code "global" ["GroupSize"]
-              cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-              eq_or_fail
+      comment "Run body"
+      ct_k body $ do
+        txns <- how_many_txns
+        comment "Check GroupSize"
+        code "global" ["GroupSize"]
+        cl $ DLL_Int sb $ fromIntegral $ 1 + txns
+        eq_or_fail
 
-              lookup_fee_amount
-              fts <- from_txns
-              its <- init_txns
-              let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
-              let itfee = do
-                    cl $ minimumBalance_l
-                    cl $ DLL_Int sb $ fromIntegral $ length its
-                    op "*"
-              let itfees = if null its then [] else [itfee]
-              csum_ $ itfees <> ftfees
-              eq_or_fail
+        lookup_fee_amount
+        fts <- from_txns
+        its <- init_txns
+        let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
+        let itfee = do
+              cl $ minimumBalance_l
+              cl $ DLL_Int sb $ fromIntegral $ length its
+              op "*"
+        let itfees = if null its then [] else [itfee]
+        csum_ $ itfees <> ftfees
+        eq_or_fail
 
-              comment "Check time limits"
-              -- We don't need to look at timev because the range of valid rounds
-              -- that a txn is valid within is built-in to Algorand, so rather than
-              -- checking that ( last_timev + from <= timev <= last_timev + to ), we
-              -- just check that FirstValid = last_time + from, etc.
-              (case last_timemv of
-                 Nothing -> return ()
-                 Just last_timev -> do
-                   let check_time f = \case
-                         [] -> nop
-                         as -> do
-                           ca $ DLA_Var last_timev
-                           csum as
-                           op "+"
-                           let go i = do
-                                 op "dup"
-                                 code "gtxn" [texty i, f]
-                                 eq_or_fail
-                           forM_ [0 .. txns] go
-                           op "pop"
-                   let CBetween ifrom ito = int
-                   check_time "FirstValid" ifrom
-                   check_time "LastValid" ito)
+        comment "Check time limits"
+        -- We don't need to look at timev because the range of valid rounds
+        -- that a txn is valid within is built-in to Algorand, so rather than
+        -- checking that ( last_timev + from <= timev <= last_timev + to ), we
+        -- just check that FirstValid = last_time + from, etc.
+        (case last_timemv of
+          Nothing -> return ()
+          Just last_timev -> do
+            let check_time f = \case
+                  [] -> nop
+                  as -> do
+                      ca $ DLA_Var last_timev
+                      csum as
+                      op "+"
+                      let go i = do
+                            op "dup"
+                            code "gtxn" [texty i, f]
+                            eq_or_fail
+                      forM_ [0 .. txns] go
+                      op "pop"
+            let CBetween ifrom ito = int
+            check_time "FirstValid" ifrom
+            check_time "LastValid" ito)
 
-            std_footer
+      std_footer
+  viewBsLen <- readIORef eViewLen
+  let argSize = typeSizeOf $ T_Tuple $ (++) (stdArgTypes viewBsLen) $ map varType $ svs ++ msg
+  let cinfo = Aeson.object $
+        [ ("size", Aeson.Number $ fromIntegral argSize)
+        , ("count", Aeson.Number $ fromIntegral argCount) ]
+  return $ Just (cinfo, cbs)
 
 type Disp = String -> T.Text -> IO ()
 
@@ -1263,14 +1302,14 @@ compile_algo disp pl = do
   hm_res <- forM (M.toAscList hm) $ \(hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
-      Nothing -> return (Aeson.Null, Aeson.Number 0, return ())
+      Nothing -> return (Aeson.Null, Aeson.Null, return ())
       Just (az, ht) -> do
         let lab = "m" <> show hi
         let t = render ht
         disp lab t
         return
           ( Aeson.String t
-          , Aeson.Number $ fromInteger az
+          , az
           , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
@@ -1279,10 +1318,11 @@ compile_algo disp pl = do
           )
   let (steps_, stepargs_, hchecks) = unzip3 hm_res
   let steps = Aeson.Null : steps_
-  let stepargs = Aeson.Number 0 : stepargs_
+  let stepargs = Aeson.Null : stepargs_
   modifyIORef resr $ M.insert "steps" $ aarray steps
   modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
-  let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
+  eViewLen <- newIORef 0
+  let simple m = runApp shared 0 mempty Nothing eViewLen $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
     code "txn" ["TypeEnum"]
@@ -1305,6 +1345,8 @@ compile_algo disp pl = do
       cstate (HM_Set 0) []
     app_global_put keyLast $ do
       code "global" ["Round"]
+    app_global_put keyView $ do
+      cl $ DLL_Bytes $ ""
     app_global_put keyHalts $ do
       cl $ DLL_Bool $ False
     code "b" ["done"]
@@ -1350,6 +1392,8 @@ compile_algo disp pl = do
       cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
+    app_global_put keyView $ do
+      readArg argView
     app_global_put keyHalts $ do
       readArg argHalts
       cfrombs T_Bool

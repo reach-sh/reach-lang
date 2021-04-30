@@ -18,14 +18,13 @@ import {
   getDEBUG,
   lt,
   CurrencyAmount,
-  IBackend,
+  IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IAccount,
   IContract,
   IRecv,
   OnProgress,
   makeRandom,
   argsSplit,
-  objectMap,
 } from './shared';
 import {
   memoizeThunk, replaceableThunk
@@ -59,8 +58,10 @@ type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   ABI: string,
   Bytecode: string,
   deployMode: DeployMode,
-  views: {[key: string]: {[key: string]: string}},
+  views: {[viewn: string]: {[keyn: string]: string}},
 }}};
+type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
+type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
 
 // TODO: a wrapper obj with smart constructor?
 type Address = string;
@@ -947,19 +948,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const creationTime = async () =>
       bigNumberify((await getInfo()).creation_block);
 
-    const views_ctcsm = bin._getViews({reachStdlib: compiledStdlib});
+    const views_bin = bin._getViews({reachStdlib: compiledStdlib});
     const views_namesm = bin._Connectors.ETH.views;
-    const getView1 = (v:string, k:string, ctc: AnyETH_Ty) =>
+    const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (): Promise<any> => {
+        void(vs);
+        const { ty } = vim;
         const ethersC = await getC();
         const vkn = views_namesm[v][k];
         const val = await ethersC[vkn]();
-        return ctc.unmunge(val);
+        return ty.unmunge(val);
     };
-    const getViews = () =>
-      objectMap(views_ctcsm, ((v:string, vm:{[key:string]: AnyETH_Ty}) =>
-        objectMap(vm, ((k:string, ctc: AnyETH_Ty) =>
-          getView1(v, k, ctc)))));
+    const getViews = getViewsHelper(views_bin, getView1);
 
     // Note: wait is the local one not the global one of the same name.
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };

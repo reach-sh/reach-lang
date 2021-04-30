@@ -14,7 +14,9 @@ const {Buffer} = buffer;
 
 import {
   CurrencyAmount, OnProgress,
-  IBackend, IAccount, IContract, IRecv, ISimRes, ISimTxn,
+  IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
+  IAccount, IContract, IRecv, ISimRes, ISimTxn,
+  deferContract,
   debug, assert, envDefault,
   isBigNumber, bigNumberify, bigNumberToNumber,
   argsSlice,
@@ -103,15 +105,22 @@ type CompileResultBytes = {
 
 type NetworkAccount = Wallet;
 
+type StepArgInfo = {
+  count: number,
+  size: number,
+};
+
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   appApproval0: string,
   appApproval: string,
   appClear: string,
   ctc: string,
   steps: Array<string|null>,
-  stepargs: Array<number>,
+  stepargs: Array<StepArgInfo|null>,
   unsupported: boolean,
 }}};
+type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
+type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 type CompiledBackend = {
   appApproval: CompileResultBytes,
@@ -131,7 +140,7 @@ type Digest = BigNumber
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
-type SimRes = ISimRes<Digest, Address, Token>
+type SimRes = ISimRes<Digest, Address, Token, AnyALGO_Ty>
 type SimTxn = ISimTxn<Address, Token>
 
 // Helpers
@@ -250,7 +259,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   if ( s == 200 ) {
     debug('compile',  label, 'succeeded:', r);
     r.src = code;
-    r.result = new Uint8Array(Buffer.from(r.result, 'base64'));
+    r.result = base64ToUI8A(r.result);
     // debug('compile transformed:', r);
     return r;
   } else {
@@ -326,15 +335,15 @@ function unclean_for_AlgoSigner(txnOrig: any) {
   // Application transactions only
   if (txn && txn.type === 'appl'){
     if ('appApprovalProgram' in txn){
-      txn.appApprovalProgram = Uint8Array.from(Buffer.from(txn.appApprovalProgram,'base64'));
+      txn.appApprovalProgram = base64ToUI8A(txn.appApprovalProgram);
     }
     if ('appClearProgram' in txn){
-      txn.appClearProgram = Uint8Array.from(Buffer.from(txn.appClearProgram,'base64'));
+      txn.appClearProgram = base64ToUI8A(txn.appClearProgram);
     }
     if ('appArgs' in txn){
       var tempArgs: Array<Uint8Array> = [];
       txn.appArgs.forEach((element: string) => {
-          tempArgs.push(Uint8Array.from(Buffer.from(element,'base64')));
+          tempArgs.push(base64ToUI8A(element));
       });
       txn.appArgs = tempArgs;
     }
@@ -344,7 +353,7 @@ function unclean_for_AlgoSigner(txnOrig: any) {
   // and isn't even strictly necessary,
   // but it is nice for getting the same signatures from algosdk & AlgoSigner
   if ('group' in txn) {
-    txn.group = new Uint8Array(Buffer.from(txn.group, 'base64'));
+    txn.group = base64ToUI8A(txn.group);
   }
   return txn;
 }
@@ -456,6 +465,13 @@ function must_be_supported(bin: Backend) {
   }
 }
 
+// Get these from stdlib
+const MaxTxnLife = 1000;
+const LogicSigMaxSize = 1000;
+const MaxAppArgs = 16;
+const MaxAppTotalArgLen = 2048;
+const MaxAppProgramLen = 1024;
+
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   const { ApplicationID, Deployer } = info;
   must_be_supported(bin);
@@ -474,11 +490,6 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
   const checkLen = (label:string, actual:number, expected:number): void => {
     if ( actual > expected ) {
         throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
-  // Get these from stdlib
-  const LogicSigMaxSize = 1000;
-  // const MaxAppArgs = 16;
-  const MaxAppTotalArgLen = 2048;
-  const MaxAppProgramLen = 1024;
 
   const ctc_bin = await compileTEAL('ctc_subst', subst_creator(subst_appid(ctc)));
   checkLen(`Escrow Contract`, ctc_bin.result.length, LogicSigMaxSize);
@@ -493,8 +504,11 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
       const mc_subst = subst_creator(subst_ctc(subst_appid(mc)));
       const cr = await compileTEAL(mN, mc_subst);
       checkLen(`${mN} Contract`, cr.result.length, LogicSigMaxSize);
-      // XXX check arg count
-      checkLen(`${mN} Contract Arguments`, stepargs[mi], MaxAppTotalArgLen);
+      const sa = stepargs[mi];
+      if ( sa ) {
+        checkLen(`${mN} Contract Arguments Count`, sa.count, MaxAppArgs);
+        checkLen(`${mN} Contract Arguments Length`, sa.size, MaxAppTotalArgLen);
+      }
       appApproval_subst =
         replaceAddr(mN, cr.hash, appApproval_subst);
       return cr;
@@ -516,6 +530,7 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
 
 const ui8z = new Uint8Array();
 
+const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: any): String => Buffer.from(x).toString('base64');
 
 const format_failed_request = (e: any) => {
@@ -957,12 +972,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       debug(dhead , '--- SIMULATE', sim_r);
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
+      const [ view_ty, view_v ] = sim_r.view;
+      debug(dhead, 'VIEW', { view_ty, view_v });
 
       while ( true ) {
         const params = await getTxnParams();
         if ( timeout_delay ) {
-          // This 1000 is MaxTxnLife --- https://github.com/algorand/go-algorand/blob/master/config/consensus.go#L560
-          const tdn = Math.min(1000, timeout_delay.toNumber());
+          const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
           params.lastRound = lastRound + tdn;
           if ( params.firstRound > params.lastRound ) {
             debug(dhead, '--- FAIL/TIMEOUT');
@@ -1021,10 +1037,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                           value.add(totalFromFee),
                           undefined, params);
 
-        const actual_args =
-          [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+      const actual_args =
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_v, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
+        [ T_Digest, T_Digest, view_ty, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
@@ -1247,9 +1263,32 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const creationTime = async () =>
       bigNumberify((await getInfo()).creationRound);
 
-    const getViews = () => {
-      throw Error(`Algorand does not support views`);
+    const views_bin = bin._getViews({reachStdlib: compiledStdlib});
+    const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
+      async (): Promise<any> => {
+        void(v); void(k);
+        const { decode } = vim;
+        const client = await getAlgodClient();
+        const appInfo = await client.getApplicationByID(ApplicationID).do();
+        const appSt = appInfo['params']['global-state'];
+        const viewSt = (appSt.find((x:any) => x.key === 'dg==')).value;
+        debug({viewSt});
+        const vvn = base64ToUI8A(viewSt.bytes);
+        debug({vvn});
+        const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
+        const vi = bigNumberToNumber(vin);
+        debug({vi});
+        const vtys = vs[vi];
+        debug({vtys});
+        const vty = T_Tuple([T_UInt, ...vtys]);
+        debug({vty});
+        const vvs = vty.fromNet(vvn);
+        debug({vvs});
+        const vres = decode(vi, vvs.slice(1));
+        debug({vres});
+        return vres;
     };
+    const getViews = getViewsHelper(views_bin, getView1);
 
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
@@ -1278,7 +1317,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          0, 0, 2, 1));
+          0, 0, 2, 2));
 
     const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
@@ -1333,34 +1372,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return await attachP(bin, getInfo());
   };
 
-  /**
-   * @description Push await down into the functions of a Contract
-   * @param implP A promise of an implementation of Contract
-   */
-  const deferP = (implP: Promise<Contract>): Contract => {
-    return {
-      getInfo: async () => (await implP).getInfo(),
-      creationTime: async () => (await implP).creationTime(),
-      // @ts-ignore
-      sendrecv: async (...args: any) => (await implP).sendrecv(...args),
-      // @ts-ignore
-      recv: async (...args: any) => (await implP).recv(...args),
-      // @ts-ignore
-      wait: async(...args: any) => (await implP).wait(...args),
-      iam, // doesn't need to await the implP
-      selfAddress, // doesn't need to await the implP
-      // @ts-ignore
-      getViews: async(...args: any) => (await implP).getViews(...args),
-      stdlib: compiledStdlib,
-    };
-  };
+  const implNow = { stdlib: compiledStdlib };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
-    return deferP(attachP(bin, ctcInfoP));
+    return deferContract(attachP(bin, ctcInfoP), implNow);
   };
 
   const deploy = (bin: Backend): Contract => {
-    return deferP(deployP(bin));
+    return deferContract(deployP(bin), implNow);
   };
 
   function setDebugLabel(newLabel: string): Account {

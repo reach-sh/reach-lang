@@ -63,7 +63,7 @@ data ETail_ a
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg (ETail_ a) (ETail_ a)
   | ET_Switch SrcLoc DLVar (SwitchCases (ETail_ a))
-  | ET_FromConsensus SrcLoc Int FromInfo (ETail_ a)
+  | ET_FromConsensus SrcLoc Int ViewSave FromInfo (ETail_ a)
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
@@ -102,8 +102,8 @@ instance Pretty a => Pretty (ETail_ a) where
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
-      ET_FromConsensus _ which msvs k ->
-        "fromConsensus" <+> whichp <+> pretty msvs <+> semi
+      ET_FromConsensus _ which vis msvs k ->
+        "fromConsensus" <+> whichp <+> pretty vis <+> pretty msvs <+> semi
           <> hardline
           <> pretty k
         where

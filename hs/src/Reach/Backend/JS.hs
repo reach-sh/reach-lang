@@ -63,8 +63,11 @@ jsWhile cond body = "while" <+> parens cond <+> jsBraces body
 jsReturn :: Doc -> Doc
 jsReturn a = "return" <+> a <> semi
 
+jsWhen :: Doc -> Doc -> Doc
+jsWhen cap ttp = "if" <+> parens cap <+> jsBraces ttp
+
 jsIf :: Doc -> Doc -> Doc -> Doc
-jsIf cap ttp ftp = "if" <+> parens cap <+> jsBraces ttp <> hardline <> "else" <+> jsBraces ftp
+jsIf cap ttp ftp = jsWhen cap ttp <> hardline <> "else" <+> jsBraces ftp
 
 jsBraces :: Doc -> Doc
 jsBraces body = braces (nest 2 $ hardline <> body)
@@ -230,11 +233,15 @@ jsLargeArg = \case
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
 
+jsContractAndVals :: [DLArg] -> App [Doc]
+jsContractAndVals as = do
+  let la = DLLA_Tuple as
+  ctc <- jsContract $ largeArgTypeOf la
+  as' <- jsLargeArg la
+  return $ [ctc, as']
+
 jsDigest :: AppT [DLArg]
-jsDigest as = do
-  ctc <- jsContract (T_Tuple $ map argTypeOf as)
-  as' <- jsLargeArg (DLLA_Tuple as)
-  return $ jsApply "stdlib.digest" [ctc, as']
+jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsPrimApply :: PrimOp -> [Doc] -> Doc
 jsPrimApply = \case
@@ -523,16 +530,21 @@ jsETail = \case
       True -> mempty
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus at which msvs k ->
+  ET_FromConsensus at which vis msvs k ->
     (ctxt_simulate <$> ask) >>= \case
       False -> jsETail k
       True -> do
-        let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
+        let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
+        let mkStDigest svs_ = jsDigest $ vconcat which svs_
+        vis' <- do
+          let ViewSave vwhich vvs = vis
+          jsArray <$> jsContractAndVals (vconcat vwhich vvs)
         let common extra nextSt' nextSt_noTime' isHalt' =
               vsep $
                 extra
                   <> [ "sim_r.nextSt =" <+> nextSt' <> semi
                      , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
+                     , "sim_r.view =" <+> vis' <> semi
                      , "sim_r.isHalt =" <+> isHalt' <> semi
                      ]
         case msvs of
@@ -811,8 +823,32 @@ jsViews :: Maybe (CPViews, ViewInfos) -> App Doc
 jsViews mcv = do
   jsFunctionWStdlib "_getViews" $ do
     let cvs = fromMaybe mempty $ fmap fst mcv
-    let toObj fv o = jsObject <$> mapM fv o
-    jsReturn <$> toObj (toObj jsContract) cvs
+    let vis = fromMaybe mempty $ fmap snd mcv
+    let toObj fv o = jsObject <$> mapWithKeyM fv o
+    let enView _ (ViewInfo vs _) =
+          jsArray <$> (mapM jsContract $ map varType vs)
+    views <- toObj enView vis
+    let enDecode v k vi (ViewInfo vs vim) = do
+          let vka = (vim M.! v) M.! k
+          vs' <- mapM jsVar vs
+          vka' <- jsArg vka
+          vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
+          let c = jsPrimApply PEQ [ "i", vi' ]
+          let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
+          return $ jsWhen c $ vsep [ let', jsReturn vka' ]
+    let enInfo' v k ctc = do
+          ctc' <- jsContract ctc
+          body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
+          let body' = vsep [ body, jsApply "stdlib.assert" [ "false", jsString "illegal view" ] ]
+          let decode' = jsApply "" [ "i", "svs" ] <+> "=>" <+> jsBraces body'
+          return $ jsObject $ M.fromList $
+            [ ("ty"::String, ctc')
+            , ("decode", decode') ]
+    let enInfo v = toObj (enInfo' v)
+    infos <- toObj enInfo cvs
+    return $ jsReturn $ jsObject $ M.fromList $
+      [ ("views"::String, views)
+      , ("infos", infos) ]
 
 jsPIProg :: ConnectorResult -> PIProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
