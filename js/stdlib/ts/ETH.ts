@@ -587,7 +587,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return await impl.recv(funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
       };
-      const impl: Contract = deferContract(implP, implNow);
+      const impl: Contract = deferContract(true, implP, implNow);
       return impl;
     }
 

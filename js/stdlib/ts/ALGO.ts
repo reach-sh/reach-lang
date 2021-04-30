@@ -1375,11 +1375,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const implNow = { stdlib: compiledStdlib };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
-    return deferContract(attachP(bin, ctcInfoP), implNow);
+    return deferContract(false, attachP(bin, ctcInfoP), implNow);
   };
 
   const deploy = (bin: Backend): Contract => {
-    return deferContract(deployP(bin), implNow);
+    return deferContract(false, deployP(bin), implNow);
   };
 
   function setDebugLabel(newLabel: string): Account {

@@ -89,19 +89,22 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
 type ContractIndex = 'getInfo' | 'creationTime' | 'sendrecv' | 'recv' | 'wait' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
 
 export const deferContract =
-  <ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy>(implP:Promise<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>,
-   implNow: Partial<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>):
+  <ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
+    shouldError: boolean,
+    implP:Promise<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>,
+    implNow: Partial<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>):
   IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy> => {
 
   const not_yet = (which:ContractIndex) => (...args: any[]): any => {
     void(args);
     throw Error(`Cannot ${which} yet; contract is not actually deployed`);
   };
-  const mnow = (which:ContractIndex) =>
-    implNow[which] === undefined ? not_yet(which) : implNow[which];
   const delay = (which:ContractIndex) => async (...args: any[]): Promise<any> =>
     // @ts-ignore
     (await implP)[which](...args);
+  const thenow = shouldError ? not_yet : delay;
+  const mnow = (which:ContractIndex) =>
+    implNow[which] === undefined ? thenow(which) : implNow[which];
 
   // impl starts with a shim that deploys on first sendrecv,
   // then replaces itself with the real impl once deployed.
