@@ -1186,7 +1186,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
   eViewLen <- newIORef 0
-  let letArgs' :: App a -> [(DLVar, Int)] -> App a
+  let letArgs' :: App a -> [(DLVar, Word8)] -> App a
       letArgs' km = \case
         [] -> km
         (dv@(DLVar _ _ t _), i):more -> do

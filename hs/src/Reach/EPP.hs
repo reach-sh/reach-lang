@@ -165,7 +165,7 @@ data BEnv = BEnv
   , be_loop :: Maybe Int
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
-  , be_viewc :: Counter
+  , be_viewmc :: Maybe Counter
   , be_viewr :: IORef ViewInfos
   , be_views :: ViewsInfo
   , be_inConsensus :: Bool
@@ -265,7 +265,9 @@ assignView = do
   BEnv {..} <- ask
   let vs = countsl be_views
   let vi = ViewInfo vs be_views
-  i <- liftIO $ incCounter be_viewc
+  i <- case be_viewmc of
+         Nothing -> return $ 0
+         Just c -> liftIO $ incCounter c
   let vis = ViewSave i $ asnLike vs
   liftIO $ modifyIORef be_viewr $ M.insert i vi
   return $ vis
@@ -649,6 +651,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   be_output_vs <- newIORef mempty
   let be_toks = mempty
   be_viewc <- newCounter 1
+  let be_viewmc = if M.null dvs then Nothing else Just be_viewc
   be_viewr <- newIORef mempty
   let be_views = mempty
   let be_inConsensus = False
