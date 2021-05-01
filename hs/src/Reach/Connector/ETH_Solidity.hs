@@ -787,6 +787,7 @@ solCom = \case
   DL_LocalIf _ ca t f ->
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
+  DL_Only {} -> impossible $ "only in CT"
   DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
     addMemVars $ [ans, a]
     let sz = arraySize x

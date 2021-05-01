@@ -32,7 +32,6 @@ data LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
-  | LLC_Only SrcLoc SLPart LLTail LLConsensus
   deriving (Eq)
 
 instance Pretty LLConsensus where
@@ -45,12 +44,10 @@ instance Pretty LLConsensus where
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     LLC_Continue _at asn -> prettyContinue asn
-    LLC_Only _at who onlys k -> prettyOnlyK who onlys k
 
 data LLStep
   = LLS_Com LLCommon LLStep
   | LLS_Stop SrcLoc
-  | LLS_Only SrcLoc SLPart LLTail LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
       , lls_tc_send :: M.Map SLPart DLSend
@@ -63,7 +60,6 @@ instance Pretty LLStep where
   pretty = \case
     LLS_Com x k -> prettyCom x k
     LLS_Stop _at -> prettyStop
-    LLS_Only _at who onlys k -> prettyOnlyK who onlys k
     LLS_ToConsensus {..} ->
       prettyToConsensus__ lls_tc_send lls_tc_recv lls_tc_mtime
 

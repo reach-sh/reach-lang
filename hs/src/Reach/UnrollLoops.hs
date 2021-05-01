@@ -130,6 +130,7 @@ instance Unroll LLCommon where
       return $ DL_Let at (Just ans) (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb
+    DL_Only at p l -> DL_Only at p <$> ul l
 
 ul_m :: Unroll a => (LLCommon -> a -> a) -> LLCommon -> AppT a
 ul_m mkk m k = do
@@ -165,7 +166,6 @@ instance Unroll LLConsensus where
     LLC_While at asn inv cond body k ->
       LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
-    LLC_Only at p l k -> LLC_Only at p <$> ul l <*> ul k
 
 instance Unroll k => Unroll (a, k) where
   ul (a, k) = (,) a <$> ul k
@@ -183,7 +183,6 @@ instance Unroll LLStep where
   ul = \case
     LLS_Com m k -> ul_m LLS_Com m k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_Only at p l s -> LLS_Only at p <$> ul l <*> ul s
     LLS_ToConsensus at send recv mtime ->
       LLS_ToConsensus at send <$> ul recv <*> ul mtime
 

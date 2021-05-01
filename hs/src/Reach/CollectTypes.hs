@@ -116,6 +116,7 @@ instance CollectsTypes a => CollectsTypes (DLinStmt a) where
   cts (DL_Set _ v a) = cts v <> cts a
   cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
+  cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
 
 instance CollectsTypes a => CollectsTypes (DLinTail a) where
@@ -137,7 +138,6 @@ instance CollectsTypes LLConsensus where
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
-  cts (LLC_Only _ _ l s) = cts l <> cts s
 
 instance CollectsTypes DLPayAmt where
   cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks
@@ -151,7 +151,6 @@ instance CollectsTypes a => CollectsTypes (DLRecv a) where
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
   cts (LLS_Stop _) = mempty
-  cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
 instance CollectsTypes (DLExportinBlock LLVar) where

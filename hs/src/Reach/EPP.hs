@@ -168,9 +168,13 @@ data BEnv = BEnv
   , be_viewc :: Counter
   , be_viewr :: IORef ViewInfos
   , be_views :: ViewsInfo
+  , be_inConsensus :: Bool
   }
 
 type BApp = ReaderT BEnv IO
+
+withConsensus :: Bool -> BApp a -> BApp a
+withConsensus b = local (\e -> e { be_inConsensus = b })
 
 signalMore :: BApp ()
 signalMore = liftIO . flip writeIORef True =<< (be_more <$> ask)
@@ -327,75 +331,104 @@ readVars = do
 itsame :: SLPart -> EApp Bool
 itsame who = ((who ==) . ee_who) <$> ask
 
-ee_only :: SrcLoc -> SLPart -> LLTail -> EITail -> EApp EITail
-ee_only _at who l k' =
-  itsame who >>= \case
-    False -> return k'
-    True -> return $ dtReplace ET_Com k' l
+eeIze :: (a -> BApp (b, c)) -> a -> BApp c
+eeIze f x = do
+  be_flowr' <- (liftIO . dupeIORef) =<< (be_flowr <$> ask)
+  local (\e -> e { be_flowr = be_flowr' }) $
+    snd <$> f x
 
-be_m :: LLCommon -> BApp (CApp PILCommon)
+ee_m :: LLCommon -> BApp (EApp PILCommon)
+ee_m = eeIze be_m
+
+ee_t :: LLTail -> BApp (EApp PILTail)
+ee_t = eeIze be_t
+
+be_m :: LLCommon -> BApp (CApp PILCommon, EApp PILCommon)
 be_m = \case
-  DL_Nop at -> return $ return $ DL_Nop at
+  DL_Nop at -> retb0 $ const $ return $ DL_Nop at
   DL_Let at mdv de -> do
     fg_use $ de
     case de of
       DLE_Remote {} -> recordOutputVar mdv
       _ -> return ()
     fg_defn $ mdv
-    return $ return $ DL_Let at mdv de
+    retb0 $ const $ return $ DL_Let at mdv de
   DL_ArrayMap at ans x a f -> do
     fg_defn $ [ans, a]
     fg_use $ x
-    f' <- be_bl f
-    return $ DL_ArrayMap at ans x a <$> f'
+    be_bl f >>= retb (\f' ->
+      return $ DL_ArrayMap at ans x a f')
   DL_ArrayReduce at ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ [x, z]
-    f' <- be_bl f
-    return $ DL_ArrayReduce at ans x z b a <$> f'
+    be_bl f >>= retb (\f' ->
+      return $ DL_ArrayReduce at ans x z b a f')
   DL_Var at v -> do
     fg_defn $ v
-    return $ do
-      ce_vdef v
-      return $ DL_Var at v
+    let mkt _ = return $ DL_Var at v
+    return $ (,) (ce_vdef v >> (mkt ())) (mkt ())
   DL_Set at v a -> do
     fg_defn $ v
     fg_use $ a
-    return $ do
-      ce_vuse v
-      return $ DL_Set at v a
+    let mkt _ = return $ DL_Set at v a
+    return $ (,) (ce_vuse v >> (mkt ())) (mkt ())
   DL_LocalIf at c t f -> do
     fg_use $ c
-    t' <- be_t t
-    f' <- be_t f
-    return $ DL_LocalIf at c <$> t' <*> f'
+    t'p <- be_t t
+    f'p <- be_t f
+    retb2 t'p f'p (\t' f' ->
+      return $ DL_LocalIf at c t' f')
   DL_LocalSwitch at ov csm -> do
     fg_use $ ov
     let go (mv, k) = do
           fg_defn $ mv
-          k' <- be_t k
-          return $ (,) mv <$> k'
+          k'p <- be_t k
+          return $ (,) mv k'p
     csm' <- mapM go csm
-    return $ (DL_LocalSwitch at ov <$> mapM id csm')
+    let mkt f = (DL_LocalSwitch at ov <$> mapM f' csm')
+          where f' (mv, k'p) = (,) mv <$> (f k'p)
+    return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ z
-    f' <- be_bl f
-    return $ DL_MapReduce at mri ans x z b a <$> f'
+    be_bl f >>= retb (\f' ->
+      return $ DL_MapReduce at mri ans x z b a f')
+  DL_Only at (Left who) l -> do
+    ic <- be_inConsensus <$> ask
+    l'l <- ee_t l
+    let t'c = return $ DL_Nop at
+    let t'l = do
+          itsame who >>= \case
+            False -> return $ DL_Nop at
+            True -> DL_Only at (Right ic) <$> l'l
+    return $ (,) t'c t'l
+  DL_Only {} -> impossible $ "right only before EPP"
 
-be_t :: LLTail -> BApp (CApp PILTail)
+be_t :: LLTail -> BApp (CApp PILTail, EApp PILTail)
 be_t = \case
-  DT_Return at -> return $ return $ DT_Return at
+  DT_Return at -> retb0 $ const $ return $ DT_Return at
   DT_Com m k -> do
-    m' <- be_m m
-    k' <- be_t k
-    return $ DT_Com <$> m' <*> k'
+    m'p <- be_m m
+    k'p <- be_t k
+    retb2 m'p k'p (\m' k' ->
+      return $ DT_Com m' k')
 
-be_bl :: LLBlock -> BApp (CApp PILBlock)
+retb :: (Monad m, Monad n, Monad p) => (forall o . Monad o => a -> o b) -> (m a, n a) -> p (m b, n b)
+retb f (mx, my) = return $ (,) (mx >>= f) (my >>= f)
+
+retb0 :: (Monad m, Monad n, Monad p) => (forall o . Monad o => () -> o b) -> p (m b, n b)
+retb0 f = retb f (return (), return ())
+
+retb2 :: (Monad m, Monad n, Monad p) => (m a1, n a1) -> (m a2, n a2) -> (forall o . Monad o => a1 -> a2 -> o b) -> p (m b, n b)
+retb2 (mx1, my1) (mx2, my2) f = retb f' ((p mx1 mx2), (p my1 my2))
+  where f' (x1, x2) = f x1 x2
+        p mx my = (,) <$> mx <*> my
+
+be_bl :: LLBlock -> BApp (CApp PILBlock, EApp PILBlock)
 be_bl (DLinBlock at fs t a) = do
   fg_use $ a
-  t' <- be_t t
-  return $ DLinBlock at fs <$> t' <*> pure a
+  be_t t >>= retb (\t' ->
+    return $ DLinBlock at fs t' a)
 
 class OnlyHalts a where
   onlyHalts :: a -> Bool
@@ -408,13 +441,11 @@ instance OnlyHalts LLConsensus where
     LLC_FromConsensus _ _ s -> onlyHalts s
     LLC_While {} -> False
     LLC_Continue {} -> False
-    LLC_Only _ _ _ k -> onlyHalts k
 
 instance OnlyHalts LLStep where
   onlyHalts = \case
     LLS_Com _ k -> onlyHalts k
     LLS_Stop _ -> True
-    LLS_Only _ _ _ s -> onlyHalts s
     LLS_ToConsensus {} -> False
 
 be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
@@ -428,15 +459,8 @@ be_c = \case
             _ -> []
     let remember_toks = local (\e -> e {be_toks = toks <> be_toks e})
     (k'c, k'l) <- remember_toks $ be_c k
-    c'c <- be_m c
-    return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com c <$> k'l)
-  LLC_Only at who l k -> do
-    (k'c, k'l) <- be_c k
-    let lm =
-          itsame who >>= \case
-            False -> k'l
-            True -> ET_ConsensusOnly at l <$> k'l
-    return $ (,) (k'c) lm
+    (c'c, c'l) <- withConsensus True $ be_m c
+    return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com <$> c'l <*> k'l)
   LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
     (f'c, f'l) <- be_c f
@@ -498,7 +522,7 @@ be_c = \case
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
-    cond_l' <- inLoop $ do
+    (cond_l', _) <- inLoop $ do
       fg_defn $ loop_vars
       be_t cond_l
     (body'c, body'l) <-
@@ -537,12 +561,10 @@ be_s = \case
             (DL_Let _ _ (DLE_Wait _ amt)) -> interval_add_from int amt
             _ -> int
     k' <- local (\e -> e {be_interval = int'}) $ be_s k
-    return $ ET_Com c <$> k'
+    c'e <- withConsensus False $ ee_m c
+    return $ ET_Com <$> c'e <*> k'
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
-  LLS_Only at who l k -> do
-    k' <- be_s k
-    return $ ee_only at who l =<< k'
   LLS_ToConsensus at send recv mtime -> do
     let DLRecv from_v msg_vs time_v (last_time_mv, ok_c) = recv
     prev <- be_which <$> ask
@@ -629,6 +651,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   be_viewc <- newCounter 1
   be_viewr <- newIORef mempty
   let be_views = mempty
+  let be_inConsensus = False
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   vm <- readIORef be_viewr
   hs <- readIORef be_handlers

@@ -86,8 +86,8 @@ instance Pretty DLStmt where
       DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
       DLS_If _ ca sa ts fs ->
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
-      DLS_Switch _ ov _ csm ->
-        prettySwitch ov csm
+      DLS_Switch _ ov sa csm ->
+        prettySwitch (pretty ov <+> braces (pretty sa)) csm
       DLS_Return _ ret sv ->
         "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
@@ -175,7 +175,7 @@ instance IsLocal DLStmt where
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> isLocal ss
     DLS_Stop {} -> False
-    DLS_Only {} -> False
+    DLS_Only {} -> True
     DLS_ToConsensus {} -> False
     DLS_FromConsensus {} -> False
     DLS_While {} -> False

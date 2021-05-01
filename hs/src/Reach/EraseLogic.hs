@@ -75,6 +75,7 @@ instance Erase LLCommon where
     DL_Set at dv da -> DL_Set at <$> el dv <*> el da
     DL_LocalIf at c t f -> DL_LocalIf at <$> el c <*> el t <*> el f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> el ov <*> el csm
+    DL_Only at who b -> DL_Only at who <$> el b
     DL_MapReduce at mri ans x z b a f ->
       isUsed (Just ans) >>= \case
         False -> skip at
@@ -138,10 +139,6 @@ instance Erase LLConsensus where
       asn' <- restrictToUsed asn
       asn'' <- el asn'
       return $ LLC_Continue at asn''
-    LLC_Only at p l k -> do
-      k' <- el k
-      l' <- el l
-      return $ LLC_Only at p l' k'
 
 instance Erase LLStep where
   el = \case
@@ -150,10 +147,6 @@ instance Erase LLStep where
       m' <- el m
       return $ mkCom LLS_Com m' k'
     LLS_Stop at -> return $ LLS_Stop at
-    LLS_Only at p l k -> do
-      k' <- el k
-      l' <- el l
-      return $ LLS_Only at p l' k'
     LLS_ToConsensus at send recv mtime -> do
       let (lt_mv, c) = dr_k recv
       c' <- el c

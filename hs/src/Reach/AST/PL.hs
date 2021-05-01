@@ -88,7 +88,6 @@ data ETail_ a
       , et_w_k :: (ETail_ a)
       }
   | ET_Continue SrcLoc DLAssignment
-  | ET_ConsensusOnly SrcLoc (DLinTail a) (ETail_ a)
   deriving (Eq)
 
 type ETail = ETail_ PLVar
@@ -150,8 +149,6 @@ instance Pretty a => Pretty (ETail_ a) where
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn
-      ET_ConsensusOnly _ lt k ->
-        pretty lt <> hardline <> pretty k
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)

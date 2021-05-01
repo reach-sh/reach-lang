@@ -452,6 +452,12 @@ jsCom = \case
     return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "reduce" [(jsApply "" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'), z']
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
+  DL_Only _at (Right c) l -> do
+    sim <- ctxt_simulate <$> ask
+    case (not c || sim) of
+      True -> jsPLTail l
+      False -> mempty
+  DL_Only {} -> impossible $ "left only after EPP"
 
 jsPLTail :: AppT PILTail
 jsPLTail = \case
@@ -697,13 +703,6 @@ jsETail = \case
               wk' <- newCtxt_oldWhile $ jsETail wk
               return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
     return $ asn'o <> hardline <> asn'i
-  ET_ConsensusOnly _at l k ->
-    (ctxt_simulate <$> ask) >>= \case
-      True -> kp
-      False -> vsep <$> mapM id [lp, kp]
-    where
-      kp = jsETail k
-      lp = jsPLTail l
 
 newJsContract :: App JSContracts
 newJsContract = do

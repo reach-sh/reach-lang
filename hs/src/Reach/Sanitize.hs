@@ -88,6 +88,7 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinStmt a) where
     DL_Set _ v a -> DL_Set sb v (sani a)
     DL_LocalIf _ a b c -> DL_LocalIf sb (sani a) (sani b) (sani c)
     DL_LocalSwitch _ a b -> DL_LocalSwitch sb a (sani b)
+    DL_Only _ a b -> DL_Only sb a (sani b)
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
 
@@ -110,7 +111,6 @@ instance Sanitize LLConsensus where
     LLC_While _ asn inv cond body k -> LLC_While sb (sani asn) (sani inv) (sani cond) (sani body) (sani k)
     LLC_Continue _ asn -> LLC_Continue sb (sani asn)
     LLC_FromConsensus _ _ s -> LLC_FromConsensus sb sb (sani s)
-    LLC_Only _ p l k -> LLC_Only sb p (sani l) (sani k)
 
 instance Sanitize DLPayAmt where
   sani (DLPayAmt {..}) = DLPayAmt pa_net (sani pa_ks)
@@ -125,7 +125,6 @@ instance Sanitize LLStep where
   sani = \case
     LLS_Com m k -> LLS_Com (sani m) (sani k)
     LLS_Stop _ -> LLS_Stop sb
-    LLS_Only _ p l s -> LLS_Only sb p (sani l) (sani s)
     LLS_ToConsensus _ send recv mtime -> LLS_ToConsensus sb (sani send) (sani recv) (sani mtime)
 
 instance Sanitize FromInfo where

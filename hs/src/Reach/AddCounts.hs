@@ -56,6 +56,9 @@ ac_m = \case
     csm' <- ac_csm ac_lt csm
     ac_visit $ ov
     return $ DL_LocalSwitch at ov csm'
+  DL_Only at who b -> do
+    b' <- ac_lt b
+    return $ DL_Only at who b'
   DL_MapReduce at mri ans x z b a f -> do
     f' <- ac_bl f
     ac_visit $ z

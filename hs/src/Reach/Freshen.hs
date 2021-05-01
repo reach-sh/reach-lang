@@ -98,6 +98,7 @@ instance {-# OVERLAPS #-} Freshen LLCommon where
       DL_LocalSwitch at <$> fu ov <*> mapM go csm
       where
         go (vn, k) = (,) <$> fu_mv vn <*> fu k
+    DL_Only at who b -> DL_Only at who <$> fu b
     DL_ArrayMap at ans x a fb -> do
       x' <- fu x
       a' <- fu_v a

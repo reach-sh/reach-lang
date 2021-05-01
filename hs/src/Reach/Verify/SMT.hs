@@ -1161,6 +1161,8 @@ smt_m = \case
       B_Prove _ ->
         smtMapReviewRecordReduce at mri ans x z b a f
       _ -> impossible $ "Map.reduce outside invariant"
+  DL_Only _at (Left who) loc -> smt_lm who loc
+  DL_Only {} -> impossible $ "right only before EPP"
 
 smt_l :: LLTail -> SMTComp
 smt_l = \case
@@ -1276,13 +1278,11 @@ smt_n = \case
         smt_invblock (B_Assume False) cond
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
-  LLC_Only _at who loc k -> smt_lm who loc <> smt_n k
 
 smt_s :: LLStep -> SMTComp
 smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
-  LLS_Only _at who loc k -> smt_lm who loc <> smt_s k
   LLS_ToConsensus at send recv mtime -> do
     let DLRecv whov msgvs timev (last_timemv, next_n) = recv
     timev' <- smt_v at timev

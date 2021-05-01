@@ -64,10 +64,9 @@ dkc = \case
       cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
   DLS_MapReduce at mri ans x z b a f ->
     DKC_MapReduce at mri ans x z b a <$> dk_block at f
-  DLS_FluidSet at fv a ->
-    return $ DKC_FluidSet at fv a
-  DLS_FluidRef at v fv ->
-    return $ DKC_FluidRef at v fv
+  DLS_FluidSet at fv a -> return $ DKC_FluidSet at fv a
+  DLS_FluidRef at v fv -> return $ DKC_FluidRef at v fv
+  DLS_Only at who ss -> DKC_Only at who <$> dk_ at ss
   _ -> impossible "dkc"
 
 dk_block :: SrcLoc -> DLBlock -> DKApp DKBlock
@@ -120,8 +119,6 @@ dk1 at_top ks s =
         com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
-    DLS_Only at who ss ->
-      DK_Only at who <$> dk_ at ss <*> dk_ at ks
     DLS_ToConsensus at send recv mtime -> do
       let cs = dr_k recv
       cs' <- dk_ at (cs <> ks)
@@ -144,6 +141,7 @@ dk1 at_top ks s =
     DLS_FluidSet {} -> com
     DLS_FluidRef {} -> com
     DLS_MapReduce {} -> com
+    DLS_Only {} -> com
     DLS_Throw at da _ -> do
       handler <- asks eExnHandler
       case handler of
@@ -235,6 +233,7 @@ instance CanLift DKCommon where
     DKC_MapReduce _ _ _ _ _ _ _ f -> canLift f
     DKC_FluidSet {} -> True
     DKC_FluidRef {} -> True
+    DKC_Only {} -> False --- XXX maybe okay
 
 noLifts :: LCApp a -> LCApp a
 noLifts = local (\e -> e {eLifts = Nothing})
@@ -292,7 +291,6 @@ instance LiftCon DKTail where
   lc = \case
     DK_Com m k -> doLift m (lc k)
     DK_Stop at -> return $ DK_Stop at
-    DK_Only at who l s -> DK_Only at who l <$> lc s
     DK_ToConsensus at send recv mtime -> do
       DK_ToConsensus at send <$> (noLifts $ lc recv) <*> lc mtime
     DK_If at c t f -> DK_If at c <$> lc t <*> lc f
@@ -394,6 +392,7 @@ df_com mkk back = \case
           where
             go (c, y) = (,) c <$> df_t y
         DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
+        DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
     mkk m' <$> back k
   t -> impossible $ show $ "df_com " <> pretty t
@@ -433,8 +432,6 @@ df_con = \case
     makeWhile <$> df_con k'
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap asn
-  DK_Only at who body k ->
-    LLC_Only at who <$> df_t body <*> df_con k
   DK_FromConsensus at1 at2 t -> do
     -- This was formerly done inside of Eval.hs, but that meant that these refs
     -- and sets would dominate the lifted ones in the step body, which defeats
@@ -448,7 +445,6 @@ df_con = \case
 df_step :: DKTail -> DFApp LLStep
 df_step = \case
   DK_Stop at -> return $ LLS_Stop at
-  DK_Only at who body k -> LLS_Only at who <$> df_t body <*> df_step k
   DK_ToConsensus at send recv mtime -> do
     let k = dr_k recv
     let cvt = \case

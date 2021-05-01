@@ -264,6 +264,11 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
+    DL_Only at ep l -> do
+      let w = case ep of
+                Left p -> focusp p
+                Right _ -> id
+      DL_Only at ep <$> w (opt l)
 
 instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
   opt = \case
@@ -301,8 +306,6 @@ instance Optimize LLConsensus where
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
       LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
-    LLC_Only at p l k ->
-      LLC_Only at p <$> (focusp p $ opt l) <*> opt k
 
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
@@ -321,8 +324,6 @@ instance Optimize LLStep where
   opt = \case
     LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_Only at p l s ->
-      LLS_Only at p <$> (focusp p $ opt l) <*> opt s
     LLS_ToConsensus at send recv mtime ->
       LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
       where

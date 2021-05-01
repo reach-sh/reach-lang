@@ -488,6 +488,7 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
     replaceAddr('Deployer', Deployer, x);
 
   const checkLen = (label:string, actual:number, expected:number): void => {
+    debug(`checkLen`, {label, actual, expected});
     if ( actual > expected ) {
         throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
 

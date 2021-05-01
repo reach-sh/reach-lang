@@ -250,6 +250,9 @@ kgq_m ctxt = \case
       cm1 (mov', l) =
         kgq_a_onlym ctxt mov' oa
           >> kgq_l ctxt' l
+  DL_Only _at (Left who) loc ->
+    kgq_l (ctxt_restrict ctxt who) loc
+  DL_Only {} -> impossible $ "right only before EPP"
   DL_MapReduce _ _ ans x z b a (DLinBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
@@ -296,9 +299,6 @@ kgq_n ctxt = \case
       ctxt' = ctxt_add_back ctxt ca
   LLC_Continue _ asn ->
     kgq_asn ctxt asn
-  LLC_Only _at who loc k ->
-    kgq_l (ctxt_restrict ctxt who) loc
-      >> kgq_n ctxt k
 
 kgq_pa :: KCtxt -> DLPayAmt -> IO ()
 kgq_pa ctxt (DLPayAmt {..}) = do
@@ -310,9 +310,6 @@ kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
   LLS_Stop {} -> mempty
-  LLS_Only _at who loc k ->
-    kgq_l (ctxt_restrict ctxt who) loc
-      >> kgq_s ctxt k
   LLS_ToConsensus _ send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)

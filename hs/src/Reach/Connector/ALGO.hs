@@ -921,6 +921,8 @@ cm km = \case
     km
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
+  DL_Only {} ->
+    impossible $ "only in CP"
 
 cp :: App () -> PLTail -> App ()
 cp km = \case
