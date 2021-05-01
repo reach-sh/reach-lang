@@ -71,24 +71,45 @@ spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
       importSource f `shouldBe` (Right $ ImportLocal f)
       isLeft (importSource n) `shouldBe` True
 
-    describe "can distinguish remote GitHub imports" $ do
-      it "in long-form" $ do
-        importSource "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-          `shouldBe` (Right $ ImportRemoteGit $ GitHub
-            (HostGitAcct "reach-sh")
-            (HostGitRepo "reach-lang")
-            (HostGitRef  "6c3dd0f")
-            (HostGitDir  [ "examples", "exports" ])
-            (HostGitFile "index.rsh"))
+    -- TODO
+    -- describe "can distinguish remote GitHub imports" $ do
+    --   it "in long-form" $ do
+    --     importSource "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+    --       `shouldBe` (Right $ ImportRemoteGit $ GitHub
+    --         (HostGitAcct "reach-sh")
+    --         (HostGitRepo "reach-lang")
+    --         (HostGitRef  "6c3dd0f")
+    --         (HostGitDir  [ "examples", "exports" ])
+    --         (HostGitFile "index.rsh"))
 
-      it "(by default) when no host is specified" $ do
-        importSource "@reach-sh/reach-lang#6c3dd0f/module.rsh"
-          `shouldBe` (Right $ ImportRemoteGit $ GitHub
-            (HostGitAcct "reach-sh")
-            (HostGitRepo "reach-lang")
-            (HostGitRef  "6c3dd0f")
-            (HostGitDir  [])
-            (HostGitFile "module.rsh"))
+    --   it "(by default) when no host is specified" $ do
+    --     importSource "@reach-sh/reach-lang#6c3dd0f/module.rsh"
+    --       `shouldBe` (Right $ ImportRemoteGit $ GitHub
+    --         (HostGitAcct "reach-sh")
+    --         (HostGitRepo "reach-lang")
+    --         (HostGitRef  "6c3dd0f")
+    --         (HostGitDir  [])
+    --         (HostGitFile "module.rsh"))
+
+  describe "exports a `gitUriOf` function which" $ do
+    let uriShouldBe i o = case importSource i of
+          Right (ImportRemoteGit h) -> gitUriOf h `shouldBe` o
+          _ -> fail $ "Invalid translation " <> i <> " -> " <> o
+
+    describe "translates GitHub imports of" $ do
+
+      it "long-form into their corresponding git URIs" $
+        "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+          `uriShouldBe`
+        "https://github.com/reach-sh/reach-lang.git"
+
+    describe "translates BitBucket imports of" $ do
+
+      it "long-form into their corresponding git URIs" $
+        "@bitbucket.org:reach-sh/fancy-lib#v0.1.2/src/lib.rsh"
+          `uriShouldBe`
+        "https://bitbucket.org/reach-sh/fancy-lib.git"
+
 
 main :: IO ()
 main = hspec spec_ImportSource
