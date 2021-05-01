@@ -68,6 +68,7 @@ dependencies:
 - time
 - unordered-containers
 - vector
+- yaml
 
 default-extensions:
 - BangPatterns
