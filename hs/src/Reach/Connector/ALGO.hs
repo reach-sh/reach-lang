@@ -331,6 +331,14 @@ salloc fm = do
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
+sallocLet :: DLVar -> App () -> App a -> App a
+sallocLet dv cgen km = do
+  salloc $ \loc -> do
+    let loct = texty loc
+    cgen
+    code "store" [loct]
+    store_let dv True (code "load" [loct]) km
+
 talloc :: TxnKind -> App TxnIdx
 talloc tk = do
   Env {..} <- ask
@@ -765,10 +773,17 @@ ce = \case
     cfrombs T_Address
     eq_or_fail
     code "gtxn" [texty txni, fAmount]
-    when rmFee $ do
-      lookup_fee_amount
-      op "-"
-    ca amt
+    case rmFee of
+      False ->
+        ca amt
+      True -> do
+        lookup_fee_amount
+        case amt of
+          DLA_Literal (DLL_Int _ 0) ->
+            return ()
+          _ -> do
+            op "-"
+            ca amt
     eq_or_fail
   -- NOTE: We don't care who the sender is... this means that you can get
   -- other people to pay for you if you want.
@@ -834,14 +849,11 @@ doSwitch ck at dv csm = do
         case mov of
           Nothing -> ck k
           Just vv -> do
-            salloc $ \loc -> do
+            flip (sallocLet vv) (ck k) $ do
               ca $ DLA_Var dv
               let vt = argTypeOf $ DLA_Var vv
               csubstring at 1 (1 + typeSizeOf vt)
               cfrombs vt
-              code "store" [texty loc]
-              store_let vv True (code "load" [texty loc]) $
-                ck k
         label next_lab
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
   label end_lab
@@ -859,11 +871,7 @@ cm km = \case
       True ->
         store_let dv True (ce de) km
       False ->
-        salloc $ \loc -> do
-          let loct = texty loc
-          ce de
-          code "store" [loct]
-          store_let dv True (code "load" [loct]) km
+        sallocLet dv (ce de) km
   DL_ArrayMap at ansv aa lv (DLinBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
@@ -874,10 +882,8 @@ cm km = \case
       cfor xlen $ \load_idx -> do
         code "load" [texty ansl]
         doArrayRef at aa True $ Right load_idx
-        salloc $ \lvl -> do
-          code "store" [texty lvl]
-          store_let lv True (code "load" [texty lvl]) $ do
-            cp (ca ra) body
+        sallocLet lv (return ()) $ do
+          cp (ca ra) body
         op "concat"
         code "store" [texty ansl]
       store_let ansv True (code "load" [texty ansl]) km
@@ -889,10 +895,8 @@ cm km = \case
       store_let av True (code "load" [texty ansl]) $ do
         cfor xlen $ \load_idx -> do
           doArrayRef at aa True $ Right load_idx
-          salloc $ \lvl -> do
-            code "store" [texty lvl]
-            store_let lv True (code "load" [texty lvl]) $ do
-              cp (ca ra) body
+          sallocLet lv (return ()) $ do
+            cp (ca ra) body
           code "store" [texty ansl]
         store_let ansv True (code "load" [texty ansl]) km
   DL_Var _ dv ->
@@ -1173,19 +1177,25 @@ ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = do
   let svs = dvdeletem last_timemv svs_
-  let mkarg dv@(DLVar _ _ t _) i = (dv, readArg i >> cfrombs t)
   let args = svs <> msg
-  let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser ..]
   let argCount = fromIntegral argFirstUser + length args
-  let eLets1 = M.insert from lookup_sender eLets0
+  let eLets1 = M.insert from lookup_sender mempty
   let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
   let eLets3 = case last_timemv of
         Nothing -> eLets2
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
   eViewLen <- newIORef 0
+  let letArgs' :: App a -> [(DLVar, Int)] -> App a
+      letArgs' km = \case
+        [] -> km
+        (dv@(DLVar _ _ t _), i):more -> do
+          let cgen = readArg i >> cfrombs t
+          sallocLet dv cgen $ letArgs' km more
+  let letArgs :: App a -> App a
+      letArgs km = letArgs' km (zip args [argFirstUser ..])
   cbs <-
-    runApp eShared eWhich eLets (Just timev) eViewLen $ do
+    runApp eShared eWhich eLets (Just timev) eViewLen $ letArgs $ do
       comment ("Handler " <> texty eWhich)
       comment "Check txnAppl"
       code "gtxn" [texty txnAppl, "TypeEnum"]
