@@ -454,7 +454,7 @@ jsCom = \case
     impossible $ "cannot inspect maps at runtime"
   DL_Only _at (Right c) l -> do
     sim <- ctxt_simulate <$> ask
-    case (not c || sim) of
+    case (not c || (c && not sim)) of
       True -> jsPLTail l
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
