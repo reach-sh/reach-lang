@@ -11,7 +11,7 @@ import Reach.Subst
 import Reach.Util
 
 data Env = Env
-  { e_hs :: M.Map Int CIHandler
+  { e_hs :: M.Map Int CHandler
   , e_rho :: M.Map DLVar DLVar
   , e_idx :: Counter
   }
@@ -25,7 +25,7 @@ allocVar (DLVar at s t _) = do
   idx <- liftIO $ incCounter e_idx
   return $ DLVar at s t idx
 
-getLoop :: Int -> App CITail
+getLoop :: Int -> App CTail
 getLoop w = do
   hs <- e_hs <$> ask
   case M.lookup w hs of
@@ -53,7 +53,7 @@ class DeJump a where
 instance (Subst b, DeJump a) => DeJump (M.Map k (b, a)) where
   dj = mapM (\(x, y) -> (,) <$> djs x <*> dj y)
 
-instance DeJump CITail where
+instance DeJump CTail where
   dj = \case
     CT_Com m k -> CT_Com <$> djs m <*> dj k
     CT_If at c t f -> CT_If at <$> djs c <*> dj t <*> dj f
@@ -68,7 +68,7 @@ instance DeJump CITail where
             v' <- allocVar v
             liftIO $ modifyIORef rho'r $ M.insert v v'
             a' <- djs a
-            return $ DL_Let at (Just v') $ DLE_Arg at a'
+            return $ DL_Let at (DLV_Let DVC_Many v') $ DLE_Arg at a'
       nms <- mapM go2 $ M.toList asnm
       rho' <- liftIO $ readIORef rho'r
       -- Process the body in the context of the new substitution
@@ -76,13 +76,13 @@ instance DeJump CITail where
       -- Include the new variable definitions
       return $ foldr' CT_Com t' nms
 
-instance DeJump CIHandler where
+instance DeJump CHandler where
   dj (C_Loop {}) = impossible $ "dejump loop"
   dj (C_Handler {..}) = do
     ch_body' <- dj ch_body
     return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
-dejump :: PIProg -> IO PIProg
+dejump :: PLProg -> IO PLProg
 dejump (PLProg at plo dli dex epps cp) = do
   let PLOpts {..} = plo
   let CPProg cat vi (CHandlers hs) = cp

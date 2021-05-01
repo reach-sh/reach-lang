@@ -76,7 +76,7 @@ instance Sanitize DLExpr where
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
 
-instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinStmt a) where
+instance Sanitize DLStmt where
   sani = \case
     DL_Nop _ -> DL_Nop sb
     DL_Let _ x e -> DL_Let sb (sani x) (sani e)
@@ -92,15 +92,15 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinStmt a) where
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
 
-instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinTail a) where
+instance Sanitize DLTail where
   sani = \case
     DT_Return _ -> DT_Return sb
     DT_Com c t -> DT_Com (sani c) (sani t)
 
-instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLinBlock a) where
-  sani (DLinBlock _ _ t a) = DLinBlock sb mempty (sani t) (sani a)
+instance Sanitize DLBlock where
+  sani (DLBlock _ _ t a) = DLBlock sb mempty (sani t) (sani a)
 
-instance Sanitize PLVar where
+instance Sanitize DLLetVar where
   sani x = x
 
 instance Sanitize LLConsensus where
@@ -136,7 +136,7 @@ instance Sanitize ViewSave where
   sani = \case
     ViewSave i svs -> ViewSave i $ sani svs
 
-instance {-# OVERLAPPING #-} Sanitize a => Sanitize (CTail_ a) where
+instance Sanitize CTail where
   sani = \case
     CT_Com m k -> CT_Com (sani m) (sani k)
     CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)

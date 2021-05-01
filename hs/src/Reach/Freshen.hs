@@ -9,7 +9,6 @@ import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
-import Reach.AST.LL
 import Reach.Counter
 
 type App = ReaderT Env IO
@@ -24,7 +23,7 @@ data Env = Env
 class Freshen a where
   fu :: AppT a
 
-fu_v :: DLVar -> App DLVar
+fu_v :: AppT DLVar
 fu_v v@(DLVar at lab t _) = do
   Env {..} <- ask
   idx <- liftIO $ incCounter fCounter
@@ -32,7 +31,12 @@ fu_v v@(DLVar at lab t _) = do
   liftIO $ modifyIORef fRho (M.insert v v')
   return $ v'
 
-fu_mv :: LLVar -> App LLVar
+fu_lv :: AppT DLLetVar
+fu_lv = \case
+  DLV_Eff -> return $ DLV_Eff
+  DLV_Let vc v -> DLV_Let vc <$> fu_v v
+
+fu_mv :: AppT (Maybe DLVar)
 fu_mv = mapM fu_v
 
 instance {-# OVERLAPPABLE #-} (Traversable f, Freshen a) => Freshen (f a) where
@@ -85,11 +89,11 @@ instance Freshen DLExpr where
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
     DLE_ViewIs at v k a -> DLE_ViewIs at v k <$> fu a
 
-instance {-# OVERLAPS #-} Freshen LLCommon where
+instance Freshen DLStmt where
   fu = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at v e -> do
-      f' <- fu_mv v
+      f' <- fu_lv v
       DL_Let at f' <$> fu e
     DL_Var at v -> DL_Var at <$> fu_v v
     DL_Set at v a -> DL_Set at <$> fu v <*> fu a
@@ -126,14 +130,14 @@ instance Freshen DLPayAmt where
     DLPayAmt net ks ->
       DLPayAmt <$> fu net <*> mapM (\ (amt, ty) -> (,) <$> fu amt <*> fu ty) ks
 
-instance {-# OVERLAPS #-} Freshen LLTail where
+instance Freshen DLTail where
   fu = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> DT_Com <$> fu m <*> fu k
 
-instance {-# OVERLAPS #-} Freshen LLBlock where
-  fu (DLinBlock at fs t a) =
-    DLinBlock at fs <$> fu t <*> fu a
+instance Freshen DLBlock where
+  fu (DLBlock at fs t a) =
+    DLBlock at fs <$> fu t <*> fu a
 
 freshen_ :: Freshen a => Counter -> a -> [DLVar] -> IO (a, [DLVar])
 freshen_ fCounter x vs = do

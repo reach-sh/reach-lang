@@ -11,7 +11,7 @@ import Reach.Pretty
 import Reach.Texty
 
 data DKCommon
-  = DKC_Let SrcLoc (Maybe DLVar) DLExpr
+  = DKC_Let SrcLoc DLLetVar DLExpr
   | DKC_ArrayMap SrcLoc DLVar DLArg DLVar DKBlock
   | DKC_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DKBlock
   | DKC_Var SrcLoc DLVar

@@ -89,7 +89,7 @@ data JSContracts = JSContracts
   }
 
 newtype JSCtxtWhile
-  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, PILBlock, EITail, EITail))
+  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, DLBlock, ETail, ETail))
 
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
@@ -402,22 +402,22 @@ jsEmitSwitch iter _at ov csm = do
   csm' <- mapM cm1 $ M.toAscList csm
   return $ "switch" <+> parens (ov' <> "[0]") <+> jsBraces (vsep csm')
 
-jsCom :: AppT PILCommon
+jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote {}) ->
     case pv of
-      Nothing -> mempty
-      Just dv -> do
+      DLV_Eff -> mempty
+      DLV_Let _ dv -> do
         dv' <- jsVar dv
         txn' <- jsTxn
         dvt' <- jsContract $ varType dv
         return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [squotes dv', dvt']
-  DL_Let _ (Just dv) de -> do
+  DL_Let _ (DLV_Let _ dv) de -> do
     dv' <- jsVar dv
     de' <- jsExpr de
     return $ "const" <+> dv' <+> "=" <+> de' <> semi
-  DL_Let _ Nothing de -> do
+  DL_Let _ DLV_Eff de -> do
     de' <- jsExpr de
     return $ de' <> semi
   DL_Var _ dv -> do
@@ -434,14 +434,14 @@ jsCom = \case
     return $ jsIf c' t' f'
   DL_LocalSwitch at ov csm ->
     jsEmitSwitch jsPLTail at ov csm
-  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
+  DL_ArrayMap _ ans x a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     a' <- jsArg $ DLA_Var a
     f' <- jsPLTail f
     r' <- jsArg r
     return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
-  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) -> do
+  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     z' <- jsArg z
@@ -459,7 +459,7 @@ jsCom = \case
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
 
-jsPLTail :: AppT PILTail
+jsPLTail :: AppT DLTail
 jsPLTail = \case
   DT_Return {} -> mempty
   DT_Com m k -> jsCom m <> pure hardline <> jsPLTail k
@@ -468,13 +468,13 @@ jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlockNewScope :: AppT PILBlock
+jsBlockNewScope :: AppT DLBlock
 jsBlockNewScope b = do
   (t', a') <- jsBlock b
   return $ jsNewScope $ t' <> hardline <> jsReturn a'
 
-jsBlock :: DLinBlock PILVar -> App (Doc, Doc)
-jsBlock (DLinBlock _ _ t a) = do
+jsBlock :: DLBlock -> App (Doc, Doc)
+jsBlock (DLBlock _ _ t a) = do
   t' <- jsPLTail t
   a' <- jsArg a
   return (t', a')
@@ -527,7 +527,7 @@ jsSimTxn kind kvs =
   jsApply "sim_r.txns.push" $
     [jsObject $ M.fromList $ [("kind", jsString kind)] <> kvs]
 
-jsETail :: AppT EITail
+jsETail :: AppT ETail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
   ET_Stop _ ->
@@ -711,7 +711,7 @@ newJsContract = do
   jsc_i2t <- liftIO $ newIORef mempty
   return $ JSContracts {..}
 
-jsPart :: DLInit -> SLPart -> EIProg -> App Doc
+jsPart :: DLInit -> SLPart -> EPProg -> App Doc
 jsPart dli p (EPProg _ _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
@@ -771,7 +771,7 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsExportValue :: DLinExportVal PILBlock -> App Doc
+jsExportValue :: DLinExportVal DLBlock -> App Doc
 jsExportValue = \case
   DLEV_Arg _ a -> jsArg a
   DLEV_Fun _ args b -> do
@@ -790,15 +790,15 @@ jsExportValue = \case
     let argList = parens $ hsep $ punctuate comma tmps
     return $ argList <+> "=>" <+> jsBraces body
 
-jsExportBlock :: DLExportinBlock PILVar -> App Doc
+jsExportBlock :: DLExportBlock -> App Doc
 jsExportBlock = \case
   -- Process flattened large arg
-  DLExportinBlock b@DT_Com {} (DLEV_Arg at a) -> do
-    (tl, ret) <- jsBlock (DLinBlock at [] b a)
+  DLExportBlock b@DT_Com {} (DLEV_Arg at a) -> do
+    (tl, ret) <- jsBlock (DLBlock at [] b a)
     let body = tl <> hardline <> jsReturn ret
     let noArgs = parens ""
     return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
-  DLExportinBlock _ ev -> jsExportValue ev
+  DLExportBlock _ ev -> jsExportValue ev
 
 jsFunctionWStdlib :: Doc -> App Doc -> App Doc
 jsFunctionWStdlib name mbody = do
@@ -812,7 +812,7 @@ jsFunctionWStdlib name mbody = do
         <> ctcs
         <> [body]
 
-jsExports :: DLinExports PILVar -> App Doc
+jsExports :: DLExports -> App Doc
 jsExports exports =
   jsFunctionWStdlib "getExports" $ do
     exportM <- mapM jsExportBlock exports
@@ -849,7 +849,7 @@ jsViews mcv = do
       [ ("views"::String, views)
       , ("infos", infos) ]
 
-jsPIProg :: ConnectorResult -> PIProg -> App Doc
+jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let preamble =
         vsep

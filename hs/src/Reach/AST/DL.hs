@@ -41,10 +41,10 @@ mkAnnot a = StmtAnnot {..}
     sa_pure = isPure a
     sa_local = isLocal a
 
-data DLStmt
-  = DLS_Let SrcLoc (Maybe DLVar) DLExpr
-  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLBlock
-  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
+data DLSStmt
+  = DLS_Let SrcLoc DLLetVar DLExpr
+  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLSBlock
+  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int (Either Int DLArg)
@@ -61,27 +61,24 @@ data DLStmt
   | DLS_While
       { dls_w_at :: SrcLoc
       , dls_w_asn :: DLAssignment
-      , dls_w_inv :: DLBlock
-      , dls_w_cond :: DLBlock
+      , dls_w_inv :: DLSBlock
+      , dls_w_cond :: DLSBlock
       , dls_w_body :: DLStmts
       }
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
+  | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLSBlock
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   deriving (Eq, Generic)
 
-instance Pretty DLStmt where
+instance Pretty DLSStmt where
   pretty d =
     case d of
-      DLS_Let _ mv e ->
-        case mv of
-          Just v ->
-            "const" <+> pretty v <+> "=" <+> pretty e <> semi
-          Nothing ->
-            pretty e <> semi
+      DLS_Let _ DLV_Eff e -> pretty e <> semi
+      DLS_Let _ (DLV_Let _ v) e ->
+        "const" <+> pretty v <+> "=" <+> pretty e <> semi
       DLS_ArrayMap _ ans x a f -> prettyMap ans x a f
       DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
       DLS_If _ ca sa ts fs ->
@@ -123,7 +120,7 @@ instance Pretty DLStmt where
 render_dls :: DLStmts -> Doc
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
-instance SrcLocOf DLStmt where
+instance SrcLocOf DLSStmt where
   srclocOf = \case
     DLS_Let a _ _ -> a
     DLS_ArrayMap a _ _ _ _ -> a
@@ -144,7 +141,7 @@ instance SrcLocOf DLStmt where
     DLS_Throw a _ _ -> a
     DLS_Try a _ _ _ -> a
 
-instance IsPure DLStmt where
+instance IsPure DLSStmt where
   isPure = \case
     DLS_Let _ _ e -> isPure e
     DLS_ArrayMap {} -> True
@@ -165,7 +162,7 @@ instance IsPure DLStmt where
     DLS_Throw {} -> False
     DLS_Try _ b _ h -> isPure b && isPure h
 
-instance IsLocal DLStmt where
+instance IsLocal DLSStmt where
   isLocal = \case
     DLS_Let _ _ e -> isLocal e
     DLS_ArrayMap {} -> True
@@ -186,17 +183,17 @@ instance IsLocal DLStmt where
     DLS_Throw _ _ local -> local
     DLS_Try _ b _ h -> isLocal b && isLocal h
 
-type DLStmts = Seq.Seq DLStmt
+type DLStmts = Seq.Seq DLSStmt
 
-instance Pretty (Seq.Seq DLStmt) where
+instance Pretty (Seq.Seq DLSStmt) where
   pretty = render_dls
 
-data DLBlock
-  = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
+data DLSBlock
+  = DLSBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
   deriving (Eq, Generic)
 
-instance Pretty DLBlock where
-  pretty (DLBlock _at _ ss da) = prettyBlock (render_dls ss) da
+instance Pretty DLSBlock where
+  pretty (DLSBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
@@ -211,19 +208,17 @@ data DLOpts = DLOpts
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
-type DLExportVal = DLinExportVal DLBlock
+data DLSExportBlock
+  = DLSExportBlock DLStmts (DLinExportVal DLSBlock)
 
-data DLExportBlock
-  = DLExportBlock DLStmts (DLinExportVal DLBlock)
-
-instance Pretty DLExportBlock where
+instance Pretty DLSExportBlock where
   pretty = \case
-    DLExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+    DLSExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
 
-type DLExports = M.Map SLVar DLExportBlock
+type DLSExports = M.Map SLVar DLSExportBlock
 
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLExports DLViews DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLSExports DLViews DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where

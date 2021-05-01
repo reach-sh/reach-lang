@@ -169,7 +169,7 @@ data SMTMapInfo = SMTMapInfo
   }
 
 data SMTMapRecordReduce
-  = SMR_Reduce Int DLVar DLArg DLVar DLVar LLBlock
+  = SMR_Reduce Int DLVar DLArg DLVar DLVar DLBlock
 
 instance Pretty SMTMapRecordReduce where
   pretty (SMR_Reduce _mri ans z b a f) =
@@ -191,7 +191,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
   , ctxt_bindingsr :: IORef BindingEnv
-  , ctxt_while_invariant :: Maybe LLBlock
+  , ctxt_while_invariant :: Maybe DLBlock
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
@@ -870,12 +870,12 @@ smtMapReviewRecord mpv sm_x = do
   mi <- smtMapLookupC mpv
   liftIO $ readIORef $ sm_x mi
 
-smt_freshen :: LLBlock -> [DLVar] -> App (LLBlock, [DLVar])
+smt_freshen :: DLBlock -> [DLVar] -> App (DLBlock, [DLVar])
 smt_freshen x vs = do
   c <- ctxt_idx <$> ask
   liftIO $ freshen_ c x vs
 
-smtMapReduceApply :: SrcLoc -> DLVar -> DLVar -> LLBlock -> App (SExpr, SExpr, App SExpr)
+smtMapReduceApply :: SrcLoc -> DLVar -> DLVar -> DLBlock -> App (SExpr, SExpr, App SExpr)
 smtMapReduceApply at b a f = do
   (f', b_f, a_f) <-
     smt_freshen f [b, a] >>= \case
@@ -907,7 +907,7 @@ smtMapReviewRecordRef at x fse res = do
       fres' <- f'
       smtAssertCtxt $ smtEq ans' fres'
 
-smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> LLBlock -> App ()
+smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> DLBlock -> App ()
 smtMapReviewRecordReduce at mri ans x z b a f = do
   rs <- smtMapReviewRecord x sm_rs
   let look (SMR_Reduce mri' ans' _ _ _ _) =
@@ -1131,10 +1131,10 @@ smtSwitch sm at ov csm iter = do
     SM_Local -> smtAssertCtxt (smtOrAll $ map snd casesl)
     SM_Consensus -> mempty
 
-smt_m :: LLCommon -> SMTComp
+smt_m :: DLStmt -> SMTComp
 smt_m = \case
   DL_Nop _ -> mempty
-  DL_Let at mdv de -> smt_e at mdv de
+  DL_Let at lv de -> smt_e at (lv2mdv lv) de
   DL_Var at dv -> pathAddUnbound at (Just dv) O_Var
   DL_ArrayMap {} ->
     --- FIXME: It might be possible to do this in Z3 by generating a function
@@ -1164,12 +1164,12 @@ smt_m = \case
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
 
-smt_l :: LLTail -> SMTComp
+smt_l :: DLTail -> SMTComp
 smt_l = \case
   DT_Return _ -> mempty
   DT_Com m k -> smt_m m <> smt_l k
 
-smt_lm :: SLPart -> LLTail -> SMTComp
+smt_lm :: SLPart -> DLTail -> SMTComp
 smt_lm who l =
   shouldSimulate who >>= \case
     True -> smt_l l
@@ -1180,13 +1180,13 @@ data BlockMode
   | B_Prove Bool
   | B_None
 
-smt_block :: LLBlock -> App SExpr
-smt_block (DLinBlock at _ l da) = do
+smt_block :: DLBlock -> App SExpr
+smt_block (DLBlock at _ l da) = do
   smt_l l
   smt_a at da
 
-smt_invblock :: BlockMode -> LLBlock -> SMTComp
-smt_invblock bm b@(DLinBlock at f _ _) = do
+smt_invblock :: BlockMode -> DLBlock -> SMTComp
+smt_invblock bm b@(DLBlock at f _ _) = do
   da' <-
     local (\e -> e {ctxt_inv_mode = bm}) $
       smt_block b
@@ -1203,10 +1203,10 @@ smt_while_jump vars_are_primed asn = do
     (ctxt_while_invariant <$> ask) >>= \case
       Just x -> return $ x
       Nothing -> impossible "asn outside loop"
-  let add_asn_lets m (DLinBlock at fs t ra) =
-        DLinBlock at fs t' ra
+  let add_asn_lets m (DLBlock at fs t ra) =
+        DLBlock at fs t' ra
         where
-          go (v, a) t_ = DT_Com (DL_Let at (Just v) (DLE_Arg at a)) t_
+          go (v, a) t_ = DT_Com (DL_Let at (DLV_Let DVC_Many v) (DLE_Arg at a)) t_
           t' = foldr go t $ M.toList m
   inv' <-
     case vars_are_primed of
@@ -1492,16 +1492,16 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-smt_ev :: DLinExportVal LLBlock -> App SExpr
+smt_ev :: DLinExportVal DLBlock -> App SExpr
 smt_ev = \case
   DLEV_Arg at a -> smt_a at a
   DLEV_Fun at args body -> do
     forM_ args $ flip (pathAddUnbound at) O_Export . Just
     smt_block body
 
-smt_eb :: DLExportinBlock LLVar -> App SExpr
+smt_eb :: DLExportBlock -> App SExpr
 smt_eb = \case
-  DLExportinBlock s r -> do
+  DLExportBlock s r -> do
     _ <- smt_l s
     smt_ev r
 

@@ -225,15 +225,15 @@ kgq_e ctxt mv = \case
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
   DLE_ViewIs {} -> mempty
 
-kgq_m :: KCtxt -> LLCommon -> IO ()
+kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
   DL_Nop _ -> mempty
-  DL_Let _ mdv de -> kgq_e ctxt mdv de
-  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) ->
+  DL_Let _ lv de -> kgq_e ctxt (lv2mdv lv) de
+  DL_ArrayMap _ ans x a (DLBlock _ _ f r) ->
     kgq_a_only ctxt a x
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) ->
+  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> kgq_a_only ctxt a x
       >> kgq_a_only ctxt ans r
@@ -253,13 +253,13 @@ kgq_m ctxt = \case
   DL_Only _at (Left who) loc ->
     kgq_l (ctxt_restrict ctxt who) loc
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_MapReduce _ _ ans x z b a (DLinBlock _ _ f r) ->
+  DL_MapReduce _ _ ans x z b a (DLBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
 
-kgq_l :: KCtxt -> LLTail -> IO ()
+kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case
   DT_Return _ -> mempty
   DT_Com m k -> kgq_m ctxt m >> kgq_l ctxt k
@@ -289,7 +289,7 @@ kgq_n ctxt = \case
             >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k ->
     kgq_s ctxt k
-  LLC_While _ asn _ (DLinBlock _ _ cond_l ca) body k ->
+  LLC_While _ asn _ (DLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn
       >> kgq_asn ctxt asn
       >> kgq_l ctxt cond_l

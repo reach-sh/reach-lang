@@ -10,30 +10,31 @@ data Env = Env
   {e_cs :: IORef Counts}
 
 type App = ReaderT Env IO
+type AppT a = a -> App a
 
 ac_visit :: Countable a => a -> App ()
 ac_visit x = do
   csr <- e_cs <$> ask
   liftIO $ modifyIORef csr $ (<>) (counts x)
 
-ac_vdef :: Bool -> PILVar -> App PLVar
-ac_vdef _ Nothing = return $ PV_Eff
-ac_vdef okToDupe (Just v) = do
+ac_vdef :: Bool -> AppT DLLetVar
+ac_vdef _ DLV_Eff = return $ DLV_Eff
+ac_vdef okToDupe (DLV_Let _ v) = do
   cs <- (liftIO . readIORef) =<< (e_cs <$> ask)
   case get_count v cs of
-    Count Nothing -> return $ PV_Eff
+    Count Nothing -> return $ DLV_Eff
     Count (Just lc) -> do
-      let lc' = if okToDupe then lc else PL_Many
-      return $ PV_Let lc' v
+      let lc' = if okToDupe then lc else DVC_Many
+      return $ DLV_Let lc' v
 
-ac_m :: PILCommon -> App PLCommon
+ac_m :: AppT DLStmt
 ac_m = \case
   DL_Nop at -> return $ DL_Nop at
   DL_Let at x de -> do
     ac_visit $ de
     x' <- ac_vdef (canDupe de) x
     case (isPure de, x') of
-      (True, PV_Eff) -> return $ DL_Nop at
+      (True, DLV_Eff) -> return $ DL_Nop at
       _ -> return $ DL_Let at x' de
   DL_ArrayMap at ans x a f -> do
     f' <- ac_bl f
@@ -64,7 +65,7 @@ ac_m = \case
     ac_visit $ z
     return $ DL_MapReduce at mri ans x z b a f'
 
-ac_lt :: PILTail -> App PLTail
+ac_lt :: AppT DLTail
 ac_lt = \case
   DT_Return at -> return $ DT_Return at
   DT_Com m k -> do
@@ -72,18 +73,18 @@ ac_lt = \case
     m' <- ac_m m
     return $ mkCom DT_Com m' k'
 
-ac_bl :: PILBlock -> App PLBlock
-ac_bl (DLinBlock at fs t a) = do
+ac_bl :: AppT DLBlock
+ac_bl (DLBlock at fs t a) = do
   ac_visit $ a
   t' <- ac_lt t
-  return $ DLinBlock at fs t' a
+  return $ DLBlock at fs t' a
 
-ac_csm :: (a -> App b) -> SwitchCases a -> App (SwitchCases b)
+ac_csm :: AppT a -> SwitchCases a -> App (SwitchCases a)
 ac_csm iter = mapM go
   where
     go (mv, k) = (,) mv <$> iter k
 
-ac_ct :: CITail -> App CTail
+ac_ct :: AppT CTail
 ac_ct = \case
   CT_Com m k -> do
     k' <- ac_ct k
@@ -107,7 +108,7 @@ ac_ct = \case
     ac_visit $ asn
     return $ CT_Jump at which svs asn
 
-ac_ch :: CIHandler -> App CHandler
+ac_ch :: AppT CHandler
 ac_ch = \case
   C_Loop {..} -> do
     body' <- ac_ct cl_body
@@ -116,26 +117,26 @@ ac_ch = \case
     ch_body' <- ac_ct ch_body
     return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
-ac_top :: CIHandler -> IO CHandler
+ac_top :: CHandler -> IO CHandler
 ac_top x = do
   e_cs <- newIORef $ mempty
   flip runReaderT (Env {..}) $ ac_ch x
 
-ac_ev :: DLinExportVal PILBlock -> App (DLinExportVal PLBlock)
+ac_ev :: DLinExportVal DLBlock -> App (DLinExportVal DLBlock)
 ac_ev = \case
   DLEV_Arg at a -> return $ DLEV_Arg at a
   DLEV_Fun at a b -> do
     ac_visit a
     DLEV_Fun at a <$> ac_bl b
 
-ac_eb :: DLExportinBlock PILVar -> IO (DLExportinBlock PLVar)
+ac_eb :: DLExportBlock -> IO DLExportBlock
 ac_eb = \case
-  DLExportinBlock b a -> do
+  DLExportBlock b a -> do
     e_cs <- newIORef $ mempty
     flip runReaderT (Env {..}) $ do
-      DLExportinBlock <$> ac_lt b <*> ac_ev a
+      DLExportBlock <$> ac_lt b <*> ac_ev a
 
-add_counts :: PIProg -> IO PLProg
+add_counts :: PLProg -> IO PLProg
 add_counts (PLProg at plo dli dex _epps cp) = do
   let epps' = EPPs mempty -- XXX hack
   let CPProg cat vi (CHandlers chs) = cp

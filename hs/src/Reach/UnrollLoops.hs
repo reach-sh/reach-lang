@@ -18,7 +18,7 @@ type App = ReaderT Env IO
 
 type AppT a = a -> App a
 
-type Lifts = Seq.Seq LLCommon
+type Lifts = Seq.Seq DLStmt
 
 data Env = Env
   { eCounter :: Counter
@@ -33,7 +33,7 @@ allocIdx = do
   Env {..} <- ask
   lift $ incCounter eCounter
 
-addLifts :: (LLCommon -> a -> a) -> Lifts -> a -> a
+addLifts :: (DLStmt -> a -> a) -> Lifts -> a -> a
 addLifts mkk ls k = foldr mkk k ls
 
 collectLifts :: App a -> App (Lifts, a)
@@ -44,7 +44,7 @@ collectLifts m = do
   lifts <- liftIO $ readIORef newLifts
   return $ (lifts, res)
 
-liftCommon :: HasCallStack => LLCommon -> App ()
+liftCommon :: HasCallStack => DLStmt -> App ()
 liftCommon m = do
   Env {..} <- ask
   case emLifts of
@@ -53,7 +53,7 @@ liftCommon m = do
     Nothing ->
       impossible "no lifts"
 
-liftLocal :: HasCallStack => LLTail -> App ()
+liftLocal :: HasCallStack => DLTail -> App ()
 liftLocal = \case
   DT_Return _ -> return ()
   DT_Com m k -> liftCommon m >> liftLocal k
@@ -62,7 +62,7 @@ liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App DLArg
 liftExpr at t e = do
   idx <- allocIdx
   let v = DLVar at Nothing t idx
-  liftCommon (DL_Let at (Just v) e)
+  liftCommon (DL_Let at (DLV_Let DVC_Many v) e)
   return $ DLA_Var v
 
 liftArray :: HasCallStack => SrcLoc -> DLType -> [DLArg] -> App DLExpr
@@ -84,14 +84,14 @@ ul_explode at a =
           liftExpr at t $
             DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
 
-fu_ :: LLBlock -> [(DLVar, DLArg)] -> App DLArg
+fu_ :: DLBlock -> [(DLVar, DLArg)] -> App DLArg
 fu_ b nvs = do
-  let DLinBlock at fs t a = b
-  let lets = map (\(nv, na) -> DL_Let at (Just nv) (DLE_Arg at na)) nvs
+  let DLBlock at fs t a = b
+  let lets = map (\(nv, na) -> DL_Let at (DLV_Let DVC_Many nv) (DLE_Arg at na)) nvs
   let t' = foldr DT_Com t lets
-  let b' = DLinBlock at fs t' a
+  let b' = DLBlock at fs t' a
   Env {..} <- ask
-  DLinBlock _ _ t'' a' <-
+  DLBlock _ _ t'' a' <-
     liftIO $ freshen eCounter b'
   liftLocal =<< ul t''
   return $ a'
@@ -111,7 +111,7 @@ instance Unroll DLExpr where
       liftArray at ty as
     e -> return $ e
 
-instance Unroll LLCommon where
+instance Unroll DLStmt where
   ul = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at mdv e -> DL_Let at mdv <$> ul e
@@ -123,39 +123,39 @@ instance Unroll LLCommon where
       (_, x') <- ul_explode at x
       r' <- mapM (\xa -> fu_ fb [(a, xa)]) x'
       let r_ty = arrType $ varType ans
-      return $ DL_Let at (Just ans) (DLE_LArg at $ DLLA_Array r_ty r')
+      return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
     DL_ArrayReduce at ans x z b a fb -> do
       (_, x') <- ul_explode at x
       r' <- foldlM (\za xa -> fu_ fb [(b, za), (a, xa)]) z x'
-      return $ DL_Let at (Just ans) (DLE_Arg at r')
+      return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l
 
-ul_m :: Unroll a => (LLCommon -> a -> a) -> LLCommon -> AppT a
+ul_m :: Unroll a => (DLStmt -> a -> a) -> DLStmt -> AppT a
 ul_m mkk m k = do
   (lifts, m') <- collectLifts $ ul m
   let lifts' = lifts <> (return $ m')
   k' <- ul k
   return $ addLifts mkk lifts' k'
 
-instance Unroll LLTail where
+instance Unroll DLTail where
   ul = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> ul_m DT_Com m k
 
-instance Unroll LLBlock where
-  ul (DLinBlock at fs b a) =
-    DLinBlock at fs <$> ul b <*> pure a
+instance Unroll DLBlock where
+  ul (DLBlock at fs b a) =
+    DLBlock at fs <$> ul b <*> pure a
 
-instance Unroll (DLinExportVal LLBlock) where
+instance Unroll (DLinExportVal DLBlock) where
   ul = \case
     DLEV_Fun at a b -> DLEV_Fun at a <$> ul b
     DLEV_Arg at a -> return $ DLEV_Arg at a
 
-instance Unroll (DLExportinBlock LLVar) where
+instance Unroll DLExportBlock where
   ul = \case
-    DLExportinBlock s r -> DLExportinBlock <$> ul s <*> ul r
+    DLExportBlock s r -> DLExportBlock <$> ul s <*> ul r
 
 instance Unroll LLConsensus where
   ul = \case
@@ -190,7 +190,7 @@ instance Unroll LLProg where
   ul (LLProg at opts ps dli dex dvs s) =
     LLProg at opts ps dli <$> ul dex <*> pure dvs <*> ul s
 
-instance Unroll CITail where
+instance Unroll CTail where
   ul = \case
     CT_Com m k -> ul_m CT_Com m k
     CT_If at c t f -> CT_If at c <$> ul t <*> ul f
@@ -198,27 +198,27 @@ instance Unroll CITail where
     e@(CT_From {}) -> return $ e
     e@(CT_Jump {}) -> return $ e
 
-instance Unroll CIHandler where
+instance Unroll CHandler where
   ul = \case
     C_Handler at int last_timev from lasti svs msg timev body ->
       C_Handler at int last_timev from lasti svs msg timev <$> ul body
     C_Loop at svs vars body ->
       C_Loop at svs vars <$> ul body
 
-instance Unroll CIHandlers where
+instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
-instance Unroll CIProg where
+instance Unroll CPProg where
   ul (CPProg at vi hs) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll vi here.
     CPProg at vi <$> ul hs
 
-instance Unroll (EPPs a) where
+instance Unroll EPPs where
   ul (EPPs m) = pure $ EPPs m
 
-instance Unroll PIProg where
+instance Unroll PLProg where
   ul (PLProg at opts dli dex ep cp) =
     PLProg at opts dli <$> ul dex <*> ul ep <*> ul cp
 

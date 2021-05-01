@@ -135,7 +135,7 @@ saveLifts ss = do
   Env {..} <- ask
   liftIO $ modifyIORef e_lifts $ (<> ss)
 
-saveLift :: DLStmt -> App ()
+saveLift :: DLSStmt -> App ()
 saveLift = saveLifts . return
 
 whenVerifyArithmetic :: App () -> App ()
@@ -505,10 +505,10 @@ dlvToDL = \case
   where
     recAssoc (k, v) = (,) k <$> dlvToDL v
 
-slToDLExportVal :: SLVal -> App (Maybe DLExportBlock)
+slToDLExportVal :: SLVal -> App (Maybe DLSExportBlock)
 slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . Just))
 
-dlvToEV :: DLValue -> App DLExportBlock
+dlvToEV :: DLValue -> App DLSExportBlock
 dlvToEV = \case
   DLV_Arg at a -> retMt $ DLEV_Arg at a
   DLV_Fun at a b -> retMt $ DLEV_Fun at a b
@@ -517,9 +517,9 @@ dlvToEV = \case
       Nothing -> impossible "dlvToEV"
       Just i -> do
         (stmts, da) <- captureLifts $ compileArgExpr i
-        return $ DLExportBlock stmts $ DLEV_Arg (srclocOf ow) da
+        return $ DLSExportBlock stmts $ DLEV_Arg (srclocOf ow) da
   where
-    retMt = return . DLExportBlock Seq.empty
+    retMt = return . DLSExportBlock Seq.empty
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar = \case
@@ -631,13 +631,13 @@ ctxt_lift_expr :: (Int -> DLVar) -> DLExpr -> App DLVar
 ctxt_lift_expr mkvar e = do
   at <- withAt id
   dv <- ctxt_mkvar mkvar
-  saveLift $ DLS_Let at (Just dv) e
+  saveLift $ DLS_Let at (DLV_Let DVC_Many dv) e
   return dv
 
 ctxt_lift_eff :: DLExpr -> App ()
 ctxt_lift_eff e = do
   at <- withAt id
-  saveLift $ DLS_Let at Nothing e
+  saveLift $ DLS_Let at DLV_Eff e
 
 compileArgExpr :: DLArgExpr -> App DLArg
 compileArgExpr = \case
@@ -1373,9 +1373,7 @@ evalForm f args = do
       let whats_da = DLA_Literal $ DLL_Bool False
       let ct = CT_Unknowable notter whats_das
       fs <- e_stack <$> ask
-      saveLift $
-        DLS_Let at Nothing $
-          DLE_Claim at fs ct whats_da mmsg
+      ctxt_lift_eff $ DLE_Claim at fs ct whats_da mmsg
       return $ public $ SLV_Null at "unknowable"
     SLForm_wait -> do
       ensure_can_wait
@@ -1384,7 +1382,7 @@ evalForm f args = do
       amt_sv <- locStMode SLM_ConsensusPure $ evalExpr amt_e
       amt_da <- compileCheckType T_UInt =<< ensure_public amt_sv
       at <- withAt id
-      saveLift $ DLS_Let at Nothing (DLE_Wait at amt_da)
+      ctxt_lift_eff $ DLE_Wait at amt_da
       return $ public $ SLV_Null at "wait"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
@@ -1883,7 +1881,7 @@ evalPrim p sargs =
             False -> do
               let t = T_Array f_ty x_sz
               (ans_dv, ans_dsv) <- make_dlvar at t
-              let f_bl = DLBlock at [] f_lifts f_da
+              let f_bl = DLSBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayMap at ans_dv x_da a_dv f_bl
               return $ (lvl, ans_dsv)
         x : y : args' -> do
@@ -1932,7 +1930,7 @@ evalPrim p sargs =
               foldM evalem (lvl, z) x_vs
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at z_ty
-              let f_bl = DLBlock at [] f_lifts f_da
+              let f_bl = DLSBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
               return $ (lvl, ans_dsv)
         x : y : args' -> do
@@ -2124,7 +2122,7 @@ evalPrim p sargs =
       DLPayAmt {..} <- compilePayAmt TT_Pay pay_sv
       let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
             tokenPay mtok_a amt_a "balance sufficient for transfer"
-            saveLift $ DLS_Let at Nothing $ DLE_Transfer at who_a amt_a mtok_a
+            ctxt_lift_eff $ DLE_Transfer at who_a amt_a mtok_a
       one pa_net Nothing
       forM_ pa_ks $ \(a, t) -> one a $ Just t
       return $ public $ SLV_Null at "transfer.to"
@@ -2249,7 +2247,7 @@ evalPrim p sargs =
           void $ typeMeet_d z_ty f_ty
           return $ f_da
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
-      let f_bl = DLBlock at [] f_lifts f_da
+      let f_bl = DLSBlock at [] f_lifts f_da
       mri <- ctxt_alloc
       saveLift $ DLS_MapReduce at mri ans_dv mv z_da b_dv ma_dv f_bl
       return $ (lvl, ans_dsv)
@@ -2946,7 +2944,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
       whenUsingStrict $ ignoreAll $ evalExpr oe
       lvlMeet clvl <$> (locAt n_at' $ evalExpr ne)
 
-checkCond :: SLMode -> DLStmt -> App DLStmt
+checkCond :: SLMode -> DLSStmt -> App DLSStmt
 checkCond om s = do
   unless (isLocal s) $
     locStMode om $
@@ -3839,7 +3837,7 @@ doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   let cont_das = DLAssignment cont_dam'
   saveLift $ DLS_Continue at cont_das
 
-evalModeToBlock :: SLMode -> DLType -> App (a, SLVal) -> App DLBlock
+evalModeToBlock :: SLMode -> DLType -> App (a, SLVal) -> App DLSBlock
 evalModeToBlock mode rest e = do
   at <- withAt id
   st <- readSt id
@@ -3849,9 +3847,9 @@ evalModeToBlock mode rest e = do
     captureLifts $
       locSt pure_st $
         compileCheckType rest . snd =<< e
-  return $ DLBlock at fs e_lifts e_da
+  return $ DLSBlock at fs e_lifts e_da
 
-evalExportClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLBlock
+evalExportClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLSBlock
 evalExportClosureToBlock clo sargs mtf rest = do
   at <- withAt id
   let sv = SLV_Clo at mtf clo
@@ -3859,7 +3857,7 @@ evalExportClosureToBlock clo sargs mtf rest = do
     SLAppRes _ val <- evalApplyValsAux True sv sargs
     return val
 
-evalPureExprToBlock :: JSExpression -> DLType -> App DLBlock
+evalPureExprToBlock :: JSExpression -> DLType -> App DLSBlock
 evalPureExprToBlock e rest = do
   evalModeToBlock SLM_ConsensusPure rest $ evalExpr e
 
@@ -3901,7 +3899,7 @@ evalStmt = \case
         --- DLS_Continue and DLS_Stop, so if this assert is not
         --- removed, then ti will error.
         fs <- e_stack <$> ask
-        saveLift $ DLS_Let at Nothing $ DLE_Claim at fs CT_Assert (DLA_Literal $ DLL_Bool False) (Just "unreachable")
+        ctxt_lift_eff $ DLE_Claim at fs CT_Assert (DLA_Literal $ DLL_Bool False) (Just "unreachable")
         ret []
       RS_MayBeEmpty -> ret []
   ((JSStatementBlock a ss' _ sp) : ks) -> do

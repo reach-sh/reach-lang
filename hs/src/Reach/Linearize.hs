@@ -48,7 +48,7 @@ setRetsToEmpty = restoreRets mempty
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
 withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
 
-dkc :: DLStmt -> DKApp DKCommon
+dkc :: DLSStmt -> DKApp DKCommon
 dkc = \case
   DLS_Let at mdv de ->
     return $ DKC_Let at mdv de
@@ -69,11 +69,11 @@ dkc = \case
   DLS_Only at who ss -> DKC_Only at who <$> dk_ at ss
   _ -> impossible "dkc"
 
-dk_block :: SrcLoc -> DLBlock -> DKApp DKBlock
-dk_block _at (DLBlock at fs l a) =
+dk_block :: SrcLoc -> DLSBlock -> DKApp DKBlock
+dk_block _at (DLSBlock at fs l a) =
   DKBlock at fs <$> (setRetsToEmpty $ dk_ at l) <*> pure a
 
-dk1 :: SrcLoc -> DLStmts -> DLStmt -> DKApp DKTail
+dk1 :: SrcLoc -> DLStmts -> DLSStmt -> DKApp DKTail
 dk1 at_top ks s =
   case s of
     DLS_Let {} -> com
@@ -147,7 +147,7 @@ dk1 at_top ks s =
       case handler of
         Nothing -> impossible "dk: encountered `throw` without an exception handler"
         Just h ->
-          com'' (DKC_Let at (Just $ hV h) $ DLE_Arg at da) $ hS h
+          com'' (DKC_Let at (DLV_Let DVC_Many $ hV h) $ DLE_Arg at da) $ hS h
     DLS_Try at e hv hs ->
       local
         (\env ->
@@ -172,18 +172,18 @@ runDk = do
   let eExnHandler = Nothing
   flip runReaderT (DKEnv {..})
 
-dk_ev :: DLExportVal -> DKApp (DLinExportVal DKBlock)
+dk_ev :: DLinExportVal DLSBlock-> DKApp (DLinExportVal DKBlock)
 dk_ev = \case
   DLEV_Fun at args body ->
     DLEV_Fun at args <$> dk_block at body
   DLEV_Arg at a -> return $ DLEV_Arg at a
 
-dk_eb :: DLExportBlock -> IO DKExportBlock
+dk_eb :: DLSExportBlock -> IO DKExportBlock
 dk_eb = \case
-  DLExportBlock s r ->
+  DLSExportBlock s r ->
     runDk $ do
       let at = srclocOf r
-      s' <- dk_block at $ DLBlock at [] s $ DLA_Literal DLL_Null
+      s' <- dk_block at $ DLSBlock at [] s $ DLA_Literal DLL_Null
       r' <- dk_ev r
       return $ DKExportBlock s' r'
 
@@ -372,13 +372,13 @@ expandFromFVMap (DLAssignment updatem) = do
   let updatem' = M.union (M.fromList $ fvm'l) updatem
   return $ DLAssignment updatem'
 
-df_com :: HasCallStack => (LLCommon -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
+df_com :: HasCallStack => (DLStmt -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
 df_com mkk back = \case
   DK_Com (DKC_FluidSet at fv da) k ->
     fluidSet fv (at, da) (back k)
   DK_Com (DKC_FluidRef at dv fv) k -> do
     (at', da) <- fluidRef fv
-    mkk <$> (pure $ DL_Let at (Just dv) (DLE_Arg at' da)) <*> back k
+    mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv) (DLE_Arg at' da)) <*> back k
   DK_Com m k -> do
     m' <-
       case m of
@@ -397,11 +397,11 @@ df_com mkk back = \case
     mkk m' <$> back k
   t -> impossible $ show $ "df_com " <> pretty t
 
-df_bl :: DKBlock -> DFApp LLBlock
+df_bl :: DKBlock -> DFApp DLBlock
 df_bl (DKBlock at fs t a) =
-  DLinBlock at fs <$> df_t t <*> pure a
+  DLBlock at fs <$> df_t t <*> pure a
 
-df_t :: DKTail -> DFApp LLTail
+df_t :: DKTail -> DFApp DLTail
 df_t = \case
   DK_Stop at -> return $ DT_Return at
   x -> df_com DT_Com df_t x
@@ -462,15 +462,15 @@ df_step = \case
     return $ LLS_ToConsensus at send recv' mtime'
   x -> df_com LLS_Com df_step x
 
-df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal LLBlock)
+df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal DLBlock)
 df_ev = \case
   DLEV_Fun at args body -> DLEV_Fun at args <$> df_bl body
   DLEV_Arg at a -> return $ DLEV_Arg at a
 
-df_eb :: DKExportBlock -> DFApp (DLExportinBlock LLVar)
+df_eb :: DKExportBlock -> DFApp DLExportBlock
 df_eb = \case
   DKExportBlock (DKBlock _ _ l _) r ->
-    DLExportinBlock <$> df_t l <*> df_ev r
+    DLExportBlock <$> df_t l <*> df_ev r
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do

@@ -159,7 +159,7 @@ data BEnv = BEnv
   { be_which :: Int
   , be_handlerc :: Counter
   , be_interval :: CInterval DLArg
-  , be_handlers :: IORef (M.Map Int (CApp CIHandler))
+  , be_handlers :: IORef (M.Map Int (CApp CHandler))
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
   , be_loop :: Maybe Int
@@ -172,6 +172,8 @@ data BEnv = BEnv
   }
 
 type BApp = ReaderT BEnv IO
+
+type BAppT2 a = a -> BApp (CApp a, EApp a)
 
 withConsensus :: Bool -> BApp a -> BApp a
 withConsensus b = local (\e -> e { be_inConsensus = b })
@@ -194,7 +196,7 @@ newHandler lab = do
     traceM $ "newHandler " <> show lab <> " => " <> show n
   return $ n
 
-setHandler :: Int -> CApp CIHandler -> BApp ()
+setHandler :: Int -> CApp CHandler -> BApp ()
 setHandler which m = do
   hsr <- be_handlers <$> ask
   hs <- liftIO $ readIORef hsr
@@ -203,10 +205,10 @@ setHandler which m = do
     Nothing -> do
       liftIO $ modifyIORef hsr $ M.insert which m
 
-recordOutputVar :: LLVar -> BApp ()
+recordOutputVar :: DLLetVar -> BApp ()
 recordOutputVar = \case
-  Nothing -> return ()
-  Just dv -> do
+  DLV_Eff -> return ()
+  DLV_Let _ dv -> do
     vsr <- be_output_vs <$> ask
     liftIO $ modifyIORef vsr $ (:) dv
 
@@ -243,12 +245,12 @@ fg_jump dst = do
   fg_record $ \f -> f {fid_jumps = S.insert dst $ fid_jumps f}
 
 -- Views
-isViewIs :: LLCommon -> Bool
+isViewIs :: DLStmt -> Bool
 isViewIs = \case
   DL_Let _ _ (DLE_ViewIs {}) -> True
   _ -> False
 
-recordView :: LLCommon -> BApp a -> BApp a
+recordView :: DLStmt -> BApp a -> BApp a
 recordView (DL_Let _ _ (DLE_ViewIs _ v f a)) =
   local (\e -> e { be_views = modv $ be_views e})
   where
@@ -339,13 +341,13 @@ eeIze f x = do
   local (\e -> e { be_flowr = be_flowr' }) $
     snd <$> f x
 
-ee_m :: LLCommon -> BApp (EApp PILCommon)
+ee_m :: DLStmt -> BApp (EApp DLStmt)
 ee_m = eeIze be_m
 
-ee_t :: LLTail -> BApp (EApp PILTail)
+ee_t :: DLTail -> BApp (EApp DLTail)
 ee_t = eeIze be_t
 
-be_m :: LLCommon -> BApp (CApp PILCommon, EApp PILCommon)
+be_m :: BAppT2 DLStmt
 be_m = \case
   DL_Nop at -> retb0 $ const $ return $ DL_Nop at
   DL_Let at mdv de -> do
@@ -406,7 +408,7 @@ be_m = \case
     return $ (,) t'c t'l
   DL_Only {} -> impossible $ "right only before EPP"
 
-be_t :: LLTail -> BApp (CApp PILTail, EApp PILTail)
+be_t :: BAppT2 DLTail
 be_t = \case
   DT_Return at -> retb0 $ const $ return $ DT_Return at
   DT_Com m k -> do
@@ -426,11 +428,11 @@ retb2 (mx1, my1) (mx2, my2) f = retb f' ((p mx1 mx2), (p my1 my2))
   where f' (x1, x2) = f x1 x2
         p mx my = (,) <$> mx <*> my
 
-be_bl :: LLBlock -> BApp (CApp PILBlock, EApp PILBlock)
-be_bl (DLinBlock at fs t a) = do
+be_bl :: BAppT2 DLBlock
+be_bl (DLBlock at fs t a) = do
   fg_use $ a
   be_t t >>= retb (\t' ->
-    return $ DLinBlock at fs t' a)
+    return $ DLBlock at fs t' a)
 
 class OnlyHalts a where
   onlyHalts :: a -> Bool
@@ -450,7 +452,7 @@ instance OnlyHalts LLStep where
     LLS_Stop _ -> True
     LLS_ToConsensus {} -> False
 
-be_c :: LLConsensus -> BApp (CApp CITail, EApp EITail)
+be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_Com c k | isViewIs c ->
     recordView c $ be_c k
@@ -496,7 +498,7 @@ be_c = \case
     let lm = ET_FromConsensus at1 which vis <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
-    let DLinBlock cond_at _ cond_l cond_a = cond
+    let DLBlock cond_at _ cond_l cond_a = cond
     this_loop <- newHandler "While"
     let inBlock which = local (\e -> e {be_which = which})
     let inLoop = inBlock this_loop
@@ -552,7 +554,7 @@ be_c = \case
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
 
-be_s :: LLStep -> BApp (EApp EITail)
+be_s :: LLStep -> BApp (EApp ETail)
 be_s = \case
   LLS_Com c k | isViewIs c ->
     recordView c $ be_s k
@@ -625,20 +627,20 @@ be_s = \case
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs time_v mtime' ok_l'
     return $ ok_l''m
 
-mk_ev :: DLinExportVal LLBlock -> BApp (DLinExportVal PILBlock)
+mk_ev :: DLinExportVal DLBlock -> BApp (DLinExportVal DLBlock)
 mk_ev = \case
-  DLEV_Fun at args (DLinBlock bat sf ll a) -> do
+  DLEV_Fun at args (DLBlock bat sf ll a) -> do
     let body' = dtReplace DT_Com (DT_Return bat) ll
-    return $ DLEV_Fun at args (DLinBlock bat sf body' a)
+    return $ DLEV_Fun at args (DLBlock bat sf body' a)
   DLEV_Arg at a -> return $ DLEV_Arg at a
 
-mk_eb :: DLExportinBlock LLVar -> BApp (DLExportinBlock PILVar)
+mk_eb :: DLExportBlock -> BApp DLExportBlock
 mk_eb = \case
-  DLExportinBlock ll r -> do
+  DLExportBlock ll r -> do
     let body' = dtReplace DT_Com (DT_Return $ srclocOf r) ll
-    DLExportinBlock body' <$> mk_ev r
+    DLExportBlock body' <$> mk_ev r
 
-epp :: LLProg -> IO PIProg
+epp :: LLProg -> IO PLProg
 epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   -- Step 1: Analyze the program to compute basic blocks
   be_handlerc <- newCounter 1

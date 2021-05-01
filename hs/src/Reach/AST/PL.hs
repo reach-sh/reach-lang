@@ -10,42 +10,6 @@ import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 
-data PLLetCat
-  = PL_Once
-  | PL_Many
-  deriving (Eq, Show)
-
-instance Semigroup PLLetCat where
-  _ <> _ = PL_Many
-
-instance Pretty PLLetCat where
-  pretty PL_Many = "*"
-  pretty PL_Once = "!"
-
-data PLVar
-  = PV_Eff
-  | PV_Let PLLetCat DLVar
-  deriving (Eq, Show)
-
-instance Pretty PLVar where
-  pretty = \case
-    PV_Eff -> "eff"
-    PV_Let lc x -> pretty x <> pretty lc
-
-type PILVar = Maybe DLVar
-
-type PLCommon = DLinStmt PLVar
-
-type PLTail = DLinTail PLVar
-
-type PLBlock = DLinBlock PLVar
-
-type PILCommon = DLinStmt PILVar
-
-type PILTail = DLinTail PILVar
-
-type PILBlock = DLinBlock PILVar
-
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
 data FromInfo
@@ -58,12 +22,12 @@ instance Pretty FromInfo where
     FI_Continue svs -> pform "continue" (pretty svs)
     FI_Halt toks -> pform "halt" (pretty toks)
 
-data ETail_ a
-  = ET_Com (DLinStmt a) (ETail_ a)
+data ETail
+  = ET_Com DLStmt ETail
   | ET_Stop SrcLoc
-  | ET_If SrcLoc DLArg (ETail_ a) (ETail_ a)
-  | ET_Switch SrcLoc DLVar (SwitchCases (ETail_ a))
-  | ET_FromConsensus SrcLoc Int ViewSave FromInfo (ETail_ a)
+  | ET_If SrcLoc DLArg ETail ETail
+  | ET_Switch SrcLoc DLVar (SwitchCases ETail)
+  | ET_FromConsensus SrcLoc Int ViewSave FromInfo ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
@@ -77,24 +41,20 @@ data ETail_ a
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_out :: [DLVar]
       , et_tc_from_timev :: DLVar
-      , et_tc_from_mtime :: (Maybe ([DLArg], (ETail_ a)))
-      , et_tc_cons :: (ETail_ a)
+      , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
+      , et_tc_cons :: ETail
       }
   | ET_While
       { et_w_at :: SrcLoc
       , et_w_asn :: DLAssignment
-      , et_w_cond :: (DLinBlock a)
-      , et_w_body :: (ETail_ a)
-      , et_w_k :: (ETail_ a)
+      , et_w_cond :: DLBlock
+      , et_w_body :: ETail
+      , et_w_k :: ETail
       }
   | ET_Continue SrcLoc DLAssignment
   deriving (Eq)
 
-type ETail = ETail_ PLVar
-
-type EITail = ETail_ PILVar
-
-instance Pretty a => Pretty (ETail_ a) where
+instance Pretty ETail where
   pretty e =
     case e of
       ET_Com c k -> pretty c <> hardline <> pretty k
@@ -153,15 +113,11 @@ instance Pretty a => Pretty (ETail_ a) where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
 
-data EPProg_ a
-  = EPProg SrcLoc InteractEnv (ETail_ a)
+data EPProg
+  = EPProg SrcLoc InteractEnv ETail
   deriving (Eq)
 
-type EPProg = EPProg_ PLVar
-
-type EIProg = EPProg_ PILVar
-
-instance Pretty a => Pretty (EPProg_ a) where
+instance Pretty EPProg where
   pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
 
@@ -173,15 +129,15 @@ instance Pretty ViewSave where
   pretty (ViewSave vi svs) =
     pform "viewsave" (pretty vi <> "," <+> pretty svs)
 
-data CTail_ a
-  = CT_Com (DLinStmt a) (CTail_ a)
-  | CT_If SrcLoc DLArg (CTail_ a) (CTail_ a)
-  | CT_Switch SrcLoc DLVar (SwitchCases (CTail_ a))
+data CTail
+  = CT_Com DLStmt CTail
+  | CT_If SrcLoc DLArg CTail CTail
+  | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_From SrcLoc Int ViewSave FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
-instance Pretty a => Pretty (CTail_ a) where
+instance Pretty CTail where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
@@ -189,10 +145,6 @@ instance Pretty a => Pretty (CTail_ a) where
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
       args = pretty which <+> pretty vars <+> pretty assignment
-
-type CTail = CTail_ PLVar
-
-type CITail = CTail_ PILVar
 
 data CInterval a
   = CBetween [a] [a]
@@ -203,7 +155,7 @@ instance Pretty a => Pretty (CInterval a) where
     where
       go = brackets . render_das
 
-data CHandler_ a
+data CHandler
   = C_Handler
       { ch_at :: SrcLoc
       , ch_int :: CInterval DLArg
@@ -213,21 +165,17 @@ data CHandler_ a
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
       , ch_timev :: DLVar
-      , ch_body :: (CTail_ a)
+      , ch_body :: CTail
       }
   | C_Loop
       { cl_at :: SrcLoc
       , cl_svs :: [DLVar]
       , cl_vars :: [DLVar]
-      , cl_body :: (CTail_ a)
+      , cl_body :: CTail
       }
   deriving (Eq)
 
-type CHandler = CHandler_ PLVar
-
-type CIHandler = CHandler_ PILVar
-
-instance Pretty a => Pretty (CHandler_ a) where
+instance Pretty CHandler where
   pretty (C_Handler _ int last_timev fs last_i svs msg timev body) =
     pbrackets
       [ pretty fs
@@ -249,15 +197,11 @@ instance Pretty a => Pretty (CHandler_ a) where
       , render_nest $ pretty body
       ]
 
-newtype CHandlers_ a = CHandlers (M.Map Int (CHandler_ a))
+newtype CHandlers = CHandlers (M.Map Int CHandler)
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
-type CHandlers = CHandlers_ PLVar
-
-type CIHandlers = CHandlers_ PILVar
-
-instance Pretty a => Pretty (CHandlers_ a) where
+instance Pretty CHandlers where
   pretty (CHandlers m) =
     render_obj m
 
@@ -294,22 +238,19 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
-data CPProg a
-  = CPProg SrcLoc (Maybe (CPViews, ViewInfos)) (CHandlers_ a)
+data CPProg
+  = CPProg SrcLoc (Maybe (CPViews, ViewInfos)) CHandlers
   deriving (Eq)
 
-type CIProg = CPProg PILVar
+instance Pretty CPProg where
+  pretty (CPProg _ vis chs) =
+    "views:" <+> pretty vis <> hardline <> pretty chs
 
-instance Pretty a => Pretty (CPProg a) where
-  pretty (CPProg _ vis chs) = "views:" <+> pretty vis <> hardline <> pretty chs
-
-newtype EPPs a = EPPs (M.Map SLPart (EPProg_ a))
+newtype EPPs = EPPs (M.Map SLPart EPProg)
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)
 
-type EIPPs = EPPs PILVar
-
-instance Pretty a => Pretty (EPPs a) where
+instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 data PLOpts = PLOpts
@@ -322,18 +263,14 @@ data PLOpts = PLOpts
 instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
 
-data PLinProg a
-  = PLProg SrcLoc PLOpts DLInit (DLinExports a) (EPPs a) (CPProg a)
+data PLProg
+  = PLProg SrcLoc PLOpts DLInit DLExports EPPs CPProg
   deriving (Eq)
 
-instance HasCounter (PLinProg a) where
+instance HasCounter PLProg where
   getCounter (PLProg _ plo _ _ _ _) = getCounter plo
 
-type PLProg = PLinProg PLVar
-
-type PIProg = PLinProg PILVar
-
-instance Pretty a => Pretty (PLinProg a) where
+instance Pretty PLProg where
   pretty (PLProg _ _ dli dex ps cp) =
     "#lang pl" <> hardline
       <> pretty dex

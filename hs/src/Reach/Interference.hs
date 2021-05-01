@@ -46,7 +46,7 @@ updateInterferenceGraph g k vs =
   let m = M.insertWith S.union k vs g
    in foldr (\v -> M.insertWith S.union v $ S.singleton k) m vs
 
-getWrittenVars :: CTail_ a -> [DLVar]
+getWrittenVars :: CTail -> [DLVar]
 getWrittenVars = \case
   CT_From _ _ _ fi -> case fi of
     FI_Continue vs -> map fst vs
@@ -59,7 +59,7 @@ getWrittenVars = \case
     getSwitchWrittenVars sc =
       concatMap (getWrittenVars . snd . snd) $ M.toList sc
 
-buildInterference :: S.Set DLVar -> [CHandler_ a] -> App ()
+buildInterference :: S.Set DLVar -> [CHandler] -> App ()
 buildInterference liveAfter = \case
   C_Handler {..} : rst -> process ch_svs ch_body rst
   C_Loop {..} : rst -> process cl_svs cl_body rst
@@ -90,12 +90,12 @@ buildInterference liveAfter = \case
         modifyIORef tvRef $
           M.insertWith S.union (varType v) (S.singleton v)
 
-getTypes :: CHandler_ a -> [DLType]
+getTypes :: CHandler -> [DLType]
 getTypes = \case
   C_Handler {..} -> map varType ch_svs
   C_Loop {..} -> map varType cl_svs
 
-makeInterferenceGraph :: M.Map Int CIHandler -> App ()
+makeInterferenceGraph :: M.Map Int CHandler -> App ()
 makeInterferenceGraph hs = do
   let handlers = map snd $ M.toDescList hs
   let allTypes = concatMap getTypes handlers
@@ -145,7 +145,7 @@ color s gInter asn0 = do
   color_loop
   readIORef asnr
 
-colorProgram :: PIProg -> IO ColorGraphs
+colorProgram :: PLProg -> IO ColorGraphs
 colorProgram (PLProg _ _ _ _ _ (CPProg _ _ (CHandlers handlers))) = do
   e_tv <- newIORef mempty
   e_ti <- newIORef mempty

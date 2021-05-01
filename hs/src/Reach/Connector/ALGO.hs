@@ -858,21 +858,21 @@ doSwitch ck at dv csm = do
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
   label end_lab
 
-cm :: App () -> PLCommon -> App ()
+cm :: App () -> DLStmt -> App ()
 cm km = \case
   DL_Nop _ -> km
-  DL_Let _ PV_Eff de -> ce de >> km
-  DL_Let _ (PV_Let PL_Once dv) de -> do
+  DL_Let _ DLV_Eff de -> ce de >> km
+  DL_Let _ (DLV_Let DVC_Once dv) de -> do
     sm <- exprSmall de
     store_let dv sm (ce de) km
-  DL_Let _ (PV_Let PL_Many dv) de -> do
+  DL_Let _ (DLV_Let DVC_Many dv) de -> do
     sm <- exprSmall de
     case sm of
       True ->
         store_let dv True (ce de) km
       False ->
         sallocLet dv (ce de) km
-  DL_ArrayMap at ansv aa lv (DLinBlock _ _ body ra) -> do
+  DL_ArrayMap at ansv aa lv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
     check_concat_len anssz
@@ -887,7 +887,7 @@ cm km = \case
         op "concat"
         code "store" [texty ansl]
       store_let ansv True (code "load" [texty ansl]) km
-  DL_ArrayReduce at ansv aa za av lv (DLinBlock _ _ body ra) -> do
+  DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
     let (_, xlen) = typeArray aa
     salloc $ \ansl -> do
       ca za
@@ -928,7 +928,7 @@ cm km = \case
   DL_Only {} ->
     impossible $ "only in CP"
 
-cp :: App () -> PLTail -> App ()
+cp :: App () -> DLTail -> App ()
 cp km = \case
   DT_Return _ -> km
   DT_Com m k -> cm (cp km k) m
@@ -1186,7 +1186,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
   eViewLen <- newIORef 0
-  let letArgs' :: App a -> [(DLVar, Word8)] -> App a
+  let letArgs' :: App a -> [(DLVar, ScratchSlot)] -> App a
       letArgs' km = \case
         [] -> km
         (dv@(DLVar _ _ t _), i):more -> do

@@ -621,7 +621,7 @@ solType_withArgLoc :: DLType -> App Doc
 solType_withArgLoc t =
   (<> (withArgLoc t)) <$> solType t
 
-solCom :: AppT PLCommon
+solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nnTokRecvVar nonNetTokRecv nnTokRecvZero )) -> do
@@ -629,8 +629,8 @@ solCom = \case
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
     let rng_ty = case pv of
-          PV_Eff -> T_Null
-          PV_Let _ dv ->
+          DLV_Eff -> T_Null
+          DLV_Let _ dv ->
             case varType dv of
               T_Tuple [_, _, x] -> x
               T_Tuple [_, x]    -> x
@@ -688,8 +688,8 @@ solCom = \case
     let billOffset :: Int -> Doc
         billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
     pv' <- case pv of
-      PV_Eff -> return []
-      PV_Let _ dv -> do
+      DLV_Eff -> return []
+      DLV_Let _ dv -> do
         addMemVar dv
         sub' <- solPrimApply SUB [meBalance, v_before]
         let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
@@ -727,10 +727,10 @@ solCom = \case
           <> setDynamicNonNetTokBals
           <> checkNonNetTokAllowances
           <> pv'
-  DL_Let _ (PV_Let _ dv) (DLE_LArg _ la) -> do
+  DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
-  DL_Let _ (PV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
+  DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     addMemVar dv
     dv' <- solVar dv
     let copy src (off :: Integer) = do
@@ -741,7 +741,7 @@ solCom = \case
     x' <- copy x 0
     y' <- copy y (arraySize x)
     return $ vsep [x', y']
-  DL_Let _ (PV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
+  DL_Let _ (DLV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
     addMemVar dv
     let (xy_ty, xy_sz) = case t of
           T_Array a b -> (a, b)
@@ -752,13 +752,13 @@ solCom = \case
     x' <- ith x
     y' <- ith y
     return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' "i" <+> "=" <+> solApply tcon [x', y'] <> semi)
-  DL_Let _ (PV_Let pu dv) de ->
+  DL_Let _ (DLV_Let pu dv) de ->
     case simple de of
       True -> no_def
       False ->
         case pu of
-          PL_Once -> no_def
-          PL_Many -> def
+          DVC_Once -> no_def
+          DVC_Many -> def
     where
       simple = \case
         DLE_Arg {} -> True
@@ -779,7 +779,7 @@ solCom = \case
         addMemVar dv
         de' <- solExpr emptyDoc de
         return $ solSet (solMemVar dv) de'
-  DL_Let _ PV_Eff de -> solExpr semi de
+  DL_Let _ DLV_Eff de -> solExpr semi de
   DL_Var _ dv -> do
     addMemVar dv
     mempty
@@ -788,7 +788,7 @@ solCom = \case
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_Only {} -> impossible $ "only in CT"
-  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
+  DL_ArrayMap _ ans x a (DLBlock _ _ f r) -> do
     addMemVars $ [ans, a]
     let sz = arraySize x
     ans' <- solVar ans
@@ -806,7 +806,7 @@ solCom = \case
                  , (solArrayRef ans' "i") <+> "=" <+> r' <> semi
                  ])
         ]
-  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) -> do
+  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
     addMemVars $ [ans, b, a]
     let sz = arraySize x
     ans' <- solVar ans
@@ -831,7 +831,7 @@ solCom = \case
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
 
-solCom_ :: AppT a -> PLCommon -> AppT a
+solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do
   m' <- solCom m
   k' <- iter k
@@ -840,7 +840,7 @@ solCom_ iter m k = do
       True -> k'
       False -> m' <> hardline <> k'
 
-solPLTail :: AppT PLTail
+solPLTail :: AppT DLTail
 solPLTail = \case
   DT_Return _ -> mempty
   DT_Com m k -> solCom_ solPLTail m k
