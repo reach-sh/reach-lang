@@ -1490,7 +1490,6 @@ export async function getDefaultAccount(): Promise<Account> {
     const AlgoSigner = await getAlgoSigner();
     const ledger = getLedgerFromAlgoSigner(AlgoSigner);
     if (ledger === undefined) throw Error(`Ledger is undefined; this is required by AlgoSigner`);
-    if (ledger === 'MainNet') throw Error(`Sorry. AlgoSigner support on MainNet coming soon!`);
     const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
     if (!addr) { throw Error(`No address provided`); }
     return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
