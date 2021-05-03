@@ -803,7 +803,10 @@ const makeTransferTxn = (
   closeTo: Address|undefined = undefined,
 ): Txn => {
   const valuen = bigNumberToNumber(value);
-  const note = algosdk.encodeObj('Reach');
+  // XXX AlgoSigner doesn't correctly handle msgpacked notes
+  // When it does: update {,un}clean_for_AlgoSigner
+  // const note = algosdk.encodeObj('Reach');
+  const note = new Uint8Array(Buffer.from('Reach'));
   const txn =
     token ?
       algosdk.makeAssetTransferTxnWithSuggestedParams(
@@ -842,6 +845,9 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
       txID: txnOrig.txID().toString(),
       lastRound: txnOrig.lastRound,
     };
+    debug('signed sk_ret');
+    debug({txID: ret.txID});
+    debug(msgpack.decode(ret.tx));
     return ret;
   } else if (AlgoSigner) {
     // TODO: clean up txn before signing
