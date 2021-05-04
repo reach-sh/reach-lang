@@ -3657,15 +3657,20 @@ doFork ks cases mtime mnntpay = do
         let network_pay_var = jid "networkTokenPay"
         let nnts = map (jse_expect_id at) $ jsa_flatten ts
         let nnts_js = map (\ i ->
-              JSArrayLiteral a [ JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid "_") ] a)
+              JSArrayLiteral a [ JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i) ] a)
               [0..length nnts - 1]
         let nnts_ret = toList $ mapWithIndex (\ i nnt ->
               JSArrayLiteral a [
                 JSArrayElement (jid $ "amt" <> show i)
                 , JSArrayElement (jid $ show $ pretty nnt)] a) (Seq.fromList nnts)
+        let verifyPaySpec = toList $ mapWithIndex (\ i nnt ->
+                JSExpressionStatement (JSCallExpression (jid "assert") a
+                    (toJSCL [JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq a) (jid nnt)
+                              , JSStringLiteral a ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")]) a) sp
+              ) (Seq.fromList nnts)
         let pay_var tl = JSArrayLiteral a (intercalate [JSArrayComma a] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) a
         let noArgs = JSParenthesizedArrowParameterList a JSLNil a
-        let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp, JSReturn a (Just (pay_var nnts_ret)) sp]
+        let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp] <> verifyPaySpec <> [ JSReturn a (Just (pay_var nnts_ret)) sp]
         let pay_call = JSCallExpression (JSArrowExpression noArgs a (JSStatementBlock a pay_ss a sp)) a JSLNil a
         return pay_call
       _ -> return pay_e

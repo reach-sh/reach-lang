@@ -33,50 +33,15 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   );
   accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(bidderNames[i]));
 
-  if ( conn == 'ETH' ) {
-    const myGasLimit = 5000000;
-    accAuctioneer.setGasLimit(myGasLimit);
-    accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
-  } else if ( conn == 'ALGO' ) {
-    console.log(`Demonstrating need to opt-in on ALGO`);
-    await shouldFail(async () => await zorkmid.mint(accAuctioneer, startingBalance));
-    console.log(`Opt-ing in on ALGO`);
-    await stdlib.transfer(accAuctioneer, accAuctioneer, 0, zorkmid.id);
-    await stdlib.transfer(accAuctioneer, accAuctioneer, 0, gil.id);
-    await Promise.all([
-      accBidders.forEach(async accBidder => {
-        await stdlib.transfer(accBidder, accBidder, 0, zorkmid.id);
-        await stdlib.transfer(accBidder, accBidder, 0, gil.id);
-      })
-    ]);
-  }
+  const myGasLimit = 5000000;
+  accAuctioneer.setGasLimit(myGasLimit);
+  accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
 
   // Fund auctioneer with ZMD and bidders with GIL
   await zorkmid.mint(accAuctioneer, startingBalance.mul(2));
   for (let i = 0; i < accBidders.length; ++i) {
     const accBidder = accBidders[i];
     await gil.mint(accBidder, startingBalance.mul(2));
-  }
-
-  if ( conn == 'ALGO' ) {
-    console.log(`Demonstrating opt-out on ALGO`);
-    console.log(`\tAuctioneer opts out`);
-    await zorkmid.optOut(accAuctioneer);
-    console.log(`\tAuctioneer can't receive mint`);
-    await shouldFail(async () => await zorkmid.mint(accAuctioneer, startingBalance));
-    console.log(`\tAuctioneer re-opts-in`);
-    await stdlib.transfer(accAuctioneer, accAuctioneer, 0, zorkmid.id);
-    console.log(`\tAuctioneer can receive mint`);
-    await zorkmid.mint(accAuctioneer, startingBalance);
-
-    for (let i = 0; i < accBidders.length; ++i) {
-      const accBidder = accBidders[i];
-      const who = bidderNames[i];
-      console.log(`\t${who} re-opts-in`);
-      await stdlib.transfer(accBidder, accBidder, 0, gil.id);
-      console.log(`\t${who} can receive mint`);
-      await gil.mint(accBidder, startingBalance);
-    }
   }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
