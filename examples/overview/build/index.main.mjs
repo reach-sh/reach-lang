@@ -29,15 +29,15 @@ export async function Alice(ctc, interact) {
   const ctc5 = stdlib.T_Tuple([ctc1, ctc4, ctc1, ctc1]);
   const ctc6 = stdlib.T_Tuple([ctc1, ctc4, ctc1]);
   const ctc7 = stdlib.T_Tuple([ctc1, ctc1]);
-
-
+  
+  
   const v20 = await ctc.creationTime();
   const v18 = stdlib.protect(ctc0, interact.info, null);
   const v19 = stdlib.protect(ctc1, interact.request, null);
-
-
-
-
+  
+  
+  
+  
   const txn1 = await (ctc.sendrecv(1, 1, stdlib.checkedBigNumberify('./index.rsh:14:9:dot', stdlib.UInt_max, 0), [ctc1, ctc1], [v20, v19], [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []], [ctc1], true, true, false, (async (txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc7, [stdlib.checkedBigNumberify('./index.rsh:14:9:dot', stdlib.UInt_max, 0), v20]);
@@ -45,7 +45,7 @@ export async function Alice(ctc, interact) {
     const [v25] = txn1.data;
     const v28 = txn1.time;
     const v24 = txn1.from;
-
+    
     sim_r.txns.push({
       amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
       kind: 'to',
@@ -55,22 +55,22 @@ export async function Alice(ctc, interact) {
     sim_r.nextSt_noTime = stdlib.digest(ctc6, [stdlib.checkedBigNumberify('./index.rsh:15:15:after expr stmt semicolon', stdlib.UInt_max, 1), v24, v25]);
     sim_r.view = [ctc2, [stdlib.checkedBigNumberify('./index.rsh:15:15:after expr stmt semicolon', stdlib.UInt_max, 0)]];
     sim_r.isHalt = false;
-
+    
     return sim_r;
     })));
   const [v25] = txn1.data;
   const v28 = txn1.time;
   const v24 = txn1.from;
   ;
-
-
+  
+  
   const txn2 = await (ctc.recv(2, 0, [], false, false));
   const [] = txn2.data;
   const v35 = txn2.time;
   const v32 = txn2.from;
   ;
-
-
+  
+  
   const txn3 = await (ctc.sendrecv(3, 1, stdlib.checkedBigNumberify('./index.rsh:24:9:dot', stdlib.UInt_max, 2), [ctc4, ctc1, ctc1, ctc0], [v24, v25, v35, v18], [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []], [ctc0], true, true, false, (async (txn3) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc5, [stdlib.checkedBigNumberify('./index.rsh:24:9:dot', stdlib.UInt_max, 2), v24, v25, v35]);
@@ -78,7 +78,7 @@ export async function Alice(ctc, interact) {
     const [v40] = txn3.data;
     const v44 = txn3.time;
     const v39 = txn3.from;
-
+    
     sim_r.txns.push({
       amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
       kind: 'to',
@@ -105,7 +105,7 @@ export async function Alice(ctc, interact) {
     sim_r.nextSt_noTime = stdlib.digest(ctc3, []);
     sim_r.view = [ctc2, [stdlib.checkedBigNumberify('./index.rsh:26:15:after expr stmt semicolon', stdlib.UInt_max, 0)]];
     sim_r.isHalt = true;
-
+    
     return sim_r;
     })));
   const [v40] = txn3.data;
@@ -120,11 +120,11 @@ export async function Alice(ctc, interact) {
     who: 'Alice'
     });
   ;
-
+  
   return;
-
-
-
+  
+  
+  
   };
 export async function Bob(ctc, interact) {
   const stdlib = ctc.stdlib;
@@ -135,13 +135,13 @@ export async function Bob(ctc, interact) {
   const ctc4 = stdlib.T_Address;
   const ctc5 = stdlib.T_Tuple([ctc0, ctc4, ctc0, ctc0]);
   const ctc6 = stdlib.T_Tuple([ctc0, ctc4, ctc0]);
-
-
+  
+  
   const v20 = await ctc.creationTime();
-
-
-
-
+  
+  
+  
+  
   const txn1 = await (ctc.recv(1, 1, [ctc0], false, false));
   const [v25] = txn1.data;
   const v28 = txn1.time;
@@ -153,8 +153,8 @@ export async function Bob(ctc, interact) {
     msg: 'want',
     who: 'Bob'
     });
-
-
+  
+  
   const txn2 = await (ctc.sendrecv(2, 0, stdlib.checkedBigNumberify('./index.rsh:19:9:dot', stdlib.UInt_max, 2), [ctc4, ctc0, ctc0], [v24, v25, v28], [v25, []], [], true, true, false, (async (txn2) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc5, [stdlib.checkedBigNumberify('./index.rsh:19:9:dot', stdlib.UInt_max, 1), v24, v25, v28]);
@@ -162,7 +162,7 @@ export async function Bob(ctc, interact) {
     const [] = txn2.data;
     const v35 = txn2.time;
     const v32 = txn2.from;
-
+    
     sim_r.txns.push({
       amt: v25,
       kind: 'to',
@@ -172,15 +172,15 @@ export async function Bob(ctc, interact) {
     sim_r.nextSt_noTime = stdlib.digest(ctc6, [stdlib.checkedBigNumberify('./index.rsh:20:15:after expr stmt semicolon', stdlib.UInt_max, 2), v24, v25]);
     sim_r.view = [ctc3, [stdlib.checkedBigNumberify('./index.rsh:20:15:after expr stmt semicolon', stdlib.UInt_max, 0)]];
     sim_r.isHalt = false;
-
+    
     return sim_r;
     })));
   const [] = txn2.data;
   const v35 = txn2.time;
   const v32 = txn2.from;
   ;
-
-
+  
+  
   const txn3 = await (ctc.recv(3, 1, [ctc2], false, false));
   const [v40] = txn3.data;
   const v44 = txn3.time;
@@ -200,11 +200,11 @@ export async function Bob(ctc, interact) {
     msg: 'got',
     who: 'Bob'
     });
-
+  
   return;
-
-
-
+  
+  
+  
   };
 
 const _ALGO = {

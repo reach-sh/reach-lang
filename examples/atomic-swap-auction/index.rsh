@@ -41,7 +41,7 @@ export const main = Reach.App(
         parallelReduce([ Auctioneer, true, reservePrice ])
           .invariant(balance(tokA) == amtA && balance(tokB) == (isFirstBid ? 0 : currentPrice))
           .while(keepGoing())
-          .nonNetworkPay([ tokB ])
+          .paySpec([ tokB ])
           .case(Bidder,
             (() => {
               const mbid = highestBidder != this

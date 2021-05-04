@@ -35,14 +35,14 @@ export async function Alice(ctc, interact) {
   const ctc11 = stdlib.T_Tuple([ctc0, ctc5, ctc0, ctc5, ctc2, ctc0]);
   const ctc12 = stdlib.T_Tuple([ctc0, ctc5, ctc0, ctc0, ctc0]);
   const ctc13 = stdlib.T_Tuple([ctc0, ctc5, ctc0, ctc0]);
-
-
+  
+  
   const v50 = await ctc.creationTime();
   const v49 = stdlib.protect(ctc0, interact.wager, null);
-
-
-
-
+  
+  
+  
+  
   const txn1 = await (ctc.sendrecv(1, 1, stdlib.checkedBigNumberify('./index.rsh:44:9:dot', stdlib.UInt_max, 0), [ctc0, ctc0], [v50, v49], [v49, []], [ctc0], true, true, false, (async (txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc1, [stdlib.checkedBigNumberify('./index.rsh:44:9:dot', stdlib.UInt_max, 0), v50]);
@@ -50,7 +50,7 @@ export async function Alice(ctc, interact) {
     const [v55] = txn1.data;
     const v58 = txn1.time;
     const v54 = txn1.from;
-
+    
     const v57 = stdlib.add(stdlib.checkedBigNumberify('./index.rsh:compileDApp', stdlib.UInt_max, 0), v55);
     sim_r.txns.push({
       amt: v55,
@@ -61,7 +61,7 @@ export async function Alice(ctc, interact) {
     sim_r.nextSt_noTime = stdlib.digest(ctc13, [stdlib.checkedBigNumberify('./index.rsh:46:15:after expr stmt semicolon', stdlib.UInt_max, 1), v54, v55, v57]);
     sim_r.view = [ctc4, [stdlib.checkedBigNumberify('./index.rsh:46:15:after expr stmt semicolon', stdlib.UInt_max, 0)]];
     sim_r.isHalt = false;
-
+    
     return sim_r;
     })));
   const [v55] = txn1.data;
@@ -69,11 +69,11 @@ export async function Alice(ctc, interact) {
   const v54 = txn1.from;
   const v57 = stdlib.add(stdlib.checkedBigNumberify('./index.rsh:compileDApp', stdlib.UInt_max, 0), v55);
   ;
-
-
+  
+  
   const txn2 = await (ctc.recv(2, 0, [], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
   if (txn2.didTimeout) {
-
+    
     const txn3 = await (ctc.sendrecv(3, 0, stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 3), [ctc5, ctc0, ctc0, ctc0], [v54, v55, v57, v58], [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []], [], true, true, false, (async (txn3) => {
       const sim_r = { txns: [] };
       sim_r.prevSt = stdlib.digest(ctc12, [stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 1), v54, v55, v57, v58]);
@@ -81,7 +81,7 @@ export async function Alice(ctc, interact) {
       const [] = txn3.data;
       const v203 = txn3.time;
       const v199 = txn3.from;
-
+      
       const v201 = stdlib.add(v57, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
       sim_r.txns.push({
         amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
@@ -109,7 +109,7 @@ export async function Alice(ctc, interact) {
       sim_r.nextSt_noTime = stdlib.digest(ctc8, []);
       sim_r.view = [ctc4, [stdlib.checkedBigNumberify('reach standard library:211:11:after expr stmt semicolon', stdlib.UInt_max, 0)]];
       sim_r.isHalt = true;
-
+      
       return sim_r;
       })));
     const [] = txn3.data;
@@ -131,8 +131,8 @@ export async function Alice(ctc, interact) {
       msg: 'informTimeout',
       who: 'Alice'
       });
-
-
+    
+    
     return;
     }
   else {
@@ -144,10 +144,10 @@ export async function Alice(ctc, interact) {
     let v66 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     let v218 = v65;
     let v220 = v64;
-
+    
     while ((() => {
       const v76 = stdlib.eq(v66, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
-
+      
       return v76;})()) {
       const v80 = stdlib.protect(ctc0, await interact.getHand(), {
         at: './index.rsh:59:42:application',
@@ -162,8 +162,8 @@ export async function Alice(ctc, interact) {
         who: 'Alice'
         });
       const v83 = stdlib.digest(ctc1, [v82, v80]);
-
-
+      
+      
       const txn3 = await (ctc.sendrecv(6, 1, stdlib.checkedBigNumberify('./index.rsh:62:11:dot', stdlib.UInt_max, 3), [ctc5, ctc0, ctc5, ctc0, ctc0, ctc2], [v54, v55, v62, v218, v220, v83], [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []], [ctc2], true, true, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10), (async (txn3) => {
         const sim_r = { txns: [] };
         sim_r.prevSt = stdlib.digest(ctc6, [stdlib.checkedBigNumberify('./index.rsh:62:11:dot', stdlib.UInt_max, 4), v54, v55, v62, v218, v220]);
@@ -171,7 +171,7 @@ export async function Alice(ctc, interact) {
         const [v86] = txn3.data;
         const v90 = txn3.time;
         const v85 = txn3.from;
-
+        
         const v88 = stdlib.add(v220, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
         sim_r.txns.push({
           amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
@@ -189,11 +189,11 @@ export async function Alice(ctc, interact) {
         sim_r.nextSt_noTime = stdlib.digest(ctc11, [stdlib.checkedBigNumberify('./index.rsh:64:17:after expr stmt semicolon', stdlib.UInt_max, 6), v54, v55, v62, v86, v88]);
         sim_r.view = [ctc4, [stdlib.checkedBigNumberify('./index.rsh:64:17:after expr stmt semicolon', stdlib.UInt_max, 0)]];
         sim_r.isHalt = false;
-
+        
         return sim_r;
         })));
       if (txn3.didTimeout) {
-
+        
         const txn4 = await (ctc.recv(7, 0, [], false, false));
         const [] = txn4.data;
         const v165 = txn4.time;
@@ -214,8 +214,8 @@ export async function Alice(ctc, interact) {
           msg: 'informTimeout',
           who: 'Alice'
           });
-
-
+        
+        
         return;
         }
       else {
@@ -231,11 +231,11 @@ export async function Alice(ctc, interact) {
           msg: 'sender correct',
           who: 'Alice'
           });
-
-
+        
+        
         const txn4 = await (ctc.recv(8, 1, [ctc0], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
         if (txn4.didTimeout) {
-
+          
           const txn5 = await (ctc.sendrecv(9, 0, stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 5), [ctc5, ctc0, ctc5, ctc2, ctc0, ctc0], [v54, v55, v62, v86, v88, v90], [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []], [], true, true, false, (async (txn5) => {
             const sim_r = { txns: [] };
             sim_r.prevSt = stdlib.digest(ctc10, [stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 6), v54, v55, v62, v86, v88, v90]);
@@ -243,7 +243,7 @@ export async function Alice(ctc, interact) {
             const [] = txn5.data;
             const v145 = txn5.time;
             const v141 = txn5.from;
-
+            
             const v143 = stdlib.add(v88, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
             sim_r.txns.push({
               amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
@@ -271,7 +271,7 @@ export async function Alice(ctc, interact) {
             sim_r.nextSt_noTime = stdlib.digest(ctc8, []);
             sim_r.view = [ctc4, [stdlib.checkedBigNumberify('reach standard library:211:11:after expr stmt semicolon', stdlib.UInt_max, 0)]];
             sim_r.isHalt = true;
-
+            
             return sim_r;
             })));
           const [] = txn5.data;
@@ -293,8 +293,8 @@ export async function Alice(ctc, interact) {
             msg: 'informTimeout',
             who: 'Alice'
             });
-
-
+          
+          
           return;
           }
         else {
@@ -310,8 +310,8 @@ export async function Alice(ctc, interact) {
             msg: 'sender correct',
             who: 'Alice'
             });
-
-
+          
+          
           const txn5 = await (ctc.sendrecv(10, 2, stdlib.checkedBigNumberify('./index.rsh:75:11:dot', stdlib.UInt_max, 6), [ctc5, ctc0, ctc5, ctc2, ctc0, ctc0, ctc0, ctc0, ctc0], [v54, v55, v62, v86, v96, v98, v100, v82, v80], [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []], [ctc0, ctc0], true, true, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10), (async (txn5) => {
             const sim_r = { txns: [] };
             sim_r.prevSt = stdlib.digest(ctc9, [stdlib.checkedBigNumberify('./index.rsh:75:11:dot', stdlib.UInt_max, 8), v54, v55, v62, v86, v96, v98, v100]);
@@ -319,7 +319,7 @@ export async function Alice(ctc, interact) {
             const [v105, v106] = txn5.data;
             const v110 = txn5.time;
             const v104 = txn5.from;
-
+            
             const v108 = stdlib.add(v98, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
             sim_r.txns.push({
               amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
@@ -347,15 +347,15 @@ export async function Alice(ctc, interact) {
             const cv66 = v118;
             const cv218 = v110;
             const cv220 = v108;
-
+            
             (() => {
               const v66 = cv66;
               const v218 = cv218;
               const v220 = cv220;
-
+              
               if ((() => {
                 const v76 = stdlib.eq(v66, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
-
+                
                 return v76;})()) {
                 sim_r.nextSt = stdlib.digest(ctc6, [stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 4), v54, v55, v62, v218, v220]);
                 sim_r.nextSt_noTime = stdlib.digest(ctc7, [stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 4), v54, v55, v62, v220]);
@@ -384,7 +384,7 @@ export async function Alice(ctc, interact) {
             return sim_r;
             })));
           if (txn5.didTimeout) {
-
+            
             const txn6 = await (ctc.recv(11, 0, [], false, false));
             const [] = txn6.data;
             const v125 = txn6.time;
@@ -405,8 +405,8 @@ export async function Alice(ctc, interact) {
               msg: 'informTimeout',
               who: 'Alice'
               });
-
-
+            
+            
             return;
             }
           else {
@@ -436,11 +436,11 @@ export async function Alice(ctc, interact) {
             const cv66 = v118;
             const cv218 = v110;
             const cv220 = v108;
-
+            
             v66 = cv66;
             v218 = cv218;
             v220 = cv220;
-
+            
             continue;}
           }
         }
@@ -455,11 +455,11 @@ export async function Alice(ctc, interact) {
       msg: 'seeOutcome',
       who: 'Alice'
       });
-
-
+    
+    
     return;}
-
-
+  
+  
   };
 export async function Bob(ctc, interact) {
   const stdlib = ctc.stdlib;
@@ -477,13 +477,13 @@ export async function Bob(ctc, interact) {
   const ctc11 = stdlib.T_Tuple([ctc0, ctc6, ctc0, ctc6, ctc0]);
   const ctc12 = stdlib.T_Tuple([ctc0, ctc6, ctc0, ctc0, ctc0]);
   const ctc13 = stdlib.T_Tuple([ctc0, ctc6, ctc0, ctc0]);
-
-
+  
+  
   const v50 = await ctc.creationTime();
-
-
-
-
+  
+  
+  
+  
   const txn1 = await (ctc.recv(1, 1, [ctc0], false, false));
   const [v55] = txn1.data;
   const v58 = txn1.time;
@@ -496,8 +496,8 @@ export async function Bob(ctc, interact) {
     msg: 'acceptWager',
     who: 'Bob'
     });
-
-
+  
+  
   const txn2 = await (ctc.sendrecv(2, 0, stdlib.checkedBigNumberify('./index.rsh:50:9:dot', stdlib.UInt_max, 3), [ctc6, ctc0, ctc0, ctc0], [v54, v55, v57, v58], [v55, []], [], true, true, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10), (async (txn2) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(ctc12, [stdlib.checkedBigNumberify('./index.rsh:50:9:dot', stdlib.UInt_max, 1), v54, v55, v57, v58]);
@@ -505,7 +505,7 @@ export async function Bob(ctc, interact) {
     const [] = txn2.data;
     const v65 = txn2.time;
     const v62 = txn2.from;
-
+    
     const v64 = stdlib.add(v57, v55);
     sim_r.txns.push({
       amt: v55,
@@ -515,10 +515,10 @@ export async function Bob(ctc, interact) {
     const v66 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     const v218 = v65;
     const v220 = v64;
-
+    
     if ((() => {
       const v76 = stdlib.eq(v66, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
-
+      
       return v76;})()) {
       sim_r.nextSt = stdlib.digest(ctc10, [stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 4), v54, v55, v62, v218, v220]);
       sim_r.nextSt_noTime = stdlib.digest(ctc11, [stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 4), v54, v55, v62, v220]);
@@ -547,7 +547,7 @@ export async function Bob(ctc, interact) {
     return sim_r;
     })));
   if (txn2.didTimeout) {
-
+    
     const txn3 = await (ctc.recv(3, 0, [], false, false));
     const [] = txn3.data;
     const v203 = txn3.time;
@@ -562,14 +562,14 @@ export async function Bob(ctc, interact) {
       who: 'Bob'
       });
     ;
-
+    
     stdlib.protect(ctc1, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
       fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'informTimeout',
       who: 'Bob'
       });
-
+    
     return;
     }
   else {
@@ -581,16 +581,16 @@ export async function Bob(ctc, interact) {
     let v66 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     let v218 = v65;
     let v220 = v64;
-
+    
     while ((() => {
       const v76 = stdlib.eq(v66, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
-
+      
       return v76;})()) {
-
-
+      
+      
       const txn3 = await (ctc.recv(6, 1, [ctc2], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
       if (txn3.didTimeout) {
-
+        
         const txn4 = await (ctc.sendrecv(7, 0, stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 3), [ctc6, ctc0, ctc6, ctc0, ctc0], [v54, v55, v62, v218, v220], [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []], [], true, true, false, (async (txn4) => {
           const sim_r = { txns: [] };
           sim_r.prevSt = stdlib.digest(ctc10, [stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 4), v54, v55, v62, v218, v220]);
@@ -598,7 +598,7 @@ export async function Bob(ctc, interact) {
           const [] = txn4.data;
           const v165 = txn4.time;
           const v161 = txn4.from;
-
+          
           const v163 = stdlib.add(v220, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
           sim_r.txns.push({
             amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
@@ -626,7 +626,7 @@ export async function Bob(ctc, interact) {
           sim_r.nextSt_noTime = stdlib.digest(ctc5, []);
           sim_r.view = [ctc4, [stdlib.checkedBigNumberify('reach standard library:211:11:after expr stmt semicolon', stdlib.UInt_max, 0)]];
           sim_r.isHalt = true;
-
+          
           return sim_r;
           })));
         const [] = txn4.data;
@@ -642,14 +642,14 @@ export async function Bob(ctc, interact) {
           who: 'Bob'
           });
         ;
-
+        
         stdlib.protect(ctc1, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
           fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'informTimeout',
           who: 'Bob'
           });
-
+        
         return;
         }
       else {
@@ -671,8 +671,8 @@ export async function Bob(ctc, interact) {
           msg: 'getHand',
           who: 'Bob'
           });
-
-
+        
+        
         const txn4 = await (ctc.sendrecv(8, 1, stdlib.checkedBigNumberify('./index.rsh:69:11:dot', stdlib.UInt_max, 5), [ctc6, ctc0, ctc6, ctc2, ctc0, ctc0, ctc0], [v54, v55, v62, v86, v88, v90, v94], [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []], [ctc0], true, true, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10), (async (txn4) => {
           const sim_r = { txns: [] };
           sim_r.prevSt = stdlib.digest(ctc8, [stdlib.checkedBigNumberify('./index.rsh:69:11:dot', stdlib.UInt_max, 6), v54, v55, v62, v86, v88, v90]);
@@ -680,7 +680,7 @@ export async function Bob(ctc, interact) {
           const [v96] = txn4.data;
           const v100 = txn4.time;
           const v95 = txn4.from;
-
+          
           const v98 = stdlib.add(v88, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
           sim_r.txns.push({
             amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
@@ -698,11 +698,11 @@ export async function Bob(ctc, interact) {
           sim_r.nextSt_noTime = stdlib.digest(ctc8, [stdlib.checkedBigNumberify('./index.rsh:71:17:after expr stmt semicolon', stdlib.UInt_max, 8), v54, v55, v62, v86, v96, v98]);
           sim_r.view = [ctc4, [stdlib.checkedBigNumberify('./index.rsh:71:17:after expr stmt semicolon', stdlib.UInt_max, 0)]];
           sim_r.isHalt = false;
-
+          
           return sim_r;
           })));
         if (txn4.didTimeout) {
-
+          
           const txn5 = await (ctc.recv(9, 0, [], false, false));
           const [] = txn5.data;
           const v145 = txn5.time;
@@ -717,14 +717,14 @@ export async function Bob(ctc, interact) {
             who: 'Bob'
             });
           ;
-
+          
           stdlib.protect(ctc1, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
             fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'informTimeout',
             who: 'Bob'
             });
-
+          
           return;
           }
         else {
@@ -740,11 +740,11 @@ export async function Bob(ctc, interact) {
             msg: 'sender correct',
             who: 'Bob'
             });
-
-
+          
+          
           const txn5 = await (ctc.recv(10, 2, [ctc0, ctc0], false, stdlib.checkedBigNumberify('./index.rsh:32:18:decimal', stdlib.UInt_max, 10)));
           if (txn5.didTimeout) {
-
+            
             const txn6 = await (ctc.sendrecv(11, 0, stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 6), [ctc6, ctc0, ctc6, ctc2, ctc0, ctc0, ctc0], [v54, v55, v62, v86, v96, v98, v100], [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []], [], true, true, false, (async (txn6) => {
               const sim_r = { txns: [] };
               sim_r.prevSt = stdlib.digest(ctc7, [stdlib.checkedBigNumberify('reach standard library:209:7:dot', stdlib.UInt_max, 8), v54, v55, v62, v86, v96, v98, v100]);
@@ -752,7 +752,7 @@ export async function Bob(ctc, interact) {
               const [] = txn6.data;
               const v125 = txn6.time;
               const v121 = txn6.from;
-
+              
               const v123 = stdlib.add(v98, stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0));
               sim_r.txns.push({
                 amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
@@ -780,7 +780,7 @@ export async function Bob(ctc, interact) {
               sim_r.nextSt_noTime = stdlib.digest(ctc5, []);
               sim_r.view = [ctc4, [stdlib.checkedBigNumberify('reach standard library:211:11:after expr stmt semicolon', stdlib.UInt_max, 0)]];
               sim_r.isHalt = true;
-
+              
               return sim_r;
               })));
             const [] = txn6.data;
@@ -796,14 +796,14 @@ export async function Bob(ctc, interact) {
               who: 'Bob'
               });
             ;
-
+            
             stdlib.protect(ctc1, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
               fs: ['at ./index.rsh:39:13:application call to [unknown function] (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'informTimeout',
               who: 'Bob'
               });
-
+            
             return;
             }
           else {
@@ -833,11 +833,11 @@ export async function Bob(ctc, interact) {
             const cv66 = v118;
             const cv218 = v110;
             const cv220 = v108;
-
+            
             v66 = cv66;
             v218 = cv218;
             v220 = cv220;
-
+            
             continue;}
           }
         }
@@ -846,17 +846,17 @@ export async function Bob(ctc, interact) {
     const v183 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:83:16:decimal', stdlib.UInt_max, 2), v55);
     const v185 = v180 ? v54 : v62;
     ;
-
+    
     stdlib.protect(ctc1, await interact.seeOutcome(v66), {
       at: './index.rsh:87:28:application',
       fs: ['at ./index.rsh:86:11:application call to [unknown function] (defined at: ./index.rsh:86:23:function exp)'],
       msg: 'seeOutcome',
       who: 'Bob'
       });
-
+    
     return;}
-
-
+  
+  
   };
 
 const _ALGO = {

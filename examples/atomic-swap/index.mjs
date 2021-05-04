@@ -26,34 +26,12 @@ const shouldFail = async (fp) => {
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-  if ( conn == 'ETH' ) {
-    const myGasLimit = 5000000;
-    accAlice.setGasLimit(myGasLimit);
-    accBob.setGasLimit(myGasLimit);
-  } else if ( conn == 'ALGO' ) {
-    console.log(`Demonstrating need to opt-in on ALGO`);
-    await shouldFail(async () => await zorkmid.mint(accAlice, startingBalance));
-    console.log(`Opt-ing in on ALGO`);
-    await stdlib.transfer(accAlice, accAlice, 0, zorkmid.id);
-    await stdlib.transfer(accAlice, accAlice, 0, gil.id);
-    await stdlib.transfer(accBob, accBob, 0, zorkmid.id);
-    await stdlib.transfer(accBob, accBob, 0, gil.id);
-  }
+  const myGasLimit = 5000000;
+  accAlice.setGasLimit(myGasLimit);
+  accBob.setGasLimit(myGasLimit);
 
   await zorkmid.mint(accAlice, startingBalance.mul(2));
   await gil.mint(accBob, startingBalance.mul(2));
-
-  if ( conn == 'ALGO' ) {
-    console.log(`Demonstrating opt-out on ALGO`);
-    console.log(`\tAlice opts out`);
-    await zorkmid.optOut(accAlice);
-    console.log(`\tAlice can't receive mint`);
-    await shouldFail(async () => await zorkmid.mint(accAlice, startingBalance));
-    console.log(`\tAlice re-opts-in`);
-    await stdlib.transfer(accAlice, accAlice, 0, zorkmid.id);
-    console.log(`\tAlice can receive mint`);
-    await zorkmid.mint(accAlice, startingBalance);
-  }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const doSwap = async (tokenA, amtA, tokenB, amtB, trusted) => {

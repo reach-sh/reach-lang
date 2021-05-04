@@ -332,6 +332,17 @@ For examples, these are @tech{invalid} @tech{pay amounts}:
 [ [2, gil], [1, gil] ]
 }
 
+The ordering of a @tech{pay amount} is only significant when used within a @tech{fork statement} or @tech{parallel reduce statement} that specifies a @reachin{paySpec}.
+In this case, payments are expected to be a tuple where the first element is an integer @tech{pay amount}, and the rest of the elements are @tech{token amount} tuples. The ordering of the @tech{token amount} elements should match the ordering in @reachin{paySpec}. For example,
+@reach{
+  .paySpec([tokA, tokB])}
+
+will indicate that @reachin{fork} payments should be of the format:
+
+@reach{
+  [ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]}
+
+
 @subsubsection{@tt{publish}, @tt{pay}, @tt{when}, and @tt{timeout}}
 
 @(mint-define! '("publish") '("pay") '("when") '("timeout"))
@@ -457,6 +468,7 @@ A @deftech{fork statement} is written:
 
 @reach{
 fork()
+.paySpec(TOKENS_EXPR)
 .case(PART_EXPR,
   PUBLISH_EXPR,
   PAY_EXPR,
@@ -466,6 +478,7 @@ fork()
 }
 
 where:
+@reachin{TOKENS_EXPR} is an expression that evalues to a tuple of @reachin{Token}s.
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
 @reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns a @tech{pay amount};
@@ -795,6 +808,7 @@ const LHS =
   parallelReduce(INIT_EXPR)
   .invariant(INVARIANT_EXPR)
   .while(COND_EXPR)
+  .paySpec(TOKENS_EXPR)
   .case(PART_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
@@ -805,7 +819,7 @@ const LHS =
 
 The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component of a @reachin{while} loop; and,
 the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
-while the @reachin{.case} and @reachin{.timeout} components are like the corresponding components of a @reachin{fork} statement.
+while the @reachin{.case}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
 
@@ -2049,6 +2063,25 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 
 @index{isSome} @reachin{isSome} is a convenience method that determines whether the variant is @tt{isSome}.
 
+
+@(mint-define! '("fromSome"))
+@reach{
+  fromSome(Maybe(UInt).Some(1), 0); // 1
+  fromSome(Maybe(UInt).None(), 0);  // 0
+}
+
+@index{fromSome} @reachin{fromSome} receives a @reachin{Maybe} value and a default value as arguments and will return the value inside
+of the @reachin{Some} variant or the default value otherwise.
+
+@(mint-define! '("maybe"))
+@reach{
+  const add1 = (x) => x + 1;
+  maybe(Maybe(UInt).Some(1), 0, add1); // 2
+  maybe(Maybe(UInt).None(), 0, add1);  // 0
+}
+
+@index{maybe} @reachin{maybe(m, defaultVal, f)} receives a @reachin{Maybe} value, a default value, and a unary function as arguments. The function will
+either return the application of the function, @reachin{f}, to the @reachin{Some} value or return the default value provided.
 
 @subsubsection{@tt{Either}}
 

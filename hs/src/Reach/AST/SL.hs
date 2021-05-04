@@ -278,7 +278,7 @@ data ForkMode
   = FM_Case
   | FM_Timeout
   | FM_ThrowTimeout
-  | FM_NonNetworkPay
+  | FM_PaySpec
   deriving (Eq, Generic, Show)
 
 data ParallelReduceMode
@@ -288,7 +288,7 @@ data ParallelReduceMode
   | PRM_Timeout
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
-  | PRM_NonNetworkPay
+  | PRM_PaySpec
   deriving (Eq, Generic, Show)
 
 data SLForm

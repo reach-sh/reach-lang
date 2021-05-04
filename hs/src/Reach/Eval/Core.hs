@@ -958,7 +958,7 @@ evalAsEnv obj = case obj of
         go "case" FM_Case
           <> gom "timeout" FM_Timeout mtime
           <> gom "throwTimeout" FM_ThrowTimeout mtime
-          <> gom "nonNetworkPay" FM_NonNetworkPay mpay
+          <> gom "paySpec" FM_PaySpec mpay
     where
       gom key mode me =
         case me of
@@ -975,7 +975,7 @@ evalAsEnv obj = case obj of
           <> gom "timeout" PRM_Timeout pr_mtime
           <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
           <> gom "throwTimeout" PRM_ThrowTimeout pr_mtime
-          <> gom "nonNetworkPay" PRM_NonNetworkPay pr_mpay
+          <> gom "paySpec" PRM_PaySpec pr_mpay
     where
       gom key mode me =
         case me of
@@ -1261,7 +1261,7 @@ evalForm f args = do
                 JSArrowExpression (JSParenthesizedArrowParameterList ta JSLNil ta) ta $
                   JSThrow ta arg JSSemiAuto
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS])) mpay
-        Just FM_NonNetworkPay -> do
+        Just FM_PaySpec -> do
           nnts <- case args of
             [toks] -> return toks
             _ -> illegal_args 1
@@ -1282,7 +1282,7 @@ evalForm f args = do
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime pr_mpay
         Just PRM_Case ->
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime pr_mpay
-        Just PRM_NonNetworkPay -> do
+        Just PRM_PaySpec -> do
           x <- one_arg
           retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime (Just x)
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
@@ -3740,7 +3740,7 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
     case pr_mpay of
       Nothing -> return fork_e1
       Just toks ->
-        return $ call a (JSMemberDot fork_e1 a $ jid "nonNetworkPay") [toks]
+        return $ call a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
   let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
         where
           ca = ao case_at
