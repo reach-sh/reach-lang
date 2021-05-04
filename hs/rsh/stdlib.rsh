@@ -554,3 +554,7 @@ void intervalOpAux;
 export const intervalMul = (x, y) => intervalOpAux(x, y, imul);
 
 export const intervalDiv = (x, y) => intervalOpAux(x, y, idiv);
+
+export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
+
+export const fromSome = (m, def) => maybe(m, def, ((x) => x));

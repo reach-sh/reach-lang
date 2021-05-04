@@ -2,19 +2,21 @@
 
 const AuctionProps = Object({
   startingBid: UInt,
-  timeout: UInt });
+  timeout: UInt});
 
 const BidderProps = {
   getBid: Fun([UInt], Maybe(UInt)) };
 
 const OwnerInterface = {
-  showOwner: Fun([Address], Null),
+  showOwner: Fun([UInt, Address], Null),
   getAuctionProps: Fun([], AuctionProps),
   ...BidderProps };
 
 const CreatorInterface = {
   ...OwnerInterface,
   getId: Fun([], UInt) };
+
+const emptyAuction = { startingBid: 0, timeout: 0 };
 
 export const main = Reach.App(
   {},
@@ -23,27 +25,34 @@ export const main = Reach.App(
     ParticipantClass('Owner', OwnerInterface)
   ],
   (Creator, Owner) => {
-    Creator.publish();
+    Creator.only(() => {
+      const id = declassify(interact.getId());
+    });
+    Creator.publish(id);
 
     var owner = Creator;
     invariant(balance() == 0);
     while (true) {
       commit();
 
+      // Have the owner publish info about the auction
       Owner.only(() => {
-        interact.showOwner(owner);
+        interact.showOwner(id, owner);
+        const amOwner = this == owner;
         const { startingBid, timeout } =
-          declassify(interact.getAuctionProps());
+          amOwner ? declassify(interact.getAuctionProps()) : emptyAuction;
       });
       Owner
         .publish(startingBid, timeout)
+        .when(amOwner)
         .timeout(false);
 
       const [ timeRemaining, keepGoing ] = makeDeadline(timeout);
 
-      const [ winner, first, currentPrice ] =
+      // Let them fight for the best bid
+      const [ winner, isFirstBid, currentPrice ] =
         parallelReduce([ owner, true, startingBid ])
-          .invariant(balance() == (first ? 0 : currentPrice))
+          .invariant(balance() == (isFirstBid ? 0 : currentPrice))
           .while(keepGoing())
           .case(Owner,
             (() => {
@@ -51,21 +60,22 @@ export const main = Reach.App(
                 ? declassify(interact.getBid(currentPrice))
                 : Maybe(UInt).None();
               return ({
-                when: maybe(mbid, false, ((x) => x > currentPrice)),
+                when: maybe(mbid, false, ((bid) => bid > currentPrice)),
                 msg : fromSome(mbid, 0),
               });
             }),
             ((bid) => bid),
             ((bid) => {
               require(bid > currentPrice);
-              if ( ! first ) {
+              // Return funds to previous highest bidder
+              if (!isFirstBid) {
                 transfer(currentPrice).to(winner); }
               return [ this, false, bid ];
             })
           )
           .timeRemaining(timeRemaining());
 
-      if ( ! first ) {
+      if(!isFirstBid) {
         transfer(currentPrice).to(owner); }
 
       owner = winner;
