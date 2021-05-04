@@ -1859,6 +1859,75 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  pkg:
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean pkg"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Clean pkg
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build pkg"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Rebuild pkg
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run pkg"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run pkg with ETH
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run pkg"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run pkg with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run pkg"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run pkg with CFX
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "popularity-contest":
     docker:
     - auth:
@@ -4261,6 +4330,12 @@ workflows:
         requires:
         - "build-core"
     - "own-addr":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - pkg:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

@@ -23,6 +23,7 @@
 , { mapKey = "overview-more-deps", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "overview-react", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "own-addr", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "pkg", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "popularity-contest", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "pr202105-zet", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "race", mapValue = [ "ETH", "ALGO", "CFX" ] }

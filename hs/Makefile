@@ -70,6 +70,14 @@ hs-test-accept: stack
 .PHONY: hs-deps
 hs-deps: stack
 	stack setup
+	@# Broken-out dependencies help prevent CI resource exhaustion
+	RESOLVER=$$(echo "$$(cat stack.yaml | grep 'resolver:')" | sed 's/resolver:\s*//') \
+	  && stack --resolver "$$RESOLVER" build aeson \
+	  && stack --resolver "$$RESOLVER" build yaml \
+	  && stack --resolver "$$RESOLVER" build clay \
+	  && stack --resolver "$$RESOLVER" build megaparsec \
+	  && stack --resolver "$$RESOLVER" build relude \
+	  && stack --resolver "$$RESOLVER" build tomland
 	stack build --dependencies-only
 	stack test --dependencies-only
 	stack build stan
