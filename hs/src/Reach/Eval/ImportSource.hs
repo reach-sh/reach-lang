@@ -7,7 +7,7 @@
 module Reach.Eval.ImportSource
   ( ImportSource(..)
   , LockFile(..)
-  , EntryModule(..)
+  , LockModule(..)
 
   , PkgError
   , PkgT
@@ -15,6 +15,8 @@ module Reach.Eval.ImportSource
   , runPkgT
 
   , dirDotReach
+  , dirGitClones
+  , dirLockModules
   , pathLockFile
   , removeMe
 
@@ -27,20 +29,28 @@ module Reach.Eval.ImportSource
 
   , importSource
   , gitUriOf
+
+  , GitUri(..)
   ) where
 
 import Text.Parsec
 
+import Control.Monad          (unless, when)
 import Control.Monad.Except   (MonadError, ExceptT(..), runExceptT, throwError)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.State    (MonadState, StateT(..), get, modify)
-import Data.Aeson.Types       (ToJSON, FromJSON)
+import Crypto.Hash            (Digest, SHA256(..), hashWith, digestFromByteString)
+import Data.Aeson             (ToJSONKey, FromJSONKey)
 import Data.Functor.Identity  (Identity)
+import Data.List              (intercalate)
+import Data.Text.Encoding     (encodeUtf8)
+import Data.Yaml              (ToJSON(..), FromJSON(..), prettyPrintParseException)
+import Data.Yaml              (withText, encode, decodeEither')
 import GHC.Generics           (Generic)
 import System.Directory       (createDirectoryIfMissing, doesDirectoryExist)
 import System.Directory       (doesFileExist, getCurrentDirectory)
-import System.FilePath        ((</>), isValid)
 import System.Exit            (ExitCode(..))
+import System.FilePath        ((</>), isValid, takeFileName, pathSeparator)
 import System.Process         (readCreateProcessWithExitCode, shell, cwd)
 import Text.Printf            (printf)
 
@@ -56,12 +66,28 @@ newtype G a = G a
 instance (ToJSON   a) => ToJSON   (G a)
 instance (FromJSON a) => FromJSON (G a)
 
-newtype HostGitAcct = HostGitAcct  String    deriving (Eq, Show, ToJSON, FromJSON) via (G HostGitAcct)
-newtype HostGitRepo = HostGitRepo  String    deriving (Eq, Show, ToJSON, FromJSON) via (G HostGitRepo)
-newtype HostGitRef  = HostGitRef   String    deriving (Eq, Show, ToJSON, FromJSON) via (G HostGitRef)
-newtype HostGitDir  = HostGitDir  [FilePath] deriving (Eq, Show, ToJSON, FromJSON) via (G HostGitDir)
-newtype HostGitFile = HostGitFile  FilePath  deriving (Eq, Show, ToJSON, FromJSON) via (G HostGitFile)
-newtype GitUri      = GitUri       String    deriving (Eq, Show, ToJSON, FromJSON) via (G GitUri)
+newtype HostGitAcct = HostGitAcct  String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
+newtype HostGitRepo = HostGitRepo  String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
+newtype HostGitRef  = HostGitRef   String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
+newtype HostGitDir  = HostGitDir  [FilePath] deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G [FilePath])
+newtype HostGitFile = HostGitFile  FilePath  deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  FilePath)
+newtype GitUri      = GitUri       String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
+
+
+newtype SHA = SHA (Digest SHA256)
+  deriving (Eq, Show, Ord)
+
+instance ToJSON SHA where
+  toJSON (SHA d) = toJSON $ show d
+
+instance FromJSON SHA where
+  parseJSON = withText "SHA" $ \a -> maybe
+    (fail $ "Invalid SHA: " <> show a)
+    (pure . SHA)
+    (digestFromByteString $ encodeUtf8 a)
+
+instance ToJSONKey   SHA
+instance FromJSONKey SHA
 
 
 data HostGit
@@ -76,23 +102,34 @@ data ImportSource
   deriving (Eq, Show)
 
 
-data EntryModule = EntryModule
+data LockModule = LockModule
   { host :: HostGit
   , uri  :: GitUri
-  } deriving (Eq, Show, ToJSON, FromJSON) via (G EntryModule)
+  , deps :: [ LockModule ]
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 
 data LockFile = LockFile
   { version :: Int
-  , modules :: M.Map String EntryModule
-  } deriving (Eq, Show, ToJSON, FromJSON) via (G LockFile)
+  , modules :: M.Map SHA LockModule
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+
+lockFileEmpty :: LockFile
+lockFileEmpty =  LockFile
+  { version = 1
+  , modules = mempty
+  }
 
 
 --------------------------------------------------------------------------------
 
 data PkgError
-  = PkgFileDoesNotExist FilePath
-  | PkgGitCloneFailed   String
+  = PkgFileDoesNotExist  FilePath
+  | PkgGitCloneFailed    String
+  | PkgGitCheckoutFailed String
+  | PkgLockHashUnknownFS FilePath
+  | PkgLockFileParseEx   String
   deriving (Eq, Show)
 
 
@@ -107,13 +144,14 @@ newtype PkgT m a = PkgT
 
 
 class Monad m => HasPkgT m where
-  dirExists  :: FilePath ->                 PkgT m Bool
-  fileExists :: FilePath ->                 PkgT m Bool
-  fileRead   :: FilePath ->                 PkgT m B.ByteString
-  fileUpsert :: FilePath -> B.ByteString -> PkgT m ()
-  gitClone   :: HostGit  ->                 PkgT m ()
-  mkdirP     :: FilePath ->                 PkgT m ()
-  pwd        ::                             PkgT m FilePath
+  dirExists   :: FilePath ->                 PkgT m Bool
+  fileExists  :: FilePath ->                 PkgT m Bool
+  fileRead    :: FilePath ->                 PkgT m B.ByteString
+  fileUpsert  :: FilePath -> B.ByteString -> PkgT m ()
+  mkdirP      :: FilePath ->                 PkgT m ()
+  pwd         ::                             PkgT m FilePath
+  gitClone'   :: String   -> FilePath     -> PkgT m ()
+  gitFileRead :: HostGit  ->                 PkgT m B.ByteString
 
 
 runPkgT :: PkgT m a -> m (Either PkgError a)
@@ -121,42 +159,126 @@ runPkgT = runExceptT . runPkgT'
 
 
 instance (Monad m, MonadIO (PkgT m)) => HasPkgT m where
-  dirExists    = liftIO . doesDirectoryExist
-  fileExists   = liftIO . doesFileExist
-  fileRead     = liftIO . B.readFile
-  fileUpsert f = liftIO . B.writeFile f
-  mkdirP       = liftIO . createDirectoryIfMissing True
-  pwd          = liftIO $ getCurrentDirectory
+  dirExists     = liftIO . doesDirectoryExist
+  fileExists    = liftIO . doesFileExist
+  fileRead      = liftIO . B.readFile
+  fileUpsert f  = liftIO . B.writeFile f
+  mkdirP        = liftIO . createDirectoryIfMissing True
+  pwd           = liftIO $ getCurrentDirectory
 
-  gitClone h = do
-    warehouse <- dirGitClones
-    mkdirP warehouse
+  gitClone' u d = do
+    let cmd = printf "git clone %s %s" u d
+    liftIO (readCreateProcessWithExitCode (shell cmd) "") >>= \case
+      (ExitSuccess,   _, _) -> pure ()
+      (ExitFailure _, _, e) -> throwError $ PkgGitCloneFailed e
 
-    let uri = gitUriOf h
-        cmd = printf "git clone %s %s" uri $ cloneDirOf h
+  gitFileRead h = do
+    clone <- (</> gitCloneDirOf h) <$> dirGitClones
 
-    (c, o, e) <- liftIO $ readCreateProcessWithExitCode
-      ((shell cmd) { cwd = Just warehouse }) ""
+    let cmd  = printf "git checkout %s" (gitRefOf h)
+        cmd' = (shell cmd) { cwd = Just clone }
 
-    case c of
-      ExitSuccess   -> liftIO     $ putStrLn o
-      ExitFailure _ -> throwError $ PkgGitCloneFailed e
+    liftIO (readCreateProcessWithExitCode cmd' "") >>= \case
+      (ExitSuccess,   _, _) -> pure ()
+      (ExitFailure _, _, e) -> throwError $ PkgGitCheckoutFailed e
 
+    fileRead $ clone </> gitFilePathOf h
+
+
+--------------------------------------------------------------------------------
 
 dirDotReach :: HasPkgT m => PkgT m FilePath
 dirDotReach = (</> ".reach") <$> pwd
 
+
 dirGitClones :: HasPkgT m => PkgT m FilePath
 dirGitClones = (</> "warehouse" </> "git") <$> dirDotReach
+
+
+dirLockModules :: HasPkgT m => PkgT m FilePath
+dirLockModules = (</> "sha256") <$> dirDotReach
+
 
 pathLockFile :: HasPkgT m => PkgT m FilePath
 pathLockFile = (</> "reach-lock.yaml") <$> pwd
 
-removeMe :: FilePath -> HasPkgT m => PkgT m ()
+
+mkdirPdotReach :: HasPkgT m => PkgT m ()
+mkdirPdotReach = do
+  warehouse <- dirGitClones
+  lockMods  <- dirLockModules
+  mkdirP warehouse
+  mkdirP lockMods
+
+
+gitClone :: HasPkgT m => HostGit -> PkgT m ()
+gitClone h = do
+  mkdirPdotReach
+
+  dest          <- (</> gitCloneDirOf h) <$> dirGitClones
+  alreadyCloned <- dirExists dest
+
+  unless alreadyCloned $ gitClone' (gitUriOf h) dest
+
+
+lockFileRead :: HasPkgT m => PkgT m LockFile
+lockFileRead = decodeEither' <$> (pathLockFile >>= fileRead) >>= either
+  (throwError . PkgLockFileParseEx . prettyPrintParseException)
+  pure
+
+
+-- TODO fail when module not in lockfile manifest
+_lockModuleContents :: HasPkgT m => FilePath -> PkgT m B.ByteString
+_lockModuleContents p = do
+  mkdirPdotReach
+
+  let sha = takeFileName p
+
+  p' <- (</> (show sha)) <$> dirLockModules
+
+  hashUnknownFS <- not <$> fileExists p'
+
+  when hashUnknownFS
+    $ throwError $ PkgLockHashUnknownFS p'
+
+  fileRead p
+
+
+lockModuleFix :: HasPkgT m => HostGit -> PkgT m (SHA, LockModule)
+lockModuleFix h = do
+  mkdirPdotReach
+
+  gitClone h
+
+  reach <- gitFileRead h
+  lockf <- pathLockFile
+  lmods <- dirLockModules
+
+  lock <- fileExists lockf >>= \case
+    True  -> lockFileRead
+    False -> pure lockFileEmpty
+
+  let sha  = SHA $ hashWith SHA256 reach
+      dest = lmods </> show sha
+      lmod = LockModule { host = h
+                        , uri  = GitUri . gitUriOf $ h
+                        , deps = [] -- TODO
+                        }
+
+  fileUpsert dest reach
+
+  -- TODO YAML comment about committing to source control but not editing
+  fileUpsert lockf . encode
+    $ lock { modules = M.insert sha lmod (modules lock) }
+
+  pure (sha, lmod)
+
+
+removeMe :: FilePath -> HasPkgT m => PkgT m (SHA, LockModule)
 removeMe f = case importSource f of
   Left  e                   -> throwError . PkgGitCloneFailed $ show e
-  Right (ImportLocal _)     -> pure ()
-  Right (ImportRemoteGit h) -> gitClone h
+  Right (ImportLocal _)     -> throwError $ PkgGitCheckoutFailed "nope"
+  Right (ImportRemoteGit h) -> lockModuleFix h
 
 
 --------------------------------------------------------------------------------
@@ -190,9 +312,10 @@ instance HasPkgT PkgTest where
     $ \s -> s { filesystem = M.insert f c (filesystem s) }
 
   -- TODO
-  gitClone _ = pure ()
-  mkdirP   _ = pure ()
-  pwd        = pure ""
+  gitClone' _ _ = pure ()
+  gitFileRead _ = pure ""
+  mkdirP      _ = pure ()
+  pwd           = pure ""
 
 
 --------------------------------------------------------------------------------
@@ -241,6 +364,8 @@ importSource = runParser (remoteGit <|> localPath) () ""
 
 --------------------------------------------------------------------------------
 
+-- TODO: better data structures will negate the need for these
+
 gitUriOf :: HostGit -> String
 gitUriOf = \case
   GitHub    a r _ _ _ -> f "https://github.com/%s/%s.git"    a r
@@ -248,8 +373,20 @@ gitUriOf = \case
  where f fmt (HostGitAcct a) (HostGitRepo r) = printf fmt a r
 
 
-cloneDirOf :: HostGit -> String
-cloneDirOf = \case
+gitRefOf :: HostGit -> String
+gitRefOf = \case
+  GitHub    _ _ (HostGitRef r) _ _ -> r
+  BitBucket _ _ (HostGitRef r) _ _ -> r
+
+
+gitCloneDirOf :: HostGit -> String
+gitCloneDirOf = \case
   GitHub    a r _ _ _ -> f "@github.com:%s:%s"    a r
   BitBucket a r _ _ _ -> f "@bitbucket.org:%s:%s" a r
  where f fmt (HostGitAcct a) (HostGitRepo r) = printf fmt a r
+
+
+gitFilePathOf :: HostGit -> FilePath
+gitFilePathOf = \case
+  GitHub    _ _ _ (HostGitDir d) (HostGitFile f) -> (intercalate (pathSeparator : "") d) </> f
+  BitBucket _ _ _ (HostGitDir d) (HostGitFile f) -> (intercalate (pathSeparator : "") d) </> f
