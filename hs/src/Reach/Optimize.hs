@@ -166,7 +166,24 @@ instance Optimize DLExpr where
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
+      let zero = DLA_Literal $ DLL_Int at 0
       case (p, as') of
+        (ADD, [(DLA_Literal (DLL_Int _ 0)), rhs]) ->
+          return $ DLE_Arg at rhs
+        (ADD, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at lhs
+        (SUB, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at lhs
+        (MUL, [(DLA_Literal (DLL_Int _ 1)), rhs]) ->
+          return $ DLE_Arg at rhs
+        (MUL, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+          return $ DLE_Arg at lhs
+        (MUL, [(DLA_Literal (DLL_Int _ 0)), _]) ->
+          return $ DLE_Arg at zero
+        (MUL, [_, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at zero
+        (DIV, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+          return $ DLE_Arg at lhs
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
           return $ DLE_Arg at $ if c then t else f
         _ -> meh

@@ -1524,11 +1524,28 @@ evalNeg v = evalITE Public v (b False) (b True)
 evalPrimOp :: PrimOp -> [SLSVal] -> App SLSVal
 evalPrimOp p sargs = do
   at <- withAt id
+  let zero = SLV_Int at 0
   case p of
-    ADD -> nn2n (+)
-    SUB -> nn2n (-)
-    MUL -> nn2n (*)
-    DIV -> nn2n (div)
+    ADD ->
+      case args of
+        [ SLV_Int _ 0, rhs ] -> static rhs
+        [ lhs, SLV_Int _ 0 ] -> static lhs
+        _ -> nn2n (+)
+    SUB ->
+      case args of
+        [ lhs, SLV_Int _ 0 ] -> static lhs
+        _ -> nn2n (-)
+    MUL ->
+      case args of
+        [ SLV_Int _ 1, rhs ] -> static rhs
+        [ lhs, SLV_Int _ 1 ] -> static lhs
+        [ SLV_Int _ 0, _ ] -> static zero
+        [ _, SLV_Int _ 0 ] -> static zero
+        _ -> nn2n (*)
+    DIV ->
+      case args of
+        [ lhs, SLV_Int _ 1 ] -> static lhs
+        _ -> nn2n (div)
     MOD -> nn2n (mod)
     PLT -> nn2b (<)
     PLE -> nn2b (<=)

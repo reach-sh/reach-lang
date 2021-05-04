@@ -50,17 +50,18 @@ type FlowInput = M.Map Int FlowInputData
 data FlowInputData = FlowInputData
   { fid_uses :: DLVarS
   , fid_defns :: DLVarS
+  , fid_edges :: M.Map DLVar DLVarS
   , fid_parents :: S.Set Int
   , fid_children :: S.Set Int
   , fid_jumps :: S.Set Int
   }
 
 instance Semigroup FlowInputData where
-  (FlowInputData xa xb xc xd xe) <> (FlowInputData ya yb yc yd ye) =
-    FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd) (xe <> ye)
+  (FlowInputData xa xb xc xd xe xf) <> (FlowInputData ya yb yc yd ye yf) =
+    FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd) (xe <> ye) (xf <> yf)
 
 instance Monoid FlowInputData where
-  mempty = FlowInputData mempty mempty mempty mempty mempty
+  mempty = FlowInputData mempty mempty mempty mempty mempty mempty
 
 instance Pretty FlowInputData where
   pretty (FlowInputData {..}) =
@@ -68,6 +69,7 @@ instance Pretty FlowInputData where
       M.fromList
         [ ("uses" :: String, pretty fid_uses)
         , ("defns", pretty fid_defns)
+        , ("edges", pretty fid_edges)
         , ("parents", pretty fid_parents)
         , ("children", pretty fid_children)
         , ("jumps", pretty fid_jumps)
@@ -102,8 +104,8 @@ fod_savel = S.toAscList . fod_save
 fod_recvl :: FlowOutputData -> [DLVar]
 fod_recvl = S.toAscList . fod_recv
 
-fixedPoint :: forall a. Eq a => Monoid a => (a -> a) -> a
-fixedPoint f = h mempty
+fixedPoint_ :: forall a. Eq a => a -> (a -> a) -> a
+fixedPoint_ x0 f = h x0
   where
     h :: a -> a
     h x =
@@ -111,6 +113,9 @@ fixedPoint f = h mempty
        in case x == x' of
             True -> x
             False -> h x'
+
+fixedPoint :: (Eq a, Monoid a) => (a -> a) -> a
+fixedPoint = fixedPoint_ mempty
 
 solve :: FlowInput -> FlowOutput
 solve fi' = fixedPoint go
@@ -121,10 +126,10 @@ solve fi' = fixedPoint go
         False -> v
     fi = mtrace imsg fi'
     imsg = "\nflow input:" <> show (pretty fi') <> "\n"
-    omsg fo = "\nflow ouput:" <> show (pretty fo) <> "\n"
+    omsg fo = "\nflow output:" <> show (pretty fo) <> "\n"
     go fo = mtrace (omsg fo) $ go' fo
-    go' fo = M.map (go1 fo) fi
-    go1 fo (FlowInputData {..}) = fod
+    go' fo = M.mapWithKey (go1 fo) fi
+    go1 fo me (FlowInputData {..}) = fod
       where
         fod =
           FlowOutputData
@@ -139,12 +144,35 @@ solve fi' = fixedPoint go
         recv =
           -- We must recv what our parents sends plus what we need
           S.union (unionmap (fod_save . foread) fid_parents) need
-        use =
+        jumps_and_save =
+          S.union save $ unionmap (fod_recv . foread) fid_jumps
+        (use, defs) =
           -- We use what our jumps recv and what we actually use
-          S.union fid_uses (unionmap (fod_recv . foread) fid_jumps)
+          closeEdges jumps_and_save
         need =
           -- We need what we save & use, minus what we define
-          S.difference (S.union use save) fid_defns
+          S.difference use defs
+        closeEdges extra =
+          fixedPoint_ (S.union fid_uses extra, fid_defns) closeEdges1
+        closeEdges1 in0 = mtrace msg $ out1
+          where
+            msg = "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
+            (use0, defs0) = in0
+            out1 = (use1, defs1)
+            used_edge =
+              flip $ const $ flip S.member use0
+            edges =
+              M.filterWithKey used_edge fid_edges
+            edge_use =
+              S.unions $ M.elems edges
+            edge_defs =
+              -- We define the edges that remain
+              M.keysSet edges
+            use1 =
+              S.union use0 edge_use
+            defs1 =
+              S.union defs0 edge_defs
+
 
 -- Build flow
 data EPPError
@@ -232,6 +260,10 @@ fg_use x = fg_record $ \f -> f {fid_uses = S.union (countsS x) (fid_uses f)}
 
 fg_defn :: Countable a => a -> BApp ()
 fg_defn x = fg_record $ \f -> f {fid_defns = S.union (countsS x) (fid_defns f)}
+
+fg_edge :: (Countable a) => DLLetVar -> a -> BApp ()
+fg_edge DLV_Eff x = fg_use x
+fg_edge (DLV_Let _ v) use = fg_record $ \f -> f { fid_edges = M.singleton v (countsS use) <> (fid_edges f) }
 
 fg_child :: Int -> BApp ()
 fg_child child = do
@@ -351,11 +383,10 @@ be_m :: BAppT2 DLStmt
 be_m = \case
   DL_Nop at -> retb0 $ const $ return $ DL_Nop at
   DL_Let at mdv de -> do
-    fg_use $ de
     case de of
       DLE_Remote {} -> recordOutputVar mdv
       _ -> return ()
-    fg_defn $ mdv
+    fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
   DL_ArrayMap at ans x a f -> do
     fg_defn $ [ans, a]
@@ -528,6 +559,7 @@ be_c = \case
     fg_defn $ loop_vars
     (cond_l', _) <- inLoop $ do
       fg_defn $ loop_vars
+      fg_use cond_a
       be_t cond_l
     (body'c, body'l) <-
       inLoop $
