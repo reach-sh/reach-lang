@@ -23,7 +23,6 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.AddCounts
 import Reach.Connector
 import Reach.Counter
 import Reach.EmbeddedFiles
@@ -1283,17 +1282,15 @@ connect_eth = Connector {..}
   where
     conName = "ETH"
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
-    conGen moutn pil = case moutn of
+    conGen moutn pl = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
         go (dir </> "compiled.sol")
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          ig <- colorProgram pil
+          ig <- colorProgram pl
           conShowP moutn "sol.colors" ig
-          pl <- add_counts pil
-          conShowP moutn "sol.pl" pl
           (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
