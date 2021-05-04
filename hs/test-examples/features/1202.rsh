@@ -16,9 +16,6 @@ const CreatorInterface = {
   ...OwnerInterface,
   getId: Fun([], UInt) };
 
-const maybe = (m, x, f) => fromMaybe(m, (() => x), f);
-const fromJust = (m, x) => maybe(m, x, ((y) => y));
-
 export const main = Reach.App(
   {},
   [
@@ -55,7 +52,7 @@ export const main = Reach.App(
                 : Maybe(UInt).None();
               return ({
                 when: maybe(mbid, false, ((x) => x > currentPrice)),
-                msg : fromJust(mbid, 0),
+                msg : fromSome(mbid, 0),
               });
             }),
             ((bid) => bid),
