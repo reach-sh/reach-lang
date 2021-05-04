@@ -35,29 +35,32 @@ module Reach.Eval.ImportSource
 
 import Text.Parsec
 
-import Control.Monad          (unless, when)
-import Control.Monad.Except   (MonadError, ExceptT(..), runExceptT, throwError)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.State    (MonadState, StateT(..), get, modify)
-import Crypto.Hash            (Digest, SHA256(..), hashWith, digestFromByteString)
-import Data.Aeson             (ToJSONKey, FromJSONKey)
-import Data.Functor.Identity  (Identity)
-import Data.List              (intercalate)
-import Data.Text.Encoding     (encodeUtf8)
-import Data.Yaml              (ToJSON(..), FromJSON(..), prettyPrintParseException)
-import Data.Yaml              (withText, encode, decodeEither')
-import GHC.Generics           (Generic)
-import System.Directory       (createDirectoryIfMissing, doesDirectoryExist)
-import System.Directory       (doesFileExist, getCurrentDirectory)
-import System.Exit            (ExitCode(..))
-import System.FilePath        ((</>), isValid, takeFileName, pathSeparator)
-import System.Process         (readCreateProcessWithExitCode, shell, cwd)
-import Text.Printf            (printf)
+import Control.Monad           (unless, when)
+import Control.Monad.Except    (MonadError, ExceptT(..), runExceptT, throwError)
+import Control.Monad.IO.Class  (MonadIO, liftIO)
+import Control.Monad.State     (MonadState, StateT(..), get, modify)
+import Crypto.Hash             (Digest, SHA256(..), hashWith, digestFromByteString)
+import Data.Aeson              (ToJSONKey, FromJSONKey)
+import Data.ByteArray          (ByteArrayAccess, ByteArray, convert)
+import Data.ByteArray.Encoding (Base(Base16), convertFromBase, convertToBase)
+import Data.Functor.Identity   (Identity)
+import Data.List               (intercalate)
+import Data.Text.Encoding      (decodeUtf8, encodeUtf8)
+import Data.Yaml               (ToJSON(..), FromJSON(..), prettyPrintParseException)
+import Data.Yaml               (withText, encode, decodeEither')
+import GHC.Generics            (Generic)
+import System.Directory        (createDirectoryIfMissing, doesDirectoryExist)
+import System.Directory        (doesFileExist, getCurrentDirectory)
+import System.Exit             (ExitCode(..))
+import System.FilePath         ((</>), isValid, takeFileName, pathSeparator)
+import System.Process          (readCreateProcessWithExitCode, shell, cwd)
+import Text.Printf             (printf)
 
-import Reach.Util             (uncurry5)
+import Reach.Util (uncurry5)
 
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
+import qualified Data.Text       as T
 
 
 newtype G a = G a
@@ -74,17 +77,29 @@ newtype HostGitFile = HostGitFile  FilePath  deriving (Eq, Show) deriving (ToJSO
 newtype GitUri      = GitUri       String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
 
 
+toBase16 :: ByteArrayAccess b => b -> T.Text
+toBase16 a = decodeUtf8
+  . convertToBase Base16
+  $ (convert a :: B.ByteString)
+
+
+fromBase16 :: ByteArray b => T.Text -> Either T.Text b
+fromBase16 = either (Left . T.pack) Right
+  . convertFromBase Base16
+  . encodeUtf8
+
+
 newtype SHA = SHA (Digest SHA256)
   deriving (Eq, Show, Ord)
 
 instance ToJSON SHA where
-  toJSON (SHA d) = toJSON $ show d
+  toJSON (SHA d) = toJSON $ toBase16 d
 
 instance FromJSON SHA where
   parseJSON = withText "SHA" $ \a -> maybe
     (fail $ "Invalid SHA: " <> show a)
     (pure . SHA)
-    (digestFromByteString $ encodeUtf8 a)
+    (digestFromByteString =<< either (const Nothing) Just (fromBase16 @B.ByteString a))
 
 instance ToJSONKey   SHA
 instance FromJSONKey SHA
@@ -259,8 +274,8 @@ lockModuleFix h = do
     True  -> lockFileRead
     False -> pure lockFileEmpty
 
-  let sha  = SHA $ hashWith SHA256 reach
-      dest = lmods </> show sha
+  let sha  = hashWith SHA256 reach
+      dest = lmods </> (T.unpack $ toBase16 sha)
       lmod = LockModule { host = h
                         , uri  = GitUri . gitUriOf $ h
                         , deps = [] -- TODO
@@ -270,9 +285,9 @@ lockModuleFix h = do
 
   -- TODO YAML comment about committing to source control but not editing
   fileUpsert lockf . encode
-    $ lock { modules = M.insert sha lmod (modules lock) }
+    $ lock { modules = M.insert (SHA sha) lmod (modules lock) }
 
-  pure (sha, lmod)
+  pure (SHA sha, lmod)
 
 
 removeMe :: FilePath -> HasPkgT m => PkgT m (SHA, LockModule)
