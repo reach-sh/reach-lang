@@ -701,7 +701,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
         const tokBalance = await tokCtc["balanceOf"](address);
         debug({...dhead, kind:'token'}, 'balanceOf', tokBalance);
-        assert(tokBalance >= amt, `local account token balance insufficient: ${tokBalance} < ${amt}`);
+        assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
         await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit); }
       const maybePayTok = async (i:number) => {
         if ( i < toks.length ) {

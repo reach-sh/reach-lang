@@ -32,6 +32,9 @@ export const main = Reach.App(
     invariant(balance(tokA) == (dealMade ? 0 : amtA) && balance(tokB) == 0);
     while (!dealMade) {
 
+      commit();
+      Anybody.publish();
+
       const [ timeRemaining, keepGoing ] = makeDeadline(timeout);
 
       const [ highestBidder, isFirstBid, currentPrice ] =

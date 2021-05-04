@@ -17,7 +17,7 @@ const shouldFail = async (fp) => {
 };
 
 const N = 3;
-const BidderNames = ["Alice", "Bob", "Camus"];
+const bidderNames = ["Alice", "Bob", "Camus"];
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
@@ -31,7 +31,7 @@ const BidderNames = ["Alice", "Bob", "Camus"];
   const accBidders = await Promise.all(
     Array.from({ length: N }, () => stdlib.newTestAccount(startingBalance))
   );
-  accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(BidderNames[i]));
+  accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(bidderNames[i]));
 
   if ( conn == 'ETH' ) {
     const myGasLimit = 5000000;
@@ -71,7 +71,7 @@ const BidderNames = ["Alice", "Bob", "Camus"];
 
     for (let i = 0; i < accBidders.length; ++i) {
       const accBidder = accBidders[i];
-      const who = BidderNames[i];
+      const who = bidderNames[i];
       console.log(`\t${who} re-opts-in`);
       await stdlib.transfer(accBidder, accBidder, 0, gil.id);
       console.log(`\t${who} can receive mint`);
@@ -99,7 +99,7 @@ const BidderNames = ["Alice", "Bob", "Camus"];
   const biddersBalances = accBidders.map(_ => ({ before: 0, after: 0}));
   for (let i = 0; i < accBidders.length; ++i) {
     const accBidder = accBidders[i];
-    const who = BidderNames[i];
+    const who = bidderNames[i];
     biddersBalances[i].before = await getBalances(accBidder);
     console.log(`${who} has ${biddersBalances[i].before}`);
   }
@@ -118,14 +118,14 @@ const BidderNames = ["Alice", "Bob", "Camus"];
 
 
   const bidderBackends = accBidders.map((accBidder, i) => {
-    const who = BidderNames[i];
+    const who = bidderNames[i];
     console.log(`${who} attaches to the Reach DApp.`);
     const ctcBidder = accBidder.attach(backend, ctcInfo);
     return backend.Bidder(ctcBidder, {
       ...common(who),
       getBid: (cp) => {
         const bid = cp.add(stdlib.parseCurrency(1));
-        console.log(`${who} tries to bid ${bid} based on price of ${cp}`);
+        console.log(`${who} tries to bid ${fmt(bid)} based on price of ${fmt(cp)}`);
         return ['Some', bid];
       },
       showBid: (isS, s) => console.log(`${who} saw their bid: ${s} , is some: ${isS}`)
@@ -147,7 +147,7 @@ const BidderNames = ["Alice", "Bob", "Camus"];
   console.log(`Auctioneer went from ${beforeAuctioneer} to ${afterAuctioneer}`);
   for (let i = 0; i < accBidders.length; ++i) {
     const accBidder = accBidders[i];
-    const who = BidderNames[i];
+    const who = bidderNames[i];
     biddersBalances[i].after = await getBalances(accBidder);
     console.log(`${who} went from ${biddersBalances[i].before} to ${biddersBalances[i].after}`);
   }
