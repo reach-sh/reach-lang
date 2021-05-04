@@ -31,7 +31,7 @@ type ConnectorInfo = Value
 data Connector = Connector
   { conName :: T.Text
   , conCons :: DLConstant -> DLLiteral
-  , conGen :: Maybe (T.Text -> String) -> PIProg -> IO ConnectorInfo
+  , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   }
 
 data ConnectorError

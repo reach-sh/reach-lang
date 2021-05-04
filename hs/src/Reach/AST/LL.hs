@@ -10,29 +10,20 @@ import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 
-type LLVar = Maybe DLVar
-
-type LLCommon = DLinStmt LLVar
-
-type LLTail = DLinTail LLVar
-
-type LLBlock = DLinBlock LLVar
-
 data LLConsensus
-  = LLC_Com LLCommon LLConsensus
+  = LLC_Com DLStmt LLConsensus
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Switch SrcLoc DLVar (SwitchCases LLConsensus)
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
-      , llc_w_inv :: LLBlock
-      , llc_w_cond :: LLBlock
+      , llc_w_inv :: DLBlock
+      , llc_w_cond :: DLBlock
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
-  | LLC_Only SrcLoc SLPart LLTail LLConsensus
   deriving (Eq)
 
 instance Pretty LLConsensus where
@@ -45,12 +36,10 @@ instance Pretty LLConsensus where
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     LLC_Continue _at asn -> prettyContinue asn
-    LLC_Only _at who onlys k -> prettyOnlyK who onlys k
 
 data LLStep
-  = LLS_Com LLCommon LLStep
+  = LLS_Com DLStmt LLStep
   | LLS_Stop SrcLoc
-  | LLS_Only SrcLoc SLPart LLTail LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
       , lls_tc_send :: M.Map SLPart DLSend
@@ -63,7 +52,6 @@ instance Pretty LLStep where
   pretty = \case
     LLS_Com x k -> prettyCom x k
     LLS_Stop _at -> prettyStop
-    LLS_Only _at who onlys k -> prettyOnlyK who onlys k
     LLS_ToConsensus {..} ->
       prettyToConsensus__ lls_tc_send lls_tc_recv lls_tc_mtime
 
@@ -77,12 +65,8 @@ data LLOpts = LLOpts
 instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
-type LLExports = DLinExports LLVar
-
-type LLViews = DLViews
-
 data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit LLExports LLViews LLStep
+  = LLProg SrcLoc LLOpts SLParts DLInit DLExports DLViews LLStep
   deriving (Eq)
 
 instance HasCounter LLProg where

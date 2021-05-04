@@ -18,11 +18,11 @@ import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.PL
 
-newtype Count = Count (Maybe PLLetCat)
+newtype Count = Count (Maybe DLVarCat)
   deriving (Show, Eq)
   deriving newtype (Semigroup)
 
-newtype Counts = Counts (M.Map DLVar PLLetCat)
+newtype Counts = Counts (M.Map DLVar DLVarCat)
   deriving (Show, Eq)
 
 instance Monoid Counts where
@@ -80,7 +80,12 @@ instance Countable v => Countable (M.Map k v) where
   counts m = counts $ M.elems m
 
 instance Countable DLVar where
-  counts dv = Counts $ M.singleton dv PL_Once
+  counts dv = Counts $ M.singleton dv DVC_Once
+
+instance Countable DLLetVar where
+  counts = \case
+    DLV_Eff -> mempty
+    DLV_Let _ v -> counts v
 
 instance Countable DLArg where
   counts = \case

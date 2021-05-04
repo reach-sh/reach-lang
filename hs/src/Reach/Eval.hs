@@ -71,7 +71,7 @@ app_options =
 
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 
-compileDApp :: Connectors -> DLExports -> SLVal -> App CompiledDApp
+compileDApp :: Connectors -> DLSExports -> SLVal -> App CompiledDApp
 compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
   at' <- withAt id
   idr <- e_id <$> ask
@@ -175,7 +175,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
 compileDApp _ _ topv =
   expect_t topv $ Err_Top_NotApp
 
-getExports :: SLLibs -> App DLExports
+getExports :: SLLibs -> App DLSExports
 getExports libs = do
   let getLibExports lib = justValues . M.toList <$> mapM (slToDLExportVal . sss_val) lib
   M.fromList

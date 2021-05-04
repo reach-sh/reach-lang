@@ -75,7 +75,7 @@ instance Subst DLExpr where
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
     DLE_ViewIs at v k a -> DLE_ViewIs at v k <$> subst a
 
-instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
+instance Subst DLStmt where
   subst = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at v de -> DL_Let at v <$> subst de
@@ -87,16 +87,17 @@ instance {-# OVERLAPPING #-} Subst (DLinStmt a) where
     DL_Set at v a -> DL_Set at v <$> subst a
     DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
     DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
+    DL_Only at who b -> DL_Only at who <$> subst b
     DL_MapReduce at mri x a b u v bl ->
       DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
 
-instance {-# OVERLAPPING #-} Subst (DLinTail a) where
+instance Subst DLTail where
   subst = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> DT_Com <$> subst m <*> subst k
 
-instance {-# OVERLAPPING #-} Subst (DLinBlock a) where
-  subst (DLinBlock at fs t a) = DLinBlock at fs <$> subst t <*> subst a
+instance Subst DLBlock where
+  subst (DLBlock at fs t a) = DLBlock at fs <$> subst t <*> subst a
 
 instance Subst DLAssignment where
   subst (DLAssignment m) = DLAssignment <$> subst m
@@ -110,7 +111,7 @@ instance Subst ViewSave where
   subst = \case
     ViewSave i svs -> ViewSave i <$> subst svs
 
-instance {-# OVERLAPPING #-} Subst (CTail_ a) where
+instance Subst CTail where
   subst = \case
     CT_Com m k -> CT_Com <$> subst m <*> subst k
     CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f

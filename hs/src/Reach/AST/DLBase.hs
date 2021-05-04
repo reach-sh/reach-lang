@@ -489,71 +489,102 @@ instance Pretty DLAssignment where
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
 
+data DLVarCat
+  = DVC_Once
+  | DVC_Many
+  deriving (Eq, Show)
+
+instance Semigroup DLVarCat where
+  _ <> _ = DVC_Many
+
+instance Pretty DLVarCat where
+  pretty = \case
+    DVC_Many -> "*"
+    DVC_Once -> "!"
+
+data DLLetVar
+  = DLV_Eff
+  | DLV_Let DLVarCat DLVar
+  deriving (Eq, Show)
+
+instance Pretty DLLetVar where
+  pretty = \case
+    DLV_Eff -> "eff"
+    DLV_Let lc x -> pretty x <> pretty lc
+
+lv2mdv :: DLLetVar -> Maybe DLVar
+lv2mdv = \case
+  DLV_Eff -> Nothing
+  DLV_Let _ v -> Just v
+
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
   M.Map SLVar (Maybe DLVar, a)
 
-data DLinStmt a
+data DLStmt
   = DL_Nop SrcLoc
-  | DL_Let SrcLoc a DLExpr
-  | DL_ArrayMap SrcLoc DLVar DLArg DLVar (DLinBlock a)
-  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar (DLinBlock a)
+  | DL_Let SrcLoc DLLetVar DLExpr
+  | DL_ArrayMap SrcLoc DLVar DLArg DLVar DLBlock
+  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
-  | DL_LocalIf SrcLoc DLArg (DLinTail a) (DLinTail a)
-  | DL_LocalSwitch SrcLoc DLVar (SwitchCases (DLinTail a))
-  | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar (DLinBlock a)
+  | DL_LocalIf SrcLoc DLArg DLTail DLTail
+  | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
+  | DL_Only SrcLoc (Either SLPart Bool) DLTail
+  | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
   deriving (Eq)
 
-instance Pretty a => Pretty (DLinStmt a) where
+instance Pretty DLStmt where
   pretty = \case
     DL_Nop _ -> mempty
-    DL_Let _at x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
+    DL_Let _ DLV_Eff de -> pretty de <> semi
+    DL_Let _ x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
     DL_ArrayMap _ ans x a f -> prettyMap ans x a f
     DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalIf _at ca t f -> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> prettySwitch ov csm
+    DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
 
-mkCom :: (DLinStmt a -> k -> k) -> DLinStmt a -> k -> k
+mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
     DL_Nop _ -> k
     _ -> mk m k
 
-data DLinTail a
+data DLTail
   = DT_Return SrcLoc
-  | DT_Com (DLinStmt a) (DLinTail a)
+  | DT_Com DLStmt DLTail
   deriving (Eq)
 
-instance Pretty a => Pretty (DLinTail a) where
+instance Pretty DLTail where
   pretty = \case
     DT_Return _at -> mempty
     DT_Com x k -> prettyCom x k
 
-dtReplace :: (DLinStmt a -> b -> b) -> b -> DLinTail a -> b
+dtReplace :: (DLStmt -> b -> b) -> b -> DLTail -> b
 dtReplace mkk nk = \case
   DT_Return _ -> nk
   DT_Com m k -> mkk m $ dtReplace mkk nk k
 
-data DLinBlock a
-  = DLinBlock SrcLoc [SLCtxtFrame] (DLinTail a) DLArg
+data DLBlock
+  = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
   deriving (Eq)
 
-instance Pretty a => Pretty (DLinBlock a) where
-  pretty (DLinBlock _ _ ts ta) = prettyBlockP ts ta
+instance Pretty DLBlock where
+  pretty (DLBlock _ _ ts ta) = prettyBlockP ts ta
 
-data DLExportinBlock a
-  = DLExportinBlock (DLinTail a) (DLinExportVal (DLinBlock a))
+data DLExportBlock
+  = DLExportBlock DLTail (DLinExportVal DLBlock)
   deriving (Eq)
 
-instance Pretty a => Pretty (DLExportinBlock a) where
+instance Pretty DLExportBlock where
   pretty = \case
-    DLExportinBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
+    DLExportBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
 
-type DLinExports a = M.Map SLVar (DLExportinBlock a)
+type DLExports = M.Map SLVar DLExportBlock
 
 data DLPayAmt = DLPayAmt
   { pa_net :: DLArg

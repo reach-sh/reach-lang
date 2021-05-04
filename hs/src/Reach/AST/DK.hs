@@ -11,13 +11,14 @@ import Reach.Pretty
 import Reach.Texty
 
 data DKCommon
-  = DKC_Let SrcLoc (Maybe DLVar) DLExpr
+  = DKC_Let SrcLoc DLLetVar DLExpr
   | DKC_ArrayMap SrcLoc DLVar DLArg DLVar DKBlock
   | DKC_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DKBlock
   | DKC_Var SrcLoc DLVar
   | DKC_Set SrcLoc DLVar DLArg
   | DKC_LocalIf SrcLoc DLArg DKTail DKTail
   | DKC_LocalSwitch SrcLoc DLVar (SwitchCases DKTail)
+  | DKC_Only SrcLoc SLPart DKTail
   | DKC_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DKBlock
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
@@ -33,15 +34,13 @@ instance Pretty DKCommon where
     DKC_LocalIf _at ca t f -> prettyIfp ca t f
     DKC_LocalSwitch _at ov csm -> prettySwitch ov csm
     DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
-    DKC_FluidSet at fv a ->
-      pretty (DLS_FluidSet at fv a)
-    DKC_FluidRef at dv fv ->
-      pretty (DLS_FluidRef at dv fv)
+    DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
+    DKC_FluidRef at dv fv -> pretty (DLS_FluidRef at dv fv)
+    DKC_Only _at who t -> prettyOnly who t
 
 data DKTail
   = DK_Com DKCommon DKTail
   | DK_Stop SrcLoc
-  | DK_Only SrcLoc SLPart DKTail DKTail
   | DK_ToConsensus
       { dk_tc_at :: SrcLoc
       , dk_tc_send :: M.Map SLPart DLSend
@@ -66,7 +65,6 @@ instance Pretty DKTail where
   pretty = \case
     DK_Com m k -> prettyCom m k
     DK_Stop _ -> prettyStop
-    DK_Only _ who body k -> prettyOnlyK who body k
     DK_ToConsensus {..} ->
       prettyToConsensus__ dk_tc_send dk_tc_recv dk_tc_mtime
     DK_If _at ca t f -> prettyIfp ca t f

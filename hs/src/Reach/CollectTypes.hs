@@ -107,7 +107,7 @@ instance CollectsTypes DLMapInfo where
 instance CollectsTypes DLInit where
   cts (DLInit {..}) = cts dli_ctimem <> cts dli_maps
 
-instance CollectsTypes a => CollectsTypes (DLinStmt a) where
+instance CollectsTypes DLStmt where
   cts (DL_Nop _) = mempty
   cts (DL_Let _ v e) = cts v <> cts e
   cts (DL_ArrayMap _ ans x a f) = cts ans <> cts x <> cts a <> cts f
@@ -116,16 +116,17 @@ instance CollectsTypes a => CollectsTypes (DLinStmt a) where
   cts (DL_Set _ v a) = cts v <> cts a
   cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
+  cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
 
-instance CollectsTypes a => CollectsTypes (DLinTail a) where
+instance CollectsTypes DLTail where
   cts (DT_Return _) = mempty
   cts (DT_Com a k) = cts a <> cts k
 
-instance CollectsTypes a => CollectsTypes (DLinBlock a) where
-  cts (DLinBlock _ _ k a) = cts k <> cts a
+instance CollectsTypes DLBlock where
+  cts (DLBlock _ _ k a) = cts k <> cts a
 
-instance CollectsTypes (DLinExportVal LLBlock) where
+instance CollectsTypes a => CollectsTypes (DLinExportVal a) where
   cts = \case
     DLEV_Arg _ a -> cts a
     DLEV_Fun _ a b -> cts a <> cts b
@@ -137,7 +138,6 @@ instance CollectsTypes LLConsensus where
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
-  cts (LLC_Only _ _ l s) = cts l <> cts s
 
 instance CollectsTypes DLPayAmt where
   cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks
@@ -151,19 +151,18 @@ instance CollectsTypes a => CollectsTypes (DLRecv a) where
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
   cts (LLS_Stop _) = mempty
-  cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
-instance CollectsTypes (DLExportinBlock LLVar) where
-  cts (DLExportinBlock s r) = cts s <> cts r
+instance CollectsTypes DLExportBlock where
+  cts (DLExportBlock s r) = cts s <> cts r
 
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps dli dex dvs s) =
     cts ps <> cts dli <> cts dex <> cts dvs <> cts s
 
-instance CollectsTypes PLVar where
-  cts (PV_Eff) = mempty
-  cts (PV_Let _ x) = cts x
+instance CollectsTypes DLLetVar where
+  cts (DLV_Eff) = mempty
+  cts (DLV_Let _ x) = cts x
 
 instance CollectsTypes FromInfo where
   cts = \case
@@ -184,7 +183,7 @@ instance CollectsTypes CTail where
 instance CollectsTypes a => CollectsTypes (CInterval a) where
   cts (CBetween from to) = cts from <> cts to
 
-instance CollectsTypes PLLetCat where
+instance CollectsTypes DLVarCat where
   cts _ = mempty
 
 instance CollectsTypes CHandler where

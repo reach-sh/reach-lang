@@ -5,7 +5,7 @@ module Reach.Eval.Types where
 import qualified Data.Map.Strict as M
 import Generics.Deriving
 import Reach.AST.Base
-import Reach.AST.DL (DLBlock)
+import Reach.AST.DL (DLSBlock)
 import Reach.AST.DLBase
 import Reach.AST.SL
 
@@ -74,7 +74,7 @@ type SLPartDVars = M.Map SLPart DLVar
 
 data DLValue
   = DLV_Arg SrcLoc DLArg
-  | DLV_Fun SrcLoc [DLVar] DLBlock
+  | DLV_Fun SrcLoc [DLVar] DLSBlock
   | DLV_Array SrcLoc DLType [DLValue]
   | DLV_Tuple SrcLoc [DLValue]
   | DLV_Obj SrcLoc (M.Map SLVar DLValue)

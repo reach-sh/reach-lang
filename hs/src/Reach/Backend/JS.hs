@@ -63,8 +63,11 @@ jsWhile cond body = "while" <+> parens cond <+> jsBraces body
 jsReturn :: Doc -> Doc
 jsReturn a = "return" <+> a <> semi
 
+jsWhen :: Doc -> Doc -> Doc
+jsWhen cap ttp = "if" <+> parens cap <+> jsBraces ttp
+
 jsIf :: Doc -> Doc -> Doc -> Doc
-jsIf cap ttp ftp = "if" <+> parens cap <+> jsBraces ttp <> hardline <> "else" <+> jsBraces ftp
+jsIf cap ttp ftp = jsWhen cap ttp <> hardline <> "else" <+> jsBraces ftp
 
 jsBraces :: Doc -> Doc
 jsBraces body = braces (nest 2 $ hardline <> body)
@@ -86,7 +89,7 @@ data JSContracts = JSContracts
   }
 
 newtype JSCtxtWhile
-  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, PILBlock, EITail, EITail))
+  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, DLBlock, ETail, ETail))
 
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
@@ -230,11 +233,15 @@ jsLargeArg = \case
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
 
+jsContractAndVals :: [DLArg] -> App [Doc]
+jsContractAndVals as = do
+  let la = DLLA_Tuple as
+  ctc <- jsContract $ largeArgTypeOf la
+  as' <- jsLargeArg la
+  return $ [ctc, as']
+
 jsDigest :: AppT [DLArg]
-jsDigest as = do
-  ctc <- jsContract (T_Tuple $ map argTypeOf as)
-  as' <- jsLargeArg (DLLA_Tuple as)
-  return $ jsApply "stdlib.digest" [ctc, as']
+jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsPrimApply :: PrimOp -> [Doc] -> Doc
 jsPrimApply = \case
@@ -395,22 +402,22 @@ jsEmitSwitch iter _at ov csm = do
   csm' <- mapM cm1 $ M.toAscList csm
   return $ "switch" <+> parens (ov' <> "[0]") <+> jsBraces (vsep csm')
 
-jsCom :: AppT PILCommon
+jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote {}) ->
     case pv of
-      Nothing -> mempty
-      Just dv -> do
+      DLV_Eff -> mempty
+      DLV_Let _ dv -> do
         dv' <- jsVar dv
         txn' <- jsTxn
         dvt' <- jsContract $ varType dv
         return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [squotes dv', dvt']
-  DL_Let _ (Just dv) de -> do
+  DL_Let _ (DLV_Let _ dv) de -> do
     dv' <- jsVar dv
     de' <- jsExpr de
     return $ "const" <+> dv' <+> "=" <+> de' <> semi
-  DL_Let _ Nothing de -> do
+  DL_Let _ DLV_Eff de -> do
     de' <- jsExpr de
     return $ de' <> semi
   DL_Var _ dv -> do
@@ -427,14 +434,14 @@ jsCom = \case
     return $ jsIf c' t' f'
   DL_LocalSwitch at ov csm ->
     jsEmitSwitch jsPLTail at ov csm
-  DL_ArrayMap _ ans x a (DLinBlock _ _ f r) -> do
+  DL_ArrayMap _ ans x a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     a' <- jsArg $ DLA_Var a
     f' <- jsPLTail f
     r' <- jsArg r
     return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
-  DL_ArrayReduce _ ans x z b a (DLinBlock _ _ f r) -> do
+  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     z' <- jsArg z
@@ -445,8 +452,14 @@ jsCom = \case
     return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "reduce" [(jsApply "" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'), z']
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
+  DL_Only _at (Right c) l -> do
+    sim <- ctxt_simulate <$> ask
+    case (not c || (c && not sim)) of
+      True -> jsPLTail l
+      False -> mempty
+  DL_Only {} -> impossible $ "left only after EPP"
 
-jsPLTail :: AppT PILTail
+jsPLTail :: AppT DLTail
 jsPLTail = \case
   DT_Return {} -> mempty
   DT_Com m k -> jsCom m <> pure hardline <> jsPLTail k
@@ -455,13 +468,13 @@ jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlockNewScope :: AppT PILBlock
+jsBlockNewScope :: AppT DLBlock
 jsBlockNewScope b = do
   (t', a') <- jsBlock b
   return $ jsNewScope $ t' <> hardline <> jsReturn a'
 
-jsBlock :: DLinBlock PILVar -> App (Doc, Doc)
-jsBlock (DLinBlock _ _ t a) = do
+jsBlock :: DLBlock -> App (Doc, Doc)
+jsBlock (DLBlock _ _ t a) = do
   t' <- jsPLTail t
   a' <- jsArg a
   return (t', a')
@@ -514,7 +527,7 @@ jsSimTxn kind kvs =
   jsApply "sim_r.txns.push" $
     [jsObject $ M.fromList $ [("kind", jsString kind)] <> kvs]
 
-jsETail :: AppT EITail
+jsETail :: AppT ETail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
   ET_Stop _ ->
@@ -523,16 +536,21 @@ jsETail = \case
       True -> mempty
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus at which msvs k ->
+  ET_FromConsensus at which vis msvs k ->
     (ctxt_simulate <$> ask) >>= \case
       False -> jsETail k
       True -> do
-        let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map snd svs_))
+        let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
+        let mkStDigest svs_ = jsDigest $ vconcat which svs_
+        vis' <- do
+          let ViewSave vwhich vvs = vis
+          jsArray <$> jsContractAndVals (vconcat vwhich vvs)
         let common extra nextSt' nextSt_noTime' isHalt' =
               vsep $
                 extra
                   <> [ "sim_r.nextSt =" <+> nextSt' <> semi
                      , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
+                     , "sim_r.view =" <+> vis' <> semi
                      , "sim_r.isHalt =" <+> isHalt' <> semi
                      ]
         case msvs of
@@ -685,13 +703,6 @@ jsETail = \case
               wk' <- newCtxt_oldWhile $ jsETail wk
               return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
     return $ asn'o <> hardline <> asn'i
-  ET_ConsensusOnly _at l k ->
-    (ctxt_simulate <$> ask) >>= \case
-      True -> kp
-      False -> vsep <$> mapM id [lp, kp]
-    where
-      kp = jsETail k
-      lp = jsPLTail l
 
 newJsContract :: App JSContracts
 newJsContract = do
@@ -700,7 +711,7 @@ newJsContract = do
   jsc_i2t <- liftIO $ newIORef mempty
   return $ JSContracts {..}
 
-jsPart :: DLInit -> SLPart -> EIProg -> App Doc
+jsPart :: DLInit -> SLPart -> EPProg -> App Doc
 jsPart dli p (EPProg _ _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
@@ -760,7 +771,7 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsExportValue :: DLinExportVal PILBlock -> App Doc
+jsExportValue :: DLinExportVal DLBlock -> App Doc
 jsExportValue = \case
   DLEV_Arg _ a -> jsArg a
   DLEV_Fun _ args b -> do
@@ -779,15 +790,15 @@ jsExportValue = \case
     let argList = parens $ hsep $ punctuate comma tmps
     return $ argList <+> "=>" <+> jsBraces body
 
-jsExportBlock :: DLExportinBlock PILVar -> App Doc
+jsExportBlock :: DLExportBlock -> App Doc
 jsExportBlock = \case
   -- Process flattened large arg
-  DLExportinBlock b@DT_Com {} (DLEV_Arg at a) -> do
-    (tl, ret) <- jsBlock (DLinBlock at [] b a)
+  DLExportBlock b@DT_Com {} (DLEV_Arg at a) -> do
+    (tl, ret) <- jsBlock (DLBlock at [] b a)
     let body = tl <> hardline <> jsReturn ret
     let noArgs = parens ""
     return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
-  DLExportinBlock _ ev -> jsExportValue ev
+  DLExportBlock _ ev -> jsExportValue ev
 
 jsFunctionWStdlib :: Doc -> App Doc -> App Doc
 jsFunctionWStdlib name mbody = do
@@ -801,7 +812,7 @@ jsFunctionWStdlib name mbody = do
         <> ctcs
         <> [body]
 
-jsExports :: DLinExports PILVar -> App Doc
+jsExports :: DLExports -> App Doc
 jsExports exports =
   jsFunctionWStdlib "getExports" $ do
     exportM <- mapM jsExportBlock exports
@@ -811,10 +822,34 @@ jsViews :: Maybe (CPViews, ViewInfos) -> App Doc
 jsViews mcv = do
   jsFunctionWStdlib "_getViews" $ do
     let cvs = fromMaybe mempty $ fmap fst mcv
-    let toObj fv o = jsObject <$> mapM fv o
-    jsReturn <$> toObj (toObj jsContract) cvs
+    let vis = fromMaybe mempty $ fmap snd mcv
+    let toObj fv o = jsObject <$> mapWithKeyM fv o
+    let enView _ (ViewInfo vs _) =
+          jsArray <$> (mapM jsContract $ map varType vs)
+    views <- toObj enView vis
+    let enDecode v k vi (ViewInfo vs vim) = do
+          let vka = (vim M.! v) M.! k
+          vs' <- mapM jsVar vs
+          vka' <- jsArg vka
+          vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
+          let c = jsPrimApply PEQ [ "i", vi' ]
+          let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
+          return $ jsWhen c $ vsep [ let', jsReturn vka' ]
+    let enInfo' v k ctc = do
+          ctc' <- jsContract ctc
+          body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
+          let body' = vsep [ body, jsApply "stdlib.assert" [ "false", jsString "illegal view" ] ]
+          let decode' = jsApply "" [ "i", "svs" ] <+> "=>" <+> jsBraces body'
+          return $ jsObject $ M.fromList $
+            [ ("ty"::String, ctc')
+            , ("decode", decode') ]
+    let enInfo v = toObj (enInfo' v)
+    infos <- toObj enInfo cvs
+    return $ jsReturn $ jsObject $ M.fromList $
+      [ ("views"::String, views)
+      , ("infos", infos) ]
 
-jsPIProg :: ConnectorResult -> PIProg -> App Doc
+jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let preamble =
         vsep

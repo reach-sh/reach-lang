@@ -16,9 +16,29 @@ type BigNumber = ethers.BigNumber;
 
 type num = BigNumber | number
 
-export type IBackend<ConnectorTy extends AnyBackendTy> = {
-  _getViews: (stdlib:Object) => {[key: string]: {[key: string]: ConnectorTy}},
+export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
+  ty: ConnectorTy,
+  decode: (i:number, svs:Array<any>) => any,
 };
+
+export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
+  {[viewi: number]: Array<ConnectorTy>};
+export type IBackendViews<ConnectorTy extends AnyBackendTy> = {
+  views: IBackendViewsInfo<ConnectorTy>,
+  infos: {[viewn: string]:
+    {[keyn: string]: IBackendViewInfo<ConnectorTy>}},
+};
+
+export type IBackend<ConnectorTy extends AnyBackendTy> = {
+  _getViews: (stdlib:Object) => IBackendViews<ConnectorTy>,
+};
+
+export const getViewsHelper =
+  <ConnectorTy extends AnyBackendTy, B>(views:IBackendViews<ConnectorTy>, getView1:((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string, vi:IBackendViewInfo<ConnectorTy>) => B)) =>
+    () =>
+      objectMap(views.infos, ((v:string, vm:{[keyn:string]: IBackendViewInfo<ConnectorTy>}) =>
+        objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
+            getView1(views.views, v, k, vi)))));
 
 export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
 
@@ -52,7 +72,7 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
     tys: Array<ConnectorTy>,
     args: Array<any>, value: MkPayAmt<Token>, out_tys: Array<ConnectorTy>,
     onlyIf: boolean, soloSend: boolean,
-    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress, Token>>,
+    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress, Token, ConnectorTy>>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (
     okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
@@ -64,6 +84,71 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
   selfAddress: () => CBR_Address, // Not RawAddress!
   getViews: () => {[key: string]: {[key: string]: (() => Promise<any>)}},
   stdlib: Object,
+};
+
+type ContractIndex = 'getInfo' | 'creationTime' | 'sendrecv' | 'recv' | 'wait' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
+
+export const deferContract =
+  <ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
+    shouldError: boolean,
+    implP:Promise<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>,
+    implNow: Partial<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>):
+  IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy> => {
+
+  const not_yet = (which:ContractIndex) => (...args: any[]): any => {
+    void(args);
+    throw Error(`Cannot ${which} yet; contract is not actually deployed`);
+  };
+  const delay = (which:ContractIndex) => async (...args: any[]): Promise<any> =>
+    // @ts-ignore
+    (await implP)[which](...args);
+  const thenow = shouldError ? not_yet : delay;
+  const mnow = (which:ContractIndex) =>
+    implNow[which] === undefined ? thenow(which) : implNow[which];
+
+  // impl starts with a shim that deploys on first sendrecv,
+  // then replaces itself with the real impl once deployed.
+  let impl: IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy> = {
+    getInfo: delay('getInfo'),
+    // @ts-ignore
+    creationTime: delay('creationTime'),
+    // @ts-ignore
+    sendrecv: mnow('sendrecv'),
+    // @ts-ignore
+    recv: mnow('recv'),
+    // @ts-ignore
+    wait: mnow('wait'),
+    // @ts-ignore
+    iam: mnow('iam'),
+    // @ts-ignore
+    selfAddress: mnow('selfAddress'),
+    // @ts-ignore
+    getViews: mnow('getViews'),
+    stdlib: (() => {
+      if ( implNow.stdlib === undefined ) {
+        throw Error(`stdlib not defined`); }
+      return implNow.stdlib; })(),
+  };
+
+  implP.then((x) => { impl = x; });
+
+  const wrap = (which:ContractIndex) => (...args: any[]): any =>
+    // @ts-ignore
+    impl[which](...args);
+
+  // Return a wrapper around the impl. This obj and its fields do not mutate,
+  // but the fields are closures around a mutating ref to impl.
+  return {
+    sendrecv: wrap('sendrecv'),
+    recv: wrap('recv'),
+    wait: wrap('wait'),
+    getInfo: wrap('getInfo'),
+    creationTime: wrap('creationTime'),
+    iam: wrap('iam'),
+    selfAddress: wrap('selfAddress'),
+    getViews: wrap('getViews'),
+    stdlib: impl.stdlib,
+  };
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
@@ -79,12 +164,13 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Digest, RawAddress, Token> = {
+export type ISimRes<Digest, RawAddress, Token, ConnectorTy> = {
   prevSt: Digest,
   prevSt_noPrevTime: Digest,
   txns: Array<ISimTxn<RawAddress, Token>>,
   nextSt: Digest,
   nextSt_noTime: Digest,
+  view: [ ConnectorTy, any ],
   isHalt : boolean,
 };
 
@@ -288,6 +374,7 @@ export const objectMap = <A,B>(object: {[key:string]: A}, mapFn: ((k:string, a:A
     result[key] = mapFn(key, object[key])
     return result;
   }, {});
+
 
 // XXX this doesn't really belong here, but hard to relocate due to dep on bytesEq
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}

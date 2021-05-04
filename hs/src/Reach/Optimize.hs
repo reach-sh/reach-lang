@@ -206,7 +206,7 @@ instance Extract (Maybe DLVar) where
   extract = id
 
 -- XXX Add DL_LocalDo
-locDo :: DLinTail a -> DLinStmt a
+locDo :: DLTail -> DLStmt
 locDo t = DL_LocalIf at (DLA_Literal $ DLL_Bool True) t (DT_Return at)
   where
     at = srcloc_builtin
@@ -224,7 +224,7 @@ opt_if mkDo mkIf at c t f = do
         True -> return $ mkDo t'
         False -> return $ mkIf at c' t' f'
 
-instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt a) where
+instance Optimize DLStmt where
   opt = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at x e -> do
@@ -264,26 +264,31 @@ instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinStmt
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
+    DL_Only at ep l -> do
+      let w = case ep of
+                Left p -> focusp p
+                Right _ -> id
+      DL_Only at ep <$> w (opt l)
 
-instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinTail a) where
+instance Optimize DLTail where
   opt = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> mkCom DT_Com <$> opt m <*> opt k
 
-instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLinBlock a) where
-  opt (DLinBlock at fs b a) =
-    newScope $ DLinBlock at fs <$> opt b <*> opt a
+instance Optimize DLBlock where
+  opt (DLBlock at fs b a) =
+    newScope $ DLBlock at fs <$> opt b <*> opt a
 
 instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
   opt = \case
     DLEV_Arg at a -> DLEV_Arg at <$> opt a
     DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
 
-instance {-# OVERLAPPING #-} (Eq a, Sanitize a, Extract a) => Optimize (DLExportinBlock a) where
+instance Optimize DLExportBlock where
   opt = \case
-    DLExportinBlock b r -> newScope $ DLExportinBlock <$> opt b <*> opt r
+    DLExportBlock b r -> newScope $ DLExportBlock <$> opt b <*> opt r
 
-instance {-# OVERLAPPING #-} Optimize LLExports where
+instance {-# OVERLAPS #-} Optimize DLExports where
   opt = mapM opt
 
 instance Optimize LLConsensus where
@@ -301,8 +306,6 @@ instance Optimize LLConsensus where
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
       LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
-    LLC_Only at p l k ->
-      LLC_Only at p <$> (focusp p $ opt l) <*> opt k
 
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
@@ -321,8 +324,6 @@ instance Optimize LLStep where
   opt = \case
     LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_Only at p l s ->
-      LLS_Only at p <$> (focusp p $ opt l) <*> opt s
     LLS_ToConsensus at send recv mtime ->
       LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
       where
@@ -352,10 +353,10 @@ instance Optimize LLProg where
 
 -- This is a bit of a hack...
 
-instance Extract PLVar where
+instance Extract DLLetVar where
   extract = \case
-    PV_Eff -> Nothing
-    PV_Let _ v -> Just v
+    DLV_Eff -> Nothing
+    DLV_Let _ v -> Just v
 
 opt_svs :: AppT [(DLVar, DLArg)]
 opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
@@ -369,7 +370,7 @@ instance Optimize ViewSave where
   opt = \case
     ViewSave i svs -> ViewSave i <$> opt_svs svs
 
-instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a) where
+instance Optimize CTail where
   opt = \case
     CT_Com m k -> mkCom CT_Com <$> opt m <*> opt k
     CT_If at c t f ->
@@ -383,7 +384,7 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CTail_ a
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
 
-instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler_ a) where
+instance Optimize CHandler where
   opt = \case
     C_Handler {..} -> do
       C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev <$> opt ch_body
@@ -393,11 +394,11 @@ instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CHandler
 instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
 
-instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (CPProg a) where
+instance Optimize CPProg where
   opt (CPProg at vi (CHandlers hs)) =
     CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
 
-instance {-# OVERLAPPING #-} (Eq a, Extract a, Sanitize a) => Optimize (PLinProg a) where
+instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =
     PLProg at plo dli <$> opt dex <*> pure epps <*> opt cp
 

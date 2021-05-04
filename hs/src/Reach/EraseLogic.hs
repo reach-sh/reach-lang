@@ -13,11 +13,14 @@ data Env = Env
 
 type App = ReaderT Env IO
 
-isUsed :: Maybe DLVar -> App Bool
-isUsed Nothing = return $ False
-isUsed (Just v) = do
+isUsed :: DLLetVar -> App Bool
+isUsed DLV_Eff = return $ False
+isUsed (DLV_Let _ v) = do
   vs <- (liftIO . readIORef) =<< (e_vs <$> ask)
   return $ S.member v vs
+
+isUsedv :: DLVar -> App Bool
+isUsedv = isUsed . DLV_Let DVC_Many
 
 class Erase a where
   el :: a -> App a
@@ -44,7 +47,7 @@ instance Erase DLAssignment where
 instance Erase a => Erase (SwitchCases a) where
   el = mapM (\(x, y) -> (,) x <$> el y)
 
-instance Erase LLCommon where
+instance Erase DLStmt where
   el = \case
     DL_Nop at -> skip at
     DL_Let at mdv de ->
@@ -61,28 +64,29 @@ instance Erase LLCommon where
                 False -> skip at
                 True -> keep
     DL_ArrayMap at ans x a f ->
-      isUsed (Just ans) >>= \case
+      isUsedv ans >>= \case
         False -> skip at
         True -> DL_ArrayMap at ans <$> el x <*> pure a <*> el f
     DL_ArrayReduce at ans x z b a f ->
-      isUsed (Just ans) >>= \case
+      isUsedv ans >>= \case
         False -> skip at
         True -> DL_ArrayReduce at ans <$> el x <*> el z <*> pure b <*> pure a <*> el f
     DL_Var at dv ->
-      isUsed (Just dv) >>= \case
+      isUsedv dv >>= \case
         False -> skip at
         True -> return $ DL_Var at dv
     DL_Set at dv da -> DL_Set at <$> el dv <*> el da
     DL_LocalIf at c t f -> DL_LocalIf at <$> el c <*> el t <*> el f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> el ov <*> el csm
+    DL_Only at who b -> DL_Only at who <$> el b
     DL_MapReduce at mri ans x z b a f ->
-      isUsed (Just ans) >>= \case
+      isUsedv ans >>= \case
         False -> skip at
         True -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> el f
     where
       skip at = return $ DL_Nop at
 
-instance Erase LLTail where
+instance Erase DLTail where
   el = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> do
@@ -90,15 +94,15 @@ instance Erase LLTail where
       m' <- el m
       return $ mkCom DT_Com m' k'
 
-instance Erase LLBlock where
-  el (DLinBlock at fs t r) = do
+instance Erase DLBlock where
+  el (DLBlock at fs t r) = do
     r' <- el r
     t' <- el t
-    return $ DLinBlock at fs t' r'
+    return $ DLBlock at fs t' r'
 
 restrictToUsed :: DLAssignment -> App DLAssignment
 restrictToUsed (DLAssignment m) = do
-  let go = isUsed . Just . fst
+  let go = isUsedv . fst
   m' <- M.fromList <$> (filterM go $ M.toList m)
   return $ DLAssignment m'
 
@@ -131,17 +135,13 @@ instance Erase LLConsensus where
               True -> return (body', asn'')
               False -> loop m
       (body', asn'') <- loop (restrictToUsed asn)
-      let DLinBlock inv_at inv_fs _inv_t _inv_a = inv
-      let inv' = DLinBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)
+      let DLBlock inv_at inv_fs _inv_t _inv_a = inv
+      let inv' = DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)
       return $ LLC_While at asn'' inv' cond' body' k'
     LLC_Continue at asn -> do
       asn' <- restrictToUsed asn
       asn'' <- el asn'
       return $ LLC_Continue at asn''
-    LLC_Only at p l k -> do
-      k' <- el k
-      l' <- el l
-      return $ LLC_Only at p l' k'
 
 instance Erase LLStep where
   el = \case
@@ -150,10 +150,6 @@ instance Erase LLStep where
       m' <- el m
       return $ mkCom LLS_Com m' k'
     LLS_Stop at -> return $ LLS_Stop at
-    LLS_Only at p l k -> do
-      k' <- el k
-      l' <- el l
-      return $ LLS_Only at p l' k'
     LLS_ToConsensus at send recv mtime -> do
       let (lt_mv, c) = dr_k recv
       c' <- el c
@@ -164,20 +160,20 @@ instance Erase LLStep where
       send' <- traverse viaCount send
       return $ LLS_ToConsensus at send' recv' mtime'
 
-instance Erase (DLinExportVal LLBlock) where
+instance Erase (DLinExportVal DLBlock) where
   el = \case
     DLEV_Fun at args body ->
       DLEV_Fun at <$> mapM el args <*> el body
     DLEV_Arg at a -> DLEV_Arg at <$> el a
 
-instance Erase (DLExportinBlock LLVar) where
+instance Erase DLExportBlock where
   el = \case
-    DLExportinBlock s r -> do
+    DLExportBlock s r -> do
       r' <- el r
       s' <- el s
-      return $ DLExportinBlock s' r'
+      return $ DLExportBlock s' r'
 
-instance Erase LLExports where
+instance Erase DLExports where
   el = mapM el
 
 instance Erase LLProg where

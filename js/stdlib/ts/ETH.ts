@@ -18,14 +18,11 @@ import {
   getDEBUG,
   lt,
   CurrencyAmount,
-  IBackend,
-  IAccount,
-  IContract,
-  IRecv,
+  IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
+  IAccount, IContract, IRecv, deferContract,
   OnProgress,
   makeRandom,
   argsSplit,
-  objectMap,
 } from './shared';
 import {
   memoizeThunk, replaceableThunk
@@ -59,8 +56,10 @@ type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   ABI: string,
   Bytecode: string,
   deployMode: DeployMode,
-  views: {[key: string]: {[key: string]: string}},
+  views: {[viewn: string]: {[keyn: string]: string}},
 }}};
+type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
+type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
 
 // TODO: a wrapper obj with smart constructor?
 type Address = string;
@@ -547,17 +546,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const attachDeferDeploy = (): Contract => {
-      const not_yet = (which:string) => (...args: any[]): any => {
-        void(args);
-        throw Error(`Cannot ${which} yet; contract is not actually deployed`);
-      };
-      // impl starts with a shim that deploys on first sendrecv,
-      // then replaces itself with the real impl once deployed.
-      let impl: Contract = {
-        recv: not_yet(`recv`),
-        // Wait times are relative to contract events
-        // Wait without an initial contract event is nonsense
-        wait: not_yet(`wait`),
+      let setImpl:any;
+      const implP: Promise<Contract> =
+        new Promise((resolve) => { setImpl = resolve; });
+      const implNow = {
+        stdlib: compiledStdlib,
         sendrecv: async (
           funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
@@ -587,36 +580,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
 
           // shim impl is replaced with real impl
-          impl = performDeploy({args: [[0], args], value});
+          setImpl(performDeploy({args: [[0], args], value}));
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
           return await impl.recv(funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
-        getInfo: async () => {
-          // Danger: deadlock possible
-          return await infoP;
-        },
-        creationTime: (async () => bigNumberify((await infoP).creation_block)),
-        // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
-        iam,
-        selfAddress,
-        getViews: not_yet(`getViews`),
-        stdlib: compiledStdlib,
       };
-      // Return a wrapper around the impl. This obj and its fields do not mutate,
-      // but the fields are closures around a mutating ref to impl.
-      return {
-        sendrecv: (...args) => impl.sendrecv(...args),
-        recv: (...args) => impl.recv(...args),
-        wait: (...args) => impl.wait(...args),
-        getInfo: (...args) => impl.getInfo(...args),
-        creationTime: (...args) => impl.creationTime(...args),
-        iam: (...args) => impl.iam(...args),
-        selfAddress: (...args) => impl.selfAddress(...args),
-        getViews: (...args) => impl.getViews(...args),
-        stdlib: compiledStdlib,
-      }
+      const impl: Contract = deferContract(true, implP, implNow);
+      return impl;
     }
 
     switch (bin._Connectors.ETH.deployMode) {
@@ -947,19 +919,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const creationTime = async () =>
       bigNumberify((await getInfo()).creation_block);
 
-    const views_ctcsm = bin._getViews({reachStdlib: compiledStdlib});
+    const views_bin = bin._getViews({reachStdlib: compiledStdlib});
     const views_namesm = bin._Connectors.ETH.views;
-    const getView1 = (v:string, k:string, ctc: AnyETH_Ty) =>
+    const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (): Promise<any> => {
+        void(vs);
+        const { ty } = vim;
         const ethersC = await getC();
         const vkn = views_namesm[v][k];
         const val = await ethersC[vkn]();
-        return ctc.unmunge(val);
+        return ty.unmunge(val);
     };
-    const getViews = () =>
-      objectMap(views_ctcsm, ((v:string, vm:{[key:string]: AnyETH_Ty}) =>
-        objectMap(vm, ((k:string, ctc: AnyETH_Ty) =>
-          getView1(v, k, ctc)))));
+    const getViews = getViewsHelper(views_bin, getView1);
 
     // Note: wait is the local one not the global one of the same name.
     return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
