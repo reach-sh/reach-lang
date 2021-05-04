@@ -138,7 +138,6 @@ newtype PkgT m a = PkgT
   } deriving ( Functor
              , Applicative
              , Monad
-             , MonadIO
              , MonadError PkgError
              ) via (ExceptT PkgError m)
 
@@ -157,6 +156,8 @@ class Monad m => HasPkgT m where
 runPkgT :: PkgT m a -> m (Either PkgError a)
 runPkgT = runExceptT . runPkgT'
 
+
+deriving newtype instance MonadIO m => MonadIO (PkgT m)
 
 instance (Monad m, MonadIO (PkgT m)) => HasPkgT m where
   dirExists     = liftIO . doesDirectoryExist
