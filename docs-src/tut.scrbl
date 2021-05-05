@@ -1691,9 +1691,9 @@ you should call it like so:
 
 @jsin{const reach = await loadStdlib(process.env)}
 
-React compiles the reach stdlib in such a way that
+React compiles the Reach standard libray in such a way that
 it does not have direct access to the environment variables
-which are used to select the desired stdlib.
+which are used to select the desired standard library.
 This is why you need to pass @jsin{process.env} as an argument
 to achieve the desired effect.
 }

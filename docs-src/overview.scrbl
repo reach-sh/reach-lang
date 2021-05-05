@@ -200,10 +200,10 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 
 @item{Lines 1 and 2 import the Reach standard library loader and the compiled app backend.}
 
-@item{Line 5 dynamically loads the appropriate network-specific Reach stdlib,
+@item{Line 5 dynamically loads the appropriate network-specific Reach standard library,
 based on the @tech{REACH_CONNECTOR_MODE} environment variable.
-If unspecified, Reach's ETH stdlib will be used by default.
-All of Reach's network-specific stdlibs adhere to a common interface allowing you to write programs that are network-agnostic.}
+If unspecified, Reach's Ethereum standard library will be used by default.
+All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.}
 
 @item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
 
@@ -226,7 +226,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 @itemlist[
 
-@item{Line 14 invokes Alice, passing a contract object which includes stdlib used by the backend to interface with the consensus network. }
+@item{Line 14 invokes Alice, passing a contract object which includes the standard library used by the backend to interface with the consensus network. }
 
 @item{Line 15 provides the @reachin{request} value.}
 
