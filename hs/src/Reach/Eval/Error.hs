@@ -107,7 +107,7 @@ data EvalError
   | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
   | Err_Switch_MissingCases [SLVar]
   | Err_Switch_ExtraCases [SLVar]
-  | Err_Expected_Bytes SLValTy
+  | Err_Expected String SLValTy
   | Err_RecursionDepthLimit
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
@@ -461,8 +461,8 @@ instance Show EvalError where
       "switch missing cases: " <> show cs
     Err_Switch_ExtraCases cs ->
       "switch contains extra cases: " <> show cs
-    Err_Expected_Bytes v ->
-      "expected bytes, got something else: " <> show_sv v
+    Err_Expected t v ->
+      "expected " <> t <> ", got something else: " <> show_sv v
     Err_RecursionDepthLimit ->
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_Eval_MustBeLive m ->
