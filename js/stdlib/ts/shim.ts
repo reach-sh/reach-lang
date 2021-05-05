@@ -9,7 +9,7 @@ type Env = {
   REACH_CONNECTOR_MODE?: string,
 
   ETH_NODE_URI?: string,
-  ETH_NODE_NETWORK?: string,
+  ETH_NET?: string,
 
   ALGO_FAUCET_PASSPHRASE?: string,
   ALGO_TOKEN?: string,

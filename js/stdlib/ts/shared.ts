@@ -224,6 +224,13 @@ const forceHex = (x: string): string =>
 // Utility exports
 // ****************************************************************************
 
+export function truthyEnv(v: string|undefined|null): v is string {
+  if (!v) return false;
+  return ![
+    '0', 'false', 'f', '#f', 'no', 'off',
+  ].includes(v && v.toLowerCase && v.toLowerCase());
+}
+
 export const envDefault = (v: string|undefined|null, d: any): any =>
   (v === undefined || v === null) ? d : v;
 
