@@ -3524,22 +3524,52 @@ doFork ks cases mtime mnntpay = do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
+  let tv = jid "t"
   let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
   let thunkBlock b = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a $ JSStatementBlock a b a sp
   let oneParam p e = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne p) a) a (JSExpressionStatement e sp)
   let callThunk e = JSCallExpression e a JSLNil a
+  let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
+  let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
+  let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
   let indexed = zip [0 ..] :: [a] -> [(Int, a)]
+  let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
+        let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
+        (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
+        (_, (_, res_ty, _)) <-
+          case res_sv of
+            SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
+              captureLifts $
+                doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
+            _ -> impossible "not each"
+        res_ty_m <-
+          case res_ty of
+            T_Object m -> return m
+            _ -> expect_ $ Err_Fork_ResultNotObject res_ty
+        let resHas = flip M.member res_ty_m
+        let tDot field def =
+              bool def (JSMemberDot tv a $ jid field) $ resHas field
+        let defWhen = defcon when_id $ tDot "when" $ JSLiteral a "true"
+        let defMsg = defcon msg_id $ tDot "msg" $ JSLiteral a "null"
+        return $ (,) res_ty_m $
+          [ defcon tv $ callThunk before_e
+          , defWhen
+          , defMsg ]
+  let getAfter (a_at, after_e) = locAt a_at $
+        case after_e of
+          JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
+          JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> return [defcon ae msg_e, s]
+          JSExpressionParen _ e _ -> getAfter (a_at, e)
+          ow -> expect_ $ Err_Fork_ConsensusBadArrow ow
   let go pcases = do
         let (ats, who_es, before_es, pay_es, after_es) =
               unzip5 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_before, fc_pay, fc_after)) pcases
         let who_e = hdDie who_es
         let c_at = hdDie ats
-        let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
         let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
         let partCase n = who <> show n
-        let tv = jid "t"
         let partMsgType = who <> "MsgType"
         let ifOneCase t e = if length before_es == 1 then t else e
         -- Generate:
@@ -3549,34 +3579,16 @@ doFork ks cases mtime mnntpay = do
         --   const msg = res.msg || null;
         --   return { ... res, when, msg: Alice<N>(msg) };
         -- }
-        let makeRuns (n, (e_at, before_e)) = locAt e_at $ do
-              let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
-              (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
-              (_, (_, res_ty, _)) <-
-                case res_sv of
-                  SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
-                    captureLifts $
-                      doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
-                  _ -> impossible "not each"
-              res_ty_m <-
-                case res_ty of
-                  T_Object m -> return m
-                  _ -> expect_ $ Err_Fork_ResultNotObject res_ty
-              let resHas = flip M.member res_ty_m
-              let tDot field def =
-                    bool def (JSMemberDot tv a $ jid field) $ resHas field
-              let defWhen = defcon (jid "when") $ tDot "when" $ JSLiteral a "true"
-              let defMsg = defcon (jid "msg") $ tDot "msg" $ JSLiteral a "null"
+        let makeRuns (n, (e_at, before_e)) = do
+              (res_ty_m, only_body) <-
+                forkOnlyHelp who_e e_at before_e (jid "msg") (jid "when")
               -- If there's one case, simply return message.
               --  Otherwise, inject msg into variant representing which case executed
               let msgExpr = ifOneCase "msg" $ partMsgType <> "." <> partCase n <> "(msg) "
               let returnExpr = "({ ...t, when, msg: " <> msgExpr <> " })"
               let stmts =
-                    [ defcon tv $ callThunk before_e
-                    , defWhen
-                    , defMsg
-                    , JSReturn a (Just $ readJsExpr returnExpr) sp
-                    ]
+                    only_body <>
+                      [ JSReturn a (Just $ readJsExpr returnExpr) sp ]
               let cloName = "run" <> partCase n
               return (res_ty_m, cloName, thunkBlock stmts)
 
@@ -3634,12 +3646,6 @@ doFork ks cases mtime mnntpay = do
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
-        let getAfter (a_at, after_e) = locAt a_at $
-              case after_e of
-                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
-                JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> return [defcon ae msg_e, s]
-                JSExpressionParen _ e _ -> getAfter (a_at, e)
-                ow -> expect_ $ Err_Fork_ConsensusBadArrow ow
         all_afters <- mapM getAfter $ zip ats after_es
         let cases_switch_cases =
               map
@@ -3649,25 +3655,42 @@ doFork ks cases mtime mnntpay = do
         let after_ss =
               ifOneCase (concat all_afters) [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
-        let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
+        let cfc_only = makeOnly who_e only_body
         locAt c_at $ return CompiledForkCase {..}
-  casel <- mapM go $ groupBy forkCaseSameParticipant cases
-  let cases_msg_type_def = concatMap cfc_msg_type_def casel
-  let cases_data_def = map cfc_data_def casel
-  let cases_parts = map cfc_part casel
-  let cases_pay_props = map cfc_pay_prop casel
-  let cases_req_props = map cfc_req_prop casel
-  let cases_switch_cases = map cfc_switch_case casel
-  let cases_onlys = map cfc_only casel
-  let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
-  let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
-  let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
-  let data_ss = [JSConstant a data_decls sp]
-  let race_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
-  let tc_pub_e = JSCallExpression (JSMemberDot race_e a (jid "publish")) a (JSLOne msg_e) a
+  (before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
+    case cases of
+      [ ForkCase {..} ] -> do
+        (_, only_body) <-
+          forkOnlyHelp fc_who fc_at fc_before msg_e when_e
+        let tc_head_e = fc_who
+        let before_tc_ss = [ makeOnly fc_who only_body ]
+        let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
+        after_tc_ss <- getAfter (fc_at, fc_after)
+        return $ (before_tc_ss, pay_e, tc_head_e, after_tc_ss)
+      _ -> do
+        casel <- mapM go $ groupBy forkCaseSameParticipant cases
+        let cases_msg_type_def = concatMap cfc_msg_type_def casel
+        let cases_data_def = map cfc_data_def casel
+        let cases_parts = map cfc_part casel
+        let cases_pay_props = map cfc_pay_prop casel
+        let cases_req_props = map cfc_req_prop casel
+        let cases_switch_cases = map cfc_switch_case casel
+        let cases_onlys = map cfc_only casel
+        let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
+        let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
+        let data_ss = [JSConstant a data_decls sp]
+        let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
+        let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
+        let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
+        let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
+        let req_ss = [JSExpressionStatement req_e sp]
+        let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
+        let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
+        let after_tc_ss = req_ss <> switch_ss
+        return $ ( before_tc_ss, pay_e, tc_head_e, after_tc_ss )
+  let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
-  let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
   pay_expr <-
     case mnntpay of
       Just (JSArrayLiteral _ ts _) -> do
@@ -3700,12 +3723,6 @@ doFork ks cases mtime mnntpay = do
             JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) a (toJSCL targs) a
   let tc_e = tc_time_e
   let tc_ss = [JSExpressionStatement tc_e sp]
-  let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
-  let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
-  let req_ss = [JSExpressionStatement req_e sp]
-  let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
-  let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
-  let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   evalStmt $ exp_ss <> ks
 
