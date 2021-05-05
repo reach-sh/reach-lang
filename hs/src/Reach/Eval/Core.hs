@@ -3796,15 +3796,16 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
       Just toks ->
         return $ call a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
   let forkcase fork_eN (case_at, case_es) = do
+        let aux ccomps cbody = locAt case_at $ do
+                  cbody' <- injectContinueIntoBody cbody
+                  return $ ccomps <> [cbody']
+        let injectContinue cs = case reverse cs of
+              [] -> return []
+              cbody:rst -> aux (reverse rst) cbody
         cases' <- injectContinue case_es
         return $ JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL cases') ca
         where
           ca = ao case_at
-          injectContinue caseArgs
-            | null caseArgs = return []
-            | otherwise = locAt case_at $ do
-              fn' <- injectContinueIntoBody $ last caseArgs
-              return $ init caseArgs <> [fn']
   fork_e <- foldM forkcase fork_e2 pr_cases
   let fork_s = JSExpressionStatement fork_e sp
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
