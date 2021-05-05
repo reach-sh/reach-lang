@@ -15,7 +15,7 @@ instance Ord TokenPosn where
 deriving instance Read Token
 
 viaJS :: (JSAnnot -> JSAST) -> Doc
-viaJS mk = DText $ rmBlanks $ renderToText $ mk JSNoAnnot
+viaJS mk = DText $ renderToText $ mk JSNoAnnot
 
 instance Pretty JSExpression where
   pretty = viaJS . JSAstExpression
