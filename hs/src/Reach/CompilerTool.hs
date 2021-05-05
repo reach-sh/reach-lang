@@ -4,6 +4,7 @@ import Control.Monad
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler
 import System.Directory
+import Reach.Util (Top(..))
 
 data CompilerToolOpts = CompilerToolOpts
   { cto_outputDir :: FilePath
@@ -23,7 +24,7 @@ makeCompilerOpts CompilerToolOpts {..} = do
     CompilerOpts
       { output = outn
       , source = srcp
-      , tops = cto_tops
+      , tops = if null cto_tops then CompileAll else CompileJust cto_tops
       , intermediateFiles = cto_intermediateFiles
       }
 

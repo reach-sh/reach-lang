@@ -16,6 +16,7 @@ module Reach.Util
   , mapWithKeyM
   , hdDie
   , justValues
+  , Top(..)
   )
 where
 
@@ -101,3 +102,7 @@ mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscLis
 
 justValues :: [(a, Maybe b)] -> [(a, b)]
 justValues = foldr' (\(k, mv) acc -> maybe acc ((: acc) . (k,)) mv) []
+
+data Top
+  = CompileAll
+  | CompileJust [String]

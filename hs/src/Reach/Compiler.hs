@@ -22,7 +22,7 @@ import Reach.Verify
 data CompilerOpts = CompilerOpts
   { output :: T.Text -> String
   , source :: FilePath
-  , tops :: [String]
+  , tops :: Top
   , intermediateFiles :: Bool
   }
 
@@ -75,5 +75,8 @@ compile copts = do
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js woutn crs pil
         return ()
+  case tops copts of
+        CompileAll ->
+        CompileJust tops -> mapM_ compile1 tops
   mapM_ compile1 $ tops copts
   return ()

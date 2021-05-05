@@ -23,7 +23,7 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
   CompilerToolOpts
     { cto_outputDir = maybe defaultOutputDir id cta_outputDir
     , cto_source = cta_source
-    , cto_tops = if null cta_tops then ["main"] else cta_tops
+    , cto_tops = cta_tops
     , cto_intermediateFiles = cta_intermediateFiles
     }
   where

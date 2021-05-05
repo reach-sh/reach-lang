@@ -194,7 +194,7 @@ compileBundle_ cns (JSBundle mods) main = do
   topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
   compileDApp cns exports topv
 
-compileBundle :: Connectors -> JSBundle -> SLVar -> IO DLProg
+compileBundle :: Connectors -> JSBundle -> SLVar -> IO (String, DLProg)
 compileBundle cns jsb main = do
   e_id <- newCounter 0
   let e_ios = mempty
@@ -231,14 +231,14 @@ compileBundle cns jsb main = do
   e_unused_variables <- newIORef mempty
   e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
   let e_mape = MapEnv {..}
-  mkprog <-
+  (topName, mkprog) <-
     flip runReaderT (Env {..}) $
       compileBundle_ cns jsb main
   ms' <- readIORef me_ms
   final <- readIORef e_lifts
   unused_vars <- readIORef e_unused_variables
   reportUnusedVars $ S.toList unused_vars
-  return $ mkprog ms' final
+  return (topName, mkprog ms' final)
   where
     reportUnusedVars [] = return ()
     reportUnusedVars l@(h : _) =
