@@ -44,7 +44,7 @@ export const main =
             msg: declassify(interact.getVote()),
             when: declassify(interact.shouldVote()),
           })),
-          (() => ticketPrice),
+          ((_) => ticketPrice),
           ((forAlice) => {
             const voter = this;
             Voter.only(() => interact.voterWas(voter));

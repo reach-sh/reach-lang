@@ -55,7 +55,7 @@ export const main =
             const msg = declassify(digest(_ticket));
             return { msg, when };
           }),
-          (() => ticketPrice),
+          ((_) => ticketPrice),
           ((ticketCommit) => {
             const player = this;
             require(isNone(randomsM[player]));

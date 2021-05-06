@@ -9,6 +9,6 @@ export const main =
       const isNoneDef = (m) =>
         m.match({
           Some: (_) => { return false; },
-          default: () => true });
+          default: (_) => true });
       assert(isNoneDef(mx));
     });

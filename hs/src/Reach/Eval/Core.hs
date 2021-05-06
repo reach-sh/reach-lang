@@ -1239,7 +1239,7 @@ evalForm f args = do
         Just FM_Case -> do
           a <- withAt srcloc2annot
           let sp = JSSemi a
-          let default_pay = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement (JSDecimal a "0") sp)
+          let default_pay = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne (JSIdentifier a "_")) a) a (JSExpressionStatement (JSDecimal a "0") sp)
           at <- withAt id
           case_args <-
             case args of
@@ -1726,6 +1726,23 @@ mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
   v -> expect_t v $ Err_Expected_Bytes
 
+mustBeObject :: SLVal -> App SLEnv
+mustBeObject = \case
+  SLV_Object _ _ m -> return m
+  ow ->
+    locAtf (flip srclocOf_ ow) $
+      expect_t ow $ Err_Decl_NotType "object"
+
+mustBeDataTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar DLType)
+mustBeDataTy err = \case
+  T_Data x -> return $ x
+  t -> expect_ $ err t
+
+mustBeObjectTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar DLType)
+mustBeObjectTy err = \case
+  T_Object x -> return $ x
+  t -> expect_ $ err t
+
 structKeyRegex :: App RE
 structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
 
@@ -2074,7 +2091,7 @@ evalPrim p sargs =
           return $ (lvl, SLV_Tuple at tupvs')
         _ -> illegal_args
     SLPrim_Object -> do
-      objm <- mustBeObject_ =<< one_arg
+      objm <- mustBeObject =<< one_arg
       vm <- mapM (expect_ty . sss_val) objm
       retV $ (lvl, SLV_Type $ ST_Object vm)
     SLPrim_Object_has -> do
@@ -2182,7 +2199,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_part_setted {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_Data -> do
-      argm <- mustBeObject_ =<< one_arg
+      argm <- mustBeObject =<< one_arg
       varm <- mapM (expect_ty . sss_val) argm
       retV $ (lvl, SLV_Type $ ST_Data varm)
     SLPrim_Data_variant t vn vt -> do
@@ -2196,42 +2213,46 @@ evalPrim p sargs =
     SLPrim_data_match -> do
       -- Expect two arguments to function
       (obj, cases) <- two_args
-      -- Get the key/value pairs for the case object
-      objEnv <- case cases of
-        SLV_Object _ _ env -> return $ env
-        ow ->
-          locAtf (flip getSrcLocOrDefault ow) $
-            expect_t ow $ Err_Decl_NotType "object"
-      -- Keep a map of type constructor - args, for each case
+      (obj_ty, _) <- typeOf obj
+      obj_tys <- mustBeDataTy Err_Switch_NotData obj_ty
+      cases_m <- mustBeObject cases
       args_x_case <-
         mapM
           (\v ->
              case sss_val v of
-               SLV_Clo _ _ (SLClo _ case_args _ _) -> return $ case_args
+               SLV_Clo at _ (SLClo _ case_args _ _) ->
+                 case case_args of
+                   [] -> return $ False
+                   [_] -> return $ True
+                   xs -> expect_ $ Err_Apply_ArgCount at (length xs) 1
                ow ->
-                 locAtf (flip getSrcLocOrDefault ow) $
+                 locAtf (flip srclocOf_ ow) $
                    expect_t ow $ Err_Decl_NotType "closure")
-          objEnv
+          cases_m
       -- Generate the function to call
       fnv <- evalExpr $ do
         let ann = JSNoAnnot
         let semi = JSSemiAuto
         let data_param = JSIdentifier ann "data_id"
         let case_param = JSIdentifier ann "cases_id"
-        let switch_parts =
-              map
-                (\(tycon, tycon_args) ->
-                   let case_id = JSIdentifier ann tycon
-                    in let fn = JSMemberDot case_param ann $ JSIdentifier ann tycon
-                        in let js_args = case tycon_args of
-                                 [] -> JSLNil
-                                 _ -> JSLOne data_param
-                            in let ret = JSCallExpression fn ann js_args ann
-                                in let case_body = [JSReturn ann (Just ret) semi]
-                                    in case tycon == "default" of
-                                         True -> JSDefault ann ann case_body
-                                         False -> JSCase ann case_id ann case_body)
-                $ M.toList args_x_case
+        let go (tycon, case_args) =
+              case tycon == "default" of
+                True -> JSDefault ann ann case_body
+                False -> JSCase ann case_id ann case_body
+              where
+                tycon_ty = M.lookup tycon obj_tys
+                case_id = JSIdentifier ann tycon
+                fn = JSMemberDot case_param ann $ JSIdentifier ann tycon
+                one = JSLOne data_param
+                js_args = case tycon_ty of
+                            Just T_Null ->
+                              case case_args of
+                                False -> JSLNil
+                                True -> one
+                            _ -> one
+                ret = JSCallExpression fn ann js_args ann
+                case_body = [JSReturn ann (Just ret) semi]
+        let switch_parts = map go $ M.toAscList args_x_case
         let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
         let params = mkArrowParameterList [data_param, case_param]
         JSArrowExpression params ann body
@@ -2331,7 +2352,7 @@ evalPrim p sargs =
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       (av, ri) <- two_args
       aa <- compileCheckType T_Address av
-      rm_ <- mustBeObject_ ri
+      rm_ <- mustBeObject ri
       rm <- mapM (expect_ty . sss_val) rm_
       at <- withAt id
       let go k = \case
@@ -2434,9 +2455,6 @@ evalPrim p sargs =
     illegal_args = expect_ts args $ Err_Prim_InvalidArgs p
     retV = return
     rator = SLV_Prim p
-    getSrcLocOrDefault def sv =
-      let loc = srclocOf sv
-       in if loc == srcloc_builtin then def else loc
     expect_ty = \case
       SLV_Type t -> return $ t
       _ -> illegal_args
@@ -2467,14 +2485,6 @@ evalPrim p sargs =
       [x, y, z] -> return (x, y, z, Nothing)
       [x, y, z, a] -> return (x, y, z, Just a)
       _ -> illegal_args
-    mustBeObject_ = \case
-      SLV_Object _ _ m -> return m
-      ow ->
-        locAtf (flip getSrcLocOrDefault ow) $
-          expect_t ow $ Err_Decl_NotType "object"
-    _mustBeObject v = do
-      void $ mustBeObject_ v
-      return v
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
       _ -> illegal_args
@@ -2482,7 +2492,7 @@ evalPrim p sargs =
       dv <- ctxt_mkvar $ DLVar at' Nothing ty
       return $ (dv, SLV_DLVar dv)
     mustBeInterface intv = do
-      objEnv <- mustBeObject_ intv
+      objEnv <- mustBeObject intv
       let checkint = \case
             SLSSVal _ _ (SLV_Type t) -> return $ t
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
@@ -3525,7 +3535,6 @@ doFork ks cases mtime mnntpay = do
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
   let tv = jid "t"
-  let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
   let thunkBlock b = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a $ JSStatementBlock a b a sp
   let oneParam p e = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne p) a) a (JSExpressionStatement e sp)
   let callThunk e = JSCallExpression e a JSLNil a
@@ -3542,10 +3551,7 @@ doFork ks cases mtime mnntpay = do
               captureLifts $
                 doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
             _ -> impossible "not each"
-        res_ty_m <-
-          case res_ty of
-            T_Object m -> return m
-            _ -> expect_ $ Err_Fork_ResultNotObject res_ty
+        res_ty_m <- mustBeObjectTy Err_Fork_ResultNotObject res_ty
         let resHas = flip M.member res_ty_m
         let tDot field def =
               bool def (JSMemberDot tv a $ jid field) $ resHas field
@@ -3555,6 +3561,7 @@ doFork ks cases mtime mnntpay = do
           [ defcon tv $ callThunk before_e
           , defWhen
           , defMsg ]
+  let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
   let getAfter (a_at, after_e) = locAt a_at $
         case after_e of
           JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
@@ -3568,9 +3575,8 @@ doFork ks cases mtime mnntpay = do
         let c_at = hdDie ats
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
-        let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
         let partCase n = who <> show n
-        let partMsgType = who <> "MsgType"
+        let partMsgType = fid $ who <> "MsgType"
         let ifOneCase t e = if length before_es == 1 then t else e
         -- Generate:
         -- const runAlice<N> = () => {
@@ -3584,11 +3590,11 @@ doFork ks cases mtime mnntpay = do
                 forkOnlyHelp who_e e_at before_e (jid "msg") (jid "when")
               -- If there's one case, simply return message.
               --  Otherwise, inject msg into variant representing which case executed
-              let msgExpr = ifOneCase "msg" $ partMsgType <> "." <> partCase n <> "(msg) "
-              let returnExpr = "({ ...t, when, msg: " <> msgExpr <> " })"
+              let msgExpr = ifOneCase (jid "msg") $ JSCallExpression (JSMemberDot (jid partMsgType) a (jid $ partCase n)) a (JSLOne (jid "msg")) a
+              let returnExpr = JSObjectLiteral a (mkCommaTrailingList $ [ JSObjectSpread a (jid "t"), JSPropertyIdentRef a "when", JSPropertyNameandValue (JSPropertyIdent a "msg") a [ msgExpr ] ] ) a
               let stmts =
                     only_body <>
-                      [ JSReturn a (Just $ readJsExpr returnExpr) sp ]
+                      [ JSReturn a (Just returnExpr) sp ]
               let cloName = "run" <> partCase n
               return (res_ty_m, cloName, thunkBlock stmts)
 
@@ -3622,10 +3628,11 @@ doFork ks cases mtime mnntpay = do
         isBound <- readSt $ M.member who_s . st_pdvs
         let req_e = bool (JSLiteral a "true") this_eq_who isBound
         let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
-        let pay_obj_props = map (\(i, e) -> mkobjp (partCase i) e) $ indexed pay_es
+        let pay_go (i, e) = mkobjp (partCase i) e
+        let pay_obj_props = map pay_go $ indexed pay_es
         let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
         let pay_cases = oneParam tv $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
-        let cfc_req_prop = mkobjp who $ thunkify req_e
+        let cfc_req_prop = mkobjp who $ oneParam (jid "_") req_e
         let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
         let (cfc_msg_type_def, tyExpr) =
               case msg_ty of
@@ -3724,6 +3731,8 @@ doFork ks cases mtime mnntpay = do
   let tc_e = tc_time_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
+  -- liftIO $ putStrLn $ "Fork Output"
+  -- liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
 doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> Maybe JSExpression -> App [JSStatement]
@@ -3794,6 +3803,8 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   let while_body = [commit_s, def_s, asn_s, continue_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
   let pr_ss = [var_s, inv_s, while_s]
+  -- liftIO $ putStrLn $ "ParallelReduce"
+  -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
@@ -4151,9 +4162,7 @@ evalStmt = \case
       let de_v = jse_expect_id at' de
       (de_lvl, de_val) <- evalId "switch" de_v
       (de_ty, _) <- typeOf de_val
-      varm <- case de_ty of
-        T_Data m -> return $ m
-        _ -> expect_t de_val $ Err_Switch_NotData
+      varm <- mustBeDataTy Err_Switch_NotData de_ty
       let ks_ne = dropEmptyJSStmts ks
       sco <- e_sco <$> ask
       let sco' =

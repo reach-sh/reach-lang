@@ -103,7 +103,7 @@ data EvalError
   | Err_Eval_LookupUnderscore
   | Err_Eval_NotSpreadable String SLVal
   | Err_Zip_ArraysNotEqualLength Integer Integer
-  | Err_Switch_NotData SLValTy
+  | Err_Switch_NotData DLType
   | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
   | Err_Switch_MissingCases [SLVar]
   | Err_Switch_ExtraCases [SLVar]
@@ -454,7 +454,7 @@ instance Show EvalError where
     Err_Eval_LookupUnderscore ->
       "Invalid identifier reference. The _ identifier may never be read."
     Err_Switch_NotData x ->
-      "switch expects data instance, but got " <> show_sv x
+      "switch expects data instance, but got " <> show x
     Err_Switch_DoubleCase at0 at1 mc ->
       "switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
     Err_Switch_MissingCases cs ->

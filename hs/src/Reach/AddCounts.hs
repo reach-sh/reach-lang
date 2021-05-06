@@ -172,14 +172,18 @@ instance AC CHandler where
 
 instance {-# OVERLAPS #-} AC a => AC (DLinExportVal a) where
   ac = \case
-    DLEV_Arg at a -> return $ DLEV_Arg at a
+    DLEV_Arg at a -> do
+      ac_visit a
+      return $ DLEV_Arg at a
     DLEV_Fun at a b -> do
       ac_visit a
       fresh $ DLEV_Fun at a <$> ac b
 
 instance AC DLExportBlock where
-  ac (DLExportBlock b a) =
-    DLExportBlock <$> ac b <*> ac a
+  ac (DLExportBlock b a) = do
+    a' <- ac a
+    b' <- ac b
+    return $ DLExportBlock b' a'
 
 instance AC EPProg where
   ac (EPProg at ie et) = fresh $
