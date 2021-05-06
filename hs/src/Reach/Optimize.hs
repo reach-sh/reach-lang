@@ -217,11 +217,15 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       case a' of
-        DLA_Literal (DLL_Bool True) ->
-          return $ DLE_Arg at $ DLA_Literal $ DLL_Null
+        DLA_Literal (DLL_Bool True) -> nop at
         _ ->
           return $ DLE_Claim at fs t a' m
-    DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
+    DLE_Transfer at t a m -> do
+      a' <- opt a
+      case a' of
+        DLA_Literal (DLL_Int _ 0) -> nop at
+        _ ->
+          DLE_Transfer at <$> opt t <*> pure a' <*> opt m
     DLE_TokenInit at t -> DLE_TokenInit at <$> opt t
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
@@ -231,6 +235,8 @@ instance Optimize DLExpr where
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
     DLE_ViewIs at k n a -> DLE_ViewIs at k n <$> opt a
+    where
+      nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
