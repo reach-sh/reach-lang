@@ -1320,6 +1320,8 @@ evalForm f args = do
             case args of
               [de] -> return $ (at, de, Nothing)
               [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] -> return $ (at, de, Just (jsStmtToBlock dt_s))
+              [de, JSExpressionParen _ (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s) _] ->
+                return $ (at, de, Just (jsStmtToBlock dt_s))
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $ Just x
         Just TCM_ThrowTimeout -> do
@@ -1724,7 +1726,7 @@ doArrayBoundsCheck sz idxv = do
 mustBeBytes :: SLVal -> App B.ByteString
 mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
-  v -> expect_t v $ Err_Expected_Bytes
+  v -> expect_t v $ Err_Expected "bytes"
 
 mustBeObject :: SLVal -> App SLEnv
 mustBeObject = \case
@@ -3756,23 +3758,39 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
   let call ta f es = JSCallExpression f ta (toJSCL es) ta
+  let makeContinue ss = do
+        let def_e = jid $ prid "res"
+        let call_og = call a (thunk a ss) []
+        let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_og) sp
+        let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
+        let continue_s = JSContinue a JSIdentNone sp
+        [def_s, asn_s, continue_s]
+  let injectContinueIntoBody = \case
+        JSExpressionParen _ e _ -> injectContinueIntoBody e
+        JSArrowExpression args annt ss -> do
+          return $ JSExpressionParen a (JSArrowExpression args annt $ block annt $ makeContinue ss) a
+        ow -> evalExpr ow >>= \ v -> (expect_t (snd v) $ Err_Expected "function")
   fork_e1 <-
     case pr_mtime of
       Nothing -> return fork_e0
       Just (mode, t_at, args) ->
         case (mode, args) of
           (PRM_ThrowTimeout, [t_e]) ->
-            callTimeout [t_e, thunk $ block [JSThrow ta lhs semi]]
+            callTimeout [t_e, thunk ta $ block ta [JSThrow ta lhs semi]]
           (PRM_TimeRemaining, [t_e]) -> do
             let dot o f = JSCallExpressionDot o ta f
             let publish = dot (jid "Anybody") $ jid "publish"
             let pubApp = call ta publish []
-            let bodys =
+            let bodyStmts = JSStatementBlock ta
                   [ JSExpressionStatement pubApp semi
                   , JSReturn ta (Just lhs) semi
-                  ]
-            callTimeout [t_e, thunk $ block bodys]
-          (PRM_Timeout, t_es) -> return $ call ta (JSMemberDot fork_e0 ta timeOutId) t_es
+                  ] ta sp
+            callTimeout [t_e, thunk ta $ block ta $ makeContinue bodyStmts]
+          (PRM_Timeout, t_d:t_fn:_) -> do
+            locAt t_at $ do
+              t_fn' <- injectContinueIntoBody t_fn
+              return $ call ta (JSMemberDot fork_e0 ta timeOutId) [t_d, t_fn']
+          (PRM_Timeout, _) ->  expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
           (PRM_ThrowTimeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
           (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
           _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
@@ -3780,32 +3798,36 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
           semi = JSSemiAuto
           timeOutId = jid "timeout"
           callTimeout = return . call ta (JSMemberDot fork_e0 ta timeOutId)
-          block bodys = JSStatementBlock ta bodys ta semi
-          noArgs = JSParenthesizedArrowParameterList ta JSLNil ta
-          thunk = JSArrowExpression noArgs ta
           ta = ao t_at
   fork_e2 <-
     case pr_mpay of
       Nothing -> return fork_e1
       Just toks ->
         return $ call a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
-  let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
+  let forkcase fork_eN (case_at, case_es) = do
+        let aux ccomps cbody = locAt case_at $ do
+                  cbody' <- injectContinueIntoBody cbody
+                  return $ ccomps <> [cbody']
+        let injectContinue cs = case reverse cs of
+              [] -> return []
+              cbody:rst -> aux (reverse rst) cbody
+        cases' <- injectContinue case_es
+        return $ JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL cases') ca
         where
           ca = ao case_at
-  let fork_e = foldl' forkcase fork_e2 pr_cases
-  let fork_arr_e = JSFunctionExpression a JSIdentNone a JSLNil a (JSBlock a [JSExpressionStatement fork_e sp] a)
-  let call_e = JSCallExpression fork_arr_e a JSLNil a
+  fork_e <- foldM forkcase fork_e2 pr_cases
+  let fork_s = JSExpressionStatement fork_e sp
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
-  let def_e = jid $ prid "res"
-  let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_e) sp
-  let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
-  let continue_s = JSContinue a JSIdentNone sp
-  let while_body = [commit_s, def_s, asn_s, continue_s]
+  let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
   let pr_ss = [var_s, inv_s, while_s]
   -- liftIO $ putStrLn $ "ParallelReduce"
   -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
+  where
+    block ta bodys = JSStatementBlock ta bodys ta JSSemiAuto
+    thunk ta = JSArrowExpression noArgs ta
+    noArgs = JSParenthesizedArrowParameterList JSNoAnnot JSLNil JSNoAnnot
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =
