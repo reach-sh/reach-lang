@@ -5,4 +5,5 @@
 
 export const blah = 0;
 
+// This example needs to fail
 assert(false);

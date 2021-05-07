@@ -1,9 +1,5 @@
 'reach 0.1';
 
-// Used in:
-// * /hs/test-examples/Err_Fun_NamesIllegal.rsh
-export const blah = 0;
-
 // Test assertions for libaries
 export const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
