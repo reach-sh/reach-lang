@@ -1,1 +1,21 @@
-reachc: error: <top level>: Invalid compilation target. No `Reach.App`s are exported
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  at ./sample_lib.rsh:9:7:application
+
+  // Violation witness
+
+  // Theorem formalization
+  assert(false);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  at ./sample_lib.rsh:9:7:application
+
+  (details omitted on repeat)
+Checked 4 theorems; 2 failures. :'(

@@ -171,8 +171,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
   return $ \dli_maps final ->
     let dli = DLInit {..}
      in DLProg at dlo' sps dli exports dviews final
-compileDApp _ _ _ =
-  expect_ Err_Top_NotApp
+compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 getExports :: SLLibs -> App DLSExports
 getExports libs = do
@@ -185,9 +184,7 @@ getExports libs = do
 compileBundle_ :: Connectors -> JSBundle -> SLLibs -> SLVar -> App CompiledDApp
 compileBundle_ cns (JSBundle mods) libm main = do
   exports <- getExports libm
-  let exe = case mods of
-        [] -> impossible $ "compileBundle: no files"
-        ((x, _) : _) -> x
+  let exe = getLibExe mods
   let exe_ex = libm M.! exe
   topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
   compileDApp cns exports topv
