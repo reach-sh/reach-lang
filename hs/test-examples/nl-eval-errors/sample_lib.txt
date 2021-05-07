@@ -1,1 +1,1 @@
-reachc: error: <top level>: Expected the following identifier to be declared: "main"
+reachc: error: <top level>: Invalid compilation target. No `Reach.App`s are exported

@@ -1,4 +1,4 @@
-module Reach.Eval (compileBundle) where
+module Reach.Eval (compileBundle, compileEnv) where
 
 import Control.Arrow (second)
 import Control.Monad.Extra
@@ -18,7 +18,6 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Eval.Core
 import Reach.Eval.Error
-import Reach.Eval.Module
 import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
@@ -172,8 +171,8 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
   return $ \dli_maps final ->
     let dli = DLInit {..}
      in DLProg at dlo' sps dli exports dviews final
-compileDApp _ _ topv =
-  expect_t topv $ Err_Top_NotApp
+compileDApp _ _ _ =
+  expect_ Err_Top_NotApp
 
 getExports :: SLLibs -> App DLSExports
 getExports libs = do
@@ -183,9 +182,8 @@ getExports libs = do
       (getLibExports . snd)
       (filter ((/= ReachStdLib) . fst) $ M.toList libs)
 
-compileBundle_ :: Connectors -> JSBundle -> SLVar -> App CompiledDApp
-compileBundle_ cns (JSBundle mods) main = do
-  libm <- evalLibs cns mods
+compileBundle_ :: Connectors -> JSBundle -> SLLibs -> SLVar -> App CompiledDApp
+compileBundle_ cns (JSBundle mods) libm main = do
   exports <- getExports libm
   let exe = case mods of
         [] -> impossible $ "compileBundle: no files"
@@ -194,51 +192,55 @@ compileBundle_ cns (JSBundle mods) main = do
   topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
   compileDApp cns exports topv
 
-compileBundle :: Connectors -> JSBundle -> SLVar -> IO (String, DLProg)
-compileBundle cns jsb main = do
-  e_id <- newCounter 0
-  let e_ios = mempty
-  let e_who = Nothing
-  let e_stack = []
-  let e_stv =
-        SLState
-          { st_mode = SLM_Module
-          , st_live = False
-          , st_pdvs = mempty
-          , st_after_first = False
-          , st_after_ctor = False
-          , st_toks = mempty
-          }
-  let e_dlo = app_default_opts e_id $ M.keys cns
-  let e_classes = mempty
-  let e_sco =
-        SLScope
-          { sco_ret = Nothing
-          , sco_must_ret = RS_CannotReturn
-          , sco_while_vars = Nothing
-          , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
-            sco_penvs = mempty
-          , sco_cenv = mempty
-          , sco_use_strict = False
-          }
-  let e_depth = recursionDepthLimit
-  let e_while_invariant = False
-  e_st <- newIORef e_stv
-  let e_at = srcloc_top
-  e_lifts <- newIORef mempty
-  me_id <- newCounter 0
-  me_ms <- newIORef mempty
-  e_unused_variables <- newIORef mempty
-  e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
-  let e_mape = MapEnv {..}
-  (topName, mkprog) <-
-    flip runReaderT (Env {..}) $
-      compileBundle_ cns jsb main
-  ms' <- readIORef me_ms
-  final <- readIORef e_lifts
-  unused_vars <- readIORef e_unused_variables
+compileEnv :: Connectors -> IO Env
+compileEnv cns = do
+    e_id <- newCounter 0
+    let e_ios = mempty
+    let e_who = Nothing
+    let e_stack = []
+    let e_stv =
+          SLState
+            { st_mode = SLM_Module
+            , st_live = False
+            , st_pdvs = mempty
+            , st_after_first = False
+            , st_after_ctor = False
+            , st_toks = mempty
+            }
+    let e_dlo = app_default_opts e_id $ M.keys cns
+    let e_classes = mempty
+    let e_sco =
+          SLScope
+            { sco_ret = Nothing
+            , sco_must_ret = RS_CannotReturn
+            , sco_while_vars = Nothing
+            , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
+              sco_penvs = mempty
+            , sco_cenv = mempty
+            , sco_use_strict = False
+            }
+    let e_depth = recursionDepthLimit
+    let e_while_invariant = False
+    e_st <- newIORef e_stv
+    let e_at = srcloc_top
+    e_lifts <- newIORef mempty
+    me_id <- newCounter 0
+    me_ms <- newIORef mempty
+    e_unused_variables <- newIORef mempty
+    e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
+    let e_mape = MapEnv {..}
+    return (Env {..})
+
+compileBundle :: Env -> Connectors -> JSBundle -> SLLibs -> SLVar -> IO DLProg
+compileBundle env cns jsb libm main = do
+  mkprog <-
+    flip runReaderT env $
+        compileBundle_ cns jsb libm main
+  ms' <- readIORef $ me_ms $ e_mape env
+  final <- readIORef $ e_lifts env
+  unused_vars <- readIORef $ e_unused_variables env
   reportUnusedVars $ S.toList unused_vars
-  return (topName, mkprog ms' final)
+  return $ mkprog ms' final
   where
     reportUnusedVars [] = return ()
     reportUnusedVars l@(h : _) =
