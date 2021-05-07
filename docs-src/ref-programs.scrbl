@@ -1324,6 +1324,50 @@ There are a large variety of different @deftech{expressions} in Reach programs.
 
 The remainder of this section enumerates each kind of @tech{expression}.
 
+@subsubsection{'use strict'}
+
+@(mint-define! '("'use strict'"))
+@reach{
+  'use strict'; }
+
+@index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
+declarations within the current scope. If a variable is declared, but never used, there will
+be an error emitted at compile time.
+
+@deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
+For example, normally Reach will permit expressions like the following to be evaluated:
+
+@reach{
+  const foo = (o) =>
+    o ? o.b : false;
+
+  void foo({ b: true });
+  void foo(false); }
+
+Reach allows @reachin{o} to be either an object with a @reachin{b} field or @reachin{false} because it
+partially evaluates the program at compile time. So, without @reachin{'use strict'}, Reach will not evaluate
+@reachin{o.b} when @reachin{o = false} and this code will compile successfully.
+
+But, in @tech{strict mode}, Reach will ensure that this program treats @reachin{o} as
+having a single type and detect an error in the program as follows:
+
+@verbatim{
+  reachc: error: Invalid field access. Expected object, got: Bool }
+
+The correct way to write a program like this in @tech{strict mode} is to use @reachin{Maybe}. Like this:
+
+@reach{
+  const MObj = Maybe(Object({ b : Bool }));
+
+  const foo = (mo) =>
+    mo.match({
+      None: (() => false),
+      Some: ((o) => o.b)
+    });
+
+  void foo(MObj.Some({ b : true }));
+  void foo(MObj.None()); }
+
 @subsubsection{Identifier reference}
 
 @reach{
@@ -2555,50 +2599,6 @@ it does not matter who @reachin{publish}es, such as in a @reachin{timeout}.
 @reachin{Anybody} is strictly an abbreviation of a @reachin{race} involving all of the named participants of the application.
 In an application with a @tech{participant class}, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
 In an application without any @tech{participant class}es, @reachin{Anybody} instead would mean only the actual previously-bound @tech{participant}s.
-
-@subsubsection{'use strict'}
-
-@(mint-define! '("'use strict'"))
-@reach{
-  'use strict'; }
-
-@index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
-declarations within the current scope. If a variable is declared, but never used, there will
-be an error emitted at compile time.
-
-@deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
-For example, normally Reach will permit expressions like the following to be evaluated:
-
-@reach{
-  const foo = (o) =>
-    o ? o.b : false;
-
-  void foo({ b: true });
-  void foo(false); }
-
-Reach allows @reachin{o} to be either an object with a @reachin{b} field or @reachin{false} because it
-partially evaluates the program at compile time. So, without @reachin{'use strict'}, Reach will not evaluate
-@reachin{o.b} when @reachin{o = false} and this code will compile successfully.
-
-But, in @tech{strict mode}, Reach will ensure that this program treats @reachin{o} as
-having a single type and detect an error in the program as follows:
-
-@verbatim{
-  reachc: error: Invalid field access. Expected object, got: Bool }
-
-The correct way to write a program like this in @tech{strict mode} is to use @reachin{Maybe}. Like this:
-
-@reach{
-  const MObj = Maybe(Object({ b : Bool }));
-
-  const foo = (mo) =>
-    mo.match({
-      None: (() => false),
-      Some: ((o) => o.b)
-    });
-
-  void foo(MObj.Some({ b : true }));
-  void foo(MObj.None()); }
 
 @subsubsection{Intervals}
 
