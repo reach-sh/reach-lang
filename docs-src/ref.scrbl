@@ -50,7 +50,7 @@ and each @exec{EXPORT} is an @tech{export}ed @tech{Reach.App}.
 
 If no @exec{SOURCE} is provided, then @exec{index.rsh} is used.
 
-If no @exec{EXPORT} is provided, then @litchar{main} is used.
+If no @exec{EXPORT} is provided, then all the exported @tech{Reach.App}s will be compiled.
 
 @exec{reach compile} supports the following options:
 

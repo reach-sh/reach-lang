@@ -1,8 +1,9 @@
-module Reach.Eval.Module (evalLibs) where
+module Reach.Eval.Module (evalLibs, findTops) where
 
 import Control.Monad.Reader
 import Data.Foldable
 import qualified Data.Map.Strict as M
+import Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -15,6 +16,18 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 import Reach.Version
+
+findTops :: JSBundle -> SLLibs -> [SLVar]
+findTops (JSBundle mods) libm = do
+  let exe = case mods of
+        [] -> impossible $ "findReachApps: no files"
+        ((x, _) : _) -> x
+  let exe_ex = libm M.! exe
+  mapMaybe (\ (k, v) ->
+    case sss_val v of
+      SLV_Prim SLPrim_App_Delay {} -> Just k
+      _ -> Nothing
+    ) $ M.toList exe_ex
 
 lookupDep :: ReachSource -> SLLibs -> App SLEnv
 lookupDep rs libm =

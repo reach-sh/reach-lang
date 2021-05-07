@@ -91,7 +91,7 @@ data EvalError
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
-  | Err_Top_NotApp SLValTy
+  | Err_Top_NotApp
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure SLValTy
   | Err_Each_NotTuple SLValTy
@@ -429,8 +429,8 @@ instance Show EvalError where
       _ -> "Invalid double toConsensus."
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
-    Err_Top_NotApp slval ->
-      "Invalid compilation target. Expected App, but got " <> show_sv slval
+    Err_Top_NotApp ->
+      "Invalid compilation target. No `Reach.App`s are exported"
     Err_While_IllegalInvariant exprs ->
       "Invalid while loop invariant. Expected 1 expr, but got " <> got
       where

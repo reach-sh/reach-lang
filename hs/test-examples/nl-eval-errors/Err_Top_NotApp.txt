@@ -1,1 +1,1 @@
-reachc: error: <top level>: Invalid compilation target. Expected App, but got UInt
+reachc: error: <top level>: Invalid compilation target. No `Reach.App`s are exported
