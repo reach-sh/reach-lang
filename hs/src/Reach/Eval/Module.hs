@@ -19,9 +19,7 @@ import Reach.Version
 
 findTops :: JSBundle -> SLLibs -> [SLVar]
 findTops (JSBundle mods) libm = do
-  let exe = case mods of
-        [] -> impossible $ "findReachApps: no files"
-        ((x, _) : _) -> x
+  let exe = getLibExe mods
   let exe_ex = libm M.! exe
   mapMaybe (\ (k, v) ->
     case sss_val v of

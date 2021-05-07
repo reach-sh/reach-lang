@@ -19,13 +19,12 @@ import Reach.Parser
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
-import Reach.Eval.Core (SLLibs, expect_, e_lifts)
+import Reach.Eval.Core (SLLibs, e_lifts, defaultApp, getLibExe)
 import Reach.AST.Base (SLVar)
 import Reach.AST.SL (SLPrimitive(SLPrim_App_Delay), SLVal (SLV_Prim), sss_val)
-import Control.Monad (forM_, when)
+import Control.Monad (forM_)
 import Reach.Eval.Module (evalLibs, findTops)
 import Control.Monad.Reader (runReaderT)
-import Reach.Eval.Error (EvalError(Err_Top_NotApp))
 import Data.IORef (readIORef, writeIORef)
 
 data CompilerOpts = CompilerOpts
@@ -51,6 +50,14 @@ dropOtherTops which =
         SLV_Prim SLPrim_App_Delay {} -> k == which
         _ -> True ))
 
+maybeDefaultApp :: JSBundle -> SLLibs -> [String] -> (SLLibs, [String])
+maybeDefaultApp (JSBundle mods) libm = \case
+  []   -> do
+    let name = "default" -- `default` will never be accepted by the parser as an identifier
+    let exe = getLibExe mods
+    (M.insert exe (M.insert name defaultApp $ libm M.! exe) libm, [name])
+  tops -> (libm, tops)
+
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let outn = output copts
@@ -65,13 +72,11 @@ compile copts = do
   -- Either compile all the Reach.Apps or those specified by user
   evalEnv <- defaultEnv all_connectors
   let JSBundle mods = djp
-  libm <- flip runReaderT evalEnv $ evalLibs all_connectors mods
+  _libm <- flip runReaderT evalEnv $ evalLibs all_connectors mods
   lifts <- readIORef $ e_lifts evalEnv
-  let whichs = case tops copts of
-        CompileAll -> findTops djp libm
+  let (libm, whichs) = maybeDefaultApp djp _libm $ case tops copts of
+        CompileAll -> findTops djp _libm
         CompileJust tops -> tops
-  when (null whichs) $
-    flip runReaderT evalEnv $ expect_ Err_Top_NotApp
   forM_ whichs $ \ which -> do
       let addWhich = ((T.pack which <> ".") <>)
       let woutn = outn . addWhich
