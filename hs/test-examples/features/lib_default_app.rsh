@@ -9,4 +9,3 @@ export const winner = (handA, handB) =>
 forall(UInt, handA =>
   forall(UInt, handB =>
     assert(isOutcome(winner(handA, handB)))));
-

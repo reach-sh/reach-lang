@@ -50,7 +50,9 @@ and each @exec{EXPORT} is an @tech{export}ed @tech{Reach.App}.
 
 If no @exec{SOURCE} is provided, then @exec{index.rsh} is used.
 
-If no @exec{EXPORT} is provided, then all the exported @tech{Reach.App}s will be compiled.
+If no @exec{EXPORT} is provided, then all the exported @tech{Reach.App}s will be compiled. If there are no
+@tech{Reach.App}s exported, then the program will be compiled as a library, where its exports are available
+to other Reach programs and frontends.
 
 @exec{reach compile} supports the following options:
 

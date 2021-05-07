@@ -4,7 +4,7 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: assert
-  at ./sample_lib.rsh:8:7:application
+  at ./sample_lib.rsh:9:7:application
 
   // Violation witness
 
@@ -15,7 +15,7 @@ Verification failed:
 Verification failed:
   when NO participants are honest
   of theorem: assert
-  at ./sample_lib.rsh:8:7:application
+  at ./sample_lib.rsh:9:7:application
 
   (details omitted on repeat)
 Checked 4 theorems; 2 failures. :'(
