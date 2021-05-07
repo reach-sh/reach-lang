@@ -1,4 +1,4 @@
-module Reach.Eval (compileBundle, compileEnv) where
+module Reach.Eval (compileBundle, defaultEnv) where
 
 import Control.Arrow (second)
 import Control.Monad.Extra
@@ -192,8 +192,8 @@ compileBundle_ cns (JSBundle mods) libm main = do
   topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
   compileDApp cns exports topv
 
-compileEnv :: Connectors -> IO Env
-compileEnv cns = do
+defaultEnv :: Connectors -> IO Env
+defaultEnv cns = do
     e_id <- newCounter 0
     let e_ios = mempty
     let e_who = Nothing

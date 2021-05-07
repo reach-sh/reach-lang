@@ -22,9 +22,8 @@ import Reach.Verify
 import Reach.Eval.Core (SLLibs, expect_, e_lifts)
 import Reach.AST.Base (SLVar)
 import Reach.AST.SL (SLPrimitive(SLPrim_App_Delay), SLVal (SLV_Prim), sss_val)
-import Data.Maybe (mapMaybe)
 import Control.Monad (forM_, when)
-import Reach.Eval.Module (evalLibs)
+import Reach.Eval.Module (evalLibs, findTops)
 import Control.Monad.Reader (runReaderT)
 import Reach.Eval.Error (EvalError(Err_Top_NotApp))
 import Data.IORef (readIORef, writeIORef)
@@ -45,20 +44,8 @@ all_connectors =
       , connect_algo
       ]
 
-findReachApps :: JSBundle -> SLLibs -> [SLVar]
-findReachApps (JSBundle mods) libm = do
-  let exe = case mods of
-        [] -> impossible $ "findReachApps: no files"
-        ((x, _) : _) -> x
-  let exe_ex = libm M.! exe
-  mapMaybe (\ (k, v) ->
-    case sss_val v of
-      SLV_Prim SLPrim_App_Delay {} -> Just k
-      _ -> Nothing
-    ) $ M.toList exe_ex
-
-filterOtherApps :: SLVar -> SLLibs -> SLLibs
-filterOtherApps which =
+dropOtherTops :: SLVar -> SLLibs -> SLLibs
+dropOtherTops which =
   M.map (M.filterWithKey (\ k v ->
       case sss_val v of
         SLV_Prim SLPrim_App_Delay {} -> k == which
@@ -76,12 +63,12 @@ compile copts = do
   djp <- gatherDeps_top $ source copts
   interOut outn "bundle.js" $ render $ pretty djp
   -- Either compile all the Reach.Apps or those specified by user
-  evalEnv <- compileEnv all_connectors
+  evalEnv <- defaultEnv all_connectors
   let JSBundle mods = djp
   libm <- flip runReaderT evalEnv $ evalLibs all_connectors mods
   lifts <- readIORef $ e_lifts evalEnv
   let whichs = case tops copts of
-        CompileAll -> findReachApps djp libm
+        CompileAll -> findTops djp libm
         CompileJust tops -> tops
   when (null whichs) $
     flip runReaderT evalEnv $ expect_ Err_Top_NotApp
@@ -94,7 +81,7 @@ compile copts = do
           showp l = winterOut l . render . pretty
       let showp' :: (forall a. Pretty a => String -> a -> IO ())
           showp' = showp . T.pack
-      let libm' = filterOtherApps which libm
+      let libm' = dropOtherTops which libm
       -- Reutilize env from parsing module, but remove any lifts
       -- from processing previous top
       writeIORef (e_lifts evalEnv) lifts
