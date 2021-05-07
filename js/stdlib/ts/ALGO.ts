@@ -13,6 +13,9 @@ import msgpack from '@msgpack/msgpack';
 const {Buffer} = buffer;
 
 import {
+  VERSION
+} from './version';
+import {
   CurrencyAmount, OnProgress,
   IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IAccount, IContract, IRecv, ISimRes, ISimTxn,
@@ -529,7 +532,7 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
   };
 }
 
-const ui8z = new Uint8Array();
+// const ui8z = new Uint8Array();
 
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: any): String => Buffer.from(x).toString('base64');
@@ -794,6 +797,11 @@ const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
 
 export {getFaucet, setFaucet};
 
+// XXX AlgoSigner doesn't correctly handle msgpacked notes
+// When it does: update {,un}clean_for_AlgoSigner
+// const note = algosdk.encodeObj('Reach');
+const NOTE_Reach = new Uint8Array(Buffer.from(`Reach ${VERSION}`));
+
 const makeTransferTxn = (
   from: Address,
   to: Address,
@@ -803,18 +811,14 @@ const makeTransferTxn = (
   closeTo: Address|undefined = undefined,
 ): Txn => {
   const valuen = bigNumberToNumber(value);
-  // XXX AlgoSigner doesn't correctly handle msgpacked notes
-  // When it does: update {,un}clean_for_AlgoSigner
-  // const note = algosdk.encodeObj('Reach');
-  const note = new Uint8Array(Buffer.from('Reach'));
   const txn =
     token ?
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         from, to, closeTo, undefined,
-        valuen, ui8z, bigNumberToNumber(token), ps)
+        valuen, NOTE_Reach, bigNumberToNumber(token), ps)
     :
       algosdk.makePaymentTxnWithSuggestedParams(
-        from, to, valuen, closeTo, note, ps);
+        from, to, valuen, closeTo, NOTE_Reach, ps);
   return txn;
 };
 
@@ -1071,14 +1075,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.makeApplicationNoOpTxn;
         const txnAppl =
           whichAppl(
-            thisAcc.addr, params, ApplicationID, safe_args);
+            thisAcc.addr, params, ApplicationID, safe_args,
+            undefined, undefined, undefined, NOTE_Reach);
         const txnFromHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,
             thisAcc.addr,
             0,
             thisAcc.addr,
-            ui8z,
+            NOTE_Reach,
             params);
         debug(dhead, '--- txnFromHandler =', txnFromHandler);
         const txnToHandler =
@@ -1086,7 +1091,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             thisAcc.addr,
             handler.hash,
             txnFromHandler.fee + raw_minimumBalance,
-            undefined, ui8z,
+            undefined, NOTE_Reach,
             params);
         debug(dhead, '--- txnToHandler =', txnToHandler);
         const txns = [
@@ -1324,7 +1329,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          0, 0, 2, 2));
+          0, 0, 2, 2,
+          undefined, undefined, undefined, undefined,
+          NOTE_Reach));
 
     const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
@@ -1338,13 +1345,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       algosdk.makeApplicationUpdateTxn(
         thisAcc.addr, params,
         ApplicationID, bin_comp.appApproval.result,
-        appClear_bin.result);
+        appClear_bin.result,
+        undefined, undefined, undefined, undefined,
+        NOTE_Reach);
     const txnToContract =
       algosdk.makePaymentTxnWithSuggestedParams(
         thisAcc.addr,
         escrowAddr,
         raw_minimumBalance,
-        undefined, ui8z,
+        undefined, NOTE_Reach,
         params);
 
     const txns = [

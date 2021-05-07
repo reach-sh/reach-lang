@@ -34,7 +34,7 @@ rules:
   no-duplicate-imports:
     - error
   max-len:
-    - error
+    - off
     - code:       256
       ignoreUrls: true
   no-tabs:

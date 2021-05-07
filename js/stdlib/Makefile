@@ -24,8 +24,11 @@ mo:
 package.json: package.mo.json $(ROOT)/VERSION mo
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
+ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION mo
+	REACH_VERSION=$(REACH_VERSION) mo $< > $@
+
 .PHONY: build
-build: package.json
+build: package.json ts/version.ts
 	docker build --tag=$(IMAGE) \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \

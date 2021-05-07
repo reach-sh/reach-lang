@@ -65,17 +65,25 @@ declare module 'algosdk' {
     hash: string
   }
 
+  declare type ARG_appArgs = Array<LogicArg>;
+  declare type ARG_appAccounts = Array<string>;
+  declare type ARG_foreignApps = Array<number>;
+  declare type ARG_foreignAssets = Array<number>;
+  declare type ARG_note = Uint8Array;
+  declare type ARG_lease = Uint8Array;
+  declare type ARG_rekeyTo = string;
+
   declare function makePaymentTxnWithSuggestedParams(
       from: Address, to: Address, amount: number,
       closeRemainderTo: Address|undefined,
-      note: Uint8Array, params: TxnParams
+      note: ARG_note, params: TxnParams
   ): Txn;
   declare function makeAssetTransferTxnWithSuggestedParams(
       from: Address, to: Address,
       closeRemainderTo: Address|undefined,
       revocationTarget: Address|undefined,
       amount: number,
-      note: Uint8Array,
+      note: ARG_note,
       id: number,
       params: TxnParams
   ): Txn;
@@ -96,26 +104,52 @@ declare module 'algosdk' {
     numLocalInts: number,
     numLocalByteSlices: number,
     numGlobalInts: number,
-    numGlobalByteSlices: number
+    numGlobalByteSlices: number,
+    appArgs?: ARG_appArgs,
+    accounts?: ARG_appAccounts,
+    foreignApps?: ARG_appForeignApps,
+    foreignAssets?: ARG_appForeignAssets,
+    note?: ARG_note,
+    lease?: ARG_lease,
+    rekeyTo?: ARG_reKeyTo
   ): Txn;
   declare function makeApplicationUpdateTxn(
     from: Address,
     suggestedParams: TxnParams,
     appIndex: number,
     approvalProgram: Uint8Array,
-    clearProgram: Uint8Array
+    clearProgram: Uint8Array,
+    appArgs?: ARG_appArgs,
+    accounts?: ARG_appAccounts,
+    foreignApps?: ARG_appForeignApps,
+    foreignAssets?: ARG_appForeignAssets,
+    note?: ARG_note,
+    lease?: ARG_lease,
+    rekeyTo?: ARG_reKeyTo
   ): Txn;
   declare function makeApplicationDeleteTxn(
     from: Address,
     suggestedParams: TxnParams,
     appIndex: number,
-    args: Array<LogicArg>,
+    appArgs: ARG_appArgs,
+    accounts?: ARG_appAccounts,
+    foreignApps?: ARG_appForeignApps,
+    foreignAssets?: ARG_appForeignAssets,
+    note?: ARG_note,
+    lease?: ARG_lease,
+    rekeyTo?: ARG_reKeyTo
   ): Txn;
   declare function makeApplicationNoOpTxn(
     from: Address,
     suggestedParams: TxnParams,
     appIndex: number,
-    args: Array<LogicArg>,
+    appArgs: ARG_appArgs,
+    accounts?: ARG_appAccounts,
+    foreignApps?: ARG_appForeignApps,
+    foreignAssets?: ARG_appForeignAssets,
+    note?: ARG_note,
+    lease?: ARG_lease,
+    rekeyTo?: ARG_reKeyTo
   ): Txn;
   declare function assignGroupID(
     txns: Array<Txn>
