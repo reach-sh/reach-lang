@@ -730,8 +730,9 @@ This may only occur within a @tech{consensus step}.
 @(mint-define! '("while") '("var") '("invariant"))
 @reach{
  var [ heap1, heap2 ] = [ 21, 21 ];
+ { const sum = () => heap1 + heap2; }
  invariant(balance() == 2 * wagerAmount);
- while ( heap1 + heap2 > 0 ) {
+ while ( sum() > 0 ) {
    ....
    [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
    continue; } }
@@ -740,10 +741,12 @@ A @deftech{while statement} may occur within a @tech{consensus step} and is writ
 
 @reach{
  var LHS = INIT_EXPR;
+ BLOCK; // optional
  invariant(INVARIANT_EXPR);
  while( COND_EXPR ) BLOCK }
 
 where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and
+@reachin{BLOCK} is an optional @tech{block} that may define bindings that use the @reachin{LHS} values which are bound inside the rest of the @reachin{while} and its @tech{tail}, and
 @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and
 if @reachin{COND_EXPR} is true, then the @tech{block} executes,
 and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}.

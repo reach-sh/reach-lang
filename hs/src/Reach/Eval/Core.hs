@@ -1250,8 +1250,7 @@ evalForm f args = do
       case mmode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
-          let sp = JSSemi a
-          let default_pay = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne (JSIdentifier a "_")) a) a (JSExpressionStatement (JSDecimal a "0") sp)
+          let default_pay = jsArrowExpr a [JSIdentifier a "_"] $ JSDecimal a "0"
           at <- withAt id
           case_args <-
             case args of
@@ -1269,9 +1268,7 @@ evalForm f args = do
             [d, x] -> return (d, x)
             _ -> illegal_args 2
           let ta = srcloc2annot at
-          let throwS =
-                JSArrowExpression (JSParenthesizedArrowParameterList ta JSLNil ta) ta $
-                  JSThrow ta arg JSSemiAuto
+          let throwS = jsArrow ta [] $ JSThrow ta arg (a2sp ta)
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS])) mpay
         Just FM_PaySpec -> do
           nnts <- case args of
@@ -2244,9 +2241,9 @@ evalPrim p sargs =
                    expect_t ow $ Err_Decl_NotType "closure")
           cases_m
       -- Generate the function to call
+      ann <- withAt at2a
+      let semi = a2sp ann
       fnv <- evalExpr $ do
-        let ann = JSNoAnnot
-        let semi = JSSemiAuto
         let data_param = JSIdentifier ann "data_id"
         let case_param = JSIdentifier ann "cases_id"
         let go (tycon, case_args) =
@@ -2257,19 +2254,18 @@ evalPrim p sargs =
                 tycon_ty = M.lookup tycon obj_tys
                 case_id = JSIdentifier ann tycon
                 fn = JSMemberDot case_param ann $ JSIdentifier ann tycon
-                one = JSLOne data_param
+                one = [data_param]
                 js_args = case tycon_ty of
                             Just T_Null ->
                               case case_args of
-                                False -> JSLNil
+                                False -> []
                                 True -> one
                             _ -> one
-                ret = JSCallExpression fn ann js_args ann
+                ret = jsCall ann fn js_args
                 case_body = [JSReturn ann (Just ret) semi]
         let switch_parts = map go $ M.toAscList args_x_case
         let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
-        let params = mkArrowParameterList [data_param, case_param]
-        JSArrowExpression params ann body
+        jsArrow ann [data_param, case_param] body
       -- Apply the object and cases to the newly created function
       let fn = snd fnv
       evalApplyVals' fn [public obj, public cases]
@@ -3495,6 +3491,9 @@ srcloc2annot = \case
   SrcLoc _ (Just x) _ -> JSAnnot x []
   _ -> JSNoAnnot
 
+at2a :: SrcLoc -> JSAnnot
+at2a = srcloc2annot
+
 typeToExpr :: DLType -> JSExpression
 typeToExpr = \case
   T_Null -> var "Null"
@@ -3549,11 +3548,8 @@ doFork ks cases mtime mnntpay = do
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
   let tv = jid "t"
-  let thunkBlock b = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a $ JSStatementBlock a b a sp
-  let oneParam p e = JSArrowExpression (JSParenthesizedArrowParameterList a (JSLOne p) a) a (JSExpressionStatement e sp)
-  let callThunk e = JSCallExpression e a JSLNil a
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
-  let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
+  let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
   let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
   let indexed = zip [0 ..] :: [a] -> [(Int, a)]
   let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
@@ -3572,7 +3568,7 @@ doFork ks cases mtime mnntpay = do
         let defWhen = defcon when_id $ tDot "when" $ JSLiteral a "true"
         let defMsg = defcon msg_id $ tDot "msg" $ JSLiteral a "null"
         return $ (,) res_ty_m $
-          [ defcon tv $ callThunk before_e
+          [ defcon tv $ jsCallThunk a before_e
           , defWhen
           , defMsg ]
   let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
@@ -3610,7 +3606,7 @@ doFork ks cases mtime mnntpay = do
                     only_body <>
                       [ JSReturn a (Just returnExpr) sp ]
               let cloName = "run" <> partCase n
-              return (res_ty_m, cloName, thunkBlock stmts)
+              return (res_ty_m, cloName, jsThunkStmts a stmts)
 
         (res_ty_ms, beforeNames, beforeClosures) <- unzip3 <$> mapM makeRuns (indexed $ zip ats before_es)
         -- Msg is either the type for a single case or variant of all possible case msgs
@@ -3624,14 +3620,14 @@ doFork ks cases mtime mnntpay = do
         let genCaseResStmts = aux 0
               where
                 aux :: Int -> [String] -> [JSStatement]
-                aux 0 [h] = [defcon res_e $ callThunk $ jid h]
-                aux 0 (h : t) = defcon (mkCaseRes 0) (callThunk $ jid h) : aux 1 t
-                aux n (h : t) =
-                  let prevRes = mkCaseRes $ n - 1
-                   in let thisRes = if null t then res_e else mkCaseRes n
-                       in let cnd = JSMemberDot prevRes a (jid "when")
-                           in let e = JSExpressionTernary cnd a prevRes a $ callThunk $ jid h
-                               in defcon thisRes e : aux (n + 1) t
+                aux 0 [h] = [defcon res_e $ jsCallThunk a $ jid h]
+                aux 0 (h : t) = defcon (mkCaseRes 0) (jsCallThunk a $ jid h) : aux 1 t
+                aux n (h : t) = defcon thisRes e : aux (n + 1) t
+                  where
+                    prevRes = mkCaseRes $ n - 1
+                    thisRes = if null t then res_e else mkCaseRes n
+                    cnd = JSMemberDot prevRes a (jid "when")
+                    e = JSExpressionTernary cnd a prevRes a $ jsCallThunk a $ jid h
                 aux _ [] = []
                 mkCaseRes :: Int -> JSExpression
                 mkCaseRes n = jid $ "case_res" <> show n
@@ -3645,8 +3641,8 @@ doFork ks cases mtime mnntpay = do
         let pay_go (i, e) = mkobjp (partCase i) e
         let pay_obj_props = map pay_go $ indexed pay_es
         let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
-        let pay_cases = oneParam tv $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
-        let cfc_req_prop = mkobjp who $ oneParam (jid "_") req_e
+        let pay_cases = jsArrowExpr a [tv] $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
+        let cfc_req_prop = mkobjp who $ jsArrowExpr a [(jid "_")] req_e
         let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
         let (cfc_msg_type_def, tyExpr) =
               case msg_ty of
@@ -3730,9 +3726,8 @@ doFork ks cases mtime mnntpay = do
                               , JSStringLiteral a ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")]) a) sp
               ) (Seq.fromList nnts)
         let pay_var tl = JSArrayLiteral a (intercalate [JSArrayComma a] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) a
-        let noArgs = JSParenthesizedArrowParameterList a JSLNil a
         let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp] <> verifyPaySpec <> [ JSReturn a (Just (pay_var nnts_ret)) sp]
-        let pay_call = JSCallExpression (JSArrowExpression noArgs a (JSStatementBlock a pay_ss a sp)) a JSLNil a
+        let pay_call = jsCallThunk a $ jsThunkStmts a pay_ss
         return pay_call
       _ -> return pay_e
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_expr) a
@@ -3768,11 +3763,10 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   let var_decls = JSLOne (JSVarInitExpression lhs (JSVarInit a init_e))
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
-  let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
-  let call ta f es = JSCallExpression f ta (toJSCL es) ta
+  let fork_e0 = jsCall a (jid "fork") []
   let makeContinue ss = do
         let def_e = jid $ prid "res"
-        let call_og = call a (thunk a ss) []
+        let call_og = jsCallThunk a (jsThunkStmts a [ss])
         let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_og) sp
         let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
         let continue_s = JSContinue a JSIdentNone sp
@@ -3780,7 +3774,7 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   let injectContinueIntoBody = \case
         JSExpressionParen _ e _ -> injectContinueIntoBody e
         JSArrowExpression args annt ss -> do
-          return $ JSExpressionParen a (JSArrowExpression args annt $ block annt $ makeContinue ss) a
+          return $ JSExpressionParen a (JSArrowExpression args annt $ JSStatementBlock annt (makeContinue ss) annt (a2sp annt)) a
         ow -> evalExpr ow >>= \ v -> (expect_t (snd v) $ Err_Expected "function")
   fork_e1 <-
     case pr_mtime of
@@ -3788,20 +3782,20 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
       Just (mode, t_at, args) ->
         case (mode, args) of
           (PRM_ThrowTimeout, [t_e]) ->
-            callTimeout [t_e, thunk ta $ block ta [JSThrow ta lhs semi]]
+            callTimeout [t_e, jsThunkStmts ta [JSThrow ta lhs semi]]
           (PRM_TimeRemaining, [t_e]) -> do
             let dot o f = JSCallExpressionDot o ta f
             let publish = dot (jid "Anybody") $ jid "publish"
-            let pubApp = call ta publish []
+            let pubApp = jsCallThunk ta publish
             let bodyStmts = JSStatementBlock ta
                   [ JSExpressionStatement pubApp semi
                   , JSReturn ta (Just lhs) semi
                   ] ta sp
-            callTimeout [t_e, thunk ta $ block ta $ makeContinue bodyStmts]
+            callTimeout [t_e, jsThunkStmts ta $ makeContinue bodyStmts]
           (PRM_Timeout, t_d:t_fn:_) -> do
             locAt t_at $ do
               t_fn' <- injectContinueIntoBody t_fn
-              return $ call ta (JSMemberDot fork_e0 ta timeOutId) [t_d, t_fn']
+              return $ jsCall ta (JSMemberDot fork_e0 ta timeOutId) [t_d, t_fn']
           (PRM_Timeout, _) ->  expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
           (PRM_ThrowTimeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
           (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
@@ -3809,13 +3803,13 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
         where
           semi = JSSemiAuto
           timeOutId = jid "timeout"
-          callTimeout = return . call ta (JSMemberDot fork_e0 ta timeOutId)
+          callTimeout = return . jsCall ta (JSMemberDot fork_e0 ta timeOutId)
           ta = ao t_at
   fork_e2 <-
     case pr_mpay of
       Nothing -> return fork_e1
       Just toks ->
-        return $ call a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
+        return $ jsCall a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
   let forkcase fork_eN (case_at, case_es) = do
         let aux ccomps cbody = locAt case_at $ do
                   cbody' <- injectContinueIntoBody cbody
@@ -3836,10 +3830,25 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   -- liftIO $ putStrLn $ "ParallelReduce"
   -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
-  where
-    block ta bodys = JSStatementBlock ta bodys ta JSSemiAuto
-    thunk ta = JSArrowExpression noArgs ta
-    noArgs = JSParenthesizedArrowParameterList JSNoAnnot JSLNil JSNoAnnot
+
+jsArrow :: JSAnnot -> [JSExpression] -> JSStatement -> JSExpression
+jsArrow a args s = JSArrowExpression args' a s
+  where args' = JSParenthesizedArrowParameterList a (toJSCL args) a
+
+jsArrowExpr :: JSAnnot -> [JSExpression] -> JSExpression -> JSExpression
+jsArrowExpr a args e = jsArrow a args $ JSExpressionStatement e (a2sp a)
+
+jsArrowStmts :: JSAnnot -> [JSExpression] -> [JSStatement] -> JSExpression
+jsArrowStmts a args s = jsArrow a args $ JSStatementBlock a s a (a2sp a)
+
+jsThunkStmts :: JSAnnot -> [JSStatement] -> JSExpression
+jsThunkStmts a = jsArrowStmts a []
+
+jsCallThunk :: JSAnnot -> JSExpression -> JSExpression
+jsCallThunk a e = jsCall a e []
+
+jsCall :: JSAnnot -> JSExpression -> [JSExpression] -> JSExpression
+jsCall a f as = JSCallExpression f a (toJSCL as) a
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =
@@ -4376,14 +4385,15 @@ evalStmt = \case
             ensure_mode SLM_ConsensusStep "while"
             (while_lhs, while_rhs) <- destructDecls while_decls
             (init_vars, init_dl, sco_env') <- doWhileLikeInitEval while_lhs while_rhs
+            let add_preamble a e = jsCallThunk a $ jsThunkStmts a $ blk_ss <> [ JSReturn a (Just e) (a2sp a) ]
             inv_b <-
               locAtf (srcloc_jsa "invariant" inv_a) $
                 locSco sco_env' $
                   locWhileInvariant $
-                    evalPureExprToBlock invariant_e T_Bool
+                    evalPureExprToBlock (add_preamble inv_a invariant_e) T_Bool
             cond_b <-
               locAtf (srcloc_jsa "cond" cond_a) $
-                locSco sco_env' $ evalPureExprToBlock while_cond T_Bool
+                locSco sco_env' $ evalPureExprToBlock (add_preamble cond_a while_cond) T_Bool
             let while_sco =
                   sco_env'
                     { sco_while_vars = Just init_vars
