@@ -746,52 +746,16 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer at who amt mtok -> do
-    doTransfer TK_Out at (ca who) amt mtok
-  DLE_TokenInit at tok -> do
+  DLE_Transfer _at who amt mtok -> do
+    doTransfer TK_Out (ca who) amt mtok
+  DLE_TokenInit _at tok -> do
     comment $ "Initializing token"
-    doTransfer TK_Init at (code "byte" [tContractAddr]) (DLA_Literal $ DLL_Int sb 0) (Just tok)
+    doTransfer TK_Init (code "byte" [tContractAddr]) (DLA_Literal $ DLL_Int sb 0) (Just tok)
   DLE_CheckPay at fs amt mtok -> do
-    comment $ "CheckPay"
-    comment $ texty $ unsafeRedactAbsStr $ show at
-    comment $ texty $ unsafeRedactAbsStr $ show fs
-    txni <- talloc TK_In
-    (vTypeEnum, fReceiver, fAmount, rmFee, _fSender :: String) <-
-      case mtok of
-        Nothing ->
-          return ("pay", "Receiver", "Amount", True, "Sender")
-        Just tok -> do
-          code "gtxn" [texty txni, "XferAsset"]
-          ca tok
-          eq_or_fail
-          return ("axfer", "AssetReceiver", "AssetAmount", False, "Sender")
-    code "gtxn" [texty txni, "TypeEnum"]
-    code "int" [vTypeEnum]
-    eq_or_fail
-    code "gtxn" [texty txni, fReceiver]
-    code "byte" [tContractAddr]
-    cfrombs T_Address
-    eq_or_fail
-    code "gtxn" [texty txni, fAmount]
-    case rmFee of
-      False ->
-        ca amt
-      True -> do
-        lookup_fee_amount
-        case amt of
-          DLA_Literal (DLL_Int _ 0) ->
-            return ()
-          _ -> do
-            op "-"
-            ca amt
-    eq_or_fail
-  -- NOTE: We don't care who the sender is... this means that you can get
-  -- other people to pay for you if you want.
-  -- code "gtxn" [texty txni, fSender]
+    show_stack ("CheckPay"::String) at fs
+    doCheckPay amt mtok
   DLE_Claim at fs t a mmsg -> do
-    comment $ texty mmsg
-    comment $ texty $ unsafeRedactAbsStr $ show at
-    comment $ texty $ unsafeRedactAbsStr $ show fs
+    show_stack mmsg at fs
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume _ -> check
@@ -807,10 +771,14 @@ ce = \case
   DLE_MapDel {} -> xxx "algo mapdel"
   DLE_Remote {} -> xxx "algo remote"
   DLE_ViewIs {} -> impossible "viewis"
+  where
+    show_stack msg at fs = do
+      comment $ texty msg
+      comment $ texty $ unsafeRedactAbsStr $ show at
+      comment $ texty $ unsafeRedactAbsStr $ show fs
 
-doTransfer :: TxnKind -> SrcLoc -> App () -> DLArg -> Maybe DLArg -> App ()
-doTransfer tk _at cwho amt mtok = do
-  txni <- talloc tk
+doTransfer_ :: TxnIdx -> App () -> DLArg -> Maybe DLArg -> App ()
+doTransfer_ txni cwho amt mtok = do
   (vTypeEnum, fReceiver, fAmount, fSender) <-
     case mtok of
       Nothing ->
@@ -834,6 +802,49 @@ doTransfer tk _at cwho amt mtok = do
   code "byte" [tContractAddr]
   cfrombs T_Address
   eq_or_fail
+
+doTransfer :: TxnKind -> App () -> DLArg -> Maybe DLArg -> App ()
+doTransfer tk cwho amt mtok = do
+  txni <- talloc tk
+  doTransfer_ txni cwho amt mtok
+
+doCheckPay_ :: TxnIdx -> DLArg -> Maybe DLArg -> App ()
+doCheckPay_ txni amt mtok = do
+  (vTypeEnum, fReceiver, fAmount, rmFee, _fSender :: String) <-
+    case mtok of
+      Nothing ->
+        return ("pay", "Receiver", "Amount", True, "Sender")
+      Just tok -> do
+        code "gtxn" [texty txni, "XferAsset"]
+        ca tok
+        eq_or_fail
+        return ("axfer", "AssetReceiver", "AssetAmount", False, "Sender")
+  code "gtxn" [texty txni, "TypeEnum"]
+  code "int" [vTypeEnum]
+  eq_or_fail
+  code "gtxn" [texty txni, fReceiver]
+  code "byte" [tContractAddr]
+  cfrombs T_Address
+  eq_or_fail
+  code "gtxn" [texty txni, fAmount]
+  case rmFee of
+    False ->
+      ca amt
+    True -> do
+      lookup_fee_amount
+      case amt of
+        DLA_Literal (DLL_Int _ 0) ->
+          return ()
+        _ -> do
+          op "-"
+          ca amt
+  eq_or_fail
+  comment "We don't care who the sender is... this means that you can get other people to pay for you if you want."
+
+doCheckPay :: DLArg -> Maybe DLArg -> App ()
+doCheckPay amt mtok = do
+  txni <- talloc TK_In
+  doCheckPay_ txni amt mtok
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
@@ -1349,6 +1360,14 @@ compile_algo disp pl = do
     code "global" ["GroupSize"]
     cl $ DLL_Int sb $ 2
     eq_or_fail
+    code "gtxn" [texty txnToHandler, "TypeEnum"]
+    code "int" [ "pay" ]
+    eq_or_fail
+    code "gtxn" [texty txnToHandler, "Amount"]
+    cl minimumBalance_l
+    eq_or_fail
+    comment "We don't check the receiver, because we don't know it yet, because the escrow account embeds our id"
+    comment "We don't check the sender, because we don't care... anyone is allowed to fund it. We'll give it back to the deployer, though."
     code "txn" ["OnCompletion"]
     code "int" ["UpdateApplication"]
     eq_or_fail
