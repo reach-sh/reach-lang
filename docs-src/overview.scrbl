@@ -19,7 +19,7 @@ These agents act on behalf of principals that provide direction and authority th
 These principals might be humans or other autonomous agents or even committees and organizations with their own structure.
 The consensus network allows these agents to transfer and receive value in the form of network-specific tokens, like ETH or ALGO.
 The network also allows the creation of "contracts" that ensure that all agents follow the same rules as they take turns computing and publishing values and information.
-The details of these "contracts" are specific to each consensus network, but they are implicitly trusted by all agents and principals, because their operation can be independently verified to match the previously agreed-upon rules.
+The details of these "contracts" are specific to each consensus network, but they are implicitly trusted by all agents and principals because their operation can be independently verified to match the previously agreed-upon rules.
 
 A single Reach program incorporates all aspects of a @|DApp|:
 @itemlist[
@@ -75,7 +75,7 @@ The elided lines, 12 through 30, contain the body of the application, which we c
 @item{Lines 12 and 13 specify that Alice takes a @tech{local step} where she @tech{declassifies} the amount of tokens requested.
 In Reach, all values from the @tech{frontend} are @tech{secret} until explicitly made @tech{public} with @tech{declassify}.}
 
-@item{Line 14 has Alice @tech{joins} the application by publishing that value and the logic of the program transitions to specifying what the @tech{contract} does.}
+@item{Line 14 has Alice @tech{join} the application by publishing that value, and the logic of the program transitions to specifying what the @tech{contract} does.}
 
 @item{Line 15 has the @tech{contract} commit to these values and continue the rest of the program.}
 
@@ -88,11 +88,11 @@ At this point, Bob's @tech{backend} has learned the value of @reachin{request} a
 
 @itemlist[
 
-@item{Lines 17 and 18 has Bob perform that delivery.
-@reachin{interact.want} doesn't explicitly return a boolean, because the frontend can not return if Bob doesn't want to continue.
+@item{Lines 17 and 18 have Bob perform that delivery.
+@reachin{interact.want} doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
 A better version of this program might return @reachin{false} and have that communicated to Alice.}
 
-@item{Lines 19 and 20 have Bob @tech{join} the application and submit a payment matching the appropriate amount and then the @tech{contract} commits.}
+@item{Lines 19 and 20 have Bob @tech{join} the application and submit a payment matching the appropriate amount, and then the @tech{contract} commits.}
 
 ]
 
@@ -146,14 +146,14 @@ For this @exloc["overview/index.rsh"] line application, the Reach compiler gener
 Separately, it generated @exloc["overview/build/index.main.sol"] lines of Solidity code to implement the contract.
 If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol" -152] lines in these three modules separately and keep them synchronized at every step of the development process.
 
-Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
-Nor is Reach tied to JavaScript, it can be configured to target other @tech{backend} languages, like Go.
+Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target a different @tech{consensus network}, like Algorand.
+Nor is Reach tied to JavaScript: it can be configured to target other @tech{backend} languages, like Go.
 
 @section[#:tag "over-verify"]{Verify}
 
-Reach doesn't just compile your program, it also verifies it and ensures that entire categories of errors don't occur.
+Reach doesn't just compile your program: it also verifies it and ensures that entire categories of errors don't occur.
 For example, it always guarantees that the balance in the @tech{contract} at the end of the program is zero.
-This is important, because if it were not true, then tokens would be locked away by the @tech{contract} and inaccessible.
+This is important because if it were not true, then tokens would be locked away by the @tech{contract} and inaccessible.
 
 For this example program, it is obvious that when a single transfer of @reachin{request} goes in at line 18 and a single transfer of @reachin{request} goes out at line 24, then the balance is zero at the end of the program.
 We could make a small tweak, however, to demonstrate things going wrong.
@@ -163,7 +163,7 @@ Let's change the third step to leave a single unit in the balance:
 @reachex[#:show-lines? #t "overview/index-error.rsh"
          'only 21 25 "      // ..."]
 
-And then run the compiler
+And then run the compiler:
 
 @cmd{reach compile @reachexlink["overview/index-error.rsh"]}
 
@@ -178,7 +178,7 @@ In this case, it reports that if Alice were to pass an @reachin{interact.request
 
 @(hrule)
 
-Reach programmers don't need to be worried about entire categories of errors, because the compiler automatically checks their code and ensures that those errors aren't present.
+Reach programmers don't need to worry about entire categories of errors because the compiler automatically checks their code and ensures that those errors aren't present.
 Of course, there's a lot more to say about the details of @seclink["guide-assert"]{automatic verification}; indeed, it is one of the most powerful features of Reach, but we'll leave it at that for now.
 
 @section[#:tag "over-interface"]{Interface}
@@ -200,24 +200,23 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 
 @item{Lines 1 and 2 import the Reach standard library loader and the compiled app backend.}
 
-@item{Line 5 dynamically loads the appropriate network-specific Reach stdlib,
+@item{Line 5 dynamically loads the appropriate network-specific Reach standard library,
 based on the @tech{REACH_CONNECTOR_MODE} environment variable.
-If unspecified, Reach's ETH stdlib will be used by default.
-All of Reach's network-specific stdlibs adhere to a common interface,
-which allows you to write programs which are network-agnostic.}
+If unspecified, Reach's Ethereum standard library will be used by default.
+All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.}
 
 @item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
 
-@item{Line 10 has Alice deploy the contact on the consensus network.}
+@item{Line 10 has Alice deploy the contract on the consensus network.}
 
 @item{Line 11 has Bob attach to the contract.
 The value @jsin{ctcAlice} contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.}
 
-@item{Lines 13 through 22 launch the backends and wait for their completion, we'll look at the details in a moment.}
+@item{Lines 13 through 22 launch the backends and wait for their completion. We'll look at the details in a moment.}
 
 ]
 
-This code will be very similar for all testing programs and demonstrates how straight-forward it is to scaffold a Reach application for testing.
+This code, similar for all test programs, demonstrates how straightforward it is to scaffold a Reach application for testing.
 
 Let's look at initializing and interfacing each participant, starting with Alice.
 
@@ -227,10 +226,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 @itemlist[
 
-@item{Line 14 extracts the backend for Alice.}
-
-@item{Line 14 also passes it the appropriate standard library and contract handle.
-It needs these to be able to interface with the consensus network.}
+@item{Line 14 invokes Alice, passing a contract object which includes the standard library used by the backend to interface with the consensus network. }
 
 @item{Line 15 provides the @reachin{request} value.}
 
@@ -292,7 +288,7 @@ In fact, Reach works for multiple networks, so if we instead run
 @cmd{REACH_CONNECTOR_MODE=ALGO reach run}
 
 Then Reach will instead start up a private Algorand devnet image and use the Algorand @tech{connector}.
-The developer does not need to change anything about their program, because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
+The developer does not need to change anything about their program because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
 
 @section[#:tag "over-react"]{Web app}
 
@@ -303,7 +299,7 @@ and provides a brief explanation of how it works.}
 The previous execution uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
 
-A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "examples/overview-react"] file, but connected to a React-based @reachexlink["index.js" #:dir "examples/overview-react"] file.
+A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "examples/overview-react"] file connected, this time, to a React-based @reachexlink["index.js" #:dir "examples/overview-react"] file.
 (It also uses some simple React @reachexlink["views" #:dir "examples/overview-react"]
  and @reachexlink["index.css" @tt{css} #:dir "examples/overview-react"] to go with it.)
 Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "examples/overview-react"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples/overview"] from before:
@@ -322,9 +318,8 @@ We hook into the App @link["https://reactjs.org/docs/react-component.html"]{comp
 in order to fetch the user's account.
 @jsin{getDefaultAccount} automatically interacts with browser extensions, like MetaMask, to get the user's
 currently-selected account.
-Reach is able to deploy contracts and send transactions to the consensus network by prompting the user through the extension's API,
-without the Reach programming having to do this in manually.
-This is just like how in the Node.js deployment, the Reach programmer does need to decode the details of the underlying consensus network's interaction API.
+Reach is able to deploy contracts and send transactions to the consensus network by prompting the user directly through the extension's API, without additional assistance from the React frontend.
+This is just like how in the Node.js deployment, the Reach programmer does not need to decode the details of the underlying consensus network's interaction API.
 
 @reachex[#:mode js
          #:show-lines? #t "overview-react/index.js"
@@ -345,7 +340,7 @@ Similarly, we implement a @jsin{runBackend} method that executes the Reach progr
          #:show-lines? #t "overview-react/index.js"
          'only 112 121 "  // ..."]
 
-We implement a similar method in the @jsin{Bob} component that runs the backend as Bob,
+We implement a similar method in the @jsin{Bob} component that runs the backend as Bob.
 
 We specify Alice's and Bob's respective @tech{participant interact interface}s
 just as we would in Node.js.
@@ -368,10 +363,10 @@ This command runs your DApp with the React development server in a Docker contai
 In this overview, we've briefly described the structure and fundamental concepts of a Reach application.
 We've shown how to construct a simple program, compile it, connect an interface, test at the command-line, and deploy it using a React Web application.
 Since this is only a brief overview of what Reach can do, we left a lot out.
-But even so, it is should be clear why Reach is easiest and safest programming language for decentralized application development.
+But even so, it should be clear why Reach is the easiest and safest programming language for decentralized application development.
 
-Furthermore, this program has many flaws and should not be used in practice.
-For example, it provides no protection to Bob in the event that Alice fails to deliver the information and makes no attempt to ensure that the information is what he wants.
+Furthermore, this example program has many flaws and should not be used in practice.
+For example, it provides no protection to Bob in the event that Alice fails to deliver the information, and makes no attempt to ensure that the information is what he wants.
 Reach allows you to abstract away the low-level details of your decentralized program and focus on these sorts of bigger picture issues.
 In the rest of @seclink["guide"]{the guide}, we discuss design issues like this. For example,
 

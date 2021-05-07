@@ -46,14 +46,14 @@ export const main = Reach.App(
           Buyer,
           (() => ({
             when: declassify(interact.shouldBuyTicket(ticketPrice)) })),
-          (() => ticketPrice),
-          () => {
+          ((_) => ticketPrice),
+          ((_) => {
             const buyer = this;
             Buyer.only(() => interact.showPurchase(buyer));
             const idx = ticketsSold % NUM_OF_WINNERS;
             const newWinners =
               Array.set(winners, idx, buyer);
-            return [ true, newWinners, ticketsSold + 1 ]; })
+            return [ true, newWinners, ticketsSold + 1 ]; }))
         .timeout(deadline, () => {
           Anybody.publish();
           return [ false, winners, ticketsSold ]; });

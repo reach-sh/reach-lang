@@ -4,6 +4,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
+import Reach.AddCounts
 import Reach.AST.DL
 import Reach.Backend.JS
 import Reach.Connector
@@ -113,7 +114,9 @@ compile copts = do
       showp "el" el
       pil <- epp el
       showp "pil" pil
-      let runConnector c = (,) (conName c) <$> conGen c woutnMay pil
+      pl <- add_counts pil
+      showp "pl" pl
+      let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
       crs <- HM.fromList <$> mapM runConnector connectors
-      backend_js woutn crs pil
+      backend_js woutn crs pl
       return ()

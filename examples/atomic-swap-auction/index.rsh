@@ -6,7 +6,7 @@ const common = {
 };
 
 export const main = Reach.App(
-  { connectors: [ETH] },
+  { },
   [ Participant('Auctioneer', {
       ...common,
       getSwap: Fun([], Tuple(Token, UInt, Token, UInt, UInt)),
@@ -55,16 +55,13 @@ export const main = Reach.App(
             ((bid) => [ 0, [bid, tokB] ]),
             ((bid) => {
               require(bid > currentPrice);
-              if (!isFirstBid) {
-                transfer(currentPrice, tokB).to(highestBidder); }
+              transfer(isFirstBid ? 0 : currentPrice, tokB).to(highestBidder);
               return [ this, false, bid ];
             }))
           .timeRemaining(timeRemaining());
 
-      if (!isFirstBid) {
-        transfer(amtA, tokA).to(highestBidder);
-        transfer(currentPrice, tokB).to(Auctioneer);
-      }
+      transfer(isFirstBid ? 0 : amtA, tokA).to(highestBidder);
+      transfer(isFirstBid ? 0 : currentPrice, tokB).to(Auctioneer);
 
       [ dealMade ] = [ !isFirstBid ];
       continue;

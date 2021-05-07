@@ -7,4 +7,4 @@ Verifying for ETH connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 22 theorems; No failures!
+Checked 16 theorems; No failures!

@@ -51,8 +51,8 @@ export const main = Reach.App(
           (() => ({
             when: declassify(interact.shouldBuyTicket(ticketPrice)),
           })),
-          (() => ticketPrice),
-          (() => {
+          ((_) => ticketPrice),
+          ((_) => {
             const buyer = this;
             Buyer.only(() => interact.showPurchase(buyer));
             return [ true, buyer, ticketsSold + 1 ];

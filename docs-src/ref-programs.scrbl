@@ -446,8 +446,8 @@ fork()
   })
 .case(Bob, (() => ({
   when: declassify(interact.keepGoing()) })),
-  (() => wager),
-  () => {
+  ((_) => wager),
+  (_) => {
     commit();
 
     Alice.only(() => interact.showOpponent(Bob));
@@ -489,7 +489,7 @@ If the @litchar{msg} field is absent from the object returned from @reachin{PUBL
 
 If the @litchar{when} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{true}.
 
-If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{() => 0}.
+If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{(_) => 0}.
 
 The @reachin{.case} component may be repeated many times.
 
@@ -524,7 +524,7 @@ The sample @reachin{fork} statement linked to the @reachin{fork} keyword is roug
   // The pay ammount depends on who is publishing
   .pay(fork_msg.match( {
     Alice: (v => v),
-    Bob: (() => wager) } ))
+    Bob: ((_) => wager) } ))
   // The timeout is always the same
   .timeout(deadline, () => {
     race(Alice, Bob).publish();
@@ -537,7 +537,7 @@ The sample @reachin{fork} statement linked to the @reachin{fork} keyword is roug
     // Alice had previously published
     Alice: (v => this == Alice),
     // But Bob had not.
-    Bob: (() => true) } ));
+    Bob: ((_) => true) } ));
 
   // Then we select the appropriate body to run
   switch (fork_msg) {
@@ -785,13 +785,13 @@ const [ keepGoing, as, bs ] =
   .while(keepGoing)
   .case(Alice, (() => ({
     when: declassify(interact.keepGoing()) })),
-    () => {
+    (_) => {
       each([Alice, Bob], () => {
         interact.roundWinnerWas(true); });
       return [ true, 1 + as, bs ]; })
   .case(Bob, (() => ({
     when: declassify(interact.keepGoing()) })),
-    () => {
+    (_) => {
       each([Alice, Bob], () => {
         interact.roundWinnerWas(false); });
       return [ true, as, 1 + bs ]; })
@@ -881,8 +881,8 @@ while(COND_EXPR) {
   .case(PART_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
-    () => {
-      LHS = CONSENSUS_EXPR;
+    (m) => {
+      LHS = CONSENSUS_EXPR(m);
       continue; })
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
@@ -2146,8 +2146,10 @@ or @tt{default} if the variant is @tt{Left}.
 
 A @deftech{match expression}, written @reachin{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
 bound to a @tech{data instance} and @tt{CASE} is @tt{VARIANT: FUNCTION}, where @tt{VARIANT} is a
-variant or @reachin{default}, and @tt{FUNCTION} is a function that takes the same parameters as the
-variant constructor, or no parameters if the variant has a type of @reachin{Null}.
+variant or @reachin{default}, and @tt{FUNCTION} is a function that takes the same arguments as the
+variant constructor.
+If the variant has a type of @reachin{Null}, then the function is allowed to take no arguments.
+@reachin{default} functions must always take an argument, even if all defaulted variants have type @reachin{Null}.
 
 @reachin{match} is similar to a @tech{switch statement}, but since it is an expression, it
 can be conveniently used in places like the right hand side of an assignment statement.

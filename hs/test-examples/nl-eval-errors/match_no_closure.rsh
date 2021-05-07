@@ -13,14 +13,16 @@ export const main =
     ],
     (Alice) => {
 
-      const mx = Maybe(UInt).Some(5);
-      const i = mx.match({
+      const f = (m) => m.match({
         None: 4,
         Some: (i) => { return i },
       });
+      const i = f(Maybe(UInt).Some(5));
+      const j = f(Maybe(UInt).None());
 
       Alice.only(() => {
         interact.put(i);
+        interact.put(j);
       });
 
       exit();

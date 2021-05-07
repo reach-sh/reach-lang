@@ -68,15 +68,13 @@ export const main = Reach.App(
             ((bid) => {
               require(bid > currentPrice);
               // Return funds to previous highest bidder
-              if (!isFirstBid) {
-                transfer(currentPrice).to(winner); }
+              transfer(isFirstBid ? 0 : currentPrice).to(winner);
               return [ this, false, bid ];
             })
           )
           .timeRemaining(timeRemaining());
 
-      if(!isFirstBid) {
-        transfer(currentPrice).to(owner); }
+      transfer(isFirstBid ? 0 : currentPrice).to(owner);
 
       owner = winner;
       continue;

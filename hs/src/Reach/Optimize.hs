@@ -25,6 +25,7 @@ data Focus
 data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
   , cePrev :: M.Map DLExpr DLVar
+  , ceNots :: M.Map DLVar DLArg
   }
 
 instance Semigroup CommonEnv where
@@ -32,12 +33,13 @@ instance Semigroup CommonEnv where
     CommonEnv
       { ceReplaced = g ceReplaced
       , cePrev = g cePrev
+      , ceNots = g ceNots
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty
+  mempty = CommonEnv mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -79,6 +81,18 @@ repeated :: DLExpr -> App (Maybe DLVar)
 repeated = \case
   DLE_Arg _ (DLA_Var dv') -> return $ Just dv'
   e -> lookupCommon cePrev e
+
+optNotHuh :: DLArg -> App (Maybe DLArg)
+optNotHuh = \case
+  DLA_Var v -> lookupCommon ceNots v
+  _ -> return $ Nothing
+
+recordNotHuh :: DLLetVar -> DLArg -> App ()
+recordNotHuh = \case
+  DLV_Eff -> const $ return ()
+  DLV_Let _ v -> \a ->
+    updateLookup (\cenv -> cenv {
+      ceNots = M.insert v a $ ceNots cenv })
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -166,9 +180,31 @@ instance Optimize DLExpr where
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
+      let zero = DLA_Literal $ DLL_Int at 0
       case (p, as') of
+        (ADD, [(DLA_Literal (DLL_Int _ 0)), rhs]) ->
+          return $ DLE_Arg at rhs
+        (ADD, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at lhs
+        (SUB, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at lhs
+        (MUL, [(DLA_Literal (DLL_Int _ 1)), rhs]) ->
+          return $ DLE_Arg at rhs
+        (MUL, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+          return $ DLE_Arg at lhs
+        (MUL, [(DLA_Literal (DLL_Int _ 0)), _]) ->
+          return $ DLE_Arg at zero
+        (MUL, [_, (DLA_Literal (DLL_Int _ 0))]) ->
+          return $ DLE_Arg at zero
+        (DIV, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+          return $ DLE_Arg at lhs
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
           return $ DLE_Arg at $ if c then t else f
+        (IF_THEN_ELSE, [c, t, f]) ->
+          optNotHuh c >>= \case
+            Just c' ->
+              return $ DLE_PrimOp at IF_THEN_ELSE [ c', f, t ]
+            Nothing -> meh
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
@@ -181,11 +217,15 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       case a' of
-        DLA_Literal (DLL_Bool True) ->
-          return $ DLE_Arg at $ DLA_Literal $ DLL_Null
+        DLA_Literal (DLL_Bool True) -> nop at
         _ ->
           return $ DLE_Claim at fs t a' m
-    DLE_Transfer at t a m -> DLE_Transfer at <$> opt t <*> opt a <*> opt m
+    DLE_Transfer at t a m -> do
+      a' <- opt a
+      case a' of
+        DLA_Literal (DLL_Int _ 0) -> nop at
+        _ ->
+          DLE_Transfer at <$> opt t <*> pure a' <*> opt m
     DLE_TokenInit at t -> DLE_TokenInit at <$> opt t
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
@@ -195,6 +235,8 @@ instance Optimize DLExpr where
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
     DLE_ViewIs at k n a -> DLE_ViewIs at k n <$> opt a
+    where
+      nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
@@ -212,17 +254,21 @@ locDo t = DL_LocalIf at (DLA_Literal $ DLL_Bool True) t (DT_Return at)
     at = srcloc_builtin
 
 opt_if :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
-opt_if mkDo mkIf at c t f = do
-  c' <- opt c
-  case c' of
+opt_if mkDo mkIf at c t f =
+  opt c >>= \case
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
-    _ -> do
+    c' -> do
       t' <- newScope $ opt t
       f' <- newScope $ opt f
       case sani t == sani f of
         True -> return $ mkDo t'
-        False -> return $ mkIf at c' t' f'
+        False ->
+          optNotHuh c' >>= \case
+            Just c'' ->
+              return $ mkIf at c'' f' t'
+            Nothing ->
+              return $ mkIf at c' t' f'
 
 instance Optimize DLStmt where
   opt = \case
@@ -244,6 +290,11 @@ instance Optimize DLStmt where
                     return $ DL_Nop at
                   Nothing -> do
                     remember dv e''
+                    case e' of
+                      DLE_PrimOp _ IF_THEN_ELSE [ c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True) ] ->
+                        recordNotHuh x c
+                      _ ->
+                        return ()
                     return $ DL_Let at x e'
       case (extract x, isPure e && canDupe e) of
         (Just dv, True) -> yes dv

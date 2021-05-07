@@ -32,4 +32,4 @@ Verification failed:
   at ./overflow_con.rsh:14:17:application
 
   (details omitted on repeat)
-Checked 11 theorems; 3 failures. :'(
+Checked 8 theorems; 3 failures. :'(

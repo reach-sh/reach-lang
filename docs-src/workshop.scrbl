@@ -157,6 +157,23 @@ Thus, the interest rate for the loan is essentially the Lender's prediction of t
 
 @(WIP/XXX "secured-loan")
 
+@section[#:tag "workshop-atomic-swap"]{Workshop: Atomic Swap}
+
+@(workshop-deps "tut")
+
+In this workshop, we implement an atomic swap, or sell order, wherein a Seller offers an amount of an asset, X of A, in exchange for a prescribed amount of another asset, Y of B, and waits for a Buyer to complete the other side of the trade.
+This workshop demonstrates the use of @tech{non-network tokens}.
+
+@(WIP/XXX "atomic-swap")
+
+@section[#:tag "workshop-atomic-swap-auction"]{Workshop: Atomic Swap Auction}
+
+@(workshop-deps "workshop-atomic-swap")
+
+In this workshop, we extend the @seclink["workshop-atomic-swap"]{Atomic Swap} workshop by allowing the Seller to solicit bids for their X of A in a prescribed asset B and accept whichever buyer is willing to provide the most before a preset time.
+
+@(WIP/XXX "atomic-swap-auction")
+
 @section[#:tag "workshop-race"]{Workshop: Race}
 
 @(workshop-deps "tut")
@@ -188,13 +205,30 @@ This workshop introduces effective use of @tech{participant class}es and @reachi
 
 @section[#:tag "workshop-nft-dumb"]{Workshop: Simple NFT}
 
-@(workshop-deps "race")
+@(workshop-deps "workshop-race")
 
 In this workshop, we implement a trivial @link["https://en.wikipedia.org/wiki/Non-fungible_token"]{non-fungible token} (NFT) where a single creator creates a unique item and initial owns it.
 The creator and all subsequent owners may transfer ownership of the unique item to a different owner and so on.
 This workshop uses a @tech{participant class} to represent owners and is a kind of trial temple before we explore more interesting and in-depth variants of the NFT concept.
 
 @(WIP/XXX "nft-dumb")
+
+@section[#:tag "workshop-nft-auction"]{Workshop: NFT with Auction}
+
+@(workshop-deps "workshop-nft-dumb")
+
+In this workshop, we extend @secref["workshop-nft-dumb"] by adding an auction when the current owner is ready to sell their NFT.
+This could be extended to give creator (or royalty rights holders) a percentage of the auction yield.
+
+@(WIP/XXX "nft-auction")
+
+@section[#:tag "workshop-nft-tax"]{Workshop: NFT with Royalties and Harberger Tax}
+
+@(workshop-deps "workshop-nft-dumb")
+
+In this workshop, we extend @secref["workshop-nft-dumb"] workshop by incorporating a Harberger Tax (c.f. @link["https://en.wikipedia.org/wiki/Arnold_Harberger"]{Arnold Harberger}) where owners must state a price at which they are willing to part with the asset and pay a percentage of that price to the creator.
+They can update this price upwards by paying an additional tax, or decrease it without cost (to free themselves of the asset.)
+This represents an interesting place in the NFT design space where utility increasing transfers are immediate and creators receive royalties.
 
 @section[#:tag "workshop-raffle"]{Workshop: Raffle}
 

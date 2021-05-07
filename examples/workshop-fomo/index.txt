@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Buyer" is honest
   Verifying when ONLY "Funder" is honest
-Checked 29 theorems; No failures!
+Checked 28 theorems; No failures!
