@@ -381,7 +381,8 @@ ee_t = eeIze be_t
 
 be_m :: BAppT2 DLStmt
 be_m = \case
-  DL_Nop at -> retb0 $ const $ return $ DL_Nop at
+  DL_Nop at -> nop at
+  c | isViewIs c -> nop $ srclocOf c
   DL_Let at mdv de -> do
     case de of
       DLE_Remote {} -> recordOutputVar mdv
@@ -438,6 +439,8 @@ be_m = \case
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
   DL_Only {} -> impossible $ "right only before EPP"
+  where
+    nop at = retb0 $ const $ return $ DL_Nop at
 
 be_t :: BAppT2 DLTail
 be_t = \case
@@ -446,7 +449,7 @@ be_t = \case
     m'p <- be_m m
     k'p <- be_t k
     retb2 m'p k'p (\m' k' ->
-      return $ DT_Com m' k')
+      return $ mkCom DT_Com m' k')
 
 retb :: (Monad m, Monad n, Monad p) => (forall o . Monad o => a -> o b) -> (m a, n a) -> p (m b, n b)
 retb f (mx, my) = return $ (,) (mx >>= f) (my >>= f)
@@ -495,7 +498,7 @@ be_c = \case
     let remember_toks = local (\e -> e {be_toks = toks <> be_toks e})
     (k'c, k'l) <- remember_toks $ be_c k
     (c'c, c'l) <- withConsensus True $ be_m c
-    return $ (,) (CT_Com <$> c'c <*> k'c) (ET_Com <$> c'l <*> k'l)
+    return $ (,) (mkCom CT_Com <$> c'c <*> k'c) (mkCom ET_Com <$> c'l <*> k'l)
   LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
     (f'c, f'l) <- be_c f
@@ -529,7 +532,7 @@ be_c = \case
     let lm = ET_FromConsensus at1 which vis <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
-    let DLBlock cond_at _ cond_l cond_a = cond
+    let DLBlock cond_at cond_fs cond_l cond_a = cond
     this_loop <- newHandler "While"
     let inBlock which = local (\e -> e {be_which = which})
     let inLoop = inBlock this_loop
@@ -557,7 +560,7 @@ be_c = \case
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
-    (cond_l', _) <- inLoop $ do
+    (cond_l'c, cond_l'l) <- inLoop $ do
       fg_defn $ loop_vars
       fg_use cond_a
       be_t cond_l
@@ -566,14 +569,15 @@ be_c = \case
         local (\e -> e {be_loop = Just this_loop}) $
           be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
-    let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'
+    let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     setHandler this_loop $ do
       loop_svs <- ce_readMustReceive this_loop
       loopc <- (liftIO . optimize) =<< loop_top
       return $ C_Loop at loop_svs loop_vars loopc
     fg_jump $ this_loop
     let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
-    let lm = ET_While at asn cond <$> body'l <*> k'l
+    let cond'l = DLBlock cond_at cond_fs <$> cond_l'l <*> pure cond_a
+    let lm = ET_While at asn <$> cond'l <*> body'l <*> k'l
     return $ (,) cm lm
   LLC_Continue at asn -> do
     fg_use $ asn
@@ -598,7 +602,7 @@ be_s = \case
             _ -> int
     k' <- local (\e -> e {be_interval = int'}) $ be_s k
     c'e <- withConsensus False $ ee_m c
-    return $ ET_Com <$> c'e <*> k'
+    return $ mkCom ET_Com <$> c'e <*> k'
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
   LLS_ToConsensus at send recv mtime -> do

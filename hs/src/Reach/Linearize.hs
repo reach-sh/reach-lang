@@ -404,7 +404,7 @@ df_bl (DKBlock at fs t a) =
 df_t :: DKTail -> DFApp DLTail
 df_t = \case
   DK_Stop at -> return $ DT_Return at
-  x -> df_com DT_Com df_t x
+  x -> df_com (mkCom DT_Com) df_t x
 
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
@@ -440,7 +440,7 @@ df_con = \case
     tct <- fluidRef FV_thisConsensusTime
     fluidSet FV_lastConsensusTime tct $
       LLC_FromConsensus at1 at2 <$> df_step t
-  x -> df_com LLC_Com df_con x
+  x -> df_com (mkCom LLC_Com) df_con x
 
 df_step :: DKTail -> DFApp LLStep
 df_step = \case
@@ -460,7 +460,7 @@ df_step = \case
           tk' <- df_step tk
           return $ Just (ta, tk')
     return $ LLS_ToConsensus at send recv' mtime'
-  x -> df_com LLS_Com df_step x
+  x -> df_com (mkCom LLS_Com) df_step x
 
 df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal DLBlock)
 df_ev = \case

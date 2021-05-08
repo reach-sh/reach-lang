@@ -534,6 +534,19 @@ data DLStmt
   | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
   deriving (Eq)
 
+instance SrcLocOf DLStmt where
+  srclocOf = \case
+    DL_Nop a -> a
+    DL_Let a _ _ -> a
+    DL_ArrayMap a _ _ _ _ -> a
+    DL_ArrayReduce a _ _ _ _ _ _ -> a
+    DL_Var a _ -> a
+    DL_Set a _ _ -> a
+    DL_LocalIf a _ _ _ -> a
+    DL_LocalSwitch a _ _ -> a
+    DL_Only a _ _ -> a
+    DL_MapReduce a _ _ _ _ _ _ _ -> a
+
 instance Pretty DLStmt where
   pretty = \case
     DL_Nop _ -> mempty
@@ -567,7 +580,7 @@ instance Pretty DLTail where
 dtReplace :: (DLStmt -> b -> b) -> b -> DLTail -> b
 dtReplace mkk nk = \case
   DT_Return _ -> nk
-  DT_Com m k -> mkk m $ dtReplace mkk nk k
+  DT_Com m k -> (mkCom mkk) m $ dtReplace mkk nk k
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
