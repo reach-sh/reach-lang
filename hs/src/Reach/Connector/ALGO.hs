@@ -274,7 +274,7 @@ bad lab = do
 xxx :: LT.Text -> App ()
 xxx lab = do
   let lab' = "XXX " <> lab
-  when True $
+  when False $
     liftIO $ LTIO.putStrLn lab'
   bad lab'
 
