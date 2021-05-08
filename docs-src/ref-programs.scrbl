@@ -161,7 +161,7 @@ export const main =
 
 @deftech{Reach.App} is a function which accepts three arguments:
 @reachin{options},
-@reachin{participantDefinitions},
+@reachin{applicationArgs},
 and @reachin{program}.
 
 The @reachin{options} must be an object.
@@ -219,20 +219,23 @@ It supports the following options:
 
 )]
 
-The @reachin{participantDefinitions} argument is a tuple of @tech{participant constructor}s.
+The @reachin{applicationArgs} argument is a tuple of @tech{application arguments}.
 
 The @reachin{program} argument must be a syntactic @tech{arrow expression}.
-The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
+The arguments to this arrow must match the number and order of @reachin{applicationArgs}.
 The function body is the program to be @tech{compile}d.
 It specifies a @tech{step}, which means its content is specified by @Secref["ref-programs-step"].
 When it returns, it must be in a @tech{step}, as well; which means that its content cannot end within a @tech{consensus step}.
 
-If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then it may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
+If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then that identifier may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
 
-@subsubsection{Participant Constructors}
+@subsubsection{Application Arguments}
 
-A @deftech{participant constructor} is used for declaring a logical actor in
-a Reach program.
+An @deftech{application argument} is used for declaring the components of a Reach @|DApp|.
+These components are either @tech{participants} or @tech{views}.
+
+@(hrule)
+
 A @tech{participant} and @tech{participant class} may be declared with
 
 @(mint-define! '("Participant"))
@@ -247,9 +250,21 @@ and
 
 respectively.
 
-@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
+@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code.
+Each @reachin{participantName} must be unique.
 
 @reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
+
+@(hrule)
+
+@(mint-define! '("View"))
+@reach{
+  View('NFT', { owner: Address })
+}
+
+A @tech{view} is defined with @reachin{View(viewName, viewInterface)}, where @reachin{viewName} is a string that labels the @tech{view} and @reachin{viewInterface} is an object where each field indicates the type of a function or value provided by the @tech{contract} associated with the specified @|DApp|.
+These @tech{views} are available in @tech{frontends} via the @jsin{ctc.getViews} function.
+In the @|DApp|, the result of this application argument is referred to as a @tech{view object}.
 
 @section[#:tag "ref-programs-step"]{Steps}
 
@@ -564,6 +579,10 @@ This pattern is tedious to write and error-prone, so the @reachin{fork} statemen
 When a @tech{participant} specifies multiple cases, the @tt{msg} field of the participant will be wrapped with an additional
 variant signifying what case was chosen.
 
+@subsubsection[#:tag "ref-programs-step-view"]{View Objects}
+
+If a @tech{step} contains a reference to a @seclink["ref-programs-consensus-view"]{view object}, then it is lifted to the previous @tech{consensus step}.
+
 @subsubsection{@tt{wait}}
 
 @(mint-define! '("wait"))
@@ -710,6 +729,26 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 @subsubsection[#:tag "ref-programs-only-consensus"]{@tt{only} and @tt{each}}
 
 @secref["ref-programs-only-step"] are allowed in @tech{consensus steps} and are executed by @tech{backends} once they observe the completion of the @tech{consensus step} (i.e., after the associated @tech{commit statement}.)
+
+@subsubsection[#:tag "ref-programs-consensus-view"]{View Objects}
+
+@reach{
+  vNFT.owner.is(creator);
+}
+
+If @reachin{VIEW} is a @deftech{view object}, then its fields are the elements of the associated @tech{view}.
+Each of these fields are bound to an object with an @litchar{is} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps dominated by the current step (unless otherwise overridden.)
+If this function is not provided with an argument, then the corresponding @tech{view} is unset.
+
+For example, consider the following program:
+
+@reachex[#:show-lines? #t "view-steps/index.rsh"
+         #:link #t]
+
+In this program, there are four steps that are possible, depending on whether @reachin{A} and @reachin{B} end up being distinct.
+An external observer can run @jsin{await ctc.getViews().Main.i()} to learn at what step the computation is in.
+
+When a @tech{view} is bound to a function, it may inspect any values in its scope, including @tech{linear state}.
 
 @subsubsection{@tt{Participant.set} and @tt{.set}}
 
@@ -1851,7 +1890,7 @@ The given @reachin{len} must evaluate to an integer at compile-time.
 
 @subsubsub*section{@tt{Array.replicate} && @tt{.replicate}}
 
-@(mint-define! '("Array_replicate" "replicate"))
+@(mint-define! '("Array_replicate") '("replicate"))
 @reach{
  Array.replicate(5, "five")
  Array_replicate(5, "five") }
@@ -1872,7 +1911,7 @@ This may be abbreviated as @reachin{x.concat(y)}.
 
 @subsubsub*section{@tt{Array.empty}}
 
-@(mint-define! '("Array_empty" "empty"))
+@(mint-define! '("Array_empty") '("empty"))
 @reach{
  Array_empty
  Array.empty }

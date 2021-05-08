@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "ref-backends-js"]{JavaScript}
 
-The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.export.mjs} which exports an asynchronous function for each @tech{participant}.
+The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.APP.mjs}.
 This will normally be imported by writing:
 
 @(mint-define! '("backend"))
@@ -11,8 +11,10 @@ This will normally be imported by writing:
  import * as backend from './build/index.main.mjs';
 }
 
+This module exports an asynchronous function for each @tech{participant}.
+For example, if a Reach program contains a participant named @reachin{'A'} in the @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A} (i.e. @jsin{backend.A})
+
 Each function accepts two arguments: @jsin{ctc} and @jsin{interact}. These functions should be called by the @tech{frontend}.
-For example, if a Reach program contains a participant named @reachin{'A'} in the argument to @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A}.
 
 The @jsin{ctc} argument is the result of a call to the functions @jsin{acc.deploy} or @jsin{acc.attach} provided by the @seclink["ref-frontends-js"]{JavaScript frontend support library}.
 
@@ -20,12 +22,12 @@ The @jsin{interact} argument is an object matching the @tech{participant interac
 The types of values this object contains must match those specified
 @seclink["ref-frontends-js-types"]{on this list}.
 
-The JavaScript backend also provides an export named @jsin{_version}, which is a string representation of the Reach version used to compile the program.
+The backend provides a value, @jsin{_version}, which is a string representation of the Reach version used to compile the program.
 For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
 
-
-The backend also provides a function, @(mint-define! '("getExports")) @jsin{getExports}, which exposes the exports of a Reach program.
-This function receives the standard library as an argument and returns an object with all the exports. For example, if a Reach program
+The backend provides a function, @(mint-define! '("getExports")) @jsin{getExports}, which exposes the @tech{exports} of a Reach program.
+This function receives the standard library as an argument and returns an object with all the exports.
+For example, if a Reach program
 exported a variable @tt{x}, i.e. @reachin{export const x = 5}, the frontend could access the value in the following manner:
 
 @js{
@@ -33,7 +35,7 @@ exported a variable @tt{x}, i.e. @reachin{export const x = 5}, the frontend coul
    backend.getExports(stdlib).x; // 5
 }
 
-Finally, the backend will provide an export named @jsin{_Connectors}, which is an opaque object representing the @tech{connectors} this app was compiled to.
+Finally, the backend provides a value, @jsin{_Connectors}, which is an opaque object representing the @tech{connectors} the app was compiled for.
 
 @section[#:tag "ref-backends-js-guarantees"]{Guarantees}
 
@@ -47,13 +49,16 @@ In the case of Reach, this means that non-function values in a @tech{participant
 For example, if the Reach program,
 
 @reach{
- Reach.App({},
-  [Participant("A", { get: Bytes(32), give: Fun([Bytes(32)], Bool) })],
+ Reach.App( {},
+  [ Participant("A", {
+      get: Bytes(32),
+      give: Fun([Bytes(32)], Bool) } ) ],
   (A) => {
    A.only(() => {
     const x = interact.give(interact.get); });
    A.publish(x);
-   commit(); }); }
+   commit(); });
+}
 
 is given the @jsin{interact} object,
 

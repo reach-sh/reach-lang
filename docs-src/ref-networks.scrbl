@@ -20,6 +20,10 @@ Its @tech{bit width} is 256-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
 
+@tech{Views} are compiled to @litchar{view} functions.
+A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
+@tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
+
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
 
@@ -50,7 +54,7 @@ The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generate
 execution.
 
 It uses finite on-chain state: two integers and one byte string.
-The DApp consists of one application, one contract-controlled escrow account, and many contract-controlled handlers for each of the @tech{publications} of your Reach program.
+The @|DApp| consists of one application, one contract-controlled escrow account, and many contract-controlled handlers for each of the @tech{publications} of your Reach program.
 During compilation, the connector produces intermediate outputs for each of these contracts.
 These contracts embed references to each through their template arguments, which is done automatically by the Reach standard library implementation.
 
@@ -66,6 +70,11 @@ For example, if a program has a @tech{consensus step} where Alice will receive 1
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
 You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
+
+@tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
+This means they are sensitive to the particular compilation details of the particular Reach program.
+We hope to work with the Algorand community to define a standard for @tech{views}.
+@tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
 
 This connector does not support different @reachin{deployMode}s and treats them all as @reachin{'constructor'}.
 

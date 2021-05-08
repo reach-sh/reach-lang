@@ -274,6 +274,17 @@ Awaiting @reachin{getInfo} too early may cause your program to enter a state of 
 @index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument (or a Promise for ctcInfo) and the @jsin{bin} argument.
 This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 
+@(hrule)
+
+@(mint-define! '("getViews"))
+@js{
+ ctc.getViews() => Object }
+
+@index{ctc.getViews} Returns an object representing the @tech{views} of the @tech{contract}.
+This object mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.getViews().X.Y} is a @deftech{view function}.
+A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
+For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.getViews().NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None']}.
+
 @section[#:tag "ref-frontends-js-network"]{Network Utilities}
 
 These functions interact with the @tech{consensus network} itself.
