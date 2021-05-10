@@ -613,10 +613,12 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 @(mint-define! '("closeTo"))
 @reach{
- closeTo( Who, after ) }
+ closeTo( Who, after, nonNetPayAmt ) }
 
-@index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
-The @reachin{after} argument is optional.
+@index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} and the non-network @tech{pay amount} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
+The @reachin{nonNetPayAmt} parameter should be a @tech{pay amount}. For example, when closing a program that uses a @reachin{Token} @reachin{token}, the argument would be @reachin{[ [balance(tok), tok] ]}.
+The @reachin{after} and @reachin{nonNetPayAmt} argument are optional.
+
 
 @section[#:tag "ref-programs-local"]{Local Steps}
 

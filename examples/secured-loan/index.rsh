@@ -7,6 +7,7 @@ const ParamsType = Object({
   post: UInt,
   maturation: UInt,
   maxLenderDelay: UInt,
+  tok: Token
 });
 
 const hasSendOutcome = {
@@ -37,9 +38,10 @@ export const main = Reach.App(
 
     Borrower.only(() => {
       const params = declassify(interact.getParams());
+      const tok = params.tok;
       assume(params.pre < params.post); });
-    Borrower.publish(params)
-      .pay(params.collateral);
+    Borrower.publish(params, tok)
+      .pay([ [params.collateral, tok] ]);
     const { collateral, pre, post, maturation, maxLenderDelay }
           = params;
     require(pre < post);
@@ -48,24 +50,24 @@ export const main = Reach.App(
     Lender.only(() => {
       interact.acceptParams(params);
     });
-    Lender.pay(pre)
+    Lender.pay([ [pre, tok] ])
       .timeout(maxLenderDelay, () =>
-        closeTo(Borrower, sendOutcome(
-          'Lender failed to lend on time'
-        )));
-    transfer(pre).to(Borrower);
+        closeTo(Borrower,
+          sendOutcome('Lender failed to lend on time'),
+          [[balance(tok), tok]]));
+    transfer(pre, tok).to(Borrower);
     commit();
 
     Borrower.only(() => {
       interact.waitForPayback();
     });
-    Borrower.pay(post)
+    Borrower.pay([ [post, tok] ])
       .timeout(maturation, () =>
-        closeTo(Lender, sendOutcome(
-          'Borrower failed to pay on time'
-        )));
-    transfer(post).to(Lender);
-    transfer(collateral).to(Borrower);
+        closeTo(Lender,
+          sendOutcome('Borrower failed to pay on time'),
+          [[balance(tok), tok]]));
+    transfer([ [post, tok] ]).to(Lender);
+    transfer([ [collateral, tok] ]).to(Borrower);
     commit();
   }
 );
