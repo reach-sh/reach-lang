@@ -36,6 +36,7 @@ import {
   typeDefs
 } from './ETH_compiled';
 import waitPort from './waitPort';
+import { canonicalizeConnectorMode } from './ConnectorMode';
 
 // ****************************************************************************
 // Type Definitions
@@ -123,9 +124,12 @@ const Some = <T>(m: T): Some<T> => [m];
 const None: None = [];
 void(isSome);
 
+// Avoid using _providerEnv directly; use get/set
+// We don't use replaceableThunk because slightly more nuanced inspection needs to be possible.
 let _providerEnv: ProviderEnv|undefined;
 function getProviderEnv(): ProviderEnv {
   if (!_providerEnv) {
+    // We only fall back on process.env if there no setProviderEnv occurrs
     const env = envDefaultsETH(process.env);
     _providerEnv = env;
   }
@@ -232,19 +236,37 @@ function windowLooksIsolated() {
   return (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539');
 }
 
-// TODO: look at ETH_CONNECTOR_MODE to help decide?
+function connectorModeIsolatedNetwork(connectorMode: string): 'yes' | 'no' {
+  switch (connectorMode) {
+  case 'ETH-test-dockerized-geth': return 'yes';
+  default: return 'no';
+  }
+}
+
+function guessConnectorMode(env: Partial<ProviderByName & ProviderByURI>): string|undefined {
+  if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
+    // take a guess if ETH_NODE_URI is set
+    return env.ETH_NODE_URI.toLowerCase().includes('localhost') ? 'ETH-test-dockerized-geth' : 'ETH-live';
+  } else {
+    // abstain from guessing
+    return undefined;
+  }
+}
+
 function envDefaultsETH(env: Partial<ProviderByName & ProviderByURI>): ProviderEnv {
   const { ETH_NET, ETH_NODE_URI } = env;
+  const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
+  const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
   const isolatedDefault
     = ETH_NET && ETH_NET !== 'window' ? 'no'
     : ETH_NET === 'window' || window.ethereum ? (windowLooksIsolated() ? 'yes' : 'no')
-    : localhostProviderEnv.REACH_ISOLATED_NETWORK;
+    : connectorModeIsolatedNetwork(REACH_CONNECTOR_MODE);
   const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
   if (truthyEnv(ETH_NET)) {
-    return { ETH_NET, REACH_ISOLATED_NETWORK };
+    return { ETH_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(ETH_NODE_URI)) {
     const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'no');
-    return { ETH_NODE_URI, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
+    return { ETH_NODE_URI, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.ethereum) {
       return windowProviderEnv(REACH_ISOLATED_NETWORK);
@@ -270,8 +292,10 @@ export function setProvider(provider: Provider|Promise<Provider>): void {
   _setProvider(provider);
   if (!_providerEnv) {
     // this circumstance is weird and maybe we should handle it better
+    // process.env isn't available in browser so we try to avoid relying on it here.
     setProviderEnv({
       ETH_NET: '__custom_unspecified__',
+      REACH_CONNECTOR_MODE: 'ETH-unspecified',
       REACH_ISOLATED_NETWORK: 'no',
     });
   }
@@ -371,6 +395,7 @@ export type ProviderName
 // TODO: support config of custom api keys
 export interface ProviderByURI {
   ETH_NODE_URI: string
+  REACH_CONNECTOR_MODE: string
   REACH_DO_WAIT_PORT: string // preferably: 'yes' | 'no'
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
@@ -381,6 +406,7 @@ export interface ProviderByURI {
 // It queries multiple providers.
 export interface ProviderByName {
   ETH_NET: string // WhichNetExternal | 'window'
+  REACH_CONNECTOR_MODE: string
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
 
@@ -439,6 +465,7 @@ export function setProviderByName(providerName: ProviderName): void  {
 
 const localhostProviderEnv: ProviderByURI = {
   ETH_NODE_URI: 'http://localhost:8545',
+  REACH_CONNECTOR_MODE: 'ETH-test-dockerized-geth',
   REACH_DO_WAIT_PORT: 'yes',
   REACH_ISOLATED_NETWORK: 'yes',
 }
@@ -446,6 +473,7 @@ const localhostProviderEnv: ProviderByURI = {
 function windowProviderEnv(REACH_ISOLATED_NETWORK: string = 'no'): ProviderByName {
   return {
     ETH_NET: 'window',
+    REACH_CONNECTOR_MODE: 'ETH-browser',
     REACH_ISOLATED_NETWORK,
   }
 }
@@ -453,6 +481,7 @@ function windowProviderEnv(REACH_ISOLATED_NETWORK: string = 'no'): ProviderByNam
 function ethersProviderEnv(network: WhichNetExternal): ProviderByName {
   return {
     ETH_NET: network,
+    REACH_CONNECTOR_MODE: 'ETH-live',
     REACH_ISOLATED_NETWORK: 'no',
   }
 }

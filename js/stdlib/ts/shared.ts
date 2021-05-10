@@ -231,7 +231,7 @@ export function truthyEnv(v: string|undefined|null): v is string {
   ].includes(v && v.toLowerCase && v.toLowerCase());
 }
 
-export const envDefault = (v: string|undefined|null, d: any): any =>
+export const envDefault = <T>(v: string|undefined|null, d: T): string|T =>
   (v === undefined || v === null) ? d : v;
 
 export const setDEBUG = (b: boolean) => {
