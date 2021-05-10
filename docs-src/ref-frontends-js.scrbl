@@ -549,6 +549,22 @@ in the token's @tech{atomic unit}.
 
 @jsin{bigNumberify} is transparently applied to @jsin{formatCurrency}'s first argument.
 
+@(hrule)
+@(mint-define! '("formatAddress"))
+@jsin{
+  formatAddress(acc) => string }
+
+Formats the address in the way the user would expect to see it.
+
+@itemlist[
+ @item{On Ethereum, it is a hex-encoded string starting with @jsin{'0x'}.}
+ @item{On Algorand, it is a base32-encoded string, ending with the checksum.}
+]
+
+There is no corresponding @jsin{parseAddress} function because
+the user-friendly form is also accepted from the frontend
+in all places that Reach expects an address.
+
 @section[#:tag "ref-frontends-js-ask.mjs"]{@tt{ask.mjs}}
 
 The Reach JavaScript standard library also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.

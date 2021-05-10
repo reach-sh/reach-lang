@@ -42,4 +42,11 @@ export const spec = async () => describe('The `ALGO` stdlib', async () => {
       expect(formatCurrency(789)).toBe('0.000789');
     });
   });
+
+  await describe('formatAddress', async () => {
+    const acc = await ALGO.createAccount();
+    const {addr} = acc.networkAccount;
+    expect(ALGO.formatAddress(acc)).toBe(addr);
+    expect(ALGO.formatAddress(acc.getAddress())).toBe(addr);
+  });
 });

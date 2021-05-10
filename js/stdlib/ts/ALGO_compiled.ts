@@ -103,18 +103,23 @@ export const T_Digest: ALGO_Ty<CBR_Digest> = {
   netSize: 32,
 };
 
-export const addressToHex = (x: any): string =>
+export const addressToHex = (x: string): string =>
   '0x' + Buffer.from(algosdk.decodeAddress(x).publicKey).toString('hex');
 
-function addressUnwrapper(x: any): string {
-  const addr =
-    x && x.networkAccount && x.networkAccount.addr
-    || x && x.addr;
+export const addressFromHex = (hexAddr: string): string =>
+  algosdk.encodeAddress(Buffer.from(hexAddr.slice(2), 'hex'));
 
-  return (addr != undefined)
-    ? addressToHex(addr)
-    : x;
+function addressUnwrapper(x: any): string {
+  const addr: string|false =
+    x && x.networkAccount && x.networkAccount.addr
+    || x && x.addr
+    || typeof x === 'string' && x;
+
+  return !addr ? x
+   : addr.slice(0, 2) === '0x' ? addr
+   : addressToHex(addr);
 };
+
 export const T_Address: ALGO_Ty<CBR_Address> = {
   ...CBR.BT_Address,
   ...bytestringyNet,

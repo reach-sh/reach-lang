@@ -36,8 +36,9 @@ import {
   ALGO_Ty,
   NV,
   addressToHex,
+  addressFromHex,
   stdlib as compiledStdlib,
-  typeDefs
+  typeDefs,
 } from './ALGO_compiled';
 import { process, window } from './shim';
 export * from './shared';
@@ -1619,5 +1620,14 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
   return true;
 };
+
+/**
+ * Formats an account's address in the way users expect to see it.
+ * @param acc Account, NetworkAccount, base32-encoded address, or hex-encoded address
+ * @returns the address formatted as a base32-encoded string with checksum
+ */
+export function formatAddress(acc: string|NetworkAccount|Account): string {
+  return addressFromHex(T_Address.canonicalize(acc));
+}
 
 export const reachStdlib = compiledStdlib;

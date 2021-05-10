@@ -1332,4 +1332,13 @@ export function formatCurrency(amt: any, decimals: number = 18): string {
   }
 }
 
+/**
+ * Formats an account's address in the way users expect to see it.
+ * @param acc Account, NetworkAccount, or hex-encoded address
+ * @returns the address formatted as a hex-encoded string
+ */
+export function formatAddress(acc: string|NetworkAccount|Account): string {
+  return T_Address.canonicalize(acc);
+}
+
 export const reachStdlib = compiledStdlib;
