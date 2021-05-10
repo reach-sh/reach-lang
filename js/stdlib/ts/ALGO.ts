@@ -896,7 +896,6 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
 }
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
-  const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   let label = shad;
@@ -1173,6 +1172,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ): Promise<Recv> => {
       // Ignoring this, because no ALGO dev node
       void(waitIfNotPresent);
+      const indexer = await getIndexer();
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
