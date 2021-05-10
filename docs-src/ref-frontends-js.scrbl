@@ -314,6 +314,85 @@ The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
 
+@section[#:tag "ref-frontends-js-provider"]{Provider Selection}
+
+These functions allow you to choose which particular @tech{consensus network} API provider to connect to.
+
+@margin-note{
+On Ethereum, if you would like to use the wallet from the user's browser,
+the setProvider functions are not needed.
+The Reach standard library uses window.ethereum by default.
+
+On Algorand, if you would like to use AlgoSigner,
+the setProvider functions are necessary for all but LocalHost.
+However, this will eventually become unnecessary.
+Reach is working with Algorand wallets to develop standards
+that will put provider selection in control of the end user,
+instead of the DApp developer.
+}
+
+@(hrule)
+@(mint-define! '("setProviderByName"))
+@js{
+  setProviderByName(string) => void }
+
+Supported provider names are: @jsin{'MainNet'}, @jsin{'TestNet'}, and @jsin{'LocalHost'}.
+
+On Ethereum, MainNet will connect to homestead, and TestNet to ropsten.
+Multiple free API providers are used behind the scenes, @link["https://docs.ethers.io/v5/api/providers/#providers-getDefaultProvider"]{as implemented by ethers.js}.
+
+On Algorand, MainNet will connect to MainNet, and TestNet to TestNet.
+The free RandLabs API provider is used ( http://algoexplorerapi.io ).
+
+@(hrule)
+@(mint-define! '("providerEnvByName"))
+@js{
+  providerEnvByName(string) => env }
+
+Retrieve configuration information about providers by name.
+
+@(hrule)
+@(mint-define! '("setProviderByEnv"))
+@js{
+  setProviderByEnv(env) => void }
+
+Select an API provider by supplying information about it.
+
+This function's API is considered unstable.
+
+Env is a record with string keys and string values.
+
+On Ethereum, env may include keys:
+@jsin{ETH_NODE_URI}
+
+On Algorand, env may include keys:
+@jsin{ALGO_LEDGER}, @jsin{ALGO_SERVER}, @jsin{ALGO_PORT}, @jsin{ALGO_TOKEN}, @jsin{ALGO_INDEXER_SERVER}, @jsin{ALGO_INDEXER_PORT}, @jsin{ALGO_INDEXER_TOKEN}.
+
+ALGO_LEDGER is used by AlgoSigner. Configuration for the indicated ledger should match the configuration present in AlgoSigner.
+
+@(hrule)
+@(mint-define! '("setProvider"))
+@js{
+  setProvider(provider): void }
+
+Select an API provider by providing an object satisfying its interface.
+
+This function's API is considered unstable.
+
+On Ethereum, provider is an instance of ethers.provider.
+See: @link["https://docs.ethers.io/v5/api/providers/provider/"]{https://docs.ethers.io/v5/api/providers/provider/}
+
+On Algorand, provider is an object:
+@js{
+{
+  ledger: string,
+  algodClient: algosdk.Algodv2,
+  indexerClient: algosdk.Indexer,
+}
+}
+
+See: @link["https://algorand.github.io/js-algorand-sdk/"]{https://algorand.github.io/js-algorand-sdk/}
+
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 
 These functions operate on JavaScript representations of Reach values.
