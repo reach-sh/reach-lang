@@ -52,6 +52,7 @@ data ParserError
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
   | Err_Parse_InvalidImportSource FilePath P.ParseError
+  | Err_Parse_InvalidLockModuleImport HostGit FilePath PkgError
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 --- FIXME implement a custom show that is useful
@@ -82,6 +83,13 @@ instance Show ParserError where
     "Not a module: " <> (take 256 $ show ast)
   show (Err_Parse_InvalidImportSource fp e) =
     "Invalid import: " <> fp <> "\n" <> show e
+  show (Err_Parse_InvalidLockModuleImport h fp e)
+     = "Invalid lock-module import ("
+    <> gitUriOf h
+    <> "): "
+    <> fp
+    <> "\n"
+    <> show e
 
 --- Helpers
 parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
@@ -147,42 +155,67 @@ instance Pretty JSBundle where
           ("// " <> viaShow rs) :
           map (pretty . ppShow) jms
 
-gatherDeps_fc :: SrcLoc -> IORef JSBundleMap -> JSFromClause -> IO JSFromClause
-gatherDeps_fc at fmr (JSFromClause ab aa s) = do
-  s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
+gatherDeps_fc
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> JSFromClause
+  -> IO JSFromClause
+gatherDeps_fc mh at fmr (JSFromClause ab aa s) = do
+  s_abs <- gatherDeps_file GatherNotTop mh (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
   return $ JSFromClause ab aa s_abs
 
-gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImportDeclaration
-gatherDeps_imd at fmr = \case
+gatherDeps_imd
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> JSImportDeclaration
+  -> IO JSImportDeclaration
+gatherDeps_imd mh at fmr = \case
   JSImportDeclaration ic fc sm -> do
-    fc' <- gatherDeps_fc at fmr fc
+    fc' <- gatherDeps_fc mh at fmr fc
     return $ JSImportDeclaration ic fc' sm
   JSImportDeclarationBare a s sm -> do
-    s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
+    s_abs <- gatherDeps_file GatherNotTop mh (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
     return $ JSImportDeclarationBare a s_abs sm
 
-gatherDeps_exd :: SrcLoc -> IORef JSBundleMap -> JSExportDeclaration -> IO JSExportDeclaration
-gatherDeps_exd at fmr = \case
+gatherDeps_exd
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> JSExportDeclaration
+  -> IO JSExportDeclaration
+gatherDeps_exd mh at fmr = \case
   JSExportFrom ec fc sp -> do
-    fc' <- gatherDeps_fc at fmr fc
+    fc' <- gatherDeps_fc mh at fmr fc
     return $ JSExportFrom ec fc' sp
   exd ->
     return exd
 
-gatherDeps_mi :: SrcLoc -> IORef JSBundleMap -> JSModuleItem -> IO JSModuleItem
-gatherDeps_mi at fmr = \case
+gatherDeps_mi
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> JSModuleItem
+  -> IO JSModuleItem
+gatherDeps_mi mh at fmr = \case
   JSModuleImportDeclaration a imd -> do
-    imd' <- gatherDeps_imd (srcloc_at "import" (tp a) at) fmr imd
+    imd' <- gatherDeps_imd mh (srcloc_at "import" (tp a) at) fmr imd
     return $ JSModuleImportDeclaration a imd'
   JSModuleExportDeclaration a exd -> do
-    exd' <- gatherDeps_exd (srcloc_at "export" (tp a) at) fmr exd
+    exd' <- gatherDeps_exd mh (srcloc_at "export" (tp a) at) fmr exd
     return $ JSModuleExportDeclaration a exd'
   mi -> return mi
 
-gatherDeps_ast :: SrcLoc -> IORef JSBundleMap -> JSAST -> IO [JSModuleItem]
-gatherDeps_ast at fmr = \case
+gatherDeps_ast
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> JSAST
+  -> IO [JSModuleItem]
+gatherDeps_ast mh at fmr = \case
   JSAstModule mis _ ->
-    mapM (gatherDeps_mi at fmr) mis
+    mapM (gatherDeps_mi mh at fmr) mis
   j ->
     expect_thrown at (Err_Parse_NotModule j)
 
@@ -238,16 +271,27 @@ tryPrettifyError at' e = case readMaybe e of
         _ -> ""
   _ -> e
 
-gatherDeps_ast_rewriteErr :: SrcLoc -> IORef JSBundleMap -> String -> IO [JSModuleItem]
-gatherDeps_ast_rewriteErr at' fmr s = case parseModule s (show $ get_srcloc_src at') of
+gatherDeps_ast_rewriteErr
+  :: Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> String
+  -> IO [JSModuleItem]
+gatherDeps_ast_rewriteErr mh at' fmr s = case parseModule s (show $ get_srcloc_src at') of
   Left e -> error $ tryPrettifyError at' e -- TODO: prettify
-  Right r -> gatherDeps_ast at' fmr r
+  Right r -> gatherDeps_ast mh at' fmr r
 
 data GatherContext = GatherTop | GatherNotTop
   deriving (Eq)
 
-gatherDeps_file :: GatherContext -> SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
-gatherDeps_file gctxt at fmr src_rel =
+gatherDeps_file
+  :: GatherContext
+  -> Maybe HostGit
+  -> SrcLoc
+  -> IORef JSBundleMap
+  -> FilePath
+  -> IO FilePath
+gatherDeps_file gctxt mh at fmr src_rel = do
   updatePartialAvoidCycles
     at
     fmr
@@ -261,25 +305,35 @@ gatherDeps_file gctxt at fmr src_rel =
   where
     no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
 
-    get_key () = case importSource src_rel of
+    (mh', isrc) = case importSource src_rel of
+      Right i@(ImportRemoteGit h) -> (Just h, i)
+      Right i@(ImportLocal     _) -> (mh,     i)
       Left e ->
         expect_thrown at (Err_Parse_InvalidImportSource src_rel e)
 
-      Right (ImportLocal src_rel') -> do
-        src_abs <- makeAbsolute src_rel'
-        reRel   <- makeRelativeToCurrentDirectory src_abs
+    get_key () = case isrc of
+      ImportRemoteGit h -> runPkgT (lockModuleAbsPath True h) >>= \case
+        Left  e -> expect_thrown at (Err_Parse_InvalidLockModuleImport h src_rel e)
+        Right s -> pure $ ReachSourceFile s
 
-        when (gctxt == GatherNotTop) $ do
-          when (isAbsolute src_rel')
-            $ expect_thrown at (Err_Parse_ImportAbsolute src_rel')
+      ImportLocal src_rel' -> case mh' of
+        Just h -> runPkgT (lockModuleAbsPathGitLocalDep True h src_rel') >>= \case
+          Left  e -> putStrLn "here" >> expect_thrown at (Err_Parse_InvalidLockModuleImport h src_rel' e)
+          Right s -> pure $ ReachSourceFile s
 
-          when ("../" `isPrefixOf` reRel)
-            $ expect_thrown at (Err_Parse_ImportDotDot src_rel')
+        Nothing -> do
+          src_abs <- makeAbsolute src_rel'
+          reRel   <- makeRelativeToCurrentDirectory src_abs
 
-        pure $ ReachSourceFile src_abs
+          when (gctxt == GatherNotTop) $ do
+            when (isAbsolute src_rel')
+              $ expect_thrown at (Err_Parse_ImportAbsolute src_rel')
 
-      Right (ImportRemoteGit _) ->
-        pure $ ReachSourceFile "TODO"
+            when ("../" `isPrefixOf` reRel)
+              $ expect_thrown at (Err_Parse_ImportDotDot src_rel')
+
+          pure $ ReachSourceFile src_abs
+
 
     ret_key (ReachSourceFile x) = x
     ret_key ReachStdLib         = no_stdlib
@@ -291,7 +345,7 @@ gatherDeps_file gctxt at fmr src_rel =
       content <- readFile src_abs
       withCurrentDirectory
         (takeDirectory src_abs)
-        (gatherDeps_ast_rewriteErr at' fmr content)
+        (gatherDeps_ast_rewriteErr mh' at' fmr content)
 
 gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMap -> IO ()
 gatherDeps_stdlib at fmr =
@@ -302,7 +356,7 @@ gatherDeps_stdlib at fmr =
     err_key x = Err_Parse_CyclicImport x
     proc_key _ = do
       let at' = srcloc_src ReachStdLib
-      (gatherDeps_ast_rewriteErr at' fmr $ B.unpack stdlib_rsh)
+      (gatherDeps_ast_rewriteErr Nothing at' fmr $ B.unpack stdlib_rsh)
 
 map_order :: Ord a => M.Map a [a] -> [a]
 map_order dm = order
@@ -317,7 +371,7 @@ gatherDeps_top :: FilePath -> IO JSBundle
 gatherDeps_top src_p = do
   fmr <- newIORef (mempty, mempty)
   let at = srcloc_top
-  _src_abs_p <- gatherDeps_file GatherTop at fmr src_p
+  _src_abs_p <- gatherDeps_file GatherTop Nothing at fmr src_p
   gatherDeps_stdlib at fmr
   (dm, fm) <- readIORef fmr
   return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
