@@ -153,7 +153,8 @@ In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Secured_lo
 It is easy to model this scenario using only @tech{network tokens}, but it would be useless, because the premise of a loan is that the participants believe the Borrower can make better use of the funds than the Lender.
 However, many @tech{consensus network} also support custom fungible assets that are like tokens.
 If this is the case, then a secured loan will typically have different assets as the loan amount and the collateral amount.
-Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan.
+Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan. In this workshop, the Borrower pledges @tech{non-network tokens} as collateral for the loan.
+
 
 @(WIP/XXX "secured-loan")
 

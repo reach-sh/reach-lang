@@ -50,23 +50,23 @@ export const main = Reach.App(
     Lender.only(() => {
       interact.acceptParams(params);
     });
-    Lender.pay([ [pre, tok] ])
+    Lender.pay(pre)
       .timeout(maxLenderDelay, () =>
         closeTo(Borrower,
           sendOutcome('Lender failed to lend on time'),
           [[balance(tok), tok]]));
-    transfer(pre, tok).to(Borrower);
+    transfer(pre).to(Borrower);
     commit();
 
     Borrower.only(() => {
       interact.waitForPayback();
     });
-    Borrower.pay([ [post, tok] ])
+    Borrower.pay(post)
       .timeout(maturation, () =>
         closeTo(Lender,
           sendOutcome('Borrower failed to pay on time'),
           [[balance(tok), tok]]));
-    transfer([ [post, tok] ]).to(Lender);
+    transfer(post).to(Lender);
     transfer([ [collateral, tok] ]).to(Borrower);
     commit();
   }
