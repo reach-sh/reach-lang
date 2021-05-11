@@ -1,5 +1,6 @@
 module Reach.Parser
   ( ParserError (..)
+  , ParserOpts (..)
   , JSBundle (..)
   , parseJSFormals
   , jsArrowFormalsToFunFormals
@@ -13,7 +14,9 @@ module Reach.Parser
   )
 where
 
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad (when)
+import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
@@ -29,6 +32,7 @@ import Reach.AST.Base
 import Reach.EmbeddedFiles
 import Reach.Eval.ImportSource
 import Reach.JSUtil
+import Reach.Parser.Common
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -37,6 +41,7 @@ import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
 import qualified Text.Parsec as P
+
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -160,7 +165,7 @@ gatherDeps_fc
   -> SrcLoc
   -> IORef JSBundleMap
   -> JSFromClause
-  -> IO JSFromClause
+  -> ReaderT ParserOpts IO JSFromClause
 gatherDeps_fc mh at fmr (JSFromClause ab aa s) = do
   s_abs <- gatherDeps_file GatherNotTop mh (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
   return $ JSFromClause ab aa s_abs
@@ -170,7 +175,7 @@ gatherDeps_imd
   -> SrcLoc
   -> IORef JSBundleMap
   -> JSImportDeclaration
-  -> IO JSImportDeclaration
+  -> ReaderT ParserOpts IO JSImportDeclaration
 gatherDeps_imd mh at fmr = \case
   JSImportDeclaration ic fc sm -> do
     fc' <- gatherDeps_fc mh at fmr fc
@@ -184,7 +189,7 @@ gatherDeps_exd
   -> SrcLoc
   -> IORef JSBundleMap
   -> JSExportDeclaration
-  -> IO JSExportDeclaration
+  -> ReaderT ParserOpts IO JSExportDeclaration
 gatherDeps_exd mh at fmr = \case
   JSExportFrom ec fc sp -> do
     fc' <- gatherDeps_fc mh at fmr fc
@@ -197,7 +202,7 @@ gatherDeps_mi
   -> SrcLoc
   -> IORef JSBundleMap
   -> JSModuleItem
-  -> IO JSModuleItem
+  -> ReaderT ParserOpts IO JSModuleItem
 gatherDeps_mi mh at fmr = \case
   JSModuleImportDeclaration a imd -> do
     imd' <- gatherDeps_imd mh (srcloc_at "import" (tp a) at) fmr imd
@@ -212,7 +217,7 @@ gatherDeps_ast
   -> SrcLoc
   -> IORef JSBundleMap
   -> JSAST
-  -> IO [JSModuleItem]
+  -> ReaderT ParserOpts IO [JSModuleItem]
 gatherDeps_ast mh at fmr = \case
   JSAstModule mis _ ->
     mapM (gatherDeps_mi mh at fmr) mis
@@ -221,30 +226,30 @@ gatherDeps_ast mh at fmr = \case
 
 updatePartialAvoidCycles
   :: Ord a
-  => SrcLoc                -- ^ at
-  -> IORef (BundleMap a b) -- ^ fmr
-  -> Maybe a               -- ^ mfrom
-  -> [a]                   -- ^ def_a
-  -> (() -> IO a)          -- ^ get_key
-  -> (a -> c)              -- ^ ret_key
-  -> (a -> ParserError)    -- ^ err_key
-  -> (a -> IO b)           -- ^ proc_key
-  -> IO c
+  => SrcLoc                          -- ^ at
+  -> IORef (BundleMap a b)           -- ^ fmr
+  -> Maybe a                         -- ^ mfrom
+  -> [a]                             -- ^ def_a
+  -> (() -> ReaderT ParserOpts IO a) -- ^ get_key
+  -> (a -> c)                        -- ^ ret_key
+  -> (a -> ParserError)              -- ^ err_key
+  -> (a -> ReaderT ParserOpts IO b)  -- ^ proc_key
+  -> ReaderT ParserOpts IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
-  (dm, fm) <- readIORef fmr
+  (dm, fm) <- liftIO $ readIORef fmr
   case (M.lookup key fm) of
     Nothing -> do
-      writeIORef fmr ((M.insert key def_a dm), (M.insert key Nothing fm))
+      liftIO $ writeIORef fmr ((M.insert key def_a dm), (M.insert key Nothing fm))
       content <- proc_key key
-      (dm', fm') <- readIORef fmr
+      (dm', fm') <- liftIO $ readIORef fmr
       let fm'' = (M.insert key (Just content) fm')
           add_key ml = Just $ key : (maybe [] id ml)
           dm'' = case mfrom of
             Just from -> (M.alter add_key from dm')
             Nothing -> dm'
-      writeIORef fmr (dm'', fm'')
+      liftIO $ writeIORef fmr (dm'', fm'')
       return res
     Just Nothing ->
       expect_thrown at $ err_key key
@@ -276,7 +281,7 @@ gatherDeps_ast_rewriteErr
   -> SrcLoc
   -> IORef JSBundleMap
   -> String
-  -> IO [JSModuleItem]
+  -> ReaderT ParserOpts IO [JSModuleItem]
 gatherDeps_ast_rewriteErr mh at' fmr s = case parseModule s (show $ get_srcloc_src at') of
   Left e -> error $ tryPrettifyError at' e -- TODO: prettify
   Right r -> gatherDeps_ast mh at' fmr r
@@ -290,7 +295,7 @@ gatherDeps_file
   -> SrcLoc
   -> IORef JSBundleMap
   -> FilePath
-  -> IO FilePath
+  -> ReaderT ParserOpts IO FilePath
 gatherDeps_file gctxt mh at fmr src_rel = do
   updatePartialAvoidCycles
     at
@@ -312,18 +317,18 @@ gatherDeps_file gctxt mh at fmr src_rel = do
         expect_thrown at (Err_Parse_InvalidImportSource src_rel e)
 
     get_key () = case isrc of
-      ImportRemoteGit h -> runPkgT (lockModuleAbsPath True h) >>= \case
+      ImportRemoteGit h -> runPkgT (lockModuleAbsPath h) >>= \case
         Left  e -> expect_thrown at (Err_Parse_InvalidLockModuleImport h src_rel e)
         Right s -> pure $ ReachSourceFile s
 
       ImportLocal src_rel' -> case mh' of
-        Just h -> runPkgT (lockModuleAbsPathGitLocalDep True h src_rel') >>= \case
-          Left  e -> putStrLn "here" >> expect_thrown at (Err_Parse_InvalidLockModuleImport h src_rel' e)
+        Just h -> runPkgT (lockModuleAbsPathGitLocalDep h src_rel') >>= \case
+          Left  e -> expect_thrown at (Err_Parse_InvalidLockModuleImport h src_rel' e)
           Right s -> pure $ ReachSourceFile s
 
         Nothing -> do
-          src_abs <- makeAbsolute src_rel'
-          reRel   <- makeRelativeToCurrentDirectory src_abs
+          src_abs <- liftIO $ makeAbsolute src_rel'
+          reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs
 
           when (gctxt == GatherNotTop) $ do
             when (isAbsolute src_rel')
@@ -339,24 +344,24 @@ gatherDeps_file gctxt mh at fmr src_rel = do
     ret_key ReachStdLib         = no_stdlib
 
     proc_key ReachStdLib                   = no_stdlib
-    proc_key src@(ReachSourceFile src_abs) = do
+    proc_key src@(ReachSourceFile src_abs) = ask >>= \po -> liftIO $ do
       let at' = srcloc_src src
       setLocaleEncoding utf8
       content <- readFile src_abs
       withCurrentDirectory
         (takeDirectory src_abs)
-        (gatherDeps_ast_rewriteErr mh' at' fmr content)
+        (flip runReaderT po (gatherDeps_ast_rewriteErr mh' at' fmr content))
 
-gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMap -> IO ()
-gatherDeps_stdlib at fmr =
+gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMap -> ReaderT ParserOpts IO ()
+gatherDeps_stdlib at fmr = do
+  let proc_key _ = gatherDeps_ast_rewriteErr
+        Nothing (srcloc_src ReachStdLib) fmr $ B.unpack stdlib_rsh
+
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [] get_key ret_key err_key proc_key
   where
     get_key () = return $ ReachStdLib
     ret_key _ = ()
     err_key x = Err_Parse_CyclicImport x
-    proc_key _ = do
-      let at' = srcloc_src ReachStdLib
-      (gatherDeps_ast_rewriteErr Nothing at' fmr $ B.unpack stdlib_rsh)
 
 map_order :: Ord a => M.Map a [a] -> [a]
 map_order dm = order
@@ -367,13 +372,13 @@ map_order dm = order
     edgeList = map (\(from, to) -> (from, from, to)) $ M.toList dm
     getNodePart (n, _, _) = n
 
-gatherDeps_top :: FilePath -> IO JSBundle
+gatherDeps_top :: FilePath -> ReaderT ParserOpts IO JSBundle
 gatherDeps_top src_p = do
-  fmr <- newIORef (mempty, mempty)
+  fmr <- liftIO $ newIORef (mempty, mempty)
   let at = srcloc_top
   _src_abs_p <- gatherDeps_file GatherTop Nothing at fmr src_p
   gatherDeps_stdlib at fmr
-  (dm, fm) <- readIORef fmr
+  (dm, fm) <- liftIO $ readIORef fmr
   return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
   where
     ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"

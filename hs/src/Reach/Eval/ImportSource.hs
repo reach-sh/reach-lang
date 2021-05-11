@@ -34,6 +34,7 @@ import Text.Parsec
 import Control.Monad.Except    (MonadError, ExceptT(..), runExceptT, throwError)
 import Control.Monad.Extra     (unlessM, whenM, ifM)
 import Control.Monad.IO.Class  (MonadIO, liftIO)
+import Control.Monad.Reader    (ReaderT(..), MonadReader, asks)
 import Control.Monad.State     (MonadState, StateT(..), get, modify)
 import Crypto.Hash             (Digest, SHA256(..), hashWith, digestFromByteString)
 import Data.Aeson              (ToJSONKey, FromJSONKey)
@@ -46,13 +47,14 @@ import Data.Yaml               (ToJSON(..), FromJSON(..), prettyPrintParseExcept
 import Data.Yaml               (withText, encode, decodeEither')
 import GHC.Generics            (Generic)
 import System.Directory        (createDirectoryIfMissing, doesDirectoryExist)
-import System.Directory        (doesFileExist, getCurrentDirectory)
+import System.Directory        (doesFileExist)
 import System.Exit             (ExitCode(..))
 import System.FilePath         ((</>), isValid, pathSeparator)
 import System.Process          (readCreateProcessWithExitCode, shell, cwd)
 import Text.Printf             (printf)
 
-import Reach.Util (uncurry5)
+import Reach.Parser.Common (ParserOpts(..))
+import Reach.Util          (uncurry5)
 
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
@@ -148,17 +150,16 @@ data PkgError
 
 
 newtype PkgT m a = PkgT
-  { runPkgT' :: ExceptT PkgError m a
+  { runPkgT' :: ReaderT ParserOpts (ExceptT PkgError m) a
   } deriving ( Functor
              , Applicative
              , Monad
-             , MonadError PkgError
-             ) via (ExceptT PkgError m)
+             , MonadReader ParserOpts
+             , MonadError  PkgError
+             ) via ReaderT ParserOpts (ExceptT PkgError m)
 
 
 class Monad m => HasPkgT m where
-  pwd          :: PkgT m FilePath
-
   dirExists    :: FilePath -> PkgT m Bool
   fileExists   :: FilePath -> PkgT m Bool
   fileRead     :: FilePath -> PkgT m B.ByteString
@@ -170,8 +171,8 @@ class Monad m => HasPkgT m where
   gitClone'    :: FilePath -> String -> FilePath -> PkgT m ()
 
 
-runPkgT :: PkgT m a -> m (Either PkgError a)
-runPkgT = runExceptT . runPkgT'
+runPkgT :: PkgT m a -> ReaderT ParserOpts m (Either PkgError a)
+runPkgT a = ReaderT $ \po -> runExceptT $ runReaderT (runPkgT' a) po
 
 
 deriving newtype instance MonadIO m => MonadIO (PkgT m)
@@ -194,7 +195,6 @@ instance (Monad m, MonadIO m) => HasPkgT m where
   fileRead      = liftIO . B.readFile
   fileUpsert f  = liftIO . B.writeFile f
   mkdirP        = liftIO . createDirectoryIfMissing True
-  pwd           = liftIO $ getCurrentDirectory
 
   gitClone' b u d = runGit b (printf "clone %s %s" u d)
     >>= orFail (throwError . PkgGitCloneFailed)
@@ -208,20 +208,16 @@ instance (Monad m, MonadIO m) => HasPkgT m where
 
 --------------------------------------------------------------------------------
 
-dirDotReach :: HasPkgT m => PkgT m FilePath
-dirDotReach = (</> ".reach") <$> pwd
-
-
 dirGitClones :: HasPkgT m => PkgT m FilePath
-dirGitClones = (</> "warehouse" </> "git") <$> dirDotReach
+dirGitClones = (</> "warehouse" </> "git") <$> asks dirDotReach
 
 
 dirLockModules :: HasPkgT m => PkgT m FilePath
-dirLockModules = (</> "sha256") <$> dirDotReach
+dirLockModules = (</> "sha256") <$> asks dirDotReach
 
 
 pathLockFile :: HasPkgT m => PkgT m FilePath
-pathLockFile = (</> "reach-lock.yaml") <$> pwd
+pathLockFile = (</> "lock.yaml") <$> asks dirDotReach
 
 
 mkdirPdotReach :: HasPkgT m => PkgT m ()
@@ -314,31 +310,31 @@ failIfMissingOrMismatched f (SHA s) = do
 
 lockModuleAbsPath
   :: HasPkgT m
-  => Bool
-  -> HostGit
+  => HostGit
   -> PkgT m FilePath
-lockModuleAbsPath canGit h = withLock $ \(lock, _) ->
+lockModuleAbsPath h = withLock $ \(lock, _) -> do
   case lock @!! h of
     Just (SHA k, _) -> do
       modPath  <- (</> (T.unpack $ toBase16 k)) <$> dirLockModules
       failIfMissingOrMismatched modPath (SHA k)
       pure modPath
 
-    Nothing -> if canGit
-      then lockModuleFix h >>= pure . fst
-      else throwError PkgLockModifyUnauthorized
+    Nothing -> ifM (asks canGit)
+      (lockModuleFix h >>= pure . fst)
+      (throwError PkgLockModifyUnauthorized)
 
 
 lockModuleAbsPathGitLocalDep
   :: HasPkgT m
-  => Bool
-  -> HostGit
+  => HostGit
   -> FilePath
   -> PkgT m FilePath
-lockModuleAbsPathGitLocalDep canGit h ldep = withLock $ \(lock, _) -> do
+lockModuleAbsPathGitLocalDep h ldep = withLock $ \(lock, _) -> do
+  canGit' <- asks canGit
+
   let relPath = gitDirPathOf h </> ldep
 
-      fix shaParent lm = if not canGit
+      fix shaParent lm = if not canGit'
         then throwError PkgLockModifyUnauthorized
         else do
           dirClones <- dirGitClones
@@ -406,7 +402,6 @@ instance HasPkgT PkgTest where
   -- TODO
   gitClone'    _ _ _ = pure ()
   mkdirP           _ = pure ()
-  pwd                = pure ""
   gitCheckout'   _ _ = pure ()
 
 

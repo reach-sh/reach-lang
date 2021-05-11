@@ -22,12 +22,15 @@ makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
 makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
   CompilerToolOpts
     { cto_outputDir = maybe defaultOutputDir id cta_outputDir
+    , cto_dirDotReach = maybe defaultDirDotReach id cta_dirDotReach
     , cto_source = cta_source
     , cto_tops = cta_tops
     , cto_intermediateFiles = cta_intermediateFiles
+    , cto_canGit = cta_canGit
     }
   where
     defaultOutputDir = takeDirectory cta_source </> "build"
+    defaultDirDotReach = takeDirectory cta_source </> ".reach"
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
