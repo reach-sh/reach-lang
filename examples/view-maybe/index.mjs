@@ -1,24 +1,25 @@
-import {loadStdlib} from '@reach-sh/stdlib';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(100);
+  const assertEq = (expected, actual) => {
+    console.log('assertEq', {expected, actual});
+    stdlib.assert(JSON.stringify(expected) === JSON.stringify(actual)) };
+  const startingBalance = stdlib.parseCurrency(10);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const ctcAlice = accAlice.deploy(backend);
 
-  const alice = await stdlib.newTestAccount(startingBalance);
-  const bob = await stdlib.newTestAccount(startingBalance);
+  const go = async (expected) => {
+    console.log('go', expected);
+    assertEq(expected, await ctcAlice.getViews().Main.i()) };
 
-  const ctcAlice = alice.deploy(backend);
-  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
+  console.log(`It's starting`);
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
-      ...stdlib.hasRandom
-    }),
-    backend.Bob(ctcBob, {
-      ...stdlib.hasRandom
-    }),
+    backend.Alice(ctcAlice, { go }),
   ]);
 
-  console.log('Hello, Alice and Bob!');
+  console.log(`It's over`);
+  await go(['None', null]);
 })();

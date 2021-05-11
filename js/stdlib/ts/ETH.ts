@@ -1058,8 +1058,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ty } = vim;
         const ethersC = await getC();
         const vkn = views_namesm[v][k];
-        const val = await ethersC[vkn]();
-        return ty.unmunge(val);
+        try {
+          const val = await ethersC[vkn]();
+          return ['Some', ty.unmunge(val)];
+        } catch (e) {
+          debug('getView1', v, k, 'error', e);
+          return ['None', null];
+        }
     };
     const getViews = getViewsHelper(views_bin, getView1);
 

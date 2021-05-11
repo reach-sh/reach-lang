@@ -387,6 +387,16 @@ mustBeMem = \case
   T_Data {} -> True
   T_Struct {} -> True
 
+mayMemSol :: Doc -> Doc
+mayMemSol x =
+  case x' of
+    "bool" -> no
+    _ -> yes
+  where
+    x' = show x
+    yes = x <> " memory"
+    no = x
+
 data ArgMode
   = AM_Call
   | AM_Memory
@@ -571,15 +581,22 @@ solEventEmit :: Int -> Doc
 solEventEmit which =
   "emit" <+> solApply (solMsg_evt which) ["_a"] <> semi
 
+solAsnType :: [DLVar] -> App Doc
+solAsnType = solType . vsToType
+
+solAsnSet :: Doc -> [(DLVar, DLArg)] -> App [Doc]
+solAsnSet asnv vs = do
+  let go (v, a) = solSet (asnv <> "." <> solRawVar v) <$> solArg a
+  vs' <- mapM go vs
+  vs_ty' <- solAsnType $ map fst vs
+  return $ [solDecl asnv (mayMemSol vs_ty') <> semi] <> vs'
+
 solHashStateSet :: [(DLVar, DLArg)] -> App ([Doc], Doc)
 solHashStateSet svs = do
   which <- ctxt_handler_num <$> ask
-  let sete = solHash [(solNum which), "nsvs"]
-  let go (v, a) = solSet ("nsvs." <> solRawVar v) <$> solArg a
-  svs' <- mapM go svs
-  let svs_ty = vsToType $ map fst svs
-  svs_ty' <- solType svs_ty
-  let setl = [solDecl "nsvs" (svs_ty' <> " memory") <> semi] <> svs'
+  let asnv = "nsvs"
+  let sete = solHash [(solNum which), asnv]
+  setl <- solAsnSet asnv svs
   return $ (setl, sete)
 
 solHashStateCheck :: Int -> Doc
@@ -872,9 +889,11 @@ solCTail = \case
         False -> return []
         True -> do
           let vi' = solNum vi
-          vvs' <- mapM solArg $ map snd vvs
-          return [ solSet "current_view_i" vi'
-                 , solSet "current_view_bs" $ solEncode vvs' ]
+          let asnv = "vvs"
+          setv <- solAsnSet asnv vvs
+          return $ setv <>
+            [ solSet "current_view_i" vi'
+            , solSet "current_view_bs" $ solEncode [ asnv ] ]
     return $ vsep $ [emit'] <> viewl <> setl <> [solSet ("current_state") sete]
   CT_From _ _ _ (FI_Halt _toks) -> do
     -- XXX we could "selfdestruct" our token holdings, based on _toks
@@ -1180,12 +1199,10 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                 let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                       let a = mlf (mlf vim v) k
                       c' <- solEq "current_view_i" $ solNum i
-                      let h = parens . hsep . punctuate ","
-                      vvts <- mapM (solType_ . varType) vvs
-                      let vvs' = h vvts
-                      let vdef vv = solDecl (solRawVar vv)
-                      let de' = solSet (h $ zipWith vdef vvs vvts) $ solApply "abi.decode" [ "current_view_bs", vvs' ]
-                      extendVarMap $ M.fromList $ map (\vv->(vv, solRawVar vv)) $ vvs
+                      let asnv = "vvs"
+                      vvs_ty' <- solAsnType vvs
+                      let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" [ "current_view_bs", parens vvs_ty' ]
+                      extendVarMap $ M.fromList $ map (\vv->(vv, asnv <> "." <> solRawVar vv)) $ vvs
                       ret' <- ("return" <+>) <$> solArg a
                       return $ solWhen c' $ vsep [ de', ret' <> semi ]
                 body' <- mapM igo $ M.toAscList vi

@@ -117,13 +117,13 @@ export const deferContract =
     // @ts-ignore
     recv: mnow('recv'),
     // @ts-ignore
-    wait: mnow('wait'),
+    wait: not_yet('wait'),
     // @ts-ignore
     iam: mnow('iam'),
     // @ts-ignore
     selfAddress: mnow('selfAddress'),
     // @ts-ignore
-    getViews: mnow('getViews'),
+    getViews: not_yet('getViews'),
     stdlib: (() => {
       if ( implNow.stdlib === undefined ) {
         throw Error(`stdlib not defined`); }

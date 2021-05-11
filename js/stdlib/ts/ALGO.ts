@@ -1279,15 +1279,24 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const views_bin = bin._getViews({reachStdlib: compiledStdlib});
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (): Promise<any> => {
-        void(v); void(k);
+        debug('getView1', v, k);
         const { decode } = vim;
         const client = await getAlgodClient();
-        const appInfo = await client.getApplicationByID(ApplicationID).do();
+        let appInfo;
+        try {
+          appInfo = await client.getApplicationByID(ApplicationID).do();
+        } catch (e) {
+          debug('getApplicationById', e);
+          return ['None', null];
+        }
         const appSt = appInfo['params']['global-state'];
         const viewSt = (appSt.find((x:any) => x.key === 'dg==')).value;
         debug({viewSt});
         const vvn = base64ToUI8A(viewSt.bytes);
         debug({vvn});
+        if ( vvn.length == 0 ) {
+          return ['None', null];
+        }
         const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
         const vi = bigNumberToNumber(vin);
         debug({vi});
@@ -1297,9 +1306,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug({vty});
         const vvs = vty.fromNet(vvn);
         debug({vvs});
-        const vres = decode(vi, vvs.slice(1));
-        debug({vres});
-        return vres;
+        try {
+          const vres = decode(vi, vvs.slice(1));
+          debug({vres});
+          return ['Some', vres];
+        } catch (e) {
+          debug(`getView1`, v, k, 'error', e);
+          return ['None', null];
+        }
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
