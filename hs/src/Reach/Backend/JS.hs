@@ -827,18 +827,25 @@ jsViews mcv = do
     let enView _ (ViewInfo vs _) =
           jsArray <$> (mapM jsContract $ map varType vs)
     views <- toObj enView vis
+    let mlf m k =
+          case M.lookup k m of
+            Just x -> x
+            Nothing -> impossible $ "jsViews " <> show k
+    let illegal = jsApply "stdlib.assert" [ "false", jsString "illegal view" ]
     let enDecode v k vi (ViewInfo vs vim) = do
-          let vka = (vim M.! v) M.! k
           vs' <- mapM jsVar vs
-          vka' <- jsArg vka
           vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
           let c = jsPrimApply PEQ [ "i", vi' ]
           let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
-          return $ jsWhen c $ vsep [ let', jsReturn vka' ]
+          ret' <-
+            case M.lookup k (mlf vim v) of
+              Just vka -> jsReturn <$> jsArg vka
+              Nothing -> return $ illegal
+          return $ jsWhen c $ vsep [ let', ret' ]
     let enInfo' v k ctc = do
           ctc' <- jsContract ctc
           body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
-          let body' = vsep [ body, jsApply "stdlib.assert" [ "false", jsString "illegal view" ] ]
+          let body' = vsep [ body, illegal ]
           let decode' = jsApply "" [ "i", "svs" ] <+> "=>" <+> jsBraces body'
           return $ jsObject $ M.fromList $
             [ ("ty"::String, ctc')

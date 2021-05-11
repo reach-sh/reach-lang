@@ -374,7 +374,7 @@ data DLExpr
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
-  | DLE_ViewIs SrcLoc SLPart SLVar DLArg
+  | DLE_ViewIs SrcLoc SLPart SLVar (Maybe DLArg)
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where

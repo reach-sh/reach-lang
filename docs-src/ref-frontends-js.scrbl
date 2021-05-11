@@ -283,7 +283,7 @@ This @jsin{bin} argument is the @filepath{input.mjs} module produced by the Java
 @index{ctc.getViews} Returns an object representing the @tech{views} of the @tech{contract}.
 This object mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.getViews().X.Y} is a @deftech{view function}.
 A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
-For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.getViews().NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None']}.
+For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.getViews().NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
 
 @section[#:tag "ref-frontends-js-network"]{Network Utilities}
 

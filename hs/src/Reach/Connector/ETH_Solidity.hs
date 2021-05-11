@@ -1196,17 +1196,22 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                       case M.lookup mk m of
                         Just x -> x
                         Nothing -> impossible "sol view defn"
+                let illegal = solRequire "invalid view_i" "false"
                 let igo (i, ViewInfo vvs vim) = freshVarMap $ do
-                      let a = mlf (mlf vim v) k
                       c' <- solEq "current_view_i" $ solNum i
                       let asnv = "vvs"
                       vvs_ty' <- solAsnType vvs
                       let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" [ "current_view_bs", parens vvs_ty' ]
                       extendVarMap $ M.fromList $ map (\vv->(vv, asnv <> "." <> solRawVar vv)) $ vvs
-                      ret' <- ("return" <+>) <$> solArg a
+                      ret' <-
+                        case M.lookup k (mlf vim v) of
+                          Just a ->
+                            ("return" <+>) <$> solArg a
+                          Nothing ->
+                            return $ illegal
                       return $ solWhen c' $ vsep [ de', ret' <> semi ]
                 body' <- mapM igo $ M.toAscList vi
-                let body'' = vsep $ body' <> [ solRequire "invalid view_i" "false" <> semi ]
+                let body'' = vsep $ body' <> [ illegal <> semi ]
                 return $ (,) (s2t k, Aeson.String $ s2t vk_) $
                   solFunction vk [] ret body''
           let vgo (v, tm) = do

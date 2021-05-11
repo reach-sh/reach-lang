@@ -11,7 +11,7 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, listToMaybe)
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -450,7 +450,7 @@ dlvOccurs env bindings = \case
     DLE_MapDel at _ fa -> _rec at fa
     DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
       _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
-    DLE_ViewIs at _ _ a -> _rec at a
+    DLE_ViewIs at _ _ ma -> _recs at $ maybeToList ma
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -500,7 +500,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
-  DLE_ViewIs _ v k a -> "view(" <> show v <> ")." <> show k <> ".is(" <> sub a <> ")"
+  DLE_ViewIs _ v k ma -> "view(" <> show v <> ")." <> show k <> ".is(" <> msub ma <> ")"
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))

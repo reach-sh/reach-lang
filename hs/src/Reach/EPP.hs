@@ -283,11 +283,13 @@ isViewIs = \case
   _ -> False
 
 recordView :: DLStmt -> BApp a -> BApp a
-recordView (DL_Let _ _ (DLE_ViewIs _ v f a)) =
+recordView (DL_Let _ _ (DLE_ViewIs _ v f ma)) =
   local (\e -> e { be_views = modv $ be_views e})
   where
     modv = mAdjust mempty v modf
-    modf = M.insert f a
+    modf = case ma of
+             Just a -> M.insert f a
+             Nothing -> M.delete f
     mAdjust d k m = flip M.alter k $ Just . m . fromMaybe d
 recordView _ = impossible "recordView not called on isViewIs"
 

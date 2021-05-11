@@ -745,8 +745,12 @@ For example, consider the following program:
 @reachex[#:show-lines? #t "view-steps/index.rsh"
          #:link #t]
 
-In this program, there are four steps that are possible, depending on whether @reachin{A} and @reachin{B} end up being distinct.
-An external observer can run @jsin{await ctc.getViews().Main.i()} to learn at what step the computation is in.
+In this program, the Reach backend calls the frontend @reachin{interact} function, @reachin{checkView} with the expected value of the @tech{views} at each point in the program.
+The frontend compares that value with what is returned by
+@js{
+[ await ctc.getViews().Main.last(),
+  await ctc.getViews().Main.i() ]
+}
 
 When a @tech{view} is bound to a function, it may inspect any values in its scope, including @tech{linear state}.
 

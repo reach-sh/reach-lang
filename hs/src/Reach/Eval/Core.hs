@@ -2454,10 +2454,14 @@ evalPrim p sargs =
     SLPrim_viewis _vat vn vk st -> do
       ensure_modes [ SLM_Step, SLM_ConsensusStep, SLM_ConsensusPure ] "view.is"
       at <- withAt id
-      v <- one_arg
-      vae <- typeCheck_s st v
-      va <- compileArgExpr vae
-      ctxt_lift_eff $ DLE_ViewIs at vn vk va
+      mva <-
+        case args of
+          [] -> return Nothing
+          [ v ] -> do
+            vae <- typeCheck_s st v
+            Just <$> compileArgExpr vae
+          _ -> illegal_args
+      ctxt_lift_eff $ DLE_ViewIs at vn vk mva
       return $ public $ SLV_Null at "viewis"
   where
     lvl = mconcatMap fst sargs
