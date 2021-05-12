@@ -1209,8 +1209,9 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
       );
       // Let logs show up by just waiting for another block
       // https://github.com/reach-sh/reach-lang/issues/134
-      now = (await waitUntilTime(bigNumberify(waitTillBlock))).toNumber();
+      await waitUntilTime(bigNumberify(waitTillBlock));
     }
+    now = await getNetworkTimeNumber();
 
     const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
     debug('verifyContract: checking logs for', deployEvent, 'from', creation_block, 'to', now, '...');
