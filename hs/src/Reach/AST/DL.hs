@@ -205,6 +205,15 @@ data DLOpts = DLOpts
   }
   deriving (Eq, Generic)
 
+instance Pretty DLOpts where
+  pretty = \case
+    DLOpts {..} ->
+      braces $ vsep
+        [ "deployMode: " <> viaShow dlo_deployMode
+        , "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
+        , "verifyPerConnector: " <> viaShow dlo_verifyPerConnector
+        , "connectors: " <> viaShow dlo_connectors ]
+
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 

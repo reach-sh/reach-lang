@@ -73,6 +73,7 @@ data Env = Env
   , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
   , e_exn :: IORef ExnEnv
   , e_pie :: IORef (M.Map SLPart InteractEnv)
+  , e_views :: IORef DLViews
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -2356,7 +2357,7 @@ evalPrim p sargs =
     SLPrim_Participant -> makeParticipant False
     SLPrim_ParticipantClass -> makeParticipant True
     SLPrim_View -> do
-      ensure_mode SLM_AppInit "View"
+      ensure_modes [SLM_Module, SLM_AppInit] "View"
       at <- withAt id
       (n, intv) <- two_args
       namebs <- mustBeBytes n
@@ -2565,7 +2566,15 @@ evalPrim p sargs =
                   Right x -> x
                   Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
       let dlo = M.foldrWithKey use_opt dlo_def opts
+      -- liftIO $ putStrLn $ "constructed options: " <> show (pretty dlo)
       setDlo dlo
+      -- liftIO $ putStrLn $ "dlo': " <> show (pretty dlo')
+      st <- readSt id
+      let after_ctor =
+            case dlo_deployMode dlo of
+              DM_constructor -> True
+              DM_firstMsg -> False
+      setSt $ st { st_after_ctor = after_ctor }
       return $ public $ SLV_Null at "setOptions"
   where
     lvl = mconcatMap fst sargs
@@ -4185,6 +4194,29 @@ evalStmt = \case
           addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
           -- locWho _part $ do
           sco_ <- sco_update addl_env -- env
+          locSco sco_ $ do
+            locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
+        SLV_AppArg (SLA_View (SLViewInfo va n (SLInterface i))) -> do
+          at <- withAt id
+          views <- asks e_views
+          sv <- liftIO $ readIORef views
+          when (M.member n sv) $
+            expect_ $ Err_View_DuplicateView n
+          let ns = bunpack n
+          let go k t = do
+                let vv = SLV_Prim $ SLPrim_viewis at n k t
+                let vom = M.singleton "is" $ SLSSVal va Public vv
+                let vo = SLV_Object va (Just $ ns <> " view, " <> k) vom
+                let io = SLSSVal va Public vo
+                di <- st2dte t
+                return $ (di, io)
+          ix <- mapWithKeyM go i
+          let i' = M.map fst ix
+          let io = M.map snd ix
+          liftIO $ modifyIORef views $ M.insert n i'
+          let v = SLV_Object va (Just $ ns <> " view") io
+          addl_env <- evalDeclLHS True rhs_lvl mempty v lhs
+          sco_ <- sco_update addl_env
           locSco sco_ $ do
             locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
         _ -> do
