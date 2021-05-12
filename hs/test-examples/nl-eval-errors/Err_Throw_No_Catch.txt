@@ -1,1 +1,1 @@
-reachc: error: ./Err_Throw_No_Catch.rsh:compileDApp: `throw` statements may only occur inside of `try/catch` blocks.
+reachc: error: ./Err_Throw_No_Catch.rsh:7:12:block: `throw` statements may only occur inside of `try/catch` blocks.

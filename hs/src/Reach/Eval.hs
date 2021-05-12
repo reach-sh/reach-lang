@@ -45,7 +45,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_s
   seenViews <- liftIO $ newIORef mempty
   let tr_av = \case
         SLAV_Participant (SLCompiledPartInfo {..}) ->
-          return $ public $ SLV_Participant slcpi_at slcpi_who Nothing Nothing
+          return $ public $ SLV_Participant slcpi_at slcpi_who Nothing Nothing (SLCompiledPartInfo {..})
         SLAV_View (SLViewInfo a n (SLInterface i)) -> do
           sv <- liftIO $ readIORef seenViews
           when (M.member n sv) $
@@ -116,11 +116,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_s
     case dlo_deployMode dlo of
       DM_constructor -> yes
       DM_firstMsg -> no
-  _ <-
-    -- locIOs ios $
-      locSco sco $
-          -- locClasses classes $
-            evalStmt top_ss
+  _ <- locSco sco $ evalStmt top_ss
   flip when doExit =<< readSt st_live
   sps <- SLParts <$> (asks e_pie >>= liftIO . readIORef)
   fin_toks <- readSt st_toks

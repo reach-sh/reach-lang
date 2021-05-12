@@ -143,7 +143,7 @@ data EvalError
 
 show_sv :: SLValTy -> String
 show_sv = \case
-  (SLV_Participant _ who _ _, _) ->
+  (SLV_Participant _ who _ _ _, _) ->
     "<participant " <> (bunpack who) <> ">"
   (SLV_Object _ (Just lab) _, _) ->
     lab

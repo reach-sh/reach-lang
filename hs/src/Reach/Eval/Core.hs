@@ -625,7 +625,7 @@ slToDLV = \case
   SLV_Data at dt vn sv -> do
     msv <- slToDLV sv
     return $ DLV_Data at dt vn <$> msv
-  SLV_Participant at who _ mdv -> do
+  SLV_Participant at who _ mdv _ -> do
     pdvs <- readSt st_pdvs
     case M.lookup who pdvs <|> mdv of
       Just dv -> arg at $ DLA_Var dv
@@ -749,7 +749,7 @@ compileArgExprMap = mapM compileArgExpr
 
 slvParticipant_part :: SLVal -> App SLPart
 slvParticipant_part = \case
-  SLV_Participant _ x _ _ -> return x
+  SLV_Participant _ x _ _ _ -> return x
   x -> expect_t x $ Err_NotParticipant
 
 compileTypeOf :: SLVal -> App (DLType, DLArg)
@@ -964,8 +964,8 @@ infectWithId_clo v (SLClo _ e b c) =
 
 infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
-  SLV_Participant a who _ mdv ->
-    SLV_Participant a who (Just v) mdv
+  SLV_Participant a who _ mdv slcpi ->
+    SLV_Participant a who (Just v) mdv slcpi
   SLV_Clo a mt c ->
     SLV_Clo a mt $ infectWithId_clo v c
   SLV_DLVar (DLVar a _ t i) ->
@@ -993,7 +993,7 @@ evalAsEnv obj = case obj of
     return $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
     return $ retDLVar tm (DLA_Var obj_dv) Public
-  SLV_Participant _ who vas _ ->
+  SLV_Participant _ who vas _ _ ->
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1265,18 +1265,14 @@ makeInteract who (SLInterface spec) = do
   saveLift $ DLS_Only at who lifts
   return $ (io, ienv)
 
-evalAppArg :: SLVal -> App SLAppArgV
+evalAppArg :: SLVal -> App ()
 evalAppArg = \case
   -- Participant declarations via tuple are deprecated
   SLV_Tuple at [who, int] -> adapt_tuple at SLPrim_Participant who int
   SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
     adapt_tuple at SLPrim_ParticipantClass who int
-  SLV_AppArg (SLA_Participant slcpi_at slcpi_isClass slcpi_who int) -> do
-    (slcpi_lifts, (slcpi_io, slcpi_ienv)) <-
-      captureLifts $ makeInteract slcpi_who int
-    return $ SLAV_Participant $ SLCompiledPartInfo {..}
-  SLV_AppArg (SLA_View vi) ->
-    return $ SLAV_View vi
+  SLV_Participant {} -> return ()
+  SLV_AppArg (SLA_View _) -> return ()
   v -> do
     at <- withAt id
     locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
@@ -1285,14 +1281,26 @@ evalAppArg = \case
       liftIO $ emitWarning $ W_Deprecated $ D_ParticipantTuples at
       evalAppArg =<< (snd <$> (evalPrim p $ map public $ [ who, int ]))
 
-convertDeprecatedReachApp :: JSAnnot -> JSExpression -> JSExpression -> JSExpression -> JSStatement -> JSStatement
-convertDeprecatedReachApp a opte pis partse top_s =
-  JSStatementBlock a [
-    JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) JSSemiAuto,
-    JSConstant a (JSLOne $ JSVarInitExpression pis $ JSVarInit a partse) JSSemiAuto,
-    JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) JSSemiAuto,
-    top_s
-    ] a JSSemiAuto
+convertDeprecatedReachApp :: JSAnnot -> JSExpression -> JSArrowParameterList -> JSExpression -> JSStatement -> App JSStatement
+convertDeprecatedReachApp a opte top_formals partse top_s = do
+  at <- withAt id
+  sarg <- evalExpr partse
+  case snd sarg of
+    SLV_Tuple _ parts -> do
+      mapM_ evalAppArg parts
+      let pis = parseJSArrowFormals at top_formals
+      ps <- case partse of
+              JSArrayLiteral _ el _ -> return $ jsa_flatten el
+              _ -> impossible "convertDeprecatedReachApp: already confirmed tuple"
+      assigns <- zipEq (Err_Apply_ArgCount at) pis ps
+      let assignSs = map (\ (p, v) -> JSConstant a (JSLOne $ JSVarInitExpression p $ JSVarInit a v) JSSemiAuto) assigns
+      return $ JSStatementBlock a
+        ([ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) JSSemiAuto ]
+        <> assignSs
+        <> [ JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) JSSemiAuto, top_s ])
+         a JSSemiAuto
+    v -> locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
+
 
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
@@ -1305,9 +1313,8 @@ evalForm f args = do
           retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
         [opte, partse, JSArrowExpression top_formals a top_s] -> do
           -- liftIO $ emitWarning $ W_Deprecated D_ReachAppArgs
-          let psArr = JSArrayLiteral a (JSArrayElement <$> parseJSArrowFormals at top_formals) a
           -- verify that participant tuples get warnings & anything not participant raises invalidpartspec
-          let newBody = convertDeprecatedReachApp a opte psArr partse top_s
+          newBody <- convertDeprecatedReachApp a opte top_formals partse top_s
           retV $ public $ SLV_Prim $ SLPrim_App_Delay at newBody (sco_cenv, sco_use_strict)
         _ -> expect_ $ Err_App_InvalidArgs args
     SLForm_Part_Only who mv -> do
@@ -1433,7 +1440,7 @@ evalForm f args = do
           parts <-
             mapM
               (\case
-                 SLV_Participant _ who mv _ -> return (who, mv)
+                 SLV_Participant _ who mv _ _ -> return (who, mv)
                  v -> expect_t v $ Err_NotParticipant)
               part_vs
           ce <- ask >>= sco_to_cloenv . e_sco
@@ -1457,7 +1464,7 @@ evalForm f args = do
         traverse (mustBeBytes <=< ensure_public <=< evalExpr) mmsg_e
       (_, v_n) <- evalExpr notter_e
       let participant_who = \case
-            SLV_Participant _ who _ _ -> return $ who
+            SLV_Participant _ who _ _ _ -> return $ who
             v -> expect_t v $ Err_NotParticipant
       notter <- participant_who v_n
       (_, v_kn) <- evalExpr knower_e
@@ -2280,7 +2287,7 @@ evalPrim p sargs =
       evalPrim dp $ bargs <> sargs <> aargs
     SLPrim_part_set ->
       case map snd sargs of
-        [(SLV_Participant _ who _ _), addr] -> do
+        [(SLV_Participant _ who _ _ _), addr] -> do
           addr_da <- compileCheckType T_Address addr
           withAt $ \at -> (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
@@ -2609,9 +2616,7 @@ evalPrim p sargs =
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
     makeParticipant isClass = do
-      ensure_mode SLM_AppInit "Participant Constructor"
-      -- modify global state (new thing in Env / not env.state)
-      -- return SLV_Participant
+      ensure_modes [SLM_Module, SLM_AppInit] "Participant Constructor"
       at <- withAt id
       (n, intv) <- two_args
       slcpi_who <- mustBeBytes n
@@ -2623,15 +2628,15 @@ evalPrim p sargs =
       int <- mustBeInterface intv
       (slcpi_lifts, (slcpi_io, slcpi_ienv)) <-
         captureLifts $ makeInteract slcpi_who int
-      saveLifts slcpi_lifts
       _env0 <- locAt at $ env_insertp mempty ("interact", slcpi_io)
-      ios <- asks e_ios
-      liftIO $ modifyIORef ios (M.insert slcpi_who slcpi_io)
-      updatePie slcpi_who slcpi_ienv
-      when isClass $ do
-        classes <- asks e_classes
-        liftIO $ modifyIORef classes $ S.insert slcpi_who
-      let v = SLV_Participant at slcpi_who Nothing Nothing
+      let slcpi = SLCompiledPartInfo {
+        slcpi_at = at,
+        slcpi_isClass = isClass,
+        slcpi_who = slcpi_who,
+        slcpi_io = slcpi_io,
+        slcpi_ienv = slcpi_ienv,
+        slcpi_lifts = slcpi_lifts }
+      let v = SLV_Participant at slcpi_who Nothing Nothing slcpi
       retV (lvl, v)
 
 updatePie :: SLPart -> InteractEnv -> App ()
@@ -3346,7 +3351,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
             Nothing -> return $ add_this me_v penv_
             Just v ->
               case M.lookup v penv_ of
-                Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv)) ->
+                Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv slcpi)) ->
                   case mdv of
                     Just _ | not isClass -> return $ add_this pv penv_
                     _ -> do
@@ -3356,7 +3361,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
                       -- participant, their self address is actually always the
                       -- same, but the whole point is to ensure that we can't
                       -- require(P == P) where P is a class.
-                      let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
+                      let pv' = SLV_Participant at_ who_ mv_ (Just me_dv) slcpi
                       return $
                         add_this pv' $
                           M.insert v (SLSSVal pv_at pv_lvl pv') penv_
@@ -3492,8 +3497,8 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
                 Nothing -> return $ env
                 Just whov ->
                   evalId_ "publish who binding" whov >>= \case
-                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
-                      return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
+                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _ slcpi)) ->
+                      return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv) slcpi)) env
                     _ ->
                       impossible $ "participant is not participant"
         return $ (add_who_env, pdvs')
@@ -4031,7 +4036,7 @@ findStmtTrampoline = \case
 
 doExit :: App ()
 doExit = do
-  ensure_modes [SLM_AppInit, SLM_Step] "exit"
+  ensure_modes [SLM_Step, SLM_AppInit] "exit"
   ensure_live "exit"
   at <- withAt id
   let zero = SLV_Int at 0
@@ -4166,20 +4171,21 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
           pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
-        SLV_Participant _ _part _ _ -> do
-          -- liftIO $ putStrLn $ "env: " <> show (pretty env)
-          -- liftIO $ putStrLn $ "assigning participant: penv = " <> show (pretty env) <> " == " <> show (pretty $ M.lookup "interact" env)
+        SLV_Participant _ _part _ _ (SLCompiledPartInfo {..}) -> do
+          -- liftIO $ putStrLn $ "assigning participant: slcpi_ienv = " <> show (pretty slcpi_ienv)
+          mode <- readSt st_mode
+          when (mode == SLM_AppInit) $ do
+            saveLifts slcpi_lifts
+            ios <- asks e_ios
+            liftIO $ modifyIORef ios (M.insert slcpi_who slcpi_io)
+            updatePie slcpi_who slcpi_ienv
+            when slcpi_isClass $ do
+              classes <- asks e_classes
+              liftIO $ modifyIORef classes $ S.insert slcpi_who
           addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
-          -- ie <- lookupPie part >>= \case
-          --             Just ie' -> return ie'
-          --             Nothing  -> impossible "InteractEnv not defined for participant"
-          -- iv <- makeInteract part ie
           -- locWho _part $ do
           sco_ <- sco_update addl_env -- env
-          -- liftIO $ putStrLn $ "sco_cenv: " <> show (pretty $ sco_cenv sco_)
-          -- let penvs = sco_penvs sco_
-          -- let sco_penv' = M.insert part env penvs
-          locSco sco_ $ do -- { sco_penvs = sco_penv' }
+          locSco sco_ $ do
             locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
         _ -> do
           addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
