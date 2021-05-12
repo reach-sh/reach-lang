@@ -66,6 +66,7 @@ dependencies:
 - temporary
 - text
 - time
+- unix-compat
 - unordered-containers
 - vector
 - yaml

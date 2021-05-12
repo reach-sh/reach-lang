@@ -27,30 +27,32 @@ module Reach.Eval.ImportSource
 
 import Text.Parsec
 
-import Control.Monad.Except    (MonadError, ExceptT(..), runExceptT, throwError)
-import Control.Monad.Extra     (unlessM, whenM, ifM)
-import Control.Monad.IO.Class  (MonadIO, liftIO)
-import Control.Monad.Reader    (ReaderT(..), MonadReader, asks)
-import Control.Monad.State     (MonadState, StateT(..), get, modify)
-import Crypto.Hash             (Digest, SHA256(..), hashWith, digestFromByteString)
-import Data.Aeson              (ToJSONKey, FromJSONKey)
-import Data.ByteArray          (ByteArrayAccess, ByteArray, convert)
-import Data.ByteArray.Encoding (Base(Base16), convertFromBase, convertToBase)
-import Data.Functor.Identity   (Identity)
-import Data.List               (find, intercalate)
-import Data.Text.Encoding      (decodeUtf8, encodeUtf8)
-import Data.Yaml               (ToJSON(..), FromJSON(..), prettyPrintParseException)
-import Data.Yaml               (withText, encode, decodeEither')
-import GHC.Generics            (Generic)
-import System.Directory        (createDirectoryIfMissing, doesDirectoryExist)
-import System.Directory        (doesFileExist)
-import System.Exit             (ExitCode(..))
-import System.FilePath         ((</>), isValid, pathSeparator)
-import System.Process          (readCreateProcessWithExitCode, shell, cwd)
-import Text.Printf             (printf)
+import Control.Monad.Except     (MonadError, ExceptT(..), runExceptT, throwError)
+import Control.Monad.Extra      (unlessM, whenM, ifM)
+import Control.Monad.IO.Class   (MonadIO, liftIO)
+import Control.Monad.Reader     (ReaderT(..), MonadReader, asks)
+import Control.Monad.State      (MonadState, StateT(..), get, modify)
+import Crypto.Hash              (Digest, SHA256(..), hashWith, digestFromByteString)
+import Data.Aeson               (ToJSONKey, FromJSONKey)
+import Data.ByteArray           (ByteArrayAccess, ByteArray, convert)
+import Data.ByteArray.Encoding  (Base(Base16), convertFromBase, convertToBase)
+import Data.Functor.Identity    (Identity)
+import Data.List                (find, intercalate)
+import Data.Text.Encoding       (decodeUtf8, encodeUtf8)
+import Data.Yaml                (ToJSON(..), FromJSON(..), prettyPrintParseException)
+import Data.Yaml                (withText, encode, decodeEither')
+import GHC.Generics             (Generic)
+import System.Directory         (createDirectoryIfMissing, doesDirectoryExist)
+import System.Directory         (doesFileExist)
+import System.Directory.Extra   (listFilesRecursive)
+import System.Exit              (ExitCode(..))
+import System.FilePath          ((</>), isValid, pathSeparator)
+import System.Process           (readCreateProcessWithExitCode, shell, cwd)
+import Text.Printf              (printf)
+import System.PosixCompat.Files (setFileMode, accessModes, stdFileMode)
 
-import Reach.Parser.Common     (ParserOpts(..))
-import Reach.Util              (uncurry5)
+import Reach.Parser.Common      (ParserOpts(..))
+import Reach.Util               (listDirectoriesRecursive, uncurry5)
 
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
@@ -161,6 +163,10 @@ class Monad m => HasPkgT m where
   fileRead     :: FilePath -> PkgT m B.ByteString
   mkdirP       :: FilePath -> PkgT m ()
 
+  -- Allow `sudo`-less directory traversal/deletion for Docker users
+  -- but disable execute bit on individual files
+  applyPerms   :: PkgT m ()
+
   fileUpsert   :: FilePath -> B.ByteString -> PkgT m ()
   gitCheckout' :: FilePath -> String       -> PkgT m ()
 
@@ -201,6 +207,14 @@ instance (Monad m, MonadIO m) => HasPkgT m where
       >>= orFail (throwError . PkgGitFetchFailed)
       >>   check (throwError . PkgGitCheckoutFailed)
 
+  applyPerms = do
+    dr <- asks dirDotReach
+    ds <- liftIO $ listDirectoriesRecursive dr
+    fs <- liftIO $ listFilesRecursive       dr
+    liftIO $ setFileMode dr accessModes
+    liftIO $ mapM_ (flip setFileMode accessModes) ds
+    liftIO $ mapM_ (flip setFileMode stdFileMode) fs
+
 
 --------------------------------------------------------------------------------
 
@@ -238,7 +252,10 @@ withDotReach m = do
       ]
 
   lock <- ifM (fileExists lockf) lockFileRead (pure lockFileEmpty)
-  m (lock, lockf)
+  res  <- m (lock, lockf)
+
+  applyPerms
+  pure res
 
 
 gitClone :: HasPkgT m => HostGit -> PkgT m ()
@@ -406,6 +423,7 @@ instance HasPkgT PkgTest where
   gitClone'    _ _ _ = pure ()
   mkdirP           _ = pure ()
   gitCheckout'   _ _ = pure ()
+  applyPerms         = pure ()
 
 
 --------------------------------------------------------------------------------

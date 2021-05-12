@@ -20,10 +20,12 @@ module Reach.Util
   , uncurry3
   , uncurry4
   , uncurry5
+  , listDirectoriesRecursive
   )
 where
 
 import Control.Monad
+import Control.Monad.Extra
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (foldr')
@@ -33,6 +35,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import GHC.Stack
+import System.Directory.Extra
 import System.Exit
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
@@ -118,3 +121,9 @@ uncurry4 f (a, b, c, d) = f a b c d
 
 uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
 uncurry5 f (a, b, c, d, e) = f a b c d e
+
+listDirectoriesRecursive :: FilePath -> IO [FilePath]
+listDirectoriesRecursive dir = do
+  (ds, _) <- partitionM doesDirectoryExist =<< listContents dir
+  rest    <- concatMapM listDirectoriesRecursive ds
+  pure $ ds <> rest

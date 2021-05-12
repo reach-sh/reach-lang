@@ -24,8 +24,9 @@ RUN ln -s /z3/z3-${Z3_VER}-${Z3_SYS}/bin/z3 /z3/z3
 
 FROM ubuntu:18.04 as deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  libgmp10 \
-  ca-certificates \
+    libgmp10 \
+    ca-certificates \
+    git \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
