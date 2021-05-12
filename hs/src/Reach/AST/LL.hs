@@ -24,6 +24,7 @@ data LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
+  | LLC_ViewIs SrcLoc SLPart SLVar (Maybe DLExportBlock) LLConsensus
   deriving (Eq)
 
 instance Pretty LLConsensus where
@@ -36,6 +37,8 @@ instance Pretty LLConsensus where
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     LLC_Continue _at asn -> prettyContinue asn
+    LLC_ViewIs _ vn vk a k ->
+      prettyViewIs vn vk a <> hardline <> pretty k
 
 data LLStep
   = LLS_Com DLStmt LLStep

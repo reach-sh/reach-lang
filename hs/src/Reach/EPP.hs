@@ -277,22 +277,6 @@ fg_jump dst = do
   fg_record $ \f -> f {fid_jumps = S.insert dst $ fid_jumps f}
 
 -- Views
-isViewIs :: DLStmt -> Bool
-isViewIs = \case
-  DL_Let _ _ (DLE_ViewIs {}) -> True
-  _ -> False
-
-recordView :: DLStmt -> BApp a -> BApp a
-recordView (DL_Let _ _ (DLE_ViewIs _ v f ma)) =
-  local (\e -> e { be_views = modv $ be_views e})
-  where
-    modv = mAdjust mempty v modf
-    modf = case ma of
-             Just a -> M.insert f a
-             Nothing -> M.delete f
-    mAdjust d k m = flip M.alter k $ Just . m . fromMaybe d
-recordView _ = impossible "recordView not called on isViewIs"
-
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
 
@@ -384,7 +368,6 @@ ee_t = eeIze be_t
 be_m :: BAppT2 DLStmt
 be_m = \case
   DL_Nop at -> nop at
-  c | isViewIs c -> nop $ srclocOf c
   DL_Let at mdv de -> do
     case de of
       DLE_Remote {} -> recordOutputVar mdv
@@ -481,6 +464,7 @@ instance OnlyHalts LLConsensus where
     LLC_FromConsensus _ _ s -> onlyHalts s
     LLC_While {} -> False
     LLC_Continue {} -> False
+    LLC_ViewIs {} -> False
 
 instance OnlyHalts LLStep where
   onlyHalts = \case
@@ -490,8 +474,15 @@ instance OnlyHalts LLStep where
 
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
-  LLC_Com c k | isViewIs c ->
-    recordView c $ be_c k
+  LLC_ViewIs _ v f ma k ->
+    local (\e -> e { be_views = modv $ be_views e}) $
+      be_c k
+    where
+      modv = mAdjust mempty v modf
+      modf = case ma of
+               Just a -> M.insert f a
+               Nothing -> M.delete f
+      mAdjust d mk m = flip M.alter mk $ Just . m . fromMaybe d
   LLC_Com c k -> do
     let toks =
           case c of
@@ -594,8 +585,6 @@ be_c = \case
 
 be_s :: LLStep -> BApp (EApp ETail)
 be_s = \case
-  LLS_Com c k | isViewIs c ->
-    recordView c $ be_s k
   LLS_Com c k -> do
     int <- be_interval <$> ask
     let int' =

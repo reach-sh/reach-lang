@@ -153,6 +153,9 @@ dk1 at_top ks s =
         (\env ->
            env {eExnHandler = Just (Handler hv (hs <> ks))})
         $ dk_ at (e <> ks)
+    DLS_ViewIs at vn vk mva -> do
+      mva' <- maybe (return $ Nothing) (\eb -> Just <$> dk_eba eb) mva
+      DK_ViewIs at vn vk mva' <$> dk_ at ks
   where
     com :: DKApp DKTail
     com = com' =<< dkc s
@@ -177,6 +180,9 @@ dk_ev = \case
   DLEV_Fun at args body ->
     DLEV_Fun at args <$> dk_block at body
   DLEV_Arg at a -> return $ DLEV_Arg at a
+
+dk_eba :: DLSExportBlock -> DKApp DKExportBlock
+dk_eba eb = liftIO $ dk_eb eb
 
 dk_eb :: DLSExportBlock -> IO DKExportBlock
 dk_eb = \case
@@ -300,6 +306,8 @@ instance LiftCon DKTail where
     DK_While at asn inv cond body k ->
       DK_While at asn inv cond <$> lc body <*> lc k
     DK_Continue at asn -> return $ DK_Continue at asn
+    DK_ViewIs at vn vk a k ->
+      DK_ViewIs at vn vk a <$> lc k
 
 liftcon :: DKProg -> IO DKProg
 liftcon (DKProg at opts sps dli dex dvs k) = do
@@ -440,6 +448,10 @@ df_con = \case
     tct <- fluidRef FV_thisConsensusTime
     fluidSet FV_lastConsensusTime tct $
       LLC_FromConsensus at1 at2 <$> df_step t
+  DK_ViewIs at vn vk mva k -> do
+    mva' <- maybe (return $ Nothing) (\eb -> Just <$> df_eb eb) mva
+    k' <- df_con k
+    return $ LLC_ViewIs at vn vk mva' k'
   x -> df_com (mkCom LLC_Com) df_con x
 
 df_step :: DKTail -> DFApp LLStep

@@ -1158,7 +1158,7 @@ evalDot_ obj env field = do
 evalDot :: SLVal -> String -> App SLSVal
 evalDot obj s = flip (evalDot_ obj) s =<< evalAsEnv obj
 
-st2dte :: SLType -> App DLType
+st2dte :: HasCallStack => SLType -> App DLType
 st2dte t =
   case st2dt t of
     Just x -> return $ x
@@ -2356,8 +2356,7 @@ evalPrim p sargs =
             _ -> expect_ $ Err_Decl_NotType "Fun" (x, Nothing)
         _ -> do
           void $ typeCheck_s t x
-          at <- withAt id
-          return $ (lvl, SLV_Bool at True)
+          return $ (lvl, x)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       (av, ri) <- two_args
@@ -2452,16 +2451,19 @@ evalPrim p sargs =
               [cmp_v, public $ SLV_Bytes at "remote bill check"]
           return $ public res
     SLPrim_viewis _vat vn vk st -> do
-      ensure_modes [ SLM_Step, SLM_ConsensusStep, SLM_ConsensusPure ] "view.is"
+      ensure_modes [ SLM_ConsensusStep, SLM_ConsensusPure ] "view.is"
       at <- withAt id
       mva <-
         case args of
           [] -> return Nothing
           [ v ] -> do
-            vae <- typeCheck_s st v
-            Just <$> compileArgExpr vae
+            v' <- snd <$> evalPrim SLPrim_is [public v, public $ SLV_Type st]
+            mev <- slToDLExportVal v'
+            when (mev == Nothing) $ do
+              expect_t v $ Err_View_CannotExpose
+            return $ mev
           _ -> illegal_args
-      ctxt_lift_eff $ DLE_ViewIs at vn vk mva
+      saveLift $ DLS_ViewIs at vn vk mva
       return $ public $ SLV_Null at "viewis"
   where
     lvl = mconcatMap fst sargs

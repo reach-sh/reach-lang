@@ -839,16 +839,21 @@ jsViews mcv = do
           let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
           ret' <-
             case M.lookup k (mlf vim v) of
-              Just vka -> jsReturn <$> jsArg vka
+              Just eb -> do
+                eb' <- jsExportBlock $ dlebEnsureFun eb
+                let eb'call = jsApply (parens eb') [ "...args" ]
+                return $ jsReturn $ parens eb'call
               Nothing -> return $ illegal
           return $ jsWhen c $ vsep [ let', ret' ]
-    let enInfo' v k ctc = do
-          ctc' <- jsContract ctc
+    let enInfo' :: SLPart -> SLVar -> IType -> App Doc
+        enInfo' v k vt = do
+          let (_, rng) = itype2arr vt
+          rng' <- jsContract rng
           body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
           let body' = vsep [ body, illegal ]
-          let decode' = jsApply "" [ "i", "svs" ] <+> "=>" <+> jsBraces body'
+          let decode' = jsApply "" [ "i", "svs", "args" ] <+> "=>" <+> jsBraces body'
           return $ jsObject $ M.fromList $
-            [ ("ty"::String, ctc')
+            [ ("ty"::String, rng')
             , ("decode", decode') ]
     let enInfo v = toObj (enInfo' v)
     infos <- toObj enInfo cvs

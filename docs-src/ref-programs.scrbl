@@ -579,10 +579,6 @@ This pattern is tedious to write and error-prone, so the @reachin{fork} statemen
 When a @tech{participant} specifies multiple cases, the @tt{msg} field of the participant will be wrapped with an additional
 variant signifying what case was chosen.
 
-@subsubsection[#:tag "ref-programs-step-view"]{View Objects}
-
-If a @tech{step} contains a reference to a @seclink["ref-programs-consensus-view"]{view object}, then it is lifted to the previous @tech{consensus step}.
-
 @subsubsection{@tt{wait}}
 
 @(mint-define! '("wait"))
@@ -1493,7 +1489,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
 @reach{
  typeOf(x) // type
  isType(t) // Bool
- is(x, t) // Bool
+ is(x, t) // t
 }
 
 The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
@@ -1502,8 +1498,10 @@ it returns the type of its argument.
 The @reachin{isType} function returns @reachin{true} if its argument is a type.
 Any expression satisfying @reachin{isType} is compiled away and does not exist at runtime.
 
-The @reachin{is} function returns @reachin{true} if its first argument satisfies the type of the second argument.
+The @reachin{is} function returns its first argument if it satisfies the type specified by the second argument.
+If it is not, then the program is @tech{invalid}.
 This is considered a @tech{negative position} for @reachin{Refine}.
+For example, @reachin{is(5, UInt)} returns @reachin{5}, while @reachin{is(5, Bool)} is an @tech{invalid} program.
 
 @subsubsection{Literal values}
 

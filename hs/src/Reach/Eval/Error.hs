@@ -137,6 +137,7 @@ data EvalError
   | Err_Token_DynamicRef
   | Err_WithBill_Type DLType
   | Err_View_DuplicateView SLPart
+  | Err_View_CannotExpose SLValTy
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -524,5 +525,7 @@ instance Show EvalError where
       "`withBill` expects no arguments or a Tuple of Tokens, but received: " <> show (pretty ty)
     Err_View_DuplicateView n ->
       "Duplicated view name: " <> show n
+    Err_View_CannotExpose sv ->
+      "Value cannot be exposed to view: " <> show_sv sv
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

@@ -138,6 +138,7 @@ instance CollectsTypes LLConsensus where
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
+  cts (LLC_ViewIs _ _ _ a k) = cts a <> cts k
 
 instance CollectsTypes DLPayAmt where
   cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks

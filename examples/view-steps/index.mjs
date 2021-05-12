@@ -4,8 +4,10 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await loadStdlib();
   const assertEq = (expected, actual) => {
-    console.log('assertEq', {expected, actual});
-    stdlib.assert(JSON.stringify(expected) === JSON.stringify(actual)) };
+    const exps = JSON.stringify(expected);
+    const acts = JSON.stringify(actual);
+    console.log('assertEq', {expected, actual}, {exps, acts});
+    stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);

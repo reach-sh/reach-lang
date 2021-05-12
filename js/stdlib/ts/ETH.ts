@@ -1053,13 +1053,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const views_bin = bin._getViews({reachStdlib: compiledStdlib});
     const views_namesm = bin._Connectors.ETH.views;
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
-      async (): Promise<any> => {
+      async (...args: any[]): Promise<any> => {
         void(vs);
         const { ty } = vim;
         const ethersC = await getC();
         const vkn = views_namesm[v][k];
+        debug('getView1', v, k, args, vkn);
         try {
-          const val = await ethersC[vkn]();
+          const val = await ethersC[vkn](...args);
           return ['Some', ty.unmunge(val)];
         } catch (e) {
           debug('getView1', v, k, 'error', e);

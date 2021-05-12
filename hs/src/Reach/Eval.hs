@@ -98,7 +98,11 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
                 let vom = M.singleton "is" $ SLSSVal a Public vv
                 let vo = SLV_Object a (Just $ ns <> " view, " <> k) vom
                 let io = SLSSVal a Public vo
-                di <- st2dte t
+                di <-
+                  case t of
+                    ST_Fun (SLTypeFun {..}) ->
+                      IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
+                    _ -> IT_Val <$> st2dte t
                 return $ (di, io)
           ix <- mapWithKeyM go i
           let i' = M.map fst ix

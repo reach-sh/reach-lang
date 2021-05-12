@@ -18,7 +18,7 @@ type num = BigNumber | number
 
 export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
   ty: ConnectorTy,
-  decode: (i:number, svs:Array<any>) => any,
+  decode: (i:number, svs:Array<any>, args:Array<any>) => any,
 };
 
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =

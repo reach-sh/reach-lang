@@ -103,6 +103,16 @@ instance Sanitize DLBlock where
 instance Sanitize DLLetVar where
   sani x = x
 
+instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLinExportVal a) where
+  sani = \case
+    DLEV_Arg _ a -> DLEV_Arg sb (sani a)
+    DLEV_Fun _ vs a -> DLEV_Fun sb vs (sani a)
+
+instance Sanitize DLExportBlock where
+  sani = \case
+    DLExportBlock k ev ->
+      DLExportBlock (sani k) (sani ev)
+
 instance Sanitize LLConsensus where
   sani = \case
     LLC_Com m k -> LLC_Com (sani m) (sani k)
@@ -111,6 +121,7 @@ instance Sanitize LLConsensus where
     LLC_While _ asn inv cond body k -> LLC_While sb (sani asn) (sani inv) (sani cond) (sani body) (sani k)
     LLC_Continue _ asn -> LLC_Continue sb (sani asn)
     LLC_FromConsensus _ _ s -> LLC_FromConsensus sb sb (sani s)
+    LLC_ViewIs _ vn vk a k -> LLC_ViewIs sb vn vk (sani a) (sani k)
 
 instance Sanitize DLPayAmt where
   sani (DLPayAmt {..}) = DLPayAmt pa_net (sani pa_ks)

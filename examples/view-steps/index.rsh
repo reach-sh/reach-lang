@@ -24,6 +24,10 @@ export const main =
     checkView([Tlast.Some(A), Ti.Some(1)]);
     commit();
 
+    // Block race of Alice and Bob for Alice to observe the state
+    A.publish();
+    commit();
+
     B.publish();
     vMain.i.is(2);
     vMain.last.is(B);

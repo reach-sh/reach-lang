@@ -299,6 +299,8 @@ kgq_n ctxt = \case
       ctxt' = ctxt_add_back ctxt ca
   LLC_Continue _ asn ->
     kgq_asn ctxt asn
+  LLC_ViewIs _ _ _ _ k ->
+    kgq_n ctxt k
 
 kgq_pa :: KCtxt -> DLPayAmt -> IO ()
 kgq_pa ctxt (DLPayAmt {..}) = do

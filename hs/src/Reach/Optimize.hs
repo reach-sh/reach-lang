@@ -8,6 +8,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Sanitize
+import Reach.Util
 
 type App = ReaderT Env IO
 
@@ -62,8 +63,7 @@ focusc = focus F_Consensus
 newScope :: App x -> App x
 newScope m = do
   Env {..} <- ask
-  eEnvs <- liftIO $ readIORef eEnvsR
-  eEnvsR' <- liftIO $ newIORef eEnvs
+  eEnvsR' <- liftIO $ dupeIORef eEnvsR
   local (\e -> e {eEnvsR = eEnvsR'}) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
@@ -357,6 +357,8 @@ instance Optimize LLConsensus where
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
       LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
+    LLC_ViewIs at vn vk a k ->
+      LLC_ViewIs at vn vk <$> opt a <*> opt k
 
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case

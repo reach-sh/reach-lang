@@ -32,6 +32,9 @@ viaCount x = do
   liftIO $ modifyIORef vsr $ S.union cs
   return $ x
 
+instance (Traversable t, Erase a) => Erase (t a) where
+  el = traverse el
+
 instance Erase DLVar where
   el = viaCount
 
@@ -44,7 +47,7 @@ instance Erase DLArg where
 instance Erase DLAssignment where
   el = viaCount
 
-instance Erase a => Erase (SwitchCases a) where
+instance {-# OVERLAPS #-} Erase a => Erase (SwitchCases a) where
   el = mapM (\(x, y) -> (,) x <$> el y)
 
 instance Erase DLStmt where
@@ -142,6 +145,10 @@ instance Erase LLConsensus where
       asn' <- restrictToUsed asn
       asn'' <- el asn'
       return $ LLC_Continue at asn''
+    LLC_ViewIs at vn vk a k -> do
+      k' <- el k
+      a' <- el a
+      return $ LLC_ViewIs at vn vk a' k'
 
 instance Erase LLStep where
   el = \case
@@ -160,7 +167,7 @@ instance Erase LLStep where
       send' <- traverse viaCount send
       return $ LLS_ToConsensus at send' recv' mtime'
 
-instance Erase (DLinExportVal DLBlock) where
+instance {-# OVERLAPS #-} Erase a => Erase (DLinExportVal a) where
   el = \case
     DLEV_Fun at args body ->
       DLEV_Fun at <$> mapM el args <*> el body
@@ -172,9 +179,6 @@ instance Erase DLExportBlock where
       r' <- el r
       s' <- el s
       return $ DLExportBlock s' r'
-
-instance Erase DLExports where
-  el = mapM el
 
 instance Erase LLProg where
   el (LLProg at llo ps dli dex dvs s) =

@@ -4,22 +4,24 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await loadStdlib();
   const assertEq = (expected, actual) => {
-    console.log('assertEq', {expected, actual});
-    stdlib.assert(JSON.stringify(expected) === JSON.stringify(actual)) };
+    const exps = JSON.stringify(expected);
+    const acts = JSON.stringify(actual);
+    console.log('assertEq', {expected, actual}, {exps, acts});
+    stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const ctcAlice = accAlice.deploy(backend);
 
-  const go = async (expected) => {
-    console.log('go', expected);
+  const checkView = async (expected) => {
+    console.log('checkView', expected);
     assertEq(expected, await ctcAlice.getViews().Main.i()) };
 
   console.log(`It's starting`);
 
   await Promise.all([
-    backend.Alice(ctcAlice, { go }),
+    backend.Alice(ctcAlice, { checkView }),
   ]);
 
   console.log(`It's over`);
-  await go(['None', null]);
+  await checkView(['None', null]);
 })();

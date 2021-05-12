@@ -241,11 +241,13 @@ addInterface f dom rng = do
   modifyCtxtIO ctxt_ints $ M.insert idx idef
   return $ ip <> "." <> f <> ".selector"
 
-allocVar :: App Doc
-allocVar = do
+allocVarIdx :: App Int
+allocVarIdx = do
   PLOpts {..} <- ctxt_plo <$> ask
-  i <- liftIO $ incCounter plo_counter
-  return $ pretty $ "v" ++ show i
+  liftIO $ incCounter plo_counter
+
+allocVar :: App Doc
+allocVar = (pretty . (++) "v" . show) <$> allocVarIdx
 
 extendVarMap :: VarMap -> App ()
 extendVarMap vm1 = do
@@ -1111,6 +1113,24 @@ mkEnsureTypeDefined define f t =
 ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
 
+solEV :: [DLVar] -> AppT (DLinExportVal DLBlock)
+solEV args = \case
+  DLEV_Arg {} -> impossible $ "not fun"
+  DLEV_Fun _ fargs (DLBlock _ _ t r) -> do
+    let go a fa = do
+          a' <- solVar a
+          return $ (fa, a')
+    extendVarMap =<< (M.fromList <$> zipWithM go args fargs)
+    t' <- solPLTail t
+    r' <- solArg r
+    return $ vsep [ t', "return" <+> r' <> semi ]
+
+solEB :: [DLVar] -> AppT DLExportBlock
+solEB args (DLExportBlock t ev) = do
+  t' <- solPLTail t
+  ev' <- solEV args $ dlevEnsureFun ev
+  return $ vsep [t', ev']
+
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   let DLInit {..} = dli
@@ -1187,16 +1207,26 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
         Nothing -> return (mempty, [])
         Just (vs, vi) -> do
           let vst = [ "uint256 current_view_i;", "bytes current_view_bs;" ]
-          let tgo v (k, t) = do
+          let tgo :: SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
+              tgo v (k, t) = do
                 let vk_ = bunpack v <> "_" <> k
                 let vk = pretty $ vk_
-                t' <- solType_ t
-                let ret = "external view returns" <+> parens t'
+                let (dom, rng) = itype2arr t
+                let mkarg domt = DLVar at Nothing domt <$> allocVarIdx
+                args <- mapM mkarg dom
+                let mkargvm arg = (arg, solRawVar arg)
+                extendVarMap $ M.fromList $ map mkargvm args
+                let mkdom arg argt = do
+                      argt' <- solType_ argt
+                      return $ solDecl (solRawVar arg) (argt' <> (solArgLoc $ if mustBeMem argt then AM_Call else AM_Event))
+                dom' <- zipWithM mkdom args dom
+                rng' <- solType_ rng
+                let ret = "external view returns" <+> parens rng'
                 let mlf m mk =
                       case M.lookup mk m of
                         Just x -> x
                         Nothing -> impossible "sol view defn"
-                let illegal = solRequire "invalid view_i" "false"
+                let illegal = solRequire "invalid view_i" "false" <> semi
                 let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                       c' <- solEq "current_view_i" $ solNum i
                       let asnv = "vvs"
@@ -1205,15 +1235,14 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                       extendVarMap $ M.fromList $ map (\vv->(vv, asnv <> "." <> solRawVar vv)) $ vvs
                       ret' <-
                         case M.lookup k (mlf vim v) of
-                          Just a ->
-                            ("return" <+>) <$> solArg a
+                          Just a -> solEB args a
                           Nothing ->
                             return $ illegal
-                      return $ solWhen c' $ vsep [ de', ret' <> semi ]
+                      return $ solWhen c' $ vsep [ de', ret' ]
                 body' <- mapM igo $ M.toAscList vi
-                let body'' = vsep $ body' <> [ illegal <> semi ]
+                let body'' = vsep $ body' <> [ illegal ]
                 return $ (,) (s2t k, Aeson.String $ s2t vk_) $
-                  solFunction vk [] ret body''
+                  solFunction vk dom' ret body''
           let vgo (v, tm) = do
                 (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
                 return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs

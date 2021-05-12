@@ -1278,8 +1278,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const views_bin = bin._getViews({reachStdlib: compiledStdlib});
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
-      async (): Promise<any> => {
-        debug('getView1', v, k);
+      async (...args: any[]): Promise<any> => {
+        debug('getView1', v, k, args);
         const { decode } = vim;
         const client = await getAlgodClient();
         let appInfo;
@@ -1307,7 +1307,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const vvs = vty.fromNet(vvn);
         debug({vvs});
         try {
-          const vres = decode(vi, vvs.slice(1));
+          const vres = decode(vi, vvs.slice(1), args);
           debug({vres});
           return ['Some', vres];
         } catch (e) {

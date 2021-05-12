@@ -83,6 +83,11 @@ data IType
   | IT_Fun [DLType] DLType
   deriving (Eq, Ord, Generic, Show)
 
+itype2arr :: IType -> ([DLType], DLType)
+itype2arr = \case
+  IT_Val t -> ([], t)
+  IT_Fun dom rng -> (dom, rng)
+
 instance Pretty IType where
   pretty = viaShow
 
@@ -269,6 +274,11 @@ instance SrcLocOf (DLinExportVal a) where
   srclocOf = \case
     DLEV_Arg a _ -> a
     DLEV_Fun a _ _ -> a
+
+dlevEnsureFun :: DLinExportVal DLBlock -> DLinExportVal DLBlock
+dlevEnsureFun = \case
+  DLEV_Arg at a -> DLEV_Fun at [] $ DLBlock at [] (DT_Return at) a
+  x -> x
 
 instance Pretty a => Pretty (DLinExportVal a) where
   pretty = \case
@@ -593,6 +603,11 @@ data DLExportBlock
   = DLExportBlock DLTail (DLinExportVal DLBlock)
   deriving (Eq)
 
+dlebEnsureFun :: DLExportBlock -> DLExportBlock
+dlebEnsureFun = \case
+  DLExportBlock t ev ->
+    DLExportBlock t $ dlevEnsureFun ev
+
 instance Pretty DLExportBlock where
   pretty = \case
     DLExportBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
@@ -677,5 +692,5 @@ allFluidVars bals =
 class HasCounter a where
   getCounter :: a -> Counter
 
-type DLViews = M.Map SLPart (M.Map SLVar DLType)
+type DLViews = M.Map SLPart (M.Map SLVar IType)
 

@@ -166,6 +166,10 @@ instance Unroll LLConsensus where
     LLC_While at asn inv cond body k ->
       LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
+    LLC_ViewIs at vn vk a k ->
+      -- Note: We're making a choice here to *not* unroll the view function.
+      -- It's plausible that would be a good idea in the future.
+      LLC_ViewIs at vn vk a <$> ul k
 
 instance Unroll k => Unroll (a, k) where
   ul (a, k) = (,) a <$> ul k
