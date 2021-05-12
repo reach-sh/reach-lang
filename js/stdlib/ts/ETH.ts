@@ -1197,11 +1197,10 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   debug('verifyContract: got receipt', r);
 
   const provider = await getProvider();
-  let tries = 0;
   const maxTries = isIsolatedNetwork() ? 1 : 2; // TODO: fine-tune the number of tries?
   let logs: ethers.providers.Log[] = [];
   let now: number = 0;
-  while (logs.length < 1 && tries < maxTries) {
+  for (let tries = 0; logs.length < 1 && tries < maxTries; tries++) {
     if (tries > 0) {
       const waitTillBlock = Math.max(now, creation_block) + 1;
       debug(
@@ -1224,7 +1223,6 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
       address: address,
       topics: [factory.interface.getEventTopic(deployEvent)],
     });
-    tries++;
   }
   if (logs.length < 1) {
     throw Error(`Contract was claimed to be deployed at ${creation_block},`
