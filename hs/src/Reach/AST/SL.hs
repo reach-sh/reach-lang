@@ -467,7 +467,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLAppArgV] [JSExpression] JSStatement (SLEnv, Bool)
+  | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -492,6 +492,8 @@ data SLPrimitive
   | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
   | SLPrim_balance
   | SLPrim_viewis SrcLoc SLPart SLVar SLType
+  | SLPrim_deploy
+  | SLPrim_setOptions
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

@@ -8,7 +8,6 @@ import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
-import qualified Data.Text as T
 import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DL
@@ -23,55 +22,14 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 
-app_default_opts :: Counter -> [T.Text] -> DLOpts
-app_default_opts idxr cns =
-  DLOpts
-    { dlo_deployMode = DM_constructor
-    , dlo_verifyArithmetic = False
-    , dlo_verifyPerConnector = False
-    , dlo_connectors = cns
-    , dlo_counter = idxr
-    , dlo_bals = 1
-    }
-
-app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
-app_options =
-  M.fromList
-    [ ("deployMode", opt_deployMode)
-    , ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
-    , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
-    , ("connectors", opt_connectors)
-    ]
-  where
-    opt_bool f opts v =
-      case v of
-        SLV_Bool _ b -> Right $ f opts b
-        _ -> Left $ "expected boolean"
-    opt_connectors opts v =
-      case v of
-        SLV_Tuple _ vs ->
-          case traverse f vs of
-            Left x -> Left x
-            Right y -> Right $ opts {dlo_connectors = y}
-          where
-            f (SLV_Connector cn) = Right $ cn
-            f _ = Left $ "expected connector"
-        _ -> Left $ "expected tuple"
-    opt_deployMode opts v =
-      case v of
-        SLV_Bytes _ "firstMsg" -> up DM_firstMsg
-        SLV_Bytes _ "constructor" -> up DM_constructor
-        SLV_Bytes _ bs -> Left $ bss <> " is not a deployMode" <> didYouMean bss ["firstMsg", "constructor"] 2
-          where
-            bss = bunpack bs
-        _ -> Left $ "expected bytes"
-      where
-        up m = Right $ opts {dlo_deployMode = m}
 
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 
 compileDApp :: Connectors -> DLSExports -> SLVal -> App CompiledDApp
-compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+  let avs = []
+  let opts = mempty
+  let top_formals = []
   at' <- withAt id
   idr <- e_id <$> ask
   let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
@@ -122,14 +80,14 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
           DM_firstMsg -> False
   let st_step =
         SLState
-          { st_mode = SLM_Step
+          { st_mode = SLM_AppInit
           , st_live = True
           , st_pdvs = mempty
           , st_after_ctor = st_after_ctor0
           , st_after_first = False
           , st_toks = mempty
           }
-  let classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass]
+  let _classes = S.fromList $ [slcpi_who | SLCompiledPartInfo {..} <- part_ios, slcpi_isClass]
   let ios = M.fromList $ [(slcpi_who, slcpi_io) | SLCompiledPartInfo {..} <- part_ios]
   top_env_wps <- foldlM env_insertp top_env top_rvargs
   let make_penvp (SLCompiledPartInfo {..}) = do
@@ -159,13 +117,12 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
       DM_constructor -> yes
       DM_firstMsg -> no
   _ <-
-    locIOs ios $
+    -- locIOs ios $
       locSco sco $
-        locDLO dlo $
-          locClasses classes $
+          -- locClasses classes $
             evalStmt top_ss
   flip when doExit =<< readSt st_live
-  let sps = SLParts $ M.fromList $ [(slcpi_who, slcpi_ienv) | SLCompiledPartInfo {..} <- part_ios]
+  sps <- SLParts <$> (asks e_pie >>= liftIO . readIORef)
   fin_toks <- readSt st_toks
   let dlo' = dlo {dlo_bals = 1 + length fin_toks}
   return $ \dli_maps final ->
@@ -192,7 +149,7 @@ compileBundle_ cns (JSBundle mods) libm main = do
 defaultEnv :: Connectors -> IO Env
 defaultEnv cns = do
     e_id <- newCounter 0
-    let e_ios = mempty
+    e_ios <- newIORef mempty
     let e_who = Nothing
     let e_stack = []
     let e_stv =
@@ -204,8 +161,8 @@ defaultEnv cns = do
             , st_after_ctor = False
             , st_toks = mempty
             }
-    let e_dlo = app_default_opts e_id $ M.keys cns
-    let e_classes = mempty
+    e_dlo <- newIORef $ app_default_opts e_id $ M.keys cns
+    e_classes <- newIORef mempty
     let e_sco =
           SLScope
             { sco_ret = Nothing
@@ -224,6 +181,7 @@ defaultEnv cns = do
     me_id <- newCounter 0
     me_ms <- newIORef mempty
     e_unused_variables <- newIORef mempty
+    e_pie <- newIORef mempty
     e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
     let e_mape = MapEnv {..}
     return (Env {..})

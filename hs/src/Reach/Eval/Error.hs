@@ -238,6 +238,7 @@ getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
       (SLM_Module, _) -> "create a `React.App`"
+      (SLM_AppInit, _) -> "`deploy`"
       (s, SLM_Step)
         | isConsensusStep s -> "`commit`"
         | isLocalStep s -> "exit `only` or `each`"
