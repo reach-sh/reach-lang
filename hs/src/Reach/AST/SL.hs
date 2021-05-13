@@ -147,7 +147,7 @@ data SLVal
     -- really sloppy. Maybe a better way would be to look at the context when
     -- you're inspecting an object and set the pdvs that gets sent to Type.hs
     -- differently.
-    SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar) SLCompiledPartInfo
+    SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_RaceParticipant SrcLoc (S.Set SLPart)
   | SLV_Anybody
   | SLV_Prim SLPrimitive
@@ -181,7 +181,7 @@ instance Pretty SLVal where
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
     SLV_Connector cn -> "<connector: " <> pretty cn <> ">"
-    SLV_Participant _ who _ _ _ ->
+    SLV_Participant _ who _ _ ->
       "<participant: " <> pretty who <> ">"
     SLV_RaceParticipant _ whos ->
       "<race: " <> pretty whos <> ">"
@@ -210,7 +210,7 @@ instance SrcLocOf SLVal where
     SLV_DLVar (DLVar a _ _ _) -> a
     SLV_Type {} -> def
     SLV_Connector _ -> def
-    SLV_Participant a _ _ _ _ -> a
+    SLV_Participant a _ _ _ -> a
     SLV_RaceParticipant a _ -> a
     SLV_Anybody -> def
     SLV_Prim _ -> def
@@ -245,19 +245,19 @@ instance Pretty SLViewInfo where
     "View" <> "(" <> pretty n <> ", " <> pretty v <> ")"
 
 data SLAppArg
-  = SLA_Participant SrcLoc Bool SLPart SLInterface
+  = SLA_Participant SrcLoc SLCompiledPartInfo
   | SLA_View SLViewInfo
   deriving (Eq, Generic)
 
 instance SrcLocOf SLAppArg where
   srclocOf = \case
-    SLA_Participant a _ _ _ -> a
+    SLA_Participant a _  -> a
     SLA_View vi -> srclocOf vi
 
 instance Pretty SLAppArg where
   pretty p =
     case p of
-      SLA_Participant _ icb n e -> pp ("Participant" <> ic icb) n e
+      SLA_Participant _ (SLCompiledPartInfo {..}) -> pp ("Participant" <> ic slcpi_isClass) slcpi_who slcpi_ienv
       SLA_View vi -> pretty vi
     where
       ic b = if b then "Class" else ""

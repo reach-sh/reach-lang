@@ -451,6 +451,11 @@ env_lookup ctx x env =
         SLSSVal {sss_val = SLV_Deprecated d v} -> do
           liftIO $ emitWarning $ W_Deprecated d
           return $ sv {sss_val = v}
+        SLSSVal {sss_val = SLV_AppArg (SLA_Participant _ SLCompiledPartInfo {..}) } -> do
+          mode <- readSt st_mode
+          when (mode /= SLM_AppInit) $
+            expect_ $ Err_UnboundAppParticipant slcpi_who
+          return sv
         v -> return $ v
     Nothing ->
       expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
@@ -620,7 +625,7 @@ slToDLV = \case
   SLV_Data at dt vn sv -> do
     msv <- slToDLV sv
     return $ DLV_Data at dt vn <$> msv
-  SLV_Participant at who _ mdv _ -> do
+  SLV_Participant at who _ mdv -> do
     pdvs <- readSt st_pdvs
     case M.lookup who pdvs <|> mdv of
       Just dv -> arg at $ DLA_Var dv
@@ -744,7 +749,7 @@ compileArgExprMap = mapM compileArgExpr
 
 slvParticipant_part :: SLVal -> App SLPart
 slvParticipant_part = \case
-  SLV_Participant _ x _ _ _ -> return x
+  SLV_Participant _ x _ _ -> return x
   x -> expect_t x $ Err_NotParticipant
 
 compileTypeOf :: SLVal -> App (DLType, DLArg)
@@ -959,8 +964,8 @@ infectWithId_clo v (SLClo _ e b c) =
 
 infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
 infectWithId_sv at v = \case
-  SLV_Participant a who _ mdv slcpi ->
-    SLV_Participant a who (Just v) mdv slcpi
+  SLV_Participant a who _ mdv ->
+    SLV_Participant a who (Just v) mdv
   SLV_Clo a mt c ->
     SLV_Clo a mt $ infectWithId_clo v c
   SLV_DLVar (DLVar a _ t i) ->
@@ -988,7 +993,7 @@ evalAsEnv obj = case obj of
     return $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
     return $ retDLVar tm (DLA_Var obj_dv) Public
-  SLV_Participant _ who vas _ _ ->
+  SLV_Participant _ who vas _ ->
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1266,7 +1271,6 @@ verifyAppArg = \case
   SLV_Tuple at [who, int] -> adapt_tuple at SLPrim_Participant who int
   SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
     adapt_tuple at SLPrim_ParticipantClass who int
-  SLV_Participant {} -> return ()
   SLV_AppArg _ -> return ()
   v -> do
     at <- withAt id
@@ -1434,7 +1438,7 @@ evalForm f args = do
           parts <-
             mapM
               (\case
-                 SLV_Participant _ who mv _ _ -> return (who, mv)
+                 SLV_Participant _ who mv _ -> return (who, mv)
                  v -> expect_t v $ Err_NotParticipant)
               part_vs
           ce <- ask >>= sco_to_cloenv . e_sco
@@ -1458,7 +1462,7 @@ evalForm f args = do
         traverse (mustBeBytes <=< ensure_public <=< evalExpr) mmsg_e
       (_, v_n) <- evalExpr notter_e
       let participant_who = \case
-            SLV_Participant _ who _ _ _ -> return $ who
+            SLV_Participant _ who _ _ -> return $ who
             v -> expect_t v $ Err_NotParticipant
       notter <- participant_who v_n
       (_, v_kn) <- evalExpr knower_e
@@ -2281,7 +2285,7 @@ evalPrim p sargs =
       evalPrim dp $ bargs <> sargs <> aargs
     SLPrim_part_set ->
       case map snd sargs of
-        [(SLV_Participant _ who _ _ _), addr] -> do
+        [(SLV_Participant _ who _ _), addr] -> do
           addr_da <- compileCheckType T_Address addr
           withAt $ \at -> (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
@@ -2635,7 +2639,7 @@ evalPrim p sargs =
         slcpi_io = slcpi_io,
         slcpi_ienv = slcpi_ienv,
         slcpi_lifts = slcpi_lifts }
-      let v = SLV_Participant at slcpi_who Nothing Nothing slcpi
+      let v = SLV_AppArg (SLA_Participant at slcpi)
       retV (lvl, v)
 
 updatePie :: SLPart -> InteractEnv -> App ()
@@ -3334,15 +3338,12 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
       locSt st_localstep $ do
         penv__ <- sco_lookup_penv who
         ios <- asks e_ios >>= liftIO . readIORef
-        penv_ <-
+        let penv_ =
               -- Ensure that only has access to "interact" if it didn't before,
               -- such as when an only occurs inside of a closure in a module body
               case M.member "interact" penv__ of
-                True -> return penv__
-                False -> do
-                  unless (M.member who ios) $
-                    expect_ $ Err_UnboundAppParticipant who
-                  return $ M.insert "interact" (ios M.! who) penv__
+                True -> penv__
+                False -> M.insert "interact" (ios M.! who) penv__
         me_dv <- doGetSelfAddress who
         let me_v = SLV_DLVar me_dv
         let ssv_here = SLSSVal only_at Public
@@ -3353,7 +3354,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
             Nothing -> return $ add_this me_v penv_
             Just v ->
               case M.lookup v penv_ of
-                Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv slcpi)) ->
+                Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv)) ->
                   case mdv of
                     Just _ | not isClass -> return $ add_this pv penv_
                     _ -> do
@@ -3363,7 +3364,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
                       -- participant, their self address is actually always the
                       -- same, but the whole point is to ensure that we can't
                       -- require(P == P) where P is a class.
-                      let pv' = SLV_Participant at_ who_ mv_ (Just me_dv) slcpi
+                      let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
                       return $
                         add_this pv' $
                           M.insert v (SLSSVal pv_at pv_lvl pv') penv_
@@ -3499,8 +3500,8 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
                 Nothing -> return $ env
                 Just whov ->
                   evalId_ "publish who binding" whov >>= \case
-                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _ slcpi)) ->
-                      return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv) slcpi)) env
+                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
+                      return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
                       impossible $ "participant is not participant"
         return $ (add_who_env, pdvs')
@@ -4173,12 +4174,13 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
           pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
-        SLV_Participant _ _ _ _ (SLCompiledPartInfo {..}) -> do
-          addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
+        SLV_AppArg (SLA_Participant at (SLCompiledPartInfo {..})) -> do
+          mode <- readSt st_mode
+          let v = if mode == SLM_AppInit then SLV_Participant at slcpi_who Nothing Nothing else rhs_v
+          addl_env <- evalDeclLHS True rhs_lvl mempty v lhs
           sco_ <- sco_update addl_env
           let penvs = sco_penvs sco_
           let penv = fromMaybe (sco_cenv sco_) $ M.lookup slcpi_who penvs
-          mode <- readSt st_mode
           iosR <- asks e_ios
           ios <- liftIO $ readIORef iosR
           penv' <- case mode == SLM_AppInit && not (M.member slcpi_who ios) of
