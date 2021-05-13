@@ -843,7 +843,7 @@ sco_update_and_mod imode addl_env env_mod =
     ps :: SLScope -> App SLScope
     ps = h $ \case
       SLM_Module -> return
-      SLM_AppInit -> return
+      SLM_AppInit -> ps_all_mod
       SLM_Step -> ps_all_mod
       SLM_LocalStep -> ps_one_mod
       SLM_LocalPure -> ps_one_mod
@@ -2651,7 +2651,7 @@ evalPrim p sargs =
 updatePie :: SLPart -> InteractEnv -> App ()
 updatePie who env = do
   piR <- asks e_pie
-  liftIO $ modifyIORef piR (\ pi' -> M.insert who env pi')
+  liftIO $ modifyIORef piR (M.insert who env)
 
 lookupPie :: SLPart -> App (Maybe InteractEnv)
 lookupPie who = do
@@ -4180,21 +4180,25 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
           pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
-        SLV_Participant _ _part _ _ (SLCompiledPartInfo {..}) -> do
-          -- liftIO $ putStrLn $ "assigning participant: slcpi_ienv = " <> show (pretty slcpi_ienv)
-          mode <- readSt st_mode
-          when (mode == SLM_AppInit) $ do
-            saveLifts slcpi_lifts
-            ios <- asks e_ios
-            liftIO $ modifyIORef ios (M.insert slcpi_who slcpi_io)
-            updatePie slcpi_who slcpi_ienv
-            when slcpi_isClass $ do
-              classes <- asks e_classes
-              liftIO $ modifyIORef classes $ S.insert slcpi_who
+        SLV_Participant _ _ _ _ (SLCompiledPartInfo {..}) -> do
           addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
-          -- locWho _part $ do
-          sco_ <- sco_update addl_env -- env
-          locSco sco_ $ do
+          sco_ <- sco_update addl_env
+          let penvs = sco_penvs sco_
+          let penv = fromMaybe (sco_cenv sco_) $ M.lookup slcpi_who penvs
+          mode <- readSt st_mode
+          iosR <- asks e_ios
+          ios <- liftIO $ readIORef iosR
+          penv' <- case mode == SLM_AppInit && not (M.member slcpi_who ios) of
+            True  -> do
+              saveLifts slcpi_lifts
+              liftIO $ modifyIORef iosR (M.insert slcpi_who slcpi_io)
+              updatePie slcpi_who slcpi_ienv
+              when slcpi_isClass $ do
+                  classes <- asks e_classes
+                  liftIO $ modifyIORef classes $ S.insert slcpi_who
+              env_insertp penv ("interact", slcpi_io)
+            False -> return penv
+          locSco (sco_ { sco_penvs = M.insert slcpi_who penv' penvs }) $ do
             locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
         SLV_AppArg (SLA_View (SLViewInfo va n (SLInterface i))) -> do
           at <- withAt id
@@ -4209,7 +4213,7 @@ evalStmt = \case
                 let vo = SLV_Object va (Just $ ns <> " view, " <> k) vom
                 let io = SLSSVal va Public vo
                 di <- st2dte t
-                return $ (di, io)
+                return (di, io)
           ix <- mapWithKeyM go i
           let i' = M.map fst ix
           let io = M.map snd ix
