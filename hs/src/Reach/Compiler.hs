@@ -94,7 +94,7 @@ compile copts = do
       let showp' :: (forall a. Pretty a => String -> a -> IO ())
           showp' = showp . T.pack
       let libm' = dropOtherTops which libm
-      -- Reutilize env from parsing module, but remove any lifts
+      -- Reutilize env from parsing module, but remove any mutable state
       -- from processing previous top
       resetEnvRefs evalEnv lifts
       dl <- compileBundle evalEnv all_connectors djp libm' which

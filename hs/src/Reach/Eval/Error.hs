@@ -62,6 +62,7 @@ data EvalError
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Class SLPart
   | Err_Eval_PartSet_Bound SLPart
+  | Err_UnboundAppParticipant SLPart
   | Err_Eval_IllegalMode SLMode String [SLMode]
   | Err_LValue_IllegalJS JSExpression
   | Err_Eval_IllegalJS JSExpression
@@ -317,9 +318,11 @@ instance Show EvalError where
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
     Err_Eval_PartSet_Class who ->
-      (bunpack who) <> " is a class and cannot be bound"
+      bunpack who <> " is a class and cannot be bound"
     Err_Eval_PartSet_Bound who ->
-      (bunpack who) <> " is bound and cannot be rebound"
+      bunpack who <> " is bound and cannot be rebound"
+    Err_UnboundAppParticipant who ->
+      bunpack who <> " has not been bound within this `Reach.App`"
     Err_Eval_IllegalWait dm ->
       "Cannot wait or timeout until after first message in deployMode " <> show dm
     Err_Decls_IllegalJS _ ->

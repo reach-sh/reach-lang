@@ -61,11 +61,11 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_s
       DM_constructor -> yes
       DM_firstMsg -> no
   _ <- locSco sco $ evalStmt top_ss
-  dloSet <- readDlo id
+  progDlo <- readDlo id
   flip when doExit =<< readSt st_live
-  sps <- SLParts <$> (asks e_pie >>= liftIO . readIORef)
+  sps <- fmap SLParts $ asks e_pie >>= liftIO . readIORef
   fin_toks <- readSt st_toks
-  let dlo' = dloSet {dlo_bals = 1 + length fin_toks}
+  let dlo' = progDlo {dlo_bals = 1 + length fin_toks}
   dviews <- asks e_views >>= liftIO . readIORef
   return $ \dli_maps final ->
     let dli = DLInit {..}

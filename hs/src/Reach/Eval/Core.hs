@@ -96,12 +96,6 @@ withFrame f m = do
          })
     m
 
--- -- locIOs :: M.Map SLPart SLSSVal -> App a -> App a
--- locIOs m = local (\e -> e {e_ios = m})
-
--- locClasses :: S.Set SLPart -> App a -> App a
--- locClasses m = local (\e -> e {e_classes = m})
-
 locMap :: App a -> App a
 locMap m = do
   MapEnv {..} <- asks e_mape :: App MapEnv
@@ -157,7 +151,7 @@ setDlo x = do
 
 whenVerifyArithmetic :: App () -> App ()
 whenVerifyArithmetic m =
-  flip when m =<< (readDlo dlo_verifyArithmetic)
+  flip when m =<< readDlo dlo_verifyArithmetic
 
 setSt :: SLState -> App ()
 setSt x = do
@@ -1266,21 +1260,21 @@ makeInteract who (SLInterface spec) = do
   saveLift $ DLS_Only at who lifts
   return $ (io, ienv)
 
-evalAppArg :: SLVal -> App ()
-evalAppArg = \case
+verifyAppArg :: SLVal -> App ()
+verifyAppArg = \case
   -- Participant declarations via tuple are deprecated
   SLV_Tuple at [who, int] -> adapt_tuple at SLPrim_Participant who int
   SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
     adapt_tuple at SLPrim_ParticipantClass who int
   SLV_Participant {} -> return ()
-  SLV_AppArg (SLA_View _) -> return ()
+  SLV_AppArg _ -> return ()
   v -> do
     at <- withAt id
     locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
   where
     adapt_tuple at p who int = do
       liftIO $ emitWarning $ W_Deprecated $ D_ParticipantTuples at
-      evalAppArg =<< (snd <$> (evalPrim p $ map public $ [ who, int ]))
+      verifyAppArg . snd =<< evalPrim p (map public $ [ who, int ])
 
 convertDeprecatedReachApp :: JSAnnot -> JSExpression -> JSArrowParameterList -> JSExpression -> JSStatement -> App JSStatement
 convertDeprecatedReachApp a opte top_formals partse top_s = do
@@ -1288,7 +1282,7 @@ convertDeprecatedReachApp a opte top_formals partse top_s = do
   sarg <- evalExpr partse
   case snd sarg of
     SLV_Tuple _ parts -> do
-      mapM_ evalAppArg parts
+      mapM_ verifyAppArg parts
       let pis = parseJSArrowFormals at top_formals
       ps <- case partse of
               JSArrayLiteral _ el _ -> return $ jsa_flatten el
@@ -1314,7 +1308,6 @@ evalForm f args = do
           retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
         [opte, partse, JSArrowExpression top_formals a top_s] -> do
           -- liftIO $ emitWarning $ W_Deprecated D_ReachAppArgs
-          -- verify that participant tuples get warnings & anything not participant raises invalidpartspec
           newBody <- convertDeprecatedReachApp a opte top_formals partse top_s
           retV $ public $ SLV_Prim $ SLPrim_App_Delay at newBody (sco_cenv, sco_use_strict)
         _ -> expect_ $ Err_App_InvalidArgs args
@@ -2566,9 +2559,7 @@ evalPrim p sargs =
                   Right x -> x
                   Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
       let dlo = M.foldrWithKey use_opt dlo_def opts
-      -- liftIO $ putStrLn $ "constructed options: " <> show (pretty dlo)
       setDlo dlo
-      -- liftIO $ putStrLn $ "dlo': " <> show (pretty dlo')
       st <- readSt id
       let after_ctor =
             case dlo_deployMode dlo of
@@ -2637,7 +2628,6 @@ evalPrim p sargs =
       int <- mustBeInterface intv
       (slcpi_lifts, (slcpi_io, slcpi_ienv)) <-
         captureLifts $ makeInteract slcpi_who int
-      _env0 <- locAt at $ env_insertp mempty ("interact", slcpi_io)
       let slcpi = SLCompiledPartInfo {
         slcpi_at = at,
         slcpi_isClass = isClass,
@@ -3344,12 +3334,15 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
       locSt st_localstep $ do
         penv__ <- sco_lookup_penv who
         ios <- asks e_ios >>= liftIO . readIORef
-        let penv_ =
+        penv_ <-
               -- Ensure that only has access to "interact" if it didn't before,
               -- such as when an only occurs inside of a closure in a module body
               case M.member "interact" penv__ of
-                True -> penv__
-                False -> M.insert "interact" (ios M.! who) penv__
+                True -> return penv__
+                False -> do
+                  unless (M.member who ios) $
+                    expect_ $ Err_UnboundAppParticipant who
+                  return $ M.insert "interact" (ios M.! who) penv__
         me_dv <- doGetSelfAddress who
         let me_v = SLV_DLVar me_dv
         let ssv_here = SLSSVal only_at Public

@@ -1,0 +1,1 @@
+reachc: error: ./Err_UnboundAppParticipant.rsh:10:9:application: A has not been bound within this `Reach.App`
