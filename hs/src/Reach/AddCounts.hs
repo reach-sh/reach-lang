@@ -171,7 +171,7 @@ instance AC CHandler where
       return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
 instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
-  ac (DLinExportBlock at vs a) =
+  ac (DLinExportBlock at vs a) = fresh $
     DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
