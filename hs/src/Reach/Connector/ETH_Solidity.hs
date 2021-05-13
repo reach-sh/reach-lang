@@ -1180,7 +1180,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
           let mt = maybeT dlmi_ty
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]
-          let ret = "internal returns (" <> valTy <> " memory res)"
+          let ret = "internal view returns (" <> valTy <> " memory res)"
           let ref = (solArrayRef (solMapVar mpv) "addr")
           do_none <- solLargeArg' "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
           let do_some = solSet "res" ref
@@ -1207,11 +1207,15 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                 args <- mapM mkarg dom
                 let mkargvm arg = (arg, solRawVar arg)
                 extendVarMap $ M.fromList $ map mkargvm args
+                let solType_p am ty = do
+                      ty' <- solType_ ty
+                      let loc = solArgLoc $ if mustBeMem ty then am else AM_Event
+                      return $ ty' <> loc
                 let mkdom arg argt = do
-                      argt' <- solType_ argt
-                      return $ solDecl (solRawVar arg) (argt' <> (solArgLoc $ if mustBeMem argt then AM_Call else AM_Event))
+                      argt' <- solType_p AM_Call argt
+                      return $ solDecl (solRawVar arg) argt'
                 dom' <- zipWithM mkdom args dom
-                rng' <- solType_ rng
+                rng' <- solType_p AM_Memory rng
                 let ret = "external view returns" <+> parens rng'
                 let mlf m mk =
                       case M.lookup mk m of
