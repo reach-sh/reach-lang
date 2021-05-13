@@ -403,6 +403,10 @@ df_com mkk back = \case
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
     mkk m' <$> back k
+  DK_ViewIs _ _ _ _ k ->
+    -- This can only occur inside of the while cond & invariant and it is safe
+    -- to throw out
+    back k
   t -> impossible $ show $ "df_com " <> pretty t
 
 df_bl :: DKBlock -> DFApp DLBlock

@@ -1500,8 +1500,9 @@ Any expression satisfying @reachin{isType} is compiled away and does not exist a
 
 The @reachin{is} function returns its first argument if it satisfies the type specified by the second argument.
 If it is not, then the program is @tech{invalid}.
-This is considered a @tech{negative position} for @reachin{Refine}.
 For example, @reachin{is(5, UInt)} returns @reachin{5}, while @reachin{is(5, Bool)} is an @tech{invalid} program.
+The value returned by @reachin{is} may not be identical to the input, because in some cases, such as for functions, it will record the applied to type and enforce it on future invocations.
+These applications are considered @tech{negative positions} for @reachin{Refine}.
 
 @subsubsection{Literal values}
 
