@@ -770,7 +770,6 @@ ce = \case
   DLE_MapSet {} -> xxx "algo mapset"
   DLE_MapDel {} -> xxx "algo mapdel"
   DLE_Remote {} -> xxx "algo remote"
-  DLE_ViewIs {} -> impossible "viewis"
   where
     show_stack msg at fs = do
       comment $ texty msg

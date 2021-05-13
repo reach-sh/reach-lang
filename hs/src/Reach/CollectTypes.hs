@@ -96,7 +96,6 @@ instance CollectsTypes DLExpr where
   cts (DLE_MapSet _ _ fa na) = cts [fa, na]
   cts (DLE_MapDel _ _ fa) = cts fa
   cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
-  cts (DLE_ViewIs _ _ _ a) = cts $ a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

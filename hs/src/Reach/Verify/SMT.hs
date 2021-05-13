@@ -11,7 +11,7 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -450,7 +450,6 @@ dlvOccurs env bindings = \case
     DLE_MapDel at _ fa -> _rec at fa
     DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
       _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
-    DLE_ViewIs at _ _ ma -> _recs at $ maybeToList ma
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -500,7 +499,6 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
-  DLE_ViewIs _ v k ma -> "view(" <> show v <> ")." <> show k <> ".is(" <> msub ma <> ")"
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -1067,8 +1065,6 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Nothing
     DLE_Remote at _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
-    DLE_ViewIs {} ->
-      mempty
   where
     bo = O_Expr de
     bound at = pathAddBound at mdv bo (Just de)

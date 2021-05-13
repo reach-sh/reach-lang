@@ -71,7 +71,6 @@ instance Sanitize DLExpr where
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
     DLE_MapDel _ mv fa -> DLE_MapDel sb mv (sani fa)
     DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) wbill
-    DLE_ViewIs _ v k a -> DLE_ViewIs sb v k (sani a)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

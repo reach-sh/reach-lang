@@ -385,7 +385,6 @@ jsExpr = \case
     fa' <- jsArg fa
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
   DLE_Remote {} -> impossible "remote"
-  DLE_ViewIs {} -> impossible "viewis"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

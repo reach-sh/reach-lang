@@ -342,7 +342,6 @@ instance DepthOf DLExpr where
     DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
       add1 $ depthOf $ av : net :
         pairList ks <> as
-    DLE_ViewIs _ _ _ a -> add1 $ depthOf a
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\ (a, b) -> [a, b])
@@ -559,7 +558,6 @@ solExpr sp = \case
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
-  DLE_ViewIs {} -> impossible "viewis"
   where
     spa m = (<> sp) <$> m
 
