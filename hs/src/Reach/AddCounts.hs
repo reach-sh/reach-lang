@@ -116,11 +116,10 @@ instance AC ETail where
       csm' <- ac csm
       ac_visit v
       return $ ET_Switch at v csm'
-    ET_FromConsensus at vi vs fi k -> do
+    ET_FromConsensus at vi fi k -> do
       k' <- ac k
       ac_visit fi
-      ac_visit vs
-      return $ ET_FromConsensus at vi vs fi k'
+      return $ ET_FromConsensus at vi fi k'
     ET_ToConsensus {..} -> do
       et_tc_cons' <- ac et_tc_cons
       et_tc_from_mtime' <- ac et_tc_from_mtime
@@ -152,10 +151,9 @@ instance AC CTail where
       csm' <- ac csm
       ac_visit $ v
       return $ CT_Switch at v csm'
-    CT_From at w v fi -> do
-      ac_visit $ v
+    CT_From at w fi -> do
       ac_visit $ fi
-      return $ CT_From at w v fi
+      return $ CT_From at w fi
     CT_Jump at which svs asn -> do
       ac_visit $ svs
       ac_visit $ asn

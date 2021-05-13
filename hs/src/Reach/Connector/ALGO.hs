@@ -957,13 +957,12 @@ ct = \case
     doSwitch (withFresh . ct) at dv csm
   CT_Jump {} ->
     impossible $ "continue after dejump"
-  CT_From at which vis msvs -> do
-    check_view
+  CT_From at which msvs -> do
     check_nextSt
     halt_should_be isHalt
     finalize
     where
-      check_view = do
+      check_view vis = do
         let ViewSave vwhich vvs = vis
         let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
         let la = DLLA_Tuple $ vconcat vwhich vvs
@@ -977,10 +976,14 @@ ct = \case
         ctobs lat
         readArg argView
         eq_or_fail
+      zero_view = do
+        cl $ DLL_Bytes ""
+        readArg argView
+        eq_or_fail
       (isHalt, check_nextSt) =
         case msvs of
           --- XXX fix this so it makes sure it is zero bytes
-          FI_Halt toks -> (True, forM_ toks close_asset >> close_escrow)
+          FI_Halt toks -> (True, zero_view >> forM_ toks close_asset >> close_escrow)
             where
               close_asset tok =
                 close "axfer" "AssetAmount" "Sender" "AssetCloseTo" $ \txni -> do
@@ -1007,9 +1010,10 @@ ct = \case
                 code "byte" [tDeployer]
                 cfrombs T_Address
                 eq_or_fail
-          FI_Continue svs -> (False, ck)
+          FI_Continue vis svs -> (False, ck)
             where
               ck = do
+                check_view vis
                 Env {..} <- ask
                 -- XXX incorporate this logic in svs via EPP
                 let timev = fromMaybe (impossible "no timev") emTimev

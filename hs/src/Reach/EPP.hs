@@ -509,20 +509,25 @@ be_c = \case
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     which <- be_which <$> ask
-    vis <- assignView
     (more, s'l) <-
       captureMore $
         local (\e -> e {be_interval = default_interval}) $ do
-          fg_use $ vis
           be_s s
+    mvis <-
+      case more of
+        True -> do
+          vis <- assignView
+          fg_use vis
+          return $ Just vis
+        False -> return $ Nothing
     toks <- be_toks <$> ask
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
-          return $ case more of
-            True -> FI_Continue $ asnLike svs
-            False -> FI_Halt toks
-    let cm = CT_From at1 which vis <$> mkfrom_info ce_readMustSave
-    let lm = ET_FromConsensus at1 which vis <$> mkfrom_info ee_readMustSave <*> s'l
+          return $ case mvis of
+            Just vis -> FI_Continue vis $ asnLike svs
+            Nothing -> FI_Halt toks
+    let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
+    let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLBlock cond_at cond_fs cond_l cond_a = cond

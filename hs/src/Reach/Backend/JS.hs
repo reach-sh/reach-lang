@@ -535,16 +535,13 @@ jsETail = \case
       True -> mempty
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus at which vis msvs k ->
+  ET_FromConsensus at which msvs k ->
     (ctxt_simulate <$> ask) >>= \case
       False -> jsETail k
       True -> do
         let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
         let mkStDigest svs_ = jsDigest $ vconcat which svs_
-        vis' <- do
-          let ViewSave vwhich vvs = vis
-          jsArray <$> jsContractAndVals (vconcat vwhich vvs)
-        let common extra nextSt' nextSt_noTime' isHalt' =
+        let common extra vis' nextSt' nextSt_noTime' isHalt' =
               vsep $
                 extra
                   <> [ "sim_r.nextSt =" <+> nextSt' <> semi
@@ -561,11 +558,15 @@ jsETail = \case
             let close_escrow = close Nothing
             let close_asset = close . Just
             closes <- (<>) <$> forM toks close_asset <*> ((\x -> [x]) <$> close_escrow)
-            common closes <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
-          FI_Continue svs -> do
+            vis' <- jsArray <$> jsContractAndVals []
+            common closes vis' <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
+          FI_Continue vis svs -> do
+            vis' <- do
+              let ViewSave vwhich vvs = vis
+              jsArray <$> jsContractAndVals (vconcat vwhich vvs)
             timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
             let svs' = dvdeletep timev svs
-            common [] <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
+            common [] vis' <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
   ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out timev mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs

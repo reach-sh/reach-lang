@@ -161,7 +161,7 @@ instance CollectsTypes DLLetVar where
 
 instance CollectsTypes FromInfo where
   cts = \case
-    FI_Continue svs -> cts svs
+    FI_Continue vis svs -> cts vis <> cts svs
     FI_Halt toks -> cts toks
 
 instance CollectsTypes ViewSave where
@@ -172,7 +172,7 @@ instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
-  cts (CT_From _ _ vs msvs) = cts vs <> cts msvs
+  cts (CT_From _ _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
 
 instance CollectsTypes a => CollectsTypes (CInterval a) where

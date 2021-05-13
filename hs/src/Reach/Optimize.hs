@@ -407,7 +407,7 @@ opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
 
 instance Optimize FromInfo where
   opt = \case
-    FI_Continue svs -> FI_Continue <$> opt_svs svs
+    FI_Continue vis svs -> FI_Continue <$> opt vis <*> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
 
 instance Optimize ViewSave where
@@ -423,8 +423,8 @@ instance Optimize CTail where
       CT_Switch at ov <$> mapM cm1 csm
       where
         cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
-    CT_From at w v fi ->
-      CT_From at w <$> opt v <*> opt fi
+    CT_From at w fi ->
+      CT_From at w <$> opt fi
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
 

@@ -103,7 +103,7 @@ instance Subst DLAssignment where
 
 instance Subst FromInfo where
   subst = \case
-    FI_Continue svs -> FI_Continue <$> subst svs
+    FI_Continue vis svs -> FI_Continue <$> subst vis <*> subst svs
     FI_Halt toks -> FI_Halt <$> subst toks
 
 instance Subst ViewSave where
@@ -115,7 +115,7 @@ instance Subst CTail where
     CT_Com m k -> CT_Com <$> subst m <*> subst k
     CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f
     CT_Switch at v csm -> CT_Switch at <$> subst v <*> subst csm
-    CT_From at which vi msvs -> CT_From at which <$> subst vi <*> subst msvs
+    CT_From at which msvs -> CT_From at which <$> subst msvs
     CT_Jump at which svs asn -> CT_Jump at which <$> subst svs <*> subst asn
 
 subst_ :: Subst a => SubstEnv -> a -> a

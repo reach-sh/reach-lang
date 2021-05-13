@@ -141,7 +141,7 @@ instance Countable DLSend where
 
 instance Countable FromInfo where
   counts = \case
-    FI_Continue svs -> counts svs
+    FI_Continue vis svs -> counts vis <> counts svs
     FI_Halt toks -> counts toks
 
 instance Countable ViewSave where

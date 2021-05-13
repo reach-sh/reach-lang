@@ -881,7 +881,7 @@ solCTail = \case
           <> svs'
           <> asn'
           <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ _ (ViewSave vi vvs) (FI_Continue svs) -> do
+  CT_From _ _ (FI_Continue (ViewSave vi vvs) svs) -> do
     (setl, sete) <- solHashStateSet svs
     emit' <- ctxt_emit <$> ask
     viewl <-
@@ -895,7 +895,7 @@ solCTail = \case
             [ solSet "current_view_i" vi'
             , solSet "current_view_bs" $ solEncode [ asnv ] ]
     return $ vsep $ [emit'] <> viewl <> setl <> [solSet ("current_state") sete]
-  CT_From _ _ _ (FI_Halt _toks) -> do
+  CT_From _ _ (FI_Halt _toks) -> do
     -- XXX we could "selfdestruct" our token holdings, based on _toks
     emit' <- ctxt_emit <$> ask
     hv <- ctxt_hasViews <$> ask
@@ -1166,7 +1166,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
           let dli' = vsep $ ctimem'
           (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList csvs_)
           let csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-          consbody <- withC $ solCTail (CT_From at 0 (ViewSave 0 []) (FI_Continue csvs_m))
+          consbody <- withC $ solCTail (CT_From at 0 (FI_Continue (ViewSave 0 []) csvs_m))
           let evtBody = solApply (solMsg_evt (0 :: Int)) []
           let evtEmit = "emit" <+> evtBody <> semi
           let evtDefn = "event" <+> evtBody <> semi
