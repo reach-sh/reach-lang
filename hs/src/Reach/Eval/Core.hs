@@ -2450,7 +2450,7 @@ evalPrim p sargs =
               [cmp_v, public $ SLV_Bytes at "remote bill check"]
           return $ public res
     SLPrim_viewis _vat vn vk st -> do
-      ensure_modes [ SLM_ConsensusStep, SLM_ConsensusPure ] "view.is"
+      ensure_modes [ SLM_ConsensusStep, SLM_ConsensusPure ] "view.set"
       at <- withAt id
       mva <-
         case args of

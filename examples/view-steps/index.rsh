@@ -18,8 +18,8 @@ export const main =
     checkView([Tlast.None(), Ti.None()]);
 
     A.publish();
-    vMain.i.is(1);
-    vMain.last.is(A);
+    vMain.i.set(1);
+    vMain.last.set(A);
     // These views are now visible
     checkView([Tlast.Some(A), Ti.Some(1)]);
     commit();
@@ -29,16 +29,16 @@ export const main =
     commit();
 
     B.publish();
-    vMain.i.is(2);
-    vMain.last.is(B);
+    vMain.i.set(2);
+    vMain.last.set(B);
     if ( A != B ) {
       // The views above are visible
       checkView([Tlast.Some(B), Ti.Some(2)]);
       commit();
     } else {
       // Or, we overwrite them
-      vMain.i.is(3);
-      vMain.last.is();
+      vMain.i.set(3);
+      vMain.last.set();
       checkView([Tlast.None(), Ti.Some(3)]);
       commit();
     }

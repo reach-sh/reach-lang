@@ -95,7 +95,7 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at opts avs top_formals top_
           let ns = bunpack n
           let go k t = do
                 let vv = SLV_Prim $ SLPrim_viewis at n k t
-                let vom = M.singleton "is" $ SLSSVal a Public vv
+                let vom = M.singleton "set" $ SLSSVal a Public vv
                 let vo = SLV_Object a (Just $ ns <> " view, " <> k) vom
                 let io = SLSSVal a Public vo
                 di <-

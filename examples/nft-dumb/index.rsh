@@ -21,7 +21,7 @@ export const main =
       Creator.publish(id);
 
       var owner = Creator;
-      { vNFT.owner.is(owner); };
+      { vNFT.owner.set(owner); };
       invariant(balance() == 0);
       while ( true ) {
         commit();

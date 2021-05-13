@@ -14,19 +14,19 @@ export const main = Reach.App(
   (A, vMain) => {
     A.only(() => interact.checkView(MUInt.None()));
     A.publish();
-    vMain.i.is(1);
+    vMain.i.set(1);
     A.only(() => interact.checkView(MUInt.Some(1)));
     commit();
 
     /*
     A.publish();
-    vMain.i.is();
+    vMain.i.set();
     A.only(() => interact.checkView(MUInt.None));
     commit();
     */
 
     A.publish();
-    vMain.i.is(3);
+    vMain.i.set(3);
     A.only(() => interact.checkView(MUInt.None()));
     commit();
 

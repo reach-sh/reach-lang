@@ -729,11 +729,11 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 @subsubsection[#:tag "ref-programs-consensus-view"]{View Objects}
 
 @reach{
-  vNFT.owner.is(creator);
+  vNFT.owner.set(creator);
 }
 
 If @reachin{VIEW} is a @deftech{view object}, then its fields are the elements of the associated @tech{view}.
-Each of these fields are bound to an object with an @litchar{is} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps dominated by the current step (unless otherwise overridden.)
+Each of these fields are bound to an object with an @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps dominated by the current step (unless otherwise overridden.)
 If this function is not provided with an argument, then the corresponding @tech{view} is unset.
 
 For example, consider the following program:
