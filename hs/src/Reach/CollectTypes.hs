@@ -125,11 +125,6 @@ instance CollectsTypes DLTail where
 instance CollectsTypes DLBlock where
   cts (DLBlock _ _ k a) = cts k <> cts a
 
-instance CollectsTypes a => CollectsTypes (DLinExportVal a) where
-  cts = \case
-    DLEV_Arg _ a -> cts a
-    DLEV_Fun _ a b -> cts a <> cts b
-
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
@@ -153,8 +148,8 @@ instance CollectsTypes LLStep where
   cts (LLS_Stop _) = mempty
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
-instance CollectsTypes DLExportBlock where
-  cts (DLExportBlock s r) = cts s <> cts r
+instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
+  cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps dli dex dvs s) =

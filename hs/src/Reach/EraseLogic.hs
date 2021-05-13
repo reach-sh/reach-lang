@@ -167,18 +167,9 @@ instance Erase LLStep where
       send' <- traverse viaCount send
       return $ LLS_ToConsensus at send' recv' mtime'
 
-instance {-# OVERLAPS #-} Erase a => Erase (DLinExportVal a) where
-  el = \case
-    DLEV_Fun at args body ->
-      DLEV_Fun at <$> mapM el args <*> el body
-    DLEV_Arg at a -> DLEV_Arg at <$> el a
-
-instance Erase DLExportBlock where
-  el = \case
-    DLExportBlock s r -> do
-      r' <- el r
-      s' <- el s
-      return $ DLExportBlock s' r'
+instance {-# OVERLAPS #-} Erase a => Erase (DLinExportBlock a) where
+  el (DLinExportBlock at vs b) =
+    DLinExportBlock at vs <$> el b
 
 instance Erase LLProg where
   el (LLProg at llo ps dli dex dvs s) =

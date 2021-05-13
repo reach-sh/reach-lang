@@ -170,20 +170,9 @@ instance AC CHandler where
       ch_body' <- ac ch_body
       return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
-instance {-# OVERLAPS #-} AC a => AC (DLinExportVal a) where
-  ac = \case
-    DLEV_Arg at a -> do
-      ac_visit a
-      return $ DLEV_Arg at a
-    DLEV_Fun at a b -> do
-      ac_visit a
-      fresh $ DLEV_Fun at a <$> ac b
-
-instance AC DLExportBlock where
-  ac (DLExportBlock b a) = do
-    a' <- ac a
-    b' <- ac b
-    return $ DLExportBlock b' a'
+instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
+  ac (DLinExportBlock at vs a) =
+    DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
   ac (EPProg at ie et) = fresh $

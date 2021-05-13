@@ -213,13 +213,7 @@ data DLOpts = DLOpts
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
-data DLSExportBlock
-  = DLSExportBlock DLStmts (DLinExportVal DLSBlock)
-  deriving (Generic, Eq)
-
-instance Pretty DLSExportBlock where
-  pretty = \case
-    DLSExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+type DLSExportBlock = DLinExportBlock DLSBlock
 
 type DLSExports = M.Map SLVar DLSExportBlock
 

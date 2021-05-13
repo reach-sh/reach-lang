@@ -1111,23 +1111,16 @@ mkEnsureTypeDefined define f t =
 ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
 
-solEV :: [DLVar] -> AppT (DLinExportVal DLBlock)
-solEV args = \case
-  DLEV_Arg {} -> impossible $ "not fun"
-  DLEV_Fun _ fargs (DLBlock _ _ t r) -> do
-    let go a fa = do
-          a' <- solVar a
-          return $ (fa, a')
-    extendVarMap =<< (M.fromList <$> zipWithM go args fargs)
-    t' <- solPLTail t
-    r' <- solArg r
-    return $ vsep [ t', "return" <+> r' <> semi ]
-
 solEB :: [DLVar] -> AppT DLExportBlock
-solEB args (DLExportBlock t ev) = do
+solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
+  let fargs = fromMaybe mempty mfargs
+  let go a fa = do
+        a' <- solVar a
+        return $ (fa, a')
+  extendVarMap =<< (M.fromList <$> zipWithM go args fargs)
   t' <- solPLTail t
-  ev' <- solEV args $ dlevEnsureFun ev
-  return $ vsep [t', ev']
+  r' <- solArg r
+  return $ vsep [t', "return" <+> r' <> semi ]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
@@ -1231,16 +1224,21 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                       vvs_ty' <- solAsnType vvs
                       let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" [ "current_view_bs", parens vvs_ty' ]
                       extendVarMap $ M.fromList $ map (\vv->(vv, asnv <> "." <> solRawVar vv)) $ vvs
-                      ret' <-
+                      (defn, ret') <-
                         case M.lookup k (mlf vim v) of
-                          Just a -> solEB args a
+                          Just eb -> do
+                            eb' <- solEB args eb
+                            mvars <- readMemVars
+                            which <- allocVarIdx
+                            (frameDefn, frameDecl) <- solFrame which mvars
+                            return (frameDefn, vsep [ frameDecl, eb' ])
                           Nothing ->
-                            return $ illegal
-                      return $ solWhen c' $ vsep [ de', ret' ]
-                body' <- mapM igo $ M.toAscList vi
+                            return $ (emptyDoc, illegal)
+                      return $ (defn, solWhen c' $ vsep [ de', ret' ])
+                (defns, body') <- unzip <$> (mapM igo $ M.toAscList vi)
                 let body'' = vsep $ body' <> [ illegal ]
                 return $ (,) (s2t k, Aeson.String $ s2t vk_) $
-                  solFunction vk dom' ret body''
+                  vsep $ defns <> [ solFunction vk dom' ret body'' ]
           let vgo (v, tm) = do
                 (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
                 return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs

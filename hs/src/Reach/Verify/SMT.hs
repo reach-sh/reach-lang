@@ -1491,18 +1491,11 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-smt_ev :: DLinExportVal DLBlock -> App ()
-smt_ev = \case
-  DLEV_Arg {} -> return ()
-  DLEV_Fun at args body -> do
-    forM_ args $ flip (pathAddUnbound at) O_Export . Just
-    void $ smt_block body
-
 smt_eb :: DLExportBlock -> App ()
-smt_eb = \case
-  DLExportBlock s r -> ctxtNewScope $ freshAddrs $ do
-    smt_l s
-    smt_ev r
+smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
+  let args = fromMaybe [] margs
+  forM_ args $ flip (pathAddUnbound at) O_Export . Just
+  void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do

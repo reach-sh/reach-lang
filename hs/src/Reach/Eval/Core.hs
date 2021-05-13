@@ -525,16 +525,15 @@ slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . 
 
 dlvToEV :: DLValue -> App DLSExportBlock
 dlvToEV = \case
-  DLV_Arg at a -> retMt $ DLEV_Arg at a
-  DLV_Fun at a b -> retMt $ DLEV_Fun at a b
+  DLV_Fun at vs b ->
+    return $ DLinExportBlock at (Just vs) b
   ow ->
     case dlvToDL ow of
       Nothing -> impossible "dlvToEV"
       Just i -> do
+        let at = srclocOf ow
         (stmts, da) <- captureLifts $ compileArgExpr i
-        return $ DLSExportBlock stmts $ DLEV_Arg (srclocOf ow) da
-  where
-    retMt = return . DLSExportBlock Seq.empty
+        return $ DLinExportBlock at Nothing (DLSBlock at [] stmts da)
 
 expectDLVar :: SLVal -> DLVar
 expectDLVar = \case

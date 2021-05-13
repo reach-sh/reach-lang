@@ -148,14 +148,10 @@ instance Countable ViewSave where
   counts = \case
     ViewSave _ svs -> counts svs
 
-instance {-# OVERLAPS #-} Countable a => Countable (DLinExportVal a) where
+instance {-# OVERLAPS #-} Countable a => Countable (DLinExportBlock a) where
   counts = \case
-    DLEV_Arg _ a -> counts a
-    DLEV_Fun _ vs t -> count_rms vs $ counts t
-
-instance Countable DLExportBlock where
-  counts = \case
-    DLExportBlock t ev -> countsk (counts ev) t
+    DLinExportBlock _ vs b ->
+      count_rms (countsl vs) $ counts b
 
 instance Countable DLBlock where
   counts = \case

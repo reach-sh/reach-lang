@@ -84,12 +84,7 @@ data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
 instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a
 
-data DKExportBlock = DKExportBlock DKBlock (DLinExportVal DKBlock)
-  deriving (Eq)
-
-instance Pretty DKExportBlock where
-  pretty = \case
-    DKExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+type DKExportBlock = DLinExportBlock DKBlock
 
 type DKExports = M.Map SLVar DKExportBlock
 

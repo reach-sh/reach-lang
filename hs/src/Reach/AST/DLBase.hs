@@ -6,6 +6,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
+import Data.Maybe
 import GHC.Generics
 import Reach.AST.Base
 import Reach.Counter
@@ -264,26 +265,6 @@ data DLArgExpr
   | DLAE_Obj (M.Map SLVar DLArgExpr)
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
-
-data DLinExportVal a
-  = DLEV_Arg SrcLoc DLArg
-  | DLEV_Fun SrcLoc [DLVar] a
-  deriving (Eq)
-
-instance SrcLocOf (DLinExportVal a) where
-  srclocOf = \case
-    DLEV_Arg a _ -> a
-    DLEV_Fun a _ _ -> a
-
-dlevEnsureFun :: DLinExportVal DLBlock -> DLinExportVal DLBlock
-dlevEnsureFun = \case
-  DLEV_Arg at a -> DLEV_Fun at [] $ DLBlock at [] (DT_Return at) a
-  x -> x
-
-instance Pretty a => Pretty (DLinExportVal a) where
-  pretty = \case
-    DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
-    DLEV_Arg _ a -> pretty a
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
@@ -595,18 +576,24 @@ data DLBlock
 instance Pretty DLBlock where
   pretty (DLBlock _ _ ts ta) = prettyBlockP ts ta
 
-data DLExportBlock
-  = DLExportBlock DLTail (DLinExportVal DLBlock)
+data DLinExportBlock a
+  = DLinExportBlock SrcLoc (Maybe [DLVar]) a
   deriving (Eq)
 
-dlebEnsureFun :: DLExportBlock -> DLExportBlock
-dlebEnsureFun = \case
-  DLExportBlock t ev ->
-    DLExportBlock t $ dlevEnsureFun ev
+instance SrcLocOf (DLinExportBlock a) where
+  srclocOf = \case
+    DLinExportBlock a _ _ -> a
 
-instance Pretty DLExportBlock where
+instance Pretty a => Pretty (DLinExportBlock a) where
   pretty = \case
-    DLExportBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
+    DLinExportBlock _ args b ->
+      "export" <+> parens (pretty args) <+> "=>" <+> braces (pretty b)
+
+dlebEnsureFun :: DLinExportBlock a -> DLinExportBlock a
+dlebEnsureFun (DLinExportBlock at mvs a) =
+  DLinExportBlock at (Just $ fromMaybe [] mvs) a
+
+type DLExportBlock = DLinExportBlock DLBlock
 
 type DLExports = M.Map SLVar DLExportBlock
 

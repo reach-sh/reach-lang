@@ -770,34 +770,26 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsExportValue :: DLinExportVal DLBlock -> App Doc
-jsExportValue = \case
-  DLEV_Arg _ a -> jsArg a
-  DLEV_Fun _ args b -> do
-    (tl, ret) <- jsBlock b
-    (argDefs, tmps) <-
-      unzip
-        <$> mapM
-          (\arg -> do
-             arg' <- jsVar arg
-             let tmp = "_" <> arg'
-             protected <- jsProtect "null" (varType arg) tmp
-             let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
-             return (def, tmp))
-          args
-    let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
-    let argList = parens $ hsep $ punctuate comma tmps
-    return $ argList <+> "=>" <+> jsBraces body
-
 jsExportBlock :: DLExportBlock -> App Doc
-jsExportBlock = \case
-  -- Process flattened large arg
-  DLExportBlock b@DT_Com {} (DLEV_Arg at a) -> do
-    (tl, ret) <- jsBlock (DLBlock at [] b a)
-    let body = tl <> hardline <> jsReturn ret
-    let noArgs = parens ""
-    return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
-  DLExportBlock _ ev -> jsExportValue ev
+jsExportBlock (DLinExportBlock _ margs b) = do
+  (tl, ret) <- jsBlock b
+  let args = fromMaybe [] margs
+  (argDefs, tmps) <-
+    unzip
+      <$> mapM
+        (\arg -> do
+           arg' <- jsVar arg
+           let tmp = "_" <> arg'
+           protected <- jsProtect "null" (varType arg) tmp
+           let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
+           return (def, tmp))
+        args
+  let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
+  let argList = parens $ hsep $ punctuate comma tmps
+  let fun = parens $ argList <+> "=>" <+> jsBraces body
+  let call x = jsApply x []
+  let wrap = maybe call (const id) margs
+  return $ wrap fun
 
 jsFunctionWStdlib :: Doc -> App Doc -> App Doc
 jsFunctionWStdlib name mbody = do

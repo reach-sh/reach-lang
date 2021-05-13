@@ -329,17 +329,9 @@ instance Optimize DLBlock where
   opt (DLBlock at fs b a) =
     newScope $ DLBlock at fs <$> opt b <*> opt a
 
-instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
-  opt = \case
-    DLEV_Arg at a -> DLEV_Arg at <$> opt a
-    DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
-
-instance Optimize DLExportBlock where
-  opt = \case
-    DLExportBlock b r -> newScope $ DLExportBlock <$> opt b <*> opt r
-
-instance {-# OVERLAPS #-} Optimize DLExports where
-  opt = mapM opt
+instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
+  opt (DLinExportBlock at vs b) =
+    newScope $ DLinExportBlock at vs <$> opt b
 
 instance Optimize LLConsensus where
   opt = \case

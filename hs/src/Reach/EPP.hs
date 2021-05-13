@@ -654,18 +654,10 @@ be_s = \case
           return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs time_v mtime' ok_l'
     return $ ok_l''m
 
-mk_ev :: DLinExportVal DLBlock -> BApp (DLinExportVal DLBlock)
-mk_ev = \case
-  DLEV_Fun at args (DLBlock bat sf ll a) -> do
-    let body' = dtReplace DT_Com (DT_Return bat) ll
-    return $ DLEV_Fun at args (DLBlock bat sf body' a)
-  DLEV_Arg at a -> return $ DLEV_Arg at a
-
 mk_eb :: DLExportBlock -> BApp DLExportBlock
-mk_eb = \case
-  DLExportBlock ll r -> do
-    let body' = dtReplace DT_Com (DT_Return $ srclocOf r) ll
-    DLExportBlock body' <$> mk_ev r
+mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
+  let body' = dtReplace DT_Com (DT_Return bat) ll
+  return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
 epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
