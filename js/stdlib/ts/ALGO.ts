@@ -41,6 +41,7 @@ import {
   typeDefs,
 } from './ALGO_compiled';
 import { process, window } from './shim';
+export const { add, sub, mod, mul, div } = compiledStdlib;
 export * from './shared';
 
 // Type Definitions

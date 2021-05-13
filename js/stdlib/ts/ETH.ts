@@ -8,7 +8,6 @@ import http from 'http';
 import url from 'url';
 import {window, process} from './shim';
 import {
-  add,
   assert,
   bigNumberify,
   debug, envDefault,
@@ -33,10 +32,11 @@ import {
   PayAmt,
   AnyETH_Ty,
   stdlib as compiledStdlib,
-  typeDefs
+  typeDefs,
 } from './ETH_compiled';
 import waitPort from './waitPort';
 import { canonicalizeConnectorMode } from './ConnectorMode';
+export const { add, sub, mod, mul, div } = compiledStdlib;
 
 // ****************************************************************************
 // Type Definitions

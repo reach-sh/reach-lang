@@ -339,11 +339,16 @@ export const makeRandom = (width:number) => {
 };
 
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
-export const add = (a: num, b: num): BigNumber => bigNumberify(a).add(bigNumberify(b));
-export const sub = (a: num, b: num): BigNumber => bigNumberify(a).sub(bigNumberify(b));
-export const mod = (a: num, b: num): BigNumber => bigNumberify(a).mod(bigNumberify(b));
-export const mul = (a: num, b: num): BigNumber => bigNumberify(a).mul(bigNumberify(b));
-export const div = (a: num, b: num): BigNumber => bigNumberify(a).div(bigNumberify(b));
+export const makeArith = (m:BigNumber) => {
+  const check = (x: BigNumber) =>
+    checkedBigNumberify(`internal`, m, x);
+  const add = (a: num, b: num): BigNumber => check(bigNumberify(a).add(bigNumberify(b)));
+  const sub = (a: num, b: num): BigNumber => check(bigNumberify(a).sub(bigNumberify(b)));
+  const mod = (a: num, b: num): BigNumber => check(bigNumberify(a).mod(bigNumberify(b)));
+  const mul = (a: num, b: num): BigNumber => check(bigNumberify(a).mul(bigNumberify(b)));
+  const div = (a: num, b: num): BigNumber => check(bigNumberify(a).div(bigNumberify(b)));
+  return { add, sub, mod, mul, div };
+};
 export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(b));
 export const gt = (a: num, b: num): boolean => bigNumberify(a).gt(bigNumberify(b));
 export const le = (a: num, b: num): boolean => bigNumberify(a).lte(bigNumberify(b));

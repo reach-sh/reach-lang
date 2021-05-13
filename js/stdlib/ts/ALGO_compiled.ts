@@ -288,8 +288,11 @@ export const typeDefs = {
   T_Struct
 };
 
+const arith = shared.makeArith(UInt_max);
+
 export const stdlib = {
   ...shared,
+  ...arith,
   ...typeDefs,
   addressEq,
   tokenEq,
