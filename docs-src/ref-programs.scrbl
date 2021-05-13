@@ -1691,6 +1691,8 @@ and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural numbe
 selects the element at the given index of the array.
 Indices start at zero.
 
+If @reachin{REF_EXPR} is a @tech{tuple}, then @reachin{IDX_EXPR} must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.
+
 If @reachin{REF_EXPR} is a @tech{mapping} and @reachin{IDX_EXPR} evaluates to an @tech{address}, then this @tech{reference} evaluates to a value of type @reachin{Maybe(TYPE)}, where @reachin{TYPE} is the @tech{type} of the @tech{mapping}.
 
 @subsubsection{Array & tuple length: @tt{Tuple.length}, @tt{Array.length}, and @tt{.length}}
@@ -1719,6 +1721,7 @@ Both may be abbreviated as @reachin{expr.length} where @reachin{expr} evaluates 
 
 @index{Tuple.set} @reachin{Tuple.set} Returns a new @tech{tuple} identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
+The @reachin{idx} must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.
 
 @index{Array.set} @reachin{Array.set} Returns a new @tech{array} identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
