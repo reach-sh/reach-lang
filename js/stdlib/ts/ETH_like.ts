@@ -3,11 +3,41 @@
 // ****************************************************************************
 
 import Timeout from 'await-timeout';
-import ethers, { Signer } from 'ethers';
+import ethers from 'ethers';
 import http from 'http';
 import url from 'url';
-import {window, process} from './shim';
+import { window, process } from './shim';
 import {
+  memoizeThunk, replaceableThunk
+} from './shared_impl';
+import * as shared from './shared';
+import waitPort from './waitPort';
+import { canonicalizeConnectorMode } from './ConnectorMode';
+
+// Types-only imports
+import type { Signer } from 'ethers';
+import type {
+  CurrencyAmount,
+  IAccount,
+  IBackend,
+  IBackendViewInfo,
+  IBackendViewsInfo,
+  IContract,
+  IRecv,
+  OnProgress,
+} from './shared';
+import type {
+  AnyETH_Ty,
+  Token,
+  PayAmt,
+} from './ETH_like_compiled';
+import type {
+  // EthLike, // TODO: use this once types are in place
+  EthLikeBackendStdlib,
+  EthLikeCompiled,
+} from './ETH_like_interfaces';
+
+const {
   assert,
   bigNumberify,
   debug, envDefault,
@@ -15,28 +45,12 @@ import {
   ge,
   getDEBUG,
   lt,
-  CurrencyAmount,
-  IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
-  IAccount, IContract, IRecv, deferContract,
-  OnProgress,
+  getViewsHelper,
+  deferContract,
   makeRandom,
   argsSplit,
   truthyEnv,
-} from './shared';
-import {
-  memoizeThunk, replaceableThunk
-} from './shared_impl';
-export * from './shared';
-import {
-  Token,
-  PayAmt,
-  AnyETH_Ty,
-  stdlib as compiledStdlib,
-  typeDefs,
-} from './ETH_compiled';
-import waitPort from './waitPort';
-import { canonicalizeConnectorMode } from './ConnectorMode';
-export const { add, sub, mod, mul, div } = compiledStdlib;
+} = shared;
 
 // ****************************************************************************
 // Type Definitions
@@ -72,12 +86,15 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | Wallet | Signer; // required to deploy/attach
 
+type Hash = string;
+
 type ContractInfo = {
   address: Address,
   creation_block: number,
   transactionHash: Hash,
   init?: ContractInitInfo,
 };
+
 
 type Digest = string
 type Recv = IRecv<Address>
@@ -101,6 +118,39 @@ type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
 }
 
+// We don't ever do waitPort for these so it's not an option.
+// The reason this level of indirection still exists here
+// is because ethers.js does a cool thing by default:
+// It queries multiple providers.
+export interface ProviderByName {
+  ETH_NET: string // WhichNetExternal | 'window'
+  REACH_CONNECTOR_MODE: string
+  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
+}
+
+export type WhichNetExternal
+  = 'homestead'
+  | 'ropsten'
+
+// TODO: more providers 'by name'
+export type ProviderName
+  = WhichNetExternal
+  | 'MainNet'
+  | 'TestNet'
+  | 'LocalHost'
+  | 'window'
+
+// TODO: support config of custom api keys
+export interface ProviderByURI {
+  ETH_NODE_URI: string
+  REACH_CONNECTOR_MODE: string
+  REACH_DO_WAIT_PORT: string // preferably: 'yes' | 'no'
+  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
+}
+
+export type ProviderEnv = ProviderByURI | ProviderByName
+
+
 // ****************************************************************************
 // Helpers
 // ****************************************************************************
@@ -123,6 +173,17 @@ function isSome<T>(m: Maybe<T>): m is Some<T> {
 const Some = <T>(m: T): Some<T> => [m];
 const None: None = [];
 void(isSome);
+
+// TODO: add return type once types are in place
+export function makeEthLike(ethLikeCompiled: EthLikeCompiled) {
+// ...............................................
+
+const {
+  T_Address, T_Tuple,
+  add,
+  stdlib,
+} = ethLikeCompiled;
+const reachStdlib: EthLikeBackendStdlib = stdlib;
 
 // Avoid using _providerEnv directly; use get/set
 // We don't use replaceableThunk because slightly more nuanced inspection needs to be possible.
@@ -285,8 +346,7 @@ const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>
   const fullEnv = getProviderEnv();
   return await waitProviderFromEnv(fullEnv);
 });
-export {getProvider};
-export function setProvider(provider: Provider|Promise<Provider>): void {
+function setProvider(provider: Provider|Promise<Provider>): void {
   // TODO: define ETHProvider to be {provider: Provider, isolated: boolean} ?
   // Maybe also {window: boolean}
   _setProvider(provider);
@@ -374,43 +434,7 @@ const stepTime = async (): Promise<TransactionReceipt> => {
 // Common Interface Exports
 // ****************************************************************************
 
-export const { addressEq, digest } = compiledStdlib;
-
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct } = typeDefs;
-
-export const { randomUInt, hasRandom } = makeRandom(32);
-
-export type WhichNetExternal
-  = 'homestead'
-  | 'ropsten'
-
-// TODO: more providers 'by name'
-export type ProviderName
-  = WhichNetExternal
-  | 'MainNet'
-  | 'TestNet'
-  | 'LocalHost'
-  | 'window'
-
-// TODO: support config of custom api keys
-export interface ProviderByURI {
-  ETH_NODE_URI: string
-  REACH_CONNECTOR_MODE: string
-  REACH_DO_WAIT_PORT: string // preferably: 'yes' | 'no'
-  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
-}
-
-// We don't ever do waitPort for these so it's not an option.
-// The reason this level of indirection still exists here
-// is because ethers.js does a cool thing by default:
-// It queries multiple providers.
-export interface ProviderByName {
-  ETH_NET: string // WhichNetExternal | 'window'
-  REACH_CONNECTOR_MODE: string
-  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
-}
-
-export type ProviderEnv = ProviderByURI | ProviderByName
+const { randomUInt, hasRandom } = makeRandom(32);
 
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
 function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
@@ -452,13 +476,13 @@ function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
   }
 }
 
-export function setProviderByEnv(env: Partial<ProviderByName & ProviderByURI>): void {
+function setProviderByEnv(env: Partial<ProviderByName & ProviderByURI>): void {
   const fullEnv = envDefaultsETH(env);
   setProviderEnv(fullEnv);
   setProvider(waitProviderFromEnv(fullEnv));
 }
 
-export function setProviderByName(providerName: ProviderName): void  {
+function setProviderByName(providerName: ProviderName): void  {
   const env = providerEnvByName(providerName);
   setProviderByEnv(env);
 }
@@ -486,7 +510,7 @@ function ethersProviderEnv(network: WhichNetExternal): ProviderByName {
   }
 }
 
-export function providerEnvByName(providerName: ProviderName): ProviderEnv {
+function providerEnvByName(providerName: ProviderName): ProviderEnv {
   switch (providerName) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return windowProviderEnv();
@@ -498,7 +522,7 @@ export function providerEnvByName(providerName: ProviderName): ProviderEnv {
   }
 }
 
-export const balanceOf = async (acc: Account): Promise<BigNumber> => {
+const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
 
@@ -546,7 +570,7 @@ const doCall = async (
 };
 
 /** @description Arg order follows "src before dst" convention */
-export const transfer = async (
+const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
   value: any,
@@ -601,7 +625,7 @@ const ERC20_ABI = [
     "type": "function" }
 ];
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
   if (networkAccount.getAddress && !networkAccount.address) {
     // @ts-ignore
@@ -677,7 +701,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const implP: Promise<Contract> =
         new Promise((resolve) => { setImpl = resolve; });
       const implNow = {
-        stdlib: compiledStdlib,
+        stdlib,
         sendrecv: async (
           funcNum: number, evt_cnt: number,
           hasLastTime: (BigNumber | false),
@@ -996,7 +1020,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const ok_vals = ok_ed[0][1];
 
           debug(shad, ':', label, 'recv', ok_evt, `--- MSG --`, ok_vals);
-          const data = T_Tuple(out_tys).unmunge(ok_vals);
+          const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[]; // TODO: typing
 
           const getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
             let dhead = [shad, label, 'recv', ok_evt, '--- getLog', l_evt, l_ctc];
@@ -1050,7 +1074,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const creationTime = async () =>
       bigNumberify((await getInfo()).creation_block);
 
-    const views_bin = bin._getViews({reachStdlib: compiledStdlib});
+    const views_bin = bin._getViews({reachStdlib});
     const views_namesm = bin._Connectors.ETH.views;
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (...args: any[]): Promise<any> => {
@@ -1070,7 +1094,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getViews = getViewsHelper(views_bin, getView1);
 
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib };
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -1079,17 +1103,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return this;
   }
 
-  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel };
+  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib, setDebugLabel };
 };
 
-export const newAccountFromSecret = async (secret: string): Promise<Account> => {
+const newAccountFromSecret = async (secret: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = (new ethers.Wallet(secret)).connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
 };
 
-export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
+const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
   const acc = await connectAccount(networkAccount);
@@ -1105,7 +1129,7 @@ async function _getDefaultAccount(): Promise<Account> {
   return await connectAccount(signer);
 }
 
-export const getDefaultAccount = async (): Promise<Account> => {
+const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);
   if (!(isWindowProvider() || isIsolatedNetwork())) throw Error(`Default account not available`);
   return _getDefaultAccount();
@@ -1113,7 +1137,7 @@ export const getDefaultAccount = async (): Promise<Account> => {
 
 // TODO: Should users be able to access this directly?
 // TODO: define a faucet on Ropsten & other testnets?
-export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
+const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   if (isIsolatedNetwork()) {
     if (isWindowProvider()) {
       // XXX only localhost:8545 is supported
@@ -1131,19 +1155,19 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
   throw Error(`getFaucet not supported in this context.`)
 });
 
-export const createAccount = async () => {
+const createAccount = async () => {
   debug(`createAccount with 0 balance.`);
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   return await connectAccount(networkAccount);
 }
 
-export const fundFromFaucet = async (account: AccountTransferable, value: any) => {
+const fundFromFaucet = async (account: AccountTransferable, value: any) => {
   const faucet = await getFaucet();
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: any): Promise<Account> => {
+const newTestAccount = async (startingBalance: any): Promise<Account> => {
   debug('newTestAccount(', startingBalance, ')');
   requireIsolatedNetwork('newTestAccount');
   const acc = await createAccount();
@@ -1160,20 +1184,20 @@ export const newTestAccount = async (startingBalance: any): Promise<Account> => 
   }
 };
 
-export const getNetworkTime = async (): Promise<BigNumber> => {
+const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   return await waitUntilTime(add(now, delta), onProgress);
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   targetTime = bigNumberify(targetTime);
   if (isIsolatedNetwork()) {
     return await fastForwardTo(targetTime, onProgress);
@@ -1187,7 +1211,7 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
 // * it matches the bytecode you are expecting.
 // * it was deployed at exactly creation_block.
 // Throws an Error if any verifications fail
-export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
+const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
   const { address, creation_block, transactionHash, init } = ctcInfo;
   const { argsMay } = initOrDefaultArgs(init);
@@ -1316,10 +1340,10 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 };
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'ETH';
+const standardUnit = 'ETH';
 
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'WEI';
+const atomicUnit = 'WEI';
 
 /**
  * @description  Parse currency by network
@@ -1327,11 +1351,11 @@ export const atomicUnit = 'WEI';
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100000000000000000000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
 
-export const minimumBalance: BigNumber =
+const minimumBalance: BigNumber =
   parseCurrency(0);
 
 
@@ -1344,7 +1368,7 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
-export function formatCurrency(amt: any, decimals: number = 18): string {
+function formatCurrency(amt: any, decimals: number = 18): string {
   // Recall that 1 WEI = 10e18 ETH
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
@@ -1368,8 +1392,43 @@ export function formatCurrency(amt: any, decimals: number = 18): string {
  * @param acc Account, NetworkAccount, or hex-encoded address
  * @returns the address formatted as a hex-encoded string
  */
-export function formatAddress(acc: string|NetworkAccount|Account): string {
-  return T_Address.canonicalize(acc);
+function formatAddress(acc: string|NetworkAccount|Account): string {
+  return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
-export const reachStdlib = compiledStdlib;
+// TODO: restore type ann once types are in place
+// const ethLike: EthLike = {
+const ethLike = {
+  ...ethLikeCompiled,
+  getProvider,
+  setProvider,
+  randomUInt,
+  hasRandom,
+  setProviderByEnv,
+  setProviderByName,
+  providerEnvByName,
+  balanceOf,
+  transfer,
+  connectAccount,
+  newAccountFromSecret,
+  newAccountFromMnemonic,
+  getDefaultAccount,
+  getFaucet,
+  setFaucet,
+  createAccount,
+  fundFromFaucet,
+  newTestAccount,
+  getNetworkTime,
+  wait,
+  waitUntilTime,
+  verifyContract,
+  standardUnit,
+  atomicUnit,
+  parseCurrency,
+  minimumBalance,
+  formatCurrency,
+  formatAddress,
+  reachStdlib,
+};
+return ethLike;
+}
