@@ -16,7 +16,6 @@ import Timeout from 'await-timeout';
 // import {window, process} from './shim';
 // import { ConnectorMode, getConnectorMode } from './ConnectorMode';
 import {
-  add,
   assert,
   bigNumberify,
   debug,
@@ -45,6 +44,9 @@ import {
   typeDefs as ethTypeDefs,
 } from './ETH_compiled';
 import { ConnectorMode } from './ConnectorMode';
+
+const { add } = compiledEthStdlib;
+
 
 // ****************************************************************************
 // Type Definitions
@@ -560,6 +562,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return await infoP;
         },
         creationTime: (async () => bigNumberify((await infoP).creation_block)),
+        getViews: () => { throw Error(`Not yet implemented on CFX`); },
         // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
         iam,
         selfAddress,
@@ -573,6 +576,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         wait: (...args) => impl.wait(...args),
         getInfo: (...args) => impl.getInfo(...args),
         creationTime: (...args) => impl.creationTime(...args),
+        getViews: (...args) => impl.getViews(...args),
         iam: (...args) => impl.iam(...args),
         selfAddress: (...args) => impl.selfAddress(...args),
         stdlib: compiledStdlib,
@@ -905,8 +909,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const creationTime = (async () => bigNumberify((await getInfo()).creation_block));
 
+    const getViews = () => { throw Error(`Not yet implemented on CFX`); }
+
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, wait, getViews, iam, selfAddress, stdlib: compiledStdlib };
   };
 
   return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib: compiledStdlib };
