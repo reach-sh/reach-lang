@@ -45,6 +45,8 @@ export interface TypeDefs {
 
 // TODO revisit which of these should actually be exported/exposed
 export interface SharedStdlib {
+  bigNumberify: any
+  bigNumberToNumber: any
   getViewsHelper: any
   deferContract: any
   truthyEnv: any
