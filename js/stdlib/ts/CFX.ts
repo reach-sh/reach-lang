@@ -373,7 +373,7 @@ const stepTime = async (): Promise<TransactionReceipt> => {
 
 export const { digest } = compiledEthStdlib;
 // XXX Do not use ETH-style addressEq
-export const addressEq = (a1: string, a2: string) => a1 == a2;
+export const addressEq = (a1: unknown, a2: unknown) => a1 == a2;
 
 export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Digest, T_Struct } = ethTypeDefs;
 export const T_Address = {
@@ -1264,8 +1264,28 @@ export const atomicUnit = 'Drip';
 export const connectorMode: ConnectorMode = 'CFX-experimental'; // XXX
 const isIsolatedNetwork: boolean = true; // XXX
 
-async function verifyContract(...args: any): Promise<true> {
+export async function verifyContract(...args: any): Promise<true> {
   // TODO
   void(args);
   return true;
 }
+
+// Just some TODO junk for typechecking
+export const setProviderByEnv: any = false;
+export const providerByEnvName: any = false;
+export const getDefaultAccount: any = false;
+export const setProviderByName: any = false;
+export const providerEnvByName: any = false;
+export const formatAddress: any = false;
+export const reachStdlib: any = false;
+export {typeDefs};
+export const tokenEq: any = false;
+export const stdlib: any = false;
+export const UInt_max: any = false;
+
+export {add};
+export const sub: any = false;
+export const mul: any = false;
+export const div: any = false;
+export const mod: any = false;
+export const T_Token: any = false;
