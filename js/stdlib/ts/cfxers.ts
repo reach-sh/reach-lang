@@ -125,14 +125,18 @@ export class ContractFactory {
   abi: any[]
   bytecode: string
   wallet: Wallet
+  interface: ethers.utils.Interface
 
   constructor(abi: string|any[], bytecode: string, wallet: Wallet) {
     this.abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this.bytecode = bytecode;
     this.wallet = wallet;
+    this.interface = new ethers.utils.Interface(this.abi);
   }
 
-  deploy(...deployArgs: any): Contract {
+  // XXX this code can return Contract directly
+  // Should it wait?
+  async deploy(...deployArgs: any): Promise<Contract> {
     const [argsOrTxn, txnIfArgs]: any[] = deployArgs;
     const [args, txn]: [any[], {value?: ethers.BigNumber, gasLimit?: undefined}] = txnIfArgs
       ? [ argsOrTxn, txnIfArgs ]
@@ -154,6 +158,10 @@ export class ContractFactory {
       .executed();
 
     return new Contract(undefined, abi, wallet, receiptP);
+  }
+  getDeployTransaction() {
+    // XXX
+    throw Error(`XXX getDeployTransaction on CFX`);
   }
 }
 
