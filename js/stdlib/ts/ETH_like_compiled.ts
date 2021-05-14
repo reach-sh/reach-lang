@@ -27,7 +27,7 @@ import type {
   // EthLikeCompiled, // TODO: use once types are in place
   TypeDefs,
   Arith,
-  EthLikeBackendStdlib,
+  BackendStdlib,
 } from './ETH_like_interfaces'
 import { labelMaps } from './shared_impl';
 export type {
@@ -368,7 +368,7 @@ const typeDefs: TypeDefs = {
 
 const arith: Arith = shared.makeArith(UInt_max);
 
-const stdlib: EthLikeBackendStdlib = {
+const stdlib: BackendStdlib = {
   ...shared,
   ...arith,
   ...typeDefs,

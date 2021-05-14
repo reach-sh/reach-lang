@@ -271,8 +271,8 @@ export const addressEq = shared.mkAddressEq(T_Address);
 
 const T_Token = T_UInt;
 export type Token = CBR_UInt;
-export const tokenEq = (x:Token, y:Token): boolean =>
-  x.eq(y);
+export const tokenEq = (x: unknown, y: unknown): boolean =>
+  T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
 export type PayAmt = shared.MkPayAmt<Token>;
 
 export const typeDefs = {
