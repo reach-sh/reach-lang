@@ -23,29 +23,25 @@ import {
   labelMaps,
 } from './shared_impl';
 
+import type {BigNumber} from 'ethers';
+import type {
+  ETH_Ty,
+  AnyETH_Ty,
+  // EthLikeCompiled, // TODO: use once types are in place
+  TypeDefs,
+  Arith,
+  EthLikeBackendStdlib,
+} from './ETH_like_interfaces'
+export type {
+  ETH_Ty,
+  AnyETH_Ty,
+}
+
 // Types
-type BigNumber = ethers.BigNumber;
 export type Token = CBR_Address;
 export type PayAmt = shared.MkPayAmt<Token>;
 
-// BV = backend value
-// NV = net value
-type ETH_Ty<BV extends CBR_Val, NV> =  {
-  name: string,
-  // ty: CBR.ReachTy,
-  defaultValue: BV,
-  // TODO: rename.
-  // * canonicalize -> user2cbr
-  // * munge/unmunge -> cbr2net/net2cbr
-  canonicalize: (uv: unknown) => BV,
-  munge: (bv: BV) => NV,
-  unmunge: (nv: NV) => BV,
-  /** @description describes the shape of the munged value */
-  paramType: string,
-}
-
-export type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
-
+// TODO: restore return type annotation once types are in place
 export function makeCompiledStdlib() {
 // ...............................................
 
@@ -359,7 +355,7 @@ const addressEq = shared.mkAddressEq(T_Address);
 const T_Token = T_Address;
 const tokenEq = addressEq;
 
-const typeDefs = {
+const typeDefs: TypeDefs = {
   T_Null,
   T_Bool,
   T_UInt,
@@ -371,12 +367,12 @@ const typeDefs = {
   T_Data,
   T_Array,
   T_Tuple,
-  T_Struct
+  T_Struct,
 };
 
-const arith = shared.makeArith(UInt_max);
+const arith: Arith = shared.makeArith(UInt_max);
 
-const stdlib = {
+const stdlib: EthLikeBackendStdlib = {
   ...shared,
   ...arith,
   ...typeDefs,
@@ -387,12 +383,15 @@ const stdlib = {
 };
 
 // ...............................................
-return {
-  T_UInt,
-  digest,
-  addressEq,
-  tokenEq,
+// It's the same as stdlib, but with convenient access to
+// stdlib and typeDefs as bundles of bindings
+
+// TODO: restore type annotation once types are in place
+// const ethLikeCompiled: EthLikeCompiled = {
+const ethLikeCompiled = {
+  ...stdlib,
   typeDefs,
   stdlib,
 };
+return ethLikeCompiled;
 }

@@ -15,7 +15,7 @@ export interface AnyBackendTy {
 
 type BigNumber = ethers.BigNumber;
 
-type num = BigNumber | number
+export type num = BigNumber | number
 
 export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
   ty: ConnectorTy,
@@ -55,7 +55,7 @@ export type MkPayAmt<Token> =
 
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
-  data: Array<any>,
+  data: Array<unknown>,
   from: RawAddress,
   time: BigNumber,
   getOutput: (o_lab:string, o_ctc:any) => Promise<any>,
