@@ -1,9 +1,9 @@
 import { makeEthLike } from './ETH_like'
-import * as ethCompiled from './ETH_compiled';
+import * as ethImpl from './ETH_impl';
 
 // TODO: export some types from ./shared?
 
-const ethLike = makeEthLike(ethCompiled);
+const ethLike = makeEthLike(ethImpl);
 
 export const {
   // start ...shared,
