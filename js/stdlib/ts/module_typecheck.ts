@@ -6,8 +6,12 @@ import * as CFX from './CFX';
 import ethers from 'ethers';
 import * as cfxers from './cfxers';
 import * as ETH_impl from './ETH_impl';
+import * as shared from './shared';
 
-import { EthersLike, EthLike, EthLikeArgs, EthLikeCompiled } from './ETH_like_interfaces';
+import { EthersLike, EthLike, EthLikeArgs, EthLikeCompiled, SharedStdlib } from './ETH_like_interfaces';
+
+const _shared: SharedStdlib = shared;
+void(_shared);
 
 const _ETH_compiled: EthLikeCompiled = ETH_compiled;
 void(_ETH_compiled);

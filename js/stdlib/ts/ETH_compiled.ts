@@ -2,49 +2,11 @@ import { makeCompiledStdlib } from './ETH_like_compiled';
 import type { EthLikeCompiled } from './ETH_like_interfaces';
 
 export type { Token, PayAmt, AnyETH_Ty } from './ETH_like_compiled';
+export * from './shared';
 
 const ethCompiled: EthLikeCompiled = makeCompiledStdlib();
 export const {
   // TODO: revisit which of these should actually be export
-  // start ...shared,
-  getViewsHelper,
-  deferContract,
-  truthyEnv,
-  envDefault,
-  setDEBUG,
-  getDEBUG,
-  debug,
-  assert,
-  isBigNumber,
-  checkedBigNumberify,
-  protect,
-  isHex,
-  hexToString,
-  stringToHex,
-  makeDigest,
-  hexToBigNumber,
-  uintToBytes,
-  bigNumberToHex,
-  bytesEq,
-  digestEq,
-  makeRandom,
-  eq,
-  makeArith,
-  ge,
-  gt,
-  le,
-  lt,
-  argsSlice,
-  argsSplit,
-  Array_set,
-  Array_zip,
-  mapRef,
-  objectMap,
-  mkAddressEq,
-  parseFixedPoint,
-  parseInt,
-  // end ...shared,
-
   // start ...arith,
   add,
   sub,
