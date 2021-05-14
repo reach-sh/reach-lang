@@ -42,7 +42,12 @@ jsMapVarCtc :: DLMVar -> Doc
 jsMapVarCtc mpv = jsMapVar mpv <> "_ctc"
 
 jsString :: String -> Doc
-jsString s = squotes $ pretty s
+jsString s = squotes $ pretty $ escape s
+  where
+    escape = concatMap escapec
+    escapec = \case
+      '\'' -> "\\'"
+      c -> [c]
 
 jsArray :: [Doc] -> Doc
 jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
@@ -216,8 +221,8 @@ jsArg = \case
       DLC_UInt_max ->
         return "stdlib.UInt_max"
   DLA_Literal c -> jsCon c
-  DLA_Interact _ m t ->
-    jsProtect "null" t $ "interact." <> pretty m
+  DLA_Interact who m t ->
+    jsProtect (jsString $ "for " <> bunpack who <> "'s interact field " <> m) t $ "interact." <> pretty m
 
 jsLargeArg :: AppT DLLargeArg
 jsLargeArg = \case
