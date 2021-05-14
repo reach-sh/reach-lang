@@ -44,6 +44,7 @@ spec_examples_cover_EvalError =
       , "Err_Type_NotDT"
       , "Err_Type_NotApplicable"
       , "Err_TypeMeets_dMismatch"
+      , "Err_View_CannotExpose"
       ]
 
 spec_examples_cover_ParserError :: Spec

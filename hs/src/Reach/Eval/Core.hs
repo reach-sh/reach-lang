@@ -2459,6 +2459,7 @@ evalPrim p sargs =
             v' <- snd <$> evalPrim SLPrim_is [public v, public $ SLV_Type st]
             mev <- slToDLExportVal v'
             when (mev == Nothing) $ do
+              -- Might not be possible, because we already type checked
               expect_t v $ Err_View_CannotExpose
             return $ mev
           _ -> illegal_args
