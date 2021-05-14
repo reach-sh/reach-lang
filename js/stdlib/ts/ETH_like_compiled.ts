@@ -1,8 +1,26 @@
-import { makeCompiledStdlib } from './ETH_like_compiled';
+// ****************************************************************************
+// standard library needed at runtime by compiled Reach programs
+// ****************************************************************************
 
-export type { Token, PayAmt, AnyETH_Ty } from './ETH_like_compiled';
+import ethers from 'ethers';
+import * as shared from './shared';
+import * as CBR from './CBR';
 
-import type {BigNumber} from 'ethers';
+import type { BigNumber } from 'ethers';
+import type {
+  CBR_Address,
+  CBR_Array,
+  CBR_Bool,
+  CBR_Bytes,
+  CBR_Data,
+  CBR_Digest,
+  CBR_Null,
+  CBR_Object,
+  CBR_Struct,
+  CBR_Tuple,
+  CBR_UInt,
+  CBR_Val,
+} from './CBR';
 import type {
   ETH_Ty,
   AnyETH_Ty,
@@ -11,6 +29,7 @@ import type {
   Arith,
   EthLikeBackendStdlib,
 } from './ETH_like_interfaces'
+import { labelMaps } from './shared_impl';
 export type {
   ETH_Ty,
   AnyETH_Ty,
@@ -24,10 +43,8 @@ export type PayAmt = shared.MkPayAmt<Token>;
 export function makeCompiledStdlib() {
 // ...............................................
 
-const BigNumber = ethers.BigNumber;
-
 const UInt_max: BigNumber =
-  BigNumber.from(2).pow(256).sub(1);
+  ethers.BigNumber.from(2).pow(256).sub(1);
 
 const digest = shared.makeDigest((t:AnyETH_Ty, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
@@ -90,7 +107,7 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
 const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
   defaultValue: ethers.utils.keccak256([]),
-  munge: (bv: CBR_Digest): BigNumber => BigNumber.from(bv),
+  munge: (bv: CBR_Digest): BigNumber => ethers.BigNumber.from(bv),
   // XXX likely not the correct unmunge type?
   unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
   paramType: 'uint256',
