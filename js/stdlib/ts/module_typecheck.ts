@@ -2,7 +2,7 @@
 
 import * as ETH from './ETH';
 import * as ETH_compiled from './ETH_compiled';
-// import * as CFX from './CFX';
+import * as CFX from './CFX';
 
 import { EthLike, EthLikeCompiled } from './ETH_like_interfaces';
 
@@ -12,4 +12,5 @@ void(_ETH_compiled);
 const _ETH: EthLike = ETH;
 void(_ETH);
 
-// const _CFX: EthLike = CFX;
+const _CFX: EthLike = CFX;
+void(_CFX);
