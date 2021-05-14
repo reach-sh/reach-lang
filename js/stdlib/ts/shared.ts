@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import ethers from 'ethers';
-import { CBR_Address } from './CBR';
+import { CBR_Address, bigNumberify, bigNumberToNumber } from './CBR';
 import util from 'util';
+export { bigNumberify, bigNumberToNumber };
 
 // ****************************************************************************
 // Type Definitions
@@ -264,11 +265,6 @@ export const assert = (d: any, ai: any = null) => {
 }
 
 export const { isBigNumber } = BigNumber;
-
-export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
-
-export const bigNumberToNumber = (x: any) =>
-  bigNumberify(x).toNumber();
 
 export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber => {
   const xb = bigNumberify(x);

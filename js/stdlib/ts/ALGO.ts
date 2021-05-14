@@ -120,6 +120,8 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   appApproval: string,
   appClear: string,
   ctc: string,
+  viewSize: number,
+  viewKeys: number,
   steps: Array<string|null>,
   stepargs: Array<StepArgInfo|null>,
   unsupported: boolean,
@@ -929,6 +931,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
+    const { viewKeys, viewSize } = bin._Connectors.ALGO;
+
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       return await waitUntilTime(bigNumberify(lastRound).add(delta));
     };
@@ -986,6 +990,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const sim_txns = sim_r.txns;
       const [ view_ty, view_v ] = sim_r.view;
       debug(dhead, 'VIEW', { view_ty, view_v });
+      const view_tysz = view_ty.netSize;
+      const padding = viewSize - view_tysz;
+      const padding_ty = T_Bytes(padding);
+      const view_typ = T_Tuple([view_ty, padding_ty]);
+      const view_vp = [ view_v, padding_ty.canonicalize('') ];
+      debug(dhead, 'VIEWP', { view_typ, view_vp });
 
       while ( true ) {
         const params = await getTxnParams();
@@ -1050,9 +1060,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                           undefined, params);
 
       const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_v, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, view_ty, T_Bool, T_UInt, T_UInt, ...tys ];
+        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
@@ -1291,18 +1301,29 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return ['None', null];
         }
         const appSt = appInfo['params']['global-state'];
-        const viewSt = (appSt.find((x:any) => x.key === 'dg==')).value;
-        debug({viewSt});
-        const vvn = base64ToUI8A(viewSt.bytes);
-        debug({vvn});
-        if ( vvn.length == 0 ) {
-          return ['None', null];
+        const vvn = new Uint8Array(viewSize);
+        let offset = 0;
+        for ( let i = 0; i < viewKeys; i++ ) {
+          debug({i});
+          const ik = base64ify(`v${i}`);
+          debug({ik});
+          const viewSt = (appSt.find((x:any) => x.key === ik)).value;
+          debug({viewSt});
+          const vvni = base64ToUI8A(viewSt.bytes);
+          debug({vvni});
+          if ( vvni.length == 0 ) {
+            return ['None', null];
+          }
+          vvn.set(vvni, offset);
+          offset += vvni.length;
         }
         const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
         const vi = bigNumberToNumber(vin);
         debug({vi});
         const vtys = vs[vi];
         debug({vtys});
+        if ( ! vtys ) {
+          return ['None', null]; }
         const vty = T_Tuple([T_UInt, ...vtys]);
         debug({vty});
         const vvs = vty.fromNet(vvn);
@@ -1326,7 +1347,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
 
-    const { appApproval0, appClear } = algob;
+    const { appApproval0, appClear, viewKeys } = algob;
     const Deployer = thisAcc.addr;
 
     const appApproval0_subst =
@@ -1345,7 +1366,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          0, 0, 2, 2,
+          0, 0, 2, 1 + viewKeys,
           undefined, undefined, undefined, undefined,
           NOTE_Reach));
 

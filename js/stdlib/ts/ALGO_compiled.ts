@@ -94,7 +94,7 @@ const bytestringyNet = {
 export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   ...CBR.BT_Bytes(len),
   ...stringyNet,
-  netSize: len,
+  netSize: shared.bigNumberToNumber(len),
 });
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
@@ -156,7 +156,9 @@ export const T_Tuple = (
 ): ALGO_Ty<CBR_Tuple> => ({
   ...CBR.BT_Tuple(cos),
   netSize: (
-    cos.reduce((acc, co) => acc + co.netSize, 0)
+    cos.reduce(((acc:number, co:ALGO_Ty<CBR_Val>): number =>
+                  acc + co.netSize),
+               0)
   ),
   toNet: (bv: CBR_Tuple): NV => {
     const val = cos.map((co, i) => co.toNet(bv[i]));
