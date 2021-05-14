@@ -991,10 +991,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const [ view_ty, view_v ] = sim_r.view;
       debug(dhead, 'VIEW', { view_ty, view_v });
       const view_tysz = view_ty.netSize;
-      const padding = viewSize - view_tysz;
+      const padding = Math.max(viewSize - view_tysz, 0);
       const padding_ty = T_Bytes(padding);
-      const view_typ = T_Tuple([view_ty, padding_ty]);
-      const view_vp = [ view_v, padding_ty.canonicalize('') ];
+      const padding_v = padding_ty.canonicalize('');
+      const [ view_typ, view_vp ] =
+        viewSize > 0 ?
+        [ T_Tuple([view_ty, padding_ty]), [ view_v,  padding_v] ]:
+        [ padding_ty, padding_v ];
       debug(dhead, 'VIEWP', { view_typ, view_vp });
 
       while ( true ) {

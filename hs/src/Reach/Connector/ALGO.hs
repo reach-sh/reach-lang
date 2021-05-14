@@ -972,12 +972,16 @@ ct = \case
         let la = DLLA_Tuple $ vconcat vwhich vvs
         let lat = largeArgTypeOf la
         let sz = typeSizeOf lat
-        comment $ "check view bs"
-        cla la
-        ctobs lat
         viewSz <- readViewSize
-        padding $ viewSz - sz
-        op "concat"
+        case viewSz > 0 of
+          True -> do
+            comment $ "check view bs"
+            cla la
+            ctobs lat
+            padding $ viewSz - sz
+            op "concat"
+          False ->
+            padding viewSz
         readArg argView
         eq_or_fail
       zero_view = do
