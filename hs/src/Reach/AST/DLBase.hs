@@ -6,6 +6,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
+import Data.Maybe
 import GHC.Generics
 import Reach.AST.Base
 import Reach.Counter
@@ -82,6 +83,11 @@ data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
   deriving (Eq, Ord, Generic, Show)
+
+itype2arr :: IType -> ([DLType], DLType)
+itype2arr = \case
+  IT_Val t -> ([], t)
+  IT_Fun dom rng -> (dom, rng)
 
 instance Pretty IType where
   pretty = viaShow
@@ -260,21 +266,6 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
 
-data DLinExportVal a
-  = DLEV_Arg SrcLoc DLArg
-  | DLEV_Fun SrcLoc [DLVar] a
-  deriving (Eq)
-
-instance SrcLocOf (DLinExportVal a) where
-  srclocOf = \case
-    DLEV_Arg a _ -> a
-    DLEV_Fun a _ _ -> a
-
-instance Pretty a => Pretty (DLinExportVal a) where
-  pretty = \case
-    DLEV_Fun _ args b -> parens (hsep $ punctuate comma $ map pretty args) <> " => " <> braces (pretty b)
-    DLEV_Arg _ a -> pretty a
-
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
   DLAE_Arg a -> [a]
@@ -374,7 +365,6 @@ data DLExpr
   | DLE_MapSet SrcLoc DLMVar DLArg DLArg
   | DLE_MapDel SrcLoc DLMVar DLArg
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
-  | DLE_ViewIs SrcLoc SLPart SLVar DLArg
   deriving (Eq, Ord, Generic)
 
 instance Pretty DLExpr where
@@ -408,7 +398,6 @@ instance Pretty DLExpr where
       DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
         "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
         parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
-      DLE_ViewIs _ v k a -> "view(" <> pretty v <> ")." <> pretty k <> ".is(" <> pretty a <> ")"
 
 instance IsPure DLExpr where
   isPure = \case
@@ -440,7 +429,6 @@ instance IsPure DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
     DLE_Remote {} -> False
-    DLE_ViewIs {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -466,7 +454,6 @@ instance IsLocal DLExpr where
     DLE_MapSet {} -> False
     DLE_MapDel {} -> False
     DLE_Remote {} -> False
-    DLE_ViewIs {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -534,6 +521,19 @@ data DLStmt
   | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
   deriving (Eq)
 
+instance SrcLocOf DLStmt where
+  srclocOf = \case
+    DL_Nop a -> a
+    DL_Let a _ _ -> a
+    DL_ArrayMap a _ _ _ _ -> a
+    DL_ArrayReduce a _ _ _ _ _ _ -> a
+    DL_Var a _ -> a
+    DL_Set a _ _ -> a
+    DL_LocalIf a _ _ _ -> a
+    DL_LocalSwitch a _ _ -> a
+    DL_Only a _ _ -> a
+    DL_MapReduce a _ _ _ _ _ _ _ -> a
+
 instance Pretty DLStmt where
   pretty = \case
     DL_Nop _ -> mempty
@@ -567,7 +567,7 @@ instance Pretty DLTail where
 dtReplace :: (DLStmt -> b -> b) -> b -> DLTail -> b
 dtReplace mkk nk = \case
   DT_Return _ -> nk
-  DT_Com m k -> mkk m $ dtReplace mkk nk k
+  DT_Com m k -> (mkCom mkk) m $ dtReplace mkk nk k
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
@@ -576,13 +576,24 @@ data DLBlock
 instance Pretty DLBlock where
   pretty (DLBlock _ _ ts ta) = prettyBlockP ts ta
 
-data DLExportBlock
-  = DLExportBlock DLTail (DLinExportVal DLBlock)
+data DLinExportBlock a
+  = DLinExportBlock SrcLoc (Maybe [DLVar]) a
   deriving (Eq)
 
-instance Pretty DLExportBlock where
+instance SrcLocOf (DLinExportBlock a) where
+  srclocOf = \case
+    DLinExportBlock a _ _ -> a
+
+instance Pretty a => Pretty (DLinExportBlock a) where
   pretty = \case
-    DLExportBlock s r -> braces $ pretty s <> hardline <> "  return" <> pretty r
+    DLinExportBlock _ args b ->
+      "export" <+> parens (pretty args) <+> "=>" <+> braces (pretty b)
+
+dlebEnsureFun :: DLinExportBlock a -> DLinExportBlock a
+dlebEnsureFun (DLinExportBlock at mvs a) =
+  DLinExportBlock at (Just $ fromMaybe [] mvs) a
+
+type DLExportBlock = DLinExportBlock DLBlock
 
 type DLExports = M.Map SLVar DLExportBlock
 
@@ -664,5 +675,5 @@ allFluidVars bals =
 class HasCounter a where
   getCounter :: a -> Counter
 
-type DLViews = M.Map SLPart (M.Map SLVar DLType)
+type DLViews = M.Map SLPart (M.Map SLVar IType)
 

@@ -126,7 +126,6 @@ instance Countable DLExpr where
     DLE_MapSet _ _ fa na -> counts [fa, na]
     DLE_MapDel _ _ fa -> counts fa
     DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
-    DLE_ViewIs _ _ _ a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
@@ -142,9 +141,50 @@ instance Countable DLSend where
 
 instance Countable FromInfo where
   counts = \case
-    FI_Continue svs -> counts svs
+    FI_Continue vis svs -> counts vis <> counts svs
     FI_Halt toks -> counts toks
 
 instance Countable ViewSave where
   counts = \case
     ViewSave _ svs -> counts svs
+
+instance {-# OVERLAPS #-} Countable a => Countable (DLinExportBlock a) where
+  counts = \case
+    DLinExportBlock _ vs b ->
+      count_rms (countsl vs) $ counts b
+
+instance Countable DLBlock where
+  counts = \case
+    DLBlock _ _ t a -> countsk (counts a) t
+
+class CountableK a where
+  countsk :: Counts -> a -> Counts
+
+instance CountableK DLTail where
+  countsk kcs = \case
+    DT_Return {} -> kcs
+    DT_Com m t -> countsk (countsk kcs t) m
+
+instance Countable DLTail where
+  counts = countsk mempty
+
+instance CountableK DLLetVar where
+  countsk kcs = \case
+    DLV_Eff -> kcs
+    DLV_Let _ v -> count_rms [v] kcs
+
+instance CountableK DLStmt where
+  countsk kcs = \case
+    DL_Nop {} -> kcs
+    DL_Let _ lv e -> countsk (counts e <> kcs) lv
+    DL_ArrayMap _ ans x a f ->
+      count_rms [ans, a] (counts f <> kcs) <> counts x
+    DL_ArrayReduce _ ans x z b a f ->
+      count_rms [ans, b, a] (counts f <> kcs) <> counts [x, z]
+    DL_Var _ v -> count_rms [v] kcs
+    DL_Set _ v a -> counts v <> counts a <> kcs
+    DL_LocalIf _ c t f -> counts c <> counts [t, f] <> kcs
+    DL_LocalSwitch _ v csm -> counts v <> counts csm <> kcs
+    DL_Only _ _ t -> counts t <> kcs
+    DL_MapReduce _ _ ans _ z b a f ->
+      count_rms [ans, b, a] (counts f <> kcs) <> counts z

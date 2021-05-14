@@ -71,6 +71,7 @@ data DLSStmt
   | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLSBlock
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
+  | DLS_ViewIs SrcLoc SLPart SLVar (Maybe DLSExportBlock)
   deriving (Eq, Generic)
 
 instance Pretty DLSStmt where
@@ -114,6 +115,7 @@ instance Pretty DLSStmt where
       DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
       DLS_Throw _ dv local -> if local then "local" else "nonlocal" <+> "throw" <+> pretty dv
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
+      DLS_ViewIs _ v k a -> prettyViewIs v k a
     where
       ns x = render_nest $ render_dls x
 
@@ -140,6 +142,7 @@ instance SrcLocOf DLSStmt where
     DLS_MapReduce a _ _ _ _ _ _ _ -> a
     DLS_Throw a _ _ -> a
     DLS_Try a _ _ _ -> a
+    DLS_ViewIs a _ _ _ -> a
 
 instance IsPure DLSStmt where
   isPure = \case
@@ -161,6 +164,7 @@ instance IsPure DLSStmt where
     DLS_MapReduce {} -> True
     DLS_Throw {} -> False
     DLS_Try _ b _ h -> isPure b && isPure h
+    DLS_ViewIs {} -> False
 
 instance IsLocal DLSStmt where
   isLocal = \case
@@ -182,6 +186,7 @@ instance IsLocal DLSStmt where
     DLS_MapReduce {} -> True
     DLS_Throw _ _ local -> local
     DLS_Try _ b _ h -> isLocal b && isLocal h
+    DLS_ViewIs {} -> False
 
 type DLStmts = Seq.Seq DLSStmt
 
@@ -217,12 +222,7 @@ instance Pretty DLOpts where
 instance HasCounter DLOpts where
   getCounter (DLOpts {..}) = dlo_counter
 
-data DLSExportBlock
-  = DLSExportBlock DLStmts (DLinExportVal DLSBlock)
-
-instance Pretty DLSExportBlock where
-  pretty = \case
-    DLSExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+type DLSExportBlock = DLinExportBlock DLSBlock
 
 type DLSExports = M.Map SLVar DLSExportBlock
 

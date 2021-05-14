@@ -41,7 +41,7 @@ djs_asnLike = mapM $ \(v, a) -> (,) v <$> djs a
 djs_fi :: AppT FromInfo
 djs_fi = \case
   FI_Halt toks -> FI_Halt <$> mapM djs toks
-  FI_Continue svs -> FI_Continue <$> djs_asnLike svs
+  FI_Continue vs svs -> FI_Continue <$> djs_vs vs <*> djs_asnLike svs
 
 djs_vs :: AppT ViewSave
 djs_vs = \case
@@ -58,7 +58,7 @@ instance DeJump CTail where
     CT_Com m k -> CT_Com <$> djs m <*> dj k
     CT_If at c t f -> CT_If at <$> djs c <*> dj t <*> dj f
     CT_Switch at ov csm -> CT_Switch at <$> djs ov <*> dj csm
-    CT_From at w v fi -> CT_From at w <$> djs_vs v <*> djs_fi fi
+    CT_From at w fi -> CT_From at w <$> djs_fi fi
     CT_Jump at dst _ (DLAssignment asnm) -> do
       t <- getLoop dst
       rho <- e_rho <$> ask

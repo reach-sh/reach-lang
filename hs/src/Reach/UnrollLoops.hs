@@ -148,14 +148,9 @@ instance Unroll DLBlock where
   ul (DLBlock at fs b a) =
     DLBlock at fs <$> ul b <*> pure a
 
-instance Unroll (DLinExportVal DLBlock) where
+instance Unroll a => Unroll (DLinExportBlock a) where
   ul = \case
-    DLEV_Fun at a b -> DLEV_Fun at a <$> ul b
-    DLEV_Arg at a -> return $ DLEV_Arg at a
-
-instance Unroll DLExportBlock where
-  ul = \case
-    DLExportBlock s r -> DLExportBlock <$> ul s <*> ul r
+    DLinExportBlock at vs b -> DLinExportBlock at vs <$> ul b
 
 instance Unroll LLConsensus where
   ul = \case
@@ -166,6 +161,10 @@ instance Unroll LLConsensus where
     LLC_While at asn inv cond body k ->
       LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
+    LLC_ViewIs at vn vk a k ->
+      -- Note: We're making a choice here to *not* unroll the view function.
+      -- It's plausible that would be a good idea in the future.
+      LLC_ViewIs at vn vk a <$> ul k
 
 instance Unroll k => Unroll (a, k) where
   ul (a, k) = (,) a <$> ul k

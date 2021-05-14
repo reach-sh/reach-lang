@@ -132,3 +132,7 @@ prettyBlock b da = b <> hardline <> "return" <+> pretty da <> semi
 
 prettyBlockP :: Pretty a => Pretty b => a -> b -> Doc
 prettyBlockP b da = prettyBlock (pretty b) da
+
+prettyViewIs :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc
+prettyViewIs v k a = "view(" <> pretty v <> ")." <> pretty k <> ".is(" <> pretty a <> ")"
+

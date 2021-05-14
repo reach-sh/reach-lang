@@ -5,14 +5,11 @@
 
 export const main =
   Reach.App(
-    {
-      deployMode: 'firstMsg',
-      connectors: [ETH],
-    },
-    [Participant('Alice', { request: UInt,
-                 info: Bytes(128) }),
-     Participant('Bob', { want: Fun([UInt], Null),
-                 got: Fun([Bytes(128)], Null) })],
+    {},
+    [ Participant('Alice', { request: UInt,
+                                info: Bytes(128) }),
+      Participant('Bob', { want: Fun([UInt], Null),
+                            got: Fun([Bytes(128)], Null) })],
     (A, B) => {
       A.only(() => {
         const request = declassify(interact.request); });

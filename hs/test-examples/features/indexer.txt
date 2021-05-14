@@ -5,5 +5,3 @@ Verifying for generic connector
   Verifying when ONLY "Manager" is honest
   Verifying when ONLY "User" is honest
 Checked 23 theorems; No failures!
-XXX algo mapref
-XXX algo mapset

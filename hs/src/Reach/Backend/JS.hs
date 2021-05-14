@@ -42,7 +42,12 @@ jsMapVarCtc :: DLMVar -> Doc
 jsMapVarCtc mpv = jsMapVar mpv <> "_ctc"
 
 jsString :: String -> Doc
-jsString s = squotes $ pretty s
+jsString s = squotes $ pretty $ escape s
+  where
+    escape = concatMap escapec
+    escapec = \case
+      '\'' -> "\\'"
+      c -> [c]
 
 jsArray :: [Doc] -> Doc
 jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
@@ -216,8 +221,8 @@ jsArg = \case
       DLC_UInt_max ->
         return "stdlib.UInt_max"
   DLA_Literal c -> jsCon c
-  DLA_Interact _ m t ->
-    jsProtect "null" t $ "interact." <> pretty m
+  DLA_Interact who m t ->
+    jsProtect (jsString $ "for " <> bunpack who <> "'s interact field " <> m) t $ "interact." <> pretty m
 
 jsLargeArg :: AppT DLLargeArg
 jsLargeArg = \case
@@ -385,7 +390,6 @@ jsExpr = \case
     fa' <- jsArg fa
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
   DLE_Remote {} -> impossible "remote"
-  DLE_ViewIs {} -> impossible "viewis"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -536,16 +540,13 @@ jsETail = \case
       True -> mempty
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus at which vis msvs k ->
+  ET_FromConsensus at which msvs k ->
     (ctxt_simulate <$> ask) >>= \case
       False -> jsETail k
       True -> do
         let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
         let mkStDigest svs_ = jsDigest $ vconcat which svs_
-        vis' <- do
-          let ViewSave vwhich vvs = vis
-          jsArray <$> jsContractAndVals (vconcat vwhich vvs)
-        let common extra nextSt' nextSt_noTime' isHalt' =
+        let common extra vis' nextSt' nextSt_noTime' isHalt' =
               vsep $
                 extra
                   <> [ "sim_r.nextSt =" <+> nextSt' <> semi
@@ -562,11 +563,15 @@ jsETail = \case
             let close_escrow = close Nothing
             let close_asset = close . Just
             closes <- (<>) <$> forM toks close_asset <*> ((\x -> [x]) <$> close_escrow)
-            common closes <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
-          FI_Continue svs -> do
+            vis' <- jsArray <$> jsContractAndVals []
+            common closes vis' <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
+          FI_Continue vis svs -> do
+            vis' <- do
+              let ViewSave vwhich vvs = vis
+              jsArray <$> jsContractAndVals (vconcat vwhich vvs)
             timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
             let svs' = dvdeletep timev svs
-            common [] <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
+            common [] vis' <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
   ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out timev mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
@@ -771,34 +776,26 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsExportValue :: DLinExportVal DLBlock -> App Doc
-jsExportValue = \case
-  DLEV_Arg _ a -> jsArg a
-  DLEV_Fun _ args b -> do
-    (tl, ret) <- jsBlock b
-    (argDefs, tmps) <-
-      unzip
-        <$> mapM
-          (\arg -> do
-             arg' <- jsVar arg
-             let tmp = "_" <> arg'
-             protected <- jsProtect "null" (varType arg) tmp
-             let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
-             return (def, tmp))
-          args
-    let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
-    let argList = parens $ hsep $ punctuate comma tmps
-    return $ argList <+> "=>" <+> jsBraces body
-
 jsExportBlock :: DLExportBlock -> App Doc
-jsExportBlock = \case
-  -- Process flattened large arg
-  DLExportBlock b@DT_Com {} (DLEV_Arg at a) -> do
-    (tl, ret) <- jsBlock (DLBlock at [] b a)
-    let body = tl <> hardline <> jsReturn ret
-    let noArgs = parens ""
-    return $ parens $ parens (noArgs <+> "=>" <+> jsBraces body) <+> noArgs
-  DLExportBlock _ ev -> jsExportValue ev
+jsExportBlock (DLinExportBlock _ margs b) = do
+  (tl, ret) <- jsBlock b
+  let args = fromMaybe [] margs
+  (argDefs, tmps) <-
+    unzip
+      <$> mapM
+        (\arg -> do
+           arg' <- jsVar arg
+           let tmp = "_" <> arg'
+           protected <- jsProtect "null" (varType arg) tmp
+           let def = "  const" <+> arg' <+> "=" <+> protected <> semi <> hardline
+           return (def, tmp))
+        args
+  let body = hcat argDefs <> hardline <> tl <> hardline <> jsReturn ret
+  let argList = parens $ hsep $ punctuate comma tmps
+  let fun = parens $ argList <+> "=>" <+> jsBraces body
+  let call x = jsApply x []
+  let wrap = maybe call (const id) margs
+  return $ wrap fun
 
 jsFunctionWStdlib :: Doc -> App Doc -> App Doc
 jsFunctionWStdlib name mbody = do
@@ -827,21 +824,33 @@ jsViews mcv = do
     let enView _ (ViewInfo vs _) =
           jsArray <$> (mapM jsContract $ map varType vs)
     views <- toObj enView vis
+    let mlf m k =
+          case M.lookup k m of
+            Just x -> x
+            Nothing -> impossible $ "jsViews " <> show k
+    let illegal = jsApply "stdlib.assert" [ "false", jsString "illegal view" ]
     let enDecode v k vi (ViewInfo vs vim) = do
-          let vka = (vim M.! v) M.! k
           vs' <- mapM jsVar vs
-          vka' <- jsArg vka
           vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
           let c = jsPrimApply PEQ [ "i", vi' ]
           let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
-          return $ jsWhen c $ vsep [ let', jsReturn vka' ]
-    let enInfo' v k ctc = do
-          ctc' <- jsContract ctc
+          ret' <-
+            case M.lookup k (mlf vim v) of
+              Just eb -> do
+                eb' <- jsExportBlock $ dlebEnsureFun eb
+                let eb'call = jsApply (parens eb') [ "...args" ]
+                return $ jsReturn $ parens eb'call
+              Nothing -> return $ illegal
+          return $ jsWhen c $ vsep [ let', ret' ]
+    let enInfo' :: SLPart -> SLVar -> IType -> App Doc
+        enInfo' v k vt = do
+          let (_, rng) = itype2arr vt
+          rng' <- jsContract rng
           body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
-          let body' = vsep [ body, jsApply "stdlib.assert" [ "false", jsString "illegal view" ] ]
-          let decode' = jsApply "" [ "i", "svs" ] <+> "=>" <+> jsBraces body'
+          let body' = vsep [ body, illegal ]
+          let decode' = jsApply "" [ "i", "svs", "args" ] <+> "=>" <+> jsBraces body'
           return $ jsObject $ M.fromList $
-            [ ("ty"::String, ctc')
+            [ ("ty"::String, rng')
             , ("decode", decode') ]
     let enInfo v = toObj (enInfo' v)
     infos <- toObj enInfo cvs

@@ -48,8 +48,8 @@ updateInterferenceGraph g k vs =
 
 getWrittenVars :: CTail -> [DLVar]
 getWrittenVars = \case
-  CT_From _ _ _ fi -> case fi of
-    FI_Continue vs -> map fst vs
+  CT_From _ _ fi -> case fi of
+    FI_Continue _ vs -> map fst vs
     _ -> []
   CT_Com _ t -> getWrittenVars t
   CT_If _ _ t f -> concatMap getWrittenVars [t, f]

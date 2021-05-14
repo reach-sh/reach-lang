@@ -153,6 +153,9 @@ dk1 at_top ks s =
         (\env ->
            env {eExnHandler = Just (Handler hv (hs <> ks))})
         $ dk_ at (e <> ks)
+    DLS_ViewIs at vn vk mva -> do
+      mva' <- maybe (return $ Nothing) (\eb -> Just <$> dk_eb eb) mva
+      DK_ViewIs at vn vk mva' <$> dk_ at ks
   where
     com :: DKApp DKTail
     com = com' =<< dkc s
@@ -166,31 +169,23 @@ dk_ at = \case
   Seq.Empty -> return $ DK_Stop at
   s Seq.:<| ks -> dk1 at ks s
 
-runDk :: ReaderT DKEnv m a -> m a
-runDk = do
-  let eRets = mempty
-  let eExnHandler = Nothing
-  flip runReaderT (DKEnv {..})
+dk_eb :: DLSExportBlock -> DKApp DKExportBlock
+dk_eb (DLinExportBlock at vs b) = resetDK $
+  DLinExportBlock at vs <$> dk_block at b
 
-dk_ev :: DLinExportVal DLSBlock-> DKApp (DLinExportVal DKBlock)
-dk_ev = \case
-  DLEV_Fun at args body ->
-    DLEV_Fun at args <$> dk_block at body
-  DLEV_Arg at a -> return $ DLEV_Arg at a
-
-dk_eb :: DLSExportBlock -> IO DKExportBlock
-dk_eb = \case
-  DLSExportBlock s r ->
-    runDk $ do
-      let at = srclocOf r
-      s' <- dk_block at $ DLSBlock at [] s $ DLA_Literal DLL_Null
-      r' <- dk_ev r
-      return $ DKExportBlock s' r'
+resetDK :: DKApp a -> DKApp a
+resetDK = local (const $ DKEnv {..})
+  where
+    eRets = mempty
+    eExnHandler = Nothing
 
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex dvs ss) = do
-  dex' <- mapM dk_eb dex
-  runDk $ DKProg at opts sps dli dex' dvs <$> dk_ at ss
+  let eRets = mempty
+  let eExnHandler = Nothing
+  flip runReaderT (DKEnv {..}) $ do
+    dex' <- mapM dk_eb dex
+    DKProg at opts sps dli dex' dvs <$> dk_ at ss
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -271,18 +266,13 @@ instance LiftCon z => LiftCon (DLRecv z) where
 instance LiftCon a => LiftCon (SwitchCases a) where
   lc = traverse lc
 
-instance LiftCon a => LiftCon (DLinExportVal a) where
-  lc = \case
-    DLEV_Fun at a b -> DLEV_Fun at a <$> lc b
-    DLEV_Arg at a -> return $ DLEV_Arg at a
-
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
     DKBlock at sf <$> lc b <*> pure a
 
-instance LiftCon DKExportBlock where
-  lc = \case
-    DKExportBlock s r -> DKExportBlock <$> lc s <*> lc r
+instance LiftCon a => LiftCon (DLinExportBlock a) where
+  lc (DLinExportBlock at vs b) =
+    DLinExportBlock at vs <$> lc b
 
 instance LiftCon DKExports where
   lc = mapM lc
@@ -300,6 +290,8 @@ instance LiftCon DKTail where
     DK_While at asn inv cond body k ->
       DK_While at asn inv cond <$> lc body <*> lc k
     DK_Continue at asn -> return $ DK_Continue at asn
+    DK_ViewIs at vn vk a k ->
+      DK_ViewIs at vn vk a <$> lc k
 
 liftcon :: DKProg -> IO DKProg
 liftcon (DKProg at opts sps dli dex dvs k) = do
@@ -395,6 +387,10 @@ df_com mkk back = \case
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
     mkk m' <$> back k
+  DK_ViewIs _ _ _ _ k ->
+    -- This can only occur inside of the while cond & invariant and it is safe
+    -- to throw out
+    back k
   t -> impossible $ show $ "df_com " <> pretty t
 
 df_bl :: DKBlock -> DFApp DLBlock
@@ -404,7 +400,7 @@ df_bl (DKBlock at fs t a) =
 df_t :: DKTail -> DFApp DLTail
 df_t = \case
   DK_Stop at -> return $ DT_Return at
-  x -> df_com DT_Com df_t x
+  x -> df_com (mkCom DT_Com) df_t x
 
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
@@ -440,7 +436,11 @@ df_con = \case
     tct <- fluidRef FV_thisConsensusTime
     fluidSet FV_lastConsensusTime tct $
       LLC_FromConsensus at1 at2 <$> df_step t
-  x -> df_com LLC_Com df_con x
+  DK_ViewIs at vn vk mva k -> do
+    mva' <- maybe (return $ Nothing) (\eb -> Just <$> df_eb eb) mva
+    k' <- df_con k
+    return $ LLC_ViewIs at vn vk mva' k'
+  x -> df_com (mkCom LLC_Com) df_con x
 
 df_step :: DKTail -> DFApp LLStep
 df_step = \case
@@ -460,17 +460,11 @@ df_step = \case
           tk' <- df_step tk
           return $ Just (ta, tk')
     return $ LLS_ToConsensus at send recv' mtime'
-  x -> df_com LLS_Com df_step x
-
-df_ev :: DLinExportVal DKBlock -> DFApp (DLinExportVal DLBlock)
-df_ev = \case
-  DLEV_Fun at args body -> DLEV_Fun at args <$> df_bl body
-  DLEV_Arg at a -> return $ DLEV_Arg at a
+  x -> df_com (mkCom LLS_Com) df_step x
 
 df_eb :: DKExportBlock -> DFApp DLExportBlock
-df_eb = \case
-  DKExportBlock (DKBlock _ _ l _) r ->
-    DLExportBlock <$> df_t l <*> df_ev r
+df_eb (DLinExportBlock at vs b) =
+    DLinExportBlock at vs <$> df_bl b
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do

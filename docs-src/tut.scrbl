@@ -134,9 +134,9 @@ This will only work on the Reach-provided developer testing network.}
 
 @item{Line 12 has Bob attach to it.}
 
-@item{Lines 15 through 18 initialize Alice's backend.}
+@item{Lines 15 through 18 initialize a backend for Alice.}
 
-@item{Lines 19 through 22 initialize Bob's backend.}
+@item{Lines 19 through 22 initialize a backend for Bob.}
 
 @item{Line 14 waits for the backends to complete.}
 
@@ -231,7 +231,7 @@ This will be more obvious at @seclink["tut-8"]{the end of the tutorial} when we'
 
 The game proceeds in three steps.
 
-First, Alice's backend interacts with her frontend, gets her hand, and publishes it.
+First, the backend for Alice interacts with its frontend, gets Alice's hand, and publishes it.
 
 @reachex[#:show-lines? #t "tut-3/index.rsh"
          #:link #t
@@ -421,7 +421,7 @@ First, we need to update the @tech{participant interact interface}.
 @item{Lines 9 through 11 do the same for Bob, where he has a method called @reachin{acceptWager} that can look at the wager value.}
 
 @item{Line 16 associates these interfaces with the corresponding participants.
-The format of this line is a @tech{tuple} of @tech{participant constructor}s, where the first argument is a string that names the @tech{backend} @tech{participant}
+The format of this line is a @tech{tuple} of @tech{application arguments}, where the first argument is a string that names the @tech{backend} @tech{participant}
 and the second argument is the @tech{participant interact interface}. It's conventional to name them similarly.}
 
 ]

@@ -5,10 +5,3 @@ Verifying for generic connector
   Verifying when ONLY "Player" is honest
   Verifying when ONLY "Sponsor" is honest
 Checked 65 theorems; No failures!
-XXX algo mapref
-XXX algo mapref
-XXX algo mapref
-XXX algo mapset
-XXX algo mapdel
-XXX algo mapref
-XXX algo mapset

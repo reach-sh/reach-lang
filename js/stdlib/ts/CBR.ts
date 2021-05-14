@@ -1,5 +1,11 @@
-import ethers, {BigNumber} from 'ethers';
+import ethers from 'ethers';
 // "CBR", canonical backend representation
+
+type BigNumber = ethers.BigNumber;
+const BigNumber = ethers.BigNumber;
+export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
+export const bigNumberToNumber = (x: any) =>
+  bigNumberify(x).toNumber();
 
 // A Reach value of the given type
 export type CBR_Null = null;
@@ -81,6 +87,7 @@ export const BV_UInt = (val: BigNumber): CBR_UInt => {
 export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
   canonicalize: (val: unknown): CBR_Bytes => {
+    const lenn = bigNumberToNumber(len);
     if (typeof(val) !== 'string') {
       throw Error(`Bytes expected string, but got ${JSON.stringify(val)}`);
     }
@@ -91,9 +98,9 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
       return val.padEnd(alen, fill);
     };
     if ( val.slice(0,2) === '0x' ) {
-      return checkLen('hex ', len*2+2, '0');
+      return checkLen('hex ', lenn*2+2, '0');
     } else {
-      return checkLen('', len, '\0');
+      return checkLen('', lenn, '\0');
     }
   },
 });

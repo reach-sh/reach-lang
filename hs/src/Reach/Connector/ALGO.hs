@@ -123,6 +123,7 @@ type TEALs = DL.DList TEAL
 peep_optimize :: [TEAL] -> [TEAL]
 peep_optimize = \case
   [] -> []
+  ["byte", "base64()"] : ["concat"] : l -> peep_optimize l
   ["b", x] : b@[y] : l | y == (x <> ":") -> b : peep_optimize l
   ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
   ["btoi"] : ["itob"] : l -> peep_optimize l
@@ -171,6 +172,7 @@ render ts = tt
 
 data Shared = Shared
   { sFailedR :: IORef Bool
+  , sViewSize :: Integer
   }
 
 type Lets = M.Map DLVar (App ())
@@ -207,7 +209,6 @@ data Env = Env
   , eLetSmalls :: M.Map DLVar Bool
   , emTimev :: Maybe DLVar
   , eFinalize :: App ()
-  , eViewLen :: IORef Integer
   }
 
 type App = ReaderT Env IO
@@ -243,6 +244,9 @@ op = flip code []
 nop :: App ()
 nop = return ()
 
+padding :: Integer -> App ()
+padding k = cl $ DLL_Bytes $ B.replicate (fromIntegral k) '\0'
+
 app_global_get :: B.ByteString -> App ()
 app_global_get k = do
   cl $ DLL_Bytes $ k
@@ -274,7 +278,7 @@ bad lab = do
 xxx :: LT.Text -> App ()
 xxx lab = do
   let lab' = "XXX " <> lab
-  when True $
+  when False $
     liftIO $ LTIO.putStrLn lab'
   bad lab'
 
@@ -770,7 +774,6 @@ ce = \case
   DLE_MapSet {} -> xxx "algo mapset"
   DLE_MapDel {} -> xxx "algo mapdel"
   DLE_Remote {} -> xxx "algo remote"
-  DLE_ViewIs {} -> impossible "viewis"
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -958,30 +961,37 @@ ct = \case
     doSwitch (withFresh . ct) at dv csm
   CT_Jump {} ->
     impossible $ "continue after dejump"
-  CT_From at which vis msvs -> do
-    check_view
+  CT_From at which msvs -> do
     check_nextSt
     halt_should_be isHalt
     finalize
     where
-      check_view = do
+      check_view vis = do
         let ViewSave vwhich vvs = vis
         let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
         let la = DLLA_Tuple $ vconcat vwhich vvs
         let lat = largeArgTypeOf la
         let sz = typeSizeOf lat
-        when (sz >= algoMaxAppBytesValueLen) $
-          bad $ "View is too large: " <> texty sz
-        rememberViewSize sz
-        comment $ "check view bs"
-        cla la
-        ctobs lat
+        viewSz <- readViewSize
+        case viewSz > 0 of
+          True -> do
+            comment $ "check view bs"
+            cla la
+            ctobs lat
+            padding $ viewSz - sz
+            op "concat"
+          False ->
+            padding viewSz
+        readArg argView
+        eq_or_fail
+      zero_view = do
+        padding =<< readViewSize
         readArg argView
         eq_or_fail
       (isHalt, check_nextSt) =
         case msvs of
           --- XXX fix this so it makes sure it is zero bytes
-          FI_Halt toks -> (True, forM_ toks close_asset >> close_escrow)
+          FI_Halt toks -> (True, zero_view >> forM_ toks close_asset >> close_escrow)
             where
               close_asset tok =
                 close "axfer" "AssetAmount" "Sender" "AssetCloseTo" $ \txni -> do
@@ -1008,9 +1018,10 @@ ct = \case
                 code "byte" [tDeployer]
                 cfrombs T_Address
                 eq_or_fail
-          FI_Continue svs -> (False, ck)
+          FI_Continue vis svs -> (False, ck)
             where
               ck = do
+                check_view vis
                 Env {..} <- ask
                 -- XXX incorporate this logic in svs via EPP
                 let timev = fromMaybe (impossible "no timev") emTimev
@@ -1084,8 +1095,8 @@ keyHalts = "h"
 keyState :: B.ByteString
 keyState = "s"
 
-keyView :: B.ByteString
-keyView = "v"
+keyView :: Integer -> B.ByteString
+keyView i = bpack $ "v" <> show i
 
 keyLast :: B.ByteString
 keyLast = "l"
@@ -1164,8 +1175,8 @@ std_footer = do
   cl $ DLL_Int sb 1
   op "return"
 
-runApp :: Shared -> Int -> Lets -> Maybe DLVar -> IORef Integer -> App () -> IO TEALs
-runApp eShared eWhich eLets emTimev eViewLen m = do
+runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
+runApp eShared eWhich eLets emTimev m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
@@ -1179,10 +1190,8 @@ runApp eShared eWhich eLets emTimev eViewLen m = do
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
-rememberViewSize :: Integer -> App ()
-rememberViewSize n = do
-  r <- eViewLen <$> ask
-  liftIO $ modifyIORef r $ max n
+readViewSize :: App Integer
+readViewSize = sViewSize <$> (eShared <$> ask)
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
@@ -1196,7 +1205,6 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
         Nothing -> eLets2
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
-  eViewLen <- newIORef 0
   let letArgs' :: App a -> [(DLVar, ScratchSlot)] -> App a
       letArgs' km = \case
         [] -> km
@@ -1206,7 +1214,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
   let letArgs :: App a -> App a
       letArgs km = letArgs' km (zip args [argFirstUser ..])
   cbs <-
-    runApp eShared eWhich eLets (Just timev) eViewLen $ letArgs $ do
+    runApp eShared eWhich eLets (Just timev) $ letArgs $ do
       comment ("Handler " <> texty eWhich)
       comment "Check txnAppl"
       code "gtxn" [texty txnAppl, "TypeEnum"]
@@ -1300,12 +1308,22 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
             check_time "LastValid" ito)
 
       std_footer
-  viewBsLen <- readIORef eViewLen
+  let viewBsLen = sViewSize eShared
   let argSize = typeSizeOf $ T_Tuple $ (++) (stdArgTypes viewBsLen) $ map varType $ svs ++ msg
   let cinfo = Aeson.object $
         [ ("size", Aeson.Number $ fromIntegral argSize)
         , ("count", Aeson.Number $ fromIntegral argCount) ]
   return $ Just (cinfo, cbs)
+
+computeViewSize :: Maybe (CPViews, ViewInfos) -> Integer
+computeViewSize = h1
+  where
+    h1 = \case
+      Nothing -> 0
+      Just (_, vi) -> h2 vi
+    h2 = maximum . map h3 . M.elems
+    h3 (ViewInfo vs _) = typeSizeOf $ T_Tuple $ T_UInt : h4 vs
+    h4 = map varType
 
 type Disp = String -> T.Text -> IO ()
 
@@ -1315,9 +1333,10 @@ compile_algo disp pl = do
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
-  let CPProg _at _XXXvi (CHandlers hm) = cpp
+  let CPProg at vi (CHandlers hm) = cpp
   resr <- newIORef mempty
   sFailedR <- newIORef False
+  let sViewSize = computeViewSize vi
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)
@@ -1344,8 +1363,13 @@ compile_algo disp pl = do
   let stepargs = Aeson.Null : stepargs_
   modifyIORef resr $ M.insert "steps" $ aarray steps
   modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
-  eViewLen <- newIORef 0
-  let simple m = runApp shared 0 mempty Nothing eViewLen $ m >> std_footer
+  let divup :: Integer -> Integer -> Integer
+      divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
+  modifyIORef resr $ M.insert "viewSize" $ Aeson.Number $ fromIntegral $ sViewSize
+  let viewKeys = sViewSize `divup` algoMaxAppBytesValueLen
+  let viewKeysl = take (fromIntegral viewKeys) [0..]
+  modifyIORef resr $ M.insert "viewKeys" $ Aeson.Number $ fromIntegral $ viewKeys
+  let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
     code "txn" ["TypeEnum"]
@@ -1376,8 +1400,9 @@ compile_algo disp pl = do
       cstate (HM_Set 0) []
     app_global_put keyLast $ do
       code "global" ["Round"]
-    app_global_put keyView $ do
-      cl $ DLL_Bytes $ ""
+    forM_ viewKeysl $ \i ->
+      app_global_put (keyView i) $ do
+        cl $ DLL_Bytes $ ""
     app_global_put keyHalts $ do
       cl $ DLL_Bool $ False
     code "b" ["done"]
@@ -1423,8 +1448,11 @@ compile_algo disp pl = do
       cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
-    app_global_put keyView $ do
-      readArg argView
+    forM_ viewKeysl $ \i ->
+      app_global_put (keyView i) $ do
+        readArg argView
+        let k = algoMaxAppBytesValueLen
+        csubstring at (k * i) (min sViewSize $ k * (i + 1))
     app_global_put keyHalts $ do
       readArg argHalts
       cfrombs T_Bool

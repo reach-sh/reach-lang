@@ -161,7 +161,7 @@ export const main =
 
 @deftech{Reach.App} is a function which accepts three arguments:
 @reachin{options},
-@reachin{participantDefinitions},
+@reachin{applicationArgs},
 and @reachin{program}.
 
 The @reachin{options} must be an object.
@@ -219,20 +219,23 @@ It supports the following options:
 
 )]
 
-The @reachin{participantDefinitions} argument is a tuple of @tech{participant constructor}s.
+The @reachin{applicationArgs} argument is a tuple of @tech{application arguments}.
 
 The @reachin{program} argument must be a syntactic @tech{arrow expression}.
-The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
+The arguments to this arrow must match the number and order of @reachin{applicationArgs}.
 The function body is the program to be @tech{compile}d.
 It specifies a @tech{step}, which means its content is specified by @Secref["ref-programs-step"].
 When it returns, it must be in a @tech{step}, as well; which means that its content cannot end within a @tech{consensus step}.
 
-If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then it may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
+If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then that identifier may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
 
-@subsubsection{Participant Constructors}
+@subsubsection{Application Arguments}
 
-A @deftech{participant constructor} is used for declaring a logical actor in
-a Reach program.
+An @deftech{application argument} is used for declaring the components of a Reach @|DApp|.
+These components are either @tech{participants} or @tech{views}.
+
+@(hrule)
+
 A @tech{participant} and @tech{participant class} may be declared with
 
 @(mint-define! '("Participant"))
@@ -247,9 +250,21 @@ and
 
 respectively.
 
-@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
+@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code.
+Each @reachin{participantName} must be unique.
 
 @reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
+
+@(hrule)
+
+@(mint-define! '("View"))
+@reach{
+  View('NFT', { owner: Address })
+}
+
+A @tech{view} is defined with @reachin{View(viewName, viewInterface)}, where @reachin{viewName} is a string that labels the @tech{view} and @reachin{viewInterface} is an object where each field indicates the type of a function or value provided by the @tech{contract} associated with the specified @|DApp|.
+These @tech{views} are available in @tech{frontends} via the @jsin{ctc.getViews} function.
+In the @|DApp|, the result of this application argument is referred to as a @tech{view object}.
 
 @section[#:tag "ref-programs-step"]{Steps}
 
@@ -711,6 +726,30 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 
 @secref["ref-programs-only-step"] are allowed in @tech{consensus steps} and are executed by @tech{backends} once they observe the completion of the @tech{consensus step} (i.e., after the associated @tech{commit statement}.)
 
+@subsubsection[#:tag "ref-programs-consensus-view"]{View Objects}
+
+@reach{
+  vNFT.owner.set(creator);
+}
+
+If @reachin{VIEW} is a @deftech{view object}, then its fields are the elements of the associated @tech{view}.
+Each of these fields are bound to an object with an @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps dominated by the current step (unless otherwise overridden.)
+If this function is not provided with an argument, then the corresponding @tech{view} is unset.
+
+For example, consider the following program:
+
+@reachex[#:show-lines? #t "view-steps/index.rsh"
+         #:link #t]
+
+In this program, the Reach backend calls the frontend @reachin{interact} function, @reachin{checkView} with the expected value of the @tech{views} at each point in the program.
+The frontend compares that value with what is returned by
+@js{
+[ await ctc.getViews().Main.last(),
+  await ctc.getViews().Main.i() ]
+}
+
+When a @tech{view} is bound to a function, it may inspect any values in its scope, including @tech{linear state}.
+
 @subsubsection{@tt{Participant.set} and @tt{.set}}
 
 @(mint-define! '("Participant.set"))
@@ -730,8 +769,9 @@ This may only occur within a @tech{consensus step}.
 @(mint-define! '("while") '("var") '("invariant"))
 @reach{
  var [ heap1, heap2 ] = [ 21, 21 ];
+ { const sum = () => heap1 + heap2; }
  invariant(balance() == 2 * wagerAmount);
- while ( heap1 + heap2 > 0 ) {
+ while ( sum() > 0 ) {
    ....
    [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
    continue; } }
@@ -740,10 +780,12 @@ A @deftech{while statement} may occur within a @tech{consensus step} and is writ
 
 @reach{
  var LHS = INIT_EXPR;
+ BLOCK; // optional
  invariant(INVARIANT_EXPR);
  while( COND_EXPR ) BLOCK }
 
 where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and
+@reachin{BLOCK} is an optional @tech{block} that may define bindings that use the @reachin{LHS} values which are bound inside the rest of the @reachin{while} and its @tech{tail}, and
 @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and
 if @reachin{COND_EXPR} is true, then the @tech{block} executes,
 and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}.
@@ -1321,6 +1363,50 @@ There are a large variety of different @deftech{expressions} in Reach programs.
 
 The remainder of this section enumerates each kind of @tech{expression}.
 
+@subsubsection{'use strict'}
+
+@(mint-define! '("'use strict'"))
+@reach{
+  'use strict'; }
+
+@index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
+declarations within the current scope. If a variable is declared, but never used, there will
+be an error emitted at compile time.
+
+@deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
+For example, normally Reach will permit expressions like the following to be evaluated:
+
+@reach{
+  const foo = (o) =>
+    o ? o.b : false;
+
+  void foo({ b: true });
+  void foo(false); }
+
+Reach allows @reachin{o} to be either an object with a @reachin{b} field or @reachin{false} because it
+partially evaluates the program at compile time. So, without @reachin{'use strict'}, Reach will not evaluate
+@reachin{o.b} when @reachin{o = false} and this code will compile successfully.
+
+But, in @tech{strict mode}, Reach will ensure that this program treats @reachin{o} as
+having a single type and detect an error in the program as follows:
+
+@verbatim{
+  reachc: error: Invalid field access. Expected object, got: Bool }
+
+The correct way to write a program like this in @tech{strict mode} is to use @reachin{Maybe}. Like this:
+
+@reach{
+  const MObj = Maybe(Object({ b : Bool }));
+
+  const foo = (mo) =>
+    mo.match({
+      None: (() => false),
+      Some: ((o) => o.b)
+    });
+
+  void foo(MObj.Some({ b : true }));
+  void foo(MObj.None()); }
+
 @subsubsection{Identifier reference}
 
 @reach{
@@ -1403,7 +1489,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
 @reach{
  typeOf(x) // type
  isType(t) // Bool
- is(x, t) // Bool
+ is(x, t) // t
 }
 
 The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
@@ -1412,8 +1498,11 @@ it returns the type of its argument.
 The @reachin{isType} function returns @reachin{true} if its argument is a type.
 Any expression satisfying @reachin{isType} is compiled away and does not exist at runtime.
 
-The @reachin{is} function returns @reachin{true} if its first argument satisfies the type of the second argument.
-This is considered a @tech{negative position} for @reachin{Refine}.
+The @reachin{is} function returns its first argument if it satisfies the type specified by the second argument.
+If it is not, then the program is @tech{invalid}.
+For example, @reachin{is(5, UInt)} returns @reachin{5}, while @reachin{is(5, Bool)} is an @tech{invalid} program.
+The value returned by @reachin{is} may not be identical to the input, because in some cases, such as for functions, it will record the applied to type and enforce it on future invocations.
+These applications are considered @tech{negative positions} for @reachin{Refine}.
 
 @subsubsection{Literal values}
 
@@ -1602,6 +1691,8 @@ and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural numbe
 selects the element at the given index of the array.
 Indices start at zero.
 
+If @reachin{REF_EXPR} is a @tech{tuple}, then @reachin{IDX_EXPR} must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.
+
 If @reachin{REF_EXPR} is a @tech{mapping} and @reachin{IDX_EXPR} evaluates to an @tech{address}, then this @tech{reference} evaluates to a value of type @reachin{Maybe(TYPE)}, where @reachin{TYPE} is the @tech{type} of the @tech{mapping}.
 
 @subsubsection{Array & tuple length: @tt{Tuple.length}, @tt{Array.length}, and @tt{.length}}
@@ -1630,6 +1721,7 @@ Both may be abbreviated as @reachin{expr.length} where @reachin{expr} evaluates 
 
 @index{Tuple.set} @reachin{Tuple.set} Returns a new @tech{tuple} identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
+The @reachin{idx} must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.
 
 @index{Array.set} @reachin{Array.set} Returns a new @tech{array} identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
@@ -1804,7 +1896,7 @@ The given @reachin{len} must evaluate to an integer at compile-time.
 
 @subsubsub*section{@tt{Array.replicate} && @tt{.replicate}}
 
-@(mint-define! '("Array_replicate" "replicate"))
+@(mint-define! '("Array_replicate") '("replicate"))
 @reach{
  Array.replicate(5, "five")
  Array_replicate(5, "five") }
@@ -1825,7 +1917,7 @@ This may be abbreviated as @reachin{x.concat(y)}.
 
 @subsubsub*section{@tt{Array.empty}}
 
-@(mint-define! '("Array_empty" "empty"))
+@(mint-define! '("Array_empty") '("empty"))
 @reach{
  Array_empty
  Array.empty }
@@ -2552,50 +2644,6 @@ it does not matter who @reachin{publish}es, such as in a @reachin{timeout}.
 @reachin{Anybody} is strictly an abbreviation of a @reachin{race} involving all of the named participants of the application.
 In an application with a @tech{participant class}, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
 In an application without any @tech{participant class}es, @reachin{Anybody} instead would mean only the actual previously-bound @tech{participant}s.
-
-@subsubsection{'use strict'}
-
-@(mint-define! '("'use strict'"))
-@reach{
-  'use strict'; }
-
-@index{'use strict'} @reachin{'use strict'} enables unused variables checks for all subsequent
-declarations within the current scope. If a variable is declared, but never used, there will
-be an error emitted at compile time.
-
-@deftech{strict mode} will reject some code that is normally valid and limit how dynamic Reach's type system is.
-For example, normally Reach will permit expressions like the following to be evaluated:
-
-@reach{
-  const foo = (o) =>
-    o ? o.b : false;
-
-  void foo({ b: true });
-  void foo(false); }
-
-Reach allows @reachin{o} to be either an object with a @reachin{b} field or @reachin{false} because it
-partially evaluates the program at compile time. So, without @reachin{'use strict'}, Reach will not evaluate
-@reachin{o.b} when @reachin{o = false} and this code will compile successfully.
-
-But, in @tech{strict mode}, Reach will ensure that this program treats @reachin{o} as
-having a single type and detect an error in the program as follows:
-
-@verbatim{
-  reachc: error: Invalid field access. Expected object, got: Bool }
-
-The correct way to write a program like this in @tech{strict mode} is to use @reachin{Maybe}. Like this:
-
-@reach{
-  const MObj = Maybe(Object({ b : Bool }));
-
-  const foo = (mo) =>
-    mo.match({
-      None: (() => false),
-      Some: ((o) => o.b)
-    });
-
-  void foo(MObj.Some({ b : true }));
-  void foo(MObj.None()); }
 
 @subsubsection{Intervals}
 

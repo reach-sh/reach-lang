@@ -8,6 +8,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Sanitize
+import Reach.Util
 
 type App = ReaderT Env IO
 
@@ -62,8 +63,7 @@ focusc = focus F_Consensus
 newScope :: App x -> App x
 newScope m = do
   Env {..} <- ask
-  eEnvs <- liftIO $ readIORef eEnvsR
-  eEnvsR' <- liftIO $ newIORef eEnvs
+  eEnvsR' <- liftIO $ dupeIORef eEnvsR
   local (\e -> e {eEnvsR = eEnvsR'}) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
@@ -234,7 +234,6 @@ instance Optimize DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
     DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
-    DLE_ViewIs at k n a -> DLE_ViewIs at k n <$> opt a
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
@@ -330,17 +329,9 @@ instance Optimize DLBlock where
   opt (DLBlock at fs b a) =
     newScope $ DLBlock at fs <$> opt b <*> opt a
 
-instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportVal a) where
-  opt = \case
-    DLEV_Arg at a -> DLEV_Arg at <$> opt a
-    DLEV_Fun at a b -> DLEV_Fun at a <$> opt b
-
-instance Optimize DLExportBlock where
-  opt = \case
-    DLExportBlock b r -> newScope $ DLExportBlock <$> opt b <*> opt r
-
-instance {-# OVERLAPS #-} Optimize DLExports where
-  opt = mapM opt
+instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
+  opt (DLinExportBlock at vs b) =
+    newScope $ DLinExportBlock at vs <$> opt b
 
 instance Optimize LLConsensus where
   opt = \case
@@ -357,6 +348,8 @@ instance Optimize LLConsensus where
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
       LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
+    LLC_ViewIs at vn vk a k ->
+      LLC_ViewIs at vn vk <$> opt a <*> opt k
 
 opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
@@ -414,7 +407,7 @@ opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
 
 instance Optimize FromInfo where
   opt = \case
-    FI_Continue svs -> FI_Continue <$> opt_svs svs
+    FI_Continue vis svs -> FI_Continue <$> opt vis <*> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
 
 instance Optimize ViewSave where
@@ -430,8 +423,8 @@ instance Optimize CTail where
       CT_Switch at ov <$> mapM cm1 csm
       where
         cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
-    CT_From at w v fi ->
-      CT_From at w <$> opt v <*> opt fi
+    CT_From at w fi ->
+      CT_From at w <$> opt fi
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
 

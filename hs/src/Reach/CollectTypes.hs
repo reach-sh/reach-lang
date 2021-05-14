@@ -96,7 +96,6 @@ instance CollectsTypes DLExpr where
   cts (DLE_MapSet _ _ fa na) = cts [fa, na]
   cts (DLE_MapDel _ _ fa) = cts fa
   cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
-  cts (DLE_ViewIs _ _ _ a) = cts $ a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
@@ -126,11 +125,6 @@ instance CollectsTypes DLTail where
 instance CollectsTypes DLBlock where
   cts (DLBlock _ _ k a) = cts k <> cts a
 
-instance CollectsTypes a => CollectsTypes (DLinExportVal a) where
-  cts = \case
-    DLEV_Arg _ a -> cts a
-    DLEV_Fun _ a b -> cts a <> cts b
-
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
@@ -138,6 +132,7 @@ instance CollectsTypes LLConsensus where
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
+  cts (LLC_ViewIs _ _ _ a k) = cts a <> cts k
 
 instance CollectsTypes DLPayAmt where
   cts (DLPayAmt {..}) = cts pa_net <> cts pa_ks
@@ -153,8 +148,8 @@ instance CollectsTypes LLStep where
   cts (LLS_Stop _) = mempty
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
-instance CollectsTypes DLExportBlock where
-  cts (DLExportBlock s r) = cts s <> cts r
+instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
+  cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps dli dex dvs s) =
@@ -166,7 +161,7 @@ instance CollectsTypes DLLetVar where
 
 instance CollectsTypes FromInfo where
   cts = \case
-    FI_Continue svs -> cts svs
+    FI_Continue vis svs -> cts vis <> cts svs
     FI_Halt toks -> cts toks
 
 instance CollectsTypes ViewSave where
@@ -177,7 +172,7 @@ instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
-  cts (CT_From _ _ vs msvs) = cts vs <> cts msvs
+  cts (CT_From _ _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
 
 instance CollectsTypes a => CollectsTypes (CInterval a) where

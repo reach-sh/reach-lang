@@ -59,6 +59,7 @@ data DKTail
       , dk_w_k :: DKTail
       }
   | DK_Continue SrcLoc DLAssignment
+  | DK_ViewIs SrcLoc SLPart SLVar (Maybe DKExportBlock) DKTail
   deriving (Eq, Generic)
 
 instance Pretty DKTail where
@@ -74,6 +75,8 @@ instance Pretty DKTail where
     DK_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     DK_Continue _at asn -> prettyContinue asn
+    DK_ViewIs _ vn vk a k ->
+      prettyViewIs vn vk a <> hardline <> pretty k
 
 data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
   deriving (Eq)
@@ -81,12 +84,7 @@ data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
 instance Pretty DKBlock where
   pretty (DKBlock _ _ k a) = prettyBlockP k a
 
-data DKExportBlock = DKExportBlock DKBlock (DLinExportVal DKBlock)
-  deriving (Eq)
-
-instance Pretty DKExportBlock where
-  pretty = \case
-    DKExportBlock s r -> braces $ pretty s <> hardline <> " return" <> pretty r
+type DKExportBlock = DLinExportBlock DKBlock
 
 type DKExports = M.Map SLVar DKExportBlock
 

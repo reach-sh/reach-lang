@@ -450,7 +450,6 @@ dlvOccurs env bindings = \case
     DLE_MapDel at _ fa -> _rec at fa
     DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
       _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
-    DLE_ViewIs at _ _ a -> _rec at a
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -500,7 +499,6 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
     <> args as
-  DLE_ViewIs _ v k a -> "view(" <> show v <> ")." <> show k <> ".is(" <> sub a <> ")"
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -1067,8 +1065,6 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa $ Nothing
     DLE_Remote at _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
-    DLE_ViewIs {} ->
-      mempty
   where
     bo = O_Expr de
     bound at = pathAddBound at mdv bo (Just de)
@@ -1278,6 +1274,9 @@ smt_n = \case
         smt_invblock (B_Assume False) cond
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
+  LLC_ViewIs _ _ _ ma k -> do
+    maybe mempty smt_eb ma
+    smt_n k
 
 smt_s :: LLStep -> SMTComp
 smt_s = \case
@@ -1492,18 +1491,11 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-smt_ev :: DLinExportVal DLBlock -> App SExpr
-smt_ev = \case
-  DLEV_Arg at a -> smt_a at a
-  DLEV_Fun at args body -> do
-    forM_ args $ flip (pathAddUnbound at) O_Export . Just
-    smt_block body
-
-smt_eb :: DLExportBlock -> App SExpr
-smt_eb = \case
-  DLExportBlock s r -> do
-    _ <- smt_l s
-    smt_ev r
+smt_eb :: DLExportBlock -> App ()
+smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
+  let args = fromMaybe [] margs
+  forM_ args $ flip (pathAddUnbound at) O_Export . Just
+  void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
@@ -1562,7 +1554,7 @@ _verify_smt mc ctxt_vst smt lp = do
     let smt_s_top mode = do
           liftIO $ putStrLn $ "  Verifying when " <> show (pretty mode)
           local (\e -> e {ctxt_modem = Just mode}) $ do
-            forM_ dex $ ctxtNewScope . freshAddrs . smt_eb
+            forM_ dex smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
     let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
     mapM_ smt_s_top ms

@@ -116,11 +116,10 @@ instance AC ETail where
       csm' <- ac csm
       ac_visit v
       return $ ET_Switch at v csm'
-    ET_FromConsensus at vi vs fi k -> do
+    ET_FromConsensus at vi fi k -> do
       k' <- ac k
       ac_visit fi
-      ac_visit vs
-      return $ ET_FromConsensus at vi vs fi k'
+      return $ ET_FromConsensus at vi fi k'
     ET_ToConsensus {..} -> do
       et_tc_cons' <- ac et_tc_cons
       et_tc_from_mtime' <- ac et_tc_from_mtime
@@ -152,10 +151,9 @@ instance AC CTail where
       csm' <- ac csm
       ac_visit $ v
       return $ CT_Switch at v csm'
-    CT_From at w v fi -> do
-      ac_visit $ v
+    CT_From at w fi -> do
       ac_visit $ fi
-      return $ CT_From at w v fi
+      return $ CT_From at w fi
     CT_Jump at which svs asn -> do
       ac_visit $ svs
       ac_visit $ asn
@@ -170,20 +168,9 @@ instance AC CHandler where
       ch_body' <- ac ch_body
       return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
 
-instance {-# OVERLAPS #-} AC a => AC (DLinExportVal a) where
-  ac = \case
-    DLEV_Arg at a -> do
-      ac_visit a
-      return $ DLEV_Arg at a
-    DLEV_Fun at a b -> do
-      ac_visit a
-      fresh $ DLEV_Fun at a <$> ac b
-
-instance AC DLExportBlock where
-  ac (DLExportBlock b a) = do
-    a' <- ac a
-    b' <- ac b
-    return $ DLExportBlock b' a'
+instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
+  ac (DLinExportBlock at vs a) = fresh $
+    DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
   ac (EPProg at ie et) = fresh $

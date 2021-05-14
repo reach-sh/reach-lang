@@ -13,13 +13,13 @@ import Reach.Texty
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
 data FromInfo
-  = FI_Continue [(DLVar, DLArg)]
+  = FI_Continue ViewSave [(DLVar, DLArg)]
   | FI_Halt [DLArg]
   deriving (Eq)
 
 instance Pretty FromInfo where
   pretty = \case
-    FI_Continue svs -> pform "continue" (pretty svs)
+    FI_Continue vis svs -> pform "continue" (pretty vis <> "," <+> pretty svs)
     FI_Halt toks -> pform "halt" (pretty toks)
 
 data ETail
@@ -27,7 +27,7 @@ data ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
-  | ET_FromConsensus SrcLoc Int ViewSave FromInfo ETail
+  | ET_FromConsensus SrcLoc Int FromInfo ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
@@ -61,8 +61,8 @@ instance Pretty ETail where
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
-      ET_FromConsensus _ which vis msvs k ->
-        "fromConsensus" <+> whichp <+> pretty vis <+> pretty msvs <+> semi
+      ET_FromConsensus _ which msvs k ->
+        "fromConsensus" <+> whichp <+> pretty msvs <+> semi
           <> hardline
           <> pretty k
         where
@@ -133,7 +133,7 @@ data CTail
   = CT_Com DLStmt CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
-  | CT_From SrcLoc Int ViewSave FromInfo
+  | CT_From SrcLoc Int FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
@@ -141,7 +141,7 @@ instance Pretty CTail where
   pretty (CT_Com e k) = pretty e <> hardline <> pretty k
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
-  pretty (CT_From _ which vi fi) = pform "from" $ pretty which <> "," <+> pretty vi <> "," <+> pretty fi
+  pretty (CT_From _ which fi) = pform "from" $ pretty which <> "," <+> pretty fi
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
       args = pretty which <+> pretty vars <+> pretty assignment
@@ -225,7 +225,7 @@ instance Pretty ColorGraphs where
                 $ M.toList g
          in braces $ hardline <> vsep rows
 
-type ViewsInfo = M.Map SLPart (M.Map SLVar DLArg)
+type ViewsInfo = M.Map SLPart (M.Map SLVar DLExportBlock)
 
 data ViewInfo = ViewInfo [DLVar] ViewsInfo
   deriving (Eq)
