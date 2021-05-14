@@ -3,19 +3,14 @@
 // ****************************************************************************
 
 import Timeout from 'await-timeout';
-import ethers from 'ethers';
-import http from 'http';
-import url from 'url';
-import { window, process } from './shim';
+import real_ethers from 'ethers';
 import {
   memoizeThunk, replaceableThunk
 } from './shared_impl';
 import * as shared from './shared';
-import waitPort from './waitPort';
-import { canonicalizeConnectorMode } from './ConnectorMode';
 
 // Types-only imports
-import type { Signer } from 'ethers';
+import type { BigNumber } from 'ethers';
 import type {
   CurrencyAmount,
   IAccount,
@@ -32,35 +27,34 @@ import type {
   PayAmt,
 } from './ETH_like_compiled';
 import type {
+  EthersLikeContract,
+  EthersLikeSigner,
+  EthersLikeWallet,
+  EthLikeArgs,
   // EthLike, // TODO: use this once types are in place
   EthLikeBackendStdlib,
-  EthLikeCompiled,
 } from './ETH_like_interfaces';
 
 const {
   assert,
   bigNumberify,
-  debug, envDefault,
+  debug,
   eq,
   ge,
-  getDEBUG,
   lt,
   getViewsHelper,
   deferContract,
   makeRandom,
   argsSplit,
-  truthyEnv,
 } = shared;
 
 // ****************************************************************************
 // Type Definitions
 // ****************************************************************************
-type BigNumber = ethers.BigNumber;
 
-type Provider = ethers.providers.Provider;
-type TransactionReceipt = ethers.providers.TransactionReceipt;
-type Wallet = ethers.Wallet;
-type Log = ethers.providers.Log;
+// XXX make interfaces for these
+type TransactionReceipt = real_ethers.providers.TransactionReceipt;
+type Log = real_ethers.providers.Log;
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -84,7 +78,7 @@ type NetworkAccount = {
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => any, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
-} | Wallet | Signer; // required to deploy/attach
+} | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 type Hash = string;
 
@@ -99,7 +93,7 @@ type ContractInfo = {
 type Digest = string
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
-type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
+export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
 
 // For when you init the contract with the 1st message
@@ -117,38 +111,6 @@ type ContractInitInfo2 = {
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
 }
-
-// We don't ever do waitPort for these so it's not an option.
-// The reason this level of indirection still exists here
-// is because ethers.js does a cool thing by default:
-// It queries multiple providers.
-export interface ProviderByName {
-  ETH_NET: string // WhichNetExternal | 'window'
-  REACH_CONNECTOR_MODE: string
-  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
-}
-
-export type WhichNetExternal
-  = 'homestead'
-  | 'ropsten'
-
-// TODO: more providers 'by name'
-export type ProviderName
-  = WhichNetExternal
-  | 'MainNet'
-  | 'TestNet'
-  | 'LocalHost'
-  | 'window'
-
-// TODO: support config of custom api keys
-export interface ProviderByURI {
-  ETH_NODE_URI: string
-  REACH_CONNECTOR_MODE: string
-  REACH_DO_WAIT_PORT: string // preferably: 'yes' | 'no'
-  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
-}
-
-export type ProviderEnv = ProviderByURI | ProviderByName
 
 
 // ****************************************************************************
@@ -175,8 +137,22 @@ const None: None = [];
 void(isSome);
 
 // TODO: add return type once types are in place
-export function makeEthLike(ethLikeCompiled: EthLikeCompiled) {
+export function makeEthLike(ethLikeArgs: EthLikeArgs) {
 // ...............................................
+const {
+  ethLikeCompiled,
+  ethers,
+  standardDigits = 18,
+  providerLib,
+  isIsolatedNetwork,
+  isWindowProvider,
+  _getDefaultNetworkAccount,
+  _getDefaultFaucetNetworkAccount,
+} = ethLikeArgs;
+
+const {
+  getProvider
+} = providerLib;
 
 const {
   T_Address, T_Tuple,
@@ -184,79 +160,6 @@ const {
   stdlib,
 } = ethLikeCompiled;
 const reachStdlib: EthLikeBackendStdlib = stdlib;
-
-// Avoid using _providerEnv directly; use get/set
-// We don't use replaceableThunk because slightly more nuanced inspection needs to be possible.
-let _providerEnv: ProviderEnv|undefined;
-function getProviderEnv(): ProviderEnv {
-  if (!_providerEnv) {
-    // We only fall back on process.env if there no setProviderEnv occurrs
-    const env = envDefaultsETH(process.env);
-    _providerEnv = env;
-  }
-  return _providerEnv;
-}
-function setProviderEnv(env: ProviderEnv): void {
-  if (_providerEnv) {
-    throw Error(`setProviderEnv called after it was already set`);
-  }
-  _providerEnv = env;
-}
-
-function isIsolatedNetwork(): boolean {
-  return truthyEnv(getProviderEnv().REACH_ISOLATED_NETWORK);
-}
-
-function isWindowProvider(): boolean {
-  const env = getProviderEnv();
-  return 'ETH_NET' in env && env.ETH_NET === 'window' && !!window.ethereum;
-}
-
-// XXX: doesn't even retry, just returns the first attempt
-const doHealthcheck = async (theUrl: string): Promise<void> => {
-  debug('doHealthcheck');
-  const urlObj = url.parse(theUrl);
-
-  // XXX the code below only supports http
-  if (urlObj.protocol !== 'http:') { return; }
-
-  await new Promise((resolve, reject) => {
-    const data = JSON.stringify({
-      jsonrpc: '2.0',
-      method: 'web3_clientVersion',
-      params: [],
-      id: 67,
-    });
-    debug('Sending health check request...');
-    const opts = {
-      ...urlObj,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': data.length,
-      },
-    };
-    const req = http.request(opts, (res) => {
-      debug(`statusCode:`, res.statusCode);
-      res.on('data', (d) => {
-        debug('rpc health check succeeded');
-        if (getDEBUG()) {
-          process.stdout.write(d);
-        }
-        resolve({ res, d });
-      });
-    });
-    req.on('error', (e) => {
-      console.log('rpc health check failed');
-      console.log(e);
-      reject(e);
-    });
-    req.write(data);
-    debug('attached all the handlers...');
-    req.end();
-    debug('req.end...');
-  });
-};
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
@@ -288,77 +191,6 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
   const provider = await getProvider();
   const r = await provider.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
-};
-
-function windowLooksIsolated() {
-  if (!window.ethereum) return false;
-  // XXX this is a hacky way of checking if we're on a devnet
-  // @ts-ignore // 0x539 = 1337
-  return (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539');
-}
-
-function connectorModeIsolatedNetwork(connectorMode: string): 'yes' | 'no' {
-  switch (connectorMode) {
-  case 'ETH-test-dockerized-geth': return 'yes';
-  default: return 'no';
-  }
-}
-
-function guessConnectorMode(env: Partial<ProviderByName & ProviderByURI>): string|undefined {
-  if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
-    // take a guess if ETH_NODE_URI is set
-    return env.ETH_NODE_URI.toLowerCase().includes('localhost') ? 'ETH-test-dockerized-geth' : 'ETH-live';
-  } else {
-    // abstain from guessing
-    return undefined;
-  }
-}
-
-function envDefaultsETH(env: Partial<ProviderByName & ProviderByURI>): ProviderEnv {
-  const { ETH_NET, ETH_NODE_URI } = env;
-  const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
-  const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
-  const isolatedDefault
-    = ETH_NET && ETH_NET !== 'window' ? 'no'
-    : ETH_NET === 'window' || window.ethereum ? (windowLooksIsolated() ? 'yes' : 'no')
-    : connectorModeIsolatedNetwork(REACH_CONNECTOR_MODE);
-  const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
-  if (truthyEnv(ETH_NET)) {
-    return { ETH_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
-  } else if (truthyEnv(ETH_NODE_URI)) {
-    const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'no');
-    return { ETH_NODE_URI, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
-  } else {
-    if (window.ethereum) {
-      return windowProviderEnv(REACH_ISOLATED_NETWORK);
-    } else {
-      const { REACH_DO_WAIT_PORT } = env;
-      if (truthyEnv(REACH_DO_WAIT_PORT)) {
-        return {...localhostProviderEnv, REACH_DO_WAIT_PORT};
-      } else {
-        return localhostProviderEnv;
-      }
-    }
-  }
-}
-
-const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
-  const fullEnv = getProviderEnv();
-  return await waitProviderFromEnv(fullEnv);
-});
-function setProvider(provider: Provider|Promise<Provider>): void {
-  // TODO: define ETHProvider to be {provider: Provider, isolated: boolean} ?
-  // Maybe also {window: boolean}
-  _setProvider(provider);
-  if (!_providerEnv) {
-    // this circumstance is weird and maybe we should handle it better
-    // process.env isn't available in browser so we try to avoid relying on it here.
-    setProviderEnv({
-      ETH_NET: '__custom_unspecified__',
-      REACH_CONNECTOR_MODE: 'ETH-unspecified',
-      REACH_ISOLATED_NETWORK: 'no',
-    });
-  }
 };
 
 const getNetworkTimeNumber = async (): Promise<number> => {
@@ -436,92 +268,6 @@ const stepTime = async (): Promise<TransactionReceipt> => {
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
-// Not an async fn because it throws some errors synchronously, rather than in the Promise thread
-function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
-  if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
-    const {ETH_NODE_URI, REACH_DO_WAIT_PORT} = env;
-    return (async () => {
-      if (truthyEnv(REACH_DO_WAIT_PORT)) await waitPort(ETH_NODE_URI);
-      await doHealthcheck(ETH_NODE_URI);
-      const provider = new ethers.providers.JsonRpcProvider(ETH_NODE_URI);
-      // TODO: make polling interval configurable?
-      provider.pollingInterval = 500; // ms
-      return provider;
-    })();
-  } else if ('ETH_NET' in env && env.ETH_NET) {
-    const {ETH_NET} = env;
-    // TODO: support more
-    if (ETH_NET === 'homestead' || ETH_NET === 'ropsten') {
-      // No waitPort for these, just go
-      return Promise.resolve(ethers.getDefaultProvider(ETH_NET));
-    } else if (ETH_NET === 'window') {
-      const {ethereum} = window;
-      if (ethereum) {
-        return (async () => {
-          const provider = new ethers.providers.Web3Provider(ethereum);
-          // The proper way to ask MetaMask to enable itself is eth_requestAccounts
-          // https://eips.ethereum.org/EIPS/eip-1102
-          await provider.send('eth_requestAccounts', []);
-          return provider;
-        })();
-      } else {
-        throw Error(`window.ethereum is not defined`);
-      }
-    } else {
-      throw Error(`ETH_NET not recognized: '${ETH_NET}'`);
-    }
-  } else {
-    // This branch should be impossible, but just in case...
-    throw Error(`non-empty ETH_NET or ETH_NODE_URI is required, got: ${Object.keys(env)}`);
-  }
-}
-
-function setProviderByEnv(env: Partial<ProviderByName & ProviderByURI>): void {
-  const fullEnv = envDefaultsETH(env);
-  setProviderEnv(fullEnv);
-  setProvider(waitProviderFromEnv(fullEnv));
-}
-
-function setProviderByName(providerName: ProviderName): void  {
-  const env = providerEnvByName(providerName);
-  setProviderByEnv(env);
-}
-
-const localhostProviderEnv: ProviderByURI = {
-  ETH_NODE_URI: 'http://localhost:8545',
-  REACH_CONNECTOR_MODE: 'ETH-test-dockerized-geth',
-  REACH_DO_WAIT_PORT: 'yes',
-  REACH_ISOLATED_NETWORK: 'yes',
-}
-
-function windowProviderEnv(REACH_ISOLATED_NETWORK: string = 'no'): ProviderByName {
-  return {
-    ETH_NET: 'window',
-    REACH_CONNECTOR_MODE: 'ETH-browser',
-    REACH_ISOLATED_NETWORK,
-  }
-}
-
-function ethersProviderEnv(network: WhichNetExternal): ProviderByName {
-  return {
-    ETH_NET: network,
-    REACH_CONNECTOR_MODE: 'ETH-live',
-    REACH_ISOLATED_NETWORK: 'no',
-  }
-}
-
-function providerEnvByName(providerName: ProviderName): ProviderEnv {
-  switch (providerName) {
-  case 'LocalHost': return localhostProviderEnv;
-  case 'window': return windowProviderEnv();
-  case 'MainNet': return providerEnvByName('homestead');
-  case 'TestNet': return providerEnvByName('ropsten');
-  case 'homestead': return ethersProviderEnv('homestead');
-  case 'ropsten': return ethersProviderEnv('ropsten');
-  default: throw Error(`Unrecognized provider name: ${providerName}`);
-  }
-}
-
 const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
@@ -556,7 +302,7 @@ const doTxn = async (
 
 const doCall = async (
   dhead: any,
-  ctc: ethers.Contract,
+  ctc: EthersLikeContract,
   funcName: string,
   args: Array<any>,
   value: BigNumber,
@@ -797,8 +543,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
 
     const getC = (() => {
-      let _ethersC: ethers.Contract | null = null;
-      return async (): Promise<ethers.Contract> => {
+      let _ethersC: EthersLikeContract | null = null;
+      return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
         await verifyContract(info, bin);
@@ -806,7 +552,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         if (!ethers.Signer.isSigner(networkAccount)) {
           throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
         }
-        _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
+        // TODO: remove "as" when we figure out how to type the interface for ctors
+        _ethersC = new ethers.Contract(info.address, ABI, networkAccount) as EthersLikeContract;
         return _ethersC;
       }
     })();
@@ -1120,39 +867,17 @@ const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
   return acc;
 };
 
-async function _getDefaultAccount(): Promise<Account> {
-  debug(`_getDefaultAccount`);
-  const provider = await getProvider();
-  // TODO: teach ts what the specialized type of provider is in this branch
-  // @ts-ignore
-  const signer: Signer = provider.getSigner();
-  return await connectAccount(signer);
-}
 
 const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);
   if (!(isWindowProvider() || isIsolatedNetwork())) throw Error(`Default account not available`);
-  return _getDefaultAccount();
+  return connectAccount(await _getDefaultNetworkAccount());
 };
 
 // TODO: Should users be able to access this directly?
 // TODO: define a faucet on Ropsten & other testnets?
 const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
-  if (isIsolatedNetwork()) {
-    if (isWindowProvider()) {
-      // XXX only localhost:8545 is supported
-      const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-      return await connectAccount(p.getSigner());
-    }
-    // XXX this may break if users call setProvider?
-    // On isolated networks, the default account is assumed to be the faucet.
-    // Furthermore, it is assumed that the faucet Signer is "unlocked",
-    // so no further secrets need be provided in order to access its funds.
-    // This is true of reach-provided devnets.
-    // TODO: allow the user to set the faucet via mnemnonic.
-    return await _getDefaultAccount();
-  }
-  throw Error(`getFaucet not supported in this context.`)
+  return await connectAccount(await _getDefaultFaucetNetworkAccount());
 });
 
 const createAccount = async () => {
@@ -1228,7 +953,7 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
 
   const provider = await getProvider();
   const maxTries = isIsolatedNetwork() ? 1 : 2; // TODO: fine-tune the number of tries?
-  let logs: ethers.providers.Log[] = [];
+  let logs: Log[] = [];
   let now: number = 0;
   for (let tries = 0; logs.length < 1 && tries < maxTries; tries++) {
     if (tries > 0) {
@@ -1352,7 +1077,7 @@ const atomicUnit = 'WEI';
  * @example  parseCurrency(100).toString() // => '100000000000000000000'
  */
 function parseCurrency(amt: CurrencyAmount): BigNumber {
-  return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
+  return bigNumberify(real_ethers.utils.parseUnits(amt.toString(), standardDigits));
 }
 
 const minimumBalance: BigNumber =
@@ -1368,17 +1093,17 @@ const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
-function formatCurrency(amt: any, decimals: number = 18): string {
+function formatCurrency(amt: any, decimals: number = standardDigits): string {
   // Recall that 1 WEI = 10e18 ETH
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
   // Truncate
-  decimals = Math.min(decimals, 18);
-  const decimalsToForget = 18 - decimals;
+  decimals = Math.min(decimals, standardDigits);
+  const decimalsToForget = standardDigits - decimals;
   const divAmt = bigNumberify(amt)
     .div(bigNumberify(10).pow(decimalsToForget));
-  const amtStr = ethers.utils.formatUnits(divAmt, decimals)
+  const amtStr = real_ethers.utils.formatUnits(divAmt, decimals);
   // If the str ends with .0, chop it off
   if (amtStr.slice(amtStr.length - 2) == ".0") {
     return amtStr.slice(0, amtStr.length - 2);
@@ -1400,21 +1125,17 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
 // const ethLike: EthLike = {
 const ethLike = {
   ...ethLikeCompiled,
-  getProvider,
-  setProvider,
+  ...providerLib,
+  getFaucet,
+  setFaucet,
   randomUInt,
   hasRandom,
-  setProviderByEnv,
-  setProviderByName,
-  providerEnvByName,
   balanceOf,
   transfer,
   connectAccount,
   newAccountFromSecret,
   newAccountFromMnemonic,
   getDefaultAccount,
-  getFaucet,
-  setFaucet,
   createAccount,
   fundFromFaucet,
   newTestAccount,

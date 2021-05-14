@@ -1,8 +1,11 @@
+// ****************************************************************************
 // Interfaces for the various modules of ETH_like
+// ****************************************************************************
+
 
 // Types only!
 import type { num } from './shared';
-import type { BigNumber } from 'ethers';
+import type { BigNumber, ethers } from 'ethers';
 import type { CBR_Val } from './CBR';
 
 // BV = backend value
@@ -101,24 +104,27 @@ export interface EthLikeCompiled extends EthLikeBackendStdlib {
   typeDefs: TypeDefs
 }
 
-
 // TODO: types
-export interface EthLike extends EthLikeCompiled {
+export interface ProviderLib {
   getProvider: any
   setProvider: any
-  randomUInt: any
-  hasRandom: any
   setProviderByEnv: any
   setProviderByName: any
   providerEnvByName: any
+}
+
+
+
+// TODO: types
+export interface EthLike extends EthLikeCompiled, ProviderLib {
+  randomUInt: any
+  hasRandom: any
   balanceOf: any
   transfer: any
   connectAccount: any
   newAccountFromSecret: any
   newAccountFromMnemonic: any
   getDefaultAccount: any
-  getFaucet: any
-  setFaucet: any
   createAccount: any
   fundFromFaucet: any
   newTestAccount: any
@@ -133,4 +139,75 @@ export interface EthLike extends EthLikeCompiled {
   formatCurrency: any
   formatAddress: any
   reachStdlib: EthLikeBackendStdlib
+}
+
+// EthersLike stuff .............................
+
+export interface EthersLikeSigner {
+  // TODO
+  isSigner(...arg: any): boolean
+}
+
+export interface EthersLikeContractFactory {
+
+}
+
+export interface EthersLikeContract {
+  // TODO
+  [key: string]: any
+
+  interface: ethers.utils.Interface
+}
+
+// like ethers.providers
+export interface EthersLikeProviders {
+
+}
+
+export interface EthersLikeContractFactory {
+  // TODO
+  deploy(...args: any): Promise<EthersLikeContract>
+  getDeployTransaction(...args: any): any
+  interface: ethers.utils.Interface
+}
+
+export interface EthersLikeContractFactoryClass {
+  // TODO: type args
+  new (...args: any): EthersLikeContractFactory
+}
+
+export interface EthersLikeContractClass {
+  // TODO: type args
+  new (...args: any): EthersLikeContract
+}
+
+// like ethers
+export interface EthersLike {
+  Contract: EthersLikeContractClass
+  ContractFactory: EthersLikeContractFactoryClass
+  Wallet: EthersLikeWalletClass
+  Signer: EthersLikeSigner
+  providers: EthersLikeProviders
+}
+
+export interface EthersLikeWallet {
+  // TODO: type args
+  connect(...args: any): this
+}
+
+export interface EthersLikeWalletClass {
+  new(secret: string): EthersLikeWallet
+  fromMnemonic(mnemonic: string): EthersLikeWallet
+  createRandom(): EthersLikeWallet
+}
+
+export interface EthLikeArgs {
+  ethLikeCompiled: EthLikeCompiled
+  ethers: EthersLike
+  standardDigits?: number
+  providerLib: ProviderLib
+  isIsolatedNetwork(): boolean
+  isWindowProvider(): boolean
+  _getDefaultNetworkAccount(): any
+  _getDefaultFaucetNetworkAccount(): any
 }
