@@ -93,16 +93,18 @@ export interface Arith {
   div: (x: num, y: num) => BigNumber
 }
 
-
-export interface EthLikeBackendStdlib extends SharedStdlib, Arith, TypeDefs {
+export interface StdlibBase extends SharedStdlib, Arith, TypeDefs   {
   addressEq: (addr1: unknown, addr2: unknown) => boolean
   tokenEq: (x: unknown, y: unknown) => boolean
   digest: (t: AnyETH_Ty, a: unknown) => string // TODO typing
+}
+
+export interface BackendStdlib extends StdlibBase {
   UInt_max: BigNumber
 }
 
-export interface EthLikeCompiled extends EthLikeBackendStdlib {
-  stdlib: EthLikeBackendStdlib
+export interface EthLikeCompiled extends BackendStdlib {
+  stdlib: BackendStdlib
   typeDefs: TypeDefs
 }
 
@@ -115,10 +117,8 @@ export interface ProviderLib {
   providerEnvByName: any
 }
 
-
-
 // TODO: types
-export interface EthLike extends EthLikeCompiled, ProviderLib {
+export interface ReachStdlib extends StdlibBase, ProviderLib {
   randomUInt: any
   hasRandom: any
   balanceOf: any
@@ -140,7 +140,7 @@ export interface EthLike extends EthLikeCompiled, ProviderLib {
   minimumBalance: any
   formatCurrency: any
   formatAddress: any
-  reachStdlib: EthLikeBackendStdlib
+  reachStdlib: BackendStdlib
 }
 
 // EthersLike stuff .............................

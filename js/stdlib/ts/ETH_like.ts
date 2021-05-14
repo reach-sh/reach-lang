@@ -32,7 +32,7 @@ import type {
   EthersLikeWallet,
   EthLikeArgs,
   // EthLike, // TODO: use this once types are in place
-  EthLikeBackendStdlib,
+  BackendStdlib,
 } from './ETH_like_interfaces';
 
 const {
@@ -159,7 +159,7 @@ const {
   add,
   stdlib,
 } = ethLikeCompiled;
-const reachStdlib: EthLikeBackendStdlib = stdlib;
+const reachStdlib: BackendStdlib = stdlib;
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
