@@ -453,7 +453,7 @@ env_lookup ctx x env =
           return $ sv {sss_val = v}
         SLSSVal {sss_val = SLV_AppArg (SLA_Participant _ SLCompiledPartInfo {..}) } -> do
           mode <- readSt st_mode
-          when (mode /= SLM_AppInit) $
+          when (not $ elem mode [SLM_AppInit, SLM_Module]) $
             expect_ $ Err_UnboundAppParticipant slcpi_who
           return sv
         v -> return $ v
@@ -4219,11 +4219,15 @@ evalStmt = \case
           let ns = bunpack n
           let go k t = do
                 let vv = SLV_Prim $ SLPrim_viewis at n k t
-                let vom = M.singleton "is" $ SLSSVal va Public vv
+                let vom = M.singleton "set" $ SLSSVal va Public vv
                 let vo = SLV_Object va (Just $ ns <> " view, " <> k) vom
                 let io = SLSSVal va Public vo
-                di <- st2dte t
-                return (di, io)
+                di <-
+                  case t of
+                    ST_Fun (SLTypeFun {..}) ->
+                      IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
+                    _ -> IT_Val <$> st2dte t
+                return $ (di, io)
           ix <- mapWithKeyM go i
           let i' = M.map fst ix
           let io = M.map snd ix

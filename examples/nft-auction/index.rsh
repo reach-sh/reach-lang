@@ -18,13 +18,12 @@ const CreatorInterface = {
 
 const emptyAuction = { startingBid: 0, timeout: 0 };
 
-export const main = Reach.App(
-  {},
-  [
-    Participant('Creator', CreatorInterface),
-    ParticipantClass('Owner', OwnerInterface)
-  ],
-  (Creator, Owner) => {
+export const main = Reach.App(() => {
+
+    const Creator = Participant('Creator', CreatorInterface);
+    const Owner = ParticipantClass('Owner', OwnerInterface);
+    deploy();
+
     Creator.only(() => {
       const id = declassify(interact.getId());
     });
@@ -82,4 +81,5 @@ export const main = Reach.App(
 
     commit();
     exit();
+
   });
