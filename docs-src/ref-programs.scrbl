@@ -1205,6 +1205,11 @@ Parameters with default arguments must come after all other parameters.
     a + b + c + d;
 }
 
+The last parameter of a function may be a @deftech{rest parameter}, which allows the function to be called
+with an indefinite number of arguments. A @tech{rest parameter} is specified via @reachin{...IDENT}, where
+@reachin{IDENT} is an @reachin{Array} containing all the remaining arguments. Since an array requires all of its elements
+to be of the same type, the arguments bound to the rest parameter must also be of the same type.
+
 
 @(hrule)
 
@@ -2285,10 +2290,11 @@ while the regular conditional expression only evaluates one branch.
  (({x, y}) => { assert(x + y == 3); })({x: 1, y: 2});
  (([x, [y]]) => { assert(x + y == 3); })([1,[2]]);
  (([x, {y}]) => { assert(x + y == 3); })([1,{ y: 2 }]);
+ ((...xs) => Foldable.sum(xs))(1, 2, 3)
 }
 
 An @deftech{arrow expression}, written @reachin{(LHS_0, ..., LHS_n) => EXPR}, where @reachin{LHS_0} through @reachin{LHS_n} are left-hand sides and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values compatible with the respective left-hand side.
-Like @tech{function definition}s, @tech{arrow expression}s may use default argument notation.
+Like @tech{function definition}s, @tech{arrow expression}s may use default argument notation and @tech{rest parameter}s.
 
 @subsubsection{@tt{makeEnum}}
 

@@ -2594,6 +2594,14 @@ instDefaultArgs env err formals = \case
     -- Ignore default arg since specified at application
     | JSAssignExpression lhs (JSAssign _) _ : ft <- formals ->
       evalArg lhs h ft t
+    -- Rest parameter should be the final parameter
+    | [JSSpreadExpression a lhs@JSIdentifier {}] <- formals -> do
+      let at = srcloc_jsa_only a
+      (ht, _) <- typeOf $ snd h
+      evalArg lhs (Public, SLV_Array at ht $ map snd $ h : t ) [] []
+    -- Error on rest parameter that is not the final parameter
+    | JSSpreadExpression a _ : _ <- formals ->
+      locAtf (srcloc_jsa "rest parameter" a) $ expect_ Err_RestParameterNotLast
     | lhs : ft <- formals -> evalArg lhs h ft t
   where
     evalArg lhs rhs ft tl = do

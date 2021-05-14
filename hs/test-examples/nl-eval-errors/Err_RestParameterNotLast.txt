@@ -1,0 +1,1 @@
+reachc: error: ./Err_RestParameterNotLast.rsh:3:14:rest parameter: Only the last parameter in a function definition can be a rest parameter.
