@@ -228,6 +228,63 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "atomic-swap-auction":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean atomic-swap-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean atomic-swap-auction"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build atomic-swap-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild atomic-swap-auction"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run atomic-swap-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run atomic-swap-auction"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "build-core":
     docker:
     - auth:
@@ -569,6 +626,82 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-race"
         no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "default-app":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean default-app"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean default-app"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build default-app"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild default-app"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run default-app"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run default-app"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  dhallcheck:
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - run:
+        command: "cd .circleci && make check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run dhallcheck
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -919,6 +1052,63 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run multisig
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "nft-auction":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean nft-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean nft-auction"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build nft-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild nft-auction"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run nft-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run nft-auction"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1375,6 +1565,63 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run popularity-contest"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "pr202105-zet":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean pr202105-zet"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean pr202105-zet"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build pr202105-zet"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild pr202105-zet"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run pr202105-zet"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run pr202105-zet"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2659,6 +2906,291 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "view-bytes":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean view-bytes"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean view-bytes"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build view-bytes"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild view-bytes"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run view-bytes"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-bytes"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "view-fun":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean view-fun"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean view-fun"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build view-fun"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild view-fun"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run view-fun"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-fun"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "view-map":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean view-map"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean view-map"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build view-map"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild view-map"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run view-map"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-map"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "view-maybe":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean view-maybe"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean view-maybe"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build view-maybe"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild view-maybe"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run view-maybe"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-maybe"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "view-steps":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean view-steps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean view-steps"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build view-steps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild view-steps"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh run view-steps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-steps"
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "weird-swap":
     docker:
     - auth:
@@ -3049,6 +3581,12 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - "atomic-swap-auction":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - "chicken-fork":
         context:
         - "reachdevbot-on-dockerhub"
@@ -3062,6 +3600,12 @@ workflows:
         requires:
         - "build-core"
     - "chicken-race":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "default-app":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -3086,6 +3630,12 @@ workflows:
         requires:
         - "build-core"
     - multisig:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "nft-auction":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -3134,6 +3684,12 @@ workflows:
         requires:
         - "build-core"
     - "popularity-contest":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "pr202105-zet":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -3259,6 +3815,36 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - "view-bytes":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "view-fun":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "view-map":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "view-maybe":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "view-steps":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - "weird-swap":
         context:
         - "reachdevbot-on-dockerhub"
@@ -3313,6 +3899,10 @@ workflows:
   lint:
     jobs:
     - shellcheck:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+    - dhallcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

@@ -1,7 +1,13 @@
 .DEFAULT_GOAL := validate
 
+.PHONY: check
+check: config.yml
+	cp config.yml config.yml.bak
+	$(MAKE) build
+	diff -u config.yml config.yml.bak
+
 .PHONY: build
-build:
+build: ../VERSION rebuild.hs config.dhall
 	@echo "(Re-)building..."
 	@. ../VERSION && export MAJOR MINOR PATCH VERSION && ./rebuild.hs
 	@echo

@@ -430,6 +430,10 @@ let shellcheck = dockerized-job ResourceClass.small
   , slack/notify
   ]
 
+let dhallcheck = dockerized-job ResourceClass.small
+  [ run "Run dhallcheck" "cd .circleci && make check"
+  , slack/notify
+  ]
 
 let docker-lint = dockerized-job-with
   "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
@@ -460,6 +464,7 @@ let jobs =
       , `=:=` "docs-render" docs-render
       , `=:=` "docs-deploy" docs-deploy
       , `=:=` "shellcheck"  shellcheck
+      , `=:=` "dhallcheck"  dhallcheck
       , `=:=` "docker-lint" docker-lint
       , `=:=` "test-hs"     test-hs
       , `=:=` "test-js"     test-js
@@ -494,8 +499,10 @@ let workflows =
      = \(directory : Text)
     -> [ `=:=` directory requires-build-core ]
 
-  let lint =
-    { jobs = [[ `=:=` "shellcheck" T.default ]] }
+  let lint = { jobs =
+    [ [ `=:=` "shellcheck" T.default ]
+    , [ `=:=` "dhallcheck" T.default ]
+    ] }
 
   let docs = { jobs =
     [ [ `=:=` "docs-render" T.default      ]
