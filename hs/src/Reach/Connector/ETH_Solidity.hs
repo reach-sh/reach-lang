@@ -1217,10 +1217,6 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                 dom' <- zipWithM mkdom args dom
                 rng' <- solType_p AM_Memory rng
                 let ret = "external view returns" <+> parens rng'
-                let mlf m mk =
-                      case M.lookup mk m of
-                        Just x -> x
-                        Nothing -> impossible "sol view defn"
                 let illegal = solRequire "invalid view_i" "false" <> semi
                 let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                       c' <- solEq "current_view_i" $ solNum i
@@ -1229,7 +1225,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                       let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" [ "current_view_bs", parens vvs_ty' ]
                       extendVarMap $ M.fromList $ map (\vv->(vv, asnv <> "." <> solRawVar vv)) $ vvs
                       (defn, ret') <-
-                        case M.lookup k (mlf vim v) of
+                        case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
                           Just eb -> do
                             eb' <- solEB args eb
                             mvars <- readMemVars

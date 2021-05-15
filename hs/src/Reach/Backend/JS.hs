@@ -824,10 +824,6 @@ jsViews mcv = do
     let enView _ (ViewInfo vs _) =
           jsArray <$> (mapM jsContract $ map varType vs)
     views <- toObj enView vis
-    let mlf m k =
-          case M.lookup k m of
-            Just x -> x
-            Nothing -> impossible $ "jsViews " <> show k
     let illegal = jsApply "stdlib.assert" [ "false", jsString "illegal view" ]
     let enDecode v k vi (ViewInfo vs vim) = do
           vs' <- mapM jsVar vs
@@ -835,7 +831,7 @@ jsViews mcv = do
           let c = jsPrimApply PEQ [ "i", vi' ]
           let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
           ret' <-
-            case M.lookup k (mlf vim v) of
+            case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
               Just eb -> do
                 eb' <- jsExportBlock $ dlebEnsureFun eb
                 let eb'call = jsApply (parens eb') [ "...args" ]
