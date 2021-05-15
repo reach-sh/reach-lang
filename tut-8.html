@@ -145,28 +145,29 @@ services:
 <span class="nt">70      bob</span><span class="p">:</span> <span class="nv">*player</span>
 </pre></div></div></p><ul><li><p>Lines 2 and 3 define a service for starting our application.
 Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-8</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory througout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 7 through 24 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 25 through 64 define services that allow the application to be run with different networks; including line 25, which defines <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-8-ETH-live</span><span class="hspace"></span></span> for connecting to a live network.</p></li><li><p>We&rsquo;ll also add lines 65 through 70 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-8-ETH-live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
-If we use the live version, then we have to define the environment variable <a href="ref-network-eth.html#%28env._.E.T.H_.N.O.D.E_.U.R.I%29" class="stt" data-pltdoc="x">ETH_NODE_URI</a> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile"><span class="stt">tut-8/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile#L29-L39"><span class="stt">tut-8/Makefile</span></a><button class="btn" data-clipboard-text=".PHONY: run-live
+If we use the live version, then we have to define the environment variable <a href="ref-network-eth.html#%28env._.E.T.H_.N.O.D.E_.U.R.I%29" class="stt" data-pltdoc="x">ETH_NODE_URI</a> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile"><span class="stt">tut-8/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile#L29-L39"><span class="stt">tut-8/Makefile</span></a><button class="btn" data-clipboard-text="	cp $^ $@
+
+docker-compose.ALGO.yml: docker-compose.yml
+	sed -e '32s/ &amp;default-app//' -e '52s/:/: \&amp;default-app/' $^ &gt; $@
+
+.PHONY: run-live
 run-live:
 	docker-compose run --rm reach-app-tut-8-ETH-live
 
 .PHONY: run-alice
-run-alice:
-	docker-compose run --rm alice
-
-.PHONY: run-bob
-run-bob:
-	docker-compose run --rm bob"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">..</span>    
-<span class="nf">29    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">live</span>
-<span class="nf">30    run-live</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">31</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">reach-app-tut-8-ETH-live</span>
-<span class="err">32</span>    
-<span class="nf">33    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">alice</span>
-<span class="nf">34    run-alice</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">35</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">alice</span>
-<span class="err">36</span>    
-<span class="nf">37    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">bob</span>
-<span class="nf">38    run-bob</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">39</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">bob</span>
+run-alice:"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">..</span>    
+<span class="err">29</span>    	<span class="err">cp</span> <span class="err">$^</span> <font class="badlink"><span class="k">$@</span></font>
+<span class="err">30</span>    
+<span class="nf">31    docker-compose.ALGO.yml</span><font class="badlink"><span class="o">:</span></font> <span class="n">docker</span>-<span class="n">compose</span>.<span class="n">yml</span>
+<span class="nf">32    	sed -e &#39;32s/ &amp;default-app//&#39; -e &#39;52s/</span><font class="badlink"><span class="o">:</span></font>/: \&amp;<span class="n">default</span>-<span class="n">app</span>/&#39; $^ &gt; $@
+<span class="err">33</span>    
+<span class="nf">34    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">live</span>
+<span class="nf">35    run-live</span><font class="badlink"><span class="o">:</span></font>
+<span class="err">36</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">reach-app-tut-8-ETH-live</span>
+<span class="err">37</span>    
+<span class="nf">38    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">alice</span>
+<span class="nf">39    run-alice</span><font class="badlink"><span class="o">:</span></font>
+<span class="err">..</span>    
 </pre></div></div></p><p>However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let&rsquo;s modify the JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> and make them interactive.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We&rsquo;ll start from scratch and show every line of the program again.
 You&rsquo;ll see a lot of similarity between this and the last version, but for completeness, we&rsquo;ll show every line.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L1-L6"><span class="stt">tut-8/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
