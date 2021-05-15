@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Admin" is honest
+  Verifying when ONLY "Nominee" is honest
+  Verifying when ONLY "Voter" is honest
+Checked 95 theorems; No failures!

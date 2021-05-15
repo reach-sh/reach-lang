@@ -129,9 +129,30 @@ peep_optimize = \case
   ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
   ["btoi"] : ["itob"] : l -> peep_optimize l
   ["itob"] : ["btoi"] : l -> peep_optimize l
+  ["int", "0"] : ["=="] : a@["bz", _] : l ->
+    peep_optimize (a : l)
+  a@["load", x] : ["load", y] : l
+    | x == y ->
+      -- This misses if there is ANOTHER load of the same thing
+      peep_optimize $ a : ["dup"] : l
   a@["store", x] : ["load", y] : l
     | x == y ->
       ["dup"] : peep_optimize (a : l)
+  a@["substring", s0, _] : b@["int", x] : c@["getbyte"] : l ->
+    case mse of
+      Just (s0x, s0xp1) ->
+        peep_optimize $ ["substring", s0x, s0xp1] : l
+      Nothing ->
+        a : (peep_optimize $ b : c : l)
+    where
+      mse = do
+        s0n <- parse s0
+        xn <- parse x
+        let s0xn = s0n + xn
+        let s0xp1n = s0xn + 1
+        case s0xn < 256 && s0xp1n < 256 of
+          True -> return (texty s0xn, texty s0xp1n)
+          False -> mempty
   a@["substring", s0, _] : b@["substring", s1, e1] : l ->
     case mse of
       Just (s2, e2) ->
@@ -633,13 +654,13 @@ cla = \case
             Just (_, x) -> x
             Nothing -> impossible $ "dla_data"
     cl $ DLL_Int sb vti
+    ctobs T_UInt
     ca va
     let vlen = 1 + typeSizeOf (argTypeOf va)
     op "concat"
     let dlen = typeSizeOf $ T_Data tm
     let zlen = fromIntegral $ dlen - vlen
-    let zbs = B.replicate zlen (toEnum 0)
-    cl $ DLL_Bytes zbs
+    padding $ zlen
     op "concat"
     check_concat_len dlen
   DLLA_Struct kvs ->
@@ -984,11 +1005,11 @@ ct = \case
             op "concat"
           False ->
             padding viewSz
-        readArg argView
+        readArgCache argView
         eq_or_fail
       zero_view = do
         padding =<< readViewSize
-        readArg argView
+        readArgCache argView
         eq_or_fail
       (isHalt, check_nextSt) =
         case msvs of
@@ -1038,7 +1059,7 @@ ct = \case
                 let svs' = delete_timev svs
                 -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
                 cstate (HM_Set which) svs'
-                readArg argNextSt
+                readArgCache argNextSt
                 eq_or_fail
 
 finalize :: App ()
@@ -1067,7 +1088,7 @@ cstate hm svs = do
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
-  readArg argHalts
+  readArgCache argHalts
   cfrombs T_Bool
   cl $ DLL_Bool b
   eq_or_fail
@@ -1162,14 +1183,42 @@ lookup_sender :: App ()
 lookup_sender = code "gtxn" [texty txnAppl, "Sender"]
 
 lookup_last :: App ()
-lookup_last = readArg argLast >> cfrombs T_UInt
+lookup_last = readArgCache argLast >> cfrombs T_UInt
 
 lookup_fee_amount :: App ()
-lookup_fee_amount = readArg argFeeAmount >> cfrombs T_UInt
+lookup_fee_amount = readArgCache argFeeAmount >> cfrombs T_UInt
 
 -- XXX get from SDK or use min_balance opcode
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb $ 100000
+
+argCacheM :: M.Map Word8 ScratchSlot
+argCacheM = M.fromList $
+  [ (argNextSt, argNextSt - 1)
+  , (argView, argView - 1)
+  , (argHalts, argHalts - 1)
+  , (argFeeAmount, argFeeAmount - 1)
+  , (argLast, argLast - 1)
+  ]
+
+initArgCache :: App a -> App a
+initArgCache km = initArgCache' $ M.toAscList argCacheM
+  where
+    initArgCache' = \case
+      [] -> km
+      (arg, slot) : more -> do
+        readArg arg
+        code "store" [ texty slot ]
+        initArgCache' more
+
+readArgCache_ :: Word8 -> ScratchSlot
+readArgCache_ ai =
+  case M.lookup ai argCacheM of
+    Just idx -> idx
+    Nothing -> impossible $ show ai <> " not cached"
+
+readArgCache :: Word8 -> App ()
+readArgCache ai = code "load" [ texty $ readArgCache_ ai ]
 
 std_footer :: App ()
 std_footer = do
@@ -1181,7 +1230,7 @@ runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
 runApp eShared eWhich eLets emTimev m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
-  let eHP = 0
+  let eHP = fromIntegral $ M.size argCacheM
   let eSP = 255
   eTxnsR <- newIORef $ txnUser0 - 1
   let eVars = mempty
@@ -1203,7 +1252,9 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let msgArgTy = T_Tuple $ map varType args
   msgArg <- DLVar at Nothing msgArgTy <$> incCounter (sCounter eShared)
   let argCount = argUser + 1 -- it's an index, we want count
-  let eLets0 = M.insert msgArg (readArg argUser >> cfrombs msgArgTy) mempty
+  let real_readArgUser = readArg argUser >> cfrombs msgArgTy
+  let fake_readArgUser = op "dup"
+  let eLets0 = M.insert msgArg fake_readArgUser mempty
   let eLets1 = M.insert from lookup_sender eLets0
   let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
   let eLets3 = case last_timemv of
@@ -1212,15 +1263,17 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let eLets = eLets3
   let letArgs' :: App a -> [(DLVar, Integer)] -> App a
       letArgs' km = \case
-        [] -> km
+        [] -> op "pop" >> km
         (dv, i):more -> do
           -- I could use dup a bunch of times to save space
           let cgen = ce $ DLE_TupleRef at (DLA_Var msgArg) i
           sallocLet dv cgen $ letArgs' km more
   let letArgs :: App a -> App a
-      letArgs km = letArgs' km (zip args [0 ..])
+      letArgs km = do
+        real_readArgUser
+        letArgs' km (zip args [0 ..]) 
   cbs <-
-    runApp eShared eWhich eLets (Just timev) $ letArgs $ do
+    runApp eShared eWhich eLets (Just timev) $ initArgCache $ letArgs $ do
       comment ("Handler " <> texty eWhich)
       comment "Check txnAppl"
       code "gtxn" [texty txnAppl, "TypeEnum"]
