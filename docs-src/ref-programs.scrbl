@@ -1207,9 +1207,6 @@ Parameters with default arguments must come after all other parameters.
 
 The last parameter of a function may be a @deftech{rest parameter}, which allows the function to be called
 with an indefinite number of arguments. A @tech{rest parameter} is specified via @reachin{...IDENT}, where
-@reachin{IDENT} is an @reachin{Array} containing all the remaining arguments. Since an array requires all of its elements
-to be of the same type, the arguments bound to the rest parameter must also be of the same type.
-
 
 @(hrule)
 

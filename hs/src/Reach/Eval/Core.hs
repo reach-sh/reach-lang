@@ -2578,31 +2578,30 @@ evalApplyArgs' rator randas =
   evalApplyVals' rator =<< mapM (liftM public . argToSV) randas
 
 instDefaultArgs :: SLEnv -> EvalError -> [JSExpression] -> [SLSVal] -> App SLEnv
-instDefaultArgs env err formals = \case
-  []
+instDefaultArgs env err formals args =
+  case (formals, args) of
     -- Every argument was specified PERFECTLY
-    | [] <- formals -> return env
+    ([], []) -> return env
+    -- The last formal is a rest arg
+    ([JSSpreadExpression a lhs@JSIdentifier {}], _) -> do
+      let at = srcloc_jsa_only a
+      evalArg lhs (mconcat (map fst args), SLV_Tuple at $ map snd args) [] []
+    -- Error on rest parameter that is not the final parameter
+    ((JSSpreadExpression a _ : _), _ ) ->
+      locAtf (srcloc_jsa "rest parameter" a) $
+        expect_ Err_RestParameterNotLast
     -- Since there are no more applications args, now start consuming default args
-    | JSAssignExpression lhs (JSAssign _) rhs : ft <- formals -> do
+    ((JSAssignExpression lhs (JSAssign _) rhs : ft), []) -> do
       rhs' <- sco_update env >>= flip locSco (evalExpr rhs)
       evalArg lhs rhs' ft []
-    -- Not enough args provided
-    | _ : _ <- formals -> expect_ err
-  h : t
-    -- There are too many args provided at application
-    | [] <- formals -> expect_ err
     -- Ignore default arg since specified at application
-    | JSAssignExpression lhs (JSAssign _) _ : ft <- formals ->
+    ((JSAssignExpression lhs (JSAssign _) _ : ft), (h : t)) ->
       evalArg lhs h ft t
-    -- Rest parameter should be the final parameter
-    | [JSSpreadExpression a lhs@JSIdentifier {}] <- formals -> do
-      let at = srcloc_jsa_only a
-      (ht, _) <- typeOf $ snd h
-      evalArg lhs (Public, SLV_Array at ht $ map snd $ h : t ) [] []
-    -- Error on rest parameter that is not the final parameter
-    | JSSpreadExpression a _ : _ <- formals ->
-      locAtf (srcloc_jsa "rest parameter" a) $ expect_ Err_RestParameterNotLast
-    | lhs : ft <- formals -> evalArg lhs h ft t
+    -- Normal case
+    ((lhs : ft), (h : t)) ->
+      evalArg lhs h ft t
+    -- Bad
+    _ -> expect_ err
   where
     evalArg lhs rhs ft tl = do
       env' <- evalDeclLHSs True env [(lhs, rhs)]
