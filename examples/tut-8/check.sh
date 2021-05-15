@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 make build || exit 1
 
@@ -22,7 +22,8 @@ unlink Bob.in
 unlink Bob.out
 
 get_Alice() {
-    read -r <&4
+    echo Waiting for Alice...
+    read -r REPLY <&4
     echo Alice: "$REPLY"
 }
 to_Alice() {
@@ -30,7 +31,8 @@ to_Alice() {
     echo "$@" >&3
 }
 get_Bob() {
-    read -r <&6
+    echo Waiting for Bob...
+    read -r REPLY <&6
     echo Bob: "$REPLY"
 }
 to_Bob() {
@@ -38,11 +40,9 @@ to_Bob() {
     echo "$@" >&5
 }
 
-get_Alice
-get_Alice
-get_Alice
-get_Alice
-get_Alice
+while [ "x$REPLY" != "xAre you Alice?" ] ; do
+  get_Alice
+done
 to_Alice y
 get_Alice
 get_Alice
@@ -55,11 +55,9 @@ get_Alice
 get_Alice
 to_Alice 10
 
-get_Bob
-get_Bob
-get_Bob
-get_Bob
-get_Bob
+while [ "x$REPLY" != "xAre you Alice?" ] ; do
+  get_Bob
+done
 to_Bob n
 get_Bob
 get_Bob

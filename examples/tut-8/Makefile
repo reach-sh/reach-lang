@@ -16,11 +16,11 @@ down:
 	docker-compose -f "docker-compose.yml" down
 
 .PHONY: run
-run: check
+run: build check
 
 .PHONY: check
 check: docker-compose.algo.yml
-#	./check.sh docker-compose.yml
+	./check.sh docker-compose.yml
 	./check.sh docker-compose.algo.yml
 
 docker-compose.algo.yml: docker-compose.yml
