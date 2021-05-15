@@ -24,19 +24,19 @@ unlink Bob.out
 get_Alice() {
     echo Waiting for Alice...
     read -r REPLY <&4
-    echo Alice: "$REPLY"
+    echo Alice:-: "$REPLY"
 }
 to_Alice() {
-    echo Alice: "$@"
+    echo Alice:+: "$@"
     echo "$@" >&3
 }
 get_Bob() {
     echo Waiting for Bob...
     read -r REPLY <&6
-    echo Bob: "$REPLY"
+    echo "  Bob:-:" "$REPLY"
 }
 to_Bob() {
-    echo Bob: "$@"
+    echo "  Bob:+:" "$@"
     echo "$@" >&5
 }
 

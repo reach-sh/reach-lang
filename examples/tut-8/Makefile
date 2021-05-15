@@ -19,8 +19,11 @@ down:
 run: build check
 
 .PHONY: check
-check: docker-compose.ETH.yml docker-compose.ALGO.yml
+check: docker-compose..yml docker-compose.ETH.yml docker-compose.ALGO.yml
 	./check.sh docker-compose.${REACH_CONNECTOR_MODE}.yml
+
+docker-compose..yml: docker-compose.yml
+	cp $^ $@
 
 docker-compose.ETH.yml: docker-compose.yml
 	cp $^ $@
