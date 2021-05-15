@@ -46,7 +46,7 @@ includeRequireMsg :: Bool
 includeRequireMsg = False
 
 maxDepth :: Int
-maxDepth = 15
+maxDepth = 13
 
 --- Solidity helpers
 

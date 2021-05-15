@@ -24,6 +24,7 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.AddCounts
 import Reach.Connector
+import Reach.Counter
 import Reach.DeJump
 import Reach.Optimize
 import Reach.Texty (pretty)
@@ -173,6 +174,7 @@ render ts = tt
 data Shared = Shared
   { sFailedR :: IORef Bool
   , sViewSize :: Integer
+  , sCounter :: Counter
   }
 
 type Lets = M.Map DLVar (App ())
@@ -1126,7 +1128,7 @@ txnUser0 = txnFromHandler + 1
 -- 3   : Handler halts
 -- 4   : Fee amount
 -- 5   : Last round
--- 6.. : Handler arguments
+-- 6   : Handler arguments
 stdArgTypes :: Integer -> [DLType]
 stdArgTypes vbs =
   [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt]
@@ -1149,8 +1151,8 @@ argFeeAmount = argHalts + 1
 argLast :: Word8
 argLast = argFeeAmount + 1
 
-argFirstUser :: Word8
-argFirstUser = argLast + 1
+argUser :: Word8
+argUser = argLast + 1
 
 readArg :: Word8 -> App ()
 readArg which =
@@ -1195,24 +1197,28 @@ readViewSize = sViewSize <$> (eShared <$> ask)
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = do
+ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) = do
   let svs = dvdeletem last_timemv svs_
   let args = svs <> msg
-  let argCount = fromIntegral argFirstUser + length args
-  let eLets1 = M.insert from lookup_sender mempty
+  let msgArgTy = T_Tuple $ map varType args
+  msgArg <- DLVar at Nothing msgArgTy <$> incCounter (sCounter eShared)
+  let argCount = argUser + 1 -- it's an index, we want count
+  let eLets0 = M.insert msgArg (readArg argUser >> cfrombs msgArgTy) mempty
+  let eLets1 = M.insert from lookup_sender eLets0
   let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
   let eLets3 = case last_timemv of
         Nothing -> eLets2
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
-  let letArgs' :: App a -> [(DLVar, ScratchSlot)] -> App a
+  let letArgs' :: App a -> [(DLVar, Integer)] -> App a
       letArgs' km = \case
         [] -> km
-        (dv@(DLVar _ _ t _), i):more -> do
-          let cgen = readArg i >> cfrombs t
+        (dv, i):more -> do
+          -- I could use dup a bunch of times to save space
+          let cgen = ce $ DLE_TupleRef at (DLA_Var msgArg) i
           sallocLet dv cgen $ letArgs' km more
   let letArgs :: App a -> App a
-      letArgs km = letArgs' km (zip args [argFirstUser ..])
+      letArgs km = letArgs' km (zip args [0 ..])
   cbs <-
     runApp eShared eWhich eLets (Just timev) $ letArgs $ do
       comment ("Handler " <> texty eWhich)
@@ -1309,7 +1315,7 @@ ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg timev body) = 
 
       std_footer
   let viewBsLen = sViewSize eShared
-  let argSize = typeSizeOf $ T_Tuple $ (++) (stdArgTypes viewBsLen) $ map varType $ svs ++ msg
+  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen <> [ msgArgTy ]
   let cinfo = Aeson.object $
         [ ("size", Aeson.Number $ fromIntegral argSize)
         , ("count", Aeson.Number $ fromIntegral argCount) ]
@@ -1329,7 +1335,7 @@ type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
-  let PLProg _at _plo _dli _ _ cpp = pl
+  let PLProg _at plo _dli _ _ cpp = pl
   -- We ignore dli, because it can only contain a binding for the creation
   -- time, which is the previous time of the first message, and these
   -- last_timevs are never included in svs on Algorand.
@@ -1337,6 +1343,8 @@ compile_algo disp pl = do
   resr <- newIORef mempty
   sFailedR <- newIORef False
   let sViewSize = computeViewSize vi
+  let PLOpts {..} = plo
+  let sCounter = plo_counter
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)

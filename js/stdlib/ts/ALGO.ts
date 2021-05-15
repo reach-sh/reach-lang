@@ -1063,12 +1063,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                           undefined, params);
 
       const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, args ];
       const actual_tys =
-        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, ...tys ];
+        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(tys) ];
       debug(dhead, '--- ARGS =', actual_args);
 
-      const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
+      const safe_args: Array<NV> = actual_args.map(
+        // @ts-ignore
+        (m, i) => actual_tys[i].toNet(m));
       safe_args.forEach((x) => {
         if (! ( x instanceof Uint8Array ) ) {
           // The types say this is impossible now,
@@ -1238,12 +1240,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         debug(dhead, '--- txn =', txn);
 
-        const ctc_args: Array<string> =
+        const ctc_args_all: Array<string> =
           txn['application-transaction']['application-args'];
-        debug(dhead, '--- ctc_args =', ctc_args);
-
-        const args = argsSlice(ctc_args, evt_cnt);
-        debug(dhead, '--- args =', args);
+        debug(dhead, {ctc_args_all});
+        const argUser = 6; // from ALGO.hs
+        const ctc_args_s: string = ctc_args_all[argUser];
 
         /** @description base64->hex->arrayify */
         const reNetify = (x: string): NV => {
@@ -1253,13 +1254,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         };
 
         debug(dhead, '--- tys =', tys);
+        const msgTy = T_Tuple(tys);
+        const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
+        debug(dhead, {ctc_args});
 
-        const args_un =
-            args.map((x, i) => tys[i].fromNet(reNetify(x)));
+        const args_un = argsSlice(ctc_args, evt_cnt);
         debug(dhead, '--- args_un =', args_un);
 
+        const argFeeAmount = 3; // from ALGO.hs
         const totalFromFee =
-          T_UInt.fromNet(reNetify(ctc_args[3]));
+          T_UInt.fromNet(reNetify(ctc_args_all[argFeeAmount]));
         debug(dhead, '--- totalFromFee =', totalFromFee);
 
         const fromAddr =
