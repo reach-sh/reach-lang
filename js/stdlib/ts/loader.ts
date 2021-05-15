@@ -1,5 +1,6 @@
 import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
+import * as stdlib_CFX from './CFX';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
 import {process, window} from './shim';
 
@@ -30,6 +31,7 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
   switch (connector) {
     case 'ETH': stdlib = stdlib_ETH; break;
     case 'ALGO': stdlib = stdlib_ALGO; break;
+    case 'CFX': stdlib = stdlib_CFX; break;
     default: throw Error(`impossible: unknown connector ${connector}`);
   }
   if (connectorModeOrEnv && typeof connectorModeOrEnv !== 'string') {

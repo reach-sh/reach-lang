@@ -32,7 +32,11 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
   describe('exports', () => {
     const stdlibExports = Object.keys(ETH).sort();
 
+    // TODO: rejigger exports so that these aren't exposed
     const ETH_extra_exports = [
+      'UInt_max',
+      'stdlib',
+      'typeDefs',
     ];
 
     const ALGO_extra_exports = [
