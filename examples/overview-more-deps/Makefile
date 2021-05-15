@@ -11,10 +11,6 @@ build/%.main.mjs: %.rsh
 build: build/index.main.mjs
 	docker build -f Dockerfile --tag=reachsh/reach-app-over:latest .
 
-.PHONY: run
-run:
-	$(REACH) run index
-
 .PHONY: run-target
 run-target: build
 	docker-compose -f "docker-compose.yml" run --rm reach-app-over-$${REACH_CONNECTOR_MODE} $(ARGS)

@@ -2,6 +2,8 @@ let Prelude =
   https://prelude.dhall-lang.org/v20.1.0/package.dhall
   sha256:26b0ef498663d269e4dc6a82b0ee289ec565d683ef4c00d0ebdd25333a5a3c98
 
+let CONNECTORS = [ "ETH", "ALGO" ]
+
 let Map = Prelude.Map.Type
 let map = Prelude.List.map
 
@@ -446,17 +448,20 @@ let docker-lint = dockerized-job-with
 
 --------------------------------------------------------------------------------
 
+let mk-example-run
+   = \(directory : Text)
+  -> \(connector : Text)
+  -> runT "5m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} ./one.sh run ${directory}"
+
 let mk-example-job
    = \(directory : Text)
-  -> let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
+  -> let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small (
       [ run       "Clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
       , run       "Rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
-      , runT "5m" "Run ${directory}"     "cd examples && ./one.sh run ${directory}"
-
-      , slack/notify
       ]
+      # map Text Step (mk-example-run directory) CONNECTORS
+      # [ slack/notify ])
     in `:=` DockerizedJob directory j
-
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
