@@ -1,5 +1,4 @@
 IMAGE="reachsh/reach"
-CIRCLE_IMAGE="reachsh/reach-circle"
 
 .PHONY: install-mo
 install-mo:
@@ -29,14 +28,6 @@ build: stack
 .PHONY: push
 push:
 	../scripts/docker-push.sh $(IMAGE)
-
-.PHONY: build-circle-docker
-build-circle-docker: stack
-	docker build -f Dockerfile.circleci --tag=$(CIRCLE_IMAGE):latest .
-
-.PHONY: push-circle-docker
-push-circle-docker: build-circle-docker
-	../scripts/docker-push.sh $(CIRCLE_IMAGE)
 
 # TODO: dockerized stan so that make check does not require local hs install?
 .PHONY: check
