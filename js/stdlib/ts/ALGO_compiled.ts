@@ -3,6 +3,7 @@
 // ****************************************************************************
 
 import * as shared from './shared';
+const { debug } = shared;
 import algosdk from 'algosdk';
 import buffer from 'buffer';
 import ethers from 'ethers';
@@ -259,6 +260,7 @@ export const T_Data = (
       const i = nv[0];
       const label = ascLabels[i];
       const val_co = coMap[label];
+      debug({nv, i, label, val_co});
       const rest = nv.slice(1);
       const sliceTo = val_co.netSize;
       const val = val_co.fromNet(rest.slice(0, sliceTo));

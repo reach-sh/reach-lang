@@ -8,11 +8,10 @@ actual: build/index.main.pil
 	grep between $^ > $@
 
 build/index.main.pil: index.rsh
-	$(REACH) compile -- --intermediate-files $^
+	$(REACH) compile -- $^
 
 .PHONY: build
 build: check
-	$(REACH) compile index.rsh
 
 .PHONY: clean
 clean:

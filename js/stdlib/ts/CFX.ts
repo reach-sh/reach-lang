@@ -1,3 +1,5 @@
+export const connector = 'CFX';
+
 import * as ethers from './cfxers'; // Not Actually Ethers
 import * as real_ethers from 'ethers';
 

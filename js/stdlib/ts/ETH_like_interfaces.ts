@@ -119,6 +119,7 @@ export interface ProviderLib {
 
 // TODO: types
 export interface ReachStdlib extends StdlibBase, ProviderLib {
+  connector: string
   randomUInt: any
   hasRandom: any
   balanceOf: any

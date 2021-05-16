@@ -6,6 +6,10 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
+  if ( stdlib.connector === 'ALGO' ) {
+    console.log(`XXX Unsupported`);
+    process.exit(0);
+  }
 
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);

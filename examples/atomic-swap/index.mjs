@@ -17,8 +17,7 @@ const shouldFail = async (fp) => {
 };
 
 (async () => {
-  const stdlib = await stdlib_loader.loadStdlib();
-  const conn = stdlib_loader.getConnector();
+  const stdlib = await loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
   const zorkmid = await launchToken("zorkmid", "ZMD");
@@ -26,11 +25,11 @@ const shouldFail = async (fp) => {
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-  if ( conn == 'ETH' ) {
+  if ( stdlib.connector == 'ETH' ) {
     const myGasLimit = 5000000;
     accAlice.setGasLimit(myGasLimit);
     accBob.setGasLimit(myGasLimit);
-  } else if ( conn == 'ALGO' ) {
+  } else if ( stdlib.connector == 'ALGO' ) {
     console.log(`Demonstrating need to opt-in on ALGO`);
     await shouldFail(async () => await zorkmid.mint(accAlice, startingBalance));
     console.log(`Opt-ing in on ALGO`);
@@ -43,7 +42,7 @@ const shouldFail = async (fp) => {
   await zorkmid.mint(accAlice, startingBalance.mul(2));
   await gil.mint(accBob, startingBalance.mul(2));
 
-  if ( conn == 'ALGO' ) {
+  if ( stdlib.connector == 'ALGO' ) {
     console.log(`Demonstrating opt-out on ALGO`);
     console.log(`\tAlice opts out`);
     await zorkmid.optOut(accAlice);

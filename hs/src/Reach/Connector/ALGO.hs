@@ -129,8 +129,6 @@ peep_optimize = \case
   ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
   ["btoi"] : ["itob"] : l -> peep_optimize l
   ["itob"] : ["btoi"] : l -> peep_optimize l
-  ["int", "0"] : ["=="] : a@["bz", _] : l ->
-    peep_optimize (a : l)
   a@["load", x] : ["load", y] : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -239,7 +237,9 @@ type App = ReaderT Env IO
 withFresh :: App m -> App m
 withFresh m = do
   eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
-  local (\e -> e {eTxnsR = eTxnsR'}) m
+  eTxns' <- liftIO . dupeIORef =<< (eTxns <$> ask)
+  local (\e -> e { eTxnsR = eTxnsR'
+                 , eTxns  = eTxns' } ) m
 
 output :: TEAL -> App ()
 output t = do
@@ -1092,7 +1092,6 @@ halt_should_be b = do
   cfrombs T_Bool
   cl $ DLL_Bool b
   eq_or_fail
-  code "b" ["done"]
 
 -- Intialization:
 --
@@ -1149,7 +1148,8 @@ txnUser0 = txnFromHandler + 1
 -- 3   : Handler halts
 -- 4   : Fee amount
 -- 5   : Last round
--- 6   : Handler arguments
+-- 6   : Saved values
+-- 7   : Handler arguments
 stdArgTypes :: Integer -> [DLType]
 stdArgTypes vbs =
   [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt]
@@ -1172,8 +1172,11 @@ argFeeAmount = argHalts + 1
 argLast :: Word8
 argLast = argFeeAmount + 1
 
-argUser :: Word8
-argUser = argLast + 1
+argSvs :: Word8
+argSvs = argLast + 1
+
+argMsg :: Word8
+argMsg = argSvs + 1
 
 readArg :: Word8 -> App ()
 readArg which =
@@ -1248,30 +1251,30 @@ ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) = do
   let svs = dvdeletem last_timemv svs_
-  let args = svs <> msg
-  let msgArgTy = T_Tuple $ map varType args
-  msgArg <- DLVar at Nothing msgArgTy <$> incCounter (sCounter eShared)
-  let argCount = argUser + 1 -- it's an index, we want count
-  let real_readArgUser = readArg argUser >> cfrombs msgArgTy
-  let fake_readArgUser = op "dup"
-  let eLets0 = M.insert msgArg fake_readArgUser mempty
+  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> incCounter (sCounter eShared)
+  argSvsVar <- mkArgVar svs
+  argMsgVar <- mkArgVar msg
+  let argCount = argMsg + 1 -- it's an index, we want count
+  let eLets0 = M.fromList $
+        [ (argSvsVar, op "dup"), (argMsgVar, op "dup") ]
   let eLets1 = M.insert from lookup_sender eLets0
   let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
   let eLets3 = case last_timemv of
         Nothing -> eLets2
         Just x -> M.insert x lookup_last eLets2
   let eLets = eLets3
-  let letArgs' :: App a -> [(DLVar, Integer)] -> App a
-      letArgs' km = \case
+  let letArgs' :: DLVar -> App a -> [(DLVar, Integer)] -> App a
+      letArgs' argVar km = \case
         [] -> op "pop" >> km
         (dv, i):more -> do
-          -- I could use dup a bunch of times to save space
-          let cgen = ce $ DLE_TupleRef at (DLA_Var msgArg) i
-          sallocLet dv cgen $ letArgs' km more
+          let cgen = ce $ DLE_TupleRef at (DLA_Var argVar) i
+          sallocLet dv cgen $ letArgs' argVar km more
+  let letArgs_ :: Word8 -> DLVar -> [DLVar] -> App a -> App a
+      letArgs_ argLoc argVar args km = do
+        readArg argLoc
+        letArgs' argVar km (zip args [0 ..])
   let letArgs :: App a -> App a
-      letArgs km = do
-        real_readArgUser
-        letArgs' km (zip args [0 ..]) 
+      letArgs = letArgs_ argSvs argSvsVar svs . letArgs_ argMsg argMsgVar msg
   cbs <-
     runApp eShared eWhich eLets (Just timev) $ initArgCache $ letArgs $ do
       comment ("Handler " <> texty eWhich)
@@ -1342,7 +1345,6 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
         csum_ $ itfees <> ftfees
         eq_or_fail
 
-        comment "Check time limits"
         -- We don't need to look at timev because the range of valid rounds
         -- that a txn is valid within is built-in to Algorand, so rather than
         -- checking that ( last_timev + from <= timev <= last_timev + to ), we
@@ -1350,6 +1352,7 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
         (case last_timemv of
           Nothing -> return ()
           Just last_timev -> do
+            comment "Check time limits"
             let check_time f = \case
                   [] -> nop
                   as -> do
@@ -1366,9 +1369,11 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
             check_time "FirstValid" ifrom
             check_time "LastValid" ito)
 
+        code "b" ["done"]
+
       std_footer
   let viewBsLen = sViewSize eShared
-  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen <> [ msgArgTy ]
+  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen <> (map varType [ argSvsVar, argMsgVar ])
   let cinfo = Aeson.object $
         [ ("size", Aeson.Number $ fromIntegral argSize)
         , ("count", Aeson.Number $ fromIntegral argCount) ]

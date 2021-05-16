@@ -48,13 +48,13 @@ jobs:
         name: "Rebuild abstract-simul"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run abstract-simul"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run abstract-simul"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run abstract-simul with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run abstract-simul"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run abstract-simul"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run abstract-simul with ALGO"
@@ -111,13 +111,13 @@ jobs:
         name: "Rebuild algorand-placeholder"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run algorand-placeholder"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run algorand-placeholder"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run algorand-placeholder with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run algorand-placeholder"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run algorand-placeholder"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run algorand-placeholder with ALGO"
@@ -174,13 +174,13 @@ jobs:
         name: Rebuild argz
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run argz"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run argz"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run argz with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run argz"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run argz"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run argz with ALGO
@@ -237,13 +237,13 @@ jobs:
         name: "Rebuild atomic-swap"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run atomic-swap"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run atomic-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run atomic-swap"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run atomic-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap with ALGO"
@@ -300,13 +300,13 @@ jobs:
         name: "Rebuild atomic-swap-auction"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run atomic-swap-auction"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run atomic-swap-auction"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap-auction with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run atomic-swap-auction"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run atomic-swap-auction"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap-auction with ALGO"
@@ -537,13 +537,13 @@ jobs:
         name: "Rebuild chicken-fork"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run chicken-fork"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run chicken-fork"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-fork with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run chicken-fork"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run chicken-fork"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-fork with ALGO"
@@ -600,13 +600,13 @@ jobs:
         name: "Rebuild chicken-parallel"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run chicken-parallel"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run chicken-parallel"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-parallel with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run chicken-parallel"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run chicken-parallel"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-parallel with ALGO"
@@ -663,13 +663,13 @@ jobs:
         name: "Rebuild chicken-race"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run chicken-race"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run chicken-race"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-race with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run chicken-race"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run chicken-race"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-race with ALGO"
@@ -726,13 +726,13 @@ jobs:
         name: "Rebuild default-app"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run default-app"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run default-app"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run default-app with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run default-app"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run default-app"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run default-app with ALGO"
@@ -750,6 +750,32 @@ jobs:
     resource_class: small
     steps:
     - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
     - run:
         command: "cd .circleci && make check"
         environment:
@@ -931,16 +957,79 @@ jobs:
         name: Rebuild exports
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run exports"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run exports"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run exports with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run exports"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run exports"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run exports with ALGO
+        no_output_timeout: 5m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "many-args":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean many-args"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean many-args"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build many-args"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild many-args"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run many-args"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run many-args with ETH"
+        no_output_timeout: 5m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run many-args"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run many-args with ALGO"
         no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -994,13 +1083,13 @@ jobs:
         name: "Rebuild maybe-send"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run maybe-send"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run maybe-send"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run maybe-send with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run maybe-send"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run maybe-send"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run maybe-send with ALGO"
@@ -1057,13 +1146,13 @@ jobs:
         name: "Rebuild multiple-pr-case"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run multiple-pr-case"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run multiple-pr-case"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run multiple-pr-case with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run multiple-pr-case"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run multiple-pr-case"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run multiple-pr-case with ALGO"
@@ -1120,13 +1209,13 @@ jobs:
         name: Rebuild multisig
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run multisig"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run multisig"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run multisig with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run multisig"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run multisig"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run multisig with ALGO
@@ -1183,13 +1272,13 @@ jobs:
         name: "Rebuild nft-auction"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run nft-auction"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run nft-auction"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-auction with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run nft-auction"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run nft-auction"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-auction with ALGO"
@@ -1246,13 +1335,13 @@ jobs:
         name: "Rebuild nft-dumb"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run nft-dumb"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run nft-dumb"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-dumb with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run nft-dumb"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run nft-dumb"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-dumb with ALGO"
@@ -1309,13 +1398,13 @@ jobs:
         name: Rebuild nim
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run nim"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run nim"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run nim with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run nim"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run nim"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run nim with ALGO
@@ -1372,13 +1461,13 @@ jobs:
         name: "Rebuild object-digest"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run object-digest"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run object-digest"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run object-digest with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run object-digest"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run object-digest"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run object-digest with ALGO"
@@ -1435,13 +1524,13 @@ jobs:
         name: Rebuild overview
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run overview"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run overview"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run overview with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run overview"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run overview"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run overview with ALGO
@@ -1498,13 +1587,13 @@ jobs:
         name: "Rebuild overview-more-deps"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run overview-more-deps"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run overview-more-deps"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-more-deps with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run overview-more-deps"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run overview-more-deps"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-more-deps with ALGO"
@@ -1561,13 +1650,13 @@ jobs:
         name: "Rebuild overview-react"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run overview-react"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run overview-react"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-react with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run overview-react"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run overview-react"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-react with ALGO"
@@ -1624,13 +1713,13 @@ jobs:
         name: "Rebuild own-addr"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run own-addr"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run own-addr"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run own-addr with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run own-addr"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run own-addr"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run own-addr with ALGO"
@@ -1687,13 +1776,13 @@ jobs:
         name: "Rebuild popularity-contest"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run popularity-contest"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run popularity-contest"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run popularity-contest with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run popularity-contest"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run popularity-contest"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run popularity-contest with ALGO"
@@ -1750,13 +1839,13 @@ jobs:
         name: "Rebuild pr202105-zet"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run pr202105-zet"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run pr202105-zet"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run pr202105-zet with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run pr202105-zet"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run pr202105-zet"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run pr202105-zet with ALGO"
@@ -1813,13 +1902,13 @@ jobs:
         name: Rebuild race
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run race"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run race"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run race with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run race"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run race"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run race with ALGO
@@ -1876,13 +1965,13 @@ jobs:
         name: Rebuild raffle
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run raffle"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run raffle"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run raffle with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run raffle"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run raffle"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run raffle with ALGO
@@ -1939,13 +2028,13 @@ jobs:
         name: Rebuild remote
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run remote"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run remote"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run remote with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run remote"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run remote"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run remote with ALGO
@@ -2002,13 +2091,13 @@ jobs:
         name: "Rebuild rent-seeking"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run rent-seeking"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run rent-seeking"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run rent-seeking with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run rent-seeking"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run rent-seeking"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run rent-seeking with ALGO"
@@ -2065,13 +2154,13 @@ jobs:
         name: Rebuild rental
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run rental"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run rental"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run rental with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run rental"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run rental"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run rental with ALGO
@@ -2128,13 +2217,13 @@ jobs:
         name: "Rebuild secured-loan"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run secured-loan"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run secured-loan"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run secured-loan with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run secured-loan"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run secured-loan"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run secured-loan with ALGO"
@@ -2330,13 +2419,13 @@ jobs:
         name: Rebuild timeoutception
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run timeoutception"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run timeoutception"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run timeoutception with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run timeoutception"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run timeoutception"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run timeoutception with ALGO
@@ -2393,13 +2482,13 @@ jobs:
         name: Rebuild ttt
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run ttt"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run ttt"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run ttt with ETH
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run ttt"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run ttt"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run ttt with ALGO
@@ -2456,13 +2545,13 @@ jobs:
         name: "Rebuild tut-2"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-2"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-2"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-2 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-2"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-2"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-2 with ALGO"
@@ -2519,13 +2608,13 @@ jobs:
         name: "Rebuild tut-3"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-3"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-3"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-3 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-3"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-3"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-3 with ALGO"
@@ -2582,13 +2671,13 @@ jobs:
         name: "Rebuild tut-4"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-4"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-4"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-4 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-4"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-4"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-4 with ALGO"
@@ -2645,13 +2734,13 @@ jobs:
         name: "Rebuild tut-5"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-5"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-5"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-5"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-5"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5 with ALGO"
@@ -2708,13 +2797,13 @@ jobs:
         name: "Rebuild tut-5-attack"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-5-attack"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-5-attack"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5-attack with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-5-attack"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-5-attack"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5-attack with ALGO"
@@ -2771,13 +2860,13 @@ jobs:
         name: "Rebuild tut-6"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-6"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-6"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-6 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-6"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-6"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-6 with ALGO"
@@ -2834,13 +2923,13 @@ jobs:
         name: "Rebuild tut-7"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-7"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-7"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-7"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-7"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7 with ALGO"
@@ -2897,13 +2986,13 @@ jobs:
         name: "Rebuild tut-7-array"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-7-array"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-7-array"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-array with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-7-array"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-7-array"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-array with ALGO"
@@ -2960,13 +3049,13 @@ jobs:
         name: "Rebuild tut-7-rpc"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-7-rpc"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-7-rpc"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-rpc with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-7-rpc"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-7-rpc"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-rpc with ALGO"
@@ -3023,13 +3112,13 @@ jobs:
         name: "Rebuild tut-8"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-8"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-8"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-8 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-8"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-8"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-8 with ALGO"
@@ -3086,13 +3175,13 @@ jobs:
         name: "Rebuild tut-9"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run tut-9"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-9"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-9 with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run tut-9"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-9"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-9 with ALGO"
@@ -3149,13 +3238,13 @@ jobs:
         name: "Rebuild variable-transfers"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run variable-transfers"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run variable-transfers"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run variable-transfers with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run variable-transfers"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run variable-transfers"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run variable-transfers with ALGO"
@@ -3212,13 +3301,13 @@ jobs:
         name: "Rebuild view-bytes"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run view-bytes"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run view-bytes"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-bytes with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run view-bytes"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run view-bytes"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-bytes with ALGO"
@@ -3275,13 +3364,13 @@ jobs:
         name: "Rebuild view-fun"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run view-fun"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run view-fun"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-fun with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run view-fun"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run view-fun"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-fun with ALGO"
@@ -3338,13 +3427,13 @@ jobs:
         name: "Rebuild view-map"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run view-map"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run view-map"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-map with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run view-map"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run view-map"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-map with ALGO"
@@ -3401,13 +3490,13 @@ jobs:
         name: "Rebuild view-maybe"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run view-maybe"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run view-maybe"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-maybe with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run view-maybe"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run view-maybe"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-maybe with ALGO"
@@ -3464,13 +3553,13 @@ jobs:
         name: "Rebuild view-steps"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run view-steps"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run view-steps"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-steps with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run view-steps"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run view-steps"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-steps with ALGO"
@@ -3527,13 +3616,13 @@ jobs:
         name: "Rebuild weird-swap"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run weird-swap"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run weird-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run weird-swap with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run weird-swap"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run weird-swap"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run weird-swap with ALGO"
@@ -3590,13 +3679,13 @@ jobs:
         name: "Rebuild workshop-fomo"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run workshop-fomo"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run workshop-fomo"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run workshop-fomo"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run workshop-fomo"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo with ALGO"
@@ -3653,13 +3742,13 @@ jobs:
         name: "Rebuild workshop-fomo-generalized"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run workshop-fomo-generalized"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run workshop-fomo-generalized"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo-generalized with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run workshop-fomo-generalized"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run workshop-fomo-generalized"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo-generalized with ALGO"
@@ -3716,13 +3805,13 @@ jobs:
         name: "Rebuild workshop-hash-lock"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run workshop-hash-lock"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run workshop-hash-lock"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-hash-lock with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run workshop-hash-lock"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run workshop-hash-lock"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-hash-lock with ALGO"
@@ -3779,13 +3868,13 @@ jobs:
         name: "Rebuild workshop-relay"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run workshop-relay"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run workshop-relay"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-relay with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run workshop-relay"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run workshop-relay"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-relay with ALGO"
@@ -3842,13 +3931,13 @@ jobs:
         name: "Rebuild workshop-trust-fund"
         no_output_timeout: 10m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH ./one.sh run workshop-trust-fund"
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run workshop-trust-fund"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-trust-fund with ETH"
         no_output_timeout: 5m
     - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO ./one.sh run workshop-trust-fund"
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run workshop-trust-fund"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-trust-fund with ALGO"
@@ -3876,6 +3965,12 @@ workflows:
         requires:
         - "build-core"
     - "test-js":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - dhallcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -3936,6 +4031,12 @@ workflows:
         requires:
         - "build-core"
     - exports:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "many-args":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -4223,10 +4324,6 @@ workflows:
   lint:
     jobs:
     - shellcheck:
-        context:
-        - "reachdevbot-on-dockerhub"
-        - "circleci-on-slack"
-    - dhallcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

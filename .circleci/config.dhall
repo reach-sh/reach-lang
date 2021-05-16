@@ -432,7 +432,7 @@ let shellcheck = dockerized-job ResourceClass.small
   , slack/notify
   ]
 
-let dhallcheck = dockerized-job ResourceClass.small
+let dhallcheck = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
   [ run "Run dhallcheck" "cd .circleci && make check"
   , slack/notify
   ]
@@ -451,7 +451,7 @@ let docker-lint = dockerized-job-with
 let mk-example-run
    = \(directory : Text)
   -> \(connector : Text)
-  -> runT "5m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} ./one.sh run ${directory}"
+  -> runT "5m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} REACH_DEBUG=1 ./one.sh run ${directory}"
 
 let mk-example-job
    = \(directory : Text)
@@ -506,7 +506,6 @@ let workflows =
 
   let lint = { jobs =
     [ [ `=:=` "shellcheck" T.default ]
-    , [ `=:=` "dhallcheck" T.default ]
     ] }
 
   let docs = { jobs =
@@ -518,6 +517,7 @@ let workflows =
     [ [ `=:=` "build-core" T.default           ]
     , [ `=:=` "test-hs"    requires-build-core ]
     , [ `=:=` "test-js"    requires-build-core ]
+    , [ `=:=` "dhallcheck" requires-build-core ]
     ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 

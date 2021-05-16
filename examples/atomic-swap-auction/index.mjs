@@ -33,9 +33,18 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   );
   accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(bidderNames[i]));
 
-  const myGasLimit = 5000000;
-  accAuctioneer.setGasLimit(myGasLimit);
-  accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
+  if ( stdlib.connector === 'ETH' ) {
+    const myGasLimit = 5000000;
+    accAuctioneer.setGasLimit(myGasLimit);
+    accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
+  } else if ( stdlib.connector === 'ALGO' ) {
+    const optin = async (who) => {
+      await stdlib.transfer(who, who, 0, zorkmid.id);
+      await stdlib.transfer(who, who, 0, gil.id);
+    };
+    await optin(accAuctioneer);
+    await Promise.all(accBidders.map(optin));
+  }
 
   // Fund auctioneer with ZMD and bidders with GIL
   await zorkmid.mint(accAuctioneer, startingBalance.mul(2));

@@ -9,6 +9,7 @@
 , "chicken-race"
 , "default-app"
 , "exports"
+, "many-args"
 , "maybe-send"
 , "multiple-pr-case"
 , "multisig"

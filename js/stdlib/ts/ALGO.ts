@@ -1,3 +1,5 @@
+export const connector = 'ALGO';
+
 // XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
@@ -22,7 +24,7 @@ import {
   deferContract,
   debug, assert, envDefault,
   isBigNumber, bigNumberify, bigNumberToNumber,
-  argsSlice,
+  argsSlice, argsSplit,
   makeRandom,
 } from './shared';
 import {
@@ -972,9 +974,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if ( ! handler ) {
         throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
 
+      const [ svs, msg ] = argsSplit(args, evt_cnt);
+      const [ svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
       const fake_res = {
         didTimeout: false,
-        data: argsSlice(args, evt_cnt),
+        data: msg,
         time: bigNumberify(0), // This should not be read.
         value: value,
         from: pks,
@@ -1063,9 +1067,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                           undefined, params);
 
       const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, args ];
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, svs, msg ];
       const actual_tys =
-        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(tys) ];
+        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(svs_tys), T_Tuple(msg_tys) ];
       debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map(
@@ -1243,8 +1247,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const ctc_args_all: Array<string> =
           txn['application-transaction']['application-args'];
         debug(dhead, {ctc_args_all});
-        const argUser = 6; // from ALGO.hs
-        const ctc_args_s: string = ctc_args_all[argUser];
+        const argMsg = 7; // from ALGO.hs
+        const ctc_args_s: string = ctc_args_all[argMsg];
 
         /** @description base64->hex->arrayify */
         const reNetify = (x: string): NV => {

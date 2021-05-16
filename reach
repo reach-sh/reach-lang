@@ -809,9 +809,9 @@ do_run () {
     reach_make_f build
     # Run from Makefile if present and not "run from reach"
     if [ -f Makefile ] && ! $RUN_FROM_REACH && ! $ANY_CUSTOMIZATION; then
-      reach_make run
+      reach_make run "$@"
     else
-      reach_make_f run
+      reach_make_f run "$@"
     fi
   else
     # It is assumed that if this is being called from within reach run,

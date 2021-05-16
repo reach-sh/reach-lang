@@ -1,3 +1,5 @@
+export const connector = 'ETH';
+
 import { makeEthLike } from './ETH_like'
 import * as ethImpl from './ETH_impl';
 

@@ -2,4 +2,4 @@ REACH = ../../reach
 
 .PHONY: run
 run:
-	$(REACH) run index hello 'Mr. Postman'
+	$(REACH) run index Hello 'Mr. Postman'
