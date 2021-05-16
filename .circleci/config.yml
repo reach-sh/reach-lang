@@ -480,12 +480,6 @@ jobs:
         name: "Pull algorand-devnet"
         no_output_timeout: 10m
     - run:
-        command: "cd .circleci && make check"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: Run dhallcheck
-        no_output_timeout: 10m
-    - run:
         command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
         environment:
           LC_ALL: "en_US.UTF-8"
@@ -2280,6 +2274,12 @@ jobs:
         no_output_timeout: 10m
     - store_artifacts:
         path: hs/stan.html
+    - run:
+        command: "cd .circleci && make check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run dhallcheck
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
