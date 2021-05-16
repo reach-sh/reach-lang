@@ -4,7 +4,7 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await loadStdlib();
   const [ N, timeoutFactor ] =
-    stdlib.standardUnit === 'ALGO' ? [ 5, 2 ] : [ 5, 2 ];
+    stdlib.connector === 'ALGO' ? [ 2, 2 ] : [ 5, 2 ];
 
   const startingBalance = stdlib.parseCurrency(10);
   const accPollster = await stdlib.newTestAccount(startingBalance);

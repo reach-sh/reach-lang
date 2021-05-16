@@ -480,6 +480,12 @@ jobs:
         name: "Pull algorand-devnet"
         no_output_timeout: 10m
     - run:
+        command: "cd .circleci && make check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run dhallcheck
+        no_output_timeout: 10m
+    - run:
         command: "scripts/docker-check.sh || echo 'XXX allowed to fail'"
         environment:
           LC_ALL: "en_US.UTF-8"
@@ -737,51 +743,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run default-app with ALGO"
         no_output_timeout: 5m
-    - slack/notify:
-        branch_pattern: "master,gh-pages"
-        event: fail
-        template: basic_fail_1
-  dhallcheck:
-    docker:
-    - auth:
-        password: $DOCKER_PASSWORD
-        username: $DOCKER_LOGIN
-      image: "cimg/base:stable-18.04"
-    resource_class: small
-    steps:
-    - checkout
-    - attach_workspace:
-        at: "/tmp/build-core"
-    - run:
-        command: "mkdir -p ~/.local/bin"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "mkdir -p ~/.local/bin"
-        no_output_timeout: 10m
-    - run:
-        command: "cp /tmp/build-core/bin/* ~/.local/bin"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "cp /tmp/build-core/bin/* ~/.local/bin"
-        no_output_timeout: 10m
-    - setup_remote_docker:
-        docker_layer_caching: false
-    - run:
-        command: |
-          zcat /tmp/build-core/runner.tar.gz | docker load
-          docker tag reachsh/runner:latest reachsh/runner:0.1.2
-          docker tag reachsh/runner:latest reachsh/runner:0.1
-          docker tag reachsh/runner:latest reachsh/runner:0
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: Attach runner image
-        no_output_timeout: 10m
-    - run:
-        command: "cd .circleci && make check"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: Run dhallcheck
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3965,12 +3926,6 @@ workflows:
         requires:
         - "build-core"
     - "test-js":
-        context:
-        - "reachdevbot-on-dockerhub"
-        - "circleci-on-slack"
-        requires:
-        - "build-core"
-    - dhallcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

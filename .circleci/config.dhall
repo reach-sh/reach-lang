@@ -350,6 +350,8 @@ let test-hs = dockerized-job-with-build-core-bins ResourceClass.medium
   , run  "Check hs"    "cd hs && make hs-check"
   , store_artifacts    "hs/stan.html"
 
+  , run "Run dhallcheck" "cd .circleci && make check"
+
   , slack/notify
   ]
 
@@ -432,11 +434,6 @@ let shellcheck = dockerized-job ResourceClass.small
   , slack/notify
   ]
 
-let dhallcheck = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
-  [ run "Run dhallcheck" "cd .circleci && make check"
-  , slack/notify
-  ]
-
 let docker-lint = dockerized-job-with
   "hadolint/hadolint:v1.18.0-6-ga0d655d-alpine"
   ResourceClass.small
@@ -469,7 +466,6 @@ let jobs =
       , `=:=` "docs-render" docs-render
       , `=:=` "docs-deploy" docs-deploy
       , `=:=` "shellcheck"  shellcheck
-      , `=:=` "dhallcheck"  dhallcheck
       , `=:=` "docker-lint" docker-lint
       , `=:=` "test-hs"     test-hs
       , `=:=` "test-js"     test-js
@@ -517,7 +513,6 @@ let workflows =
     [ [ `=:=` "build-core" T.default           ]
     , [ `=:=` "test-hs"    requires-build-core ]
     , [ `=:=` "test-js"    requires-build-core ]
-    , [ `=:=` "dhallcheck" requires-build-core ]
     ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 

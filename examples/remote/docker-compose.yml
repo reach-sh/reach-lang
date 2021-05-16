@@ -20,5 +20,6 @@ services:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://ethereum-devnet:8545
+  reach-app-remote-ALGO-test-dockerized-algod: *default-app
   reach-app-remote-: *default-app
   reach-app-remote: *default-app

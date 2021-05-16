@@ -1,4 +1,4 @@
-import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import { loadStdlib } from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
@@ -20,8 +20,7 @@ const N = 3;
 const bidderNames = ["Alice", "Bob", "Camus"];
 
 (async () => {
-  const stdlib = await stdlib_loader.loadStdlib();
-  const conn = stdlib_loader.getConnector();
+  const stdlib = await loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
   const zorkmid = await launchToken("zorkmid", "ZMD");

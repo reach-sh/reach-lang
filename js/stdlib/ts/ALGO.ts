@@ -1009,6 +1009,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( timeout_delay ) {
           const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
           params.lastRound = lastRound + tdn;
+          debug(dhead, '--- TIMECHECK', { params, timeout_delay, tdn });
           if ( params.firstRound > params.lastRound ) {
             debug(dhead, '--- FAIL/TIMEOUT');
             return {didTimeout: true};
@@ -1163,19 +1164,24 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
           debug(dhead, '--- SUCCESS:', res);
         } catch (e) {
-
           if ( e.type == 'sendRawTransaction' ) {
-            if (!soloSend) {
-              debug(dhead, '--- FAIL:', format_failed_request(e.e));
-            } else {
-              throw Error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
-            }
+            debug(dhead, '--- FAIL:', format_failed_request(e.e));
           } else {
-            if (!soloSend) {
-              debug(dhead, '--- FAIL:', e);
-            } else {
-              throw Error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
-            }
+            debug(dhead, '--- FAIL:', e);
+          }
+
+          if ( ! soloSend ) {
+            // If there is no soloSend, then someone else "won", so let's
+            // listen for their message
+            return await doRecv(false);
+          }
+
+          if ( timeout_delay ) {
+            // If there can be a timeout, then keep waiting for it
+            continue;
+          } else {
+            // Otherwise, something bad is happening
+            throw Error(`${dhead} --- ABORT`);
           }
         }
 

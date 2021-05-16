@@ -3,6 +3,7 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
+  const howManyRounds = stdlib.connector === 'ALGO' ? 3 : 10;
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -17,7 +18,7 @@ import * as backend from './build/index.main.mjs';
 
   const OUTCOME = ['Alice wins', 'Bob wins', 'Timeout'];
   const Player = (Who) => {
-    let count = Math.floor(Math.random() * 10);
+    let count = Math.floor(Math.random() * howManyRounds);
     console.log(`${Who} decides to go ${count} rounds`);
     return {
       showOutcome: (outcome) => {

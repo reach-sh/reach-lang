@@ -1353,7 +1353,7 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
           Nothing -> return ()
           Just last_timev -> do
             comment "Check time limits"
-            let check_time f = \case
+            let check_time f the_cmp = \case
                   [] -> nop
                   as -> do
                       ca $ DLA_Var last_timev
@@ -1362,12 +1362,13 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
                       let go i = do
                             op "dup"
                             code "gtxn" [texty i, f]
-                            eq_or_fail
+                            op the_cmp
+                            or_fail
                       forM_ [0 .. txns] go
                       op "pop"
             let CBetween ifrom ito = int
-            check_time "FirstValid" ifrom
-            check_time "LastValid" ito)
+            check_time "FirstValid" "<=" ifrom
+            check_time "LastValid" ">=" ito)
 
         code "b" ["done"]
 
