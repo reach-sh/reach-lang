@@ -1206,7 +1206,8 @@ Parameters with default arguments must come after all other parameters.
 }
 
 The last parameter of a function may be a @deftech{rest parameter}, which allows the function to be called
-with an indefinite number of arguments. A @tech{rest parameter} is specified via @reachin{...IDENT}, where
+with an arbitrary number of arguments. A @tech{rest parameter} is specified via @reachin{...IDENT}, where
+@reachin{IDENT} is bound to a @reachin{Tuple} containing all the remaining arguments.
 
 @(hrule)
 
