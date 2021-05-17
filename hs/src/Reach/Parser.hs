@@ -156,22 +156,12 @@ instance Pretty JSBundle where
           ("// " <> viaShow rs) :
           map (pretty . ppShow) jms
 
-gatherDeps_fc
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> JSFromClause
-  -> ReaderT ParserOpts IO JSFromClause
+gatherDeps_fc :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> JSFromClause -> ReaderT ParserOpts IO JSFromClause
 gatherDeps_fc mh at fmr (JSFromClause ab aa s) = do
   s_abs <- gatherDeps_file GatherNotTop mh (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
   return $ JSFromClause ab aa s_abs
 
-gatherDeps_imd
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> JSImportDeclaration
-  -> ReaderT ParserOpts IO JSImportDeclaration
+gatherDeps_imd :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> ReaderT ParserOpts IO JSImportDeclaration
 gatherDeps_imd mh at fmr = \case
   JSImportDeclaration ic fc sm -> do
     fc' <- gatherDeps_fc mh at fmr fc
@@ -180,12 +170,7 @@ gatherDeps_imd mh at fmr = \case
     s_abs <- gatherDeps_file GatherNotTop mh (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
     return $ JSImportDeclarationBare a s_abs sm
 
-gatherDeps_exd
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> JSExportDeclaration
-  -> ReaderT ParserOpts IO JSExportDeclaration
+gatherDeps_exd :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> JSExportDeclaration -> ReaderT ParserOpts IO JSExportDeclaration
 gatherDeps_exd mh at fmr = \case
   JSExportFrom ec fc sp -> do
     fc' <- gatherDeps_fc mh at fmr fc
@@ -193,12 +178,7 @@ gatherDeps_exd mh at fmr = \case
   exd ->
     return exd
 
-gatherDeps_mi
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> JSModuleItem
-  -> ReaderT ParserOpts IO JSModuleItem
+gatherDeps_mi :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> JSModuleItem -> ReaderT ParserOpts IO JSModuleItem
 gatherDeps_mi mh at fmr = \case
   JSModuleImportDeclaration a imd -> do
     imd' <- gatherDeps_imd mh (srcloc_at "import" (tp a) at) fmr imd
@@ -208,12 +188,7 @@ gatherDeps_mi mh at fmr = \case
     return $ JSModuleExportDeclaration a exd'
   mi -> return mi
 
-gatherDeps_ast
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> JSAST
-  -> ReaderT ParserOpts IO [JSModuleItem]
+gatherDeps_ast :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> JSAST -> ReaderT ParserOpts IO [JSModuleItem]
 gatherDeps_ast mh at fmr = \case
   JSAstModule mis _ ->
     mapM (gatherDeps_mi mh at fmr) mis
@@ -272,12 +247,7 @@ tryPrettifyError at' e = case readMaybe e of
         _ -> ""
   _ -> e
 
-gatherDeps_ast_rewriteErr
-  :: Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> String
-  -> ReaderT ParserOpts IO [JSModuleItem]
+gatherDeps_ast_rewriteErr :: Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> String -> ReaderT ParserOpts IO [JSModuleItem]
 gatherDeps_ast_rewriteErr mh at' fmr s = case parseModule s (show $ get_srcloc_src at') of
   Left e -> error $ tryPrettifyError at' e -- TODO: prettify
   Right r -> gatherDeps_ast mh at' fmr r
@@ -285,13 +255,7 @@ gatherDeps_ast_rewriteErr mh at' fmr s = case parseModule s (show $ get_srcloc_s
 data GatherContext = GatherTop | GatherNotTop
   deriving (Eq)
 
-gatherDeps_file
-  :: GatherContext
-  -> Maybe HostGit
-  -> SrcLoc
-  -> IORef JSBundleMap
-  -> FilePath
-  -> ReaderT ParserOpts IO FilePath
+gatherDeps_file :: GatherContext -> Maybe HostGit -> SrcLoc -> IORef JSBundleMap -> FilePath -> ReaderT ParserOpts IO FilePath
 gatherDeps_file gctxt mh at fmr src_rel = do
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
 

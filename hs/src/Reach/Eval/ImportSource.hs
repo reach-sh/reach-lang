@@ -318,11 +318,7 @@ lockFileUpsert a = withDotReach $ \(_, lockf) ->
     ]
 
 
-byGitRefSha
-  :: HasPkgT m
-  => HostGit
-  -> FilePath
-  -> PkgT m (HostGitRef, B.ByteString)
+byGitRefSha :: HasPkgT m => HostGit -> FilePath -> PkgT m (HostGitRef, B.ByteString)
 byGitRefSha h fp = withDotReach $ \_ -> do
   f' (gitRefOf h)
 
@@ -346,10 +342,7 @@ byGitRefSha h fp = withDotReach $ \_ -> do
   f' ref = f ref `catchError` err ref
 
 
-lockModuleFix
-  :: HasPkgT m
-  => HostGit
-  -> PkgT m (FilePath, LockModule)
+lockModuleFix :: HasPkgT m => HostGit -> PkgT m (FilePath, LockModule)
 lockModuleFix h = withDotReach $ \(lock, _) -> do
   gitClone h
 
@@ -392,10 +385,7 @@ failIfMissingOrMismatched f (SHA s) = do
   pure ()
 
 
-lockModuleAbsPath
-  :: HasPkgT m
-  => HostGit
-  -> PkgT m FilePath
+lockModuleAbsPath :: HasPkgT m => HostGit -> PkgT m FilePath
 lockModuleAbsPath h = withDotReach $ \(lock, _) -> do
   case lock @!! h of
     Just (SHA k, _) -> do
@@ -408,11 +398,7 @@ lockModuleAbsPath h = withDotReach $ \(lock, _) -> do
       (throwError PkgLockModifyUnauthorized)
 
 
-lockModuleAbsPathGitLocalDep
-  :: HasPkgT m
-  => HostGit
-  -> FilePath
-  -> PkgT m FilePath
+lockModuleAbsPathGitLocalDep :: HasPkgT m => HostGit -> FilePath -> PkgT m FilePath
 lockModuleAbsPathGitLocalDep h ldep = withDotReach $ \(lock, _) -> do
   canGit' <- asks canGit
 
