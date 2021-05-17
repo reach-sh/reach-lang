@@ -135,7 +135,9 @@ export interface ReachStdlib extends StdlibBase, ProviderLib {
   wait: any
   waitUntilTime: any
   verifyContract: any
+  /** @description the display name of the standard unit of currency for the network */
   standardUnit: string
+  /** @description the display name of the atomic (smallest) unit of currency for the network */
   atomicUnit: string
   parseCurrency: any
   minimumBalance: any
@@ -213,4 +215,12 @@ export interface EthLikeArgs {
   isWindowProvider(): boolean
   _getDefaultNetworkAccount(): any
   _getDefaultFaucetNetworkAccount(): any
+  _verifyContractCode?: boolean
+  _warnTxNoBlockNumber?: boolean
+  standardUnit: string
+  atomicUnit: string
+}
+
+export interface EthLikeCompiledArgs {
+  T_Address: ETH_Ty<string, string>
 }

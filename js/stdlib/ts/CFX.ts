@@ -1228,10 +1228,16 @@ export const minimumBalance: BigNumber =
 
 const cfxers = ethers;
 export {cfxers};
+const url =
+  process.env.CFX_NODE_URI || 'http://localhost:12537';
+const networkId =
+  (process.env.CFX_NETWORK_ID && parseInt(process.env.CFX_NETWORK_ID)) || 999;
+console.log({url, networkId});
+
 export const conflux = new Conflux({
-  url: process.env.CFX_NODE_URI || 'http://localhost:12537',
+  url,
   // logger: console,
-  networkId: (process.env.CFX_NETWORK_ID && parseInt(process.env.CFX_NETWORK_ID)) || 999,
+  networkId,
 });
 
 type NetworkAccount = Wallet;

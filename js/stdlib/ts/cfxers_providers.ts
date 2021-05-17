@@ -6,15 +6,21 @@ type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
 type Conflux = cfxsdk.Conflux;
 
+function epochToBlockNumber(x: Record<string, any>): Record<string, any> {
+  return {
+    blockNumber: x.epochNumber,
+    ...x,
+  };
+}
+
 export function ethifyOkReceipt(receipt: any): any {
   if (receipt.outcomeStatus !== 0) {
     throw Error(`Receipt outcomeStatus is nonzero: ${receipt.outcomeStatus}`);
   }
-  return {
-    blockNumber: receipt.epochNumber,
+  return epochToBlockNumber({
     status: 'ok',
     ...receipt,
-  };
+  });
 }
 
 export function ethifyTxn(txn: any): any {
@@ -77,7 +83,7 @@ export class Provider {
       address: opts.address,
       topics: opts.topics,
     };
-    return await this.conflux.getLogs(cfxOpts);
+    return (await this.conflux.getLogs(cfxOpts)).map(epochToBlockNumber);
   }
 
   async getTransaction(txnHash: string): Promise<any> {

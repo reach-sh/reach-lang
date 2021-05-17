@@ -1,11 +1,11 @@
-import { makeEthLike } from './ETH_like'
-import * as ethImpl from './ETH_impl';
+import * as cfxImpl from "./CFX_impl";
+import { makeEthLike } from "./ETH_like";
 
-export * from './ETH_compiled';
-export const connector = 'ETH';
+export * from './CFX_compiled';
+export const connector = 'CFX';
 
-const ethLike = makeEthLike(ethImpl);
-// The following should be identical to CFX.ts
+const ethLike = makeEthLike(cfxImpl);
+// The following should be identical to ETH.ts
 export const {
   getProvider,
   setProvider,
