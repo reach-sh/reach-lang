@@ -36,13 +36,6 @@ findTops (JSBundle mods) libm = do
           SLV_Prim SLPrim_App_Delay {} -> True
           _ -> False
 
-dropOtherTops :: SLVar -> SLLibs -> SLLibs
-dropOtherTops which =
-  M.map (M.filterWithKey (\ k v ->
-      case sss_val v of
-        SLV_Prim SLPrim_App_Delay {} -> k == which
-        _ -> True ))
-
 resetEnvRefs :: Env -> DLStmts -> IO ()
 resetEnvRefs env lifts = do
   writeIORef (e_lifts env) lifts
@@ -50,30 +43,40 @@ resetEnvRefs env lifts = do
   writeIORef (e_ios env) mempty
   writeIORef (e_views env) mempty
 
-evalBundle :: Connectors -> JSBundle -> IO (M.Map SLVar (IO DLProg))
+evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
 evalBundle cns djp = do
   -- Either compile all the Reach.Apps or those specified by user
   evalEnv <- defaultEnv cns
   let JSBundle mods = djp
+  let exe = getLibExe mods
   libm <- flip runReaderT evalEnv $ evalLibs cns mods
   lifts <- readIORef $ e_lifts evalEnv
+  let exe_ex = libm M.! exe
   let tops = findTops djp libm
-  let (libm', tops') =
-        case S.null tops of
-          True -> do
-            let name = "default"
-            -- `default` will never be accepted by the parser as an identifier
-            let exe = getLibExe mods
-            (M.insert exe (M.insert name defaultApp $ libm M.! exe) libm, S.singleton name)
-          False ->
-            (libm, tops)
-  let go which = do
-        let libm'' = dropOtherTops which libm'
+  let go getdapp = do
         -- Reutilize env from parsing module, but remove any mutable state
         -- from processing previous top
         resetEnvRefs evalEnv lifts
-        compileBundle evalEnv cns djp libm'' which
-  return $ M.fromSet go tops'
+        mkprog <-
+          flip runReaderT evalEnv $ do
+            exports <- getExports exe_ex
+            topv <- ensure_public . sss_sls =<< getdapp
+            compileDApp cns exports topv
+        ms' <- readIORef $ me_ms $ e_mape evalEnv
+        final <- readIORef $ e_lifts evalEnv
+        unused_vars <- readIORef $ e_unused_variables evalEnv
+        let reportUnusedVars = \case
+              [] -> return ()
+              l@(h : _) ->
+                expect_throw Nothing (fst h) $ Err_Unused_Variables l
+        reportUnusedVars $ S.toList unused_vars
+        return $ mkprog ms' final
+  case S.null tops of
+    True -> do
+      return (S.singleton "default", const $ go $ return defaultApp)
+    False -> do
+      let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
+      return (tops, go')
 
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 
@@ -127,21 +130,11 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_s
      in DLProg at dlo' sps dli exports dviews final
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
-getExports :: SLLibs -> App DLSExports
-getExports libs = do
-  let getLibExports lib = justValues . M.toList <$> mapM (slToDLExportVal . sss_val) lib
-  M.fromList
-    <$> concatMapM
-      (getLibExports . snd)
-      (filter ((/= ReachStdLib) . fst) $ M.toList libs)
+mmapMaybeM :: Monad m => (a -> m (Maybe b)) -> M.Map k a -> m (M.Map k b)
+mmapMaybeM f m = M.mapMaybe id <$> mapM f m
 
-compileBundle_ :: Connectors -> JSBundle -> SLLibs -> SLVar -> App CompiledDApp
-compileBundle_ cns (JSBundle mods) libm main = do
-  exports <- getExports libm
-  let exe = getLibExe mods
-  let exe_ex = libm M.! exe
-  topv <- ensure_public . sss_sls =<< env_lookup LC_CompilerRequired main exe_ex
-  compileDApp cns exports topv
+getExports :: SLEnv -> App DLSExports
+getExports = mmapMaybeM (slToDLExportVal . sss_val)
 
 defaultEnv :: Connectors -> IO Env
 defaultEnv cns = do
@@ -183,18 +176,3 @@ defaultEnv cns = do
     e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
     let e_mape = MapEnv {..}
     return (Env {..})
-
-compileBundle :: Env -> Connectors -> JSBundle -> SLLibs -> SLVar -> IO DLProg
-compileBundle env cns jsb libm main = do
-  mkprog <-
-    flip runReaderT env $
-        compileBundle_ cns jsb libm main
-  ms' <- readIORef $ me_ms $ e_mape env
-  final <- readIORef $ e_lifts env
-  unused_vars <- readIORef $ e_unused_variables env
-  reportUnusedVars $ S.toList unused_vars
-  return $ mkprog ms' final
-  where
-    reportUnusedVars [] = return ()
-    reportUnusedVars l@(h : _) =
-      expect_throw Nothing (fst h) $ Err_Unused_Variables l

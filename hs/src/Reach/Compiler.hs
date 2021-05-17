@@ -4,6 +4,7 @@ import Control.Monad
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AddCounts
@@ -49,9 +50,9 @@ compile copts = do
         Nothing -> \_ _ -> return ()
   djp <- gatherDeps_top $ source copts
   interOut outn "bundle.js" $ render $ pretty djp
-  dappm <- evalBundle all_connectors djp
-  let dappm' = maybe id (flip M.restrictKeys) (tops copts) $ dappm
-  forM_ (M.toAscList dappm') $ \ (which, compileDApp) -> do
+  (avail, compileDApp) <- evalBundle all_connectors djp
+  let chosen = fromMaybe avail $ tops copts
+  forM_ (S.toAscList chosen) $ \ which -> do
       let addWhich = ((T.pack which <> ".") <>)
       let woutn = outn . addWhich
       let woutnMay = outnMay woutn
@@ -60,7 +61,7 @@ compile copts = do
           showp l = winterOut l . render . pretty
       let showp' :: (forall a. Pretty a => String -> a -> IO ())
           showp' = showp . T.pack
-      dl <- compileDApp
+      dl <- compileDApp which
       let DLProg _ (DLOpts {..}) _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
