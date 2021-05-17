@@ -1,4 +1,4 @@
-module Reach.Eval (compileBundle, defaultEnv) where
+module Reach.Eval (evalBundle) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -14,11 +14,66 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Eval.Core
 import Reach.Eval.Error
+import Reach.Eval.Module
 import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 
+getLibExe :: [(p, b)] -> p
+getLibExe = \case
+  [] -> impossible "getLibExe: no files"
+  ((x, _) : _) -> x
+
+findTops :: JSBundle -> SLLibs -> S.Set SLVar
+findTops (JSBundle mods) libm = do
+  let exe = getLibExe mods
+  let exe_ex = libm M.! exe
+  M.keysSet $
+    flip M.filter exe_ex $
+      \v ->
+        case sss_val v of
+          SLV_Prim SLPrim_App_Delay {} -> True
+          _ -> False
+
+dropOtherTops :: SLVar -> SLLibs -> SLLibs
+dropOtherTops which =
+  M.map (M.filterWithKey (\ k v ->
+      case sss_val v of
+        SLV_Prim SLPrim_App_Delay {} -> k == which
+        _ -> True ))
+
+resetEnvRefs :: Env -> DLStmts -> IO ()
+resetEnvRefs env lifts = do
+  writeIORef (e_lifts env) lifts
+  writeIORef (e_pie env) mempty
+  writeIORef (e_ios env) mempty
+  writeIORef (e_views env) mempty
+
+evalBundle :: Connectors -> JSBundle -> IO (M.Map SLVar (IO DLProg))
+evalBundle cns djp = do
+  -- Either compile all the Reach.Apps or those specified by user
+  evalEnv <- defaultEnv cns
+  let JSBundle mods = djp
+  libm <- flip runReaderT evalEnv $ evalLibs cns mods
+  lifts <- readIORef $ e_lifts evalEnv
+  let tops = findTops djp libm
+  let (libm', tops') =
+        case S.null tops of
+          True -> do
+            let name = "default"
+            -- `default` will never be accepted by the parser as an identifier
+            let exe = getLibExe mods
+            (M.insert exe (M.insert name defaultApp $ libm M.! exe) libm, S.singleton name)
+          False ->
+            (libm, tops)
+  let go which = do
+        let libm'' = dropOtherTops which libm'
+        -- Reutilize env from parsing module, but remove any mutable state
+        -- from processing previous top
+        resetEnvRefs evalEnv lifts
+        compileBundle evalEnv cns djp libm'' which
+  return $ M.fromSet go tops'
 
 type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
 

@@ -306,11 +306,6 @@ app_options =
       where
         up m = Right $ opts {dlo_deployMode = m}
 
-getLibExe :: [(p, b)] -> p
-getLibExe = \case
-  [] -> impossible "getLibExe: no files"
-  ((x, _) : _) -> x
-
 --- Utilities
 expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = do
