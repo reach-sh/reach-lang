@@ -1,0 +1,3 @@
+reachc: error: ./strict_value_not_bound.rsh:10:23:after expr stmt semicolon: Invalid block result type. Expected Null, got UInt
+Trace:
+  in [unknown function] from (./strict_value_not_bound.rsh:9:17:function exp) at (./strict_value_not_bound.rsh:9:13:application)
