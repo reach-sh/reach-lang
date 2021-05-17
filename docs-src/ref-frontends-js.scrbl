@@ -333,6 +333,13 @@ The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
 
+@(hrule)
+@(mint-define! '("connector"))
+@js{
+ connector : Connector }
+
+Represents the @jsin{Connector} the @jsin{stdlib} uses.
+
 @section[#:tag "ref-frontends-js-provider"]{Provider Selection}
 
 These functions allow you to choose which particular @tech{consensus network} API provider to connect to.
