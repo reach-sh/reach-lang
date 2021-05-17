@@ -1,7 +1,7 @@
 // This file only exists to typecheck that modules satisfy an interface
 
 import * as ALGO from './ALGO';
-import * as CFX from './CFX_beautiful';
+import * as CFX from './CFX';
 import * as CFX_compiled from './CFX_compiled';
 import * as CFX_compiled_impl from './CFX_compiled_impl';
 import * as CFX_impl from './CFX_impl';
