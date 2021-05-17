@@ -7,3 +7,8 @@ clean:
 .PHONY: build
 build:
 	$(REACH) compile --install-pkgs index.rsh
+
+.PHONY: run
+run: build
+	$(REACH) run index
+	$(REACH) down
