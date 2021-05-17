@@ -1,6 +1,6 @@
 import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
-import * as stdlib_CFX from './CFX_beautiful';
+import * as stdlib_CFX from './CFX';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
 import {process, window} from './shim';
 
