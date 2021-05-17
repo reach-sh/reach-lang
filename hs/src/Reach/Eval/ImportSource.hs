@@ -372,6 +372,7 @@ lockModuleFix h = withDotReach $ \(lock, _) -> do
 
 (@!!) :: LockFile -> HostGit -> Maybe (SHA, LockModule)
 (@!!) l h = find ((== h) . host . snd) (M.toList $ modules l)
+infixl 9 @!!
 
 
 failIfMissingOrMismatched :: HasPkgT m => FilePath -> SHA -> PkgT m ()
