@@ -40,6 +40,16 @@ The table below shows the JavaScript representation of each of the Reach types:
 
 For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt})} inhabitant @reachin{MInt.Some(42)} is represented as @reachin{['Some', 42]} in JavaScript.
 
+@(hrule)
+@(mint-define! '("Connector"))
+@js{
+  type Connector = 'ETH' | 'ALGO'
+}
+
+A @reachin{Connector} is the abbreviated name of the network
+being connected to.
+
+
 @section[#:tag "ref-frontends-js-loader.mjs"]{@tt{loader.mjs}}
 
 The @tt{loader.mjs} module exports the following functions
@@ -78,12 +88,10 @@ If the variable is missing or empty, it will return the canonicalized form of @j
 @(hrule)
 @(mint-define! '("getConnector"))
 @js{
-  getConnector() => string
+  getConnector() => Connector
 }
 
-Returns the first piece of @jsin{getConnectorMode()},
-which indicates the abbreviated name of the network being connected to.
-Connectors are one of the following: @jsin{['ETH', 'ALGO']}.
+Returns the first piece of @jsin{getConnectorMode()}.
 
 @(hrule)
 @(mint-define! '("loadStdlib"))
