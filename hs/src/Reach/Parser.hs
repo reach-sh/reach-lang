@@ -89,12 +89,8 @@ instance Show ParserError where
   show (Err_Parse_InvalidImportSource fp e) =
     "Invalid import: " <> fp <> "\n" <> show e
   show (Err_Parse_InvalidLockModuleImport h fp e)
-     = "Invalid lock-module import ("
-    <> gitUriOf h
-    <> "): "
-    <> fp
-    <> "\n"
-    <> show e
+     = "Invalid lock-module import (" <> gitUriOf h <> "): "
+    <> fp <> "\n" <> show e
 
 --- Helpers
 parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
@@ -297,15 +293,7 @@ gatherDeps_file
   -> FilePath
   -> ReaderT ParserOpts IO FilePath
 gatherDeps_file gctxt mh at fmr src_rel = do
-  updatePartialAvoidCycles
-    at
-    fmr
-    (gatherDeps_from at)
-    [ReachStdLib]
-    get_key
-    ret_key
-    Err_Parse_CyclicImport
-    proc_key
+  updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
 
   where
     no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
