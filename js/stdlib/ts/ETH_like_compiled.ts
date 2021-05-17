@@ -28,6 +28,7 @@ import type {
   TypeDefs,
   Arith,
   BackendStdlib,
+  EthLikeCompiledArgs,
 } from './ETH_like_interfaces'
 import { labelMaps } from './shared_impl';
 export type {
@@ -40,8 +41,11 @@ export type Token = CBR_Address;
 export type PayAmt = shared.MkPayAmt<Token>;
 
 // TODO: restore return type annotation once types are in place
-export function makeCompiledStdlib() {
+export function makeEthLikeCompiled(ethLikeCompiledArgs: EthLikeCompiledArgs) {
 // ...............................................
+const {
+  T_Address,
+} = ethLikeCompiledArgs;
 
 const UInt_max: BigNumber =
   ethers.BigNumber.from(2).pow(256).sub(1);
@@ -114,42 +118,6 @@ const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
 };
 const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
-};
-
-function addressUnwrapper(x: any): string {
-  // TODO: set it up so that .address is always there
-  // Just putting it here to appease BT_Address.canonicalize
-  if (typeof x === 'string') {
-    // XXX is this actually needed?
-    if (x.slice(0, 2) !== '0x') {
-      return '0x' + x;
-    } else {
-      return x;
-    }
-  } else if (x.networkAccount && x.networkAccount.address) {
-    return (x.networkAccount.address);
-  } else if (x.address) {
-    return x.address;
-  } else {
-    throw Error(`Failed to unwrap address ${x}`);
-  }
-}
-
-const T_Address: ETH_Ty<CBR_Address, string> = {
-  ...CBR.BT_Address,
-  canonicalize: (uv: unknown): CBR_Address => {
-    const val = addressUnwrapper(uv);
-    return CBR.BT_Address.canonicalize(val || uv);
-  },
-  defaultValue: '0x' + Array(40).fill('0').join(''),
-  munge: (bv: CBR_Address): string => bv,
-  unmunge: (nv: string): CBR_Address => V_Address(nv),
-  paramType: 'address',
-}
-
-const V_Address = (s: string): CBR_Address => {
-  // Uses ETH-specific canonicalize!
-  return T_Address.canonicalize(s);
 };
 
 const T_Array = <T>(

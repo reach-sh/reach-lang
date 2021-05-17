@@ -148,6 +148,10 @@ const {
   isWindowProvider,
   _getDefaultNetworkAccount,
   _getDefaultFaucetNetworkAccount,
+  _verifyContractCode = true,
+  _warnTxNoBlockNumber = true,
+  standardUnit,
+  atomicUnit,
 } = ethLikeArgs;
 
 const {
@@ -756,8 +760,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           } else {
             // XXX For some reason ok_t sometimes doesn't have blockNumber
-            console.log(`WARNING: no blockNumber on transaction.`);
-            console.log(ok_t);
+            if (_warnTxNoBlockNumber) {
+              console.log(`WARNING: no blockNumber on transaction.`);
+              console.log(ok_t);
+            }
           }
 
           debug(shad, ':', label, 'recv', ok_evt, `--- AT`, ok_r.blockNumber);
@@ -994,6 +1000,8 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
     );
   }
 
+  if (!_verifyContractCode) return true;
+
   debug(`verifyContract: checking code...`)
   // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
   // We can safely getCode at the current block;
@@ -1063,12 +1071,6 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
 
   return true;
 };
-
-/** @description the display name of the standard unit of currency for the network */
-const standardUnit = 'ETH';
-
-/** @description the display name of the atomic (smallest) unit of currency for the network */
-const atomicUnit = 'WEI';
 
 /**
  * @description  Parse currency by network

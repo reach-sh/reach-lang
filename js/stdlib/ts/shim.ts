@@ -18,6 +18,9 @@ type Env = {
   ALGO_INDEXER_TOKEN?: string,
   ALGO_INDEXER_SERVER?: string,
   ALGO_INDEXER_PORT?: string,
+
+  CFX_NODE_URI?: string,
+  CFX_NETWORK_ID?: string,
 }
 type Stdout = {
   write: (data: any) => void,

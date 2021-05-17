@@ -313,3 +313,5 @@ export const providerLib = {
   setProviderByEnv,
   providerEnvByName,
 }
+export const standardUnit = 'ETH';
+export const atomicUnit = 'WEI';
