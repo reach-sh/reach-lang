@@ -50,6 +50,9 @@ skipEth =
 skipAlgo :: [FilePath]
 skipAlgo =
   [ "tut-7-rpc"
+
+  -- 2021-05-19: Chris asked that this be disabled until the replacement
+  -- Algorand dev node becomes available (or when we can speed up the test)
   , "nft-auction"
   ]
 
