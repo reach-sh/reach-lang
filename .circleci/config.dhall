@@ -446,7 +446,7 @@ let docker-lint = dockerized-job-with
 let mk-example-run
    = \(directory : Text)
   -> \(connector : Text)
-  -> runT "5m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} REACH_DEBUG=1 ./one.sh run ${directory}"
+  -> runT "10m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} REACH_DEBUG=1 ./one.sh run ${directory}"
 
 let mk-example-job
    = \(ex : KeyVal Text (List Text))
