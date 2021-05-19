@@ -35,6 +35,31 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "reach-ide",
+					"title": "Reach IDE",
+					"icon": "./images/reach-logo.png"
+				}
+			]
+		},
+		"views": {
+			"reach-ide": [
+				{
+					"id": "reach-commands",
+					"name": "Commands"
+				},
+				{
+					"id": "reach-docs",
+					"name": "Documentation"
+				},
+				{
+					"id": "reach-help",
+					"name": "Help and Feedback"
+				}
+			]
+		},
 		"snippets": [
 			{
 				"language": "javascript",
@@ -78,10 +103,52 @@
 					"command": "reach.run"
 				},
 				{
+					"command": "reach.clean"
+				},
+				{
+					"command": "reach.issue"
+				},
+				{
+					"command": "reach.discord"
+				},
+				{
+					"command": "reach.gist"
+				},
+				{
 					"command": "reach.docs"
 				},
 				{
 					"command": "reach.upgrade"
+				},
+				{
+					"command": "reach.hashes"
+				},
+				{
+					"command": "reach.version"
+				},
+				{
+					"command": "reach.docker-reset"
+				},
+				{
+					"command": "reach.devnet"
+				},
+				{
+					"command": "reach.rpc-server"
+				},
+				{
+					"command": "reach.rpc-run"
+				},
+				{
+					"command": "reach.react"
+				},
+				{
+					"command": "reach.scaffold"
+				},
+				{
+					"command": "reach.down"
+				},
+				{
+					"command": "reach.init"
 				},
 				{
 					"command": "reach.update"
