@@ -1232,12 +1232,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-auction with ETH"
         no_output_timeout: 5m
-    - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run nft-auction"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run nft-auction with ALGO"
-        no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3009,18 +3003,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Rebuild tut-7-rpc"
         no_output_timeout: 10m
-    - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run tut-7-rpc"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run tut-7-rpc with ETH"
-        no_output_timeout: 5m
-    - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run tut-7-rpc"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run tut-7-rpc with ALGO"
-        no_output_timeout: 5m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail

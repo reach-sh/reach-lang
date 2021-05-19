@@ -451,14 +451,14 @@ let mk-example-run
   -> runT "5m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} REACH_DEBUG=1 ./one.sh run ${directory}"
 
 let mk-example-job
-   = \(directory : Text)
+   = \(ex : KeyVal Text (List Text))
   -> let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small (
-      [ run       "Clean ${directory}"   "cd examples && ./one.sh clean ${directory}"
-      , run       "Rebuild ${directory}" "cd examples && ./one.sh build ${directory}"
+      [ run "Clean ${ex.mapKey}"   "cd examples && ./one.sh clean ${ex.mapKey}"
+      , run "Rebuild ${ex.mapKey}" "cd examples && ./one.sh build ${ex.mapKey}"
       ]
-      # map Text Step (mk-example-run directory) CONNECTORS
+      # map Text Step (mk-example-run ex.mapKey) ex.mapValue
       # [ slack/notify ])
-    in `:=` DockerizedJob directory j
+    in `:=` DockerizedJob ex.mapKey j
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
@@ -469,7 +469,7 @@ let jobs =
       , `=:=` "docker-lint" docker-lint
       , `=:=` "test-hs"     test-hs
       , `=:=` "test-js"     test-js
-      ] # map Text (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
+      ] # map (KeyVal Text (List Text)) (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
 
 
 --------------------------------------------------------------------------------
@@ -497,8 +497,8 @@ let workflows =
     T::{ requires = Some [ "build-core" ] }
 
   let mk-example-wf
-     = \(directory : Text)
-    -> [ `=:=` directory requires-build-core ]
+     = \(ex : KeyVal Text (List Text))
+    -> [ `=:=` ex.mapKey requires-build-core ]
 
   let lint = { jobs =
     [ [ `=:=` "shellcheck" T.default ]
@@ -513,7 +513,7 @@ let workflows =
     [ [ `=:=` "build-core" T.default           ]
     , [ `=:=` "test-hs"    requires-build-core ]
     , [ `=:=` "test-js"    requires-build-core ]
-    ] # map Text (Map Text T.Type) mk-example-wf ./examples.dhall
+    ] # map (KeyVal Text (List Text)) (Map Text T.Type) mk-example-wf ./examples.dhall
     }
 
   in { lint, docs, build-and-test }
