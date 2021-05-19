@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import qualified Reach.Parser.Common as P
 import Reach.AST.DL
 import Reach.Backend.JS
 import Reach.Connector
@@ -23,7 +22,6 @@ import Reach.Parser (gatherDeps_top)
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
-import Control.Monad.Reader (runReaderT)
 import System.Directory
 
 data CompilerOpts = CompilerOpts
@@ -54,10 +52,7 @@ compile copts = do
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute $ dirDotReach copts
-  djp <- runReaderT (gatherDeps_top $ source copts) P.ParserOpts
-    { P.dirDotReach = dirDotReach'
-    , P.canGit = canGit copts
-    }
+  djp <- gatherDeps_top (source copts) (canGit copts) dirDotReach'
   interOut outn "bundle.js" $ render $ pretty djp
   (avail, compileDApp) <- evalBundle all_connectors djp
   let chosen = fromMaybe avail $ tops copts
