@@ -459,8 +459,20 @@ localPath = do
                else fail $ "Invalid local path: " <> p
 
 
-importSource :: FilePath -> Either ParseError ImportSource
-importSource = runParser (remoteGit <|> localPath) () ""
+data Err_Parse_InvalidImportSource
+  = Err_Parse_InvalidImportSource FilePath ParseError
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show Err_Parse_InvalidImportSource where
+  show (Err_Parse_InvalidImportSource fp e) =
+    "Invalid import: " <> fp <> "\n" <> show e
+
+
+importSource :: SrcLoc -> FilePath -> IO ImportSource
+importSource srcloc fp = either
+  (expect_thrown srcloc . Err_Parse_InvalidImportSource fp)
+  pure
+  (runParser (remoteGit <|> localPath) () "" fp)
 
 
 --------------------------------------------------------------------------------

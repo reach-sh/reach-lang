@@ -38,7 +38,6 @@ import System.Directory
 import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
-import qualified Text.Parsec as P
 
 
 data Env = Env
@@ -66,7 +65,6 @@ data ParserError
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
-  | Err_Parse_InvalidImportSource FilePath P.ParseError
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 --- FIXME implement a custom show that is useful
@@ -95,8 +93,6 @@ instance Show ParserError where
     "Invalid import: dotdot path imports are not supported: " <> fp
   show (Err_Parse_NotModule ast) =
     "Not a module: " <> (take 256 $ show ast)
-  show (Err_Parse_InvalidImportSource fp e) =
-    "Invalid import: " <> fp <> "\n" <> show e
 
 --- Helpers
 parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
@@ -265,16 +261,14 @@ gatherDeps_file :: GatherContext -> AppT FilePath
 gatherDeps_file gctxt src_rel = do
   Env {..} <- ask
 
+  (mh', isrc) <- liftIO $ importSource srcloc src_rel >>= \case
+    i@(ImportRemoteGit h) -> pure (Just h,   i)
+    i@(ImportLocal     _) -> pure (mhostgit, i)
+
   let no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
 
       ret_key (ReachSourceFile x) = x
       ret_key ReachStdLib         = no_stdlib
-
-      (mh', isrc) = case importSource src_rel of
-        Right i@(ImportRemoteGit h) -> (Just h,   i)
-        Right i@(ImportLocal     _) -> (mhostgit, i)
-        Left e ->
-          expect_thrown srcloc (Err_Parse_InvalidImportSource src_rel e)
 
       get_key () = case isrc of
         ImportRemoteGit h -> ReachSourceFile

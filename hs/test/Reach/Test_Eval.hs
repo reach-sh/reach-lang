@@ -7,8 +7,8 @@ module Reach.Test_Eval
   )
 where
 
-import Data.Either (isLeft)
 import Data.Proxy
+import Reach.AST.Base
 import Reach.Eval.Error
 import Reach.Eval.ImportSource
 import Reach.Parser
@@ -63,46 +63,46 @@ spec_examples_cover_ParserError =
 
 spec_ImportSource :: Spec
 spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
+  let sempty = SrcLoc Nothing Nothing Nothing
+      isrc   = importSource sempty
 
   describe "exports an `importSource` function which" $ do
     it "can distinguish local imports" $ do
       let f = "./examples/nim/index-abstract.rsh"
-          n = "@bork"
-      importSource f `shouldBe` (Right $ ImportLocal f)
-      isLeft (importSource n) `shouldBe` True
+      isrc f >>= (`shouldBe` ImportLocal f)
 
     describe "can distinguish remote GitHub imports" $ do
       it "in long-form" $ do
-        importSource "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-          `shouldBe` (Right $ ImportRemoteGit $ GitHub
-            (HostGitAcct "reach-sh")
-            (HostGitRepo "reach-lang")
-            (HostGitRef  "6c3dd0f")
-            (HostGitDir  [ "examples", "exports" ])
-            (HostGitFile "index.rsh"))
+        isrc "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
+          >>= (`shouldBe` (ImportRemoteGit $ GitHub
+                (HostGitAcct "reach-sh")
+                (HostGitRepo "reach-lang")
+                (HostGitRef  "6c3dd0f")
+                (HostGitDir  [ "examples", "exports" ])
+                (HostGitFile "index.rsh")))
 
       it "(by default) when no host is specified" $ do
-        importSource "@reach-sh/reach-lang#6c3dd0f/module.rsh"
-          `shouldBe` (Right $ ImportRemoteGit $ GitHub
-            (HostGitAcct "reach-sh")
-            (HostGitRepo "reach-lang")
-            (HostGitRef  "6c3dd0f")
-            (HostGitDir  [])
-            (HostGitFile "module.rsh"))
+        isrc "@reach-sh/reach-lang#6c3dd0f/module.rsh"
+          >>= (`shouldBe` (ImportRemoteGit $ GitHub
+                (HostGitAcct "reach-sh")
+                (HostGitRepo "reach-lang")
+                (HostGitRef  "6c3dd0f")
+                (HostGitDir  [])
+                (HostGitFile "module.rsh")))
 
     describe "can distinguish remote BitBucket imports" $ do
       it "in long-form" $ do
-        importSource "@bitbucket.org:reach-sh/reach-libs#v0.1.2/a/b/c/module.rsh"
-          `shouldBe` (Right $ ImportRemoteGit $ BitBucket
-            (HostGitAcct "reach-sh")
-            (HostGitRepo "reach-libs")
-            (HostGitRef  "v0.1.2")
-            (HostGitDir  [ "a", "b", "c" ])
-            (HostGitFile "module.rsh"))
+        isrc "@bitbucket.org:reach-sh/reach-libs#v0.1.2/a/b/c/module.rsh"
+          >>= (`shouldBe` (ImportRemoteGit $ BitBucket
+                (HostGitAcct "reach-sh")
+                (HostGitRepo "reach-libs")
+                (HostGitRef  "v0.1.2")
+                (HostGitDir  [ "a", "b", "c" ])
+                (HostGitFile "module.rsh")))
 
   describe "exports a `gitUriOf` function which" $ do
-    let uriShouldBe i o = case importSource i of
-          Right (ImportRemoteGit h) -> gitUriOf h `shouldBe` o
+    let uriShouldBe i o = isrc i >>= \case
+          ImportRemoteGit h -> gitUriOf h `shouldBe` o
           _ -> fail $ "Invalid translation " <> i <> " -> " <> o
 
     describe "translates GitHub imports of" $ do
