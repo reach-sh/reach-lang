@@ -1,2 +1,1 @@
-reachc: error: ./Err_Parse_InvalidLockModuleImport.rsh:6:27:import from: Invalid lock-module import (https://github.com/reach-sh/reach-example-package.git): @github.com:reach-sh/reach-example-package#master/src/lib.rsh
-PkgLockModifyUnauthorized
+reachc: error: ./Err_Parse_InvalidLockModuleImport.rsh:6:27:import from: PkgLockModifyUnauthorized
