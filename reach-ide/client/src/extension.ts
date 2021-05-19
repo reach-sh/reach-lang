@@ -19,8 +19,9 @@ import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
-	TransportKind
+	TransportKind,
 } from 'vscode-languageclient';
+import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataProvider } from './CommandsTreeDataProvider';
 
 let client: LanguageClient;
 
@@ -92,38 +93,50 @@ export function activate(context: ExtensionContext) {
 		rootFolder = url.fileURLToPath( workspace.workspaceFolders[0].uri.toString() );
 	};
 	associateRshFiles();
+
+	window.registerTreeDataProvider('reach-commands', new CommandsTreeDataProvider());
+	window.registerTreeDataProvider('reach-help', new HelpTreeDataProvider());
+	window.registerTreeDataProvider('reach-docs', new DocumentationTreeDataProvider());
+}
+
+const commandHelper = (context, reachPath) => (label) => {
+	const disposable = commands.registerCommand(`reach.${label}`, () => {
+		terminal.show();
+		terminal.sendText(`${reachPath} ${label}`);
+	});
+	context.subscriptions.push(disposable);
+}
+
+const urlHelper = (context, label, url) => {
+	const disposable = commands.registerCommand(`reach.${label}`, () => {
+		env.openExternal(Uri.parse(url));
+	});
+	context.subscriptions.push(disposable);
 }
 
 function registerCommands(context: ExtensionContext, reachPath: string) {
-	const disposable = commands.registerCommand('reach.compile', () => {
-		terminal.show();
-		terminal.sendText(`${reachPath} compile`);
-	});
-	context.subscriptions.push(disposable);
+	const cmdHelper = commandHelper(context, reachPath);
 
-	const disposable2 = commands.registerCommand('reach.run', () => {
-		terminal.show();
-		terminal.sendText(`${reachPath} run`);
-	});
-	context.subscriptions.push(disposable2);
+	cmdHelper('compile');
+	cmdHelper('run');
+	cmdHelper('clean');
+	cmdHelper('upgrade');
+	cmdHelper('update');
+	cmdHelper('hashes');
+	cmdHelper('version');
+	cmdHelper('docker-reset');
+	cmdHelper('devnet');
+	cmdHelper('rpc-server');
+	cmdHelper('rpc-run');
+	cmdHelper('react');
+	cmdHelper('scaffold');
+	cmdHelper('down');
+	cmdHelper('init');
 
-	const disposable3 = commands.registerCommand('reach.upgrade', () => {
-		terminal.show();
-		terminal.sendText(`${reachPath} upgrade`);
-	});
-	context.subscriptions.push(disposable3);
-
-	const disposable6 = commands.registerCommand('reach.update', () => {
-		terminal.show();
-		terminal.sendText(`${reachPath} update`);
-	});
-	context.subscriptions.push(disposable6);
-
-	// Launch docs website
-	const disposable7 = commands.registerCommand('reach.docs', () => {
-		env.openExternal(Uri.parse('https://docs.reach.sh/doc-index.html'));
-	});
-	context.subscriptions.push(disposable7);
+	urlHelper(context, 'docs', 'https://docs.reach.sh/doc-index.html');
+	urlHelper(context, 'issue', 'https://github.com/reach-sh/reach-lang/issues/new');
+	urlHelper(context, 'discord', 'https://discord.gg/2XzY6MVpFH');
+	urlHelper(context, 'gist', 'https://gist.github.com/');
 
 }
 
