@@ -865,7 +865,9 @@ The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component 
 the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
 while the @reachin{.case}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
 
-The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
+The @reachin{.case} component may be repeated many times.
+
+The same participant may specify multiple cases; the order of the cases is significant, just like in a @reachin{fork} statement.
 
 @subsubsub*section{@tt{.timeRemaining}}
 
