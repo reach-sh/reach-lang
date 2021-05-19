@@ -4,7 +4,7 @@
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Reach Platform, Inc.",
 	"license": "EPL-2.0",
-	"version": "0.13.0",
+	"version": "0.14.0",
 	"preview": true,
 	"icon": "images/reach-logo-dark.png",
 	"repository": {
