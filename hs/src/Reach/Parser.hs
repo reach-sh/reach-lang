@@ -299,14 +299,15 @@ gatherDeps_file gctxt src_rel = do
 
 
       proc_key ReachStdLib                   = no_stdlib
-      proc_key src@(ReachSourceFile src_abs) =
-        local (\e -> e { srcloc = srcloc_src src, mhostgit = mh' }) $ do
-          ask >>= \po -> liftIO $ do
-            setLocaleEncoding utf8
-            content <- readFile src_abs
-            withCurrentDirectory
-              (takeDirectory src_abs)
-              (flip runReaderT po (gatherDeps_ast_rewriteErr content))
+      proc_key src@(ReachSourceFile src_abs) = do
+        e <- ask
+        let e' = e { srcloc = srcloc_src src, mhostgit = mh' }
+        liftIO $ do
+          setLocaleEncoding utf8
+          content <- readFile src_abs
+          withCurrentDirectory
+            (takeDirectory src_abs)
+            (flip runReaderT e' (gatherDeps_ast_rewriteErr content))
 
   updatePartialAvoidCycles
     (gatherDeps_from srcloc) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
