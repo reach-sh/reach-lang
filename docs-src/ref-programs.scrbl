@@ -1138,6 +1138,7 @@ Each of these introduces one or more @deftech{bound identifier}s.
 @reach{
   const DELAY = 10;
   const [ Good, Bad ] = [ 42, 43 ];
+  const [ x, y = 2 ] = [ 1 ];
   const { x, y } = { x: 1, y: 2 };
   const [ x, [ y ] ] = [ 1, [ 2 ] ];
   const [ x, { y } ] = [ 1, { y: 2 } ];
@@ -1163,7 +1164,8 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;}.
  @BNF-seq[]
  @BNF-seq[@litchar["..."] @nonterm{LHS}]
  @BNF-seq[@nonterm{LHS}]
- @BNF-seq[@nonterm{LHS} @litchar[","] @nonterm{LHS-tuple-seq}])
+ @BNF-seq[@nonterm{LHS} @litchar[","] @nonterm{LHS-tuple-seq}]
+ @BNF-seq[@nonterm{LHS} @litchar["="] @nonterm{expr}])
 (list
  @nonterm{LHS-obj-seq}
  @BNF-seq[]
