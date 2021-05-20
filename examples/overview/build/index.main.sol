@@ -85,7 +85,7 @@ contract Stdlib {
 }
 
 struct T0 {
-  uint256 v18;
+  uint256 v20;
   }
 struct T1 {
   address payable v24;
@@ -122,16 +122,16 @@ contract ReachContract is Stdlib {
   
   event e0();
   struct _F0 {
-    uint256 v18;
+    uint256 v20;
     }
   constructor() payable {
     emit e0();
     _F0 memory _f;
-    _f.v18 = uint256(block.number);
+    _f.v20 = uint256(block.number);
     
     
     T0 memory nsvs;
-    nsvs.v18 = _f.v18;
+    nsvs.v20 = _f.v20;
     current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
     }
