@@ -51,7 +51,7 @@
 , { mapKey = "view-steps", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "weird-swap", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "workshop-fomo", mapValue = [ "ETH", "ALGO" ] }
-, { mapKey = "workshop-fomo-generalized", mapValue = [ "ETH", "ALGO" ] }
+, { mapKey = "workshop-fomo-generalized", mapValue = [ "ETH" ] }
 , { mapKey = "workshop-hash-lock", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "workshop-relay", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "workshop-trust-fund", mapValue = [ "ETH", "ALGO" ] }
