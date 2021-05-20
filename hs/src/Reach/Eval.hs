@@ -20,84 +20,18 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 
-getLibExe :: [(p, b)] -> p
-getLibExe = \case
-  [] -> impossible "getLibExe: no files"
-  ((x, _) : _) -> x
-
-findTops :: JSBundle -> SLLibs -> S.Set SLVar
-findTops (JSBundle mods) libm = do
-  let exe = getLibExe mods
-  let exe_ex = libm M.! exe
-  M.keysSet $
-    flip M.filter exe_ex $
-      \v ->
-        case sss_val v of
-          SLV_Prim SLPrim_App_Delay {} -> True
-          _ -> False
-
-resetEnvRefs :: Env -> DLStmts -> IO ()
-resetEnvRefs env lifts = do
-  writeIORef (e_lifts env) lifts
-  writeIORef (e_pie env) mempty
-  writeIORef (e_ios env) mempty
-  writeIORef (e_views env) mempty
-
-evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
-evalBundle cns djp = do
-  -- Either compile all the Reach.Apps or those specified by user
-  evalEnv <- defaultEnv cns
-  let JSBundle mods = djp
-  let exe = getLibExe mods
-  libm <- flip runReaderT evalEnv $ evalLibs cns mods
-  lifts <- readIORef $ e_lifts evalEnv
-  let exe_ex = libm M.! exe
-  let tops = findTops djp libm
-  let go getdapp = do
-        -- Reutilize env from parsing module, but remove any mutable state
-        -- from processing previous top
-        resetEnvRefs evalEnv lifts
-        mkprog <-
-          flip runReaderT evalEnv $ do
-            exports <- getExports exe_ex
-            topv <- ensure_public . sss_sls =<< getdapp
-            compileDApp cns exports topv
-        ms' <- readIORef $ me_ms $ e_mape evalEnv
-        final <- readIORef $ e_lifts evalEnv
-        unused_vars <- readIORef $ e_unused_variables evalEnv
-        let reportUnusedVars = \case
-              [] -> return ()
-              l@(h : _) ->
-                expect_throw Nothing (fst h) $ Err_Unused_Variables l
-        reportUnusedVars $ S.toList unused_vars
-        return $ mkprog ms' final
-  case S.null tops of
-    True -> do
-      return (S.singleton "default", const $ go $ return defaultApp)
-    False -> do
-      let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
-      return (tops, go')
-
-type CompiledDApp = M.Map DLMVar DLMapInfo -> DLStmts -> DLProg
-
-compileDApp :: Connectors -> DLSExports -> SLVal -> App CompiledDApp
-compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
-  idr <- asks e_id
-  let dlo = app_default_opts idr $ M.keys cns
+compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
+compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
   let (JSBlock _ top_ss _) = jsStmtToBlock top_s
-  let st_after_ctor0 =
-        case dlo_deployMode dlo of
-          DM_constructor -> True
-          DM_firstMsg -> False
-  let st_step =
-        SLState
-          { st_mode = SLM_AppInit
-          , st_live = True
-          , st_pdvs = mempty
-          , st_after_ctor = st_after_ctor0
-          , st_after_first = False
-          , st_toks = mempty
-          }
+  setSt $
+    SLState
+      { st_mode = SLM_AppInit
+      , st_live = False
+      , st_pdvs = mempty
+      , st_after_ctor = True
+      , st_after_first = False
+      , st_toks = mempty
+      }
   let sco =
         SLScope
           { sco_ret = Nothing
@@ -107,27 +41,25 @@ compileDApp cns exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_s
           , sco_cenv = top_env
           , sco_use_strict = top_use_strict
           }
-  setSt st_step
-  doBalanceInit Nothing
-  dli_ctimem <- do
-    let no = return $ Nothing
-    let yes = do
-          time_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
-          doFluidSet FV_lastConsensusTime $ public $ SLV_DLVar time_dv
-          return $ Just time_dv
-    case dlo_deployMode dlo of
-      DM_constructor -> yes
-      DM_firstMsg -> no
-  _ <- locSco sco $ evalStmt top_ss
-  progDlo <- readDlo id
-  flip when doExit =<< readSt st_live
-  sps <- fmap SLParts $ asks e_pie >>= liftIO . readIORef
+  init_dlo <- readDlo id
+  envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty
+  resr <- liftIO $ newIORef $ AppRes mempty mempty Nothing
+  appr <- liftIO $ newIORef $ AIS_Init envr resr
+  mape <- liftIO $ makeMapEnv
+  (these_lifts, final_dlo) <- captureLifts $ locSco sco $
+    local (\e -> e { e_appr = Right appr
+                   , e_mape = mape }) $ do
+      void $ evalStmt top_ss
+      flip when doExit =<< readSt st_live
+      readDlo id
   fin_toks <- readSt st_toks
-  let dlo' = progDlo {dlo_bals = 1 + length fin_toks}
-  dviews <- asks e_views >>= liftIO . readIORef
-  return $ \dli_maps final ->
-    let dli = DLInit {..}
-     in DLProg at dlo' sps dli exports dviews final
+  let final = shared_lifts <> these_lifts
+  let final_dlo' = final_dlo {dlo_bals = 1 + length fin_toks}
+  AppRes {..} <- liftIO $ readIORef resr
+  dli_maps <- liftIO $ readIORef $ me_ms mape
+  let dli_ctimem = ar_ctimem
+  let dli = DLInit {..}
+  return $ DLProg at final_dlo' (SLParts ar_pie) dli exports ar_views final
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 mmapMaybeM :: Monad m => (a -> m (Maybe b)) -> M.Map k a -> m (M.Map k b)
@@ -136,11 +68,15 @@ mmapMaybeM f m = M.mapMaybe id <$> mapM f m
 getExports :: SLEnv -> App DLSExports
 getExports = mmapMaybeM (slToDLExportVal . sss_val)
 
-defaultEnv :: Connectors -> IO Env
-defaultEnv cns = do
+makeMapEnv :: IO MapEnv
+makeMapEnv = do
+  me_id <- newCounter 0
+  me_ms <- newIORef mempty
+  return $ MapEnv {..}
+
+makeEnv :: Connectors -> IO Env
+makeEnv cns = do
     e_id <- newCounter 0
-    e_ios <- newIORef mempty
-    e_views <- newIORef mempty
     let e_who = Nothing
     let e_stack = []
     let e_stv =
@@ -152,8 +88,6 @@ defaultEnv cns = do
             , st_after_ctor = False
             , st_toks = mempty
             }
-    e_dlo <- newIORef $ app_default_opts e_id $ M.keys cns
-    e_classes <- newIORef mempty
     let e_sco =
           SLScope
             { sco_ret = Nothing
@@ -169,10 +103,47 @@ defaultEnv cns = do
     e_st <- newIORef e_stv
     let e_at = srcloc_top
     e_lifts <- newIORef mempty
-    me_id <- newCounter 0
-    me_ms <- newIORef mempty
     e_unused_variables <- newIORef mempty
-    e_pie <- newIORef mempty
+    -- XXX revise
     e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
-    let e_mape = MapEnv {..}
+    e_mape <- makeMapEnv
+    let e_appr = Left $ app_default_opts e_id $ M.keys cns
     return (Env {..})
+
+withUnusedVars :: App a -> App a
+withUnusedVars m = do
+  uvr <- liftIO $ newIORef mempty
+  a <- local (\e -> e { e_unused_variables = uvr }) m
+  uvs <- liftIO $ readIORef uvr
+  let reportUnusedVars = \case
+        [] -> return ()
+        l@(h : _) ->
+          expect_throw Nothing (fst h) $ Err_Unused_Variables l
+  reportUnusedVars $ S.toList uvs
+  return a
+
+evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
+evalBundle cns (JSBundle mods) = do
+  evalEnv <- makeEnv cns
+  let run = flip runReaderT evalEnv . withUnusedVars
+  let exe = fst $ hdDie mods
+  (shared_lifts, libm) <- run $ captureLifts $
+    evalLibs cns mods
+  let exe_ex = libm M.! exe
+  let tops =
+        M.keysSet $
+          flip M.filter exe_ex $
+            \v ->
+              case sss_val v of
+                SLV_Prim SLPrim_App_Delay {} -> True
+                _ -> False
+  let go getdapp = run $ do
+        exports <- getExports exe_ex
+        topv <- ensure_public . sss_sls =<< getdapp
+        compileDApp shared_lifts exports topv
+  case S.null tops of
+    True -> do
+      return (S.singleton "default", const $ go $ return defaultApp)
+    False -> do
+      let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
+      return (tops, go')

@@ -9,6 +9,7 @@ import Data.Bifunctor (Bifunctor (bimap))
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString as B
+import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
@@ -56,24 +57,39 @@ data ExnEnv = ExnEnv
   , e_exn_mode :: SLMode
   }
 
+data AppEnv = AppEnv
+  { ae_ios :: M.Map SLPart SLSSVal
+  , ae_dlo :: DLOpts
+  , ae_classes :: S.Set SLPart
+  }
+
+data AppRes = AppRes
+  { ar_pie :: M.Map SLPart InteractEnv
+  , ar_views :: DLViews
+  , ar_ctimem :: Maybe DLVar
+  }
+
+data AppInitSt
+  = AIS_Init
+      { aisi_env :: IORef AppEnv
+      , aisi_res :: IORef AppRes }
+  | AIS_Deployed
+      { aisd_env :: AppEnv }
+
 data Env = Env
   { e_id :: Counter
   , e_who :: Maybe SLPart
-  , e_ios :: IORef (M.Map SLPart SLSSVal)
   , e_at :: SrcLoc
   , e_sco :: SLScope
   , e_st :: IORef SLState
   , e_lifts :: IORef DLStmts
   , e_stack :: [SLCtxtFrame]
   , e_depth :: Int
-  , e_dlo :: IORef DLOpts
-  , e_classes :: IORef (S.Set SLPart)
   , e_mape :: MapEnv
-  , e_while_invariant :: Bool
   , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
+  , e_while_invariant :: Bool
   , e_exn :: IORef ExnEnv
-  , e_pie :: IORef (M.Map SLPart InteractEnv)
-  , e_views :: IORef DLViews
+  , e_appr :: Either DLOpts (IORef AppInitSt)
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -83,6 +99,30 @@ instance Monoid a => Monoid (App a) where
   mempty = return mempty
 
 -- XXX add something for SecurityLevel
+
+e_app :: App (Maybe AppInitSt)
+e_app = (e_appr <$> ask) >>= \case
+  Left _ -> return $ Nothing
+  Right r -> Just <$> (liftIO $ readIORef r)
+
+aisd_ :: App (Maybe AppEnv)
+aisd_ = e_app >>= \case
+  Just (AIS_Deployed d) -> return $ Just d
+  _ -> return $ Nothing
+
+aisd :: HasCallStack => App AppEnv
+aisd = fromMaybe (impossible $ "aisd") <$> aisd_
+
+aisiDo :: (a -> App b) -> (AppInitSt -> a) -> App b
+aisiDo g f = e_app >>= \case
+  Just i@(AIS_Init {}) -> g $ f i
+  _ -> impossible $ "aisiDo"
+
+aisiGet :: (AppInitSt -> IORef a) -> App a
+aisiGet = aisiDo (liftIO . readIORef)
+
+aisiPut :: (AppInitSt -> IORef a) -> (a -> a) -> App ()
+aisiPut f g = aisiDo (liftIO . flip modifyIORef g) f
 
 withFrame :: SLCtxtFrame -> App a -> App a
 withFrame f m = do
@@ -135,19 +175,12 @@ saveLifts ss = do
 saveLift :: DLSStmt -> App ()
 saveLift = saveLifts . return
 
-readEnv :: (MonadReader r m, MonadIO m) => (r -> IORef t) -> (t -> b) -> m b
-readEnv f vf = do
-  vref <- asks f
-  v <- liftIO $ readIORef vref
-  return $ vf v
-
 readDlo :: (DLOpts -> b) -> App b
-readDlo = readEnv e_dlo
-
-setDlo :: DLOpts -> App ()
-setDlo x = do
-  Env {..} <- ask
-  liftIO $ writeIORef e_dlo x
+readDlo f = (e_appr <$> ask) >>= \case
+  Left d -> return $ f d
+  Right r -> (liftIO $ readIORef r) >>= \case
+    AIS_Init er _ -> f . ae_dlo <$> (liftIO $ readIORef er)
+    AIS_Deployed d -> return $ f (ae_dlo d)
 
 whenVerifyArithmetic :: App () -> App ()
 whenVerifyArithmetic m =
@@ -687,7 +720,7 @@ typeCheck_s st val = do
   return $ res
 
 is_class :: SLPart -> App Bool
-is_class who = S.member who <$> (asks e_classes >>= liftIO . readIORef)
+is_class who = S.member who <$> (ae_classes <$> aisd)
 
 ctxt_alloc :: App Int
 ctxt_alloc = do
@@ -803,7 +836,8 @@ sco_lookup_penv who = do
 
 penvs_update :: (SLPart -> SLEnv -> App SLEnv) -> App SLPartEnvs
 penvs_update f = do
-  ps <- M.keys <$> (asks e_ios >>= liftIO . readIORef)
+  im <- fmap ae_ios <$> aisd_
+  let ps = M.keys $ fromMaybe mempty im
   M.fromList
     <$> mapM (\p -> (,) p <$> (f p =<< sco_lookup_penv p)) ps
 
@@ -998,7 +1032,7 @@ evalAsEnv obj = case obj of
     where
       whos = S.singleton who
   SLV_Anybody -> do
-    whos <- S.fromList . M.keys <$> (asks e_ios >>= liftIO . readIORef)
+    whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
     evalAsEnv (SLV_RaceParticipant srcloc_builtin whos)
   SLV_RaceParticipant _ whos ->
     return $
@@ -2540,16 +2574,39 @@ evalPrim p sargs =
       saveLift $ DLS_ViewIs at vn vk mva
       return $ public $ SLV_Null at "viewis"
     SLPrim_deploy -> do
-      ensure_mode SLM_AppInit "deploy"
-      st <- readSt id
-      setSt $ st { st_mode = SLM_Step }
       at <- withAt id
+      ensure_mode SLM_AppInit "deploy"
+      e_appR <- fromRight (impossible "deploy") . e_appr <$> ask
+      dlo <- readDlo id
+      ctimem <- do
+        let no = return $ Nothing
+        let yes = do
+              time_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
+              doFluidSet FV_lastConsensusTime $ public $ SLV_DLVar time_dv
+              return $ Just time_dv
+        case dlo_deployMode dlo of
+          DM_constructor -> yes
+          DM_firstMsg -> no
+      env <- (liftIO $ readIORef e_appR) >>= \case
+        AIS_Init {..} -> do
+          liftIO $ modifyIORef aisi_res $ \r -> r { ar_ctimem = ctimem }
+          liftIO $ readIORef aisi_env
+        _ -> impossible "deploy"
+      liftIO $ writeIORef e_appR $ AIS_Deployed env
+      st <- readSt id
+      let after_ctor =
+            case dlo_deployMode dlo of
+              DM_constructor -> True
+              DM_firstMsg -> False
+      setSt $ st { st_mode = SLM_Step
+                 , st_live = True
+                 , st_after_ctor = after_ctor }
+      doBalanceInit Nothing
       return $ public $ SLV_Null at "deploy"
     SLPrim_setOptions -> do
       ensure_mode SLM_AppInit "setOptions"
       at <- withAt id
       opts <- mustBeObject =<< one_arg
-      dlo_def <- asks e_dlo >>= liftIO . readIORef
       let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
             case M.lookup k app_options of
               Nothing ->
@@ -2559,14 +2616,8 @@ evalPrim p sargs =
                 case opt acc v of
                   Right x -> x
                   Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
-      let dlo = M.foldrWithKey use_opt dlo_def opts
-      setDlo dlo
-      st <- readSt id
-      let after_ctor =
-            case dlo_deployMode dlo of
-              DM_constructor -> True
-              DM_firstMsg -> False
-      setSt $ st { st_after_ctor = after_ctor }
+      aisiPut aisi_env $ \ae ->
+        ae { ae_dlo = M.foldrWithKey use_opt (ae_dlo ae) opts }
       return $ public $ SLV_Null at "setOptions"
   where
     lvl = mconcatMap fst sargs
@@ -2638,16 +2689,6 @@ evalPrim p sargs =
         slcpi_lifts = slcpi_lifts }
       let v = SLV_AppArg (SLA_Participant at slcpi)
       retV (lvl, v)
-
-updatePie :: SLPart -> InteractEnv -> App ()
-updatePie who env = do
-  piR <- asks e_pie
-  liftIO $ modifyIORef piR (M.insert who env)
-
-lookupPie :: SLPart -> App (Maybe InteractEnv)
-lookupPie who = do
-  pi_env <- asks e_pie >>= liftIO . readIORef
-  return $ M.lookup who pi_env
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
@@ -3322,7 +3363,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
     locSco sco_only_pre $
       locSt st_localstep $ do
         penv__ <- sco_lookup_penv who
-        ios <- asks e_ios >>= liftIO . readIORef
+        ios <- ae_ios <$> aisd
         let penv_ =
               -- Ensure that only has access to "interact" if it didn't before,
               -- such as when an only occurs inside of a closure in a module body
@@ -4179,24 +4220,24 @@ evalStmt = \case
           sco_ <- sco_update addl_env
           let penvs = sco_penvs sco_
           let penv = fromMaybe (sco_cenv sco_) $ M.lookup slcpi_who penvs
-          iosR <- asks e_ios
-          ios <- liftIO $ readIORef iosR
+          ios <- ae_ios <$> aisiGet aisi_env
           penv' <- case mode == SLM_AppInit && not (M.member slcpi_who ios) of
             True  -> do
               saveLifts slcpi_lifts
-              liftIO $ modifyIORef iosR (M.insert slcpi_who slcpi_io)
-              updatePie slcpi_who slcpi_ienv
+              aisiPut aisi_env $ \ae ->
+                ae { ae_ios = M.insert slcpi_who slcpi_io $ ae_ios ae }
+              aisiPut aisi_res $ \ar ->
+                ar { ar_pie = M.insert slcpi_who slcpi_ienv $ ar_pie ar }
               when slcpi_isClass $ do
-                  classes <- asks e_classes
-                  liftIO $ modifyIORef classes $ S.insert slcpi_who
+                  aisiPut aisi_env $ \ae ->
+                    ae { ae_classes = S.insert slcpi_who $ ae_classes ae }
               env_insertp penv ("interact", slcpi_io)
             False -> return penv
           locSco (sco_ { sco_penvs = M.insert slcpi_who penv' penvs }) $ do
             locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
         SLV_AppArg (SLA_View (SLViewInfo va n (SLInterface i))) -> do
           at <- withAt id
-          views <- asks e_views
-          sv <- liftIO $ readIORef views
+          sv <- ar_views <$> aisiGet aisi_res
           when (M.member n sv) $
             expect_ $ Err_View_DuplicateView n
           let ns = bunpack n
@@ -4214,7 +4255,8 @@ evalStmt = \case
           ix <- mapWithKeyM go i
           let i' = M.map fst ix
           let io = M.map snd ix
-          liftIO $ modifyIORef views $ M.insert n i'
+          aisiPut aisi_res $ \ar ->
+            ar { ar_views = M.insert n i' $ ar_views ar }
           let v = SLV_Object va (Just $ ns <> " view") io
           addl_env <- evalDeclLHS True rhs_lvl mempty v lhs
           sco_ <- sco_update addl_env
