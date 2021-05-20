@@ -455,6 +455,7 @@ data SLPrimitive
   | SLPrim_viewis SrcLoc SLPart SLVar SLType
   | SLPrim_deploy
   | SLPrim_setOptions
+  | SLPrim_adaptReachAppTupleArgs
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

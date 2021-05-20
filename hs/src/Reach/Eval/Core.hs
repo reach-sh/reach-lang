@@ -545,6 +545,7 @@ base_env =
     , ("View", SLV_Prim SLPrim_View)
     , ("deploy", SLV_Prim SLPrim_deploy)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
+    , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -1287,39 +1288,19 @@ makeInteract who (SLInterface spec) = do
   saveLift $ DLS_Only at who lifts
   return $ (io, ienv)
 
-verifyAppArg :: SLVal -> App ()
-verifyAppArg = \case
-  -- Participant declarations via tuple are deprecated
-  SLV_Tuple at [who, int] -> adapt_tuple at SLPrim_Participant who int
-  SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
-    adapt_tuple at SLPrim_ParticipantClass who int
-  v -> do
-    at <- withAt id
-    locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
+convertTernaryReachApp :: SrcLoc -> JSAnnot -> JSExpression -> JSArrowParameterList -> JSExpression -> JSStatement -> JSStatement
+convertTernaryReachApp at a opte top_formals partse top_s = top_s'
   where
-    adapt_tuple at p who int = do
-      liftIO $ emitWarning $ W_Deprecated $ D_ParticipantTuples at
-      verifyAppArg . snd =<< evalPrim p (map public $ [ who, int ])
-
-convertDeprecatedReachApp :: JSAnnot -> JSExpression -> JSArrowParameterList -> JSExpression -> JSStatement -> App JSStatement
-convertDeprecatedReachApp a opte top_formals partse top_s = do
-  at <- withAt id
-  sarg <- evalExpr partse
-  case snd sarg of
-    SLV_Tuple _ parts -> do
-      mapM_ verifyAppArg parts
-      let pis = parseJSArrowFormals at top_formals
-      ps <- case partse of
-              JSArrayLiteral _ el _ -> return $ jsa_flatten el
-              _ -> impossible "convertDeprecatedReachApp: already confirmed tuple"
-      assigns <- zipEq (Err_Apply_ArgCount at) pis ps
-      let assignSs = map (\ (p, v) -> JSConstant a (JSLOne $ JSVarInitExpression p $ JSVarInit a v) JSSemiAuto) assigns
-      return $ JSStatementBlock a
-        ([ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) JSSemiAuto ]
-        <> assignSs
-        <> [ JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) JSSemiAuto, top_s ])
-         a JSSemiAuto
-    v -> locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
+    pis = parseJSArrowFormals at top_formals
+    sp = JSSemi a
+    lhs = JSArrayLiteral a (map JSArrayElement pis) a
+    rhs = jsCall a (JSIdentifier a ".adaptReachAppTupleArgs") [partse]
+    top_ss =
+      [ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) sp
+      , JSConstant a (JSLOne $ JSVarInitExpression lhs $ JSVarInit a rhs) sp
+      , JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) sp
+      , top_s ]
+    top_s' = JSStatementBlock a top_ss a sp
 
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
@@ -1327,14 +1308,15 @@ evalForm f args = do
     SLForm_App -> do
       at <- withAt id
       SLScope {..} <- asks e_sco
-      case args of
-        [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> do
-          retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
-        [opte, partse, JSArrowExpression top_formals a top_s] -> do
-          -- liftIO $ emitWarning $ W_Deprecated D_ReachAppArgs
-          newBody <- convertDeprecatedReachApp a opte top_formals partse top_s
-          retV $ public $ SLV_Prim $ SLPrim_App_Delay at newBody (sco_cenv, sco_use_strict)
-        _ -> expect_ $ Err_App_InvalidArgs args
+      top_s <-
+        case args of
+          [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ top_s
+          [opte, partse, JSArrowExpression top_formals a top_s] -> do
+            -- liftIO $ emitWarning $ W_Deprecated D_ReachAppArgs
+            let at' = srcloc_jsa "app arrow" a at
+            return $ convertTernaryReachApp at' a opte top_formals partse top_s
+          _ -> expect_ $ Err_App_InvalidArgs args
+      retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
     SLForm_Part_Only who mv -> do
       at <- withAt id
       x <- one_arg
@@ -1835,12 +1817,19 @@ mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
   v -> expect_t v $ Err_Expected "bytes"
 
+mustBeTuple :: SLVal -> App [SLVal]
+mustBeTuple = \case
+  SLV_Tuple _ vs -> return vs
+  ow ->
+    locAtf (flip srclocOf_ ow) $
+      expect_t ow $ Err_Expected "tuple"
+
 mustBeObject :: SLVal -> App SLEnv
 mustBeObject = \case
   SLV_Object _ _ m -> return m
   ow ->
     locAtf (flip srclocOf_ ow) $
-      expect_t ow $ Err_Decl_NotType "object"
+      expect_t ow $ Err_Expected "object"
 
 mustBeDataTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar DLType)
 mustBeDataTy err = \case
@@ -2631,6 +2620,20 @@ evalPrim p sargs =
       aisiPut aisi_env $ \ae ->
         ae { ae_dlo = M.foldrWithKey use_opt (ae_dlo ae) opts }
       return $ public $ SLV_Null at "setOptions"
+    SLPrim_adaptReachAppTupleArgs -> do
+      tat <- withAt id
+      tvs <- mustBeTuple =<< one_arg
+      let adapt_tuple at p' who int = do
+            liftIO $ emitWarning $ W_Deprecated $ D_ParticipantTuples at
+            snd <$> evalPrim p' (map public $ [ who, int ])
+      let go = \case
+            SLV_Tuple at [who, int] ->
+              adapt_tuple at SLPrim_Participant who int
+            SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
+              adapt_tuple at SLPrim_ParticipantClass who int
+            x -> return x
+      tvs' <- mapM go tvs
+      return (lvl, SLV_Tuple tat tvs')
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
