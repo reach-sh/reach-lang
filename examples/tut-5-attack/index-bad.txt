@@ -10,15 +10,15 @@ Verification failed:
   // Violation witness
   const interact_Alice_wager = 2;
   //    ^ from interaction at ./index-bad.rsh:14:12:application
-  const handA/24 = 2;
+  const handA/23 = 2;
   //    ^ from evaluating interact("Alice")."getHand"() at ./index-bad.rsh:20:50:application
 
   // Theorem formalization
-  const outcome/43 = (handA/24 + (4 - ((handA/24 + 1) % 3))) % 3;
+  const outcome/42 = (handA/23 + (4 - ((handA/23 + 1) % 3))) % 3;
   //    ^ would be 0
-  const v54 = (outcome/43 == 0) ? [0, 1] : ((outcome/43 == 1) ? [1, 1] : [2, 0]);
+  const v53 = (outcome/42 == 0) ? [0, 1] : ((outcome/42 == 1) ? [1, 1] : [2, 0]);
   //    ^ would be [0, 1]
-  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v54[0] * interact_Alice_wager)) - (v54[1] * interact_Alice_wager)));
+  assert(0 == (((interact_Alice_wager + interact_Alice_wager) - (v53[0] * interact_Alice_wager)) - (v53[1] * interact_Alice_wager)));
 
   Verifying when NO participants are honest
 Verification failed:

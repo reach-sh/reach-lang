@@ -1,2 +1,2 @@
 WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./pay_multiple_currency.rsh:12:7:tuple
-reachc: error: ./pay_multiple_currency.rsh:9:12:application: Invalid participant spec
+reachc: error: ./pay_multiple_currency.rsh:32:16:application: expected function, got something else: <SLV_Clo>

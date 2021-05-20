@@ -18,4 +18,4 @@ Verification failed:
   at ./sample_lib.rsh:9:7:application
 
   (details omitted on repeat)
-Checked 4 theorems; 2 failures. :'(
+Checked 2 theorems; 2 failures. :'(
