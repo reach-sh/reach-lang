@@ -45,7 +45,7 @@ Let's look at a simple Reach program where two principals, Alice and Bob, intera
 The main part of the program looks like this:
 
 @reachex[#:show-lines? #t "overview/index.rsh"
-         'skip 12 30 "      // ...body..."]
+         'skip 15 34 " // ...body..."]
 
 @itemlist[
 
@@ -55,74 +55,78 @@ The main part of the program looks like this:
 
 @item{Line 4 defines the main @tech{export} from program. @litchar{main} is the default used by Reach.}
 
-@item{Line 5 specifies that it is an application.}
+@item{Line 4 also specifies that it is an application.}
 
-@item{Lines 7 and 8 specify the interface between Alice's @tech{participant} and @tech{frontend}. In this case, Alice's @tech{frontend} must provide a number called @litchar{request} and a string called @litchar{info}.}
+@item{Line 5 specifies that the program identifier @reachin{A} will represent the Alice @tech{participant}.}
 
-@item{Lines 9 and 10 specify the interface for Bob, which includes a function named @litchar{want}, that takes a number and returns @reachin{null}, as well as a function named @litchar{got}, that receives the information.}
+@item{Lines 6 and 7 specify the interface between Alice's @tech{participant} and @tech{frontend}. In this case, Alice's @tech{frontend} must provide a number called @litchar{request} and a string called @litchar{info}.}
 
-@item{Finally, line 11, binds these @tech{participants} to the program identifiers @reachin{A} and @reachin{B}.}
+@item{Line 9 specifies that the program identifier @reachin{B} will represent the Bob @tech{participant}.}
+
+@item{Lines 10 and 111 specify the interface for Bob, which includes a function named @litchar{want}, that takes a number and returns @reachin{null}, as well as a function named @litchar{got}, that receives the information.}
+
+@item{Finally, line 13, @tech{deploys} the @|DApp|.}
 
 ]
 
-The elided lines, 12 through 30, contain the body of the application, which we can divide into four parts.
+The elided lines, 14 through 34, contain the body of the application, which we can divide into four parts.
 
 @reachex[#:show-lines? #t "overview/index.rsh"
-         'only 12 15 "      // ..."]
+         'only 15 18 "  // ..."]
 
 @itemlist[
 
-@item{Lines 12 and 13 specify that Alice takes a @tech{local step} where she @tech{declassifies} the amount of tokens requested.
+@item{Lines 15 and 16 specify that Alice takes a @tech{local step} where she @tech{declassifies} the amount of tokens requested.
 In Reach, all values from the @tech{frontend} are @tech{secret} until explicitly made @tech{public} with @tech{declassify}.}
 
-@item{Line 14 has Alice @tech{join} the application by publishing that value, and the logic of the program transitions to specifying what the @tech{contract} does.}
+@item{Line 17 has Alice @tech{join} the application by publishing that value, and the logic of the program transitions to specifying what the @tech{contract} does.}
 
-@item{Line 15 has the @tech{contract} commit to these values and continue the rest of the program.}
+@item{Line 18 has the @tech{contract} commit to these values and continue the rest of the program.}
 
 ]
 
 At this point, Bob's @tech{backend} has learned the value of @reachin{request} and can deliver it to Bob's @tech{frontend} for his approval. This happens next.
 
 @reachex[#:show-lines? #t "overview/index.rsh"
-         'only 17 20 "      // ..."]
+         'only 20 23 "  // ..."]
 
 @itemlist[
 
-@item{Lines 17 and 18 have Bob perform that delivery.
+@item{Lines 20 and 21 have Bob perform that delivery.
 @reachin{interact.want} doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
 A better version of this program might return @reachin{false} and have that communicated to Alice.}
 
-@item{Lines 19 and 20 have Bob @tech{join} the application and submit a payment matching the appropriate amount, and then the @tech{contract} commits.}
+@item{Lines 22 and 23 have Bob @tech{join} the application and submit a payment matching the appropriate amount, and then the @tech{contract} commits.}
 
 ]
 
 It's now Alice's turn again,
 
 @reachex[#:show-lines? #t "overview/index.rsh"
-         'only 22 26 "      // ..."]
+         'only 25 29 "  // ..."]
 
 @itemlist[
 
-@item{Lines 22 and 23 specify that Alice @tech{declassifies} the information.}
+@item{Lines 25 and 26 specify that Alice @tech{declassifies} the information.}
 
-@item{Line 24 has her publish it.}
+@item{Line 27 has her publish it.}
 
-@item{Line 25 has the @tech{contract} transfer the requested amount to her.}
+@item{Line 28 has the @tech{contract} transfer the requested amount to her.}
 
-@item{Line 26 commits the transactions on the @tech{consensus network}.}
+@item{Line 29 commits the transactions on the @tech{consensus network}.}
 
 ]
 
 The only thing left is for Bob's @tech{backend} to deliver the information to his @tech{frontend}.
 
 @reachex[#:show-lines? #t "overview/index.rsh"
-         'only 28 30 "      // ..."]
+         'only 31 33 "      // ..."]
 
 @itemlist[
 
-@item{Line 28 and 29 do this.}
+@item{Line 31 and 32 do this.}
 
-@item{Line 30 exits the program.}
+@item{Line 33 exits the program.}
 
 ]
 
@@ -155,13 +159,13 @@ Reach doesn't just compile your program: it also verifies it and ensures that en
 For example, it always guarantees that the balance in the @tech{contract} at the end of the program is zero.
 This is important because if it were not true, then tokens would be locked away by the @tech{contract} and inaccessible.
 
-For this example program, it is obvious that when a single transfer of @reachin{request} goes in at line 18 and a single transfer of @reachin{request} goes out at line 24, then the balance is zero at the end of the program.
+For this example program, it is obvious that when a single transfer of @reachin{request} goes in at line 22 and a single transfer of @reachin{request} goes out at line 28, then the balance is zero at the end of the program.
 We could make a small tweak, however, to demonstrate things going wrong.
 
 Let's change the third step to leave a single unit in the balance:
 
 @reachex[#:show-lines? #t "overview/index-error.rsh"
-         'only 21 25 "      // ..."]
+         'only 25 29 "  // ..."]
 
 And then run the compiler:
 
