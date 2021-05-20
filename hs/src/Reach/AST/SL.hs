@@ -273,6 +273,7 @@ data SLForm
   | SLForm_each
   | SLForm_EachAns [(SLPart, Maybe SLVar)] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart (Maybe SLVar)
+  | SLForm_liftInteract SLPart (Maybe SLVar) String
   | SLForm_Part_ToConsensus
       { slptc_at :: SrcLoc
       , slptc_whos :: S.Set SLPart
