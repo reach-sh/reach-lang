@@ -72,24 +72,25 @@ const winner = (handA, handB) =>
       ((handA + (4 - handB)) % 3);
 
 export const rps =
-  Reach.App(
-    {},
-    [Participant('Alice', Alice(UInt, UInt)), Participant('Bob', Bob(UInt, UInt))],
-    (A, B) =>
+  Reach.App(() => {
+    const A = Participant('Alice', Alice(UInt, UInt));
+    const B = Participant('Bob', Bob(UInt, UInt));
+    deploy();
     simultaneousLoop(
       A, B,
       10, isRPSOutcome, DRAW, ((o) => (o != DRAW)), winner,
-      ((o) => (o == A_WINS ? [ 2, 0 ] : [ 0, 2 ]))));
+      ((o) => (o == A_WINS ? [ 2, 0 ] : [ 0, 2 ])));
+  });
 
-// Rental Agreement
+  // Rental Agreement
 
 const [ isRentalOutcome, NONE, ONLY_L, ONLY_T, BOTH ] = makeEnum(4);
 
 export const rental =
-  Reach.App(
-    {},
-    [Participant('Landlord', Alice(Bool, UInt)), Participant('Tenant', Bob(Bool, UInt))],
-    (A, B) =>
+  Reach.App(() => {
+    const A = Participant('Landlord', Alice(Bool, UInt));
+    const B = Participant('Tenant', Bob(Bool, UInt));
+    deploy();
     simultaneousLoop(
       A, B,
       10, isRentalOutcome, NONE, ((o) => (o != NONE)),
@@ -99,4 +100,5 @@ export const rental =
                   NONE)),
       ((o) => (o == BOTH ? [ 1, 1 ] :
                o == ONLY_L ? [ 0, 2 ] :
-               [ 2, 0 ]))));
+               [ 2, 0 ])));
+  });

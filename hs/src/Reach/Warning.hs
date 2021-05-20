@@ -22,6 +22,7 @@ camlCase acc (h : t) = acc <> capitalized h <> camlCase acc t
 data Deprecation
   = D_ParticipantTuples SrcLoc
   | D_SnakeToCamelCase String
+  | D_ReachAppArgs
   deriving (Eq)
 
 data Warning
@@ -39,6 +40,8 @@ instance Show Deprecation where
             [] -> name
             h : t -> camlCase h t
        in "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`"
+    D_ReachAppArgs ->
+      "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk."
 
 instance Show Warning where
   show = \case

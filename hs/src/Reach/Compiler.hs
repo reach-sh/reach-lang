@@ -19,7 +19,7 @@ import Reach.Parser
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
-import Reach.Eval.Core (SLLibs, e_lifts, defaultApp, getLibExe)
+import Reach.Eval.Core (SLLibs, e_lifts, defaultApp, getLibExe, Env (e_pie, e_ios, e_views))
 import Reach.AST.Base (SLVar)
 import Reach.AST.SL (SLPrimitive(SLPrim_App_Delay), SLVal (SLV_Prim), sss_val)
 import Control.Monad (forM_)
@@ -58,6 +58,13 @@ maybeDefaultApp (JSBundle mods) libm = \case
     (M.insert exe (M.insert name defaultApp $ libm M.! exe) libm, [name])
   tops -> (libm, tops)
 
+resetEnvRefs :: Env -> DLStmts -> IO ()
+resetEnvRefs env lifts = do
+  writeIORef (e_lifts env) lifts
+  writeIORef (e_pie env) mempty
+  writeIORef (e_ios env) mempty
+  writeIORef (e_views env) mempty
+
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let outn = output copts
@@ -87,9 +94,9 @@ compile copts = do
       let showp' :: (forall a. Pretty a => String -> a -> IO ())
           showp' = showp . T.pack
       let libm' = dropOtherTops which libm
-      -- Reutilize env from parsing module, but remove any lifts
+      -- Reutilize env from parsing module, but remove any mutable state
       -- from processing previous top
-      writeIORef (e_lifts evalEnv) lifts
+      resetEnvRefs evalEnv lifts
       dl <- compileBundle evalEnv all_connectors djp libm' which
       let DLProg _ (DLOpts {..}) _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors

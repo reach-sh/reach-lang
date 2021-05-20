@@ -83,61 +83,62 @@ const Bob =
         acceptWager: Fun([UInt], Null) };
 
 export const main =
-  Reach.App(
-    {},
-    [Participant('A', Alice), Participant('B', Bob)],
-    (A, B) => {
-      A.only(() => {
-        const wagerAmount = declassify(interact.getWager());
-        const _coinFlipA = interact.random();
-        const commitA = declassify(digest(_coinFlipA)); });
-      A.publish(wagerAmount, commitA)
-        .pay(wagerAmount);
-      commit();
+  Reach.App(() => {
+    const A = Participant('A', Alice);
+    const B = Participant('B', Bob);
+    deploy();
 
-      B.only(() => {
-        interact.acceptWager(wagerAmount);
-        const coinFlipB = declassify(interact.random()); });
-      B.publish(coinFlipB)
-        .pay(wagerAmount);
-      commit();
+    A.only(() => {
+      const wagerAmount = declassify(interact.getWager());
+      const _coinFlipA = interact.random();
+      const commitA = declassify(digest(_coinFlipA)); });
+    A.publish(wagerAmount, commitA)
+      .pay(wagerAmount);
+    commit();
 
-      A.only(() => {
-        const coinFlipA = declassify(_coinFlipA); });
-      A.publish(coinFlipA);
+    B.only(() => {
+      interact.acceptWager(wagerAmount);
+      const coinFlipB = declassify(interact.random()); });
+    B.publish(coinFlipB)
+      .pay(wagerAmount);
+    commit();
 
-      require(commitA == digest(coinFlipA));
-      const XisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
+    A.only(() => {
+      const coinFlipA = declassify(_coinFlipA); });
+    A.publish(coinFlipA);
 
-      var state = tttInitial(XisFirst);
-      invariant(balance() == (2 * wagerAmount));
-      while ( ! tttDone(state) ) {
-        if ( state.xsTurn ) {
-          commit();
+    require(commitA == digest(coinFlipA));
+    const XisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
 
-          A.only(() => {
-            const moveA = getValidMove(interact, state); });
-          A.publish(moveA);
+    var state = tttInitial(XisFirst);
+    invariant(balance() == (2 * wagerAmount));
+    while ( ! tttDone(state) ) {
+      if ( state.xsTurn ) {
+        commit();
 
-          state = applyMove(state, moveA);
-          continue; }
-        else {
-          commit();
+        A.only(() => {
+          const moveA = getValidMove(interact, state); });
+        A.publish(moveA);
 
-          B.only(() => {
-            const moveB = getValidMove(interact, state); });
-          B.publish(moveB);
+        state = applyMove(state, moveA);
+        continue; }
+      else {
+        commit();
 
-          state = applyMove(state, moveB);
-          continue; } }
+        B.only(() => {
+          const moveB = getValidMove(interact, state); });
+        B.publish(moveB);
 
-      const [ toA, toB ] =
-            (tttWinnerIsX( state ) ? [ 2, 0 ]
-             : (tttWinnerIsO( state ) ? [ 0, 2 ]
-                : [ 1, 1 ]));
-      transfer(toA * wagerAmount).to(A);
-      transfer(toB * wagerAmount).to(B);
-      commit();
+        state = applyMove(state, moveB);
+        continue; } }
 
-      each([A, B], () => {
-        interact.endsWith(state); }); });
+    const [ toA, toB ] =
+          (tttWinnerIsX( state ) ? [ 2, 0 ]
+            : (tttWinnerIsO( state ) ? [ 0, 2 ]
+              : [ 1, 1 ]));
+    transfer(toA * wagerAmount).to(A);
+    transfer(toB * wagerAmount).to(B);
+    commit();
+
+    each([A, B], () => {
+      interact.endsWith(state); }); });

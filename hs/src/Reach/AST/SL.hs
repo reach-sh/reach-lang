@@ -245,19 +245,19 @@ instance Pretty SLViewInfo where
     "View" <> "(" <> pretty n <> ", " <> pretty v <> ")"
 
 data SLAppArg
-  = SLA_Participant SrcLoc Bool SLPart SLInterface
+  = SLA_Participant SrcLoc SLCompiledPartInfo
   | SLA_View SLViewInfo
   deriving (Eq, Generic)
 
 instance SrcLocOf SLAppArg where
   srclocOf = \case
-    SLA_Participant a _ _ _ -> a
+    SLA_Participant a _  -> a
     SLA_View vi -> srclocOf vi
 
 instance Pretty SLAppArg where
   pretty p =
     case p of
-      SLA_Participant _ icb n e -> pp ("Participant" <> ic icb) n e
+      SLA_Participant _ (SLCompiledPartInfo {..}) -> pp ("Participant" <> ic slcpi_isClass) slcpi_who slcpi_ienv
       SLA_View vi -> pretty vi
     where
       ic b = if b then "Class" else ""
@@ -467,7 +467,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLAppArgV] [JSExpression] JSStatement (SLEnv, Bool)
+  | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -492,6 +492,8 @@ data SLPrimitive
   | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
   | SLPrim_balance
   | SLPrim_viewis SrcLoc SLPart SLVar SLType
+  | SLPrim_deploy
+  | SLPrim_setOptions
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

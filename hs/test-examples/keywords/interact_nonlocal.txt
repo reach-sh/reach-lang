@@ -1,1 +1,1 @@
-reachc: error: ./interact_nonlocal.rsh:8:7:const: Invalid name shadowing. Identifier 'interact' is already bound at ./interact_nonlocal.rsh:4:12:application. It cannot be bound again at ./interact_nonlocal.rsh:8:13:id
+reachc: error: ./interact_nonlocal.rsh:8:7:const: Invalid name shadowing. Identifier 'interact' is already bound at ./interact_nonlocal.rsh:6:17:application. It cannot be bound again at ./interact_nonlocal.rsh:8:13:id
