@@ -1,23 +1,9 @@
 {- ORMOLU_DISABLE -}
 
-{-# LANGUAGE DerivingVia          #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE UndecidableInstances #-}
-
 module Reach.Eval.ImportSource
-  ( ImportSource(..)
-  , SHA
-  , LockFile
-  , LockModule
-  , PkgError
-
+  ( GitSaas(..)
   , HostGit(..)
-  , HostGitAcct(..)
-  , HostGitRef(..)
-  , HostGitRepo(..)
-  , HostGitDir(..)
-  , HostGitFile(..)
-
+  , ImportSource(..)
   , gitUriOf
   , importSource
   , lockModuleAbsPath
@@ -48,7 +34,7 @@ import Text.Printf              (printf)
 import System.PosixCompat.Files (setFileMode, accessModes, stdFileMode)
 
 import Reach.AST.Base           (ErrorMessageForJson, ErrorSuggestions, SrcLoc, expect_thrown)
-import Reach.Util               (listDirectoriesRecursive, uncurry5)
+import Reach.Util               (listDirectoriesRecursive)
 
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
@@ -61,21 +47,9 @@ data Env = Env
   , dirDotReach :: FilePath
   }
 
-type App = ReaderT Env IO
-
-
-newtype G a = G a
-  deriving (Eq, Show, Generic)
-
-instance (ToJSON   a) => ToJSON   (G a)
-instance (FromJSON a) => FromJSON (G a)
-
-newtype HostGitAcct = HostGitAcct  String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
-newtype HostGitRepo = HostGitRepo  String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
-newtype HostGitRef  = HostGitRef   String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
-newtype HostGitDir  = HostGitDir  [FilePath] deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G [FilePath])
-newtype HostGitFile = HostGitFile  FilePath  deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  FilePath)
-newtype GitUri      = GitUri       String    deriving (Eq, Show) deriving (ToJSON, FromJSON) via (G  String)
+type App        = ReaderT Env IO
+type HostGitRef = String
+type GitUri     = String
 
 
 toBase16 :: ByteArrayAccess b => b -> T.Text
@@ -106,9 +80,18 @@ instance ToJSONKey   SHA
 instance FromJSONKey SHA
 
 
+data GitSaas = GitSaas
+  { acct ::  String
+  , repo ::  String
+  , ref  ::  String
+  , dir  :: [FilePath]
+  , file ::  FilePath
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+
 data HostGit
-  = GitHub    HostGitAcct HostGitRepo HostGitRef HostGitDir HostGitFile
-  | BitBucket HostGitAcct HostGitRepo HostGitRef HostGitDir HostGitFile
+  = GitHub    GitSaas
+  | BitBucket GitSaas
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 
@@ -206,16 +189,16 @@ gitClone' b u d = runGit b (printf "clone %s %s" u d)
   >>= orFail_ (expect_thrown' . PkgGitCloneFailed)
 
 
-gitCheckout' :: FilePath -> String -> App ()
-gitCheckout' b r = check fetch >> pure () where
+gitCheckout :: FilePath -> String -> App ()
+gitCheckout b r = check fetch >> pure () where
   check e = runGit b ("checkout " <> r) >>= orFail e
   fetch _ = runGit b "fetch"
     >>= orFail_ (expect_thrown' . PkgGitFetchFailed)
     >>    check (expect_thrown' . PkgGitCheckoutFailed)
 
 
-gitRevParse' :: FilePath -> String -> App String
-gitRevParse' b r = runGit b ("rev-parse " <> r)
+gitRevParse :: FilePath -> String -> App String
+gitRevParse b r = runGit b ("rev-parse " <> r)
   >>= orFail (expect_thrown' . PkgGitRevParseFailed)
 
 
@@ -303,15 +286,15 @@ byGitRefSha h fp = withDotReach $ \_ -> do
  where
   f ref = do
     dirClone <- (</> gitCloneDirOf h) <$> dirGitClones
-    ref'     <- gitRevParse' dirClone ref
+    ref'     <- gitRevParse dirClone ref
 
-    gitCheckout' dirClone ref'
+    gitCheckout dirClone ref'
 
     whenM (not <$> fileExists fp)
       $ expect_thrown' $ PkgLockModuleDoesNotExist fp
 
     reach <- fileRead fp
-    pure (HostGitRef ref', reach)
+    pure (ref', reach)
 
   orTry a b = do
     env <- ask
@@ -330,7 +313,7 @@ lockModuleFix h = withDotReach $ \(lock, _) -> do
       dest = lmods </> (T.unpack $ toBase16 hash)
       lmod = LockModule { host   = h
                         , refsha = rsha
-                        , uri    = GitUri . gitUriOf $ h
+                        , uri    = gitUriOf h
                         , ldeps  = mempty
                         }
 
@@ -385,10 +368,10 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
       fix shaParent lm = if not canGit
         then expect_thrown' PkgLockModifyUnauthorized
         else do
-          let HostGitRef refsha' = refsha lm
+          let refsha' = refsha lm
 
           dirClones <- dirGitClones
-          gitCheckout' (dirClones </> gitCloneDirOf h) refsha'
+          gitCheckout (dirClones </> gitCloneDirOf h) refsha'
 
           reach <- fileRead $ dirClones </> gitCloneDirOf h </> relPath
           lmods <- dirLockModules
@@ -421,13 +404,13 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
 
 --------------------------------------------------------------------------------
 
-mostHosts :: Parsec String () (HostGitAcct, HostGitRepo, HostGitRef, HostGitDir, HostGitFile)
-mostHosts = do
-  (,,,,) <$> (HostGitAcct <$> manyTill (allowed "host account") (char '/'))
-         <*> (HostGitRepo <$> manyTill (allowed "repo")         (char '#'))
-         <*> (HostGitRef  <$> manyTill (allowed "ref")          (char '/'))
-         <*> (HostGitDir  <$> many dir)
-         <*> (HostGitFile <$> (filename <|> pure "index.rsh"))
+gitSaas :: Parsec String () GitSaas
+gitSaas = do
+  GitSaas <$> (manyTill (allowed "host account") (char '/'))
+          <*> (manyTill (allowed "repo")         (char '#'))
+          <*> (manyTill (allowed "ref")          (char '/'))
+          <*> (many dir)
+          <*> (filename <|> pure "index.rsh")
 
  where
   allowed t = alphaNum <|> oneOf "-_."
@@ -442,9 +425,9 @@ mostHosts = do
 
 remoteGit :: Parsec FilePath () ImportSource
 remoteGit = do
-  let h |?| p   = uncurry5 h <$> p; infixr 3 |?|
-      bitbucket = BitBucket |?|      (try $ string "bitbucket.org:") *> mostHosts
-      github    = GitHub    |?| (optional $ string    "github.com:") *> mostHosts
+  let h |?| p   = h <$> p; infixr 3 |?|
+      bitbucket = BitBucket |?|      (try $ string "bitbucket.org:") *> gitSaas
+      github    = GitHub    |?| (optional $ string    "github.com:") *> gitSaas
 
   _ <- string "@"
   h <- bitbucket <|> github <?> "git host"
@@ -477,33 +460,34 @@ importSource srcloc fp = either
 
 --------------------------------------------------------------------------------
 
--- TODO: better data structures will negate the need for these
-
-gitUriOf :: HostGit -> String
+gitUriOf :: HostGit -> GitUri
 gitUriOf = \case
-  GitHub    a r _ _ _ -> f "https://github.com/%s/%s.git"    a r
-  BitBucket a r _ _ _ -> f "https://bitbucket.org/%s/%s.git" a r
- where f fmt (HostGitAcct a) (HostGitRepo r) = printf fmt a r
+  GitHub    s -> f s "https://github.com/%s/%s.git"
+  BitBucket s -> f s "https://bitbucket.org/%s/%s.git"
+ where f s fmt = printf fmt (acct s) (repo s)
 
 
 gitRefOf :: HostGit -> String
 gitRefOf = \case
-  GitHub    _ _ (HostGitRef r) _ _ -> r
-  BitBucket _ _ (HostGitRef r) _ _ -> r
+  GitHub    s -> ref s
+  BitBucket s -> ref s
 
 
 gitCloneDirOf :: HostGit -> String
 gitCloneDirOf = \case
-  GitHub    a r _ _ _ -> f "@github.com:%s:%s"    a r
-  BitBucket a r _ _ _ -> f "@bitbucket.org:%s:%s" a r
- where f fmt (HostGitAcct a) (HostGitRepo r) = printf fmt a r
+  GitHub    s -> f s "@github.com:%s:%s"
+  BitBucket s -> f s "@bitbucket.org:%s:%s"
+ where f s fmt = printf fmt (acct s) (repo s)
+
 
 gitDirPathOf :: HostGit -> FilePath
 gitDirPathOf = \case
-  GitHub    _ _ _ (HostGitDir d) _ -> intercalate (pathSeparator : "") d
-  BitBucket _ _ _ (HostGitDir d) _ -> intercalate (pathSeparator : "") d
+  GitHub    s -> f (dir s)
+  BitBucket s -> f (dir s)
+ where f d = intercalate (pathSeparator : "") d
+
 
 gitFilePathOf :: HostGit -> FilePath
 gitFilePathOf = \case
-  h@(GitHub    _ _ _ _ (HostGitFile f)) -> gitDirPathOf h </> f
-  h@(BitBucket _ _ _ _ (HostGitFile f)) -> gitDirPathOf h </> f
+  h@(GitHub    s) -> gitDirPathOf h </> (file s)
+  h@(BitBucket s) -> gitDirPathOf h </> (file s)

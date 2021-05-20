@@ -74,31 +74,31 @@ spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
     describe "can distinguish remote GitHub imports" $ do
       it "in long-form" $ do
         isrc "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-          >>= (`shouldBe` (ImportRemoteGit $ GitHub
-                (HostGitAcct "reach-sh")
-                (HostGitRepo "reach-lang")
-                (HostGitRef  "6c3dd0f")
-                (HostGitDir  [ "examples", "exports" ])
-                (HostGitFile "index.rsh")))
+          >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+                "reach-sh"
+                "reach-lang"
+                "6c3dd0f"
+                [ "examples", "exports" ]
+                "index.rsh"))
 
       it "(by default) when no host is specified" $ do
         isrc "@reach-sh/reach-lang#6c3dd0f/module.rsh"
-          >>= (`shouldBe` (ImportRemoteGit $ GitHub
-                (HostGitAcct "reach-sh")
-                (HostGitRepo "reach-lang")
-                (HostGitRef  "6c3dd0f")
-                (HostGitDir  [])
-                (HostGitFile "module.rsh")))
+          >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+                "reach-sh"
+                "reach-lang"
+                "6c3dd0f"
+                []
+                "module.rsh"))
 
     describe "can distinguish remote BitBucket imports" $ do
       it "in long-form" $ do
         isrc "@bitbucket.org:reach-sh/reach-libs#v0.1.2/a/b/c/module.rsh"
-          >>= (`shouldBe` (ImportRemoteGit $ BitBucket
-                (HostGitAcct "reach-sh")
-                (HostGitRepo "reach-libs")
-                (HostGitRef  "v0.1.2")
-                (HostGitDir  [ "a", "b", "c" ])
-                (HostGitFile "module.rsh")))
+          >>= (`shouldBe` (ImportRemoteGit . BitBucket $ GitSaas
+                "reach-sh"
+                "reach-libs"
+                "v0.1.2"
+                [ "a", "b", "c" ]
+                "module.rsh"))
 
   describe "exports a `gitUriOf` function which" $ do
     let uriShouldBe i o = isrc i >>= \case

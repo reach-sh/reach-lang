@@ -11,9 +11,10 @@ modules:
     host:
       tag: GitHub
       contents:
-      - reach-sh
-      - reach-example-package
-      - master
-      - - src
-      - lib.rsh
+        dir:
+        - src
+        acct: reach-sh
+        repo: reach-example-package
+        file: lib.rsh
+        ref: master
 version: 1
