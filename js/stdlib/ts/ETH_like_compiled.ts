@@ -2,7 +2,7 @@
 // standard library needed at runtime by compiled Reach programs
 // ****************************************************************************
 
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import * as shared from './shared';
 import * as CBR from './CBR';
 

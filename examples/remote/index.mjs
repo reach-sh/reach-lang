@@ -1,6 +1,6 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import * as fs from 'fs';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 

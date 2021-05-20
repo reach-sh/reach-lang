@@ -1,4 +1,4 @@
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 // Some simple shims for defining stuff across node & browser
 
 type Process = {

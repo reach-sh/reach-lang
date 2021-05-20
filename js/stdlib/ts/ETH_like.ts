@@ -3,7 +3,7 @@
 // ****************************************************************************
 
 import Timeout from 'await-timeout';
-import real_ethers from 'ethers';
+import { ethers as real_ethers } from 'ethers';
 import {
   memoizeThunk, replaceableThunk
 } from './shared_impl';

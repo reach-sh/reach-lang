@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import { CBR_Address, bigNumberify, bigNumberToNumber } from './CBR';
 import util from 'util';
 export { bigNumberify, bigNumberToNumber };

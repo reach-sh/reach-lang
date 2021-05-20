@@ -1,7 +1,7 @@
 import * as stdlib_loader from './loader.mjs';
 import ETHcompiled from './token.sol.mjs';
 import algosdk from 'algosdk';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 
 export default async function (name, sym) {
   const stdlib = await stdlib_loader.loadStdlib();

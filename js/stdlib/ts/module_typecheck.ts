@@ -11,7 +11,7 @@ import * as ETH_compiled_impl from './ETH_compiled_impl';
 import * as ETH_impl from './ETH_impl';
 import * as cfxers from './cfxers';
 import * as shared from './shared';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 
 import { EthersLike, ReachStdlib, EthLikeArgs, EthLikeCompiled, SharedStdlib, EthLikeCompiledArgs } from './ETH_like_interfaces';
 

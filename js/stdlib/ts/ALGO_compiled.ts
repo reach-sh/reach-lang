@@ -6,7 +6,7 @@ import * as shared from './shared';
 const { debug } = shared;
 import algosdk from 'algosdk';
 import buffer from 'buffer';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import {
   CBR_Null,
   CBR_Bool,
