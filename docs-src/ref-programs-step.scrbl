@@ -40,6 +40,14 @@ is a @tech{valid} program where @reachin{Alice}'s @tech{local state} includes th
 
 is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
 
+The shorthand @reachin{PART.interact.METHOD(EXPR_0, ..., EXPR_n)} is available for calling an @reachin{interact} function
+from outside of an @reachin{only} block. Such functions must return @reachin{Null}; therefore, they are only useful
+if they produce side-effects, such as logging on the @tech{frontend}. For example, the
+function @reachin{log} in the @tech{participant interact interface} of @reachin{Alice} may be called via:
+
+@reach{
+  Alice.interact.log(x); }
+
 @(hrule)
 
 @(mint-define! '("each"))
