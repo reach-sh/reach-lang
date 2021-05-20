@@ -125,7 +125,7 @@ withUnusedVars m = do
 evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
 evalBundle cns (JSBundle mods) = do
   evalEnv <- makeEnv cns
-  let run = flip runReaderT evalEnv . withUnusedVars
+  let run = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
   (shared_lifts, libm) <- run $ captureLifts $
     evalLibs cns mods
@@ -137,7 +137,7 @@ evalBundle cns (JSBundle mods) = do
               case sss_val v of
                 SLV_Prim SLPrim_App_Delay {} -> True
                 _ -> False
-  let go getdapp = run $ do
+  let go getdapp = run $ withUnusedVars $ do
         exports <- getExports exe_ex
         topv <- ensure_public . sss_sls =<< getdapp
         compileDApp shared_lifts exports topv

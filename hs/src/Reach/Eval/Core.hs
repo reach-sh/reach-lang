@@ -479,11 +479,6 @@ env_lookup ctx x env =
         SLSSVal {sss_val = SLV_Deprecated d v} -> do
           liftIO $ emitWarning $ W_Deprecated d
           return $ sv {sss_val = v}
-        SLSSVal {sss_val = SLV_AppArg (SLA_Participant _ SLCompiledPartInfo {..}) } -> do
-          mode <- readSt st_mode
-          when (not $ elem mode [SLM_AppInit, SLM_Module]) $
-            expect_ $ Err_UnboundAppParticipant slcpi_who
-          return sv
         v -> return $ v
     Nothing ->
       expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
@@ -676,7 +671,6 @@ slToDLV = \case
   SLV_Kwd {} -> no
   SLV_MapCtor {} -> no
   SLV_Map {} -> no
-  SLV_AppArg {} -> no
   SLV_Deprecated {} -> no
   where
     recs = mapM slToDLV
@@ -1299,7 +1293,6 @@ verifyAppArg = \case
   SLV_Tuple at [who, int] -> adapt_tuple at SLPrim_Participant who int
   SLV_Tuple at [SLV_Bytes _ "class", who, int] ->
     adapt_tuple at SLPrim_ParticipantClass who int
-  SLV_AppArg _ -> return ()
   v -> do
     at <- withAt id
     locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
@@ -1327,7 +1320,6 @@ convertDeprecatedReachApp a opte top_formals partse top_s = do
         <> [ JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) JSSemiAuto, top_s ])
          a JSSemiAuto
     v -> locAt (srclocOf_ at v) $ expect_ $ Err_App_InvalidPartSpec v
-
 
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
@@ -2378,12 +2370,32 @@ evalPrim p sargs =
     SLPrim_Participant -> makeParticipant False
     SLPrim_ParticipantClass -> makeParticipant True
     SLPrim_View -> do
-      ensure_modes [SLM_Module, SLM_AppInit] "View"
+      ensure_mode SLM_AppInit "View"
       at <- withAt id
-      (n, intv) <- two_args
-      namebs <- mustBeBytes n
-      int <- mustBeInterface intv
-      retV $ (lvl, SLV_AppArg $ SLA_View $ SLViewInfo at namebs int)
+      (nv, intv) <- two_args
+      n <- mustBeBytes nv
+      SLInterface im <- mustBeInterface intv
+      sv <- ar_views <$> aisiGet aisi_res
+      when (M.member n sv) $
+        expect_ $ Err_View_DuplicateView n
+      let ns = bunpack n
+      let go k t = do
+            let vv = SLV_Prim $ SLPrim_viewis at n k t
+            let vom = M.singleton "set" $ SLSSVal at Public vv
+            let vo = SLV_Object at (Just $ ns <> " view, " <> k) vom
+            let io = SLSSVal at Public vo
+            di <-
+              case t of
+                ST_Fun (SLTypeFun {..}) ->
+                  IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
+                _ -> IT_Val <$> st2dte t
+            return $ (di, io)
+      ix <- mapWithKeyM go im
+      let i' = M.map fst ix
+      let io = M.map snd ix
+      aisiPut aisi_res $ \ar ->
+        ar { ar_views = M.insert n i' $ ar_views ar }
+      retV $ (lvl, SLV_Object at (Just $ ns <> " view") io)
     SLPrim_Map -> do
       t <- expect_ty =<< one_arg
       retV $ (lvl, SLV_MapCtor t)
@@ -2667,28 +2679,30 @@ evalPrim p sargs =
             SLSSVal _ _ (SLV_Type t) -> return $ t
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
+    makeParticipant :: Bool -> App SLSVal
     makeParticipant isClass = do
-      ensure_modes [SLM_Module, SLM_AppInit] "Participant Constructor"
+      ensure_mode SLM_AppInit "Participant Constructor"
       at <- withAt id
-      (n, intv) <- two_args
-      slcpi_who <- mustBeBytes n
-      let names = bunpack slcpi_who
-      when (isSpecialBackendIdent names) $
-        expect_ $ Err_InvalidPartName names
-      when ("_" `B.isPrefixOf` slcpi_who) $
-        expect_ $ Err_App_PartUnderscore slcpi_who
+      (nv, intv) <- two_args
+      n <- mustBeBytes nv
+      let ns = bunpack n
+      when (isSpecialBackendIdent ns) $
+        expect_ $ Err_InvalidPartName ns
+      when ("_" `B.isPrefixOf` n) $
+        expect_ $ Err_App_PartUnderscore n
+      ios <- ae_ios <$> aisiGet aisi_env
+      when (M.member n ios) $
+        expect_ $ Err_Part_DuplicatePart n
       int <- mustBeInterface intv
-      (slcpi_lifts, (slcpi_io, slcpi_ienv)) <-
-        captureLifts $ makeInteract slcpi_who int
-      let slcpi = SLCompiledPartInfo {
-        slcpi_at = at,
-        slcpi_isClass = isClass,
-        slcpi_who = slcpi_who,
-        slcpi_io = slcpi_io,
-        slcpi_ienv = slcpi_ienv,
-        slcpi_lifts = slcpi_lifts }
-      let v = SLV_AppArg (SLA_Participant at slcpi)
-      retV (lvl, v)
+      (io, ienv) <- makeInteract n int
+      aisiPut aisi_env $ \ae ->
+        ae { ae_ios = M.insert n io $ ae_ios ae }
+      aisiPut aisi_res $ \ar ->
+        ar { ar_pie = M.insert n ienv $ ar_pie ar }
+      when isClass $ do
+        aisiPut aisi_env $ \ae ->
+          ae { ae_classes = S.insert n $ ae_classes ae }
+      return (lvl, SLV_Participant at n Nothing Nothing)
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
@@ -4213,55 +4227,6 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
           pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
-        SLV_AppArg (SLA_Participant at (SLCompiledPartInfo {..})) -> do
-          mode <- readSt st_mode
-          let v = if mode == SLM_AppInit then SLV_Participant at slcpi_who Nothing Nothing else rhs_v
-          addl_env <- evalDeclLHS True rhs_lvl mempty v lhs
-          sco_ <- sco_update addl_env
-          let penvs = sco_penvs sco_
-          let penv = fromMaybe (sco_cenv sco_) $ M.lookup slcpi_who penvs
-          ios <- ae_ios <$> aisiGet aisi_env
-          penv' <- case mode == SLM_AppInit && not (M.member slcpi_who ios) of
-            True  -> do
-              saveLifts slcpi_lifts
-              aisiPut aisi_env $ \ae ->
-                ae { ae_ios = M.insert slcpi_who slcpi_io $ ae_ios ae }
-              aisiPut aisi_res $ \ar ->
-                ar { ar_pie = M.insert slcpi_who slcpi_ienv $ ar_pie ar }
-              when slcpi_isClass $ do
-                  aisiPut aisi_env $ \ae ->
-                    ae { ae_classes = S.insert slcpi_who $ ae_classes ae }
-              env_insertp penv ("interact", slcpi_io)
-            False -> return penv
-          locSco (sco_ { sco_penvs = M.insert slcpi_who penv' penvs }) $ do
-            locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
-        SLV_AppArg (SLA_View (SLViewInfo va n (SLInterface i))) -> do
-          at <- withAt id
-          sv <- ar_views <$> aisiGet aisi_res
-          when (M.member n sv) $
-            expect_ $ Err_View_DuplicateView n
-          let ns = bunpack n
-          let go k t = do
-                let vv = SLV_Prim $ SLPrim_viewis at n k t
-                let vom = M.singleton "set" $ SLSSVal va Public vv
-                let vo = SLV_Object va (Just $ ns <> " view, " <> k) vom
-                let io = SLSSVal va Public vo
-                di <-
-                  case t of
-                    ST_Fun (SLTypeFun {..}) ->
-                      IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
-                    _ -> IT_Val <$> st2dte t
-                return $ (di, io)
-          ix <- mapWithKeyM go i
-          let i' = M.map fst ix
-          let io = M.map snd ix
-          aisiPut aisi_res $ \ar ->
-            ar { ar_views = M.insert n i' $ ar_views ar }
-          let v = SLV_Object va (Just $ ns <> " view") io
-          addl_env <- evalDeclLHS True rhs_lvl mempty v lhs
-          sco_ <- sco_update addl_env
-          locSco sco_ $ do
-            locAtf (srcloc_after_semi lab a sp) $ evalStmt ks
         _ -> do
           addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs
           sco' <- sco_update addl_env

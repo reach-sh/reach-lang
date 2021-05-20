@@ -11,7 +11,6 @@ import GHC.Stack (HasCallStack)
 import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
-import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
@@ -155,7 +154,6 @@ data SLVal
   | SLV_Kwd SLKwd
   | SLV_MapCtor SLType
   | SLV_Map DLMVar
-  | SLV_AppArg SLAppArg
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
@@ -190,7 +188,6 @@ instance Pretty SLVal where
     SLV_Kwd k -> pretty k
     SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
-    SLV_AppArg p -> pretty p
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
 
@@ -218,7 +215,6 @@ instance SrcLocOf SLVal where
     SLV_Kwd _ -> def
     SLV_MapCtor {} -> def
     SLV_Map _ -> def
-    SLV_AppArg a -> srclocOf a
     SLV_Deprecated _ v -> srclocOf v
     where
       def = srcloc_builtin
@@ -243,25 +239,6 @@ instance SrcLocOf SLViewInfo where
 instance Pretty SLViewInfo where
   pretty (SLViewInfo _ n v) =
     "View" <> "(" <> pretty n <> ", " <> pretty v <> ")"
-
-data SLAppArg
-  = SLA_Participant SrcLoc SLCompiledPartInfo
-  | SLA_View SLViewInfo
-  deriving (Eq, Generic)
-
-instance SrcLocOf SLAppArg where
-  srclocOf = \case
-    SLA_Participant a _  -> a
-    SLA_View vi -> srclocOf vi
-
-instance Pretty SLAppArg where
-  pretty p =
-    case p of
-      SLA_Participant _ (SLCompiledPartInfo {..}) -> pp ("Participant" <> ic slcpi_isClass) slcpi_who slcpi_ienv
-      SLA_View vi -> pretty vi
-    where
-      ic b = if b then "Class" else ""
-      pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 data SLLValue
   = SLLV_MapRef SrcLoc DLMVar DLArg
@@ -408,22 +385,6 @@ primOpType RSH = ([T_UInt, T_UInt], T_UInt)
 primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
-
-data SLCompiledPartInfo
-  = SLCompiledPartInfo
-    { slcpi_at :: SrcLoc
-    , slcpi_isClass :: Bool
-    , slcpi_who :: SLPart
-    , slcpi_io :: SLSSVal
-    , slcpi_ienv :: InteractEnv
-    , slcpi_lifts :: DLStmts
-    }
-  deriving (Eq, Generic)
-
-data SLAppArgV
-  = SLAV_Participant SLCompiledPartInfo
-  | SLAV_View SLViewInfo
-  deriving (Eq, Generic)
 
 data RemoteFunMode
   = RFM_Pay

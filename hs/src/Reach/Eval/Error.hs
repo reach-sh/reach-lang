@@ -139,6 +139,7 @@ data EvalError
   | Err_WithBill_Type DLType
   | Err_View_DuplicateView SLPart
   | Err_View_CannotExpose SLValTy
+  | Err_Part_DuplicatePart SLPart
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -527,6 +528,8 @@ instance Show EvalError where
       "Token reference based on dynamic computation, which Reach cannot track, yet."
     Err_WithBill_Type ty ->
       "`withBill` expects no arguments or a Tuple of Tokens, but received: " <> show (pretty ty)
+    Err_Part_DuplicatePart n ->
+      "Duplicated participant name: " <> show n
     Err_View_DuplicateView n ->
       "Duplicated view name: " <> show n
     Err_View_CannotExpose sv ->
