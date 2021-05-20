@@ -54,8 +54,9 @@ export function activate(context: ExtensionContext) {
 
 	terminal = window.createTerminal({ name: "Reach IDE" });
 	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
+	const wf = workspace.workspaceFolders[0].uri.path || ".";
 	const reachPath = (reachExecutablePath == './reach')
-		? path.join(process.cwd(), "reach")
+		? path.join(wf, "reach")
 		: reachExecutablePath;
 	registerCommands(context, reachPath);
 
