@@ -2577,35 +2577,6 @@ evalApplyArgs' :: SLVal -> [DLArg] -> App SLSVal
 evalApplyArgs' rator randas =
   evalApplyVals' rator =<< mapM (liftM public . argToSV) randas
 
-instDefaultArgs :: SLEnv -> EvalError -> [JSExpression] -> [SLSVal] -> App SLEnv
-instDefaultArgs env err formals args =
-  case (formals, args) of
-    -- Every argument was specified PERFECTLY
-    ([], []) -> return env
-    -- The last formal is a rest arg
-    ([JSSpreadExpression a lhs@JSIdentifier {}], _) -> do
-      let at = srcloc_jsa_only a
-      evalArg lhs (mconcat (map fst args), SLV_Tuple at $ map snd args) [] []
-    -- Error on rest parameter that is not the final parameter
-    ((JSSpreadExpression a _ : _), _ ) ->
-      locAtf (srcloc_jsa "rest parameter" a) $
-        expect_ Err_RestParameterNotLast
-    -- Since there are no more applications args, now start consuming default args
-    ((JSAssignExpression lhs (JSAssign _) rhs : ft), []) -> do
-      rhs' <- sco_update env >>= flip locSco (evalExpr rhs)
-      evalArg lhs rhs' ft []
-    -- Ignore default arg since specified at application
-    ((JSAssignExpression lhs (JSAssign _) _ : ft), (h : t)) ->
-      evalArg lhs h ft t
-    -- Normal case
-    ((lhs : ft), (h : t)) ->
-      evalArg lhs h ft t
-    -- Bad
-    _ -> expect_ err
-  where
-    evalArg lhs rhs ft tl = do
-      env' <- evalDeclLHSs True env [(lhs, rhs)]
-      instDefaultArgs env' err ft tl
 
 evalApplyClosureVals :: SrcLoc -> SLClo -> [SLSVal] -> App SLAppRes
 evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEnv {..}) randvs = do
@@ -2622,10 +2593,11 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
            , sco_use_strict = clo_use_strict
            })
   m <- readSt st_mode
+  let arg_lvl = mconcat $ map fst randvs
   arg_env <-
     locStMode (pure_mode m) $
       locSco clo_sco $
-        instDefaultArgs mempty err formals randvs
+        evalDeclLHSArray True (Just err) arg_lvl mempty (map snd randvs) formals
   at <- withAt id
   clo_sco' <- locSco clo_sco $ sco_update arg_env
   (body_lifts, (SLStmtRes clo_sco'' rs)) <-
@@ -3111,8 +3083,8 @@ evalExprs = \case
     svalN <- evalExprs randN
     return $ (svals0 <> svalN)
 
-evalDeclLHSArray :: Bool -> SecurityLevel -> SLEnv -> [SLVal] -> [JSExpression] -> App SLEnv
-evalDeclLHSArray trackVars rhs_lvl lhs_env vs es =
+evalDeclLHSArray :: Bool -> Maybe EvalError -> SecurityLevel -> SLEnv -> [SLVal] -> [JSExpression] -> App SLEnv
+evalDeclLHSArray trackVars merr rhs_lvl lhs_env vs es =
   case (vs, es) of
     ([], []) ->
       return $ lhs_env
@@ -3120,16 +3092,21 @@ evalDeclLHSArray trackVars rhs_lvl lhs_env vs es =
       locAtf (srcloc_jsa "array spread" a) $ do
         v <- withAt $ \at -> SLV_Tuple at vs
         case es' of
-          [] -> evalDeclLHS trackVars rhs_lvl lhs_env v e
+          [] -> evalDeclLHS trackVars merr rhs_lvl lhs_env v e
           _ -> expect_ $ Err_Decl_ArraySpreadNotLast
     (v : vs', e : es') -> do
-      lhs_env' <- evalDeclLHS trackVars rhs_lvl lhs_env v e
-      evalDeclLHSArray trackVars rhs_lvl lhs_env' vs' es'
-    (_, _) ->
-      expect_ $ Err_Decl_WrongArrayLength (length es) (length vs)
+      lhs_env' <- evalDeclLHS trackVars merr rhs_lvl lhs_env v e
+      evalDeclLHSArray trackVars merr rhs_lvl lhs_env' vs' es'
+    -- Use default parameter if no args specified
+    ([], JSAssignExpression lhs (JSAssign _) rhs : es') -> do
+      rhs' <- sco_update lhs_env >>= flip locSco (evalExpr rhs)
+      lhs_env' <- evalDeclLHS trackVars merr rhs_lvl lhs_env (snd rhs') lhs
+      evalDeclLHSArray trackVars merr rhs_lvl lhs_env' [] es'
+    (_, _) -> do
+      expect_ $ fromMaybe (Err_Decl_WrongArrayLength (length es) (length vs)) merr
 
-evalDeclLHSObject :: Bool -> SecurityLevel -> SLEnv -> SLVal -> SLObjEnv -> [JSObjectProperty] -> App SLEnv
-evalDeclLHSObject trackVars rhs_lvl lhs_env orig_v vm = \case
+evalDeclLHSObject :: Bool -> Maybe EvalError -> SecurityLevel -> SLEnv -> SLVal -> SLObjEnv -> [JSObjectProperty] -> App SLEnv
+evalDeclLHSObject trackVars merr rhs_lvl lhs_env orig_v vm = \case
   [] -> return $ lhs_env
   (JSObjectSpread a e) : os' -> do
     locAtf (srcloc_jsa "object spread" a) $
@@ -3137,15 +3114,15 @@ evalDeclLHSObject trackVars rhs_lvl lhs_env orig_v vm = \case
         [] -> do
           vom <- evalObjEnv vm
           vo <- withAt $ \at_ -> SLV_Object at_ Nothing vom
-          evalDeclLHS trackVars rhs_lvl lhs_env vo e
+          evalDeclLHS trackVars merr rhs_lvl lhs_env vo e
         _ -> expect_ $ Err_Decl_ObjectSpreadNotLast
   o : os' -> do
     let go x e = do
           (v_lvl, v) <- evalDot_ orig_v vm x
           let lvl' = rhs_lvl <> v_lvl
-          lhs_env' <- evalDeclLHS trackVars lvl' lhs_env v e
+          lhs_env' <- evalDeclLHS trackVars merr lvl' lhs_env v e
           let vm' = M.delete x vm
-          evalDeclLHSObject trackVars rhs_lvl lhs_env' orig_v vm' os'
+          evalDeclLHSObject trackVars merr rhs_lvl lhs_env' orig_v vm' os'
     case o of
       JSPropertyIdentRef a x -> do
         go x $ JSIdentifier a x
@@ -3154,8 +3131,8 @@ evalDeclLHSObject trackVars rhs_lvl lhs_env orig_v vm = \case
       _ ->
         expect_ $ Err_Parse_ExpectIdentifierProp o
 
-evalDeclLHS :: Bool -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> App SLEnv
-evalDeclLHS trackVars rhs_lvl lhs_env v = \case
+evalDeclLHS :: Bool -> Maybe EvalError  -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> App SLEnv
+evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
@@ -3165,23 +3142,27 @@ evalDeclLHS trackVars rhs_lvl lhs_env v = \case
   JSArrayLiteral a xs _ -> do
     locAtf (srcloc_jsa "array" a) $ do
       vs <- explodeTupleLike "lhs array" v
-      evalDeclLHSArray trackVars rhs_lvl lhs_env vs (jsa_flatten xs)
+      evalDeclLHSArray trackVars merr rhs_lvl lhs_env vs (jsa_flatten xs)
   JSObjectLiteral a props _ -> do
     locAtf (srcloc_jsa "object" a) $ do
       vm <- evalAsEnv v
-      evalDeclLHSObject trackVars rhs_lvl lhs_env v vm (jso_flatten props)
+      evalDeclLHSObject trackVars merr rhs_lvl lhs_env v vm (jso_flatten props)
+  -- Ignore default argument since assigned a value
+  JSAssignExpression lhs (JSAssign a) _ -> do
+    locAtf (srcloc_jsa "default" a) $ do
+      evalDeclLHS trackVars merr rhs_lvl lhs_env v lhs
   e -> expect_ $ Err_DeclLHS_IllegalJS e
 
 evalDeclLHSs :: Bool -> SLEnv -> [(JSExpression, SLSVal)] -> App SLEnv
 evalDeclLHSs trackVars lhs_env = \case
   [] -> return $ lhs_env
   (e, (rhs_lvl, v)) : more ->
-    flip (evalDeclLHSs trackVars) more =<< evalDeclLHS trackVars rhs_lvl lhs_env v e
+    flip (evalDeclLHSs trackVars) more =<< evalDeclLHS trackVars Nothing rhs_lvl lhs_env v e
 
 evalDecl :: Bool -> JSExpression -> JSExpression -> App SLEnv
 evalDecl trackVars lhs rhs = do
   (rhs_lvl, rhs_v) <- evalExpr rhs
-  evalDeclLHS trackVars rhs_lvl mempty rhs_v lhs
+  evalDeclLHS trackVars Nothing rhs_lvl mempty rhs_v lhs
 
 destructDecls :: (JSCommaList JSExpression) -> App (JSExpression, JSExpression)
 destructDecls = \case
@@ -3961,7 +3942,7 @@ doWhileLikeInitEval lhs rhs = do
 doWhileLikeContinueEval :: JSExpression -> M.Map SLVar DLVar -> SLSVal -> App ()
 doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   at <- withAt id
-  decl_env <- evalDeclLHS False rhs_lvl mempty rhs_v lhs
+  decl_env <- evalDeclLHS False Nothing rhs_lvl mempty rhs_v lhs
   stEnsureMode SLM_ConsensusStep
   forM_
     (M.keys decl_env)
@@ -4067,7 +4048,7 @@ evalStmt = \case
           pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
           evalStmt (pr_ss <> ks)
         _ -> do
-          addl_env <- evalDeclLHS True rhs_lvl mempty rhs_v lhs
+          addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs
           sco' <- sco_update addl_env
           locAtf (srcloc_after_semi lab a sp) $ locSco sco' $ evalStmt ks
   (cont@(JSContinue a _ sp) : cont_ks) ->
@@ -4357,7 +4338,7 @@ evalStmt = \case
           -- Bind `catch` argument before evaluating handler
           sco <- asks e_sco
           handler_arg <- ctxt_mkvar (DLVar at Nothing arg_ty)
-          handler_env <- evalDeclLHS True Public mempty (SLV_DLVar handler_arg) ce
+          handler_env <- evalDeclLHS True Nothing Public mempty (SLV_DLVar handler_arg) ce
           sco' <- sco_update handler_env
           -- Eval handler
           SLRes handler_stmts handler_st (SLStmtRes _ handler_res) <-

@@ -138,7 +138,6 @@ data EvalError
   | Err_WithBill_Type DLType
   | Err_View_DuplicateView SLPart
   | Err_View_CannotExpose SLValTy
-  | Err_RestParameterNotLast
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -528,7 +527,5 @@ instance Show EvalError where
       "Duplicated view name: " <> show n
     Err_View_CannotExpose sv ->
       "Value cannot be exposed to view: " <> show_sv sv
-    Err_RestParameterNotLast ->
-      "Only the last parameter in a function definition can be a rest parameter."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
