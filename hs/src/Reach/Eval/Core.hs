@@ -1020,9 +1020,8 @@ evalAsEnv obj = case obj of
     -- `<part>.interact.<field>(...)` is a shorthand for `<part>.only(() => interact.<field>(...))`
     -- Wrap each field of the participant's interface in a form, which will expand as described.
     let makeInteractField = do
-          penvs <- asks (sco_penvs . e_sco)
-          let penv = penvs M.! who
-          case M.lookup "interact" penv of
+          ios <- ae_ios <$> aisd
+          case M.lookup who ios of
             Just sv@(SLSSVal _ _ (SLV_Object oa ol env)) -> do
               let object = SLV_Object oa ol $ M.mapWithKey ( \ k _ ->
                     sv { sss_val = SLV_Form $ SLForm_liftInteract who vas k}) env
