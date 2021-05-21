@@ -1016,13 +1016,25 @@ evalAsEnv obj = case obj of
     return $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
     return $ retDLVar tm (DLA_Var obj_dv) Public
-  SLV_Participant _ who vas _ ->
+  SLV_Participant _ who vas _ -> do
+    -- `<part>.interact.<field>(...)` is a shorthand for `<part>.only(() => interact.<field>(...))`
+    -- Wrap each field of the participant's interface in a form, which will expand as described.
+    let makeInteractField = do
+          penvs <- asks (sco_penvs . e_sco)
+          let penv = penvs M.! who
+          case M.lookup "interact" penv of
+            Just sv@(SLSSVal _ _ (SLV_Object oa ol env)) -> do
+              let object = SLV_Object oa ol $ M.mapWithKey ( \ k _ ->
+                    sv { sss_val = SLV_Form $ SLForm_liftInteract who vas k}) env
+              return (Secret, object)
+            _ -> impossible "participant has no interact interface"
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
         , ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing Nothing))
         , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing Nothing))
         , ("set", delayCall SLPrim_part_set)
+        , ("interact", makeInteractField)
         ]
     where
       whos = S.singleton who
@@ -1236,7 +1248,7 @@ evalAsEnv obj = case obj of
     retStdLib n = (retV . public) =<< lookStdlib n
 
 evalDot_ :: SLVal -> SLObjEnv -> String -> App SLSVal
-evalDot_ obj env field = do
+evalDot_ obj env field =
   case M.lookup field env of
     Just gv -> gv
     Nothing -> expect_t obj $ \o -> Err_Dot_InvalidField o (M.keys env) field
@@ -1322,6 +1334,15 @@ evalForm f args = do
       x <- one_arg
       env <- ask >>= sco_to_cloenv . e_sco
       return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at env x
+    SLForm_liftInteract who mv field -> do
+      at <- withAt id
+      clo_env <- ask >>= sco_to_cloenv . e_sco
+      let params = JSParenthesizedArrowParameterList JSNoAnnot JSLNil JSNoAnnot
+      let dot  = JSMemberDot (JSIdentifier JSNoAnnot "interact") JSNoAnnot (JSIdentifier JSNoAnnot field)
+      let call = JSCallExpression dot JSNoAnnot (toJSCL args) JSNoAnnot
+      let stmt = JSExpressionStatement call JSSemiAuto
+      let only_thunk = JSArrowExpression params JSNoAnnot stmt
+      return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at clo_env only_thunk
     SLForm_fork -> do
       zero_args
       at <- withAt id
