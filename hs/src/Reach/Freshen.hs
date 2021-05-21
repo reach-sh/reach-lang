@@ -42,6 +42,9 @@ fu_mv = mapM fu_v
 instance {-# OVERLAPPABLE #-} (Traversable f, Freshen a) => Freshen (f a) where
   fu = traverse fu
 
+instance {-# OVERLAPS #-} (Freshen a, Freshen b) => Freshen (a, b) where
+  fu (x, y) = (,) <$> fu x <*> fu y
+
 instance Freshen DLVar where
   fu v = do
     Env {..} <- ask

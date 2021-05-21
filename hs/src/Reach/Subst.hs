@@ -23,6 +23,9 @@ class Subst a where
 instance (Traversable f, Subst a) => Subst (f a) where
   subst = traverse subst
 
+instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
+  subst (x, y) = (,) <$> subst x <*> subst y
+
 instance Subst DLVar where
   subst v = do
     m <- ask

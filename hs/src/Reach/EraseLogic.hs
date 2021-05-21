@@ -35,6 +35,9 @@ viaCount x = do
 instance (Traversable t, Erase a) => Erase (t a) where
   el = traverse el
 
+instance {-# OVERLAPS #-} (Erase a, Erase b) => Erase (a, b) where
+  el (x, y) = (,) <$> el x <*> el y
+
 instance Erase DLVar where
   el = viaCount
 

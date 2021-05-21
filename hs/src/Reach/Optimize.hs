@@ -152,6 +152,12 @@ opt_v2a v = snd <$> opt_v2p v
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
 
+instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
+  opt (x, y) = (,) <$> opt x <*> opt y
+
+instance Optimize IType where
+  opt = return
+
 instance Optimize DLVar where
   opt = opt_v2v
 

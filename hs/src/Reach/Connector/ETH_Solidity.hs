@@ -298,6 +298,9 @@ class DepthOf a where
 instance (Traversable t, DepthOf a) => DepthOf (t a) where
   depthOf o = maximum <$> mapM depthOf o
 
+instance {-# OVERLAPS #-} (DepthOf a, DepthOf b) => DepthOf (a, b) where
+  depthOf (x, y) = max <$> depthOf x <*> depthOf y
+
 instance DepthOf DLVar where
   depthOf = readDepth
 

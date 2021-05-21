@@ -46,13 +46,22 @@ ac_vdef okToDupe (DLV_Let _ v) = do
 instance (AC a, Traversable t) => AC (t a) where
   ac = mapM ac
 
+instance {-# OVERLAPS #-} (AC a, AC b) => AC (a, b) where
+  ac (x, y) = (,) <$> ac x <*> ac y
+
 viaVisit :: Countable a => AppT a
 viaVisit a = do
   ac_visit a
   return $ a
 
+instance AC DLVar where
+  ac = viaVisit
+
 instance AC DLArg where
   ac = viaVisit
+
+instance AC IType where
+  ac = return
 
 instance AC DLStmt where
   ac = \case
