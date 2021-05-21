@@ -10,7 +10,7 @@ where
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LC
-import Data.List ((\\))
+import Data.List ((\\), isInfixOf)
 import Generics.Deriving
 import Reach.Util
 import System.Directory
@@ -82,13 +82,17 @@ mkSpecExamplesCoverCtors _ exceptions = mkSpecExamplesCoverStrs strs
   where
     strs = conNames (error "unused" :: err) \\ exceptions
 
+findByExtension' :: [FilePath] -> FilePath -> IO [FilePath]
+findByExtension' exts dir = findByExtension exts dir
+  >>= pure . filter (not . (".reach" `isInfixOf`))
+
 mkSpecExamplesCoverStrs :: [String] -> String -> FilePath -> Spec
 mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
   it "covers all specified examples" $ do
     curDir <- getCurrentDirectory
     let dir = curDir </> "test-examples" </> subdir
     doesDirectoryExist dir `shouldReturn` True
-    sources <- findByExtension [ext] dir
+    sources <- findByExtension' [ext] dir
     let missing = strs \\ map takeBaseName sources
     missing `shouldBe` []
 
@@ -96,7 +100,7 @@ goldenTests' :: (FilePath -> IO TestTree) -> String -> FilePath -> IO ([FilePath
 goldenTests' mkTest ext subdir = do
   curDir <- getCurrentDirectory
   let dir = curDir </> "test-examples" </> subdir
-  sources <- findByExtension [ext] dir
+  sources <- findByExtension' [ext] dir
   testNe <- testNotEmpty "this subdir" sources
   testSources <- testGroup ("testing each " <> ext <> " file") <$> mapM mkTest sources
   let tests = [testNe, testSources]
