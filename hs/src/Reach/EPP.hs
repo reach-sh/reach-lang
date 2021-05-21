@@ -424,6 +424,10 @@ be_m = \case
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
   DL_Only {} -> impossible $ "right only before EPP"
+  DL_LocalDo at t -> do
+    (t'c, t'l) <- be_t t
+    let mk = DL_LocalDo at
+    return $ (,) (mk <$> t'c) (mk <$> t'l)
   where
     nop at = retb0 $ const $ return $ DL_Nop at
 

@@ -78,7 +78,10 @@ instance Erase DLStmt where
       isUsedv dv >>= \case
         False -> skip at
         True -> return $ DL_Var at dv
-    DL_Set at dv da -> DL_Set at <$> el dv <*> el da
+    DL_Set at dv da ->
+      isUsedv dv >>= \case
+        False -> skip at
+        True -> DL_Set at <$> el dv <*> el da
     DL_LocalIf at c t f -> DL_LocalIf at <$> el c <*> el t <*> el f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> el ov <*> el csm
     DL_Only at who b -> DL_Only at who <$> el b
@@ -86,6 +89,7 @@ instance Erase DLStmt where
       isUsedv ans >>= \case
         False -> skip at
         True -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> el f
+    DL_LocalDo at t -> DL_LocalDo at <$> el t
     where
       skip at = return $ DL_Nop at
 

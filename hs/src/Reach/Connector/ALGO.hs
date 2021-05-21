@@ -22,11 +22,10 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.AddCounts
 import Reach.Connector
 import Reach.Counter
 import Reach.DeJump
-import Reach.Optimize
+import Reach.BigOpt
 import Reach.Texty (pretty)
 import Reach.UnrollLoops
 import Reach.UnsafeUtil
@@ -964,6 +963,7 @@ cm km = \case
     impossible $ "cannot inspect maps at runtime"
   DL_Only {} ->
     impossible $ "only in CP"
+  DL_LocalDo _ t -> cp km t
 
 cp :: App () -> DLTail -> App ()
 cp km = \case
@@ -1599,9 +1599,7 @@ connect_algo = Connector {..}
       -- Once we have backward jumps, throw this out
       djpu <- unrollLoops djp
       showp "ul" djpu
-      djpo <- optimize djpu
-      showp "djpo" djpo
-      pl <- add_counts djpo
+      pl <- bigopt djpu
       showp "pl" pl
       res <- compile_algo disp pl
       return $ res

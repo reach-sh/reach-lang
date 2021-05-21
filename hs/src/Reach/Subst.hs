@@ -89,6 +89,7 @@ instance Subst DLStmt where
     DL_Only at who b -> DL_Only at who <$> subst b
     DL_MapReduce at mri x a b u v bl ->
       DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
+    DL_LocalDo at t -> DL_LocalDo at <$> subst t
 
 instance Subst DLTail where
   subst = \case

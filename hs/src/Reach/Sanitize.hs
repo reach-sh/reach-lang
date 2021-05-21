@@ -90,6 +90,7 @@ instance Sanitize DLStmt where
     DL_Only _ a b -> DL_Only sb a (sani b)
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
+    DL_LocalDo _ t -> DL_LocalDo sb (sani t)
 
 instance Sanitize DLTail where
   sani = \case

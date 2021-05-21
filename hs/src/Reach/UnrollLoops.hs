@@ -131,6 +131,7 @@ instance Unroll DLStmt where
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l
+    DL_LocalDo at t -> DL_LocalDo at <$> ul t
 
 ul_m :: Unroll a => (DLStmt -> a -> a) -> DLStmt -> AppT a
 ul_m mkk m k = do

@@ -2301,7 +2301,8 @@ evalPrim p sargs =
         [(olvl, one)] -> do
           dt <- st2dte =<< expect_ty one
           at <- withAt id
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ "cannot inspect value from forall")
+          tag <- ctxt_alloc
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ "cannot inspect value from forall: " <> show tag)
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -3677,7 +3678,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
                   captureRes $ evalStmt time_ss
                 setSt k_st
                 mergeSt time_st
-                fcr <- combineStmtRes Public k_cr time_st time_cr
+                fcr <- combineStmtRes True Public k_cr time_st time_cr
                 return $ (Just (delay_da, time_lifts), fcr)
   -- Prepare final result
   saveLift $ DLS_ToConsensus at tc_send tc_recv tc_mtime
@@ -4315,7 +4316,11 @@ evalStmt = \case
           om <- readSt st_mode
           saveLift =<< (checkCond om $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts)
           let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
-          ir <- locSt st_t $ combineStmtRes clvl (levelHelp trets) st_f (levelHelp frets)
+          let trets' = levelHelp trets
+          let frets' = levelHelp frets
+          let addNull = sco_must_ret sco' /= RS_MayBeEmpty
+          ir <- locSt st_t $
+            combineStmtRes addNull clvl trets' st_f frets'
           setSt st_t
           mergeSt st_f
           retSeqn ir ks_ne
@@ -4409,6 +4414,7 @@ evalStmt = \case
             case ks_ne of
               [] -> sco
               _ -> sco {sco_must_ret = RS_MayBeEmpty}
+      let addNull = sco_must_ret sco' /= RS_MayBeEmpty
       let case_insert k v@(at1, _, _) m =
             case M.lookup k m of
               Nothing -> return $ M.insert k v m
@@ -4476,7 +4482,7 @@ evalStmt = \case
                           return $ (Just case_st, case_rets')
                         (Just st', Just rets') -> do
                           st'' <- stMerge st' case_st
-                          rets'' <- locSt st'' $ combineStmtRets de_lvl rets' case_st case_rets'
+                          rets'' <- locSt st'' $ combineStmtRets addNull de_lvl rets' case_st case_rets'
                           return $ (Just st'', rets'')
                         _ -> impossible $ "switch"
                     let casemm'' = M.insert vn (mdv', case_lifts) casemm'
@@ -4553,7 +4559,7 @@ evalStmt = \case
           -- Coalesce the try and handler returns
           let levelHelp = SLStmtRes sco . map (\(ra, rb, rc, _) -> (ra, rb, rc, True))
           let SLStmtRes _ try_res = try_ret
-          ret <- combineStmtRes Public (levelHelp handler_res) try_st (levelHelp try_res)
+          ret <- combineStmtRes True Public (levelHelp handler_res) try_st (levelHelp try_res)
           -- Ensure the successful try block and catch block end with compatible states
           setSt try_st
           mergeSt handler_st
@@ -4629,18 +4635,20 @@ retSeqn sr ks = do
       SLStmtRes sco1 rets1 <- locSco sco' $ evalStmt ks'
       return $ SLStmtRes sco1 (rets0 <> rets1)
 
-combineStmtRes :: SecurityLevel -> SLStmtRes -> SLState -> SLStmtRes -> App SLStmtRes
-combineStmtRes lvl (SLStmtRes _ lrets) rst (SLStmtRes sco rrets) =
-  SLStmtRes sco <$> combineStmtRets lvl lrets rst rrets
+combineStmtRes :: Bool -> SecurityLevel -> SLStmtRes -> SLState -> SLStmtRes -> App SLStmtRes
+combineStmtRes addNull lvl (SLStmtRes _ lrets) rst (SLStmtRes sco rrets) =
+  SLStmtRes sco <$> combineStmtRets addNull lvl lrets rst rrets
 
-combineStmtRets :: SecurityLevel -> SLStmtRets -> SLState -> SLStmtRets -> App SLStmtRets
-combineStmtRets lvl lrets rst rrets = do
+combineStmtRets :: Bool -> SecurityLevel -> SLStmtRets -> SLState -> SLStmtRets -> App SLStmtRets
+combineStmtRets addNull lvl lrets rst rrets = do
   at <- withAt id
   lst <- readSt id
-  let mnull lab st =
+  let yes lab st =
         case st_live st of
           True -> [(at, Nothing, (lvl, SLV_Null at $ "empty " <> lab), False)]
           False -> []
+  let no _ _ = []
+  let mnull = if addNull then yes else no
   case (lrets, rrets) of
     ([], []) -> return []
     ([], _) -> return $ mnull "left" lst <> rrets

@@ -1159,6 +1159,7 @@ smt_m = \case
       _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
+  DL_LocalDo _ t -> smt_l t
 
 smt_l :: DLTail -> SMTComp
 smt_l = \case

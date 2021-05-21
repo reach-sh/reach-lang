@@ -123,6 +123,7 @@ instance Freshen DLStmt where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
+    DL_LocalDo at t -> DL_LocalDo at <$> fu t
 
 instance Freshen DLPayAmt where
   fu = \case

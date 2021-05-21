@@ -157,6 +157,9 @@ data SLVal
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
+instance Show SLVal where
+  show = show . pretty
+
 instance Pretty SLVal where
   pretty = \case
     SLV_Null {} -> "null"

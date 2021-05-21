@@ -515,6 +515,7 @@ data DLStmt
   | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
+  | DL_LocalDo SrcLoc DLTail
   | DL_LocalIf SrcLoc DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
@@ -529,6 +530,7 @@ instance SrcLocOf DLStmt where
     DL_ArrayReduce a _ _ _ _ _ _ -> a
     DL_Var a _ -> a
     DL_Set a _ _ -> a
+    DL_LocalDo a _ -> a
     DL_LocalIf a _ _ _ -> a
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
@@ -543,6 +545,7 @@ instance Pretty DLStmt where
     DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
+    DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
     DL_LocalIf _at ca t f -> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
@@ -552,6 +555,8 @@ mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
     DL_Nop _ -> k
+    DL_LocalDo _ k' ->
+      dtReplace mk k k'
     _ -> mk m k
 
 data DLTail

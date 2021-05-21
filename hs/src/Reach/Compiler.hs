@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import Reach.AddCounts
 import Reach.AST.DL
 import Reach.Backend.JS
 import Reach.Connector
@@ -17,7 +16,9 @@ import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.Linearize
+-- import Reach.AddCounts
 import Reach.Optimize
+import Reach.BigOpt
 import Reach.Parser
 import Reach.Texty
 import Reach.Util
@@ -75,9 +76,11 @@ compile copts = do
       verify woutnMay vconnectors ol >>= maybeDie
       el <- erase_logic ol
       showp "el" el
-      pil <- epp el
+      eol <- bigopt el
+      showp "eol" eol
+      pil <- epp eol
       showp "pil" pil
-      pl <- add_counts pil
+      pl <- bigopt pil
       showp "pl" pl
       let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
       crs <- HM.fromList <$> mapM runConnector connectors

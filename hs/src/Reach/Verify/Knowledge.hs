@@ -257,6 +257,7 @@ kgq_m ctxt = \case
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
+  DL_LocalDo _ t -> kgq_l ctxt t
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case
