@@ -3832,7 +3832,9 @@ doFork ks cases mtime mnntpay = do
 
         let cr_ss = genCaseResStmts beforeNames
         let this_eq_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
-        let who_s = bpack who
+        who_s <- (snd <$> evalExpr who_e) >>= \case
+          SLV_Participant _ x _ _ -> return $ x
+          v -> expect_t v $ Err_Expected "participant"
         isBound <- readSt $ M.member who_s . st_pdvs
         let req_e = bool (JSLiteral a "true") this_eq_who isBound
         let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
@@ -4074,6 +4076,7 @@ findStmtTrampoline = \case
       Nothing -> do
         whodv <- ctxt_lift_expr (DLVar at' Nothing T_Address) (DLE_PartSet at' who addr_da)
         let pdvs' = M.insert who whodv pdvs
+        liftIO $ putStrLn $ "inserting " <> show who <> " into pdvs in pset"
         let st' = st {st_pdvs = pdvs'}
         setSt st'
         evalStmt ks
