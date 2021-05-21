@@ -5,16 +5,11 @@ const IAdministrator = {
     getNewEntry: Fun([],Address),
 }
 
-const IRegistryView = {
-    last: UInt
-}
-
 export const main = Reach.App({
     deployMode: "constructor" 
     },
-    [ Participant('Administrator', IAdministrator),
-      View('RegistryView', IRegistryView) ], 
-     (Admin, RegistryView) => {
+    [ Participant('Administrator', IAdministrator) ],
+     (Admin) => {
         Admin.publish();
         
         const registry = new Set()
