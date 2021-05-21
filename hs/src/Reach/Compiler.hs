@@ -76,12 +76,10 @@ compile copts = do
       verify woutnMay vconnectors ol >>= maybeDie
       el <- erase_logic ol
       showp "el" el
-      eol <- bigopt el
-      showp "eol" eol
+      eol <- bigopt (showp, "eol") el
       pil <- epp eol
       showp "pil" pil
-      pl <- bigopt pil
-      showp "pl" pl
+      pl <- bigopt (showp, "pl") pil
       let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
       crs <- HM.fromList <$> mapM runConnector connectors
       backend_js woutn crs pl

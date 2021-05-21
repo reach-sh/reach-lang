@@ -1599,7 +1599,6 @@ connect_algo = Connector {..}
       -- Once we have backward jumps, throw this out
       djpu <- unrollLoops djp
       showp "ul" djpu
-      pl <- bigopt djpu
-      showp "pl" pl
-      res <- compile_algo disp pl
+      pl <- bigopt (showp, "pl") djpu
+      res <- compile_algo (disp . T.pack) pl
       return $ res

@@ -9,7 +9,7 @@ import Reach.CollectCounts
 import Reach.Util
 
 data Env = Env
-  {e_cs :: IORef Counts}
+  { e_cs :: IORef Counts }
 
 type App = ReaderT Env IO
 type AppT a = a -> App a
@@ -65,17 +65,19 @@ instance AC DLStmt where
           ac_visit $ de
           return $ DL_Let at x' de
     DL_ArrayMap at ans x a f -> do
+      -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ x
       return $ DL_ArrayMap at ans x a f'
     DL_ArrayReduce at ans x z b a f -> do
+      -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ [x, z]
       return $ DL_ArrayReduce at ans x z b a f'
     DL_Var at dv ->
       ac_getCount dv >>= \case
-      Nothing -> skip at
-      Just _ -> return $ DL_Var at dv
+        Nothing -> skip at
+        Just _ -> return $ DL_Var at dv
     DL_Set at dv da -> do
       ac_getCount dv >>= \case
         Nothing -> skip at
@@ -95,6 +97,7 @@ instance AC DLStmt where
       b' <- ac b
       return $ DL_Only at who b'
     DL_MapReduce at mri ans x z b a f -> do
+      -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ z
       return $ DL_MapReduce at mri ans x z b a f'
@@ -253,8 +256,6 @@ instance AC LLConsensus where
       return c
     LLC_ViewIs at who v mev c -> do
       c' <- ac c
-      -- XXX Maybe we don't want THIS to be fresh, because we want to know if
-      -- it uses variables
       mev' <- ac mev
       return $ LLC_ViewIs at who v mev' c'
 
