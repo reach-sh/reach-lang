@@ -4076,7 +4076,6 @@ findStmtTrampoline = \case
       Nothing -> do
         whodv <- ctxt_lift_expr (DLVar at' Nothing T_Address) (DLE_PartSet at' who addr_da)
         let pdvs' = M.insert who whodv pdvs
-        liftIO $ putStrLn $ "inserting " <> show who <> " into pdvs in pset"
         let st' = st {st_pdvs = pdvs'}
         setSt st'
         evalStmt ks
