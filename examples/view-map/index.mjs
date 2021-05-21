@@ -19,7 +19,7 @@ import * as backend from './build/index.main.mjs';
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
   const checkView = async (x, expected) => {
-    console.log('checkView', x, expected);
+    console.log('checkView', stdlib.formatAddress(x), expected);
     assertEq(expected, await ctcAlice.getViews().Main.f(x)) };
 
   await Promise.all([

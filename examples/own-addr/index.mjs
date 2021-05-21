@@ -10,7 +10,7 @@ import * as backend from './build/index.main.mjs';
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,
-      myAddr: (addr) => console.log(`I am: ${addr}`),
+      myAddr: (addr) => console.log(`I am: ${stdlib.formatAddress(addr)}`),
     }),
   ]);
 

@@ -37,7 +37,7 @@ const numOfPlayers = 5;
       showWinner: ((ticket) =>
         console.log(`Sponsor saw ticket #${ticket} won.`)),
       showOutcome: ((addr) =>
-        console.log(`Sponsor saw ${addr} won.`)),
+        console.log(`Sponsor saw ${stdlib.formatAddress(addr)} won.`)),
     }),
   ].concat(
     await Promise.all(

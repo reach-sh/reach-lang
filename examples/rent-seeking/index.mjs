@@ -29,7 +29,7 @@ const numOfBidders = 5;
         prize: stdlib.parseCurrency(5),
         deadline: numOfBidders * 2 })),
       showWinner: (async (done, winner, winningBid) => {
-        console.log(`Sponsor saw ${winner} won @ ${fmt(winningBid)}`);
+        console.log(`Sponsor saw ${stdlib.formatAddress(winner)} won @ ${fmt(winningBid)}`);
         if ( done ) {
           const after = await getBalance(accSponsor);
           console.log(`Sponsor balance: ${beforeSponsor} => ${after}`);

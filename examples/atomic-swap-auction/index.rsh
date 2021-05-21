@@ -2,7 +2,7 @@
 'use strict';
 
 const common = {
-  showOutcome: Fun([Maybe(Address)], Null)
+  showOutcome: Fun([Address], Null)
 };
 
 export const main = Reach.App(() => {
@@ -62,6 +62,8 @@ export const main = Reach.App(() => {
 
     transfer(isFirstBid ? 0 : amtA, tokA).to(highestBidder);
     transfer(isFirstBid ? 0 : currentPrice, tokB).to(Auctioneer);
+
+    each([Auctioneer, Bidder], () => interact.showOutcome(highestBidder));
 
     [ dealMade ] = [ !isFirstBid ];
     continue;
