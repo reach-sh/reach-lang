@@ -182,7 +182,7 @@ export const main = Reach.App(
           Anybody.publish();
           return [ false, winner, ticketsSold ]; });
 
-    // Whoever, buys last wins and receives balance
+    // Whoever buys last wins and receives balance
     transfer(balance()).to(winner);
     commit();
     showOutcome(winner);
@@ -250,7 +250,7 @@ export const main = Reach.App(
 <span class="mi">62</span>              <a href="ref-programs-compute.html#%28reach._%28%28.Anybody%29%29%29" class="nb" data-pltdoc="x">Anybody</a><span class="p">.</span><a href="ref-programs-step.html#%28reach._%28%28publish%29%29%29" class="k" data-pltdoc="x">publish</a><span class="p">();</span>
 <span class="mi">63</span>              <a href="ref-programs-compute.html#%28reach._%28%28return%29%29%29" class="k" data-pltdoc="x">return</a> <span class="p">[</span> <a href="ref-programs-compute.html#%28reach._%28%28false%29%29%29" class="kc" data-pltdoc="x">false</a><span class="p">,</span> <font class="badlink"><span class="nx">winner</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ticketsSold</span></font> <span class="p">];</span> <span class="p">});</span>
 <span class="mi">64</span>    
-<span class="mi">65</span>        <span class="c1">// Whoever, buys last wins and receives balance</span>
+<span class="mi">65</span>        <span class="c1">// Whoever buys last wins and receives balance</span>
 <span class="mi">66</span>        <a href="ref-programs-consensus.html#%28reach._%28%28transfer%29%29%29" class="k" data-pltdoc="x">transfer</a><span class="p">(</span><a href="ref-programs-compute.html#%28reach._%28%28balance%29%29%29" class="nb" data-pltdoc="x">balance</a><span class="p">()).</span><font class="badlink"><span class="nx">to</span></font><span class="p">(</span><font class="badlink"><span class="nx">winner</span></font><span class="p">);</span>
 <span class="mi">67</span>        <a href="ref-programs-consensus.html#%28reach._%28%28commit%29%29%29" class="k" data-pltdoc="x">commit</a><span class="p">();</span>
 <span class="mi">68</span>        <font class="badlink"><span class="nx">showOutcome</span></font><span class="p">(</span><font class="badlink"><span class="nx">winner</span></font><span class="p">);</span>
@@ -284,7 +284,7 @@ const numOfBuyers = 10;
 
   await Promise.all([
     backend.Funder(ctcFunder, {
-      showOutcome: (addr) =&gt; console.log(`Funder saw ${addr} won.`),
+      showOutcome: (addr) =&gt; console.log(`Funder saw ${stdlib.formatAddress(addr)} won.`),
       getParams: () =&gt; funderParams,
     }),
   ].concat(
@@ -330,7 +330,7 @@ const numOfBuyers = 10;
  <span class="mi">24</span>    
  <span class="mi">25</span>      <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><a href="ref-programs-compute.html#%28reach._%28%28all%29%29%29" class="nx" data-pltdoc="x">all</a><span class="p">([</span>
  <span class="mi">26</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Funder</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcFunder</span></font><span class="p">,</span> <span class="p">{</span>
- <span class="mi">27</span>          <font class="badlink"><span class="nx">showOutcome</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">addr</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Funder saw </span><span class="si">${</span><font class="badlink"><span class="nx">addr</span></font><span class="si">}</span><span class="sb"> won.`</span><span class="p">),</span>
+ <span class="mi">27</span>          <font class="badlink"><span class="nx">showOutcome</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">addr</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Funder saw </span><span class="si">${</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">.</span><font class="badlink"><span class="nx">formatAddress</span></font><span class="p">(</span><font class="badlink"><span class="nx">addr</span></font><span class="p">)</span><span class="si">}</span><span class="sb"> won.`</span><span class="p">),</span>
  <span class="mi">28</span>          <font class="badlink"><span class="nx">getParams</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <font class="badlink"><span class="nx">funderParams</span></font><span class="p">,</span>
  <span class="mi">29</span>        <span class="p">}),</span>
  <span class="mi">30</span>      <span class="p">].</span><a href="ref-programs-compute.html#%28reach._%28%28concat%29%29%29" class="nx" data-pltdoc="x">concat</a><span class="p">(</span>
