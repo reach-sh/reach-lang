@@ -63,6 +63,21 @@ named @tt{default}.
 
   @item{@DFlag{intermediate-files} --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.}
 
+  @item{
+  @DFlag{install-pkgs} --- Allows Reach to fetch remote @tech{package imports}.
+
+  Reach will fail with a "Did you mean to run with `--install-pkgs`?" message if
+  package imports have not yet been fetched and this flag is not activated.
+
+  Using this flag will create a @tt{.reach} directory for your project. This
+  directory stores your project's @deftech{lockfile}, which is how Reach pins
+  remote packages to specific versions.
+
+  It is recommended that you commit the @tt{.reach} directory to source control.
+
+  Deleting this directory is also safe; it can easily be rebuilt by using the
+  @DFlag{install-pkgs} flag again.
+  }
 ]
 
 @subsection[#:tag "ref-usage-init"]{@tt{reach init}}

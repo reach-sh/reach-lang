@@ -6,5 +6,10 @@
 import { fourTimesThree } from
   '@github.com:reach-sh/reach-example-package#master/src/lib.rsh';
 
-export const main = Reach.App({}, [], () =>
-  assert(fourTimesThree == 12));
+import './local.rsh';
+
+export const main = Reach.App(() => {
+  assert(fourTimesThree == 12);
+  assert(fiveTimesThree == 15);
+  assert(t3(6)          == 18);
+});

@@ -10,7 +10,7 @@ e.g. @filepath{dao.rsh}.
 
 A @deftech{module} starts with @reachin{'reach @|reach-short-vers|';}
 followed by a sequence of @tech{imports} and @tech{identifier definitions}.
-A module can only be compiled or used if it contain one or more @tech{exports}.
+A module can only be compiled or used if it contains one or more @tech{exports}.
 @margin-note{See @seclink["guide-versions"]{the guide section on versions} to understand how Reach uses version numbers like this.}
 
 @section[#:tag "ref-programs-module-stmts"]{Statements}
@@ -55,6 +55,14 @@ if they are typed, that is, if they are constructed with @reachin{is}.
 @subsection[#:tag "ref-programs-import"]{@tt{import}}
 
 @(mint-define! '("import"))
+Reach supports two types of module imports: "local imports", which refer to
+modules that exist inside your project, and "package imports", which refer to
+remote libraries that may be fetched from external sources such as GitHub.
+
+Package imports are easily distinguished from local imports by a mandatory
+@litchar|{@}| character at the beginning of the path string.
+
+@subsubsection{Local imports}
 @reach{import 'games-of-chance.rsh';}
 
 When a @tech{module}, @litchar{X}, contains an @deftech{import},
@@ -77,6 +85,104 @@ which is an @tech{object} with @tech{fields} corresponding to that @tech{module}
 The path given to an @tech{import} may @bold{not} include @litchar{..} to specify files outside the current directory @bold{nor} may it be an absolute path.
 
 It @bold{must} be a relative path, which is resolved relative to the parent directory of the @tech{source file} in which they appear.
+
+@subsubsection{Package imports}
+@reach{
+import * as func from
+  '@"@"github.com:reach-sh/reach-example-package#main/src/func.rsh';
+}
+
+@deftech{Package imports} obey the same rules as local imports but support an
+extended path syntax which allows Reach programmers to seamlessly plug into
+third-party libraries hosted on the internet.
+
+All package imports begin with the @litchar|{@}| character.
+
+Package import paths are comprised of the following components:
+@itemlist[
+@item{
+@bold{(Optional): The site where the package is hosted.}
+
+Reach currently supports GitHub and BitBucket, and will default to GitHub if no
+site is specified.
+
+This component must be followed by a @litchar{:} character.
+
+Possible values include: @tt{github.com:} and @tt{bitbucket.org:}.
+}
+
+@item{
+@bold{The account registered with the host site.}
+
+This component must be followed by a @litchar{/} character.
+
+Example: @tt{reach-sh/}.
+}
+
+@item{
+@bold{A repository associated with the account.}
+
+This component must be followed by a @litchar{#} character.
+
+Example: @tt{reach-example-package#}.
+}
+
+@item{
+@bold{(Optional): A @tt{git ref} or @tt{git commit} used to represent the
+package version.}
+
+Since @tt{git} repositories evolve and change over time, Reach must take extra
+steps in order to pin a given module import's version in its @tech{lockfile}.
+
+If no @tt{ref} is specified, Reach first tries to find the requested module
+on the repository's @tt{master} branch, and if that fails then on the @tt{main}
+branch once more.
+@margin-note{
+@tt{git refs} are discussed in further detail
+@link["https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefrefaref"]{here}.
+}
+
+If @tt{master} @italic{is} specified but the requested module does not exist on
+the @tt{master} branch, then Reach will again attempt to find it on @tt{main}.
+
+In either case, if the module cannot be found on either @tt{master} or
+@tt{main}, then Reach will emit a failure message during compilation.
+
+@bold{It is highly advisable that package authors use @tt{git tags} to denote
+version "releases", e.g. @tt{v0.2.1}, and that consuming code target the
+desired @tt{git tag} rather than a branch name.}
+@margin-note{
+Read
+@link["https://git-scm.com/book/en/v2/Git-Basics-Tagging"]{this guide}
+to learn more about how @tt{git tags} work.
+}
+
+Reach ultimately uses @tt{git rev-parse} to pin with @tt{SHA} hashes (and is
+therefore resilient to @tt{git tags} which are later modified to point at
+another commit), but following this strategy will improve program semantics for
+both package authors and consumers.
+
+Example: @tt{v3.0.6}.
+}
+
+@item{
+@bold{(Optional): The directory in which the requested module may be found.}
+
+This component must be preceded by a @litchar{/} character.
+
+Example: @tt{/src/lib}.
+}
+
+@item{
+@bold{(Optional): The filename of the requested module.}
+
+Defaults to @tt{index.rsh}.
+
+This component must be preceded by a @litchar{/} character.
+
+Example: @tt{/pkg.rsh}.
+}
+]
 
 @section[#:tag "ref-programs-module-exprs"]{Expressions}
 
@@ -101,7 +207,7 @@ export const main = Reach.App(() => {
 }
 
 @deftech{Reach.App} accepts a no-argument function that specifies a @|DApp|.
-This function is applied during compilation in as an @tech{application initialization}.
+This function is applied during compilation as an @tech{application initialization}.
 It specifies the entire @|DApp| in its body.
 
 If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then that identifier may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
@@ -119,7 +225,7 @@ export const main =
 
 Previous versions of Reach only allowed a form of @tech{Reach.App} which accepted three arguments:
 an @reachin{options} object,
-a @reachin{applicationArgs} tuple,
+an @reachin{applicationArgs} tuple,
 and a @reachin{program} arrow of the form @reachin{(applicationIds) => body}.
 
 This form was equivalent to
