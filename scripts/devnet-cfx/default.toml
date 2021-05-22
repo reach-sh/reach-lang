@@ -1,0 +1,12 @@
+node_type = "archive"
+mode = "dev"
+dev_block_interval_ms = 250
+log_conf = "log.yaml"
+jsonrpc_local_http_port = 12_539
+public_rpc_apis = "all"
+persist_tx_index = true
+chain_id = 5_517
+node_table_promotion_timeout_s = 9_600
+mining_author = "0x119ce985be90697c846ff1bcbb115797fa4cb552"
+mining_key = "0x7072d050980eb10516abd40688113e578ffb2fd26c645a186ef478c2b4344dce"
+genesis_secrets = "./genesis_secret.txt"
