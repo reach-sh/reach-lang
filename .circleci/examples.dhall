@@ -10,6 +10,7 @@
 , { mapKey = "chicken-race", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "default-app", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "exports", mapValue = [ "ETH", "ALGO" ] }
+, { mapKey = "log", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "many-args", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "maybe-send", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "multiple-pr-case", mapValue = [ "ETH", "ALGO" ] }
