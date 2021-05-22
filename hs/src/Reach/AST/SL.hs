@@ -35,6 +35,7 @@ data SLType
   | ST_Data (M.Map SLVar SLType)
   | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
+  | ST_UDFun SLType
   | ST_Type SLType
   | ST_Refine SLType SLVal (Maybe SLVal)
   deriving (Eq, Generic)
@@ -67,6 +68,8 @@ instance Show SLType where
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
     ST_Fun (SLTypeFun tys ty _ _ _ _) ->
       "Refine(Fun([" <> showTys tys <> "], " <> show ty <> "), ...., ....)"
+    ST_UDFun rng ->
+      "Fun(true, " <> show rng <> ")"
     ST_Type ty -> "Type(" <> show ty <> ")"
     ST_Refine ty _ _ -> "Refine(" <> show ty <> ", ....)"
 
@@ -88,6 +91,7 @@ st2dt = \case
   ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
+  ST_UDFun {} -> Nothing
   ST_Type {} -> Nothing
   ST_Refine t _ _ -> st2dt t
 
@@ -403,7 +407,7 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_localf SrcLoc SLPart String SLTypeFun
+  | SLPrim_localf SrcLoc SLPart String (Either SLTypeFun SLType)
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf

@@ -138,6 +138,7 @@ data EvalError
   | Err_WithBill_Type DLType
   | Err_View_DuplicateView SLPart
   | Err_View_CannotExpose SLValTy
+  | Err_View_UDFun
   | Err_Part_DuplicatePart SLPart
   deriving (Eq, Generic)
 
@@ -531,5 +532,7 @@ instance Show EvalError where
       "Duplicated view name: " <> show n
     Err_View_CannotExpose sv ->
       "Value cannot be exposed to view: " <> show_sv sv
+    Err_View_UDFun ->
+      "View functions cannot have unconstrained domains."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

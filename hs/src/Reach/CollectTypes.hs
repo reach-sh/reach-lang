@@ -55,8 +55,10 @@ instance CollectsTypes DLType where
         T_Struct elems -> cts $ map snd elems
 
 instance CollectsTypes IType where
-  cts (IT_Fun dom rng) = cts dom <> cts rng
-  cts (IT_Val v) = cts v
+  cts = \case
+    IT_Fun dom rng -> cts dom <> cts rng
+    IT_Val v -> cts v
+    IT_UDFun rng -> cts rng
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m

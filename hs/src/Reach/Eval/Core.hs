@@ -1286,8 +1286,14 @@ makeInteract who (SLInterface spec) = do
           dom' <- mapM st2dte stf_dom
           rng' <- st2dte stf_rng
           return $
-            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k stf)
+            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Left stf)
             , IT_Fun dom' rng'
+            )
+        ST_UDFun rng -> do
+          rng' <- st2dte rng
+          return $
+            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Right rng)
+            , IT_UDFun rng'
             )
         t -> do
           t' <- st2dte t
@@ -1908,6 +1914,8 @@ evalPrim p sargs =
     SLPrim_op op -> evalPrimOp op sargs
     SLPrim_Fun ->
       case map snd sargs of
+        [(SLV_Bool _ True), (SLV_Type rng)] -> do
+          retV $ (lvl, SLV_Type $ ST_UDFun rng)
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] -> do
           dom <- mapM expect_ty dom_arr
           retV $ (lvl, SLV_Type $ ST_Fun (SLTypeFun dom rng Nothing Nothing Nothing Nothing))
@@ -2398,6 +2406,8 @@ evalPrim p sargs =
               case t of
                 ST_Fun (SLTypeFun {..}) ->
                   IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
+                ST_UDFun {} ->
+                  expect_ $ Err_View_UDFun
                 _ -> IT_Val <$> st2dte t
             return $ (di, io)
       ix <- mapWithKeyM go im
@@ -2546,7 +2556,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nnToksBilledRecv
       let withBill = DLWithBill nnTokReceived (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
-      res' <- doInteractiveCall sargs rat stf' SLM_ConsensusStep "remote" (CT_Assume True)
+      res' <- doInteractiveCall sargs rat (Left stf') SLM_ConsensusStep "remote" (CT_Assume True)
                 (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
@@ -2728,21 +2738,32 @@ evalPrim p sargs =
           ae { ae_classes = S.insert n $ ae_classes ae }
       return (lvl, SLV_Participant at n Nothing Nothing)
 
-doInteractiveCall :: [SLSVal] -> SrcLoc -> SLTypeFun -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
-doInteractiveCall sargs iat (SLTypeFun {..}) mode lab ct mkexpr = do
+doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
+doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   ensure_mode mode lab
   at <- withAt id
-  (dom_tupv, arges) <- assertRefinedArgs CT_Assert sargs iat (SLTypeFun {..})
+  (check_post, rng, arges) <-
+    case estf of
+      Left stf@(SLTypeFun {..}) -> do
+        (dom_tupv, arges) <- assertRefinedArgs CT_Assert sargs iat stf
+        let rng = stf_rng
+        let check_post rng_v =
+              forM_ stf_post $ \rngp ->
+                applyRefinement ct rngp [dom_tupv, rng_v] stf_post_msg
+        return (check_post, rng, arges)
+      Right rng -> do
+        let check_post = const $ return ()
+        arges <- mapM (fmap snd . typeOf . snd) sargs
+        return (check_post, rng, arges)
   dargs <- compileArgExprs arges
   fs <- e_stack <$> ask
-  rng_v <- compileInteractResult ct lab stf_rng $ \drng ->
+  rng_v <- compileInteractResult ct lab rng $ \drng ->
     mkexpr at fs drng dargs
-  forM_ stf_post $ \rngp ->
-    applyRefinement ct rngp [dom_tupv, rng_v] stf_post_msg
+  check_post rng_v
   return rng_v
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
-assertRefinedArgs ct sargs iat SLTypeFun {..} = do
+assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
   let argvs = map snd sargs
   arges <-
     mapM (uncurry typeCheck_s)

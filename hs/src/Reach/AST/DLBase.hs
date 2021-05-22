@@ -82,12 +82,14 @@ instance Pretty DLType where
 data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
+  | IT_UDFun DLType
   deriving (Eq, Ord, Generic, Show)
 
 itype2arr :: IType -> ([DLType], DLType)
 itype2arr = \case
   IT_Val t -> ([], t)
   IT_Fun dom rng -> (dom, rng)
+  IT_UDFun rng -> ([], rng)
 
 instance Pretty IType where
   pretty = viaShow

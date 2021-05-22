@@ -374,9 +374,11 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}.}
-  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}.
+  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}, when @reachin{Domain_i} and @reachin{Range} are types.
   The domain of a function is @tech{negative position}.
   The range of a function is @tech{positive position}.}
+  @item{@reachin{Fun(true, Range)}, which denotes an @deftech{unconstrained domain function type}, when @reachin{Range} is a type.
+  These functions may only appear in @tech{participant interact interfaces}.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
   @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an @tech{object}.

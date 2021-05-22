@@ -1546,6 +1546,7 @@ _verify_smt mc ctxt_vst smt lp = do
     let defineIE who (v, it) =
           case it of
             IT_Fun {} -> mempty
+            IT_UDFun {} -> mempty
             IT_Val itv ->
               pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact
     let definePIE (who, InteractEnv iem) = do
