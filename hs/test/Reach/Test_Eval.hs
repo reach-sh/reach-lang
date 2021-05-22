@@ -71,6 +71,42 @@ spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
       let f = "./examples/nim/index-abstract.rsh"
       isrc f >>= (`shouldBe` ImportLocal f)
 
+    it "defaults to `master` branch when no `ref` is specified" $ do
+      isrc "@reach-sh/reach-lang#/examples/exports/index.rsh"
+        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "master"
+              [ "examples", "exports" ]
+              "index.rsh"))
+
+    it "defaults to `index.rsh` when no filename is specified" $ do
+      isrc "@reach-sh/reach-lang#main/examples/exports/"
+        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "main"
+              [ "examples", "exports" ]
+              "index.rsh"))
+
+    it "accepts modules that live in the repo's root directory" $ do
+      isrc "@reach-sh/reach-lang#v.0.1.7/foo.rsh"
+        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "v.0.1.7"
+              []
+              "foo.rsh"))
+
+    it "defaults to `index.rsh` in root directory when no path is specified" $ do
+      isrc "@reach-sh/reach-lang#/"
+        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "master"
+              []
+              "index.rsh"))
+
     describe "can distinguish remote GitHub imports" $ do
       it "in long-form" $ do
         isrc "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"

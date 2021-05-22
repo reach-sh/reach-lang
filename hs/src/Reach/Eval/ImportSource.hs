@@ -146,7 +146,18 @@ data PkgError
   | PkgLockModuleShaMismatch  FilePath
   | PkgLockModuleUnknown      HostGit
   | PkgLockModifyUnauthorized
-  deriving (Eq, Show, ErrorMessageForJson, ErrorSuggestions)
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+
+
+instance Show PkgError where
+  show (PkgGitCloneFailed         s) = "`git clone` failed: "          <> s
+  show (PkgGitCheckoutFailed      s) = "`git checkout` failed: "       <> s
+  show (PkgGitFetchFailed         s) = "`git fetch` failed: "          <> s
+  show (PkgGitRevParseFailed      s) = "`git rev-parse` failed: "      <> s
+  show (PkgLockModuleDoesNotExist f) = "Lock module \""                <> f <> "\" does not exist"
+  show (PkgLockModuleShaMismatch  f) = "Lock module SHA mismatch on: " <> f
+  show (PkgLockModuleUnknown      h) = "Lock module unknown: "         <> show h
+  show  PkgLockModifyUnauthorized    = "Did you mean to run with `--install-pkgs`?"
 
 
 expect_thrown' :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
@@ -406,15 +417,22 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
 
 gitSaas :: Parsec String () GitSaas
 gitSaas = do
-  GitSaas <$> (manyTill (allowed "host account") (char '/'))
-          <*> (manyTill (allowed "repo")         (char '#'))
-          <*> (manyTill (allowed "ref")          (char '/'))
+  GitSaas <$> ("host account" `terminatedBy` '/')
+          <*> ("repo"         `terminatedBy` '#')
+          <*> ("ref"          `terminatedBy` '/' <|> master)
           <*> (many dir)
           <*> (filename <|> pure "index.rsh")
 
  where
   allowed t = alphaNum <|> oneOf "-_."
     <?> "valid git " <> t <> " character (alphanumeric, -, _, .)"
+
+  f `terminatedBy` x = do
+    h <- allowed f
+    t <- manyTill (allowed f) (char x)
+    pure $ h:t
+
+  master = pure "master" <* char '/'
 
   dir = try $ manyTill (allowed "directory") (char '/')
 
