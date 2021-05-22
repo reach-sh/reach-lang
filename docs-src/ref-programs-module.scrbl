@@ -62,7 +62,7 @@ remote libraries that may be fetched from external sources such as GitHub.
 Package imports are easily distinguished from local imports by a mandatory
 @litchar|{@}| character at the beginning of the path string.
 
-@subsubsection{Local imports}
+@subsubsection[#:tag "ref-programs-import-local"]{Local imports}
 @reach{import 'games-of-chance.rsh';}
 
 When a @tech{module}, @litchar{X}, contains an @deftech{import},
@@ -86,7 +86,7 @@ The path given to an @tech{import} may @bold{not} include @litchar{..} to specif
 
 It @bold{must} be a relative path, which is resolved relative to the parent directory of the @tech{source file} in which they appear.
 
-@subsubsection{Package imports}
+@subsubsection[#:tag "ref-programs-import-package"]{Package imports}
 @reach{
 import * as func from
   '@"@"github.com:reach-sh/reach-example-package#main/src/func.rsh';
