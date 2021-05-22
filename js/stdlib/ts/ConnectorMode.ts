@@ -9,7 +9,8 @@ export type ConnectorMode =
   'ALGO-test-dockerized-algod' |
   'ALGO-live' |
   'ALGO-browser' |
-  'CFX-experimental';
+  'CFX-devnet' |
+  'CFX-live';
 
 // Order is significant, earlier = default for shared prefix
 // e.g. ETH defaults to ETH-test-dockerized-geth
@@ -20,7 +21,8 @@ const knownConnectorModes: Array<ConnectorMode> = [
   'ALGO-test-dockerized-algod',
   'ALGO-live',
   'ALGO-browser',
-  'CFX-experimental',
+  'CFX-devnet',
+  'CFX-live',
 ];
 
 function isKnownConnector(s: string): s is Connector {
