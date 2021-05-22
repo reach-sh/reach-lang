@@ -28,3 +28,4 @@ The following guides are available:
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
 @include-section["guide-editor-support.scrbl"]
+@include-section["guide-packages.scrbl"]
