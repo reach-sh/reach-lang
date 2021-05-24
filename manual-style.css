@@ -191,7 +191,9 @@ a:hover {
 }
 
 .navsettop {
-    position: absolute;
+    position: fixed;
+    z-index: 1;
+    background: #a7b0be;
     top: 0;
     left: 0;
     margin-bottom: 0;
@@ -392,15 +394,8 @@ a:hover {
     right: 2em;
     height: 0em;
     width: 13em;
-    margin: 0em 0em 0em -13em;
-}
-
-@media all and (max-width:1340px) {
-    /* avoid disappearing left note if display area is narrow */
-    .refparaleft, .refelemleft {
-        margin: 0em 0em 0em 0em;
-        right: 0em;
-     }
+    margin: 0em 0em 0em 0em;
+    display: contents;
 }
 
 .refcolumnleft {
@@ -418,15 +413,16 @@ a:hover {
 /* Table of contents, left margin */
 
 .tocset {
-    position: absolute;
+    position: fixed;
+    overflow-y: scroll;
     float: none;
     left: 0;
     top: 0rem;
+    bottom: 0;
     width: 14rem;
-    padding: 7rem 0.5rem 0.5rem 0.5rem;
+    padding: 0rem 0.5rem 0.5rem 0.5rem;
     background-color: hsl(216, 15%, 70%);
-    margin: 0;
-
+    border-top: 6rem solid hsl(216, 15%, 70%);
 }
 
 .tocset td {
@@ -446,6 +442,7 @@ a:hover {
 .tocview {
     text-align: left;
     background-color: inherit;
+    margin-top: 1em;
 }
 
 
