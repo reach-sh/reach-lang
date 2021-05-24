@@ -123,8 +123,7 @@ instance Countable DLExpr where
     DLE_Wait _ a -> counts a
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
-    DLE_MapSet _ _ fa na -> counts [fa, na]
-    DLE_MapDel _ _ fa -> counts fa
+    DLE_MapSet _ _ fa na -> counts fa <> counts na
     DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
 
 instance Countable DLAssignment where

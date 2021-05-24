@@ -364,8 +364,7 @@ data DLExpr
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
-  | DLE_MapSet SrcLoc DLMVar DLArg DLArg
-  | DLE_MapDel SrcLoc DLMVar DLArg
+  | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
   deriving (Eq, Ord, Generic)
 
@@ -394,9 +393,10 @@ instance Pretty DLExpr where
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
       DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
-      DLE_MapSet _ mv kv nv ->
+      DLE_MapSet _ mv kv (Just nv) ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
-      DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
+      DLE_MapSet _ mv i Nothing ->
+        "delete" <+> pretty mv <> brackets (pretty i)
       DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
         "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
         parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
@@ -429,7 +429,6 @@ instance IsPure DLExpr where
     DLE_PartSet {} -> False
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
-    DLE_MapDel {} -> False
     DLE_Remote {} -> False
 
 instance IsLocal DLExpr where
@@ -454,7 +453,6 @@ instance IsLocal DLExpr where
     DLE_PartSet {} -> True
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
-    DLE_MapDel {} -> False
     DLE_Remote {} -> False
 
 instance CanDupe DLExpr where

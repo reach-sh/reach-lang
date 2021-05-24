@@ -4714,18 +4714,14 @@ mapNew dlmi_ty = do
 mapDel :: DLMVar -> DLArg -> App ()
 mapDel mv mc = do
   at <- withAt id
-  -- XXX constrain this in some way so that it is the "most recent" sender, re:
-  -- Algorand opt-in restriction
-  ctxt_lift_eff $ DLE_MapDel at mv mc
+  ctxt_lift_eff $ DLE_MapSet at mv mc Nothing
 
 mapSet :: DLMVar -> DLArg -> SLVal -> App ()
 mapSet mv mc nv = do
   at <- withAt id
   DLMapInfo {..} <- mapLookup mv
-  -- XXX constrain this in some way so that it is the "most recent" sender, re:
-  -- Algorand opt-in restriction
   na <- compileCheckType dlmi_ty nv
-  ctxt_lift_eff $ DLE_MapSet at mv mc na
+  ctxt_lift_eff $ DLE_MapSet at mv mc $ Just na
 
 mapRef :: DLMVar -> SLVal -> App DLVar
 mapRef mv mcv = do

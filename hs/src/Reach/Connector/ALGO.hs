@@ -68,6 +68,8 @@ algoMaxTxGroupSize :: TxnIdx
 algoMaxTxGroupSize = 16
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
+algoMaxAppTxnAccounts :: Integer
+algoMaxAppTxnAccounts = 4 -- plus sender
 
 -- Algo specific stuff
 
@@ -792,9 +794,8 @@ ce = \case
       check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
-  DLE_MapRef {} -> xxx "algo mapref"
-  DLE_MapSet {} -> xxx "algo mapset"
-  DLE_MapDel {} -> xxx "algo mapdel"
+  DLE_MapRef _ _mpv _fa -> xxx "algo mapref"
+  DLE_MapSet _ _mpv _fa _mva -> xxx "algo mapset"
   DLE_Remote {} -> xxx "algo remote"
   where
     show_stack msg at fs = do

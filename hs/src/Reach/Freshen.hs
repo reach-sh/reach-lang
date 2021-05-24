@@ -88,7 +88,6 @@ instance Freshen DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
-    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> fu fa
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
 
 instance Freshen DLStmt where
