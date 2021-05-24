@@ -249,13 +249,13 @@ This is useful when the @tech{consensus transfer} was initiated by a @reachin{ra
  transfer(2, gil).to(Alice); }
 
 A @deftech{transfer expression},
-written @reachin{transfer(AMOUNT_EXPR).to(PART)},
+written @reachin{transfer(AMOUNT_EXPR).to(ADDR_EXPR)},
 where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to an unsigned integer, and
-@reachin{PART} is a @tech{participant} identifier,
+@reachin{ADDR_EXPR} evaluates to an address,
 performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}.
 @reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}.
 
-A @tech{transfer expression} may also be written @reachin{transfer(AMOUNT_EXPR, TOKEN_EXPR).to(PART)},
+A @tech{transfer expression} may also be written @reachin{transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)},
 where @reachin{TOKEN_EXPR} is a @reachin{Token},
 which @tech{transfers} @tech{non-network tokens} of the specified type.
 
