@@ -517,14 +517,16 @@ be_c = \case
       captureMore $
         local (\e -> e {be_interval = default_interval}) $ do
           be_s s
+    toks <- be_toks <$> ask
     mvis <-
       case more of
         True -> do
           vis <- assignView
           fg_use vis
           return $ Just vis
-        False -> return $ Nothing
-    toks <- be_toks <$> ask
+        False -> do
+          fg_use toks
+          return $ Nothing
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case mvis of
