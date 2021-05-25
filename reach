@@ -341,11 +341,13 @@ do_init () {
   cat >"${RSH}" <<EOF
 'reach ${REACH_VERSION_SHORT}';
 
-export const main = Reach.App(
-  {}, [Participant('Alice', {}), Participant('Bob', {})], (Alice, Bob) => {
-    // ...
-  }
-);
+export const main = Reach.App(() => {
+  const Alice = Participant('Alice', {});
+  const Bob   = Participant('Bob', {});
+  deploy();
+  // write your program here
+
+});
 EOF
 
   echo writing "$MJS"
