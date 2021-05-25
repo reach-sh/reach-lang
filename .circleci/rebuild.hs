@@ -58,6 +58,14 @@ skipAlgo =
   ]
 
 
+skipExample :: [FilePath]
+skipExample =
+  -- nondeterministic failures on CI
+  -- https://trello.com/c/X8c2lhSV/1273-fix-tut-8-non-deterministic-failures-in-ci
+  [ "tut-8"
+  ]
+
+
 connectors :: FilePath -> [String]
 connectors f =
      (if f `elem` skipEth  then [] else [ "ETH"  ])
@@ -80,7 +88,7 @@ main = do
 
   edirs <- listDirectory e
        >>= filterM (doesDirectoryExist . (e </>))
-       >>= pure . sort . filter (`elem` gits)
+       >>= pure . sort . filter (\x -> x `elem` gits && not (x `elem` skipExample))
 
   let examples = M.fromList $ map (\x -> (x, connectors x)) edirs
 

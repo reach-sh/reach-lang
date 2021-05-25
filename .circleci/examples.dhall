@@ -42,7 +42,6 @@
 , { mapKey = "tut-7", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "tut-7-array", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "tut-7-rpc", mapValue = [] : List Text }
-, { mapKey = "tut-8", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "tut-9", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "variable-transfers", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "view-bytes", mapValue = [ "ETH", "ALGO" ] }
