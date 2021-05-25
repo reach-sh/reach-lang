@@ -96,6 +96,7 @@ data EvalError
   | Err_Each_NotTuple SLValTy
   | Err_NotParticipant SLValTy
   | Err_Transfer_NotBound SLPart
+  | Err_Transfer_Class SLPart
   | Err_Eval_IncompatibleStates SLState SLState
   | Err_Eval_NotSecretIdent SLVar
   | Err_Eval_NotPublicIdent SLVar
@@ -235,22 +236,23 @@ instance ErrorMessageForJson EvalError where
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar
     ow -> show ow
 
-getIllegalModeSuggestion :: SLMode -> [SLMode] -> String
+getIllegalModeSuggestion :: SLMode -> [SLMode] -> Maybe String
 getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expected mode"
 getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
-      (SLM_Module, _) -> "create a `React.App`"
-      (SLM_AppInit, _) -> "`deploy`"
+      (SLM_Module, _)  -> Just "create a `React.App`"
+      (SLM_AppInit, _) -> Just "`deploy`"
+      (_, SLM_AppInit) -> Nothing
       (s, SLM_Step)
-        | isConsensusStep s -> "`commit`"
-        | isLocalStep s -> "exit `only` or `each`"
+        | isConsensusStep s -> Just "`commit`"
+        | isLocalStep s -> Just "exit `only` or `each`"
       (SLM_Step, s)
-        | isConsensusStep s -> "`publish`, `pay`, or `fork`"
-        | isLocalStep s -> "`only` or `each`"
+        | isConsensusStep s -> Just "`publish`, `pay`, or `fork`"
+        | isLocalStep s -> Just "`only` or `each`"
       (s1, s2)
-        | isConsensusStep s1 && isLocalStep s2 -> "`only` or `each`"
-        | isLocalStep s1 && isConsensusStep s2 -> "exit `only`, `each` or `case`"
+        | isConsensusStep s1 && isLocalStep s2 -> Just "`only` or `each`"
+        | isLocalStep s1 && isConsensusStep s2 -> Just "exit `only`, `each` or `case`"
       _ -> impossible "getIllegalModeSuggestion"
 
 instance ErrorSuggestions EvalError where
@@ -347,9 +349,7 @@ instance Show EvalError where
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
-        <> ". You must "
-        <> getIllegalModeSuggestion mode ok_modes
-        <> " first."
+        <> maybe "" (\ suggestion -> ". You must " <> suggestion <> " first.") (getIllegalModeSuggestion mode ok_modes)
     Err_LValue_IllegalJS e ->
       "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->
@@ -444,6 +444,8 @@ instance Show EvalError where
       "expected a participant as an argument, instead got " <> show_sv slval
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> bunpack who
+    Err_Transfer_Class who ->
+      "cannot transfer to participant class, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
       "incompatible states:" <> showStateDiff x y
     Err_Eval_NotSecretIdent x ->

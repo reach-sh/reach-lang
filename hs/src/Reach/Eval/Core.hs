@@ -2288,7 +2288,15 @@ evalPrim p sargs =
     SLPrim_transfer_amt_to pay_sv -> do
       at <- withAt id
       ensure_mode SLM_ConsensusStep "transfer"
-      who_a <- compileCheckType T_Address =<< one_arg
+      part <- one_arg
+      who_a <- typeOfM part >>= \case
+          Just (ty, res) -> typeMeet_d ty T_Address >> compileArgExpr res
+          Nothing ->
+            case part of
+              SLV_Participant _ who _ _ ->
+                is_class who >>= expect_
+                  . bool (Err_Transfer_NotBound who) (Err_Transfer_Class who)
+              _ -> expect_ $ Err_Type_None part
       let staticallyZero = \case
             DLA_Literal (DLL_Int _ 0) -> True
             _ -> False

@@ -1,0 +1,1 @@
+reachc: error: ./Err_Transfer_Class.rsh:8:19:application: cannot transfer to participant class, Bob
