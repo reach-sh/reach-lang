@@ -2,7 +2,11 @@
 
 make build || exit 1
 
-docker-compose -f "$1" up -d alice bob || exit 1
+REACH_CONNECTOR="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
+DOCKER_COMPOSE_YML_DEFAULT="docker-compose.${REACH_CONNECTOR}.yml"
+DOCKER_COMPOSE_YML="${1:-"${DOCKER_COMPOSE_YML_DEFAULT}"}"
+
+docker-compose -f "$DOCKER_COMPOSE_YML" up -d alice bob || exit 1
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
