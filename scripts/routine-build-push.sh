@@ -9,8 +9,10 @@ JS=$!
 ALGO=$!
 (cd scripts/ethereum-devnet && make build push) &
 ETH=$!
+(cd scripts/devnet-cfx && make build push) &
+CFX=$!
 
-wait $HS $JS $ALGO $ETH
+wait $HS $JS $ALGO $ETH $CFX
 
 set +x
 echo "============================"
