@@ -128,6 +128,9 @@ where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant
 @reachin{WHEN_EXPR} is a @tech{public} @tech{expression} evaluating to a boolean and determines if the @tech{consensus transfer} takes place,
 @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number,
 @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
+All of the expressions within a @tech{consensus transfer} are evaluated in a @deftech{pure} context, which may not alter the state of the
+application.
+
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 The @tech{continuation} of a timeout block is the same as the continuation of the function the timeout occurs within.
 
@@ -329,7 +332,7 @@ variant signifying what case was chosen.
 @reach{
  wait(AMOUNT); }
 
-A @deftech{wait statement}, written @reachin{wait(AMOUNT);}, delays the computation until @reachin{AMOUNT} @tech{time delta} units have passed.
+A @deftech{wait statement}, written @reachin{wait(AMOUNT);}, delays the computation until @reachin{AMOUNT} @tech{time delta} units have passed. @reachin{AMOUNT} must be @tech{pure} and only reference values known by the @tech{consensus state}.
 It may only occur in a @tech{step}.
 
 @subsection{@tt{exit}}

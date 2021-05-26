@@ -253,7 +253,7 @@ getIllegalModeSuggestion mode (m : _) = get (mode, m)
       (s1, s2)
         | isConsensusStep s1 && isLocalStep s2 -> Just "`only` or `each`"
         | isLocalStep s1 && isConsensusStep s2 -> Just "exit `only`, `each` or `case`"
-      _ -> impossible "getIllegalModeSuggestion"
+      _ -> Nothing
 
 instance ErrorSuggestions EvalError where
   errorSuggestions = \case
