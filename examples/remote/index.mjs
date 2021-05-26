@@ -1,6 +1,7 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
-import ethers from 'ethers';
+import real_ethers from 'ethers';
+import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
 import * as fs from 'fs';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
@@ -10,6 +11,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
     console.log(`XXX Unsupported`);
     process.exit(0);
   }
+  const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
