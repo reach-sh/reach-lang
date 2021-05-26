@@ -2636,12 +2636,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run ttt with ALGO
         no_output_timeout: 10m
-    - run:
-        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run ttt"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: Run ttt with CFX
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail

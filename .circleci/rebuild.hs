@@ -99,6 +99,13 @@ skipCfx =
   , "view-map"
   , "view-maybe"
   , "view-steps"
+
+  -- nondeterministic failures
+  -- RPCError: Error processing request: Filter error: Block ${blockId} is not executed yet
+  -- index.mjs > B > recv > Provider.getLogs > Conflux.getLogs
+  -- https://app.circleci.com/pipelines/github/reach-sh/reach-lang/2590/workflows/617f4fd2-6125-47e6-b1e8-e1bd32fd5671/jobs/19113
+  , "ttt"
+
   ]
 
 
