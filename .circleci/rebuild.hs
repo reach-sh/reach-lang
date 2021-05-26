@@ -58,6 +58,13 @@ skipAlgo =
   ]
 
 
+skipCfx :: [FilePath]
+skipCfx =
+  [ "tut-7-rpc" -- TODO: test rpc w/ cfx
+  , "tut-8" -- TODO: add cfx to tut-8
+  ]
+
+
 skipExample :: [FilePath]
 skipExample =
   -- nondeterministic failures on CI
@@ -70,6 +77,7 @@ connectors :: FilePath -> [String]
 connectors f =
      (if f `elem` skipEth  then [] else [ "ETH"  ])
   <> (if f `elem` skipAlgo then [] else [ "ALGO" ])
+  <> (if f `elem` skipCfx  then [] else [ "CFX" ])
 
 
 main :: IO ()

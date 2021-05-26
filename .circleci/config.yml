@@ -59,6 +59,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run abstract-simul with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run abstract-simul"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run abstract-simul with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -121,6 +127,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run algorand-placeholder with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run algorand-placeholder"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run algorand-placeholder with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -185,6 +197,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run argz with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run argz"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run argz with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -248,6 +266,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run atomic-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run atomic-swap with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -310,6 +334,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run atomic-swap-auction with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run atomic-swap-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run atomic-swap-auction with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -548,6 +578,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-fork with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-fork"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-fork with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -610,6 +646,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-parallel with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-parallel"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-parallel with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -674,6 +716,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-race with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-race with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -736,6 +784,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run default-app with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run default-app"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run default-app with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -923,6 +977,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run exports with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run exports"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run exports with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -985,6 +1045,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run log with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run log"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run log with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1049,6 +1115,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run many-args with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run many-args"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run many-args with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1111,6 +1183,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run maybe-send with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run maybe-send"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run maybe-send with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1175,6 +1253,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run multiple-pr-case with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run multiple-pr-case"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run multiple-pr-case with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1238,6 +1322,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run multisig with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run multisig"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run multisig with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1294,6 +1384,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-auction with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run nft-auction"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run nft-auction with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1358,6 +1454,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-dumb with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run nft-dumb"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run nft-dumb with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1420,6 +1522,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run nim with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run nim"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run nim with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1484,6 +1592,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run object-digest with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run object-digest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run object-digest with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1546,6 +1660,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run overview with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run overview with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1610,6 +1730,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-more-deps with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview-more-deps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run overview-more-deps with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1672,6 +1798,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-react with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview-react"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run overview-react with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1736,6 +1868,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run own-addr with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run own-addr"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run own-addr with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1798,6 +1936,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run popularity-contest with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run popularity-contest"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run popularity-contest with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1862,6 +2006,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run pr202105-zet with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run pr202105-zet"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run pr202105-zet with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1924,6 +2074,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run race with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run race"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run race with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1988,6 +2144,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run raffle with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run raffle"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run raffle with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2050,6 +2212,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run remote with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run remote"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run remote with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2114,6 +2282,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run rent-seeking with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run rent-seeking"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run rent-seeking with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2177,6 +2351,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run rental with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run rental"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run rental with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2239,6 +2419,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run secured-loan with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run secured-loan"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run secured-loan with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2448,6 +2634,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run timeoutception with ALGO
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run timeoutception"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run timeoutception with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2510,6 +2702,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run ttt with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run ttt"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run ttt with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2574,6 +2772,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-2 with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-2"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-2 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2636,6 +2840,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-3 with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-3"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-3 with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2700,6 +2910,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-4 with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-4"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-4 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2762,6 +2978,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5 with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-5 with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2826,6 +3048,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5-attack with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-5-attack"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-5-attack with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2888,6 +3116,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-6 with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-6"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-6 with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2952,6 +3186,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7 with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-7"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-7 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3014,6 +3254,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-array with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-7-array"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-7-array with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3129,6 +3375,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-9 with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-9"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-9 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3191,6 +3443,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run variable-transfers with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run variable-transfers"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run variable-transfers with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3255,6 +3513,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-bytes with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-bytes"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-bytes with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3317,6 +3581,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-fun with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-fun"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-fun with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3381,6 +3651,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-map with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-map"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-map with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3443,6 +3719,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-maybe with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-maybe"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-maybe with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3507,6 +3789,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-steps with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-steps"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-steps with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3569,6 +3857,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run weird-swap with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run weird-swap"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run weird-swap with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3633,6 +3927,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-fomo"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-fomo with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3689,6 +3989,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-fomo-generalized with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-fomo-generalized"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-fomo-generalized with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3753,6 +4059,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-hash-lock with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-hash-lock"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-hash-lock with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3816,6 +4128,12 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-relay with ALGO"
         no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-relay"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-relay with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3878,6 +4196,12 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-trust-fund with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-trust-fund"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-trust-fund with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
