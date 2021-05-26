@@ -161,6 +161,7 @@ const {
 const {
   T_Address, T_Tuple,
   add,
+  addressEq,
   stdlib,
 } = ethLikeCompiled;
 const reachStdlib: BackendStdlib = stdlib;
@@ -389,7 +390,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   let label = shad;
 
   const iam = (some_addr: Address): Address => {
-    if (some_addr == address) {
+    if (addressEq(some_addr, address)) {
       return address;
     } else {
       throw Error(`I should be ${some_addr}, but am ${address}`);

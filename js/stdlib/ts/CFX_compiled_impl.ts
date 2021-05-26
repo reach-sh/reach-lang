@@ -5,12 +5,7 @@ import type { ETH_Ty } from './ETH_like_interfaces';
 // XXX find a better way to support multiple netIds
 let netId = 999;
 
-function address_ethToCfx(addrE: string): string {
-  addrE = addrE.toLowerCase();
-  const addrB = Buffer.from(addrE.slice(2), 'hex');
-  // XXX why doesn't ts know about this fn?
-  const addrC = (cfxsdk.address as any).encodeCfxAddress(addrB, netId);
-
+function address_cfxStandardize(addrC: string): string {
   const pieces = addrC.split(':');
   // XXX Missing type chunk means assume it's a user (?)
   // XXX would it be better for our purposes to strip the type out instead?
@@ -21,6 +16,14 @@ function address_ethToCfx(addrE: string): string {
   if (pieces.length !== 3) throw Error(`impossible: bad CFX addr: '${addrC}'`);
 
   return addrC.toUpperCase();
+}
+
+function address_ethToCfx(addrE: string): string {
+  addrE = addrE.toLowerCase();
+  const addrB = Buffer.from(addrE.slice(2), 'hex');
+  // XXX why doesn't ts know about this fn?
+  const addrC = (cfxsdk.address as any).encodeCfxAddress(addrB, netId);
+  return addrC;
 }
 
 // Note: does not add the mixed-case checksum info to the ETH-like address
@@ -38,11 +41,20 @@ export const T_Address: ETH_Ty<string, string> = {
     if (typeof uv === 'string') {
       if (uv.slice(0,2) === '0x') {
         const addrC = address_ethToCfx(uv);
-        return addrC.toUpperCase();
+        return address_cfxStandardize(addrC);
       }
-      return uv.toUpperCase();
+      return address_cfxStandardize(uv);
     }
-    return uv as string; // XXX
+    if (!uv) throw Error(`Expected address, got ${JSON.stringify(uv)}`);
+    // XXX what's a better way to show ts what's going on?
+    const uobj = uv as {networkAccount?: unknown, address?: unknown};
+    if (uobj.networkAccount) {
+      return T_Address.canonicalize(uobj.networkAccount);
+    }
+    if (uobj.address) {
+      return T_Address.canonicalize(uobj.address);
+    }
+    throw Error(`TODO: canonicalize non-string addr`);
   },
   defaultValue: 'XXX', // XXX
   // Note: address_cfxToEth is not strictly necessary for munge.
