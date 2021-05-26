@@ -32,7 +32,7 @@
 , { mapKey = "rental", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "secured-loan", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "timeoutception", mapValue = [ "ETH", "ALGO", "CFX" ] }
-, { mapKey = "ttt", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "ttt", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "tut-2", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "tut-3", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "tut-4", mapValue = [ "ETH", "ALGO", "CFX" ] }
