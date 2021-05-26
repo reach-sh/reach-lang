@@ -134,27 +134,34 @@ export class ContractFactory {
     this.interface = new ethers.utils.Interface(this.abi);
   }
 
+  // compare/contrast
+  // https://github.com/ethers-io/ethers.js/blob/master/packages/contracts/src.ts/index.ts
   // XXX this code can return Contract directly
   // Should it wait?
-  async deploy(...deployArgs: any): Promise<Contract> {
-    const [argsOrTxn, txnIfArgs]: any[] = deployArgs;
-    const [args, txn]: [any[], {value?: ethers.BigNumber, gasLimit?: undefined}] = txnIfArgs
-      ? [ argsOrTxn, txnIfArgs ]
-      : [ [], argsOrTxn ];
+  async deploy(...args: any): Promise<Contract> {
+    let txnOverrides: any = {};
+
+    if (args.length === this.interface.deploy.inputs.length + 1) {
+      txnOverrides = unbn(args.pop());
+    }
+
+    const expectedLen = this.interface.deploy.inputs.length;
+    if (args.length !== expectedLen) {
+      throw Error(`cfxers: contract deployment expected ${expectedLen} args but got ${args.length}`);
+    }
+
     const {abi, bytecode, wallet} = this;
     wallet._requireConnected();
     if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
     const {conflux} = wallet.provider;
     const contract = conflux.Contract({abi, bytecode});
     const from = wallet.getAddress();
-    const value = (txn.value || BigNumber.from(0)).toString();
-    if (args.length > 0) {
-      throw Error(`ctc args not yet supported`)
-    }
+    const value = BigNumber.from(0).toString();
+    const txn = {from, value, ...txnOverrides};
 
-    // XXX gasLimit
-    const receiptP = contract.constructor()
-      .sendTransaction({from, value})
+    // XXX gasLimit, is this handled correctly by txnOverrides?
+    const receiptP = contract.constructor(...args)
+      .sendTransaction(txn)
       .executed();
 
     return new Contract(undefined, abi, wallet, receiptP);
