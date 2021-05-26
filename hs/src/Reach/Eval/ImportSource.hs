@@ -160,8 +160,8 @@ instance Show PkgError where
   show  PkgLockModifyUnauthorized    = "Did you mean to run with `--install-pkgs`?"
 
 
-expect_thrown' :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
-expect_thrown' e = asks srcloc >>= flip expect_thrown e
+expect_ :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ e = asks srcloc >>= flip expect_thrown e
 
 
 orFail :: (b -> App a) -> (ExitCode, a, b) -> App a
@@ -197,20 +197,20 @@ mkdirP = liftIO . createDirectoryIfMissing True
 
 gitClone' :: FilePath -> String -> FilePath -> App ()
 gitClone' b u d = runGit b (printf "clone %s %s" u d)
-  >>= orFail_ (expect_thrown' . PkgGitCloneFailed)
+  >>= orFail_ (expect_ . PkgGitCloneFailed)
 
 
 gitCheckout :: FilePath -> String -> App ()
 gitCheckout b r = check fetch >> pure () where
   check e = runGit b ("checkout " <> r) >>= orFail e
   fetch _ = runGit b "fetch"
-    >>= orFail_ (expect_thrown' . PkgGitFetchFailed)
-    >>    check (expect_thrown' . PkgGitCheckoutFailed)
+    >>= orFail_ (expect_ . PkgGitFetchFailed)
+    >>    check (expect_ . PkgGitCheckoutFailed)
 
 
 gitRevParse :: FilePath -> String -> App String
 gitRevParse b r = runGit b ("rev-parse " <> r)
-  >>= orFail (expect_thrown' . PkgGitRevParseFailed)
+  >>= orFail (expect_ . PkgGitRevParseFailed)
 
 
 -- | Allow `sudo`-less directory traversal/deletion for Docker users but
@@ -302,7 +302,7 @@ byGitRefSha h fp = withDotReach $ \_ -> do
     gitCheckout dirClone ref'
 
     whenM (not <$> fileExists fp)
-      $ expect_thrown' $ PkgLockModuleDoesNotExist fp
+      $ expect_ $ PkgLockModuleDoesNotExist fp
 
     reach <- fileRead fp
     pure (ref', reach)
@@ -330,7 +330,7 @@ lockModuleFix h = withDotReach $ \(lock, _) -> do
 
   whenM (fileExists dest)
     $ whenM (fileRead dest >>= pure . (hash /=) . hashWith SHA256)
-      $ expect_thrown' $ PkgLockModuleShaMismatch dest
+      $ expect_ $ PkgLockModuleShaMismatch dest
 
   fileUpsert dest reach
 
@@ -348,10 +348,10 @@ infixl 9 @!!
 failIfMissingOrMismatched :: FilePath -> SHA -> App ()
 failIfMissingOrMismatched f (SHA s) = do
   whenM (not <$> fileExists f)
-    $ expect_thrown' $ PkgLockModuleDoesNotExist f
+    $ expect_ $ PkgLockModuleDoesNotExist f
 
   whenM (((/= s) . hashWith SHA256) <$> fileRead f)
-    $ expect_thrown' $ PkgLockModuleShaMismatch f
+    $ expect_ $ PkgLockModuleShaMismatch f
 
   pure ()
 
@@ -367,7 +367,7 @@ lockModuleAbsPath srcloc canGit dirDotReach h =
 
       Nothing -> if canGit
         then lockModuleFix h >>= pure . fst
-        else expect_thrown' PkgLockModifyUnauthorized
+        else expect_ PkgLockModifyUnauthorized
 
 
 lockModuleAbsPathGitLocalDep :: SrcLoc -> Bool -> FilePath -> HostGit -> FilePath -> IO FilePath
@@ -377,7 +377,7 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
   let relPath = gitDirPathOf h </> ldep
 
       fix shaParent lm = if not canGit
-        then expect_thrown' PkgLockModifyUnauthorized
+        then expect_ PkgLockModifyUnauthorized
         else do
           let refsha' = refsha lm
 
@@ -393,7 +393,7 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
 
           whenM (fileExists dest)
             $ whenM (fileRead dest >>= pure . (hash /=) . hashWith SHA256)
-              $ expect_thrown' $ PkgLockModuleShaMismatch dest
+              $ expect_ $ PkgLockModuleShaMismatch dest
 
           fileUpsert dest reach
 
@@ -403,7 +403,7 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
           pure dest
 
   case lock @!! h of
-    Nothing -> expect_thrown' $ PkgLockModuleUnknown h
+    Nothing -> expect_ $ PkgLockModuleUnknown h
 
     Just (shaParent, lm) -> case M.lookup relPath (ldeps lm) of
       Nothing      -> fix shaParent lm
