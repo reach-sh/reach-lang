@@ -10,7 +10,6 @@ e.g. @filepath{dao.rsh}.
 
 A @deftech{module} starts with @reachin{'reach @|reach-short-vers|';}
 followed by a sequence of @tech{imports} and @tech{identifier definitions}.
-A module can only be compiled or used if it contains one or more @tech{exports}.
 @margin-note{See @seclink["guide-versions"]{the guide section on versions} to understand how Reach uses version numbers like this.}
 
 @section[#:tag "ref-programs-module-stmts"]{Statements}
@@ -55,17 +54,22 @@ if they are typed, that is, if they are constructed with @reachin{is}.
 @subsection[#:tag "ref-programs-import"]{@tt{import}}
 
 @(mint-define! '("import"))
-Reach supports two types of module imports: "local imports", which refer to
-modules that exist inside your project, and "package imports", which refer to
-remote libraries that may be fetched from external sources such as GitHub.
+@(define link-github @link["https://github.com"]{GitHub})
+Reach supports two types of module @deftech{imports}: @tech{local imports},
+which refer to modules that exist within your project, and
+@tech{package imports}, which refer to remote libraries that may be fetched
+from external sources such as @|link-github|.
+@margin-note{
+Read @seclink["guide-packages"]{the guide section on packages} for more details.
+}
 
-Package imports are easily distinguished from local imports by a mandatory
-@litchar|{@}| character at the beginning of the path string.
+@tech{Package imports} are easily distinguished from @tech{local imports} by a
+mandatory @litchar|{@}| character at the beginning of the path string.
 
 @subsubsection[#:tag "ref-programs-import-local"]{Local imports}
 @reach{import 'games-of-chance.rsh';}
 
-When a @tech{module}, @litchar{X}, contains an @deftech{import},
+When a @tech{module}, @litchar{X}, contains a @deftech{local import},
 written @reachin{import "LIB.rsh";},
 then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file}.
 The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
@@ -92,9 +96,9 @@ import * as func from
   '@"@"github.com:reach-sh/reach-example-package#main/src/func.rsh';
 }
 
-@deftech{Package imports} obey the same rules as local imports but support an
-extended path syntax which allows Reach programmers to seamlessly plug into
-third-party libraries hosted on the internet.
+@deftech{Package imports} obey the same rules as @tech{local imports} but
+support an extended path syntax which allows Reach programmers to seamlessly
+plug into third-party libraries hosted on the internet.
 
 All package imports begin with the @litchar|{@}| character.
 
@@ -103,12 +107,14 @@ Package import paths are comprised of the following components:
 @item{
 @bold{(Optional): The site where the package is hosted.}
 
-Reach currently supports GitHub and BitBucket, and will default to GitHub if no
-site is specified.
+Reach currently supports @|link-github| and
+@link["https://bitbucket.org"]{BitBucket}, and will default to @|link-github|
+if no site is specified.
 
 This component must be followed by a @litchar{:} character.
 
-Possible values include: @tt{github.com:} and @tt{bitbucket.org:}.
+Possible values include: @tt{github.com:} and @tt{bitbucket.org:} (case
+sensitive).
 }
 
 @item{
@@ -122,9 +128,7 @@ Example: @tt{reach-sh/}.
 @item{
 @bold{A repository associated with the account.}
 
-This component must be followed by a @litchar{#} character.
-
-Example: @tt{reach-example-package#}.
+Example: @tt{reach-example-package}.
 }
 
 @item{
@@ -162,15 +166,18 @@ therefore resilient to @tt{git tags} which are later modified to point at
 another commit), but following this strategy will improve program semantics for
 both package authors and consumers.
 
-Example: @tt{v3.0.6}.
+This component must be preceded by a @litchar{#} character.
+
+Example: @tt{#v3.0.6}.
 }
 
 @item{
 @bold{(Optional): The directory in which the requested module may be found.}
 
-This component must be preceded by a @litchar{/} character.
+This component must be preceded by a @litchar{:} character and must end with
+a @litchar{/}.
 
-Example: @tt{/src/lib}.
+Example: @tt{:src/lib/}.
 }
 
 @item{
@@ -178,9 +185,15 @@ Example: @tt{/src/lib}.
 
 Defaults to @tt{index.rsh}.
 
-This component must be preceded by a @litchar{/} character.
+If the module exists within a subdirectory it must be preceded by a @litchar{/}
+character.
 
-Example: @tt{/pkg.rsh}.
+Example: @tt{@"@"reach-sh/example#v1.01:parent/child/pkg.rsh}.
+
+However, if the module is stored in the root of the repository, it must instead
+be preceded by a @litchar{:} character.
+
+Example: @tt{@"@"reach-sh/example#v1.02:pkg.rsh}.
 }
 ]
 

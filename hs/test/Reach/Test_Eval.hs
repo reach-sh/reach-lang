@@ -67,93 +67,112 @@ spec_ImportSource = describe "Module `Reach.Eval.ImportSource`" $ do
       isrc   = importSource sempty
 
   describe "exports an `importSource` function which" $ do
-    it "can distinguish local imports" $ do
-      let f = "./examples/nim/index-abstract.rsh"
-      isrc f >>= (`shouldBe` ImportLocal f)
+    let it' l i e =
+          let space = if l == "" then "" else " "
+              label = l <> space <> "(e.g. \"" <> i <> "\")"
+           in it label $ isrc i >>= (`shouldBe` e)
 
-    it "defaults to `master` branch when no `ref` is specified" $ do
-      isrc "@reach-sh/reach-lang#/examples/exports/index.rsh"
-        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
-              "reach-sh"
-              "reach-lang"
-              "master"
-              [ "examples", "exports" ]
-              "index.rsh"))
+    it' "can distinguish local imports"
+        "./examples/nim/index-abstract.rsh"
+      $ ImportLocal "./examples/nim/index-abstract.rsh"
 
-    it "defaults to `index.rsh` when no filename is specified" $ do
-      isrc "@reach-sh/reach-lang#main/examples/exports/"
-        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
-              "reach-sh"
-              "reach-lang"
-              "main"
-              [ "examples", "exports" ]
-              "index.rsh"))
+    describe "can distinguish package imports and" $ do
+      it' "defaults to `master` branch when no `ref` is specified"
+          "@reach-sh/reach-lang:examples/exports/index.rsh"
+        $ ImportRemoteGit . GitHub $ GitSaas
+            "reach-sh"
+            "reach-lang"
+            "master"
+            [ "examples", "exports" ]
+            "index.rsh"
 
-    it "accepts modules that live in the repo's root directory" $ do
-      isrc "@reach-sh/reach-lang#v.0.1.7/foo.rsh"
-        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+      it' "defaults to `index.rsh` when directory is given but no filename is specified"
+          "@reach-sh/reach-lang#main:examples/exports/"
+        $ ImportRemoteGit . GitHub $ GitSaas
+            "reach-sh"
+            "reach-lang"
+            "main"
+            [ "examples", "exports" ]
+            "index.rsh"
+
+      describe "accepts modules that live in the repo's root directory" $ do
+        it' "" "@reach-sh/reach-lang#v.0.1.7:foo.rsh"
+          $ ImportRemoteGit . GitHub $ GitSaas
               "reach-sh"
               "reach-lang"
               "v.0.1.7"
               []
-              "foo.rsh"))
+              "foo.rsh"
 
-    it "defaults to `index.rsh` in root directory when no path is specified" $ do
-      isrc "@reach-sh/reach-lang#/"
-        >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
+        it' "" "@reach-sh/reach-lang:bar.rsh"
+          $ ImportRemoteGit . GitHub $ GitSaas
               "reach-sh"
               "reach-lang"
               "master"
               []
-              "index.rsh"))
+              "bar.rsh"
 
-    describe "can distinguish remote GitHub imports" $ do
-      it "in long-form" $ do
-        isrc "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-          >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
-                "reach-sh"
-                "reach-lang"
-                "6c3dd0f"
-                [ "examples", "exports" ]
-                "index.rsh"))
+      describe "defaults to `index.rsh` in root directory when" $ do
+        let saas       = GitSaas "reach-sh" "reach-lang" "stable" [] "index.rsh"
+            withRef    = ImportRemoteGit . GitHub $ saas
+            withoutRef = ImportRemoteGit . GitHub $ saas { ref = "master" }
 
-      it "(by default) when no host is specified" $ do
-        isrc "@reach-sh/reach-lang#6c3dd0f/module.rsh"
-          >>= (`shouldBe` (ImportRemoteGit . GitHub $ GitSaas
-                "reach-sh"
-                "reach-lang"
-                "6c3dd0f"
-                []
-                "module.rsh"))
+        describe "`ref` is specified but path is not" $ do
+          it' "without trailing `:`" "@reach-sh/reach-lang#stable"  withRef
+          it' "   with trailing `:`" "@reach-sh/reach-lang#stable:" withRef
 
-    describe "can distinguish remote BitBucket imports" $ do
-      it "in long-form" $ do
-        isrc "@bitbucket.org:reach-sh/reach-libs#v0.1.2/a/b/c/module.rsh"
-          >>= (`shouldBe` (ImportRemoteGit . BitBucket $ GitSaas
-                "reach-sh"
-                "reach-libs"
-                "v0.1.2"
-                [ "a", "b", "c" ]
-                "module.rsh"))
+        describe "neither `ref` nor path is specified" $ do
+          it' "without trailing `#`" "@reach-sh/reach-lang"  withoutRef
+          it' "   with trailing `#`" "@reach-sh/reach-lang#" withoutRef
+
+      describe "can distinguish remote GitHub imports" $ do
+        it' "by the component directly after `@`"
+            "@github.com:reach-sh/reach-lang#6c3dd0f:examples/exports/index.rsh"
+          $ ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "6c3dd0f"
+              [ "examples", "exports" ]
+              "index.rsh"
+
+        it' "by default when no host is specified"
+            "@reach-sh/reach-lang#6c3dd0f:module.rsh"
+          $ ImportRemoteGit . GitHub $ GitSaas
+              "reach-sh"
+              "reach-lang"
+              "6c3dd0f"
+              []
+              "module.rsh"
+
+      describe "can distinguish remote BitBucket imports" $ do
+        it' "by the component directly after `@`"
+            "@bitbucket.org:reach-sh/reach-libs#v0.1.2:a/b/c/module.rsh"
+          $ ImportRemoteGit . BitBucket $ GitSaas
+              "reach-sh"
+              "reach-libs"
+              "v0.1.2"
+              [ "a", "b", "c" ]
+              "module.rsh"
 
   describe "exports a `gitUriOf` function which" $ do
     let uriShouldBe i o = isrc i >>= \case
           ImportRemoteGit h -> gitUriOf h `shouldBe` o
           _ -> fail $ "Invalid translation " <> i <> " -> " <> o
 
-    describe "translates GitHub imports of" $ do
+        it' i e =
+          let label = "(e.g. \"" <> i <> "\" -> \"" <> e <> "\")"
+           in it label $ i `uriShouldBe` e
 
-      it "long-form into their corresponding git URIs" $
-        "@github.com:reach-sh/reach-lang#6c3dd0f/examples/exports/index.rsh"
-          `uriShouldBe`
-        "https://github.com/reach-sh/reach-lang.git"
+    describe "translates GitHub imports into their corresponding git URIs" $ do
+      it' "@github.com:reach-sh/reach-lang#6c3dd0f:examples/exports/index.rsh"
+          "https://github.com/reach-sh/reach-lang.git"
 
-    describe "translates BitBucket imports of" $ do
+      it' "@reach-sh/reach-example-package:lib.rsh"
+          "https://github.com/reach-sh/reach-example-package.git"
 
-      it "long-form into their corresponding git URIs" $
-        "@bitbucket.org:reach-sh/fancy-lib#v0.1.2/src/lib.rsh"
-          `uriShouldBe`
-        "https://bitbucket.org/reach-sh/fancy-lib.git"
+    describe "translates BitBucket imports into their corresponding git URIs" $ do
+      it' "@bitbucket.org:reach-sh/fancy-lib#v0.1.2:src/lib.rsh"
+          "https://bitbucket.org/reach-sh/fancy-lib.git"
 
 
 main :: IO ()

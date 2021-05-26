@@ -101,7 +101,7 @@ gen-reach: stack
 	stack exec gen-reach > sbin/reach
 	chmod +x sbin/reach
 
-.PHONY: ghcid
-ghcid: stack
+.PHONY: watch
+watch: stack
 	@# ghcid --target=reach:test:reach-test -T "Main.main"
-	ghcid --target=reach:test:reach-test -T "Reach.Test_Eval.main"
+	@ghcid --target=reach:test:reach-test -T "Reach.Test_Eval.main"

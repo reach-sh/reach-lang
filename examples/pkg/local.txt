@@ -1,1 +1,1 @@
-reachc: error: ./local.rsh:4:18:import from: Did you mean to run with `--install-pkgs`?
+reachc: error: ./local.rsh:3:18:import from: Did you mean to run with `--install-pkgs`?

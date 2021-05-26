@@ -4,7 +4,7 @@
 @title[
 #:version reach-vers
 #:tag     "guide-packages"
-]{Sharing and discovering shared Reach code}
+]{Sharing and discovering shared Reach packages}
 
 Reach makes library packaging very easy: simply push your code to
 @link["https://github.com"]{GitHub} or
