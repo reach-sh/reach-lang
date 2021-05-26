@@ -69,8 +69,8 @@ algoMaxTxGroupSize :: TxnIdx
 algoMaxTxGroupSize = 16
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
-algoMaxAppTxnAccounts :: Integer
-algoMaxAppTxnAccounts = 4 -- plus sender
+_algoMaxAppTxnAccounts :: Integer
+_algoMaxAppTxnAccounts = 4 -- plus sender
 
 -- Algo specific stuff
 
