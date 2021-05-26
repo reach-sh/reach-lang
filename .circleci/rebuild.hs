@@ -90,7 +90,7 @@ skipCfx =
   -- Transaction ${txn} is discarded due to a too stale nonce
   , "nft-dumb"
 
-  -- no such service: reach-app-${app}-CFX-devnet
+  -- Conflux.sendTransaction: ParseError `data` 'does not match "hex"'
   , "remote"
 
   -- View stuff. "Error: null"
