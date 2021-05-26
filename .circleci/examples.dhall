@@ -5,9 +5,9 @@
 , { mapKey = "argz", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "atomic-swap", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "atomic-swap-auction", mapValue = [ "ETH", "ALGO" ] }
-, { mapKey = "chicken-fork", mapValue = [ "ETH", "ALGO" ] }
-, { mapKey = "chicken-parallel", mapValue = [ "ETH", "ALGO" ] }
-, { mapKey = "chicken-race", mapValue = [ "ETH", "ALGO" ] }
+, { mapKey = "chicken-fork", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "chicken-parallel", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "chicken-race", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "default-app", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "exports", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "log", mapValue = [ "ETH", "ALGO", "CFX" ] }
@@ -25,7 +25,7 @@
 , { mapKey = "own-addr", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "popularity-contest", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "pr202105-zet", mapValue = [ "ETH", "ALGO", "CFX" ] }
-, { mapKey = "race", mapValue = [ "ETH", "ALGO" ] }
+, { mapKey = "race", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "raffle", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "remote", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "rent-seeking", mapValue = [ "ETH", "ALGO" ] }
@@ -52,7 +52,7 @@
 , { mapKey = "weird-swap", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "workshop-fomo", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "workshop-fomo-generalized", mapValue = [ "ETH" ] }
-, { mapKey = "workshop-hash-lock", mapValue = [ "ETH", "ALGO" ] }
-, { mapKey = "workshop-relay", mapValue = [ "ETH", "ALGO" ] }
+, { mapKey = "workshop-hash-lock", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "workshop-relay", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "workshop-trust-fund", mapValue = [ "ETH", "ALGO" ] }
 ]
