@@ -335,7 +335,7 @@ let build-core = dockerized-job ResourceClass.medium
   -- TODO: make the build process deterministic,
   -- so that we can rebuild it on CI
   , run "Pull devnet-cfx" ''
-      docker pull ${docker-image "devnet-cfx"}
+      docker pull ${docker-image "devnet-cfx" VERSION_SHORT}
       docker run \
         --entrypoint /bin/sh \
         ${docker-image "devnet-cfx" VERSION_SHORT} \

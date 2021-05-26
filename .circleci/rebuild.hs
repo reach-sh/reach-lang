@@ -62,6 +62,43 @@ skipCfx :: [FilePath]
 skipCfx =
   [ "tut-7-rpc" -- TODO: test rpc w/ cfx
   , "tut-8" -- TODO: add cfx to tut-8
+
+  -- constructor args not yet supported
+  --  at ContractFactory.deploy (cfxers)
+  , "atomic-swap"
+  , "atomic-swap-auction"
+  , "chicken-fork"
+  , "chicken-parallel"
+  , "chicken-race"
+  , "race"
+  , "weird-swap"
+  , "workshop-hash-lock"
+  , "workshop-relay"
+  , "workshop-trust-fund"
+
+  -- Tx with same nonce already inserted.
+  , "multiple-pr-case"
+  , "popularity-contest"
+  , "raffle"
+  , "rent-seeking"
+  , "workshop-fomo"
+  , "workshop-fomo-generalized"
+
+  -- data: '"tx already exist"'
+  , "nft-auction"
+
+  -- Transaction ${txn} is discarded due to a too stale nonce
+  , "nft-dumb"
+
+  -- no such service: reach-app-${app}-CFX-devnet
+  , "remote"
+
+  -- View stuff. "Error: null"
+  , "view-bytes"
+  , "view-fun"
+  , "view-map"
+  , "view-maybe"
+  , "view-steps"
   ]
 
 
