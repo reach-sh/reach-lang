@@ -36,7 +36,7 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
 
 export const _getDefaultFaucetNetworkAccount = memoizeThunk(async (): Promise<NetworkAccount> => {
   // from /scripts/devnet-cfx/default.toml
-  const mining_key = "0x7072d050980eb10516abd40688113e578ffb2fd26c645a186ef478c2b4344dce"
+  const mining_key = "0xaa911f5b5b567af4db867a9d9072f4415fe722b114306baae28b721b6fbb2d99"
   return (new cfxers.Wallet(mining_key)).connect(await getProvider());
 });
 
