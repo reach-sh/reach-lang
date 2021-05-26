@@ -417,9 +417,9 @@ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h ldep =
 
 gitSaas :: Parsec String () GitSaas
 gitSaas = do
-  GitSaas <$> ("host account" `terminatedBy` '/')
-          <*> ("repo"         `terminatedBy` '#')
-          <*> ("ref"          `terminatedBy` '/' <|> master)
+  GitSaas <$> ("host account" `terminatedBy` (char '/'))
+          <*> ("repo"         `terminatedBy` endRepo)
+          <*> ref
           <*> (many dir)
           <*> (filename <|> pure "index.rsh")
 
@@ -429,15 +429,20 @@ gitSaas = do
 
   f `terminatedBy` x = do
     h <- allowed f
-    t <- manyTill (allowed f) (char x)
+    t <- manyTill (allowed f) x
     pure $ h:t
 
-  master = pure "master" <* char '/'
+  tlac  a = try (lookAhead $ char a) *> pure ()
+  endRepo = eof <|> tlac '#' <|> tlac ':'
+  endRef  = eof <|> char ':'  *> pure ()
+
+  ref =     try ((char '#') *> "ref" `terminatedBy` endRef)
+    <|> optional (char '#') *> pure "master"     <* endRef
 
   dir = try $ manyTill (allowed "directory") (char '/')
 
   filename = do
-    n <- manyTill (allowed "file") (try . lookAhead $ string ".rsh" <* eof)
+    n <- "file" `terminatedBy` (try . lookAhead $ string ".rsh" <* eof)
     pure $ n <> ".rsh"
 
 
