@@ -4024,7 +4024,8 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
           (PRM_Timeout, t_d:t_fn:_) -> do
             locAt t_at $ do
               t_fn' <- injectContinueIntoBody t_fn
-              return $ jsCall ta (JSMemberDot fork_e0 ta timeOutId) [t_d, t_fn']
+              callTimeout [t_d, t_fn']
+          (PRM_Timeout, [t_e]) -> callTimeout [t_e]
           (PRM_Timeout, _) ->  expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
           (PRM_ThrowTimeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
           (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
