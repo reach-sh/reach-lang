@@ -186,7 +186,7 @@ This assumes
 It then
 
 @itemlist[
-  @item{Compliles your program with Reach}
+  @item{Compiles your program with Reach}
   @item{Runs the appropriate devnet based on @envref{REACH_CONNECTOR_MODE}}
   @item{Mounts the current directory into @exec{/app/src/} in the @exec{reachsh/react-runner} Docker image and runs it.}
 ]
