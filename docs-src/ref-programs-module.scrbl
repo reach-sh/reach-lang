@@ -146,12 +146,6 @@ branch once more.
 @link["https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefrefaref"]{here}.
 }
 
-If @tt{master} @italic{is} specified but the requested module does not exist on
-the @tt{master} branch, then Reach will again attempt to find it on @tt{main}.
-
-In either case, if the module cannot be found on either @tt{master} or
-@tt{main}, then Reach will emit a failure message during compilation.
-
 @bold{It is highly advisable that package authors use @tt{git tags} to denote
 version "releases", e.g. @tt{v0.2.1}, and that consuming code target the
 desired @tt{git tag} rather than a branch name.}
