@@ -380,15 +380,14 @@ jsExpr = \case
     let ctc = jsMapVarCtc mpv
     fa' <- jsArg fa
     return $ jsProtect_ "null" ctc $ jsApply "stdlib.mapRef" [jsMapVar mpv, fa']
-  DLE_MapSet _ mpv fa na -> do
+  DLE_MapSet _ mpv fa mna -> do
     -- XXX something really bad is going to happen during the simulation of
     -- this
     fa' <- jsArg fa
-    na' <- jsArg na
+    na' <- case mna of
+             Just na -> jsArg na
+             Nothing -> return "undefined"
     return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
-  DLE_MapDel _ mpv fa -> do
-    fa' <- jsArg fa
-    return $ jsMapVar mpv <> brackets fa' <+> "=" <+> "undefined"
   DLE_Remote {} -> impossible "remote"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
@@ -462,6 +461,7 @@ jsCom = \case
       True -> jsPLTail l
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
+  DL_LocalDo _ t -> jsPLTail t
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case

@@ -62,7 +62,7 @@ export const main = Reach.App(
           Anybody.publish();
           return [ false, winner, ticketsSold ]; });
 
-    // Whoever, buys last wins and receives balance
+    // Whoever buys last wins and receives balance
     transfer(balance()).to(winner);
     commit();
     showOutcome(winner);

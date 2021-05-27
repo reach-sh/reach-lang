@@ -1,1 +1,1 @@
-reachc: error: ./non-network_token.rsh:8:12:application: Invalid participant spec
+reachc: error: ./non-network_token.rsh:12:16:dot: currency is not a field of <SLV_Form>. Did you mean: ["when","publish","timeout","throwTimeout"]

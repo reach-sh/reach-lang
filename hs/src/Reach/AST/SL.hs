@@ -11,7 +11,6 @@ import GHC.Stack (HasCallStack)
 import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
-import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
@@ -36,6 +35,7 @@ data SLType
   | ST_Data (M.Map SLVar SLType)
   | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
+  | ST_UDFun SLType
   | ST_Type SLType
   | ST_Refine SLType SLVal (Maybe SLVal)
   deriving (Eq, Generic)
@@ -68,6 +68,8 @@ instance Show SLType where
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
     ST_Fun (SLTypeFun tys ty _ _ _ _) ->
       "Refine(Fun([" <> showTys tys <> "], " <> show ty <> "), ...., ....)"
+    ST_UDFun rng ->
+      "Fun(true, " <> show rng <> ")"
     ST_Type ty -> "Type(" <> show ty <> ")"
     ST_Refine ty _ _ -> "Refine(" <> show ty <> ", ....)"
 
@@ -89,6 +91,7 @@ st2dt = \case
   ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
+  ST_UDFun {} -> Nothing
   ST_Type {} -> Nothing
   ST_Refine t _ _ -> st2dt t
 
@@ -155,9 +158,11 @@ data SLVal
   | SLV_Kwd SLKwd
   | SLV_MapCtor SLType
   | SLV_Map DLMVar
-  | SLV_AppArg SLAppArg
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
+
+instance Show SLVal where
+  show = show . pretty
 
 instance Pretty SLVal where
   pretty = \case
@@ -190,7 +195,6 @@ instance Pretty SLVal where
     SLV_Kwd k -> pretty k
     SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
-    SLV_AppArg p -> pretty p
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
 
@@ -218,7 +222,6 @@ instance SrcLocOf SLVal where
     SLV_Kwd _ -> def
     SLV_MapCtor {} -> def
     SLV_Map _ -> def
-    SLV_AppArg a -> srclocOf a
     SLV_Deprecated _ v -> srclocOf v
     where
       def = srcloc_builtin
@@ -243,25 +246,6 @@ instance SrcLocOf SLViewInfo where
 instance Pretty SLViewInfo where
   pretty (SLViewInfo _ n v) =
     "View" <> "(" <> pretty n <> ", " <> pretty v <> ")"
-
-data SLAppArg
-  = SLA_Participant SrcLoc Bool SLPart SLInterface
-  | SLA_View SLViewInfo
-  deriving (Eq, Generic)
-
-instance SrcLocOf SLAppArg where
-  srclocOf = \case
-    SLA_Participant a _ _ _ -> a
-    SLA_View vi -> srclocOf vi
-
-instance Pretty SLAppArg where
-  pretty p =
-    case p of
-      SLA_Participant _ icb n e -> pp ("Participant" <> ic icb) n e
-      SLA_View vi -> pretty vi
-    where
-      ic b = if b then "Class" else ""
-      pp t n e = t <> "(" <> pretty n <> ", " <> pretty e <> ")"
 
 data SLLValue
   = SLLV_MapRef SrcLoc DLMVar DLArg
@@ -296,6 +280,7 @@ data SLForm
   | SLForm_each
   | SLForm_EachAns [(SLPart, Maybe SLVar)] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart (Maybe SLVar)
+  | SLForm_liftInteract SLPart (Maybe SLVar) String
   | SLForm_Part_ToConsensus
       { slptc_at :: SrcLoc
       , slptc_whos :: S.Set SLPart
@@ -409,22 +394,6 @@ primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
 
-data SLCompiledPartInfo
-  = SLCompiledPartInfo
-    { slcpi_at :: SrcLoc
-    , slcpi_isClass :: Bool
-    , slcpi_who :: SLPart
-    , slcpi_io :: SLSSVal
-    , slcpi_ienv :: InteractEnv
-    , slcpi_lifts :: DLStmts
-    }
-  deriving (Eq, Generic)
-
-data SLAppArgV
-  = SLAV_Participant SLCompiledPartInfo
-  | SLAV_View SLViewInfo
-  deriving (Eq, Generic)
-
 data RemoteFunMode
   = RFM_Pay
   | RFM_Bill
@@ -438,7 +407,7 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_localf SrcLoc SLPart String SLTypeFun
+  | SLPrim_localf SrcLoc SLPart String (Either SLTypeFun SLType)
   | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
@@ -467,7 +436,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
-  | SLPrim_App_Delay SrcLoc SLEnv [SLAppArgV] [JSExpression] JSStatement (SLEnv, Bool)
+  | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -492,6 +461,9 @@ data SLPrimitive
   | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
   | SLPrim_balance
   | SLPrim_viewis SrcLoc SLPart SLVar SLType
+  | SLPrim_deploy
+  | SLPrim_setOptions
+  | SLPrim_adaptReachAppTupleArgs
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

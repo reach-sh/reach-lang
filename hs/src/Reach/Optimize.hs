@@ -1,4 +1,4 @@
-module Reach.Optimize (optimize) where
+module Reach.Optimize (optimize, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -152,6 +152,12 @@ opt_v2a v = snd <$> opt_v2p v
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
 
+instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
+  opt (x, y) = (,) <$> opt x <*> opt y
+
+instance Optimize IType where
+  opt = return
+
 instance Optimize DLVar where
   opt = opt_v2v
 
@@ -232,7 +238,6 @@ instance Optimize DLExpr where
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
-    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> opt fa
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
@@ -246,12 +251,6 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
--- XXX Add DL_LocalDo
-locDo :: DLTail -> DLStmt
-locDo t = DL_LocalIf at (DLA_Literal $ DLL_Bool True) t (DT_Return at)
-  where
-    at = srcloc_builtin
-
 opt_if :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 opt_if mkDo mkIf at c t f =
   opt c >>= \case
@@ -260,7 +259,7 @@ opt_if mkDo mkIf at c t f =
     c' -> do
       t' <- newScope $ opt t
       f' <- newScope $ opt f
-      case sani t == sani f of
+      case sani t' == sani f' of
         True -> return $ mkDo t'
         False ->
           optNotHuh c' >>= \case
@@ -303,7 +302,7 @@ instance Optimize DLStmt where
     DL_Set at v a ->
       DL_Set at v <$> opt a
     DL_LocalIf at c t f ->
-      opt_if locDo DL_LocalIf at c t f
+      opt_if (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
       where
@@ -318,7 +317,14 @@ instance Optimize DLStmt where
       let w = case ep of
                 Left p -> focusp p
                 Right _ -> id
-      DL_Only at ep <$> w (opt l)
+      l' <- w $ opt l
+      case l' of
+        DT_Return _ -> return $ DL_Nop at
+        _ -> return $ DL_Only at ep l'
+    DL_LocalDo at t ->
+      opt t >>= \case
+        DT_Return _ -> return $ DL_Nop at
+        t' -> return $ DL_LocalDo at t'
 
 instance Optimize DLTail where
   opt = \case

@@ -332,6 +332,16 @@ let build-core = dockerized-job ResourceClass.medium
         -c 'echo $REACH_GIT_HASH'
       ''
 
+  -- TODO: make the build process deterministic,
+  -- so that we can rebuild it on CI
+  , run "Pull devnet-cfx" ''
+      docker pull ${docker-image "devnet-cfx" VERSION_SHORT}
+      docker run \
+        --entrypoint /bin/sh \
+        ${docker-image "devnet-cfx" VERSION_SHORT} \
+        -c 'echo $REACH_GIT_HASH'
+      ''
+
   , run "Is dockerhub up to date?" "scripts/docker-check.sh || echo 'XXX allowed to fail'"
   , slack/notify
   ]

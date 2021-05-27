@@ -16,7 +16,7 @@ import * as backend from './build/index.main.mjs';
   const externalViewer = async () => {
     console.log(`Eve sees who the owner is...`);
     const owner = await ctcEve.getViews().NFT.owner();
-    console.log(`...it is ${owner}`);
+    console.log(`...it is ${stdlib.formatAddress(owner[1])}`);
   };
 
   const everyone = [
@@ -47,7 +47,7 @@ import * as backend from './build/index.main.mjs';
         if ( stdlib.addressEq(owner, acc) ) {
           console.log(`${who} sees that they own it`);
         } else {
-          console.log(`${who} sees that ${owner} owns it`);
+          console.log(`${who} sees that ${stdlib.formatAddress(owner)} owns it`);
         }
       }),
     });
@@ -57,7 +57,7 @@ import * as backend from './build/index.main.mjs';
     backend.Creator(
       ctcAlice,
       { getId: () => {
-        const id = stdlib.randomUInt(); 
+        const id = stdlib.randomUInt();
         console.log(` Alice makes id #${id}`);
         return id; }
       },

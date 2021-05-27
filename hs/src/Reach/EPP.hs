@@ -424,6 +424,10 @@ be_m = \case
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
   DL_Only {} -> impossible $ "right only before EPP"
+  DL_LocalDo at t -> do
+    (t'c, t'l) <- be_t t
+    let mk = DL_LocalDo at
+    return $ (,) (mk <$> t'c) (mk <$> t'l)
   where
     nop at = retb0 $ const $ return $ DL_Nop at
 
@@ -513,14 +517,16 @@ be_c = \case
       captureMore $
         local (\e -> e {be_interval = default_interval}) $ do
           be_s s
+    toks <- be_toks <$> ask
     mvis <-
       case more of
         True -> do
           vis <- assignView
           fg_use vis
           return $ Just vis
-        False -> return $ Nothing
-    toks <- be_toks <$> ask
+        False -> do
+          fg_use toks
+          return $ Nothing
     let mkfrom_info do_readMustSave = do
           svs <- do_readMustSave which
           return $ case mvis of

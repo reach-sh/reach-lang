@@ -446,8 +446,7 @@ dlvOccurs env bindings = \case
     DLE_Wait at a -> _rec at a
     DLE_PartSet at _ a -> _rec at a
     DLE_MapRef at _ fa -> _rec at fa
-    DLE_MapSet at _ fa na -> _recs at [fa, na]
-    DLE_MapDel at _ fa -> _rec at fa
+    DLE_MapSet at _ fa na -> _recs_ (_rec at fa) at na
     DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
       _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
   where
@@ -493,8 +492,9 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_Wait _ a -> "wait" <> paren (sub a)
   DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
   DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
-  DLE_MapSet _ mv fa na -> ps mv <> bracket (sub fa) <> " = " <> sub na
-  DLE_MapDel _ mv fa -> "delete " <> ps mv <> bracket (sub fa)
+  DLE_MapSet _ mv fa (Just na) ->
+    ps mv <> bracket (sub fa) <> " = " <> sub na
+  DLE_MapSet _ mv fa Nothing -> "delete " <> ps mv <> bracket (sub fa)
   DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
@@ -1059,10 +1059,8 @@ smt_e at_dv mdv de = do
       fa' <- smt_a at fa
       bound at $ smtApply "select" [ma, fa']
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
-    DLE_MapSet at mpv fa na ->
-      smtMapUpdate at mpv fa $ Just na
-    DLE_MapDel at mpv fa ->
-      smtMapUpdate at mpv fa $ Nothing
+    DLE_MapSet at mpv fa mna ->
+      smtMapUpdate at mpv fa mna
     DLE_Remote at _ _ _ _ _ _ ->
       pathAddUnbound at mdv bo
   where
@@ -1159,6 +1157,7 @@ smt_m = \case
       _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
+  DL_LocalDo _ t -> smt_l t
 
 smt_l :: DLTail -> SMTComp
 smt_l = \case
@@ -1545,6 +1544,7 @@ _verify_smt mc ctxt_vst smt lp = do
     let defineIE who (v, it) =
           case it of
             IT_Fun {} -> mempty
+            IT_UDFun {} -> mempty
             IT_Val itv ->
               pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact
     let definePIE (who, InteractEnv iem) = do

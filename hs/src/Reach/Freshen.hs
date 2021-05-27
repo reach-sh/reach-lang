@@ -42,6 +42,9 @@ fu_mv = mapM fu_v
 instance {-# OVERLAPPABLE #-} (Traversable f, Freshen a) => Freshen (f a) where
   fu = traverse fu
 
+instance {-# OVERLAPS #-} (Freshen a, Freshen b) => Freshen (a, b) where
+  fu (x, y) = (,) <$> fu x <*> fu y
+
 instance Freshen DLVar where
   fu v = do
     Env {..} <- ask
@@ -85,7 +88,6 @@ instance Freshen DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
-    DLE_MapDel at mv fa -> DLE_MapDel at mv <$> fu fa
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
 
 instance Freshen DLStmt where
@@ -123,6 +125,7 @@ instance Freshen DLStmt where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
+    DL_LocalDo at t -> DL_LocalDo at <$> fu t
 
 instance Freshen DLPayAmt where
   fu = \case

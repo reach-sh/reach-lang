@@ -217,9 +217,8 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt arg
   DLE_MapRef _ mpv _ ->
     kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
-  DLE_MapSet _ mpv _ va ->
-    knows ctxt (P_Map mpv) $ all_points va
-  DLE_MapDel {} -> mempty
+  DLE_MapSet _ mpv _ mva ->
+    knows ctxt (P_Map mpv) $ maybe mempty all_points mva
   DLE_Remote _ _ av _ pamt as _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
@@ -257,6 +256,7 @@ kgq_m ctxt = \case
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
+  DL_LocalDo _ t -> kgq_l ctxt t
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case

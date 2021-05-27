@@ -69,7 +69,6 @@ instance Sanitize DLExpr where
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
-    DLE_MapDel _ mv fa -> DLE_MapDel sb mv (sani fa)
     DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) wbill
 
 instance Sanitize DLAssignment where
@@ -90,6 +89,7 @@ instance Sanitize DLStmt where
     DL_Only _ a b -> DL_Only sb a (sani b)
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
+    DL_LocalDo _ t -> DL_LocalDo sb (sani t)
 
 instance Sanitize DLTail where
   sani = \case

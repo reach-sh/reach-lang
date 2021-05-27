@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [Participant('A', {})],
+    [Participant('A', { f: Fun([], UInt) })],
     (A) => {
-      const interact = 5;
+      A.interact.f();
     });

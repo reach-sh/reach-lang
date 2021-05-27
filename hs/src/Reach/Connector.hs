@@ -42,16 +42,16 @@ instance Show ConnectorError where
   show (Err_IntLiteralRange rmin x rmax) =
     "integer literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
-conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> String -> a -> IO ()
+conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conWriteH doWrite moutn which c =
   case moutn of
     Nothing -> return ()
-    Just outn -> doWrite (outn $ T.pack $ which) c
+    Just outn -> doWrite (outn which) c
 
-conWrite :: Maybe (T.Text -> String) -> String -> T.Text -> IO ()
+conWrite :: Maybe (T.Text -> String) -> T.Text -> T.Text -> IO ()
 conWrite = conWriteH TIO.writeFile
 
-conShowP :: Pretty a => Maybe (T.Text -> String) -> String -> a -> IO ()
+conShowP :: Pretty a => Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conShowP moutn which v =
   conWriteH LTIO.writeFile moutn which (render $ pretty v)
 

@@ -1,0 +1,1 @@
+reachc: error: ./Err_Transfer_NotBound.rsh:8:19:application: cannot transfer to unbound participant, Bob

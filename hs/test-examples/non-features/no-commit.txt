@@ -1,1 +1,1 @@
-reachc: error: ./no-commit.rsh:compileDApp: Invalid operation. `exit` cannot be used in context: consensus step, must be in step. You must `commit` first.
+reachc: error: ./no-commit.rsh:compileDApp: Invalid operation. `exit` cannot be used in context: consensus step, must be in step or app init. You must `commit` first.

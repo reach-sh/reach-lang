@@ -1,16 +1,20 @@
+// TODO: migrate this file to .ts
 import * as stdlib_loader from './loader.mjs';
 import ETHcompiled from './token.sol.mjs';
 import algosdk from 'algosdk';
-import { ethers } from 'ethers';
+import { ethers as real_ethers } from 'ethers';
+import * as cfxers from './cfxers.mjs';
+// import type { EthersLike } from './ETH_like_interfaces';
 
 export default async function (name, sym) {
+  // XXX update this to work in browser (process.env not directly available to libs)
   const stdlib = await stdlib_loader.loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
   console.log(`Launching token, ${name} (${sym})`);
   const accCreator = await stdlib.newTestAccount(startingBalance);
 
-  const ETH_launchToken = async () => {
+  const ETH_like_launchToken = async (ethers /*: EthersLike */) => {
     const remoteCtc = ETHcompiled["contracts"]["contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser"];
     const remoteABI = remoteCtc["abi"];
     const remoteBytecode = remoteCtc["bin"];
@@ -34,6 +38,14 @@ export default async function (name, sym) {
       return await contract["balanceOf"](addr);
     };
     return { name, sym, id, mint, balanceOf };
+  };
+
+  const ETH_launchToken = async () => {
+    return await ETH_like_launchToken(real_ethers);
+  };
+
+  const CFX_launchToken = async () => {
+    return await ETH_like_launchToken(cfxers);
   };
 
   const ALGO_launchToken = async () => {
@@ -89,8 +101,8 @@ export default async function (name, sym) {
   const launchTokens = {
     'ETH': ETH_launchToken,
     'ALGO': ALGO_launchToken,
+    'CFX': CFX_launchToken,
   };
 
-  const conn = stdlib_loader.getConnector();
-  return await launchTokens[conn]();
+  return await launchTokens[stdlib.connector]();
 }

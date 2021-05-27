@@ -20,7 +20,7 @@ run: build check
 
 .PHONY: check
 check: docker-compose..yml docker-compose.ETH.yml docker-compose.ALGO.yml
-	./check.sh docker-compose.${REACH_CONNECTOR_MODE}.yml
+	./check.sh
 
 docker-compose..yml: docker-compose.yml
 	cp $^ $@

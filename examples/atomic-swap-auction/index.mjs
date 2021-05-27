@@ -83,7 +83,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
 
   const common = (who) => ({
     showOutcome: (outcome) => {
-      console.log(`${who} saw outcome: ${outcome}`);
+      console.log(`${who} saw outcome: ${stdlib.formatAddress(outcome)}`);
     }
   });
 

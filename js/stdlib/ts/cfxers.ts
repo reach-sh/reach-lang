@@ -1,6 +1,7 @@
 import cfxsdk from 'js-conflux-sdk';
 import { ethers } from 'ethers';
 import * as providers from './cfxers_providers';
+import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 
@@ -23,6 +24,32 @@ function unbn(arg: any): any {
     return newArg;
   }
   return arg;
+}
+
+function booleanize(arg: any): boolean {
+  if (typeof arg === 'boolean') return arg;
+  if (typeof arg === 'number') return arg !== 0;
+
+  // I don't quite understand why bools get represented this way sometimes, but they do.
+  if (Array.isArray(arg) && arg.length === 1) return booleanize(arg[0]);
+
+  // XXX handle more stuff
+  throw Error(`don't know how to booleanize '${arg}': ${typeof arg}`);
+}
+
+function conform(args: any[], tys: ParamType[]): any[] {
+  // XXX find a better way to do this stuff.
+  args = unbn(args);
+  if (args.length !== tys.length) throw Error(`impossible: number of args does not match number of tys`);
+  for (const i in tys) {
+    if (tys[i].type === 'tuple') {
+      args[i] = conform(args[i], tys[i].components);
+    } else if (tys[i].type === 'bool') {
+      args[i] = booleanize(args[i]);
+    }
+    // XXX handle more stuff
+  }
+  return args;
 }
 
 export class Signer {
@@ -134,27 +161,37 @@ export class ContractFactory {
     this.interface = new ethers.utils.Interface(this.abi);
   }
 
+  // compare/contrast
+  // https://github.com/ethers-io/ethers.js/blob/master/packages/contracts/src.ts/index.ts
   // XXX this code can return Contract directly
   // Should it wait?
-  async deploy(...deployArgs: any): Promise<Contract> {
-    const [argsOrTxn, txnIfArgs]: any[] = deployArgs;
-    const [args, txn]: [any[], {value?: ethers.BigNumber, gasLimit?: undefined}] = txnIfArgs
-      ? [ argsOrTxn, txnIfArgs ]
-      : [ [], argsOrTxn ];
-    const {abi, bytecode, wallet} = this;
+  async deploy(...args: any): Promise<Contract> {
+    // Note: can't bind keyword "interface"
+    const {abi, bytecode, interface: iface, wallet} = this;
     wallet._requireConnected();
     if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
     const {conflux} = wallet.provider;
-    const contract = conflux.Contract({abi, bytecode});
-    const from = wallet.getAddress();
-    const value = (txn.value || BigNumber.from(0)).toString();
-    if (args.length > 0) {
-      throw Error(`ctc args not yet supported`)
+
+    let txnOverrides: any = {};
+
+    if (args.length === iface.deploy.inputs.length + 1) {
+      txnOverrides = unbn(args.pop());
     }
 
-    // XXX gasLimit
-    const receiptP = contract.constructor()
-      .sendTransaction({from, value})
+    const expectedLen = iface.deploy.inputs.length;
+    if (args.length !== expectedLen) {
+      throw Error(`cfxers: contract deployment expected ${expectedLen} args but got ${args.length}`);
+    }
+
+    const contract = conflux.Contract({abi, bytecode});
+    const from = wallet.getAddress();
+    const value = BigNumber.from(0).toString();
+    const txn = {from, value, ...txnOverrides};
+    const argsConformed = conform(args, iface.deploy.inputs);
+
+    // XXX gasLimit, is this handled correctly by txnOverrides?
+    const receiptP = contract.constructor(...argsConformed)
+      .sendTransaction(txn)
       .executed();
 
     return new Contract(undefined, abi, wallet, receiptP);

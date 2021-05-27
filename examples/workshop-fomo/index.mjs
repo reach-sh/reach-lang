@@ -24,7 +24,7 @@ const numOfBuyers = 10;
 
   await Promise.all([
     backend.Funder(ctcFunder, {
-      showOutcome: (addr) => console.log(`Funder saw ${addr} won.`),
+      showOutcome: (addr) => console.log(`Funder saw ${stdlib.formatAddress(addr)} won.`),
       getParams: () => funderParams,
     }),
   ].concat(

@@ -1,0 +1,1 @@
+reachc: error: ./Err_Eval_IllegalMode_appInit.rsh:8:31:application: Invalid operation. `Participant Constructor` cannot be used in context: consensus step, must be in app init

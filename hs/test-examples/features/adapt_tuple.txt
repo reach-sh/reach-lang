@@ -1,0 +1,11 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
+  Verifying when ONLY "CoolPeople" is honest
+Checked 8 theorems; No failures!
+WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:6:7:tuple
+WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:7:7:tuple
+WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:8:7:tuple

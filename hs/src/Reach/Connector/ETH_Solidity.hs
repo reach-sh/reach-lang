@@ -298,6 +298,9 @@ class DepthOf a where
 instance (Traversable t, DepthOf a) => DepthOf (t a) where
   depthOf o = maximum <$> mapM depthOf o
 
+instance {-# OVERLAPS #-} (DepthOf a, DepthOf b) => DepthOf (a, b) where
+  depthOf (x, y) = max <$> depthOf x <*> depthOf y
+
 instance DepthOf DLVar where
   depthOf = readDepth
 
@@ -337,8 +340,7 @@ instance DepthOf DLExpr where
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
-    DLE_MapSet _ _ x y -> depthOf [x, y]
-    DLE_MapDel _ _ x -> depthOf x
+    DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
     DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
       add1 $ depthOf $ av : net :
         pairList ks <> as
@@ -548,13 +550,13 @@ solExpr sp = \case
   DLE_MapRef _ mpv fa -> do
     fa' <- solArg fa
     return $ solApply (solMapRef mpv) [fa'] <> sp
-  DLE_MapSet _ mpv fa na -> do
+  DLE_MapSet _ mpv fa (Just na) -> do
     fa' <- solArg fa
     solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
     where
       nla = DLLA_Data (dataTypeMap $ maybeT na_t) "Some" na
       na_t = argTypeOf na
-  DLE_MapDel _ mpv fa -> do
+  DLE_MapSet _ mpv fa Nothing -> do
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
@@ -846,6 +848,7 @@ solCom = \case
         ]
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
+  DL_LocalDo _ t -> solPLTail t
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do

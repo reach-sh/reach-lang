@@ -1,0 +1,1 @@
+reachc: error: ./Err_Part_DuplicatePart.rsh:6:25:application: Duplicated participant name: "Alice"

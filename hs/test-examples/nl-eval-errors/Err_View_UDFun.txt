@@ -1,0 +1,1 @@
+reachc: error: ./Err_View_UDFun.rsh:6:17:application: View functions cannot have unconstrained domains.

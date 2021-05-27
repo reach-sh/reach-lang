@@ -55,8 +55,10 @@ instance CollectsTypes DLType where
         T_Struct elems -> cts $ map snd elems
 
 instance CollectsTypes IType where
-  cts (IT_Fun dom rng) = cts dom <> cts rng
-  cts (IT_Val v) = cts v
+  cts = \case
+    IT_Fun dom rng -> cts dom <> cts rng
+    IT_Val v -> cts v
+    IT_UDFun rng -> cts rng
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m
@@ -93,8 +95,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
   cts (DLE_MapRef _ _ fa) = cts fa
-  cts (DLE_MapSet _ _ fa na) = cts [fa, na]
-  cts (DLE_MapDel _ _ fa) = cts fa
+  cts (DLE_MapSet _ _ fa na) = cts fa <> cts na
   cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
 
 instance CollectsTypes DLAssignment where
@@ -117,6 +118,7 @@ instance CollectsTypes DLStmt where
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
   cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
+  cts (DL_LocalDo _ t) = cts t
 
 instance CollectsTypes DLTail where
   cts (DT_Return _) = mempty

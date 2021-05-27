@@ -22,11 +22,10 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.AddCounts
 import Reach.Connector
 import Reach.Counter
 import Reach.DeJump
-import Reach.Optimize
+import Reach.BigOpt
 import Reach.Texty (pretty)
 import Reach.UnrollLoops
 import Reach.UnsafeUtil
@@ -69,6 +68,8 @@ algoMaxTxGroupSize :: TxnIdx
 algoMaxTxGroupSize = 16
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
+algoMaxAppTxnAccounts :: Integer
+algoMaxAppTxnAccounts = 4 -- plus sender
 
 -- Algo specific stuff
 
@@ -793,9 +794,8 @@ ce = \case
       check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
-  DLE_MapRef {} -> xxx "algo mapref"
-  DLE_MapSet {} -> xxx "algo mapset"
-  DLE_MapDel {} -> xxx "algo mapdel"
+  DLE_MapRef _ _mpv _fa -> xxx "algo mapref"
+  DLE_MapSet _ _mpv _fa _mva -> xxx "algo mapset"
   DLE_Remote {} -> xxx "algo remote"
   where
     show_stack msg at fs = do
@@ -964,6 +964,7 @@ cm km = \case
     impossible $ "cannot inspect maps at runtime"
   DL_Only {} ->
     impossible $ "only in CP"
+  DL_LocalDo _ t -> cp km t
 
 cp :: App () -> DLTail -> App ()
 cp km = \case
@@ -1599,9 +1600,6 @@ connect_algo = Connector {..}
       -- Once we have backward jumps, throw this out
       djpu <- unrollLoops djp
       showp "ul" djpu
-      djpo <- optimize djpu
-      showp "djpo" djpo
-      pl <- add_counts djpo
-      showp "pl" pl
-      res <- compile_algo disp pl
+      pl <- bigopt (showp, "pl") djpu
+      res <- compile_algo (disp . T.pack) pl
       return $ res

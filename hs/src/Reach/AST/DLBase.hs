@@ -82,12 +82,14 @@ instance Pretty DLType where
 data IType
   = IT_Val DLType
   | IT_Fun [DLType] DLType
+  | IT_UDFun DLType
   deriving (Eq, Ord, Generic, Show)
 
 itype2arr :: IType -> ([DLType], DLType)
 itype2arr = \case
   IT_Val t -> ([], t)
   IT_Fun dom rng -> (dom, rng)
+  IT_UDFun rng -> ([], rng)
 
 instance Pretty IType where
   pretty = viaShow
@@ -362,8 +364,7 @@ data DLExpr
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
-  | DLE_MapSet SrcLoc DLMVar DLArg DLArg
-  | DLE_MapDel SrcLoc DLMVar DLArg
+  | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
   deriving (Eq, Ord, Generic)
 
@@ -392,9 +393,10 @@ instance Pretty DLExpr where
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
       DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
-      DLE_MapSet _ mv kv nv ->
+      DLE_MapSet _ mv kv (Just nv) ->
         pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
-      DLE_MapDel _ mv i -> "delete" <+> pretty mv <> brackets (pretty i)
+      DLE_MapSet _ mv i Nothing ->
+        "delete" <+> pretty mv <> brackets (pretty i)
       DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
         "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
         parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
@@ -427,7 +429,6 @@ instance IsPure DLExpr where
     DLE_PartSet {} -> False
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
-    DLE_MapDel {} -> False
     DLE_Remote {} -> False
 
 instance IsLocal DLExpr where
@@ -452,7 +453,6 @@ instance IsLocal DLExpr where
     DLE_PartSet {} -> True
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
-    DLE_MapDel {} -> False
     DLE_Remote {} -> False
 
 instance CanDupe DLExpr where
@@ -515,6 +515,7 @@ data DLStmt
   | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
+  | DL_LocalDo SrcLoc DLTail
   | DL_LocalIf SrcLoc DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
@@ -529,6 +530,7 @@ instance SrcLocOf DLStmt where
     DL_ArrayReduce a _ _ _ _ _ _ -> a
     DL_Var a _ -> a
     DL_Set a _ _ -> a
+    DL_LocalDo a _ -> a
     DL_LocalIf a _ _ _ -> a
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
@@ -543,6 +545,7 @@ instance Pretty DLStmt where
     DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
+    DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
     DL_LocalIf _at ca t f -> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
@@ -552,6 +555,8 @@ mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
     DL_Nop _ -> k
+    DL_LocalDo _ k' ->
+      dtReplace mk k k'
     _ -> mk m k
 
 data DLTail
