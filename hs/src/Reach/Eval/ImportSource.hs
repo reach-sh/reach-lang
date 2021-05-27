@@ -12,7 +12,7 @@ module Reach.Eval.ImportSource
 
 import Text.Parsec
 
-import Control.Exception        (SomeException, catch)
+import Control.Exception        (Exception, throw, catch)
 import Control.Monad.Extra      (unlessM, whenM, ifM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.Reader     (ReaderT(..), ask, asks)
@@ -146,7 +146,7 @@ data PkgError
   | PkgLockModuleShaMismatch  FilePath
   | PkgLockModuleUnknown      HostGit
   | PkgLockModifyUnauthorized
-  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Exception)
 
 
 instance Show PkgError where
@@ -207,11 +207,6 @@ gitCheckout b r = check fetch >> pure () where
   fetch _ = runGit b "fetch"
     >>= orFail_ (expect_ . PkgGitFetchFailed)
     >>    check (expect_ . PkgGitCheckoutFailed)
-
-
-gitRevParse :: FilePath -> String -> App String
-gitRevParse b r = runGit b ("rev-parse " <> r)
-  >>= orFail (expect_ . PkgGitRevParseFailed)
 
 
 -- | Allow `sudo`-less directory traversal/deletion for Docker users but
@@ -296,6 +291,9 @@ byGitRefSha h fp = withDotReach $ \_ -> do
     ref      -> f ref
 
  where
+  gitRevParse b r = runGit b ("rev-parse " <> r)
+    >>= orFail (throw . PkgGitRevParseFailed)
+
   f ref = do
     dirClone <- (</> gitCloneDirOf h) <$> dirGitClones
     ref'     <- gitRevParse dirClone ref
@@ -310,7 +308,9 @@ byGitRefSha h fp = withDotReach $ \_ -> do
 
   orTry a b = do
     env <- ask
-    liftIO $ (runReaderT a env) `catch` (\(_ :: SomeException) -> runReaderT b env)
+    liftIO $ runReaderT a env `catch` (\case
+      PkgGitRevParseFailed _ -> runReaderT b env
+      rethrown               -> runReaderT (expect_ rethrown) env)
 
 
 lockModuleFix :: HostGit -> App (FilePath, LockModule)
