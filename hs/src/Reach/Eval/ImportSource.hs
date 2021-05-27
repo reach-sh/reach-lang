@@ -150,14 +150,15 @@ data PkgError
 
 
 instance Show PkgError where
-  show (PkgGitCloneFailed         s) = "`git clone` failed: "          <> s
-  show (PkgGitCheckoutFailed      s) = "`git checkout` failed: "       <> s
-  show (PkgGitFetchFailed         s) = "`git fetch` failed: "          <> s
-  show (PkgGitRevParseFailed      s) = "`git rev-parse` failed: "      <> s
-  show (PkgLockModuleDoesNotExist f) = "Lock module \""                <> f <> "\" does not exist"
-  show (PkgLockModuleShaMismatch  f) = "Lock module SHA mismatch on: " <> f
-  show (PkgLockModuleUnknown      h) = "Lock module unknown: "         <> show h
-  show  PkgLockModifyUnauthorized    = "Did you mean to run with `--install-pkgs`?"
+  show = \case
+    PkgGitCloneFailed         s -> "`git clone` failed: "          <> s
+    PkgGitCheckoutFailed      s -> "`git checkout` failed: "       <> s
+    PkgGitFetchFailed         s -> "`git fetch` failed: "          <> s
+    PkgGitRevParseFailed      s -> "`git rev-parse` failed: "      <> s
+    PkgLockModuleDoesNotExist f -> "Lock module \""                <> f <> "\" does not exist"
+    PkgLockModuleShaMismatch  f -> "Lock module SHA mismatch on: " <> f
+    PkgLockModuleUnknown      h -> "Lock module unknown: "         <> show h
+    PkgLockModifyUnauthorized   -> "Did you mean to run with `--install-pkgs`?"
 
 
 expect_ :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
