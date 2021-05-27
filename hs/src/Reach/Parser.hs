@@ -51,6 +51,9 @@ data Env = Env
 type App    = ReaderT Env IO
 type AppT a = a -> App a
 
+withAt :: String -> Maybe TokenPosn -> App a -> App a
+withAt lab mp app = local (\e -> e { srcloc = srcloc_at lab mp (srcloc e) }) app
+
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -161,7 +164,7 @@ instance Pretty JSBundle where
 
 gatherDeps_fc :: AppT JSFromClause
 gatherDeps_fc (JSFromClause ab aa s) = do
-  local (\e -> e { srcloc = srcloc_at "import from" (tp ab) (srcloc e) }) $ do
+  withAt "import from" (tp ab) $ do
     s_abs <- gatherDeps_file GatherNotTop $ trimQuotes s
     return $ JSFromClause ab aa s_abs
 
@@ -171,7 +174,7 @@ gatherDeps_imd = \case
     fc' <- gatherDeps_fc fc
     return $ JSImportDeclaration ic fc' sm
   JSImportDeclarationBare a s sm -> do
-    local (\e -> e { srcloc = srcloc_at "import bare" (tp a) (srcloc e) }) $ do
+    withAt "import bare" (tp a) $ do
       s_abs <- gatherDeps_file GatherNotTop $ trimQuotes s
       return $ JSImportDeclarationBare a s_abs sm
 
@@ -186,11 +189,11 @@ gatherDeps_exd = \case
 gatherDeps_mi :: AppT JSModuleItem
 gatherDeps_mi = \case
   JSModuleImportDeclaration a imd -> do
-    local (\e -> e { srcloc = srcloc_at "import" (tp a) (srcloc e) }) $ do
+    withAt "import" (tp a) $ do
       imd' <- gatherDeps_imd imd
       return $ JSModuleImportDeclaration a imd'
   JSModuleExportDeclaration a exd -> do
-    local (\e -> e { srcloc = srcloc_at "export" (tp a) (srcloc e) }) $ do
+    withAt "export" (tp a) $ do
       exd' <- gatherDeps_exd exd
       return $ JSModuleExportDeclaration a exd'
   mi -> return mi
