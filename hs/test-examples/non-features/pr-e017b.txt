@@ -1,0 +1,1 @@
+reachc: error: ./pr-e017b.rsh:149:32:block: code must not be reachable: Scope requires explicit return, but none given; typically this is a branch of a `while` body without a `continue` or `exit`

@@ -50,6 +50,7 @@ data DLSStmt
   | DLS_Return SrcLoc Int (Either Int DLArg)
   | DLS_Prompt SrcLoc (Either Int (DLVar, M.Map Int (DLStmts, DLArg))) DLStmts
   | DLS_Stop SrcLoc
+  | DLS_Unreachable SrcLoc [SLCtxtFrame] String
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
@@ -98,6 +99,8 @@ instance Pretty DLSStmt where
                 "let" <+> pretty dv <+> "with" <+> render_obj retm
       DLS_Stop _ ->
         prettyStop
+      DLS_Unreachable {} ->
+        "unreachable;"
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
@@ -132,6 +135,7 @@ instance SrcLocOf DLSStmt where
     DLS_Return a _ _ -> a
     DLS_Prompt a _ _ -> a
     DLS_Stop a -> a
+    DLS_Unreachable a _ _ -> a
     DLS_Only a _ _ -> a
     DLS_ToConsensus {..} -> dls_tc_at
     DLS_FromConsensus a _ -> a
@@ -154,6 +158,7 @@ instance IsPure DLSStmt where
     DLS_Return {} -> False
     DLS_Prompt _ _ ss -> isPure ss
     DLS_Stop {} -> False
+    DLS_Unreachable {} -> True
     DLS_Only _ _ ss -> isPure ss
     DLS_ToConsensus {} -> False
     DLS_FromConsensus {} -> False
@@ -176,6 +181,7 @@ instance IsLocal DLSStmt where
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> isLocal ss
     DLS_Stop {} -> False
+    DLS_Unreachable {} -> True
     DLS_Only {} -> True
     DLS_ToConsensus {} -> False
     DLS_FromConsensus {} -> False

@@ -4262,15 +4262,11 @@ evalStmt = \case
       RS_CannotReturn -> ret []
       RS_ImplicitNull -> ret [(at, Nothing, (public $ SLV_Null at "implicit null"), False)]
       RS_NeedExplicit -> do
-        --- In the presence of `exit()`, it is okay to have a while
-        --- that ends in an empty tail, if the empty tail is
-        --- dominated by an exit(). Here we really on two properties
-        --- of the linearizer and the verifier: first, the
-        --- linearizer will completely drop the continuation of
-        --- DLS_Continue and DLS_Stop, so if this assert is not
-        --- removed, then ti will error.
+        -- Rather than erroring now, we error later, because there might be an
+        -- an exit or continue prior to this, so the linearizer will remove
+        -- this code
         fs <- e_stack <$> ask
-        ctxt_lift_eff $ DLE_Claim at fs CT_Assert (DLA_Literal $ DLL_Bool False) (Just "unreachable")
+        saveLift $ DLS_Unreachable at fs $ "Scope requires explicit return, but none given; typically this is a branch of a `while` body without a `continue` or `exit`"
         ret []
       RS_MayBeEmpty -> ret []
   ((JSStatementBlock a ss' _ sp) : ks) -> do

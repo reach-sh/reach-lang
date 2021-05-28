@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import Generics.Deriving (Generic)
 import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DK
@@ -18,6 +19,14 @@ import Reach.Texty
 import Reach.Util
 
 -- Remove returns, duplicate continuations, and transform into dk
+data Error
+  = Err_Unreachable String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show Error where
+  show = \case
+    Err_Unreachable s -> "code must not be reachable: " <> s
+
 type DKApp = ReaderT DKEnv IO
 
 type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
@@ -119,6 +128,8 @@ dk1 at_top ks s =
         com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
+    DLS_Unreachable at fs m ->
+      expect_throw (Just fs) at $ Err_Unreachable m
     DLS_ToConsensus at send recv mtime -> do
       let cs = dr_k recv
       cs' <- dk_ at (cs <> ks)
