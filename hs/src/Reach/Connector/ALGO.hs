@@ -302,7 +302,7 @@ bad lab = do
 
 xxx :: LT.Text -> App ()
 xxx lab = do
-  let lab' = "XXX This program uses " <> lab
+  let lab' = "This program uses " <> lab
   when False $
     liftIO $ LTIO.putStrLn $ "ALGO: " <> lab'
   bad lab'
@@ -356,7 +356,7 @@ salloc fm = do
   Env {..} <- ask
   let eSP' = eSP - 1
   when (eSP' == eHP) $ do
-    bad "Too much memory required"
+    bad "Too many scratch slots"
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
@@ -375,7 +375,8 @@ talloc tk = do
   txni <- liftIO $ readIORef eTxnsR
   when (txni >= algoMaxTxGroupSize) $ do
     bad $ texty $
-      "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize
+      "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize <>
+      ".This is caused by too many transfers in one atomic step."
   let ti = TxnInfo txni tk
   liftIO $ modifyIORef eTxns $ (:) ti
   return txni
@@ -553,7 +554,8 @@ check_concat_len totlen =
   case totlen <= 4096 of
     True -> nop
     False -> bad $ "Cannot `concat` " <>  texty totlen <>
-      " bytes; the resulting byte array must be <= 4096 bytes"
+      " bytes; the resulting byte array must be <= 4096 bytes." <>
+      " This is caused by a Reach data type being too large."
 
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
