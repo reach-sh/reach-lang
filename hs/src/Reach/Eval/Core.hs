@@ -2137,7 +2137,7 @@ evalPrim p sargs =
                     True -> do
                       at <- withAt id
                       let valv_checked = typeCheck_d elem_ty valv `seq` valv
-                      let arrvs' = take (idxi' - 1) arrvs ++ [valv_checked] ++ drop (idxi' + 1) arrvs
+                      let arrvs' = (take idxi' arrvs) ++ [valv_checked] ++ (drop (idxi' + 1) arrvs)
                       let arrv' = SLV_Array at elem_ty arrvs'
                       retV $ (lvl, arrv')
                     False ->
