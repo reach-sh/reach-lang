@@ -469,7 +469,7 @@ const replaceAddr = (label: string, addr: Address, x:string): string =>
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported } = algob;
-  if ( unsupported != [] ) {
+  if ( unsupported.length > 0 ) {
     const reasons = unsupported.map(s => ` * ${s}`).join('\n');
     throw Error(`This Reach application is not supported by Algorand for the following reasons:\n${reasons}`);
   }
