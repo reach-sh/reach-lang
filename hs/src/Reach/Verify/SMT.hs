@@ -159,7 +159,13 @@ instance Monoid a => Monoid (App a) where
 
 type SMTComp = App ()
 
-type BindingEnv = M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr, Maybe DLExpr)
+type BindingEnv = M.Map String BindingInfo
+
+data BindingInfo
+  = BR_Var (Maybe DLVar) SrcLoc BindingOrigin (Maybe SExpr) (Maybe DLExpr)
+  | BR_MapNew
+  | BR_MapFresh
+  | BR_MapUpdate SrcLoc SExpr SMTMapRecordUpdate DLExpr
 
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
@@ -418,7 +424,8 @@ dlvOccurs env bindings = \case
         -- Otherwise, expand and mark all sub expressions
         False ->
           case v `M.lookup` bindings of
-            Just (_, _, _, _, Just e) -> dlvOccurs env' bindings e
+            Just (BR_Var _ _ _ _ (Just e)) ->
+              dlvOccurs env' bindings e
             _ -> env'
       where
         env' = v : env
@@ -491,10 +498,11 @@ displayDLAsJs v2dv inlineCtxt nested = \case
   DLE_CheckPay _ _ y z -> "checkPay" <> paren (sub y <> ", " <> msub z)
   DLE_Wait _ a -> "wait" <> paren (sub a)
   DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
-  DLE_MapRef _ mv fa -> ps mv <> bracket (sub fa)
+  DLE_MapRef _ mv fa -> subm mv <> bracket (sub fa)
   DLE_MapSet _ mv fa (Just na) ->
-    ps mv <> bracket (sub fa) <> " = " <> sub na
-  DLE_MapSet _ mv fa Nothing -> "delete " <> ps mv <> bracket (sub fa)
+    subm mv <> bracket (sub fa <> " <- " <> sub na)
+  DLE_MapSet _ mv fa Nothing ->
+    subm mv <> bracket ("\\ " <> sub fa)
   DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
     <> paren (commaSep [sub net, subPair ks])
     <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
@@ -517,6 +525,7 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     msub = \case
       Nothing -> "false"
       Just x -> sub x
+    subm mv = ps mv -- "XXX"
 
 displaySexpAsJs :: Bool -> SExpr -> String
 displaySexpAsJs nested s =
@@ -547,7 +556,7 @@ subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr 
 subAllVars bindings tk pm (Atom ai) = do
   v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
   case ai `M.lookup` bindings of
-    Just (_, _, _, _, Just de) -> do
+    Just (BR_Var _ _ _ _ (Just de)) -> do
       let env = dlvOccurs [] bindings de
       let sortedEnv = List.group $ List.sort env
       -- Get variable/values to inline. Inline a DLExpr if available,
@@ -561,8 +570,8 @@ subAllVars bindings tk pm (Atom ai) = do
             List.foldr
               (\x acc ->
                  case x `M.lookup` bindings of
-                   Just (_, _, _, _, Just dl) -> (x, Right dl) : acc
-                   Just (_, _, _, Just se, _) -> (x, Left se) : acc
+                   Just (BR_Var _ _ _ _ (Just dl)) -> (x, Right dl) : acc
+                   Just (BR_Var _ _ _ (Just se) _) -> (x, Left se) : acc
                    _ -> acc)
               []
               assignVars
@@ -587,27 +596,30 @@ subAllVars bindings tk pm (Atom ai) = do
     canInline [x] acc = x : acc
     canInline (x : _) acc =
       case x `M.lookup` bindings of
-        Just (_, _, _, _, Just (DLE_Arg _ _)) -> x : acc
+        Just (BR_Var _ _ _ _ (Just (DLE_Arg _ _))) -> x : acc
+        Just (BR_MapNew) -> x : acc
+        Just (BR_MapFresh) -> x : acc
         _ -> acc
     canInline _ acc = acc
 
     -- Variable can be assigned if it is used many times and its value is not a `DLArg`
     canAssign (x : _ : _) acc =
       case x `M.lookup` bindings of
-        Just (_, _, _, _, Just (DLE_Arg _ _)) -> acc
+        Just (BR_Var _ _ _ _ (Just (DLE_Arg _ _))) -> acc
+        Just (BR_MapNew) -> acc
+        Just (BR_MapFresh) -> acc
         _ -> x : acc
     canAssign _ acc = acc
 
     getInlineValue :: M.Map String [DLVar] -> String -> (String, Either String DLExpr)
     getInlineValue v2dv v =
       case v `M.lookup` bindings of
-        Just (_, _, _, _, Just del) -> (v, Right del)
-        Just (_, _, _, Just se, _) -> (v, Left $ SMT.showsSExpr se "")
+        Just (BR_Var _ _ _ _ (Just del)) -> (v, Right del)
+        Just (BR_Var _ _ _ (Just se) _) -> (v, Left $ SMT.showsSExpr se "")
+        Just (BR_MapNew) -> (v, Left $ "Ø")
+        Just (BR_MapFresh) -> (v, Left $ "?")
         _ -> (v, Left $ getBindingOrigin v v2dv)
 subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
-
---- FYI, the last version that had Dan's display code was
---- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
 display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> SMTComp
 display_fail tat f tk tse mmsg repeated mrd = do
@@ -653,13 +665,20 @@ display_fail tat f tk tse mmsg repeated mrd = do
                 case M.lookup v0 bindingsm of
                   Nothing ->
                     return $ mempty
-                  Just (_, at, bo, mvse, _) -> do
+                  Just (BR_MapNew) -> do
+                    return $ mempty
+                  Just (BR_MapFresh) -> do
+                    return $ mempty
+                  Just (BR_MapUpdate _at se (SMR_Update _om _ _) _mde) -> do
+                    -- iputStrLn $ "  const " <> v0 <> " = /* map update to " <> (displaySexpAsJs False om) <> " */ " <> (displayDLAsJs v2dv mempty False mde) <> ";"
+                    -- mapM_ iputStrLn $ map (redactAbsStr cwd) $
+                    --  ["  //    ^ at " ++ show at]
+                    return $ seVars se
+                  Just (BR_Var _ at bo mvse _) -> do
                     let this se =
                           [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
-                            ++ (map
-                                  (redactAbsStr cwd)
-                                  [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)
-                                  ])
+                            ++ (map (redactAbsStr cwd)
+                                  [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)])
                     case mvse of
                       Nothing ->
                         --- FIXME It might be useful to do `get-value` rather than parse
@@ -765,13 +784,17 @@ verify1 at mf tk se mmsg = smtNewScope $ do
         TClaim CT_Possible -> True
         _ -> False
 
-pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
-pathAddUnbound_v mdv at_dv v t bo = do
-  smtDeclare_v v t
+smtRecordBinding :: String -> BindingInfo -> App ()
+smtRecordBinding v bi = do
   ctxt <- ask
   liftIO $
     modifyIORef (ctxt_bindingsr ctxt) $
-      M.insert v (mdv, at_dv, bo, Nothing, Nothing)
+      M.insert v bi
+
+pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v mdv at_dv v t bo = do
+  smtDeclare_v v t
+  smtRecordBinding v $ BR_Var mdv at_dv bo Nothing Nothing
 
 pathAddBound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
 pathAddBound_v mdv at_dv v t bo de se = do
@@ -779,10 +802,7 @@ pathAddBound_v mdv at_dv v t bo de se = do
   --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
   smtAssert (smtEq (Atom $ v) se)
-  ctxt <- ask
-  liftIO $
-    modifyIORef (ctxt_bindingsr ctxt) $
-      M.insert v (mdv, at_dv, bo, Just se, de)
+  smtRecordBinding v $ BR_Var mdv at_dv bo (Just se) de
 
 pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
 pathAddUnbound _ Nothing _ = mempty
@@ -806,7 +826,7 @@ smtMapRefresh = do
   ms <- ctxt_maps <$> ask
   let go (mpv, SMTMapInfo {..}) = do
         mi' <- liftIO $ incCounter sm_c
-        smtMapDeclare mpv mi'
+        smtMapDeclare mpv mi' $ BR_MapFresh
         liftIO $ writeIORef sm_rs $ mempty
         liftIO $ writeIORef sm_us $ mempty
   mapM_ go $ M.toList ms
@@ -818,15 +838,20 @@ smtMapLookupC mpv = do
     Just x -> return $ x
     Nothing -> impossible $ "smtMapLookupC unknown map"
 
-smtMapDeclare :: DLMVar -> Int -> App ()
-smtMapDeclare mpv mi = do
+smtMapSort :: DLMVar -> App SExpr
+smtMapSort mpv = do
   SMTMapInfo {..} <- smtMapLookupC mpv
-  let mv = smtMapVar mpv mi
   t_addr' <- smtTypeSort $ T_Address
   sm_t' <- smtTypeSort sm_t
-  let t = smtApply "Array" [Atom t_addr', Atom sm_t']
+  return $ smtApply "Array" [Atom t_addr', Atom sm_t']
+
+smtMapDeclare :: DLMVar -> Int -> BindingInfo -> App ()
+smtMapDeclare mpv mi bi = do
+  let mv = smtMapVar mpv mi
+  t <- smtMapSort mpv
   smt <- ctxt_smt <$> ask
   liftIO $ void $ SMT.declare smt mv t
+  smtRecordBinding mv bi
 
 smtMapLookup :: DLMVar -> App SExpr
 smtMapLookup mpv = do
@@ -834,23 +859,30 @@ smtMapLookup mpv = do
   mi <- liftIO $ readCounter sm_c
   return $ Atom $ smtMapVar mpv (mi - 1)
 
-smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe DLArg -> SMTComp
-smtMapUpdate at mpv fa mna = do
-  fa' <- smt_a at fa
+smtMapMkMaybe :: SrcLoc -> DLMVar -> Maybe DLArg -> App SExpr
+smtMapMkMaybe at mpv mna = do
   SMTMapInfo {..} <- smtMapLookupC mpv
   let mkna = DLLA_Data $ dataTypeMap sm_t
   let na = case mna of
         Just x -> mkna "Some" x
         Nothing -> mkna "None" $ DLA_Literal DLL_Null
-  na' <- smt_la at na
+  smt_la at na
+
+smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe DLArg -> SMTComp
+smtMapUpdate at mpv fa mna = do
+  fa' <- smt_a at fa
+  na' <- smtMapMkMaybe at mpv mna
+  SMTMapInfo {..} <- smtMapLookupC mpv
   mi' <- liftIO $ incCounter sm_c
   let mi = mi' - 1
-  smtMapDeclare mpv mi'
   let mv = smtMapVar mpv mi
   let ma = Atom mv
-  smtMapRecordUpdate mpv $ SMR_Update ma fa' na'
-  let mv' = smtMapVar mpv mi'
+  let mu = SMR_Update ma fa' na'
   let se = smtApply "store" [ma, fa', na']
+  let mde = DLE_MapSet at mpv fa mna
+  smtMapDeclare mpv mi' $ BR_MapUpdate at se mu mde
+  smtMapRecordUpdate mpv mu
+  let mv' = smtMapVar mpv mi'
   smtAssert $ smtEq (Atom mv') se
 
 smtMapRecordReduce :: DLMVar -> SMTMapRecordReduce -> App ()
@@ -1530,7 +1562,12 @@ _verify_smt mc ctxt_vst smt lp = do
   flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
-          smtMapDeclare mpv mi
+          smtMapDeclare mpv mi $ BR_MapNew
+          let mv = smtMapVar mpv mi
+          t <- smtMapSort mpv
+          na' <- smtMapMkMaybe at mpv Nothing
+          let se = List [ smtApply "as" [ Atom "const", t ], na' ]
+          smtAssert $ smtEq (Atom mv) se
     mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of
       Nothing -> mempty
