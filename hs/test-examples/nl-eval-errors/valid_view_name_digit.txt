@@ -1,0 +1,1 @@
+reachc: error: ./valid_view_name_digit.rsh:4:18:application: Invalid View name. View names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `2s`

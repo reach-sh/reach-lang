@@ -1,0 +1,1 @@
+reachc: error: ./Err_InvalidNameExport.rsh:6:17:application: Invalid Participant name: `getExports`. Reach exports this identifier in the backend.

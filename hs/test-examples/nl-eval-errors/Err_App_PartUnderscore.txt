@@ -1,1 +1,0 @@
-reachc: error: ./Err_App_PartUnderscore.rsh:4:19:application: Invalid participant name. Participant names may not begin with an underscore: _A

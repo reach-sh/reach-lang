@@ -376,6 +376,14 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
+verifyName :: String -> String -> App ()
+verifyName ty ns = do
+  when (isSpecialBackendIdent ns) $
+    expect_ $ Err_InvalidNameExport ty ns
+  regex <- nameRegex
+  unless (matched $ ns ?=~ regex) $
+    expect_ $ Err_InvalidNameRegex ty ns
+
 isSpecialBackendIdent :: [Char] -> Bool
 isSpecialBackendIdent = flip elem ["getExports"]
 
@@ -1870,6 +1878,9 @@ mustBeObjectTy err = \case
 structKeyRegex :: App RE
 structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
 
+nameRegex :: App RE
+nameRegex = liftIO $ compileRegex "^([a-zA-Z][_a-zA-Z0-9]*)$"
+
 tokenPay :: Maybe DLArg -> DLArg -> B.ByteString -> ReaderT Env IO ()
 tokenPay mtok_a amt_a msg = do
   amt_sv <- argToSV amt_a
@@ -2405,6 +2416,7 @@ evalPrim p sargs =
       when (M.member n sv) $
         expect_ $ Err_View_DuplicateView n
       let ns = bunpack n
+      verifyName "View" ns
       let go k t = do
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
@@ -2728,10 +2740,7 @@ evalPrim p sargs =
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       let ns = bunpack n
-      when (isSpecialBackendIdent ns) $
-        expect_ $ Err_InvalidPartName ns
-      when ("_" `B.isPrefixOf` n) $
-        expect_ $ Err_App_PartUnderscore n
+      verifyName "Participant" ns
       ios <- ae_ios <$> aisiGet aisi_env
       when (M.member n ios) $
         expect_ $ Err_Part_DuplicatePart n

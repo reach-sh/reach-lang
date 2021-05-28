@@ -5,7 +5,6 @@ module Reach.Eval.Error
   )
 where
 
-import qualified Data.ByteString as B
 import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
@@ -47,7 +46,7 @@ data EvalError
   | Err_App_InvalidInteract SLValTy
   | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
-  | Err_App_PartUnderscore B.ByteString
+  | Err_InvalidNameRegex String String
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_ObjectSpreadNotLast
   | Err_Decl_ArraySpreadNotLast
@@ -129,7 +128,7 @@ data EvalError
   | Err_Remote_NotFun SLVar SLType
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
-  | Err_InvalidPartName String
+  | Err_InvalidNameExport String String
   | Err_Strict_Conditional SLVal
   | Err_Try_Type_Mismatch DLType DLType
   | Err_Throw_No_Catch
@@ -316,9 +315,8 @@ instance Show EvalError where
       opt <> " is not a valid app option" <> didYouMean opt opts 5
     Err_App_InvalidOptionValue opt msg ->
       "Invalid value for app option, " <> opt <> ": " <> msg
-    Err_App_PartUnderscore bs ->
-      "Invalid participant name. Participant names may not begin with an underscore: "
-        <> bunpack bs
+    Err_InvalidNameRegex ty ns ->
+      "Invalid " <> ty <> " name. " <> ty <> " names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `" <> ns <> "`"
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
     Err_Eval_PartSet_Class who ->
@@ -512,8 +510,8 @@ instance Show EvalError where
       "Struct key `" <> s <> "` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*"
     Err_Struct_Key_Not_Unique sk k ->
       "All Struct keys must be unique, but `" <> k <> "` is not. This Struct already has keys: " <> intercalate ", " sk
-    Err_InvalidPartName n ->
-      "Invalid participant name: `" <> n <> "`. Reach exports this identifier in the backend."
+    Err_InvalidNameExport ty n ->
+      "Invalid " <> ty <> " name: `" <> n <> "`. Reach exports this identifier in the backend."
     Err_Strict_Conditional v ->
       "Strict mode expects conditional values to be of type `Bool`, but received: " <> show (pretty v)
     Err_Try_Type_Mismatch expect actual ->
