@@ -32,6 +32,7 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
+import qualified Data.Set as S
 
 -- import Debug.Trace
 
@@ -192,7 +193,7 @@ render ts = tt
     lts = "#pragma version 3" : (map LT.unwords $ peep_optimize $ DL.toList ts)
 
 data Shared = Shared
-  { sFailedR :: IORef Bool
+  { sFailuresR :: IORef (S.Set LT.Text)
   , sViewSize :: Integer
   , sCounter :: Counter
   }
@@ -288,22 +289,22 @@ check_rekeyto = do
   code "global" ["ZeroAddress"]
   eq_or_fail
 
-bad_ :: App ()
-bad_ = do
+bad_ :: LT.Text -> App ()
+bad_ lab = do
   Env {..} <- ask
   let Shared {..} = eShared
-  liftIO $ writeIORef sFailedR True
+  liftIO $ modifyIORef sFailuresR (S.insert lab)
 
 bad :: LT.Text -> App ()
 bad lab = do
-  bad_
+  bad_ lab
   output $ comment_ $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
 xxx lab = do
-  let lab' = "XXX " <> lab
+  let lab' = "XXX This program uses " <> lab
   when False $
-    liftIO $ LTIO.putStrLn lab'
+    liftIO $ LTIO.putStrLn $ "ALGO: " <> lab'
   bad lab'
 
 freshLabel :: App LT.Text
@@ -355,7 +356,7 @@ salloc fm = do
   Env {..} <- ask
   let eSP' = eSP - 1
   when (eSP' == eHP) $ do
-    bad "too much memory"
+    bad "Too much memory required"
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
@@ -373,7 +374,8 @@ talloc tk = do
   liftIO $ modifyIORef eTxnsR $ (+) 1
   txni <- liftIO $ readIORef eTxnsR
   when (txni >= algoMaxTxGroupSize) $ do
-    bad "too many txns"
+    bad $ texty $
+      "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize
   let ti = TxnInfo txni tk
   liftIO $ modifyIORef eTxns $ (:) ti
   return txni
@@ -550,7 +552,8 @@ check_concat_len :: Integer -> App ()
 check_concat_len totlen =
   case totlen <= 4096 of
     True -> nop
-    False -> bad $ "concat too big: 4096 < " <> texty totlen
+    False -> bad $ "Cannot `concat` " <>  texty totlen <>
+      " bytes; the resulting byte array must be <= 4096 bytes"
 
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
@@ -596,7 +599,7 @@ cfor maxi body = do
     cl $ DLL_Int sb 1
     op "+"
     code "store" [texty idxl]
-    bad "backwards jump"
+    bad "`b` can only branch forwards, not backwards"
     code "b" [top_lab]
   label end_lab
 
@@ -794,9 +797,9 @@ ce = \case
       check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
-  DLE_MapRef _ _mpv _fa -> xxx "algo mapref"
-  DLE_MapSet _ _mpv _fa _mva -> xxx "algo mapset"
-  DLE_Remote {} -> xxx "algo remote"
+  DLE_MapRef _ _mpv _fa -> xxx "linear state"
+  DLE_MapSet _ _mpv _fa _mva -> xxx "linear state"
+  DLE_Remote {} -> xxx "remote objects"
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -1401,7 +1404,7 @@ compile_algo disp pl = do
   -- last_timevs are never included in svs on Algorand.
   let CPProg at vi (CHandlers hm) = cpp
   resr <- newIORef mempty
-  sFailedR <- newIORef False
+  sFailuresR <- newIORef mempty
   let sViewSize = computeViewSize vi
   let PLOpts {..} = plo
   let sCounter = plo_counter
@@ -1581,8 +1584,8 @@ compile_algo disp pl = do
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
   res0 <- readIORef resr
-  sFailed <- readIORef sFailedR
-  let res1 = M.insert "unsupported" (Aeson.Bool sFailed) res0
+  sFailures <- readIORef sFailuresR
+  let res1 = M.insert "unsupported" (aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) sFailures) res0
   -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
   return $ Aeson.Object $ HM.fromList $ M.toList res1
 

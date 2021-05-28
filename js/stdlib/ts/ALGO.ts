@@ -126,7 +126,7 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   viewKeys: number,
   steps: Array<string|null>,
   stepargs: Array<StepArgInfo|null>,
-  unsupported: boolean,
+  unsupported: Array<string>,
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
@@ -469,8 +469,9 @@ const replaceAddr = (label: string, addr: Address, x:string): string =>
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported } = algob;
-  if ( unsupported ) {
-    throw Error(`This Reach application is not supported by Algorand.`);
+  if ( unsupported != [] ) {
+    const reasons = unsupported.map(s => ` * ${s}`).join('\n');
+    throw Error(`This Reach application is not supported by Algorand for the following reasons:\n${reasons}`);
   }
 }
 
