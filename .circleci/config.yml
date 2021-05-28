@@ -4458,6 +4458,13 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    triggers:
+    - schedule:
+        cron: "0 0 * * *"
+        filters:
+          branches:
+            only:
+            - master
   docs:
     jobs:
     - "docs-render":

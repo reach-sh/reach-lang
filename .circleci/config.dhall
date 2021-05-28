@@ -517,12 +517,19 @@ let workflows =
     , [ `=:=` "docs-deploy" wf-docs-deploy ]
     ] }
 
-  let build-and-test = { jobs =
-    [ [ `=:=` "build-core" T.default           ]
-    , [ `=:=` "test-hs"    requires-build-core ]
-    , [ `=:=` "test-js"    requires-build-core ]
-    ] # map (KeyVal Text (List Text)) (Map Text T.Type) mk-example-wf ./examples.dhall
-    }
+  let build-and-test =
+    let jobs =
+      [ [ `=:=` "build-core" T.default           ]
+      , [ `=:=` "test-hs"    requires-build-core ]
+      , [ `=:=` "test-js"    requires-build-core ]
+      ] # map (KeyVal Text (List Text)) (Map Text T.Type) mk-example-wf ./examples.dhall
+
+    let sched = { schedule =
+      { cron    = "0 0 * * *" -- 8pm EDT / Midnight UTC
+      , filters = { branches = { only = [ "master" ] }}
+      }}
+
+    in { jobs , triggers = [ sched ] }
 
   in { lint, docs, build-and-test }
 
