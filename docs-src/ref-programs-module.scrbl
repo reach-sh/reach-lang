@@ -191,6 +191,11 @@ Example: @tt{@"@"reach-sh/example#v1.02:pkg.rsh}.
 }
 ]
 
+The following forms are all syntactically valid @tech{package import}
+expressions:
+
+@(pkg-fmts)
+
 @section[#:tag "ref-programs-module-exprs"]{Expressions}
 
 Any expressions valid for a @seclink["ref-programs-compute-exprs"]{computation} are valid for a module.
