@@ -508,7 +508,9 @@ The number of bits generated depends on the particular @tech{consensus network}.
 @js{
  hasRandom}
 
-A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function.
+@deftech{hasRandom (Frontend)} A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function, such as @reachin{hasRandom}.
+Reach does not natively support randomness and leaves random number generation to the frontend implementation.
+This value is provided out of convenience; it is not mandatory to use this implementation.
 
 @(hrule)
 @(mint-define! '("parseFixedPoint"))

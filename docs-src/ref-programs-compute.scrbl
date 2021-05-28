@@ -1351,7 +1351,7 @@ This pattern is so common that it can be abbreviated as @reachin{.timeRemaining}
 @reach{
  hasRandom }
 
-@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments and returns an unsigned integer of @tech{bit width} bits.
+@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments and returns an unsigned integer of @tech{bit width} bits. Reach provides a default frontend implementation via @tech{hasRandom (Frontend)}.
 
 
 @subsection{@tt{compose}}
