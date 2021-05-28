@@ -1,4 +1,4 @@
-module Reach.Verify.SMTParser (parseModel) where
+module Reach.Verify.SMTParser (SMTModel, parseModel) where
 
 import qualified Data.Map as M
 import Data.Maybe
@@ -28,7 +28,9 @@ parse_modelse e =
     _ ->
       error $ "invalid model " <> show e
 
-parseModel :: SExpr -> M.Map String (SExpr, SExpr)
+type SMTModel = M.Map String (SExpr, SExpr)
+
+parseModel :: SExpr -> SMTModel
 parseModel e = M.fromList m''
   where
     m = parse_modelse e

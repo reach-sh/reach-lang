@@ -27,7 +27,7 @@ import Reach.Pretty
 import Reach.Texty
 import Reach.UnrollLoops
 import Reach.Util
-import Reach.Verify.SMTParser (parseModel)
+import Reach.Verify.SMTParser
 import Reach.Verify.Shared
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
@@ -621,9 +621,61 @@ subAllVars bindings tk pm (Atom ai) = do
         _ -> (v, Left $ getBindingOrigin v v2dv)
 subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
 
+format_thermodel :: TheoremKind -> SMTModel -> SExpr -> App ()
+format_thermodel tk pm tse = do
+  v2dv <- (liftIO . readIORef) =<< (ctxt_v_to_dv <$> ask)
+  let iputStrLn = liftIO . putStrLn
+  cwd <- liftIO $ getCurrentDirectory
+  bindingsm <- (liftIO . readIORef) =<< (ctxt_bindingsr <$> ask)
+  iputStrLn $ "  // Violation witness"
+  let show_vars :: (S.Set String) -> (Seq.Seq String) -> App ()
+      show_vars shown = \case
+        Seq.Empty -> return ()
+        (v0 Seq.:<| q') -> do
+          v0vars <-
+            case M.lookup v0 bindingsm of
+              Nothing ->
+                return $ mempty
+              Just (BR_MapNew) -> do
+                return $ mempty
+              Just (BR_MapFresh) -> do
+                return $ mempty
+              Just (BR_MapUpdate _at se (SMR_Update _om _ _) _mde) -> do
+                -- iputStrLn $ "  const " <> v0 <> " = /* map update to " <> (displaySexpAsJs False om) <> " */ " <> (displayDLAsJs v2dv mempty False mde) <> ";"
+                -- mapM_ iputStrLn $ map (redactAbsStr cwd) $
+                --  ["  //    ^ at " ++ show at]
+                return $ seVars se
+              Just (BR_Var _ at bo mvse _) -> do
+                let this se =
+                      [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
+                        ++ (map (redactAbsStr cwd)
+                              [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)])
+                case mvse of
+                  Nothing ->
+                    --- FIXME It might be useful to do `get-value` rather than parse
+                    case M.lookup v0 pm of
+                      Nothing ->
+                        return $ mempty
+                      Just (_ty, se) -> do
+                        mapM_ iputStrLn (this se)
+                        return $ seVars se
+                  Just se ->
+                    return $ seVars se
+          let nvars = S.difference v0vars shown
+          let shown' = S.union shown nvars
+          let new_q = set_to_seq nvars
+          let q'' = q' <> new_q
+          show_vars shown' q''
+  let tse_vars = seVars tse
+  show_vars tse_vars $ set_to_seq $ tse_vars
+  theorem_formalization <- subAllVars bindingsm tk pm tse
+  iputStrLn ""
+  iputStrLn $ "  // Theorem formalization"
+  iputStrLn theorem_formalization
+  iputStrLn ""
+
 display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> SMTComp
 display_fail tat f tk tse mmsg repeated mrd = do
-  v2dv <- (liftIO . readIORef) =<< (ctxt_v_to_dv <$> ask)
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
   iputStrLn $ "Verification failed:"
@@ -646,8 +698,6 @@ display_fail tat f tk tse mmsg repeated mrd = do
       --- substitute everything that came from the program (the "context"
       --- below) and then just show the remaining variables found by the
       --- model.
-      bindingsm <- (liftIO . readIORef) =<< (ctxt_bindingsr <$> ask)
-      iputStrLn $ "  // Violation witness"
       let pm =
             case mrd of
               Nothing ->
@@ -657,51 +707,7 @@ display_fail tat f tk tse mmsg repeated mrd = do
                 mempty
               Just (RD_Model m) -> do
                 parseModel m
-      let show_vars :: (S.Set String) -> (Seq.Seq String) -> App ()
-          show_vars shown = \case
-            Seq.Empty -> return ()
-            (v0 Seq.:<| q') -> do
-              v0vars <-
-                case M.lookup v0 bindingsm of
-                  Nothing ->
-                    return $ mempty
-                  Just (BR_MapNew) -> do
-                    return $ mempty
-                  Just (BR_MapFresh) -> do
-                    return $ mempty
-                  Just (BR_MapUpdate _at se (SMR_Update _om _ _) _mde) -> do
-                    -- iputStrLn $ "  const " <> v0 <> " = /* map update to " <> (displaySexpAsJs False om) <> " */ " <> (displayDLAsJs v2dv mempty False mde) <> ";"
-                    -- mapM_ iputStrLn $ map (redactAbsStr cwd) $
-                    --  ["  //    ^ at " ++ show at]
-                    return $ seVars se
-                  Just (BR_Var _ at bo mvse _) -> do
-                    let this se =
-                          [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
-                            ++ (map (redactAbsStr cwd)
-                                  [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)])
-                    case mvse of
-                      Nothing ->
-                        --- FIXME It might be useful to do `get-value` rather than parse
-                        case M.lookup v0 pm of
-                          Nothing ->
-                            return $ mempty
-                          Just (_ty, se) -> do
-                            mapM_ iputStrLn (this se)
-                            return $ seVars se
-                      Just se ->
-                        return $ seVars se
-              let nvars = S.difference v0vars shown
-              let shown' = S.union shown nvars
-              let new_q = set_to_seq nvars
-              let q'' = q' <> new_q
-              show_vars shown' q''
-      let tse_vars = seVars tse
-      show_vars tse_vars $ set_to_seq $ tse_vars
-      theorem_formalization <- subAllVars bindingsm tk pm tse
-      iputStrLn ""
-      iputStrLn $ "  // Theorem formalization"
-      iputStrLn theorem_formalization
-      iputStrLn ""
+      format_thermodel tk pm tse
 
 smtNewPathConstraint :: SExpr -> App a -> App a
 smtNewPathConstraint se m = do
