@@ -1401,7 +1401,7 @@ are used to represent @reachin{Int}s:
 
 @(mint-define! '("Int") '("Pos") '("Neg"))
 @reach{
-  const Int = { sign: bool, i: UInt };
+  const Int = { sign: Bool, i: UInt };
   const Pos = true;
   const Neg = false;  }
 
