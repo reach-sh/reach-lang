@@ -10,10 +10,6 @@ Verification failed:
   // Violation witness
   const address_Alice = Address!val!0;
   //    ^ from builtin at ./map-dset.rsh:4:30:application
-  const address_Bob = Address!val!0;
-  //    ^ from builtin at ./map-dset.rsh:4:30:application
-  const b/36 = 0;
-  //    ^ from evaluating interact("Bob")."get"() at ./map-dset.rsh:21:51:application
   const a/27 = 1;
   //    ^ from evaluating interact("Alice")."get"() at ./map-dset.rsh:16:51:application
 

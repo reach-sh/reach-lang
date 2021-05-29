@@ -151,7 +151,7 @@ data DLLiteral
 instance Pretty DLLiteral where
   pretty = \case
     DLL_Null -> "null"
-    DLL_Bool b -> if b then "#t" else "#f"
+    DLL_Bool b -> if b then "true" else "false"
     DLL_Int _ i -> viaShow i
     DLL_Bytes bs -> dquotes (viaShow bs)
 

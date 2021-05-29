@@ -13,7 +13,7 @@ Verification failed:
   //    ^ from builtin at ./class_addr.rsh:4:12:application
 
   // Theorem formalization
-  require(selfAddress(""C"", #t, 19) == selfAddress(""C"", #t, 26));
+  require(selfAddress(""C"", true, 19) == selfAddress(""C"", true, 26));
 
   Verifying when NO participants are honest
   Verifying when ONLY "C" is honest

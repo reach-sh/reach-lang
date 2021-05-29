@@ -157,15 +157,13 @@ instance Semigroup a => Semigroup (App a) where
 instance Monoid a => Monoid (App a) where
   mempty = return mempty
 
-type SMTComp = App ()
-
 type BindingEnv = M.Map String BindingInfo
 
 data BindingInfo
   = BR_Var (Maybe DLVar) SrcLoc BindingOrigin (Maybe SExpr) (Maybe DLExpr)
   | BR_MapNew
   | BR_MapFresh
-  | BR_MapUpdate SrcLoc SExpr SMTMapRecordUpdate DLExpr
+  | BR_MapUpdate SrcLoc SExpr DLArg (Maybe DLArg)
 
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
@@ -284,14 +282,14 @@ smtTypeSort t = do
     Just (s, _) -> return s
     Nothing -> impossible $ "smtTypeSort " <> show t
 
-smtTypeInv :: DLType -> SExpr -> SMTComp
+smtTypeInv :: DLType -> SExpr -> App ()
 smtTypeInv t se = do
   tm <- ctxt_typem <$> ask
   case M.lookup t tm of
     Just (_, i) -> smtAssertCtxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
-smtDeclare_v :: String -> DLType -> SMTComp
+smtDeclare_v :: String -> DLType -> App ()
 smtDeclare_v v t = do
   smt <- ctxt_smt <$> ask
   s <- smtTypeSort t
@@ -640,11 +638,8 @@ format_thermodel tk pm tse = do
                 return $ mempty
               Just (BR_MapFresh) -> do
                 return $ mempty
-              Just (BR_MapUpdate _at se (SMR_Update _om _ _) _mde) -> do
-                -- iputStrLn $ "  const " <> v0 <> " = /* map update to " <> (displaySexpAsJs False om) <> " */ " <> (displayDLAsJs v2dv mempty False mde) <> ";"
-                -- mapM_ iputStrLn $ map (redactAbsStr cwd) $
-                --  ["  //    ^ at " ++ show at]
-                return $ seVars se
+              Just (BR_MapUpdate {}) -> do
+                return $ mempty
               Just (BR_Var _ at bo mvse _) -> do
                 let this se =
                       [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
@@ -674,7 +669,8 @@ format_thermodel tk pm tse = do
   iputStrLn theorem_formalization
   iputStrLn ""
 
-display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> SMTComp
+
+display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> App ()
 display_fail tat f tk tse mmsg repeated mrd = do
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
@@ -708,6 +704,7 @@ display_fail tat f tk tse mmsg repeated mrd = do
               Just (RD_Model m) -> do
                 parseModel m
       format_thermodel tk pm tse
+      -- format_thermodel2 tk pm tse
 
 smtNewPathConstraint :: SExpr -> App a -> App a
 smtNewPathConstraint se m = do
@@ -721,14 +718,14 @@ smtAddPathConstraints se =
     [] -> return $ se
     pcs -> return $ smtApply "=>" [(smtAndAll pcs), se]
 
-smtAssertCtxt :: SExpr -> SMTComp
+smtAssertCtxt :: SExpr -> App ()
 smtAssertCtxt se = smtAssert =<< smtAddPathConstraints se
 
 -- Intercept failures to prevent showing "user error",
 -- which is confusing to a Reach developer. The library
 -- `fail`s if there's a problem with the compiler,
 -- not a Reach program.
-smtAssert :: SExpr -> SMTComp
+smtAssert :: SExpr -> App ()
 smtAssert se = do
   smt <- ctxt_smt <$> ask
   liftIO $
@@ -753,7 +750,7 @@ checkUsing = do
           , "  Result: " ++ SMT.showsSExpr res ""
           ]
 
-verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
+verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
   smtAssert $ if isPossible then se else smtNot se
@@ -797,32 +794,29 @@ smtRecordBinding v bi = do
     modifyIORef (ctxt_bindingsr ctxt) $
       M.insert v bi
 
-pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> App ()
 pathAddUnbound_v mdv at_dv v t bo = do
   smtDeclare_v v t
   smtRecordBinding v $ BR_Var mdv at_dv bo Nothing Nothing
 
-pathAddBound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
-pathAddBound_v mdv at_dv v t bo de se = do
-  smtDeclare_v v t
-  --- Note: We don't use smtAssertCtxt because variables are global, so
-  --- this variable isn't affected by the path.
-  smtAssert (smtEq (Atom $ v) se)
-  smtRecordBinding v $ BR_Var mdv at_dv bo (Just se) de
-
-pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
+pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> App ()
 pathAddUnbound _ Nothing _ = mempty
 pathAddUnbound at_dv (Just dv) bo = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
   pathAddUnbound_v (Just dv) at_dv v t bo
 
-pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr -> SMTComp
+pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr -> App ()
 pathAddBound _ Nothing _ _ _ = mempty
 pathAddBound at_dv (Just dv) bo de se = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
-  pathAddBound_v (Just dv) at_dv v t bo de se
+  let mdv = Just dv
+  smtDeclare_v v t
+  --- Note: We don't use smtAssertCtxt because variables are global, so
+  --- this variable isn't affected by the path.
+  smtAssert $ smtEq (Atom v) se
+  smtRecordBinding v $ BR_Var mdv at_dv bo (Just se) de
 
 smtMapVar :: DLMVar -> Int -> String
 smtMapVar (DLMVar mi) ri = "map" <> show mi <> "_" <> show ri
@@ -874,7 +868,7 @@ smtMapMkMaybe at mpv mna = do
         Nothing -> mkna "None" $ DLA_Literal DLL_Null
   smt_la at na
 
-smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe DLArg -> SMTComp
+smtMapUpdate :: SrcLoc -> DLMVar -> DLArg -> Maybe DLArg -> App ()
 smtMapUpdate at mpv fa mna = do
   fa' <- smt_a at fa
   na' <- smtMapMkMaybe at mpv mna
@@ -885,8 +879,7 @@ smtMapUpdate at mpv fa mna = do
   let ma = Atom mv
   let mu = SMR_Update ma fa' na'
   let se = smtApply "store" [ma, fa', na']
-  let mde = DLE_MapSet at mpv fa mna
-  smtMapDeclare mpv mi' $ BR_MapUpdate at se mu mde
+  smtMapDeclare mpv mi' $ BR_MapUpdate at ma fa mna
   smtMapRecordUpdate mpv mu
   let mv' = smtMapVar mpv mi'
   smtAssert $ smtEq (Atom mv') se
@@ -1022,7 +1015,7 @@ smt_la at_de dla = do
       return $ smtApply (s ++ "_" ++ vn) [vv']
     DLLA_Struct kvs -> cons $ map snd kvs
 
-smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
+smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> App ()
 smt_e at_dv mdv de = do
   case de of
     DLE_Arg at da -> bound at =<< smt_a at da
@@ -1121,7 +1114,7 @@ data SwitchMode
   = SM_Local
   | SM_Consensus
 
-smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> SMTComp) -> SMTComp
+smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> App ()) -> App ()
 smtSwitch sm at ov csm iter = do
   let ova = DLA_Var ov
   let ovt = argTypeOf ova
@@ -1163,7 +1156,7 @@ smtSwitch sm at ov csm iter = do
     SM_Local -> smtAssertCtxt (smtOrAll $ map snd casesl)
     SM_Consensus -> mempty
 
-smt_m :: DLStmt -> SMTComp
+smt_m :: DLStmt -> App ()
 smt_m = \case
   DL_Nop _ -> mempty
   DL_Let at lv de -> smt_e at (lv2mdv lv) de
@@ -1197,12 +1190,12 @@ smt_m = \case
   DL_Only {} -> impossible $ "right only before EPP"
   DL_LocalDo _ t -> smt_l t
 
-smt_l :: DLTail -> SMTComp
+smt_l :: DLTail -> App ()
 smt_l = \case
   DT_Return _ -> mempty
   DT_Com m k -> smt_m m <> smt_l k
 
-smt_lm :: SLPart -> DLTail -> SMTComp
+smt_lm :: SLPart -> DLTail -> App ()
 smt_lm who l =
   shouldSimulate who >>= \case
     True -> smt_l l
@@ -1218,7 +1211,7 @@ smt_block (DLBlock at _ l da) = do
   smt_l l
   smt_a at da
 
-smt_invblock :: BlockMode -> DLBlock -> SMTComp
+smt_invblock :: BlockMode -> DLBlock -> App ()
 smt_invblock bm b@(DLBlock at f _ _) = do
   da' <-
     local (\e -> e {ctxt_inv_mode = bm}) $
@@ -1229,7 +1222,7 @@ smt_invblock bm b@(DLBlock at f _ _) = do
     B_Prove inCont -> verify1 at f (TInvariant inCont) da' Nothing
     B_None -> mempty
 
-smt_while_jump :: Bool -> DLAssignment -> SMTComp
+smt_while_jump :: Bool -> DLAssignment -> App ()
 smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
   inv <-
@@ -1253,7 +1246,7 @@ smt_while_jump vars_are_primed asn = do
         return $ add_asn_lets asnm' inv_f
   smt_invblock (B_Prove vars_are_primed) inv'
 
-smt_asn_def :: SrcLoc -> DLAssignment -> SMTComp
+smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
@@ -1280,7 +1273,7 @@ smtCurrentAddress who = do
     Just x -> smtVar x
     Nothing -> impossible "smtCurrentAddress"
 
-smt_n :: LLConsensus -> SMTComp
+smt_n :: LLConsensus -> App ()
 smt_n = \case
   LLC_Com m k -> smt_m m <> smt_n k
   LLC_If at ca t f -> do
@@ -1315,7 +1308,7 @@ smt_n = \case
     maybe mempty smt_eb ma
     smt_n k
 
-smt_s :: LLStep -> SMTComp
+smt_s :: LLStep -> App ()
 smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
