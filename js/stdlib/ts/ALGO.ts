@@ -22,16 +22,20 @@ import {
   IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IAccount, IContract, IRecv, ISimRes, ISimTxn,
   deferContract,
-  debug, assert, envDefault,
-  isBigNumber, bigNumberify, bigNumberToNumber,
+  debug, envDefault,
   argsSlice, argsSplit,
   makeRandom,
-} from './shared';
+  replaceableThunk,
+} from './shared_impl';
+import {
+  isBigNumber,
+  bigNumberify,
+  bigNumberToNumber,
+} from './shared_user';
 import {
   CBR_Address, CBR_Val,
 } from './CBR';
 import waitPort from './waitPort';
-import { replaceableThunk } from './shared_impl';
 import {
   Token,
   PayAmt,
@@ -43,8 +47,8 @@ import {
   typeDefs,
 } from './ALGO_compiled';
 import { process, window } from './shim';
-export const { add, sub, mod, mul, div } = compiledStdlib;
-export * from './shared';
+export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
+export * from './shared_user';
 
 // Type Definitions
 
@@ -117,13 +121,19 @@ type StepArgInfo = {
   size: number,
 };
 
+const reachAlgoBackendVersion = 1;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
+  version: number,
   appApproval0: string,
   appApproval: string,
   appClear: string,
   ctc: string,
   viewSize: number,
   viewKeys: number,
+  mapDataSize: number,
+  mapDataKeys: number,
+  mapRecordSize: number,
+  mapArgSize: number,
   steps: Array<string|null>,
   stepargs: Array<StepArgInfo|null>,
   unsupported: Array<string>,
@@ -468,10 +478,13 @@ const replaceAddr = (label: string, addr: Address, x:string): string =>
 
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
-  const { unsupported } = algob;
+  const { unsupported, version } = algob;
+  if ( version !== reachAlgoBackendVersion ) {
+    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}`);
+  }
   if ( unsupported.length > 0 ) {
     const reasons = unsupported.map(s => ` * ${s}`).join('\n');
-    throw Error(`This Reach application is not supported by Algorand for the following reasons:\n${reasons}`);
+    throw Error(`This Reach application is not supported on Algorand for the following reasons:\n${reasons}`);
   }
 }
 

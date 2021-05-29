@@ -1,5 +1,5 @@
-import {process} from './shim';
-import {envDefault} from './shared';
+import { process } from './shim';
+import { envDefault } from './shared_impl';
 export type Connector = 'ETH' | 'ALGO' | 'CFX';
 
 export type ConnectorMode =

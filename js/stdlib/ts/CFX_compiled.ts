@@ -2,12 +2,13 @@ import { makeEthLikeCompiled } from './ETH_like_compiled';
 import { EthLikeCompiled } from './ETH_like_interfaces';
 import * as cfxCompiledImpl from './CFX_compiled_impl';
 
-export * from './shared';
-
-const ethLikeCompiled: EthLikeCompiled = makeEthLikeCompiled(cfxCompiledImpl);
+const cfxCompiled: EthLikeCompiled = makeEthLikeCompiled(cfxCompiledImpl);
 // The following should be identical to ETH_compiled.ts
 export const {
-  // TODO: revisit which of these should actually be export
+  stdlib,
+  typeDefs,
+} = cfxCompiled;
+export const {
   // start ...arith,
   add,
   sub,
@@ -35,6 +36,4 @@ export const {
   digest,
   addressEq,
   tokenEq,
-  stdlib,
-  typeDefs,
-} = ethLikeCompiled;
+} = stdlib;

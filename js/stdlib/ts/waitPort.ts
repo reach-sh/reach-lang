@@ -1,6 +1,6 @@
 import rawWaitPort from 'wait-port';
 import url from 'url';
-import { debug, WPArgs, } from './shared';
+import { debug, WPArgs, } from './shared_impl';
 
 const protocolPort = {
   'https:': 443,

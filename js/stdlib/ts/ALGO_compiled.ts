@@ -1,9 +1,16 @@
-// ****************************************************************************
-// standard library needed at runtime by compiled Reach programs
-// ****************************************************************************
-
-import * as shared from './shared';
-const { debug } = shared;
+import { Stdlib_Backend_Base } from './interfaces';
+import * as shared_backend from './shared_backend';
+import {
+  debug,
+  labelMaps,
+  makeDigest,
+  mkAddressEq,
+  MkPayAmt,
+  makeArith,
+} from './shared_impl';
+import {
+  bigNumberToNumber
+} from './shared_user';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
 import ethers from 'ethers';
@@ -22,7 +29,6 @@ import {
   CBR_Val,
 } from './CBR';
 import * as CBR from './CBR';
-import { labelMaps } from './shared_impl';
 
 type BigNumber = ethers.BigNumber;
 
@@ -43,7 +49,8 @@ export type ALGO_Ty<BV extends CBR_Val> = {
   fromNet(nv: NV): BV,
 }
 
-export const digest = shared.makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
+export const digest =
+  makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
 
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
@@ -95,7 +102,7 @@ const bytestringyNet = {
 export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   ...CBR.BT_Bytes(len),
   ...stringyNet,
-  netSize: shared.bigNumberToNumber(len),
+  netSize: bigNumberToNumber(len),
 });
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
@@ -269,13 +276,13 @@ export const T_Data = (
   }
 }
 
-export const addressEq = shared.mkAddressEq(T_Address);
+export const addressEq = mkAddressEq(T_Address);
 
 const T_Token = T_UInt;
 export type Token = CBR_UInt;
 export const tokenEq = (x: unknown, y: unknown): boolean =>
   T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
-export type PayAmt = shared.MkPayAmt<Token>;
+export type PayAmt = MkPayAmt<Token>;
 
 export const typeDefs = {
   T_Null,
@@ -292,10 +299,10 @@ export const typeDefs = {
   T_Struct
 };
 
-const arith = shared.makeArith(UInt_max);
+const arith = makeArith(UInt_max);
 
-export const stdlib = {
-  ...shared,
+export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
+  ...shared_backend,
   ...arith,
   ...typeDefs,
   addressEq,

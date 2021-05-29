@@ -1,10 +1,20 @@
 import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
 import * as stdlib_CFX from './CFX';
-import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
-import {process, window} from './shim';
+import {
+  getConnectorMode,
+  canonicalizeConnectorMode,
+  getConnector
+} from './ConnectorMode';
+import {
+  process,
+  window
+} from './shim';
+import {
+  setDEBUG,
+} from './shared_impl';
 
-export {getConnectorMode, getConnector};
+export { getConnectorMode, getConnector };
 
 // XXX make an interface for Stdlib, return Promise<Stdlib>
 // The connectorMode arg is optional;
@@ -36,7 +46,7 @@ export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: s
   }
   if (connectorModeOrEnv && typeof connectorModeOrEnv !== 'string') {
     let debug: boolean = (connectorModeOrEnv['REACH_DEBUG'] || connectorModeOrEnv['REACT_APP_REACH_DEBUG']) ? true : false;
-    stdlib.setDEBUG(debug);
+    setDEBUG(debug);
   }
   // also just inject ourselves into the window for ease of use
   window.reach = stdlib;

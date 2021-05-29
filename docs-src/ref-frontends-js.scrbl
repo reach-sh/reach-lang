@@ -492,7 +492,7 @@ These are additional conversion and comparison utilities.
 @(hrule)
 @(mint-define! '("digest"))
 @js{
- digest(x) => Digest}
+ digest(ty:Type, x:ty) => Digest}
 
 Hashes the value.
 

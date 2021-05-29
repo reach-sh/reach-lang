@@ -3,11 +3,13 @@
 // ****************************************************************************
 
 import ethers from 'ethers';
-import * as shared from './shared';
+import * as shared_backend from './shared_backend';
 import * as CBR from './CBR';
 
-import type { BigNumber } from 'ethers';
-import type {
+import type { // =>
+  BigNumber
+} from 'ethers';
+import type { // =>
   CBR_Address,
   CBR_Array,
   CBR_Bool,
@@ -21,24 +23,33 @@ import type {
   CBR_UInt,
   CBR_Val,
 } from './CBR';
-import type {
+import type { // =>
   ETH_Ty,
   AnyETH_Ty,
   // EthLikeCompiled, // TODO: use once types are in place
-  TypeDefs,
-  Arith,
-  BackendStdlib,
   EthLikeCompiledArgs,
 } from './ETH_like_interfaces'
-import { labelMaps } from './shared_impl';
-export type {
+import {
+  Arith,
+  TypeDefs,
+  Stdlib_Backend_Base
+} from './interfaces';
+import {
+  labelMaps,
+  MkPayAmt,
+  makeDigest,
+  hexToString,
+  mkAddressEq,
+  makeArith,
+} from './shared_impl';
+export type { // =>
   ETH_Ty,
   AnyETH_Ty,
 }
 
 // Types
 export type Token = CBR_Address;
-export type PayAmt = shared.MkPayAmt<Token>;
+export type PayAmt = MkPayAmt<Token>;
 
 // TODO: restore return type annotation once types are in place
 export function makeEthLikeCompiled(ethLikeCompiledArgs: EthLikeCompiledArgs) {
@@ -50,7 +61,7 @@ const {
 const UInt_max: BigNumber =
   ethers.BigNumber.from(2).pow(256).sub(1);
 
-const digest = shared.makeDigest((t:AnyETH_Ty, v:any) => {
+const digest = makeDigest((t:AnyETH_Ty, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
   if (t.paramType === 'tuple()') {
     if (Array.isArray(v) && v.length === 0) {
@@ -102,7 +113,7 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
     ...CBR.BT_Bytes(len),
     defaultValue: ''.padEnd(len, '\0'),
     munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
-    unmunge: (nv: Array<number>) => me.canonicalize(shared.hexToString(ethers.utils.hexlify(nv))),
+    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(nv))),
     paramType: `uint8[${len}]`,
   };
   return me;
@@ -314,7 +325,7 @@ const V_Data = <T>(
   return T_Data(co).canonicalize(val);
 };
 
-const addressEq = shared.mkAddressEq(T_Address);
+const addressEq = mkAddressEq(T_Address);
 
 const T_Token = T_Address;
 const tokenEq = addressEq;
@@ -334,10 +345,10 @@ const typeDefs: TypeDefs = {
   T_Struct,
 };
 
-const arith: Arith = shared.makeArith(UInt_max);
+const arith: Arith = makeArith(UInt_max);
 
-const stdlib: BackendStdlib = {
-  ...shared,
+const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
+  ...shared_backend,
   ...arith,
   ...typeDefs,
   addressEq,

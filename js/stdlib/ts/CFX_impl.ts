@@ -1,10 +1,13 @@
 import * as cfxers from './cfxers';
 import * as ethLikeCompiled from './CFX_compiled';
-import { memoizeThunk, replaceableThunk } from './shared_impl';
-import { debug, envDefault } from './shared';
+import {
+  debug,
+  envDefault,
+  memoizeThunk,
+  replaceableThunk,
+} from './shared_impl';
 import { process } from './shim';
 import waitPort from './waitPort';
-
 import cfxsdk from 'js-conflux-sdk';
 import Timeout from 'await-timeout';
 const { Conflux } = cfxsdk;

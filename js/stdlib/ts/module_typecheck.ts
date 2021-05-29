@@ -10,13 +10,25 @@ import * as ETH_compiled from './ETH_compiled';
 import * as ETH_compiled_impl from './ETH_compiled_impl';
 import * as ETH_impl from './ETH_impl';
 import * as cfxers from './cfxers';
-import * as shared from './shared';
+import * as shared_backend from './shared_backend';
+import * as shared_user from './shared_user';
 import ethers from 'ethers';
 
-import { EthersLike, ReachStdlib, EthLikeArgs, EthLikeCompiled, SharedStdlib, EthLikeCompiledArgs } from './ETH_like_interfaces';
+import {
+  Stdlib_User,
+  Stdlib_User_Shared,
+  Stdlib_Backend_Shared,
+} from './interfaces';
+import {
+  EthersLike, EthLikeArgs,
+  EthLikeCompiled, EthLikeCompiledArgs
+} from './ETH_like_interfaces';
 
-const _shared: SharedStdlib = shared;
-void(_shared);
+const _shared_backend: Stdlib_Backend_Shared = shared_backend;
+void(_shared_backend);
+
+const _shared_user: Stdlib_User_Shared = shared_user;
+void(_shared_user);
 
 const _ETH_compiled: EthLikeCompiled = ETH_compiled;
 void(_ETH_compiled);
@@ -24,13 +36,13 @@ void(_ETH_compiled);
 const _CFX_compiled: EthLikeCompiled = CFX_compiled;
 void(_CFX_compiled);
 
-const _ETH: ReachStdlib = ETH;
+const _ETH: Stdlib_User<any> = ETH;
 void(_ETH);
 
-const _CFX: ReachStdlib = CFX;
+const _CFX: Stdlib_User<any> = CFX;
 void(_CFX);
 
-const _ALGO: ReachStdlib = ALGO;
+const _ALGO: Stdlib_User<any> = ALGO;
 void(_ALGO)
 
 const _ethers: EthersLike = ethers;

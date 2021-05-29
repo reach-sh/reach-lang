@@ -1,5 +1,5 @@
 import { loadStdlib } from './loader';
-import {envDefault} from './shared';
+import { envDefault } from './shared_impl';
 
 const mountDir = envDefault(process.env.REACH_RUNNER_MOUNT_DIR, '.');
 

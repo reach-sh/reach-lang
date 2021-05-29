@@ -3,8 +3,13 @@ import url from 'url';
 import http from 'http';
 import { canonicalizeConnectorMode } from './ConnectorMode';
 import * as ethLikeCompiled from './ETH_compiled';
-import { debug, envDefault, getDEBUG, truthyEnv } from './shared';
-import { replaceableThunk } from './shared_impl';
+import {
+  debug,
+  envDefault,
+  getDEBUG,
+  truthyEnv,
+  replaceableThunk
+} from './shared_impl';
 import { process, window } from './shim';
 import waitPort from './waitPort';
 

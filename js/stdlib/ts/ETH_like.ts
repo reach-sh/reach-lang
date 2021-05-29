@@ -1,17 +1,28 @@
-// ****************************************************************************
-// standard library for Javascript users
-// ****************************************************************************
-
 import Timeout from 'await-timeout';
 import real_ethers from 'ethers';
 import {
-  memoizeThunk, replaceableThunk
+  assert,
+  eq,
+  ge,
+  lt,
+} from './shared_backend';
+import {
+  memoizeThunk,
+  replaceableThunk,
+  debug,
+  getViewsHelper,
+  deferContract,
+  makeRandom,
+  argsSplit,
 } from './shared_impl';
-import * as shared from './shared';
+import {
+  bigNumberify,
+} from './shared_user';
 
 // Types-only imports
-import type { BigNumber } from 'ethers';
-import type {
+import type { // =>
+  BigNumber } from 'ethers';
+import type { // =>
   CurrencyAmount,
   IAccount,
   IBackend,
@@ -20,33 +31,22 @@ import type {
   IContract,
   IRecv,
   OnProgress,
-} from './shared';
-import type {
+} from './shared_impl';
+import type { // =>
   AnyETH_Ty,
   Token,
   PayAmt,
 } from './ETH_like_compiled';
-import type {
+import type { // =>
   EthersLikeContract,
   EthersLikeSigner,
   EthersLikeWallet,
   EthLikeArgs,
   // EthLike, // TODO: use this once types are in place
-  BackendStdlib,
 } from './ETH_like_interfaces';
-
-const {
-  assert,
-  bigNumberify,
-  debug,
-  eq,
-  ge,
-  lt,
-  getViewsHelper,
-  deferContract,
-  makeRandom,
-  argsSplit,
-} = shared;
+import type { // =>
+  Stdlib_Backend
+} from './interfaces';
 
 // ****************************************************************************
 // Type Definitions
@@ -157,14 +157,14 @@ const {
 const {
   getProvider
 } = providerLib;
-
 const {
-  T_Address, T_Tuple,
-  add,
-  addressEq,
   stdlib,
 } = ethLikeCompiled;
-const reachStdlib: BackendStdlib = stdlib;
+const {
+  T_Address, T_Tuple,
+  add, addressEq,
+} = stdlib;
+const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
