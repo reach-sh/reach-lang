@@ -35,6 +35,9 @@ export interface Stdlib_Backend_Shared extends Stdlib_Backend_Shared_User {
   protect: any,
   Array_zip: any,
   mapRef: any,
+  simMapRef: any,
+  simMapSet: any,
+  simMapDupe: any,
 };
 
 export interface Arith {

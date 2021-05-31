@@ -1543,9 +1543,9 @@ _verify_smt mc ctxt_vst smt lp = do
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
   let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) dex _dvs s = lp
-  let initMapInfo (DLMapInfo {..}) = do
+  let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0
-        let sm_t = maybeT dlmi_ty
+        let sm_t = dlmi_tym mi
         sm_rs <- liftIO $ newIORef mempty
         sm_us <- liftIO $ newIORef mempty
         return $ SMTMapInfo {..}

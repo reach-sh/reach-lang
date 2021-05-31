@@ -61,8 +61,13 @@ export type IBackendViews<ConnectorTy extends AnyBackendTy> = {
     {[keyn: string]: IBackendViewInfo<ConnectorTy>}},
 };
 
+export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
+  mapDataTy: ConnectorTy,
+};
+
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getViews: (stdlib:Object) => IBackendViews<ConnectorTy>,
+  _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
 };
 
 export const getViewsHelper =
@@ -200,6 +205,9 @@ export type ISimRes<Digest, RawAddress, Token, ConnectorTy> = {
   prevSt: Digest,
   prevSt_noPrevTime: Digest,
   txns: Array<ISimTxn<RawAddress, Token>>,
+  mapRefs: Array<RawAddress>,
+  mapsPrev: any,
+  mapsNext: any,
   nextSt: Digest,
   nextSt_noTime: Digest,
   view: [ ConnectorTy, any ],

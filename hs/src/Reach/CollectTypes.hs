@@ -102,7 +102,7 @@ instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
 
 instance CollectsTypes DLMapInfo where
-  cts (DLMapInfo {..}) = cts $ maybeT dlmi_ty
+  cts = cts . dlmi_tym
 
 instance CollectsTypes DLInit where
   cts (DLInit {..}) = cts dli_ctimem <> cts dli_maps

@@ -2451,9 +2451,8 @@ evalPrim p sargs =
         case m of
           SLV_Map mv -> return $ mv
           _ -> expect_t m $ Err_Expected_Map
-      DLMapInfo {..} <- mapLookup mv
-      let x_ty = dlmi_ty
-      let x_tym = maybeT x_ty
+      mi <- mapLookup mv
+      let x_tym = dlmi_tym mi
       let f = jsClo at "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
       ensure_while_invariant "Map.reduce"
       (z_ty, z_da) <- compileTypeOf z
@@ -4740,8 +4739,8 @@ mapSet mv mc nv = do
 mapRef :: DLMVar -> SLVal -> App DLVar
 mapRef mv mcv = do
   at <- withAt id
-  DLMapInfo {..} <- mapLookup mv
+  mi <- mapLookup mv
   mc <- compileCheckType T_Address mcv
-  let mt = T_Data $ M.fromList $ [("Some", dlmi_ty), ("None", T_Null)]
+  let mt = dlmi_tym mi
   let mkvar = DLVar at Nothing mt
   ctxt_lift_expr mkvar $ DLE_MapRef at mv mc

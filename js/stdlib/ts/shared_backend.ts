@@ -80,3 +80,21 @@ export const mapRef = (m: any, f: any): any => {
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 
+export const simMapDupe = (sim_r:any, mapi:number, mapo:any): void => {
+  sim_r.mapsPrev[mapi] = { ...mapo };
+  sim_r.mapsNext[mapi] = { ...mapo };
+};
+
+const simMapLog = (sim_r:any, f: any): void => {
+  sim_r.mapRefs.push(f);
+};
+
+export const simMapRef = (sim_r:any, mapi:number, f: any): any => {
+  simMapLog(sim_r, f);
+  return mapRef(sim_r.mapsNext[mapi], f);
+};
+
+export const simMapSet = (sim_r:any, mapi:number, f: any, nv: any): void => {
+  simMapLog(sim_r, f);
+  sim_r.mapsNext[mapi][f] = nv;
+};

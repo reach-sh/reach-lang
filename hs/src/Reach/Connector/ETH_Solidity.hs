@@ -554,7 +554,7 @@ solExpr sp = \case
     fa' <- solArg fa
     solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
     where
-      nla = DLLA_Data (dataTypeMap $ maybeT na_t) "Some" na
+      nla = mdaToMaybeLA na_t (Just na)
       na_t = argTypeOf na
   DLE_MapSet _ mpv fa Nothing -> do
     fa' <- solArg fa
@@ -1178,9 +1178,9 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
           return $ vsep [evtDefn, cfDefn, cDefn]
         DM_firstMsg ->
           return $ emptyDoc
-    let map_defn (mpv, DLMapInfo {..}) = do
+    let map_defn (mpv, mi) = do
           keyTy <- solType_ T_Address
-          let mt = maybeT dlmi_ty
+          let mt = dlmi_tym mi
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]
           let ret = "internal view returns (" <> valTy <> " memory res)"

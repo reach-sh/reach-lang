@@ -35,6 +35,9 @@ vsep_with_blank l = vsep $ punctuate emptyDoc l
 
 --- JS Helpers
 
+jsMapIdx :: DLMVar -> Doc
+jsMapIdx (DLMVar i) = pretty i
+
 jsMapVar :: DLMVar -> Doc
 jsMapVar mpv = pretty mpv
 
@@ -103,6 +106,7 @@ data JSCtxt = JSCtxt
   , ctxt_while :: JSCtxtWhile
   , ctxt_timev :: Maybe DLVar
   , ctxt_ctcs :: Maybe JSContracts
+  , ctxt_maps :: M.Map DLMVar DLMapInfo
   }
 
 type App = ReaderT JSCtxt IO
@@ -379,15 +383,21 @@ jsExpr = \case
   DLE_MapRef _ mpv fa -> do
     let ctc = jsMapVarCtc mpv
     fa' <- jsArg fa
-    return $ jsProtect_ "null" ctc $ jsApply "stdlib.mapRef" [jsMapVar mpv, fa']
+    (f, args) <-
+      (ctxt_simulate <$> ask) >>= \case
+        True -> return $ ( "stdlib.simMapRef", [ "sim_r", jsMapIdx mpv ] )
+        False -> return $ ( "stdlib.mapRef", [ jsMapVar mpv ] )
+    return $ jsProtect_ "null" ctc $ jsApply f $ args <> [ fa' ]
   DLE_MapSet _ mpv fa mna -> do
-    -- XXX something really bad is going to happen during the simulation of
-    -- this
     fa' <- jsArg fa
     na' <- case mna of
              Just na -> jsArg na
              Nothing -> return "undefined"
-    return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
+    (ctxt_simulate <$> ask) >>= \case
+      True ->
+        return $ jsApply "stdlib.simMapSet" [ "sim_r", jsMapIdx mpv, fa', na' ]
+      False ->
+        return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
   DLE_Remote {} -> impossible "remote"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
@@ -625,9 +635,14 @@ jsETail = \case
             sim_body_core <- withSim $ jsETail k_ok
             svs_d <- mkStDigest svs
             svs_nptd <- mkStDigest svs_noPrevTime
+            let dupeMap (mpv, _) = do
+                  return $ (jsApply "stdlib.simMapDupe" $
+                    [ "sim_r", jsMapIdx mpv, jsMapVar mpv ]) <> semi
+            dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
             let sim_body =
                   vsep
-                    [ "const sim_r = { txns: [] };"
+                    [ "const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };"
+                    , vsep dupeMaps
                     , "sim_r.prevSt =" <+> svs_d <> semi
                     , "sim_r.prevSt_noPrevTime =" <+> svs_nptd <> semi
                     , k_defp
@@ -725,6 +740,7 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_while = JSCtxtWhile Nothing
   let ctxt_simulate = False
   let ctxt_timev = Nothing
+  let ctxt_maps = dli_maps dli
   local (const JSCtxt {..}) $ do
     let DLInit {..} = dli
     ctimem' <-
@@ -733,8 +749,8 @@ jsPart dli p (EPProg _ _ et) = do
         Just v -> do
           v' <- jsVar v
           return $ "const" <+> v' <+> "=" <+> "await ctc.creationTime();"
-    let map_defn (mpv, DLMapInfo {..}) = do
-          ctc <- jsContract (maybeT dlmi_ty)
+    let map_defn (mpv, mi) = do
+          ctc <- jsContract $ dlmi_tym mi
           return $
             vsep
               [ "const" <+> jsMapVar mpv <+> "=" <+> "{};"
@@ -854,8 +870,20 @@ jsViews mcv = do
       [ ("views"::String, views)
       , ("infos", infos) ]
 
+-- XXX copied from ALGO.hs
+mapDataTy :: DLMapInfos -> DLType
+mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
+
+jsMaps :: DLMapInfos -> App Doc
+jsMaps ms = do
+  jsFunctionWStdlib "_getMaps" $ do
+    mapDataTy' <- jsContract $ mapDataTy ms
+    return $ jsReturn $ jsObject $ M.fromList $
+      [ ("mapDataTy"::String, mapDataTy') ]
+
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
+  let DLInit {..} = dli
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
@@ -866,8 +894,10 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
   exportsp <- jsExports dexports
-  viewsp <- jsViews vi
-  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : viewsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
+  viewsp <- local (\e -> e { ctxt_maps = dli_maps }) $
+    jsViews vi
+  mapsp <- jsMaps dli_maps
+  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : viewsp : emptyDoc : mapsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 
 backend_js :: Backend
 backend_js outn crs pl = do
@@ -878,6 +908,7 @@ backend_js outn crs pl = do
   let ctxt_while = JSCtxtWhile Nothing
   let ctxt_timev = Nothing
   let ctxt_ctcs = Nothing
+  let ctxt_maps = mempty
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsPIProg crs pl

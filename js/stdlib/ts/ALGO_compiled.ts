@@ -134,7 +134,9 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
   netSize: 32,
   canonicalize: (uv: unknown): CBR_Address => {
     const val = addressUnwrapper(uv);
-    return CBR.BT_Address.canonicalize(val || uv)
+    const hs = CBR.BT_Address.canonicalize(val || uv);
+    // We are filling up with zeros if the address is less than 32 bytes
+    return hs.padEnd(32*2+2, '0');
   }
 };
 

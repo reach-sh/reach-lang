@@ -28,6 +28,9 @@ import {
   replaceableThunk,
 } from './shared_impl';
 import {
+  mapRef,
+} from './shared_backend';
+import {
   isBigNumber,
   bigNumberify,
   bigNumberToNumber,
@@ -480,7 +483,7 @@ function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported, version } = algob;
   if ( version !== reachAlgoBackendVersion ) {
-    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}`);
+    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}; update your compiler and recompile!`);
   }
   if ( unsupported.length > 0 ) {
     const reasons = unsupported.map(s => ` * ${s}`).join('\n');
@@ -494,6 +497,8 @@ const LogicSigMaxSize = 1000;
 const MaxAppArgs = 16;
 const MaxAppTotalArgLen = 2048;
 const MaxAppProgramLen = 1024;
+const MaxAppTxnAccounts = 4;
+const HowManyAccounts = MaxAppTxnAccounts + 1;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   const { ApplicationID, Deployer } = info;
@@ -947,7 +952,46 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
-    const { viewKeys, viewSize } = bin._Connectors.ALGO;
+    const { viewSize, viewKeys } = bin._Connectors.ALGO;
+    const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
+    const mapRecordTy =
+      T_Tuple([ T_Bool, mapDataTy, mapDataTy, T_Address ]);
+    const mapArgTy =
+      T_Array(mapRecordTy, HowManyAccounts);
+    const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
+    const emptyMapData =
+      // This is a bunch of Nones
+      mapDataTy.fromNet(
+        emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
+    debug({ emptyMapData });
+
+    // Application Local State Opt-in
+    const didOptIn = async (): Promise<boolean> => {
+      const client = await getAlgodClient();
+      const ai = await client.accountInformation(thisAcc.addr).do();
+      debug(`didOptIn`, ai);
+      return false;
+    };
+    const doOptIn = async (): Promise<void> => {
+      await sign_and_send_sync(
+        'ApplicationOptIn',
+        thisAcc,
+        algosdk.makeApplicationOptInTxn(
+          thisAcc.addr, await getTxnParams(),
+          ApplicationID,
+          undefined, undefined, undefined, undefined,
+          NOTE_Reach));
+      await didOptIn();
+    };
+    let ensuredOptIn: boolean = false;
+    const ensureOptIn = async (): Promise<void> => {
+      if ( ! ensuredOptIn ) {
+        if ( ! await didOptIn() ) {
+          await doOptIn();
+        }
+        ensuredOptIn = true;
+      }
+    };
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       return await waitUntilTime(bigNumberify(lastRound).add(delta));
@@ -1004,8 +1048,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       const sim_r = await sim_p( fake_res );
       debug(dhead , '--- SIMULATE', sim_r);
-      const isHalt = sim_r.isHalt;
+      const { isHalt } = sim_r;
       const sim_txns = sim_r.txns;
+
+      // Views
       const [ view_ty, view_v ] = sim_r.view;
       debug(dhead, 'VIEW', { view_ty, view_v });
       const view_tysz = view_ty.netSize;
@@ -1017,6 +1063,47 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         [ T_Tuple([view_ty, padding_ty]), [ view_v,  padding_v] ]:
         [ padding_ty, padding_v ];
       debug(dhead, 'VIEWP', { view_typ, view_vp });
+
+      // Maps
+      const { mapRefs, mapsPrev, mapsNext } = sim_r;
+      type MapRecord = [ boolean, any, any, any ];
+      const mapAccts: Array<Address> = [ ];
+      const mapArg: Array<MapRecord> = [ ];
+      const emptyRec = (caddr:any): MapRecord =>
+        [ false, emptyMapData, emptyMapData, caddr ];
+      const getMapData = (maps:any, addr:any) =>
+        maps.map((m: any) => mapRef(m, addr));
+      const mkMapRecord = (isSender:boolean) => (addr:Address) => {
+        const caddr = T_Address.canonicalize(addr);
+        const addrIdx =
+          mapArg.findIndex((mr:MapRecord) => addressEq(mr[3], caddr));
+        const present = addrIdx !== -1;
+        if (present) { return; }
+        const refIdx =
+          mapRefs.findIndex((other:Address) => addressEq(other, caddr));
+        const used = refIdx !== -1;
+        const record = (rec:MapRecord) => {
+          mapArg.push(rec);
+          mapAccts.push(addr);
+        };
+        if ( used ) {
+          record([ true, getMapData(mapsPrev, caddr), getMapData(mapsNext, caddr), caddr ]);
+        } else if ( isSender ) {
+          record(emptyRec(caddr));
+        }
+      };
+      mkMapRecord(true)(thisAcc.addr);
+      mapRefs.forEach(mkMapRecord(false));
+      const missingAccts = (HowManyAccounts - mapArg.length);
+      const zero_caddr = T_Address.canonicalize('0x00');
+      for ( let i = 0; i < missingAccts; i++ ) {
+        mapArg.push(emptyRec(zero_caddr));
+      }
+      debug(dhead, 'MAP', { mapArg, mapArgTy, mapAccts });
+      debug(dhead, 'MAPARG', mapArg );
+      if ( mapArg[0][1] ) {
+        await ensureOptIn();
+      }
 
       while ( true ) {
         const params = await getTxnParams();
@@ -1082,9 +1169,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                           undefined, params);
 
       const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, svs, msg ];
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, svs, msg, mapArg ];
       const actual_tys =
-        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(svs_tys), T_Tuple(msg_tys) ];
+        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(svs_tys), T_Tuple(msg_tys), mapArgTy ];
       debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map(
@@ -1111,7 +1198,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txnAppl =
           whichAppl(
             thisAcc.addr, params, ApplicationID, safe_args,
-            undefined, undefined, undefined, NOTE_Reach);
+            mapAccts, undefined, undefined, NOTE_Reach);
         const txnFromHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,
@@ -1378,7 +1465,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
 
-    const { appApproval0, appClear, viewKeys } = algob;
+    const { appApproval0, appClear, viewKeys, mapDataKeys } = algob;
     const Deployer = thisAcc.addr;
 
     const appApproval0_subst =
@@ -1397,7 +1484,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          0, 0, 2, 1 + viewKeys,
+          0, mapDataKeys, 2, 1 + viewKeys,
           undefined, undefined, undefined, undefined,
           NOTE_Reach));
 

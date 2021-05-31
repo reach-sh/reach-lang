@@ -113,6 +113,18 @@ declare module 'algosdk' {
     lease?: ARG_lease,
     rekeyTo?: ARG_reKeyTo
   ): Txn;
+  declare function makeApplicationOptInTxn(
+    from: Address,
+    suggestedParams: TxnParams,
+    appIndex: number,
+    appArgs?: ARG_appArgs,
+    accounts?: ARG_appAccounts,
+    foreignApps?: ARG_appForeignApps,
+    foreignAssets?: ARG_appForeignAssets,
+    note?: ARG_note,
+    lease?: ARG_lease,
+    rekeyTo?: ARG_reKeyTo
+  ): Txn;
   declare function makeApplicationUpdateTxn(
     from: Address,
     suggestedParams: TxnParams,

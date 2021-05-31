@@ -43,10 +43,13 @@ dataTypeMap = \case
   T_Data m -> m
   _ -> impossible "no data"
 
-arrType :: DLType -> DLType
-arrType = \case
-  T_Array d _ -> d
+arrTypeLen :: DLType -> (DLType, Integer)
+arrTypeLen = \case
+  T_Array d l -> (d, l)
   _ -> impossible "no array"
+
+arrType :: DLType -> DLType
+arrType = fst . arrTypeLen
 
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
@@ -110,9 +113,11 @@ newtype SLParts
 instance Pretty SLParts where
   pretty (SLParts m) = "parts" <+> render_obj m <> semi
 
+type DLMapInfos = M.Map DLMVar DLMapInfo
+
 data DLInit = DLInit
   { dli_ctimem :: Maybe DLVar
-  , dli_maps :: M.Map DLMVar DLMapInfo
+  , dli_maps :: DLMapInfos
   }
   deriving (Eq, Generic)
 
@@ -212,6 +217,9 @@ data DLMapInfo = DLMapInfo
 instance Pretty DLMapInfo where
   pretty (DLMapInfo {..}) = pretty dlmi_ty
 
+dlmi_tym :: DLMapInfo -> DLType
+dlmi_tym = maybeT . dlmi_ty
+
 data DLArg
   = DLA_Var DLVar
   | DLA_Constant DLConstant
@@ -259,6 +267,13 @@ instance Pretty DLLargeArg where
     DLLA_Obj env -> render_obj env
     DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     DLLA_Struct kvs -> "struct" <> brackets (render_das kvs)
+
+mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
+mdaToMaybeLA t = \case
+  Nothing -> f "None" $ DLA_Literal $ DLL_Null
+  Just a -> f "Some" a
+  where
+    f = DLLA_Data (dataTypeMap $ maybeT t)
 
 data DLArgExpr
   = DLAE_Arg DLArg

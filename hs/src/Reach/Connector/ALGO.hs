@@ -5,6 +5,7 @@ import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
+import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
@@ -50,11 +51,10 @@ typeArray a =
     T_Array t sz -> (t, sz)
     _ -> impossible $ "should be array"
 
-typeTupleTypes :: HasCallStack => DLArg -> [DLType]
-typeTupleTypes a =
-  case argTypeOf a of
-    T_Tuple ts -> ts
-    _ -> impossible $ "should be tuple"
+typeTupleTypes :: HasCallStack => DLType -> [DLType]
+typeTupleTypes = \case
+  T_Tuple ts -> ts
+  _ -> impossible $ "should be tuple"
 
 typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, DLType)]
 typeObjectTypes a =
@@ -69,8 +69,15 @@ algoMaxTxGroupSize :: TxnIdx
 algoMaxTxGroupSize = 16
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
-algoMaxAppTxnAccounts :: Integer
+algoMaxAppTxnAccounts :: Word8
 algoMaxAppTxnAccounts = 4 -- plus sender
+algoMinimumBalance :: Integer
+algoMinimumBalance = 100000
+
+accountsL :: [Word8]
+accountsL = take (fromIntegral $ algoMaxAppTxnAccounts + 1) [0..]
+minimumBalance_l :: DLLiteral
+minimumBalance_l = DLL_Int sb algoMinimumBalance
 
 -- Algo specific stuff
 
@@ -165,7 +172,7 @@ peep_optimize = \case
         s1n <- parse s1
         e1n <- parse e1
         let s2n = s0n + s1n
-        let e2n = s2n + e1n
+        let e2n = s0n + e1n
         case s2n < 256 && e2n < 256 of
           True -> return $ (texty s2n, texty e2n)
           False -> mempty
@@ -194,8 +201,15 @@ render ts = tt
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
-  , sViewSize :: Integer
   , sCounter :: Counter
+  , sViewSize :: Integer
+  , sMaps :: DLMapInfos
+  , sMapDataTy :: DLType
+  , sMapDataSize :: Integer
+  , sMapRecordTy :: DLType
+  , sMapRecordSize :: Integer
+  , sMapArgTy :: DLType
+  , sMapArgSize :: Integer
   }
 
 type Lets = M.Map DLVar (App ())
@@ -283,6 +297,19 @@ app_global_put k mkv = do
   mkv
   op "app_global_put"
 
+app_local_get :: Word8 -> B.ByteString -> App ()
+app_local_get ai k = do
+  cl $ DLL_Int sb $ fromIntegral ai
+  cl $ DLL_Bytes $ k
+  op "app_local_get"
+
+app_local_put :: Word8 -> B.ByteString -> App () -> App ()
+app_local_put ai k mkv = do
+  cl $ DLL_Int sb $ fromIntegral ai
+  cl $ DLL_Bytes $ k
+  mkv
+  op "app_local_put"
+
 check_rekeyto :: App ()
 check_rekeyto = do
   code "txn" ["RekeyTo"]
@@ -360,13 +387,18 @@ salloc fm = do
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
-sallocLet :: DLVar -> App () -> App a -> App a
-sallocLet dv cgen km = do
+salloc_ :: (App () -> App () -> App a) -> App a
+salloc_ fm =
   salloc $ \loc -> do
     let loct = texty loc
+    fm (code "store" [loct]) (code "load" [loct])
+
+sallocLet :: DLVar -> App () -> App a -> App a
+sallocLet dv cgen km = do
+  salloc_ $ \cstore cload -> do
     cgen
-    code "store" [loct]
-    store_let dv True (code "load" [loct]) km
+    cstore
+    store_let dv True cload km
 
 talloc :: TxnKind -> App TxnIdx
 talloc tk = do
@@ -570,6 +602,88 @@ csubstring at b c =
       cl $ DLL_Int sb c
       op "substring3"
 
+computeSplice :: SrcLoc -> Integer -> Integer -> Integer -> (App (), App ())
+computeSplice at b c e = (before, after)
+  where
+    before = csubstring at 0 b
+    after = csubstring at c e
+
+csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
+csplice at b c e = do
+  -- [ Bytes  = X b Y c Z e , NewBytes = Y' ]
+  let len = c - b
+  case len == 1 of
+    True -> do
+      -- [ Bytes, NewByte ]
+      cl $ DLL_Int at b
+      -- [ Bytes, NewByte, Offset ]
+      op "swap"
+      -- [ Bytes, Offset, NewByte ]
+      op "setbyte"
+    False -> salloc_ $ \store_new load_new -> do
+      let (cbefore, cafter) = computeSplice at b c e
+      -- [ Big, New ]
+      store_new
+      -- [ Big ]
+      csplice3 Nothing cbefore cafter load_new
+      -- [ Big' ]
+  -- [ Bytes' = X b Y'c Z e]
+
+csplice3 :: Maybe (App ()) -> App () -> App () -> App () -> App ()
+csplice3 Nothing cbefore cafter cnew = do
+  -- [ Big ]
+  op "dup"
+  -- [ Big, Big ]
+  cbefore
+  -- [ Big, Before ]
+  cnew
+  -- [ Big, Before, New ]
+  op "concat"
+  -- [ Big, Mid' ]
+  op "swap"
+  -- [ Mid', Big ]
+  cafter
+  -- [ Mid', After ]
+  op "concat"
+  -- [ Big' ]
+csplice3 (Just cbig) cbefore cafter cnew = do
+  cbig
+  cbefore
+  cnew
+  op "concat"
+  cbig
+  cafter
+  op "concat"
+
+cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
+cArraySet at (t, alen) mcbig eidx cnew = do
+  let tsz = typeSizeOf t
+  let (cbefore, cafter) =
+        case eidx of
+          Left ii ->
+            computeSplice at start end tot
+            where
+              start = ii * tsz
+              end = start + tsz
+              tot = alen * tsz
+          Right cidx -> (b, a)
+            where
+              b = do
+                cl $ DLL_Int sb 0
+                cl $ DLL_Int sb tsz
+                cidx
+                op "*"
+                op "substring3"
+              a = do
+                cl $ DLL_Int sb tsz
+                op "dup"
+                cidx
+                op "*"
+                op "+"
+                cl $ DLL_Int sb (alen * tsz)
+                op "substring3"
+  csplice3 mcbig cbefore cafter cnew
+
 computeSubstring :: [DLType] -> Integer -> (DLType, Integer, Integer)
 computeSubstring ts idx = (t, start, end)
   where
@@ -587,10 +701,9 @@ cfor :: Integer -> (App () -> App ()) -> App ()
 cfor maxi body = do
   top_lab <- freshLabel
   end_lab <- freshLabel
-  salloc $ \idxl -> do
-    let load_idx = code "load" [texty idxl]
+  salloc_ $ \store_idx load_idx -> do
     cl $ DLL_Int sb 0
-    code "store" [texty idxl]
+    store_idx
     label top_lab
     load_idx
     cl $ DLL_Int sb maxi
@@ -600,7 +713,7 @@ cfor maxi body = do
     load_idx
     cl $ DLL_Int sb 1
     op "+"
-    code "store" [texty idxl]
+    store_idx
     bad "`b` can only branch forwards, not backwards"
     code "b" [top_lab]
   label end_lab
@@ -608,8 +721,12 @@ cfor maxi body = do
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do
   let (t, _) = typeArray aa
-  let tsz = typeSizeOf t
   ca aa
+  cArrayRef at t frombs ie
+
+cArrayRef :: SrcLoc -> DLType -> Bool -> Either DLArg (App ()) -> App ()
+cArrayRef at t frombs ie = do
+  let tsz = typeSizeOf t
   let ie' =
         case ie of
           Left ia -> ca ia
@@ -653,15 +770,13 @@ cla = \case
   DLLA_Tuple as ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLLA_Obj m -> cla $ DLLA_Struct $ M.toAscList m
-  DLLA_Data tm vt va -> do
-    let mvti = List.find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
-    let vti =
-          case mvti of
-            Just (_, x) -> x
-            Nothing -> impossible $ "dla_data"
-    cl $ DLL_Int sb vti
-    ctobs T_UInt
+  DLLA_Data tm vn va -> do
+    let h ((k, v), i) = (k, (i, v))
+    let tm' = M.fromList $ map h $ zip (M.toAscList tm) [0 ..]
+    let (vi, vt) = fromMaybe (impossible $ "dla_data") $ M.lookup vn tm'
+    cl $ DLL_Bytes $ B.singleton $ BI.w2c vi
     ca va
+    ctobs vt
     let vlen = 1 + typeSizeOf (argTypeOf va)
     op "concat"
     let dlen = typeSizeOf $ T_Data tm
@@ -671,6 +786,27 @@ cla = \case
     check_concat_len dlen
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
+
+cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
+cTupleRef at tt idx = do
+  -- [ Tuple ]
+  let ts = typeTupleTypes tt
+  let (t, start, end) = computeSubstring ts idx
+  csubstring at start end
+  -- [ ValueBs ]
+  cfrombs t
+  -- [ Value ]
+
+cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
+cTupleSet at tt idx = do
+  -- [ Tuple, Value' ]
+  let tot = typeSizeOf tt
+  let ts = typeTupleTypes tt
+  let (t, start, end) = computeSubstring ts idx
+  ctobs t
+  -- [ Tuple, Value'Bs ]
+  csplice at start end tot
+  -- [ Tuple' ]
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -688,57 +824,19 @@ ce = \case
         ca va
         op "setbyte"
       _ -> do
-        let tsz = typeSizeOf t
-        let (before, after) =
+        let cnew = ca va >> ctobs t
+        mcbig <-
+          argSmall aa >>= \case
+            False -> do
+              ca aa
+              return $ Nothing
+            True -> do
+              return $ Just $ ca aa
+        let eidx =
               case ia of
-                DLA_Literal (DLL_Int _ ii) -> (b, a)
-                  where
-                    start = ii * tsz
-                    end = start + tsz
-                    b = csubstring at 0 start
-                    a = csubstring at end (alen * tsz)
-                _ -> (b, a)
-                  where
-                    b = do
-                      cl $ DLL_Int sb 0
-                      cl $ DLL_Int sb tsz
-                      ca ia
-                      op "*"
-                      op "substring3"
-                    a = do
-                      cl $ DLL_Int sb tsz
-                      op "dup"
-                      ca ia
-                      op "*"
-                      op "+"
-                      cl $ DLL_Int sb (alen * tsz)
-                      op "substring3"
-        small_aa <- argSmall aa
-        case small_aa of
-          False -> do
-            ca aa
-            op "dup"
-            -- [ aa, aa, ... ]
-            before
-            -- [ before, aa, ... ]
-            ca va
-            ctobs t
-            -- [ va, before, aa, ... ]
-            op "concat"
-            -- [ before', aa, ... ]
-            op "swap"
-            -- [ aa, before', ... ]
-            after
-            -- [ after, before', ... ]
-            op "concat"
-          -- [ aa', ... ]
-          True -> do
-            ca aa >> before
-            ca va
-            ctobs t
-            op "concat"
-            ca aa >> after
-            op "concat"
+                DLA_Literal (DLL_Int _ ii) -> Left ii
+                _ -> Right $ ca ia
+        cArraySet at (t, alen) mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
     let (xt, xlen) = typeArray x
     let (_, ylen) = typeArray y
@@ -751,23 +849,20 @@ ce = \case
     let ysz = typeSizeOf $ argTypeOf y
     let (_, xlen) = typeArray x
     check_concat_len $ xsz + ysz
-    salloc $ \ansl -> do
+    salloc_ $ \store_ans load_ans -> do
       cl $ DLL_Bytes ""
-      code "store" [texty ansl]
+      store_ans
       cfor xlen $ \load_idx -> do
-        code "load" [texty ansl]
+        load_ans
         doArrayRef at x False $ Right load_idx
         doArrayRef at y False $ Right load_idx
         op "concat"
         op "concat"
-        code "store" [texty ansl]
-      code "load" [texty ansl]
+        store_ans
+      load_ans
   DLE_TupleRef at ta idx -> do
-    let ts = typeTupleTypes ta
-    let (t, start, end) = computeSubstring ts idx
     ca ta
-    csubstring at start end
-    cfrombs t
+    cTupleRef at (argTypeOf ta) idx
   DLE_ObjectRef at oa f -> do
     let fts = typeObjectTypes oa
     let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ List.findIndex ((== f) . fst) fts
@@ -799,8 +894,16 @@ ce = \case
       check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
-  DLE_MapRef _ _mpv _fa -> xxx "linear state"
-  DLE_MapSet _ _mpv _fa _mva -> xxx "linear state"
+  DLE_MapRef _ mpv fa -> do
+    ca fa
+    cMapRecAlloc
+    cMapRef mpv
+  DLE_MapSet _ mpv fa mva -> do
+    ca fa
+    cMapRecAlloc
+    t <- getMapTy mpv
+    cla $ mdaToMaybeLA t mva
+    cMapSet mpv
   DLE_Remote {} -> xxx "remote objects"
   where
     show_stack msg at fs = do
@@ -918,29 +1021,29 @@ cm km = \case
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
     check_concat_len anssz
-    salloc $ \ansl -> do
+    salloc_ $ \store_ans load_ans -> do
       cl $ DLL_Bytes ""
-      code "store" [texty ansl]
+      store_ans
       cfor xlen $ \load_idx -> do
-        code "load" [texty ansl]
+        load_ans
         doArrayRef at aa True $ Right load_idx
         sallocLet lv (return ()) $ do
           cp (ca ra) body
         op "concat"
-        code "store" [texty ansl]
-      store_let ansv True (code "load" [texty ansl]) km
+        store_ans
+      store_let ansv True load_ans km
   DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
     let (_, xlen) = typeArray aa
-    salloc $ \ansl -> do
+    salloc_ $ \store_ans load_ans -> do
       ca za
-      code "store" [texty ansl]
-      store_let av True (code "load" [texty ansl]) $ do
+      store_ans
+      store_let av True load_ans $ do
         cfor xlen $ \load_idx -> do
           doArrayRef at aa True $ Right load_idx
           sallocLet lv (return ()) $ do
             cp (ca ra) body
-          code "store" [texty ansl]
-        store_let ansv True (code "load" [texty ansl]) km
+          store_ans
+        store_let ansv True load_ans km
   DL_Var _ dv ->
     salloc $ \loc -> do
       store_var dv loc $
@@ -975,6 +1078,13 @@ cp :: App () -> DLTail -> App ()
 cp km = \case
   DT_Return _ -> km
   DT_Com m k -> cm (cp km k) m
+
+cwhen :: App () -> App ()
+cwhen cbody = do
+  after_lab <- freshLabel
+  code "bz" [after_lab]
+  cbody
+  label after_lab
 
 ct :: CTail -> App ()
 ct = \case
@@ -1020,7 +1130,8 @@ ct = \case
       (isHalt, check_nextSt) =
         case msvs of
           --- XXX fix this so it makes sure it is zero bytes
-          FI_Halt toks -> (True, zero_view >> forM_ toks close_asset >> close_escrow)
+          FI_Halt toks ->
+            (True, zero_view >> forM_ toks close_asset >> close_escrow)
             where
               close_asset tok =
                 close "axfer" "AssetAmount" "Sender" "AssetCloseTo" $ \txni -> do
@@ -1063,7 +1174,6 @@ ct = \case
                         where
                           more' = delete_timev more
                 let svs' = delete_timev svs
-                -- traceM $ show $ "delete_timev " <> pretty timev <> "(" <> pretty svs <> ") = " <> pretty svs'
                 cstate (HM_Set which) svs'
                 readArgCache argNextSt
                 eq_or_fail
@@ -1106,6 +1216,10 @@ halt_should_be b = do
 -- 2. Alice creates the handler contracts; embeds Id & Me; gets H_i
 -- 3. Alice updates the application; embedding Me & H_i
 
+-- Reach Constants
+reachAlgoBackendVersion :: Int
+reachAlgoBackendVersion = 1
+
 -- Template
 tApplicationID :: LT.Text
 tApplicationID = template "ApplicationID"
@@ -1125,6 +1239,9 @@ keyState = "s"
 
 keyView :: Integer -> B.ByteString
 keyView i = bpack $ "v" <> show i
+
+keyMap :: Integer -> B.ByteString
+keyMap i = bpack $ "m" <> show i
 
 keyLast :: B.ByteString
 keyLast = "l"
@@ -1156,9 +1273,10 @@ txnUser0 = txnFromHandler + 1
 -- 5   : Last round
 -- 6   : Saved values
 -- 7   : Handler arguments
-stdArgTypes :: Integer -> [DLType]
-stdArgTypes vbs =
-  [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt]
+-- 8   : Map record
+stdArgTypes :: Integer -> Integer -> [DLType]
+stdArgTypes vbs mbs =
+  [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt, T_Bytes mbs]
 
 argPrevSt :: Word8
 argPrevSt = 0
@@ -1184,6 +1302,15 @@ argSvs = argLast + 1
 argMsg :: Word8
 argMsg = argSvs + 1
 
+argMaps :: Word8
+argMaps = argMsg + 1
+
+lastArgIdx :: Word8
+lastArgIdx = argMaps
+
+argCount :: Word8
+argCount = lastArgIdx + 1 -- it's an index, we want count
+
 readArg :: Word8 -> App ()
 readArg which =
   code "gtxna" [texty txnAppl, "ApplicationArgs", texty which]
@@ -1197,34 +1324,37 @@ lookup_last = readArgCache argLast >> cfrombs T_UInt
 lookup_fee_amount :: App ()
 lookup_fee_amount = readArgCache argFeeAmount >> cfrombs T_UInt
 
--- XXX get from SDK or use min_balance opcode
-minimumBalance_l :: DLLiteral
-minimumBalance_l = DLL_Int sb $ 100000
-
 argCacheM :: M.Map Word8 ScratchSlot
 argCacheM = M.fromList $
-  [ (argNextSt, argNextSt - 1)
-  , (argView, argView - 1)
-  , (argHalts, argHalts - 1)
-  , (argFeeAmount, argFeeAmount - 1)
-  , (argLast, argLast - 1)
+  [ (argNextSt, 0)
+  , (argView, 1)
+  , (argHalts, 2)
+  , (argFeeAmount, 3)
+  , (argLast, 4)
+  , (argMaps, 5)
   ]
 
+initArgCache1 :: Word8 -> App ()
+initArgCache1 arg = do
+  readArg arg
+  setArgCache arg
+
 initArgCache :: App a -> App a
-initArgCache km = initArgCache' $ M.toAscList argCacheM
-  where
-    initArgCache' = \case
-      [] -> km
-      (arg, slot) : more -> do
-        readArg arg
-        code "store" [ texty slot ]
-        initArgCache' more
+initArgCache km = do
+  forM_ (map fst $ M.toAscList argCacheM) $ initArgCache1
+  km
+
+initHeap :: App a -> App a
+initHeap = initArgCache
 
 readArgCache_ :: Word8 -> ScratchSlot
 readArgCache_ ai =
   case M.lookup ai argCacheM of
     Just idx -> idx
     Nothing -> impossible $ show ai <> " not cached"
+
+setArgCache :: Word8 -> App ()
+setArgCache ai = code "store" [ texty $ readArgCache_ ai ]
 
 readArgCache :: Word8 -> App ()
 readArgCache ai = code "load" [ texty $ readArgCache_ ai ]
@@ -1260,7 +1390,6 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> incCounter (sCounter eShared)
   argSvsVar <- mkArgVar svs
   argMsgVar <- mkArgVar msg
-  let argCount = argMsg + 1 -- it's an index, we want count
   let eLets0 = M.fromList $
         [ (argSvsVar, op "dup"), (argMsgVar, op "dup") ]
   let eLets1 = M.insert from lookup_sender eLets0
@@ -1276,13 +1405,15 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
           let cgen = ce $ DLE_TupleRef at (DLA_Var argVar) i
           sallocLet dv cgen $ letArgs' argVar km more
   let letArgs_ :: Word8 -> DLVar -> [DLVar] -> App a -> App a
+      -- XXX We don't check that there isn't extra data in these
+      letArgs_ _ _ [] km = km
       letArgs_ argLoc argVar args km = do
         readArg argLoc
         letArgs' argVar km (zip args [0 ..])
   let letArgs :: App a -> App a
       letArgs = letArgs_ argSvs argSvsVar svs . letArgs_ argMsg argMsgVar msg
   cbs <-
-    runApp eShared eWhich eLets (Just timev) $ initArgCache $ letArgs $ do
+    runApp eShared eWhich eLets (Just timev) $ initHeap $ letArgs $ do
       comment ("Handler " <> texty eWhich)
       comment "Check txnAppl"
       code "gtxn" [texty txnAppl, "TypeEnum"]
@@ -1339,6 +1470,8 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
         cl $ DLL_Int sb $ fromIntegral $ 1 + txns
         eq_or_fail
 
+        -- XXX !!! check that unused accounts are zero / when = false
+
         lookup_fee_amount
         fts <- from_txns
         its <- init_txns
@@ -1380,7 +1513,8 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
 
       std_footer
   let viewBsLen = sViewSize eShared
-  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen <> (map varType [ argSvsVar, argMsgVar ])
+  let mapBsLen = sMapArgSize eShared
+  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen mapBsLen <> (map varType [ argSvsVar, argMsgVar ])
   let cinfo = Aeson.object $
         [ ("size", Aeson.Number $ fromIntegral argSize)
         , ("count", Aeson.Number $ fromIntegral argCount) ]
@@ -1396,18 +1530,194 @@ computeViewSize = h1
     h3 (ViewInfo vs _) = typeSizeOf $ T_Tuple $ T_UInt : h4 vs
     h4 = map varType
 
+-- <MapStuff>
+getMapTy :: DLMVar -> App DLType
+getMapTy mpv = do
+  ms <- ((sMaps . eShared) <$> ask)
+  return $
+    case M.lookup mpv ms of
+      Nothing -> impossible "getMapTy"
+      Just mi -> dlmi_ty mi
+
+mapDataTy :: DLMapInfos -> DLType
+mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
+
+getMapDataTy :: App DLType
+getMapDataTy = (sMapDataTy . eShared) <$> ask
+
+mkMapRecordTy :: DLType -> DLType
+mkMapRecordTy x =
+  --         present?, prev, next, account
+  T_Tuple $ [  T_Bool,    x,    x, T_Address ]
+
+getMapRecordTy :: App DLType
+getMapRecordTy = (sMapRecordTy . eShared) <$> ask
+
+mkMapArgTy :: DLType -> DLType
+mkMapArgTy t = T_Array t $ fromIntegral $ length accountsL
+
+getMapArgTy :: App DLType
+getMapArgTy = (sMapArgTy . eShared) <$> ask
+
+mapRecSlot_when :: Word8
+mapRecSlot_when = 0
+mapRecSlot_prev :: Word8
+mapRecSlot_prev = mapRecSlot_when + 1
+mapRecSlot_next :: Word8
+mapRecSlot_next = mapRecSlot_prev + 1
+mapRecSlot_acct :: Word8
+mapRecSlot_acct = mapRecSlot_next + 1
+
+cMapRecAlloc :: App ()
+cMapRecAlloc = do
+  -- [ Address ]
+  found_lab <- freshLabel
+  forM_ accountsL $ \ai -> do
+    -- [ Address ]
+    cMapWhen $ Just ai
+    -- [ Address, When ]
+    cwhen $ do
+      -- [ Address ]
+      op "dup"
+      -- [ Address, Address ]
+      cl $ DLL_Int sb $ fromIntegral ai
+      -- [ Address, Address, Offset ]
+      op "swap"
+      -- [ Address, Offset, Address ]
+      cMapAcct $ Just ai
+      -- [ Address, Offset, Address, Address ]
+      op "=="
+      -- [ Address, Offset, Bool ]
+      code "bnz" [ found_lab ]
+      -- [ Address, Offset ]
+      op "pop"
+      -- [ Address ]
+  -- [ Address ]
+  cl $ DLL_Bool False
+  -- [ Address, #f ]
+  op "assert"
+  -- dead
+  label found_lab
+  -- [ Address, Offset ]
+  op "swap"
+  -- [ Offset, Address ]
+  op "pop"
+  -- [ Offset ]
+
+cMapRecLoad :: Maybe Word8 -> App ()
+cMapRecLoad mai = do
+  -- (maybe [ Offset ] (const []) mai)
+  readArgCache argMaps
+  -- (maybe [ Offset ] (const []) mai) <> [ MapArg ]
+  t <- getMapRecordTy
+  case mai of
+    Just ai -> do
+      -- [ MapArg ]
+      cArrayRef sb t True (Left $ DLA_Literal $ DLL_Int sb $ fromIntegral ai)
+    Nothing -> do
+      -- [ Offset, MapArg ]
+      op "swap"
+      -- [ MapArg, Offset ]
+      salloc_ $ \cstore cload -> do
+        cstore
+        cArrayRef sb t True (Right $ cload)
+  -- [ Record ]
+
+cMapRecStore :: App ()
+cMapRecStore = do
+  salloc_ $ \store_val load_val -> do
+    salloc_ $ \store_idx load_idx -> do
+      -- [ Index, Value' ]
+      store_val
+      -- [ Index ]
+      store_idx
+      -- [ ]
+      rt <- getMapArgTy
+      cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
+      -- [ MapArg' ]
+      setArgCache argMaps
+      -- [ ]
+
+cMap_slot :: Word8 -> Maybe Word8 -> App ()
+cMap_slot slot mai = do
+  -- (maybe [ Offset ] (const []) mai)
+  cMapRecLoad mai
+  -- [ Record ]
+  t <- getMapRecordTy
+  cTupleRef sb t $ fromIntegral slot
+  -- [ Field ]
+
+cMapWhen :: Maybe Word8 -> App ()
+cMapWhen = cMap_slot mapRecSlot_when
+
+cMapPrev :: Maybe Word8 -> App ()
+cMapPrev = cMap_slot mapRecSlot_prev
+
+cMapNext :: Maybe Word8 -> App ()
+cMapNext = cMap_slot mapRecSlot_next
+
+cMapAcct :: Maybe Word8 -> App ()
+cMapAcct = cMap_slot mapRecSlot_acct
+
+cMapRef :: DLMVar -> App ()
+cMapRef (DLMVar i) = do
+  -- [ Offset ]
+  cMapPrev Nothing
+  -- [ Maps ]
+  t <- getMapDataTy
+  cTupleRef sb t $ fromIntegral i
+  -- [ MapValue ]
+
+cMapSet :: DLMVar -> App ()
+cMapSet (DLMVar i) = do
+  -- [ Offset, NewValue ]
+  op "swap"
+  -- [ NewValue, Offset ]
+  op "dup"
+  -- [ NewValue, Offset, Offset ]
+  cMapPrev Nothing
+  -- [ NewValue, Offset, Maps ]
+  dt <- getMapDataTy
+  code "dig" [ "2" ]
+  -- [ NewValue, Offset, Maps, NewValue ]
+  cTupleSet sb dt $ fromIntegral i
+  -- [ NewValue, Offset, Maps' ]
+  op "swap"
+  -- [ NewValue, Maps', Offset ]
+  op "dup"
+  -- [ NewValue, Maps', Offset, Offset ]
+  cMapRecLoad Nothing
+  -- [ NewValue, Maps', Offset, Record ]
+  code "dig" [ "2" ]
+  -- [ NewValue, Maps', Offset, Record, Maps' ]
+  rt <- getMapRecordTy
+  cTupleSet sb rt $ fromIntegral mapRecSlot_prev
+  -- [ NewValue, Maps', Offset, Record' ]
+  cMapRecStore
+  -- [ NewValue, Maps' ]
+  op "pop"
+  -- [ NewValue ]
+  op "pop"
+  -- [ ]
+
+-- </MapStuff>
+
 type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
-  let PLProg _at plo _dli _ _ cpp = pl
-  -- We ignore dli, because it can only contain a binding for the creation
-  -- time, which is the previous time of the first message, and these
-  -- last_timevs are never included in svs on Algorand.
+  let PLProg _at plo dli _ _ cpp = pl
   let CPProg at vi (CHandlers hm) = cpp
+  let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
   let sViewSize = computeViewSize vi
+  let sMapDataTy = mapDataTy sMaps
+  let sMapDataSize = typeSizeOf sMapDataTy
+  let sMapRecordTy = mkMapRecordTy sMapDataTy
+  let sMapRecordSize = typeSizeOf sMapRecordTy
+  let sMapArgTy = mkMapArgTy sMapRecordTy
+  let sMapArgSize = typeSizeOf sMapArgTy
   let PLOpts {..} = plo
   let sCounter = plo_counter
   let shared = Shared {..}
@@ -1438,10 +1748,20 @@ compile_algo disp pl = do
   modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
   let divup :: Integer -> Integer -> Integer
       divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
-  modifyIORef resr $ M.insert "viewSize" $ Aeson.Number $ fromIntegral $ sViewSize
-  let viewKeys = sViewSize `divup` algoMaxAppBytesValueLen
-  let viewKeysl = take (fromIntegral viewKeys) [0..]
-  modifyIORef resr $ M.insert "viewKeys" $ Aeson.Number $ fromIntegral $ viewKeys
+  let recordSize prefix size = do
+        modifyIORef resr $ M.insert (prefix <> "Size") $
+          Aeson.Number $ fromIntegral size
+  let recordSizeAndKeys :: T.Text -> Integer -> IO [Integer]
+      recordSizeAndKeys prefix size = do
+        recordSize prefix size
+        let keys = size `divup` algoMaxAppBytesValueLen
+        modifyIORef resr $ M.insert (prefix <> "Keys") $
+          Aeson.Number $ fromIntegral keys
+        return $ take (fromIntegral keys) [0..]
+  viewKeysl <- recordSizeAndKeys "view" sViewSize
+  mapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
+  recordSize "mapRecord" sMapRecordSize
+  recordSize "mapArg" sMapArgSize
   let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
@@ -1488,11 +1808,26 @@ compile_algo disp pl = do
     eq_or_fail
     code "b" ["done"]
   appm <- simple $ do
-    comment "Check that we're an App"
-    code "txn" ["TypeEnum"]
-    code "int" ["appl"]
-    eq_or_fail
     check_rekeyto
+    -- It would be possible to allow NoOps to be OptIn, but we are worried
+    -- about the situation where the final state has an OptIn for the final
+    -- participant
+    code "txn" ["OnCompletion"]
+    code "int" ["OptIn"]
+    op "=="
+    code "bz" ["normal"]
+    code "global" ["GroupSize"]
+    cl $ DLL_Int sb $ 1
+    eq_or_fail
+    code "b" ["done"]
+    label "normal"
+    -- We need this because the map reading code is not abstracted over how to
+    -- access the map records
+    initArgCache1 argMaps
+    -- comment "Check that we're an App"
+    -- code "txn" ["TypeEnum"]
+    -- code "int" ["appl"]
+    -- eq_or_fail
     comment "Check that everyone's here"
     code "global" ["GroupSize"]
     cl $ DLL_Int sb $ fromIntegral $ txnUser0
@@ -1506,29 +1841,54 @@ compile_algo disp pl = do
     cl $ DLL_Bool $ False
     forM_ hchecks id
     or_fail
+    -- State
     app_global_get keyState
     readArg argPrevSt
     cfrombs T_Digest
     eq_or_fail
+    app_global_put keyState $ do
+      readArg argNextSt
+      cfrombs T_Digest
+    -- Last
     app_global_get keyLast
     readArg argLast
     cfrombs T_UInt
     eq_or_fail
-    comment "Don't check anyone else, because Handler does"
-    comment "Update state"
-    app_global_put keyState $ do
-      readArg argNextSt
-      cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
+    -- Maps
+    let cStateSlice size i = do
+          let k = algoMaxAppBytesValueLen
+          csubstring at (k * i) (min size $ k * (i + 1))
+    unless (null mapKeysl) $ do
+      -- XXX !!! check number of accounts
+      forM_ accountsL $ \ai -> do
+        cMapWhen $ Just ai
+        cwhen $ do
+          cMapAcct $ Just ai
+          case (ai == 0) of
+            True ->
+              code "txn" [ "Sender" ]
+            False ->
+              code "txna" [ "Accounts", texty (ai - 1) ]
+          eq_or_fail
+          forM_ mapKeysl $ \mi -> do
+            app_local_get ai (keyMap mi)
+            cMapPrev $ Just ai
+            cStateSlice sMapDataSize mi
+            app_local_put ai (keyMap mi) $ do
+              cMapNext $ Just ai
+              cStateSlice sMapDataSize mi
+    -- Views
     forM_ viewKeysl $ \i ->
       app_global_put (keyView i) $ do
         readArg argView
-        let k = algoMaxAppBytesValueLen
-        csubstring at (k * i) (min sViewSize $ k * (i + 1))
+        cStateSlice sViewSize i
+    -- Halts
     app_global_put keyHalts $ do
       readArg argHalts
       cfrombs T_Bool
+    -- Done
     app_global_get keyHalts
     code "bnz" ["halted"]
     code "txn" ["OnCompletion"]
@@ -1585,11 +1945,13 @@ compile_algo disp pl = do
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
-  res0 <- readIORef resr
   sFailures <- readIORef sFailuresR
-  let res1 = M.insert "unsupported" (aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) sFailures) res0
-  -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
-  return $ Aeson.Object $ HM.fromList $ M.toList res1
+  modifyIORef resr $ M.insert "unsupported" $ aarray $
+    S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
+  modifyIORef resr $ M.insert "version" $
+    Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
+  res <- readIORef resr
+  return $ Aeson.Object $ HM.fromList $ M.toList res
 
 connect_algo :: Connector
 connect_algo = Connector {..}
