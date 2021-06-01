@@ -1,0 +1,15 @@
+{
+  "name": "reach-ts-webpack5-test",
+  "version": "0.0.0",
+  "main": "main.js",
+  "browser": "bundle.js",
+  "scripts": {
+    "dev": "webpack-dev-server --open",
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "process": "^0.11.10",
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.0"
+  }
+}
