@@ -41,6 +41,7 @@ declare module 'algosdk' {
   }
   declare type AcctInfo = {
     amount: number // bignumber?
+    'apps-local-state': any
   }
   declare type TxId = string;
   declare type ApiCall<T> = {

@@ -3,10 +3,6 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) {
-    console.log(`XXX Unsupported`);
-    process.exit(0);
-  }
   const assertEq = (expected, actual) => {
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);

@@ -970,7 +970,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const client = await getAlgodClient();
       const ai = await client.accountInformation(thisAcc.addr).do();
       debug(`didOptIn`, ai);
-      return false;
+      if ( ai['apps-local-state'].find((x:any) => (x.id === ApplicationID)) ) {
+        return true;
+      } else {
+        return false;
+      }
     };
     const doOptIn = async (): Promise<void> => {
       await sign_and_send_sync(
@@ -981,7 +985,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           ApplicationID,
           undefined, undefined, undefined, undefined,
           NOTE_Reach));
-      await didOptIn();
+      assert(await didOptIn(), `didOptIn after doOptIn`);
     };
     let ensuredOptIn: boolean = false;
     const ensureOptIn = async (): Promise<void> => {
@@ -1084,7 +1088,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const used = refIdx !== -1;
         const record = (rec:MapRecord) => {
           mapArg.push(rec);
-          mapAccts.push(addr);
+          if ( ! isSender ) {
+            mapAccts.push(addr);
+          }
         };
         if ( used ) {
           record([ true, getMapData(mapsPrev, caddr), getMapData(mapsNext, caddr), caddr ]);
@@ -1104,6 +1110,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if ( mapArg[0][1] ) {
         await ensureOptIn();
       }
+      const mapAcctsReal =
+        (mapAccts.length === 0) ? undefined : mapAccts;
 
       while ( true ) {
         const params = await getTxnParams();
@@ -1198,7 +1206,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txnAppl =
           whichAppl(
             thisAcc.addr, params, ApplicationID, safe_args,
-            mapAccts, undefined, undefined, NOTE_Reach);
+            mapAcctsReal, undefined, undefined, NOTE_Reach);
         const txnFromHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             handler.hash,

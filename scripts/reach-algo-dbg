@@ -16,6 +16,7 @@ if [ "x${2}" = "x" ] ; then
 else
   TMP=/tmp/algodbg.json
   docker container cp "${CONT}":/dbg/"${2}".json "${TMP}"
+  sed -i -E 's/^( +)([0-9]+):/\1"\2":/g' "${TMP}"
   line=$(jq .line "${TMP}")
   ((line = line + 1))
   # comment out if you need these

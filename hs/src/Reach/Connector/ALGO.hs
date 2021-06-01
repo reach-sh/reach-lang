@@ -1324,40 +1324,50 @@ lookup_last = readArgCache argLast >> cfrombs T_UInt
 lookup_fee_amount :: App ()
 lookup_fee_amount = readArgCache argFeeAmount >> cfrombs T_UInt
 
-argCacheM :: M.Map Word8 ScratchSlot
-argCacheM = M.fromList $
-  [ (argNextSt, 0)
-  , (argView, 1)
-  , (argHalts, 2)
-  , (argFeeAmount, 3)
-  , (argLast, 4)
-  , (argMaps, 5)
+data GlobalVar
+  = GV_Arg Word8
+  | GV_Accounts
+  deriving (Eq, Ord, Show)
+
+globalVarsM :: M.Map GlobalVar ScratchSlot
+globalVarsM = M.fromList $
+  [ (GV_Arg argNextSt, 0)
+  , (GV_Arg argView, 1)
+  , (GV_Arg argHalts, 2)
+  , (GV_Arg argFeeAmount, 3)
+  , (GV_Arg argLast, 4)
+  , (GV_Arg argMaps, 5)
+  , (GV_Accounts, 6)
   ]
 
-initArgCache1 :: Word8 -> App ()
-initArgCache1 arg = do
-  readArg arg
-  setArgCache arg
-
-initArgCache :: App a -> App a
-initArgCache km = do
-  forM_ (map fst $ M.toAscList argCacheM) $ initArgCache1
-  km
+initGV1 :: GlobalVar -> App ()
+initGV1 gv = do
+  case gv of
+    GV_Arg arg ->
+      readArg arg
+    GV_Accounts ->
+      cl $ DLL_Int sb 0
+  setGV gv
 
 initHeap :: App a -> App a
-initHeap = initArgCache
+initHeap km = do
+  forM_ (map fst $ M.toAscList globalVarsM) $ initGV1
+  km
 
-readArgCache_ :: Word8 -> ScratchSlot
-readArgCache_ ai =
-  case M.lookup ai argCacheM of
+readGV_ :: GlobalVar -> ScratchSlot
+readGV_ ai =
+  case M.lookup ai globalVarsM of
     Just idx -> idx
     Nothing -> impossible $ show ai <> " not cached"
 
-setArgCache :: Word8 -> App ()
-setArgCache ai = code "store" [ texty $ readArgCache_ ai ]
+setGV :: GlobalVar -> App ()
+setGV ai = code "store" [ texty $ readGV_ ai ]
+
+readGV :: GlobalVar -> App ()
+readGV ai = code "load" [ texty $ readGV_ ai ]
 
 readArgCache :: Word8 -> App ()
-readArgCache ai = code "load" [ texty $ readArgCache_ ai ]
+readArgCache = readGV . GV_Arg
 
 std_footer :: App ()
 std_footer = do
@@ -1369,7 +1379,7 @@ runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
 runApp eShared eWhich eLets emTimev m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
-  let eHP = fromIntegral $ M.size argCacheM
+  let eHP = fromIntegral $ M.size globalVarsM
   let eSP = 255
   eTxnsR <- newIORef $ txnUser0 - 1
   let eVars = mempty
@@ -1470,8 +1480,6 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
         cl $ DLL_Int sb $ fromIntegral $ 1 + txns
         eq_or_fail
 
-        -- XXX !!! check that unused accounts are zero / when = false
-
         lookup_fee_amount
         fts <- from_txns
         its <- init_txns
@@ -1509,7 +1517,13 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
             check_time "FirstValid" "<=" ifrom
             check_time "LastValid" ">=" ito)
 
-        code "b" ["done"]
+        code "b" ["checkAccts"]
+
+      label "checkAccts"
+      code "gtxn" [ texty txnAppl, "NumAccounts" ]
+      readGV GV_Accounts
+      eq_or_fail
+      code "b" ["done"]
 
       std_footer
   let viewBsLen = sViewSize eShared
@@ -1572,6 +1586,7 @@ cMapRecAlloc :: App ()
 cMapRecAlloc = do
   -- [ Address ]
   found_lab <- freshLabel
+  bad_lab <- freshLabel
   forM_ accountsL $ \ai -> do
     -- [ Address ]
     cMapWhen $ Just ai
@@ -1589,9 +1604,18 @@ cMapRecAlloc = do
       op "=="
       -- [ Address, Offset, Bool ]
       code "bnz" [ found_lab ]
+
+      -- If it is not found, then the current account count must be greater
+      -- than this number, otherwise the accounts were put in out of order.
+
       -- [ Address, Offset ]
-      op "pop"
+      readGV GV_Accounts
+      -- [ Address, Offset, AccountCount ]
+      op "<="
+      -- [ Address, Valid ]
+      op "assert"
       -- [ Address ]
+  label bad_lab
   -- [ Address ]
   cl $ DLL_Bool False
   -- [ Address, #f ]
@@ -1603,6 +1627,23 @@ cMapRecAlloc = do
   -- [ Offset, Address ]
   op "pop"
   -- [ Offset ]
+
+  -- We need to record that we've seen this many accounts, so if this is
+  -- bigger, then we need to record it
+  op "dup"
+  -- [ Offset, Offset ]
+  readGV GV_Accounts
+  -- [ Offset, Offset, AccountCount ]
+  op ">"
+  -- [ Offset, Bigger ]
+  dont_set_lab <- freshLabel
+  code "bz" [ dont_set_lab ]
+  -- [ Offset ]
+  op "dup"
+  -- [ Offset, Offset ]
+  setGV GV_Accounts
+  -- [ Offset ]
+  label dont_set_lab
 
 cMapRecLoad :: Maybe Word8 -> App ()
 cMapRecLoad mai = do
@@ -1635,7 +1676,7 @@ cMapRecStore = do
       rt <- getMapArgTy
       cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
       -- [ MapArg' ]
-      setArgCache argMaps
+      setGV $ GV_Arg argMaps
       -- [ ]
 
 cMap_slot :: Word8 -> Maybe Word8 -> App ()
@@ -1807,6 +1848,9 @@ compile_algo disp pl = do
     code "int" ["NoOp"]
     eq_or_fail
     code "b" ["done"]
+  let cStateSlice size i = do
+        let k = algoMaxAppBytesValueLen
+        csubstring at (k * i) (min size $ k * (i + 1))
   appm <- simple $ do
     check_rekeyto
     -- It would be possible to allow NoOps to be OptIn, but we are worried
@@ -1819,11 +1863,19 @@ compile_algo disp pl = do
     code "global" ["GroupSize"]
     cl $ DLL_Int sb $ 1
     eq_or_fail
+    unless (null mapKeysl) $ do
+      salloc_ $ \store_whole load_whole -> do
+        padding sMapDataSize
+        store_whole
+        forM_ mapKeysl $ \mi -> do
+          app_local_put 0 (keyMap mi) $ do
+            load_whole
+            cStateSlice sMapDataSize mi
     code "b" ["done"]
     label "normal"
     -- We need this because the map reading code is not abstracted over how to
     -- access the map records
-    initArgCache1 argMaps
+    initGV1 $ GV_Arg argMaps
     -- comment "Check that we're an App"
     -- code "txn" ["TypeEnum"]
     -- code "int" ["appl"]
@@ -1857,28 +1909,34 @@ compile_algo disp pl = do
     app_global_put keyLast $ do
       code "global" ["Round"]
     -- Maps
-    let cStateSlice size i = do
-          let k = algoMaxAppBytesValueLen
-          csubstring at (k * i) (min size $ k * (i + 1))
+    cl $ DLL_Int sb 0
     unless (null mapKeysl) $ do
-      -- XXX !!! check number of accounts
+      afterAccts <- freshLabel
       forM_ accountsL $ \ai -> do
         cMapWhen $ Just ai
-        cwhen $ do
-          cMapAcct $ Just ai
-          case (ai == 0) of
-            True ->
-              code "txn" [ "Sender" ]
-            False ->
-              code "txna" [ "Accounts", texty (ai - 1) ]
+        code "bz" [ afterAccts ]
+        op "pop"
+        cl $ DLL_Int sb $ fromIntegral ai
+        cMapAcct $ Just ai
+        case (ai == 0) of
+          True ->
+            code "txn" [ "Sender" ]
+          False ->
+            code "txna" [ "Accounts", texty (ai - 1) ]
+        eq_or_fail
+        forM_ mapKeysl $ \mi -> do
+          -- Check the previous
+          app_local_get ai (keyMap mi)
+          cMapPrev $ Just ai
+          cStateSlice sMapDataSize mi
           eq_or_fail
-          forM_ mapKeysl $ \mi -> do
-            app_local_get ai (keyMap mi)
-            cMapPrev $ Just ai
+          -- Set the next
+          app_local_put ai (keyMap mi) $ do
+            cMapNext $ Just ai
             cStateSlice sMapDataSize mi
-            app_local_put ai (keyMap mi) $ do
-              cMapNext $ Just ai
-              cStateSlice sMapDataSize mi
+      label afterAccts
+    code "txn" [ "NumAccounts" ]
+    eq_or_fail
     -- Views
     forM_ viewKeysl $ \i ->
       app_global_put (keyView i) $ do
