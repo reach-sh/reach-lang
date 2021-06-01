@@ -1,36 +1,7 @@
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
-Verification failed:
-  when ALL participants are honest
-  of theorem: require
-  msg: "m[A] is Some(ap)"
-  at ./index.rsh:36:10:application
-
-  // Violation witness
-  const address_Alice = Address!val!0;
-  //    ^ from builtin at ./index.rsh:4:30:application
-  const a/33 = 1;
-  //    ^ from evaluating interact("Alice")."get"() at ./index.rsh:18:51:application
-
-  // Theorem formalization
-  require(digest(map0[address_Alice]) == digest(a/33));
-
-Verification failed:
-  when ALL participants are honest
-  of theorem: require
-  at ./index.rsh:43:10:application
-
-  // Violation witness
-  const address_Bob = Address!val!0;
-  //    ^ from builtin at ./index.rsh:4:30:application
-  const b/57 = 1;
-  //    ^ from evaluating interact("Bob")."get"() at ./index.rsh:28:51:application
-
-  // Theorem formalization
-  require(digest(map0[address_Bob]) == digest(b/57));
-
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 16 theorems; 2 failures. :'(
+Checked 23 theorems; No failures!
