@@ -13,6 +13,7 @@ fi
 CONT="${1}${SUFFIX}"
 if [ "x${2}" = "x" ] ; then
   docker container exec "${CONT}" ls -1 /dbg | sort -t - -k1,1n -k2,2n
+  docker container exec "${CONT}" du -hac /dbg | tail -1
 else
   TMP=/tmp/algodbg.json
   docker container cp "${CONT}":/dbg/"${2}".json "${TMP}"

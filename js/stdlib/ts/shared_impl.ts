@@ -109,7 +109,7 @@ export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy exten
     tys: Array<ConnectorTy>,
     args: Array<any>, value: MkPayAmt<Token>, out_tys: Array<ConnectorTy>,
     onlyIf: boolean, soloSend: boolean,
-    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, RawAddress, Token, ConnectorTy>>,
+    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, Token, ConnectorTy>>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (
     okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
@@ -201,11 +201,11 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Digest, RawAddress, Token, ConnectorTy> = {
+export type ISimRes<Digest, Token, ConnectorTy> = {
   prevSt: Digest,
   prevSt_noPrevTime: Digest,
-  txns: Array<ISimTxn<RawAddress, Token>>,
-  mapRefs: Array<RawAddress>,
+  txns: Array<ISimTxn<Token>>,
+  mapRefs: Array<string>,
   mapsPrev: any,
   mapsNext: any,
   nextSt: Digest,
@@ -214,13 +214,13 @@ export type ISimRes<Digest, RawAddress, Token, ConnectorTy> = {
   isHalt : boolean,
 };
 
-export type ISimTxn<RawAddress, Token> = {
+export type ISimTxn<Token> = {
   kind: "to"|"init",
   amt: BigNumber,
   tok: Token|undefined,
 } | {
   kind: "from",
-  to: RawAddress,
+  to: string,
   amt: BigNumber,
   tok: Token|undefined,
 } | {

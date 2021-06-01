@@ -162,8 +162,8 @@ type Digest = BigNumber
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
-type SimRes = ISimRes<Digest, Address, Token, AnyALGO_Ty>
-type SimTxn = ISimTxn<Address, Token>
+type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
+type SimTxn = ISimTxn<Token>
 
 // Helpers
 
@@ -1068,6 +1068,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         [ padding_ty, padding_v ];
       debug(dhead, 'VIEWP', { view_typ, view_vp });
 
+      // Parse CBR into Public Key
+      const cbr2algo_addr = (x:string): Address =>
+        algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
+
       // Maps
       const { mapRefs, mapsPrev, mapsNext } = sim_r;
       type MapRecord = [ boolean, any, any, any ];
@@ -1099,7 +1103,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
       mkMapRecord(true)(thisAcc.addr);
-      mapRefs.forEach(mkMapRecord(false));
+      mapRefs.map(cbr2algo_addr).forEach(mkMapRecord(false));
       const missingAccts = (HowManyAccounts - mapArg.length);
       const zero_caddr = T_Address.canonicalize('0x00');
       for ( let i = 0; i < missingAccts; i++ ) {
@@ -1140,9 +1144,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               if ( t.kind === 'from' ) {
                 from = escrowAddr;
                 // @ts-ignore
-                const tto: Address = t.to;
-                // XXX use some other function
-                to = algosdk.encodeAddress(Buffer.from(tto.slice(2), 'hex'));
+                to = cbr2algo_addr(t.to);
                 amt = t.amt;
               } else if ( t.kind === 'init' ) {
                 from = escrowAddr;

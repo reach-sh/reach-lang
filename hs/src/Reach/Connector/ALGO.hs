@@ -1913,16 +1913,17 @@ compile_algo disp pl = do
     unless (null mapKeysl) $ do
       afterAccts <- freshLabel
       forM_ accountsL $ \ai -> do
+        nextAcct <- freshLabel
         cMapWhen $ Just ai
-        code "bz" [ afterAccts ]
+        case (ai == 0) of
+          True ->
+            code "bz" [ nextAcct ]
+          False ->
+            code "bz" [ afterAccts ]
         op "pop"
         cl $ DLL_Int sb $ fromIntegral ai
         cMapAcct $ Just ai
-        case (ai == 0) of
-          True ->
-            code "txn" [ "Sender" ]
-          False ->
-            code "txna" [ "Accounts", texty (ai - 1) ]
+        code "txna" [ "Accounts", texty ai ]
         eq_or_fail
         forM_ mapKeysl $ \mi -> do
           -- Check the previous
@@ -1934,6 +1935,7 @@ compile_algo disp pl = do
           app_local_put ai (keyMap mi) $ do
             cMapNext $ Just ai
             cStateSlice sMapDataSize mi
+        label nextAcct
       label afterAccts
     code "txn" [ "NumAccounts" ]
     eq_or_fail
