@@ -1,16 +1,14 @@
 # This example is not designed to be used with reach run
 
-IMG=reachsh/reach-example-webpack-5:latest
+IMG=reachsh/reach-example-react-build:latest
 
 .PHONY: build
 build:
 	docker build . -t ${IMG}
 
-# Just runs the node.js program
 .PHONY: run
 run: build
-	docker run ${IMG} js-run-node
-	echo 'to serve, use `make serve`'
+	echo 'use `make serve` to run me'
 
 .PHONY: serve
 serve: build
@@ -25,18 +23,12 @@ js-install: package.json
 	npm install
 	npm link @reach-sh/stdlib
 
-.PHONY: js-build
-js-build: dist/bundle.js
-
 # Requires that you `make js-install`
-dist/bundle.js: main.js
+.PHONY: js-build
+js-build:
 	npm run build
 
-.PHONY: js-run-node
-js-run-node: main.js
-	node main.js
-
-# Requires that you `npm install -g serve`
+# You should `make js-build` before doing this
 .PHONY: js-run-serve
-js-run-serve: dist/bundle.js
-	serve
+js-run-serve:
+	npm run serve
