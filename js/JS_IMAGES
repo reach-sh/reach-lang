@@ -7,6 +7,6 @@ REACT_RUNNER_IMAGE="reachsh/react-runner"
 RPC_SERVER_IMAGE="reachsh/rpc-server"
 
 REACH_VERSION=$(VERSION)
-NODE_VERSION="12.18.3"
+NODE_VERSION="14.17.0"
 
 REACH_GIT_HASH="$$($(ROOT)/scripts/git-hash.sh)"
