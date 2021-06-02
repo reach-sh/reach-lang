@@ -17,11 +17,9 @@ COPY package.json \
 # because react-scripts requires webpack 4
 # but we've got webpack 5 installed
 RUN npm install
-
 RUN npm link @reach-sh/stdlib
 
 COPY public/ /app/public/
-COPY craco.config.js /app/
 
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["start"]

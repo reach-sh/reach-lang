@@ -10,7 +10,8 @@
     "wait-port": "^0.2.9",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-scripts": "4.0.3"
+    "react-scripts": "4.0.3",
+    "webpack": "4.44.2"
   },
   "scripts": {
     "start": "react-scripts start"
