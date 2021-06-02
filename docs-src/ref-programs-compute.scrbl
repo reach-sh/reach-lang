@@ -655,6 +655,15 @@ The @reachin{idx} must be a compile-time constant, because tuples do not support
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a @tech{tuple} or an @tech{array}.
 
+@subsection{Array element type: @tt{Array.elemType} and @tt{.elemType}}
+
+@(mint-define! '("elemType"))
+@reach{
+  Array.elemType(arr)
+  arr.elemType }
+
+@index{Array.elemType} @reachin{Array.elemType} Returns the @reachin{Type} of elements that the array contains.
+
 @subsection{Foldable operations}
 
 The following methods are available on any @(mint-define! '("Foldable"))@reachin{Foldable} containers, such as: @reachin{Array}s and @reachin{Map}s.
@@ -938,11 +947,11 @@ no value in the array satisfies the predicate, @reachin{None} is returned.
 
 @(mint-define! '("find"))
 @reach{
-  Array.find(arr, ty, f)
-  arr.find(ty, f) }
+  Array.find(arr, f)
+  arr.find(f) }
 
-@index{Array.find} @reachin{Array.find(arr, ty, f)} returns the first element of type, @reachin{ty}, in the array, @reachin{arr},
-that satisfies the predicate @reachin{f}. The return value is of type @reachin{Maybe(ty)}. If no value in the
+@index{Array.find} @reachin{Array.find(arr, f)} returns the first element in the array, @reachin{arr},
+that satisfies the predicate @reachin{f}. The return value is of type @reachin{Maybe}. If no value in the
 array satisfies the predicate, @reachin{None} is returned.
 
 @subsubsection{@tt{Array.withIndex} && @tt{.withIndex}}

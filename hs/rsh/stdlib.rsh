@@ -559,12 +559,12 @@ export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
 
 export const fromSome = (m, def) => maybe(m, def, ((x) => x));
 
-export const Array_find = (a, ty, p) =>
-  Array.reduce(a, Maybe(ty).None(), (acc, e) =>
-    isNone(acc) && p(e) ? Maybe(ty).Some(e) : acc);
+export const Array_find = (a, p) =>
+  Array.reduce(a, Maybe(a.elemType).None(), (acc, e) =>
+    isNone(acc) && p(e) ? Maybe(a.elemType).Some(e) : acc);
 
-export const Array_find1 = (a) => (ty, p) =>
-  Array_find(a, ty, p);
+export const Array_find1 = (a) => (p) =>
+  Array_find(a, p);
 
 export const Array_withIndex = (a) =>
   Array.zip(a, Array.iota(a.length));
