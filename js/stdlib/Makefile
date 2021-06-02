@@ -4,12 +4,8 @@ include $(ROOT)/js/JS_IMAGES
 IMAGE=$(STDLIB_IMAGE)
 
 .PHONY: clean
-clean: clean-test
+clean:
 	rm -f package.json
-
-.PHONY: clean-test
-clean-test:
-	[ -d test/stdlib-test ] && rm -r test/stdlib-test || true
 
 .PHONY: install-mo
 install-mo:

@@ -1,6 +1,6 @@
 #! /bin/sh
 # usage: sbin/test.sh
-# (call from js/stdlib/ folder)
+# (call from js/dockerized-tests/ folder)
 
 # Note: We're creating an `stdlib-test` directory from scratch here in order
 #   to leverage the `reach` script and abstract over boilerplate such as
@@ -8,13 +8,13 @@
 
 set -x
 
-mkdir test/stdlib-test
-cp    test/index.* test/stdlib-test
-cp -r test/lib     test/stdlib-test/lib
-cd test/stdlib-test || exit 1
+mkdir stdlib-test
+cp    index.* stdlib-test
+cp -r lib     stdlib-test/lib
+cd stdlib-test || exit 1
 
-# js/stdlib/test/stdlib-test/
-REACH=../../../../reach
+# js/dockerized-tests/stdlib-test/
+REACH=../../../reach
 $REACH compile
 REACH_CONNECTOR_MODE=ETH $REACH run
 

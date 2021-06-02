@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import * as rpc_server      from '@reach-sh/stdlib/rpc_server.mjs';
-import * as shared          from '@reach-sh/stdlib/shared.mjs';
+import { eq }               from '@reach-sh/stdlib/shared_backend.mjs';
 
 
 const AsyncFunction = (async () => {}).constructor;
@@ -80,10 +80,10 @@ export const expect = x => ({
   toRaise: e => mkToRaise(x, e, a => a),
 
   toEq: v => assert.deepStrictEqual(
-    shared.eq(x, v), true, `${String(x)} !== ${String(v)}`),
+    eq(x, v), true, `${String(x)} !== ${String(v)}`),
 
   toNotEq: v => assert.deepStrictEqual(
-    shared.eq(x, v), false, `${String(x)} === ${String(v)}`),
+    eq(x, v), false, `${String(x)} === ${String(v)}`),
 
   toRaiseStartingWith: e => mkToRaise(x, e, a =>
     (a.match(`^${e}`) || []).shift() || a.substr(0, e.length)),
