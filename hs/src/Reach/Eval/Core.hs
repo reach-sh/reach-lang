@@ -1151,6 +1151,7 @@ evalAsEnv obj = case obj of
         , ("reduceWithIndex", retStdLib "Array_reduceWithIndex")
         , ("indexOf", retStdLib "Array_indexOf")
         , ("replicate", retStdLib "Array_replicate")
+        , ("elemType", retV $ public $ SLV_Prim $ SLPrim_array_elemType)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
         , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
         , ("iota", retV $ public $ SLV_Prim $ SLPrim_Array_iota)
@@ -1217,7 +1218,8 @@ evalAsEnv obj = case obj of
     arrayValueEnv =
       M.fromList $
         foldableObjectEnv
-          <> [ ("set", delayCall SLPrim_array_set)
+          <> [ ("elemType", doCall SLPrim_array_elemType)
+             , ("set", delayCall SLPrim_array_set)
              , ("length", doCall SLPrim_array_length)
              , ("concat", delayCall SLPrim_array_concat)
              , ("indexOf", delayStdlib "Array_indexOf1")
@@ -1986,6 +1988,13 @@ evalPrim p sargs =
         SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
           retV $ public $ SLV_Int at $ fromIntegral $ sz
         _ -> illegal_args
+    SLPrim_array_elemType ->
+      one_arg >>= getType <&> public . SLV_Type . dt2st
+      where
+        getType = \case
+          SLV_Array _ et _ -> return et
+          SLV_DLVar (DLVar _ _ (T_Array et _) _) -> return et
+          _ -> illegal_args
     SLPrim_Array_iota -> do
       at <- withAt id
       case map snd sargs of

@@ -420,6 +420,7 @@ data SLPrimitive
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array
+  | SLPrim_array_elemType
   | SLPrim_array_length
   | SLPrim_array_set
   | SLPrim_array_concat
