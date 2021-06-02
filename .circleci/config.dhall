@@ -281,6 +281,9 @@ let S_Z3   = "x64-ubuntu-18.04"
 let CACHE_DEPS_HS =
   "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
 
+let CACHE_DEPS_CI_REBUILD =
+  "ci-rebuild-0-{{ checksum \".circleci/rebuild.hs\" }}"
+
 let build-core = dockerized-job ResourceClass.medium
   [ mkdir_bin
   , run "Install `mo`" "curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
@@ -371,7 +374,15 @@ let test-hs = dockerized-job-with-build-core-bins ResourceClass.medium
   , run  "Check hs"    "cd hs && make hs-check"
   , store_artifacts    "hs/stan.html"
 
+  , slack/notify
+  ]
+
+let dhallcheck = dockerized-job-with-build-core-bins ResourceClass.small
+  [ install_stack_deps
+
+  , restore_cache [ CACHE_DEPS_CI_REBUILD ]
   , run "Run dhallcheck" "cd .circleci && make check"
+  , save_cache      CACHE_DEPS_CI_REBUILD [ "~/.stack" ]
 
   , slack/notify
   ]
@@ -516,6 +527,7 @@ let jobs =
       , `=:=` "docker-lint" docker-lint
       , `=:=` "test-hs"     test-hs
       , `=:=` "test-js"     test-js
+      , `=:=` "dhallcheck"  dhallcheck
       ]
       -- `immediate`-workflow (ETH-only)
       # map (KeyVal Text (List Connector))
@@ -575,6 +587,7 @@ let workflows =
       [ [ `=:=` "build-core" T.default           ]
       , [ `=:=` "test-hs"    requires-build-core ]
       , [ `=:=` "test-js"    requires-build-core ]
+      , [ `=:=` "dhallcheck" requires-build-core ]
       ] # map (KeyVal Text (List Connector))
               (Map Text T.Type)
               (mk-example-wf nightly)

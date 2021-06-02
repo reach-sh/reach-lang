@@ -1391,6 +1391,65 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  dhallcheck:
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: |
+          sudo apt update && sudo apt install \
+            g++ \
+            gcc \
+            git \
+            gnupg \
+            libc6-dev \
+            libffi-dev \
+            libgmp-dev \
+            libtinfo-dev \
+            make \
+            netbase \
+            xz-utils \
+            zlib1g-dev
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Install `stack` dependencies"
+        no_output_timeout: 10m
+    - restore_cache:
+        keys:
+        - "ci-rebuild-0-{{ checksum \".circleci/rebuild.hs\" }}"
+    - run:
+        command: "cd .circleci && make check"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run dhallcheck
+        no_output_timeout: 10m
+    - save_cache:
+        key: "ci-rebuild-0-{{ checksum \".circleci/rebuild.hs\" }}"
+        paths:
+        - ~/.stack
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "docker-lint":
     docker:
     - auth:
@@ -5353,12 +5412,6 @@ jobs:
         no_output_timeout: 10m
     - store_artifacts:
         path: hs/stan.html
-    - run:
-        command: "cd .circleci && make check"
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: Run dhallcheck
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -8532,6 +8585,12 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - dhallcheck:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - "abstract-simul":
         context:
         - "reachdevbot-on-dockerhub"
@@ -8911,6 +8970,12 @@ workflows:
         requires:
         - "build-core"
     - "test-js":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - dhallcheck:
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
