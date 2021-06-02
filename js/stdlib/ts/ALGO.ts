@@ -6,7 +6,7 @@ import base32 from 'hi-base32';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import msgpack from '@msgpack/msgpack';
+import * as msgpack from '@msgpack/msgpack';
 
 // DEBUG: uncomment this for debugging in browser
 // @ts-ignore
