@@ -12,7 +12,7 @@ import * as ETH_impl from './ETH_impl';
 import * as cfxers from './cfxers';
 import * as shared_backend from './shared_backend';
 import * as shared_user from './shared_user';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 
 import {
   Stdlib_User,

@@ -1,4 +1,4 @@
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;

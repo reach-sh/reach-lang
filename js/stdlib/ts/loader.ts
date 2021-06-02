@@ -13,16 +13,16 @@ import {
 import {
   setDEBUG,
 } from './shared_impl';
+import type { Stdlib_User } from './interfaces';
 
 export { getConnectorMode, getConnector };
 
-// XXX make an interface for Stdlib, return Promise<Stdlib>
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export async function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Promise<any> {
+export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Stdlib_User<any> {
   if (!connectorModeOrEnv) {
     // @ts-ignore // XXX why doesn't TS understand that Env satisfies {[key: string}: string} ?
-    return await loadStdlib(process.env);
+    return loadStdlib(process.env);
   }
   let connectorModeStr: string;
   if (typeof connectorModeOrEnv === 'string') {

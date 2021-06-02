@@ -1,5 +1,5 @@
 import cfxsdk from 'js-conflux-sdk';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 
 type BigNumber = ethers.BigNumber;

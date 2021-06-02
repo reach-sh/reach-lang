@@ -1,6 +1,9 @@
 import * as eci from './ETH_compiled_impl';
 import cfxsdk from 'js-conflux-sdk';
 import type { ETH_Ty } from './ETH_like_interfaces';
+import buffer from 'buffer';
+
+const { Buffer } = buffer;
 
 // XXX find a better way to support multiple netIds
 let netId = 999;
