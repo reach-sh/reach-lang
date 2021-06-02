@@ -2,17 +2,33 @@
   "name": "@reach-sh/stdlib",
   "version": "{{REACH_VERSION}}",
   "description": "Standard library for Reach Platform",
-  "type": "module",
-  "types": "index.d.ts",
-  "main": "index.mjs",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "browser": "dist/browser/reachsdk.min.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist/",
+    "./*.mjs",
+    "./*.d.ts"
+  ],
   "devDependencies": {
     "@types/await-timeout": "^0.3.1",
     "@types/express": "^4.17.1",
     "@types/node": "^14.14.34",
     "babel-eslint": "^10.0.3",
+    "buffer": "^6.0.3",
+    "concurrently": "^6.0.0",
+    "crypto-browserify": "^3.12.0",
     "eslint": "^7.11.0",
     "js-beautify": "^1.13.0",
-    "typescript": "^4.0.2"
+    "process": "^0.11.10",
+    "source-map-loader": "^3.0.0",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "ts-loader": "^9.2.2",
+    "typescript": "^4.0.2",
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.0"
   },
   "dependencies": {
     "@msgpack/msgpack": "^2.5.1",
@@ -27,7 +43,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reach-sh/reach-lang.git",
-    "directory": "js"
+    "directory": "js/stdlib"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
@@ -36,9 +52,11 @@
   },
   "homepage": "https://github.com/reach-sh/reach-lang#readme",
   "scripts": {
-    "beautify": "js-beautify --indent-size=2 --end-with-newline --brace-style=collapse-preserve-inline --replace *.mjs",
-    "format": "eslint --ignore-path .gitignore --ext .mjs --fix .",
+    "beautify": "js-beautify --indent-size=2 --end-with-newline --brace-style=collapse-preserve-inline --replace dist/mjs/*.mjs",
+    "build": "concurrently \"webpack --config webpack.config.js\" \"tsc -p tsconfig-esm.json\" \"tsc -p tsconfig-cjs.json\"",
+    "format": "eslint --ext .mjs --fix dist/mjs/",
     "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs",
+    "webpack": "webpack --config webpack.config.js",
     "tsc": "tsc"
   }
 }

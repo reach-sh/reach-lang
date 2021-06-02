@@ -28,21 +28,29 @@ COPY package.json /stdlib/
 
 RUN npm link
 
-COPY ts/* /stdlib/ts/
-COPY types/* /stdlib/types/
+COPY ts /stdlib/ts
+COPY types /stdlib/types
+
 # We need .gitignore for eslint, weirdly
-COPY tsconfig.json \
+COPY tsconfig*.json \
+     webpack.config.js \
+     index.ts \
      .eslintrc.yaml .eslintignore .gitignore \
+     launchToken.mjs \
      /stdlib/
 COPY sbin/* /stdlib/sbin/
 
-RUN npm run tsc
+RUN npm run build
 RUN ./sbin/fix.sh
+RUN mv ./dist/mjs/* ./
 RUN rm ./sbin/fix.sh
 
-RUN npm link
+# XXX does this need to be uncommented?
+# RUN npm link
 
-COPY *.mjs /stdlib/
+# XXX redundant
+# COPY *.mjs /stdlib/
+
 COPY --from=token-builder /token.sol.mjs /stdlib/
 
 ARG REACH_GIT_HASH

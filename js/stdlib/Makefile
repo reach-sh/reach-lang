@@ -40,3 +40,13 @@ format: package.json
 .PHONY: check
 check: package.json
 	sbin/check.sh
+
+.PHONY: js-build
+js-build: package.json
+	npm run build
+
+# XXX should be preceded by js-build
+# but don't want to re-force it
+.PHONY: js-mjs
+js-mjs: package.json
+	sbin/fix.sh

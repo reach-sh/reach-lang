@@ -5,3 +5,5 @@
 /*.d.ts
 /js-algorand-sdk
 /ts/version.ts
+/dist/
+/package-lock.json
