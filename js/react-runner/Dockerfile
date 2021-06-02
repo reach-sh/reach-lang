@@ -12,8 +12,11 @@ WORKDIR /app
 COPY --from=js-deps /js-deps/node_modules/ /app/node_modules/
 COPY package.json \
      /app/
-# The above should cover all `npm install` needs
-# RUN npm install
+
+# unfortunately we need to npm install here
+# because react-scripts requires webpack 4
+# but we've got webpack 5 installed
+RUN npm install
 
 RUN npm link @reach-sh/stdlib
 
