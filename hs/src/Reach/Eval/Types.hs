@@ -101,3 +101,58 @@ data TransferType
 
 instance Show TransferType where
   show k = drop 3 $ conNameOf k
+
+data SolReservedName
+  = SOL_address
+  | SOL_after
+  | SOL_alias
+  | SOL_anonymous
+  | SOL_apply
+  | SOL_auto
+  | SOL_case
+  | SOL_constant
+  | SOL_copyof
+  | SOL_default
+  | SOL_define
+  | SOL_external
+  | SOL_final
+  | SOL_immutable
+  | SOL_implements
+  | SOL_in
+  | SOL_indexed
+  | SOL_inline
+  | SOL_internal
+  | SOL_let
+  | SOL_macro
+  | SOL_match
+  | SOL_mutable
+  | SOL_null
+  | SOL_of
+  | SOL_override
+  | SOL_partial
+  | SOL_payable
+  | SOL_private
+  | SOL_promise
+  | SOL_public
+  | SOL_pure
+  | SOL_reference
+  | SOL_relocatable
+  | SOL_sealed
+  | SOL_sizeof
+  | SOL_static
+  | SOL_super
+  | SOL_supports
+  | SOL_switch
+  | SOL_this
+  | SOL_typedef
+  | SOL_typeof
+  | SOL_unchecked
+  | SOL_view
+  | SOL_virtual
+  deriving (Bounded, Enum, Eq, Generic)
+
+instance Show SolReservedName where
+  show k = drop 4 $ conNameOf k
+
+solReservedNames :: [SolReservedName]
+solReservedNames = enumFrom minBound

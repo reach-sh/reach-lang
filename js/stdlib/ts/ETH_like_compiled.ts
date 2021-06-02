@@ -227,6 +227,7 @@ const T_Object = <T>(
     }
     return obj;
   })(),
+  // CBR -> Net . ETH object fields are prefaced with "_"
   munge: (bv: CBR_Object): any => {
     const obj: {
       [key: string]: any
@@ -234,7 +235,7 @@ const T_Object = <T>(
     let none: boolean = true;
     for (const prop in co) {
       none = false;
-      obj[prop] = co[prop].munge(bv[prop]);
+      obj["_" + prop] = co[prop].munge(bv[prop]);
     }
     if ( none ) {
       return false;
@@ -247,7 +248,7 @@ const T_Object = <T>(
       [key: string]: CBR_Val
     } = {};
     for (const prop in co) {
-      obj[prop] = co[prop].unmunge(bv[prop]);
+      obj[prop] = co[prop].unmunge(bv["_" + prop]);
     }
     return V_Object(co)(obj);
   },

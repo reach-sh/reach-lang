@@ -35,6 +35,8 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Data.Bifunctor (Bifunctor(first))
+import Data.String (IsString)
 
 --- Debugging tools
 
@@ -194,6 +196,9 @@ vsToType :: [DLVar] -> DLType
 vsToType vs = T_Struct $ map go_ty vs
   where
     go_ty v = (show (solRawVar v), varType v)
+
+objPrefix :: (Semigroup a, IsString a) => a -> a
+objPrefix = ("_" <>)
 
 --- Compiler
 
@@ -471,7 +476,7 @@ solLargeArg' dv la =
       where
         go i a = one (".elem" <> pretty i) <$> solArg a
     DLLA_Obj m ->
-      solLargeArg' dv $ DLLA_Struct $ M.toAscList m
+      solLargeArg' dv $ DLLA_Struct $ map (first objPrefix) $ M.toAscList m
     DLLA_Data _ vn vv -> do
       t <- solType $ largeArgTypeOf la
       vv' <- solArg vv
@@ -516,7 +521,7 @@ solExpr sp = \case
     return $ ae' <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f -> do
     oe' <- solArg oe
-    return $ oe' <> "." <> pretty f <> sp
+    return $ oe' <> "." <> objPrefix (pretty f) <> sp
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> do
     args' <- mapM solArg args
@@ -1066,7 +1071,7 @@ solDefineType t = case t of
     let ats' = (flip zip) ats $ map (("elem" ++) . show) ([0 ..] :: [Int])
     addMap =<< doStruct ats'
   T_Object tm -> do
-    addMap =<< (doStruct $ M.toAscList tm)
+    addMap =<< (doStruct $ map (first objPrefix) $ M.toAscList tm)
   T_Data tm -> do
     tmn <- mapM solType tm
     --- XXX Try to use bytes and abi.decode; Why not right away? The
