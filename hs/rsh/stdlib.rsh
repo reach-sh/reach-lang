@@ -558,3 +558,28 @@ export const intervalDiv = (x, y) => intervalOpAux(x, y, idiv);
 export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
 
 export const fromSome = (m, def) => maybe(m, def, ((x) => x));
+
+export const Array_find = (a, ty, p) =>
+  Array.reduce(a, Maybe(ty).None(), (acc, e) =>
+    isNone(acc) && p(e) ? Maybe(ty).Some(e) : acc);
+
+export const Array_find1 = (a) => (ty, p) =>
+  Array_find(a, ty, p);
+
+export const Array_withIndex = (a) =>
+  Array.zip(a, Array.iota(a.length));
+
+export const Array_withIndex1 = (a) => () =>
+  Array_withIndex(a);
+
+export const Array_mapWithIndex = (a, f) =>
+  a.withIndex().map(([e, idx]) => f(e, idx));
+
+export const Array_mapWithIndex1 = (a) => (f) =>
+  Array_mapWithIndex(a, f);
+
+export const Array_reduceWithIndex = (a, init, f) =>
+  a.withIndex().reduce(init, (acc, [e, idx]) => f(acc, e, idx));
+
+export const Array_reduceWithIndex1 = (a) => (init, f) =>
+  Array_reduceWithIndex(a, init, f);
