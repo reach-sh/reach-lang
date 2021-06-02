@@ -6,6 +6,8 @@ import * as backend from './build/index.main.mjs';
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
+  accAlice.setDebugLabel('Alice');
+  accBob.setDebugLabel('Bob');
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));

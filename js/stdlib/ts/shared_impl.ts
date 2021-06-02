@@ -288,12 +288,13 @@ export const envDefault = <T>(v: string|undefined|null, d: T): string|T =>
   (v === undefined || v === null) ? d : v;
 
 export const makeDigest = (prep: any) => (t:any, v:any) => {
-  const args = [t, v];
-  debug('digest(', args, ') =>');
+  void(hexlify);
+  // const args = [t, v];
+  // debug('digest(', args, ') =>');
   const kekCat = prep(t, v);
-  debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
+  // debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
   const r = ethers.utils.keccak256(kekCat);
-  debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
+  // debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };
 

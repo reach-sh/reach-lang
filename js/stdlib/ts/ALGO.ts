@@ -244,11 +244,11 @@ const sendAndConfirm = async (
   let sendme = tx;
   if (Array.isArray(stx_or_stxs)) {
     if (stx_or_stxs.length === 0) {
-      debug(`Sending nothing... why...?`);
+      // debug(`Sending nothing... why...?`);
       // @ts-ignore
       return null;
     }
-    debug(`Sending multiple...`);
+    // debug(`Sending multiple...`);
     lastRound = stx_or_stxs[0].lastRound;
     txID = stx_or_stxs[0].txID;
     sendme = stx_or_stxs.map((stx) => stx.tx);
@@ -585,17 +585,20 @@ const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
   return res;
 };
 
-const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+type QueryResult =
+  | { succ: true, txn: any }
+  | { succ: false, round: number }
+
+const doQuery = async (dhead:string, query: ApiCall<any>): Promise<QueryResult> => {
   const res = await doQuery_(dhead, query);
 
   if ( res.transactions.length == 0 ) {
-    // XXX Look at the round in res and wait for a new round
-    return null;
+    return { succ: false, round: res['current-round'] };
   }
 
   const txn = res.transactions[0];
 
-  return txn;
+  return { succ: true, txn };
 };
 
 // ****************************************************************************
@@ -1325,11 +1328,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         undefined;
 
       while ( true ) {
-        const currentRound = await getLastRound();
-        if ( timeoutRound && timeoutRound < currentRound ) {
-          return { didTimeout: true };
-        }
-
         let hquery = indexer.searchForTransactions()
           .address(handler.hash)
           .addressRole('sender')
@@ -1341,12 +1339,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           hquery = hquery.maxRound(timeoutRound);
         }
 
-        const htxn = await doQuery(dhead, hquery);
-        if ( ! htxn ) {
+        const hres = await doQuery(dhead, hquery);
+        if ( ! hres.succ ) {
+          const currentRound = hres.round;
+          if ( timeoutRound && timeoutRound < currentRound ) {
+            debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
+            return { didTimeout: true };
+          }
+
           // XXX perhaps wait until a new round has happened using wait
           await Timeout.set(2000);
           continue;
         }
+        const htxn = hres.txn;
         debug(dhead, '--- htxn =', htxn);
 
         const theRound = htxn['confirmed-round'];
@@ -1354,11 +1359,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           .applicationID(ApplicationID)
           .txType('appl')
           .round(theRound);
-        const txn = await doQuery(dhead, query);
-        if ( ! txn ) {
+        const res = await doQuery(dhead, query);
+        if ( ! res.succ ) {
           // XXX This is probably really bad
           continue;
         }
+        const {txn} = res;
         debug(dhead, '--- txn =', txn);
 
         const ctc_args_all: Array<string> =
@@ -1395,7 +1401,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const oldLastRound = lastRound;
         lastRound = theRound;
-        debug(dhead, '--- updating round from', oldLastRound, 'to', lastRound);
+        debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', lastRound);
 
         const getOutput = (o_lab:String, o_ctc:any): Promise<any> => {
           void(o_lab);
@@ -1755,13 +1761,20 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
     .round(creationRound);
   let ctxn = null;
   while ( ! ctxn ) {
-    const cres = await doQuery_(dhead, cquery);
-    if ( cres['current-round'] < creationRound ) {
-      debug(dhead, '-- waiting for creationRound');
-      await Timeout.set(1000);
-      continue;
+    const cres = await doQuery(dhead, cquery);
+    if ( ! cres.succ ) {
+      if ( cres.round < creationRound ) {
+        debug(dhead, '-- waiting for creationRound');
+        await Timeout.set(1000);
+        continue;
+      } else {
+        chk(false, `Not created in stated round`);
+        break;
+      }
+    } else {
+      ctxn = cres.txn;
+      break;
     }
-    ctxn = cres.transactions[0];
   }
   debug(dhead, '-- ctxn =', ctxn);
   const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
