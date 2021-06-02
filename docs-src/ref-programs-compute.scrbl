@@ -894,8 +894,9 @@ For example, @reachin{Array.iota(4).map(Array.iota(4), add)} returns @reachin{[0
   Array.mapWithIndex(arr, f)
   arr.mapWithIndex(f) }
 
-@index{Array.mapWithIndex} @reachin{Array.mapWithIndex(arr, f)} is the same as @reachin{Array.map}, except it
+@index{Array.mapWithIndex} @reachin{Array.mapWithIndex(arr, f)} is similar to @reachin{Array.map}, except it
 provides @reachin{f} with an additional argument, which is the index of the current element in @reachin{arr}.
+Unlike @reachin{Array.map}, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
 
 @subsubsection{@tt{Array.reduce} && @tt{.reduce}}
 
@@ -918,8 +919,9 @@ For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x
   Array.reduceWithIndex(arr, z, f)
   arr.reduceWithIndex(z, f) }
 
-@index{Array.reduceWithIndex} @reachin{Array.reduceWithIndex(arr, z, f)} is the same as @reachin{Array.reduce}, except it
+@index{Array.reduceWithIndex} @reachin{Array.reduceWithIndex(arr, z, f)} is similar to @reachin{Array.reduce}, except it
 provides @reachin{f} with an additional argument, which is the index of the current element in @reachin{arr}.
+Unlike @reachin{Array.reduce}, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
 
 @subsubsection{@tt{Array.indexOf} && @tt{.indexOf}}
 
