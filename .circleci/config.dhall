@@ -391,7 +391,7 @@ let dhallcheck = dockerized-job-with-build-core-bins ResourceClass.medium
 let test-js = dockerized-job-with-build-core-bins-and-runner ResourceClass.small
   [ restore_cache [ "hs-{{ .Revision }}" ]
 
-  , run "Test js" "cd js/stdlib && make clean-test && sbin/test.sh"
+  , run "Test js" "cd js/dockerized-tests && make clean-test && sbin/test.sh"
 
   , slack/notify
   ]
