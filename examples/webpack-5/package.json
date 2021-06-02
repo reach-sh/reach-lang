@@ -5,10 +5,12 @@
   "browser": "bundle.js",
   "scripts": {
     "dev": "webpack-dev-server --open",
+    "serve": "serve",
     "build": "webpack"
   },
   "devDependencies": {
     "process": "^0.11.10",
+    "serve": "^11.3.2",
     "webpack": "^5.38.1",
     "webpack-cli": "^4.7.0"
   }
