@@ -36,7 +36,7 @@ dist/bundle.js: main.js
 js-run-node: main.js
 	node main.js
 
-# Requires that you `npm install -g serve`
+# Requires that you `make js-install`
 .PHONY: js-run-serve
 js-run-serve: dist/bundle.js
-	serve
+	npm run serve
