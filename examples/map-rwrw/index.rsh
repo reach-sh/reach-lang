@@ -28,7 +28,7 @@ export const main = Reach.App(() => {
   require(read() == a + 2);
 
   commit();
-  A.interact.check(m[A], MUInt.Some(a+1));
+  A.interact.check(m[A], MUInt.Some(a+2));
 
   exit();
 });
