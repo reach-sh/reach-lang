@@ -254,7 +254,7 @@ const T_Object = <T>(
   },
   paramType: (() => {
     const {ascLabels} = labelMaps(co);
-    const tupFields = ascLabels.map((label) => `${co[label].paramType} ${label}`).join(',')
+    const tupFields = ascLabels.map((label) => `${co[label].paramType} _${label}`).join(',')
     return `tuple(${tupFields})`;
   })(),
 });
