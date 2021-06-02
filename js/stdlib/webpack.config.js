@@ -16,27 +16,27 @@ module.exports = {
   resolve: {
     // Add '.ts' as resolvable extensions
     extensions: ['.ts', '.js'],
-
+    // falling back to browser shims for these
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       http: require.resolve('stream-http'),
-      // net: false,
       stream: require.resolve('stream-browserify'),
-      buffer: require.resolve('buffer/'),
-      util: false, // require.resolve('util/') ?
-      url: false, // require.resolve('url/') ?
       process: require.resolve('process/browser'),
-      // path: require.resolve('path-browserify'),
     },
+    // explicitly disabling these
     alias: {
       'wait-port': false,
+      util: false,
+      url: false,
+      net: false,
     }
   },
-  // plugins: [
-  //   new webpack.ProvidePlugin({
-  //     Buffer: ['buffer', 'Buffer'],
-  //   }),
-  // ],
+  // More browser shim stuff
+  plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
+  ],
   module: {
     rules: [
       // All files with a '.ts' extension will be handled by 'ts-loader'.
