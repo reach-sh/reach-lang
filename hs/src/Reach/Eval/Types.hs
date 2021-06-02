@@ -102,7 +102,7 @@ data TransferType
 instance Show TransferType where
   show k = drop 3 $ conNameOf k
 
-data SolReservedNames
+data SolReservedName
   = SOL_address
   | SOL_after
   | SOL_alias
@@ -151,8 +151,8 @@ data SolReservedNames
   | SOL_virtual
   deriving (Bounded, Enum, Eq, Generic)
 
-instance Show SolReservedNames where
+instance Show SolReservedName where
   show k = drop 4 $ conNameOf k
 
-solReservedNames :: [SolReservedNames]
+solReservedNames :: [SolReservedName]
 solReservedNames = enumFrom minBound
