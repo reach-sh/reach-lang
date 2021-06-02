@@ -1,4 +1,4 @@
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import url from 'url';
 import http from 'http';
 import { canonicalizeConnectorMode } from './ConnectorMode';

@@ -13,7 +13,7 @@ import {
 } from './shared_user';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import {
   CBR_Null,
   CBR_Bool,

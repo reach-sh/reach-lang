@@ -1,5 +1,5 @@
 // This can depend on the shared backend and impl
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import { bigNumberify, bigNumberToNumber } from './CBR';
 import {
   hexlify,

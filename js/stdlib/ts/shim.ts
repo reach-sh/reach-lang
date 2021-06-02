@@ -1,4 +1,4 @@
-import ethers from 'ethers';
+import type { ethers } from 'ethers';
 // Some simple shims for defining stuff across node & browser
 
 type Process = {
@@ -7,6 +7,7 @@ type Process = {
 }
 type Env = {
   REACH_CONNECTOR_MODE?: string,
+  REACH_DEBUG?: string,
 
   ETH_NODE_URI?: string,
   ETH_NET?: string,
@@ -27,6 +28,10 @@ type Stdout = {
 }
 const processShim: Process = (() => {
   try {
+    // XXX make better use of process-browserify
+    if (Object.keys(process.env).length === 0) {
+      throw Error(`nothing in process.env`);
+    }
     return process;
   } catch (e) {
     // ReferenceError

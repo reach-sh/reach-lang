@@ -1,5 +1,5 @@
 // This has no dependencies on other shared things
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import {
   bigNumberify
 } from './CBR';

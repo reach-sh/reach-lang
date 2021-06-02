@@ -1,5 +1,5 @@
 import cfxsdk from 'js-conflux-sdk';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;

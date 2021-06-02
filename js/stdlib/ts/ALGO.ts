@@ -3,7 +3,7 @@ export const connector = 'ALGO';
 // XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import msgpack from '@msgpack/msgpack';

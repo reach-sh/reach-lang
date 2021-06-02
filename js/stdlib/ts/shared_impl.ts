@@ -1,6 +1,6 @@
 // This can depend on the shared backend
 import crypto from 'crypto';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 import {
   CBR_Address,
   bigNumberify,
@@ -13,6 +13,7 @@ import {
   checkedBigNumberify,
   bytesEq,
 } from './shared_backend';
+import { process } from './shim';
 export {
   hexlify
 } from './shared_backend';
@@ -39,7 +40,7 @@ export const debug = (...msgs: any) => {
   if (getDEBUG()) {
     // Print arrays/objects in full instead of the default depth of 2
     const betterMsgs = msgs.map((msg: any) =>
-      ["object", "array"].includes(typeof msg)
+      ["object", "array"].includes(typeof msg) && util
         ? util.inspect(msg, false, null, true)
         : msg);
     void(betterMsgs);
@@ -344,4 +345,3 @@ export const objectMap = <A,B>(object: {[key:string]: A}, mapFn: ((k:string, a:A
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
 ) => (x:any, y:any): boolean =>
   bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
-
