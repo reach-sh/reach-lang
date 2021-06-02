@@ -1124,6 +1124,420 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "map-any":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-any"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-any"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-any"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-any"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-any"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-any with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-any"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-any with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-any"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-any with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "map-big":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-big"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-big"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-big"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-big"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-big"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-big with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-big"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-big with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-big"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-big with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "map-multi":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-multi"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-multi"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-multi"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-multi"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-multi"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-multi with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-multi"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-multi with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-multi"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-multi with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "map-rwrw":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-rwrw"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-rwrw"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-rwrw"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-rwrw"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-rwrw"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-rwrw with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-rwrw"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-rwrw with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-rwrw"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-rwrw with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "map-sender":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-sender"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-sender"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-sender"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-sender"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-sender"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-sender with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-sender"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-sender with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-sender"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-sender with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "map-vary":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean map-vary"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean map-vary"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build map-vary"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild map-vary"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run map-vary"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-vary with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run map-vary"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-vary with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-vary"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run map-vary with CFX"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "maybe-send":
     docker:
     - auth:
@@ -4195,6 +4609,42 @@ workflows:
         requires:
         - "build-core"
     - "many-args":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-any":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-big":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-multi":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-rwrw":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-sender":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "map-vary":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

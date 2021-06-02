@@ -12,6 +12,12 @@
 , { mapKey = "exports", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "log", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "many-args", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-any", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-big", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-multi", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-rwrw", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-sender", mapValue = [ "ETH", "ALGO", "CFX" ] }
+, { mapKey = "map-vary", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "maybe-send", mapValue = [ "ETH", "ALGO", "CFX" ] }
 , { mapKey = "multiple-pr-case", mapValue = [ "ETH", "ALGO" ] }
 , { mapKey = "multisig", mapValue = [ "ETH", "ALGO", "CFX" ] }
