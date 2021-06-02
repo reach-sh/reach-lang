@@ -1,7 +1,7 @@
 FROM reachsh/react-runner:0.1
 
 WORKDIR /app/
-RUN rm craco.config.js package.json public/index.html
+RUN rm package.json public/index.html
 
 COPY Makefile package.json ./
 
