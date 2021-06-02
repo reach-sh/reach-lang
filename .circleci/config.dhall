@@ -2,14 +2,27 @@ let Prelude =
   https://prelude.dhall-lang.org/v20.1.0/package.dhall
   sha256:26b0ef498663d269e4dc6a82b0ee289ec565d683ef4c00d0ebdd25333a5a3c98
 
-let Map = Prelude.Map.Type
-let map = Prelude.List.map
+let Map    = Prelude.Map.Type
+let map    = Prelude.List.map
+let filter = Prelude.List.filter
+let not    = Prelude.Bool.not
 
 let MAJOR         = env:MAJOR   as Text
 let MINOR         = env:MINOR   as Text
 let PATCH         = env:PATCH   as Text
 let VERSION       = env:VERSION as Text
 let VERSION_SHORT = "${MAJOR}.${MINOR}"
+
+let E         = ./examples.dhall
+let examples  = E.examples
+let Connector = E.Connector
+
+let Connector/show = \(c : Connector) -> merge
+  { ALGO = "ALGO"
+  , CFX  = "CFX"
+  , ETH  = "ETH"
+  } c
+
 
 let KeyVal
    = \(K : Type)
@@ -455,18 +468,44 @@ let docker-lint = dockerized-job-with
 
 let mk-example-run
    = \(directory : Text)
-  -> \(connector : Text)
-  -> runT "10m" "Run ${directory} with ${connector}" "cd examples && REACH_CONNECTOR_MODE=${connector} REACH_DEBUG=1 ./one.sh run ${directory}"
+  -> \(connector : Connector)
+  -> let c = Connector/show connector
+      in runT "10m" "Run ${directory} with ${c}" ''
+         cd examples && \
+           REACH_CONNECTOR_MODE=${c} REACH_DEBUG=1 ./one.sh run ${directory}
+      ''
 
 let mk-example-job
-   = \(ex : KeyVal Text (List Text))
-  -> let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small (
+   = \(nightly : Bool)
+  -> \(ex      : KeyVal Text (List Connector))
+  -> let key = if nightly
+      then "${ex.mapKey}-nightly"
+      else ex.mapKey
+
+     let is-eth = \(c : Connector) -> merge
+      { ETH  = True
+      , ALGO = False
+      , CFX  = False
+      } c
+
+     -- 2021-06-02: The `immediate` workflow should only target `ETH` for now;
+     -- likewise, `nightly` is supposed to ignore the skip lists in
+     -- `rebuild.hs` and try everything
+     let conns = if not nightly
+      then filter Connector is-eth ex.mapValue
+      else [ Connector.ALGO
+           , Connector.CFX
+           , Connector.ETH
+           ]
+
+     let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small (
       [ run "Clean ${ex.mapKey}"   "cd examples && ./one.sh clean ${ex.mapKey}"
       , run "Rebuild ${ex.mapKey}" "cd examples && ./one.sh build ${ex.mapKey}"
       ]
-      # map Text Step (mk-example-run ex.mapKey) ex.mapValue
+      # map Connector Step (mk-example-run ex.mapKey) conns
       # [ slack/notify ])
-     in `:=` DockerizedJob ex.mapKey j
+
+     in `:=` DockerizedJob key j
 
 let jobs =
   let `=:=` = `:=` DockerizedJob
@@ -477,7 +516,17 @@ let jobs =
       , `=:=` "docker-lint" docker-lint
       , `=:=` "test-hs"     test-hs
       , `=:=` "test-js"     test-js
-      ] # map (KeyVal Text (List Text)) (KeyVal Text DockerizedJob) mk-example-job ./examples.dhall
+      ]
+      -- `immediate`-workflow (ETH-only)
+      # map (KeyVal Text (List Connector))
+            (KeyVal Text DockerizedJob)
+            (mk-example-job False)
+            examples
+      -- `nightly`-workflow
+      # map (KeyVal Text (List Connector))
+            (KeyVal Text DockerizedJob)
+            (mk-example-job True)
+            examples
 
 
 --------------------------------------------------------------------------------
@@ -505,8 +554,12 @@ let workflows =
     T::{ requires = Some [ "build-core" ] }
 
   let mk-example-wf
-     = \(ex : KeyVal Text (List Text))
-    -> [ `=:=` ex.mapKey requires-build-core ]
+     = \(nightly : Bool)
+    -> \(ex      : KeyVal Text (List Connector))
+    -> let key = if nightly
+          then "${ex.mapKey}-nightly"
+          else ex.mapKey
+        in [ `=:=` key requires-build-core ]
 
   let lint = { jobs =
     [ [ `=:=` "shellcheck" T.default ]
@@ -517,21 +570,37 @@ let workflows =
     , [ `=:=` "docs-deploy" wf-docs-deploy ]
     ] }
 
-  let build-and-test =
+  let mk-build-and-test = \(nightly : Bool) ->
     let jobs =
       [ [ `=:=` "build-core" T.default           ]
       , [ `=:=` "test-hs"    requires-build-core ]
       , [ `=:=` "test-js"    requires-build-core ]
-      ] # map (KeyVal Text (List Text)) (Map Text T.Type) mk-example-wf ./examples.dhall
+      ] # map (KeyVal Text (List Connector))
+              (Map Text T.Type)
+              (mk-example-wf nightly)
+              examples
 
-    let sched = { schedule =
-      { cron    = "0 0 * * *" -- 8pm EDT / Midnight UTC
-      , filters = { branches = { only = [ "master" ] }}
-      }}
+    let Schedule =
+      { Type = { schedule :
+        { cron    : Text
+        , filters : { branches : { only : List Text }}
+        }}
+      , default = { schedule =
+        { cron    = "0 0 * * *" -- 8pm EDT / Midnight UTC
+        , filters = { branches = { only = [ "master" ] }}
+        }}
+      }
 
-    in { jobs , triggers = [ sched ] }
+    let triggers = if nightly
+      then Some [ Schedule.default ]
+      else None (List Schedule.Type)
 
-  in { lint, docs, build-and-test }
+    in { jobs, triggers }
+
+  let nightly   = mk-build-and-test True
+  let immediate = mk-build-and-test False
+
+  in { lint, docs, nightly, immediate }
 
 
 --------------------------------------------------------------------------------
