@@ -4789,6 +4789,140 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "react-build":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean react-build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean react-build"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build react-build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild react-build"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run react-build
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run react-build with ETH"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "react-build-nightly":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean react-build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean react-build"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build react-build"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild react-build"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run react-build
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run react-build with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run react-build
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run react-build with CFX"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run react-build
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run react-build with ETH"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   remote:
     docker:
     - auth:
@@ -5455,7 +5589,7 @@ jobs:
         keys:
         - "hs-{{ .Revision }}"
     - run:
-        command: "cd js/stdlib && make clean-test && sbin/test.sh"
+        command: "cd js/dockerized-tests && make clean-test && sbin/test.sh"
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Test js
@@ -7742,6 +7876,140 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  "webpack-5":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean webpack-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean webpack-5"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build webpack-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild webpack-5"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run webpack-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run webpack-5 with ETH"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "webpack-5-nightly":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean webpack-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Clean webpack-5"
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build webpack-5"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Rebuild webpack-5"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run webpack-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run webpack-5 with ALGO"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run webpack-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run webpack-5 with CFX"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run webpack-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run webpack-5 with ETH"
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
   "weird-swap":
     docker:
     - auth:
@@ -8789,6 +9057,12 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - "react-build":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - remote:
         context:
         - "reachdevbot-on-dockerhub"
@@ -8910,6 +9184,12 @@ workflows:
         requires:
         - "build-core"
     - "view-steps":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "webpack-5":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
@@ -9179,6 +9459,12 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - "react-build-nightly":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
     - "remote-nightly":
         context:
         - "reachdevbot-on-dockerhub"
@@ -9300,6 +9586,12 @@ workflows:
         requires:
         - "build-core"
     - "view-steps-nightly":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "webpack-5-nightly":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"

@@ -204,6 +204,13 @@ let examples =
   , { mapKey = "raffle"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
+  , { mapKey = "react-build"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
+    }
   , { mapKey = "remote"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
@@ -318,6 +325,13 @@ let examples =
     }
   , { mapKey = "view-steps"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    }
+  , { mapKey = "webpack-5"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "weird-swap"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
