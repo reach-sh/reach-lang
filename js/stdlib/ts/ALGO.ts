@@ -589,15 +589,16 @@ type QueryResult =
   | { succ: true, txn: any }
   | { succ: false, round: number }
 
-const doQuery = async (dhead:string, query: ApiCall<any>): Promise<QueryResult> => {
+const doQuery = async (dhead:string, query: ApiCall<any>, pred: ((x:any) => boolean) = ((x) => { void(x); return true; })): Promise<QueryResult> => {
   const res = await doQuery_(dhead, query);
+  const txns = res.transactions;
+  const ptxns = txns.filter(pred);
 
-  if ( res.transactions.length == 0 ) {
+  if ( ptxns.length == 0 ) {
     return { succ: false, round: res['current-round'] };
   }
 
-  const txn = res.transactions[0];
-
+  const txn = ptxns[0];
   return { succ: true, txn };
 };
 
@@ -1114,7 +1115,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
       debug(dhead, 'MAP', { mapArg, mapArgTy, mapAccts });
       debug(dhead, 'MAPARG', mapArg );
-      if ( mapArg[0][1] ) {
+      if ( mapArg[0][0] ) {
         await ensureOptIn();
       }
       const mapAcctsReal =
@@ -1359,7 +1360,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           .applicationID(ApplicationID)
           .txType('appl')
           .round(theRound);
-        const res = await doQuery(dhead, query);
+        const res =
+          // XXX move predicate into indexer query
+          await doQuery(dhead, query, ((x:any) => x.group === htxn.group));
         if ( ! res.succ ) {
           // XXX This is probably really bad
           continue;
