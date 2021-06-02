@@ -6,7 +6,7 @@ import { resolve                  } from 'path';
 import express, { Request, Response, NextFunction } from 'express';
 
 import { loadStdlib } from './loader';
-
+import { debug } from './shared_impl';
 
 const withApiKey = () => {
   const key = process.env.REACH_RPC_KEY;
@@ -133,7 +133,6 @@ export const mkStdlibProxy = async (lib: any) => {
 export const serveRpc = async (backend: any) => {
   const real_stdlib             = await loadStdlib();
   const { account, rpc_stdlib } = await mkStdlibProxy(real_stdlib);
-  const { debug }               = real_stdlib;
   const contract                = mkKont();
   const kont                    = mkKont();
   const app                     = express();

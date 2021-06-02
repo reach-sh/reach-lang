@@ -1,5 +1,5 @@
-import * as cfxImpl from "./CFX_impl";
-import { makeEthLike } from "./ETH_like";
+import * as cfxImpl from './CFX_impl';
+import { makeEthLike } from './ETH_like';
 
 export * from './CFX_compiled';
 export const connector = 'CFX';
