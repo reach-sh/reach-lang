@@ -26,9 +26,10 @@ for FILE in *.mjs ; do
     rm "$FILE.bak"
   done
   # XXX this is very fragile
-  # also rewrite ethers imports
-  sed -i.bak "s#import { ethers }#import ethers#" "$FILE"
-  sed -i.bak "s#import { ethers as real_ethers }#import real_ethers#" "$FILE"
+  # also rewrite ethers & msgpack imports
+  sed -i.bak 's#import { ethers }#import ethers#' "$FILE"
+  sed -i.bak 's#import { ethers as real_ethers }#import real_ethers#' "$FILE"
+  sed -i.bak 's#import \* as msgpack#import msgpack#' "$FILE"
   # also snag the typedefs
   F="${FILE%.*}" # strip the .mjs suffix
   TYPEDEFS="../esm/$F.d.ts"
