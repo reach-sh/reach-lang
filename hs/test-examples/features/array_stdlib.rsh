@@ -19,5 +19,10 @@ export const main =
         assert(Array.or(array(Bool, [true, false])));
         assert(a.includes(2));
         assert(!a.includes(322));
+        assert(a.mapWithIndex((x, i) => x - i).all(x => x == 0));
+        assert(Array.find(a, UInt, ((p) => p > 5)) == Maybe(UInt).None());
+        assert(a.find(UInt, (p) => p > 0) == Maybe(UInt).Some(1));
+        assert(a.reduceWithIndex(0, (acc, e, idx) => acc + e + idx) == 20);
+        assert(array(Bool, [false, true]).withIndex() == array(Tuple(Bool, UInt), [[false, 0], [true, 1]]));
       });
     });

@@ -878,6 +878,16 @@ This may be abbreviated as @reachin{arr.map(f)}.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{f} argument.
 For example, @reachin{Array.iota(4).map(Array.iota(4), add)} returns @reachin{[0, 2, 4, 6]}.
 
+@subsubsection{@tt{Array.mapWithIndex} && @tt{.mapWithIndex}}
+
+@(mint-define! '("mapWithIndex"))
+@reach{
+  Array.mapWithIndex(arr, f)
+  arr.mapWithIndex(f) }
+
+@index{Array.mapWithIndex} @reachin{Array.mapWithIndex(arr, f)} is the same as @reachin{Array.map}, except it
+provides @reachin{f} with an additional argument, which is the index of the current element in @reachin{arr}.
+
 @subsubsection{@tt{Array.reduce} && @tt{.reduce}}
 
 @(mint-define! '("reduce"))
@@ -891,6 +901,16 @@ This may be abbreviated as @reachin{arr.reduce(z, f)}.
 
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
 For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
+
+@subsubsection{@tt{Array.reduceWithIndex} && @tt{.reduceWithIndex}}
+
+@(mint-define! '("reduceWithIndex"))
+@reach{
+  Array.reduceWithIndex(arr, z, f)
+  arr.reduceWithIndex(z, f) }
+
+@index{Array.reduceWithIndex} @reachin{Array.reduceWithIndex(arr, z, f)} is the same as @reachin{Array.reduce}, except it
+provides @reachin{f} with an additional argument, which is the index of the current element in @reachin{arr}.
 
 @subsubsection{@tt{Array.indexOf} && @tt{.indexOf}}
 
@@ -913,6 +933,28 @@ the value is not present in the array, @reachin{None} is returned.
 @index{Array.findIndex} @reachin{Array.findIndex(arr, f)} returns the index of the first element
 in the given array that satisfies the predicate @tt{f}. The return value is of type @reachin{Maybe(UInt)}. If
 no value in the array satisfies the predicate, @reachin{None} is returned.
+
+@subsubsection{@tt{Array.find} && @tt{.find}}
+
+@(mint-define! '("find"))
+@reach{
+  Array.find(arr, ty, f)
+  arr.find(ty, f) }
+
+@index{Array.find} @reachin{Array.find(arr, ty, f)} returns the first element of type, @reachin{ty}, in the array, @reachin{arr},
+that satisfies the predicate @reachin{f}. The return value is of type @reachin{Maybe(ty)}. If no value in the
+array satisfies the predicate, @reachin{None} is returned.
+
+@subsubsection{@tt{Array.withIndex} && @tt{.withIndex}}
+
+@(mint-define! '("withIndex"))
+@reach{
+  Array.withIndex(arr)
+  arr.withIndex() }
+
+@index{Array.withIndex} @reachin{Array.withIndex(arr)} returns an array where every element of @reachin{arr}
+is paired with its index. For example, @reachin{array(Bool, [false, true]).withIndex()} returns
+@reachin{array(Tuple(Bool, UInt), [[false, 0], [true, 1]])}.
 
 @subsection{Mapping group operations}
 
