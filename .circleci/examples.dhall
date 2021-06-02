@@ -290,7 +290,6 @@ let examples =
       , < ALGO | CFX | ETH >.CFX
       ]
     }
-  , { mapKey = "tut-7-rpc", mapValue = [] : List < ALGO | CFX | ETH > }
   , { mapKey = "tut-9"
     , mapValue =
       [ < ALGO | CFX | ETH >.ETH

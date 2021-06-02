@@ -124,9 +124,11 @@ skipCfx =
 
 skipExample :: [FilePath]
 skipExample =
+  [ "tut-7-rpc"
+
   -- nondeterministic failures on CI
   -- https://trello.com/c/X8c2lhSV/1273-fix-tut-8-non-deterministic-failures-in-ci
-  [ "tut-8"
+  , "tut-8"
   ]
 
 
