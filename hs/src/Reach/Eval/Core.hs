@@ -2194,6 +2194,7 @@ evalPrim p sargs =
         verifyStructId r s = do
           at <- withAt id
           connectors <- readDlo dlo_connectors
+          -- XXX extend `Connector` to convey this info we're checking
           when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
             expect_thrown at $ Err_Sol_Reserved s
           bool (expect_ $ Err_Struct_Key_Invalid s) (return s) $ matched $ s ?=~ r
