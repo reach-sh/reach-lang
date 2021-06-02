@@ -989,6 +989,8 @@ Structs may be converted into a corresponding @tech{tuple} or @tech{object} via 
   assert(Struct.toObject(p2).y == 2);
 }
 
+The names of elements may be restricted to avoid conflicting with reserved words of the specified @tech{connectors}.
+
 @subsection{Field reference}
 
 @reach{

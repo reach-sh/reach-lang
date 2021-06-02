@@ -140,6 +140,7 @@ data EvalError
   | Err_View_CannotExpose SLValTy
   | Err_View_UDFun
   | Err_Part_DuplicatePart SLPart
+  | Err_Sol_Reserved String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -534,5 +535,7 @@ instance Show EvalError where
       "Value cannot be exposed to view: " <> show_sv sv
     Err_View_UDFun ->
       "View functions cannot have unconstrained domains."
+    Err_Sol_Reserved field ->
+      "`" <> field <> "` is not a valid field name because it is reserved in Solidity."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
