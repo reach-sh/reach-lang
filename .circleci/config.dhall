@@ -377,7 +377,7 @@ let test-hs = dockerized-job-with-build-core-bins ResourceClass.medium
   , slack/notify
   ]
 
-let dhallcheck = dockerized-job-with-build-core-bins ResourceClass.small
+let dhallcheck = dockerized-job-with-build-core-bins ResourceClass.medium
   [ install_stack_deps
 
   , restore_cache [ CACHE_DEPS_CI_REBUILD ]

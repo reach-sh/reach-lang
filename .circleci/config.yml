@@ -1397,7 +1397,7 @@ jobs:
         password: $DOCKER_PASSWORD
         username: $DOCKER_LOGIN
       image: "cimg/base:stable-18.04"
-    resource_class: small
+    resource_class: medium
     steps:
     - checkout
     - attach_workspace:
