@@ -23,7 +23,6 @@
     "webpack-cli": "^4.7.0"
   },
   "dependencies": {
-    "@craco/craco": "^5.8.0",
     "@msgpack/msgpack": "^2.5.1",
     "algosdk": "github:algorand/js-algorand-sdk#d7c9f8946bce78d41db247883622df569d643c0f",
     "await-timeout": "^0.6.0",

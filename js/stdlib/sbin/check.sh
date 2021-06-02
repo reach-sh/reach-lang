@@ -10,7 +10,7 @@
 # they need to get updated here, too.
 
 N_DIFF_LINES="$(diff ../js-deps/package.json ./package.json | wc -l)"
-if [ "$N_DIFF_LINES" -eq 37 ]; then
+if [ "$N_DIFF_LINES" -eq 44 ]; then
 	echo 'The diff line count looks good'
 else
 	echo 'The diff line count looks off'
