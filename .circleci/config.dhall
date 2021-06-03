@@ -112,7 +112,7 @@ let Step =
       : { add_ssh_keys : { fingerprints : List Text }}
 
   | SetupRemoteDocker
-      : { setup_remote_docker : { docker_layer_caching : Bool }}
+      : { setup_remote_docker : { docker_layer_caching : Bool, version : Text }}
 
   | Run
       : { run : Run.Type }
@@ -189,7 +189,7 @@ let add_ssh_keys
 
 let setup_remote_docker
    = \(docker_layer_caching : Bool)
-  -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching }}
+  -> Step.SetupRemoteDocker { setup_remote_docker = { docker_layer_caching, version = "20.10.6" }}
 
 
 let mkdir_bin =
