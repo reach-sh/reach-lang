@@ -21,6 +21,7 @@ The @jsin{ctc} argument is the result of a call to the functions @jsin{acc.deplo
 The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
 The types of values this object contains must match those specified
 @seclink["ref-frontends-js-types"]{on this list}.
+Each function may return a @jsin{Promise}, which the @tech{backend} will @jsin{await}, if it needs to perform an asynchronous action.
 
 The backend provides a value, @jsin{_version}, which is a string representation of the Reach version used to compile the program.
 For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
