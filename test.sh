@@ -43,10 +43,10 @@ r () {
 
   # jb
 
-  # export REACH_DEBUG=1
+  export REACH_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -77,7 +77,7 @@ tealcount () {
 
 #######
 
-jb
+# jb
 
 # c hs/test-examples/nl-eval-errors/Err_IllegalEffPosition.rsh
 # c hs/test-examples/nl-eval-errors/Err_TimeMustBeSimple.rsh
@@ -132,6 +132,8 @@ jb
 # c hs/test-examples/features/pr-202105281833.rsh
 # c hs/test-examples/features/map-mt.rsh
 # fc hs/test-examples/nl-verify-errs/map-dset.rsh
+c hs/test-examples/features/lazy-ifs.rsh
+exit 0
 
 # c hs/test-examples/features/big-d8cff.rsh
 # tealcount1 hs/test-examples/features big-d8cff
@@ -157,9 +159,9 @@ jb
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
-# r examples/map-any
+r examples/map-any
 # r examples/map-sender
-# r examples/map-vary
+r examples/map-vary
 # r examples/map-rwrw # XXX
 # r examples/map-multi
 # r examples/map-big
@@ -196,8 +198,8 @@ r examples/view-map
 # r examples/workshop-relay
 # r examples/workshop-trust-fund
 # r users/kwame20210311
-r examples/raffle
-r examples/rent-seeking
+# r examples/raffle
+# r examples/rent-seeking
 
 # (cd examples/abstract-simul && make build)
 

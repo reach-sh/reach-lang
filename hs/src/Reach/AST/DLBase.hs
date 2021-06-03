@@ -430,13 +430,11 @@ instance IsPure DLExpr where
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
-    DLE_Claim _ _ ct _ _ ->
-      case ct of
-        CT_Assert -> True
-        CT_Possible -> True
-        CT_Assume _ -> False
-        CT_Require -> False
-        CT_Unknowable {} -> True
+    DLE_Claim {} ->
+      -- These are all false, because we use purity to determine if we can
+      -- reorder things and an assert can not be ordered outside of an IF to
+      -- turn it into an ITE
+      False
     DLE_Transfer {} -> False
     DLE_TokenInit {} -> False
     DLE_CheckPay {} -> False

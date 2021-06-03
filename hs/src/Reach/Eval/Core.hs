@@ -1337,6 +1337,16 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
       , top_s ]
     top_s' = JSStatementBlock a top_ss a sp
 
+doClaim :: ClaimType -> DLArg -> Maybe B.ByteString -> App ()
+doClaim ct ca mmsg =
+  case ca of
+    DLA_Literal (DLL_Bool True) ->
+      return ()
+    _ -> do
+      at <- withAt id
+      fs <- e_stack <$> ask
+      ctxt_lift_eff $ DLE_Claim at fs ct ca mmsg
+
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
   case f of
@@ -1520,8 +1530,7 @@ evalForm f args = do
       let whats_das = argExprToArgs $ DLAE_Tuple whats_dae
       let whats_da = DLA_Literal $ DLL_Bool False
       let ct = CT_Unknowable notter whats_das
-      fs <- e_stack <$> ask
-      ctxt_lift_eff $ DLE_Claim at fs ct whats_da mmsg
+      doClaim ct whats_da mmsg
       return $ public $ SLV_Null at "unknowable"
     SLForm_wait -> do
       ensure_can_wait
@@ -1729,9 +1738,7 @@ evalPrimOp p sargs = do
         mapM (uncurry typeCheck_d)
           =<< zipEq (Err_Apply_ArgCount at) dom args'
       dargs <- compileArgExprs args'e
-      let doClaim ca msg = do
-            fs <- e_stack <$> ask
-            ctxt_lift_eff $ DLE_Claim at fs CT_Assert ca $ Just msg
+      let dopClaim ca msg = doClaim CT_Assert ca $ Just msg
       let mkvar t = DLVar at Nothing t
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
@@ -1744,16 +1751,16 @@ evalPrimOp p sargs = do
                   _ -> impossible "add args"
             ra <- doOp T_UInt SUB [lim_maxUInt_a, b]
             ca <- doCmp PLE [a, ra]
-            doClaim ca "add overflow"
+            dopClaim ca "add overflow"
           SUB -> do
             ca <- doCmp PGE dargs
-            doClaim ca "sub wraparound"
+            dopClaim ca "sub wraparound"
           DIV -> do
             let denom = case dargs of
                   [_, b] -> b
                   _ -> impossible "div args"
             ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
-            doClaim ca "div by zero"
+            dopClaim ca "div by zero"
           _ -> return ()
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
@@ -1761,7 +1768,7 @@ evalPrimOp p sargs = do
         case p of
           MUL -> do
             ca <- doCmp PLE [da, lim_maxUInt_a]
-            doClaim ca "mul overflow"
+            dopClaim ca "mul overflow"
           _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 
@@ -2294,9 +2301,8 @@ evalPrim p sargs =
           return $ (barg arg, Just bs)
         _ -> illegal_args
       darg <- dargm
+      doClaim ct darg mmsg
       at <- withAt id
-      fs <- e_stack <$> ask
-      ctxt_lift_eff $ DLE_Claim at fs ct darg mmsg
       let good = return $ public $ SLV_Null at "claim"
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
