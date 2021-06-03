@@ -123,3 +123,12 @@ gen-reach: stack
 .PHONY: watch
 watch: stack
 	@ghcid --target=reach:test:reach-test
+
+.PHONY: watch-reach-cli
+watch-reach-cli: stack
+	@ghcid --target=reach:exe:reach-cli -T Main.main
+
+# TODO
+#.PHONY: reach-cli
+#reach-cli: stack
+#	docker build -f Dockerfile.reach-cli --tag=reachsh/reach-cli:latest .
