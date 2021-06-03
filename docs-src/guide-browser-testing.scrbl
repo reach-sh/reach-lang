@@ -56,7 +56,7 @@ The configuration:
 @itemlist[
  @item{Display Name: Reach Devnet}
  @item{Network ID: devnet-v1}
- @item{Network ALgod URL: http://localhost:4180}
+ @item{Network Algod URL: http://localhost:4180}
  @item{Network Indexer URL: http://localhost:8980}
  @item{Network Headers: @jsin{{"Algod": {"X-Algo-API-Token": "c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705"}, "Indexer": {"X-Indexer-API-Token": "reach-devnet"}}}}
 ]
