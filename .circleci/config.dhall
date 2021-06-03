@@ -505,7 +505,8 @@ let mk-example-job
      let conns = if not nightly
       then filter Connector is-eth ex.mapValue
       else [ Connector.ALGO
-           , Connector.CFX
+           -- XXX 2021-06-03: DanBurton pls enable this when ready
+           -- , Connector.CFX
            , Connector.ETH
            ]
 
