@@ -128,8 +128,10 @@ where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant
 @reachin{WHEN_EXPR} is a @tech{public} @tech{expression} evaluating to a boolean and determines if the @tech{consensus transfer} takes place,
 @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number,
 @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
+
 All of the expressions within a @tech{consensus transfer} are evaluated in a @deftech{pure} context, which may not alter the state of the
 application.
+The @reachin{PAY_EXPR}, @reachin{WHEN_EXPR}, and @reachin{DELAY_EXPR} expressions must refer only to the @tech{consensus state}, including the new data published via the @reachin{.publish} component.
 
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 The @tech{continuation} of a timeout block is the same as the continuation of the function the timeout occurs within.
@@ -193,7 +195,7 @@ In the tail of this program, @reachin{x} is bound to either @reachin{1} or @reac
 
 @subsection{@tt{fork}}
 
-@(mint-define! '("fork"))
+@(mint-define! '("fork") '("paySpec"))
 @reach{
 fork()
 .case(Alice, (() => ({
@@ -252,6 +254,8 @@ If the @litchar{msg} field is absent from the object returned from @reachin{PUBL
 If the @litchar{when} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{true}.
 
 If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{(_) => 0}.
+
+The @reachin{TOKENS_EXPR} and @reachin{PAY_EXPR} have the same restrictions as the @reachin{.pay} component of a @tech{consensus transfer}: i.e., they must be @tech{pure} and can only refer to @tech{consensus state}.
 
 The @reachin{.case} component may be repeated many times.
 
