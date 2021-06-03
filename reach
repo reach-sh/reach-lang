@@ -356,7 +356,7 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = await loadStdlib(process.env);
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
