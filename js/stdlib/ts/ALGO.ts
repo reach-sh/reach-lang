@@ -956,7 +956,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
-    const { viewSize, viewKeys } = bin._Connectors.ALGO;
+    const { viewSize, viewKeys, mapDataKeys } = bin._Connectors.ALGO;
+    const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
     const mapRecordTy =
       T_Tuple([ T_Bool, mapDataTy, mapDataTy, T_Address ]);
@@ -1115,7 +1116,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
       debug(dhead, 'MAP', { mapArg, mapArgTy, mapAccts });
       debug(dhead, 'MAPARG', mapArg );
-      if ( mapArg[0][0] ) {
+      if ( hasMaps ) {
         await ensureOptIn();
       }
       const mapAcctsReal =
