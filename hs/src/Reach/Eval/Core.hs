@@ -42,7 +42,7 @@ import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
 import Reach.Texty (pretty)
-import Data.Sequence (mapWithIndex)
+import Data.Sequence (mapWithIndex, fromList)
 import Data.List (intercalate)
 import qualified Data.Text as T
 
@@ -1367,15 +1367,22 @@ evalForm f args = do
       x <- one_arg
       env <- ask >>= sco_to_cloenv . e_sco
       return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at env x
-    SLForm_liftInteract who mv field -> do
-      at <- withAt id
-      clo_env <- ask >>= sco_to_cloenv . e_sco
-      let params = JSParenthesizedArrowParameterList JSNoAnnot JSLNil JSNoAnnot
-      let dot  = JSMemberDot (JSIdentifier JSNoAnnot "interact") JSNoAnnot (JSIdentifier JSNoAnnot field)
-      let call = JSCallExpression dot JSNoAnnot (toJSCL args) JSNoAnnot
+    SLForm_liftInteract _ msv field -> do
+      let who = fromMaybe (impossible "lifted interact: participant unbound") msv
+      annot <- at2a <$> withAt id
+      -- Enclose the generated `only` with a closure that binds all the arguments to the interact call,
+      -- which allows `this` to point to the originator of the consensus transfer instead of `who`.
+      let param_ids = toList $ mapWithIndex (\ i _ -> JSIdentifier annot $ "liftedInteractArg" <> show i) $ fromList args
+      let no_params = JSParenthesizedArrowParameterList annot JSLNil annot
+      let dot  = JSMemberDot (JSIdentifier annot "interact") annot (JSIdentifier annot field)
+      let call = JSCallExpression dot annot (toJSCL param_ids) annot
       let stmt = JSExpressionStatement call JSSemiAuto
-      let only_thunk = JSArrowExpression params JSNoAnnot stmt
-      return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at clo_env only_thunk
+      let only_thunk = JSArrowExpression no_params annot stmt
+      let only_mem  = JSMemberDot (JSIdentifier annot who) annot (JSIdentifier annot "only")
+      let only_stmt = JSExpressionStatement (JSCallExpression only_mem annot (toJSCL [only_thunk]) annot) JSSemiAuto
+      let params = JSParenthesizedArrowParameterList annot (toJSCL param_ids) annot
+      let fun = JSArrowExpression params annot only_stmt
+      evalExpr $ JSCallExpression fun annot (toJSCL args) annot
     SLForm_fork -> do
       zero_args
       at <- withAt id
