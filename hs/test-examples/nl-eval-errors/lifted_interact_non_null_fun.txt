@@ -1,1 +1,3 @@
 reachc: error: ./lifted_interact_non_null_fun.rsh:8:19:application: Invalid block result type. Expected Null, got UInt
+Trace:
+  in [unknown function] from (./lifted_interact_non_null_fun.rsh:8:19:function exp) at (./lifted_interact_non_null_fun.rsh:8:19:application)
