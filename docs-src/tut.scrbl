@@ -1414,7 +1414,7 @@ We'll modify the @reachexlink["tut-8/Makefile"] to have commands to run each of 
 @reachex[#:mode makefile
          #:show-lines? #t "tut-8/Makefile"
          #:link #t
-         'only 29 39 ""]
+         'only 34 44 ""]
 
 However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let's modify the JavaScript @tech{frontend} and make them interactive.
