@@ -349,6 +349,8 @@ instance Show EvalError where
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
         <> maybe "" (\ suggestion -> ". You must " <> suggestion <> " first.") (getIllegalModeSuggestion mode ok_modes)
+    Err_LValue_IllegalJS (JSIdentifier _ i) ->
+      "Invalid Reach l-value syntax: `" <> i <> "`. Mutation is not allowed unless before `continue`"
     Err_LValue_IllegalJS e ->
       "Invalid Reach l-value syntax: " <> conNameOf e
     Err_Eval_IllegalJS e ->

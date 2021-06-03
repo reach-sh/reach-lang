@@ -1,1 +1,1 @@
-reachc: error: ./Err_LValue_IllegalJS.rsh:1:12:after header semicolon: Invalid Reach l-value syntax: JSIdentifier
+reachc: error: ./Err_LValue_IllegalJS.rsh:1:12:after header semicolon: Invalid Reach l-value syntax: `x`. Mutation is not allowed unless before `continue`
