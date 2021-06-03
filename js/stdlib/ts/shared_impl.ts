@@ -40,7 +40,7 @@ export const debug = (...msgs: any) => {
   if (getDEBUG()) {
     // Print arrays/objects in full instead of the default depth of 2
     const betterMsgs = msgs.map((msg: any) =>
-      ["object", "array"].includes(typeof msg) && util
+      ["object", "array"].includes(typeof msg) && util && util.inspect instanceof Function
         ? util.inspect(msg, false, null, true)
         : msg);
     void(betterMsgs);

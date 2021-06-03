@@ -8,6 +8,10 @@ const protocolPort = {
 };
 
 export default async function waitPort(uri: string, givenPort: string | number | undefined = undefined) {
+  // These libs may not be available in the browser
+  if (!(rawWaitPort instanceof Function)) return;
+  if (!url || !(url.parse instanceof Function)) return;
+
   const { hostname, port, protocol } = url.parse(uri);
   if (!(protocol === 'http:' || protocol === 'https:')) {
     throw Error(`Unsupported protocol ${protocol}`);
