@@ -16,6 +16,7 @@ The following guides are available:
 @include-section["guide-solidity.scrbl"]
 @include-section["guide-rpc.scrbl"]
 @include-section["guide-logging.scrbl"]
+@include-section["guide-ctransfers.scrbl"]
 @include-section["guide-assert.scrbl"]
 @include-section["guide-loop-invs.scrbl"]
 @include-section["guide-deploymode.scrbl"]

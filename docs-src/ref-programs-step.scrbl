@@ -121,6 +121,8 @@ will indicate that @reachin{fork} payments should be of the format:
       .pay(wagerAmount)
       .timeout(false); }
 
+@(note-ctransfer)
+
 A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
 @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
@@ -227,6 +229,8 @@ fork()
   commit();
   exit(); });
 }
+
+@(note-ctransfer)
 
 A @deftech{fork statement} is written:
 
@@ -359,6 +363,8 @@ However, some additional expressions are allowed.
 @(mint-define! '("race"))
 @reach{
  race(Alice, Bob).publish(bet); }
+
+@(note-ctransfer)
 
 A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPANT_n);}, constructs a @tech{participant} that may be used in a @tech{consensus transfer} statement, such as @reachin{publish} or @reachin{pay}, where the various @tech{participants} race to be the first one to perform the @tech{consensus transfer}.
 

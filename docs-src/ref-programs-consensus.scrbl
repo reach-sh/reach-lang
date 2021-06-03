@@ -143,6 +143,8 @@ const [ keepGoing, as, bs ] =
     return [ false, as, bs ]; });
 }
 
+@(note-ctransfer)
+
 A @deftech{parallel reduce statement} is written:
 
 @reach{

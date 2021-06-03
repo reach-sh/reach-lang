@@ -371,5 +371,5 @@ You should start off by initializing your Reach program:
   (number->nice-string 123456)
   (number->nice-string (expt 2 (* 256 3))))
 
-
-
+(define (note-ctransfer)
+  @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.})
