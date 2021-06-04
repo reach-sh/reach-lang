@@ -1,5 +1,6 @@
 'reach 0.1';
 
+import { bestNumber } from '@reach-sh/reach-example-package';
 import * as func from
   '@github.com:reach-sh/reach-example-package:src/func.rsh';
 

@@ -1,9 +1,8 @@
 'reach 0.1';
 
-// No `master` branch exists in the example repo but we're using it here
-// deliberately to demonstrate the complier's "fall through to `main`" behavior
+// No `master`, so this demonstrates default fails to "main"
 import { fourTimesThree } from
-  '@github.com:reach-sh/reach-example-package#master:src/lib.rsh';
+  '@github.com:reach-sh/reach-example-package:src/lib.rsh';
 
 import './local.rsh';
 
