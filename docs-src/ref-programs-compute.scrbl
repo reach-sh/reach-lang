@@ -370,7 +370,8 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
   @item{@(mint-define! '("UInt")) @reachin{UInt}, which denotes an unsigned integer.
   @reachin{UInt.max} is the largest value that may be assigned to a @reachin{UInt}.}
-  @item{@(mint-define! '("Bytes")) @reachin{Bytes(length)}, which denotes a string of bytes of length at most @reachin{length}.}
+  @item{@(mint-define! '("Bytes")) @reachin{Bytes(length)}, which denotes a string of bytes of length at most @reachin{length}.
+  Bytes of different lengths are not compatible; however the shorter bytes may be @tech{padded}.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}.}
@@ -465,6 +466,7 @@ Reach provides syntactic sugar for defining signed @reachin{FixedPoint} numbers,
 may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
+Since @reachin{Bytes} types are specialized in their length, literals typically needed to be @tech{padded} to be useful.
 
 @subsection{Operator expression}
 
@@ -520,7 +522,6 @@ values of type: @reachin{Int}, and @reachin{FixedPoint}.
 @margin-note{Bitwise operations are not supported by all @tech{consensus networks} and greatly decrease the efficiency of verification.}
 
 A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}.
-The operators @reachin{==} (and @reachin{===}) and @reachin{!=} (and @reachin{!==}) operate on all atomic values.
 Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers.
 Since all numbers in Reach are integers, operations like @reachin{/} truncate their result.
 Boolean operations, like @reachin{&&}, only operate on booleans.
@@ -564,7 +565,8 @@ their corresponding named functions @reachin{and} and @reachin{or}, always do.
  ieq(a, b)       // eq on Int
 }
 
-@reachin{==} is a function which operates on all types.
+Equality functions, like @reachin{==}, @reachin{===}, @reachin{!=}, and @reachin{!==}, operate on all types.
+However, values with different types are always not equal.
 Both arguments must be of the same type.
 Specialized functions exist for equality checking on each supported type.
 
@@ -582,6 +584,23 @@ If it is @reachin{false}, then the @tech{connector} will ensure this dynamically
  xor(true, true);   // false }
 
 @index{xor} @reachin{xor(Bool, Bool)} returns @reachin{true} only when the inputs differ in value.
+
+@subsection{Padding}
+
+@(mint-define! '("pad"))
+@reach{
+ Bytes(16).pad('abc');
+}
+
+@reachin{Bytes} are like @reachin{Array}s in that they fixedly and exactly sized.
+This means that two @reachin{Bytes} of different lengths are usable in the same contexts.
+
+For example, @reachin{'You win!'} and @reachin{'You lose!'} cannot both be provided to an @reachin{interact} function, because the second is one character longer.
+Most of the time this is good, because it is a signal that you should use a @reachin{Data} type instead, so that the formatting and display logic is entirely controlled by the @tech{frontend}.
+
+But, sometimes it is necessary and useful to extend one byte string into a larger size.
+Each @reachin{Bytes} type has a @litchar{pad} field that is bound to a function that extends its argument to the needed size.
+A byte string extended in this way is called @deftech{padded}, because it is extended with additional @litchar{NUL} bytes.
 
 @subsection{Parenthesized expression}
 

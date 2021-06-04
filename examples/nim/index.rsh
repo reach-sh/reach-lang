@@ -3,11 +3,12 @@
 
 // Protocol
 const DELAY = 10; // in blocks
+const [ isOutcome, A_TIMEOUT, B_TIMEOUT, A_WON, B_WON ] = makeEnum(4);
 
 const Player =
       { ...hasRandom,
         getMove: Fun([UInt, UInt], Tuple(Bool, UInt)),
-        showOutcome: Fun([Bytes(64)], Null) };
+        showOutcome: Fun([UInt], Null) };
 const Alice =
       { ...Player,
         getParams: Fun([], Tuple(UInt, UInt)) };
@@ -38,14 +39,14 @@ export const main =
         const coinFlipB = declassify(interact.random()); });
       B.publish(coinFlipB)
         .pay(wagerAmount)
-        .timeout(DELAY, () => closeTo(A, sendOutcome('B never accepted')));
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_TIMEOUT)));
       commit();
 
       A.only(() => {
         const coinFlipA = declassify(_coinFlipA); });
       A.publish(coinFlipA)
         .timeout(DELAY, () => {
-          closeTo(B, sendOutcome('A never revealed coinflip'));
+          closeTo(B, sendOutcome(A_TIMEOUT));
         });
       require(commitA == digest(coinFlipA));
       const AisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
@@ -69,7 +70,7 @@ export const main =
             const [ choose1, amount ] = declassify(_move);
             assume(amount <= (choose1 ? heap1 : heap2)); });
           A.publish(choose1, amount)
-            .timeout(DELAY, () => closeTo(B, sendOutcome('A timed out move')));
+            .timeout(DELAY, () => closeTo(B, sendOutcome(A_TIMEOUT)));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue;
@@ -81,7 +82,7 @@ export const main =
             const [ choose1, amount ] = declassify(_move);
             assume(amount <= (choose1 ? heap1 : heap2)); });
           B.publish(choose1, amount)
-            .timeout(DELAY, () => closeTo(A, sendOutcome('B timed out move')));
+            .timeout(DELAY, () => closeTo(A, sendOutcome(B_TIMEOUT)));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue; } }
@@ -89,7 +90,7 @@ export const main =
       const [ toA, toB ] = AsTurn ? [ 2, 0 ] : [ 0, 2 ];
       transfer(toA * wagerAmount).to(A);
       transfer(toB * wagerAmount).to(B);
-      const outcome = AsTurn ? 'A won' : 'B won';
+      const outcome = AsTurn ? A_WON : B_WON;
       commit();
 
       sendOutcome(outcome)(); } );

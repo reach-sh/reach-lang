@@ -149,7 +149,10 @@ tealcount () {
 # err Err_Part_DuplicatePart
 # err Err_View_UDFun
 
-r examples/zbeq
+# r examples/zbeq
+# r examples/nim
+# c examples/nim/index-abstract.rsh
+r examples/secured-loan
 exit 0
 
 # r examples/overview

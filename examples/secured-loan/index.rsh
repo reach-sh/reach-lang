@@ -10,8 +10,9 @@ const ParamsType = Object({
   tok: Token
 });
 
+const [ isOutcome, LENDER_TIMEOUT, BORROWER_TIMEOUT ] = makeEnum(2);
 const hasSendOutcome = {
-  sendOutcome: Fun([Bytes(128)], Null),
+  sendOutcome: Fun([UInt], Null),
 };
 
 export const main = Reach.App(() => {
@@ -52,7 +53,7 @@ export const main = Reach.App(() => {
   Lender.pay(pre)
     .timeout(maxLenderDelay, () =>
       closeTo(Borrower,
-        sendOutcome('Lender failed to lend on time'),
+        sendOutcome(LENDER_TIMEOUT),
         [[balance(tok), tok]]));
   transfer(pre).to(Borrower);
   commit();
@@ -63,7 +64,7 @@ export const main = Reach.App(() => {
   Borrower.pay(post)
     .timeout(maturation, () =>
       closeTo(Lender,
-        sendOutcome('Borrower failed to pay on time'),
+        sendOutcome(BORROWER_TIMEOUT),
         [[balance(tok), tok]]));
   transfer(post).to(Lender);
   transfer([ [collateral, tok] ]).to(Borrower);
