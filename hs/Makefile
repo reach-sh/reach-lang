@@ -126,7 +126,7 @@ watch: stack
 
 .PHONY: watch-reach-cli
 watch-reach-cli: stack
-	@ghcid --target=reach:exe:reach-cli -T Main.main
+	@ghcid --target=reach:exe:reach -T Main.main
 
 # TODO
 #.PHONY: reach-cli
