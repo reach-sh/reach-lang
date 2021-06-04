@@ -34,6 +34,7 @@ r () {
   (cd "$1"
 
   ${REACH} clean
+  ${REACH} compile --install-pkgs
   ${REACH} compile
 
   # tealcount1 .
@@ -149,12 +150,13 @@ tealcount () {
 # err Err_Part_DuplicatePart
 # err Err_View_UDFun
 
+r examples/pkg
+exit 0
+
 # r examples/zbeq
 # r examples/nim
 # c examples/nim/index-abstract.rsh
-r examples/secured-loan
-exit 0
-
+# r examples/secured-loan
 # r examples/overview
 # r examples/log
 # r examples/argz
@@ -166,9 +168,9 @@ exit 0
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
-r examples/map-any
+# r examples/map-any
 # r examples/map-sender
-r examples/map-vary
+# r examples/map-vary
 # r examples/map-rwrw # XXX
 # r examples/map-multi
 # r examples/map-big
