@@ -141,7 +141,6 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - optparse-generic
     - shell-monad
     - unix
 
