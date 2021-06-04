@@ -65,6 +65,13 @@ let examples =
       , < ALGO | CFX | ETH >.CFX
       ]
     }
+  , { mapKey = "interact-this"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
+    }
   , { mapKey = "log"
     , mapValue =
       [ < ALGO | CFX | ETH >.ETH
