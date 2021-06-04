@@ -25,14 +25,14 @@ reachVersion = "0.1"
 
 reachImages :: [T.Text]
 reachImages =
- [ "reach"
- , "ethereum-devnet"
- , "algorand-devnet"
- , "devnet-cfx"
- , "runner"
- , "react-runner"
- , "rpc-server"
- ]
+  [ "reach"
+  , "ethereum-devnet"
+  , "algorand-devnet"
+  , "devnet-cfx"
+  , "runner"
+  , "react-runner"
+  , "rpc-server"
+  ]
 
 
 data Cli
@@ -42,6 +42,7 @@ data Cli
   | DockerReset
   | Down
   | Hashes
+  | Help
   | Init
   | NumericVersion
   | React
@@ -87,6 +88,146 @@ clean m i = do
 
 
 --------------------------------------------------------------------------------
+cmdCompile :: Mod CommandFields Cli
+cmdCompile = command "compile" $ info (pure Compile) desc where
+  desc = progDesc "Compile an app"
+
+
+compile :: Script ()
+compile = undefined
+
+
+--------------------------------------------------------------------------------
+cmdInit :: Mod CommandFields Cli
+cmdInit = command "init" $ info (pure Init) desc where
+  desc = progDesc "Set up source files for a simple app"
+
+
+init' :: Script ()
+init' = undefined
+
+
+--------------------------------------------------------------------------------
+cmdRun :: Mod CommandFields Cli
+cmdRun = command "run" $ info (pure Run) desc where
+  desc = progDesc "Run a simple app"
+
+
+run' :: Script ()
+run' = undefined
+
+
+--------------------------------------------------------------------------------
+cmdDown :: Mod CommandFields Cli
+cmdDown = command "down" $ info (pure Down) desc where
+  desc = progDesc "Halt any dockerized devnets for this app"
+
+
+down :: Script ()
+down = undefined
+
+
+--------------------------------------------------------------------------------
+cmdScaffold :: Mod CommandFields Cli
+cmdScaffold = command "scaffold" $ info (pure Scaffold) desc where
+  desc = progDesc "Set up Docker scaffolding for a simple app"
+
+
+scaffold :: Script ()
+scaffold = undefined
+
+
+--------------------------------------------------------------------------------
+cmdReact :: Mod CommandFields Cli
+cmdReact = command "react" $ info (pure React) desc where
+  desc = progDesc "Run a simple React app"
+
+
+react :: Script ()
+react = undefined
+
+
+--------------------------------------------------------------------------------
+cmdRpcServer :: Mod CommandFields Cli
+cmdRpcServer = command "rpc-server" $ info (pure RpcServer) desc where
+  desc = progDesc "Run a simple Reach RPC server"
+
+
+rpcServer :: Script ()
+rpcServer = undefined
+
+
+--------------------------------------------------------------------------------
+cmdRpcRun :: Mod CommandFields Cli
+cmdRpcRun = command "rpc-run" $ info (pure RpcRun) desc where
+  desc = progDesc "Run an RPC server + frontend with development configuration"
+
+
+rpcRun :: Script ()
+rpcRun = undefined
+
+
+--------------------------------------------------------------------------------
+cmdDevnet :: Mod CommandFields Cli
+cmdDevnet = command "devnet" $ info (pure Devnet) desc where
+  desc = progDesc "Run only the devnet"
+
+
+devnet :: Script ()
+devnet = undefined
+
+
+--------------------------------------------------------------------------------
+cmdUpgrade :: Mod CommandFields Cli
+cmdUpgrade = command "upgrade" $ info (pure Upgrade) desc where
+  desc = progDesc "Upgrade Reach"
+
+
+upgrade :: Script ()
+upgrade = undefined
+
+
+--------------------------------------------------------------------------------
+cmdUpdate :: Mod CommandFields Cli
+cmdUpdate = command "update" $ info (pure Update) desc where
+  desc = progDesc "Update Reach Docker images"
+
+
+update :: Script ()
+update = undefined
+
+
+--------------------------------------------------------------------------------
+cmdDockerReset :: Mod CommandFields Cli
+cmdDockerReset = command "docker-reset" $ info (pure DockerReset) desc where
+  desc = progDesc "Docker kill and rm all images"
+
+
+dockerReset :: Script ()
+dockerReset = undefined
+
+
+--------------------------------------------------------------------------------
+cmdVersion :: Mod CommandFields Cli
+cmdVersion = command "version" $ info (pure Version) desc where
+  desc = progDesc "Display version"
+
+
+version :: Script ()
+version = undefined
+
+
+--------------------------------------------------------------------------------
+cmdHelp :: Mod CommandFields Cli
+cmdHelp = command "help" $ info (pure Help) desc where
+  desc = progDesc "Show usage"
+
+
+help' :: Script ()
+help' = undefined
+
+
+--------------------------------------------------------------------------------
 cmdHashes :: Mod CommandFields Cli
 cmdHashes = command "hashes" $ info (pure Hashes) desc where
   desc = progDesc "Display git hashes used to build each Docker image"
@@ -110,6 +251,42 @@ whoami = cmd "docker" "info" "--format" "{{.ID}}"
 
 
 --------------------------------------------------------------------------------
+cmdNumericVersion :: Mod CommandFields Cli
+cmdNumericVersion = command "numeric-version" $ info (pure NumericVersion) fullDesc
+
+
+numericVersion :: Script ()
+numericVersion = undefined
+
+
+--------------------------------------------------------------------------------
+cmdReactDown :: Mod CommandFields Cli
+cmdReactDown = command "react-down" $ info (pure ReactDown) fullDesc
+
+
+reactDown :: Script ()
+reactDown = undefined
+
+
+--------------------------------------------------------------------------------
+cmdRpcServerDown :: Mod CommandFields Cli
+cmdRpcServerDown = command "rpc-server-down" $ info (pure RpcServerDown) fullDesc
+
+
+rpcServerDown :: Script ()
+rpcServerDown = undefined
+
+
+--------------------------------------------------------------------------------
+cmdUnscaffold :: Mod CommandFields Cli
+cmdUnscaffold = command "unscaffold" $ info (pure Unscaffold) fullDesc
+
+
+unscaffold :: Script ()
+unscaffold = undefined
+
+
+--------------------------------------------------------------------------------
 -- TODO better header
 header' :: String
 header' = "https://reach.sh"
@@ -118,36 +295,56 @@ header' = "https://reach.sh"
 cmds :: ParserInfo Cli
 cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
   im = header header' <> fullDesc
-  cs = cmdClean
+  cs = cmdCompile
+    <> cmdClean
+    <> cmdInit
+    <> cmdRun
+    <> cmdDown
+    <> cmdScaffold
+    <> cmdReact
+    <> cmdRpcServer
+    <> cmdRpcRun
+    <> cmdDevnet
+    <> cmdUpgrade
+    <> cmdUpdate
+    <> cmdDockerReset
+    <> cmdVersion
     <> cmdHashes
+    <> cmdHelp
   hs = internal
     <> commandGroup "hidden subcommands"
+    <> cmdNumericVersion
+    <> cmdReactDown
+    <> cmdRpcServerDown
+    <> cmdUnscaffold
     <> cmdWhoami
 
 
 main :: IO ()
 main = customExecParser (prefs showHelpOnError) cmds >>= \case
-  Clean m i -> sh $ clean m i
-  Hashes    -> sh hashes
-  Whoami    -> sh whoami
+  Clean m i      -> sh $ clean m i
+  Compile        -> sh compile
+  Devnet         -> sh devnet
+  DockerReset    -> sh dockerReset
+  Down           -> sh down
+  Hashes         -> sh hashes
+  Help           -> sh help'
+  Init           -> sh init'
+  React          -> sh react
+  RpcRun         -> sh rpcRun
+  RpcServer      -> sh rpcServer
+  Run            -> sh run'
+  Scaffold       -> sh scaffold
+  Update         -> sh update
+  Upgrade        -> sh upgrade
+  Version        -> sh version
 
-  Compile        -> undefined
-  Devnet         -> undefined
-  DockerReset    -> undefined
-  Down           -> undefined
-  Init           -> undefined
-  NumericVersion -> undefined
-  React          -> undefined
-  ReactDown      -> undefined
-  RpcRun         -> undefined
-  RpcServer      -> undefined
-  RpcServerDown  -> undefined
-  Run            -> undefined
-  Scaffold       -> undefined
-  Unscaffold     -> undefined
-  Update         -> undefined
-  Upgrade        -> undefined
-  Version        -> undefined
+  -- Hidden
+  NumericVersion -> sh numericVersion
+  ReactDown      -> sh reactDown
+  RpcServerDown  -> sh rpcServerDown
+  Unscaffold     -> sh unscaffold
+  Whoami         -> sh whoami
 
  where
   sh f = T.putStrLn . script $ do
