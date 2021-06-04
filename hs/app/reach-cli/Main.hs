@@ -60,6 +60,29 @@ data Cli
 
 
 --------------------------------------------------------------------------------
+echo :: CmdParams p => p
+echo = cmd "echo"
+
+
+docker :: CmdParams p => p
+docker = cmd "docker"
+
+
+stdErrDevNull :: Script () -> Script ()
+stdErrDevNull f = f |> (stdError, T.unpack "/dev/null")
+
+
+-- | Squelch @stderr@ and continue even if @f@ returns non-zero exit code
+regardless :: Script () -> Script ()
+regardless f = stdErrDevNull f -||- cmd ":"
+
+
+-- | A completely silent 'regardless'
+regardless' :: Script () -> Script ()
+regardless' f = regardless $ toStderr f
+
+
+--------------------------------------------------------------------------------
 cmdClean :: Mod CommandFields Cli
 cmdClean = command "clean" . info opts $ fullDesc <> desc <> fdoc
  where
@@ -204,8 +227,12 @@ cmdDockerReset = command "docker-reset" $ info (pure DockerReset) desc where
 
 
 dockerReset :: Script ()
-dockerReset = undefined
-
+dockerReset = do
+  echo "Docker kill all the things..."
+  regardless' $ docker "kill" (Output $ docker "ps" "-q" )
+  echo "Docker rm   all the things..."
+  regardless' $ docker "rm"   (Output $ docker "ps" "-qa")
+  echo "...done"
 
 --------------------------------------------------------------------------------
 cmdVersion :: Mod CommandFields Cli
@@ -214,7 +241,7 @@ cmdVersion = command "version" $ info (pure Version) desc where
 
 
 version :: Script ()
-version = cmd "echo" (quote $ "reach " <> reachVersion)
+version = echo (quote $ "reach " <> reachVersion)
 
 
 --------------------------------------------------------------------------------
@@ -236,8 +263,8 @@ cmdHashes = command "hashes" $ info (pure Hashes) desc where
 hashes :: Script ()
 hashes = flip mapM_ reachImages $ \i -> do
   let t = "reachsh/" <> i <> ":" <> reachVersion
-      s = cmd "docker" "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
-  cmd "echo" (i <> ":") (Output s)
+      s = docker "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
+  echo (i <> ":") (Output s)
 
 
 --------------------------------------------------------------------------------
@@ -246,8 +273,7 @@ cmdWhoami = command "whoami" $ info (pure Whoami) fullDesc
 
 
 whoami :: Script ()
-whoami = cmd "docker" "info" "--format" "{{.ID}}"
-  |> (stdError, T.unpack "/dev/null")
+whoami = stdErrDevNull $ docker "info" "--format" "{{.ID}}"
 
 
 --------------------------------------------------------------------------------
@@ -256,7 +282,7 @@ cmdNumericVersion = command "numeric-version" $ info (pure NumericVersion) fullD
 
 
 numericVersion :: Script ()
-numericVersion = cmd "echo" reachVersion
+numericVersion = echo reachVersion
 
 
 --------------------------------------------------------------------------------
