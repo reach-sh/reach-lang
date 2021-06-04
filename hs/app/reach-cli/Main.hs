@@ -14,6 +14,8 @@ import System.Posix.IO (stdError)
 import qualified Data.Text.Lazy    as T
 import qualified Data.Text.Lazy.IO as T
 
+import qualified Reach.Version     as V
+
 default (T.Text)
 
 -- TODO usage help currently prints `reach-cli` instead of `reach`, which may
@@ -22,10 +24,6 @@ default (T.Text)
 
 type Subcommand = ParserInfo (Script ())
 
-
--- TODO
-reachVersion :: T.Text
-reachVersion = "0.1"
 
 reachImages :: [T.Text]
 reachImages =
@@ -185,7 +183,7 @@ dockerReset = info f d where
 version :: Subcommand
 version = info f d where
   d = progDesc "Display version"
-  f = pure $ echo (quote $ "reach " <> reachVersion)
+  f = pure $ echo V.versionHeader
 
 
 --------------------------------------------------------------------------------
@@ -200,7 +198,7 @@ hashes :: Subcommand
 hashes = info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ flip mapM_ reachImages $ \i -> do
-    let t = "reachsh/" <> i <> ":" <> reachVersion
+    let t = "reachsh/" <> i <> ":" <> T.pack V.compatibleVersionStr
     let s = docker "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
     echo (i <> ":") (Output s)
 
@@ -214,7 +212,7 @@ whoami = info f fullDesc where
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
 numericVersion = info f fullDesc where
-  f = pure $ echo reachVersion
+  f = pure $ echo V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
