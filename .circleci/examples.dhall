@@ -138,7 +138,9 @@ let examples =
       , < ALGO | CFX | ETH >.CFX
       ]
     }
-  , { mapKey = "nft-auction", mapValue = [ < ALGO | CFX | ETH >.ETH ] }
+  , { mapKey = "nft-auction"
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    }
   , { mapKey = "nft-dumb"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
@@ -340,7 +342,7 @@ let examples =
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "workshop-fomo-generalized"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "workshop-hash-lock"
     , mapValue =
