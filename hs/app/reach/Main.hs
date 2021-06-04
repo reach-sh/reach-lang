@@ -2,6 +2,7 @@
 
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE QuasiQuotes          #-}
 
 module Main (main) where
 
@@ -11,12 +12,14 @@ import Options.Applicative
 import Options.Applicative.Help.Pretty
 import System.Posix.IO (stdError)
 
-import qualified Data.Text.Lazy    as T
-import qualified Data.Text.Lazy.IO as T
+import qualified Data.Text         as TS
+import qualified Data.Text.Lazy    as TL
+import qualified Data.Text.Lazy.IO as TL
+import qualified NeatInterpolation as N
 
 import qualified Reach.Version     as V
 
-default (T.Text)
+default (TL.Text)
 
 -- TODO usage help currently prints `reach-cli` instead of `reach`, which may
 -- be confusing to end-users who shouldn't have to care that their CLI session
@@ -25,7 +28,7 @@ default (T.Text)
 type Subcommand = ParserInfo (Script ())
 
 
-reachImages :: [T.Text]
+reachImages :: [TL.Text]
 reachImages =
   [ "reach"
   , "ethereum-devnet"
@@ -42,6 +45,10 @@ echo :: CmdParams p => p
 echo = cmd "echo"
 
 
+exit :: Int -> Script ()
+exit i = cmd "exit" $ static i
+
+
 docker :: CmdParams p => p
 docker = cmd "docker"
 
@@ -51,7 +58,7 @@ rm = cmd "rm"
 
 
 stdErrDevNull :: Script () -> Script ()
-stdErrDevNull f = f |> (stdError, T.unpack "/dev/null")
+stdErrDevNull f = f |> (stdError, TL.unpack "/dev/null")
 
 
 -- | Squelch @stderr@ and continue even if @f@ returns non-zero exit code
@@ -77,12 +84,12 @@ clean = info f $ fullDesc <> desc <> fdoc where
    <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
 
   go m i = do
-    let f' m' = rm "-f" $ "build/" <> T.pack m' <> "." <> i <> ".mjs"
+    let f' m' = rm "-f" $ "build/" <> TL.pack m' <> "." <> i <> ".mjs"
 
     case m of
       "index" -> f' m
       _       -> ifCmd (test $ TDirExists m)
-        (cmd "cd" m -||- cmd "exit" "1" *> f' "index")
+        (cmd "cd" m -||- exit 1 *> f' "index")
         (f' m)
 
   f = go
@@ -98,10 +105,81 @@ compile = info f d where
 
 
 --------------------------------------------------------------------------------
+reachVersionShort :: TS.Text -- TODO
+reachVersionShort = TS.pack V.compatibleVersionStr
+
+
+initRsh :: TS.Text -> TL.Text
+initRsh v = TL.fromStrict [N.text|
+  'reach ${v}';
+
+  export const main = Reach.App(() => {
+    const Alice = Participant('Alice', {});
+    const Bob   = Participant('Bob', {});
+    deploy();
+    // write your program here
+
+  });
+|]
+
+
+initMjs :: TS.Text -> TL.Text
+initMjs app = TL.fromStrict [N.text|
+  import {loadStdlib} from '@reach-sh/stdlib';
+  import * as backend from './build/${app}.main.mjs';
+
+  (async () => {
+    const stdlib = await loadStdlib(process.env);
+    const startingBalance = stdlib.parseCurrency(100);
+
+    const alice = await stdlib.newTestAccount(startingBalance);
+    const bob = await stdlib.newTestAccount(startingBalance);
+
+    const ctcAlice = alice.deploy(backend);
+    const ctcBob = bob.attach(backend, ctcAlice.getInfo());
+
+    await Promise.all([
+      backend.Alice(ctcAlice, {
+        ...stdlib.hasRandom
+      }),
+      backend.Bob(ctcBob, {
+        ...stdlib.hasRandom
+      }),
+    ]);
+
+    console.log('Hello, Alice and Bob!');
+  })();
+|]
+
+
 init' :: Subcommand
-init' = info f d where
+init' = info f $ d <> foot where
   d = progDesc "Set up source files for a simple app"
-  f = undefined
+  f = go <$> strArgument (metavar "APP" <> value "index" <> showDefault)
+
+  foot = footerDoc . Just
+     $  text "APP is \"index\" by default"
+   <$$> text ""
+   <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
+
+  go :: FilePath -> Script ()
+  go app = do
+    let rsh = app <> ".rsh"
+    let mjs = app <> ".mjs"
+
+    whenCmd (test $ TRegularFileExists rsh) $ do
+      echo $ rsh <> " already exists"
+      exit 1
+
+    whenCmd (test $ TRegularFileExists mjs) $ do
+      echo $ mjs <> " already exists"
+      exit 1
+
+    echo $ "Writing " <> rsh
+    cmd "cat" |> rsh `hereDocument` initRsh reachVersionShort
+
+    echo $ "Writing " <> mjs
+    cmd "cat" |> mjs `hereDocument` initMjs (TS.pack app)
 
 
 --------------------------------------------------------------------------------
@@ -198,7 +276,7 @@ hashes :: Subcommand
 hashes = info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ flip mapM_ reachImages $ \i -> do
-    let t = "reachsh/" <> i <> ":" <> T.pack V.compatibleVersionStr
+    let t = "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
     let s = docker "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
     echo (i <> ":") (Output s)
 
@@ -271,6 +349,6 @@ main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
   im   = header header' <> fullDesc
   cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
 
-  sh f = T.putStrLn . script $ do
+  sh f = TL.putStrLn . script $ do
     stopOnFailure True
     f
