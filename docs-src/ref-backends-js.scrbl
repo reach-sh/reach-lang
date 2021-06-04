@@ -12,7 +12,8 @@ This will normally be imported by writing:
 }
 
 This module exports an asynchronous function for each @tech{participant}.
-For example, if a Reach program contains a participant named @reachin{'A'} in the @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A} (i.e. @jsin{backend.A})
+For example, if a Reach program contains a participant named @reachin{'A'} in the @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A} (i.e. @jsin{backend.A}).
+The @jsin{Promise} returned by these functions is resolved when the Reach program terminates (i.e. reaches @reachin{exit();}).
 
 Each function accepts two arguments: @jsin{ctc} and @jsin{interact}. These functions should be called by the @tech{frontend}.
 
