@@ -112,7 +112,7 @@ header' = "https://reach.sh"
 
 
 cmds :: ParserInfo Cli
-cmds = info ((hsubparser cs <|> hsubparser hs) <**> helper) im where
+cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
   im = header header' <> fullDesc
   cs = cmdClean
     <> cmdHashes
@@ -122,7 +122,7 @@ cmds = info ((hsubparser cs <|> hsubparser hs) <**> helper) im where
 
 
 main :: IO ()
-main = execParser cmds >>= \case
+main = customExecParser (prefs showHelpOnError) cmds >>= \case
   Clean m i -> sh $ clean m i
   Hashes    -> sh hashes
   Whoami    -> sh whoami
