@@ -577,26 +577,19 @@ jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
-typeMeetM_d :: DLType -> DLType -> Maybe DLType
-typeMeetM_d (T_Bytes xz) (T_Bytes yz) =
-  Just $ T_Bytes (max xz yz)
-typeMeetM_d xt yt =
-  case xt == yt of
-    True -> Just xt
-    False -> Nothing
+typeEqb :: DLType -> DLType -> Bool
+typeEqb = (==)
 
-typeMeet_d :: DLType -> DLType -> App DLType
-typeMeet_d x y = do
-  case typeMeetM_d x y of
-    Just t -> return t
-    Nothing -> expect_ $ Err_TypeMeets_dMismatch x y
+typeEq :: DLType -> DLType -> App ()
+typeEq x y = do
+  unless (typeEqb x y) $
+    expect_ $ Err_Type_Mismatch x y
 
-typeMeets_d :: [DLType] -> App DLType
-typeMeets_d = \case
-  [] -> impossible $ "typeMeets_d none"
-  [xt] -> return $ xt
-  [x, y] -> typeMeet_d x y
-  xt : more -> typeMeet_d xt =<< typeMeets_d more
+typeEqs :: [DLType] -> App DLType
+typeEqs = \case
+  [] -> impossible $ "typeEqs none"
+  [xt] -> return xt
+  x : y : more -> typeEq x y >> typeEqs (y : more)
 
 slToDL :: SLVal -> App (Maybe DLArgExpr)
 slToDL v = slToDLV v <&> maybe Nothing dlvToDL
@@ -702,7 +695,7 @@ typeOf v =
 typeCheck_d :: DLType -> SLVal -> App DLArgExpr
 typeCheck_d ty val = do
   (val_ty, res) <- typeOf val
-  void $ typeMeet_d val_ty ty
+  typeEq val_ty ty
   return res
 
 applyRefinement :: ClaimType -> SLVal -> [SLVal] -> Maybe SLVal -> App ()
@@ -1133,6 +1126,10 @@ evalAsEnv obj = case obj of
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
+  SLV_Type (ST_Bytes len) -> do
+    return $
+      M.fromList
+        [ ("pad", retV $ public $ SLV_Prim $ SLPrim_padTo len) ]
   SLV_Prim SLPrim_Participant ->
     return $
       M.fromList
@@ -1609,9 +1606,9 @@ evalPolyEq lvl x y =
           notR <- evalPrimOp IF_THEN_ELSE [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
           evalPrimOp IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
         _ ->
-          case typeMeetM_d lty rty of
-            Nothing -> retBool False
-            Just _ -> hashAndCmp (lvl, l) (lvl, r)
+          case typeEqb lty rty of
+            False -> retBool False
+            True -> hashAndCmp (lvl, l) (lvl, r)
   where
     andMapEq ls rs = do
       xs <- zipWithM (\l r -> snd <$> evalPolyEq lvl l r) ls rs
@@ -1677,6 +1674,18 @@ evalPrimOp p sargs = do
   at <- withAt id
   let zero = SLV_Int at 0
   case p of
+    BYTES_CONCAT ->
+      case args of
+        [ SLV_Bytes _ "", rhs ] -> static rhs
+        [ lhs, SLV_Bytes _ "" ] -> static lhs
+        [ SLV_Bytes _ lhs, SLV_Bytes _ rhs ] -> do
+          static $ SLV_Bytes at $ lhs <> rhs
+        [ lhs, rhs ] -> do
+          (lhs_l, lhs_ae) <- typeOfBytes lhs
+          (rhs_l, rhs_ae) <- typeOfBytes rhs
+          let rng = T_Bytes $ lhs_l + rhs_l
+          make_var_ rng [ lhs_ae, rhs_ae ]
+        _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
     ADD ->
       case args of
         [ SLV_Int _ 0, rhs ] -> static rhs
@@ -1744,6 +1753,9 @@ evalPrimOp p sargs = do
       args'e <-
         mapM (uncurry typeCheck_d)
           =<< zipEq (Err_Apply_ArgCount at) dom args'
+      make_var_ rng args'e
+    make_var_ rng args'e = do
+      at <- withAt id
       dargs <- compileArgExprs args'e
       let dopClaim ca msg = doClaim CT_Assert ca $ Just msg
       let mkvar t = DLVar at Nothing t
@@ -1927,10 +1939,23 @@ getBillTokens mbill billAmt = do
       return (ST_Tuple $ map (const ST_UInt) nnBilled, map snd nnBilled)
     _ -> return (ST_Null, [])
 
+typeOfBytes :: SLVal -> App (Integer, DLArgExpr)
+typeOfBytes v = do
+  (t, ae) <- typeOf v
+  case t of
+    T_Bytes l -> return (l, ae)
+    _ -> expect_t v $ Err_Expected "bytes"
 
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
+    SLPrim_padTo len -> do
+      at <- withAt id
+      v <- one_arg
+      (vl, _) <- typeOfBytes v
+      let xtra = fromIntegral $ len - vl
+      let z = public $ SLV_Bytes at $ B.replicate xtra 0
+      evalPrimOp BYTES_CONCAT [ public v, z ]
     SLPrim_race -> do
       at <- withAt id
       ps <- mapM slvParticipant_part $ map snd sargs
@@ -2033,15 +2058,15 @@ evalPrim p sargs =
       at <- withAt id
       case map snd sargs of
         [SLV_Array _ x_ty x_vs, SLV_Array _ y_ty y_vs] -> do
-          ty <- typeMeet_d x_ty y_ty
-          retV $ (lvl, SLV_Array at ty $ x_vs ++ y_vs)
+          typeEq x_ty y_ty
+          retV $ (lvl, SLV_Array at x_ty $ x_vs ++ y_vs)
         [x, y] -> do
           (xt, xa) <- compileTypeOf x
           (yt, ya) <- compileTypeOf y
           case (xt, yt) of
             (T_Array x_ty x_sz, T_Array y_ty y_sz) -> do
-              meet_ty <- typeMeet_d x_ty y_ty
-              let t = T_Array meet_ty (x_sz + y_sz)
+              typeEq x_ty y_ty
+              let t = T_Array x_ty (x_sz + y_sz)
               let mkdv = DLVar at Nothing t
               dv <- ctxt_lift_expr mkdv $ DLE_ArrayConcat at xa ya
               return $ (lvl, SLV_DLVar dv)
@@ -2127,7 +2152,7 @@ evalPrim p sargs =
               (f_lvl, f_v) <- f' b_dsv a_dsv
               ensure_level lvl f_lvl
               (f_ty, f_da) <- compileTypeOf f_v
-              void $ typeMeet_d z_ty f_ty
+              typeEq z_ty f_ty
               return $ f_da
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
@@ -2336,7 +2361,7 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "transfer"
       part <- one_arg
       who_a <- typeOfM part >>= \case
-          Just (ty, res) -> typeMeet_d ty T_Address >> compileArgExpr res
+          Just (ty, res) -> typeEq ty T_Address >> compileArgExpr res
           Nothing ->
             case part of
               SLV_Participant _ who _ _ ->
@@ -2498,7 +2523,7 @@ evalPrim p sargs =
           (f_lvl, f_v) <- evalApplyVals' f [(lvl, b_dsv), (lvl, ma_dsv)]
           ensure_level lvl f_lvl
           (f_ty, f_da) <- compileTypeOf f_v
-          void $ typeMeet_d z_ty f_ty
+          typeEq z_ty f_ty
           return $ f_da
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
       let f_bl = DLSBlock at [] f_lifts f_da
@@ -2920,7 +2945,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
                 return $ (retsm, rty)
           (retsms, tys) <- unzip <$> mapM go rs
           let retsm = mconcat retsms
-          r_ty <- locAt body_at $ typeMeets_d tys
+          r_ty <- locAt body_at $ typeEqs tys
           let dv = DLVar body_at Nothing r_ty ret
           saveLift $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
           return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
@@ -3238,9 +3263,9 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
                 return $ (elifts', e_ty)
           (tlifts', t_ty) <- add_ret t_at' tlifts tv
           (flifts', f_ty) <- add_ret f_at' flifts fv
-          ty <- typeMeet_d t_ty f_ty
+          typeEq t_ty f_ty
           at' <- withAt id
-          let ans_dv = DLVar at' Nothing ty ret
+          let ans_dv = DLVar at' Nothing t_ty ret
           theIf <- checkCond om $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
           saveLift $ DLS_Prompt at' (Right (ans_dv, mempty)) $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
@@ -3619,7 +3644,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
   let tc_send = fmap snd tc_send'
   let msg_dass = fmap ds_msg tc_send
   let msg_dass_t = transpose $ M.elems $ msg_dass
-  let get_msg_t = typeMeets_d . map argTypeOf
+  let get_msg_t = typeEqs . map argTypeOf
   msg_ts <- mapM get_msg_t msg_dass_t
   let mrepeat_dvs = all_just $ M.elems $ M.map fst tc_send'
   -- Handle receiving / consensus

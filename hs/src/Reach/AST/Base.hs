@@ -206,6 +206,7 @@ data PrimOp
   | BAND
   | BIOR
   | BXOR
+  | BYTES_CONCAT
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -230,6 +231,7 @@ instance Pretty PrimOp where
     BAND -> "&"
     BIOR -> "|"
     BXOR -> "^"
+    BYTES_CONCAT -> "concat"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

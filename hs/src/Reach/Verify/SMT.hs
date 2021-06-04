@@ -328,6 +328,7 @@ smtPrimOp p dargs =
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
     TOKEN_EQ -> app "="
+    BYTES_CONCAT -> app "bytesAppend"
     SELF_ADDRESS ->
       case dargs of
         [ DLA_Literal (DLL_Bytes pn)

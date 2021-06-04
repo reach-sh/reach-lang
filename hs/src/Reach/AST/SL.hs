@@ -384,6 +384,7 @@ primOpType PLE = ([T_UInt, T_UInt], T_Bool)
 primOpType PEQ = impossible "peq type"
 primOpType PGE = ([T_UInt, T_UInt], T_Bool)
 primOpType PGT = ([T_UInt, T_UInt], T_Bool)
+primOpType BYTES_CONCAT = impossible "pad type"
 primOpType IF_THEN_ELSE = impossible "ite type"
 primOpType DIGEST_EQ = ([T_Digest, T_Digest], T_Bool)
 primOpType ADDRESS_EQ = ([T_Address, T_Address], T_Bool)
@@ -465,6 +466,7 @@ data SLPrimitive
   | SLPrim_deploy
   | SLPrim_setOptions
   | SLPrim_adaptReachAppTupleArgs
+  | SLPrim_padTo Integer
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

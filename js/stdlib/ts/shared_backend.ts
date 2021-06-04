@@ -3,6 +3,10 @@ import { ethers } from 'ethers';
 import {
   bigNumberify
 } from './CBR';
+import {
+  debug
+} from './shared_impl';
+void(debug);
 
 type BigNumber = ethers.BigNumber;
 export type num = BigNumber | number
@@ -53,6 +57,11 @@ const forceHex = (x: string): string =>
 
 export const bytesEq = (x: any, y: any): boolean => {
   return forceHex(x) === forceHex(y); };
+
+export const bytesConcat = (x: string, y: string): string => {
+  // forceHex(x).concat(forceHex(y).slice(2));
+  return x.concat(y);
+};
 
 export const digestEq = bytesEq;
 

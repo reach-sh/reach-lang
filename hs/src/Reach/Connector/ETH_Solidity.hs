@@ -8,6 +8,7 @@ import Control.Monad.Reader
 import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
 import Data.Aeson.Text
+import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
@@ -95,8 +96,11 @@ solVersion = "pragma solidity ^0.8.2;"
 solStdLib :: Doc
 solStdLib = pretty $ B.unpack stdlib_sol
 
+solCommas :: [Doc] -> Doc
+solCommas args = hcat $ intersperse (comma <> space) args
+
 solApply :: Doc -> [Doc] -> Doc
-solApply f args = f <> parens (hcat $ intersperse (comma <> space) args)
+solApply f args = f <> parens (solCommas args)
 
 --- FIXME these add size to the contract without much payoff. A better
 --- thing would be to encode a number and then emit a dictionary of
@@ -422,7 +426,9 @@ solLit = \case
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i -> solNum $ checkIntLiteralC at connect_eth i
-  DLL_Bytes s -> dquotes $ pretty $ B.unpack s
+  DLL_Bytes s -> brackets $ solCommas $ map h $ B.unpack s
+  where
+    h x = solApply "uint8" [ pretty $ show $ BI.c2w x ]
 
 solArg :: AppT DLArg
 solArg = \case
@@ -456,6 +462,7 @@ solPrimApply = \case
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   TOKEN_EQ -> binOp "=="
+  BYTES_CONCAT -> impossible "bytes concat"
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -613,6 +620,7 @@ solHashStateCheck prev =
 arraySize :: DLArg -> Integer
 arraySize a =
   case argTypeOf a of
+    T_Bytes sz -> sz
     T_Array _ sz -> sz
     _ -> impossible "arraySize"
 
@@ -643,6 +651,20 @@ withArgLoc t =
 solType_withArgLoc :: DLType -> App Doc
 solType_withArgLoc t =
   (<> (withArgLoc t)) <$> solType t
+
+doConcat :: DLVar -> DLArg -> DLArg -> App Doc
+doConcat dv x y = do
+  addMemVar dv
+  dv' <- solVar dv
+  let copy src (off :: Integer) = do
+        let sz = arraySize src
+        src' <- solArg src
+        add <- solPrimApply ADD ["i", solNum off]
+        let ref = solArrayRef src' "i"
+        return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' add <+> "=" <+> ref <> semi)
+  x' <- copy x 0
+  y' <- copy y (arraySize x)
+  return $ vsep [x', y']
 
 solCom :: AppT DLStmt
 solCom = \case
@@ -753,17 +775,10 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_CONCAT [x, y]) -> do
+    doConcat dv x y
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
-    addMemVar dv
-    dv' <- solVar dv
-    let copy src (off :: Integer) = do
-          let sz = arraySize src
-          src' <- solArg src
-          add <- solPrimApply ADD ["i", solNum off]
-          return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' add <+> "=" <+> solArrayRef src' "i" <> semi)
-    x' <- copy x 0
-    y' <- copy y (arraySize x)
-    return $ vsep [x', y']
+    doConcat dv x y
   DL_Let _ (DLV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
     addMemVar dv
     let (xy_ty, xy_sz) = case t of
@@ -1039,6 +1054,8 @@ solDefineType t = case t of
   T_Bool -> base
   T_UInt -> base
   T_Bytes sz -> do
+    -- NOTE: This wastes a lot of space, but we can't make fixed bytes larger
+    -- than 32
     addMap $ "uint8[" <> pretty sz <> "]"
   T_Digest -> base
   T_Address -> base

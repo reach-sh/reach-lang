@@ -46,7 +46,7 @@ r () {
   export REACH_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -132,8 +132,9 @@ tealcount () {
 # c hs/test-examples/features/pr-202105281833.rsh
 # c hs/test-examples/features/map-mt.rsh
 # fc hs/test-examples/nl-verify-errs/map-dset.rsh
-c hs/test-examples/features/lazy-ifs.rsh
-exit 0
+# c hs/test-examples/features/lazy-ifs.rsh
+# c hs/test-examples/features/pr-20210603.rsh
+# c hs/test-examples/features/pr-3e579.rsh
 
 # c hs/test-examples/features/big-d8cff.rsh
 # tealcount1 hs/test-examples/features big-d8cff
@@ -147,6 +148,9 @@ exit 0
 # err export_ret_ty
 # err Err_Part_DuplicatePart
 # err Err_View_UDFun
+
+r examples/zbeq
+exit 0
 
 # r examples/overview
 # r examples/log

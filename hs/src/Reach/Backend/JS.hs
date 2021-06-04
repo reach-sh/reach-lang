@@ -277,6 +277,7 @@ jsPrimApply = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
+  BYTES_CONCAT -> jsApply "stdlib.bytesConcat"
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
