@@ -33,7 +33,7 @@ If a participant value is @tech{participant class}, then all of its actions are 
 @section{Are there multiple participants that each want to do different things?}
 
 If the @|DApp| doesn't have a clear next step, but multiple participants each have a different option for what the next step should be, then you need a @reachin{fork}.
-For example, a sale @|DApp| might have an buy option and a bid option where the first immediately ends the computation, while the second moves it to an auction.
+For example, a sale @|DApp| might have a buy option and a bid option where the first immediately ends the computation, while the second moves it to an auction.
 
 @reachin{fork} is for when many participants want to each do a different thing.
 
