@@ -214,7 +214,7 @@ cmdVersion = command "version" $ info (pure Version) desc where
 
 
 version :: Script ()
-version = undefined
+version = cmd "echo" (quote $ "reach " <> reachVersion)
 
 
 --------------------------------------------------------------------------------
