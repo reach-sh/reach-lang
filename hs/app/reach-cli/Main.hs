@@ -256,7 +256,7 @@ cmdNumericVersion = command "numeric-version" $ info (pure NumericVersion) fullD
 
 
 numericVersion :: Script ()
-numericVersion = undefined
+numericVersion = cmd "echo" reachVersion
 
 
 --------------------------------------------------------------------------------
