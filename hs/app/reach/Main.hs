@@ -21,9 +21,6 @@ import qualified Reach.Version     as V
 
 default (TL.Text)
 
--- TODO usage help currently prints `reach-cli` instead of `reach`, which may
--- be confusing to end-users who shouldn't have to care that their CLI session
--- is being forwarded to this binary... Consider renaming
 
 type Subcommand = ParserInfo (Script ())
 
