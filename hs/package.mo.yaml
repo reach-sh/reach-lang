@@ -133,9 +133,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - reach
-  reach-cli:
+  reach:
     main:                Main.hs
-    source-dirs:         app/reach-cli
+    source-dirs:         app/reach
     ghc-options:
     - -threaded
     - -rtsopts
