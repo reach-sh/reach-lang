@@ -1,16 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE TypeOperators        #-}
 
 module Main (main) where
 
 import Control.Monad.Shell
-import Options.Generic
+import Options.Applicative
+import Options.Applicative.Help.Pretty
 import System.Posix.IO (stdError)
 
 import qualified Data.Text.Lazy    as T
@@ -18,12 +15,24 @@ import qualified Data.Text.Lazy.IO as T
 
 default (T.Text)
 
+-- TODO
+reachVersion :: T.Text
+reachVersion = "0.1"
 
-data Cli w
-  = Clean
-    (w ::: Maybe FilePath <?> "Module name")
-    (w ::: Maybe T.Text   <?> "Ident")
+reachImages :: [T.Text]
+reachImages =
+ [ "reach"
+ , "ethereum-devnet"
+ , "algorand-devnet"
+ , "devnet-cfx"
+ , "runner"
+ , "react-runner"
+ , "rpc-server"
+ ]
 
+
+data Cli
+  = Clean FilePath T.Text
   | Compile
   | Devnet
   | DockerReset
@@ -43,31 +52,52 @@ data Cli w
   | Upgrade
   | Version
   | Whoami
-  deriving Generic
 
-deriving instance Show (Cli Unwrapped)
 
-instance ParseRecord (Cli Wrapped) where
-  parseRecord = parseRecordWithModifiers lispCaseModifiers
+--------------------------------------------------------------------------------
+cmdClean :: Mod CommandFields Cli
+cmdClean = command "clean" . info opts $ fullDesc <> desc <> fdoc
+ where
+  desc = progDesc "Delete 'build/$MODULE.$IDENT.mjs'"
+  fdoc = footerDoc . Just
+     $  text "MODULE is \"index\" by default"
+   <$$> text "IDENT  is \"main\"  by default"
+   <$$> text ""
+   <$$> text "If:"
+   <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
+   <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
+  opts = Clean
+    <$> strArgument (metavar "MODULE" <> value "index" <> showDefault)
+    <*> strArgument (metavar "IDENT"  <> value "main"  <> showDefault)
 
 
 -- | > rm -f "build/$m.$i.mjs
---
--- If:
---  * @m@ is @Just "directory"@ then @cd directory@ and use @"index"@ in @m@'s place;
---  * @m@ is @Just "not-index"@ then @rm -f "build/not-index.$i.mjs"@;
---  * @m@ is @Nothing@ then use @"index"@ in its place;
---  * @i@ is @Nothing@ then use @"main"@ in its place
-clean :: Maybe FilePath -> Maybe T.Text -> Script ()
+clean :: FilePath -> T.Text -> Script ()
 clean m i = do
-  let i'   = maybe "main" id i
-      f m' = cmd "rm" "-f" $ "build/" <> m' <> "." <> i' <> ".mjs"
+  let f m' = cmd "rm" "-f" $ "build/" <> T.pack m' <> "." <> i <> ".mjs"
+  if m == "index"
+    then f m
+    else ifCmd (test $ TDirExists m)
+      (cmd "cd" m -||- cmd "exit" "1" *> f "index")
+      (f m)
 
-  case m of
-    Nothing -> f "index"
-    Just m' -> ifCmd (test $ TDirExists m')
-      (cmd "cd" m' -||- cmd "exit" "1" *> f "index")
-      (f $ T.pack m')
+
+--------------------------------------------------------------------------------
+cmdHashes :: Mod CommandFields Cli
+cmdHashes = command "hashes" $ info (pure Hashes) desc where
+  desc = progDesc "Display git hashes used to build each Docker image"
+
+
+hashes :: Script ()
+hashes = flip mapM_ reachImages $ \i -> do
+  let t = "reachsh/" <> i <> ":" <> reachVersion
+      s = cmd "docker" "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
+  cmd "echo" (i <> ":") (Output s)
+
+
+--------------------------------------------------------------------------------
+cmdWhoami :: Mod CommandFields Cli
+cmdWhoami = command "whoami" $ info (pure Whoami) fullDesc
 
 
 whoami :: Script ()
@@ -75,21 +105,32 @@ whoami = cmd "docker" "info" "--format" "{{.ID}}"
   |> (stdError, T.unpack "/dev/null")
 
 
+--------------------------------------------------------------------------------
 -- TODO better header
-header :: T.Text
-header = "https://reach.sh"
+header' :: String
+header' = "https://reach.sh"
+
+
+cmds :: ParserInfo Cli
+cmds = info ((hsubparser cs <|> hsubparser hs) <**> helper) im where
+  im = header header' <> fullDesc
+  cs = cmdClean
+    <> cmdHashes
+  hs = internal
+    <> commandGroup "hidden subcommands"
+    <> cmdWhoami
 
 
 main :: IO ()
-main = unwrapRecord (T.toStrict header) >>= \case
+main = execParser cmds >>= \case
   Clean m i -> sh $ clean m i
+  Hashes    -> sh hashes
   Whoami    -> sh whoami
 
   Compile        -> undefined
   Devnet         -> undefined
   DockerReset    -> undefined
   Down           -> undefined
-  Hashes         -> undefined
   Init           -> undefined
   NumericVersion -> undefined
   React          -> undefined
