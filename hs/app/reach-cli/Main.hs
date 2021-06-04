@@ -15,6 +15,10 @@ import qualified Data.Text.Lazy.IO as T
 
 default (T.Text)
 
+-- TODO usage help currently prints `reach-cli` instead of `reach`, which may
+-- be confusing to end-users who shouldn't have to care that their CLI session
+-- is being forwarded to this binary... Consider renaming
+
 -- TODO
 reachVersion :: T.Text
 reachVersion = "0.1"
