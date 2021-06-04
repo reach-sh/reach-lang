@@ -368,6 +368,13 @@ let examples =
   , { mapKey = "workshop-trust-fund"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
+  , { mapKey = "zbeq"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
+    }
   ]
 
 in { Connector, examples }

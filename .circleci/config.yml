@@ -8572,6 +8572,134 @@ jobs:
         branch_pattern: "master,gh-pages"
         event: fail
         template: basic_fail_1
+  zbeq:
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+        version: '20.10.6'
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean zbeq"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Clean zbeq
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build zbeq"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Rebuild zbeq
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run zbeq
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run zbeq with ETH
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
+  "zbeq-nightly":
+    docker:
+    - auth:
+        password: $DOCKER_PASSWORD
+        username: $DOCKER_LOGIN
+      image: "cimg/base:stable-18.04"
+    resource_class: small
+    steps:
+    - checkout
+    - attach_workspace:
+        at: "/tmp/build-core"
+    - run:
+        command: "mkdir -p ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "mkdir -p ~/.local/bin"
+        no_output_timeout: 10m
+    - run:
+        command: "cp /tmp/build-core/bin/* ~/.local/bin"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "cp /tmp/build-core/bin/* ~/.local/bin"
+        no_output_timeout: 10m
+    - setup_remote_docker:
+        docker_layer_caching: false
+        version: '20.10.6'
+    - run:
+        command: |
+          zcat /tmp/build-core/runner.tar.gz | docker load
+          docker tag reachsh/runner:latest reachsh/runner:0.1.2
+          docker tag reachsh/runner:latest reachsh/runner:0.1
+          docker tag reachsh/runner:latest reachsh/runner:0
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Attach runner image
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh clean zbeq"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Clean zbeq
+        no_output_timeout: 10m
+    - run:
+        command: "cd examples && ./one.sh build zbeq"
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Rebuild zbeq
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ./one.sh run zbeq
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run zbeq with ALGO
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=ETH REACH_DEBUG=1 ./one.sh run zbeq
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run zbeq with ETH
+        no_output_timeout: 10m
+    - slack/notify:
+        branch_pattern: "master,gh-pages"
+        event: fail
+        template: basic_fail_1
 orbs:
   jq: "circleci/jq@2.2.0"
   shellcheck: "circleci/shellcheck@2.2.0"
@@ -8995,6 +9123,12 @@ workflows:
         - "circleci-on-slack"
         requires:
         - "build-core"
+    - zbeq:
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
   lint:
     jobs:
     - shellcheck:
@@ -9398,6 +9532,12 @@ workflows:
         requires:
         - "build-core"
     - "workshop-trust-fund-nightly":
+        context:
+        - "reachdevbot-on-dockerhub"
+        - "circleci-on-slack"
+        requires:
+        - "build-core"
+    - "zbeq-nightly":
         context:
         - "reachdevbot-on-dockerhub"
         - "circleci-on-slack"
