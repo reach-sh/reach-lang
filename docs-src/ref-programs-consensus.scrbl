@@ -210,7 +210,7 @@ Therefore, a @reachin{parallelReduce} that uses this branch must be inside of a 
     throw [ x, y, z ]; }) }
 
 
-@(hrule)
+@subsubsection{@tt{parallelReduce} intuition}
 
 A @tech{parallel reduce statement} is essentially an abbreviation of pattern of a @reachin{while} loop combined with a @reachin{fork} statement that you could write yourself.
 This is an extremely common pattern in decentralized applications.

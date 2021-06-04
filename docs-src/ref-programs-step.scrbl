@@ -268,12 +268,12 @@ That is, a subsequent case will only be evaluated if the prior case's @tt{when} 
 
 If the @tech{participant} specified by @reachin{PART_EXPR} is not already @tech{fixed} (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is @tech{fixed}, provided it is not a @tech{participant class}.
 
-@(hrule)
+@subsubsection{@tt{fork} intuition}
 
 A @tech{fork statement} is an abbreviation of a common @reachin{race} and @reachin{switch} pattern you could write yourself.
 
-The idea is that each of the @tech{participants} in the @reachin{case} components do an independent @tech{local step} evaluation of a value they would like to @reachin{publish} and then all @reachin{race} to @reachin{publish} it.
-The one that "wins" the @reachin{race} then determines not only the value (& @reachin{pay} amount), but also what @tech{consensus step} code runs to consume the value.
+The idea is that each of the @tech{participants} in the @reachin{case} components do an independent @tech{local step} evaluation of a value they would like to @reachin{publish} and then all @reachin{race} to @reachin{publish} their value.
+The one that "wins" the @reachin{race} then determines not only the value (& @reachin{pay} expression), but also what @tech{consensus step} code runs to consume the value.
 
 The sample @reachin{fork} statement linked to the @reachin{fork} keyword is roughly equivalent to:
 @reach{
