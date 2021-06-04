@@ -141,6 +141,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - reach
     - shell-monad
     - unix
 
