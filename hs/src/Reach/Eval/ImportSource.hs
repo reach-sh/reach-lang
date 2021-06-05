@@ -273,13 +273,18 @@ data Parsed = Parsed
 parser :: Parsec String () Parsed
 parser = do
   _ <- string "@"
-  Parsed
-    <$> (optionMaybe $ try $ "server" `terminatedBy` (char ':'))
-    <*> ("host account" `terminatedBy` (char '/'))
-    <*> ("repo"         `terminatedBy` endRepo)
-    <*> (optionMaybe $ try $ (char '#') *> "ref" `terminatedBy` endRef)
-    <*> (many dir)
-    <*> (optionMaybe $ try $ "file" `terminatedBy` eof)
+  host <- optionMaybe $ try $ "server" `terminatedBy` (char ':')
+  user <- "account" `terminatedBy` (char '/')
+  repo <- "repo" `terminatedBy` endRepo
+  ref <- optionMaybe $ try $ (char '#') *> "ref" `terminatedBy` endRef
+  optionMaybe (char ':') >>= \case
+    Nothing -> do
+      eof
+      return $ Parsed host user repo ref [] Nothing
+    Just _ -> do
+      ds <- many $ try $ manyTill (allowed "directory") (char '/')
+      file <- optionMaybe $ try $ "file" `terminatedBy` eof
+      return $ Parsed host user repo ref ds file
  where
   allowed t = alphaNum <|> oneOf "-_."
     <?> "valid git " <> t <> " character (alphanumeric, -, _, .)"
@@ -289,8 +294,7 @@ parser = do
     pure $ h:t
   tlac  a = try (lookAhead $ char a) *> pure ()
   endRepo = eof <|> tlac '#' <|> tlac ':'
-  endRef  = eof <|> char ':'  *> pure ()
-  dir = try $ manyTill (allowed "directory") (char '/')
+  endRef  = eof <|> tlac ':'  *> pure ()
 
 parseIt :: String -> App Parsed
 parseIt s = do
@@ -308,5 +312,6 @@ importSource e_at e_install e_dreachp is =
   flip runReaderT (Env {..}) $ do
     pd <- parseIt is
     nd <- normalize pd
-    resolve nd
+    fp <- resolve nd
+    return $ fp
 
