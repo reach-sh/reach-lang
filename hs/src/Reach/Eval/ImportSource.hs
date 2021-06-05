@@ -1,8 +1,6 @@
 module Reach.Eval.ImportSource
-  ( GitSaas(..)
-  , HostGit(..)
+  ( HostGit(..)
   , ImportSource(..)
-  , gitUriOf
   , importSource
   , lockModuleAbsPath
   , lockModuleAbsPathGitLocalDep
@@ -17,6 +15,7 @@ import Data.Aeson hiding ((<?>), encode)
 import Data.ByteArray          
 import Data.ByteArray.Encoding 
 import Data.List (intercalate, find)              
+import Data.Maybe
 import Data.Text.Encoding      
 import Data.Yaml               
 import GHC.Generics            
@@ -68,18 +67,14 @@ instance FromJSON SHA where
 instance ToJSONKey   SHA
 instance FromJSONKey SHA
 
-data GitSaas = GitSaas
-  { acct ::  String
-  , repo ::  String
-  , ref  ::  String
+data HostGit = HostGit
+  { host :: String
+  , acct :: String
+  , repo :: String
+  , ref  :: String
   , dir  :: [FilePath]
-  , file ::  FilePath
+  , file :: FilePath
   } deriving (Eq, Show, Generic, ToJSON, FromJSON)
-
-data HostGit
-  = GitHub    GitSaas
-  | BitBucket GitSaas
-  deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data ImportSource
   = ImportLocal     FilePath
@@ -100,7 +95,7 @@ data ImportSource
 -- which belong to the same 'refsha' are discovered and added the 'ldeps'
 -- field.
 data LockModule = LockModule
-  { host   :: HostGit            -- ^ Raw result of parsing import statement
+  { hg   :: HostGit            -- ^ Raw result of parsing import statement
   , refsha :: HostGitRef         -- ^ Git SHA to which @host@ refers at time of locking
   , uri    :: GitUri             -- ^ A @git clone@-able URI
   , ldeps  :: M.Map FilePath SHA -- ^ Repo-local deps discovered during @gatherDeps_*@ phase
@@ -244,7 +239,7 @@ lockFileUpsert a = withDotReach $ \(_, lockf) ->
 
 byGitRefSha :: HostGit -> FilePath -> App (HostGitRef, B.ByteString)
 byGitRefSha h fp = withDotReach $ \_ -> do
-  case gitRefOf h of
+  case ref h of
     "master" -> f "master" `orTry` f "main"
     ref      -> f ref
  where
@@ -275,7 +270,7 @@ lockModuleFix h = withDotReach $ \(lock, _) -> do
   lmods         <- dirLockModules
   let hsh = hashWith SHA256 reach
   let dest = lmods </> (T.unpack $ toBase16 hsh)
-  let lmod = LockModule { host   = h
+  let lmod = LockModule { hg     = h
                         , refsha = rsha
                         , uri    = gitUriOf h
                         , ldeps  = mempty
@@ -289,7 +284,7 @@ lockModuleFix h = withDotReach $ \(lock, _) -> do
   pure (dest, lmod)
 
 (@!!) :: LockFile -> HostGit -> Maybe (SHA, LockModule)
-(@!!) l h = find ((== h) . host . snd) (M.toList $ modules l)
+(@!!) l h = find ((== h) . hg . snd) (M.toList $ modules l)
 infixl 9 @!!
 
 failIfMissingOrMismatched :: FilePath -> SHA -> App ()
@@ -343,9 +338,10 @@ lockModuleAbsPathGitLocalDep srcloc installPkgs dirDotReach h ldep =
         failIfMissingOrMismatched dest (SHA s)
         pure dest
 
-gitSaas :: Parsec String () GitSaas
-gitSaas = do
-  GitSaas <$> ("host account" `terminatedBy` (char '/'))
+hostGit :: Parsec String () HostGit
+hostGit = do
+  HostGit <$> server
+          <*> ("host account" `terminatedBy` (char '/'))
           <*> ("repo"         `terminatedBy` endRepo)
           <*> ref
           <*> (many dir)
@@ -360,6 +356,8 @@ gitSaas = do
   tlac  a = try (lookAhead $ char a) *> pure ()
   endRepo = eof <|> tlac '#' <|> tlac ':'
   endRef  = eof <|> char ':'  *> pure ()
+  server = fromMaybe "github.com" <$>
+    optionMaybe (try $ "server" `terminatedBy` (char ':'))
   ref =     try ((char '#') *> "ref" `terminatedBy` endRef)
     <|> optional (char '#') *> pure "master"     <* endRef
   dir = try $ manyTill (allowed "directory") (char '/')
@@ -369,11 +367,8 @@ gitSaas = do
 
 remoteGit :: Parsec FilePath () ImportSource
 remoteGit = do
-  let h |?| p   = h <$> p; infixr 3 |?|
-      bitbucket = BitBucket |?|      (try $ string "bitbucket.org:") *> gitSaas
-      github    = GitHub    |?| (optional $ string    "github.com:") *> gitSaas
   _ <- string "@"
-  h <- bitbucket <|> github <?> "git host"
+  h <- hostGit
   pure $ ImportRemoteGit h
 
 localPath :: Parsec FilePath () ImportSource
@@ -397,29 +392,17 @@ importSource srcloc fp = either
   (runParser (remoteGit <|> localPath) () "" fp)
 
 gitUriOf :: HostGit -> GitUri
-gitUriOf = \case
-  GitHub    s -> f s "https://github.com/%s/%s.git"
-  BitBucket s -> f s "https://bitbucket.org/%s/%s.git"
- where f s fmt = printf fmt (acct s) (repo s)
-
-gitRefOf :: HostGit -> String
-gitRefOf = \case
-  GitHub    s -> ref s
-  BitBucket s -> ref s
+gitUriOf (HostGit {..}) =
+  printf "https://%s/%s/%s.git" host acct repo
 
 gitCloneDirOf :: HostGit -> String
-gitCloneDirOf = \case
-  GitHub    s -> f s "@github.com:%s:%s"
-  BitBucket s -> f s "@bitbucket.org:%s:%s"
- where f s fmt = printf fmt (acct s) (repo s)
+gitCloneDirOf (HostGit {..}) =
+  printf "@%s:%s:%s" host acct repo
 
 gitDirPathOf :: HostGit -> FilePath
-gitDirPathOf = \case
-  GitHub    s -> f (dir s)
-  BitBucket s -> f (dir s)
- where f d = intercalate (pathSeparator : "") d
+gitDirPathOf (HostGit {..}) =
+  intercalate (pathSeparator : "") dir
 
 gitFilePathOf :: HostGit -> FilePath
-gitFilePathOf = \case
-  h@(GitHub    s) -> gitDirPathOf h </> (file s)
-  h@(BitBucket s) -> gitDirPathOf h </> (file s)
+gitFilePathOf h@(HostGit {..}) =
+  gitDirPathOf h </> file
