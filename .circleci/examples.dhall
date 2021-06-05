@@ -193,6 +193,13 @@ let examples =
       , < ALGO | CFX | ETH >.CFX
       ]
     }
+  , { mapKey = "pkg"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
+    }
   , { mapKey = "popularity-contest"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
