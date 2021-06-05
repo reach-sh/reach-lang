@@ -150,9 +150,7 @@ tealcount () {
 # err Err_Part_DuplicatePart
 # err Err_View_UDFun
 
-r examples/pkg
-exit 0
-
+# r examples/pkg
 # r examples/zbeq
 # r examples/nim
 # c examples/nim/index-abstract.rsh
@@ -168,9 +166,9 @@ exit 0
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
-# r examples/map-any
-# r examples/map-sender
-# r examples/map-vary
+r examples/map-sender
+r examples/map-any
+r examples/map-vary
 # r examples/map-rwrw # XXX
 # r examples/map-multi
 # r examples/map-big

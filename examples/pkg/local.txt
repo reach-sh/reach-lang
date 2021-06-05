@@ -1,1 +1,5 @@
-reachc: error: ./local.rsh:3:18:import from: Did you mean to run with `--install-pkgs`?
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 0 theorems; No failures!

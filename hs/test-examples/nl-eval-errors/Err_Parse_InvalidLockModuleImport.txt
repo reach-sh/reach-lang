@@ -1,1 +1,1 @@
-reachc: error: ./Err_Parse_InvalidLockModuleImport.rsh:5:27:import from: Did you mean to run with `--install-pkgs`?
+reachc: error: ./Err_Parse_InvalidLockModuleImport.rsh:5:27:import from: Cannot install packages; did you mean to run with `--install-pkgs`?
