@@ -109,16 +109,13 @@ All package imports begin with the @litchar|{@}| character.
 Package import paths are comprised of the following components:
 @itemlist[
 @item{
-@bold{(Optional): The site where the package is hosted.}
-
-Reach currently supports @|link-github| and
-@link["https://bitbucket.org"]{BitBucket}, and will default to @|link-github|
-if no site is specified.
+@bold{(Optional): The @tt{git} server where the package is hosted.}
 
 This component must be followed by a @litchar{:} character.
 
-Possible values include: @tt{github.com:} and @tt{bitbucket.org:} (case
-sensitive).
+This component defaults to @|link-github| (i.e. @tt{github.com}) if no site is specified.
+
+Examples: @tt{github.com:}, @tt{bitbucket.org:}.
 }
 
 @item{
@@ -126,21 +123,18 @@ sensitive).
 
 This component must be followed by a @litchar{/} character.
 
-Example: @tt{reach-sh/}.
+Examples: @tt{reach-sh/}, @tt{jeapostrophe/}.
 }
 
 @item{
 @bold{A repository associated with the account.}
 
-Example: @tt{reach-example-package}.
+Examples: @tt{reach-example-package}, @tt{nfts}.
 }
 
 @item{
 @bold{(Optional): A @tt{git ref} or @tt{git commit} used to represent the
 package version.}
-
-Since @tt{git} repositories evolve and change over time, Reach must take extra
-steps in order to pin a given module import's version in its @tech{lockfile}.
 
 If no @tt{ref} is specified, Reach first tries to find the requested module
 on the repository's @tt{master} branch, and if that fails then on the @tt{main}
@@ -159,18 +153,13 @@ Read
 to learn more about how @tt{git tags} work.
 }
 
-Reach ultimately uses @tt{git rev-parse} to pin with @tt{SHA} hashes (and is
-therefore resilient to @tt{git tags} which are later modified to point at
-another commit), but following this strategy will improve program semantics for
-both package authors and consumers.
-
 This component must be preceded by a @litchar{#} character.
 
 Example: @tt{#v3.0.6}.
 }
 
 @item{
-@bold{(Optional): The directory in which the requested module may be found.}
+@bold{(Optional): The directory in which the module may be found.}
 
 This component must be preceded by a @litchar{:} character and must end with
 a @litchar{/}.
@@ -199,6 +188,12 @@ The following forms are all syntactically valid @tech{package import}
 expressions:
 
 @(pkg-fmts)
+
+@(hrule)
+
+Since @tt{git} repositories evolve and change over time, Reach takes extra
+steps in order to pin a given module import's version to the specific @tt{SHA} hash of the specified revision at the time the package is first installed.
+These pins are stored in a @tech{lockfile}, which should be included in your source control system.
 
 @section[#:tag "ref-programs-module-exprs"]{Expressions}
 
