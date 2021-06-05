@@ -38,18 +38,18 @@ import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
 
 data Env = Env
-  { srcloc      :: SrcLoc
-  , bundle      :: IORef JSBundleMap
-  , mhostgit    :: Maybe HostGit
-  , installPkgs :: Bool
-  , dirDotReach :: FilePath
+  { e_at      :: SrcLoc
+  , e_bm      :: IORef JSBundleMap
+  , e_install :: Bool
+  , e_dreachp :: FilePath
   }
 
 type App    = ReaderT Env IO
 type AppT a = a -> App a
 
 withAt :: String -> Maybe TokenPosn -> App a -> App a
-withAt lab mp app = local (\e -> e { srcloc = srcloc_at lab mp (srcloc e) }) app
+withAt lab mp app =
+  local (\e -> e { e_at = srcloc_at lab mp (e_at e) }) app
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -199,30 +199,30 @@ gatherDeps_ast = \case
   JSAstModule mis _ ->
     mapM gatherDeps_mi mis
   j -> do
-    at <- asks srcloc
+    at <- asks e_at
     expect_thrown at (Err_Parse_NotModule j)
 
 updatePartialAvoidCycles :: Maybe ReachSource -> [ReachSource] -> (() -> App ReachSource) -> (ReachSource -> c) -> (ReachSource -> ParserError) -> (ReachSource -> App [JSModuleItem]) -> App c
 updatePartialAvoidCycles mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
-  at <- asks srcloc
-  fmr <- asks bundle
-  (dm, fm) <- liftIO $ readIORef fmr
+  Env {..} <- ask
+  (dm, fm) <- liftIO $ readIORef e_bm
   case (M.lookup key fm) of
     Nothing -> do
-      liftIO $ writeIORef fmr ((M.insert key def_a dm), (M.insert key Nothing fm))
+      liftIO $ writeIORef e_bm $
+        ((M.insert key def_a dm), (M.insert key Nothing fm))
       content <- proc_key key
-      (dm', fm') <- liftIO $ readIORef fmr
+      (dm', fm') <- liftIO $ readIORef e_bm
       let fm'' = (M.insert key (Just content) fm')
           add_key ml = Just $ key : (maybe [] id ml)
           dm'' = case mfrom of
             Just from -> (M.alter add_key from dm')
             Nothing -> dm'
-      liftIO $ writeIORef fmr (dm'', fm'')
+      liftIO $ writeIORef e_bm (dm'', fm'')
       return res
     Just Nothing ->
-      expect_thrown at $ err_key key
+      expect_thrown e_at $ err_key key
     Just (Just _) ->
       return res
 
@@ -248,7 +248,7 @@ tryPrettifyError at' e = case readMaybe e of
 
 gatherDeps_ast_rewriteErr :: String -> App [JSModuleItem]
 gatherDeps_ast_rewriteErr s = do
-  at' <- asks srcloc
+  at' <- asks e_at
   case parseModule s (show $ get_srcloc_src at') of
     Left e -> error $ tryPrettifyError at' e -- TODO: prettify
     Right r -> gatherDeps_ast r
@@ -257,35 +257,31 @@ data GatherContext = GatherTop | GatherNotTop
   deriving (Eq)
 
 gatherDeps_file :: GatherContext -> AppT FilePath
-gatherDeps_file gctxt src_rel = do
+gatherDeps_file gctxt raw = do
   Env {..} <- ask
-  (mh', isrc) <- liftIO $ importSource srcloc src_rel >>= \case
-    i@(ImportRemoteGit h) -> pure (Just h,   i)
-    i@(ImportLocal     _) -> pure (mhostgit, i)
+  src_abs <-
+    case "@" `isPrefixOf` raw of
+      True -> do
+        liftIO $ importSource e_at e_install e_dreachp raw
+      False -> do
+        src_abs <- liftIO $ makeAbsolute raw
+        reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs
+        when (gctxt == GatherNotTop) $ do
+          when (isAbsolute raw) $
+            expect_thrown e_at (Err_Parse_ImportAbsolute raw)
+          when ("../" `isPrefixOf` reRel) $
+            expect_thrown e_at (Err_Parse_ImportDotDot raw)
+        return src_abs
   let no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
   let ret_key = \case
         ReachSourceFile x -> x
         ReachStdLib -> no_stdlib
-  let get_key () = case isrc of
-        ImportRemoteGit h -> ReachSourceFile
-          <$> (liftIO $ lockModuleAbsPath srcloc installPkgs dirDotReach h)
-        ImportLocal src_rel' -> case mh' of
-          Just h -> ReachSourceFile
-            <$> (liftIO $ lockModuleAbsPathGitLocalDep srcloc installPkgs dirDotReach h src_rel')
-          Nothing -> do
-            src_abs <- liftIO $ makeAbsolute src_rel'
-            reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs
-            when (gctxt == GatherNotTop) $ do
-              when (isAbsolute src_rel')
-                $ expect_thrown srcloc (Err_Parse_ImportAbsolute src_rel')
-              when ("../" `isPrefixOf` reRel)
-                $ expect_thrown srcloc (Err_Parse_ImportDotDot src_rel')
-            pure $ ReachSourceFile src_abs
+  let get_key () = return $ ReachSourceFile src_abs
   let proc_key = \case
         ReachStdLib -> no_stdlib
-        src@(ReachSourceFile src_abs) -> do
+        src@(ReachSourceFile _) -> do
           e <- ask
-          let e' = e { srcloc = srcloc_src src, mhostgit = mh' }
+          let e' = e { e_at = srcloc_src src }
           liftIO $ do
             setLocaleEncoding utf8
             content <- readFile src_abs
@@ -293,15 +289,15 @@ gatherDeps_file gctxt src_rel = do
               (takeDirectory src_abs)
               (flip runReaderT e' (gatherDeps_ast_rewriteErr content))
   updatePartialAvoidCycles
-    (gatherDeps_from srcloc) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
+    (gatherDeps_from e_at) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
 
 gatherDeps_stdlib :: App ()
 gatherDeps_stdlib = do
   let proc_key _ =
-        local (\e -> e { mhostgit = Nothing, srcloc = srcloc_src ReachStdLib })
+        local (\e -> e { e_at = srcloc_src ReachStdLib })
           $ gatherDeps_ast_rewriteErr (B.unpack stdlib_rsh)
 
-  at' <- gatherDeps_from <$> asks srcloc
+  at' <- gatherDeps_from <$> asks e_at
   updatePartialAvoidCycles at' [] get_key ret_key err_key proc_key
   where
     get_key () = return $ ReachStdLib
@@ -318,13 +314,13 @@ map_order dm = order
     getNodePart (n, _, _) = n
 
 gatherDeps_top :: FilePath -> Bool -> FilePath -> IO JSBundle
-gatherDeps_top src_p installPkgs' dirDotReach' = do
-  fmr <- liftIO $ newIORef (mempty, mempty)
-  let e = Env srcloc_top fmr Nothing installPkgs' dirDotReach'
-  flip runReaderT e $ do
+gatherDeps_top src_p e_install e_dreachp = do
+  let e_at = srcloc_top
+  e_bm <- liftIO $ newIORef (mempty, mempty)
+  flip runReaderT (Env {..}) $ do
     _src_abs_p <- gatherDeps_file GatherTop src_p
     gatherDeps_stdlib
-    (dm, fm) <- liftIO $ readIORef fmr
+    (dm, fm) <- liftIO $ readIORef e_bm
     return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
     where
       ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"

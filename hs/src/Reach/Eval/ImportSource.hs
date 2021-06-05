@@ -1,24 +1,14 @@
-module Reach.Eval.ImportSource
-  ( HostGit(..)
-  , ImportSource(..)
-  , importSource
-  , lockModuleAbsPath
-  , lockModuleAbsPathGitLocalDep
-  ) where
+module Reach.Eval.ImportSource ( importSource ) where
 
 import Text.Parsec
-import Control.Exception hiding (try)
 import Control.Monad.Extra     
 import Control.Monad.Reader
-import Crypto.Hash
 import Data.Aeson hiding ((<?>), encode)
-import Data.ByteArray          
-import Data.ByteArray.Encoding 
-import Data.List (intercalate, find)              
+import Data.List (intercalate)              
 import Data.Maybe
-import Data.Text.Encoding      
 import Data.Yaml               
 import GHC.Generics            
+import GHC.Stack (HasCallStack)
 import System.Directory        
 import System.Directory.Extra  
 import System.Exit            
@@ -30,196 +20,177 @@ import Reach.AST.Base
 import Reach.Util        
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
-import qualified Data.Text       as T
 
 data Env = Env
-  { srcloc      :: SrcLoc
-  , installPkgs :: Bool
-  , dirDotReach :: FilePath
+  { e_at :: SrcLoc
+  , e_install :: Bool
+  , e_dreachp :: FilePath
   }
 
-type App        = ReaderT Env IO
-type HostGitRef = String
-type GitUri     = String
-
-toBase16 :: ByteArrayAccess b => b -> T.Text
-toBase16 a = decodeUtf8
-  . convertToBase Base16
-  $ (convert a :: B.ByteString)
-
-fromBase16 :: ByteArray b => T.Text -> Either T.Text b
-fromBase16 = either (Left . T.pack) Right
-  . convertFromBase Base16
-  . encodeUtf8
-
-newtype SHA = SHA (Digest SHA256)
-  deriving (Eq, Show, Ord)
-
-instance ToJSON SHA where
-  toJSON (SHA d) = toJSON $ toBase16 d
-
-instance FromJSON SHA where
-  parseJSON = withText "SHA" $ \a -> maybe
-    (fail $ "Invalid SHA: " <> show a)
-    (pure . SHA)
-    (digestFromByteString =<< either (const Nothing) Just (fromBase16 @B.ByteString a))
-
-instance ToJSONKey   SHA
-instance FromJSONKey SHA
-
-data HostGit = HostGit
-  { host :: String
-  , acct :: String
-  , repo :: String
-  , ref  :: String
-  , dir  :: [FilePath]
-  , file :: FilePath
-  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
-
-data ImportSource
-  = ImportLocal     FilePath
-  | ImportRemoteGit HostGit
-  deriving (Eq, Show)
-
--- | Represents an entry indexed by 'SHA' in 'LockFile' capturing details by
--- which a directly-imported package module may be fetched.
---
--- This type tracks parsed but unevaluated @git@ imports in its 'host' field.
---
--- __The /unevaluated/ distinction here is important:__ e.g. if the user asks
--- to import a module from the package's @master@ branch, in which case we need
--- to perform some additional steps to fix the import to a specific @git SHA@.
--- This is why the 'refsha' field exists.
---
--- Transitive dependencies which are local to the direct import in 'host' and
--- which belong to the same 'refsha' are discovered and added the 'ldeps'
--- field.
-data LockModule = LockModule
-  { hg   :: HostGit            -- ^ Raw result of parsing import statement
-  , refsha :: HostGitRef         -- ^ Git SHA to which @host@ refers at time of locking
-  , uri    :: GitUri             -- ^ A @git clone@-able URI
-  , ldeps  :: M.Map FilePath SHA -- ^ Repo-local deps discovered during @gatherDeps_*@ phase
-  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
-
-data LockFile = LockFile
-  { version :: Int
-  , modules :: M.Map SHA LockModule
-  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
-
-lockFileEmpty :: LockFile
-lockFileEmpty =  LockFile
-  { version = 1
-  , modules = mempty
-  }
+type App = ReaderT Env IO
 
 data PkgError
-  = PkgGitCloneFailed         String
-  | PkgGitCheckoutFailed      String
-  | PkgGitFetchFailed         String
-  | PkgGitRevParseFailed      String
-  | PkgLockModuleDoesNotExist FilePath
-  | PkgLockModuleShaMismatch  FilePath
-  | PkgLockModuleUnknown      HostGit
-  | PkgLockModifyUnauthorized
-  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Exception)
+  = Err_Clone String
+  | Err_Checkout String
+  | Err_NoRev (Maybe String)
+  | Err_Unauthorized
+  | Err_InvalidImportSource FilePath ParseError
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
 
 instance Show PkgError where
   show = \case
-    PkgGitCloneFailed         s -> "`git clone` failed: "          <> s
-    PkgGitCheckoutFailed      s -> "`git checkout` failed: "       <> s
-    PkgGitFetchFailed         s -> "`git fetch` failed: "          <> s
-    PkgGitRevParseFailed      s -> "`git rev-parse` failed: "      <> s
-    PkgLockModuleDoesNotExist f -> "Lock module \""                <> f <> "\" does not exist"
-    PkgLockModuleShaMismatch  f -> "Lock module SHA mismatch on: " <> f
-    PkgLockModuleUnknown      h -> "Lock module unknown: "         <> show h
-    PkgLockModifyUnauthorized   -> "Did you mean to run with `--install-pkgs`?"
+    Err_Clone s ->
+      "`git clone` failed: " <> s
+    Err_Checkout s ->
+      "`git checkout` failed: " <> s
+    Err_NoRev Nothing ->
+      "Repository does not contain 'master' or 'main' revision"
+    Err_NoRev (Just r) ->
+      "Repository does not contain '" <> r <> "' revision"
+    Err_Unauthorized ->
+      "Cannot install packages; did you mean to run with `--install-pkgs`?"
+    Err_InvalidImportSource fp e ->
+      "Invalid import: " <> fp <> "\n" <> show e
 
-expect_ :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
-expect_ e = asks srcloc >>= flip expect_thrown e
+-- Library
 
-orFail :: (b -> App a) -> (ExitCode, a, b) -> App a
-orFail err = \case
-  (ExitSuccess  , a, _) -> pure a
-  (ExitFailure _, _, b) -> err b
+expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ e = asks e_at >>= flip expect_thrown e
 
-orFail_ :: (b -> App a) -> (ExitCode, a, b) -> App ()
-orFail_ err r = orFail err r >> pure ()
+runGit :: FilePath -> [String] -> App (Either String String)
+runGit cwd args = do
+  ensureInstall
+  let p = (proc "git" args){ cwd = Just cwd }
+  (ec, stdout, stderr) <- liftIO $ readCreateProcessWithExitCode p ""
+  case ec of
+    ExitSuccess -> return $ Right stdout
+    ExitFailure _ -> return $ Left stderr
 
-runGit :: FilePath -> String -> App (ExitCode, String, String)
-runGit cwd c = liftIO
-  $ readCreateProcessWithExitCode ((shell ("git " <> c)){ cwd = Just cwd }) ""
+dirExists :: FilePath -> App Bool
+dirExists = liftIO . doesDirectoryExist
 
 fileExists :: FilePath -> App Bool
 fileExists = liftIO . doesFileExist
 
-fileRead :: FilePath -> App B.ByteString
-fileRead = liftIO . B.readFile
-
 fileUpsert :: FilePath -> B.ByteString -> App ()
-fileUpsert f  = liftIO . B.writeFile f
+fileUpsert f c = do
+  ensureInstall
+  liftIO $ B.writeFile f c
+  applyPerms
 
-gitClone' :: FilePath -> String -> FilePath -> App ()
-gitClone' b u d = runGit b (printf "clone %s %s" u d)
-  >>= orFail_ (expect_ . PkgGitCloneFailed)
+dirBare :: App FilePath
+dirBare = (</> "bare") <$> asks e_dreachp
 
-gitCheckout :: FilePath -> String -> App ()
-gitCheckout b r = check fetch >> pure () where
-  check e = runGit b ("checkout " <> r) >>= orFail e
-  fetch _ = runGit b "fetch"
-    >>= orFail_ (expect_ . PkgGitFetchFailed)
-    >>    check (expect_ . PkgGitCheckoutFailed)
+dirRev :: App FilePath
+dirRev = (</> "rev") <$> asks e_dreachp
+
+data GitRepo = GitRepo
+  { gr_host :: String
+  , gr_user :: String
+  , gr_repo :: String
+  , gr_rev :: Maybe String
+  } deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+
+gitUri :: GitRepo -> String
+gitUri (GitRepo {..}) =
+  printf "https://%s/%s/%s.git" gr_host gr_user gr_repo
+
+gitDir :: Bool -> GitRepo -> String
+gitDir incRef (GitRepo {..}) =
+  printf "@%s:%s:%s%s" gr_host gr_user gr_repo gr_rev'
+  where
+    gr_rev' =
+      case incRef of
+        True -> maybe "" (":" <>) gr_rev
+        False -> ""
+
+gitBareDir :: GitRepo -> App FilePath
+gitBareDir gr = (</> gitDir False gr) <$> dirBare
+
+gitRevDir :: GitRepo -> App FilePath
+gitRevDir gr = (</> gitDir True gr) <$> dirRev
+
+ensureInstall :: HasCallStack => App ()
+ensureInstall = (e_install <$> ask) >>= \case
+  True -> return ()
+  False -> expect_ Err_Unauthorized
+
+ensureBare :: GitRepo -> App ()
+ensureBare gr = do
+  bdir <- gitBareDir gr
+  unlessM (dirExists bdir) $ do
+    p <- dirBare
+    let u = gitUri gr
+    runGit p ["clone", "--bare", u, bdir] >>= \case
+      Right _ -> return ()
+      Left e -> expect_ $ Err_Clone e
+
+ensureRev :: GitRepo -> App ()
+ensureRev gr = do
+  rdir <- gitRevDir gr
+  unlessM (dirExists rdir) $ do
+    ensureBare gr
+    bdir <- gitBareDir gr
+    let r = fromMaybe (impossible "ensureRev") $ gr_rev gr
+    mkdirP rdir
+    runGit rdir ["--git-dir=" <> bdir, "--work-tree=.", "checkout", r] >>= \case
+      Right _ -> return ()
+      Left e -> expect_ $ Err_Checkout e
+
+-- Lockfile
+
+data LockFile = LockFile
+  { lf_vers :: Int
+  , lf_revs :: M.Map GitRepo GitRepo
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+lockFileEmpty :: LockFile
+lockFileEmpty = LockFile
+  { lf_vers = 1
+  , lf_revs = mempty
+  }
+
+pathLockFile :: App FilePath
+pathLockFile = (</> "lock.yaml") <$> asks e_dreachp
 
 -- | Allow `sudo`-less directory traversal/deletion for Docker users but
 -- disable execute bit on individual files
 applyPerms :: App ()
 applyPerms = do
-  dr <- asks dirDotReach
+  ensureInstall
+  dr <- asks e_dreachp
   ds <- liftIO $ listDirectoriesRecursive dr
-  fs <- liftIO $ listFilesRecursive       dr
+  fs <- liftIO $ listFilesRecursive dr
   liftIO $ setFileMode dr accessModes
   liftIO $ mapM_ (flip setFileMode accessModes) ds
   liftIO $ mapM_ (flip setFileMode stdFileMode) fs
 
-dirGitClones :: App FilePath
-dirGitClones = (</> "warehouse") <$> asks dirDotReach
-
-dirLockModules :: App FilePath
-dirLockModules = (</> "sha256") <$> asks dirDotReach
-
-pathLockFile :: App FilePath
-pathLockFile = (</> "lock.yaml") <$> asks dirDotReach
+mkdirP :: FilePath -> App ()
+mkdirP d = do
+  unlessM (dirExists d) $ do
+    ensureInstall
+    liftIO $ createDirectoryIfMissing True d
+    applyPerms
 
 withDotReach :: ((LockFile, FilePath) -> App a) -> App a
 withDotReach m = do
-  warehouse    <- dirGitClones
-  lockMods     <- dirLockModules
-  lockf        <- pathLockFile
-  gitignore    <- (</> ".gitignore")    <$> asks dirDotReach
-  dockerignore <- (</> ".dockerignore") <$> asks dirDotReach
-  let mkdirP = liftIO . createDirectoryIfMissing True
-  mkdirP warehouse
-  mkdirP lockMods
-  unlessM (fileExists gitignore)
-    $ fileUpsert gitignore $ B.intercalate "\n"
-      [ "warehouse/"
-      ]
-  unlessM (fileExists dockerignore)
-    $ fileUpsert dockerignore $ B.intercalate "\n"
-      [ "warehouse/"
-      ]
+  barep <- dirBare
+  revp <- dirRev
+  lockf <- pathLockFile
+  mkdirP barep
+  mkdirP revp
+  let initIgnore f = do
+        unlessM (fileExists f) $ do
+          fileUpsert f $ B.intercalate "\n"
+            [ "bare/"
+            , "rev/"
+            ]
+  initIgnore =<< (</> ".gitignore") <$> asks e_dreachp
+  initIgnore =<< (</> ".dockerignore") <$> asks e_dreachp
+  let lockFileRead = pathLockFile >>= decodeFileThrow
   lock <- ifM (fileExists lockf) lockFileRead (pure lockFileEmpty)
   res  <- m (lock, lockf)
-  applyPerms
   pure res
-
-gitClone :: HostGit -> App ()
-gitClone h = withDotReach $ \_ -> do
-  dirClones <- dirGitClones
-  let dest = dirClones </> gitCloneDirOf h
-  unlessM (liftIO $ doesDirectoryExist dest) $ gitClone' dirClones (gitUriOf h) dest
-
-lockFileRead :: App LockFile
-lockFileRead = pathLockFile >>= decodeFileThrow
 
 lockFileUpsert :: LockFile -> App ()
 lockFileUpsert a = withDotReach $ \(_, lockf) ->
@@ -229,114 +200,86 @@ lockFileUpsert a = withDotReach $ \(_, lockf) ->
     , encode a
     ]
 
-byGitRefSha :: HostGit -> FilePath -> App (HostGitRef, B.ByteString)
-byGitRefSha h fp = withDotReach $ \_ -> do
-  case ref h of
-    "master" -> f "master" `orTry` f "main"
-    ref      -> f ref
- where
-  gitRevParse b r = runGit b ("rev-parse " <> r)
-    >>= orFail (throw . PkgGitRevParseFailed)
-  f ref = do
-    dirClone <- (</> gitCloneDirOf h) <$> dirGitClones
-    ref'     <- gitRevParse dirClone ref
-    gitCheckout dirClone ref'
-    whenM (not <$> fileExists fp)
-      $ expect_ $ PkgLockModuleDoesNotExist fp
-    reach <- fileRead fp
-    pure (ref', reach)
-  orTry a b = do
-    env <- ask
-    liftIO $ runReaderT a env `catch` (\case
-      PkgGitRevParseFailed _ -> runReaderT b env
-      rethrown               -> runReaderT (expect_ rethrown) env)
+-- Resolver
 
-lockModuleFix :: HostGit -> App (FilePath, LockModule)
-lockModuleFix h = withDotReach $ \(lock, _) -> do
-  gitClone h
-  dirClone      <- (</> gitCloneDirOf h)   <$> dirGitClones
-  (rsha, reach) <- byGitRefSha h (dirClone </> gitFilePathOf h)
-  lmods         <- dirLockModules
-  let hsh = hashWith SHA256 reach
-  let dest = lmods </> (T.unpack $ toBase16 hsh)
-  let lmod = LockModule { hg     = h
-                        , refsha = rsha
-                        , uri    = gitUriOf h
-                        , ldeps  = mempty
-                        }
-  whenM (fileExists dest)
-    $ whenM (fileRead dest >>= pure . (hsh /=) . hashWith SHA256)
-      $ expect_ $ PkgLockModuleShaMismatch dest
-  fileUpsert dest reach
-  lockFileUpsert
-    $ lock { modules = M.insert (SHA hsh) lmod (modules lock) }
-  pure (dest, lmod)
+consultLock :: GitRepo -> App GitRepo
+consultLock gr@(GitRepo {..}) = withDotReach $ \(lf@(LockFile {..}), _) ->
+  case M.lookup gr lf_revs of
+    Just gr' -> return $ gr'
+    Nothing -> do
+      ensureBare gr
+      bdir <- gitBareDir gr
+      let getM :: String -> App (Maybe String)
+          getM r = runGit bdir ["rev-parse", r] >>= \case
+            Left _ -> return $ Nothing
+            Right ls ->
+              case lines ls of
+                [ x ] -> return $ Just x
+                _ -> return $ Nothing
+      mrev' <-
+        case gr_rev of
+          Just r -> getM r
+          Nothing ->
+            getM "master" >>= \case
+              Nothing -> getM "main"
+              x -> return x
+      case mrev' of
+        Nothing ->
+          expect_ $ Err_NoRev gr_rev
+        Just rev' -> do
+          let gr' = gr { gr_rev = Just rev' }
+          let lf' = lf { lf_revs = M.insert gr gr' lf_revs }
+          lockFileUpsert lf'
+          return $ gr'
 
-(@!!) :: LockFile -> HostGit -> Maybe (SHA, LockModule)
-(@!!) l h = find ((== h) . hg . snd) (M.toList $ modules l)
-infixl 9 @!!
+resolve :: Normal -> App FilePath
+resolve (Normal {..}) = do
+  lgr <- consultLock n_gr
+  ensureRev lgr
+  lgr' <- gitRevDir lgr
+  let n_dir' = intercalate (pathSeparator : "") n_dir
+  return $ lgr' </> n_dir' </> n_file
 
-failIfMissingOrMismatched :: FilePath -> SHA -> App ()
-failIfMissingOrMismatched f (SHA s) = do
-  whenM (not <$> fileExists f)
-    $ expect_ $ PkgLockModuleDoesNotExist f
-  whenM (((/= s) . hashWith SHA256) <$> fileRead f)
-    $ expect_ $ PkgLockModuleShaMismatch f
-  pure ()
+-- Normalizer
 
-lockModuleAbsPath :: SrcLoc -> Bool -> FilePath -> HostGit -> IO FilePath
-lockModuleAbsPath srcloc installPkgs dirDotReach h =
-  flip runReaderT (Env {..}) $ withDotReach $ \(lock, _) -> do
-    case lock @!! h of
-      Just (SHA k, _) -> do
-        modPath <- (</> (T.unpack $ toBase16 k)) <$> dirLockModules
-        failIfMissingOrMismatched modPath (SHA k)
-        pure modPath
-      Nothing -> if installPkgs
-        then lockModuleFix h >>= pure . fst
-        else expect_ PkgLockModifyUnauthorized
+data Normal = Normal
+  { n_gr :: GitRepo
+  , n_dir :: [FilePath]
+  , n_file :: FilePath
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
-lockModuleAbsPathGitLocalDep :: SrcLoc -> Bool -> FilePath -> HostGit -> FilePath -> IO FilePath
-lockModuleAbsPathGitLocalDep srcloc installPkgs dirDotReach h ldep =
-  flip runReaderT (Env {..}) $ withDotReach $ \(lock, _) -> do
-  let relPath = gitDirPathOf h </> ldep
-  let correct shaParent lm =
-        case not installPkgs of
-          True ->
-            expect_ PkgLockModifyUnauthorized
-          False -> do
-            let refsha' = refsha lm
-            dirClones <- dirGitClones
-            gitCheckout (dirClones </> gitCloneDirOf h) refsha'
-            reach <- fileRead $ dirClones </> gitCloneDirOf h </> relPath
-            lmods <- dirLockModules
-            let hsh = hashWith SHA256 reach
-                dest = lmods </> (T.unpack $ toBase16 hsh)
-                lmod = lm { ldeps = M.insert relPath (SHA hsh) (ldeps lm) }
-            whenM (fileExists dest) $
-              whenM (fileRead dest >>= pure . (hsh /=) . hashWith SHA256) $
-                expect_ $ PkgLockModuleShaMismatch dest
-            fileUpsert dest reach
-            lockFileUpsert $
-              lock { modules = M.insert shaParent lmod (modules lock) }
-            pure dest
-  case lock @!! h of
-    Nothing -> expect_ $ PkgLockModuleUnknown h
-    Just (shaParent, lm) -> case M.lookup relPath (ldeps lm) of
-      Nothing      -> correct shaParent lm
-      Just (SHA s) -> do
-        dest <- (</> (T.unpack $ toBase16 s)) <$> dirLockModules
-        failIfMissingOrMismatched dest (SHA s)
-        pure dest
+normalize :: Parsed -> App Normal
+normalize (Parsed {..}) = do
+  let gr_host = fromMaybe "github.com" p_host
+  let gr_user = p_user
+  let gr_repo = p_repo
+  let gr_rev = p_ref
+  let n_gr = GitRepo {..}
+  let n_dir = p_dir
+  let n_file = fromMaybe "index.rsh" p_file
+  return $ Normal {..}
 
-hostGit :: Parsec String () HostGit
-hostGit = do
-  HostGit <$> server
-          <*> ("host account" `terminatedBy` (char '/'))
-          <*> ("repo"         `terminatedBy` endRepo)
-          <*> ref
-          <*> (many dir)
-          <*> (filename <|> pure "index.rsh")
+-- Parser
+
+data Parsed = Parsed
+  { p_host :: Maybe String
+  , p_user :: String
+  , p_repo :: String
+  , p_ref :: Maybe String
+  , p_dir :: [FilePath]
+  , p_file :: Maybe FilePath
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+parser :: Parsec String () Parsed
+parser = do
+  _ <- string "@"
+  Parsed
+    <$> (optionMaybe $ try $ "server" `terminatedBy` (char ':'))
+    <*> ("host account" `terminatedBy` (char '/'))
+    <*> ("repo"         `terminatedBy` endRepo)
+    <*> (optionMaybe $ try $ (char '#') *> "ref" `terminatedBy` endRef)
+    <*> (many dir)
+    <*> (optionMaybe $ try $ "file" `terminatedBy` eof)
  where
   allowed t = alphaNum <|> oneOf "-_."
     <?> "valid git " <> t <> " character (alphanumeric, -, _, .)"
@@ -347,53 +290,23 @@ hostGit = do
   tlac  a = try (lookAhead $ char a) *> pure ()
   endRepo = eof <|> tlac '#' <|> tlac ':'
   endRef  = eof <|> char ':'  *> pure ()
-  server = fromMaybe "github.com" <$>
-    optionMaybe (try $ "server" `terminatedBy` (char ':'))
-  ref =     try ((char '#') *> "ref" `terminatedBy` endRef)
-    <|> optional (char '#') *> pure "master"     <* endRef
   dir = try $ manyTill (allowed "directory") (char '/')
-  filename = do
-    n <- "file" `terminatedBy` (try . lookAhead $ string ".rsh" <* eof)
-    pure $ n <> ".rsh"
 
-remoteGit :: Parsec FilePath () ImportSource
-remoteGit = do
-  _ <- string "@"
-  h <- hostGit
-  pure $ ImportRemoteGit h
+parseIt :: String -> App Parsed
+parseIt s = do
+  let pr = runParser parser () "" s
+  case pr of
+    Left pe ->
+      expect_ $ Err_InvalidImportSource s pe
+    Right v ->
+      return $ v
 
-localPath :: Parsec FilePath () ImportSource
-localPath = do
-  p <- manyTill anyChar eof
-  if isValid p then pure $ ImportLocal p
-               else fail $ "Invalid local path: " <> p
+-- Put it together
 
-data Err_Parse_InvalidImportSource
-  = Err_Parse_InvalidImportSource FilePath ParseError
-  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+importSource :: SrcLoc -> Bool -> FilePath -> String -> IO FilePath
+importSource e_at e_install e_dreachp is =
+  flip runReaderT (Env {..}) $ do
+    pd <- parseIt is
+    nd <- normalize pd
+    resolve nd
 
-instance Show Err_Parse_InvalidImportSource where
-  show (Err_Parse_InvalidImportSource fp e) =
-    "Invalid import: " <> fp <> "\n" <> show e
-
-importSource :: SrcLoc -> FilePath -> IO ImportSource
-importSource srcloc fp = either
-  (expect_thrown srcloc . Err_Parse_InvalidImportSource fp)
-  pure
-  (runParser (remoteGit <|> localPath) () "" fp)
-
-gitUriOf :: HostGit -> GitUri
-gitUriOf (HostGit {..}) =
-  printf "https://%s/%s/%s.git" host acct repo
-
-gitCloneDirOf :: HostGit -> String
-gitCloneDirOf (HostGit {..}) =
-  printf "@%s:%s:%s" host acct repo
-
-gitDirPathOf :: HostGit -> FilePath
-gitDirPathOf (HostGit {..}) =
-  intercalate (pathSeparator : "") dir
-
-gitFilePathOf :: HostGit -> FilePath
-gitFilePathOf h@(HostGit {..}) =
-  gitDirPathOf h </> file
