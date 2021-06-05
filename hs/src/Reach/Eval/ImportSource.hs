@@ -158,9 +158,6 @@ fileRead = liftIO . B.readFile
 fileUpsert :: FilePath -> B.ByteString -> App ()
 fileUpsert f  = liftIO . B.writeFile f
 
-mkdirP :: FilePath -> App ()
-mkdirP = liftIO . createDirectoryIfMissing True
-
 gitClone' :: FilePath -> String -> FilePath -> App ()
 gitClone' b u d = runGit b (printf "clone %s %s" u d)
   >>= orFail_ (expect_ . PkgGitCloneFailed)
@@ -184,7 +181,7 @@ applyPerms = do
   liftIO $ mapM_ (flip setFileMode stdFileMode) fs
 
 dirGitClones :: App FilePath
-dirGitClones = (</> "warehouse" </> "git") <$> asks dirDotReach
+dirGitClones = (</> "warehouse") <$> asks dirDotReach
 
 dirLockModules :: App FilePath
 dirLockModules = (</> "sha256") <$> asks dirDotReach
@@ -199,23 +196,19 @@ withDotReach m = do
   lockf        <- pathLockFile
   gitignore    <- (</> ".gitignore")    <$> asks dirDotReach
   dockerignore <- (</> ".dockerignore") <$> asks dirDotReach
-
+  let mkdirP = liftIO . createDirectoryIfMissing True
   mkdirP warehouse
   mkdirP lockMods
-
   unlessM (fileExists gitignore)
     $ fileUpsert gitignore $ B.intercalate "\n"
       [ "warehouse/"
       ]
-
   unlessM (fileExists dockerignore)
     $ fileUpsert dockerignore $ B.intercalate "\n"
       [ "warehouse/"
       ]
-
   lock <- ifM (fileExists lockf) lockFileRead (pure lockFileEmpty)
   res  <- m (lock, lockf)
-
   applyPerms
   pure res
 
@@ -223,7 +216,6 @@ gitClone :: HostGit -> App ()
 gitClone h = withDotReach $ \_ -> do
   dirClones <- dirGitClones
   let dest = dirClones </> gitCloneDirOf h
-
   unlessM (liftIO $ doesDirectoryExist dest) $ gitClone' dirClones (gitUriOf h) dest
 
 lockFileRead :: App LockFile
@@ -248,12 +240,9 @@ byGitRefSha h fp = withDotReach $ \_ -> do
   f ref = do
     dirClone <- (</> gitCloneDirOf h) <$> dirGitClones
     ref'     <- gitRevParse dirClone ref
-
     gitCheckout dirClone ref'
-
     whenM (not <$> fileExists fp)
       $ expect_ $ PkgLockModuleDoesNotExist fp
-
     reach <- fileRead fp
     pure (ref', reach)
   orTry a b = do
@@ -311,24 +300,26 @@ lockModuleAbsPathGitLocalDep :: SrcLoc -> Bool -> FilePath -> HostGit -> FilePat
 lockModuleAbsPathGitLocalDep srcloc installPkgs dirDotReach h ldep =
   flip runReaderT (Env {..}) $ withDotReach $ \(lock, _) -> do
   let relPath = gitDirPathOf h </> ldep
-  let correct shaParent lm = if not installPkgs
-        then expect_ PkgLockModifyUnauthorized
-        else do
-          let refsha' = refsha lm
-          dirClones <- dirGitClones
-          gitCheckout (dirClones </> gitCloneDirOf h) refsha'
-          reach <- fileRead $ dirClones </> gitCloneDirOf h </> relPath
-          lmods <- dirLockModules
-          let hsh = hashWith SHA256 reach
-              dest = lmods </> (T.unpack $ toBase16 hsh)
-              lmod = lm { ldeps = M.insert relPath (SHA hsh) (ldeps lm) }
-          whenM (fileExists dest)
-            $ whenM (fileRead dest >>= pure . (hsh /=) . hashWith SHA256)
-              $ expect_ $ PkgLockModuleShaMismatch dest
-          fileUpsert dest reach
-          lockFileUpsert
-            $ lock { modules = M.insert shaParent lmod (modules lock) }
-          pure dest
+  let correct shaParent lm =
+        case not installPkgs of
+          True ->
+            expect_ PkgLockModifyUnauthorized
+          False -> do
+            let refsha' = refsha lm
+            dirClones <- dirGitClones
+            gitCheckout (dirClones </> gitCloneDirOf h) refsha'
+            reach <- fileRead $ dirClones </> gitCloneDirOf h </> relPath
+            lmods <- dirLockModules
+            let hsh = hashWith SHA256 reach
+                dest = lmods </> (T.unpack $ toBase16 hsh)
+                lmod = lm { ldeps = M.insert relPath (SHA hsh) (ldeps lm) }
+            whenM (fileExists dest) $
+              whenM (fileRead dest >>= pure . (hsh /=) . hashWith SHA256) $
+                expect_ $ PkgLockModuleShaMismatch dest
+            fileUpsert dest reach
+            lockFileUpsert $
+              lock { modules = M.insert shaParent lmod (modules lock) }
+            pure dest
   case lock @!! h of
     Nothing -> expect_ $ PkgLockModuleUnknown h
     Just (shaParent, lm) -> case M.lookup relPath (ldeps lm) of
