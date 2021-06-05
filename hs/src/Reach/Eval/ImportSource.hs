@@ -1,23 +1,23 @@
 module Reach.Eval.ImportSource ( importSource ) where
 
 import Text.Parsec
-import Control.Monad.Extra     
+import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Aeson hiding ((<?>), encode)
-import Data.List (intercalate)              
+import Data.List (intercalate)
 import Data.Maybe
-import Data.Yaml               
-import GHC.Generics            
+import Data.Yaml
+import GHC.Generics
 import GHC.Stack (HasCallStack)
-import System.Directory        
-import System.Directory.Extra  
-import System.Exit            
-import System.FilePath        
-import System.Process         
-import Text.Printf            
+import System.Directory
+import System.Directory.Extra
+import System.Exit
+import System.FilePath
+import System.Process
+import Text.Printf
 import System.PosixCompat.Files
-import Reach.AST.Base       
-import Reach.Util        
+import Reach.AST.Base
+import Reach.Util
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
 
@@ -65,6 +65,12 @@ runGit cwd args = do
   case ec of
     ExitSuccess -> return $ Right stdout
     ExitFailure _ -> return $ Left stderr
+
+runGit_ :: (String -> PkgError) -> FilePath -> [String] -> App ()
+runGit_ err cwd args =
+  runGit cwd args >>= \case
+    Right _ -> return ()
+    Left e -> expect_ $ err e
 
 dirExists :: FilePath -> App Bool
 dirExists = liftIO . doesDirectoryExist
@@ -121,9 +127,8 @@ ensureBare gr = do
   unlessM (dirExists bdir) $ do
     p <- dirBare
     let u = gitUri gr
-    runGit p ["clone", "--bare", u, bdir] >>= \case
-      Right _ -> return ()
-      Left e -> expect_ $ Err_Clone e
+    runGit_ Err_Clone p $
+      ["clone", "--bare", u, bdir]
 
 ensureRev :: GitRepo -> App ()
 ensureRev gr = do
@@ -133,9 +138,8 @@ ensureRev gr = do
     bdir <- gitBareDir gr
     let r = fromMaybe (impossible "ensureRev") $ gr_rev gr
     mkdirP rdir
-    runGit rdir ["--git-dir=" <> bdir, "--work-tree=.", "checkout", r] >>= \case
-      Right _ -> return ()
-      Left e -> expect_ $ Err_Checkout e
+    runGit_ Err_Checkout rdir $
+      ["--git-dir=" <> bdir, "--work-tree=.", "checkout", r]
 
 -- Lockfile
 
@@ -314,4 +318,3 @@ importSource e_at e_install e_dreachp is =
     nd <- normalize pd
     fp <- resolve nd
     return $ fp
-
