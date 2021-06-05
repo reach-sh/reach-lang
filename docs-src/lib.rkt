@@ -351,9 +351,9 @@ You should start off by initializing your Reach program:
   (let* ([host-and-acct (lambda (x) (car (string-split x "/" #:trim? #f)))]
 
          [fmts (for*/list
-            ([host '("" "github.com:" "bitbucket.org:"       )]
-             [ref  '("" "#" "#ref"                           )]
-             [path '("" ":" ":src/lib.rsh" ":a/b/" ":pkg.rsh")])
+            ([host '("" "server:")]
+             [ref  '("" "#" "#ref")]
+             [path '("" ":" ":a/b/file.rsh" ":a/b/" ":file.rsh")])
             (format "@~aaccount/repo~a~a" host ref path))]
 
          [groups (for/list ([g (group-by host-and-acct fmts)])

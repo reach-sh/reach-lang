@@ -95,9 +95,9 @@ It @bold{must} be a relative path, which is resolved relative to the parent dire
 import * as func from
   '@"@"reach-sh/reach-example-package';
 import * as func from
-  '@"@"reach-sh/reach-example-package/src/func.rsh';
+  '@"@"reach-sh/reach-example-package:src/func.rsh';
 import * as func from
-  '@"@"github.com:reach-sh/reach-example-package#main/src/func.rsh';
+  '@"@"github.com:reach-sh/reach-example-package#main:src/func.rsh';
 }
 
 @deftech{Package imports} obey the same rules as @tech{local imports} but
