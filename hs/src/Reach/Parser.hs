@@ -27,7 +27,7 @@ import Language.JavaScript.Parser.AST hiding (showStripped)
 import Language.JavaScript.Parser.Lexer
 import Reach.AST.Base
 import Reach.EmbeddedFiles
-import Reach.Eval.ImportSource
+import Reach.PackageImport
 import Reach.JSUtil
 import Reach.Texty
 import Reach.UnsafeUtil
@@ -262,7 +262,7 @@ gatherDeps_file gctxt raw = do
   src_abs <-
     case "@" `isPrefixOf` raw of
       True -> do
-        liftIO $ importSource e_at e_install e_dreachp raw
+        liftIO $ packageImport e_at e_install e_dreachp raw
       False -> do
         src_abs <- liftIO $ makeAbsolute raw
         reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs

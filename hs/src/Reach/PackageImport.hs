@@ -1,4 +1,4 @@
-module Reach.Eval.ImportSource ( importSource ) where
+module Reach.PackageImport ( packageImport ) where
 
 import Text.Parsec
 import Control.Monad.Extra
@@ -311,8 +311,8 @@ parseIt s = do
 
 -- Put it together
 
-importSource :: SrcLoc -> Bool -> FilePath -> String -> IO FilePath
-importSource e_at e_install e_dreachp is =
+packageImport :: SrcLoc -> Bool -> FilePath -> String -> IO FilePath
+packageImport e_at e_install e_dreachp is =
   flip runReaderT (Env {..}) $ do
     pd <- parseIt is
     nd <- normalize pd
