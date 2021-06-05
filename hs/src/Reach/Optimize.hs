@@ -11,6 +11,7 @@ import Reach.Sanitize
 import Reach.Util
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 class Optimize a where
@@ -90,8 +91,11 @@ recordNotHuh :: DLLetVar -> DLArg -> App ()
 recordNotHuh = \case
   DLV_Eff -> const $ return ()
   DLV_Let _ v -> \a ->
-    updateLookup (\cenv -> cenv {
-      ceNots = M.insert v a $ ceNots cenv })
+    updateLookup
+      (\cenv ->
+         cenv
+           { ceNots = M.insert v a $ ceNots cenv
+           })
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -208,7 +212,7 @@ instance Optimize DLExpr where
         (IF_THEN_ELSE, [c, t, f]) ->
           optNotHuh c >>= \case
             Just c' ->
-              return $ DLE_PrimOp at IF_THEN_ELSE [ c', f, t ]
+              return $ DLE_PrimOp at IF_THEN_ELSE [c', f, t]
             Nothing -> meh
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
@@ -288,7 +292,7 @@ instance Optimize DLStmt where
                   Nothing -> do
                     remember dv e''
                     case e' of
-                      DLE_PrimOp _ IF_THEN_ELSE [ c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True) ] ->
+                      DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] ->
                         recordNotHuh x c
                       _ ->
                         return ()
@@ -314,8 +318,8 @@ instance Optimize DLStmt where
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_Only at ep l -> do
       let w = case ep of
-                Left p -> focusp p
-                Right _ -> id
+            Left p -> focusp p
+            Right _ -> id
       l' <- w $ opt l
       case l' of
         DT_Return _ -> return $ DL_Nop at

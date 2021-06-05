@@ -9,15 +9,16 @@ import Reach.CollectCounts
 import Reach.Util
 
 data Env = Env
-  { e_cs :: IORef Counts }
+  {e_cs :: IORef Counts}
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 fresh :: App m -> App m
 fresh m = do
   e_cs' <- (liftIO . dupeIORef) =<< (e_cs <$> ask)
-  local (\e -> e { e_cs = e_cs' }) m
+  local (\e -> e {e_cs = e_cs'}) m
 
 class AC a where
   ac :: AppT a
@@ -204,8 +205,9 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
-  ac (EPProg at ie et) = fresh $
-    EPProg at ie <$> ac et
+  ac (EPProg at ie et) =
+    fresh $
+      EPProg at ie <$> ac et
 
 instance AC EPPs where
   ac (EPPs m) = EPPs <$> ac m

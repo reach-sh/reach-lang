@@ -49,8 +49,8 @@ instance Subst DLLargeArg where
 instance Subst DLPayAmt where
   subst = \case
     DLPayAmt net ks ->
-      DLPayAmt <$> subst net <*>
-        mapM (\ (amt, ty) -> (,) <$> subst amt <*> subst ty) ks
+      DLPayAmt <$> subst net
+        <*> mapM (\(amt, ty) -> (,) <$> subst amt <*> subst ty) ks
 
 instance Subst DLExpr where
   subst = \case

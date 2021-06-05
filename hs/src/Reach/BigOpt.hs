@@ -1,8 +1,8 @@
 module Reach.BigOpt (bigopt) where
 
 import qualified Data.Text as T
-import Reach.Optimize
 import Reach.AddCounts
+import Reach.Optimize
 import Reach.Util
 
 i2t :: Integer -> T.Text
@@ -21,4 +21,4 @@ bigopt (showp, lab) = rec (0 :: Integer)
       -- something"
       case x2 == x0 of
         True -> return $ x2
-        False -> rec (i+1) x2
+        False -> rec (i + 1) x2

@@ -386,17 +386,17 @@ jsExpr = \case
     fa' <- jsArg fa
     (f, args) <-
       (ctxt_simulate <$> ask) >>= \case
-        True -> return $ ( "stdlib.simMapRef", [ "sim_r", jsMapIdx mpv ] )
-        False -> return $ ( "stdlib.mapRef", [ jsMapVar mpv ] )
-    return $ jsProtect_ "null" ctc $ jsApply f $ args <> [ fa' ]
+        True -> return $ ("stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
+        False -> return $ ("stdlib.mapRef", [jsMapVar mpv])
+    return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
   DLE_MapSet _ mpv fa mna -> do
     fa' <- jsArg fa
     na' <- case mna of
-             Just na -> jsArg na
-             Nothing -> return "undefined"
+      Just na -> jsArg na
+      Nothing -> return "undefined"
     (ctxt_simulate <$> ask) >>= \case
       True ->
-        return $ jsApply "stdlib.simMapSet" [ "sim_r", jsMapIdx mpv, fa', na' ]
+        return $ jsApply "stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
       False ->
         return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
   DLE_Remote {} -> impossible "remote"
@@ -637,8 +637,10 @@ jsETail = \case
             svs_d <- mkStDigest svs
             svs_nptd <- mkStDigest svs_noPrevTime
             let dupeMap (mpv, _) = do
-                  return $ (jsApply "stdlib.simMapDupe" $
-                    [ "sim_r", jsMapIdx mpv, jsMapVar mpv ]) <> semi
+                  return $
+                    (jsApply "stdlib.simMapDupe" $
+                       ["sim_r", jsMapIdx mpv, jsMapVar mpv])
+                      <> semi
             dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
             let sim_body =
                   vsep
@@ -716,8 +718,8 @@ jsETail = \case
             JSCtxtWhile Nothing -> impossible "continue not in while"
             JSCtxtWhile (Just (woldWhile, wtimev', wcond, wbody, wk)) -> do
               let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
-              let newCtxt_noWhile = newCtxt . local (\e -> e { ctxt_while = JSCtxtWhile Nothing })
-              let newCtxt_oldWhile = newCtxt . local (\e -> e { ctxt_while = woldWhile })
+              let newCtxt_noWhile = newCtxt . local (\e -> e {ctxt_while = JSCtxtWhile Nothing})
+              let newCtxt_oldWhile = newCtxt . local (\e -> e {ctxt_while = woldWhile})
               asn_ <- jsAsn AM_ContinueInnerSim asn
               wcond' <- jsBlockNewScope wcond
               wbody' <- newCtxt_noWhile $ jsETail wbody
@@ -821,10 +823,13 @@ jsFunctionWStdlib name mbody = do
     body <- mbody
     i2t' <- liftIO $ readIORef $ jsc_i2t jsc
     let ctcs = map snd $ M.toAscList i2t'
-    return $ (<+>) "export" $ jsFunction_ name ["s"] $
-      vsep $ ["const stdlib = s.reachStdlib" <> semi]
-        <> ctcs
-        <> [body]
+    return $
+      (<+>) "export" $
+        jsFunction_ name ["s"] $
+          vsep $
+            ["const stdlib = s.reachStdlib" <> semi]
+              <> ctcs
+              <> [body]
 
 jsExports :: DLExports -> App Doc
 jsExports exports =
@@ -841,35 +846,42 @@ jsViews mcv = do
     let enView _ (ViewInfo vs _) =
           jsArray <$> (mapM jsContract $ map varType vs)
     views <- toObj enView vis
-    let illegal = jsApply "stdlib.assert" [ "false", jsString "illegal view" ]
+    let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
     let enDecode v k vi (ViewInfo vs vim) = do
           vs' <- mapM jsVar vs
           vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
-          let c = jsPrimApply PEQ [ "i", vi' ]
+          let c = jsPrimApply PEQ ["i", vi']
           let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
           ret' <-
             case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
               Just eb -> do
                 eb' <- jsExportBlock $ dlebEnsureFun eb
-                let eb'call = jsApply (parens eb') [ "...args" ]
+                let eb'call = jsApply (parens eb') ["...args"]
                 return $ jsReturn $ parens eb'call
               Nothing -> return $ illegal
-          return $ jsWhen c $ vsep [ let', ret' ]
+          return $ jsWhen c $ vsep [let', ret']
     let enInfo' :: SLPart -> SLVar -> IType -> App Doc
         enInfo' v k vt = do
           let (_, rng) = itype2arr vt
           rng' <- jsContract rng
           body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
-          let body' = vsep [ body, illegal ]
-          let decode' = jsApply "" [ "i", "svs", "args" ] <+> "=>" <+> jsBraces body'
-          return $ jsObject $ M.fromList $
-            [ ("ty"::String, rng')
-            , ("decode", decode') ]
+          let body' = vsep [body, illegal]
+          let decode' = jsApply "" ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
+          return $
+            jsObject $
+              M.fromList $
+                [ ("ty" :: String, rng')
+                , ("decode", decode')
+                ]
     let enInfo v = toObj (enInfo' v)
     infos <- toObj enInfo cvs
-    return $ jsReturn $ jsObject $ M.fromList $
-      [ ("views"::String, views)
-      , ("infos", infos) ]
+    return $
+      jsReturn $
+        jsObject $
+          M.fromList $
+            [ ("views" :: String, views)
+            , ("infos", infos)
+            ]
 
 -- XXX copied from ALGO.hs
 mapDataTy :: DLMapInfos -> DLType
@@ -879,8 +891,11 @@ jsMaps :: DLMapInfos -> App Doc
 jsMaps ms = do
   jsFunctionWStdlib "_getMaps" $ do
     mapDataTy' <- jsContract $ mapDataTy ms
-    return $ jsReturn $ jsObject $ M.fromList $
-      [ ("mapDataTy"::String, mapDataTy') ]
+    return $
+      jsReturn $
+        jsObject $
+          M.fromList $
+            [("mapDataTy" :: String, mapDataTy')]
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
@@ -895,8 +910,9 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connsExp = jsConnsExp $ HM.keys cr
   exportsp <- jsExports dexports
-  viewsp <- local (\e -> e { ctxt_maps = dli_maps }) $
-    jsViews vi
+  viewsp <-
+    local (\e -> e {ctxt_maps = dli_maps}) $
+      jsViews vi
   mapsp <- jsMaps dli_maps
   return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : viewsp : emptyDoc : mapsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
 

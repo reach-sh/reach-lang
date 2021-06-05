@@ -17,6 +17,7 @@ data Env = Env
   }
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 allocVar :: AppT DLVar

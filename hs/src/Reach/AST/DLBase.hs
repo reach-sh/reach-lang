@@ -5,8 +5,8 @@ module Reach.AST.DLBase where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
-import qualified Data.Sequence as Seq
 import Data.Maybe
+import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
 import Reach.Counter
@@ -356,7 +356,8 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
 data DLWithBill = DLWithBill
   { amts_recv :: DLVar
   , tok_billed :: [DLArg]
-  , tok_not_billed :: [DLArg] }
+  , tok_not_billed :: [DLArg]
+  }
   deriving (Eq, Ord, Show)
 
 data DLExpr
@@ -413,8 +414,10 @@ instance Pretty DLExpr where
       DLE_MapSet _ mv i Nothing ->
         "delete" <+> pretty mv <> brackets (pretty i)
       DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
-        "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta) <>
-        parens (render_das as) <> ".withBill" <> parens (render_das nonNetTokRecv)
+        "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta)
+          <> parens (render_das as)
+          <> ".withBill"
+          <> parens (render_das nonNetTokRecv)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -694,4 +697,3 @@ class HasCounter a where
   getCounter :: a -> Counter
 
 type DLViews = M.Map SLPart (M.Map SLVar IType)
-

@@ -5,8 +5,8 @@ import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
-import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
@@ -14,6 +14,7 @@ import Data.IORef
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
@@ -23,17 +24,16 @@ import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.BigOpt
 import Reach.Connector
 import Reach.Counter
 import Reach.DeJump
-import Reach.BigOpt
 import Reach.Texty (pretty)
 import Reach.UnrollLoops
 import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
-import qualified Data.Set as S
 
 -- import Debug.Trace
 
@@ -67,15 +67,19 @@ typeObjectTypes a =
 
 algoMaxTxGroupSize :: TxnIdx
 algoMaxTxGroupSize = 16
+
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
+
 algoMaxAppTxnAccounts :: Word8
 algoMaxAppTxnAccounts = 4 -- plus sender
+
 algoMinimumBalance :: Integer
 algoMinimumBalance = 100000
 
 accountsL :: [Word8]
-accountsL = take (fromIntegral $ algoMaxAppTxnAccounts + 1) [0..]
+accountsL = take (fromIntegral $ algoMaxAppTxnAccounts + 1) [0 ..]
+
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
 
@@ -254,8 +258,13 @@ withFresh :: App m -> App m
 withFresh m = do
   eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
   eTxns' <- liftIO . dupeIORef =<< (eTxns <$> ask)
-  local (\e -> e { eTxnsR = eTxnsR'
-                 , eTxns  = eTxns' } ) m
+  local
+    (\e ->
+       e
+         { eTxnsR = eTxnsR'
+         , eTxns = eTxns'
+         })
+    m
 
 output :: TEAL -> App ()
 output t = do
@@ -406,9 +415,10 @@ talloc tk = do
   liftIO $ modifyIORef eTxnsR $ (+) 1
   txni <- liftIO $ readIORef eTxnsR
   when (txni >= algoMaxTxGroupSize) $ do
-    bad $ texty $
-      "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize <>
-      ".This is caused by too many transfers in one atomic step."
+    bad $
+      texty $
+        "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize
+          <> ".This is caused by too many transfers in one atomic step."
   let ti = TxnInfo txni tk
   liftIO $ modifyIORef eTxns $ (:) ti
   return txni
@@ -591,9 +601,11 @@ check_concat_len :: Integer -> App ()
 check_concat_len totlen =
   case totlen <= 4096 of
     True -> nop
-    False -> bad $ "Cannot `concat` " <>  texty totlen <>
-      " bytes; the resulting byte array must be <= 4096 bytes." <>
-      " This is caused by a Reach data type being too large."
+    False ->
+      bad $
+        "Cannot `concat` " <> texty totlen
+          <> " bytes; the resulting byte array must be <= 4096 bytes."
+          <> " This is caused by a Reach data type being too large."
 
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
@@ -632,8 +644,9 @@ csplice at b c e = do
       store_new
       -- [ Big ]
       csplice3 Nothing cbefore cafter load_new
-      -- [ Big' ]
-  -- [ Bytes' = X b Y'c Z e]
+
+-- [ Big' ]
+-- [ Bytes' = X b Y'c Z e]
 
 csplice3 :: Maybe (App ()) -> App () -> App () -> App () -> App ()
 csplice3 Nothing cbefore cafter cnew = do
@@ -651,7 +664,7 @@ csplice3 Nothing cbefore cafter cnew = do
   cafter
   -- [ Mid', After ]
   op "concat"
-  -- [ Big' ]
+-- [ Big' ]
 csplice3 (Just cbig) cbefore cafter cnew = do
   cbig
   cbefore
@@ -801,7 +814,8 @@ cTupleRef at tt idx = do
   csubstring at start end
   -- [ ValueBs ]
   cfrombs t
-  -- [ Value ]
+
+-- [ Value ]
 
 cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
 cTupleSet at tt idx = do
@@ -812,7 +826,8 @@ cTupleSet at tt idx = do
   ctobs t
   -- [ Tuple, Value'Bs ]
   csplice at start end tot
-  -- [ Tuple' ]
+
+-- [ Tuple' ]
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -886,7 +901,7 @@ ce = \case
     comment $ "Initializing token"
     doTransfer TK_Init (code "byte" [tContractAddr]) (DLA_Literal $ DLL_Int sb 0) (Just tok)
   DLE_CheckPay at fs amt mtok -> do
-    show_stack ("CheckPay"::String) at fs
+    show_stack ("CheckPay" :: String) at fs
     doCheckPay amt mtok
   DLE_Claim at fs t a mmsg -> do
     show_stack mmsg at fs
@@ -1336,15 +1351,16 @@ data GlobalVar
   deriving (Eq, Ord, Show)
 
 globalVarsM :: M.Map GlobalVar ScratchSlot
-globalVarsM = M.fromList $
-  [ (GV_Arg argNextSt, 0)
-  , (GV_Arg argView, 1)
-  , (GV_Arg argHalts, 2)
-  , (GV_Arg argFeeAmount, 3)
-  , (GV_Arg argLast, 4)
-  , (GV_Arg argMaps, 5)
-  , (GV_Accounts, 6)
-  ]
+globalVarsM =
+  M.fromList $
+    [ (GV_Arg argNextSt, 0)
+    , (GV_Arg argView, 1)
+    , (GV_Arg argHalts, 2)
+    , (GV_Arg argFeeAmount, 3)
+    , (GV_Arg argLast, 4)
+    , (GV_Arg argMaps, 5)
+    , (GV_Accounts, 6)
+    ]
 
 initGV1 :: GlobalVar -> App ()
 initGV1 gv = do
@@ -1367,10 +1383,10 @@ readGV_ ai =
     Nothing -> impossible $ show ai <> " not cached"
 
 setGV :: GlobalVar -> App ()
-setGV ai = code "store" [ texty $ readGV_ ai ]
+setGV ai = code "store" [texty $ readGV_ ai]
 
 readGV :: GlobalVar -> App ()
-readGV ai = code "load" [ texty $ readGV_ ai ]
+readGV ai = code "load" [texty $ readGV_ ai]
 
 readArgCache :: Word8 -> App ()
 readArgCache = readGV . GV_Arg
@@ -1406,8 +1422,9 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> incCounter (sCounter eShared)
   argSvsVar <- mkArgVar svs
   argMsgVar <- mkArgVar msg
-  let eLets0 = M.fromList $
-        [ (argSvsVar, op "dup"), (argMsgVar, op "dup") ]
+  let eLets0 =
+        M.fromList $
+          [(argSvsVar, op "dup"), (argMsgVar, op "dup")]
   let eLets1 = M.insert from lookup_sender eLets0
   let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
   let eLets3 = case last_timemv of
@@ -1417,7 +1434,7 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let letArgs' :: DLVar -> App a -> [(DLVar, Integer)] -> App a
       letArgs' argVar km = \case
         [] -> op "pop" >> km
-        (dv, i):more -> do
+        (dv, i) : more -> do
           let cgen = ce $ DLE_TupleRef at (DLA_Var argVar) i
           sallocLet dv cgen $ letArgs' argVar km more
   let letArgs_ :: Word8 -> DLVar -> [DLVar] -> App a -> App a
@@ -1429,115 +1446,119 @@ ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) =
   let letArgs :: App a -> App a
       letArgs = letArgs_ argSvs argSvsVar svs . letArgs_ argMsg argMsgVar msg
   cbs <-
-    runApp eShared eWhich eLets (Just timev) $ initHeap $ letArgs $ do
-      comment ("Handler " <> texty eWhich)
-      comment "Check txnAppl"
-      code "gtxn" [texty txnAppl, "TypeEnum"]
-      code "int" ["appl"]
-      eq_or_fail
-      code "gtxn" [texty txnAppl, "ApplicationID"]
-      --- XXX Make this int
-      code "byte" [tApplicationID]
-      cfrombs T_UInt
-      eq_or_fail
-      code "gtxn" [texty txnAppl, "NumAppArgs"]
-      cl $ DLL_Int sb $ fromIntegral $ argCount
-      eq_or_fail
+    runApp eShared eWhich eLets (Just timev) $
+      initHeap $
+        letArgs $ do
+          comment ("Handler " <> texty eWhich)
+          comment "Check txnAppl"
+          code "gtxn" [texty txnAppl, "TypeEnum"]
+          code "int" ["appl"]
+          eq_or_fail
+          code "gtxn" [texty txnAppl, "ApplicationID"]
+          --- XXX Make this int
+          code "byte" [tApplicationID]
+          cfrombs T_UInt
+          eq_or_fail
+          code "gtxn" [texty txnAppl, "NumAppArgs"]
+          cl $ DLL_Int sb $ fromIntegral $ argCount
+          eq_or_fail
 
-      comment "Check txnToHandler"
-      code "gtxn" [texty txnToHandler, "TypeEnum"]
-      code "int" ["pay"]
-      eq_or_fail
-      code "gtxn" [texty txnToHandler, "Receiver"]
-      code "txn" ["Sender"]
-      eq_or_fail
-      code "gtxn" [texty txnToHandler, "Amount"]
-      code "gtxn" [texty txnFromHandler, "Fee"]
-      cl $ minimumBalance_l
-      op "+"
-      eq_or_fail
+          comment "Check txnToHandler"
+          code "gtxn" [texty txnToHandler, "TypeEnum"]
+          code "int" ["pay"]
+          eq_or_fail
+          code "gtxn" [texty txnToHandler, "Receiver"]
+          code "txn" ["Sender"]
+          eq_or_fail
+          code "gtxn" [texty txnToHandler, "Amount"]
+          code "gtxn" [texty txnFromHandler, "Fee"]
+          cl $ minimumBalance_l
+          op "+"
+          eq_or_fail
 
-      comment "Check txnFromHandler (us)"
-      code "txn" ["GroupIndex"]
-      cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
-      eq_or_fail
-      code "txn" ["TypeEnum"]
-      code "int" ["pay"]
-      eq_or_fail
-      code "txn" ["Amount"]
-      cl $ DLL_Int sb $ 0
-      eq_or_fail
-      code "txn" ["Receiver"]
-      code "gtxn" [texty txnToHandler, "Sender"]
-      eq_or_fail
-      cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
-      readArg argPrevSt
-      eq_or_fail
+          comment "Check txnFromHandler (us)"
+          code "txn" ["GroupIndex"]
+          cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
+          eq_or_fail
+          code "txn" ["TypeEnum"]
+          code "int" ["pay"]
+          eq_or_fail
+          code "txn" ["Amount"]
+          cl $ DLL_Int sb $ 0
+          eq_or_fail
+          code "txn" ["Receiver"]
+          code "gtxn" [texty txnToHandler, "Sender"]
+          eq_or_fail
+          cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
+          readArg argPrevSt
+          eq_or_fail
 
-      code "txn" ["CloseRemainderTo"]
-      code "gtxn" [texty txnToHandler, "Sender"]
-      eq_or_fail
+          code "txn" ["CloseRemainderTo"]
+          code "gtxn" [texty txnToHandler, "Sender"]
+          eq_or_fail
 
-      comment "Run body"
-      ct_k body $ do
-        txns <- how_many_txns
-        comment "Check GroupSize"
-        code "global" ["GroupSize"]
-        cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-        eq_or_fail
+          comment "Run body"
+          ct_k body $ do
+            txns <- how_many_txns
+            comment "Check GroupSize"
+            code "global" ["GroupSize"]
+            cl $ DLL_Int sb $ fromIntegral $ 1 + txns
+            eq_or_fail
 
-        lookup_fee_amount
-        fts <- from_txns
-        its <- init_txns
-        let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
-        let itfee = do
-              cl $ minimumBalance_l
-              cl $ DLL_Int sb $ fromIntegral $ length its
-              op "*"
-        let itfees = if null its then [] else [itfee]
-        csum_ $ itfees <> ftfees
-        eq_or_fail
+            lookup_fee_amount
+            fts <- from_txns
+            its <- init_txns
+            let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
+            let itfee = do
+                  cl $ minimumBalance_l
+                  cl $ DLL_Int sb $ fromIntegral $ length its
+                  op "*"
+            let itfees = if null its then [] else [itfee]
+            csum_ $ itfees <> ftfees
+            eq_or_fail
 
-        -- We don't need to look at timev because the range of valid rounds
-        -- that a txn is valid within is built-in to Algorand, so rather than
-        -- checking that ( last_timev + from <= timev <= last_timev + to ), we
-        -- just check that FirstValid = last_time + from, etc.
-        (case last_timemv of
-          Nothing -> return ()
-          Just last_timev -> do
-            comment "Check time limits"
-            let check_time f the_cmp = \case
-                  [] -> nop
-                  as -> do
-                      ca $ DLA_Var last_timev
-                      csum as
-                      op "+"
-                      let go i = do
-                            op "dup"
-                            code "gtxn" [texty i, f]
-                            op the_cmp
-                            or_fail
-                      forM_ [0 .. txns] go
-                      op "pop"
-            let CBetween ifrom ito = int
-            check_time "FirstValid" "<=" ifrom
-            check_time "LastValid" ">=" ito)
+            -- We don't need to look at timev because the range of valid rounds
+            -- that a txn is valid within is built-in to Algorand, so rather than
+            -- checking that ( last_timev + from <= timev <= last_timev + to ), we
+            -- just check that FirstValid = last_time + from, etc.
+            (case last_timemv of
+               Nothing -> return ()
+               Just last_timev -> do
+                 comment "Check time limits"
+                 let check_time f the_cmp = \case
+                       [] -> nop
+                       as -> do
+                         ca $ DLA_Var last_timev
+                         csum as
+                         op "+"
+                         let go i = do
+                               op "dup"
+                               code "gtxn" [texty i, f]
+                               op the_cmp
+                               or_fail
+                         forM_ [0 .. txns] go
+                         op "pop"
+                 let CBetween ifrom ito = int
+                 check_time "FirstValid" "<=" ifrom
+                 check_time "LastValid" ">=" ito)
 
-        code "b" ["checkAccts"]
+            code "b" ["checkAccts"]
 
-      label "checkAccts"
-      code "gtxn" [ texty txnAppl, "NumAccounts" ]
-      readGV GV_Accounts
-      eq_or_fail
-      code "b" ["done"]
+          label "checkAccts"
+          code "gtxn" [texty txnAppl, "NumAccounts"]
+          readGV GV_Accounts
+          eq_or_fail
+          code "b" ["done"]
 
-      std_footer
+          std_footer
   let viewBsLen = sViewSize eShared
   let mapBsLen = sMapArgSize eShared
-  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen mapBsLen <> (map varType [ argSvsVar, argMsgVar ])
-  let cinfo = Aeson.object $
-        [ ("size", Aeson.Number $ fromIntegral argSize)
-        , ("count", Aeson.Number $ fromIntegral argCount) ]
+  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen mapBsLen <> (map varType [argSvsVar, argMsgVar])
+  let cinfo =
+        Aeson.object $
+          [ ("size", Aeson.Number $ fromIntegral argSize)
+          , ("count", Aeson.Number $ fromIntegral argCount)
+          ]
   return $ Just (cinfo, cbs)
 
 computeViewSize :: Maybe (CPViews, ViewInfos) -> Integer
@@ -1568,7 +1589,7 @@ getMapDataTy = (sMapDataTy . eShared) <$> ask
 mkMapRecordTy :: DLType -> DLType
 mkMapRecordTy x =
   --         present?, prev, next, account
-  T_Tuple $ [  T_Bool,    x,    x, T_Address ]
+  T_Tuple $ [T_Bool, x, x, T_Address]
 
 getMapRecordTy :: App DLType
 getMapRecordTy = (sMapRecordTy . eShared) <$> ask
@@ -1581,10 +1602,13 @@ getMapArgTy = (sMapArgTy . eShared) <$> ask
 
 mapRecSlot_when :: Word8
 mapRecSlot_when = 0
+
 mapRecSlot_prev :: Word8
 mapRecSlot_prev = mapRecSlot_when + 1
+
 mapRecSlot_next :: Word8
 mapRecSlot_next = mapRecSlot_prev + 1
+
 mapRecSlot_acct :: Word8
 mapRecSlot_acct = mapRecSlot_next + 1
 
@@ -1609,7 +1633,7 @@ cMapRecAlloc = do
       -- [ Address, Offset, Address, Address ]
       op "=="
       -- [ Address, Offset, Bool ]
-      code "bnz" [ found_lab ]
+      code "bnz" [found_lab]
 
       -- If it is not found, then the current account count must be greater
       -- than this number, otherwise the accounts were put in out of order.
@@ -1620,7 +1644,7 @@ cMapRecAlloc = do
       op "<="
       -- [ Address, Valid ]
       op "assert"
-      -- [ Address ]
+  -- [ Address ]
   label bad_lab
   -- [ Address ]
   cl $ DLL_Bool False
@@ -1643,7 +1667,7 @@ cMapRecAlloc = do
   op ">"
   -- [ Offset, Bigger ]
   dont_set_lab <- freshLabel
-  code "bz" [ dont_set_lab ]
+  code "bz" [dont_set_lab]
   -- [ Offset ]
   op "dup"
   -- [ Offset, Offset ]
@@ -1668,7 +1692,8 @@ cMapRecLoad mai = do
       salloc_ $ \cstore cload -> do
         cstore
         cArrayRef sb t True (Right $ cload)
-  -- [ Record ]
+
+-- [ Record ]
 
 cMapRecStore :: App ()
 cMapRecStore = do
@@ -1683,7 +1708,8 @@ cMapRecStore = do
       cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
       -- [ MapArg' ]
       setGV $ GV_Arg argMaps
-      -- [ ]
+
+-- [ ]
 
 cMap_slot :: Word8 -> Maybe Word8 -> App ()
 cMap_slot slot mai = do
@@ -1692,7 +1718,8 @@ cMap_slot slot mai = do
   -- [ Record ]
   t <- getMapRecordTy
   cTupleRef sb t $ fromIntegral slot
-  -- [ Field ]
+
+-- [ Field ]
 
 cMapWhen :: Maybe Word8 -> App ()
 cMapWhen = cMap_slot mapRecSlot_when
@@ -1713,7 +1740,8 @@ cMapRef (DLMVar i) = do
   -- [ Maps ]
   t <- getMapDataTy
   cTupleRef sb t $ fromIntegral i
-  -- [ MapValue ]
+
+-- [ MapValue ]
 
 cMapSet :: DLMVar -> App ()
 cMapSet (DLMVar i) = do
@@ -1725,7 +1753,7 @@ cMapSet (DLMVar i) = do
   cMapPrev Nothing
   -- [ NewValue, Offset, Maps ]
   dt <- getMapDataTy
-  code "dig" [ "2" ]
+  code "dig" ["2"]
   -- [ NewValue, Offset, Maps, NewValue ]
   cTupleSet sb dt $ fromIntegral i
   -- [ NewValue, Offset, Maps' ]
@@ -1735,7 +1763,7 @@ cMapSet (DLMVar i) = do
   -- [ NewValue, Maps', Offset, Offset ]
   cMapRecLoad Nothing
   -- [ NewValue, Maps', Offset, Record ]
-  code "dig" [ "2" ]
+  code "dig" ["2"]
   -- [ NewValue, Maps', Offset, Record, Maps' ]
   rt <- getMapRecordTy
   cTupleSet sb rt $ fromIntegral mapRecSlot_prev
@@ -1745,7 +1773,8 @@ cMapSet (DLMVar i) = do
   op "pop"
   -- [ NewValue ]
   op "pop"
-  -- [ ]
+
+-- [ ]
 
 -- </MapStuff>
 
@@ -1796,15 +1825,17 @@ compile_algo disp pl = do
   let divup :: Integer -> Integer -> Integer
       divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
   let recordSize prefix size = do
-        modifyIORef resr $ M.insert (prefix <> "Size") $
-          Aeson.Number $ fromIntegral size
+        modifyIORef resr $
+          M.insert (prefix <> "Size") $
+            Aeson.Number $ fromIntegral size
   let recordSizeAndKeys :: T.Text -> Integer -> IO [Integer]
       recordSizeAndKeys prefix size = do
         recordSize prefix size
         let keys = size `divup` algoMaxAppBytesValueLen
-        modifyIORef resr $ M.insert (prefix <> "Keys") $
-          Aeson.Number $ fromIntegral keys
-        return $ take (fromIntegral keys) [0..]
+        modifyIORef resr $
+          M.insert (prefix <> "Keys") $
+            Aeson.Number $ fromIntegral keys
+        return $ take (fromIntegral keys) [0 ..]
   viewKeysl <- recordSizeAndKeys "view" sViewSize
   mapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
   recordSize "mapRecord" sMapRecordSize
@@ -1825,7 +1856,7 @@ compile_algo disp pl = do
     cl $ DLL_Int sb $ 2
     eq_or_fail
     code "gtxn" [texty txnToHandler, "TypeEnum"]
-    code "int" [ "pay" ]
+    code "int" ["pay"]
     eq_or_fail
     code "gtxn" [texty txnToHandler, "Amount"]
     cl minimumBalance_l
@@ -1923,13 +1954,13 @@ compile_algo disp pl = do
         cMapWhen $ Just ai
         case (ai == 0) of
           True ->
-            code "bz" [ nextAcct ]
+            code "bz" [nextAcct]
           False ->
-            code "bz" [ afterAccts ]
+            code "bz" [afterAccts]
         op "pop"
         cl $ DLL_Int sb $ fromIntegral ai
         cMapAcct $ Just ai
-        code "txna" [ "Accounts", texty ai ]
+        code "txna" ["Accounts", texty ai]
         eq_or_fail
         forM_ mapKeysl $ \mi -> do
           -- Check the previous
@@ -1943,7 +1974,7 @@ compile_algo disp pl = do
             cStateSlice sMapDataSize mi
         label nextAcct
       label afterAccts
-    code "txn" [ "NumAccounts" ]
+    code "txn" ["NumAccounts"]
     eq_or_fail
     -- Views
     forM_ viewKeysl $ \i ->
@@ -2012,10 +2043,13 @@ compile_algo disp pl = do
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
   sFailures <- readIORef sFailuresR
-  modifyIORef resr $ M.insert "unsupported" $ aarray $
-    S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
-  modifyIORef resr $ M.insert "version" $
-    Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
+  modifyIORef resr $
+    M.insert "unsupported" $
+      aarray $
+        S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
+  modifyIORef resr $
+    M.insert "version" $
+      Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef resr
   return $ Aeson.Object $ HM.fromList $ M.toList res
 

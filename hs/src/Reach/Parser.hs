@@ -27,8 +27,8 @@ import Language.JavaScript.Parser.AST hiding (showStripped)
 import Language.JavaScript.Parser.Lexer
 import Reach.AST.Base
 import Reach.EmbeddedFiles
-import Reach.PackageImport
 import Reach.JSUtil
+import Reach.PackageImport
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -38,18 +38,19 @@ import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
 
 data Env = Env
-  { e_at      :: SrcLoc
-  , e_bm      :: IORef JSBundleMap
+  { e_at :: SrcLoc
+  , e_bm :: IORef JSBundleMap
   , e_install :: Bool
   , e_dreachp :: FilePath
   }
 
-type App    = ReaderT Env IO
+type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 withAt :: String -> Maybe TokenPosn -> App a -> App a
 withAt lab mp app =
-  local (\e -> e { e_at = srcloc_at lab mp (e_at e) }) app
+  local (\e -> e {e_at = srcloc_at lab mp (e_at e)}) app
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -157,7 +158,6 @@ instance Pretty JSBundle where
           ("// " <> viaShow rs) :
           map (pretty . ppShow) jms
 
-
 gatherDeps_fc :: AppT JSFromClause
 gatherDeps_fc (JSFromClause ab aa s) = do
   withAt "import from" (tp ab) $ do
@@ -210,8 +210,9 @@ updatePartialAvoidCycles mfrom def_a get_key ret_key err_key proc_key = do
   (dm, fm) <- liftIO $ readIORef e_bm
   case (M.lookup key fm) of
     Nothing -> do
-      liftIO $ writeIORef e_bm $
-        ((M.insert key def_a dm), (M.insert key Nothing fm))
+      liftIO $
+        writeIORef e_bm $
+          ((M.insert key def_a dm), (M.insert key Nothing fm))
       content <- proc_key key
       (dm', fm') <- liftIO $ readIORef e_bm
       let fm'' = (M.insert key (Just content) fm')
@@ -265,7 +266,7 @@ gatherDeps_file gctxt raw = do
         liftIO $ packageImport e_at e_install e_dreachp raw
       False -> do
         src_abs <- liftIO $ makeAbsolute raw
-        reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs
+        reRel <- liftIO $ makeRelativeToCurrentDirectory src_abs
         when (gctxt == GatherNotTop) $ do
           when (isAbsolute raw) $
             expect_thrown e_at (Err_Parse_ImportAbsolute raw)
@@ -281,7 +282,7 @@ gatherDeps_file gctxt raw = do
         ReachStdLib -> no_stdlib
         src@(ReachSourceFile _) -> do
           e <- ask
-          let e' = e { e_at = srcloc_src src }
+          let e' = e {e_at = srcloc_src src}
           liftIO $ do
             setLocaleEncoding utf8
             content <- readFile src_abs
@@ -289,13 +290,18 @@ gatherDeps_file gctxt raw = do
               (takeDirectory src_abs)
               (flip runReaderT e' (gatherDeps_ast_rewriteErr content))
   updatePartialAvoidCycles
-    (gatherDeps_from e_at) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
+    (gatherDeps_from e_at)
+    [ReachStdLib]
+    get_key
+    ret_key
+    Err_Parse_CyclicImport
+    proc_key
 
 gatherDeps_stdlib :: App ()
 gatherDeps_stdlib = do
   let proc_key _ =
-        local (\e -> e { e_at = srcloc_src ReachStdLib })
-          $ gatherDeps_ast_rewriteErr (B.unpack stdlib_rsh)
+        local (\e -> e {e_at = srcloc_src ReachStdLib}) $
+          gatherDeps_ast_rewriteErr (B.unpack stdlib_rsh)
 
   at' <- gatherDeps_from <$> asks e_at
   updatePartialAvoidCycles at' [] get_key ret_key err_key proc_key
@@ -322,6 +328,6 @@ gatherDeps_top src_p e_install e_dreachp = do
     gatherDeps_stdlib
     (dm, fm) <- liftIO $ readIORef e_bm
     return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
-    where
-      ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"
-      ensureJust (Just x) = x
+  where
+    ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"
+    ensureJust (Just x) = x

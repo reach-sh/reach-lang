@@ -16,7 +16,7 @@ module Reach.Util
   , mapWithKeyM
   , hdDie
   , justValues
-  , Top(..)
+  , Top (..)
   , uncurry3
   , uncurry4
   , uncurry5
@@ -125,5 +125,5 @@ uncurry5 f (a, b, c, d, e) = f a b c d e
 listDirectoriesRecursive :: FilePath -> IO [FilePath]
 listDirectoriesRecursive dir = do
   (ds, _) <- partitionM doesDirectoryExist =<< listContents dir
-  rest    <- concatMapM listDirectoriesRecursive ds
+  rest <- concatMapM listDirectoriesRecursive ds
   pure $ ds <> rest

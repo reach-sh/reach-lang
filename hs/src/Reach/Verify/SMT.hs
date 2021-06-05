@@ -416,45 +416,45 @@ set_to_seq = Seq.fromList . S.toList
 -- Log every occurence of dlvars so we know what is used how many times
 dlvOccurs :: [String] -> BindingEnv -> DLExpr -> [String]
 dlvOccurs env bindings = \case
-    DLE_Arg _ (DLA_Var dv) ->
-      case v `List.elem` env of
-        -- If we already expanded, mark that we've seen var again and go home
-        True -> env'
-        -- Otherwise, expand and mark all sub expressions
-        False ->
-          case v `M.lookup` bindings of
-            Just (BR_Var _ _ _ _ (Just e)) ->
-              dlvOccurs env' bindings e
-            _ -> env'
-      where
-        env' = v : env
-        v = getVarName dv
-    DLE_Arg {} -> env
-    DLE_LArg at (DLLA_Array _ as) -> _recs at as
-    DLE_LArg at (DLLA_Tuple as) -> _recs at as
-    DLE_LArg at (DLLA_Obj as) -> _recs at $ map snd $ M.toList as
-    DLE_LArg at (DLLA_Data _ _ a) -> _rec at a
-    DLE_LArg at (DLLA_Struct kvs) -> _recs at $ map snd kvs
-    DLE_Impossible {} -> env
-    DLE_PrimOp at _ as -> _recs at as
-    DLE_ArrayRef at x y -> _recs at [x, y]
-    DLE_ArraySet at x y z -> _recs at [x, y, z]
-    DLE_ArrayConcat at x y -> _recs at [x, y]
-    DLE_ArrayZip at x y -> _recs at [x, y]
-    DLE_TupleRef at a _ -> _rec at a
-    DLE_ObjectRef at a _ -> _rec at a
-    DLE_Interact at _ _ _ _ as -> _recs at as
-    DLE_Digest at as -> _recs at as
-    DLE_Claim at _ _ a _ -> _rec at a
-    DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
-    DLE_TokenInit at x -> _rec at x
-    DLE_CheckPay at _ y z -> _recs_ (_rec at y) at z
-    DLE_Wait at a -> _rec at a
-    DLE_PartSet at _ a -> _rec at a
-    DLE_MapRef at _ fa -> _rec at fa
-    DLE_MapSet at _ fa na -> _recs_ (_rec at fa) at na
-    DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
-      _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
+  DLE_Arg _ (DLA_Var dv) ->
+    case v `List.elem` env of
+      -- If we already expanded, mark that we've seen var again and go home
+      True -> env'
+      -- Otherwise, expand and mark all sub expressions
+      False ->
+        case v `M.lookup` bindings of
+          Just (BR_Var _ _ _ _ (Just e)) ->
+            dlvOccurs env' bindings e
+          _ -> env'
+    where
+      env' = v : env
+      v = getVarName dv
+  DLE_Arg {} -> env
+  DLE_LArg at (DLLA_Array _ as) -> _recs at as
+  DLE_LArg at (DLLA_Tuple as) -> _recs at as
+  DLE_LArg at (DLLA_Obj as) -> _recs at $ map snd $ M.toList as
+  DLE_LArg at (DLLA_Data _ _ a) -> _rec at a
+  DLE_LArg at (DLLA_Struct kvs) -> _recs at $ map snd kvs
+  DLE_Impossible {} -> env
+  DLE_PrimOp at _ as -> _recs at as
+  DLE_ArrayRef at x y -> _recs at [x, y]
+  DLE_ArraySet at x y z -> _recs at [x, y, z]
+  DLE_ArrayConcat at x y -> _recs at [x, y]
+  DLE_ArrayZip at x y -> _recs at [x, y]
+  DLE_TupleRef at a _ -> _rec at a
+  DLE_ObjectRef at a _ -> _rec at a
+  DLE_Interact at _ _ _ _ as -> _recs at as
+  DLE_Digest at as -> _recs at as
+  DLE_Claim at _ _ a _ -> _rec at a
+  DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
+  DLE_TokenInit at x -> _rec at x
+  DLE_CheckPay at _ y z -> _recs_ (_rec at y) at z
+  DLE_Wait at a -> _rec at a
+  DLE_PartSet at _ a -> _rec at a
+  DLE_MapRef at _ fa -> _rec at fa
+  DLE_MapSet at _ fa na -> _recs_ (_rec at fa) at na
+  DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
+    _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
   where
     _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
     _recs = _recs_ env
@@ -502,10 +502,12 @@ displayDLAsJs v2dv inlineCtxt nested = \case
     subm mv <> bracket (sub fa <> " <- " <> sub na)
   DLE_MapSet _ mv fa Nothing ->
     subm mv <> bracket ("\\ " <> sub fa)
-  DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) -> "remote(" <> show av <> ")." <> f <> ".pay"
-    <> paren (commaSep [sub net, subPair ks])
-    <> ".withBill" <> paren (commaSep $ map sub nonNetTokRecv)
-    <> args as
+  DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
+    "remote(" <> show av <> ")." <> f <> ".pay"
+      <> paren (commaSep [sub net, subPair ks])
+      <> ".withBill"
+      <> paren (commaSep $ map sub nonNetTokRecv)
+      <> args as
   where
     commaSep = List.intercalate ", "
     args as = paren (commaSep (map sub as))
@@ -644,8 +646,9 @@ format_thermodel tk pm tse = do
               Just (BR_Var _ at bo mvse _) -> do
                 let this se =
                       [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
-                        ++ (map (redactAbsStr cwd)
-                              [ ("  //    ^ from " ++ show bo ++ " at " ++ show at)])
+                        ++ (map
+                              (redactAbsStr cwd)
+                              [("  //    ^ from " ++ show bo ++ " at " ++ show at)])
                 case mvse of
                   Nothing ->
                     --- FIXME It might be useful to do `get-value` rather than parse
@@ -669,7 +672,6 @@ format_thermodel tk pm tse = do
   iputStrLn $ "  // Theorem formalization"
   iputStrLn theorem_formalization
   iputStrLn ""
-
 
 display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> App ()
 display_fail tat f tk tse mmsg repeated mrd = do
@@ -705,7 +707,8 @@ display_fail tat f tk tse mmsg repeated mrd = do
               Just (RD_Model m) -> do
                 parseModel m
       format_thermodel tk pm tse
-      -- format_thermodel2 tk pm tse
+
+-- format_thermodel2 tk pm tse
 
 smtNewPathConstraint :: SExpr -> App a -> App a
 smtNewPathConstraint se m = do
@@ -1523,10 +1526,11 @@ _smtDefineTypes smt ts = do
   readIORef tmr
 
 smt_eb :: DLExportBlock -> App ()
-smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
-  let args = fromMaybe [] margs
-  forM_ args $ flip (pathAddUnbound at) O_Export . Just
-  void $ smt_block b
+smt_eb (DLinExportBlock at margs b) = ctxtNewScope $
+  freshAddrs $ do
+    let args = fromMaybe [] margs
+    forM_ args $ flip (pathAddUnbound at) O_Export . Just
+    void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
@@ -1566,7 +1570,7 @@ _verify_smt mc ctxt_vst smt lp = do
           let mv = smtMapVar mpv mi
           t <- smtMapSort mpv
           na' <- smtMapMkMaybe at mpv Nothing
-          let se = List [ smtApply "as" [ Atom "const", t ], na' ]
+          let se = List [smtApply "as" [Atom "const", t], na']
           smtAssert $ smtEq (Atom mv) se
     mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of

@@ -241,7 +241,7 @@ getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expecte
 getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
-      (SLM_Module, _)  -> Just "create a `React.App`"
+      (SLM_Module, _) -> Just "create a `React.App`"
       (SLM_AppInit, _) -> Just "`deploy`"
       (_, SLM_AppInit) -> Nothing
       (s, SLM_Step)
@@ -348,7 +348,7 @@ instance Show EvalError where
       "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalMode mode s ok_modes ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> intercalate " or " (map show ok_modes)
-        <> maybe "" (\ suggestion -> ". You must " <> suggestion <> " first.") (getIllegalModeSuggestion mode ok_modes)
+        <> maybe "" (\suggestion -> ". You must " <> suggestion <> " first.") (getIllegalModeSuggestion mode ok_modes)
     Err_LValue_IllegalJS (JSIdentifier _ i) ->
       "Invalid Reach l-value syntax: `" <> i <> "`. Mutation is not allowed unless before `continue`"
     Err_LValue_IllegalJS e ->

@@ -46,12 +46,18 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   resr <- liftIO $ newIORef $ AppRes mempty mempty Nothing
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
-  (these_lifts, final_dlo) <- captureLifts $ locSco sco $
-    local (\e -> e { e_appr = Right appr
-                   , e_mape = mape }) $ do
-      void $ evalStmt top_ss
-      flip when doExit =<< readSt st_live
-      readDlo id
+  (these_lifts, final_dlo) <- captureLifts $
+    locSco sco $
+      local
+        (\e ->
+           e
+             { e_appr = Right appr
+             , e_mape = mape
+             })
+        $ do
+          void $ evalStmt top_ss
+          flip when doExit =<< readSt st_live
+          readDlo id
   fin_toks <- readSt st_toks
   let final = shared_lifts <> these_lifts
   let final_dlo' = final_dlo {dlo_bals = 1 + length fin_toks}
@@ -76,44 +82,44 @@ makeMapEnv = do
 
 makeEnv :: Connectors -> IO Env
 makeEnv cns = do
-    e_id <- newCounter 0
-    let e_who = Nothing
-    let e_stack = []
-    let e_stv =
-          SLState
-            { st_mode = SLM_Module
-            , st_live = False
-            , st_pdvs = mempty
-            , st_after_first = False
-            , st_after_ctor = False
-            , st_toks = mempty
-            }
-    let e_sco =
-          SLScope
-            { sco_ret = Nothing
-            , sco_must_ret = RS_CannotReturn
-            , sco_while_vars = Nothing
-            , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
-              sco_penvs = mempty
-            , sco_cenv = mempty
-            , sco_use_strict = False
-            }
-    let e_depth = recursionDepthLimit
-    let e_while_invariant = False
-    e_st <- newIORef e_stv
-    let e_at = srcloc_top
-    e_lifts <- newIORef mempty
-    e_unused_variables <- newIORef mempty
-    -- XXX revise
-    e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
-    e_mape <- makeMapEnv
-    let e_appr = Left $ app_default_opts e_id $ M.keys cns
-    return (Env {..})
+  e_id <- newCounter 0
+  let e_who = Nothing
+  let e_stack = []
+  let e_stv =
+        SLState
+          { st_mode = SLM_Module
+          , st_live = False
+          , st_pdvs = mempty
+          , st_after_first = False
+          , st_after_ctor = False
+          , st_toks = mempty
+          }
+  let e_sco =
+        SLScope
+          { sco_ret = Nothing
+          , sco_must_ret = RS_CannotReturn
+          , sco_while_vars = Nothing
+          , -- FIXME change this type to (Either SLEnv (M.Map SLPart SLEnv) and use the left case here so we can remove base_penvs
+            sco_penvs = mempty
+          , sco_cenv = mempty
+          , sco_use_strict = False
+          }
+  let e_depth = recursionDepthLimit
+  let e_while_invariant = False
+  e_st <- newIORef e_stv
+  let e_at = srcloc_top
+  e_lifts <- newIORef mempty
+  e_unused_variables <- newIORef mempty
+  -- XXX revise
+  e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
+  e_mape <- makeMapEnv
+  let e_appr = Left $ app_default_opts e_id $ M.keys cns
+  return (Env {..})
 
 withUnusedVars :: App a -> App a
 withUnusedVars m = do
   uvr <- liftIO $ newIORef mempty
-  a <- local (\e -> e { e_unused_variables = uvr }) m
+  a <- local (\e -> e {e_unused_variables = uvr}) m
   uvs <- liftIO $ readIORef uvr
   let reportUnusedVars = \case
         [] -> return ()
@@ -127,8 +133,10 @@ evalBundle cns (JSBundle mods) = do
   evalEnv <- makeEnv cns
   let run = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
-  (shared_lifts, libm) <- run $ captureLifts $
-    evalLibs cns mods
+  (shared_lifts, libm) <-
+    run $
+      captureLifts $
+        evalLibs cns mods
   let exe_ex = libm M.! exe
   let tops =
         M.keysSet $
@@ -137,10 +145,11 @@ evalBundle cns (JSBundle mods) = do
               case sss_val v of
                 SLV_Prim SLPrim_App_Delay {} -> True
                 _ -> False
-  let go getdapp = run $ withUnusedVars $ do
-        exports <- getExports exe_ex
-        topv <- ensure_public . sss_sls =<< getdapp
-        compileDApp shared_lifts exports topv
+  let go getdapp = run $
+        withUnusedVars $ do
+          exports <- getExports exe_ex
+          topv <- ensure_public . sss_sls =<< getdapp
+          compileDApp shared_lifts exports topv
   case S.null tops of
     True -> do
       return (S.singleton "default", const $ go $ return defaultApp)

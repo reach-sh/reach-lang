@@ -10,7 +10,7 @@ where
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LC
-import Data.List ((\\), isInfixOf)
+import Data.List (isInfixOf, (\\))
 import Generics.Deriving
 import Reach.Util
 import System.Directory
@@ -83,8 +83,9 @@ mkSpecExamplesCoverCtors _ exceptions = mkSpecExamplesCoverStrs strs
     strs = conNames (error "unused" :: err) \\ exceptions
 
 findByExtension' :: [FilePath] -> FilePath -> IO [FilePath]
-findByExtension' exts dir = findByExtension exts dir
-  >>= pure . filter (not . (".reach" `isInfixOf`))
+findByExtension' exts dir =
+  findByExtension exts dir
+    >>= pure . filter (not . (".reach" `isInfixOf`))
 
 mkSpecExamplesCoverStrs :: [String] -> String -> FilePath -> Spec
 mkSpecExamplesCoverStrs strs ext subdir = describe subdir $

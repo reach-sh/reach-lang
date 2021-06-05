@@ -130,7 +130,7 @@ instance Freshen DLStmt where
 instance Freshen DLPayAmt where
   fu = \case
     DLPayAmt net ks ->
-      DLPayAmt <$> fu net <*> mapM (\ (amt, ty) -> (,) <$> fu amt <*> fu ty) ks
+      DLPayAmt <$> fu net <*> mapM (\(amt, ty) -> (,) <$> fu amt <*> fu ty) ks
 
 instance Freshen DLTail where
   fu = \case

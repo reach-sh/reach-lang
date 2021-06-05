@@ -7,8 +7,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
-import Generics.Deriving (Generic)
 import GHC.Stack (HasCallStack)
+import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DK
 import Reach.AST.DL
@@ -181,8 +181,9 @@ dk_ at = \case
   s Seq.:<| ks -> dk1 at ks s
 
 dk_eb :: DLSExportBlock -> DKApp DKExportBlock
-dk_eb (DLinExportBlock at vs b) = resetDK $
-  DLinExportBlock at vs <$> dk_block at b
+dk_eb (DLinExportBlock at vs b) =
+  resetDK $
+    DLinExportBlock at vs <$> dk_block at b
 
 resetDK :: DKApp a -> DKApp a
 resetDK = local (const $ DKEnv {..})
@@ -434,8 +435,9 @@ df_con = \case
     let body_fvs' = df_con =<< unpackFVMap at body
     --- Note: The invariant and condition can't return
     let block b = df_bl =<< block_unpackFVMap at b
-    (makeWhile, k') <- withWhileFVMap fvm $
-      (,) <$> (LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
+    (makeWhile, k') <-
+      withWhileFVMap fvm $
+        (,) <$> (LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
     makeWhile <$> df_con k'
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap asn
@@ -475,7 +477,7 @@ df_step = \case
 
 df_eb :: DKExportBlock -> DFApp DLExportBlock
 df_eb (DLinExportBlock at vs b) =
-    DLinExportBlock at vs <$> df_bl b
+  DLinExportBlock at vs <$> df_bl b
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do

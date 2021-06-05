@@ -173,7 +173,6 @@ solve fi' = fixedPoint go
             defs1 =
               S.union defs0 edge_defs
 
-
 -- Build flow
 data EPPError
   = Err_ContinueDomination
@@ -204,7 +203,7 @@ type BApp = ReaderT BEnv IO
 type BAppT2 a = a -> BApp (CApp a, EApp a)
 
 withConsensus :: Bool -> BApp a -> BApp a
-withConsensus b = local (\e -> e { be_inConsensus = b })
+withConsensus b = local (\e -> e {be_inConsensus = b})
 
 signalMore :: BApp ()
 signalMore = liftIO . flip writeIORef True =<< (be_more <$> ask)
@@ -263,7 +262,7 @@ fg_defn x = fg_record $ \f -> f {fid_defns = S.union (countsS x) (fid_defns f)}
 
 fg_edge :: (Countable a) => DLLetVar -> a -> BApp ()
 fg_edge DLV_Eff x = fg_use x
-fg_edge (DLV_Let _ v) use = fg_record $ \f -> f { fid_edges = M.singleton v (countsS use) <> (fid_edges f) }
+fg_edge (DLV_Let _ v) use = fg_record $ \f -> f {fid_edges = M.singleton v (countsS use) <> (fid_edges f)}
 
 fg_child :: Int -> BApp ()
 fg_child child = do
@@ -286,8 +285,8 @@ assignView = do
   let vs = countsl be_views
   let vi = ViewInfo vs be_views
   i <- case be_viewmc of
-         Nothing -> return $ 0
-         Just c -> liftIO $ incCounter c
+    Nothing -> return $ 0
+    Just c -> liftIO $ incCounter c
   let vis = ViewSave i $ asnLike vs
   liftIO $ modifyIORef be_viewr $ M.insert i vi
   return $ vis
@@ -356,7 +355,7 @@ itsame who = ((who ==) . ee_who) <$> ask
 eeIze :: (a -> BApp (b, c)) -> a -> BApp c
 eeIze f x = do
   be_flowr' <- (liftIO . dupeIORef) =<< (be_flowr <$> ask)
-  local (\e -> e { be_flowr = be_flowr' }) $
+  local (\e -> e {be_flowr = be_flowr'}) $
     snd <$> f x
 
 ee_m :: DLStmt -> BApp (EApp DLStmt)
@@ -377,13 +376,17 @@ be_m = \case
   DL_ArrayMap at ans x a f -> do
     fg_defn $ [ans, a]
     fg_use $ x
-    be_bl f >>= retb (\f' ->
-      return $ DL_ArrayMap at ans x a f')
+    be_bl f
+      >>= retb
+        (\f' ->
+           return $ DL_ArrayMap at ans x a f')
   DL_ArrayReduce at ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ [x, z]
-    be_bl f >>= retb (\f' ->
-      return $ DL_ArrayReduce at ans x z b a f')
+    be_bl f
+      >>= retb
+        (\f' ->
+           return $ DL_ArrayReduce at ans x z b a f')
   DL_Var at v -> do
     fg_defn $ v
     let mkt _ = return $ DL_Var at v
@@ -397,8 +400,11 @@ be_m = \case
     fg_use $ c
     t'p <- be_t t
     f'p <- be_t f
-    retb2 t'p f'p (\t' f' ->
-      return $ DL_LocalIf at c t' f')
+    retb2
+      t'p
+      f'p
+      (\t' f' ->
+         return $ DL_LocalIf at c t' f')
   DL_LocalSwitch at ov csm -> do
     fg_use $ ov
     let go (mv, k) = do
@@ -407,13 +413,16 @@ be_m = \case
           return $ (,) mv k'p
     csm' <- mapM go csm
     let mkt f = (DL_LocalSwitch at ov <$> mapM f' csm')
-          where f' (mv, k'p) = (,) mv <$> (f k'p)
+          where
+            f' (mv, k'p) = (,) mv <$> (f k'p)
     return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ z
-    be_bl f >>= retb (\f' ->
-      return $ DL_MapReduce at mri ans x z b a f')
+    be_bl f
+      >>= retb
+        (\f' ->
+           return $ DL_MapReduce at mri ans x z b a f')
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
     l'l <- ee_t l
@@ -437,25 +446,31 @@ be_t = \case
   DT_Com m k -> do
     m'p <- be_m m
     k'p <- be_t k
-    retb2 m'p k'p (\m' k' ->
-      return $ mkCom DT_Com m' k')
+    retb2
+      m'p
+      k'p
+      (\m' k' ->
+         return $ mkCom DT_Com m' k')
 
-retb :: (Monad m, Monad n, Monad p) => (forall o . Monad o => a -> o b) -> (m a, n a) -> p (m b, n b)
+retb :: (Monad m, Monad n, Monad p) => (forall o. Monad o => a -> o b) -> (m a, n a) -> p (m b, n b)
 retb f (mx, my) = return $ (,) (mx >>= f) (my >>= f)
 
-retb0 :: (Monad m, Monad n, Monad p) => (forall o . Monad o => () -> o b) -> p (m b, n b)
+retb0 :: (Monad m, Monad n, Monad p) => (forall o. Monad o => () -> o b) -> p (m b, n b)
 retb0 f = retb f (return (), return ())
 
-retb2 :: (Monad m, Monad n, Monad p) => (m a1, n a1) -> (m a2, n a2) -> (forall o . Monad o => a1 -> a2 -> o b) -> p (m b, n b)
+retb2 :: (Monad m, Monad n, Monad p) => (m a1, n a1) -> (m a2, n a2) -> (forall o. Monad o => a1 -> a2 -> o b) -> p (m b, n b)
 retb2 (mx1, my1) (mx2, my2) f = retb f' ((p mx1 mx2), (p my1 my2))
-  where f' (x1, x2) = f x1 x2
-        p mx my = (,) <$> mx <*> my
+  where
+    f' (x1, x2) = f x1 x2
+    p mx my = (,) <$> mx <*> my
 
 be_bl :: BAppT2 DLBlock
 be_bl (DLBlock at fs t a) = do
   fg_use $ a
-  be_t t >>= retb (\t' ->
-    return $ DLBlock at fs t' a)
+  be_t t
+    >>= retb
+      (\t' ->
+         return $ DLBlock at fs t' a)
 
 class OnlyHalts a where
   onlyHalts :: a -> Bool
@@ -479,13 +494,13 @@ instance OnlyHalts LLStep where
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_ViewIs _ v f ma k ->
-    local (\e -> e { be_views = modv $ be_views e}) $
+    local (\e -> e {be_views = modv $ be_views e}) $
       be_c k
     where
       modv = mAdjust mempty v modf
       modf = case ma of
-               Just a -> M.insert f a
-               Nothing -> M.delete f
+        Just a -> M.insert f a
+        Nothing -> M.delete f
       mAdjust d mk m = flip M.alter mk $ Just . m . fromMaybe d
   LLC_Com c k -> do
     let toks =

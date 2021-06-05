@@ -2,13 +2,14 @@ module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 
 import Control.Monad
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.DL
 import Reach.Backend.JS
+import Reach.BigOpt
 import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
@@ -17,7 +18,6 @@ import Reach.EraseLogic
 import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
-import Reach.BigOpt
 import Reach.Parser (gatherDeps_top)
 import Reach.Texty
 import Reach.Util
@@ -58,7 +58,7 @@ compile copts = do
   unless doPkgs $ do
     (avail, compileDApp) <- evalBundle all_connectors djp
     let chosen = fromMaybe avail $ tops copts
-    forM_ (S.toAscList chosen) $ \ which -> do
+    forM_ (S.toAscList chosen) $ \which -> do
       let addWhich = ((T.pack which <> ".") <>)
       let woutn = outn . addWhich
       let woutnMay = outnMay woutn
@@ -76,8 +76,8 @@ compile copts = do
       showp "ol" ol
       let vconnectors =
             case dlo_verifyPerConnector of
-            False -> Nothing
-            True -> Just connectors
+              False -> Nothing
+              True -> Just connectors
       verify woutnMay vconnectors ol >>= maybeDie
       el <- erase_logic ol
       showp "el" el
