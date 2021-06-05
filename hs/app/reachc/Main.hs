@@ -26,7 +26,7 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
     , cto_source = cta_source
     , cto_tops = cta_tops
     , cto_intermediateFiles = cta_intermediateFiles
-    , cto_canGit = cta_canGit
+    , cto_installPkgs = cta_installPkgs
     }
   where
     defaultOutputDir = takeDirectory cta_source </> "build"

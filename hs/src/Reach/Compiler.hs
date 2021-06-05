@@ -30,7 +30,7 @@ data CompilerOpts = CompilerOpts
   , tops :: Maybe (S.Set String)
   , intermediateFiles :: Bool
   , dirDotReach :: FilePath
-  , canGit :: Bool
+  , installPkgs :: Bool
   }
 
 all_connectors :: Connectors
@@ -52,11 +52,13 @@ compile copts = do
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute $ dirDotReach copts
-  djp <- gatherDeps_top (source copts) (canGit copts) dirDotReach'
+  let doPkgs = installPkgs copts
+  djp <- gatherDeps_top (source copts) doPkgs dirDotReach'
   interOut outn "bundle.js" $ render $ pretty djp
-  (avail, compileDApp) <- evalBundle all_connectors djp
-  let chosen = fromMaybe avail $ tops copts
-  forM_ (S.toAscList chosen) $ \ which -> do
+  unless doPkgs $ do
+    (avail, compileDApp) <- evalBundle all_connectors djp
+    let chosen = fromMaybe avail $ tops copts
+    forM_ (S.toAscList chosen) $ \ which -> do
       let addWhich = ((T.pack which <> ".") <>)
       let woutn = outn . addWhich
       let woutnMay = outnMay woutn

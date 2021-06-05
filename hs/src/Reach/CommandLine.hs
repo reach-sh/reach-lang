@@ -6,7 +6,7 @@ data CompilerToolArgs = CompilerToolArgs
   { cta_intermediateFiles :: Bool
   , cta_disableReporting :: Bool
   , cta_errorFormatJson :: Bool
-  , cta_canGit :: Bool
+  , cta_installPkgs :: Bool
   , cta_dirDotReach :: Maybe FilePath
   , cta_outputDir :: Maybe FilePath
   , cta_source :: FilePath

@@ -9,7 +9,7 @@ import System.Directory
 data CompilerToolOpts = CompilerToolOpts
   { cto_outputDir :: FilePath
   , cto_dirDotReach :: FilePath
-  , cto_canGit :: Bool
+  , cto_installPkgs :: Bool
   , cto_source :: FilePath
   , cto_tops :: [String]
   , cto_intermediateFiles :: Bool
@@ -29,7 +29,7 @@ makeCompilerOpts CompilerToolOpts {..} = do
       , tops = if null cto_tops then Nothing else Just (S.fromList cto_tops)
       , intermediateFiles = cto_intermediateFiles
       , dirDotReach = cto_dirDotReach
-      , canGit = cto_canGit
+      , installPkgs = cto_installPkgs
       }
 
 compilerToolMain :: CompilerToolOpts -> IO ()

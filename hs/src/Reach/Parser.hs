@@ -13,9 +13,7 @@ module Reach.Parser
   )
 where
 
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad (when)
-import Control.Monad.Reader (ReaderT, runReaderT, ask, asks, local)
+import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
@@ -39,13 +37,12 @@ import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
 
-
 data Env = Env
   { srcloc      :: SrcLoc
   , bundle      :: IORef JSBundleMap
-  , mhostgit    :: Maybe HostGit     -- ^ Tracks descent into transitive `git` deps
-  , canGit      :: Bool              -- ^ See Reach.Eval.ImportSource
-  , dirDotReach :: FilePath          -- ^ See Reach.Eval.ImportSource
+  , mhostgit    :: Maybe HostGit
+  , installPkgs :: Bool
+  , dirDotReach :: FilePath
   }
 
 type App    = ReaderT Env IO
@@ -53,7 +50,6 @@ type AppT a = a -> App a
 
 withAt :: String -> Maybe TokenPosn -> App a -> App a
 withAt lab mp app = local (\e -> e { srcloc = srcloc_at lab mp (srcloc e) }) app
-
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -263,52 +259,41 @@ data GatherContext = GatherTop | GatherNotTop
 gatherDeps_file :: GatherContext -> AppT FilePath
 gatherDeps_file gctxt src_rel = do
   Env {..} <- ask
-
   (mh', isrc) <- liftIO $ importSource srcloc src_rel >>= \case
     i@(ImportRemoteGit h) -> pure (Just h,   i)
     i@(ImportLocal     _) -> pure (mhostgit, i)
-
   let no_stdlib = impossible $ "gatherDeps_file: source file became stdlib"
-
-      ret_key (ReachSourceFile x) = x
-      ret_key ReachStdLib         = no_stdlib
-
-      get_key () = case isrc of
+  let ret_key = \case
+        ReachSourceFile x -> x
+        ReachStdLib -> no_stdlib
+  let get_key () = case isrc of
         ImportRemoteGit h -> ReachSourceFile
-          <$> (liftIO $ lockModuleAbsPath srcloc canGit dirDotReach h)
-
+          <$> (liftIO $ lockModuleAbsPath srcloc installPkgs dirDotReach h)
         ImportLocal src_rel' -> case mh' of
           Just h -> ReachSourceFile
-            <$> (liftIO $ lockModuleAbsPathGitLocalDep srcloc canGit dirDotReach h src_rel')
-
+            <$> (liftIO $ lockModuleAbsPathGitLocalDep srcloc installPkgs dirDotReach h src_rel')
           Nothing -> do
             src_abs <- liftIO $ makeAbsolute src_rel'
             reRel   <- liftIO $ makeRelativeToCurrentDirectory src_abs
-
             when (gctxt == GatherNotTop) $ do
               when (isAbsolute src_rel')
                 $ expect_thrown srcloc (Err_Parse_ImportAbsolute src_rel')
-
               when ("../" `isPrefixOf` reRel)
                 $ expect_thrown srcloc (Err_Parse_ImportDotDot src_rel')
-
             pure $ ReachSourceFile src_abs
-
-
-      proc_key ReachStdLib                   = no_stdlib
-      proc_key src@(ReachSourceFile src_abs) = do
-        e <- ask
-        let e' = e { srcloc = srcloc_src src, mhostgit = mh' }
-        liftIO $ do
-          setLocaleEncoding utf8
-          content <- readFile src_abs
-          withCurrentDirectory
-            (takeDirectory src_abs)
-            (flip runReaderT e' (gatherDeps_ast_rewriteErr content))
-
+  let proc_key = \case
+        ReachStdLib -> no_stdlib
+        src@(ReachSourceFile src_abs) -> do
+          e <- ask
+          let e' = e { srcloc = srcloc_src src, mhostgit = mh' }
+          liftIO $ do
+            setLocaleEncoding utf8
+            content <- readFile src_abs
+            withCurrentDirectory
+              (takeDirectory src_abs)
+              (flip runReaderT e' (gatherDeps_ast_rewriteErr content))
   updatePartialAvoidCycles
     (gatherDeps_from srcloc) [ReachStdLib] get_key ret_key Err_Parse_CyclicImport proc_key
-
 
 gatherDeps_stdlib :: App ()
 gatherDeps_stdlib = do
@@ -333,9 +318,9 @@ map_order dm = order
     getNodePart (n, _, _) = n
 
 gatherDeps_top :: FilePath -> Bool -> FilePath -> IO JSBundle
-gatherDeps_top src_p canGit' dirDotReach' = do
+gatherDeps_top src_p installPkgs' dirDotReach' = do
   fmr <- liftIO $ newIORef (mempty, mempty)
-  let e = Env srcloc_top fmr Nothing canGit' dirDotReach'
+  let e = Env srcloc_top fmr Nothing installPkgs' dirDotReach'
   flip runReaderT e $ do
     _src_abs_p <- gatherDeps_file GatherTop src_p
     gatherDeps_stdlib

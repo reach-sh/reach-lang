@@ -11,7 +11,6 @@ import Reach.Sanitize
 import Reach.Util
 
 type App = ReaderT Env IO
-
 type AppT a = a -> App a
 
 class Optimize a where
