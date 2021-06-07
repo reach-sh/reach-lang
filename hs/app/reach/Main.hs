@@ -6,11 +6,11 @@
 
 module Main (main) where
 
-import Control.Monad (join)
+import Control.Monad
 import Control.Monad.Shell
 import Options.Applicative
 import Options.Applicative.Help.Pretty
-import System.Posix.IO (stdError)
+import System.Posix.IO
 
 import qualified Data.Text         as TS
 import qualified Data.Text.Lazy    as TL
