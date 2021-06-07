@@ -22,7 +22,7 @@ import qualified Reach.Version     as V
 default (TL.Text)
 
 
-type Subcommand = ParserInfo (Script ())
+type Subcommand = Mod CommandFields (Script ())
 
 
 reachImages :: [TL.Text]
@@ -70,7 +70,7 @@ regardless' f = regardless $ toStderr f
 
 --------------------------------------------------------------------------------
 clean :: Subcommand
-clean = info f $ fullDesc <> desc <> fdoc where
+clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
   desc = progDesc "Delete 'build/$MODULE.$IDENT.mjs'"
   fdoc = footerDoc . Just
      $  text "MODULE is \"index\" by default"
@@ -96,7 +96,7 @@ clean = info f $ fullDesc <> desc <> fdoc where
 
 --------------------------------------------------------------------------------
 compile :: Subcommand
-compile = info f d where
+compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = undefined
 
@@ -150,7 +150,7 @@ initMjs app = TL.fromStrict [N.text|
 
 
 init' :: Subcommand
-init' = info f $ d <> foot where
+init' = command "info" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app"
   f = go <$> strArgument (metavar "APP" <> value "index" <> showDefault)
 
@@ -181,70 +181,70 @@ init' = info f $ d <> foot where
 
 --------------------------------------------------------------------------------
 run' :: Subcommand
-run' = info f d where
+run' = command "run" $ info f d where
   d = progDesc "Run a simple app"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 down :: Subcommand
-down = info f d where
+down = command "down" $ info f d where
   d = progDesc "Halt any Dockerized devnets for this app"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 scaffold :: Subcommand
-scaffold = info f d where
+scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 react :: Subcommand
-react = info f d where
+react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 rpcServer :: Subcommand
-rpcServer = info f d where
+rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 rpcRun :: Subcommand
-rpcRun = info f d where
+rpcRun = command "rpc-run" $ info f d where
   d = progDesc "Run an RPC server + frontend with development configuration"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 devnet :: Subcommand
-devnet = info f d where
+devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 upgrade :: Subcommand
-upgrade = info f d where
+upgrade = command "upgrade" $ info f d where
   d = progDesc "Upgrade Reach"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 update :: Subcommand
-update = info f d where
+update = command "update" $ info f d where
   d = progDesc "Update Reach Docker images"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 dockerReset :: Subcommand
-dockerReset = info f d where
+dockerReset = command "docker-reset" $ info f d where
   d = progDesc "Docker kill and rm all images"
   f = pure $ do
     echo "Docker kill all the things..."
@@ -256,21 +256,21 @@ dockerReset = info f d where
 
 --------------------------------------------------------------------------------
 version :: Subcommand
-version = info f d where
+version = command "version" $ info f d where
   d = progDesc "Display version"
   f = pure $ echo V.versionHeader
 
 
 --------------------------------------------------------------------------------
 help' :: Subcommand
-help' = info f d where
+help' = command "help" $ info f d where
   d = progDesc "Show usage"
   f = undefined
 
 
 --------------------------------------------------------------------------------
 hashes :: Subcommand
-hashes = info f d where
+hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ flip mapM_ reachImages $ \i -> do
     let t = "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
@@ -280,31 +280,31 @@ hashes = info f d where
 
 --------------------------------------------------------------------------------
 whoami :: Subcommand
-whoami = info f fullDesc where
+whoami = command "whoami" $ info f fullDesc where
   f = pure . stdErrDevNull $ docker "info" "--format" "{{.ID}}"
 
 
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
-numericVersion = info f fullDesc where
+numericVersion = command "numeric-version" $ info f fullDesc where
   f = pure $ echo V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
 reactDown :: Subcommand
-reactDown = info f fullDesc where
+reactDown = command "react-down" $ info f fullDesc where
   f = undefined
 
 
 --------------------------------------------------------------------------------
 rpcServerDown :: Subcommand
-rpcServerDown = info f fullDesc where
+rpcServerDown = command "rpc-server-down" $ info f fullDesc where
   f = undefined
 
 
 --------------------------------------------------------------------------------
 unscaffold :: Subcommand
-unscaffold = info f fullDesc where
+unscaffold = command "unscaffold" $ info f fullDesc where
   f = undefined
 
 
@@ -316,32 +316,30 @@ header' = "https://reach.sh"
 
 main :: IO ()
 main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
-  s |?| p = command s p
-
-  cs = "compile"      |?| compile
-    <> "clean"        |?| clean
-    <> "init"         |?| init'
-    <> "run"          |?| run'
-    <> "down"         |?| down
-    <> "scaffold"     |?| scaffold
-    <> "react"        |?| react
-    <> "rpc-server"   |?| rpcServer
-    <> "rpc-run"      |?| rpcRun
-    <> "devnet"       |?| devnet
-    <> "upgrade"      |?| upgrade
-    <> "update"       |?| update
-    <> "docker-reset" |?| dockerReset
-    <> "version"      |?| version
-    <> "hashes"       |?| hashes
-    <> "help"         |?| help'
+  cs = compile
+    <> clean
+    <> init'
+    <> run'
+    <> down
+    <> scaffold
+    <> react
+    <> rpcServer
+    <> rpcRun
+    <> devnet
+    <> upgrade
+    <> update
+    <> dockerReset
+    <> version
+    <> hashes
+    <> help'
 
   hs = internal
     <> commandGroup "hidden subcommands"
-    <> "numeric-version" |?| numericVersion
-    <> "react-down"      |?| reactDown
-    <> "rpc-server-down" |?| rpcServerDown
-    <> "unscaffold"      |?| unscaffold
-    <> "whoami"          |?| whoami
+    <> numericVersion
+    <> reactDown
+    <> rpcServerDown
+    <> unscaffold
+    <> whoami
 
   im   = header header' <> fullDesc
   cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
