@@ -87,46 +87,22 @@ let examples =
       ]
     }
   , { mapKey = "map-any"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "map-big"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "map-multi"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "map-rwrw"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "map-sender"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "map-vary"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "maybe-send"
     , mapValue =
