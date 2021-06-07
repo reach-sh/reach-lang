@@ -103,5 +103,4 @@ gen-reach: stack
 
 .PHONY: watch
 watch: stack
-	@# ghcid --target=reach:test:reach-test -T "Main.main"
-	@ghcid --target=reach:test:reach-test -T "Reach.Test_Eval.main"
+	@ghcid --target=reach:test:reach-test
