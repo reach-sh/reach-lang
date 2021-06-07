@@ -493,21 +493,21 @@ let mk-example-job
       then "${ex.mapKey}-nightly"
       else ex.mapKey
 
-     let is-eth = \(c : Connector) -> merge
+     let is-immediate = \(c : Connector) -> merge
       { ETH  = True
       , ALGO = False
-      , CFX  = False
+      , CFX  = True
       } c
 
-     -- 2021-06-02: The `immediate` workflow should only target `ETH` for now;
+     -- 2021-06-07: The `immediate` workflow should only target `ETH` & `CFX for now;
      -- likewise, `nightly` is supposed to ignore the skip lists in
      -- `rebuild.hs` and try everything
      let conns = if not nightly
-      then filter Connector is-eth ex.mapValue
+      then filter Connector is-immediate ex.mapValue
       else [ Connector.ALGO
-           -- XXX 2021-06-03: DanBurton pls enable this when ready
-           -- , Connector.CFX
            , Connector.ETH
+           -- XXX 2021-06-07: DanBurton pls enable this when ready
+           -- , Connector.CFX
            ]
 
      let j = dockerized-job-with-build-core-bins-and-runner ResourceClass.small (
