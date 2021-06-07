@@ -18,7 +18,7 @@ The overall purpose of this application is so that:
 @itemlist[
  @item{The Funder must decide an amount of funds to provide, as well as all of the other parameters of the application.}
  @item{The Funder will know the identity of the Receiver at the beginning.}
- @item{Whomever ever ultimately receives the funds transfers it to themselves.}
+ @item{Whomever ultimately receives the funds transfers it to themselves.}
 ]
 
 With this in mind, let's answer the questions:
