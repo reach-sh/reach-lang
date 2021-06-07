@@ -1,5 +1,1 @@
-Verifying knowledge assertions
-Verifying for generic connector
-  Verifying when ALL participants are honest
-  Verifying when NO participants are honest
-Checked 0 theorems; No failures!
+reachc: error: ./index.rsh:4:27:import from: Cannot install packages; did you mean to run with `--install-pkgs`?
