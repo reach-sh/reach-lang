@@ -15,5 +15,4 @@ build: clean
 
 .PHONY: run
 run: build
-	$(REACH) run index
-	$(REACH) down
+	echo No runtime
