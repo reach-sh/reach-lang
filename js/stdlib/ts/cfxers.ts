@@ -4,6 +4,7 @@ import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
+import { address_cfxStandardize } from './CFX_util';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -243,7 +244,7 @@ export class Wallet {
   getAddress(): string {
     this._requireConnected();
     if (!this.account) throw Error(`Impossible: account is undefined`);
-    return this.account.toString()
+    return address_cfxStandardize(this.account.toString());
   }
 
   async sendTransaction(txn: any): Promise<{

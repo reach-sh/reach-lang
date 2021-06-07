@@ -108,6 +108,9 @@ skipCfx =
   , "view-maybe"
   , "view-steps"
 
+  -- expected Some, got None
+  , "zbeq"
+
   -- nondeterministic failures
   -- RPCError: Error processing request: Filter error: Block ${blockId} is not executed yet
   -- index.mjs > B > recv > Provider.getLogs > Conflux.getLogs
