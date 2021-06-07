@@ -50,13 +50,6 @@ prettyContinue :: Pretty b => b -> Doc
 prettyContinue cont_da =
   pretty cont_da <> hardline <> "continue" <> semi
 
-prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc
-prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m)
-
-prettyTransfer :: Pretty a => a -> a -> Maybe a -> Doc
-prettyTransfer who da mta =
-  "transfer." <> parens (pretty da <> ", " <> pretty mta) <> ".to" <> parens (pretty who)
-
 prettyStop :: Doc
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 

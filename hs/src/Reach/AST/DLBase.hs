@@ -13,6 +13,16 @@ import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 import Reach.Util
+import Control.Monad.Identity
+import Control.Monad.Reader
+import Data.Functor ((<&>))
+
+type PrettySubstEnv = M.Map DLVar Doc
+
+type PrettySubstApp = ReaderT PrettySubstEnv Identity
+
+class PrettySubst a where
+  prettySubst :: a -> PrettySubstApp Doc
 
 data DeployMode
   = DM_constructor
@@ -228,12 +238,16 @@ data DLArg
   deriving (Eq, Ord, Generic, Show)
 
 instance Pretty DLArg where
-  pretty = \case
-    DLA_Var v -> pretty v
-    DLA_Constant c -> pretty c
-    DLA_Literal c -> pretty c
-    DLA_Interact who m t ->
-      "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
+
+instance PrettySubst DLArg where
+  prettySubst a = do
+    case a of
+      DLA_Var v -> return $ viaShow v
+      DLA_Constant c -> return $ pretty c
+      DLA_Literal c -> return $ pretty c
+      DLA_Interact who m t ->
+        return $ "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
 class CanDupe a where
   canDupe :: a -> Bool
@@ -260,13 +274,44 @@ data DLLargeArg
   | DLLA_Struct [(SLVar, DLArg)]
   deriving (Eq, Ord, Generic, Show)
 
+render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
+render_dasM as = do
+  as' <- mapM prettySubst as
+  return $ hsep $ punctuate comma as'
+
+
+render_objM :: Pretty k => PrettySubst v => M.Map k v -> PrettySubstApp Doc
+render_objM env = do
+  ps <- mapM render_p $ M.toAscList env
+  return $ braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) ps)
+  where
+    render_p (k, oa) = do
+      o' <- prettySubst oa
+      return $ pretty k <+> "=" <+> o'
+
+instance PrettySubst String where
+  prettySubst = return . pretty
+
+instance (PrettySubst a, PrettySubst b) => PrettySubst (a, b) where
+  prettySubst (x, y) = do
+    x' <- prettySubst x
+    y' <- prettySubst y
+    return $ parens $ hsep $ punctuate comma [x', y']
+
 instance Pretty DLLargeArg where
-  pretty = \case
-    DLLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLLA_Tuple as))
-    DLLA_Tuple as -> brackets $ render_das as
-    DLLA_Obj env -> render_obj env
-    DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
-    DLLA_Struct kvs -> "struct" <> brackets (render_das kvs)
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
+
+instance PrettySubst DLLargeArg where
+  prettySubst = \case
+    DLLA_Array t as -> do
+      t' <- prettySubst (DLLA_Tuple as)
+      return $ "array" <> parens (pretty t <> comma <+> t')
+    DLLA_Tuple as -> render_dasM as <&> brackets
+    DLLA_Obj env -> render_objM env
+    DLLA_Data _ vn vv -> return $ "<" <> pretty vn <> " " <> pretty vv <> ">"
+    DLLA_Struct kvs -> do
+      kvs' <- render_dasM kvs
+      return $ "struct" <> brackets kvs'
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
 mdaToMaybeLA t = \case
@@ -384,40 +429,112 @@ data DLExpr
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
   deriving (Eq, Ord, Generic)
 
+prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
+prettyClaim ct a m = do
+  a' <- prettySubst a
+  return $ "claim" <> parens (viaShow ct) <> parens (a' <> comma <+> viaShow m)
+
+-- prettyTransfer :: Pretty a => a -> a -> Maybe a -> PrettySubstApp Doc
+prettyTransfer :: (PrettySubst a1, PrettySubst a2, PrettySubst a3) => a1 -> a2 -> a3 -> PrettySubstApp Doc
+prettyTransfer who da mta = do
+  who' <- prettySubst who
+  da' <- prettySubst da
+  mta' <- prettySubst mta
+  return $ "transfer." <> parens (da' <> ", " <> mta') <> ".to" <> parens who'
+
+instance PrettySubst a => PrettySubst (Maybe a) where
+  prettySubst = \case
+    Just a -> do
+      a' <- prettySubst a
+      return $ "Just" <+> a'
+    Nothing -> return "Nothing"
+
 instance Pretty DLExpr where
-  pretty e =
-    case e of
-      DLE_Arg _ a -> pretty a
-      DLE_LArg _ a -> pretty a
-      DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
-      DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> pretty c <> " ? " <> pretty t <> " : " <> pretty el
-      DLE_PrimOp _ o [a] -> pretty o <> pretty a
-      DLE_PrimOp _ o [a, b] -> hsep [pretty a, pretty o, pretty b]
-      DLE_PrimOp _ o as -> pretty o <> parens (render_das as)
-      DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
-      DLE_ArraySet _ a i v -> "array_set" <> (parens $ render_das [a, i, v])
-      DLE_ArrayConcat _ x y -> "array_concat" <> (parens $ render_das [x, y])
-      DLE_ArrayZip _ x y -> "array_zip" <> (parens $ render_das [x, y])
-      DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)
-      DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
-      DLE_Interact _ _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
-      DLE_Digest _ as -> "digest" <> parens (render_das as)
-      DLE_Claim _ _ ct a m -> prettyClaim ct a m
-      DLE_Transfer _ who da mtok -> prettyTransfer who da mtok
-      DLE_TokenInit _ tok -> "tokenInit" <> parens (pretty tok)
-      DLE_CheckPay _ _ da mtok -> "checkPay" <> parens (pretty da <> ", " <> pretty mtok)
-      DLE_Wait _ a -> "wait" <> parens (pretty a)
-      DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
-      DLE_MapRef _ mv i -> pretty mv <> brackets (pretty i)
-      DLE_MapSet _ mv kv (Just nv) ->
-        pretty mv <> "[" <> pretty kv <> "]" <+> "=" <+> pretty nv
-      DLE_MapSet _ mv i Nothing ->
-        "delete" <+> pretty mv <> brackets (pretty i)
-      DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) ->
-        "remote(" <> pretty av <> ")." <> viaShow m <> ".pay" <> parens (pretty amta)
-          <> parens (render_das as)
-          <> ".withBill"
-          <> parens (render_das nonNetTokRecv)
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
+
+instance PrettySubst DLExpr where
+  prettySubst = \case
+    DLE_Arg _ a -> prettySubst a
+    DLE_LArg _ a -> prettySubst a
+    DLE_Impossible _ msg -> return $ "impossible" <> parens (pretty msg)
+    DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do
+      c' <- prettySubst c
+      t' <- prettySubst t
+      e' <- prettySubst el
+      return $ c' <> " ? " <> t' <> " : " <> e'
+    DLE_PrimOp _ o [a] -> do
+      a' <- prettySubst a
+      return $ pretty o <> a'
+    DLE_PrimOp _ o [a, b] -> do
+      a' <- prettySubst a
+      b' <- prettySubst b
+      return $ hsep [a', pretty o, b']
+    DLE_PrimOp _ o as -> do
+      as' <- render_dasM as
+      return $ pretty o <> parens as'
+    DLE_ArrayRef _ a o -> do
+      a' <- prettySubst a
+      o' <- prettySubst o
+      return $ a' <> brackets o'
+    DLE_ArraySet _ a i v -> do
+      as' <- render_dasM [a,i,v]
+      return $ "Array.set" <> parens as'
+    DLE_ArrayConcat _ x y -> do
+      as' <- render_dasM [x, y]
+      return $ "Array.concat" <> parens as'
+    DLE_ArrayZip _ x y -> do
+      as' <- render_dasM [x, y]
+      return $ "Array.zip" <> parens as'
+    DLE_TupleRef _ a i -> do
+      a' <- prettySubst a
+      return $ a' <> brackets (pretty i)
+    DLE_ObjectRef _ a f -> do
+      a' <- prettySubst a
+      return $ a' <> "." <> pretty f
+    DLE_Interact _ _ who m _ as -> do
+      as' <- render_dasM as
+      return $ "interact(" <> render_sp who <> ")." <> viaShow m <> parens as'
+    DLE_Digest _ as -> do
+      as' <- render_dasM as
+      return $ "digest" <> parens as'
+    DLE_Claim _ _ ct a m -> prettyClaim ct a m
+    DLE_Transfer _ who da mtok -> prettyTransfer who da mtok
+    DLE_TokenInit _ tok -> do
+      tok' <- prettySubst tok
+      return $ "tokenInit" <> parens tok'
+    DLE_CheckPay _ _ da mtok -> do
+      da' <- prettySubst da
+      mtok' <- prettySubst mtok
+      return $ "checkPay" <> parens (da' <> ", " <> mtok')
+    DLE_Wait _ a -> do
+      a' <- prettySubst a
+      return $ "wait" <> parens a'
+    DLE_PartSet _ who a -> do
+      a' <- prettySubst a
+      return $ render_sp who <> ".set" <> parens a'
+    DLE_MapRef _ mv i -> do
+      i' <- prettySubst i
+      return $ pretty mv <> brackets i'
+    DLE_MapSet _ mv kv (Just nv) -> do
+      kv' <- prettySubst kv
+      nv' <- prettySubst nv
+      return $ pretty mv <> "[" <> kv' <> "]" <+> "=" <+> nv'
+    DLE_MapSet _ mv i Nothing -> do
+      i' <- prettySubst i
+      return $ "delete" <+> pretty mv <> brackets i'
+    DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) -> do
+      av' <- prettySubst av
+      amta' <- prettySubst amta
+      as' <- render_dasM as
+      nn' <- render_dasM nonNetTokRecv
+      return $ "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
+        <> parens as'
+        <> ".withBill"
+        <> parens nn'
+
+pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
+pretty_subst e x =
+  runIdentity $ flip runReaderT e $ prettySubst x
 
 instance IsPure DLExpr where
   isPure = \case
@@ -625,8 +742,13 @@ data DLPayAmt = DLPayAmt
   deriving (Eq, Generic, Ord)
 
 instance Pretty DLPayAmt where
-  pretty (DLPayAmt {..}) =
-    brackets $ pretty pa_net <> ", " <> render_das pa_ks
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
+
+instance PrettySubst DLPayAmt where
+  prettySubst (DLPayAmt {..}) = do
+    pa_net' <- prettySubst pa_net
+    pa_ks' <- render_dasM pa_ks
+    return $ brackets $ pa_net' <> ", " <> pa_ks'
 
 data DLSend = DLSend
   { ds_isClass :: Bool

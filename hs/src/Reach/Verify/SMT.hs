@@ -8,10 +8,9 @@ import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.Foldable
 import Data.IORef
-import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -34,6 +33,9 @@ import qualified SimpleSMT as SMT
 import System.Directory
 import System.Exit
 import System.IO
+import Reach.Verify.SMTAst
+import Reach.AddCounts (add_counts)
+import qualified Data.List as List
 
 --- SMT Helpers
 
@@ -114,42 +116,6 @@ instance Pretty VerifyMode where
     VM_Dishonest RoleContract -> "NO participants are honest"
     VM_Dishonest (RolePart p) -> "ONLY " <> pretty p <> " is honest"
 
-data BindingOrigin
-  = O_Join SLPart Bool
-  | O_Msg SLPart (Maybe DLArg)
-  | O_ClassJoin SLPart
-  | O_ToConsensus
-  | O_BuiltIn
-  | O_Var
-  | O_Interact
-  | O_Expr DLExpr
-  | O_Assignment
-  | O_SwitchCase SLVar
-  | O_ReduceVar
-  | O_Export
-  deriving (Eq)
-
-instance Show BindingOrigin where
-  show bo =
-    case bo of
-      O_Join who False -> "a dishonest join from " ++ sp who
-      O_Msg who Nothing -> "a dishonest message from " ++ sp who
-      O_Join who True -> "an honest join from " ++ sp who
-      O_Msg who (Just what) -> "an honest message from " ++ sp who ++ " of " ++ sp what
-      O_ClassJoin who -> "a join by a class member of " <> sp who
-      O_ToConsensus -> "a consensus transfer"
-      O_BuiltIn -> "builtin"
-      O_Var -> "function return"
-      O_Interact -> "interaction"
-      O_Expr e -> "evaluating " ++ sp e
-      O_Assignment -> "loop variable"
-      O_SwitchCase vn -> "switch case " <> vn
-      O_ReduceVar -> "map reduction"
-      O_Export -> "export"
-    where
-      sp :: Pretty a => a -> String
-      sp = show . pretty
-
 type SMTTypeInv = SExpr -> SExpr
 
 type SMTTypeMap =
@@ -162,14 +128,6 @@ instance Semigroup a => Semigroup (App a) where
 
 instance Monoid a => Monoid (App a) where
   mempty = return mempty
-
-type BindingEnv = M.Map String BindingInfo
-
-data BindingInfo
-  = BR_Var (Maybe DLVar) SrcLoc BindingOrigin (Maybe SExpr) (Maybe DLExpr)
-  | BR_MapNew
-  | BR_MapFresh
-  | BR_MapUpdate SrcLoc SExpr DLArg (Maybe DLArg)
 
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
@@ -212,7 +170,6 @@ data SMTCtxt = SMTCtxt
   , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_bindingsr :: IORef BindingEnv
   , ctxt_while_invariant :: Maybe DLBlock
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_vars_defdr :: IORef (S.Set String)
@@ -221,6 +178,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
   , ctxt_inv_mode :: BlockMode
   , ctxt_pay_amt :: Maybe (SExpr, SExpr)
+  , ctxt_smt_trace :: IORef (S.Set SMTLet)
   }
 
 ctxt_mode :: App VerifyMode
@@ -240,7 +198,6 @@ smtNewScope m = do
 ctxtNewScope :: App a -> App a
 ctxtNewScope m = do
   SMTCtxt {..} <- ask
-  ctxt_bindingsr' <- liftIO $ dupeIORef ctxt_bindingsr
   ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
   let dupeMapInfo (SMTMapInfo {..}) = do
         sm_c' <- liftIO $ dupeCounter sm_c
@@ -258,8 +215,7 @@ ctxtNewScope m = do
     local
       (\e ->
          e
-           { ctxt_bindingsr = ctxt_bindingsr'
-           , ctxt_vars_defdr = ctxt_vars_defdr'
+           { ctxt_vars_defdr = ctxt_vars_defdr'
            , ctxt_maps = ctxt_maps'
            })
       $ m
@@ -307,25 +263,32 @@ smtTypeInv t se = do
     Just (_, i) -> smtAssertCtxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
-smtDeclare_v :: String -> DLType -> App ()
-smtDeclare_v v t = do
+
+smtDeclare :: Solver -> String -> SExpr -> Maybe SMTLet -> App ()
+smtDeclare smt v s ml = do
+  smt_trace_r <- asks ctxt_smt_trace
+  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (flip S.insert st) ml)
+  liftIO $ void $ SMT.declare smt v s
+
+smtDeclare_v :: String -> DLType -> Maybe SMTLet -> App ()
+smtDeclare_v v t l = do
   smt <- ctxt_smt <$> ask
   s <- smtTypeSort t
-  liftIO $ void $ SMT.declare smt v $ Atom s
+  smtDeclare smt v (Atom s) l
   smtTypeInv t $ Atom v
 
-smtDeclare_v_memo :: String -> DLType -> App ()
-smtDeclare_v_memo v t = do
+smtDeclare_v_memo :: String -> DLType -> Maybe SMTLet -> App ()
+smtDeclare_v_memo v t ml = do
   vds <- ctxt_vars_defdr <$> ask
   vars_defd <- liftIO $ readIORef vds
   case S.member v vars_defd of
     True -> return ()
     False -> do
       liftIO $ modifyIORef vds $ S.insert v
-      smtDeclare_v v t
+      smtDeclare_v v t ml
 
-smtPrimOp :: PrimOp -> [DLArg] -> [SExpr] -> App SExpr
-smtPrimOp p dargs =
+smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
+smtPrimOp at p dargs =
   case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
@@ -363,7 +326,9 @@ smtPrimOp p dargs =
                   False -> do
                     ai <- smt_alloc_id
                     let av = "classAddr" <> show ai
-                    smtDeclare_v av T_Address
+                    let dv = DLVar at Nothing T_Address ai
+                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Context (SMTProgram $ DLE_PrimOp at SELF_ADDRESS dargs)
+                    smtDeclare_v av T_Address $ Just smlet
                     return $ Atom av
         se -> impossible $ "self address " <> show se
   where
@@ -397,18 +362,6 @@ smtDigestCombine at args =
 
 --- Verifier
 
-data TheoremKind
-  = TClaim ClaimType
-  | TInvariant Bool
-  | TWhenNotUnknown
-
-instance Pretty TheoremKind where
-  pretty = \case
-    TClaim c -> pretty c
-    TInvariant False -> "while invariant before loop"
-    TInvariant True -> "while invariant after loop"
-    TWhenNotUnknown -> "when is not unknown"
-
 fmtAssert :: TheoremKind -> String
 fmtAssert = \case
   TClaim c -> show $ pretty c
@@ -431,268 +384,105 @@ seVars se =
 set_to_seq :: S.Set a -> Seq.Seq a
 set_to_seq = Seq.fromList . S.toList
 
--- Log every occurence of dlvars so we know what is used how many times
-dlvOccurs :: [String] -> BindingEnv -> DLExpr -> [String]
-dlvOccurs env bindings = \case
-  DLE_Arg _ (DLA_Var dv) ->
-    case v `List.elem` env of
-      -- If we already expanded, mark that we've seen var again and go home
-      True -> env'
-      -- Otherwise, expand and mark all sub expressions
-      False ->
-        case v `M.lookup` bindings of
-          Just (BR_Var _ _ _ _ (Just e)) ->
-            dlvOccurs env' bindings e
-          _ -> env'
-    where
-      env' = v : env
-      v = getVarName dv
-  DLE_Arg {} -> env
-  DLE_LArg at (DLLA_Array _ as) -> _recs at as
-  DLE_LArg at (DLLA_Tuple as) -> _recs at as
-  DLE_LArg at (DLLA_Obj as) -> _recs at $ map snd $ M.toList as
-  DLE_LArg at (DLLA_Data _ _ a) -> _rec at a
-  DLE_LArg at (DLLA_Struct kvs) -> _recs at $ map snd kvs
-  DLE_Impossible {} -> env
-  DLE_PrimOp at _ as -> _recs at as
-  DLE_ArrayRef at x y -> _recs at [x, y]
-  DLE_ArraySet at x y z -> _recs at [x, y, z]
-  DLE_ArrayConcat at x y -> _recs at [x, y]
-  DLE_ArrayZip at x y -> _recs at [x, y]
-  DLE_TupleRef at a _ -> _rec at a
-  DLE_ObjectRef at a _ -> _rec at a
-  DLE_Interact at _ _ _ _ as -> _recs at as
-  DLE_Digest at as -> _recs at as
-  DLE_Claim at _ _ a _ -> _rec at a
-  DLE_Transfer at x y z -> _recs_ (_recs at [x, y]) at z
-  DLE_TokenInit at x -> _rec at x
-  DLE_CheckPay at _ y z -> _recs_ (_rec at y) at z
-  DLE_Wait at a -> _rec at a
-  DLE_PartSet at _ a -> _rec at a
-  DLE_MapRef at _ fa -> _rec at fa
-  DLE_MapSet at _ fa na -> _recs_ (_rec at fa) at na
-  DLE_Remote at _ av _ (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
-    _recs at (av : net : pairList ks <> as <> nonNetTokRecv)
-  where
-    _recs_ env_ at as = foldr (\a acc -> dlvOccurs acc bindings $ DLE_Arg at a) env_ as
-    _recs = _recs_ env
-    _rec at a = dlvOccurs env bindings $ DLE_Arg at a
-    pairList = concatMap (\(a, b) -> [a, b])
-
-displayDLAsJs :: M.Map String [DLVar] -> [(String, Either String DLExpr)] -> Bool -> DLExpr -> String
-displayDLAsJs v2dv inlineCtxt nested = \case
-  DLE_Arg _ (DLA_Interact p s _) -> List.intercalate "_" ["interact", B.unpack p, ps s]
-  DLE_Arg _ a -> sub a
-  DLE_LArg _ (DLLA_Array _ as) -> "array" <> args as
-  DLE_LArg _ (DLLA_Tuple as) -> bracket $ commaSep (map sub as)
-  DLE_LArg _ (DLLA_Obj env) ->
-    curly $ commaSep (map (\(k, v) -> k <> ": " <> sub v) $ M.toList env)
-  DLE_LArg _ (DLLA_Data _ _ a) -> sub a
-  DLE_LArg _ (DLLA_Struct as) -> "struct" <> bracket (commaSep (map go as))
-    where
-      go (k, a) = bracket (k <> ", " <> sub a)
-  d@(DLE_Impossible {}) -> ps d
-  DLE_PrimOp _ IF_THEN_ELSE [c, t, el] ->
-    mparen $ sub c <> " ? " <> sub t <> " : " <> sub el
-  DLE_PrimOp _ o [a] -> mparen $ ps o <> sub a
-  DLE_PrimOp _ o [a, b] ->
-    case (o, sub a, sub b) of
-      (ADD, "0", b') -> b'
-      (ADD, a', "0") -> a'
-      (_, a', b') -> mparen $ unwords [a', ps o, b']
-  DLE_PrimOp _ o as -> ps o <> args as
-  DLE_ArrayRef _ x y -> sub x <> bracket (sub y)
-  DLE_ArraySet _ x y z -> "Array.set" <> args [x, y, z]
-  DLE_ArrayConcat _ x y -> "Array.concat" <> args [x, y]
-  DLE_ArrayZip _ x y -> "Array.zip" <> args [x, y]
-  DLE_TupleRef _ a i -> sub a <> bracket (show i)
-  DLE_ObjectRef _ a i -> sub a <> bracket i
-  DLE_Interact _ _ pv f _ as -> "interact(" <> show pv <> ")." <> f <> args as
-  DLE_Digest _ as -> "digest" <> args as
-  DLE_Claim _ _ ty a m -> show ty <> paren (commaSep [sub a, show m])
-  DLE_Transfer _ x y z -> "transfer" <> paren (sub y <> ", " <> msub z) <> ".to" <> paren (sub x)
-  DLE_TokenInit _ x -> "tokenInit" <> paren (sub x)
-  DLE_CheckPay _ _ y z -> "checkPay" <> paren (sub y <> ", " <> msub z)
-  DLE_Wait _ a -> "wait" <> paren (sub a)
-  DLE_PartSet _ p a -> "Participant.set" <> paren (commaSep [show p, sub a])
-  DLE_MapRef _ mv fa -> subm mv <> bracket (sub fa)
-  DLE_MapSet _ mv fa (Just na) ->
-    subm mv <> bracket (sub fa <> " <- " <> sub na)
-  DLE_MapSet _ mv fa Nothing ->
-    subm mv <> bracket ("\\ " <> sub fa)
-  DLE_Remote _ _ av f (DLPayAmt net ks) as (DLWithBill _ nonNetTokRecv _) ->
-    "remote(" <> show av <> ")." <> f <> ".pay"
-      <> paren (commaSep [sub net, subPair ks])
-      <> ".withBill"
-      <> paren (commaSep $ map sub nonNetTokRecv)
-      <> args as
-  where
-    commaSep = List.intercalate ", "
-    args as = paren (commaSep (map sub as))
-    ps o = show $ pretty o
-    mparen = if nested then paren else id
-    curly e = "{" <> e <> "}"
-    paren e = "(" <> e <> ")"
-    bracket e = "[" <> e <> "]"
-    subPair = bracket . concatMap (\(a, t) -> commaSep [sub a, sub t])
-    sub (DLA_Var v) =
-      case getVarName v `List.lookup` inlineCtxt of
-        Nothing -> show v
-        Just (Right de) -> displayDLAsJs v2dv inlineCtxt True de
-        Just (Left s) -> s
-    sub e = ps e
-    msub = \case
-      Nothing -> "false"
-      Just x -> sub x
-    subm mv = ps mv -- "XXX"
-
-displaySexpAsJs :: Bool -> SExpr -> String
-displaySexpAsJs nested s =
-  case s of
-    Atom i -> i
-    List (Atom w : rs)
-      | "cons" `List.isSuffixOf` w ->
-        "[" <> List.intercalate ", " (map r rs) <> "]"
-    List xs -> lparen <> unwords (map r xs) <> rparen
-  where
-    lparen = if nested then "(" else ""
-    rparen = if nested then ")" else ""
-    r = displaySexpAsJs True
-
 -- A computation is first stored into an unamed var, then `const`
 -- assigned to a variable. So, choose the second variable inserted
 -- into list, if it exists (This will be the user named variable).
 -- If no user assigned var, display the name of the tmp var.
 -- If the list is empty, it is an "unbound" var like an interact field.
-getBindingOrigin :: String -> M.Map String [DLVar] -> String
-getBindingOrigin v v2dv =
-  case reverse $ fromMaybe [] $ M.lookup v v2dv of
-    (_ : val : _) -> show val
-    (val : _) -> show val
-    [] -> v
 
-subAllVars :: BindingEnv -> TheoremKind -> M.Map String (SExpr, SExpr) -> SExpr -> App String
-subAllVars bindings tk pm (Atom ai) = do
-  v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
-  case ai `M.lookup` bindings of
-    Just (BR_Var _ _ _ _ (Just de)) -> do
-      let env = dlvOccurs [] bindings de
-      let sortedEnv = List.group $ List.sort env
-      -- Get variable/values to inline. Inline a DLExpr if available,
-      -- or fallback to s-exp Atom value
-      let inlineVars = List.foldr canInline [] sortedEnv
-      let inlines = map (getInlineValue v2dv) inlineVars
-      let toJs = displayDLAsJs v2dv inlines False
-      -- Get let assignments
-      let assignVars = List.foldr canAssign [] sortedEnv
-      let assigns =
-            List.foldr
-              (\x acc ->
-                 case x `M.lookup` bindings of
-                   Just (BR_Var _ _ _ _ (Just dl)) -> (x, Right dl) : acc
-                   Just (BR_Var _ _ _ (Just se) _) -> (x, Left se) : acc
-                   _ -> acc)
-              []
-              assignVars
-      let assignStr =
-            unlines $
-              map
-                (\(k, eds) ->
-                   let kv = maybe "" (displaySexpAsJs False . snd) $ M.lookup k pm
-                    in "  const " <> getBindingOrigin k v2dv <> " = " <> case eds of
-                         Right v -> toJs v
-                         Left v -> SMT.showsSExpr v ""
-                         <> ";"
-                         <> "\n  //    ^ would be "
-                         <> kv)
-                assigns
-      let assertStr = "  " <> fmtAssert tk <> "(" <> toJs de <> ");"
-      return $ assignStr <> assertStr
-    -- Something like assert(false)
-    _ -> return $ "  " <> fmtAssert tk <> "(" <> ai <> ");"
+sv2dv :: String -> App (Maybe DLVar)
+sv2dv v = do
+  v2dv <- (liftIO. readIORef) =<< asks ctxt_v_to_dv
+  case M.lookup v v2dv of
+    Just (_:dv:_) -> return $ Just dv
+    _ -> return Nothing
+
+parseType :: SExpr -> App DLType
+parseType = \case
+    Atom "Token" -> return $ T_Token
+    Atom "Int" -> return $ T_UInt
+    Atom "Bool" -> return $ T_Bool
+    Atom "Digest" -> return $ T_Digest
+    Atom "Address" -> return $ T_Address
+    Atom "Bytes" -> return $ T_Bytes 0
+    Atom "Null" -> return $ T_Null
+    List (Atom "Array":rs) -> do
+      rs' <- mapM parseType rs
+      return $ T_Array (T_Tuple rs') (fromIntegral $ length rs)
+    -- xxx parse tuples
+    ow -> impossible $ "parseType: " <> show ow
+
+parseVal :: DLType -> SExpr -> App SMTVal
+parseVal t v =
+  case t of
+    T_Bool -> do
+      return $ SMV_Bool (v == Atom "true")
+    T_Null -> return $ SMV_Null
+    T_UInt ->
+      case v of
+        Atom i -> return $ SMV_Int (read i :: Int)
+        _ -> impossible $ "parseVal: UInt: " <> show v
+    T_Address -> do
+      case v of
+        Atom i -> return $ SMV_Address $ B.pack i
+        _ -> impossible $ "parseVal: Address: " <> show v
+    T_Bytes _ -> do
+      case v of
+        Atom i -> return $ SMV_Bytes $ B.pack i
+        _ -> impossible $ "parseVal: Bytes: " <> show v
+    T_Array (T_Tuple [T_Token, T_UInt]) _ ->
+      -- XXX This is a Map
+      return $ SMV_Null
+    T_Array (T_Tuple [T_UInt, ty]) _ ->
+      case v of
+        List (_:elems) -> do
+          let parseVals = \case
+                List (Atom "store":this) -> parseVals (List this)
+                List [rst, _, x] -> do
+                  el <- parseVal ty x
+                  rs <- parseVals rst
+                  return $ el : rs
+                _ -> return []
+          elems' <- parseVals (List elems)
+          return $ SMV_Array ty $ reverse elems'
+        _ -> impossible $ "parseVal: Array(" <> show ty <> ")"
+    _ -> impossible $ "parseVal: " <> show t <> " " <> show v
+
+
+parseModel2 :: SMTModel -> App (M.Map DLVar SMTVal)
+parseModel2 pm = M.fromList <$> aux (M.toList pm)
   where
-    -- Variable can be inlined if it is used once or its value is a `DLArg`
-    canInline [x] acc = x : acc
-    canInline (x : _) acc =
-      case x `M.lookup` bindings of
-        Just (BR_Var _ _ _ _ (Just (DLE_Arg _ _))) -> x : acc
-        Just (BR_MapNew) -> x : acc
-        Just (BR_MapFresh) -> x : acc
-        _ -> acc
-    canInline _ acc = acc
+    aux = \case
+      [] -> return []
+      (v, (tyse, vse)) : tl -> do
+        sv2dv v >>= \case
+          Just dv -> do
+            ty <- parseType tyse
+            ve <- parseVal ty vse
+            rst <- aux tl
+            return $ (dv, ve) : rst
+          Nothing -> aux tl
 
-    -- Variable can be assigned if it is used many times and its value is not a `DLArg`
-    canAssign (x : _ : _) acc =
-      case x `M.lookup` bindings of
-        Just (BR_Var _ _ _ _ (Just (DLE_Arg _ _))) -> acc
-        Just (BR_MapNew) -> acc
-        Just (BR_MapFresh) -> acc
-        _ -> x : acc
-    canAssign _ acc = acc
+showTrace :: M.Map DLVar SMTVal -> SMTTrace -> Doc
+showTrace pm st = do
+  let pm' = M.map pretty pm
+  pretty_subst pm' st
 
-    getInlineValue :: M.Map String [DLVar] -> String -> (String, Either String DLExpr)
-    getInlineValue v2dv v =
-      case v `M.lookup` bindings of
-        Just (BR_Var _ _ _ _ (Just del)) -> (v, Right del)
-        Just (BR_Var _ _ _ (Just se) _) -> (v, Left $ SMT.showsSExpr se "")
-        Just (BR_MapNew) -> (v, Left $ "Ø")
-        Just (BR_MapFresh) -> (v, Left $ "?")
-        _ -> (v, Left $ getBindingOrigin v v2dv)
-subAllVars _ _ _ _ = impossible "subAllVars: expected Atom"
+-- Attempt to retrieve binding info for any DLVar's that do not have it
+recoverBindingInfo :: SMTLet -> App SMTLet
+recoverBindingInfo = \case
+  ow@(SMTLet at (DLVar _ Nothing _ i) lv c e) -> do
+    v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
+    let hasBindingInfo (DLVar _ mb _ _) = isJust mb
+    let sVar = "v" <> show i
+    let dvs = maybe [] (reverse . filter hasBindingInfo) $ M.lookup sVar v2dv
+    case dvs of
+      (dv:_) -> return $ SMTLet at dv lv c e
+      _ -> return ow
+  ow -> return ow
 
-format_thermodel :: TheoremKind -> SMTModel -> SExpr -> App ()
-format_thermodel tk pm tse = do
-  v2dv <- (liftIO . readIORef) =<< (ctxt_v_to_dv <$> ask)
-  let iputStrLn = liftIO . putStrLn
-  cwd <- liftIO $ getCurrentDirectory
-  bindingsm <- (liftIO . readIORef) =<< (ctxt_bindingsr <$> ask)
-  iputStrLn $ "  // Violation witness"
-  let show_vars :: (S.Set String) -> (Seq.Seq String) -> App ()
-      show_vars shown = \case
-        Seq.Empty -> return ()
-        (v0 Seq.:<| q') -> do
-          v0vars <-
-            case M.lookup v0 bindingsm of
-              Nothing ->
-                return $ mempty
-              Just (BR_MapNew) -> do
-                return $ mempty
-              Just (BR_MapFresh) -> do
-                return $ mempty
-              Just (BR_MapUpdate {}) -> do
-                return $ mempty
-              Just (BR_Var _ at bo mvse _) -> do
-                let this se =
-                      [("  const " ++ getBindingOrigin v0 v2dv ++ " = " ++ (displaySexpAsJs False se) ++ ";")]
-                        ++ (map
-                              (redactAbsStr cwd)
-                              [("  //    ^ from " ++ show bo ++ " at " ++ show at)])
-                case mvse of
-                  Nothing ->
-                    --- FIXME It might be useful to do `get-value` rather than parse
-                    case M.lookup v0 pm of
-                      Nothing ->
-                        return $ mempty
-                      Just (_ty, se) -> do
-                        mapM_ iputStrLn (this se)
-                        return $ seVars se
-                  Just se ->
-                    return $ seVars se
-          let nvars = S.difference v0vars shown
-          let shown' = S.union shown nvars
-          let new_q = set_to_seq nvars
-          let q'' = q' <> new_q
-          show_vars shown' q''
-  let tse_vars = seVars tse
-  show_vars tse_vars $ set_to_seq $ tse_vars
-  theorem_formalization <- subAllVars bindingsm tk pm tse
-  iputStrLn ""
-  iputStrLn $ "  // Theorem formalization"
-  iputStrLn theorem_formalization
-  iputStrLn ""
-
-display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> App ()
-display_fail tat f tk tse mmsg repeated mrd = do
+display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> Maybe DLVar -> App ()
+display_fail tat f tk mmsg repeated mrd mdv = do
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
   iputStrLn $ "Verification failed:"
@@ -715,16 +505,21 @@ display_fail tat f tk tse mmsg repeated mrd = do
       --- substitute everything that came from the program (the "context"
       --- below) and then just show the remaining variables found by the
       --- model.
-      let pm =
-            case mrd of
-              Nothing ->
-                mempty
-              Just (RD_UnsatCore _uc) -> do
+      case mdv of
+        Nothing -> do
+          iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
+        Just dv -> do
+          lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
+          lets' <- mapM recoverBindingInfo $ S.toList lets
+          let smtTrace = SMTTrace lets' tk dv
+          smtTrace' <- liftIO $ add_counts smtTrace
+          let pm = case mrd of
+                Nothing -> mempty
                 --- FIXME Do something useful here
-                mempty
-              Just (RD_Model m) -> do
-                parseModel m
-      format_thermodel tk pm tse
+                Just (RD_UnsatCore _uc) -> mempty
+                Just (RD_Model m) -> parseModel m
+          pm2 <- parseModel2 pm
+          iputStrLn $ show $ showTrace pm2 smtTrace'
 
 -- format_thermodel2 tk pm tse
 
@@ -801,7 +596,11 @@ verify1 at mf tk se mmsg = smtNewScope $ do
       mm <- mgetm
       dr <- ctxt_displayed <$> ask
       dspd <- liftIO $ readIORef dr
-      display_fail at mf tk se mmsg (elem se dspd) mm
+      let sv = case se of
+                Atom id' -> id'
+                _ -> impossible "verify1: expected atom"
+      mdv <- sv2dv sv
+      display_fail at mf tk mmsg (elem se dspd) mm mdv
       liftIO $ modifyIORef dr $ S.insert se
       void $ (liftIO . incCounter . vst_res_fail) =<< (ctxt_vst <$> ask)
     isPossible =
@@ -809,48 +608,45 @@ verify1 at mf tk se mmsg = smtNewScope $ do
         TClaim CT_Possible -> True
         _ -> False
 
-smtRecordBinding :: String -> BindingInfo -> App ()
-smtRecordBinding v bi = do
-  ctxt <- ask
-  liftIO $
-    modifyIORef (ctxt_bindingsr ctxt) $
-      M.insert v bi
 
-pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> App ()
-pathAddUnbound_v mdv at_dv v t bo = do
-  smtDeclare_v v t
-  smtRecordBinding v $ BR_Var mdv at_dv bo Nothing Nothing
+pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe SMTLet -> App ()
+pathAddUnbound_v mdv at_dv v t bo ml = do
+  let l = case (ml, mdv) of
+        (Nothing, Just dv) -> Just $ SMTLet at_dv dv (DLV_Let DVC_Once dv) Context (SMTModel bo)
+        (ow, _) -> ow
+  smtDeclare_v v t l
 
-pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> App ()
-pathAddUnbound _ Nothing _ = mempty
-pathAddUnbound at_dv (Just dv) bo = do
+pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe SMTExpr -> App ()
+pathAddUnbound _ Nothing _ _ = mempty
+pathAddUnbound at_dv (Just dv) bo msmte = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
-  pathAddUnbound_v (Just dv) at_dv v t bo
+  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Context =<< msmte
+  pathAddUnbound_v (Just dv) at_dv v t bo smlet
 
-pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr -> App ()
+pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr-> App ()
 pathAddBound _ Nothing _ _ _ = mempty
-pathAddBound at_dv (Just dv) bo de se = do
+pathAddBound at_dv (Just dv) _bo de se = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
-  let mdv = Just dv
-  smtDeclare_v v t
+  -- let mdv = Just dv
+  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Context . SMTProgram =<< de
+  smtDeclare_v v t smlet
   --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
   smtAssert $ smtEq (Atom v) se
-  smtRecordBinding v $ BR_Var mdv at_dv bo (Just se) de
 
 smtMapVar :: DLMVar -> Int -> String
 smtMapVar (DLMVar mi) ri = "map" <> show mi <> "_" <> show ri
 
-smtMapRefresh :: App ()
-smtMapRefresh = do
+smtMapRefresh :: SrcLoc -> App ()
+smtMapRefresh at = do
   ms <- ctxt_maps <$> ask
   let go (mpv, SMTMapInfo {..}) = do
         mi' <- liftIO $ incCounter sm_c
         liftIO $ writeIORef sm_rs $ mempty
         liftIO $ writeIORef sm_us $ SMR_Fresh
-        smtMapDeclare mpv mi' $ BR_MapFresh
+        smtMapDeclare at mpv mi' $ SMTMapFresh
   mapM_ go $ M.toList ms
 
 smtMapLookupC :: DLMVar -> App SMTMapInfo
@@ -867,13 +663,17 @@ smtMapSort mpv = do
   sm_t' <- smtTypeSort sm_t
   return $ smtApply "Array" [Atom t_addr', Atom sm_t']
 
-smtMapDeclare :: DLMVar -> Int -> BindingInfo -> App ()
-smtMapDeclare mpv mi bi = do
+smtMapDeclare :: SrcLoc -> DLMVar -> Int -> SynthExpr -> App ()
+smtMapDeclare at mpv mi se = do
   let mv = smtMapVar mpv mi
   t <- smtMapSort mpv
   smt <- ctxt_smt <$> ask
-  liftIO $ void $ SMT.declare smt mv t
-  smtRecordBinding mv bi
+  let cat = case se of
+              SMTMapFresh -> Witness
+              _ -> Context
+  let dv = DLVar at (Just (at, mv)) T_Null mi
+  let l = SMTLet at dv (DLV_Let DVC_Once dv) cat $ SMTSynth se
+  smtDeclare smt mv t $ Just l
 
 smtMapLookup :: DLMVar -> App SExpr
 smtMapLookup mpv = do
@@ -900,7 +700,8 @@ smtMapUpdate at mpv fa mna = do
   let mv = smtMapVar mpv mi
   let ma = Atom mv
   let se = smtApply "store" [ma, fa', na']
-  smtMapDeclare mpv mi' $ BR_MapUpdate at ma fa mna
+  let mapDLVar = DLVar at (Just (at, mv)) T_Null mi
+  smtMapDeclare at mpv mi' $ SMTMapSet mapDLVar fa mna
   smtMapRecordUpdate mpv $ SMR_Update ma fa' na'
   let mv' = smtMapVar mpv mi'
   smtAssert $ smtEq (Atom mv') se
@@ -932,9 +733,9 @@ smtMapReduceApply at b a f = do
       (f', [b_f, a_f]) -> return (f', b_f, a_f)
       _ -> impossible "smt_freshen bad"
   b' <- smt_v at b_f
-  pathAddUnbound at (Just b_f) O_ReduceVar
+  pathAddUnbound at (Just b_f) O_ReduceVar $ Just $ SMTSynth $ SMTMapRef b a
   a' <- smt_v at a_f
-  pathAddUnbound at (Just a_f) O_ReduceVar
+  pathAddUnbound at (Just a_f) O_ReduceVar $ Just $ SMTSynth $ SMTMapRef b a
   let call_f' = smt_block f'
   return $ (b', a', call_f')
 
@@ -1011,7 +812,7 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
             [] -> do
               -- Or, it could be related to a different reduction
               ans'_dv <- freshenDV ans
-              pathAddUnbound at (Just ans'_dv) O_ReduceVar
+              pathAddUnbound at (Just ans'_dv) O_ReduceVar Nothing
               ans' <- smt_v at ans'_dv
               mapM_ (go_fresh ans') other_rs
               return ans'
@@ -1085,10 +886,10 @@ smt_e at_dv mdv de = do
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible _ _ ->
-      pathAddUnbound at_dv mdv bo
+      unbound at_dv
     DLE_PrimOp at cp args -> do
       args' <- mapM (smt_a at) args
-      bound at =<< smtPrimOp cp args args'
+      bound at =<< smtPrimOp at cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
@@ -1115,7 +916,7 @@ smt_e at_dv mdv de = do
       obj_da' <- smt_a at obj_da
       bound at $ smtApply (s ++ "_" ++ f) [obj_da']
     DLE_Interact at _ _ _ _ _ ->
-      pathAddUnbound at mdv bo
+      unbound at
     DLE_Digest at args -> do
       args' <- smtDigestCombine at args
       bound at $ smtApply "digest" [args']
@@ -1157,10 +958,11 @@ smt_e at_dv mdv de = do
     DLE_MapSet at mpv fa mna ->
       smtMapUpdate at mpv fa mna
     DLE_Remote at _ _ _ _ _ _ ->
-      pathAddUnbound at mdv bo
+      unbound at
   where
     bo = O_Expr de
-    bound at = pathAddBound at mdv bo (Just de)
+    bound at se = pathAddBound at mdv bo (Just de) se
+    unbound at = pathAddUnbound at mdv bo (Just $ SMTProgram de)
     doClaim at f ct ca' mmsg = do
       let check_m = verify1 at f (TClaim ct) ca' mmsg
       let assert_m = smtAssertCtxt ca'
@@ -1181,6 +983,7 @@ data SwitchMode
 smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> App ()) -> App ()
 smtSwitch sm at ov csm iter = do
   let ova = DLA_Var ov
+  let smte = SMTProgram $ DLE_Arg at ova
   let ovt = argTypeOf ova
   let ovtm = case ovt of
         T_Data m -> m
@@ -1200,12 +1003,12 @@ smtSwitch sm at ov csm iter = do
                 -- and then make it so that EPP can remove them if they aren't
                 -- actually used
                 Nothing ->
-                  ( smtDeclare_v_memo vnv vt
+                  ( smtDeclare_v_memo vnv vt Nothing
                   , smtTypeSort ovt >>= \s -> (return $ smtApply (s <> "_" <> vn) [Atom vnv])
                   )
         ov'p <- get_ov'p
         let eqc = smtEq ovp ov'p
-        let udef_m = ov'p_m <> pathAddUnbound at mov' (O_SwitchCase vn)
+        let udef_m = ov'p_m <> pathAddUnbound at mov' (O_SwitchCase vn) (Just smte)
         let with_pc = smtNewPathConstraint eqc
         let branch_m =
               case sm of
@@ -1224,7 +1027,7 @@ smt_m :: DLStmt -> App ()
 smt_m = \case
   DL_Nop _ -> mempty
   DL_Let at lv de -> smt_e at (lv2mdv lv) de
-  DL_Var at dv -> pathAddUnbound at (Just dv) O_Var
+  DL_Var at dv -> pathAddUnbound at (Just dv) O_Var Nothing
   DL_ArrayMap {} ->
     --- FIXME: It might be possible to do this in Z3 by generating a function
     impossible "array_map"
@@ -1243,7 +1046,9 @@ smt_m = \case
   DL_LocalSwitch at ov csm ->
     smtSwitch SM_Local at ov csm smt_l
   DL_MapReduce at mri ans x z b a f -> do
-    pathAddUnbound at (Just ans) O_ReduceVar
+    -- XXX represent map reduce
+    let smte = Just $ SMTSynth $ SMTMapRef b a
+    pathAddUnbound at (Just ans) O_ReduceVar smte
     (ctxt_inv_mode <$> ask) >>= \case
       B_Assume _ -> do
         smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
@@ -1314,7 +1119,9 @@ smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
-    def1 dv = pathAddUnbound at (Just dv) O_Assignment
+    def1 dv =
+      pathAddUnbound at (Just dv) O_Assignment $
+        maybe Nothing (Just . SMTProgram . DLE_Arg at) $ M.lookup dv asnm
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
@@ -1329,7 +1136,7 @@ freshAddrs :: App a -> App a
 freshAddrs m = do
   let go dv@(DLVar at _ _ _) = do
         dv' <- freshenDV dv
-        pathAddUnbound at (Just dv') O_BuiltIn
+        pathAddUnbound at (Just dv') O_BuiltIn Nothing
         return dv'
   addrs' <- mapM go =<< (ctxt_addrs <$> ask)
   local (\e -> e {ctxt_addrs = addrs'}) m
@@ -1360,13 +1167,13 @@ smt_n = \case
       with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
       before_m = with_inv $ smt_while_jump False asn
       loop_m = do
-        smtMapRefresh
+        smtMapRefresh at
         smt_asn_def at asn
         smt_invblock (B_Assume True) inv
         smt_invblock (B_Assume True) cond
         (with_inv $ smt_n body)
       after_m = do
-        smtMapRefresh
+        smtMapRefresh at
         smt_asn_def at asn
         smt_invblock (B_Assume True) inv
         smt_invblock (B_Assume False) cond
@@ -1386,7 +1193,7 @@ smt_s = \case
     let timeout = case mtime of
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
-    let bind_time = pathAddUnbound at (Just timev) O_ToConsensus
+    let bind_time = pathAddUnbound at (Just timev) O_ToConsensus Nothing
     let order_time =
           case last_timemv of
             Nothing -> mempty
@@ -1396,39 +1203,44 @@ smt_s = \case
     let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
-          let maybe_pathAdd v bo_no bo_yes mde se =
+          let maybe_pathAdd v bo_no bo_yes mde se = do
+                let smte = Just . SMTProgram =<< mde
                 case should of
-                  False -> pathAddUnbound at (Just v) bo_no
+                  False -> pathAddUnbound at (Just v) bo_no smte
                   True -> pathAddBound at (Just v) bo_yes mde se
           let bind_from =
                 case isClass of
                   True ->
                     case should of
                       False ->
-                        pathAddUnbound at (Just whov) (O_ClassJoin from)
+                        pathAddUnbound at (Just whov) (O_ClassJoin from) Nothing
                       True -> do
                         from' <- smtCurrentAddress from
                         pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from')
                   _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
           let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
           let bind_amt m = do
-                let mki f = ((<>) ("pv_" <> f) . show) <$> smt_alloc_id
-                pv_net <- mki "net"
+                let DLPayAmt {..} = amta
+                let mki f = do
+                      i <- smt_alloc_id
+                      return (((<>) ("pv_" <> f) . show) i, i)
+                (pv_net, pv_net_i) <- mki "net"
                 let pv_net' = Atom pv_net
-                pv_ks <- mki "ks"
+                (pv_ks, _) <- mki "ks"
                 let pv_ks' = Atom pv_ks
-                pv_tok <- mki "tok"
+                (pv_tok, _) <- mki "tok"
                 let pv_tok' = Atom pv_tok
                 smt <- ctxt_smt <$> ask
-                liftIO $ void $ SMT.declare smt pv_net $ Atom "UInt"
+                let pv_net_dv = DLVar at (Just (at, pv_net)) T_UInt pv_net_i
+                let pv_net_let = SMTLet at pv_net_dv (DLV_Let DVC_Once pv_net_dv) Context $ SMTProgram (DLE_Arg at pa_net)
+                smtDeclare smt pv_net (Atom "UInt") $ Just pv_net_let
                 smtTypeInv T_UInt $ pv_net'
-                liftIO $ void $ SMT.declare smt pv_tok $ Atom "Token"
+                smtDeclare smt pv_tok (Atom "Token") Nothing
                 smtTypeInv T_Token $ pv_tok'
-                liftIO $ void $ SMT.declare smt pv_ks $ smtApply "Array" [Atom "Token", Atom "UInt"]
+                smtDeclare smt pv_ks (smtApply "Array" [Atom "Token", Atom "UInt"]) Nothing
                 smtTypeInv T_UInt $ smtApply "select" [pv_ks', pv_tok']
                 let one v a = smtAssert =<< (smtEq v <$> smt_a at a)
                 when should $ do
-                  let DLPayAmt {..} = amta
                   one pv_net' pa_net
                   forM_ pa_ks $ \(ka, kt) -> do
                     kt' <- smt_a at kt
@@ -1590,11 +1402,11 @@ _smtDefineTypes smt ts = do
   readIORef tmr
 
 smt_eb :: DLExportBlock -> App ()
-smt_eb (DLinExportBlock at margs b) = ctxtNewScope $
-  freshAddrs $ do
-    let args = fromMaybe [] margs
-    forM_ args $ flip (pathAddUnbound at) O_Export . Just
-    void $ smt_block b
+smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
+  let args = fromMaybe [] margs
+  forM_ args $ \ arg ->
+    pathAddUnbound at (Just arg) O_Export (Just $ SMTProgram $ DLE_Arg at $ DLA_Var arg)
+  void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
@@ -1603,7 +1415,6 @@ _verify_smt mc ctxt_vst smt lp = do
         Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> T.unpack mcs
   ctxt_displayed <- newIORef mempty
-  ctxt_bindingsr <- newIORef mempty
   ctxt_vars_defdr <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)
@@ -1627,10 +1438,11 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_smt = smt
   let ctxt_idx = llo_counter
   let ctxt_pay_amt = Nothing
+  ctxt_smt_trace <- newIORef mempty
   flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
-          smtMapDeclare mpv mi $ BR_MapNew
+          smtMapDeclare at mpv mi $ SMTMapNew
           let mv = smtMapVar mpv mi
           t <- smtMapSort mpv
           na' <- smtMapMkMaybe at mpv Nothing
@@ -1639,11 +1451,11 @@ _verify_smt mc ctxt_vst smt lp = do
     mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of
       Nothing -> mempty
-      Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn
+      Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn (Just $ SMTProgram $ DLE_Arg at $ DLA_Var ctimev)
     case mc of
       Just _ -> mempty
       Nothing ->
-        pathAddUnbound_v Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn
+        pathAddUnbound_v Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn Nothing
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =
@@ -1651,9 +1463,9 @@ _verify_smt mc ctxt_vst smt lp = do
             IT_Fun {} -> mempty
             IT_UDFun {} -> mempty
             IT_Val itv ->
-              pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact
+              pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact Nothing
     let definePIE (who, InteractEnv iem) = do
-          pathAddUnbound_v Nothing at (smtAddress who) T_Address O_BuiltIn
+          pathAddUnbound_v Nothing at (smtAddress who) T_Address O_BuiltIn Nothing
           mapM_ (defineIE who) $ M.toList iem
     mapM_ definePIE $ M.toList pies_m
     let smt_s_top mode = do
