@@ -5,6 +5,10 @@ const numOfBidders = 5;
 
 (async () => {
   const stdlib = await loadStdlib();
+  if ( stdlib.connector === 'ALGO' ) {
+    console.log(`XXX Unsupported`);
+    process.exit(0);
+  }
   const startingBalance = stdlib.parseCurrency(10);
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
