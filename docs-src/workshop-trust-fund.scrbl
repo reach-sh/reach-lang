@@ -67,7 +67,7 @@ We've represented most values as @reachin{UInt} fields, and created a "common" i
 @(drstep-cc TAG)
 
 Now, we can write down the structure of communication and action in our application.
-Try this on your own based on your experience with @secref["workshop-trust-fund"].
+Try this on your own based on your experience with @secref["workshop-relay"].
 
 @(drstep-cc-stop1)
 
