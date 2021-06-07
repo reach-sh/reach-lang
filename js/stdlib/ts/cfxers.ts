@@ -190,7 +190,11 @@ export class ContractFactory {
     const argsConformed = conform(args, iface.deploy.inputs);
 
     // XXX gasLimit, is this handled correctly by txnOverrides?
-    const receiptP = contract.constructor(...argsConformed)
+
+    // Note: this usage of `.call` here is because javascript is insane.
+    // XXX 2021-06-07 Dan: This works for the cjs compilation target, but does it work for the other targets?
+    // @ts-ignore
+    const receiptP = contract.constructor.call(...argsConformed)
       .sendTransaction(txn)
       .executed();
 
