@@ -376,11 +376,7 @@ let examples =
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "zbeq"
-    , mapValue =
-      [ < ALGO | CFX | ETH >.ETH
-      , < ALGO | CFX | ETH >.ALGO
-      , < ALGO | CFX | ETH >.CFX
-      ]
+    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   ]
 
