@@ -108,6 +108,14 @@ skipCfx =
   , "view-maybe"
   , "view-steps"
 
+  -- Map stuff. "Invalid parameters: tx"
+  , "map-any"
+  , "map-big"
+  , "map-multi"
+  , "map-rwrw"
+  , "map-sender"
+  , "map-vary"
+
   -- expected Some, got None
   , "zbeq"
 

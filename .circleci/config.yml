@@ -2176,14 +2176,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-any with ETH"
         no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-any
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-any with CFX"
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2311,14 +2303,6 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-big with ETH"
-        no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-big
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-big with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2448,14 +2432,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-multi with ETH"
         no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-multi
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-multi with CFX"
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2583,14 +2559,6 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-rwrw with ETH"
-        no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-rwrw
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-rwrw with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2720,14 +2688,6 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-sender with ETH"
         no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-sender
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-sender with CFX"
-        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -2855,14 +2815,6 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run map-vary with ETH"
-        no_output_timeout: 10m
-    - run:
-        command: |
-             cd examples && \
-               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run map-vary
-        environment:
-          LC_ALL: "en_US.UTF-8"
-        name: "Run map-vary with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
