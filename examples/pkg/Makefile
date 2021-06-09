@@ -11,8 +11,8 @@ build: clean
 	[ ! -f build/index.main.mjs ]
 	$(REACH) compile index.rsh
 	$(REACH) compile --install-pkgs index-master.rsh; [ $$? -eq 1 ]
+	$(MAKE) clean
 
 .PHONY: run
 run: build
-	$(REACH) run index
-	$(REACH) down
+	echo No runtime

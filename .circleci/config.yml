@@ -56,6 +56,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run abstract-simul with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run abstract-simul
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run abstract-simul with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -184,6 +192,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run algorand-placeholder with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run algorand-placeholder
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run algorand-placeholder with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -311,6 +327,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run argz with ETH
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run argz
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run argz with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -882,6 +906,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-fork with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-fork
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-fork with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1009,6 +1041,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-parallel with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-parallel
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-parallel with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1138,6 +1178,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run chicken-race with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run chicken-race
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run chicken-race with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1265,6 +1313,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run default-app with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run default-app
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run default-app with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1576,6 +1632,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run exports with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run exports
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run exports with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1703,6 +1767,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run interact-this with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run interact-this
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run interact-this with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -1832,6 +1904,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run log with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run log
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run log with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -1959,6 +2039,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run many-args with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run many-args
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run many-args with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -2856,6 +2944,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run maybe-send with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run maybe-send
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run maybe-send with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3111,6 +3207,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run multisig with ETH
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run multisig
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run multisig with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3496,6 +3600,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run nim with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run nim
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run nim with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3623,6 +3735,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run object-digest with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run object-digest
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run object-digest with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -3752,6 +3872,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run overview with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run overview with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -3811,6 +3939,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-more-deps with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview-more-deps
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run overview-more-deps with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -4008,6 +4144,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run overview-react with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run overview-react
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run overview-react with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -4136,6 +4280,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run own-addr with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run own-addr
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run own-addr with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -4263,6 +4415,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run pkg with ETH
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run pkg
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run pkg with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -4520,6 +4680,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run pr202105-zet with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run pr202105-zet
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run pr202105-zet with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -4647,6 +4815,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run race with ETH
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run race
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run race with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -4903,6 +5079,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run react-build with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run react-build
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run react-build with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -5288,6 +5472,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run rental with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run rental
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run rental with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -5415,6 +5607,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run secured-loan with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run secured-loan
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run secured-loan with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -5684,6 +5884,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: Run timeoutception with ETH
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run timeoutception
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run timeoutception with CFX
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -5940,6 +6148,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-2 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-2
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-2 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -6067,6 +6283,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-3 with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-3
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-3 with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -6196,6 +6420,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-4 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-4
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-4 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -6324,6 +6556,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-5 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -6383,6 +6623,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-5-attack with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-5-attack
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-5-attack with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -6580,6 +6828,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-6 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-6
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-6 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -6708,6 +6964,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-7
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-7 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -6767,6 +7031,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-7-array with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-7-array
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-7-array with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -6964,6 +7236,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run tut-9 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run tut-9
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run tut-9 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -7091,6 +7371,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run variable-transfers with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run variable-transfers
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run variable-transfers with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -7860,6 +8148,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run webpack-5 with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run webpack-5
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run webpack-5 with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -8372,6 +8668,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-hash-lock with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-hash-lock
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-hash-lock with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -8499,6 +8803,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run workshop-relay with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run workshop-relay
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run workshop-relay with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"

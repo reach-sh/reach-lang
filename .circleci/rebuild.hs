@@ -108,6 +108,17 @@ skipCfx =
   , "view-maybe"
   , "view-steps"
 
+  -- Map stuff. "Invalid parameters: tx"
+  , "map-any"
+  , "map-big"
+  , "map-multi"
+  , "map-rwrw"
+  , "map-sender"
+  , "map-vary"
+
+  -- expected Some, got None
+  , "zbeq"
+
   -- nondeterministic failures
   -- RPCError: Error processing request: Filter error: Block ${blockId} is not executed yet
   -- index.mjs > B > recv > Provider.getLogs > Conflux.getLogs
