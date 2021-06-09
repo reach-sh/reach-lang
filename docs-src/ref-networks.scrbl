@@ -12,7 +12,8 @@ supported by Reach version @|reach-vers|.
 @section[#:tag "ref-network-eth"]{Ethereum}
 
 The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
-manages one instance of the @|DApp|'s execution. It is guaranteed to
+manages one instance of the @|DApp|'s execution.
+It is guaranteed to
 use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
 
 Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
@@ -75,6 +76,15 @@ We hope that future versions of Algorand will provide a facility for preventing 
 This means they are sensitive to the particular compilation details of the particular Reach program.
 We hope to work with the Algorand community to define a standard for @tech{views}.
 @tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
+
+@tech{Linear state} is compiled into Application Local State.
+This means that participants that must explicitly "opt-in" to storing this state on their account (which increases their minimum balance.)
+The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to this.
+This "opt-in" requirement means that @|DApps| with @tech{linear state} deployed on Algorand can deadlock and be held hostage:
+Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two, the consensus must store a value associated with Bob, and then she can receive her 10 ALGO back, then the program terminates.
+On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
+However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
+We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
 
 This connector does not support different @reachin{deployMode}s and treats them all as @reachin{'constructor'}.
 
