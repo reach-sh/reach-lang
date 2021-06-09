@@ -13,7 +13,7 @@ last person to buy a ticket—when the deadline finally hits—wins
 the entire balance. This program is based off of the crypto game,
 @link["https://fomo3d.hostedwiki.co/"]{FOMO3DGame}.
 
-This workshop utilizes @tech{participant class}es to represent Buyers, which allows us to handle multiple participants in a generic way.
+This workshop utilizes the @tech{participant class} to represent Buyers as @emph{participant instances}, which allows us to handle multiple participants in a generic way.
 
 @(workshop-deps)
 @(workshop-init TAG)
