@@ -179,6 +179,13 @@ let examples =
   , { mapKey = "popularity-contest"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
+  , { mapKey = "pr175"
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
+    }
   , { mapKey = "pr202105-zet"
     , mapValue =
       [ < ALGO | CFX | ETH >.ETH
