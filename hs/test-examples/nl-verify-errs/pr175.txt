@@ -1,0 +1,30 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  at ./pr175.rsh:9:9:application
+
+  // Violation witness
+  const v19 = 1;
+  //    ^ from function return at ./pr175.rsh:5:22:block
+
+  // Theorem formalization
+  assert(v19 == 0);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  at ./pr175.rsh:9:9:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Alice" is honest
+Verification failed:
+  when ONLY "Alice" is honest
+  of theorem: assert
+  at ./pr175.rsh:9:9:application
+
+  (details omitted on repeat)
+Checked 6 theorems; 3 failures. :'(

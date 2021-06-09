@@ -54,6 +54,11 @@ restoreRets rets' = local (\e -> e {eRets = rets'})
 setRetsToEmpty :: DKApp a -> DKApp a
 setRetsToEmpty = restoreRets mempty
 
+abortRets :: DKApp a -> DKApp a
+abortRets = local (\e -> e { eRets = M.map h $ eRets e })
+  where
+    h (_, rv) = (mempty, rv)
+
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
 withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
 
@@ -105,28 +110,38 @@ dk1 at_top ks s =
       case rv of
         Nothing ->
           impossible $ "unknown ret " <> show ret
-        Just (rks, Nothing) ->
+        Just (rks, Nothing) -> do
           dk_ at rks
+          -- OLD dk_ at ks
         Just (rks, (Just (dv, retsm))) -> do
-          liftIO $ putStrLn $ show $ "dekont ret" <+> pretty dv <+> pretty (show eda)
+          let nks = rks
+          -- OLD let nks = ks
           case eda of
             Left reti ->
               case M.lookup reti retsm of
                 Nothing -> impossible $ "missing return da"
                 Just (das, da) ->
-                  case das <> (return $ DLS_Return at ret (Right da)) <> rks of
+                  case das <> (return $ DLS_Return at ret (Right da)) <> nks of
                     s' Seq.:<| ks' ->
                       dk1 at ks' s'
                     _ ->
                       impossible $ "no cons"
             Right da ->
-              com'' (DKC_Set at dv da) rks
+              com'' (DKC_Set at dv da) nks
     DLS_Prompt at (Left ret) ss ->
-      withReturn ret (ks, Nothing) $
-        dk_ at ss
+      withReturn ret (ks, Nothing) $ do
+        -- In this case, and the next one, we include `ks` in the
+        -- continuation/body, because the body may actually be a LocalSwitch/If
+        -- that will ignore the continuation. If we were *really* doing CPS
+        -- then we wouldn't do this and instead we would remove the `abortRets`
+        -- thing and in fact we'd remove Var/Set altogether and just turn them
+        -- into Lets. Is it worth doing it *this* way? I'm not sure... my
+        -- assumption is that duplicating code is bad so we should avoid it at
+        -- all costs.
+        dk_ at (ss <> ks)
     DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
-      withReturn ret (ks, (Just (dv, retms))) $
-        com'' (DKC_Var at dv) ss
+      withReturn ret (ks, (Just (dv, retms))) $ do
+        com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Unreachable at fs m ->
@@ -170,7 +185,7 @@ dk1 at_top ks s =
       DK_ViewIs at vn vk mva' <$> dk_ at ks
   where
     com :: DKApp DKTail
-    com = com' =<< dkc s
+    com = com' =<< (abortRets $ dkc s)
     com' :: DKCommon -> DKApp DKTail
     com' m = com'' m ks
     com'' :: DKCommon -> DLStmts -> DKApp DKTail

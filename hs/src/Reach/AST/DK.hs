@@ -32,7 +32,7 @@ instance Pretty DKCommon where
     DKC_Var _at dv -> "let" <+> pretty dv <> semi
     DKC_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DKC_LocalIf _at ca t f -> prettyIfp ca t f
-    DKC_LocalSwitch _at ov csm -> prettySwitch ov csm
+    DKC_LocalSwitch _at ov csm -> prettySwitch (pretty ov <+> "{ local}") csm
     DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
     DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
     DKC_FluidRef at dv fv -> pretty (DLS_FluidRef at dv fv)

@@ -2963,6 +2963,9 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       let mvs = map snd msvs
       let lvl = mconcat $ xlvl : mlvls
       -- Note: This test might be too expensive, so try it
+      -- chicken-fork and many other fork-ing programs would be improved by
+      -- this when all pays are zero, but it doesn't work because ints have a
+      -- srcloc
       let all_same = False && all (== xv) mvs
       case all_same of
         True -> no_prompt $ (lvl, xv)

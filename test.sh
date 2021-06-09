@@ -3,6 +3,7 @@ ROOT=$(pwd)
 REACH=${ROOT}/reach
 
 c () {
+  echo "c $1"
   ${REACH} compile "$1"
 }
 
@@ -79,8 +80,20 @@ tealcount () {
 #######
 
 # pr175
-r examples/pr175
+c examples/chicken-fork/index.rsh
 fc hs/test-examples/nl-verify-errs/pr175.rsh
+c examples/atomic-swap-auction/index.rsh
+c examples/chicken-parallel/index.rsh
+c examples/map-multi/index.rsh
+c examples/map-rwrw/index.rsh
+c examples/multiple-pr-case/index.rsh
+c examples/nft-auction/index.rsh
+c examples/nim/index.rsh
+c examples/popularity-contest/index.rsh
+c examples/raffle/index.rsh
+c examples/rent-seeking/index.rsh
+c examples/ttt/index.rsh
+r examples/pr175
 exit 0
 
 jb
