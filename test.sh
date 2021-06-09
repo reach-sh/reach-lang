@@ -78,7 +78,12 @@ tealcount () {
 
 #######
 
-# jb
+# pr175
+r examples/pr175
+fc hs/test-examples/nl-verify-errs/pr175.rsh
+exit 0
+
+jb
 
 # c hs/test-examples/nl-eval-errors/Err_IllegalEffPosition.rsh
 # c hs/test-examples/nl-eval-errors/Err_TimeMustBeSimple.rsh
@@ -167,11 +172,11 @@ tealcount () {
 # r examples/many-args
 # r examples/ttt
 r examples/map-sender
-r examples/map-any
-r examples/map-vary
+# r examples/map-any
+# r examples/map-vary
 # r examples/map-rwrw # XXX
-r examples/map-multi
-r examples/map-big
+# r examples/map-multi
+# r examples/map-big
 # r examples/maybe-send
 # r examples/multiple-pr-case
 # r examples/multisig

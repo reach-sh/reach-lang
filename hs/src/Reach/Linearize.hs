@@ -29,7 +29,7 @@ instance Show Error where
 
 type DKApp = ReaderT DKEnv IO
 
-type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
+type LLRetRHS = (DLStmts, Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
 
 type LLRets = M.Map Int LLRetRHS
 
@@ -105,27 +105,28 @@ dk1 at_top ks s =
       case rv of
         Nothing ->
           impossible $ "unknown ret " <> show ret
-        Just Nothing ->
-          dk_ at ks
-        Just (Just (dv, retsm)) ->
+        Just (rks, Nothing) ->
+          dk_ at rks
+        Just (rks, (Just (dv, retsm))) -> do
+          liftIO $ putStrLn $ show $ "dekont ret" <+> pretty dv <+> pretty (show eda)
           case eda of
             Left reti ->
               case M.lookup reti retsm of
                 Nothing -> impossible $ "missing return da"
                 Just (das, da) ->
-                  case das <> (return $ DLS_Return at ret (Right da)) <> ks of
+                  case das <> (return $ DLS_Return at ret (Right da)) <> rks of
                     s' Seq.:<| ks' ->
                       dk1 at ks' s'
                     _ ->
                       impossible $ "no cons"
             Right da ->
-              com' $ DKC_Set at dv da
+              com'' (DKC_Set at dv da) rks
     DLS_Prompt at (Left ret) ss ->
-      withReturn ret Nothing $
-        dk_ at (ss <> ks)
+      withReturn ret (ks, Nothing) $
+        dk_ at ss
     DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
-      withReturn ret (Just (dv, retms)) $
-        com'' (DKC_Var at dv) (ss <> ks)
+      withReturn ret (ks, (Just (dv, retms))) $
+        com'' (DKC_Var at dv) ss
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Unreachable at fs m ->
