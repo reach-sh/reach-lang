@@ -46,6 +46,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   resr <- liftIO $ newIORef $ AppRes mempty mempty Nothing
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
+  e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
   (these_lifts, final_dlo) <- captureLifts $
     locSco sco $
       local
@@ -53,14 +54,19 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
            e
              { e_appr = Right appr
              , e_mape = mape
+             , e_droppedAsserts = e_droppedAsserts'
              })
         $ do
           void $ evalStmt top_ss
           flip when doExit =<< readSt st_live
           readDlo id
   fin_toks <- readSt st_toks
+  fin_droppedAsserts <- liftIO $ readCounter e_droppedAsserts'
   let final = shared_lifts <> these_lifts
-  let final_dlo' = final_dlo {dlo_bals = 1 + length fin_toks}
+  let final_dlo' = final_dlo
+        { dlo_bals = 1 + length fin_toks
+        , dlo_droppedAsserts = fin_droppedAsserts
+        }
   AppRes {..} <- liftIO $ readIORef resr
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli_ctimem = ar_ctimem
@@ -114,6 +120,7 @@ makeEnv cns = do
   e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
   e_mape <- makeMapEnv
   let e_appr = Left $ app_default_opts e_id $ M.keys cns
+  e_droppedAsserts <- newCounter 0
   return (Env {..})
 
 withUnusedVars :: App a -> App a

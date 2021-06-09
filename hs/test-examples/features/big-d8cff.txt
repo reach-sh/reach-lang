@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when ONLY "Admin" is honest
   Verifying when ONLY "Nominee" is honest
   Verifying when ONLY "Voter" is honest
-Checked 95 theorems; No failures!
+Checked 112 theorems; No failures!

@@ -500,6 +500,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
   let llo_deployMode = dlo_deployMode
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
+  let llo_droppedAsserts = dlo_droppedAsserts
   let opts' = LLOpts {..}
   let eCounterR = llo_counter
   let eFVMm = mempty

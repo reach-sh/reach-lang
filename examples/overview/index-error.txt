@@ -38,4 +38,4 @@ Verification failed:
   at ./index-error.rsh:33:7:application
 
   (details omitted on repeat)
-Checked 12 theorems; 4 failures. :'(
+Checked 17 theorems; 4 failures. :'(

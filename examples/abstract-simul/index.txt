@@ -4,11 +4,11 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Landlord" is honest
   Verifying when ONLY "Tenant" is honest
-Checked 61 theorems; No failures!
+Checked 71 theorems; No failures!
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 61 theorems; No failures!
+Checked 71 theorems; No failures!

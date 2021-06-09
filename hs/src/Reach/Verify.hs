@@ -14,7 +14,7 @@ data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: Maybe (T.Text -> String) -> Maybe [Connector] -> LLProg -> IO ExitCode
-verify outnMay mvcs lp = do
+verify outnMay mvcs lp@(LLProg _ llo _ _ _ _ _) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
   let vst = VerifySt {..}
@@ -39,7 +39,8 @@ verify outnMay mvcs lp = do
   --   -- - doesn't support unsat-cores
   --   -- - doesn't support declare-datatypes
   --   smt "boolector" ["--smt2"]
-  ss <- readCounter vst_res_succ
+  ss0 <- readCounter vst_res_succ
+  let ss = ss0 + (llo_droppedAsserts llo)
   fs <- readCounter vst_res_fail
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
   case fs == 0 of

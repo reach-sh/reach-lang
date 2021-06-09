@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when ONLY "Manager" is honest
   Verifying when ONLY "Receiver" is honest
   Verifying when ONLY "Sender" is honest
-Checked 34 theorems; No failures!
+Checked 38 theorems; No failures!

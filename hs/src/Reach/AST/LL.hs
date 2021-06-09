@@ -62,6 +62,7 @@ data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
   , llo_verifyArithmetic :: Bool
   , llo_counter :: Counter
+  , llo_droppedAsserts :: Int
   }
   deriving (Generic, Eq)
 

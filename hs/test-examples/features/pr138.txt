@@ -3,4 +3,4 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "Administrator" is honest
-Checked 12 theorems; No failures!
+Checked 15 theorems; No failures!

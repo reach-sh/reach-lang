@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Player" is honest
   Verifying when ONLY "Sponsor" is honest
-Checked 65 theorems; No failures!
+Checked 79 theorems; No failures!

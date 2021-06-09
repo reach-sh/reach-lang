@@ -3,5 +3,5 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 20 theorems; No failures!
+Checked 24 theorems; No failures!
 WARNING: `parallel_reduce` is now deprecated. It has been renamed from snake case to camel case. Use `parallelReduce`

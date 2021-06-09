@@ -90,6 +90,7 @@ data Env = Env
   , e_while_invariant :: Bool
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
+  , e_droppedAsserts :: Counter
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -310,6 +311,7 @@ app_default_opts idxr cns =
     , dlo_connectors = cns
     , dlo_counter = idxr
     , dlo_bals = 1
+    , dlo_droppedAsserts = 0
     }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
@@ -1349,8 +1351,9 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
 doClaim :: ClaimType -> DLArg -> Maybe B.ByteString -> App ()
 doClaim ct ca mmsg =
   case ca of
-    DLA_Literal (DLL_Bool True) ->
-      return ()
+    DLA_Literal (DLL_Bool True) -> do
+      Env {..} <- ask
+      void $ liftIO $ incCounter e_droppedAsserts
     _ -> do
       at <- withAt id
       fs <- e_stack <$> ask

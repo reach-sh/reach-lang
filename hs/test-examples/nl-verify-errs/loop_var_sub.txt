@@ -60,4 +60,4 @@ Verification failed:
   // Theorem formalization
   invariant((balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1]][0]);
 
-Checked 15 theorems; 4 failures. :'(
+Checked 18 theorems; 4 failures. :'(

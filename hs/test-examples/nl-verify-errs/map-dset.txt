@@ -19,4 +19,4 @@ Verification failed:
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 11 theorems; 1 failures. :'(
+Checked 17 theorems; 1 failures. :'(

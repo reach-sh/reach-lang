@@ -17,4 +17,4 @@ Verification failed:
 
   Verifying when NO participants are honest
   Verifying when ONLY "C" is honest
-Checked 6 theorems; 1 failures. :'(
+Checked 10 theorems; 1 failures. :'(
