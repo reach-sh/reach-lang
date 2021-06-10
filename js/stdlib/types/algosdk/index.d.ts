@@ -182,6 +182,7 @@ declare module 'algosdk' {
 
     status(): ApiCall<StatusInfo>
     statusAfterBlock(blockNumber: number): ApiCall<StatusInfo>
+    pendingTransactionsInformation(): ApiCall<TxnInfo>
     pendingTransactionInformation(txId: TxId): ApiCall<TxnInfo>
     sendRawTransaction(stx_or_stxs: SignedTxn | Array<SignedTxn>): ApiCall<void>
     getTransactionParams(): ApiCall<TxnParams>
@@ -201,6 +202,7 @@ declare module 'algosdk' {
     )
 
     // XXX
+    lookupTransactionByID(id: any): any
     searchForTransactions(): any
   }
 

@@ -45,10 +45,10 @@ r () {
 
   # jb
 
-  export REACH_DEBUG=1
-  REACH_CONNECTOR_MODE=ETH ${REACH} run
+  # export REACH_DEBUG=1
+  # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -79,24 +79,7 @@ tealcount () {
 
 #######
 
-# pr175
-c examples/chicken-fork/index.rsh
-fc hs/test-examples/nl-verify-errs/pr175.rsh
-c examples/atomic-swap-auction/index.rsh
-c examples/chicken-parallel/index.rsh
-c examples/map-multi/index.rsh
-c examples/map-rwrw/index.rsh
-c examples/multiple-pr-case/index.rsh
-c examples/nft-auction/index.rsh
-c examples/nim/index.rsh
-c examples/popularity-contest/index.rsh
-c examples/raffle/index.rsh
-c examples/rent-seeking/index.rsh
-c examples/ttt/index.rsh
-r examples/pr175
-exit 0
-
-jb
+# jb
 
 # c hs/test-examples/nl-eval-errors/Err_IllegalEffPosition.rsh
 # c hs/test-examples/nl-eval-errors/Err_TimeMustBeSimple.rsh
@@ -184,12 +167,12 @@ jb
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
-r examples/map-sender
+# r examples/map-sender
 # r examples/map-any
 # r examples/map-vary
 # r examples/map-rwrw # XXX
 # r examples/map-multi
-# r examples/map-big
+r examples/map-big
 # r examples/maybe-send
 # r examples/multiple-pr-case
 # r examples/multisig

@@ -97,9 +97,9 @@ type TxnParams = {
   genesisID: number,
   genesisHash: string,
 }
-type StatusInfo = {
-    'last-round': number,
-  }
+// type StatusInfo = {
+//    'last-round': number,
+//  }
 type TxIdWrapper = {
     toString: () => string
   }
@@ -212,57 +212,89 @@ const getLastRound = async (): Promise<Round> =>
   (await (await getAlgodClient()).status().do())['last-round'];
 
 export const waitForConfirmation = async (txId: TxId, untilRound: number|undefined): Promise<TxnInfo> => {
-  const algodClient = await getAlgodClient();
-  let lastRound: null | number = null;
-  do {
-    const lastRoundAfterCall: ApiCall<StatusInfo> = lastRound ?
-      algodClient.statusAfterBlock(lastRound) :
-      algodClient.status();
-    lastRound = (await lastRoundAfterCall.do())['last-round'];
-    const pendingInfo =
-      await algodClient.pendingTransactionInformation(txId).do();
-    const confirmedRound = pendingInfo['confirmed-round'];
-    if (confirmedRound && confirmedRound > 0) {
-      return pendingInfo;
+  const doOrDie = async (p: Promise<any>): Promise<any> => {
+    try { return await p; }
+    catch (e) { return { 'exn': e }; }
+  };
+  const checkTooLate = async (lastLastRound: number): Promise<number> => {
+    const [ c, msg ] = lastLastRound > 0 ?
+      [ client.statusAfterBlock(lastLastRound),
+        `waiting until after ${lastLastRound}` ] :
+      [ client.status(),
+        `looking up current round` ];
+    debug(...dhead, msg);
+    const lastRound = (await c.do())['last-round'];
+    if ( untilRound && untilRound < lastRound ) {
+      throw Error(`waitForConfirmation: Too late: ${lastRound} > ${untilRound}`);
+    } else {
+      return lastRound;
     }
-  } while (!untilRound || lastRound < untilRound);
+  };
 
-  throw { type: 'waitForConfirmation', txId, untilRound, lastRound };
+  const dhead = [ 'waitForConfirmation', txId ];
+  const client = await getAlgodClient();
+
+  const checkAlgod = async (lastLastRound:number): Promise<TxnInfo> => {
+    const lastRound = await checkTooLate(lastLastRound);
+    const info =
+      await doOrDie(client.pendingTransactionInformation(txId).do());
+    debug(...dhead, 'info', info);
+    if ( info['exn'] ) {
+      debug(...dhead, 'switching to indexer on error');
+      return await checkIndexer(lastRound);
+    } else if ( info['confirmed-round'] > 0 ) {
+      debug(...dhead, 'confirmed');
+      return info;
+    } else if ( info['pool-error'] === '' ) {
+      debug(...dhead, 'still in pool, trying again');
+      return await checkAlgod(lastRound);
+    } else {
+      throw Error(`waitForConfirmation: error confirming: ${JSON.stringify(info)}`);
+    }
+  };
+
+  const checkIndexer = async (lastLastRound: number): Promise<TxnInfo> => {
+    const lastRound = await checkTooLate(lastLastRound);
+    const indexer = await getIndexer();
+    const q = indexer.lookupTransactionByID(txId);
+    const res = await doOrDie(doQuery_(JSON.stringify(dhead), q));
+    debug(...dhead, 'indexer', res);
+    if ( res['exn'] ) {
+      debug(...dhead, 'indexer failed, trying again');
+      return await checkIndexer(lastRound);
+    } else {
+      return res['transaction'];
+    }
+  };
+
+  return await checkAlgod(0);
 };
 
 type STX = {
   lastRound: number,
   txID: string,
   tx: SignedTxn, // Uint8Array
-}
+};
 
 const sendAndConfirm = async (
-  stx_or_stxs: STX | Array<STX>,
+  stxs: Array<STX>,
 ): Promise<TxnInfo> => {
-  // @ts-ignore
-  let {lastRound, txID, tx} = stx_or_stxs;
-  let sendme = tx;
-  if (Array.isArray(stx_or_stxs)) {
-    if (stx_or_stxs.length === 0) {
-      // debug(`Sending nothing... why...?`);
-      // @ts-ignore
-      return null;
-    }
-    // debug(`Sending multiple...`);
-    lastRound = stx_or_stxs[0].lastRound;
-    txID = stx_or_stxs[0].txID;
-    sendme = stx_or_stxs.map((stx) => stx.tx);
-  }
-  const untilRound = lastRound;
-  const req = (await getAlgodClient()).sendRawTransaction(sendme);
-  // @ts-ignore
-  debug('sendAndConfirm:', base64ify(req.txnBytesToPost));
+  const { lastRound, txID } = stxs[0];
+  const sendme = stxs.map((stx) => stx.tx);
   try {
+    const client = await getAlgodClient();
+    const req = client.sendRawTransaction(sendme);
+    // @ts-ignore
+    debug('sendAndConfirm:', base64ify(req.txnBytesToPost));
     await req.do();
   } catch (e) {
     throw { type: 'sendRawTransaction', e };
   }
-  return await waitForConfirmation(txID, untilRound);
+  try {
+    return await waitForConfirmation(txID, lastRound);
+  } catch (e) {
+    throw { type: 'waitForConfirmation', e };
+  }
 };
 
 
@@ -456,7 +488,7 @@ const sign_and_send_sync = async (
 ): Promise<TxnInfo> => {
   const txn_s = await signTxn(networkAccount, txn);
   try {
-    return await sendAndConfirm(txn_s);
+    return await sendAndConfirm([txn_s]);
   } catch (e) {
     console.log(e);
     throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
@@ -575,11 +607,20 @@ const format_failed_request = (e: any) => {
 
 const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
   debug(dhead, '--- QUERY =', query);
+  let retries = 10;
   let res;
-  try {
-    res = await query.do();
-  } catch (e) {
-    throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
+  while ( retries > 0 ) {
+    try {
+      res = await query.do();
+      break;
+    } catch (e) {
+      if ( e.errno === -111 ) {
+        debug(dhead, '--- NO CONNECTION, RETRYING', retries--);
+        await Timeout.set(500);
+      } else {
+        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
+      }
+    }
   }
   debug(dhead, '--- RESULT =', res);
   return res;

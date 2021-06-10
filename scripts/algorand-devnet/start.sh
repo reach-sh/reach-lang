@@ -19,8 +19,11 @@ else
 fi
 
 echo Starting algod
-algod -d "${ALGORAND_DATA}" &
-PID_ALGO=$!
+ALOG="${ALGORAND_DATA}/node.log"
+(while true ; do
+ algod -d "${ALGORAND_DATA}"
+ echo Algod died, restarting...
+done) &
 
 echo Checking for algod.net
 while ! [ -f "${ALGORAND_DATA}/algod.net" ] ; do
@@ -31,19 +34,19 @@ done
 echo Starting indexer
 touch algorand-indexer.yaml
 ILOG="${ALGORAND_DATA}/indexer.log"
-algorand-indexer daemon \
+(while true ; do
+ algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable" 2>&1 1>"${ILOG}" &
-PID_IDX=$!
+  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
+ echo Indexer died, restarting...
+ done) 2>&1 1>"${ILOG}" &
 
-LOG="${ALGORAND_DATA}/node.log"
-while ! [ -f "${LOG}" -a -f "${ILOG}" ]; do sleep 1 ; done
-
-tail -f "${LOG}"  | sed 's/^/ALGOD:/' &
+while ! [ -f "${ALOG}" -a -f "${ILOG}" ]; do
+  echo Waiting for logs...
+  sleep 1
+done
+tail -f "${ALOG}" | sed 's/^/ALGOD:/' &
 tail -f "${ILOG}" | sed 's/^/INDEX:/'
-
-kill "$PID_ALGO" "$PID_IDX"
-kill -9 "$PID_ALGO" "$PID_IDX"
