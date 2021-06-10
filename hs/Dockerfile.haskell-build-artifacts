@@ -1,0 +1,9 @@
+FROM reachsh/haskell-builder:lts-17.4
+WORKDIR /build
+
+COPY stack.yaml package.yaml stack.yaml.lock ./
+RUN stack build --dependencies-only
+
+COPY . /build/
+RUN stack build
+RUN mv "$(stack path --local-install-root)/bin" /build/bin/

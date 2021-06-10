@@ -11,6 +11,7 @@ extra-source-files:
 - rsh/stdlib.rsh
 - sol/stdlib.sol
 - smt2/runtime.smt2
+- app/reach/embed/**/*
 
 dependencies:
 - aeson
@@ -68,6 +69,7 @@ dependencies:
 - tasty-hunit
 - tasty-quickcheck
 - tasty-smallcheck
+- template-haskell
 - temporary
 - text
 - time
@@ -141,7 +143,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - neat-interpolation
+    - file-embed
     - shell-monad
     - unix
     - reach

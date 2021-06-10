@@ -2,7 +2,6 @@
 
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE QuasiQuotes          #-}
 
 module Main (main) where
 
@@ -11,11 +10,12 @@ import Control.Monad.Shell
 import Options.Applicative
 import Options.Applicative.Help.Pretty
 import System.Posix.IO
+import Text.Printf
 
-import qualified Data.Text         as TS
+import Reach.EmbeddedFiles
+
 import qualified Data.Text.Lazy    as TL
 import qualified Data.Text.Lazy.IO as TL
-import qualified NeatInterpolation as N
 
 import qualified Reach.Version     as V
 
@@ -38,8 +38,33 @@ reachImages =
 
 
 --------------------------------------------------------------------------------
+printfl :: PrintfArg r => String -> r -> TL.Text
+printfl s r = TL.pack $ printf s r
+
+
+fmtInitRsh :: String
+fmtInitRsh = $(mkEmbed "init/index.rsh")
+
+
+fmtInitMjs :: String
+fmtInitMjs = $(mkEmbed "init/index.mjs")
+
+
+--------------------------------------------------------------------------------
 echo :: CmdParams p => p
 echo = cmd "echo"
+
+
+sed :: CmdParams p => p
+sed = cmd "sed"
+
+
+awk :: CmdParams p => p
+awk = cmd "awk"
+
+
+cat' :: CmdParams p => p
+cat' = cmd "cat"
 
 
 exit :: Int -> Script ()
@@ -102,55 +127,18 @@ compile = command "compile" $ info f d where
 
 
 --------------------------------------------------------------------------------
-reachVersionShort :: TS.Text -- TODO
-reachVersionShort = TS.pack V.compatibleVersionStr
-
-
-initRsh :: TS.Text -> TL.Text
-initRsh v = TL.fromStrict [N.text|
-  'reach ${v}';
-
-  export const main = Reach.App(() => {
-    const Alice = Participant('Alice', {});
-    const Bob   = Participant('Bob', {});
-    deploy();
-    // write your program here
-
-  });
-|]
-
-
-initMjs :: TS.Text -> TL.Text
-initMjs app = TL.fromStrict [N.text|
-  import {loadStdlib} from '@reach-sh/stdlib';
-  import * as backend from './build/${app}.main.mjs';
-
-  (async () => {
-    const stdlib = await loadStdlib(process.env);
-    const startingBalance = stdlib.parseCurrency(100);
-
-    const alice = await stdlib.newTestAccount(startingBalance);
-    const bob = await stdlib.newTestAccount(startingBalance);
-
-    const ctcAlice = alice.deploy(backend);
-    const ctcBob = bob.attach(backend, ctcAlice.getInfo());
-
-    await Promise.all([
-      backend.Alice(ctcAlice, {
-        ...stdlib.hasRandom
-      }),
-      backend.Bob(ctcBob, {
-        ...stdlib.hasRandom
-      }),
-    ]);
-
-    console.log('Hello, Alice and Bob!');
-  })();
-|]
+reachVersionShort :: Script ()
+reachVersionShort = do
+  rv <- globalVar "REACH_VERSION"
+  rvs <- defaultVar rv (Output $ echo V.compatibleVersionStr)
+  caseOf rvs
+    [ ("stable", echo V.compatibleVersionStr)
+    , (glob "*", echo rvs -|- sed "s/^v//" -|- awk "-F." "{print $1\".\"$2}")
+    ]
 
 
 init' :: Subcommand
-init' = command "info" . info f $ d <> foot where
+init' = command "init" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app"
   f = go <$> strArgument (metavar "APP" <> value "index" <> showDefault)
 
@@ -173,10 +161,13 @@ init' = command "info" . info f $ d <> foot where
       exit 1
 
     echo $ "Writing " <> rsh
-    cmd "cat" |> rsh `hereDocument` initRsh reachVersionShort
+    let rsh' = Output $ do
+          r <- newVarFrom (Output reachVersionShort) ()
+          echo fmtInitRsh -|- sed (WithVar r (\r' -> "s/${REACH_VERSION_SHORT}/" <> r' <> "/"))
+    echo rsh' |> rsh
 
     echo $ "Writing " <> mjs
-    cmd "cat" |> mjs `hereDocument` initMjs (TS.pack app)
+    cat' |> mjs `hereDocument` printfl fmtInitMjs app
 
 
 --------------------------------------------------------------------------------

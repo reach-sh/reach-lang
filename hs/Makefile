@@ -1,4 +1,6 @@
-IMAGE="reachsh/reach"
+IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
+IMG_REACHC="reachsh/reach"
+IMG_REACH_CLI="reachsh/reach-cli"
 
 .PHONY: install-mo
 install-mo:
@@ -41,12 +43,23 @@ clean: hs-clean
 
 .PHONY: build
 build: stack
-	docker build --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" --tag=$(IMAGE):latest .
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
+	docker build \
+	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
+	  -f Dockerfile.haskell-build-artifacts .
+	docker build \
+	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --tag=$(IMG_REACHC):latest \
+	  -f Dockerfile.reachc .
+	docker build \
+	  --tag=$(IMG_REACH_CLI):latest \
+	  -f Dockerfile.reach-cli .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: push
 push:
-	../scripts/docker-push.sh $(IMAGE)
+	../scripts/docker-push.sh $(IMG_REACHC)
+	../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 # TODO: dockerized stan so that make check does not require local hs install?
 .PHONY: check
@@ -127,8 +140,3 @@ watch: stack
 .PHONY: watch-reach-cli
 watch-reach-cli: stack
 	@ghcid --target=reach:exe:reach -T Main.main
-
-# TODO
-#.PHONY: reach-cli
-#reach-cli: stack
-#	docker build -f Dockerfile.reach-cli --tag=reachsh/reach-cli:latest .

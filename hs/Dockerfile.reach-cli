@@ -1,0 +1,7 @@
+FROM reachsh/haskell-build-artifacts:latest as build
+FROM ubuntu:18.04
+
+COPY --from=build /build/bin/reach /usr/bin/reach
+
+WORKDIR /app
+ENTRYPOINT ["/usr/bin/reach"]
