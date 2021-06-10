@@ -161,7 +161,7 @@ The body of your application should look something like this:
       )
       .timeout(deadline, () => {
         race(Buyer, Funder).publish();
-        return [ false, winner, ticketsSold ]});
+        return [ false, winner, ticketsSold ]; });
 
   // 3. Transfer the balance to the last person who bought a ticket
   transfer(balance()).to(winner);
