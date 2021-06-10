@@ -20,6 +20,7 @@ Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 256-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
+Specifically, the @reachin{Token} type refers to the address of the ERC-20 contract.
 
 @tech{Views} are compiled to @litchar{view} functions.
 A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
@@ -66,6 +67,7 @@ Algorand uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 64-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://developer.algorand.org/docs/features/asa/"]{Algorand Standard Assets} (ASAs).
+Specifically, the @reachin{Token} type refers to the id of the ASA.
 Reach programs that use @tech{non-network tokens} deployed on Algorand are inherently vulnerable to a denial-of-service attack due the ability of Algorand accounts to "opt-out" of a token.
 For example, if a program has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
