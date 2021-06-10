@@ -34,6 +34,7 @@ done
 echo Starting indexer
 touch algorand-indexer.yaml
 ILOG="${ALGORAND_DATA}/indexer.log"
+# shellcheck disable=SC2069
 (while true ; do
  algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
@@ -44,7 +45,7 @@ ILOG="${ALGORAND_DATA}/indexer.log"
  echo Indexer died, restarting...
  done) 2>&1 1>"${ILOG}" &
 
-while ! [ -f "${ALOG}" -a -f "${ILOG}" ]; do
+while ! [ -f "${ALOG}" ] || ! [ -f "${ILOG}" ]; do
   echo Waiting for logs...
   sleep 1
 done
