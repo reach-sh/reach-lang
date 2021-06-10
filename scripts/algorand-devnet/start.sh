@@ -30,17 +30,20 @@ done
 
 echo Starting indexer
 touch algorand-indexer.yaml
+ILOG="${ALGORAND_DATA}/indexer.log"
 algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable" &
+  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable" 2>&1 1>"${ILOG}" &
 PID_IDX=$!
 
 LOG="${ALGORAND_DATA}/node.log"
-while ! [ -f "${LOG}" ] ; do sleep 1 ; done
-tail -f "${LOG}"
+while ! [ -f "${LOG}" -a -f "${ILOG}" ]; do sleep 1 ; done
+
+tail -f "${LOG}"  | sed 's/^/ALGOD:/' &
+tail -f "${ILOG}" | sed 's/^/INDEX:/'
 
 kill "$PID_ALGO" "$PID_IDX"
 kill -9 "$PID_ALGO" "$PID_IDX"
