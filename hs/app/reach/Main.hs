@@ -9,7 +9,9 @@ import Control.Monad
 import Control.Monad.Shell
 import Options.Applicative
 import Options.Applicative.Help.Pretty
+import System.Exit
 import System.Posix.IO
+import System.Posix.Process
 import Text.Printf
 
 import Reach.EmbeddedFiles
@@ -231,7 +233,8 @@ upgrade = command "upgrade" $ info f d where
 update :: Subcommand
 update = command "update" $ info f d where
   d = progDesc "Update Reach Docker images"
-  f = undefined
+  f = pure $ flip mapM_ reachImages $ \i ->
+    docker "pull" $ "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -336,6 +339,8 @@ main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
   im   = header header' <> fullDesc
   cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
 
-  sh f = TL.putStrLn . ("RUNME\n" <>) . script $ do
-    stopOnFailure True
-    f
+  sh f = do
+    TL.putStrLn . script $ do
+      stopOnFailure True
+      f
+    exitImmediately $ ExitFailure 42
