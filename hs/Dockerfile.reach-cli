@@ -2,6 +2,7 @@ FROM reachsh/haskell-build-artifacts:latest as build
 FROM ubuntu:18.04
 
 COPY --from=build /build/bin/reach /usr/bin/reach
+COPY app/reach/embed/ /app/embed/
 
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reach"]

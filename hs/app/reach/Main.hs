@@ -5,16 +5,17 @@
 
 module Main (main) where
 
-import Control.Monad
+import Control.Monad.Extra
+import Control.Monad.Reader
 import Control.Monad.Shell
 import Options.Applicative
-import Options.Applicative.Help.Pretty
+import Options.Applicative.Help.Pretty ((<$$>), text)
+import System.Directory.Extra
 import System.Exit
+import System.FilePath
 import System.Posix.IO
 import System.Posix.Process
 import Text.Printf
-
-import Reach.EmbeddedFiles
 
 import qualified Data.Text.Lazy    as TL
 import qualified Data.Text.Lazy.IO as TL
@@ -24,7 +25,15 @@ import qualified Reach.Version     as V
 default (TL.Text)
 
 
-type Subcommand = Mod CommandFields (Script ())
+data Env = Env { e_embedDir :: FilePath }
+
+type App = ReaderT Env IO (Script ())
+type Subcommand = Mod CommandFields App
+
+data Cli = Cli
+  { c_env :: Env
+  , c_cmd :: App
+  }
 
 
 reachImages :: [TL.Text]
@@ -43,14 +52,6 @@ reachImages =
 --------------------------------------------------------------------------------
 printfl :: PrintfArg r => String -> r -> TL.Text
 printfl s r = TL.pack $ printf s r
-
-
-fmtInitRsh :: String
-fmtInitRsh = $(mkEmbed "init/index.rsh")
-
-
-fmtInitMjs :: String
-fmtInitMjs = $(mkEmbed "init/index.mjs")
 
 
 --------------------------------------------------------------------------------
@@ -96,6 +97,10 @@ regardless' :: Script () -> Script ()
 regardless' f = regardless $ toStderr f
 
 
+appFrom :: Script () -> Parser App
+appFrom = pure . lift . pure
+
+
 --------------------------------------------------------------------------------
 clean :: Subcommand
 clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
@@ -108,7 +113,7 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
    <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
    <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
 
-  go m i = do
+  go m i = liftIO . pure $ do
     let f' m' = rm "-f" $ "build/" <> TL.pack m' <> "." <> i <> ".mjs"
 
     case m of
@@ -143,34 +148,47 @@ reachVersionShort = do
 init' :: Subcommand
 init' = command "init" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app"
-  f = go <$> strArgument (metavar "APP" <> value "index" <> showDefault)
+  f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
+         <*> strArgument (metavar "APP" <> value "index" <> showDefault)
 
+  -- TODO list available templates?
   foot = footerDoc . Just
      $  text "APP is \"index\" by default"
    <$$> text ""
    <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
 
-  go :: FilePath -> Script ()
-  go app = do
-    let rsh = app <> ".rsh"
-    let mjs = app <> ".mjs"
+  go :: FilePath -> FilePath -> App
+  go template app = do
+    embedDir <- asks e_embedDir
+    let tmpl n = embedDir </> "template" </> "init" </> n
 
-    whenCmd (test $ TRegularFileExists rsh) $ do
-      echo $ rsh <> " already exists"
-      exit 1
+    path <- ifM (liftIO . doesDirectoryExist $ tmpl template)
+      (pure $ tmpl template)
+      (pure $ tmpl "_default")
 
-    whenCmd (test $ TRegularFileExists mjs) $ do
-      echo $ mjs <> " already exists"
-      exit 1
+    fmtInitRsh <- liftIO . readFile $ path </> "index.rsh"
+    fmtInitMjs <- liftIO . readFile $ path </> "index.mjs"
 
-    echo $ "Writing " <> rsh
-    let rsh' = Output $ do
-          r <- newVarFrom (Output reachVersionShort) ()
-          echo fmtInitRsh -|- sed (WithVar r (\r' -> "s/${REACH_VERSION_SHORT}/" <> r' <> "/"))
-    echo rsh' |> rsh
+    liftIO . pure $ do
+      let rsh = app <> ".rsh"
+      let mjs = app <> ".mjs"
 
-    echo $ "Writing " <> mjs
-    cat' |> mjs `hereDocument` printfl fmtInitMjs app
+      whenCmd (test $ TRegularFileExists rsh) $ do
+        echo $ rsh <> " already exists"
+        exit 1
+
+      whenCmd (test $ TRegularFileExists mjs) $ do
+        echo $ mjs <> " already exists"
+        exit 1
+
+      echo $ "Writing " <> rsh
+      let rsh' = Output $ do
+            r <- newVarFrom (Output reachVersionShort) ()
+            echo fmtInitRsh -|- sed (WithVar r (\r' -> "s/${REACH_VERSION_SHORT}/" <> r' <> "/"))
+      echo rsh' |> rsh
+
+      echo $ "Writing " <> mjs
+      cat' |> mjs `hereDocument` printfl fmtInitMjs app
 
 
 --------------------------------------------------------------------------------
@@ -233,7 +251,7 @@ upgrade = command "upgrade" $ info f d where
 update :: Subcommand
 update = command "update" $ info f d where
   d = progDesc "Update Reach Docker images"
-  f = pure $ flip mapM_ reachImages $ \i ->
+  f = appFrom . flip mapM_ reachImages $ \i ->
     docker "pull" $ "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
 
 
@@ -241,7 +259,7 @@ update = command "update" $ info f d where
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
   d = progDesc "Docker kill and rm all images"
-  f = pure $ do
+  f = appFrom $ do
     echo "Docker kill all the things..."
     regardless' $ docker "kill" (Output $ docker "ps" "-q" )
     echo "Docker rm   all the things..."
@@ -253,7 +271,7 @@ dockerReset = command "docker-reset" $ info f d where
 version :: Subcommand
 version = command "version" $ info f d where
   d = progDesc "Display version"
-  f = pure $ echo V.versionHeader
+  f = appFrom $ echo V.versionHeader
 
 
 --------------------------------------------------------------------------------
@@ -267,7 +285,7 @@ help' = command "help" $ info f d where
 hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
-  f = pure $ flip mapM_ reachImages $ \i -> do
+  f = appFrom . flip mapM_ reachImages $ \i -> do
     let t = "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
     let s = docker "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
     echo (i <> ":") (Output s)
@@ -276,13 +294,13 @@ hashes = command "hashes" $ info f d where
 --------------------------------------------------------------------------------
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
-  f = pure . stdErrDevNull $ docker "info" "--format" "{{.ID}}"
+  f = appFrom . stdErrDevNull $ docker "info" "--format" "{{.ID}}"
 
 
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
 numericVersion = command "numeric-version" $ info f fullDesc where
-  f = pure $ echo V.compatibleVersionStr
+  f = appFrom $ echo V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -304,13 +322,26 @@ unscaffold = command "unscaffold" $ info f fullDesc where
 
 
 --------------------------------------------------------------------------------
+env :: Parser Env
+env = Env <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
+
+
+--------------------------------------------------------------------------------
 -- TODO better header
 header' :: String
 header' = "https://reach.sh"
 
 
 main :: IO ()
-main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
+main = customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
+  >>= \Cli {..} -> runReaderT c_cmd c_env
+  >>= \f -> do
+    TL.putStrLn . script $ do
+      stopOnFailure True
+      f
+    exitImmediately $ ExitFailure 42
+
+ where
   cs = compile
     <> clean
     <> init'
@@ -336,11 +367,6 @@ main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
     <> unscaffold
     <> whoami
 
-  im   = header header' <> fullDesc
-  cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
-
-  sh f = do
-    TL.putStrLn . script $ do
-      stopOnFailure True
-      f
-    exitImmediately $ ExitFailure 42
+  cli = Cli
+    <$> env
+    <*> (hsubparser cs <|> hsubparser hs <**> helper)

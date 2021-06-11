@@ -69,7 +69,6 @@ dependencies:
 - tasty-hunit
 - tasty-quickcheck
 - tasty-smallcheck
-- template-haskell
 - temporary
 - text
 - time
@@ -143,7 +142,6 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - file-embed
     - shell-monad
     - unix
     - reach
