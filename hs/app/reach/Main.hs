@@ -28,6 +28,7 @@ type Subcommand = Mod CommandFields (Script ())
 reachImages :: [TL.Text]
 reachImages =
   [ "reach"
+  , "reach-cli"
   , "ethereum-devnet"
   , "algorand-devnet"
   , "devnet-cfx"
@@ -335,6 +336,6 @@ main = join . fmap sh $ customExecParser (prefs showHelpOnError) cmds where
   im   = header header' <> fullDesc
   cmds = info (hsubparser cs <|> hsubparser hs <**> helper) im where
 
-  sh f = TL.putStrLn . script $ do
+  sh f = TL.putStrLn . ("RUNME\n" <>) . script $ do
     stopOnFailure True
     f
