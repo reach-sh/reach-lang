@@ -608,9 +608,8 @@ solAsnSet asnv vs = do
   vs_ty' <- solAsnType $ map fst vs
   return $ [solDecl asnv (mayMemSol vs_ty') <> semi] <> vs'
 
-solHashStateSet :: [(DLVar, DLArg)] -> App ([Doc], Doc)
-solHashStateSet svs = do
-  which <- ctxt_handler_num <$> ask
+solHashStateSet :: Int -> [(DLVar, DLArg)] -> App ([Doc], Doc)
+solHashStateSet which svs = do
   let asnv = "nsvs"
   let sete = solHash [(solNum which), asnv]
   setl <- solAsnSet asnv svs
@@ -919,8 +918,8 @@ solCTail = \case
           <> svs'
           <> asn'
           <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ _ (FI_Continue (ViewSave vi vvs) svs) -> do
-    (setl, sete) <- solHashStateSet svs
+  CT_From _ which (FI_Continue (ViewSave vi vvs) svs) -> do
+    (setl, sete) <- solHashStateSet which svs
     emit' <- ctxt_emit <$> ask
     viewl <-
       (ctxt_hasViews <$> ask) >>= \case

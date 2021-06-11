@@ -46,9 +46,9 @@ r () {
   # jb
 
   # export REACH_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -137,6 +137,7 @@ tealcount () {
 # c hs/test-examples/features/lazy-ifs.rsh
 # c hs/test-examples/features/pr-20210603.rsh
 # c hs/test-examples/features/pr-3e579.rsh
+c hs/test-examples/features/pr179.rsh
 
 # c hs/test-examples/features/big-d8cff.rsh
 # tealcount1 hs/test-examples/features big-d8cff
@@ -172,7 +173,7 @@ tealcount () {
 # r examples/map-vary
 # r examples/map-rwrw # XXX
 # r examples/map-multi
-r examples/map-big
+# r examples/map-big
 # r examples/maybe-send
 # r examples/multiple-pr-case
 # r examples/multisig
@@ -192,6 +193,7 @@ r examples/map-big
 # r examples/tut-6
 # r examples/tut-5-attack
 # r examples/tut-7
+r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
 # r examples/view-bytes

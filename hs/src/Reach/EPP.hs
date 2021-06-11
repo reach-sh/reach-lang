@@ -51,17 +51,15 @@ data FlowInputData = FlowInputData
   { fid_uses :: DLVarS
   , fid_defns :: DLVarS
   , fid_edges :: M.Map DLVar DLVarS
-  , fid_parents :: S.Set Int
-  , fid_children :: S.Set Int
-  , fid_jumps :: S.Set Int
+  , fid_saves :: S.Set Int
   }
 
 instance Semigroup FlowInputData where
-  (FlowInputData xa xb xc xd xe xf) <> (FlowInputData ya yb yc yd ye yf) =
-    FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd) (xe <> ye) (xf <> yf)
+  (FlowInputData xa xb xc xd) <> (FlowInputData ya yb yc yd) =
+    FlowInputData (xa <> ya) (xb <> yb) (xc <> yc) (xd <> yd)
 
 instance Monoid FlowInputData where
-  mempty = FlowInputData mempty mempty mempty mempty mempty mempty
+  mempty = FlowInputData mempty mempty mempty mempty
 
 instance Pretty FlowInputData where
   pretty (FlowInputData {..}) =
@@ -70,39 +68,32 @@ instance Pretty FlowInputData where
         [ ("uses" :: String, pretty fid_uses)
         , ("defns", pretty fid_defns)
         , ("edges", pretty fid_edges)
-        , ("parents", pretty fid_parents)
-        , ("children", pretty fid_children)
-        , ("jumps", pretty fid_jumps)
+        , ("saves", pretty fid_saves)
         ]
 
 type FlowOutput = M.Map Int FlowOutputData
 
 data FlowOutputData = FlowOutputData
   { fod_save :: DLVarS
-  , fod_recv :: DLVarS
   }
   deriving (Eq)
 
 instance Semigroup FlowOutputData where
-  (FlowOutputData xa xb) <> (FlowOutputData ya yb) =
-    FlowOutputData (xa <> ya) (xb <> yb)
+  (FlowOutputData xa) <> (FlowOutputData ya) =
+    FlowOutputData (xa <> ya)
 
 instance Monoid FlowOutputData where
-  mempty = FlowOutputData mempty mempty
+  mempty = FlowOutputData mempty
 
 instance Pretty FlowOutputData where
   pretty (FlowOutputData {..}) =
     render_obj $
       M.fromList
         [ ("save" :: String, fod_save)
-        , ("recv", fod_recv)
         ]
 
 fod_savel :: FlowOutputData -> [DLVar]
 fod_savel = S.toAscList . fod_save
-
-fod_recvl :: FlowOutputData -> [DLVar]
-fod_recvl = S.toAscList . fod_recv
 
 fixedPoint_ :: forall a. Eq a => a -> (a -> a) -> a
 fixedPoint_ x0 f = h x0
@@ -133,22 +124,16 @@ solve fi' = fixedPoint go
       where
         fod =
           FlowOutputData
-            { fod_save = save
-            , fod_recv = recv
+            { fod_save = need
             }
-        foread which = fromMaybe mempty $ M.lookup which fo
+        foread n = fromMaybe mempty $ M.lookup n fo
         unionmap f s = S.unions $ map f $ S.toList s
-        save =
-          -- We must save what our children recv
-          unionmap (fod_recv . foread) fid_children
-        recv =
-          -- We must recv what our parents sends plus what we need
-          S.union (unionmap (fod_save . foread) fid_parents) need
-        jumps_and_save =
-          S.union save $ unionmap (fod_recv . foread) fid_jumps
+        saves =
+          -- We need to save the saves we create
+          unionmap (fod_save . foread) fid_saves
         (use, defs) =
-          -- We use what our jumps recv and what we actually use
-          closeEdges jumps_and_save
+          -- We use what our saves need and what we actually use
+          closeEdges saves
         need =
           -- We need what we save & use, minus what we define
           S.difference use defs
@@ -183,13 +168,14 @@ instance Show EPPError where
     "Continue must be dominated by communication"
 
 data BEnv = BEnv
-  { be_which :: Int
+  { be_prev :: Int
+  , be_savec :: Counter
   , be_handlerc :: Counter
   , be_interval :: CInterval DLArg
   , be_handlers :: IORef (M.Map Int (CApp CHandler))
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
-  , be_loop :: Maybe Int
+  , be_loop :: Maybe (Int, Int)
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
   , be_viewmc :: Maybe Counter
@@ -215,22 +201,30 @@ captureMore m = do
   a <- liftIO $ readIORef mr
   return (a, x)
 
-newHandler :: String -> BApp Int
-newHandler lab = do
-  hc <- be_handlerc <$> ask
+newCounterThing :: String -> (BEnv -> Counter) -> String -> BApp Int
+newCounterThing lab0 be_f lab1 = do
+  hc <- be_f <$> ask
   n <- liftIO $ incCounter hc
   when shouldTrace $ do
-    traceM $ "newHandler " <> show lab <> " => " <> show n
+    traceM $ lab0 <> " " <> lab1 <> " => " <> show n
   return $ n
 
+newHandler :: String -> BApp Int
+newHandler = newCounterThing "newHandler" be_handlerc
+
 setHandler :: Int -> CApp CHandler -> BApp ()
-setHandler which m = do
+setHandler hn m = do
   hsr <- be_handlers <$> ask
   hs <- liftIO $ readIORef hsr
-  case M.lookup which hs of
+  case M.lookup hn hs of
     Just _ -> impossible "epp double set handler"
     Nothing -> do
-      liftIO $ modifyIORef hsr $ M.insert which m
+      liftIO $ modifyIORef hsr $ M.insert hn m
+
+newSavePoint :: String -> BApp Int
+newSavePoint lab = do
+  sp <- newCounterThing "newSavePoint" be_savec lab
+  return sp
 
 recordOutputVar :: DLLetVar -> BApp ()
 recordOutputVar = \case
@@ -248,11 +242,11 @@ captureOutputVars m = do
 
 fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
-  which <- be_which <$> ask
+  prev <- be_prev <$> ask
   fr <- be_flowr <$> ask
   liftIO $
     modifyIORef fr $ \f ->
-      M.insert which (fidm $ fromMaybe mempty $ M.lookup which f) f
+      M.insert prev (fidm $ fromMaybe mempty $ M.lookup prev f) f
 
 fg_use :: Countable a => a -> BApp ()
 fg_use x = fg_record $ \f -> f {fid_uses = S.union (countsS x) (fid_uses f)}
@@ -264,16 +258,9 @@ fg_edge :: (Countable a) => DLLetVar -> a -> BApp ()
 fg_edge DLV_Eff x = fg_use x
 fg_edge (DLV_Let _ v) use = fg_record $ \f -> f {fid_edges = M.singleton v (countsS use) <> (fid_edges f)}
 
-fg_child :: Int -> BApp ()
-fg_child child = do
-  parent <- be_which <$> ask
-  fg_record $ \f -> f {fid_children = S.insert child $ fid_children f}
-  local (\e -> e {be_which = child}) $ do
-    fg_record $ \f -> f {fid_parents = S.insert parent $ fid_parents f}
-
-fg_jump :: Int -> BApp ()
-fg_jump dst = do
-  fg_record $ \f -> f {fid_jumps = S.insert dst $ fid_jumps f}
+fg_saves :: Int -> BApp ()
+fg_saves sp = do
+  fg_record $ \f -> f {fid_saves = S.insert sp $ fid_saves f}
 
 -- Views
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
@@ -318,29 +305,23 @@ ce_vdef :: DLVar -> CApp ()
 ce_vdef x = ce_vsm $ S.delete x
 
 readFlow :: Monad m => (a -> FlowOutput) -> Int -> ReaderT a m FlowOutputData
-readFlow get_flow which = do
+readFlow get_flow n = do
   fo <- get_flow <$> ask
-  case M.lookup which fo of
+  case M.lookup n fo of
     Just x -> return $ x
-    Nothing -> impossible $ "no flow for " <> show which
+    Nothing -> impossible $ "no flow for " <> show n
 
 ee_readFlow :: Int -> EApp FlowOutputData
 ee_readFlow = readFlow ee_flow
 
-ee_readMustSave :: Int -> EApp [DLVar]
-ee_readMustSave x = fod_savel <$> ee_readFlow x
-
-ee_readMustReceive :: Int -> EApp [DLVar]
-ee_readMustReceive x = fod_recvl <$> ee_readFlow x
+ee_readSave :: Int -> EApp [DLVar]
+ee_readSave x = fod_savel <$> ee_readFlow x
 
 ce_readFlow :: Int -> CApp FlowOutputData
 ce_readFlow = readFlow ce_flow
 
-ce_readMustSave :: Int -> CApp [DLVar]
-ce_readMustSave x = fod_savel <$> ce_readFlow x
-
-ce_readMustReceive :: Int -> CApp [DLVar]
-ce_readMustReceive x = fod_recvl <$> ce_readFlow x
+ce_readSave :: Int -> CApp [DLVar]
+ce_readSave x = fod_savel <$> ce_readFlow x
 
 readVars :: CApp [DLVar]
 readVars = do
@@ -527,10 +508,11 @@ be_c = \case
     csm' <- mapM go csm
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
-    which <- be_which <$> ask
+    this <- newSavePoint "fromConsensus"
     (more, s'l) <-
       captureMore $
-        local (\e -> e {be_interval = default_interval}) $ do
+        local (\e -> e { be_interval = default_interval
+                       , be_prev = this }) $ do
           be_s s
     toks <- be_toks <$> ask
     mvis <-
@@ -542,19 +524,21 @@ be_c = \case
         False -> do
           fg_use toks
           return $ Nothing
-    let mkfrom_info do_readMustSave = do
-          svs <- do_readMustSave which
+    let mkfrom_info do_read = do
+          svs <- do_read this
           return $ case mvis of
             Just vis -> FI_Continue vis $ asnLike svs
             Nothing -> FI_Halt toks
-    let cm = CT_From at1 which <$> mkfrom_info ce_readMustSave
-    let lm = ET_FromConsensus at1 which <$> mkfrom_info ee_readMustSave <*> s'l
+    fg_saves this
+    let cm = CT_From at1 this <$> mkfrom_info ce_readSave
+    let lm = ET_FromConsensus at1 this <$> mkfrom_info ee_readSave <*> s'l
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLBlock cond_at cond_fs cond_l cond_a = cond
-    this_loop <- newHandler "While"
-    let inBlock which = local (\e -> e {be_which = which})
-    let inLoop = inBlock this_loop
+    this_loopj <- newHandler "While"
+    this_loopsp <- newSavePoint "While"
+    let inBlock prev = local (\e -> e {be_prev = prev})
+    let inLoop = inBlock this_loopsp
     -- <Kont>
     (goto_kont, k'l) <-
       -- XXX This is a convoluted hack because Solidity does not allow empty
@@ -566,14 +550,15 @@ be_c = \case
       case onlyHalts k of
         True -> inLoop $ be_c k
         False -> do
-          kont_block <- newHandler "While Kont"
-          let inKont = inBlock kont_block
+          kontsp <- newSavePoint "While Kont"
+          kontj <- newHandler "While Kont"
+          let inKont = inBlock kontsp
           (k'c, k'l) <- inKont $ be_c k
-          setHandler kont_block $ do
-            kont_svs <- ce_readMustReceive kont_block
+          setHandler kontj $ do
+            kont_svs <- ce_readSave kontsp
             C_Loop at kont_svs [] <$> k'c
-          inLoop $ fg_jump $ kont_block
-          let gk = CT_Jump at kont_block <$> ce_readMustReceive kont_block <*> pure mempty
+          inLoop $ fg_saves $ kontsp
+          let gk = CT_Jump at kontj <$> ce_readSave kontsp <*> pure mempty
           return (gk, k'l)
     -- </Kont>
     fg_use $ asn
@@ -585,27 +570,28 @@ be_c = \case
       be_t cond_l
     (body'c, body'l) <-
       inLoop $
-        local (\e -> e {be_loop = Just this_loop}) $
+        local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
           be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
-    setHandler this_loop $ do
-      loop_svs <- ce_readMustReceive this_loop
+    setHandler this_loopj $ do
+      loop_svs <- ce_readSave this_loopsp
       loopc <- (liftIO . optimize) =<< loop_top
       return $ C_Loop at loop_svs loop_vars loopc
-    fg_jump $ this_loop
-    let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
+    fg_saves $ this_loopsp
+    let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let cond'l = DLBlock cond_at cond_fs <$> cond_l'l <*> pure cond_a
     let lm = ET_While at asn <$> cond'l <*> body'l <*> k'l
     return $ (,) cm lm
   LLC_Continue at asn -> do
     fg_use $ asn
-    this_loop <- fromMaybe (impossible "no loop") . be_loop <$> ask
-    which <- be_which <$> ask
-    when (this_loop == which) $
+    (this_loopj, this_loopsp) <-
+      fromMaybe (impossible "no loop") . be_loop <$> ask
+    prev <- be_prev <$> ask
+    when (this_loopsp == prev) $
       expect_thrown at Err_ContinueDomination
-    fg_jump $ this_loop
-    let cm = CT_Jump at this_loop <$> ce_readMustReceive this_loop <*> pure asn
+    fg_saves $ this_loopsp
+    let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
 
@@ -624,9 +610,9 @@ be_s = \case
     return $ (return $ ET_Stop at)
   LLS_ToConsensus at send recv mtime -> do
     let DLRecv from_v msg_vs time_v (last_time_mv, ok_c) = recv
-    prev <- be_which <$> ask
+    prev <- be_prev <$> ask
     signalMore
-    which <- newHandler "ToConsensus"
+    this_h <- newHandler "ToConsensus"
     int <- be_interval <$> ask
     (int_ok, mtime'm) <-
       case mtime of
@@ -648,16 +634,14 @@ be_s = \case
           (\e ->
              e
                { be_interval = int_ok
-               , be_which = which
                })
           $ do
             fg_use $ int_ok
             fg_use $ last_time_mv
             fg_defn $ from_v : time_v : msg_vs
             be_c ok_c
-    fg_child which
-    setHandler which $ do
-      svs <- ce_readMustReceive which
+    setHandler this_h $ do
+      svs <- ce_readSave prev
       ok_c' <- ok_c'm
       udvs <- readVars
       let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
@@ -674,10 +658,10 @@ be_s = \case
           mfrom <- case M.lookup who send of
             Nothing -> return $ Nothing
             Just (DLSend {..}) -> do
-              svs <- ee_readMustReceive which
+              svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev last_time_mv which mfrom msg_vs out_vs time_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev last_time_mv this_h mfrom msg_vs out_vs time_v mtime' ok_l'
     return $ ok_l''m
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock
@@ -688,12 +672,13 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
 epp :: LLProg -> IO PLProg
 epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   -- Step 1: Analyze the program to compute basic blocks
+  be_savec <- newCounter 1
   be_handlerc <- newCounter 1
   be_handlers <- newIORef mempty
   be_flowr <- newIORef mempty
   be_more <- newIORef False
   let be_loop = Nothing
-  let be_which = 0
+  let be_prev = 0
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
@@ -708,7 +693,8 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   let mvm = if M.null dvs then Nothing else Just (dvs, vm)
   -- Step 2: Solve the flow graph
   flowi <- readIORef be_flowr
-  let flowi' = M.map (const mempty) hs
+  last_save <- readCounter be_savec
+  let flowi' = M.fromList $ zip [0..last_save] $ repeat mempty
   let flow = solve $ flowi <> flowi'
   -- Step 3: Turn the blocks into handlers
   let mkh m = do

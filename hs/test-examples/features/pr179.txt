@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Arbitrator" is honest
+  Verifying when ONLY "Contractor" is honest
+  Verifying when ONLY "Primary" is honest
+Checked 145 theorems; No failures!
