@@ -8,8 +8,8 @@
   "types": "dist/types/index.d.ts",
   "files": [
     "dist/",
-    "./*.mjs",
-    "./*.d.ts"
+    "*.mjs",
+    "*.d.ts"
   ],
   "devDependencies": {
     "@types/await-timeout": "^0.3.1",
