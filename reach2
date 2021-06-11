@@ -1,13 +1,19 @@
 #!/bin/sh
 
-case "$1" in
-  "bootstrap") echo "TODO" ;; # Document this in `optparse` as well
+IMG='reachsh/reach-cli:latest'
 
-  *)
-    s=$(docker run -it --rm reachsh/reach-cli:latest "$@")
-    if [ "$(echo "$s" | head -n1 | tr -d '\r')" = 'RUNME' ]
-      then echo "$s" | tr -d '\r' | sed 's/RUNME//' | /bin/sh
-      else echo "$s"
-    fi
-    ;;
+if ! (which make docker docker-compose >/dev/null 2>&1) ; then
+  echo "Reach relies on an installation of make, docker, and docker-compose"
+  exit 1
+fi
+
+if [ "$(docker image ls -q $IMG)" = '' ] ; then
+  docker pull "$IMG"
+  docker run -t --rm "$IMG" update | sed 's/\r//' | sh
+fi
+
+docker run -t --rm "$IMG" "$@" >/tmp/reach.out
+case "$?" in
+  42) sed 's/\r//' /tmp/reach.out | sh ;;
+   *) cat /tmp/reach.out ;;
 esac
