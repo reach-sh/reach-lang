@@ -5,3 +5,6 @@ COPY --from=build /build/bin/reach /usr/bin/reach
 
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reach"]
+
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"

@@ -51,6 +51,7 @@ build: stack
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
 	docker build \
+	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
 	  -f Dockerfile.reach-cli .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
