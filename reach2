@@ -2,17 +2,20 @@
 
 IMG='reachsh/reach-cli:latest'
 
-if ! (which make docker docker-compose >/dev/null 2>&1) ; then
+run () {
+  docker run -t --rm "$IMG" "$@"
+}
+
+if ! (which make docker docker-compose >/dev/null 2>&1); then
   echo "Reach relies on an installation of make, docker, and docker-compose"
   exit 1
 fi
 
-if [ "$(docker image ls -q $IMG)" = '' ] ; then
-  docker pull "$IMG"
-  docker run -t --rm "$IMG" update | sed 's/\r//' | sh
+if [ "$(docker image ls -q $IMG)" = '' ]; then
+  if ! (docker pull "$IMG" && run update | sed 's/\r//' | sh); then exit 1; fi
 fi
 
-docker run -t --rm "$IMG" "$@" >/tmp/reach.out
+run "$@" >/tmp/reach.out
 case "$?" in
   42) sed 's/\r//' /tmp/reach.out | sh ;;
    *) cat /tmp/reach.out ;;
