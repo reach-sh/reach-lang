@@ -34,7 +34,6 @@ done
 echo Starting indexer
 touch algorand-indexer.yaml
 ILOG="${ALGORAND_DATA}/indexer.log"
-# shellcheck disable=SC2069
 (while true ; do
  algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
@@ -43,7 +42,7 @@ ILOG="${ALGORAND_DATA}/indexer.log"
   --token "reach-devnet" \
   --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
  echo Indexer died, restarting...
- done) 2>&1 1>"${ILOG}" &
+ done) 1>"${ILOG}" 2>&1 &
 
 while ! [ -f "${ALOG}" ] || ! [ -f "${ILOG}" ]; do
   echo Waiting for logs...
