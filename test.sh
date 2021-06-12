@@ -137,7 +137,9 @@ tealcount () {
 # c hs/test-examples/features/lazy-ifs.rsh
 # c hs/test-examples/features/pr-20210603.rsh
 # c hs/test-examples/features/pr-3e579.rsh
-c hs/test-examples/features/pr179.rsh
+# c hs/test-examples/features/pr179.rsh
+c hs/test-examples/features/pr-671006.rsh
+fc hs/test-examples/non-features/pr-671006p.rsh
 
 # c hs/test-examples/features/big-d8cff.rsh
 # tealcount1 hs/test-examples/features big-d8cff
@@ -193,7 +195,7 @@ c hs/test-examples/features/pr179.rsh
 # r examples/tut-6
 # r examples/tut-5-attack
 # r examples/tut-7
-r examples/tut-8
+# r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
 # r examples/view-bytes

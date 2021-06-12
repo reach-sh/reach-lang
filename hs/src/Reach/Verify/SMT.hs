@@ -11,7 +11,7 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -89,6 +89,12 @@ smtEq x y = smtApply "=" [x, y]
 
 smtNot :: SExpr -> SExpr
 smtNot se = smtApply "not" [se]
+
+smtImplies :: SExpr -> SExpr -> SExpr
+smtImplies x y = smtApply "=>" [x, y]
+
+smtAnd :: SExpr -> SExpr -> SExpr
+smtAnd x y = smtApply "and" [x, y]
 
 --- SMT conversion code
 
@@ -169,22 +175,34 @@ data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
   , sm_t :: DLType
   , sm_rs :: IORef [SMTMapRecordReduce]
-  , sm_us :: IORef [SMTMapRecordUpdate]
+  , sm_us :: IORef SMTMapRecordUpdate
   }
 
-data SMTMapRecordReduce
-  = SMR_Reduce Int DLVar DLArg DLVar DLVar DLBlock
+data SMTMapRecordReduce = SMR_Reduce
+  { smr_mri :: Int
+  , smr_ans :: DLVar
+  , smr_z :: DLArg
+  , smr_b :: DLVar
+  , smr_a :: DLVar
+  , smr_f :: DLBlock
+  }
 
 instance Pretty SMTMapRecordReduce where
-  pretty (SMR_Reduce _mri ans z b a f) =
-    prettyReduce ans ("map" :: String) z b a f
+  pretty = \case
+    SMR_Reduce _mri ans z b a f ->
+      prettyReduce ans ("map" :: String) z b a f
 
 data SMTMapRecordUpdate
-  = SMR_Update SExpr SExpr SExpr
+  = SMR_Update SExpr SExpr SExpr SMTMapRecordUpdate
+  | SMR_New
+  | SMR_Fresh
 
 instance Pretty SMTMapRecordUpdate where
-  pretty (SMR_Update ma fa' na') =
-    viaShow ma <> "[" <> viaShow fa' <> "]" <+> "=" <+> viaShow na'
+  pretty = \case
+    SMR_Update ma fa' na' _xxx ->
+      viaShow ma <> "[" <> viaShow fa' <> "]" <+> "=" <+> viaShow na'
+    SMR_New -> "new"
+    SMR_Fresh -> "fresh"
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
@@ -830,9 +848,9 @@ smtMapRefresh = do
   ms <- ctxt_maps <$> ask
   let go (mpv, SMTMapInfo {..}) = do
         mi' <- liftIO $ incCounter sm_c
-        smtMapDeclare mpv mi' $ BR_MapFresh
         liftIO $ writeIORef sm_rs $ mempty
-        liftIO $ writeIORef sm_us $ mempty
+        liftIO $ writeIORef sm_us $ SMR_Fresh
+        smtMapDeclare mpv mi' $ BR_MapFresh
   mapM_ go $ M.toList ms
 
 smtMapLookupC :: DLMVar -> App SMTMapInfo
@@ -881,10 +899,9 @@ smtMapUpdate at mpv fa mna = do
   let mi = mi' - 1
   let mv = smtMapVar mpv mi
   let ma = Atom mv
-  let mu = SMR_Update ma fa' na'
   let se = smtApply "store" [ma, fa', na']
   smtMapDeclare mpv mi' $ BR_MapUpdate at ma fa mna
-  smtMapRecordUpdate mpv mu
+  smtMapRecordUpdate mpv $ SMR_Update ma fa' na'
   let mv' = smtMapVar mpv mi'
   smtAssert $ smtEq (Atom mv') se
 
@@ -893,10 +910,10 @@ smtMapRecordReduce mpv r = do
   SMTMapInfo {..} <- smtMapLookupC mpv
   liftIO $ modifyIORef sm_rs $ (r :)
 
-smtMapRecordUpdate :: DLMVar -> SMTMapRecordUpdate -> App ()
+smtMapRecordUpdate :: DLMVar -> (SMTMapRecordUpdate -> SMTMapRecordUpdate) -> App ()
 smtMapRecordUpdate mpv r = do
   SMTMapInfo {..} <- smtMapLookupC mpv
-  liftIO $ modifyIORef sm_us $ (r :)
+  liftIO $ modifyIORef sm_us r
 
 smtMapReviewRecord :: DLMVar -> (SMTMapInfo -> IORef a) -> App a
 smtMapReviewRecord mpv sm_x = do
@@ -923,13 +940,20 @@ smtMapReduceApply at b a f = do
 
 smtMapReviewRecordRef :: SrcLoc -> DLMVar -> SExpr -> DLVar -> App ()
 smtMapReviewRecordRef at x fse res = do
-  us <- smtMapReviewRecord x sm_us
-  -- We only learn something about what we've read from the map via the
-  -- reduction if this field has not been modified, so we add negative path
-  -- constraints and then apply the reduction function
-  let go_u (SMR_Update _ fa' _) more =
-        smtNewPathConstraint (smtNot $ smtEq fa' fse) . more
-  let add_us_constraints = foldr go_u id us
+  let go = \case
+        SMR_Update _ fa' _ prev ->
+          -- We only learn something about what we've read from the map via the
+          -- reduction if this field has not been modified, so we add negative
+          -- path constraints and then apply the reduction function
+          smtNewPathConstraint (smtNot $ smtEq fa' fse) . go prev
+        SMR_Fresh ->
+          -- The map is completely unknown
+          id
+        SMR_New ->
+          -- XXX We know the map is empty, so we could assert that this ref is
+          -- Nothing
+          id
+  add_us_constraints <- go <$> smtMapReviewRecord x sm_us
   rs <- smtMapReviewRecord x sm_rs
   res' <- smt_v at res
   add_us_constraints $
@@ -942,35 +966,71 @@ smtMapReviewRecordRef at x fse res = do
 
 smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> DLBlock -> App ()
 smtMapReviewRecordReduce at mri ans x z b a f = do
-  rs <- smtMapReviewRecord x sm_rs
-  let look (SMR_Reduce mri' ans' _ _ _ _) =
-        if mri == mri' then Just ans' else Nothing
-  let firstJusts = listToMaybe . catMaybes
-  z' <-
-    case firstJusts $ map look rs of
-      Just oldAns ->
-        Atom <$> smtVar oldAns
-      Nothing ->
-        smt_a at z
-  -- We go through each one of the updates and inline the computation of the
-  -- reduction function back to the last known value, which is either z in the
-  -- beginning or the last value
-  --
-  -- NOTE: A question remains: what if we have two loops in a row that use
-  -- different reductions? How will we be able to relate one to the next? I
-  -- don't know and don't have a test case right now.
-  let go (SMR_Update ma fa' na') z'0 = do
-        (b'0, a'0, f'0) <- smtMapReduceApply at b a f
-        smtAssertCtxt $ smtEq a'0 $ smtApply "select" [ma, fa']
-        fres'0 <- f'0
-        smtAssertCtxt $ smtEq fres'0 z'0
-        -- n f( Z0, m[fa] ) = z'
-        -- u f( Z0, na' ) = z''
-        (b'1, a'1, f'1) <- smtMapReduceApply at b a f
-        smtAssertCtxt $ smtEq b'1 b'0
-        smtAssertCtxt $ smtEq a'1 na'
-        f'1
-  z'' <- foldrM go z' =<< smtMapReviewRecord x sm_us
+  z' <- smt_a at z
+  (me_rs, other_rs) <- List.partition ((==) mri . smr_mri) <$> smtMapReviewRecord x sm_rs
+  let go_fresh ans_x (SMR_Reduce {..}) = do
+        -- We doing one map reduce `m.sum()` and there was a different map
+        -- reduce in the past `m.product()` and we are trying to learn if the
+        -- result of that map reduce says anything about ours.
+        --
+        -- We can't look at the actual values, because it is a fresh map, so
+        -- we've forgotten what actually went into it, so all we can do is look
+        -- at the actual map formula:
+        --
+        -- ans_x = fold f_x z_x m
+        -- ans_y = fold f_y z_y m
+        --
+        -- For now, we're going to the simplest dumbest thing: just check if
+        -- f_x and f_y are exactly the same and if they are, then learn the
+        -- ans_x and ans_y are the same.
+        --
+        -- This can only happen if the types are
+        -- the same. We know they are the same if the accumulators are the
+        -- same, because the elements are definitely the same and the final
+        -- value is the same as the accumulators
+        when ((==) (varType a) (varType smr_a)) $ do
+          (b_x, a_x, mkf_x) <- smtMapReduceApply at b a f
+          (b_y, a_y, mkf_y) <- smtMapReduceApply at smr_b smr_a smr_f
+          f_x <- mkf_x
+          f_y <- mkf_y
+          let z_x = z'
+          z_y <- smt_a at smr_z
+          ans_y <- smt_v at smr_ans
+          smtAssert $ smtEq b_x b_y
+          smtAssert $ smtEq a_x a_y
+          smtAssert $ smtImplies (smtAnd (smtEq z_x z_y) (smtEq f_x f_y)) (smtEq ans_x ans_y)
+  let go = \case
+        SMR_New -> do
+          -- We know that the map is empty, so it must equal to initial value
+          return z'
+        SMR_Fresh -> do
+          case map smr_ans me_rs of
+            (oa : _) ->
+              -- It is fresh, so it could equal one of the past reductions
+              smt_v at oa
+            [] -> do
+              -- Or, it could be related to a different reduction
+              ans'_dv <- freshenDV ans
+              pathAddUnbound at (Just ans'_dv) O_ReduceVar
+              ans' <- smt_v at ans'_dv
+              mapM_ (go_fresh ans') other_rs
+              return ans'
+        SMR_Update ma fa' na' prev -> do
+          -- We go through each one of the updates and inline the computation
+          -- of the reduction function back to the last known value, which is
+          -- either z in the beginning or the last value
+          z'0 <- go prev
+          (b'0, a'0, f'0) <- smtMapReduceApply at b a f
+          smtAssertCtxt $ smtEq a'0 $ smtApply "select" [ma, fa']
+          fres'0 <- f'0
+          smtAssertCtxt $ smtEq fres'0 z'0
+          -- n f( Z0, m[fa] ) = z'
+          -- u f( Z0, na' ) = z''
+          (b'1, a'1, f'1) <- smtMapReduceApply at b a f
+          smtAssertCtxt $ smtEq b'1 b'0
+          smtAssertCtxt $ smtEq a'1 na'
+          f'1
+  z'' <- go =<< smtMapReviewRecord x sm_us
   ans' <- smt_v at ans
   smtAssertCtxt $ smtEq ans' z''
 
@@ -1085,8 +1145,8 @@ smt_e at_dv mdv de = do
       sim <- shouldSimulate who
       case (mdv, sim) of
         (Just psv, True) -> do
-          psv' <- smtVar psv
-          smtAssertCtxt (smtEq (Atom psv') (Atom $ smtAddress who))
+          psv' <- smt_v at psv
+          smtAssertCtxt (smtEq psv' (Atom $ smtAddress who))
         _ ->
           mempty
     DLE_MapRef at mpv fa -> do
@@ -1261,12 +1321,16 @@ smt_alloc_id = do
   idxr <- ctxt_idx <$> ask
   liftIO $ incCounter idxr
 
+freshenDV :: DLVar -> App DLVar
+freshenDV (DLVar at lab t _) =
+  DLVar at lab t <$> smt_alloc_id
+
 freshAddrs :: App a -> App a
 freshAddrs m = do
-  let go (DLVar at lab t _) = do
-        dv <- DLVar at lab t <$> smt_alloc_id
-        pathAddUnbound at (Just dv) O_BuiltIn
-        return dv
+  let go dv@(DLVar at _ _ _) = do
+        dv' <- freshenDV dv
+        pathAddUnbound at (Just dv') O_BuiltIn
+        return dv'
   addrs' <- mapM go =<< (ctxt_addrs <$> ask)
   local (\e -> e {ctxt_addrs = addrs'}) m
 
@@ -1552,7 +1616,7 @@ _verify_smt mc ctxt_vst smt lp = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = dlmi_tym mi
         sm_rs <- liftIO $ newIORef mempty
-        sm_us <- liftIO $ newIORef mempty
+        sm_us <- liftIO $ newIORef SMR_New
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
   let ctxt_addrs = M.mapWithKey (\p _ -> DLVar at (Just (at, bunpack p)) T_Address 0) pies_m
