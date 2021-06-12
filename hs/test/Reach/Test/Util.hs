@@ -91,7 +91,7 @@ mkSpecExamplesCoverStrs :: [String] -> String -> FilePath -> Spec
 mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
   it "covers all specified examples" $ do
     curDir <- getCurrentDirectory
-    let dir = curDir </> "test-examples" </> subdir
+    let dir = curDir </> "t" </> subdir
     doesDirectoryExist dir `shouldReturn` True
     sources <- findByExtension' [ext] dir
     let missing = strs \\ map takeBaseName sources
@@ -100,7 +100,7 @@ mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
 goldenTests' :: (FilePath -> IO TestTree) -> String -> FilePath -> IO ([FilePath], [TestTree])
 goldenTests' mkTest ext subdir = do
   curDir <- getCurrentDirectory
-  let dir = curDir </> "test-examples" </> subdir
+  let dir = curDir </> "t" </> subdir
   sources <- findByExtension' [ext] dir
   testNe <- testNotEmpty "this subdir" sources
   testSources <- testGroup ("testing each " <> ext <> " file") <$> mapM mkTest sources
@@ -136,7 +136,7 @@ stripAllAbs fp cwd = stripAbs fp''' . stripAbs fp'' . stripAbs fp' . stripAbs fp
   where
     fp' = lbunpack $ stripAbs cwd $ lbpack fp
     fp'' = lbunpack $ stripAbs (cwd </> "hs") $ lbpack fp
-    fp''' = lbunpack $ "./test-examples/../../examples/"
+    fp''' = lbunpack $ "./t/../../examples/"
 
 -- | Drops "CallStack (from HasCallStack):" and everything after
 stripCallStack :: LB.ByteString -> LB.ByteString

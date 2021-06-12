@@ -20,7 +20,7 @@ fc () {
 }
 
 err () {
-  fc "hs/test-examples/nl-eval-errors/$1.rsh"
+  fc "hs/t/n/$1.rsh"
 }
 
 jb () {
@@ -81,68 +81,68 @@ tealcount () {
 
 # jb
 
-# c hs/test-examples/nl-eval-errors/Err_IllegalEffPosition.rsh
-# c hs/test-examples/nl-eval-errors/Err_TimeMustBeSimple.rsh
-# c hs/test-examples/features/timeout_calc.rsh
-# c hs/test-examples/features/tut6-refined.rsh
-# c hs/test-examples/nl-eval-errors/Err_Apply_ArgCount.rsh
-# c hs/test-examples/nl-eval-errors/Err_Eval_IncompatibleStates.rsh
-# c hs/test-examples/nl-eval-errors/Err_Eval_NotObject.rsh
-# c hs/test-examples/features/data.rsh
-# c hs/test-examples/features/fork.rsh
+# c hs/t/n/Err_IllegalEffPosition.rsh
+# c hs/t/n/Err_TimeMustBeSimple.rsh
+# c hs/t/y/timeout_calc.rsh
+# c hs/t/y/tut6-refined.rsh
+# c hs/t/n/Err_Apply_ArgCount.rsh
+# c hs/t/n/Err_Eval_IncompatibleStates.rsh
+# c hs/t/n/Err_Eval_NotObject.rsh
+# c hs/t/y/data.rsh
+# c hs/t/y/fork.rsh
 # c examples/workshop-trust-fund/index.rsh
 # c examples/overview/index-error.rsh
 # c examples/popularity-contest/index.rsh
 # c examples/ttt/index.rsh
-# c hs/test-examples/features/array_groups.rsh
+# c hs/t/y/array_groups.rsh
 # c examples/tut-5/index.rsh
 # c examples/nim/index-abstract.rsh
 # c examples/timeoutception/index.rsh
 # c examples/workshop-trust-fund/index.rsh
 # c examples/t/penny.rsh
 # c examples/popularity-contest/index.rsh
-# c hs/test-examples/features/fork_exp.rsh
-# c hs/test-examples/features/pr1011.rsh
-# c hs/test-examples/features/lct_in_only.rsh
-# c hs/test-examples/features/tut6-refined.rsh
-# c hs/test-examples/features/pr20210303.rsh
-# c hs/test-examples/features/default_fn_arguments_dependent.rsh
-# c hs/test-examples/features/empty_svs.rsh
+# c hs/t/y/fork_exp.rsh
+# c hs/t/y/pr1011.rsh
+# c hs/t/y/lct_in_only.rsh
+# c hs/t/y/tut6-refined.rsh
+# c hs/t/y/pr20210303.rsh
+# c hs/t/y/default_fn_arguments_dependent.rsh
+# c hs/t/y/empty_svs.rsh
 # c examples/pokechain/index.rsh
 # c ../users/reach--tic-tac-toe/V3-megalaser/index.rsh
-# c hs/test-examples/features/data.rsh
-# c hs/test-examples/features/fork.rsh
-# c hs/test-examples/nl-eval-errors/Err_NoImpureCondInStep.rsh
-# c hs/test-examples/features/array_length.rsh
-# c hs/test-examples/features/lhs_array_spread.rsh
-# c hs/test-examples/features/pr20210311.rsh
-# c hs/test-examples/nl-verify-errs/class_addr.rsh
-# c hs/test-examples/features/pr1165.rsh
-# c hs/test-examples/features/1202.rsh
-# c hs/test-examples/features/rest-empty.rsh
-# c hs/test-examples/features/rest-tuple.rsh
-# c hs/test-examples/features/rest_parameter.rsh
-# c hs/test-examples/features/pr138.rsh
-# c hs/test-examples/features/adapt_tuple.rsh
-# c hs/test-examples/features/tuple-parts.rsh
-# c hs/test-examples/features/no-tail-if.rsh
-# c hs/test-examples/keywords/interact_nonlocal.rsh
-# c hs/test-examples/features/pr-b4469.rsh
-# c hs/test-examples/features/pr-88b8c.rsh
-# c hs/test-examples/features/pr-149.rsh
-# c hs/test-examples/features/pr-e017b.rsh
-# c hs/test-examples/features/pr-202105281833.rsh
-# c hs/test-examples/features/map-mt.rsh
-# fc hs/test-examples/nl-verify-errs/map-dset.rsh
-# c hs/test-examples/features/lazy-ifs.rsh
-# c hs/test-examples/features/pr-20210603.rsh
-# c hs/test-examples/features/pr-3e579.rsh
-# c hs/test-examples/features/pr179.rsh
-c hs/test-examples/features/pr-671006.rsh
-fc hs/test-examples/non-features/pr-671006p.rsh
+# c hs/t/y/data.rsh
+# c hs/t/y/fork.rsh
+# c hs/t/n/Err_NoImpureCondInStep.rsh
+# c hs/t/y/array_length.rsh
+# c hs/t/y/lhs_array_spread.rsh
+# c hs/t/y/pr20210311.rsh
+# c hs/t/n/class_addr.rsh
+# c hs/t/y/pr1165.rsh
+# c hs/t/y/1202.rsh
+# c hs/t/y/rest-empty.rsh
+# c hs/t/y/rest-tuple.rsh
+# c hs/t/y/rest_parameter.rsh
+# c hs/t/y/pr138.rsh
+# c hs/t/y/adapt_tuple.rsh
+# c hs/t/y/tuple-parts.rsh
+# c hs/t/y/no-tail-if.rsh
+# c hs/t/n/interact_nonlocal.rsh
+# c hs/t/y/pr-b4469.rsh
+# c hs/t/y/pr-88b8c.rsh
+# c hs/t/y/pr-149.rsh
+# c hs/t/y/pr-e017b.rsh
+# c hs/t/y/pr-202105281833.rsh
+# c hs/t/y/map-mt.rsh
+# fc hs/t/n/map-dset.rsh
+# c hs/t/y/lazy-ifs.rsh
+# c hs/t/y/pr-20210603.rsh
+# c hs/t/y/pr-3e579.rsh
+# c hs/t/y/pr179.rsh
+c hs/t/y/pr-671006.rsh
+fc hs/t/n/pr-671006p.rsh
 
-# c hs/test-examples/features/big-d8cff.rsh
-# tealcount1 hs/test-examples/features big-d8cff
+# c hs/t/y/big-d8cff.rsh
+# tealcount1 hs/t/y big-d8cff
 
 # err Err_Pay_DoubleToken
 # err Err_Pay_DoubleNetworkToken

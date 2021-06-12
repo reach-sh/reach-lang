@@ -1,7 +1,6 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
-  , test_compileBundle_errs
   )
 where
 
@@ -10,14 +9,10 @@ import Reach.Eval.Error
 import Reach.Parser
 import Reach.Test.Util
 import Test.Hspec
-import Test.Tasty
-
-test_compileBundle_errs :: IO TestTree
-test_compileBundle_errs = goldenTests compileTestFail ".rsh" "nl-eval-errors"
 
 spec_examples_cover_EvalError :: Spec
 spec_examples_cover_EvalError =
-  mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
+  mkSpecExamplesCoverCtors p exceptions ".rsh" "n"
   where
     p = Proxy @EvalError
     exceptions =
@@ -47,7 +42,7 @@ spec_examples_cover_EvalError =
 
 spec_examples_cover_ParserError :: Spec
 spec_examples_cover_ParserError =
-  mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
+  mkSpecExamplesCoverCtors p exceptions ".rsh" "n"
   where
     p = Proxy @ParserError
     exceptions =

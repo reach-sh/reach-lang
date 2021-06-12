@@ -1,22 +1,18 @@
 module Reach.Test_Compiler
   ( test_examples
-  , test_language_non_features
-  , test_language_features
-  , test_language_keywords
+  , test_yes
+  , test_no
   )
 where
 
 import Reach.Test.Util
 import Test.Tasty
 
-test_language_features :: IO TestTree
-test_language_features = goldenTests compileTestSuccess ".rsh" "features"
+test_yes :: IO TestTree
+test_yes = goldenTests compileTestSuccess ".rsh" "y"
 
-test_language_non_features :: IO TestTree
-test_language_non_features = goldenTests compileTestFail ".rsh" "non-features"
-
-test_language_keywords :: IO TestTree
-test_language_keywords = goldenTests compileTestFail ".rsh" "keywords"
+test_no :: IO TestTree
+test_no = goldenTests compileTestFail ".rsh" "n"
 
 test_examples :: IO TestTree
 test_examples = goldenTests compileTestAny ".rsh" "../../examples/"
