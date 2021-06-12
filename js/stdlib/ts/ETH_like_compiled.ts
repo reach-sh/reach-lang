@@ -75,12 +75,12 @@ const digest = makeDigest((t:AnyETH_Ty, v:any) => {
 
 const V_Null: CBR_Null = null;
 
-const T_Null: ETH_Ty<CBR_Null, false> = {
+// null is represented in solidity as true
+const T_Null: ETH_Ty<CBR_Null, true> = {
   ...CBR.BT_Null,
   defaultValue: V_Null,
-  // null is represented in solidity as false
-  munge: (bv: CBR_Null): false => (void(bv), false),
-  unmunge: (nv: false): CBR_Null => (void(nv), V_Null),
+  munge: (bv: CBR_Null): true => (void(bv), true),
+  unmunge: (nv: true): CBR_Null => (void(nv), V_Null),
   paramType: 'bool',
 };
 

@@ -45,7 +45,7 @@ r () {
 
   # jb
 
-  # export REACH_DEBUG=1
+  export REACH_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
@@ -138,8 +138,8 @@ tealcount () {
 # c hs/t/y/pr-20210603.rsh
 # c hs/t/y/pr-3e579.rsh
 # c hs/t/y/pr179.rsh
-c hs/t/y/pr-671006.rsh
-fc hs/t/n/pr-671006p.rsh
+# c hs/t/y/pr-671006.rsh
+# fc hs/t/n/pr-671006p.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -176,7 +176,7 @@ fc hs/t/n/pr-671006p.rsh
 # r examples/map-rwrw # XXX
 # r examples/map-multi
 # r examples/map-big
-# r examples/maybe-send
+r examples/maybe-send
 # r examples/multiple-pr-case
 # r examples/multisig
 # r examples/nft-auction
@@ -212,6 +212,7 @@ fc hs/t/n/pr-671006p.rsh
 # r users/kwame20210311
 # r examples/raffle
 # r examples/rent-seeking
+r examples/pr-1cc66
 
 # (cd examples/abstract-simul && make build)
 

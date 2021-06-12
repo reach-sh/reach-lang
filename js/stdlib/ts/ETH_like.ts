@@ -639,7 +639,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       }
 
       const dhead = [shad, label, 'send', funcName, timeout_delay, 'SEND'];
-      debug([...dhead, 'ARGS', args]);
+      debug(...dhead, 'ARGS', args);
       const [ args_svs, args_msg ] = argsSplit(args, evt_cnt );
       const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
       // @ts-ignore XXX
@@ -650,20 +650,20 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // https://github.com/reach-sh/reach-lang/issues/134
       await getC();
 
-      debug([...dhead, 'START', arg]);
+      debug(...dhead, 'START', arg);
       const lastBlock = await getLastBlock();
       let block_send_attempt = lastBlock;
       let block_repeat_count = 0;
       while (!timeout_delay || lt(block_send_attempt, add(lastBlock, timeout_delay))) {
-        debug([...dhead, 'TRY']);
+        debug(...dhead, 'TRY');
         try {
-          debug([...dhead, 'ARG', arg, pay]);
+          debug(...dhead, 'ARG', arg, pay);
           await callC(dhead, funcName, arg, pay);
         } catch (e) {
           if ( ! soloSend ) {
-            debug([...dhead, `SKIPPING`, e]);
+            debug(...dhead, `SKIPPING`, e);
           } else {
-            debug([...dhead, `ERROR`, e.stack]);
+            debug(...dhead, `ERROR`, e.stack);
 
             // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
             await Timeout.set(1);
@@ -683,7 +683,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               console.log(arg);
               throw Error(`${dhead} REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
             }
-            debug([...dhead, `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt]);
+            debug(...dhead, `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt);
             continue;
           }
         }
@@ -695,7 +695,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // think that there is a timeout and then we'll wait forever for
       // the timeout message.
 
-      debug([...dhead, `FAIL/TIMEOUT`]);
+      debug(...dhead, `FAIL/TIMEOUT`);
       return {didTimeout: true};
     };
 
