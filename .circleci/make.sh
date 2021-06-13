@@ -7,7 +7,7 @@ for ep in ../examples/* ; do
   if [ -d "${ep}" ] ; then
     e=$(basename "${ep}")
     cat >>"${DEST}" <<END
-    - example:
+    - "example":
         name: "examples.${e}"
         which: "${e}"
         requires:
@@ -17,16 +17,10 @@ END
 done
 
 cat >>"${DEST}" <<END
-    - sink:
+    - "example-sink":
         context:
           - "circleci-on-slack"
         requires:
-          - "docs-render"
-          - "shellcheck"
-          - "build"
-          - "hs-test"
-          - "hs-check"
-          - "js-test"
 END
 for ep in ../examples/* ; do
   if [ -d "${ep}" ] ; then

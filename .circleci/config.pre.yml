@@ -114,7 +114,9 @@ commands:
             xz-utils \
             zlib1g-dev
           # Install stack
-          curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+          if ! [ -f ~/.local/bin/stack ] ; then
+            curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+          fi
           # Reset locale
           sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
                     && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
@@ -153,7 +155,7 @@ jobs:
         (cd docs-src && make render)
     - worksave:
         dir: docs
-    - record_status
+    - slack_fail
   "docs-deploy":
     executor: standard
     steps:
@@ -184,7 +186,7 @@ jobs:
     - shellcheck/install
     - run: |
         make sh-lint
-    - record_status
+    - slack_fail
   "build":
     executor:
       name: standard
@@ -218,7 +220,6 @@ jobs:
         docker save reachsh/runner:latest | gzip > bin/runner.tar.gz
     - worksave:
         dir: bin
-    - record_status
     - slack_fail
   "dockerhub-check":
     executor:
@@ -243,7 +244,7 @@ jobs:
           reachsh/devnet-cfx:0.1 \
           -c 'echo $REACH_GIT_HASH'
         ./scripts/docker-check.sh
-    - record_status
+    - slack_fail
   "hs-test":
     executor:
       name: standard
@@ -256,7 +257,7 @@ jobs:
         (cd hs && make hs-test-xml)
     - store_test_results:
         path: "hs/test-reports"
-    - record_status
+    - slack_fail
   "hs-check":
     executor: standard
     steps:
@@ -267,7 +268,7 @@ jobs:
         (cd hs && make hs-check)
     - store_artifacts:
         path: hs/stan.html
-    - record_status
+    - slack_fail
   "js-test":
     executor: standard
     steps:
@@ -279,7 +280,7 @@ jobs:
         - "hs-{{ .Revision }}"
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
-    - record_status
+    - slack_fail
   "example":
     parameters:
       which:
@@ -292,7 +293,7 @@ jobs:
     - run: |
         cd examples && ../.circleci/example.sh <<parameters.which>>
     - persist_status
-  "sink":
+  "example-sink":
     executor: standard
     steps:
     - checkout
@@ -325,6 +326,8 @@ workflows:
     jobs:
     # Docs
     - "docs-render"
+        context:
+        - "circleci-on-slack"
     - "docs-deploy":
         filters:
           branches:
@@ -335,7 +338,9 @@ workflows:
         # XXX Get rid of this context and use project variables to slim config
         - "circleci-on-slack"
     # Build-less checks
-    - "shellcheck"
+    - "shellcheck":
+        context:
+        - "circleci-on-slack"
     # XXX We turned this off... so I didn't copy it over
     # - "docker-lint"
     # Build
@@ -347,12 +352,18 @@ workflows:
     #    requires:
     #      - "build"
     - "hs-test":
+        context:
+        - "circleci-on-slack"
         requires:
           - "build"
     - "hs-check":
+        context:
+        - "circleci-on-slack"
         requires:
           - "build"
     - "js-test":
+        context:
+        - "circleci-on-slack"
         requires:
           - "build"
     # Sink and examples follow
