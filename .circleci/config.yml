@@ -13,7 +13,7 @@ jobs:
       - continuation/continue:
           configuration_path: ./.circleci/config.gen.yml
 
-setup: true
+setup: true 
 workflows:
   setup:
     jobs:
