@@ -1,4 +1,5 @@
 #!/bin/bash
+# XXX there is only one workspace!
 cd /tmp/workspace/record || exit
 FAIL=0
 FAIL_ETH=0
@@ -22,4 +23,4 @@ for i in * ; do
     ((FAIL_CFX++))
   fi
 done
-echo "export RECORD_MESSAGE='${CIRCLE_USER}: ${CIRCLE_SHA1}: ${TOTAL} ${FAIL} ${FAIL_ETH} ${FAIL_ALGO} ${FAIL_CFX}'"
+echo "export RECORD_MESSAGE='${CIRCLE_USERNAME}: ${CIRCLE_SHA1}: ${TOTAL} ${FAIL} ${FAIL_ETH} ${FAIL_ALGO} ${FAIL_CFX}'"
