@@ -34,10 +34,11 @@ commands:
       - run: |
           mkdir -p /tmp/workspace/<<parameters.dir>>
           cp -r <<parameters.dir>>/* /tmp/workspace/<<parameters.dir>>
+          tree /tmp/workspace
       - persist_to_workspace:
           root: /tmp/workspace/<<parameters.dir>>
           paths:
-            - <<parameters.dir>>
+            - ./*
   slack_fail:
     steps:
       - slack/notify:
