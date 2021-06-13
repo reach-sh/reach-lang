@@ -34,7 +34,7 @@ commands:
       - run: |
           mkdir -p /tmp/workspace/<<parameters.dir>>
           cp -r <<parameters.dir>>/* /tmp/workspace/<<parameters.dir>>
-          ls /tmp/workspace
+          ls /tmp/workspace/*
       - persist_to_workspace:
           root: /tmp/workspace/<<parameters.dir>>
           paths:
@@ -87,8 +87,9 @@ commands:
       - attach_workspace:
           at: /tmp/workspace/bin
       - run: |
-          mkdir -p ~/.local/bin
+          mkdir -p ~/.local
           cp -fr /tmp/workspace/bin ~/.local/bin
+          ls ~/.local/bin/*
           zcat /tmp/workspace/bin/runner.tar.gz | docker load
           source ./VERSION
           docker tag reachsh/runner:latest reachsh/runner:${VERSION}
