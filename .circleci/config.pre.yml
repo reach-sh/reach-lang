@@ -289,7 +289,7 @@ jobs:
     - checkout
     - restore_bin
     - run: |
-        cd examples && ../../.circleci/example.sh <<parameters.which>>
+        cd examples && ../.circleci/example.sh <<parameters.which>>
     - persist_status
   "sink":
     executor: standard
