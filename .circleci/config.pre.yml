@@ -50,6 +50,9 @@ commands:
           when: always
           command: |
             mkdir -p /tmp/workspace/record
+            if [ ! -f /tmp/status ] ; then
+              echo 'export STATUS="fail"' > /tmp/status
+            fi
             mv /tmp/status /tmp/workspace/record/${CIRCLE_JOB}
       - persist_to_workspace:
           root: /tmp/workspace/record
@@ -78,6 +81,7 @@ commands:
       - attach_workspace:
           at: /tmp/workspace/bin
       - run: |
+          mkdir -p ~/.local/bin
           cp -fr /tmp/workspace/bin ~/.local/bin
           zcat /tmp/workspace/bin/runner.tar.gz | docker load
           source ./VERSION
@@ -197,6 +201,7 @@ jobs:
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
         (cd hs && stack install)
+    # XXX We could actually fork here and do hs-test and hs-check
     - srd
     - run: |
         (cd js && make build)
@@ -287,6 +292,8 @@ jobs:
         at: /tmp/workspace/record
     - run: |
         ./.circleci/record.sh >> $BASH_ENV
+    # XXX make it so that record produces results in the format the
+    # store_test_results expects
     - slack/notify:
         event: always
         custom: |
@@ -314,6 +321,7 @@ workflows:
         requires:
         - "docs-render"
         context:
+        # XXX Get rid of this context and use project variables to slim config
         - "circleci-on-slack"
     # Build-less checks
     - "shellcheck"
