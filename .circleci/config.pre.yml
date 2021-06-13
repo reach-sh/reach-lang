@@ -34,7 +34,7 @@ commands:
       - run: |
           mkdir -p /tmp/workspace/<<parameters.dir>>
           cp -r <<parameters.dir>>/* /tmp/workspace/<<parameters.dir>>
-          tree /tmp/workspace
+          ls /tmp/workspace
       - persist_to_workspace:
           root: /tmp/workspace/<<parameters.dir>>
           paths:
@@ -170,6 +170,7 @@ jobs:
         git pull origin gh-pages
         git rm -r .
         cp -r /tmp/workspace/docs/* .
+        [ -f index.html ] || exit 1
         git add .
         # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
         git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
