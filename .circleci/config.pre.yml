@@ -1,0 +1,339 @@
+version: 2.1
+orbs:
+  jq: "circleci/jq@2.2.0"
+  shellcheck: "circleci/shellcheck@2.2.0"
+  slack: "circleci/slack@4.3.3"
+
+executors:
+  standard:
+    parameters:
+      image:
+        description: "docker image"
+        default: "cimg/base:stable-18.04"
+        type: string
+      class:
+        description: "resource class"
+        default: "small"
+        type: string
+    docker:
+    - image: <<parameters.image>>
+      auth:
+        username: $DOCKER_LOGIN
+        password: $DOCKER_PASSWORD
+    resource_class: <<parameters.class>>
+    environment:
+      LC_ALL: "en_US.UTF-8"
+
+commands:
+  worksave:
+    description: "Save directory to workspace"
+    parameters:
+      dir:
+        type: string
+    steps:
+      - run: |
+          mkdir -p /workspace/<<parameters.dir>>
+          cp -r <<parameters.dir>> /workspace/<<parameters.dir>>
+      - persist_to_workspace:
+          root: /workspace/<<parameters.dir>>
+          paths:
+            - <<parameters.dir>>
+  slack_fail:
+    steps:
+      - slack/notify:
+          branch_pattern: "master,gh-pages"
+          event: fail
+          template: basic_fail_1
+  persist_status:
+    steps:
+      - run:
+          when: always
+          command: |
+            mkdir -p /workspace/record
+            mv /tmp/status > /workspace/record/${CIRCLE_JOB}
+      - persist_to_workspace:
+          root: /workspace/record
+          paths:
+            - ${CIRCLE_JOB}
+  record_status:
+    steps:
+      - run:
+          when: on_fail
+          command: |
+            echo 'export STATUS="fail"' > /tmp/status
+      - run:
+          when: on_success
+          command: |
+              echo 'export STATUS="pass"' > /tmp/status
+      - persist_status
+  srd:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: false
+          version: '20.10.6'
+  restore_bin:
+    description: "Restore the build binaries"
+    steps:
+      - srd
+      - attach_workspace:
+          at: /workspace/bin
+      - run: |
+          cp -fr /workspace/bin ~/.local/bin
+          zcat /workspace/bin/runner.tar.gz | docker load
+          source ./VERSION
+          docker tag reachsh/runner:latest reachsh/runner:${VERSION}
+          docker tag reachsh/runner:latest reachsh/runner:${MAJOR}.${MINOR}
+          docker tag reachsh/runner:latest reachsh/runner:${MAJOR}
+  stack_deps:
+    description: "Install stack dependencies"
+    steps:
+      - run: |
+          # Install stack deps
+          sudo apt update && sudo apt install \
+            g++ \
+            gcc \
+            git \
+            gnupg \
+            libc6-dev \
+            libffi-dev \
+            libgmp-dev \
+            libtinfo-dev \
+            make \
+            netbase \
+            xz-utils \
+            zlib1g-dev
+          # Reset locale
+          sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
+                    && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
+                    && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
+                    && locale-gen en_US.UTF-8'
+          # Setup package
+          (cd hs && make package.yaml)
+      - restore_cache:
+         keys:
+          - "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+      - run: |
+          # Install deps
+          (cd hs && make hs-deps)
+      - save_cache:
+          key: "hs-3-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+          paths:
+          - ~/.stack
+          - "hs/.stack-work"
+
+jobs:
+  "docs-render":
+    executor: standard
+    steps:
+    - checkout
+    - run: |
+        sudo add-apt-repository -y ppa:plt/racket \
+          && sudo apt update \
+          && sudo apt install -y --no-install-recommends \
+            libcairo2 \
+            libfontconfig1 \
+            libjpeg62 \
+            libpangocairo-1.0 \
+            racket \
+            python3-setuptools
+        (cd pygments && sudo make install)
+        (cd docs-src && make render)
+    - worksave:
+        dir: docs
+    - record_status
+  "docs-deploy":
+    executor: standard
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /workspace/docs
+    - add_ssh_keys:
+        fingerprints:
+        - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
+    - run: |
+        git config user.email "devbot@reach.sh"
+        git config user.name "reachdevbot"
+        git fetch origin gh-pages
+        git checkout gh-pages
+        git pull origin gh-pages
+        git rm -r .
+        cp -r /workspace/docs/* .
+        git add .
+        # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
+        git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
+        git push origin gh-pages
+    - slack_fail
+  "shellcheck":
+    executor: standard
+    steps:
+    - checkout
+    - shellcheck/install
+    - run: |
+        make sh-lint
+    - record_status
+  "build":
+    executor:
+      name: standard
+      class: "medium"
+    steps:
+    - checkout
+    - run: |
+        mkdir -p ~/.local/bin
+        # Install mo
+        curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
+        # Install solc
+        curl -sSLo ~/.local/bin/solc \
+          https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux
+        # Install Z3
+        curl -sSLo /tmp/z3.zip \
+              https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
+          && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
+            | cat > ~/.local/bin/z3
+        # Install stack
+        curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
+        chmod +x ~/.local/bin/*"
+    - stack_deps
+    - run: |
+        (cd hs && make hs-clean)
+        (cd hs && make hs-build)
+        (cd hs && stack install)
+    - srd
+    - run: |
+        (cd js && make build)
+        (cd js/stdlib && make check)
+        cp -fr ~/.local/bin ./bin
+        docker save reachsh/runner:latest | gzip > bin/runner.tar.gz
+    - worksave:
+        dir: bin
+    - record_status
+    - slack_fail
+  "dockerhub-check":
+    executor:
+      name: standard
+      class: "medium"
+    steps:
+    - checkout
+    - restore_bin
+    - srd
+    - run: |
+        (cd scripts/ethereum-devnet && make build)
+        # XXX build algorand
+        docker pull reachsh/algorand-devnet:0.1
+        docker run \
+          --entrypoint /bin/sh \
+          reachsh/algorand-devnet:0.1 \
+          -c 'echo $REACH_GIT_HASH'
+        # XXX build cfx
+        docker pull reachsh/devnet-cfx:0.1
+        docker run \
+          --entrypoint /bin/sh \
+          reachsh/devnet-cfx:0.1 \
+          -c 'echo $REACH_GIT_HASH'
+        ./scripts/docker-check.sh
+    - record_status
+  "hs-test":
+    executor:
+      name: standard
+      class: "medium"
+    steps:
+    - checkout
+    - restore_bin
+    - stack_deps
+    - run: |
+        (cd hs && make hs-test-xml)
+    - store_test_results:
+        path: "hs/test-reports"
+    - record_status
+  "hs-check":
+    executor: standard
+    steps:
+    - checkout
+    - restore_bin
+    - stack_deps
+    - run: |
+        (cd hs && make hs-check)
+    - store_artifacts:
+        path: hs/stan.html
+    - record_status
+  "js-test":
+    executor: standard
+    steps:
+    - checkout
+    - restore_bin
+    # XXX This cache is not saved... so doesn't appear to do anything?
+    - restore_cache:
+        keys:
+        - "hs-{{ .Revision }}"
+    - run: |
+        (cd js/dockerized-tests && make clean-test && sbin/test.sh)
+    - record_status
+  "example":
+    parameters:
+      which:
+        description: "which example directory"
+        type: string
+    executor: standard
+    steps:
+    - checkout
+    - restore_bin
+    - run: |
+        cd examples && ../../.circleci/example.sh <<parameters.which>>
+    - persist_status
+  "sink":
+    executor: standard
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /workspace/record
+    - run: |
+        ./.circleci/record.sh >> $BASH_ENV
+    - slack/notify:
+        event: always
+        custom: |
+          {
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "${RECORD_MESSAGE}"
+                }
+              }
+            ]
+          }
+
+workflows:
+  test:
+    jobs:
+    # Docs
+    - "docs-render"
+    - "docs-deploy":
+        filters:
+          branches:
+            only: master
+        requires:
+        - "docs-render"
+        context:
+        - "circleci-on-slack"
+    # Build-less checks
+    - "shellcheck"
+    # XXX We turned this off... so I didn't copy it over
+    # - "docker-lint"
+    # Build
+    - "build":
+        context:
+        - "circleci-on-slack"
+    # XXX this doesn't actual work, so it's disabled
+    # - "dockerhub-check"
+    #    requires:
+    #      - "build"
+    - "hs-test":
+        requires:
+          - "build"
+    - "hs-check":
+        requires:
+          - "build"
+    - "js-test":
+        requires:
+          - "build"
+    # Sink and examples follow
