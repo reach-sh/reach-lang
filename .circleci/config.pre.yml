@@ -33,7 +33,7 @@ commands:
     steps:
       - run: |
           mkdir -p /tmp/workspace/<<parameters.dir>>
-          cp -r <<parameters.dir>> /tmp/workspace/<<parameters.dir>>
+          cp -r <<parameters.dir>>/* /tmp/workspace/<<parameters.dir>>
       - persist_to_workspace:
           root: /tmp/workspace/<<parameters.dir>>
           paths:
@@ -69,7 +69,12 @@ commands:
           command: |
               echo 'export STATUS="pass"' > /tmp/status
       - persist_status
-  srd:
+  srd_yes:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: '20.10.6'
+  srd_no:
     steps:
       - setup_remote_docker:
           docker_layer_caching: false
@@ -77,7 +82,7 @@ commands:
   restore_bin:
     description: "Restore the build binaries"
     steps:
-      - srd
+      - srd_no
       - attach_workspace:
           at: /tmp/workspace/bin
       - run: |
@@ -202,7 +207,7 @@ jobs:
         (cd hs && make hs-build)
         (cd hs && stack install)
     # XXX We could actually fork here and do hs-test and hs-check
-    - srd
+    - srd_yes
     - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
@@ -219,7 +224,7 @@ jobs:
     steps:
     - checkout
     - restore_bin
-    - srd
+    - srd_yes
     - run: |
         (cd scripts/ethereum-devnet && make build)
         # XXX build algorand
@@ -294,6 +299,9 @@ jobs:
         ./.circleci/record.sh >> $BASH_ENV
     # XXX make it so that record produces results in the format the
     # store_test_results expects
+    #   see: cd hs && make hs-test-xml
+    # XXX maybe example could use the same format?
+    # XXX see if there's an existing slack template that looks at those
     - slack/notify:
         event: always
         custom: |
