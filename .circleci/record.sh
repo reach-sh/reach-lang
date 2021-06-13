@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /workspace/record || exit
+cd /tmp/workspace/record || exit
 FAIL=0
 FAIL_ETH=0
 FAIL_ALGO=0

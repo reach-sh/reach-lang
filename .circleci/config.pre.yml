@@ -32,10 +32,10 @@ commands:
         type: string
     steps:
       - run: |
-          mkdir -p /workspace/<<parameters.dir>>
-          cp -r <<parameters.dir>> /workspace/<<parameters.dir>>
+          mkdir -p /tmp/workspace/<<parameters.dir>>
+          cp -r <<parameters.dir>> /tmp/workspace/<<parameters.dir>>
       - persist_to_workspace:
-          root: /workspace/<<parameters.dir>>
+          root: /tmp/workspace/<<parameters.dir>>
           paths:
             - <<parameters.dir>>
   slack_fail:
@@ -49,10 +49,10 @@ commands:
       - run:
           when: always
           command: |
-            mkdir -p /workspace/record
-            mv /tmp/status > /workspace/record/${CIRCLE_JOB}
+            mkdir -p /tmp/workspace/record
+            mv /tmp/status > /tmp/workspace/record/${CIRCLE_JOB}
       - persist_to_workspace:
-          root: /workspace/record
+          root: /tmp/workspace/record
           paths:
             - ${CIRCLE_JOB}
   record_status:
@@ -76,10 +76,10 @@ commands:
     steps:
       - srd
       - attach_workspace:
-          at: /workspace/bin
+          at: /tmp/workspace/bin
       - run: |
-          cp -fr /workspace/bin ~/.local/bin
-          zcat /workspace/bin/runner.tar.gz | docker load
+          cp -fr /tmp/workspace/bin ~/.local/bin
+          zcat /tmp/workspace/bin/runner.tar.gz | docker load
           source ./VERSION
           docker tag reachsh/runner:latest reachsh/runner:${VERSION}
           docker tag reachsh/runner:latest reachsh/runner:${MAJOR}.${MINOR}
@@ -146,7 +146,7 @@ jobs:
     steps:
     - checkout
     - attach_workspace:
-        at: /workspace/docs
+        at: /tmp/workspace/docs
     - add_ssh_keys:
         fingerprints:
         - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
@@ -157,7 +157,7 @@ jobs:
         git checkout gh-pages
         git pull origin gh-pages
         git rm -r .
-        cp -r /workspace/docs/* .
+        cp -r /tmp/workspace/docs/* .
         git add .
         # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
         git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
@@ -180,7 +180,7 @@ jobs:
     - run: |
         mkdir -p ~/.local/bin
         # Install mo
-        curl -sSLo ~/.local/bin/mo https://git.io/get-mo"
+        curl -sSLo ~/.local/bin/mo https://git.io/get-mo
         # Install solc
         curl -sSLo ~/.local/bin/solc \
           https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux
@@ -284,7 +284,7 @@ jobs:
     steps:
     - checkout
     - attach_workspace:
-        at: /workspace/record
+        at: /tmp/workspace/record
     - run: |
         ./.circleci/record.sh >> $BASH_ENV
     - slack/notify:
