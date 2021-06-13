@@ -54,7 +54,7 @@ commands:
       - persist_to_workspace:
           root: /tmp/workspace/record
           paths:
-            - ${CIRCLE_JOB}
+            - *
   record_status:
     steps:
       - run:
@@ -189,11 +189,11 @@ jobs:
               https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
           && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
             | cat > ~/.local/bin/z3
+        chmod +x ~/.local/bin/*
     - stack_deps
     - run: |
         # Install stack
         curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
-        chmod +x ~/.local/bin/*"
     - run: |
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
