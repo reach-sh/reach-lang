@@ -12,13 +12,13 @@ for i in * ; do
   if [ "x${STATUS}" = "xfail" ] ; then
     ((FAIL++))
   fi
-  if [ "x${ETH_STATUS}" = "xfail" ] ; then
+  if [[ "x${ETH_STATUS}" == xfail* ]] ; then
     ((FAIL_ETH++))
   fi
-  if [ "x${ALGO_STATUS}" = "xfail" ] ; then
+  if [[ "x${ALGO_STATUS}" == xfail* ]] ; then
     ((FAIL_ALGO++))
   fi
-  if [ "x${CFX_STATUS}" = "xfail" ] ; then
+  if [[ "x${CFX_STATUS}" == xfail* ]] ; then
     ((FAIL_CFX++))
   fi
 done

@@ -102,6 +102,8 @@ commands:
             netbase \
             xz-utils \
             zlib1g-dev
+          # Install stack
+          curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
           # Reset locale
           sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
                     && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
@@ -191,9 +193,6 @@ jobs:
             | cat > ~/.local/bin/z3
         chmod +x ~/.local/bin/*
     - stack_deps
-    - run: |
-        # Install stack
-        curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
     - run: |
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
