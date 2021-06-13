@@ -54,7 +54,7 @@ commands:
       - persist_to_workspace:
           root: /tmp/workspace/record
           paths:
-            - *
+            - ./*
   record_status:
     steps:
       - run:
