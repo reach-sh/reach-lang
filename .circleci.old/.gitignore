@@ -1,0 +1,9 @@
+.history
+
+*.hi
+*.o
+
+gather-examples
+rebuild
+
+config.yml.bak
