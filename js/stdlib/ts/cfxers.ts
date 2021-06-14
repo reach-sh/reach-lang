@@ -43,14 +43,21 @@ function booleanize(arg: any): boolean {
 function conform(args: any[], tys: ParamType[]): any[] {
   // XXX find a better way to do this stuff.
   args = unbn(args);
-  if (args.length !== tys.length) throw Error(`impossible: number of args does not match number of tys`);
-  for (const i in tys) {
-    if (tys[i].type === 'tuple') {
-      args[i] = conform(args[i], tys[i].components);
-    } else if (tys[i].type === 'bool') {
-      args[i] = booleanize(args[i]);
+  if (Array.isArray(args)) {
+    if (args.length !== tys.length) {
+      debug(`conform`, `err`, {args, tys});
+      throw Error(`impossible: number of args (${args.length}) does not match number of tys (${tys.length})`);
     }
-    // XXX handle more stuff
+    for (const i in tys) {
+      if (tys[i].type === 'tuple') {
+        args[i] = conform(args[i], tys[i].components);
+      } else if (tys[i].type === 'bool') {
+        args[i] = booleanize(args[i]);
+      } else {
+        // XXX handle more stuff
+        // debug(`conform untouched:`, args[i], tys[i])
+      }
+    }
   }
   return args;
 }
@@ -217,10 +224,11 @@ export class ContractFactory {
     // Note: this usage of `.call` here is because javascript is insane.
     // XXX 2021-06-07 Dan: This works for the cjs compilation target, but does it work for the other targets?
     // @ts-ignore
-    const receiptP = contract.constructor.call(...argsConformed)
-      .sendTransaction(txn)
-      .executed();
+    const resultP = contract.constructor.call(...argsConformed).sendTransaction(txn);
+    const receiptP = resultP.executed();
 
+    const result = await resultP;
+    debug(`deploy result`, result);
     return new Contract(undefined, abi, wallet, receiptP);
   }
   getDeployTransaction() {
