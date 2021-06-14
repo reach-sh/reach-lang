@@ -24,7 +24,7 @@ for i in * ; do
 done
 
 if (( FAIL > 0 )) ; then
-  SYM="X"
+  SYM="FAIL"
   MSG="${FAIL} of ${TOTAL} failed!"
   _helper () {
     m="$1"
@@ -37,7 +37,7 @@ if (( FAIL > 0 )) ; then
   _helper "ALGO" "${FAIL_ALGO}"
   _helper "CFX" "${FAIL_CFX}"
 else
-  SYM="O"
+  SYM="OKAY"
   MSG="${TOTAL} passed!"
 fi
-echo "export RECORD_MESSAGE='${SYM} ${CIRCLE_USERNAME} > Examples: ${MSG}'"
+echo "export RECORD_MESSAGE='${SYM} ${CIRCLE_USERNAME} > Examples: ${MSG} <${CIRCLE_BUILD_URL}|more...>'"
