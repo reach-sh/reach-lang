@@ -5,6 +5,8 @@ import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
+import { debug } from './shared_impl';
+import Timeout from 'await-timeout';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -249,8 +251,8 @@ export class Wallet {
 
   async sendTransaction(txn: any): Promise<{
     transactionHash: string,
-    wait: () => Promise<{transactionHash: string,
-  }>}> {
+    wait: () => Promise<{transactionHash: string}>
+  }> {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
@@ -259,17 +261,7 @@ export class Wallet {
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
-    const transactionHashP = this.provider.conflux.sendTransaction(txn);
-    const transactionHash = await transactionHashP;
-    return {
-      transactionHash,
-      wait: async () => {
-        // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
-        // @ts-ignore
-        await transactionHashP.executed();
-        return {transactionHash};
-      },
-    }
+    return _retryingSendTxn(this.provider, txn);
   }
 
   static createRandom(): Wallet {
@@ -281,4 +273,94 @@ export class Wallet {
     void(mnemonic);
     throw Error(`Account 'from mnemonic' not supported on Conflux, please use secret key`);
   }
+}
+
+// XXX This is nutty
+// Remember the last epoch that a given sender has sent
+// and don't try to send again until it is later than that epoch.
+// Note: requires addrs to be canonicalized first.
+const lastEpochSent: Record<string, number> = {};
+const epochWaitLock: Record<string, boolean> = {};
+
+// XXX implement a queue, maybe?
+function tryGetLock(obj: Record<string, boolean>, k: string): boolean {
+  if (!obj[k]) {
+    // XXX is this actually threadsafe?
+    obj[k] = true;
+    return true;
+  }
+  return false;
+}
+
+function releaseLock(obj: Record<string, boolean>, k: string): void {
+  obj[k] = false;
+}
+
+function getLastSentAt(addr: string): number {
+  return lastEpochSent[addr] || -1;
+}
+
+function updateSentAt(addr: string, epoch: number) {
+  lastEpochSent[addr] = Math.max(getLastSentAt(addr), epoch);
+}
+
+// Note: this relies on epochs moving on their own
+// If there's ever a devnet where this is not the case,
+// this will need to be adjusted.
+const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string): Promise<void> => {
+  while (!tryGetLock(epochWaitLock, addr)) {
+    // XXX fail after waiting too long?
+    await Timeout.set(50);
+  }
+  let current: number;
+  // XXX fail after waiting too long?
+  while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
+    await Timeout.set(50); // XXX revisit how long to wait?
+  }
+  updateSentAt(addr, current);
+  releaseLock(epochWaitLock, addr);
+}
+
+async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): Promise<{
+  transactionHash: string,
+  wait: () => Promise<{transactionHash: string}>,
+}> {
+  const max_tries = 2;
+  const addr = (txnOrig as any).from as string; // XXX typing
+  let err: Error|null = null;
+  let txnMut: any = {...txnOrig};
+  for (let tries = 1; tries <= max_tries; tries++) {
+    await waitUntilSendableEpoch(provider, addr);
+    if (err) {
+      // XXX is this still needed?
+      await Timeout.set(1000); // XXX shorten this?
+    }
+    try {
+      // Note: {...txn} because conflux is going to mutate it >=[
+      txnMut = {...txnOrig};
+      const transactionHashP = provider.conflux.sendTransaction(txnMut);
+      const transactionHash = await transactionHashP;
+      debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      updateSentAt(addr, txnMut.epochHeight);
+      return {
+        transactionHash,
+        wait: async () => {
+          // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
+          // @ts-ignore
+          await transactionHashP.executed();
+          return {transactionHash};
+        },
+      }
+    } catch (e) {
+      err = e;
+      debug({
+        message: `retrying sendTxn attempt failed`,
+        txnOrig, txnMut,
+        e, tries, max_tries
+      });
+      continue;
+    }
+  }
+  if (!err) throw Error(`impossible: no error to throw after ${max_tries} failed attempts.`);
+  throw err;
 }

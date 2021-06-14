@@ -1,3 +1,5 @@
+import type { EpochNumber } from "js-conflux-sdk";
+
 // XXX check if networkId is "correct"?
 export function address_cfxStandardize(addrC: string): string {
   const pieces = addrC.split(':');
@@ -11,3 +13,6 @@ export function address_cfxStandardize(addrC: string): string {
 
   return addrC.toUpperCase();
 }
+
+// TODO: 'latest_state' seems to work well; is there a better choice?
+export const defaultEpochTag: EpochNumber = 'latest_state';
