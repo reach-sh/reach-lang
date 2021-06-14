@@ -19,6 +19,7 @@ import Control.Monad.Reader
 import qualified Data.Map as M
 import Data.List (partition)
 import Reach.Util (impossible)
+import Data.Functor ((<&>))
 
 
 data BindingOrigin
@@ -125,7 +126,7 @@ instance PrettySubst SMTExpr where
   prettySubst = \case
     SMTModel bo -> return $ viaShow bo
     SMTProgram de -> prettySubst de
-    SMTSynth se -> prettySubst se
+    SMTSynth se -> prettySubst se <&> (\ s -> "<" <> s <> ">")
 
 instance Show SMTExpr where
   show = \case
@@ -160,18 +161,29 @@ prettySubstWith model' inlines' = do
     . flip runReaderT env'
     . prettySubst
 
+-- Don't inline tail so we can show final value of assertion variable
+-- Inline variables that are equal to variables
+-- Don't inline variables used many times
 instance PrettySubst [SMTLet] where
   prettySubst = \case
     [] -> return ""
     SMTLet _ dv lv Context se : tl -> do
       se' <- prettySubst se
       modelEnv <- asks pse_model_vals
-      case lv of
-        DLV_Eff ->
-          impossible "PrettySubst SMTLet: AC did not remove Eff bindings"
-        DLV_Let DVC_Once _ ->
-          prettySubstWith mempty (M.singleton dv se') <*> pure tl
-        DLV_Let DVC_Many _ -> do
+      let (isInlinable, inlineEnv') =
+            case (lv, null tl, se) of
+              (DLV_Eff, _, _) ->
+                impossible "PrettySubst [SMTLet]: AC did not remove Eff bindings"
+              (_, _, SMTProgram (DLE_Arg _ (DLA_Var _))) ->
+                (True, M.singleton dv se')
+              (DLV_Let DVC_Once _, False, _) ->
+                (True, M.singleton dv $ parens se')
+              (_, _, _) ->
+                (False, mempty)
+      case isInlinable of
+        True ->
+          prettySubstWith mempty inlineEnv' <*> pure tl
+        False -> do
           let wouldBe x = "  //    ^ would be " <> viaShow x
           let info = maybe "" wouldBe (M.lookup dv modelEnv)
           let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
@@ -201,7 +213,7 @@ instance PrettySubst SMTTrace where
     c_lets' <- prettySubst c_lets
     return $
       "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <> hardline <>
-      "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <> hardline <>
+      "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
       "  " <> pretty tk <> parens (pretty dv) <> ";" <> hardline
     where
       isWitness = \case

@@ -5,18 +5,19 @@ Verification failed:
   when ALL participants are honest
   of theorem: assert
   msg: "div by zero"
-  at ./t/n/div_by_zero.rsh:9:21:application
+  at ./div_by_zero.rsh:9:21:application
   at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
 
   // Violation Witness
 
-  const v18 = interact("A")."x"(UInt);
+  const v18 = "A".interact.x;
   //    ^ could = 0
           from: ./div_by_zero.rsh:6:17:application
 
+
   // Theorem Formalization
 
-  const v23 = v18 > 0 ;
+  const v23 = v18 > 0;
   //    ^ would be false
   assert(v23);
 
@@ -26,7 +27,7 @@ Verification failed:
   when ONLY "A" is honest
   of theorem: assert
   msg: "div by zero"
-  at ./t/n/div_by_zero.rsh:9:21:application
+  at ./div_by_zero.rsh:9:21:application
   at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
 
   (details omitted on repeat)

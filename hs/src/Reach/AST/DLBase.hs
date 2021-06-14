@@ -246,11 +246,11 @@ instance PrettySubst DLArg where
   prettySubst a = do
     env <- asks pse_inline
     case a of
-      DLA_Var v -> return $ maybe (viaShow v) parens (M.lookup v env)
+      DLA_Var v -> return $ fromMaybe (viaShow v) (M.lookup v env)
       DLA_Constant c -> return $ pretty c
       DLA_Literal c -> return $ pretty c
-      DLA_Interact who m t ->
-        return $ "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
+      DLA_Interact who m _ ->
+        return $ pretty who <> ".interact." <> pretty m
 
 class CanDupe a where
   canDupe :: a -> Bool
@@ -471,7 +471,7 @@ instance PrettySubst DLExpr where
     DLE_PrimOp _ o [a, b] -> do
       a' <- prettySubst a
       b' <- prettySubst b
-      return $ hsep [a', pretty o, b']
+      return $ a' <+> pretty o <+> b'
     DLE_PrimOp _ o as -> do
       as' <- render_dasM as
       return $ pretty o <> parens as'
@@ -496,7 +496,7 @@ instance PrettySubst DLExpr where
       return $ a' <> "." <> pretty f
     DLE_Interact _ _ who m _ as -> do
       as' <- render_dasM as
-      return $ "interact(" <> render_sp who <> ")." <> viaShow m <> parens as'
+      return $ pretty who <> ".interact." <> pretty m <> parens as'
     DLE_Digest _ as -> do
       as' <- render_dasM as
       return $ "digest" <> parens as'
