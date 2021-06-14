@@ -413,7 +413,7 @@ On Algorand, provider is an object:
 {
   ledger: string,
   algodClient: algosdk.Algodv2,
-  indexerClient: algosdk.Indexer,
+  indexer: algosdk.Indexer,
 }
 }
 
