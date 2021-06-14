@@ -80,21 +80,6 @@ skipCfx =
   [ "tut-7-rpc" -- TODO: test rpc w/ cfx
   , "tut-8" -- TODO: add cfx to tut-8
 
-  -- Tx with same nonce already inserted.
-  , "multiple-pr-case"
-  , "popularity-contest"
-  , "raffle"
-  , "rent-seeking"
-  , "workshop-fomo"
-  , "workshop-fomo-generalized"
-
-  -- data: '"tx already exist"'
-  , "nft-auction"
-  , "workshop-trust-fund"
-
-  -- Transaction ${txn} is discarded due to a too stale nonce
-  , "nft-dumb"
-
   -- Conflux.sendTransaction: ParseError `data` 'does not match "hex"'
   , "atomic-swap"
   , "atomic-swap-auction"
@@ -107,25 +92,31 @@ skipCfx =
   , "view-map"
   , "view-maybe"
   , "view-steps"
-
-  -- Map stuff. "Invalid parameters: tx"
-  , "map-any"
-  , "map-big"
-  , "map-multi"
-  , "map-rwrw"
-  , "map-sender"
-  , "map-vary"
+  , "nft-dumb"  -- expected address, got null
 
   -- expected Some, got None
   , "zbeq"
+
+  -- endless loop
+  , "map-rwrw"
+  , "map-vary"
 
   -- nondeterministic failures
   -- RPCError: Error processing request: Filter error: Block ${blockId} is not executed yet
   -- index.mjs > B > recv > Provider.getLogs > Conflux.getLogs
   -- https://app.circleci.com/pipelines/github/reach-sh/reach-lang/2590/workflows/617f4fd2-6125-47e6-b1e8-e1bd32fd5671/jobs/19113
   , "ttt"
+  , "workshop-fomo"
 
   ]
+
+-- CFX: not skipped, passes CI, but potentially wrong output:
+
+-- "workshop-trust-fund"
+-- ^ Begin demo with funder delay(0) and receiver delay(0).
+-- ... Funder has received the funds
+-- (did the epochs go by too fast for receiver to be able to receive?)
+
 
 
 skipExample :: [FilePath]
