@@ -5,8 +5,8 @@ import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
-import { debug } from './shared_impl';
 import Timeout from 'await-timeout';
+// import { debug } from './shared_impl';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -114,6 +114,7 @@ export class Contract implements IContract {
         return providers.ethifyOkReceipt(receipt);
       },
     }
+    this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
         if (item.name[0] !== '_' && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
@@ -121,23 +122,32 @@ export class Contract implements IContract {
         }
       }
     }
-    this.interface = new ethers.utils.Interface(this._abi);
   }
 
   _makeHandler(abiFn: any): any {
+    const iface = this.interface;
+    const fname: string = abiFn.name;
     const from = this._wallet.getAddress();
     const self = this;
-    // return (await getC())[funcName](arg, { value, gasLimit });
-    // const r_fn = await callC(funcName, arg, value);
-    // r_fn.wait()
-    // const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-    return async (arg: any, txn: any) => {
-      arg = unbn(arg);
+    // XXX this should always be safe but maybe error handling around it just in case?
+    // XXX handle the case where the same method name can have multiple input sizes/types?
+    const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
+    return async (...args: any) => {
+      let txn: {from?: string, value?: string} = {};
+      if (args.length === inputs.length + 1) {
+        txn = unbn(args.pop());
+      }
+
+      args = unbn(args);
+      const argsConformed = conform(args, inputs);
       // XXX user-configurable gas limit
       // const gas = '50000';
-      txn = {from, ...txn, value: txn.value.toString()};
+      txn = {from, ...txn, value: (txn.value || '0').toString()};
+
+      // Note: this usage of `.call` here is because javascript is insane.
+      // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
       // @ts-ignore
-      const transactionReceipt = await self._contract[abiFn.name](arg).sendTransaction(txn).executed();
+      const transactionReceipt = await self._contract[fname].call(...argsConformed).sendTransaction(txn).executed();
       const { transactionHash } = transactionReceipt;
       return {
         // XXX not sure what the distinction is supposed to be here
@@ -170,11 +180,13 @@ export class ContractFactory {
   // Should it wait?
   async deploy(...args: any): Promise<Contract> {
     // Note: can't bind keyword "interface"
-    const {abi, bytecode, interface: iface, wallet} = this;
+    const {abi, bytecode: bcode, interface: iface, wallet} = this;
+    const bytecode = bcode.slice(0, 2) === '0x' || bcode === '' ? bcode : '0x' + bcode;
     wallet._requireConnected();
     if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
     const {conflux} = wallet.provider;
 
+    // XXX reduce duplication with _makeHandler
     let txnOverrides: any = {};
 
     if (args.length === iface.deploy.inputs.length + 1) {
@@ -256,7 +268,7 @@ export class Wallet {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
-    txn = {from, ...txn, value: txn.value.toString()};
+    txn = {from, ...txn, value: (txn.value || '0').toString()};
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
@@ -340,7 +352,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       txnMut = {...txnOrig};
       const transactionHashP = provider.conflux.sendTransaction(txnMut);
       const transactionHash = await transactionHashP;
-      debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      // debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
       updateSentAt(addr, txnMut.epochHeight);
       return {
         transactionHash,
@@ -353,11 +365,11 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       }
     } catch (e) {
       err = e;
-      debug({
-        message: `retrying sendTxn attempt failed`,
-        txnOrig, txnMut,
-        e, tries, max_tries
-      });
+      // debug({
+      //   message: `retrying sendTxn attempt failed`,
+      //   txnOrig, txnMut,
+      //   e, tries, max_tries
+      // });
       continue;
     }
   }
