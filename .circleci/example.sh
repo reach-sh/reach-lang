@@ -1,11 +1,21 @@
 #!/bin/bash
 WHICH="$1"
 
+banner () {
+  echo
+  echo "############"
+  echo "$*"
+  echo "############"
+  echo
+}
+
 echo > /tmp/status
 STATUS="pass"
 
 BUILD_STATUS="fail"
+banner Cleaning
 ./one.sh clean "${WHICH}"
+banner Building
 if ./one.sh build "${WHICH}" ; then
   BUILD_STATUS="pass"
 fi
@@ -16,9 +26,10 @@ fi
 for CONN in ETH ALGO CFX ; do
   THIS_STATUS="fail"
   if [ "x${BUILD_STATUS}" = "xpass" ] ; then
-    export REACH_CONNECTOR_MODE=${CONN}
+    export REACH_CONNECTOR_MODE="${CONN}"
     export REACH_DEBUG=1
-    timeout $((5 * 60)) ./one.sh run "${WHICH}"
+    banner Running w/ "${CONN}"
+    timeout $((2 * 60)) ./one.sh run "${WHICH}"
     EXIT=$?
     if [ $EXIT -eq 124 ] ; then
       echo Timeout

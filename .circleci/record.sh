@@ -1,5 +1,4 @@
 #!/bin/bash
-# XXX there is only one workspace!
 cd /tmp/workspace/record || exit
 FAIL=0
 FAIL_ETH=0
@@ -23,4 +22,22 @@ for i in * ; do
     ((FAIL_CFX++))
   fi
 done
-echo "export RECORD_MESSAGE='${CIRCLE_USERNAME}: ${CIRCLE_SHA1}: ${TOTAL} ${FAIL} ${FAIL_ETH} ${FAIL_ALGO} ${FAIL_CFX}'"
+
+if (( FAIL > 0 )) ; then
+  SYM="X"
+  MSG="${FAIL} of ${TOTAL} failed!"
+  _helper () {
+    m="$1"
+    c="$2"
+    if (( c > 0 )) ; then
+      MSG="${MSG} $m(${c})"
+    fi
+  }
+  _helper "ETH" "${FAIL_ETH}"
+  _helper "ALGO" "${FAIL_ALGO}"
+  _helper "CFX" "${FAIL_CFX}"
+else
+  SYM="O"
+  MSG="${TOTAL} passed!"
+fi
+echo "export RECORD_MESSAGE='${SYM} ${CIRCLE_USERNAME} > Examples: ${MSG}'"
