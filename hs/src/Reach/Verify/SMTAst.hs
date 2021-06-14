@@ -18,6 +18,7 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as M
 import Data.List (partition)
+import Reach.Util (impossible)
 
 
 data BindingOrigin
@@ -150,39 +151,57 @@ instance Ord SMTLet where
   compare (SMTLet _ ldv _ _ _) (SMTLet _ rdv _ _ _) = compare ldv rdv
   compare _ _ = LT
 
-instance PrettySubst SMTLet where
+prettySubstWith :: (MonadReader PrettySubstEnv m, PrettySubst a) => M.Map DLVar Doc -> M.Map DLVar Doc -> m (a -> Doc)
+prettySubstWith model' inlines' = do
+  model <- asks pse_model_vals
+  inlines <- asks pse_inline
+  let env' = PrettySubstEnv (M.union model model') (M.union inlines inlines')
+  return $ runIdentity
+    . flip runReaderT env'
+    . prettySubst
+
+instance PrettySubst [SMTLet] where
   prettySubst = \case
-    SMTLet _ dv _ Context se -> do
+    [] -> return ""
+    SMTLet _ dv lv Context se : tl -> do
       se' <- prettySubst se
-      env <- ask
-      let wouldBe x = "  //    ^ would be " <> viaShow x
-      let info = maybe "" wouldBe (M.lookup dv env)
-      return $ "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
-    SMTLet at dv _ Witness se -> do
-      env <- ask
+      modelEnv <- asks pse_model_vals
+      case lv of
+        DLV_Eff ->
+          impossible "PrettySubst SMTLet: AC did not remove Eff bindings"
+        DLV_Let DVC_Once _ ->
+          prettySubstWith mempty (M.singleton dv se') <*> pure tl
+        DLV_Let DVC_Many _ -> do
+          let wouldBe x = "  //    ^ would be " <> viaShow x
+          let info = maybe "" wouldBe (M.lookup dv modelEnv)
+          let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
+          tl' <- prettySubst tl
+          return $ msg <> hardline <> tl'
+    SMTLet at dv _ Witness se : tl -> do
+      modelEnv <- asks pse_model_vals
       se' <- prettySubst se
       let wouldBe x = "  //    ^ could = " <> x <> hardline <> "          from:" <+> pretty at
-      let info = maybe "" wouldBe (M.lookup dv env)
-      return $ "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
-    SMTNop _ -> return ""
+      let info = maybe "" wouldBe (M.lookup dv modelEnv)
+      let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
+      tl' <- prettySubst tl
+      return $ msg <> hardline <> tl'
+    SMTNop _ : tl -> prettySubst tl
 
 data SMTTrace
   = SMTTrace [SMTLet] TheoremKind DLVar
   deriving (Eq, Show)
 
 instance Pretty SMTTrace where
-  pretty = runIdentity . flip runReaderT mempty . prettySubst
+  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
 
 instance PrettySubst SMTTrace where
   prettySubst (SMTTrace lets tk dv) = do
     let (w_lets, c_lets) = partition isWitness lets
-    w_lets' <- mapM prettySubst w_lets
-    c_lets' <- mapM prettySubst c_lets
+    w_lets' <- prettySubst w_lets
+    c_lets' <- prettySubst c_lets
     return $
-      "  // Violation Witness" <> hardline <> hardline <>
-      concatWith (surround hardline) w_lets' <> hardline <> hardline <>
-      "  // Theorem Formalization" <> hardline <> hardline <>
-      concatWith (surround hardline) c_lets' <> hardline <>
+      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <> hardline <>
+      "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <> hardline <>
       "  " <> pretty tk <> parens (pretty dv) <> ";" <> hardline
     where
       isWitness = \case
