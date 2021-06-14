@@ -6,7 +6,7 @@ const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
 import Timeout from 'await-timeout';
-// import { debug } from './shared_impl';
+import { debug } from './shared_impl';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -133,30 +133,38 @@ export class Contract implements IContract {
     // XXX handle the case where the same method name can have multiple input sizes/types?
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
     return async (...args: any) => {
-      let txn: {from?: string, value?: string} = {};
+      debug(`cfxers:handler`, fname, 'call', {args});
+      let txn: {from?: string, value?: string}|null = null;
       if (args.length === inputs.length + 1) {
         txn = unbn(args.pop());
+        txn = txn && {from, ...txn, value: (txn.value || '0').toString()};
       }
-
       args = unbn(args);
       const argsConformed = conform(args, inputs);
-      // XXX user-configurable gas limit
-      // const gas = '50000';
-      txn = {from, ...txn, value: (txn.value || '0').toString()};
 
-      // Note: this usage of `.call` here is because javascript is insane.
-      // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
-      // @ts-ignore
-      const transactionReceipt = await self._contract[fname].call(...argsConformed).sendTransaction(txn).executed();
-      const { transactionHash } = transactionReceipt;
-      return {
-        // XXX not sure what the distinction is supposed to be here
-        wait: async () => {
-          return {
-            transactionHash
-          };
-        }
-      };
+      // XXX using presence of txn to decide this is sketchy
+      // should instead figure out from ABI if this is a view-only fn?
+      if (txn) {
+        // Note: this usage of `.call` here is because javascript is insane.
+        // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
+        // @ts-ignore
+        const transactionReceipt = await self._contract[fname].call(...argsConformed).sendTransaction(txn).executed();
+        debug(`cfxers:handler`, fname, 'receipt');
+        debug(transactionReceipt);
+        const { transactionHash } = transactionReceipt;
+        return {
+          // XXX not sure what the distinction is supposed to be here
+          wait: async () => {
+            debug('cfxers:handler', fname, 'wait');
+            return {
+              transactionHash
+            };
+          }
+        };
+      } else {
+        // @ts-ignore
+        return await self._contract[fname].call(...argsConformed);
+      }
     }
   }
 }

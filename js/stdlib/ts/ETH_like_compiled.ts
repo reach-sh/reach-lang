@@ -108,12 +108,29 @@ const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
 };
 
+// XXX figure out how to move this into cfxers instead of here?
+// Conflux seems to sometimes turn uint8array into an array of bigint.
+// This is silly and needs to be undone or else hexlify will die.
+function unBigInt<T>(x: T): number[]|T {
+  if (Array.isArray(x)) {
+    return x.map((n: any): number => {
+      if (typeof n === 'bigint') {
+        if (n >= 256) throw Error(`unBigInt expected n < 256`);
+        return Number(n);
+      }
+      return n;
+    });
+  } else {
+    return x;
+  }
+}
+
 const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
   const me = {
     ...CBR.BT_Bytes(len),
     defaultValue: ''.padEnd(len, '\0'),
     munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
-    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(nv))),
+    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(unBigInt(nv)))),
     paramType: `uint8[${len}]`,
   };
   return me;

@@ -3,6 +3,7 @@ import cfxsdk from 'js-conflux-sdk';
 import type { ETH_Ty } from './ETH_like_interfaces';
 import buffer from 'buffer';
 import { address_cfxStandardize } from './CFX_util';
+// import { debug } from './shared_impl';
 
 const { Buffer } = buffer;
 
@@ -45,6 +46,7 @@ export const T_Address: ETH_Ty<string, string> = {
     if (uobj.address) {
       return T_Address.canonicalize(uobj.address);
     }
+    console.log({uv, ty: typeof uv}); // XXX DELETEME
     throw Error(`TODO: canonicalize non-string addr`);
   },
   defaultValue: 'XXX', // XXX
