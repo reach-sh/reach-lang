@@ -50,21 +50,21 @@ hs-build: stack
 	stack build --fast
 
 .PHONY: hs-test
-hs-test: stack
+hs-test: hs-build
 	stack test --fast --test-arguments '+RTS -N -RTS'
 
 .PHONY: hs-test-xml
-hs-test-xml: stack
+hs-test-xml: hs-build
 	mkdir -p test-reports
 	stack test --fast --test-arguments '--xml=test-reports/junit.xml'
 
 .PHONY: hs-test-html
-hs-test-html: stack
+hs-test-html: hs-build
 	mkdir -p test-reports
 	stack test --fast --test-arguments '--html=test-reports/results.html'
 
 .PHONY: hs-test-accept
-hs-test-accept: stack
+hs-test-accept: hs-build
 	stack test --fast --test-arguments '+RTS -N -RTS --accept'
 
 .PHONY: hs-deps
@@ -83,7 +83,7 @@ hs-deps: stack
 	stack build stan
 
 .PHONY: hs-doc
-hs-doc: stack
+hs-doc: hs-build
 	stack haddock --fast
 
 .PHONY: hs-format
