@@ -122,7 +122,8 @@ jobs:
             python3-setuptools
         (cd pygments && sudo make install)
         (cd docs-src && make render)
-        cp -fr docs /tmp/workspace
+        mkdir -p /tmp/workspace/
+        cp -fr docs /tmp/workspace/
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
