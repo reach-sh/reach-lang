@@ -612,7 +612,7 @@ verify1 at mf tk se mmsg = smtNewScope $ do
 pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe SMTLet -> App ()
 pathAddUnbound_v mdv at_dv v t bo ml = do
   let l = case (ml, mdv) of
-        (Nothing, Just dv) -> Just $ SMTLet at_dv dv (DLV_Let DVC_Once dv) Context (SMTModel bo)
+        (Nothing, Just dv) -> Just $ SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness (SMTModel bo)
         (ow, _) -> ow
   smtDeclare_v v t l
 
@@ -621,7 +621,7 @@ pathAddUnbound _ Nothing _ _ = mempty
 pathAddUnbound at_dv (Just dv) bo msmte = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
-  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Context =<< msmte
+  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness =<< msmte
   pathAddUnbound_v (Just dv) at_dv v t bo smlet
 
 pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr-> App ()
@@ -883,6 +883,7 @@ smt_la at_de dla = do
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> App ()
 smt_e at_dv mdv de = do
   case de of
+    DLE_Arg at (DLA_Interact _ _ _) -> unbound at
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible _ _ ->

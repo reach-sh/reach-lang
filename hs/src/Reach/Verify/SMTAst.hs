@@ -175,25 +175,19 @@ instance Pretty SMTTrace where
 
 instance PrettySubst SMTTrace where
   prettySubst (SMTTrace lets tk dv) = do
-    let (inlinable, others) = partition isWitness lets
-    inlinable' <- mapM (prettySubst . toWitness) inlinable
-    lets' <- mapM prettySubst others
+    let (w_lets, c_lets) = partition isWitness lets
+    w_lets' <- mapM prettySubst w_lets
+    c_lets' <- mapM prettySubst c_lets
     return $
       "  // Violation Witness" <> hardline <> hardline <>
-      concatWith (surround hardline) inlinable' <> hardline <> hardline <>
+      concatWith (surround hardline) w_lets' <> hardline <> hardline <>
       "  // Theorem Formalization" <> hardline <> hardline <>
-      concatWith (surround hardline) lets' <> hardline <>
+      concatWith (surround hardline) c_lets' <> hardline <>
       "  " <> pretty tk <> parens (pretty dv) <> ";" <> hardline
     where
-      -- xxx nail down how to get witness variables
       isWitness = \case
-        SMTLet _ _ _ _ (SMTProgram (DLE_Arg _ DLA_Var {})) -> False
-        SMTLet _ _ _ _ (SMTProgram DLE_Arg {}) -> True
-        SMTLet _ _ _ _ (SMTProgram e) -> not $ isPure e
+        SMTLet _ _ _ Witness _ -> True
         _ -> False
-      toWitness = \case
-        SMTLet a b c _ e -> SMTLet a b c Witness e
-        ow -> ow
 
 data SMTVal
   = SMV_Bool Bool
