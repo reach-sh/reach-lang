@@ -188,6 +188,7 @@ jobs:
     - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
+        mkdir -p /tmp/workspace/docker
         docker save reachsh/runner:latest | gzip > /tmp/workspace/docker/runner.tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
