@@ -149,7 +149,11 @@ let examples =
       ]
     }
   , { mapKey = "nft-dumb"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "nim"
     , mapValue =
@@ -354,19 +358,35 @@ let examples =
       ]
     }
   , { mapKey = "view-bytes"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "view-fun"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "view-map"
     , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
     }
   , { mapKey = "view-maybe"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "view-steps"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   , { mapKey = "webpack-5"
     , mapValue =
@@ -410,7 +430,11 @@ let examples =
       ]
     }
   , { mapKey = "zbeq"
-    , mapValue = [ < ALGO | CFX | ETH >.ETH, < ALGO | CFX | ETH >.ALGO ]
+    , mapValue =
+      [ < ALGO | CFX | ETH >.ETH
+      , < ALGO | CFX | ETH >.ALGO
+      , < ALGO | CFX | ETH >.CFX
+      ]
     }
   ]
 

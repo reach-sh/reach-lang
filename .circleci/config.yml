@@ -3520,6 +3520,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run nft-dumb with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run nft-dumb
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run nft-dumb with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -7852,6 +7860,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-bytes with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-bytes
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-bytes with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -7979,6 +7995,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-fun with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-fun
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-fun with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -8236,6 +8260,14 @@ jobs:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-maybe with ETH"
         no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-maybe
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-maybe with CFX"
+        no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
         event: fail
@@ -8363,6 +8395,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: "Run view-steps with ETH"
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run view-steps
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: "Run view-steps with CFX"
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"
@@ -9427,6 +9467,14 @@ jobs:
         environment:
           LC_ALL: "en_US.UTF-8"
         name: Run zbeq with ETH
+        no_output_timeout: 10m
+    - run:
+        command: |
+             cd examples && \
+               REACH_CONNECTOR_MODE=CFX REACH_DEBUG=1 ./one.sh run zbeq
+        environment:
+          LC_ALL: "en_US.UTF-8"
+        name: Run zbeq with CFX
         no_output_timeout: 10m
     - slack/notify:
         branch_pattern: "master,gh-pages"

@@ -80,22 +80,14 @@ skipCfx =
   [ "tut-7-rpc" -- TODO: test rpc w/ cfx
   , "tut-8" -- TODO: add cfx to tut-8
 
-  -- Conflux.sendTransaction: ParseError `data` 'does not match "hex"'
+  -- RPCError: Can not estimate: transaction execution failed, all gas will be charged (execution error: VmError(StackUnderflow { instruction: "BLOCKHASH", wanted: 1, on_stack: 0 }))
   , "atomic-swap"
   , "atomic-swap-auction"
   , "remote"
   , "weird-swap"
 
   -- View stuff. "Error: null"
-  , "view-bytes"
-  , "view-fun"
   , "view-map"
-  , "view-maybe"
-  , "view-steps"
-  , "nft-dumb"  -- expected address, got null
-
-  -- expected Some, got None
-  , "zbeq"
 
   -- endless loop
   , "map-rwrw"
