@@ -25,52 +25,21 @@ executors:
       LC_ALL: "en_US.UTF-8"
 
 commands:
-  worksave:
-    description: "Save directory to workspace"
-    parameters:
-      dir:
-        type: string
+  workattach:
     steps:
-      - run: |
-          mkdir -p /tmp/workspace/<<parameters.dir>>
-          cp -r <<parameters.dir>>/* /tmp/workspace/<<parameters.dir>>
-          ls /tmp/workspace/*
-      - persist_to_workspace:
-          root: /tmp/workspace/<<parameters.dir>>
-          paths:
-            - ./*
+      - attach_workspace:
+          at: /tmp/workspace
   slack_fail:
     steps:
       - slack/notify:
-          branch_pattern: "master,gh-pages"
+          # XXX branch_pattern: "master,gh-pages"
           event: fail
-          # XXX use custom template that it tighter
-          template: basic_fail_1
-  persist_status:
-    steps:
-      - run:
-          when: always
-          command: |
-            mkdir -p /tmp/workspace/record
-            if [ ! -f /tmp/status ] ; then
-              echo 'export STATUS="fail"' > /tmp/status
-            fi
-            mv /tmp/status /tmp/workspace/record/${CIRCLE_JOB}
-      - persist_to_workspace:
-          root: /tmp/workspace/record
-          paths:
-            - ./*
-  record_status:
-    steps:
-      - run:
-          when: on_fail
-          command: |
-            echo 'export STATUS="fail"' > /tmp/status
-      - run:
-          when: on_success
-          command: |
-              echo 'export STATUS="pass"' > /tmp/status
-      - persist_status
+          custom: |
+            { "blocks": [
+                { "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "X ${CIRCLE_USERNAME} > [${CIRCLE_JOB}](${CIRCLE_BUILD_URL})" }}]}
   srd_yes:
     steps:
       - setup_remote_docker:
@@ -84,14 +53,13 @@ commands:
   restore_bin:
     description: "Restore the build binaries"
     steps:
+      - workattach
       - srd_no
-      - attach_workspace:
-          at: /tmp/workspace/bin
       - run: |
           mkdir -p ~/.local
-          cp -fr /tmp/workspace/bin ~/.local/bin
+          ln -sf /tmp/workspace/bin ~/.local/bin
           ls ~/.local/bin/*
-          zcat /tmp/workspace/bin/runner.tar.gz | docker load
+          zcat /tmp/workspace/docker/runner.tar.gz | docker load
           source ./VERSION
           docker tag reachsh/runner:latest reachsh/runner:${VERSION}
           docker tag reachsh/runner:latest reachsh/runner:${MAJOR}.${MINOR}
@@ -154,15 +122,17 @@ jobs:
             python3-setuptools
         (cd pygments && sudo make install)
         (cd docs-src && make render)
-    - worksave:
-        dir: docs
+        cp -fr docs /tmp/workspace
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docs
     - slack_fail
   "docs-deploy":
     executor: standard
     steps:
     - checkout
-    - attach_workspace:
-        at: /tmp/workspace/docs
+    - workattach
     - add_ssh_keys:
         fingerprints:
         - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
@@ -180,7 +150,7 @@ jobs:
         git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
         git push origin gh-pages
     - slack_fail
-  "shellcheck":
+  "sh-check":
     executor: standard
     steps:
     - checkout
@@ -195,7 +165,8 @@ jobs:
     steps:
     - checkout
     - run: |
-        mkdir -p ~/.local/bin
+        mkdir -p ~/.local /tmp/workspace/bin
+        ln -sf /tmp/workspace/bin ~/.local/bin
         # Install mo
         curl -sSLo ~/.local/bin/mo https://git.io/get-mo
         # Install solc
@@ -217,34 +188,12 @@ jobs:
     - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
-        cp -fr ~/.local/bin ./bin
-        docker save reachsh/runner:latest | gzip > bin/runner.tar.gz
-    - worksave:
-        dir: bin
-    - slack_fail
-  "dockerhub-check":
-    executor:
-      name: standard
-      class: "medium"
-    steps:
-    - checkout
-    - restore_bin
-    - srd_yes
-    - run: |
-        (cd scripts/ethereum-devnet && make build)
-        # XXX build algorand
-        docker pull reachsh/algorand-devnet:0.1
-        docker run \
-          --entrypoint /bin/sh \
-          reachsh/algorand-devnet:0.1 \
-          -c 'echo $REACH_GIT_HASH'
-        # XXX build cfx
-        docker pull reachsh/devnet-cfx:0.1
-        docker run \
-          --entrypoint /bin/sh \
-          reachsh/devnet-cfx:0.1 \
-          -c 'echo $REACH_GIT_HASH'
-        ./scripts/docker-check.sh
+        docker save reachsh/runner:latest | gzip > /tmp/workspace/docker/runner.tar.gz
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - bin
+          - docker
     - slack_fail
   "hs-test":
     executor:
@@ -275,10 +224,6 @@ jobs:
     steps:
     - checkout
     - restore_bin
-    # XXX This cache is not saved... so doesn't appear to do anything?
-    - restore_cache:
-        keys:
-        - "hs-{{ .Revision }}"
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
     - slack_fail
@@ -293,78 +238,58 @@ jobs:
     - restore_bin
     - run: |
         cd examples && ../.circleci/example.sh <<parameters.which>>
-    - persist_status
+    - run:
+        when: always
+        command: |
+          if [ ! -f /tmp/status ] ; then
+            echo 'export STATUS="fail"' > /tmp/status
+          fi
+          mkdir -p /tmp/workspace/record
+          mv /tmp/status /tmp/workspace/record/${CIRCLE_JOB}
+    - persist_to_workspace:
+        root: /tmp/workspace
+        paths:
+          - record
   "example-sink":
     executor: standard
     steps:
     - checkout
-    - attach_workspace:
-        at: /tmp/workspace/record
+    - workattach
     - run: |
         ./.circleci/record.sh >> $BASH_ENV
-    # XXX make it so that record produces results in the format the
-    # store_test_results expects
-    #   see: cd hs && make hs-test-xml
-    # XXX maybe example could use the same format?
-    # XXX see if there's an existing slack template that looks at those
     - slack/notify:
         event: always
+        # XXX branch_pattern: "master,gh-pages"
         custom: |
-          {
-            "blocks": [
-              {
-                "type": "section",
+          { "blocks": [
+              { "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "${RECORD_MESSAGE}"
-                }
-              }
-            ]
-          }
+                  "text": "${RECORD_MESSAGE}" }}]}
 
 workflows:
-  test:
+  docs:
     jobs:
-    # Docs
-    - "docs-render":
-        context:
-        - "circleci-on-slack"
+    - "docs-render"
     - "docs-deploy":
         filters:
           branches:
             only: master
         requires:
         - "docs-render"
-        context:
-        # XXX Get rid of this context and use project variables to slim config
-        - "circleci-on-slack"
-    # Build-less checks
-    - "shellcheck":
-        context:
-        - "circleci-on-slack"
-    # XXX We turned this off... so I didn't copy it over
-    # - "docker-lint"
-    # Build
-    - "build":
-        context:
-        - "circleci-on-slack"
-    # XXX this doesn't actual work, so it's disabled
-    # - "dockerhub-check"
-    #    requires:
-    #      - "build"
+  buildless:
+    jobs:
+    - "sh-check"
+  build:
+    jobs:
+    - "build"
     - "hs-test":
-        context:
-        - "circleci-on-slack"
         requires:
           - "build"
     - "hs-check":
-        context:
-        - "circleci-on-slack"
         requires:
           - "build"
     - "js-test":
-        context:
-        - "circleci-on-slack"
         requires:
           - "build"
     # Sink and examples follow

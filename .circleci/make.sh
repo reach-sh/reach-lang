@@ -18,8 +18,6 @@ done
 
 cat >>"${DEST}" <<END
     - "example-sink":
-        context:
-          - "circleci-on-slack"
         requires:
 END
 for ep in ../examples/* ; do
