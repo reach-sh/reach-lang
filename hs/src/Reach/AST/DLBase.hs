@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Reach.AST.DLBase where
 
@@ -23,6 +25,9 @@ type PrettySubstApp = ReaderT PrettySubstEnv Identity
 
 class PrettySubst a where
   prettySubst :: a -> PrettySubstApp Doc
+
+instance {-# OVERLAPPABLE #-} PrettySubst a => Pretty a where
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 data DeployMode
   = DM_constructor
@@ -237,9 +242,6 @@ data DLArg
   | DLA_Interact SLPart String DLType
   deriving (Eq, Ord, Generic, Show)
 
-instance Pretty DLArg where
-  pretty = runIdentity . flip runReaderT mempty . prettySubst
-
 instance PrettySubst DLArg where
   prettySubst a = do
     env <- ask
@@ -299,8 +301,6 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (a, b) where
     y' <- prettySubst y
     return $ parens $ hsep $ punctuate comma [x', y']
 
-instance Pretty DLLargeArg where
-  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLLargeArg where
   prettySubst = \case
@@ -450,8 +450,6 @@ instance PrettySubst a => PrettySubst (Maybe a) where
       return $ "Just" <+> a'
     Nothing -> return "Nothing"
 
-instance Pretty DLExpr where
-  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLExpr where
   prettySubst = \case
@@ -742,8 +740,6 @@ data DLPayAmt = DLPayAmt
   }
   deriving (Eq, Generic, Ord)
 
-instance Pretty DLPayAmt where
-  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLPayAmt where
   prettySubst (DLPayAmt {..}) = do
