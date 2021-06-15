@@ -248,6 +248,7 @@ jobs:
           if [ ! -f /tmp/status ] ; then
             echo 'export STATUS="fail"' > /tmp/status
           fi
+          cat /tmp/status
           mkdir -p /tmp/workspace/record
           mv /tmp/status /tmp/workspace/record/${CIRCLE_JOB}
     - persist_to_workspace:
