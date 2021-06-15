@@ -419,6 +419,10 @@ parseVal t v =
     T_Bool -> do
       return $ SMV_Bool (v == Atom "true")
     T_Null -> return $ SMV_Null
+    T_Digest -> do
+      case v of
+        Atom i -> return $ SMV_Digest i
+        _ -> impossible $ "parseVal: Digest: " <> show v
     T_UInt ->
       case v of
         Atom i -> return $ SMV_Int (read i :: Int)
@@ -458,6 +462,17 @@ parseVal t v =
           fields <- mapM (\ ((s, vt), mv) -> parseVal vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
           return $ SMV_Object $ M.fromList fields
         _ -> impossible $ "parseVal: Object " <> show v
+    T_Data ts ->
+      case v of
+        List [Atom con, vv] -> do
+          let c = case dropWhile (/= '_') con of
+                    _:c' -> c'
+                    _ -> impossible "parseType: Data: Constructor name"
+          v' <- case M.lookup c ts of
+                  Just vt -> parseVal vt vv
+                  Nothing -> impossible $ "parseType: Data: Constructor type"
+          return $ SMV_Data c [v']
+        _ -> impossible $ "parseVal: Data " <> show v
     _ -> impossible $ "parseVal: " <> show t <> " " <> show v
 
 

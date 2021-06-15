@@ -158,6 +158,11 @@ prettySubstWith env' =
     . flip runReaderT env'
     . prettySubst
 
+needsParens :: SMTExpr -> Bool
+needsParens = \case
+  SMTProgram (DLE_PrimOp _ _ args) -> length args <= 2
+  _ -> False
+
 -- Don't inline tail so we can show final value of assertion variable
 -- Inline variables that are equal to variables
 -- Don't inline variables used many times
@@ -174,7 +179,7 @@ instance PrettySubst [SMTLet] where
               (_, _, SMTProgram (DLE_Arg _ (DLA_Var rhs))) ->
                 (True, M.insert dv (fromMaybe (viaShow rhs) $ M.lookup rhs env) env)
               (DLV_Let DVC_Once _, False, _) ->
-                (True, M.insert dv (parens se') env)
+                (True, M.insert dv (if needsParens se then parens se' else se') env)
               (_, _, _) ->
                 (False, env)
       case isInlinable of
@@ -225,11 +230,13 @@ data SMTVal
   = SMV_Bool Bool
   | SMV_Int Int
   | SMV_Address SLPart
+  | SMV_Digest String
   | SMV_Null
   | SMV_Bytes B.ByteString
   | SMV_Array DLType [SMTVal]
   | SMV_Tuple [SMTVal]
   | SMV_Object (M.Map String SMTVal)
+  | SMV_Data String [SMTVal]
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
@@ -237,11 +244,13 @@ instance Pretty SMTVal where
     SMV_Bool b -> pretty $ DLL_Bool b
     SMV_Int i -> pretty i
     SMV_Address p -> pretty p
+    SMV_Digest p -> pretty p
     SMV_Null -> "null"
     SMV_Bytes b -> pretty b
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
+    SMV_Data c xs -> pretty c <> parens (brackets $ hsep $ punctuate comma $ map pretty xs)
 
 instance Countable SynthExpr where
   counts = \case
@@ -261,7 +270,7 @@ instance AC SMTLet where
     SMTLet at dv x c se -> do
       x' <- ac_vdef (canDupe se) x
       case (isPure se, x') of
-        (True, DLV_Eff) -> return $ SMTNop at
+        (_, DLV_Eff) -> return $ SMTNop at
         _ -> do
           ac_visit se
           return $ SMTLet at dv x' c se
