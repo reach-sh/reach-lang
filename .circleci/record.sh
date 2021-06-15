@@ -5,12 +5,16 @@ FAIL_ETH=0
 FAIL_ALGO=0
 FAIL_CFX=0
 TOTAL=0
+FAILS=""
 for i in * ; do
   ((TOTAL++))
   # shellcheck disable=SC1090
   source "$i"
   if [ "x${STATUS}" = "xfail" ] ; then
     echo FAILED: "$i"
+    if (( FAIL < 10 )) ; then
+      FAILS="${FAILS} ${i}"
+    fi
     ((FAIL++))
   fi
   if [[ "x${ETH_STATUS}" == xfail* ]] ; then
@@ -41,4 +45,4 @@ else
   SYM="OKAY"
   MSG="${TOTAL} passed!"
 fi
-echo "export RECORD_MESSAGE='*${SYM}* ${CIRCLE_USERNAME} > Examples: ${MSG} <${CIRCLE_BUILD_URL}|more...>'"
+echo "export RECORD_MESSAGE='*${SYM}* ${CIRCLE_USERNAME} > Examples: ${MSG} <${CIRCLE_BUILD_URL}|more...>${FAILS}'"

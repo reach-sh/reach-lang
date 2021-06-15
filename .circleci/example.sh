@@ -23,13 +23,17 @@ if [ "x${BUILD_STATUS}" = "xfail" ] ; then
   STATUS="fail"
 fi
 
+# XXX Maybe run these all in parallel?
 for CONN in ETH ALGO CFX ; do
   THIS_STATUS="fail"
   if [ "x${BUILD_STATUS}" = "xpass" ] ; then
     export REACH_CONNECTOR_MODE="${CONN}"
     export REACH_DEBUG=1
     banner Running w/ "${CONN}"
-    timeout $((2 * 60)) ./one.sh run "${WHICH}"
+    # We are using foreground to get around the lack of TTY allocation that
+    # inhibits docker-compose run. I am worried that this will be ineffective
+    # at stopping the containers
+    timeout --foreground $((2 * 60)) ./one.sh run "${WHICH}"
     EXIT=$?
     if [ $EXIT -eq 124 ] ; then
       echo Timeout
@@ -37,6 +41,8 @@ for CONN in ETH ALGO CFX ; do
     elif [ $EXIT -eq 0 ] ; then
       THIS_STATUS="pass"
     fi
+    banner Bringing down "${CONN}"
+    ./one.sh down "${WHICH}"
   fi
   if ! [ "x${THIS_STATUS}" = "xpass" ] ; then
     STATUS="fail"
