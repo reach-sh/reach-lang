@@ -639,6 +639,7 @@ const doQuery = async (dhead:string, query: ApiCall<any>, pred: ((x:any) => bool
     return { succ: false, round: res['current-round'] };
   }
 
+  ptxns.sort((x:any, y:any) => x['confirmed-round'] - y['confirmed-round']);
   const txn = ptxns[0];
   return { succ: true, txn };
 };
