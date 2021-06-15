@@ -39,7 +39,7 @@ commands:
                 { "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*FAIL* ${CIRCLE_USERNAME} > ${CIRCLE_JOB} <${CIRCLE_BUILD_URL}|more...>" }}]}
+                    "text": "*FAIL* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > ${CIRCLE_JOB} <${CIRCLE_BUILD_URL}|more...>" }}]}
   srd_yes:
     steps:
       - setup_remote_docker:
