@@ -22,6 +22,7 @@ for i in * ; do
     ((FAIL++))
   fi
   # XXX with abstraction, if there are too many, add "..."
+  # XXX notate when there's a timeout
   if [[ "x${ETH_STATUS}" == xfail* ]] ; then
     if (( FAIL_ETH < 10 )) ; then
       FAILS_ETH="${FAILS_ETH} ${el}"

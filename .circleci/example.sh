@@ -33,6 +33,7 @@ for CONN in ETH ALGO CFX ; do
     # We are using foreground to get around the lack of TTY allocation that
     # inhibits docker-compose run. I am worried that this will be ineffective
     # at stopping the containers
+    # XXX different timeouts for each connector?
     timeout --foreground $((2 * 60)) ./one.sh run "${WHICH}"
     EXIT=$?
     if [ $EXIT -eq 124 ] ; then
