@@ -466,7 +466,7 @@ parseModel2 pm = M.fromList <$> aux (M.toList pm)
 showTrace :: M.Map DLVar SMTVal -> SMTTrace -> Doc
 showTrace pm st = do
   let pm' = M.map pretty pm
-  pretty_subst (PrettySubstEnv pm' mempty) st
+  pretty_subst pm' st
 
 -- Attempt to retrieve binding info for any DLVar's that do not have it
 recoverBindingInfo :: SMTLet -> App SMTLet

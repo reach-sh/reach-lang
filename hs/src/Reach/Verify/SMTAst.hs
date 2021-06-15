@@ -152,12 +152,9 @@ instance Ord SMTLet where
   compare (SMTLet _ ldv _ _ _) (SMTLet _ rdv _ _ _) = compare ldv rdv
   compare _ _ = LT
 
-prettySubstWith :: (MonadReader PrettySubstEnv m, PrettySubst a) => M.Map DLVar Doc -> M.Map DLVar Doc -> m (a -> Doc)
-prettySubstWith model' inlines' = do
-  model <- asks pse_model_vals
-  inlines <- asks pse_inline
-  let env' = PrettySubstEnv (M.union model model') (M.union inlines inlines')
-  return $ runIdentity
+prettySubstWith :: PrettySubst a => PrettySubstEnv -> a -> Doc
+prettySubstWith env' =
+  runIdentity
     . flip runReaderT env'
     . prettySubst
 
@@ -169,34 +166,32 @@ instance PrettySubst [SMTLet] where
     [] -> return ""
     SMTLet _ dv lv Context se : tl -> do
       se' <- prettySubst se
-      modelEnv <- asks pse_model_vals
-      let (isInlinable, inlineEnv') =
+      env <- ask
+      let (isInlinable, env') =
             case (lv, null tl, se) of
               (DLV_Eff, _, _) ->
                 impossible "PrettySubst [SMTLet]: AC did not remove Eff bindings"
-              (_, _, SMTProgram (DLE_Arg _ (DLA_Var _))) ->
-                (True, M.singleton dv se')
+              (_, _, SMTProgram (DLE_Arg _ (DLA_Var rhs))) ->
+                (True, M.insert dv (viaShow rhs) env)
               (DLV_Let DVC_Once _, False, _) ->
-                (True, M.singleton dv $ parens se')
+                (True, M.insert dv (parens se') env)
               (_, _, _) ->
-                (False, mempty)
+                (False, env)
       case isInlinable of
         True ->
-          prettySubstWith mempty inlineEnv' <*> pure tl
+          return $ prettySubstWith env' tl
         False -> do
           let wouldBe x = "  //    ^ would be " <> viaShow x
-          let info = maybe "" wouldBe (M.lookup dv modelEnv)
+          let info = maybe "" wouldBe (M.lookup dv env)
           let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
-          tl' <- prettySubst tl
-          return $ msg <> hardline <> tl'
+          return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     SMTLet at dv _ Witness se : tl -> do
-      modelEnv <- asks pse_model_vals
+      env <- ask
       se' <- prettySubst se
       let wouldBe x = "  //    ^ could = " <> x <> hardline <> "          from:" <+> pretty at
-      let info = maybe "" wouldBe (M.lookup dv modelEnv)
+      let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
-      tl' <- prettySubst tl
-      return $ msg <> hardline <> tl'
+      return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     SMTNop _ : tl -> prettySubst tl
 
 data SMTTrace
@@ -204,13 +199,16 @@ data SMTTrace
   deriving (Eq, Show)
 
 instance Pretty SMTTrace where
-  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst SMTTrace where
   prettySubst (SMTTrace lets tk dv) = do
     let (w_lets, c_lets) = partition isWitness lets
     w_lets' <- prettySubst w_lets
-    c_lets' <- prettySubst c_lets
+    env <- ask
+    let witnessVars = foldr (flip collectVars) [] w_lets
+    let env' = foldr M.delete env witnessVars
+    let c_lets' = prettySubstWith env' c_lets
     return $
       "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <> hardline <>
       "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
@@ -219,6 +217,9 @@ instance PrettySubst SMTTrace where
       isWitness = \case
         SMTLet _ _ _ Witness _ -> True
         _ -> False
+      collectVars acc = \case
+        SMTLet _ ldv _ _ _ -> ldv : acc
+        _ -> acc
 
 data SMTVal
   = SMV_Bool Bool

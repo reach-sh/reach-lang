@@ -17,9 +17,7 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.Functor ((<&>))
 
-data PrettySubstEnv = PrettySubstEnv {
-  pse_model_vals :: M.Map DLVar Doc,
-  pse_inline :: M.Map DLVar Doc }
+type PrettySubstEnv = M.Map DLVar Doc
 
 type PrettySubstApp = ReaderT PrettySubstEnv Identity
 
@@ -240,11 +238,11 @@ data DLArg
   deriving (Eq, Ord, Generic, Show)
 
 instance Pretty DLArg where
-  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLArg where
   prettySubst a = do
-    env <- asks pse_inline
+    env <- ask
     case a of
       DLA_Var v -> return $ fromMaybe (viaShow v) (M.lookup v env)
       DLA_Constant c -> return $ pretty c
@@ -302,7 +300,7 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (a, b) where
     return $ parens $ hsep $ punctuate comma [x', y']
 
 instance Pretty DLLargeArg where
-  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLLargeArg where
   prettySubst = \case
@@ -453,7 +451,7 @@ instance PrettySubst a => PrettySubst (Maybe a) where
     Nothing -> return "Nothing"
 
 instance Pretty DLExpr where
-  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLExpr where
   prettySubst = \case
@@ -745,7 +743,7 @@ data DLPayAmt = DLPayAmt
   deriving (Eq, Generic, Ord)
 
 instance Pretty DLPayAmt where
-  pretty = runIdentity . flip runReaderT (PrettySubstEnv mempty mempty) . prettySubst
+  pretty = runIdentity . flip runReaderT mempty . prettySubst
 
 instance PrettySubst DLPayAmt where
   prettySubst (DLPayAmt {..}) = do
