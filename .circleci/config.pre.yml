@@ -32,8 +32,11 @@ commands:
   slack_fail:
     steps:
       - slack/notify:
-          # XXX branch_pattern: "master,gh-pages"
+          # NOTE: We used to do
+          # branch_pattern: "master,gh-pages"
+          # But, I am disabling it on purpose
           event: fail
+          # XXX make circle_branch a link
           custom: |
             { "blocks": [
                 { "type": "section",
@@ -184,7 +187,6 @@ jobs:
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
         (cd hs && stack install)
-    # XXX We could actually fork here and do hs-test and hs-check
     - srd_yes
     - run: |
         (cd js && make build)
@@ -261,7 +263,9 @@ jobs:
         ./.circleci/record.sh >> $BASH_ENV
     - slack/notify:
         event: always
-        # XXX branch_pattern: "master,gh-pages"
+        # NOTE: We used to do
+        # branch_pattern: "master,gh-pages"
+        # But, I am disabling it on purpose
         custom: |
           { "blocks": [
               { "type": "section",

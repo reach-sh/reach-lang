@@ -51,6 +51,6 @@ for CONN in ETH ALGO CFX ; do
 done
 
 echo "export STATUS=\"${STATUS}\"" >> /tmp/status
-echo "export EXAMPLE_URL=\"${CIRCLE_JOB_URL}\"" >> /tmp/status
+echo "export EXAMPLE_URL=\"${CIRCLE_BUILD_URL}\"" >> /tmp/status
 # XXX output results in the JUnit test format so we can go to
-# ${EXAMPLE_URL}/tests/ETH etc
+# ${EXAMPLE_URL}/tests/ETH on a failure?

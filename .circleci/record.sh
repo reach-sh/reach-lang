@@ -1,6 +1,7 @@
 #!/bin/bash
-# XXX Write this montrosity in something else with abstractions!
-# XXX Have the records in JSON
+# XXX Write this montrosity in something else with abstractions! Python3 is
+# available or we could use JavaScript
+# XXX Have the records in JSON?
 cd /tmp/workspace/record || exit
 FAIL=0
 FAIL_ETH=0
@@ -20,6 +21,7 @@ for i in * ; do
     (>&2 echo FAILED: "$e")
     ((FAIL++))
   fi
+  # XXX with abstraction, if there are too many, add "..."
   if [[ "x${ETH_STATUS}" == xfail* ]] ; then
     if (( FAIL_ETH < 10 )) ; then
       FAILS_ETH="${FAILS_ETH} ${el}"
@@ -60,4 +62,5 @@ else
   PRE="${TOTAL} passed!"
   POST=""
 fi
+# XXX make circle_branch a link
 echo "export RECORD_MESSAGE='*${SYM}* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > examples: ${PRE} <${CIRCLE_BUILD_URL}|more...>${POST}'"
