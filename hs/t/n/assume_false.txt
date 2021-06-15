@@ -7,9 +7,6 @@ Verification failed:
   at ./assume_false.rsh:7:13:application
   at ./assume_false.rsh:5:11:application call to [unknown function] (defined at: ./assume_false.rsh:5:15:function exp)
 
-  // Violation witness
-
-  // Theorem formalization
   assert(false);
 
   Verifying when NO participants are honest

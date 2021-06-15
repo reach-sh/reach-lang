@@ -19,7 +19,7 @@ import Control.Monad.Reader
 import qualified Data.Map as M
 import Data.List (partition)
 import Reach.Util (impossible)
-import Data.Functor ((<&>))
+import Data.Maybe
 
 
 data BindingOrigin
@@ -124,9 +124,9 @@ data SMTExpr
 
 instance PrettySubst SMTExpr where
   prettySubst = \case
-    SMTModel bo -> return $ viaShow bo
-    SMTProgram de -> prettySubst de
-    SMTSynth se -> prettySubst se <&> (\ s -> "<" <> s <> ">")
+    SMTModel bo -> return $ "<" <> viaShow bo <> ">"
+    SMTProgram de ->  prettySubst de
+    SMTSynth se -> prettySubst se
 
 instance Show SMTExpr where
   show = \case
@@ -172,7 +172,7 @@ instance PrettySubst [SMTLet] where
               (DLV_Eff, _, _) ->
                 impossible "PrettySubst [SMTLet]: AC did not remove Eff bindings"
               (_, _, SMTProgram (DLE_Arg _ (DLA_Var rhs))) ->
-                (True, M.insert dv (viaShow rhs) env)
+                (True, M.insert dv (fromMaybe (viaShow rhs) $ M.lookup rhs env) env)
               (DLV_Let DVC_Once _, False, _) ->
                 (True, M.insert dv (parens se') env)
               (_, _, _) ->
@@ -188,7 +188,7 @@ instance PrettySubst [SMTLet] where
     SMTLet at dv _ Witness se : tl -> do
       env <- ask
       se' <- prettySubst se
-      let wouldBe x = "  //    ^ could = " <> x <> hardline <> "          from:" <+> pretty at
+      let wouldBe x = "  //    ^ could = " <> x <> hardline <> "          from:" <+> pretty (show at)
       let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
@@ -228,6 +228,8 @@ data SMTVal
   | SMV_Null
   | SMV_Bytes B.ByteString
   | SMV_Array DLType [SMTVal]
+  | SMV_Tuple [SMTVal]
+  | SMV_Object (M.Map String SMTVal)
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
@@ -238,6 +240,8 @@ instance Pretty SMTVal where
     SMV_Null -> "null"
     SMV_Bytes b -> pretty b
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
+    SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
+    SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
 
 instance Countable SynthExpr where
   counts = \case

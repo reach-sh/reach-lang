@@ -309,7 +309,9 @@ instance PrettySubst DLLargeArg where
       return $ "array" <> parens (pretty t <> comma <+> t')
     DLLA_Tuple as -> render_dasM as <&> brackets
     DLLA_Obj env -> render_objM env
-    DLLA_Data _ vn vv -> return $ "<" <> pretty vn <> " " <> pretty vv <> ">"
+    DLLA_Data _ vn vv -> do
+      v' <-  prettySubst vv
+      return $ "<" <> pretty vn <> " " <> v' <> ">"
     DLLA_Struct kvs -> do
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'

@@ -7,12 +7,18 @@ Verification failed:
   at ./assert_gt.rsh:8:13:application
   at ./assert_gt.rsh:5:11:application call to [unknown function] (defined at: ./assert_gt.rsh:5:15:function exp)
 
-  // Violation witness
-  const _x/22 = 0;
-  //    ^ from evaluating interact("A")."getX"() at ./assert_gt.rsh:6:31:application
+  // Violation Witness
 
-  // Theorem formalization
-  assert(_x/22 > 0);
+  const _x/22 = "A".interact.getX();
+  //    ^ could = 0
+          from: ./assert_gt.rsh:6:31:application
+
+
+  // Theorem Formalization
+
+  const v23 = _x/22 > 0;
+  //    ^ would be false
+  assert(v23);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

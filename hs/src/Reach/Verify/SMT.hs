@@ -36,6 +36,7 @@ import System.IO
 import Reach.Verify.SMTAst
 import Reach.AddCounts (add_counts)
 import qualified Data.List as List
+import Data.Functor
 
 --- SMT Helpers
 
@@ -167,6 +168,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_idx :: Counter
   , ctxt_smt_con :: SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
+  , ctxt_smt_typem :: M.Map String DLType
   , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
@@ -327,7 +329,7 @@ smtPrimOp at p dargs =
                     ai <- smt_alloc_id
                     let av = "classAddr" <> show ai
                     let dv = DLVar at Nothing T_Address ai
-                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Context (SMTProgram $ DLE_PrimOp at SELF_ADDRESS dargs)
+                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at SELF_ADDRESS dargs)
                     smtDeclare_v av T_Address $ Just smlet
                     return $ Atom av
         se -> impossible $ "self address " <> show se
@@ -397,20 +399,19 @@ sv2dv v = do
     Just (_:dv:_) -> return $ Just dv
     _ -> return Nothing
 
-parseType :: SExpr -> App DLType
-parseType = \case
-    Atom "Token" -> return $ T_Token
-    Atom "Int" -> return $ T_UInt
-    Atom "Bool" -> return $ T_Bool
-    Atom "Digest" -> return $ T_Digest
-    Atom "Address" -> return $ T_Address
-    Atom "Bytes" -> return $ T_Bytes 0
-    Atom "Null" -> return $ T_Null
+parseType :: SExpr ->App DLType
+parseType ty = do
+  case ty of
+    Atom "Int" -> return T_UInt
+    Atom t -> do
+      typem <- asks ctxt_smt_typem
+      case M.lookup t typem of
+        Just dt -> return dt
+        Nothing -> impossible $ "parseType: Atom " <> show ty
     List (Atom "Array":rs) -> do
       rs' <- mapM parseType rs
       return $ T_Array (T_Tuple rs') (fromIntegral $ length rs)
-    -- xxx parse tuples
-    ow -> impossible $ "parseType: " <> show ow
+    _ ->  impossible $ "parseType: " <> show ty
 
 parseVal :: DLType -> SExpr -> App SMTVal
 parseVal t v =
@@ -431,7 +432,7 @@ parseVal t v =
         Atom i -> return $ SMV_Bytes $ B.pack i
         _ -> impossible $ "parseVal: Bytes: " <> show v
     T_Array (T_Tuple [T_Token, T_UInt]) _ ->
-      -- XXX This is a Map
+      -- This is a Map
       return $ SMV_Null
     T_Array (T_Tuple [T_UInt, ty]) _ ->
       case v of
@@ -446,6 +447,17 @@ parseVal t v =
           elems' <- parseVals (List elems)
           return $ SMV_Array ty $ reverse elems'
         _ -> impossible $ "parseVal: Array(" <> show ty <> ")"
+    T_Tuple ts ->
+      case v of
+        List (_:vs) ->
+          SMV_Tuple <$> zipWithM parseVal ts vs
+        _ -> impossible $ "parseVal: Tuple " <> show v
+    T_Object ts ->
+      case v of
+        List (_:vs) -> do
+          fields <- mapM (\ ((s, vt), mv) -> parseVal vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
+          return $ SMV_Object $ M.fromList fields
+        _ -> impossible $ "parseVal: Object " <> show v
     _ -> impossible $ "parseVal: " <> show t <> " " <> show v
 
 
@@ -624,13 +636,13 @@ pathAddUnbound at_dv (Just dv) bo msmte = do
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness =<< msmte
   pathAddUnbound_v (Just dv) at_dv v t bo smlet
 
-pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr-> App ()
-pathAddBound _ Nothing _ _ _ = mempty
-pathAddBound at_dv (Just dv) _bo de se = do
+pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr-> SMTCat -> App ()
+pathAddBound _ Nothing _ _ _ _ = mempty
+pathAddBound at_dv (Just dv) _bo de se sc = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
   -- let mdv = Just dv
-  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Context . SMTProgram =<< de
+  let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) sc . SMTProgram =<< de
   smtDeclare_v v t smlet
   --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
@@ -889,8 +901,11 @@ smt_e at_dv mdv de = do
     DLE_Impossible _ _ ->
       unbound at_dv
     DLE_PrimOp at cp args -> do
+      let f = case cp of
+                SELF_ADDRESS -> \ se -> pathAddBound at mdv bo (Just de) se Witness
+                _ -> bound at
       args' <- mapM (smt_a at) args
-      bound at =<< smtPrimOp at cp args args'
+      f =<< smtPrimOp at cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
@@ -962,7 +977,7 @@ smt_e at_dv mdv de = do
       unbound at
   where
     bo = O_Expr de
-    bound at se = pathAddBound at mdv bo (Just de) se
+    bound at se = pathAddBound at mdv bo (Just de) se Context
     unbound at = pathAddUnbound at mdv bo (Just $ SMTProgram de)
     doClaim at f ct ca' mmsg = do
       let check_m = verify1 at f (TClaim ct) ca' mmsg
@@ -1208,7 +1223,7 @@ smt_s = \case
                 let smte = Just . SMTProgram =<< mde
                 case should of
                   False -> pathAddUnbound at (Just v) bo_no smte
-                  True -> pathAddBound at (Just v) bo_yes mde se
+                  True -> pathAddBound at (Just v) bo_yes mde se Context
           let bind_from =
                 case isClass of
                   True ->
@@ -1217,7 +1232,7 @@ smt_s = \case
                         pathAddUnbound at (Just whov) (O_ClassJoin from) Nothing
                       True -> do
                         from' <- smtCurrentAddress from
-                        pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from')
+                        pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from') Witness
                   _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
           let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
           let bind_amt m = do
@@ -1419,6 +1434,7 @@ _verify_smt mc ctxt_vst smt lp = do
   ctxt_vars_defdr <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)
+  let ctxt_smt_typem = M.fromList $ map (\ (k, (v, _)) -> (v, k)) $ M.toList ctxt_typem
   let ctxt_smt_con at_de cn =
         case mc of
           Just c -> smt_lt at_de $ conCons c cn

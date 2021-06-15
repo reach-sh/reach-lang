@@ -6,9 +6,6 @@ Verification failed:
   of theorem: possible
   at ./possible_false.rsh:5:13:application
 
-  // Violation witness
-
-  // Theorem formalization
   possible(false);
 
 Verification failed:

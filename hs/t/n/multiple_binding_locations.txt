@@ -6,14 +6,20 @@ Verification failed:
   of theorem: assert
   at ./multiple_binding_locations.rsh:22:13:application
 
-  // Violation witness
-  const interact_A_x = 4;
-  //    ^ from interaction at ./multiple_binding_locations.rsh:4:12:application
+  // Violation Witness
 
-  // Theorem formalization
-  const x/23 = interact_A_x - 4;
+  const v18 = "A".interact.x;
+  //    ^ could = 4
+          from: ./multiple_binding_locations.rsh:6:17:application
+
+
+  // Theorem Formalization
+
+  const x/23 = v18 - 4;
   //    ^ would be 0
-  assert((x/23 + x/23) == 4);
+  const v30 = (x/23 + x/23) == 4;
+  //    ^ would be false
+  assert(v30);
 
   Verifying when NO participants are honest
 Verification failed:
