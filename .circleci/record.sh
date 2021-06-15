@@ -65,3 +65,7 @@ else
 fi
 # XXX make circle_branch a link
 echo "export RECORD_MESSAGE='*${SYM}* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > examples: ${PRE} <${CIRCLE_BUILD_URL}|more...>${POST}'"
+# XXX have a white(black?) list of what we consider an "un-important"
+# failure... this should be the only place that we fiddle with these things...
+# it should be an /accurate/ signal of "Should Dan push images?"
+# XXX make this fail if there were any "important" failures

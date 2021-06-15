@@ -23,7 +23,7 @@ if [ "x${BUILD_STATUS}" = "xfail" ] ; then
   STATUS="fail"
 fi
 
-# XXX Maybe run these all in parallel?
+# It might be possible to run these all in parallel
 for CONN in ETH ALGO CFX ; do
   THIS_STATUS="fail"
   if [ "x${BUILD_STATUS}" = "xpass" ] ; then
@@ -33,6 +33,7 @@ for CONN in ETH ALGO CFX ; do
     # We are using foreground to get around the lack of TTY allocation that
     # inhibits docker-compose run. I am worried that this will be ineffective
     # at stopping the containers
+    # XXX it actually doesn't enforce things properly for tut-7-rpc
     # XXX different timeouts for each connector?
     timeout --foreground $((2 * 60)) ./one.sh run "${WHICH}"
     EXIT=$?
