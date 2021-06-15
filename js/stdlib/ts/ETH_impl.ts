@@ -267,10 +267,10 @@ export function setProvider(provider: Provider|Promise<Provider>): void {
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async (theUrl: string): Promise<void> => {
   debug('doHealthcheck');
-  const urlObj = url.parse(theUrl);
+  const urlObj = url && url.parse && url.parse(theUrl);
 
   // XXX the code below only supports http
-  if (urlObj.protocol !== 'http:') { return; }
+  if (!urlObj || urlObj.protocol !== 'http:') { return; }
 
   await new Promise((resolve, reject) => {
     const data = JSON.stringify({
