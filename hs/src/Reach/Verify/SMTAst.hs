@@ -145,6 +145,7 @@ instance IsPure SMTExpr where
 
 data SMTLet
   = SMTLet SrcLoc DLVar DLLetVar SMTCat SMTExpr
+  | SMTCon String (Maybe SMTVal) SMTExpr
   | SMTNop SrcLoc
   deriving (Eq, Show)
 
@@ -169,6 +170,11 @@ needsParens = \case
 instance PrettySubst [SMTLet] where
   prettySubst = \case
     [] -> return ""
+    SMTCon _ (Just v) se : tl -> do
+      se' <- prettySubst se
+      let msg = "  const" <+> se' <+> "=" <+> pretty v <> ";" <> hardline
+      rest <- prettySubst tl
+      return $ msg <> hardline <> rest
     SMTLet _ dv lv Context se : tl -> do
       se' <- prettySubst se
       env <- ask
@@ -197,7 +203,7 @@ instance PrettySubst [SMTLet] where
       let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
-    SMTNop _ : tl -> prettySubst tl
+    _ : tl -> prettySubst tl
 
 data SMTTrace
   = SMTTrace [SMTLet] TheoremKind DLVar
@@ -221,6 +227,7 @@ instance PrettySubst SMTTrace where
     where
       isWitness = \case
         SMTLet _ _ _ Witness _ -> True
+        SMTCon {} -> True
         _ -> False
       collectVars acc = \case
         SMTLet _ ldv _ _ _ -> ldv : acc
@@ -237,6 +244,7 @@ data SMTVal
   | SMV_Tuple [SMTVal]
   | SMV_Object (M.Map String SMTVal)
   | SMV_Data String [SMTVal]
+  | SMV_Token String
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
@@ -245,6 +253,7 @@ instance Pretty SMTVal where
     SMV_Int i -> pretty i
     SMV_Address p -> pretty p
     SMV_Digest p -> pretty p
+    SMV_Token p -> pretty p
     SMV_Null -> "null"
     SMV_Bytes b -> pretty b
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
@@ -275,6 +284,7 @@ instance AC SMTLet where
           ac_visit se
           return $ SMTLet at dv x' c se
     SMTNop at -> return $ SMTNop at
+    SMTCon c mv se -> return $ SMTCon c mv se
 
 instance AC SMTTrace where
   ac (SMTTrace lets tk dv) = do

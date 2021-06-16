@@ -7,14 +7,20 @@ Verification failed:
   msg: "add overflow"
   at ./overflow.rsh:12:17:application
 
-  // Violation witness
-  const x/22 = 1;
-  //    ^ from evaluating interact("A")."get"() at ./overflow.rsh:9:40:application
-  const dlc_UInt_max = 1;
-  //    ^ from builtin at ./overflow.rsh:3:30:application
+  // Violation Witness
 
-  // Theorem formalization
-  assert(x/22 <= (UInt.max - 1));
+  const UInt.max = 1;
+
+  const x/22 = "A".interact.get();
+  //    ^ could = 1
+          from: ./overflow.rsh:9:40:application
+
+
+  // Theorem Formalization
+
+  const v28 = x/22 <= (UInt.max - 1);
+  //    ^ would be false
+  assert(v28);
 
   Verifying when NO participants are honest
 Verification failed:

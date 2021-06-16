@@ -6,14 +6,18 @@ Verification failed:
   of theorem: while invariant after loop
   at ./loop_var_sub.rsh:13:7:invariant
 
-  // Violation witness
-  const balance(0)/45 = 0;
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/23 = [0, false];
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+  // Violation Witness
 
-  // Theorem formalization
-  invariant((balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1]][0]);
+  const x/23 = [0, false ];
+  //    ^ could = [0, false ]
+          from: ./loop_var_sub.rsh:14:7:while
+
+
+  // Theorem Formalization
+
+  const v64 = (0 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  //    ^ would be false
+  while invariant after loop(v64);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -21,14 +25,18 @@ Verification failed:
   of theorem: while invariant after loop
   at ./loop_var_sub.rsh:13:7:invariant
 
-  // Violation witness
-  const balance(0)/45 = 0;
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/23 = [0, false];
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+  // Violation Witness
 
-  // Theorem formalization
-  invariant((balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1]][0]);
+  const x/23 = [0, false ];
+  //    ^ could = [0, false ]
+          from: ./loop_var_sub.rsh:14:7:while
+
+
+  // Theorem Formalization
+
+  const v83 = (0 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  //    ^ would be false
+  while invariant after loop(v83);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -36,14 +44,18 @@ Verification failed:
   of theorem: while invariant after loop
   at ./loop_var_sub.rsh:13:7:invariant
 
-  // Violation witness
-  const balance(0)/45 = 0;
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/23 = [0, false];
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+  // Violation Witness
 
-  // Theorem formalization
-  invariant((balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1]][0]);
+  const x/23 = [0, false ];
+  //    ^ could = [0, false ]
+          from: ./loop_var_sub.rsh:14:7:while
+
+
+  // Theorem Formalization
+
+  const v102 = (0 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  //    ^ would be false
+  while invariant after loop(v102);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -51,13 +63,17 @@ Verification failed:
   of theorem: while invariant after loop
   at ./loop_var_sub.rsh:13:7:invariant
 
-  // Violation witness
-  const balance(0)/45 = 0;
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
-  const x/23 = [0, false];
-  //    ^ from loop variable at ./loop_var_sub.rsh:14:7:while
+  // Violation Witness
 
-  // Theorem formalization
-  invariant((balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1]][0]);
+  const x/23 = [0, false ];
+  //    ^ could = [0, false ]
+          from: ./loop_var_sub.rsh:14:7:while
+
+
+  // Theorem Formalization
+
+  const v121 = (0 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  //    ^ would be false
+  while invariant after loop(v121);
 
 Checked 18 theorems; 4 failures. :'(

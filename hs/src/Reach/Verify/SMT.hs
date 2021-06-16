@@ -403,11 +403,12 @@ parseType :: SExpr ->App DLType
 parseType ty = do
   case ty of
     Atom "Int" -> return T_UInt
+    Atom "Bytes" -> return $ T_Bytes 0
     Atom t -> do
       typem <- asks ctxt_smt_typem
       case M.lookup t typem of
         Just dt -> return dt
-        Nothing -> impossible $ "parseType: Atom " <> show ty
+        Nothing -> impossible $ "parseType: Atom: " <> show ty
     List (Atom "Array":rs) -> do
       rs' <- mapM parseType rs
       return $ T_Array (T_Tuple rs') (fromIntegral $ length rs)
@@ -423,6 +424,10 @@ parseVal t v =
       case v of
         Atom i -> return $ SMV_Digest i
         _ -> impossible $ "parseVal: Digest: " <> show v
+    T_Token -> do
+      case v of
+        Atom i -> return $ SMV_Token i
+        _ -> impossible $ "parseVal: Digest: " <> show v
     T_UInt ->
       case v of
         Atom i -> return $ SMV_Int (read i :: Int)
@@ -436,6 +441,9 @@ parseVal t v =
         Atom i -> return $ SMV_Bytes $ B.pack i
         _ -> impossible $ "parseVal: Bytes: " <> show v
     T_Array (T_Tuple [T_Token, T_UInt]) _ ->
+      -- This is a Map
+      return $ SMV_Null
+    T_Array (T_Tuple [T_Address, _]) _ ->
       -- This is a Map
       return $ SMV_Null
     T_Array (T_Tuple [T_UInt, ty]) _ ->
@@ -476,19 +484,16 @@ parseVal t v =
     _ -> impossible $ "parseVal: " <> show t <> " " <> show v
 
 
-parseModel2 :: SMTModel -> App (M.Map DLVar SMTVal)
+parseModel2 :: SMTModel -> App (M.Map String SMTVal)
 parseModel2 pm = M.fromList <$> aux (M.toList pm)
   where
     aux = \case
       [] -> return []
       (v, (tyse, vse)) : tl -> do
-        sv2dv v >>= \case
-          Just dv -> do
-            ty <- parseType tyse
-            ve <- parseVal ty vse
-            rst <- aux tl
-            return $ (dv, ve) : rst
-          Nothing -> aux tl
+        ty <- parseType tyse
+        ve <- parseVal ty vse
+        rst <- aux tl
+        return $ (v, ve) : rst
 
 showTrace :: M.Map DLVar SMTVal -> SMTTrace -> Doc
 showTrace pm st = do
@@ -536,19 +541,32 @@ display_fail tat f tk mmsg repeated mrd mdv = do
         Nothing -> do
           iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
         Just dv -> do
-          lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-          lets' <- mapM recoverBindingInfo $ S.toList lets
-          let smtTrace = SMTTrace lets' tk dv
-          smtTrace' <- liftIO $ add_counts smtTrace
           let pm = case mrd of
                 Nothing -> mempty
                 --- FIXME Do something useful here
                 Just (RD_UnsatCore _uc) -> mempty
                 Just (RD_Model m) -> parseModel m
-          pm2 <- parseModel2 pm
-          iputStrLn $ show $ showTrace pm2 smtTrace'
+          pm_str_val <- parseModel2 pm
+          lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
+          lets' <- dropConstants pm_str_val <$> mapM recoverBindingInfo (S.toList lets)
+          smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
+          pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
+                sv2dv k <&> \case
+                  Just dv'' -> (dv'', v) : acc
+                  Nothing -> acc
+                ) [] (M.toList pm_str_val)
+          iputStrLn $ show $ showTrace pm_dv_val smtTrace
 
--- format_thermodel2 tk pm tse
+dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
+dropConstants pm = \case
+  [] -> []
+  SMTCon s Nothing se : tl ->
+    case (s, M.lookup s pm) of
+      (cs, Just v)
+        -- Non-zero value indicates this constant is part of assertion failure
+        | cs == smtConstant DLC_UInt_max && v == SMV_Int 0 -> dropConstants pm tl
+      (_, ow) -> SMTCon s ow se : dropConstants pm tl
+  ow : tl -> ow : dropConstants pm tl
 
 smtNewPathConstraint :: SExpr -> App a -> App a
 smtNewPathConstraint se m = do
@@ -1486,8 +1504,10 @@ _verify_smt mc ctxt_vst smt lp = do
       Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn (Just $ SMTProgram $ DLE_Arg at $ DLA_Var ctimev)
     case mc of
       Just _ -> mempty
-      Nothing ->
-        pathAddUnbound_v Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn Nothing
+      Nothing -> do
+        let con = smtConstant DLC_UInt_max
+        let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant $ DLC_UInt_max
+        pathAddUnbound_v Nothing at con T_UInt O_BuiltIn smlet
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =
