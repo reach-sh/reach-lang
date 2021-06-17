@@ -19,7 +19,7 @@ down:
 run: build check
 
 .PHONY: check
-check: docker-compose..yml docker-compose.ETH.yml docker-compose.ALGO.yml
+check: docker-compose..yml docker-compose.ETH.yml docker-compose.ALGO.yml docker-compose.CFX.yml
 	./check.sh
 
 docker-compose..yml: docker-compose.yml
