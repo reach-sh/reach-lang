@@ -1,5 +1,5 @@
 import {loadStdlib} from '@reach-sh/stdlib';
-import * as backend from './build/%s.main.mjs';
+import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib(process.env);

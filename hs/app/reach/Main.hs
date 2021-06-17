@@ -1,34 +1,34 @@
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
-
-{-# LANGUAGE ExtendedDefaultRules #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module Main (main) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Control.Monad.Shell
+import Data.IORef
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import System.Directory.Extra
 import System.Exit
 import System.FilePath
-import System.Posix.IO
 import System.Posix.Process
-import Text.Printf
 
-import qualified Data.Text.Lazy    as TL
-import qualified Data.Text.Lazy.IO as TL
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+import qualified NeatInterpolation as N
 
-import qualified Reach.Version     as V
-
-default (TL.Text)
+import qualified Reach.Version as V
 
 
-data Env = Env { e_embedDir :: FilePath }
+data Env = Env
+  { e_embedDir :: FilePath
+  , e_emitRaw :: Bool
+  , e_emit :: IORef T.Text
+  }
 
-type App = ReaderT Env IO (Script ())
+type App = ReaderT Env IO ()
 type Subcommand = Mod CommandFields App
+
 
 data Cli = Cli
   { c_env :: Env
@@ -36,7 +36,19 @@ data Cli = Cli
   }
 
 
-reachImages :: [TL.Text]
+write :: T.Text -> App
+write t = asks e_emit >>= liftIO . flip modifyIORef (<> t <> "\n\n")
+
+
+writeFrom :: FilePath -> App
+writeFrom p = asks e_embedDir >>= liftIO . T.readFile . (</> p) >>= write
+
+
+swap :: T.Text -> T.Text -> T.Text -> T.Text
+swap a b src = T.replace ("${" <> a <> "}") b src
+
+
+reachImages :: [T.Text]
 reachImages =
   [ "reach"
   , "reach-cli"
@@ -49,56 +61,30 @@ reachImages =
   ]
 
 
---------------------------------------------------------------------------------
-printfl :: PrintfArg r => String -> r -> TL.Text
-printfl s r = TL.pack $ printf s r
+reachVersion :: App
+reachVersion =
+  let v = T.pack V.versionStr
+  in write [N.text|
+    if [ "x$$REACH_VERSION" = "x" ]; then
+      REACH_VERSION="$v"
+    fi
+  |]
 
 
---------------------------------------------------------------------------------
-echo :: CmdParams p => p
-echo = cmd "echo"
+reachVersionShort :: App
+reachVersionShort =
+  let compat = T.pack V.compatibleVersionStr
+  in write [N.text|
+    if [ "$$REACH_VERSION" = "stable" ] ; then
+      REACH_VERSION_SHORT="$compat"
+    else
+      REACH_VERSION_SHORT=$(echo "$$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $$1"."$$2}')
+    fi
+  |]
 
 
-sed :: CmdParams p => p
-sed = cmd "sed"
-
-
-awk :: CmdParams p => p
-awk = cmd "awk"
-
-
-cat' :: CmdParams p => p
-cat' = cmd "cat"
-
-
-exit :: Int -> Script ()
-exit i = cmd "exit" $ static i
-
-
-docker :: CmdParams p => p
-docker = cmd "docker"
-
-
-rm :: CmdParams p => p
-rm = cmd "rm"
-
-
-stdErrDevNull :: Script () -> Script ()
-stdErrDevNull f = f |> (stdError, TL.unpack "/dev/null")
-
-
--- | Squelch @stderr@ and continue even if @f@ returns non-zero exit code
-regardless :: Script () -> Script ()
-regardless f = stdErrDevNull f -||- cmd ":"
-
-
--- | A completely silent 'regardless'
-regardless' :: Script () -> Script ()
-regardless' f = regardless $ toStderr f
-
-
-appFrom :: Script () -> Parser App
-appFrom = pure . lift . pure
+realpath :: App
+realpath = writeFrom "sh/_common/realpath.sh"
 
 
 --------------------------------------------------------------------------------
@@ -113,14 +99,16 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
    <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
    <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
 
-  go m i = liftIO . pure $ do
-    let f' m' = rm "-f" $ "build/" <> TL.pack m' <> "." <> i <> ".mjs"
+  go m i = write [N.text|
+      MODULE="$m"
 
-    case m of
-      "index" -> f' m
-      _       -> ifCmd (test $ TDirExists m)
-        (cmd "cd" m -||- exit 1 *> f' "index")
-        (f' m)
+      if [ ! "$m" = "index" ] && [ -d "$m" ]; then
+        cd "$m" || exit 1
+        MODULE="index"
+      fi
+
+      rm -f "build/$$MODULE.$i.mjs"
+    |]
 
   f = go
     <$> strArgument (metavar "MODULE" <> value "index" <> showDefault)
@@ -128,28 +116,81 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 
 
 --------------------------------------------------------------------------------
+-- TODO flesh out `optparse` usage help + defaults
+-- TODO extend interface to expose subset of hooks offered by `reachc` CLI
+--  * -o|--output DIR
+--  * --install-pkgs
+--  * --dir-dot-reach
+--  * [SOURCE]
+--  * [EXPORTS...]
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
-  f = undefined
+  f = pure $ do
+    realpath
+    write [N.text|
+      REACH="$$(realpath "$$0")"
+      export REACH
+      HS="$$(dirname "$$REACH")/hs"
+
+      reachc_release () {
+        stack build && stack exec -- reachc "$$@"
+      }
+
+      reachc_prof () {
+        stack build --profile --fast && \
+          stack exec --profile -- \
+                reachc --disable-reporting --intermediate-files "$$@" +RTS -p
+      }
+
+      reachc_dev () {
+        stack build --fast && \
+          stack exec -- reachc --disable-reporting --intermediate-files "$$@"
+      }
+
+      ID=$$($whoami')
+      if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
+        # TODO test
+        ~/.local/bin/reachc --disable-reporting --intermediate-files "$@@"
+
+      elif [ -z "$${REACH_DOCKER}" ] \
+        && [ -d "$${HS}/.stack-work" ] \
+        && (which stack > /dev/null 2>&1); then
+
+        export STACK_YAML="$${HS}/stack.yaml"
+        export REACHC_ID=$${ID}
+        REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+        export REACHC_HASH
+
+        (cd "$$HS" && make stack)
+
+        # TODO replace dollar-@s below
+        if [ "x$${REACHC_RELEASE}" = "xY" ]; then
+          reachc_release "$$@"
+        elif [ "x$${REACHC_PROFILE}" = "xY" ]; then
+          reachc_prof "$$@"
+        else
+          reachc_dev "$$@"
+        fi
+
+      else
+        # TODO "docker: invalid reference format"
+        docker run \
+          --rm \
+          --volume "$$PWD:/app" \
+          -e "REACHC_ID=$${ID}" \
+          reachsh/reach:$${REACH_VERSION} \
+          "$$@"
+      fi
+    |]
 
 
 --------------------------------------------------------------------------------
-reachVersionShort :: Script ()
-reachVersionShort = do
-  rv <- globalVar "REACH_VERSION"
-  rvs <- defaultVar rv (Output $ echo V.compatibleVersionStr)
-  caseOf rvs
-    [ ("stable", echo V.compatibleVersionStr)
-    , (glob "*", echo rvs -|- sed "s/^v//" -|- awk "-F." "{print $1\".\"$2}")
-    ]
-
-
 init' :: Subcommand
 init' = command "init" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app"
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
-         <*> strArgument (metavar "APP" <> value "index" <> showDefault)
+         <*> argument str (metavar "APP" <> value "index" <> showDefault)
 
   -- TODO list available templates?
   foot = footerDoc . Just
@@ -157,38 +198,47 @@ init' = command "init" . info f $ d <> foot where
    <$$> text ""
    <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
 
-  go :: FilePath -> FilePath -> App
+  go :: FilePath -> T.Text -> App
   go template app = do
-    embedDir <- asks e_embedDir
-    let tmpl n = embedDir </> "template" </> "init" </> n
+    Env {..} <- ask
+    let tmpl n = e_embedDir </> "template" </> "init" </> n
 
     path <- ifM (liftIO . doesDirectoryExist $ tmpl template)
       (pure $ tmpl template)
       (pure $ tmpl "_default")
 
-    fmtInitRsh <- liftIO . readFile $ path </> "index.rsh"
-    fmtInitMjs <- liftIO . readFile $ path </> "index.mjs"
+    fmtInitRsh <- liftIO . T.readFile $ path </> "index.rsh"
+    fmtInitMjs <- liftIO . T.readFile $ path </> "index.mjs"
 
-    liftIO . pure $ do
-      let rsh = app <> ".rsh"
-      let mjs = app <> ".mjs"
+    let rsh = app <> ".rsh"
+    let mjs = app <> ".mjs"
 
-      whenCmd (test $ TRegularFileExists rsh) $ do
-        echo $ rsh <> " already exists"
+    let fmtInitMjs' = swap "APP" app fmtInitMjs
+
+    reachVersion
+    reachVersionShort
+
+    write [N.text|
+      if [ -f "$rsh" ] ; then
+        echo "$rsh already exists"
         exit 1
+      fi
 
-      whenCmd (test $ TRegularFileExists mjs) $ do
-        echo $ mjs <> " already exists"
+      if [ -f "$mjs" ] ; then
+        echo "$mjs already exists"
         exit 1
+      fi
 
-      echo $ "Writing " <> rsh
-      let rsh' = Output $ do
-            r <- newVarFrom (Output reachVersionShort) ()
-            echo fmtInitRsh -|- sed (WithVar r (\r' -> "s/${REACH_VERSION_SHORT}/" <> r' <> "/"))
-      echo rsh' |> rsh
+      echo Writing "$rsh"
+      cat >"${rsh}" <<EOF
+      $fmtInitRsh
+      EOF
 
-      echo $ "Writing " <> mjs
-      cat' |> mjs `hereDocument` printfl fmtInitMjs app
+      echo Writing "$mjs"
+      cat >"${mjs}" <<EOF
+      $fmtInitMjs'
+      EOF
+    |]
 
 
 --------------------------------------------------------------------------------
@@ -249,29 +299,33 @@ upgrade = command "upgrade" $ info f d where
 
 --------------------------------------------------------------------------------
 update :: Subcommand
-update = command "update" $ info f d where
+update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
-  f = appFrom . flip mapM_ reachImages $ \i ->
-    docker "pull" $ "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
+  f = forM_ reachImages $ \i -> write
+    $ "docker pull reachsh/" <> i <> ":" <> T.pack V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
   d = progDesc "Docker kill and rm all images"
-  f = appFrom $ do
-    echo "Docker kill all the things..."
-    regardless' $ docker "kill" (Output $ docker "ps" "-q" )
-    echo "Docker rm   all the things..."
-    regardless' $ docker "rm"   (Output $ docker "ps" "-qa")
-    echo "...done"
+  f = pure $ write [N.text|
+    echo 'Docker kill all the things...'
+    # shellcheck disable=SC2046
+    docker kill $$(docker ps -q) >/dev/null 2>&1 || :
+    echo 'Docker rm all the things...'
+    # shellcheck disable=SC2046
+    docker rm $$(docker ps -qa) >/dev/null 2>&1 || :
+    echo '...done'
+  |]
 
 
 --------------------------------------------------------------------------------
 version :: Subcommand
 version = command "version" $ info f d where
   d = progDesc "Display version"
-  f = appFrom $ echo V.versionHeader
+  f = let v = T.pack V.versionHeader
+       in pure $ write [N.text| echo $v |]
 
 
 --------------------------------------------------------------------------------
@@ -285,22 +339,28 @@ help' = command "help" $ info f d where
 hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
-  f = appFrom . flip mapM_ reachImages $ \i -> do
-    let t = "reachsh/" <> i <> ":" <> TL.pack V.compatibleVersionStr
-    let s = docker "run" "--entrypoint" "/bin/sh" t "-c" (quote "echo $REACH_GIT_HASH")
-    echo (i <> ":") (Output s)
+  f = pure $ do
+    reachVersion
+    forM_ reachImages $ \i -> write [N.text|
+      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$$REACH_VERSION" -c 'echo $$REACH_GIT_HASH')"
+    |]
 
 
 --------------------------------------------------------------------------------
+whoami' :: T.Text
+whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
+
+
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
-  f = appFrom . stdErrDevNull $ docker "info" "--format" "{{.ID}}"
+  f = pure $ write whoami'
 
 
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
 numericVersion = command "numeric-version" $ info f fullDesc where
-  f = appFrom $ echo V.compatibleVersionStr
+  f = let v = T.pack V.compatibleVersionStr
+       in pure $ write [N.text| echo $v |]
 
 
 --------------------------------------------------------------------------------
@@ -322,8 +382,11 @@ unscaffold = command "unscaffold" $ info f fullDesc where
 
 
 --------------------------------------------------------------------------------
-env :: Parser Env
-env = Env <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
+env :: IORef T.Text -> Parser Env
+env emit = Env
+  <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
+  <*> switch (long "emit-raw" <> hidden)
+  <*> pure emit
 
 
 --------------------------------------------------------------------------------
@@ -333,13 +396,19 @@ header' = "https://reach.sh"
 
 
 main :: IO ()
-main = customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
-  >>= \Cli {..} -> runReaderT c_cmd c_env
-  >>= \f -> do
-    TL.putStrLn . script $ do
-      stopOnFailure True
-      f
-    exitImmediately $ ExitFailure 42
+main = do
+  emit <- newIORef "#!/bin/sh\nset -e\n\n"
+
+  let cli = Cli
+        <$> env emit
+        <*> (hsubparser cs <|> hsubparser hs <**> helper)
+
+  customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
+    >>= \Cli {..} -> runReaderT c_cmd c_env
+    >> do
+      readIORef emit >>= T.putStrLn
+      unless (e_emitRaw c_env)
+        $ exitImmediately $ ExitFailure 42
 
  where
   cs = compile
@@ -366,7 +435,3 @@ main = customExecParser (prefs showHelpOnError) (info cli (header header' <> ful
     <> rpcServerDown
     <> unscaffold
     <> whoami
-
-  cli = Cli
-    <$> env
-    <*> (hsubparser cs <|> hsubparser hs <**> helper)
