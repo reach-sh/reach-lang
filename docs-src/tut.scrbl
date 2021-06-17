@@ -1393,13 +1393,15 @@ First, let's look at the @reachexlink["tut-8/docker-compose.yml"] file:
 @item{Lines 2 and 3 define a service for starting our application.
 Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've stayed in the same directory througout the tutorial.}
 
-@item{Lines 5 and 6 define the Reach private developer test network service for Ethereum.}
+@item{Lines 5 and 6 define the Reach private developer test network service for Conflux.}
 
-@item{Lines 7 through 24 define the Reach private developer test network service for Algorand.}
+@item{Lines 7 and 8 define the Reach private developer test network service for Ethereum.}
 
-@item{Lines 25 through 64 define services that allow the application to be run with different networks; including line 25, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
+@item{Lines 9 through 26 define the Reach private developer test network service for Algorand.}
 
-@item{We'll also add lines 65 through 70 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{Lines 27 through 82 define services that allow the application to be run with different networks; including line 27, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
+
+@item{We'll also add lines 85 through 90 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run
@@ -1588,7 +1590,7 @@ Of course, when you run the exact amounts and addresses may be different.
 
 @(hrule)
 
-If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 34 to line 54, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
 
 @margin-note{We may need to also change line 32 of @reachexlink["tut-8/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{10} to a higher number, like @reachin{30}.
 This is because Algorand does not support an input-enabled developer network that only runs rounds when transactions are present, so it is possible that timeouts will occur unexpectedly.

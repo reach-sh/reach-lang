@@ -2,6 +2,8 @@ version: '3.4'
 x-app-base: &app-base
   image: reachsh/reach-app-tut-8:latest
 services:
+  devnet-cfx:
+    image: reachsh/devnet-cfx:0.1
   ethereum-devnet:
     image: reachsh/ethereum-devnet:0.1
   algorand-devnet:
@@ -60,6 +62,24 @@ services:
       - ALGO_PORT=4180
       - ALGO_INDEXER_SERVER=http://algorand-devnet
       - ALGO_INDEXER_PORT=8980
+  reach-app-tut-8-CFX-devnet:
+    <<: *app-base
+    depends_on:
+      - devnet-cfx
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-devnet
+      - CFX_DEBUG
+      - CFX_NODE_URI=http://devnet-cfx:12537
+      - CFX_NETWORK_ID=999
+  reach-app-tut-8-CFX-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-live
+      - CFX_DEBUG
+      - CFX_NODE_URI
+      - CFX_NETWORK_ID
   reach-app-tut-8-: *default-app
   reach-app-tut-8: *default-app
   # After this is new!
