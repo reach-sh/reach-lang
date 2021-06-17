@@ -1592,7 +1592,7 @@ Of course, when you run the exact amounts and addresses may be different.
 
 If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 34 to line 54, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
 
-@margin-note{We may need to also change line 32 of @reachexlink["tut-8/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{10} to a higher number, like @reachin{30}.
+@margin-note{We can also change line 32 of @reachexlink["tut-8/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{100} instead of just @reachin{10}.
 This is because Algorand does not support an input-enabled developer network that only runs rounds when transactions are present, so it is possible that timeouts will occur unexpectedly.
 We've commonly observed this on machines under heavy CPU load.}
 
