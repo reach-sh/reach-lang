@@ -199,7 +199,7 @@ instance PrettySubst [SMTLet] where
     SMTLet at dv _ Witness se : tl -> do
       env <- ask
       se' <- prettySubst se
-      let wouldBe x = "  //    ^ could = " <> x <> hardline <> "          from:" <+> pretty (show at)
+      let wouldBe x = "  //    ^ could = " <> x <> hardline <> "  //      from:" <+> pretty (show at)
       let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
@@ -259,7 +259,7 @@ instance Pretty SMTVal where
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
-    SMV_Data c xs -> pretty c <> parens (brackets $ hsep $ punctuate comma $ map pretty xs)
+    SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
 
 instance Countable SynthExpr where
   counts = \case

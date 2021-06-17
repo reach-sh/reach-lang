@@ -1169,8 +1169,7 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
     def1 dv =
-      pathAddUnbound at (Just dv) O_Assignment $
-        maybe Nothing (Just . SMTProgram . DLE_Arg at) $ M.lookup dv asnm
+      pathAddUnbound at (Just dv) O_Assignment Nothing
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
