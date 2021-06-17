@@ -7,10 +7,6 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) {
-    console.log(`XXX Unsupported`);
-    process.exit(0);
-  }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
   const startingBalance = stdlib.parseCurrency(10);

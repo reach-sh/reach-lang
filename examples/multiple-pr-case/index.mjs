@@ -3,10 +3,6 @@ import * as backend from './build/index.main.mjs';
 
 export const run = async (n) => {
   const stdlib = await loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) {
-    console.log(`XXX Unsupported`);
-    process.exit(0);
-  }
   const startingBalance = stdlib.parseCurrency(100);
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));

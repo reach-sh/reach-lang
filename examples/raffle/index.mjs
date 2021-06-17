@@ -5,10 +5,6 @@ const numOfPlayers = 5;
 
 (async () => {
   const stdlib = await loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) {
-    console.log(`XXX Unsupported`);
-    process.exit(0);
-  }
   const startingBalance = stdlib.parseCurrency(100);
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);

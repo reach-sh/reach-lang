@@ -3,5 +3,5 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-  console.log(`XXX Compile-only demo`);
+  console.log(`Compile-only demo`);
 })();
