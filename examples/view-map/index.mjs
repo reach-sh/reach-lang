@@ -3,18 +3,16 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) {
-    console.log(`XXX Unsupported`);
-    process.exit(0);
-  }
   const assertEq = (expected, actual) => {
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);
     console.log('assertEq', {expected, actual}, {exps, acts});
     stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
+  const [ accAlice, accBob ] = await Promise.all([
+    stdlib.newTestAccount(startingBalance),
+    stdlib.newTestAccount(startingBalance),
+  ]);
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 

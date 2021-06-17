@@ -19,7 +19,7 @@ import {
 } from './version';
 import {
   CurrencyAmount, OnProgress,
-  IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
+  IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IAccount, IContract, IRecv, ISimRes, ISimTxn,
   deferContract,
   debug, envDefault,
@@ -166,6 +166,10 @@ type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
 type SimTxn = ISimTxn<Token>
 
 // Helpers
+
+// Parse CBR into Public Key
+const cbr2algo_addr = (x:string): Address =>
+  algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   if (!(a instanceof Uint8Array)) {
@@ -998,7 +1002,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
-    const { viewSize, viewKeys, mapDataKeys } = bin._Connectors.ALGO;
+    const { viewSize, viewKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
     const mapRecordTy =
@@ -1012,17 +1016,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
     debug({ emptyMapData });
 
-    // Application Local State Opt-in
-    const didOptIn = async (): Promise<boolean> => {
+    // Read map data
+    const getLocalState = async (a:Address): Promise<any> => {
       const client = await getAlgodClient();
-      const ai = await client.accountInformation(thisAcc.addr).do();
-      debug(`didOptIn`, ai);
-      if ( ai['apps-local-state'].find((x:any) => (x.id === ApplicationID)) ) {
-        return true;
-      } else {
-        return false;
-      }
+      const ai = await client.accountInformation(a).do();
+      debug(`getLocalState`, ai);
+      const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
+      debug(`getLocalState`, als);
+      return als ? als['key-value'] : undefined;
     };
+
+    // Application Local State Opt-in
+    const didOptIn = async (): Promise<boolean> =>
+      ((await getLocalState(thisAcc.addr)) !== undefined);
     const doOptIn = async (): Promise<void> => {
       await sign_and_send_sync(
         'ApplicationOptIn',
@@ -1114,10 +1120,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         [ T_Tuple([view_ty, padding_ty]), [ view_v,  padding_v] ]:
         [ padding_ty, padding_v ];
       debug(dhead, 'VIEWP', { view_typ, view_vp });
-
-      // Parse CBR into Public Key
-      const cbr2algo_addr = (x:string): Address =>
-        algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
       // Maps
       const { mapRefs, mapsPrev, mapsNext } = sim_r;
@@ -1467,7 +1469,41 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const creationTime = async () =>
       bigNumberify((await getInfo()).creationRound);
 
-    const views_bin = bin._getViews({reachStdlib: compiledStdlib});
+    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
+      const bs = new Uint8Array(size);
+      let offset = 0;
+      for ( let i = 0; i < howMany; i++ ) {
+        debug({i});
+        const ik = base64ify(`${prefix}${i}`);
+        debug({ik});
+        const st = (src.find((x:any) => x.key === ik)).value;
+        debug({st});
+        const bsi = base64ToUI8A(st.bytes);
+        debug({bsi});
+        if ( bsi.length == 0 ) {
+          return undefined;
+        }
+        bs.set(bsi, offset);
+        offset += bsi.length;
+      }
+      return bs;
+    };
+    const viewlib: IViewLib = {
+      viewMapRef: async (mapi: number, a:any): Promise<any> => {
+        debug('viewMapRef', { mapi, a });
+        const ls = await getLocalState(cbr2algo_addr(a));
+        assert(ls !== undefined, 'viewMapRef ls undefined');
+        const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
+        debug('viewMapRef', { mbs });
+        const md = mapDataTy.fromNet(mbs);
+        debug('viewMapRef', { md });
+        // @ts-ignore
+        const mr = md[mapi];
+        assert(mr !== undefined, 'viewMapRef mr undefined');
+        return mr;
+      },
+    };
+    const views_bin = bin._getViews({reachStdlib: compiledStdlib}, viewlib);
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (...args: any[]): Promise<any> => {
         debug('getView1', v, k, args);
@@ -1481,21 +1517,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return ['None', null];
         }
         const appSt = appInfo['params']['global-state'];
-        const vvn = new Uint8Array(viewSize);
-        let offset = 0;
-        for ( let i = 0; i < viewKeys; i++ ) {
-          debug({i});
-          const ik = base64ify(`v${i}`);
-          debug({ik});
-          const viewSt = (appSt.find((x:any) => x.key === ik)).value;
-          debug({viewSt});
-          const vvni = base64ToUI8A(viewSt.bytes);
-          debug({vvni});
-          if ( vvni.length == 0 ) {
+        const vvn = recoverSplitBytes('v', viewSize, viewKeys, appSt);
+        if ( vvn === undefined ) {
             return ['None', null];
-          }
-          vvn.set(vvni, offset);
-          offset += vvni.length;
         }
         const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
         const vi = bigNumberToNumber(vin);
@@ -1509,7 +1533,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const vvs = vty.fromNet(vvn);
         debug({vvs});
         try {
-          const vres = decode(vi, vvs.slice(1), args);
+          const vres = await decode(vi, vvs.slice(1), args);
           debug({vres});
           return ['Some', vres];
         } catch (e) {

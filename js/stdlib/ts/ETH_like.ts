@@ -26,6 +26,7 @@ import type { // =>
   CurrencyAmount,
   IAccount,
   IBackend,
+  IViewLib,
   IBackendViewInfo,
   IBackendViewsInfo,
   IContract,
@@ -830,7 +831,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const creationTime = async () =>
       bigNumberify((await getInfo()).creation_block);
 
-    const views_bin = bin._getViews({reachStdlib});
+    const viewlib: IViewLib = {
+      viewMapRef: async (...args: any): Promise<any> => {
+        void(args);
+        throw Error('viewMapRef not used by ETH backend'); },
+    };
+    const views_bin = bin._getViews({reachStdlib}, viewlib);
     const views_namesm = bin._Connectors.ETH.views;
     const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
       async (...args: any[]): Promise<any> => {

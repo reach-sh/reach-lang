@@ -51,7 +51,7 @@ export const debug = (...msgs: any) => {
 
 export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
   ty: ConnectorTy,
-  decode: (i:number, svs:Array<any>, args:Array<any>) => any,
+  decode: (i:number, svs:Array<any>, args:Array<any>) => Promise<any>,
 };
 
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
@@ -66,8 +66,12 @@ export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
   mapDataTy: ConnectorTy,
 };
 
+export type IViewLib = {
+  viewMapRef: any,
+};
+
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
-  _getViews: (stdlib:Object) => IBackendViews<ConnectorTy>,
+  _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
 };
 
