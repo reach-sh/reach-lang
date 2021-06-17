@@ -233,7 +233,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) < _a.svs.v61 + uint256(10));
+    require(uint256(block.number) < _a.svs.v61 + uint256(100));
     require(msg.value == _a.svs.v58);
     emit e2(_a);
     T6 memory la;
@@ -254,7 +254,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) >= _a.svs.v61 + uint256(10));
+    require(uint256(block.number) >= _a.svs.v61 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v57 == payable(msg.sender)));
     _a.svs.v57.transfer(_a.svs.v58);
@@ -305,7 +305,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) < _a.svs.v218 + uint256(10));
+    require(uint256(block.number) < _a.svs.v218 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v57 == payable(msg.sender)));
     emit e6(_a);
@@ -327,7 +327,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) >= _a.svs.v218 + uint256(10));
+    require(uint256(block.number) >= _a.svs.v218 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v65 == payable(msg.sender)));
     _a.svs.v65.transfer(_a.svs.v220);
@@ -344,7 +344,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) < _a.svs.v96 + uint256(10));
+    require(uint256(block.number) < _a.svs.v96 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v65 == payable(msg.sender)));
     emit e8(_a);
@@ -367,7 +367,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) >= _a.svs.v96 + uint256(10));
+    require(uint256(block.number) >= _a.svs.v96 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v57 == payable(msg.sender)));
     _a.svs.v57.transfer(_a.svs.v220);
@@ -384,7 +384,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) < _a.svs.v105 + uint256(10));
+    require(uint256(block.number) < _a.svs.v105 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v57 == payable(msg.sender)));
     require((_a.svs.v93 == (uint256(keccak256(abi.encode(_a.msg.v110, _a.msg.v111))))));
@@ -407,7 +407,7 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     
     
-    require(uint256(block.number) >= _a.svs.v105 + uint256(10));
+    require(uint256(block.number) >= _a.svs.v105 + uint256(100));
     require(msg.value == uint256(0));
     require((_a.svs.v65 == payable(msg.sender)));
     _a.svs.v65.transfer(_a.svs.v220);

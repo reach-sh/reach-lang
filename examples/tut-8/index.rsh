@@ -29,7 +29,7 @@ const Bob =
       { ...Player,
         acceptWager: Fun([UInt], Null) };
 
-const DEADLINE = 10;
+const DEADLINE = 100;
 export const main =
   Reach.App(
     {},
