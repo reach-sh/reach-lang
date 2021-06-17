@@ -1,6 +1,8 @@
 #!/bin/sh -e
 
+sed -i.bak 's/const DEADLINE = 10;/const DEADLINE = 100;/' index.rsh
 make build || exit 1
+mv index.rsh.bak index.rsh
 
 REACH_CONNECTOR="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
 DOCKER_COMPOSE_YML_DEFAULT="docker-compose.${REACH_CONNECTOR}.yml"

@@ -29,7 +29,10 @@ docker-compose.ETH.yml: docker-compose.yml
 	cp $^ $@
 
 docker-compose.ALGO.yml: docker-compose.yml
-	sed -e '32s/ &default-app//' -e '52s/:/: \&default-app/' $^ > $@
+	sed -e '34s/ &default-app//' -e '54s/:/: \&default-app/' $^ > $@
+
+docker-compose.CFX.yml: docker-compose.yml
+	sed -e '34s/ &default-app//' -e '65s/:/: \&default-app/' $^ > $@
 
 .PHONY: run-live
 run-live:
