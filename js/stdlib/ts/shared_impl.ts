@@ -282,6 +282,12 @@ export const labelMaps = (co: {
   return {ascLabels, labelMap};
 }
 
+/** @description Access an environment variable, or its react-prefixed equivalent */
+export function rEnv(env: {[k: string]: string}, k: string): string|undefined {
+  return env[k] || env[`REACT_APP_${k}`];
+}
+
+/** @description Check that a stringy env value doesn't look falsy. */
 export function truthyEnv(v: string|undefined|null): v is string {
   if (!v) return false;
   return ![

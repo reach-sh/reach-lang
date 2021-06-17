@@ -11,7 +11,9 @@ import {
   window
 } from './shim';
 import {
+  rEnv,
   setDEBUG,
+  truthyEnv,
 } from './shared_impl';
 import type { Stdlib_User } from './interfaces';
 
@@ -45,7 +47,7 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
     default: throw Error(`impossible: unknown connector ${connector}`);
   }
   if (connectorModeOrEnv && typeof connectorModeOrEnv !== 'string') {
-    let debug: boolean = (connectorModeOrEnv['REACH_DEBUG'] || connectorModeOrEnv['REACT_APP_REACH_DEBUG']) ? true : false;
+    let debug: boolean = truthyEnv(rEnv(connectorModeOrEnv, 'REACH_DEBUG'));
     setDEBUG(debug);
   }
   // also just inject ourselves into the window for ease of use
