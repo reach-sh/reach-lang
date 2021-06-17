@@ -5,6 +5,8 @@ import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
+import Timeout from 'await-timeout';
+import { debug } from './shared_impl';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -41,14 +43,21 @@ function booleanize(arg: any): boolean {
 function conform(args: any[], tys: ParamType[]): any[] {
   // XXX find a better way to do this stuff.
   args = unbn(args);
-  if (args.length !== tys.length) throw Error(`impossible: number of args does not match number of tys`);
-  for (const i in tys) {
-    if (tys[i].type === 'tuple') {
-      args[i] = conform(args[i], tys[i].components);
-    } else if (tys[i].type === 'bool') {
-      args[i] = booleanize(args[i]);
+  if (Array.isArray(args)) {
+    if (args.length !== tys.length) {
+      debug(`conform`, `err`, {args, tys});
+      throw Error(`impossible: number of args (${args.length}) does not match number of tys (${tys.length})`);
     }
-    // XXX handle more stuff
+    for (const i in tys) {
+      if (tys[i].type === 'tuple') {
+        args[i] = conform(args[i], tys[i].components);
+      } else if (tys[i].type === 'bool') {
+        args[i] = booleanize(args[i]);
+      } else {
+        // XXX handle more stuff
+        // debug(`conform untouched:`, args[i], tys[i])
+      }
+    }
   }
   return args;
 }
@@ -112,6 +121,7 @@ export class Contract implements IContract {
         return providers.ethifyOkReceipt(receipt);
       },
     }
+    this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
         if (item.name[0] !== '_' && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
@@ -119,32 +129,49 @@ export class Contract implements IContract {
         }
       }
     }
-    this.interface = new ethers.utils.Interface(this._abi);
   }
 
   _makeHandler(abiFn: any): any {
+    const iface = this.interface;
+    const fname: string = abiFn.name;
     const from = this._wallet.getAddress();
     const self = this;
-    // return (await getC())[funcName](arg, { value, gasLimit });
-    // const r_fn = await callC(funcName, arg, value);
-    // r_fn.wait()
-    // const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-    return async (arg: any, txn: any) => {
-      arg = unbn(arg);
-      // XXX user-configurable gas limit
-      // const gas = '50000';
-      txn = {from, ...txn, value: txn.value.toString()};
-      // @ts-ignore
-      const transactionReceipt = await self._contract[abiFn.name](arg).sendTransaction(txn).executed();
-      const { transactionHash } = transactionReceipt;
-      return {
-        // XXX not sure what the distinction is supposed to be here
-        wait: async () => {
-          return {
-            transactionHash
-          };
-        }
-      };
+    // XXX this should always be safe but maybe error handling around it just in case?
+    // XXX handle the case where the same method name can have multiple input sizes/types?
+    const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
+    return async (...args: any) => {
+      debug(`cfxers:handler`, fname, 'call', {args});
+      let txn: {from?: string, value?: string}|null = null;
+      if (args.length === inputs.length + 1) {
+        txn = unbn(args.pop());
+        txn = txn && {from, ...txn, value: (txn.value || '0').toString()};
+      }
+      args = unbn(args);
+      const argsConformed = conform(args, inputs);
+
+      // XXX using presence of txn to decide this is sketchy
+      // should instead figure out from ABI if this is a view-only fn?
+      if (txn) {
+        // Note: this usage of `.call` here is because javascript is insane.
+        // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
+        // @ts-ignore
+        const transactionReceipt = await self._contract[fname].call(...argsConformed).sendTransaction(txn).executed();
+        debug(`cfxers:handler`, fname, 'receipt');
+        debug(transactionReceipt);
+        const { transactionHash } = transactionReceipt;
+        return {
+          // XXX not sure what the distinction is supposed to be here
+          wait: async () => {
+            debug('cfxers:handler', fname, 'wait');
+            return {
+              transactionHash
+            };
+          }
+        };
+      } else {
+        // @ts-ignore
+        return await self._contract[fname].call(...argsConformed);
+      }
     }
   }
 }
@@ -168,11 +195,13 @@ export class ContractFactory {
   // Should it wait?
   async deploy(...args: any): Promise<Contract> {
     // Note: can't bind keyword "interface"
-    const {abi, bytecode, interface: iface, wallet} = this;
+    const {abi, bytecode: bcode, interface: iface, wallet} = this;
+    const bytecode = bcode.slice(0, 2) === '0x' || bcode === '' ? bcode : '0x' + bcode;
     wallet._requireConnected();
     if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
     const {conflux} = wallet.provider;
 
+    // XXX reduce duplication with _makeHandler
     let txnOverrides: any = {};
 
     if (args.length === iface.deploy.inputs.length + 1) {
@@ -195,10 +224,11 @@ export class ContractFactory {
     // Note: this usage of `.call` here is because javascript is insane.
     // XXX 2021-06-07 Dan: This works for the cjs compilation target, but does it work for the other targets?
     // @ts-ignore
-    const receiptP = contract.constructor.call(...argsConformed)
-      .sendTransaction(txn)
-      .executed();
+    const resultP = contract.constructor.call(...argsConformed).sendTransaction(txn)
+    const receiptP = resultP.executed();
 
+    const result = await resultP;
+    debug(`deploy result`, result);
     return new Contract(undefined, abi, wallet, receiptP);
   }
   getDeployTransaction() {
@@ -249,27 +279,17 @@ export class Wallet {
 
   async sendTransaction(txn: any): Promise<{
     transactionHash: string,
-    wait: () => Promise<{transactionHash: string,
-  }>}> {
+    wait: () => Promise<{transactionHash: string}>,
+  }> {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
-    txn = {from, ...txn, value: txn.value.toString()};
+    txn = {from, ...txn, value: (txn.value || '0').toString()};
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
-    const transactionHashP = this.provider.conflux.sendTransaction(txn);
-    const transactionHash = await transactionHashP;
-    return {
-      transactionHash,
-      wait: async () => {
-        // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
-        // @ts-ignore
-        await transactionHashP.executed();
-        return {transactionHash};
-      },
-    }
+    return _retryingSendTxn(this.provider, txn);
   }
 
   static createRandom(): Wallet {
@@ -281,4 +301,94 @@ export class Wallet {
     void(mnemonic);
     throw Error(`Account 'from mnemonic' not supported on Conflux, please use secret key`);
   }
+}
+
+// XXX This is nutty
+// Remember the last epoch that a given sender has sent
+// and don't try to send again until it is later than that epoch.
+// Note: requires addrs to be canonicalized first.
+const lastEpochSent: Record<string, number> = {};
+const epochWaitLock: Record<string, boolean> = {};
+
+// XXX implement a queue, maybe?
+function tryGetLock(obj: Record<string, boolean>, k: string): boolean {
+  if (!obj[k]) {
+    // XXX is this actually threadsafe?
+    obj[k] = true;
+    return true;
+  }
+  return false;
+}
+
+function releaseLock(obj: Record<string, boolean>, k: string): void {
+  obj[k] = false;
+}
+
+function getLastSentAt(addr: string): number {
+  return lastEpochSent[addr] || -1;
+}
+
+function updateSentAt(addr: string, epoch: number) {
+  lastEpochSent[addr] = Math.max(getLastSentAt(addr), epoch);
+}
+
+// Note: this relies on epochs moving on their own
+// If there's ever a devnet where this is not the case,
+// this will need to be adjusted.
+const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string): Promise<void> => {
+  while (!tryGetLock(epochWaitLock, addr)) {
+    // XXX fail after waiting too long?
+    await Timeout.set(50);
+  }
+  let current: number;
+  // XXX fail after waiting too long?
+  while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
+    await Timeout.set(50); // XXX revisit how long to wait?
+  }
+  updateSentAt(addr, current);
+  releaseLock(epochWaitLock, addr);
+}
+
+async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): Promise<{
+  transactionHash: string,
+  wait: () => Promise<{transactionHash: string}>,
+}> {
+  const max_tries = 2;
+  const addr = (txnOrig as any).from as string; // XXX typing
+  let err: Error|null = null;
+  let txnMut: any = {...txnOrig};
+  for (let tries = 1; tries <= max_tries; tries++) {
+    await waitUntilSendableEpoch(provider, addr);
+    if (err) {
+      // XXX is this still needed?
+      await Timeout.set(1000); // XXX shorten this?
+    }
+    try {
+      // Note: {...txn} because conflux is going to mutate it >=[
+      txnMut = {...txnOrig};
+      const transactionHashP = provider.conflux.sendTransaction(txnMut);
+      const transactionHash = await transactionHashP;
+      // debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      updateSentAt(addr, txnMut.epochHeight);
+      return {
+        transactionHash,
+        wait: async () => {
+          // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
+          // @ts-ignore
+          await transactionHashP.executed();
+          return {transactionHash};
+        },
+      }
+    } catch (e) {
+      err = e;
+      // debug({
+      //   message: `retrying sendTxn attempt failed`,
+      //   txnOrig, txnMut,
+      //   e, tries, max_tries
+      // });
+      continue;
+    }
+  }
+  if (!err) throw Error(`impossible: no error to throw after ${max_tries} failed attempts.`);
+  throw err;
 }

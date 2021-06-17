@@ -847,6 +847,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug('getView1', v, k, args, vkn);
         try {
           const val = await ethersC[vkn](...args);
+          debug('getView1', v, k, 'val', val);
           return ['Some', ty.unmunge(val)];
         } catch (e) {
           debug('getView1', v, k, 'error', e);
