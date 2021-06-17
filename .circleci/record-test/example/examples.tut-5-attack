@@ -1,0 +1,6 @@
+
+export ETH_STATUS="pass"
+export ALGO_STATUS="pass"
+export CFX_STATUS="pass"
+export STATUS="pass"
+export EXAMPLE_URL="https://circleci.com/gh/reach-sh/reach-lang/27798"
