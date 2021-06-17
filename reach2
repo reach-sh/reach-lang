@@ -17,6 +17,6 @@ fi
 
 run "$@" >/tmp/reach.out
 case "$?" in
-  42) sed 's/\r//' /tmp/reach.out | sh ;;
+  42) sh -ac "$(sed 's/\r//' /tmp/reach.out)" "$0" ;;
    *) cat /tmp/reach.out ;;
 esac

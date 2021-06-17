@@ -54,7 +54,6 @@ dependencies:
 - safe
 - scientific
 - search-algorithms
-- shell-monad
 - silently
 - simple-smt
 - smallcheck
@@ -142,7 +141,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - shell-monad
+    - neat-interpolation
     - unix
     - reach
 
