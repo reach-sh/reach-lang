@@ -15,8 +15,9 @@ if [ "$(docker image ls -q $IMG)" = '' ]; then
   if ! (docker pull "$IMG" && run update | sed 's/\r//' | sh); then exit 1; fi
 fi
 
-run "$@" >/tmp/reach.out
+run "$@" >/tmp/reach.$$.out
 case "$?" in
-  42) sh -ac "$(sed 's/\r//' /tmp/reach.out)" "$0" ;;
-   *) cat /tmp/reach.out ;;
+  # TODO use less fragile workaround for `\r` characters?
+  42) sh -ac "$(sed 's/\r//' /tmp/reach.$$.out)" "$0" ;;
+   *) cat /tmp/reach.$$.out ;;
 esac
