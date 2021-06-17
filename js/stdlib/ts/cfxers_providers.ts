@@ -1,6 +1,7 @@
 import cfxsdk from 'js-conflux-sdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
+import { defaultEpochTag } from './CFX_util';
 
 type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
@@ -55,8 +56,7 @@ export class Provider {
     // This is just because we tend to spam this a lot.
     // It can help to increase this to 1000 or more if you need to debug.
     await Timeout.set(50);
-    // TODO: 'latest_state' seems to work well; is there a better choice?
-    return await this.conflux.getEpochNumber('latest_state');
+    return await this.conflux.getEpochNumber(defaultEpochTag);
   }
 
   async getTransactionReceipt(transactionHash: string): Promise<any> {
@@ -83,7 +83,20 @@ export class Provider {
       address: opts.address,
       topics: opts.topics,
     };
-    return (await this.conflux.getLogs(cfxOpts)).map(epochToBlockNumber);
+
+    const max_tries = 20;
+    let e: Error|null = null;
+    for (let tries = 1; tries <= max_tries; tries++) {
+      try {
+        return (await this.conflux.getLogs(cfxOpts)).map(epochToBlockNumber);
+      } catch (err) {
+        e = err;
+        // XXX be pickier about which errs we are willing to catch
+        // XXX find some way to be sure more that `toEpoch` has been executed before trying again
+        await Timeout.set(50);
+      }
+    }
+    throw e;
   }
 
   async getTransaction(txnHash: string): Promise<any> {
