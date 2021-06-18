@@ -2,6 +2,10 @@ FROM cimg/base:stable-18.04
 
 RUN mkdir /tmp/workspace
 COPY example/ /tmp/workspace/record
-COPY record.sh /
+ENV CIRCLE_USERNAME="jeapostrophe"
+ENV CIRCLE_BRANCH="master"
+ENV CIRCLE_BUILD_URL="https://circleci.com/gh/reach-sh/reach-lang/27839"
 
-ENTRYPOINT ["/record.sh"]
+COPY record.py /
+
+ENTRYPOINT ["/record.py"]

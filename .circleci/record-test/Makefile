@@ -6,9 +6,9 @@ check: output
 output: .built
 	docker run -it --rm $(IMAGE) | tee $@
 
-.built: Dockerfile record.sh example
+.built: Dockerfile record.py example
 	docker build --tag=$(IMAGE) .
 	echo > $@
 
-record.sh: ../record.sh
+record.py: ../record.py
 	cp $^ $@
