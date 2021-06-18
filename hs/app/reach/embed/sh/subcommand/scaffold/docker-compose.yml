@@ -1,0 +1,86 @@
+version: '3.4'
+x-app-base: &app-base
+  image: ${IMAGE_TAG}
+services:
+  devnet-cfx:
+    image: reachsh/devnet-cfx:${REACH_VERSION}
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  algorand-devnet:
+    image: reachsh/algorand-devnet:${REACH_VERSION}
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - REACH_DEBUG
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - 9392
+  algorand-postgres-db:
+    image: postgres:11-alpine
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+  ${SERVICE}-ETH-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-live
+      - REACH_ISOLATED_NETWORK
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
+  ${SERVICE}-ETH-test-dockerized-geth: &default-app
+    <<: *app-base
+    depends_on:
+      - ethereum-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+      - ETH_NODE_URI=http://ethereum-devnet:8545
+  ${SERVICE}-ALGO-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-live
+      - REACH_ISOLATED_NETWORK
+      - ALGO_TOKEN
+      - ALGO_SERVER
+      - ALGO_PORT
+      - ALGO_INDEXER_TOKEN
+      - ALGO_INDEXER_SERVER
+      - ALGO_INDEXER_PORT
+      - ALGO_FAUCET_PASSPHRASE
+  ${SERVICE}-ALGO-test-dockerized-algod:
+    <<: *app-base
+    depends_on:
+      - algorand-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://algorand-devnet
+      - ALGO_INDEXER_PORT=8980
+  ${SERVICE}-CFX-devnet:
+    <<: *app-base
+    depends_on:
+      - devnet-cfx
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-devnet
+      - CFX_DEBUG
+      - CFX_NODE_URI=http://devnet-cfx:12537
+      - CFX_NETWORK_ID=999
+  ${SERVICE}-CFX-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-live
+      - CFX_DEBUG
+      - CFX_NODE_URI
+      - CFX_NETWORK_ID
+  ${SERVICE}-: *default-app
+  ${SERVICE}: *default-app
