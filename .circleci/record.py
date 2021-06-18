@@ -68,10 +68,10 @@ for c in conns:
     tfailc = len(tfails)
     if tfailc > 0:
         msg = ' '.join(map(fmte, tfails))
-        POST += f"\n- *{c}* {tfailc}: {msg}"
+        POST += f"\\n- *{c}* {tfailc}: {msg}"
 
 EXIT = 0
-POST += "\n*"
+POST += "\\n*"
 if blackc > 0:
     POST += f"DO NOT "
     EXIT = 1
