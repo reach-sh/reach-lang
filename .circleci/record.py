@@ -55,14 +55,14 @@ if badc > 0:
     SYM = "FAIL"
     PRE = f"{badc} of {total} failed!"
     if nblackc > 0:
-        PRE += f" ({nblackc} expected failures)"
+        PRE += f" ({nblackc} expected)"
 
 for c in conns:
     def fmte(e):
         x = f"<{urls[e]}|{e}>"
         ce = f"{c}.{e}"
         if ce in blacklist: x = f"*{x}*"
-        if ce in time: x = f"{x}(t)"
+        if ce in time: x = f"{x} (t)"
         return x
     tfails = cfails[c]
     tfailc = len(tfails)
