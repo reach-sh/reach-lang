@@ -37,6 +37,7 @@ import Reach.Verify.SMTAst
 import Reach.AddCounts (add_counts)
 import qualified Data.List as List
 import Data.Functor
+import Data.List (nub)
 
 --- SMT Helpers
 
@@ -180,7 +181,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
   , ctxt_inv_mode :: BlockMode
   , ctxt_pay_amt :: Maybe (SExpr, SExpr)
-  , ctxt_smt_trace :: IORef (S.Set SMTLet)
+  , ctxt_smt_trace :: IORef [SMTLet]
   }
 
 ctxt_mode :: App VerifyMode
@@ -269,7 +270,7 @@ smtTypeInv t se = do
 smtDeclare :: Solver -> String -> SExpr -> Maybe SMTLet -> App ()
 smtDeclare smt v s ml = do
   smt_trace_r <- asks ctxt_smt_trace
-  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (flip S.insert st) ml)
+  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml)
   liftIO $ void $ SMT.declare smt v s
 
 smtDeclare_v :: String -> DLType -> Maybe SMTLet -> App ()
@@ -395,8 +396,8 @@ set_to_seq = Seq.fromList . S.toList
 sv2dv :: String -> App (Maybe DLVar)
 sv2dv v = do
   v2dv <- (liftIO. readIORef) =<< asks ctxt_v_to_dv
-  case M.lookup v v2dv of
-    Just (_:dv:_) -> return $ Just dv
+  case reverse . nub <$> M.lookup v v2dv of
+    Just (dv:_) -> return $ Just dv
     _ -> return Nothing
 
 parseType :: SExpr ->App DLType
@@ -548,7 +549,7 @@ display_fail tat f tk mmsg repeated mrd mdv = do
                 Just (RD_Model m) -> parseModel m
           pm_str_val <- parseModel2 pm
           lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-          lets' <- dropConstants pm_str_val <$> mapM recoverBindingInfo (S.toList lets)
+          lets' <- reverse . nub . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
           smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
           pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
                 sv2dv k <&> \case
