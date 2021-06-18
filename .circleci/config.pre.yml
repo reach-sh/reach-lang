@@ -262,7 +262,7 @@ jobs:
     - checkout
     - workattach
     - run: |
-        ./.circleci/record.sh >> $BASH_ENV
+        ./.circleci/record.py >> $BASH_ENV
     - slack/notify:
         event: always
         # NOTE: We used to do

@@ -1,0 +1,11 @@
+# These are allowed to fail and we still release
+
+# Unreliable
+ETH.tut-7-rpc
+ALGO.tut-7-rpc
+CFX.tut-7-rpc
+
+# Too big
+ALGO.ttt
+ALGO.multiple-pr-case
+ALGO.map-rwrw

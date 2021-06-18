@@ -1,3 +1,4 @@
-.built
-output
-record.py
+/.built
+/output
+/record.py
+/whitelist.txt

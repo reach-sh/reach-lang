@@ -10,7 +10,6 @@ def env(k):
 conns = [ 'ETH', 'ALGO', 'CFX' ]
 
 bad = set()
-fails = []
 cfails = {}
 for c in conns:
     cfails[c] = []
@@ -27,30 +26,36 @@ for rp in recs:
         p = json.loads("{" + m + " \"okay\": true}")
         me = str(rp).replace(f"{DIR}/examples.", "")
         urls[me] = p['EXAMPLE_URL']
-        def add_fail(k, l, cme=None):
-            if p[k] == "fail-time":
-                if cme: time.add(cme)
-            if p[k].startswith("fail"):
-                l.append(me)
-                if cme: bad.add(cme)
-        add_fail('STATUS', fails)
         for c in conns:
             cme = f"{c}.{me}"
-            add_fail(f'{c}_STATUS', cfails[c], f"{c}.{me}")
+            k = f'{c}_STATUS'
+            if p[k] == "fail-time":
+                time.add(cme)
+            if p[k].startswith("fail"):
+                cfails[c].append(me)
+                bad.add(cme)
 
-# These are allowed to fail and we still release
-whitelist = { "ALGO.ttt" }
+source_dir = Path(__file__).resolve().parent
+wlp = source_dir / 'whitelist.txt'
+wlf = open(wlp, "r")
+def no_hash(x): return x.startswith("#")
+whitelist = set( filterfalse(no_hash, wlf.read().splitlines()) )
 blacklist = bad - whitelist
 
-total = len(recs)
+badc = len(bad)
+blackc = len(blacklist)
+nblackc = badc - blackc
+total = len(recs) * len(conns)
+
 SYM = "OKAY"
 PRE = f"{total} passed!"
 POST = ""
 
-failc = len(fails)
-if failc > 0:
+if badc > 0:
     SYM = "FAIL"
-    PRE = f"{failc} of {total} failed!"
+    PRE = f"{badc} of {total} failed!"
+    if nblackc > 0:
+        PRE += f" ({nblackc} expected failures)"
 
 for c in conns:
     def fmte(e):
@@ -61,17 +66,16 @@ for c in conns:
         return x
     tfails = cfails[c]
     tfailc = len(tfails)
-    # XXX elide when too long
     if tfailc > 0:
         msg = ' '.join(map(fmte, tfails))
-        POST += f"\n*{c}* {tfailc}: {msg}"
+        POST += f"\n- *{c}* {tfailc}: {msg}"
 
 EXIT = 0
-POST += "\n"
-if len(blacklist) > 0:
+POST += "\n*"
+if blackc > 0:
     POST += f"DO NOT "
     EXIT = 1
-POST += "RELEASE"
+POST += "RELEASE*"
 
 # XXX make branch a link
 print(f"export RECORD_MESSAGE='*{SYM}* {env('CIRCLE_USERNAME')}/{env('CIRCLE_BRANCH')} > examples: {PRE} <{env('CIRCLE_BUILD_URL')}|more...>{POST}'")

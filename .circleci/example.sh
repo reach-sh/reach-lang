@@ -36,8 +36,8 @@ for CONN in ETH ALGO CFX ; do
     # ^ XXX it actually doesn't enforce things properly for tut-7-rpc
     case "${CONN}" in
       ETH) TIMEOUT=$((2 * 60)) ;;
-      CFX) TIMEOUT=$((4 * 60)) ;;
-      ALGO) TIMEOUT=$((6 * 60)) ;;
+      CFX) TIMEOUT=$((6 * 60)) ;;
+      ALGO) TIMEOUT=$((10 * 60)) ;;
     esac
     timeout --foreground "${TIMEOUT}" ./one.sh run "${WHICH}"
     EXIT=$?
