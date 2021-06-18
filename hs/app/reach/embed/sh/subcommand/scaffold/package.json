@@ -1,0 +1,12 @@
+{
+  "name": "@reach-sh/${PROJ}",
+  "type": "module",
+  "dependencies": {
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore --ext .mjs .",
+    "${APP}": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
+  }
+}

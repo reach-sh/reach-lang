@@ -19,6 +19,8 @@ import qualified NeatInterpolation as N
 
 import qualified Reach.Version as V
 
+-- TODO update `ref-usage` docs once stabilized
+
 
 data Env = Env
   { e_embedDir :: FilePath
@@ -42,6 +44,13 @@ write t = asks e_emit >>= liftIO . flip modifyIORef (<> t <> "\n\n")
 
 writeFrom :: FilePath -> App
 writeFrom p = asks e_embedDir >>= liftIO . T.readFile . (</> p) >>= write
+
+
+runSubApp :: App -> Env -> IO T.Text
+runSubApp a e = do
+  r <- newIORef ""
+  runReaderT a $ e { e_emit = r }
+  readIORef r
 
 
 swap :: T.Text -> T.Text -> T.Text -> T.Text
@@ -85,6 +94,14 @@ reachVersionShort =
 
 realpath :: App
 realpath = writeFrom "sh/_common/realpath.sh"
+
+
+ensureConnectorMode :: App
+ensureConnectorMode = writeFrom "sh/_common/ensureConnectorMode.sh"
+
+
+declareFatalInfiniteReachRunLoop :: App
+declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteReachRunLoop.sh"
 
 
 --------------------------------------------------------------------------------
@@ -245,7 +262,166 @@ init' = command "init" . info f $ d <> foot where
 run' :: Subcommand
 run' = command "run" $ info f d where
   d = progDesc "Run a simple app"
-  f = undefined
+  f = go <$> strArgument (metavar "APP" <> value "")
+
+  -- reach run args
+  -- check state of scaffolded files
+  -- * if none exist: scaffold in --isolate --quiet mode, set flag UNSCAFFOLD
+  -- * if all exist: just use the existing things
+  -- * if some exist: error
+  -- make build run
+  -- unscaffold if UNSCAFFOLD
+  --
+  -- XXX Can we add eslint on the JS?
+  go :: T.Text -> App
+  go app = do
+    let app' = if app == "" then "index" else app
+    doScaffold <- ask >>= liftIO . runSubApp (scaffold' True True app')
+
+    declareFatalInfiniteReachRunLoop
+
+    write [N.text|
+      ANY_CUSTOMIZATION=false
+      if ! [ "x$$REACH_CONNECTOR_MODE" = "x" ]; then
+        ANY_CUSTOMIZATION=true
+      fi
+    |]
+
+    ensureConnectorMode
+    write [N.text| export RUN_FROM_REACH=${RUN_FROM_REACH:-false} |]
+
+    case app of
+      "" -> write [N.text|
+        BARE_REACH_RUN=true
+        APP="index"
+      |]
+
+      app'' -> write [N.text|
+        BARE_REACH_RUN=false
+        ANY_CUSTOMIZATION=true
+        ARG=$app''
+
+        [ "x$$ARG" = "x--" ] && ARG="index"
+        [ -d "$$ARG"       ] && ARG="$$ARG/index"
+
+        cd "$(dirname "$$ARG")" || exit 1
+        APP="$(basename "$$ARG")"
+      |]
+
+    write [N.text|
+      RSH="$${APP}.rsh"
+      MJS="$${APP}.mjs"
+
+      ! [ -f "$$RSH" ] && (echo "$$RSH doesn't exit"; exit 1)
+      ! [ -f "$$MJS" ] && (echo "$$MJS doesn't exit"; exit 1)
+
+      MAKEFILE=Makefile
+      DOCKERFILE=Dockerfile
+      PACKAGE_JSON=package.json
+      DOCKER_COMPOSE_YML=docker-compose.yml
+
+      NONE_EXIST=true
+      # Note: Makefile excluded from this check
+      [ -f "$$DOCKERFILE" ] || [ -f "$$PACKAGE_JSON" ] || [ -f "$$DOCKER_COMPOSE_YML" ] \
+        && NONE_EXIST=false
+
+      do_scaffold () {
+      $doScaffold
+      }
+
+      if $$NONE_EXIST; then
+        do_scaffold
+
+        cleanup () {
+          # TODO equivalent doUnscaffold
+          # do_unscaffold --isolate --quiet "$$APP"
+          :
+        }
+
+        # Note: do_scaffold has mutated these vars like so:
+        # MAKEFILE="$$MAKEFILE.$app'"
+        # DOCKERFILE="$$Dockerfile.$app'"
+        # PACKAGE_JSON="$$PACKAGE_JSON.$app'"
+        # DOCKER_COMPOSE_YML="$$DOCKER_COMPOSE_YML.$app'"
+      else
+        cleanup () {
+          :
+        }
+
+        ALL_EXIST=false
+        : && [ -f "$$MAKEFILE" ] \
+          && [ -f "$$DOCKERFILE" ] \
+          && [ -f "$$PACKAGE_JSON" ] \
+          && [ -f "$$DOCKER_COMPOSE_YML" ] \
+          && ALL_EXIST=true
+
+        # We trust our scaffolded makefiles,
+        # so we only need to check for infinite recurrsion on:
+        # * reach run ($$BARE_REACH_RUN), since this is the only potential avenue for inf recursion
+        # * a proj with customized scaffolding. ($$ALL_EXIST)
+        # * running from inside another reach run ($$RUN_FROM_REACH)
+        if $$BARE_REACH_RUN && $$ALL_EXIST && $$RUN_FROM_REACH; then
+          fatal_infinite_reach_run_loop
+        fi
+
+        if ! $$ALL_EXIST; then
+          # TODO: more description on err
+          echo "I'm confused, some scaffolded files exist, but not all"
+          exit 1
+        fi
+      fi
+
+      ## TODO abstract and finalize the following ##
+      reach_make () {
+        RUN_FROM_REACH=true make "$$@" REACH="$${REACH}"
+        MAKE_EXIT=$$?
+        if [ $$MAKE_EXIT -ne 0 ]; then
+          cleanup
+          exit $$MAKE_EXIT
+        fi
+      }
+
+      reach_make_f () {
+        reach_make -f "$$MAKEFILE" "$$@"
+      }
+
+      if $$BARE_REACH_RUN; then
+        # Always build from "scaffolded" file
+        reach_make_f build
+        # Run from Makefile if present and not "run from reach"
+        if [ -f Makefile ] && ! $$RUN_FROM_REACH && ! $$ANY_CUSTOMIZATION; then
+          reach_make run "$$@" # TODO thread args correctly
+        else
+          reach_make_f run "$$@" # TODO thread args correctly
+        fi
+      else
+        # It is assumed that if this is being called from within reach run,
+        # then the build step has already been handled.
+        # TODO: better use of makefiles so that we just call make build anyway,
+        # and it is a noop if nothing needs to be done.
+        if ! $$RUN_FROM_REACH; then
+          reach_make_f build
+        fi
+
+        # This is nuts and possibly a little bit wrong.
+        # Easier methods exist but they are outside of POSIX standard.
+        escape_args () {
+          for arg in "$$APP" "$$@"; do
+            escaped_arg=""
+            for word in $$arg; do
+              escaped_arg="$$escaped_arg$$(printf "%s\ " "$$word")"
+            done
+            echo "$${escaped_arg%??}"
+          done
+        }
+        ARGS=$$(escape_args "$$@")
+        # Yes it apparently has to be exactly "$$(echo $$ARGS)" because reasons.
+        # shellcheck disable=SC2116,SC2086
+        reach_make_f run-target ARGS="$$(echo $$ARGS)"
+      fi
+
+      cleanup
+    |]
 
 
 --------------------------------------------------------------------------------
@@ -256,10 +432,95 @@ down = command "down" $ info f d where
 
 
 --------------------------------------------------------------------------------
+scaffold' :: Bool -> Bool -> T.Text -> App
+scaffold' isolate quiet app = do
+  Env {..} <- ask
+
+  let isolate' = if isolate then "true" else "false"
+  let verbose = if quiet then "false" else "true"
+
+  let f a = if isolate then a <> "." <> app else a
+  let dockerfile = f "Dockerfile"
+  let packageJson = f "package.json"
+  let composeYml = f "docker-compose.yml"
+  let makefile = f "Makefile"
+
+  let tmpl n = e_embedDir </> "sh" </> "subcommand" </> "scaffold" </> n
+  fmtDockerfile <- liftIO . T.readFile $ tmpl "Dockerfile"
+  fmtPackageJson <- liftIO . T.readFile $ tmpl "package.json"
+  fmtComposeYml <- liftIO . T.readFile $ tmpl "docker-compose.yml"
+  fmtMakefile <- liftIO . T.readFile $ tmpl "Makefile"
+  fmtGitignore <- liftIO . T.readFile $ tmpl ".gitignore"
+  fmtDockerignore <- liftIO . T.readFile $ tmpl ".dockerignore"
+
+  reachVersion
+  ensureConnectorMode
+
+  write [N.text|
+    APP="$app"
+    MJS="$app.mjs"
+    RSH="$app.rsh"
+    MAKEFILE="$makefile"
+    DOCKERFILE="$dockerfile"
+    PACKAGE_JSON="$packageJson"
+    DOCKER_COMPOSE_YML="$composeYml"
+
+    PROJ="$$(basename "$$(pwd)" | tr '[:upper:]' '[:lower:]')"
+    "$isolate'" && PROJ="$$PROJ-$app"
+
+    CPLINE=""
+    "$isolate'" && CPLINE="RUN cp /app/$packageJson /app/package.json"
+
+    SERVICE="reach-app-$${PROJ}"
+    IMAGE="reachsh/$${SERVICE}"
+    IMAGE_TAG="$${IMAGE}:latest"
+
+    $verbose && echo "Writing $$DOCKERFILE"
+    cat >"$$DOCKERFILE" <<EOF
+    $fmtDockerfile
+    EOF
+
+    # TODO: s/lint/preapp. It's disabled because sometimes our
+    # generated code trips the linter
+    # TODO: ^ The same goes for js/runner_package.template.json
+    $verbose && echo "Writing $$PACKAGE_JSON"
+    cat >"$$PACKAGE_JSON" <<EOF
+    $fmtPackageJson
+    EOF
+
+    $verbose && echo "Writing $$DOCKER_COMPOSE_YML"
+    cat >"$$DOCKER_COMPOSE_YML" <<EOF
+    $fmtComposeYml
+    EOF
+
+    $verbose && echo "Writing $$MAKEFILE"
+    cat >"$$MAKEFILE" <<EOF
+    $fmtMakefile
+    EOF
+
+    if [ ! -f .gitignore ]; then
+      $verbose && echo "Writing .gitignore"
+      cat >.gitignore <<EOF
+    $fmtGitignore
+    EOF
+    fi
+
+    if [ ! -f .dockerignore ]; then
+      $verbose && echo "Writing .dockerignore"
+      cat >.dockerignore <<EOF
+    $fmtDockerignore
+    EOF
+    fi
+  |]
+
+
 scaffold :: Subcommand
 scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
-  f = undefined
+  f = scaffold'
+    <$> switch (long "isolate")
+    <*> switch (long "quiet")
+    <*> strArgument (metavar "APP" <> value "index" <> showDefault)
 
 
 --------------------------------------------------------------------------------
