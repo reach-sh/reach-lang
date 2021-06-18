@@ -14,5 +14,5 @@ build: clean
 	$(MAKE) clean
 
 .PHONY: run
-run: build
+run:
 	echo No runtime

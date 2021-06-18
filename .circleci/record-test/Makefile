@@ -1,5 +1,6 @@
 IMAGE=reachsh/circleci-record-test:latest
 
+.PHONY: check
 check: output
 	cat output
 
