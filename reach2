@@ -17,7 +17,7 @@ fi
 
 run "$@" >/tmp/reach.$$.out
 case "$?" in
-  # TODO use less fragile workaround for `\r` characters?
+  # TODO write via `docker` mount and intercept + re-emit exit code
   42) sh -ac "$(sed 's/\r//' /tmp/reach.$$.out)" "$0" ;;
    *) cat /tmp/reach.$$.out ;;
 esac
