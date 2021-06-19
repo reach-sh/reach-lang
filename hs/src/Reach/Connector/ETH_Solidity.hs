@@ -1349,7 +1349,8 @@ try_compile_sol solf opt = do
             case mo of
               Nothing -> ("oD", o [])
               Just r -> ("o" <> show r, o ["--optimize-runs=" <> show r])
-  let args = oargs <> ["--combined-json", "abi,bin,opcodes", solf]
+  let args = oargs <> ["--combined-json", "abi,bin", solf]
+  -- putStrLn $ "solc " <> (show args)
   (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
   let show_output =
         case stdout == "" of

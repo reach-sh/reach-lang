@@ -140,7 +140,7 @@ tealcount () {
 # c hs/t/y/pr179.rsh
 # c hs/t/y/pr-671006.rsh
 # fc hs/t/n/pr-671006p.rsh
-# c hs/t/y/pr190.rsh
+c hs/t/y/pr190.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -215,7 +215,7 @@ tealcount () {
 # r examples/rent-seeking
 # r examples/pr-1cc66
 
-r users/ff
+# r users/ff
 
 # (cd examples/abstract-simul && make build)
 
