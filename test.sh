@@ -140,6 +140,7 @@ tealcount () {
 # c hs/t/y/pr179.rsh
 # c hs/t/y/pr-671006.rsh
 # fc hs/t/n/pr-671006p.rsh
+c hs/t/y/pr190.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -201,7 +202,7 @@ tealcount () {
 # r examples/view-bytes
 # r examples/view-fun
 # r examples/view-maybe
-r examples/view-map
+# r examples/view-map
 # r examples/view-steps
 # r examples/weird-swap
 # r examples/workshop-fomo

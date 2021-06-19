@@ -27,6 +27,7 @@ data Deprecation
 
 data Warning
   = W_Deprecated Deprecation
+  | W_SolidityOptimizeFailure String
   deriving (Eq)
 
 instance Show Deprecation where
@@ -46,6 +47,8 @@ instance Show Deprecation where
 instance Show Warning where
   show = \case
     W_Deprecated d -> show d
+    W_SolidityOptimizeFailure msg ->
+      "The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:\n" <> msg
 
 emitWarning :: Warning -> IO ()
 emitWarning d =

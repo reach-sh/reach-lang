@@ -34,6 +34,7 @@ import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
+import Reach.Warning
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -1091,7 +1092,7 @@ solDefineType t = case t of
           , solDecl "idx" "uint256"
           , solDecl "val" tnmem
           ]
-    let ret = "internal" <+> "returns" <+> parens (solDecl "arrp" memem)
+    let ret = "pure internal" <+> "returns" <+> parens (solDecl "arrp" memem)
     let assign idx val = (solArrayRef "arrp" idx) <+> "=" <+> val <> semi
     let body =
           vsep
@@ -1360,18 +1361,38 @@ extract cinfo v = do
            ])
         cinfo
 
-compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
-compile_sol cinfo solf = do
+try_compile_sol :: Bool -> ConnectorInfoMap -> FilePath -> IO (Either String ConnectorInfo)
+try_compile_sol optHuh cinfo solf = do
+  -- XXX we could analyze the program and figure out how what --optimize-runs=
+  -- should be. If there are no `while`, then it could be set exactly to the
+  -- longest path from root to leaf in the protocol
+  let args = (if optHuh then ["--optimize"] else []) <> ["--combined-json", "abi,bin,opcodes", solf]
   (ec, stdout, stderr) <-
-    readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
-  let show_output = "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr ++ "\n"
-  let bad msg = impossible $ "solc failed:\n" ++ show_output ++ msg
+    readProcessWithExitCode "solc" args []
+  let show_output =
+        case stdout == "" of
+          True -> stderr
+          False -> "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr
+  let bad = \case
+        Nothing -> return $ Left $ show_output
+        Just x -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> x
   case ec of
-    ExitFailure _ -> bad ""
+    ExitFailure _ -> bad Nothing
     ExitSuccess ->
-      either bad return $
+      either (bad . Just) (return . Right) $
         runExcept $
           extract cinfo =<< (liftEither $ eitherDecode $ LB.pack stdout)
+
+compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
+compile_sol cinfo solf = do
+  try_compile_sol True cinfo solf >>= \case
+    Right x -> return $ x
+    Left bado -> do
+      try_compile_sol False cinfo solf >>= \case
+        Right x -> do
+          emitWarning $ W_SolidityOptimizeFailure bado
+          return $ x
+        Left _ -> impossible $ "The Solidity compiler failed with the message:\n" <> bado
 
 connect_eth :: Connector
 connect_eth = Connector {..}
