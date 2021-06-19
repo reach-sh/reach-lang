@@ -3,11 +3,9 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
 
 import Control.Monad
-import Control.Monad.Except
 import Control.Monad.Reader
 import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
-import Data.Aeson.Text
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
@@ -21,7 +19,6 @@ import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -51,6 +48,9 @@ includeRequireMsg = False
 
 maxDepth :: Int
 maxDepth = 13
+
+maxContractLen :: Int
+maxContractLen = 24576
 
 --- Solidity helpers
 
@@ -1317,7 +1317,6 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
   , csrCode :: T.Text
-  , csrOpcodes :: T.Text
   }
 
 instance FromJSON CompiledSolRec where
@@ -1326,73 +1325,86 @@ instance FromJSON CompiledSolRec where
     case find (":ReachContract" `T.isSuffixOf`) (HM.keys ctcs) of
       Just ctcKey -> do
         ctc <- ctcs .: ctcKey
-        -- FIXME change ETH.ts so we don't serialize this, since we probably
-        -- just un-serialize it on that end
         (abio :: Value) <- ctc .: "abi"
-        let abit = LT.toStrict $ encodeToLazyText abio
+        -- Why are we re-encoding? ethers takes the ABI as a string, not an
+        -- object.
+        let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
+        let abit = T.pack $ LB.unpack $ encodePretty' cfg abio
         codebodyt <- ctc .: "bin"
-        opcodest <- ctc .: "opcodes"
         return
           CompiledSolRec
             { csrAbi = abit
             , csrCode = codebodyt
-            , csrOpcodes = opcodest
             }
       Nothing ->
         impossible "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: ConnectorInfoMap -> Value -> Except String ConnectorInfo
-extract cinfo v = do
-  let liftResult = \case
-        Error x -> Left x
-        Success y -> Right y
-  CompiledSolRec {..} <- liftEither $ liftResult $ fromJSON v
-  (csrAbi_parsed :: Value) <-
-    liftEither $
-      eitherDecode (LB.pack (T.unpack csrAbi))
-  let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
-  let csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
-  return $
-    Aeson.Object $
-      HM.union
-        (HM.fromList $
-           [ ("ABI", Aeson.String csrAbi_pretty)
-           , ("Bytecode", Aeson.String $ "0x" <> csrCode)
-           ])
-        cinfo
-
-try_compile_sol :: Bool -> ConnectorInfoMap -> FilePath -> IO (Either String ConnectorInfo)
-try_compile_sol optHuh cinfo solf = do
-  -- XXX we could analyze the program and figure out how what --optimize-runs=
-  -- should be. If there are no `while`, then it could be set exactly to the
-  -- longest path from root to leaf in the protocol
-  let args = (if optHuh then ["--optimize"] else []) <> ["--combined-json", "abi,bin,opcodes", solf]
-  (ec, stdout, stderr) <-
-    readProcessWithExitCode "solc" args []
+try_compile_sol :: FilePath -> Maybe (Maybe Int) -> IO (Either String CompiledSolRec)
+try_compile_sol solf opt = do
+  let oargs =
+        case opt of
+          Nothing -> []
+          Just mo -> (<>) ["--optimize"] $
+            case mo of
+              Nothing -> []
+              Just r -> ["--optimize-runs=" <> show r]
+  let args = oargs <> ["--combined-json", "abi,bin,opcodes", solf]
+  (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
   let show_output =
         case stdout == "" of
           True -> stderr
           False -> "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr
-  let bad = \case
-        Nothing -> return $ Left $ show_output
-        Just x -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> x
   case ec of
-    ExitFailure _ -> bad Nothing
+    ExitFailure _ ->
+      return $ Left show_output
     ExitSuccess ->
-      either (bad . Just) (return . Right) $
-        runExcept $
-          extract cinfo =<< (liftEither $ eitherDecode $ LB.pack stdout)
+      case eitherDecode (LB.pack stdout) of
+        Left m -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
+        Right x -> return $ Right x
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
-  try_compile_sol True cinfo solf >>= \case
-    Right x -> return $ x
-    Left bado -> do
-      try_compile_sol False cinfo solf >>= \case
-        Right x -> do
-          emitWarning $ W_SolidityOptimizeFailure bado
-          return $ x
-        Left _ -> impossible $ "The Solidity compiler failed with the message:\n" <> bado
+  let shortEnough (CompiledSolRec {..}) =
+        T.length csrCode > (2 * maxContractLen)
+  let try = try_compile_sol solf
+  let merr = \case
+        Left e -> emitWarning $ W_SolidityOptimizeFailure e
+        Right _ -> return ()
+  let desperate = \case
+        Right x -> \_ _ -> return $ x
+        e@(Left bado) -> \case
+          Right y -> \_ -> merr e >> return y
+          Left _ -> \case
+            Right z -> merr e >> return z
+            Left _ ->
+              impossible $ "The Solidity compiler failed with the message:\n" <> bado
+  let tryN eA e1 =
+        try Nothing >>= \case
+          Right oN ->
+            case shortEnough oN of
+              True -> merr eA >> return oN
+              False -> desperate eA e1 (Right oN)
+          Left rN -> desperate eA e1 (Left rN)
+  let try1 eA =
+        try (Just $ Just 1) >>= \case
+          Right o1 ->
+            case shortEnough o1 of
+              True -> merr eA >> return o1
+              False -> tryN eA (Right o1)
+          Left r1 -> tryN eA (Left r1)
+  let tryA =
+        try (Just Nothing) >>= \case
+          Right oA ->
+            case shortEnough oA of
+              True -> return $ oA
+              False -> try1 $ Right oA
+          Left rA -> try1 $ Left rA
+  CompiledSolRec {..} <- tryA
+  return $ Aeson.Object $ HM.union cinfo $
+    HM.fromList $ [ ("ABI", Aeson.String csrAbi)
+                  , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+                  , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
+                  ]
 
 connect_eth :: Connector
 connect_eth = Connector {..}

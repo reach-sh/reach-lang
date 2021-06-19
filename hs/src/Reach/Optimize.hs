@@ -207,6 +207,8 @@ instance Optimize DLExpr where
           return $ DLE_Arg at zero
         (DIV, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
           return $ DLE_Arg at lhs
+        (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
+          return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
           return $ DLE_Arg at $ if c then t else f
         (IF_THEN_ELSE, [c, t, f]) ->
