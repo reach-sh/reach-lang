@@ -43,8 +43,6 @@ r () {
   make build
   # make down
 
-  exit 0
-
   # jb
 
   export REACH_DEBUG=1

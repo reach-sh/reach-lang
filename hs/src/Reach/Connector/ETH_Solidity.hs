@@ -1339,15 +1339,16 @@ instance FromJSON CompiledSolRec where
       Nothing ->
         impossible "Expected contracts object to have a key with suffix ':ReachContract'"
 
-try_compile_sol :: FilePath -> Maybe (Maybe Int) -> IO (Either String CompiledSolRec)
+try_compile_sol :: FilePath -> Maybe (Maybe Int) -> IO (Either String (String, CompiledSolRec))
 try_compile_sol solf opt = do
-  let oargs =
+  let o = (<>) ["--optimize"]
+  let (me, oargs) =
         case opt of
-          Nothing -> []
-          Just mo -> (<>) ["--optimize"] $
+          Nothing -> ("o0", [])
+          Just mo ->
             case mo of
-              Nothing -> []
-              Just r -> ["--optimize-runs=" <> show r]
+              Nothing -> ("oD", o [])
+              Just r -> ("o" <> show r, o ["--optimize-runs=" <> show r])
   let args = oargs <> ["--combined-json", "abi,bin,opcodes", solf]
   (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
   let show_output =
@@ -1360,12 +1361,16 @@ try_compile_sol solf opt = do
     ExitSuccess ->
       case eitherDecode (LB.pack stdout) of
         Left m -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
-        Right x -> return $ Right x
+        Right x -> return $ Right (me, x)
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
-  let shortEnough (CompiledSolRec {..}) =
-        T.length csrCode > (2 * maxContractLen)
+  let shortEnough (_, CompiledSolRec {..}) =
+        case len <= (2 * maxContractLen) of
+          True -> Nothing
+          False -> Just len
+        where
+          len = T.length csrCode
   let try = try_compile_sol solf
   let merr = \case
         Left e -> emitWarning $ W_SolidityOptimizeFailure e
@@ -1382,27 +1387,28 @@ compile_sol cinfo solf = do
         try Nothing >>= \case
           Right oN ->
             case shortEnough oN of
-              True -> merr eA >> return oN
-              False -> desperate eA e1 (Right oN)
+              Nothing -> merr eA >> return oN
+              Just _lenN -> desperate eA e1 (Right oN)
           Left rN -> desperate eA e1 (Left rN)
   let try1 eA =
         try (Just $ Just 1) >>= \case
           Right o1 ->
             case shortEnough o1 of
-              True -> merr eA >> return o1
-              False -> tryN eA (Right o1)
+              Nothing -> merr eA >> return o1
+              Just _len1 -> tryN eA (Right o1)
           Left r1 -> tryN eA (Left r1)
   let tryA =
         try (Just Nothing) >>= \case
           Right oA ->
             case shortEnough oA of
-              True -> return $ oA
-              False -> try1 $ Right oA
+              Nothing -> return $ oA
+              Just _lenA -> try1 $ Right oA
           Left rA -> try1 $ Left rA
-  CompiledSolRec {..} <- tryA
+  (which, CompiledSolRec {..}) <- tryA
   return $ Aeson.Object $ HM.union cinfo $
     HM.fromList $ [ ("ABI", Aeson.String csrAbi)
                   , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+                  , ("Which", Aeson.String $ T.pack which)
                   , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
                   ]
 
