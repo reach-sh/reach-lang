@@ -347,9 +347,6 @@ class IsPure a where
 class IsLocal a where
   isLocal :: a -> Bool
 
-instance IsPure a => IsPure (Seq.Seq a) where
-  isPure = all isPure
-
 instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 

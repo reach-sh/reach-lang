@@ -3,6 +3,7 @@
 module Reach.AST.DL where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import GHC.Generics
@@ -12,33 +13,74 @@ import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 
+data Purity
+  = ImpureUnless (S.Set Int)
+  | Impure
+  | Pure
+  deriving (Eq, Generic, Show)
+
+impureUnless :: S.Set Int -> Purity
+impureUnless x =
+  case S.null x of
+    True -> Pure
+    False -> ImpureUnless x
+
+instance Semigroup Purity where
+  ImpureUnless x <> ImpureUnless y = ImpureUnless (x <> y)
+  Impure <> _ = Impure
+  _ <> Impure = Impure
+  Pure <> y = y
+  x <> Pure = x
+
+instance Monoid Purity where
+  mempty = Pure
+
+instance Pretty Purity where
+  pretty = \case
+    Impure -> "impure"
+    ImpureUnless rets -> "impure(" <> pretty rets <> ")"
+    Pure -> "pure"
+
+class HasPurity a where
+  hasPurity :: a -> Purity
+
+hasIsPure :: HasPurity a => a -> Bool
+hasIsPure x =
+  case hasPurity x of
+    Pure -> True
+    Impure -> False
+    ImpureUnless r -> S.null r
+
+instance HasPurity a => HasPurity (Seq.Seq a) where
+  hasPurity = foldMap hasPurity
+
 data StmtAnnot = StmtAnnot
-  { sa_pure :: Bool
+  { sa_purity :: Purity
   , sa_local :: Bool
   }
   deriving (Eq, Generic, Show)
 
 instance Pretty StmtAnnot where
-  pretty (StmtAnnot {..}) = h sa_pure "pure" <> h sa_local "local"
+  pretty (StmtAnnot {..}) = pretty sa_purity <> h sa_local "local"
     where
       h x s = if x then " " <> s else ""
 
 instance Semigroup StmtAnnot where
-  (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
+  (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp <> yp) (xl && yl))
 
 instance Monoid StmtAnnot where
-  mempty = StmtAnnot True True
+  mempty = StmtAnnot mempty True
 
-instance IsPure StmtAnnot where
-  isPure = sa_pure
+instance HasPurity StmtAnnot where
+  hasPurity = sa_purity
 
 instance IsLocal StmtAnnot where
   isLocal = sa_local
 
-mkAnnot :: IsPure a => IsLocal a => a -> StmtAnnot
+mkAnnot :: HasPurity a => IsLocal a => a -> StmtAnnot
 mkAnnot a = StmtAnnot {..}
   where
-    sa_pure = isPure a
+    sa_purity = hasPurity a
     sa_local = isLocal a
 
 data DLSStmt
@@ -148,28 +190,38 @@ instance SrcLocOf DLSStmt where
     DLS_Try a _ _ _ -> a
     DLS_ViewIs a _ _ _ -> a
 
-instance IsPure DLSStmt where
-  isPure = \case
-    DLS_Let _ _ e -> isPure e
-    DLS_ArrayMap {} -> True
-    DLS_ArrayReduce {} -> True
-    DLS_If _ _ a _ _ -> isPure a
-    DLS_Switch _ _ a _ -> isPure a
-    DLS_Return {} -> False
-    DLS_Prompt _ _ ss -> isPure ss
-    DLS_Stop {} -> False
-    DLS_Unreachable {} -> True
-    DLS_Only _ _ ss -> isPure ss
-    DLS_ToConsensus {} -> False
-    DLS_FromConsensus {} -> False
-    DLS_While {} -> False
-    DLS_Continue {} -> False
-    DLS_FluidSet {} -> False
-    DLS_FluidRef {} -> True
-    DLS_MapReduce {} -> True
-    DLS_Throw {} -> False
-    DLS_Try _ b _ h -> isPure b && isPure h
-    DLS_ViewIs {} -> False
+instance HasPurity DLSStmt where
+  hasPurity = \case
+    DLS_Let _ _ e -> fb $ isPure e
+    DLS_ArrayMap {} -> fb $ True
+    DLS_ArrayReduce {} -> fb True
+    DLS_If _ _ a _ _ -> hasPurity a
+    DLS_Switch _ _ a _ -> hasPurity a
+    DLS_Return _ ret _ -> ImpureUnless $ S.singleton ret
+    DLS_Prompt _ ret ss -> rme ret $ hasPurity ss
+    DLS_Stop {} -> fb False
+    DLS_Unreachable {} -> fb True
+    DLS_Only _ _ ss -> hasPurity ss
+    DLS_ToConsensus {} -> fb False
+    DLS_FromConsensus {} -> fb False
+    DLS_While {} -> fb False
+    DLS_Continue {} -> fb False
+    DLS_FluidSet {} -> fb False
+    DLS_FluidRef {} -> fb True
+    DLS_MapReduce {} -> fb True
+    DLS_Throw {} -> fb False
+    DLS_Try _ b _ h -> hasPurity b <> hasPurity h
+    DLS_ViewIs {} -> fb False
+    where
+      rme = \case
+        Left r -> rm r
+        Right (DLVar _ _ _ r,_) -> rm r
+      rm r = \case
+        ImpureUnless rs -> impureUnless $ S.delete r rs
+        x -> x
+      fb = \case
+        True -> Pure
+        False -> Impure
 
 instance IsLocal DLSStmt where
   isLocal = \case

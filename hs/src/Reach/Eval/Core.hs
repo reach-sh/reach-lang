@@ -2133,7 +2133,7 @@ evalPrim p sargs =
               (f_lvl, f_v) <- f' a_dsv
               (f_ty, f_da) <- compileTypeOf f_v
               return (f_lvl, f_ty, f_da)
-          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+          let shouldUnroll = not (hasIsPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
             True -> do
               x_vs <- explodeTupleLike "map" x
@@ -2176,9 +2176,10 @@ evalPrim p sargs =
               (f_ty, f_da) <- compileTypeOf f_v
               typeEq z_ty f_ty
               return $ f_da
-          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+          let shouldUnroll = not (hasIsPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
             True -> do
+              -- liftIO $ putStrLn $ "unrolling at " <> show at <> ": " <> (show $ isLiteralArray x) <> " " <> show (hasIsPure f_lifts) <> " " <> show (pretty $ hasPurity f_lifts) <> " " <> show (isLocal f_lifts) <> ":\n" <> (show $ pretty f_lifts) <> "\n"
               x_vs <- explodeTupleLike "reduce" x
               let evalem :: SLSVal -> SLVal -> App SLSVal
                   evalem prev_z xv = do
@@ -3285,7 +3286,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
       om <- readSt st_mode
       setSt =<< stMerge st_t st_f
       let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
-      case isPure sa of
+      case hasIsPure sa of
         True -> do
           saveLifts (tlifts <> flifts)
           lvlMeet lvl
