@@ -99,8 +99,8 @@ export class Contract implements IContract {
   //   parseLog: (log: Log) => {args: {[k: string]: any}},
   // }
 
-  constructor(address: string|undefined, abi: string|any[], wallet: Wallet, receiptP?: Promise<any>) {
-    this.address = address;
+  constructor(address: string|null|undefined, abi: string|any[], wallet: Wallet, receiptP?: Promise<any>, hash?: string) {
+    this.address = address || undefined;
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
     this._receiptP = receiptP;
@@ -110,14 +110,22 @@ export class Contract implements IContract {
     });
     const self = this;
     this.deployTransaction = {
-      hash: undefined,
+      hash,
       wait: async () => {
+        debug(`cfxers:Contract.wait`, `start`);
         if (!receiptP) {
           throw Error(`No receipt promise to wait on`);
         }
         const receipt = await self._receiptP;
-        self.address = receipt.contractCreated;
-        self.deployTransaction.hash = receipt.transactionHash;
+        debug(`cfxers:Contract.wait`, `got receipt`, receipt);
+        if (self.address && self.address !== receipt.contractCreated) {
+          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${receipt.contractCreated}`);
+        }
+        self.address = self.address || receipt.contractCreated;
+        if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
+          throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
+        }
+        self.deployTransaction.hash = self.deployTransaction.hash || receipt.transactionHash;
         return providers.ethifyOkReceipt(receipt);
       },
     }
@@ -218,21 +226,28 @@ export class ContractFactory {
     const value = BigNumber.from(0).toString();
     const txn = {from, value, ...txnOverrides};
     const argsConformed = conform(args, iface.deploy.inputs);
-
-    // XXX gasLimit, is this handled correctly by txnOverrides?
+    debug(`cfxers:Contract.deploy`, {argsConformed, txn});
 
     // Note: this usage of `.call` here is because javascript is insane.
     // XXX 2021-06-07 Dan: This works for the cjs compilation target, but does it work for the other targets?
     // @ts-ignore
-    const resultP = contract.constructor.call(...argsConformed).sendTransaction(txn)
-    const receiptP = resultP.executed();
+    const ccc = contract.constructor.call(...argsConformed);
+    // debug(`cfxers:Contract.deploy`, `cfx ctc constructed`, ccc);
+    // const data = ccc.data;
+    // const txnDat = {...txn, data};
+    // const resultP = conflux.sendTransaction(txnDat);
+    const resultP = ccc.sendTransaction(txn);
+    const hash = await resultP;
+    const receiptP = waitReceipt(wallet.provider, hash);
 
-    const result = await resultP;
-    debug(`deploy result`, result);
-    return new Contract(undefined, abi, wallet, receiptP);
+    const txnRes = await conflux.getTransactionByHash(hash);
+    debug(`deploy result`, {hash, txnRes});
+
+    return new Contract(undefined, abi, wallet, receiptP, hash);
   }
   getDeployTransaction() {
     // XXX
+    debug(`cfxers:getDeployTransaction`, `error`);
     throw Error(`XXX getDeployTransaction on CFX`);
   }
 }
@@ -391,4 +406,22 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
   }
   if (!err) throw Error(`impossible: no error to throw after ${max_tries} failed attempts.`);
   throw err;
+}
+
+async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
+  // XXX is 5s enough time on testnet/mainnet?
+  // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
+  const maxTries = 100;
+  const waitMs = 50;
+  for (let tries = 1; tries <= maxTries; tries++) {
+    const r: any = await provider.conflux.getTransactionReceipt(txnHash);
+    if (r) {
+      if (r.outcomeStatus !== 0) {
+        throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
+      }
+      return r;
+    }
+    await Timeout.set(waitMs);
+  }
+  throw Error(`Transaction timed out after ${maxTries * waitMs} ms`);
 }
