@@ -265,7 +265,7 @@ do_compile () {
               reachc "$@"
     }
     reachc_prof () {
-      if [ "$HAS_INT" ]; then
+      if [ "$HAS_INT" = "1" ]; then
         stack build --profile --fast && \
           stack exec --profile -- \
                 reachc --disable-reporting "$@" +RTS -p
@@ -276,7 +276,7 @@ do_compile () {
       fi
     }
     reachc_dev () {
-      if [ "$HAS_INT" ]; then
+      if [ "$HAS_INT" = "1" ]; then
         stack build --fast && \
           stack exec -- \
                 reachc --disable-reporting "$@"
