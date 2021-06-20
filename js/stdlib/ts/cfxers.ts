@@ -156,6 +156,7 @@ export class Contract implements IContract {
       }
       args = unbn(args);
       const argsConformed = conform(args, inputs);
+      debug(`cfxers:handler`, fname, 'conform', argsConformed);
 
       // XXX using presence of txn to decide this is sketchy
       // should instead figure out from ABI if this is a view-only fn?
