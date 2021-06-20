@@ -18,6 +18,13 @@ type = "Exclude"
 category = "Infinite"
 scope = "all"
 
+# TODO use bytestring instead of text? meh...
+# why doesn't Data.Text include a O(1) fn for utf8 byte length?
+[[check]]
+type = "Exclude"
+id = "STAN-0208"
+scope = "all"
+
 # Stan thinks $(embedFile) is bad because it splices in unsafePerformIO
 # https://github.com/kowainik/stan/issues/356
 # Anti-pattern: unsafe functions
