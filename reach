@@ -236,6 +236,17 @@ do_whoami () {
   docker info --format '{{.ID}}' 2>/dev/null
 }
 
+has_opt () {
+  opt="$1"
+  shift
+  for X in "$@"; do
+    if [ "$X" = "$opt" ]; then
+      return 1
+    fi
+  done
+  return 0
+}
+
 do_compile () {
     HS=${HERE}/hs
 
@@ -243,25 +254,42 @@ do_compile () {
     # (because what if file names have spaces),
     # but also, sh doesn't have array splicing, so... this.
     # It's a little less mix-and-match
+
+    INT_OPT="--intermediate-files"
+    has_opt "$INT_OPT" "$@"
+    HAS_INT="$?"
+
     reachc_release () {
       stack build && \
         stack exec -- \
               reachc "$@"
     }
     reachc_prof () {
-      stack build --profile --fast && \
-        stack exec --profile -- \
-              reachc --disable-reporting --intermediate-files "$@" +RTS -p
+      if [ "$HAS_INT" ]; then
+        stack build --profile --fast && \
+          stack exec --profile -- \
+                reachc --disable-reporting "$@" +RTS -p
+      else
+        stack build --profile --fast && \
+          stack exec --profile -- \
+                reachc --disable-reporting --intermediate-files "$@" +RTS -p
+      fi
     }
     reachc_dev () {
-      stack build --fast && \
-        stack exec -- \
-              reachc --disable-reporting --intermediate-files "$@"
+      if [ "$HAS_INT" ]; then
+        stack build --fast && \
+          stack exec -- \
+                reachc --disable-reporting "$@"
+      else
+        stack build --fast && \
+          stack exec -- \
+                reachc --disable-reporting --intermediate-files "$@"
+      fi
     }
 
     ID=$(do_whoami)
     if [ "$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-        ~/.local/bin/reachc --disable-reporting --intermediate-files "$@"
+        ~/.local/bin/reachc --disable-reporting "$@"
 
     elif [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
         export STACK_YAML="${HS}/stack.yaml"
