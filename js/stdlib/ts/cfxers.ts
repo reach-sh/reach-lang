@@ -142,6 +142,7 @@ export class Contract implements IContract {
   _makeHandler(abiFn: any): any {
     const iface = this.interface;
     const fname: string = abiFn.name;
+    const mut: string = abiFn.stateMutability;
     const from = this._wallet.getAddress();
     const self = this;
     // XXX this should always be safe but maybe error handling around it just in case?
@@ -149,18 +150,17 @@ export class Contract implements IContract {
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
     return async (...args: any) => {
       debug(`cfxers:handler`, fname, 'call', {args});
-      let txn: {from?: string, value?: string}|null = null;
+      let txn: {from?: string, value?: string} = {from, value: '0'};
       if (args.length === inputs.length + 1) {
         txn = unbn(args.pop());
-        txn = txn && {from, ...txn, value: (txn.value || '0').toString()};
+        txn = {from, ...txn, value: (txn.value || '0').toString()};
       }
       args = unbn(args);
       const argsConformed = conform(args, inputs);
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
 
-      // XXX using presence of txn to decide this is sketchy
-      // should instead figure out from ABI if this is a view-only fn?
-      if (txn) {
+      if (mut !== 'view' && mut !== 'pure') {
+        debug(`cfsers:handler`, fname, `waitable`);
         // Note: this usage of `.call` here is because javascript is insane.
         // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
         // @ts-ignore
@@ -178,6 +178,9 @@ export class Contract implements IContract {
           }
         };
       } else {
+        debug(`cfxers:handler`, fname, 'view')
+        // XXX in this case it doesn't return something with `wait`,
+        // it just returns the result. Weird design choice, ethers. =/
         // @ts-ignore
         return await self._contract[fname].call(...argsConformed);
       }
