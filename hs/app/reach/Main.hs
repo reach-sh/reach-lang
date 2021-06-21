@@ -105,6 +105,109 @@ declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteRea
 
 
 --------------------------------------------------------------------------------
+data Scaffold = Scaffold
+  { dockerfile :: T.Text
+  , packageJson :: T.Text
+  , composeYml :: T.Text
+  , makefile :: T.Text
+  , isolate' :: T.Text
+  , verbose :: T.Text
+  }
+
+
+mkScaffold :: Bool -> Bool -> T.Text -> Scaffold
+mkScaffold isolate quiet app = Scaffold
+  { dockerfile = f "Dockerfile"
+  , packageJson = f "package.json"
+  , composeYml = f "docker-compose.yml"
+  , makefile = f "Makefile"
+  , isolate' = if isolate then "true" else "false"
+  , verbose = if quiet then "false" else "true"
+  }
+ where
+  f a = if isolate then a <> "." <> app else a
+
+
+scaffold' :: Bool -> Bool -> T.Text -> App
+scaffold' isolate quiet app = do
+  Env {..} <- ask
+  let Scaffold {..} = mkScaffold isolate quiet app
+
+  let cpline = case isolate of
+        False -> ""
+        True -> "RUN cp /app/" <> packageJson <> " /app/package.json"
+
+  let tmpl n =
+          swap "APP" app
+        . swap "MJS" (app <> ".mjs")
+        . swap "RSH" (app <> ".rsh")
+        . swap "MAKEFILE" makefile
+        . swap "DOCKERFILE" dockerfile
+        . swap "PACKAGE_JSON" packageJson
+        . swap "DOCKER_COMPOSE_YML" composeYml
+        . swap "CPLINE" cpline
+       <$> (liftIO . T.readFile $ e_embedDir </> "sh" </> "subcommand" </> "scaffold" </> n)
+
+  let scaff n f = write [N.text|
+        $verbose && echo "Writing $n"
+        cat >"$n" <<EOF
+        $f
+        EOF
+      |]
+
+  let scaffIfAbsent n f = do
+        c <- ask >>= liftIO . runSubApp (scaff n f)
+        write [N.text|
+          if [ ! -f $n ]; then
+          $c
+          fi
+        |]
+
+
+  fmtDockerfile <- tmpl "Dockerfile"
+  fmtPackageJson <- tmpl "package.json"
+  fmtComposeYml <- tmpl "docker-compose.yml"
+  fmtMakefile <- tmpl "Makefile"
+  fmtGitignore <- tmpl ".gitignore"
+  fmtDockerignore <- tmpl ".dockerignore"
+
+  reachVersion
+  ensureConnectorMode
+
+  write [N.text|
+    PROJ="$$(basename "$$(pwd)" | tr '[:upper:]' '[:lower:]')"
+    "$isolate'" && PROJ="$$PROJ-$app"
+
+    SERVICE="reach-app-$${PROJ}"
+    IMAGE="reachsh/$${SERVICE}"
+    IMAGE_TAG="$${IMAGE}:latest"
+  |]
+
+  -- TODO: s/lint/preapp. It's disabled because sometimes our
+  -- generated code trips the linter
+  -- TODO: ^ The same goes for js/runner_package.template.json
+  scaff packageJson fmtPackageJson
+
+  scaff dockerfile fmtDockerfile
+  scaff composeYml fmtComposeYml
+  scaff makefile fmtMakefile
+
+  scaffIfAbsent ".gitignore" fmtGitignore
+  scaffIfAbsent ".dockerignore" fmtDockerignore
+
+
+unscaffold' :: Bool -> Bool -> T.Text -> App
+unscaffold' isolate quiet app = do
+  let Scaffold {..} = mkScaffold isolate quiet app
+  write [N.text|
+    for file in $dockerfile $packageJson $composeYml $makefile; do
+      if $verbose; then echo deleting $$file; fi
+      rm -f $$file
+    done
+  |]
+
+
+--------------------------------------------------------------------------------
 clean :: Subcommand
 clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
   desc = progDesc "Delete 'build/$MODULE.$IDENT.mjs'"
@@ -168,7 +271,7 @@ compile = command "compile" $ info f d where
       ID=$$($whoami')
       if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
         # TODO test
-        ~/.local/bin/reachc --disable-reporting --intermediate-files "$@@"
+        ~/.local/bin/reachc --disable-reporting "$@@"
 
       elif [ -z "$${REACH_DOCKER}" ] \
         && [ -d "$${HS}/.stack-work" ] \
@@ -432,88 +535,6 @@ down = command "down" $ info f d where
 
 
 --------------------------------------------------------------------------------
-scaffold' :: Bool -> Bool -> T.Text -> App
-scaffold' isolate quiet app = do
-  Env {..} <- ask
-
-  let isolate' = if isolate then "true" else "false"
-  let verbose = if quiet then "false" else "true"
-
-  let f a = if isolate then a <> "." <> app else a
-  let dockerfile = f "Dockerfile"
-  let packageJson = f "package.json"
-  let composeYml = f "docker-compose.yml"
-  let makefile = f "Makefile"
-
-  let tmpl n = e_embedDir </> "sh" </> "subcommand" </> "scaffold" </> n
-  fmtDockerfile <- liftIO . T.readFile $ tmpl "Dockerfile"
-  fmtPackageJson <- liftIO . T.readFile $ tmpl "package.json"
-  fmtComposeYml <- liftIO . T.readFile $ tmpl "docker-compose.yml"
-  fmtMakefile <- liftIO . T.readFile $ tmpl "Makefile"
-  fmtGitignore <- liftIO . T.readFile $ tmpl ".gitignore"
-  fmtDockerignore <- liftIO . T.readFile $ tmpl ".dockerignore"
-
-  reachVersion
-  ensureConnectorMode
-
-  write [N.text|
-    APP="$app"
-    MJS="$app.mjs"
-    RSH="$app.rsh"
-    MAKEFILE="$makefile"
-    DOCKERFILE="$dockerfile"
-    PACKAGE_JSON="$packageJson"
-    DOCKER_COMPOSE_YML="$composeYml"
-
-    PROJ="$$(basename "$$(pwd)" | tr '[:upper:]' '[:lower:]')"
-    "$isolate'" && PROJ="$$PROJ-$app"
-
-    CPLINE=""
-    "$isolate'" && CPLINE="RUN cp /app/$packageJson /app/package.json"
-
-    SERVICE="reach-app-$${PROJ}"
-    IMAGE="reachsh/$${SERVICE}"
-    IMAGE_TAG="$${IMAGE}:latest"
-
-    $verbose && echo "Writing $$DOCKERFILE"
-    cat >"$$DOCKERFILE" <<EOF
-    $fmtDockerfile
-    EOF
-
-    # TODO: s/lint/preapp. It's disabled because sometimes our
-    # generated code trips the linter
-    # TODO: ^ The same goes for js/runner_package.template.json
-    $verbose && echo "Writing $$PACKAGE_JSON"
-    cat >"$$PACKAGE_JSON" <<EOF
-    $fmtPackageJson
-    EOF
-
-    $verbose && echo "Writing $$DOCKER_COMPOSE_YML"
-    cat >"$$DOCKER_COMPOSE_YML" <<EOF
-    $fmtComposeYml
-    EOF
-
-    $verbose && echo "Writing $$MAKEFILE"
-    cat >"$$MAKEFILE" <<EOF
-    $fmtMakefile
-    EOF
-
-    if [ ! -f .gitignore ]; then
-      $verbose && echo "Writing .gitignore"
-      cat >.gitignore <<EOF
-    $fmtGitignore
-    EOF
-    fi
-
-    if [ ! -f .dockerignore ]; then
-      $verbose && echo "Writing .dockerignore"
-      cat >.dockerignore <<EOF
-    $fmtDockerignore
-    EOF
-    fi
-  |]
-
-
 scaffold :: Subcommand
 scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
@@ -639,7 +660,10 @@ rpcServerDown = command "rpc-server-down" $ info f fullDesc where
 --------------------------------------------------------------------------------
 unscaffold :: Subcommand
 unscaffold = command "unscaffold" $ info f fullDesc where
-  f = undefined
+  f = unscaffold'
+    <$> switch (long "isolate")
+    <*> switch (long "quiet")
+    <*> strArgument (metavar "APP" <> value "index" <> showDefault)
 
 
 --------------------------------------------------------------------------------
