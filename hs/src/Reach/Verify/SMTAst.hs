@@ -147,7 +147,7 @@ data SMTLet
   = SMTLet SrcLoc DLVar DLLetVar SMTCat SMTExpr
   | SMTCon String (Maybe SMTVal) SMTExpr
   | SMTNop SrcLoc
-  deriving (Show)
+  deriving (Eq, Show)
 
 instance Ord SMTLet where
   compare (SMTLet _ ldv _ _ _) (SMTLet _ rdv _ _ _) = compare ldv rdv
@@ -205,11 +205,6 @@ instance PrettySubst [SMTLet] where
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     _ : tl -> prettySubst tl
 
-instance Eq SMTLet where
-  (SMTLet _ ldv _ _ _) == (SMTLet _ rdv _ _ _) = ldv == rdv
-  (SMTCon l _ _) == (SMTCon r _ _) = l == r
-  SMTNop {} == SMTNop {} = True
-  _ == _ = False
 
 data SMTTrace
   = SMTTrace [SMTLet] TheoremKind DLVar

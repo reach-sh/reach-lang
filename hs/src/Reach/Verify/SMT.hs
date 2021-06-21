@@ -201,6 +201,7 @@ smtNewScope m = do
 ctxtNewScope :: App a -> App a
 ctxtNewScope m = do
   SMTCtxt {..} <- ask
+  ctxt_smt_trace' <- liftIO $ dupeIORef ctxt_smt_trace
   ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
   let dupeMapInfo (SMTMapInfo {..}) = do
         sm_c' <- liftIO $ dupeCounter sm_c
@@ -220,6 +221,7 @@ ctxtNewScope m = do
          e
            { ctxt_vars_defdr = ctxt_vars_defdr'
            , ctxt_maps = ctxt_maps'
+           , ctxt_smt_trace = ctxt_smt_trace'
            })
       $ m
 
@@ -655,27 +657,23 @@ verify1 at mf tk se mmsg = smtNewScope $ do
         _ -> False
 
 
-pathAddUnbound_v :: Maybe DLVar -> SrcLoc -> String -> DLType -> BindingOrigin -> Maybe SMTLet -> App ()
-pathAddUnbound_v mdv at_dv v t bo ml = do
-  let l = case (ml, mdv) of
-        (Nothing, Just dv) -> Just $ SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness (SMTModel bo)
-        (ow, _) -> ow
-  smtDeclare_v v t l
+pathAddUnbound_v :: String -> DLType -> Maybe SMTLet -> App ()
+pathAddUnbound_v v t ml = do
+  smtDeclare_v v t ml
 
-pathAddUnbound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe SMTExpr -> App ()
-pathAddUnbound _ Nothing _ _ = mempty
-pathAddUnbound at_dv (Just dv) bo msmte = do
+pathAddUnbound :: SrcLoc -> Maybe DLVar -> Maybe SMTExpr -> App ()
+pathAddUnbound _ Nothing _ = mempty
+pathAddUnbound at_dv (Just dv) msmte = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness =<< msmte
-  pathAddUnbound_v (Just dv) at_dv v t bo smlet
+  pathAddUnbound_v v t smlet
 
-pathAddBound :: SrcLoc -> Maybe DLVar -> BindingOrigin -> Maybe DLExpr -> SExpr-> SMTCat -> App ()
-pathAddBound _ Nothing _ _ _ _ = mempty
-pathAddBound at_dv (Just dv) _bo de se sc = do
+pathAddBound :: SrcLoc -> Maybe DLVar -> Maybe DLExpr -> SExpr-> SMTCat -> App ()
+pathAddBound _ Nothing _ _ _ = mempty
+pathAddBound at_dv (Just dv) de se sc = do
   let DLVar _ _ t _ = dv
   v <- smtVar dv
-  -- let mdv = Just dv
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) sc . SMTProgram =<< de
   smtDeclare_v v t smlet
   --- Note: We don't use smtAssertCtxt because variables are global, so
@@ -779,9 +777,9 @@ smtMapReduceApply at b a f = do
       (f', [b_f, a_f]) -> return (f', b_f, a_f)
       _ -> impossible "smt_freshen bad"
   b' <- smt_v at b_f
-  pathAddUnbound at (Just b_f) O_ReduceVar $ Just $ SMTSynth $ SMTMapRef b a
+  pathAddUnbound at (Just b_f) $ Just $ SMTSynth $ SMTMapRef b a
   a' <- smt_v at a_f
-  pathAddUnbound at (Just a_f) O_ReduceVar $ Just $ SMTSynth $ SMTMapRef b a
+  pathAddUnbound at (Just a_f) $ Just $ SMTSynth $ SMTMapRef b a
   let call_f' = smt_block f'
   return $ (b', a', call_f')
 
@@ -858,7 +856,7 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
             [] -> do
               -- Or, it could be related to a different reduction
               ans'_dv <- freshenDV ans
-              pathAddUnbound at (Just ans'_dv) O_ReduceVar Nothing
+              pathAddUnbound at (Just ans'_dv) Nothing
               ans' <- smt_v at ans'_dv
               mapM_ (go_fresh ans') other_rs
               return ans'
@@ -936,7 +934,7 @@ smt_e at_dv mdv de = do
       unbound at_dv
     DLE_PrimOp at cp args -> do
       let f = case cp of
-                SELF_ADDRESS -> \ se -> pathAddBound at mdv bo (Just de) se Witness
+                SELF_ADDRESS -> \ se -> pathAddBound at mdv (Just de) se Witness
                 _ -> bound at
       args' <- mapM (smt_a at) args
       f =<< smtPrimOp at cp args args'
@@ -1010,9 +1008,8 @@ smt_e at_dv mdv de = do
     DLE_Remote at _ _ _ _ _ _ ->
       unbound at
   where
-    bo = O_Expr de
-    bound at se = pathAddBound at mdv bo (Just de) se Context
-    unbound at = pathAddUnbound at mdv bo (Just $ SMTProgram de)
+    bound at se = pathAddBound at mdv (Just de) se Context
+    unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
     doClaim at f ct ca' mmsg = do
       let check_m = verify1 at f (TClaim ct) ca' mmsg
       let assert_m = smtAssertCtxt ca'
@@ -1058,7 +1055,7 @@ smtSwitch sm at ov csm iter = do
                   )
         ov'p <- get_ov'p
         let eqc = smtEq ovp ov'p
-        let udef_m = ov'p_m <> pathAddUnbound at mov' (O_SwitchCase vn) (Just smte)
+        let udef_m = ov'p_m <> pathAddUnbound at mov' (Just smte)
         let with_pc = smtNewPathConstraint eqc
         let branch_m =
               case sm of
@@ -1077,7 +1074,7 @@ smt_m :: DLStmt -> App ()
 smt_m = \case
   DL_Nop _ -> mempty
   DL_Let at lv de -> smt_e at (lv2mdv lv) de
-  DL_Var at dv -> pathAddUnbound at (Just dv) O_Var Nothing
+  DL_Var at dv -> pathAddUnbound at (Just dv) (Just $ SMTModel O_Var)
   DL_ArrayMap {} ->
     --- FIXME: It might be possible to do this in Z3 by generating a function
     impossible "array_map"
@@ -1098,7 +1095,7 @@ smt_m = \case
   DL_MapReduce at mri ans x z b a f -> do
     -- XXX represent map reduce
     let smte = Just $ SMTSynth $ SMTMapRef b a
-    pathAddUnbound at (Just ans) O_ReduceVar smte
+    pathAddUnbound at (Just ans) smte
     (ctxt_inv_mode <$> ask) >>= \case
       B_Assume _ -> do
         smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
@@ -1170,7 +1167,7 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
     def1 dv =
-      pathAddUnbound at (Just dv) O_Assignment Nothing
+      pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
@@ -1185,7 +1182,7 @@ freshAddrs :: App a -> App a
 freshAddrs m = do
   let go dv@(DLVar at _ _ _) = do
         dv' <- freshenDV dv
-        pathAddUnbound at (Just dv') O_BuiltIn Nothing
+        pathAddUnbound at (Just dv') Nothing
         return dv'
   addrs' <- mapM go =<< (ctxt_addrs <$> ask)
   local (\e -> e {ctxt_addrs = addrs'}) m
@@ -1242,7 +1239,7 @@ smt_s = \case
     let timeout = case mtime of
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
-    let bind_time = pathAddUnbound at (Just timev) O_ToConsensus Nothing
+    let bind_time = pathAddUnbound at (Just timev) Nothing
     let order_time =
           case last_timemv of
             Nothing -> mempty
@@ -1252,22 +1249,22 @@ smt_s = \case
     let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
-          let maybe_pathAdd v bo_no bo_yes mde se = do
+          let maybe_pathAdd v mde se = do
                 let smte = Just . SMTProgram =<< mde
                 case should of
-                  False -> pathAddUnbound at (Just v) bo_no smte
-                  True -> pathAddBound at (Just v) bo_yes mde se Context
+                  False -> pathAddUnbound at (Just v) smte
+                  True -> pathAddBound at (Just v) mde se Context
           let bind_from =
                 case isClass of
                   True ->
                     case should of
                       False ->
-                        pathAddUnbound at (Just whov) (O_ClassJoin from) Nothing
+                        pathAddUnbound at (Just whov) Nothing
                       True -> do
                         from' <- smtCurrentAddress from
-                        pathAddBound at (Just whov) (O_Join from True) Nothing (Atom $ from') Witness
-                  _ -> maybe_pathAdd whov (O_Join from False) (O_Join from True) Nothing (Atom $ smtAddress from)
-          let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_Msg from Nothing) (O_Msg from $ Just da) (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
+                        pathAddBound at (Just whov) Nothing (Atom $ from') Witness
+                  _ -> maybe_pathAdd whov Nothing (Atom $ smtAddress from)
+          let bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (Just $ DLE_Arg at da) =<< (smt_a at da)) msgvs msgas
           let bind_amt m = do
                 let DLPayAmt {..} = amta
                 let mki f = do
@@ -1454,7 +1451,7 @@ smt_eb :: DLExportBlock -> App ()
 smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
   let args = fromMaybe [] margs
   forM_ args $ \ arg ->
-    pathAddUnbound at (Just arg) O_Export (Just $ SMTProgram $ DLE_Arg at $ DLA_Var arg)
+    pathAddUnbound at (Just arg) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var arg)
   void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
@@ -1501,13 +1498,13 @@ _verify_smt mc ctxt_vst smt lp = do
     mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of
       Nothing -> mempty
-      Just ctimev -> pathAddUnbound at (Just ctimev) O_BuiltIn (Just $ SMTProgram $ DLE_Arg at $ DLA_Var ctimev)
+      Just ctimev -> pathAddUnbound at (Just ctimev) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var ctimev)
     case mc of
       Just _ -> mempty
       Nothing -> do
         let con = smtConstant DLC_UInt_max
         let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant $ DLC_UInt_max
-        pathAddUnbound_v Nothing at con T_UInt O_BuiltIn smlet
+        pathAddUnbound_v con T_UInt smlet
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =
@@ -1515,9 +1512,9 @@ _verify_smt mc ctxt_vst smt lp = do
             IT_Fun {} -> mempty
             IT_UDFun {} -> mempty
             IT_Val itv ->
-              pathAddUnbound_v Nothing at (smtInteract who v) itv O_Interact Nothing
+              pathAddUnbound_v (smtInteract who v) itv Nothing
     let definePIE (who, InteractEnv iem) = do
-          pathAddUnbound_v Nothing at (smtAddress who) T_Address O_BuiltIn Nothing
+          pathAddUnbound_v (smtAddress who) T_Address Nothing
           mapM_ (defineIE who) $ M.toList iem
     mapM_ definePIE $ M.toList pies_m
     let smt_s_top mode = do
