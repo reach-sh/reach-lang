@@ -1,9 +1,15 @@
 #!/bin/sh
 
 IMG='reachsh/reach-cli:latest'
+TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
 
-run () {
-  docker run -t --rm "$IMG" "$@"
+run_d () {
+  docker run -t --rm -u "$(id -u)" -v "$TMP:/app/tmp" -v "$(pwd):/app/src" "$IMG" "$@"
+}
+
+run_s () {
+  chmod 700 "$TMP/out.sh"
+  sh -ac "$TMP/out.sh" "$0"
 }
 
 if ! (which make docker docker-compose >/dev/null 2>&1); then
@@ -12,12 +18,10 @@ if ! (which make docker docker-compose >/dev/null 2>&1); then
 fi
 
 if [ "$(docker image ls -q $IMG)" = '' ]; then
-  if ! (docker pull "$IMG" && run update | sed 's/\r//' | sh); then exit 1; fi
+  if ! (docker pull "$IMG" && run_d update && run_s); then exit 1; fi
 fi
 
-run "$@" >/tmp/reach.$$.out
+run_d "$@"
 case "$?" in
-  # TODO write via `docker` mount and intercept + re-emit exit code
-  42) sh -ac "$(sed 's/\r//' /tmp/reach.$$.out)" "$0" ;;
-   *) cat /tmp/reach.$$.out ;;
+  42) run_s ;;
 esac

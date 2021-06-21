@@ -691,9 +691,11 @@ main = do
   customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
     >>= \Cli {..} -> runReaderT c_cmd c_env
     >> do
-      readIORef emit >>= T.putStrLn
-      unless (e_emitRaw c_env)
-        $ exitImmediately $ ExitFailure 42
+      case e_emitRaw c_env of
+        True -> readIORef emit >>= T.putStrLn
+        False -> do
+          readIORef emit >>= T.writeFile "/app/tmp/out.sh"
+          exitImmediately $ ExitFailure 42
 
  where
   cs = compile
