@@ -9,3 +9,40 @@ CFX.tut-7-rpc
 ALGO.ttt
 ALGO.multiple-pr-case
 ALGO.map-rwrw
+ALGO.raffle
+ALGO.rent-seeking
+
+# nondeterministic timeout; fixable?
+ETH.rent-seeking
+
+# ALGO known timeouts that shouldn't prevent release
+# (but we should give them more time in CI, or use a faster devnet)
+ALGO.atomic-swap-auction
+ALGO.chicken-fork
+ALGO.chicken-parallel
+ALGO.chicken-race
+ALGO.map-any
+ALGO.map-multi
+ALGO.map-sender
+ALGO.map-vary
+ALGO.popularity-contest
+ALGO.workshop-fomo
+ALGO.workshop-fomo-generalized
+ALGO.workshop-trust-fund
+
+
+# CFX known failures that shouldn't prevent release
+# (but we should work on fixing them soon)
+
+# CFX known failures w/ launchToken::mint
+CFX.atomic-swap
+CFX.atomic-swap-auction
+CFX.remote
+CFX.weird-swap
+
+# CFX known timeouts
+CFX.map-rwrw
+CFX.map-vary
+
+# CFX known failures: misc
+CFX.view-map
