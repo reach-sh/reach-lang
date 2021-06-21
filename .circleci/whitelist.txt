@@ -22,14 +22,19 @@ ALGO.chicken-fork
 ALGO.chicken-parallel
 ALGO.chicken-race
 ALGO.map-any
-ALGO.map-multi
-ALGO.map-sender
-ALGO.map-vary
 ALGO.popularity-contest
 ALGO.workshop-fomo
 ALGO.workshop-fomo-generalized
 ALGO.workshop-trust-fund
 
+# ALGO known nondeterministic timeouts
+# Are these indicative of real errors, or just CI BS?
+ALGO.map-multi
+ALGO.map-sender
+ALGO.map-vary
+ALGO.nft-auction
+ALGO.tut-6
+ALGO.view-bytes
 
 # CFX known failures that shouldn't prevent release
 # (but we should work on fixing them soon)
@@ -46,3 +51,8 @@ CFX.map-vary
 
 # CFX known failures: misc
 CFX.view-map
+
+# CFX known non-deterministic failures
+# "Transaction ${t} is is discarded due to a too stale nonce"
+CFX.nft-dumb
+CFX.popularity-contest
