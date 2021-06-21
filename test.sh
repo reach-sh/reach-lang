@@ -141,6 +141,7 @@ tealcount () {
 # c hs/t/y/pr-671006.rsh
 # fc hs/t/n/pr-671006p.rsh
 c hs/t/y/pr190.rsh
+c hs/t/y/pr190b.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
