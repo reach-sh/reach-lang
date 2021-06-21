@@ -1,0 +1,11 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Bakesale" is honest
+  Verifying when ONLY "Buyer" is honest
+Checked 88 theorems; No failures!
+WARNING: The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:
+Compiler error: Stack too deep when compiling inline assembly: Variable dataEnd is 1 slot(s) too deep inside the stack.
+
+
