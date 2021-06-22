@@ -8,10 +8,8 @@ import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.Foldable
 import Data.IORef
-import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
-import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Reach.AST.Base
@@ -37,8 +35,9 @@ import Reach.Verify.SMTAst
 import Reach.AddCounts (add_counts)
 import qualified Data.List as List
 import Data.Functor
-import Data.List (nub)
 import Data.Char (isDigit)
+import Data.Containers.ListUtils (nubOrd)
+import Text.Read (readMaybe)
 
 --- SMT Helpers
 
@@ -375,39 +374,20 @@ smtDigestCombine at args =
     convert1 = smtArgBytes at
 
 --- Verifier
-
-fmtAssert :: TheoremKind -> String
-fmtAssert = \case
-  TClaim c -> show $ pretty c
-  TInvariant _ -> "invariant"
-  TWhenNotUnknown -> "assert"
-
 data ResultDesc
   = RD_UnsatCore [String]
   | RD_Model SExpr
 
-seVars :: SExpr -> S.Set String
-seVars se =
-  case se of
-    Atom a ->
-      --- FIXME try harder to figure out what is a variable, like v7,
-      --- and what is a function symbol, like <
-      S.singleton a
-    List l -> mconcatMap seVars l
-
-set_to_seq :: S.Set a -> Seq.Seq a
-set_to_seq = Seq.fromList . S.toList
 
 -- A computation is first stored into an unamed var, then `const`
 -- assigned to a variable. So, choose the second variable inserted
 -- into list, if it exists (This will be the user named variable).
 -- If no user assigned var, display the name of the tmp var.
 -- If the list is empty, it is an "unbound" var like an interact field.
-
 sv2dv :: String -> App (Maybe DLVar)
 sv2dv v = do
   v2dv <- (liftIO. readIORef) =<< asks ctxt_v_to_dv
-  case reverse . nub <$> M.lookup v v2dv of
+  case reverse . nubOrd <$> M.lookup v v2dv of
     Just (dv:_) -> return $ Just dv
     _ -> return Nothing
 
@@ -442,15 +422,19 @@ parseVal t v =
         _ -> impossible $ "parseVal: Digest: " <> show v
     T_UInt ->
       case v of
-        Atom i -> return $ SMV_Int (read i :: Int)
+        Atom i -> do
+          let val = fromMaybe (impossible "parseVal UInt") (readMaybe i :: Maybe Int)
+          return $ SMV_Int val
         _ -> impossible $ "parseVal: UInt: " <> show v
     T_Address -> do
       case v of
-        Atom i -> return $ SMV_Address $ (read $ dropWhile (not . isDigit) i :: Int)
+        Atom i -> do
+          let val = fromMaybe (impossible "parseVal Address") (readMaybe $ dropWhile (not . isDigit) i :: Maybe Int)
+          return $ SMV_Address $ val
         _ -> impossible $ "parseVal: Address: " <> show v
     T_Bytes _ -> do
       case v of
-        Atom i -> return $ SMV_Bytes $ B.pack i
+        Atom i -> return $ SMV_Bytes $ bpack i
         _ -> impossible $ "parseVal: Bytes: " <> show v
     T_Array (T_Tuple [T_Token, T_UInt]) _ -> return SMV_Map
     T_Array (T_Tuple [T_Address, _]) _ -> return SMV_Map
@@ -556,7 +540,7 @@ display_fail tat f tk mmsg repeated mrd mdv = do
                 Just (RD_Model m) -> parseModel m
           pm_str_val <- parseModel2 pm
           lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-          lets' <- reverse . nub . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
+          lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
           smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
           pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
                 sv2dv k <&> \case
