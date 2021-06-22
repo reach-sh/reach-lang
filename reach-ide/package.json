@@ -198,14 +198,39 @@
 		},
 		"commands": [
 			{
+				"command": "reach.clean",
+				"category": "Reach IDE",
+				"title": "Clean Reach build files"
+			},
+			{
 				"command": "reach.compile",
 				"category": "Reach IDE",
 				"title": "Compile Reach program"
 			},
 			{
-				"command": "reach.run",
+				"command": "reach.devnet",
 				"category": "Reach IDE",
-				"title": "Run Reach program"
+				"title": "Reach devnet"
+			},
+			{
+				"command": "reach.discord",
+				"category": "Reach IDE",
+				"title": "Chat on Discord"
+			},
+			{
+				"command": "reach.docker-reset",
+				"category": "Reach IDE",
+				"title": "Reach docker reset"
+			},
+			{
+				"command": "reach.down",
+				"category": "Reach IDE",
+				"title": "Reach down"
+			},
+			{
+				"command": "reach.hashes",
+				"category": "Reach IDE",
+				"title": "Reach Hashes"
 			},
 			{
 				"command": "reach.docs",
@@ -217,14 +242,59 @@
 				}
 			},
 			{
-				"command": "reach.upgrade",
+				"command": "reach.gist",
 				"category": "Reach IDE",
-				"title": "Upgrade Reach"
+				"title": "Create a Gist to share"
+			},
+			{
+				"command": "reach.init",
+				"category": "Reach IDE",
+				"title": "Reach Init"
+			},
+			{
+				"command": "reach.issue",
+				"category": "Reach IDE",
+				"title": "Open an issue on GitHub"
+			},
+			{
+				"command": "reach.react",
+				"category": "Reach IDE",
+				"title": "Run Reach React"
+			},
+			{
+				"command": "reach.rpc-run",
+				"category": "Reach IDE",
+				"title": "Reach RPC-Run"
+			},
+			{
+				"command": "reach.rpc-server",
+				"category": "Reach IDE",
+				"title": "Reach RPC-Server"
+			},
+			{
+				"command": "reach.run",
+				"category": "Reach IDE",
+				"title": "Run Reach program"
+			},
+			{
+				"command": "reach.scaffold",
+				"category": "Reach IDE",
+				"title": "Run Reach scaffold"
 			},
 			{
 				"command": "reach.update",
 				"category": "Reach IDE",
 				"title": "Update Reach Docker images"
+			},
+			{
+				"command": "reach.upgrade",
+				"category": "Reach IDE",
+				"title": "Upgrade Reach"
+			},
+			{
+				"command": "reach.version",
+				"category": "Reach IDE",
+				"title": "Reach Version"
 			}
 		]
 	},
