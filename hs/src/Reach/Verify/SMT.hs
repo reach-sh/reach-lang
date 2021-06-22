@@ -1466,7 +1466,7 @@ smt_eb :: DLExportBlock -> App ()
 smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
   let args = fromMaybe [] margs
   forM_ args $ \ arg ->
-    pathAddUnbound at (Just arg) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var arg)
+    pathAddUnbound at (Just arg) (Just $ SMTModel O_ExportArg)
   void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()

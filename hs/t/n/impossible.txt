@@ -12,11 +12,9 @@ Verification failed:
   const _x/22 = "A".interact.getX();
 
 
-
   // Theorem Formalization
 
   const v23 = _x/22 < 0;
-
   possible(v23);
 
   Verifying when NO participants are honest

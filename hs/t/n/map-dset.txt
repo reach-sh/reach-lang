@@ -20,12 +20,12 @@ Verification failed:
   // Theorem Formalization
 
   const map0_0/57 = new Map();
-
-  const map0_1/70 = set(map0_0/57["Address!val!0"], Just a/27);
-
-  const map0_2/76 = set(map0_1/70["Address!val!0"], Just b/36);
-
-  const v54 = digest(map0_2/76["Address!val!0"] ) == digest(<Some a/27> );
+  //    ^ would be <map>
+  const map0_1/70 = map0_0/57[<abstract address 0> <- Just a/27];
+  //    ^ would be <map>
+  const map0_2/76 = map0_1/70[<abstract address 0> <- Just b/36];
+  //    ^ would be <map>
+  const v54 = digest(map0_2/76[<abstract address 0>] ) == digest(<Some a/27> );
   //    ^ would be false
   require(v54);
 

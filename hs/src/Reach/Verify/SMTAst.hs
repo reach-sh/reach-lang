@@ -24,55 +24,39 @@ import Data.Maybe
 
 data BindingOrigin
   = O_Join SLPart Bool
-  | O_Msg SLPart (Maybe DLArg)
   | O_ClassJoin SLPart
-  | O_ToConsensus
   | O_BuiltIn
   | O_Var
-  | O_Interact
-  | O_Expr DLExpr
   | O_Assignment
-  | O_SwitchCase SLVar
   | O_ReduceVar
-  | O_Export
+  | O_ExportArg
   deriving (Eq)
 
 instance Show BindingOrigin where
   show bo =
     case bo of
       O_Join who False -> "a dishonest join from " ++ sp who
-      O_Msg who Nothing -> "a dishonest message from " ++ sp who
       O_Join who True -> "an honest join from " ++ sp who
-      O_Msg who (Just what) -> "an honest message from " ++ sp who ++ " of " ++ sp what
       O_ClassJoin who -> "a join by a class member of " <> sp who
-      O_ToConsensus -> "a consensus transfer"
       O_BuiltIn -> "builtin"
       O_Var -> "function return"
-      O_Interact -> "interaction"
-      O_Expr e -> "evaluating " ++ sp e
       O_Assignment -> "loop variable"
-      O_SwitchCase vn -> "switch case " <> vn
       O_ReduceVar -> "map reduction"
-      O_Export -> "export"
+      O_ExportArg -> "function argument"
     where
       sp :: Pretty a => a -> String
       sp = show . pretty
 
 instance IsPure BindingOrigin where
   isPure = \case
-    O_Expr de -> isPure de
     O_ReduceVar -> True
-    O_Export -> True
+    O_ExportArg -> True
     -- Rest are `False` to be conservative with the lack of info
     O_Join {} -> False
-    O_Msg {} -> False
     O_ClassJoin _ -> False
-    O_ToConsensus -> False
     O_BuiltIn -> False
     O_Var -> False
-    O_Interact -> False
     O_Assignment -> False
-    O_SwitchCase _ -> False
 
 data TheoremKind
   = TClaim ClaimType
@@ -100,7 +84,6 @@ data SynthExpr
   | SMTMapFresh DLVar                   -- Witness
   | SMTMapSet DLVar DLArg (Maybe DLArg) -- Context
   | SMTMapRef DLVar DLArg               -- Context
-  | SMTMapReduce DLVar DLVar DLArg
   deriving (Eq, Show)
 
 instance PrettySubst SynthExpr where
@@ -117,11 +100,6 @@ instance PrettySubst SynthExpr where
       m' <- prettySubst $ DLA_Var m
       f' <- prettySubst f
       return $ m' <> brackets f'
-    SMTMapReduce a b f -> do
-      a' <- prettySubst $ DLA_Var a
-      b' <- prettySubst $ DLA_Var b
-      f' <- prettySubst f
-      return $ a' <+> "=" <+> b' <> brackets f'
 
 data SMTExpr
   = SMTModel BindingOrigin
@@ -289,7 +267,6 @@ instance Countable SynthExpr where
     SMTMapFresh m -> counts m
     SMTMapSet m f ma -> counts m <> counts f <> counts ma
     SMTMapRef m f -> counts m <> counts f
-    SMTMapReduce a b f -> counts a <> counts b <> counts f
 
 instance Countable SMTExpr where
   counts = \case

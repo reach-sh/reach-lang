@@ -9,10 +9,10 @@ Verification failed:
   // Violation Witness
 
   const v20 = selfAddress(""C"", true, 19 );
-  //    ^ could = "Address!val!0"
+  //    ^ could = <abstract address 0>
   //      from: ./class_addr.rsh:8:13:application
   const v27 = selfAddress(""C"", true, 26 );
-  //    ^ could = "Address!val!1"
+  //    ^ could = <abstract address 1>
   //      from: ./class_addr.rsh:13:13:application
 
 
