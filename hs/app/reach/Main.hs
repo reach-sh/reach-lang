@@ -8,7 +8,9 @@ import Control.Monad.Reader
 import Data.IORef
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
+import Safe
 import System.Directory.Extra
+import System.Environment
 import System.Exit
 import System.FilePath
 import System.Posix.Process
@@ -29,7 +31,8 @@ data Effect
 
 
 data Env = Env
-  { e_embedDir :: FilePath
+  { e_dirEmbed :: FilePath
+  , e_dirProject :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   }
@@ -58,7 +61,7 @@ write t = asks e_effect >>= liftIO . flip modifyIORef w where
 
 
 writeFrom :: FilePath -> App
-writeFrom p = asks e_embedDir >>= liftIO . T.readFile . (</> p) >>= write
+writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
 
 
 runSubScript :: App -> Env -> IO T.Text
@@ -89,8 +92,8 @@ reachImages =
 
 
 --------------------------------------------------------------------------------
-reachVersion :: App
-reachVersion =
+reachVersionScript :: App
+reachVersionScript =
   let v = T.pack V.versionStr
   in write [N.text|
     if [ "x$$REACH_VERSION" = "x" ]; then
@@ -99,8 +102,8 @@ reachVersion =
   |]
 
 
-reachVersionShort :: App
-reachVersionShort =
+_reachVersionShortScript :: App
+_reachVersionShortScript =
   let compat = T.pack V.compatibleVersionStr
   in write [N.text|
     if [ "$$REACH_VERSION" = "stable" ]; then
@@ -109,6 +112,23 @@ reachVersionShort =
       REACH_VERSION_SHORT=$(echo "$$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $$1"."$$2}')
     fi
   |]
+
+
+reachVersionInProcess :: IO T.Text
+reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
+  Nothing -> pure $ T.pack V.versionStr
+  Just v -> pure $ T.pack v
+
+
+reachVersionShortInProcess :: IO T.Text
+reachVersionShortInProcess = reachVersionInProcess >>= \case
+  "stable" -> pure $ T.pack V.compatibleVersionStr
+  v -> pure $ a <> "." <> b where
+    f ('v':s) = s
+    f s = s
+    v' = T.splitOn "." . T.pack . f $ T.unpack v
+    a = maybe "0" id $ atMay v' 0
+    b = maybe "0" id $ atMay v' 1
 
 
 realpath :: App
@@ -165,7 +185,7 @@ scaffold' isolate quiet app = do
         . swap "PACKAGE_JSON" packageJson
         . swap "DOCKER_COMPOSE_YML" composeYml
         . swap "CPLINE" cpline
-       <$> (liftIO . T.readFile $ e_embedDir </> "sh" </> "subcommand" </> "scaffold" </> n)
+       <$> (liftIO . T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> n)
 
   let scaff n f = write [N.text|
         $verbose && echo "Writing $n"
@@ -182,7 +202,6 @@ scaffold' isolate quiet app = do
           fi
         |]
 
-
   fmtDockerfile <- tmpl "Dockerfile"
   fmtPackageJson <- tmpl "package.json"
   fmtComposeYml <- tmpl "docker-compose.yml"
@@ -190,7 +209,7 @@ scaffold' isolate quiet app = do
   fmtGitignore <- tmpl ".gitignore"
   fmtDockerignore <- tmpl ".dockerignore"
 
-  reachVersion
+  reachVersionScript
   ensureConnectorMode
 
   write [N.text|
@@ -337,47 +356,35 @@ init' = command "init" . info f $ d <> foot where
    <$$> text ""
    <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
 
-  go :: FilePath -> T.Text -> App
-  go template app = script $ do
+  go template app = do
     Env {..} <- ask
-    let tmpl n = e_embedDir </> "template" </> "init" </> n
+    let tmpl n = e_dirEmbed </> "template" </> "init" </> n
 
-    path <- ifM (liftIO . doesDirectoryExist $ tmpl template)
-      (pure $ tmpl template)
-      (pure $ tmpl "_default")
+    liftIO $ do
+      tmpl' <- ifM (doesDirectoryExist $ tmpl template)
+        (pure $ tmpl template)
+        (pure $ tmpl "_default")
 
-    fmtInitRsh <- liftIO . T.readFile $ path </> "index.rsh"
-    fmtInitMjs <- liftIO . T.readFile $ path </> "index.mjs"
+      fmtInitRsh <- T.readFile $ tmpl' </> "index.rsh"
+      fmtInitMjs <- T.readFile $ tmpl' </> "index.mjs"
+      rvs <- reachVersionShortInProcess
 
-    let rsh = app <> ".rsh"
-    let mjs = app <> ".mjs"
+      let rsh = e_dirProject </> T.unpack app <> ".rsh"
+      let mjs = e_dirProject </> T.unpack app <> ".mjs"
 
-    let fmtInitMjs' = swap "APP" app fmtInitMjs
+      let abortIf x = whenM (doesFileExist x) $ do
+            putStrLn $ x <> " already exists."
+            exitImmediately $ ExitFailure 1
 
-    reachVersion
-    reachVersionShort
+      abortIf rsh
+      abortIf mjs
 
-    write [N.text|
-      if [ -f "$rsh" ] ; then
-        echo "$rsh already exists"
-        exit 1
-      fi
+      T.putStrLn $ "Writing " <> app <> ".rsh..."
+      T.writeFile rsh $ swap "REACH_VERSION_SHORT" rvs fmtInitRsh
 
-      if [ -f "$mjs" ] ; then
-        echo "$mjs already exists"
-        exit 1
-      fi
-
-      echo Writing "$rsh"
-      cat >"${rsh}" <<EOF
-      $fmtInitRsh
-      EOF
-
-      echo Writing "$mjs"
-      cat >"${mjs}" <<EOF
-      $fmtInitMjs'
-      EOF
-    |]
+      T.putStrLn $ "Writing " <> app <> ".mjs..."
+      T.writeFile mjs $ swap "APP" app fmtInitMjs
+      putStrLn "Done."
 
 
 --------------------------------------------------------------------------------
@@ -640,7 +647,7 @@ hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure . script $ do
-    reachVersion
+    reachVersionScript
     forM_ reachImages $ \i -> write [N.text|
       echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$$REACH_VERSION" -c 'echo $$REACH_GIT_HASH')"
     |]
@@ -694,7 +701,8 @@ main = do
   eff <- newIORef InProcess
 
   let env = Env
-        <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
+        <$> strOption (long "dir-embed" <> value "/app/embed" <> hidden)
+        <*> strOption (long "dir-project" <> value "/app/src" <> hidden)
         <*> switch (long "emit-raw" <> hidden)
         <*> pure eff
 

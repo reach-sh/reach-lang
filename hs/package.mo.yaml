@@ -142,6 +142,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - neat-interpolation
+    - safe
     - unix
     - reach
 
