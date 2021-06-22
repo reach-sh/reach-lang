@@ -13,7 +13,7 @@ Verification failed:
 
   const x/22 = "A".interact.get();
   //    ^ could = 1
-          from: ./overflow_con.rsh:9:40:application
+  //      from: ./overflow_con.rsh:9:40:application
 
 
   // Theorem Formalization

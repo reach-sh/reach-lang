@@ -97,24 +97,31 @@ instance Pretty SMTCat where
 
 data SynthExpr
   = SMTMapNew                           -- Context
-  | SMTMapFresh                         -- Witness
+  | SMTMapFresh DLVar                   -- Witness
   | SMTMapSet DLVar DLArg (Maybe DLArg) -- Context
-  | SMTMapRef DLVar DLVar               -- Context
+  | SMTMapRef DLVar DLArg               -- Context
+  | SMTMapReduce DLVar DLVar DLArg
   deriving (Eq, Show)
 
 instance PrettySubst SynthExpr where
   prettySubst = \case
     SMTMapNew -> return "new Map()"
-    SMTMapFresh -> return "Map?"
+    SMTMapFresh _ -> do
+      return "<fresh Map>"
     SMTMapSet m f ma -> do
       m' <- prettySubst $ DLA_Var m
       f' <- prettySubst f
       ma' <- prettySubst ma
-      return $ m' <> brackets f' <+> "=" <+> ma'
+      return $ "set" <> parens (m' <> brackets f' <> "," <+> ma')
     SMTMapRef m f -> do
       m' <- prettySubst $ DLA_Var m
-      f' <- prettySubst $ DLA_Var f
+      f' <- prettySubst f
       return $ m' <> brackets f'
+    SMTMapReduce a b f -> do
+      a' <- prettySubst $ DLA_Var a
+      b' <- prettySubst $ DLA_Var b
+      f' <- prettySubst f
+      return $ a' <+> "=" <+> b' <> brackets f'
 
 data SMTExpr
   = SMTModel BindingOrigin
@@ -133,14 +140,26 @@ instance Show SMTExpr where
     SMTProgram dl -> show . pretty $ dl
     ow -> show ow
 
+instance CanDupe SynthExpr where
+  canDupe = \case
+    SMTMapRef {} -> True
+    _ -> False
+
+instance IsPure SynthExpr where
+  isPure = \case
+    SMTMapRef {} -> True
+    _ -> False
+
 instance CanDupe SMTExpr where
   canDupe = \case
     SMTProgram de -> canDupe de
+    SMTSynth de -> canDupe de
     _ -> True
 
 instance IsPure SMTExpr where
   isPure = \case
     SMTProgram de -> isPure de
+    SMTSynth se -> isPure se
     _ -> True
 
 data SMTLet
@@ -192,7 +211,9 @@ instance PrettySubst [SMTLet] where
         True ->
           return $ prettySubstWith env' tl
         False -> do
-          let wouldBe x = "  //    ^ would be " <> viaShow x
+          let wouldBe = \case
+                "null" -> ""
+                x -> "  //    ^ would be " <> viaShow x
           let info = maybe "" wouldBe (M.lookup dv env)
           let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
           return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
@@ -265,9 +286,10 @@ instance Pretty SMTVal where
 instance Countable SynthExpr where
   counts = \case
     SMTMapNew -> mempty
-    SMTMapFresh -> mempty
+    SMTMapFresh m -> counts m
     SMTMapSet m f ma -> counts m <> counts f <> counts ma
     SMTMapRef m f -> counts m <> counts f
+    SMTMapReduce a b f -> counts a <> counts b <> counts f
 
 instance Countable SMTExpr where
   counts = \case

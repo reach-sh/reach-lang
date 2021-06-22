@@ -11,10 +11,10 @@ Verification failed:
 
   const wager/18 = "Alice".interact.wager;
   //    ^ could = 2
-          from: ./index-bad.rsh:16:17:application
+  //      from: ./index-bad.rsh:16:17:application
   const handA/23 = "Alice".interact.getHand();
   //    ^ could = 2
-          from: ./index-bad.rsh:20:50:application
+  //      from: ./index-bad.rsh:20:50:application
 
 
   // Theorem Formalization

@@ -11,7 +11,7 @@ Verification failed:
 
   const _x/22 = "A".interact.getX();
   //    ^ could = 0
-          from: ./assert_gt.rsh:6:31:application
+  //      from: ./assert_gt.rsh:6:31:application
 
 
   // Theorem Formalization

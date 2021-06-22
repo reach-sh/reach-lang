@@ -7,14 +7,27 @@ Verification failed:
   msg: "m[A] is Some(ap)"
   at ./map-dset.rsh:29:10:application
 
-  // Violation witness
-  const address_Alice = Address!val!0;
-  //    ^ from builtin at ./map-dset.rsh:4:30:application
-  const a/27 = 1;
-  //    ^ from evaluating interact("Alice")."get"() at ./map-dset.rsh:16:51:application
+  // Violation Witness
 
-  // Theorem formalization
-  require(digest(map0[address_Alice]) == digest(a/27));
+  const a/27 = "Alice".interact.get();
+  //    ^ could = 1
+  //      from: ./map-dset.rsh:16:51:application
+  const b/36 = "Bob".interact.get();
+  //    ^ could = 0
+  //      from: ./map-dset.rsh:21:51:application
+
+
+  // Theorem Formalization
+
+  const map0_0/57 = new Map();
+
+  const map0_1/70 = set(map0_0/57["Address!val!0"], Just a/27);
+
+  const map0_2/76 = set(map0_1/70["Address!val!0"], Just b/36);
+
+  const v54 = digest(map0_2/76["Address!val!0"] ) == digest(<Some a/27> );
+  //    ^ would be false
+  require(v54);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

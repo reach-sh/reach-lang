@@ -10,7 +10,7 @@ Verification failed:
 
   const v18 = "A".interact.x;
   //    ^ could = 4
-          from: ./multiple_binding_locations.rsh:6:17:application
+  //      from: ./multiple_binding_locations.rsh:6:17:application
 
 
   // Theorem Formalization

@@ -10,7 +10,7 @@ Verification failed:
 
   const v19 = <function return>;
   //    ^ could = 1
-          from: ./pr175.rsh:5:22:block
+  //      from: ./pr175.rsh:5:22:block
 
 
   // Theorem Formalization

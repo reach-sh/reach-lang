@@ -11,7 +11,7 @@ Verification failed:
 
   const request/19 = "Alice".interact.request;
   //    ^ could = 1
-          from: ./index-error.rsh:5:24:application
+  //      from: ./index-error.rsh:5:24:application
 
 
   // Theorem Formalization
