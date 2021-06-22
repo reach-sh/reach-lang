@@ -2,15 +2,15 @@ import * as vscode from 'vscode';
 import { TreeItem } from 'vscode';
 import * as path from 'path';
 
-const reach_icon = path.join(__filename, "..", "..", "..", "images", "reach-icon.svg");
-const reach_icon_red = path.join(__filename, "..", "..", "..", "images", "reach-icon-red.svg");
-const discord_icon = path.join(__filename, "..", "..", "..", "images", "discord-icon-small.png");
-const github_icon = path.join(__filename, "..", "..", "..", "images", "github-icon-red.png");
-const gist_icon = path.join(__filename, "..", "..", "..", "images", "github-icon-blue.png");
+const reach_icon = path.join(__filename, '..', '..', '..', 'images', 'reach-icon.svg');
+const reach_icon_red = path.join(__filename, '..', '..', '..', 'images', 'reach-icon-red.svg');
+const discord_icon = path.join(__filename, '..', '..', '..', 'images', 'discord-icon-small.png');
+const github_icon = path.join(__filename, '..', '..', '..', 'images', 'github-icon-red.png');
+const gist_icon = path.join(__filename, '..', '..', '..', 'images', 'github-icon-blue.png');
 
 const makeTreeItem = (label, command, icon = reach_icon) => {
 	return makeLabeledTreeItem(label, label, command, icon);
-}
+};
 
 const makeLabeledTreeItem = (label, title, command, icon = reach_icon) => {
 	const t : TreeItem = new TreeItem(title, 0);
@@ -24,7 +24,7 @@ const makeLabeledTreeItem = (label, title, command, icon = reach_icon) => {
 		dark: vscode.Uri.parse(icon)
 	};
 	return t;
-}
+};
 
 export class CommandsTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
@@ -47,7 +47,7 @@ export class CommandsTreeDataProvider implements vscode.TreeDataProvider<TreeIte
 			makeTreeItem('update', 'reach.update'),
 			makeTreeItem('upgrade', 'reach.upgrade'),
 			makeTreeItem('version', 'reach.version'),
-		]
+		];
 	}
 
 	getTreeItem(element: TreeItem) {
@@ -68,7 +68,7 @@ export class HelpTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 			makeLabeledTreeItem('discord', 'Chat on Discord', 'reach.discord', discord_icon),
 			makeLabeledTreeItem('gist', 'Create a Gist to share', 'reach.gist', gist_icon),
 			makeLabeledTreeItem('issue', 'Open an issue on GitHub', 'reach.issue', github_icon)
-		]
+		];
 	}
 
 	getTreeItem(element: TreeItem) {
@@ -87,7 +87,7 @@ export class DocumentationTreeDataProvider implements vscode.TreeDataProvider<Tr
 	constructor() {
 		this.data = [
 			makeLabeledTreeItem('docs', 'Open the documentation', 'reach.docs', reach_icon_red),
-		]
+		];
 	}
 
 	getTreeItem(element: TreeItem) {

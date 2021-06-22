@@ -14,7 +14,7 @@ function createButtons(buttons) {
 }
 
 function removeAllButtons() {
-	return new Promise((resolve, reject) => {
+	return new Promise<void>((resolve, reject) => {
 		shownButtons.forEach(button => button.hide());
 		shownButtons = [];
 		resolve();
@@ -22,10 +22,10 @@ function removeAllButtons() {
 }
 
 function showButtons() {
-		createButtons([
-			['Reach Compile', 'reach.compile'],
-			['Reach Run', 'reach.run'],
-		]);
+	createButtons([
+		['Reach Compile', 'reach.compile'],
+		['Reach Run', 'reach.run'],
+	]);
 }
 
 export const initButtons = (context: ExtensionContext) => {
