@@ -112,7 +112,7 @@ instance PrettySubst SynthExpr where
       m' <- prettySubst $ DLA_Var m
       f' <- prettySubst f
       ma' <- prettySubst ma
-      return $ "set" <> parens (m' <> brackets f' <> "," <+> ma')
+      return $ m' <> brackets (f' <+> "<-" <+> ma')
     SMTMapRef m f -> do
       m' <- prettySubst $ DLA_Var m
       f' <- prettySubst f
@@ -211,18 +211,16 @@ instance PrettySubst [SMTLet] where
         True ->
           return $ prettySubstWith env' tl
         False -> do
-          let wouldBe = \case
-                "null" -> ""
-                x -> "  //    ^ would be " <> viaShow x
+          let wouldBe x = hardline <> "  //    ^ would be " <> viaShow x
           let info = maybe "" wouldBe (M.lookup dv env)
-          let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
+          let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> info
           return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     SMTLet at dv _ Witness se : tl -> do
       env <- ask
       se' <- prettySubst se
-      let wouldBe x = "  //    ^ could = " <> x <> hardline <> "  //      from:" <+> pretty (show at)
+      let wouldBe x = hardline <> "  //    ^ could = " <> x <> hardline <> "  //      from:" <+> pretty (show at)
       let info = maybe "" wouldBe (M.lookup dv env)
-      let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> hardline <> info
+      let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     _ : tl -> prettySubst tl
 
@@ -258,7 +256,7 @@ instance PrettySubst SMTTrace where
 data SMTVal
   = SMV_Bool Bool
   | SMV_Int Int
-  | SMV_Address SLPart
+  | SMV_Address Int
   | SMV_Digest String
   | SMV_Null
   | SMV_Bytes B.ByteString
@@ -267,13 +265,14 @@ data SMTVal
   | SMV_Object (M.Map String SMTVal)
   | SMV_Data String [SMTVal]
   | SMV_Token String
+  | SMV_Map
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
   pretty = \case
     SMV_Bool b -> pretty $ DLL_Bool b
     SMV_Int i -> pretty i
-    SMV_Address p -> pretty p
+    SMV_Address p -> "<abstract address" <+> pretty p <> ">"
     SMV_Digest p -> pretty p
     SMV_Token p -> pretty p
     SMV_Null -> "null"
@@ -282,6 +281,7 @@ instance Pretty SMTVal where
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
     SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
+    SMV_Map -> "<map>"
 
 instance Countable SynthExpr where
   counts = \case

@@ -38,6 +38,7 @@ import Reach.AddCounts (add_counts)
 import qualified Data.List as List
 import Data.Functor
 import Data.List (nub)
+import Data.Char (isDigit)
 
 --- SMT Helpers
 
@@ -268,11 +269,19 @@ smtTypeInv t se = do
     Just (_, i) -> smtAssertCtxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
+redactAbsStrLet :: SMTLet -> App SMTLet
+redactAbsStrLet = \case
+  SMTLet (SrcLoc a b (Just (ReachSourceFile fp))) d l Witness s -> do
+    cwd <- liftIO getCurrentDirectory
+    let at' = SrcLoc a b (Just $ ReachSourceFile $ redactAbsStr cwd fp)
+    return $ SMTLet at' d l Witness s
+  ow -> return ow
 
 smtDeclare :: Solver -> String -> SExpr -> Maybe SMTLet -> App ()
 smtDeclare smt v s ml = do
   smt_trace_r <- asks ctxt_smt_trace
-  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml)
+  ml' <- maybe (return Nothing) (fmap Just . redactAbsStrLet) ml
+  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml')
   liftIO $ void $ SMT.declare smt v s
 
 smtDeclare_v :: String -> DLType -> Maybe SMTLet -> App ()
@@ -437,18 +446,14 @@ parseVal t v =
         _ -> impossible $ "parseVal: UInt: " <> show v
     T_Address -> do
       case v of
-        Atom i -> return $ SMV_Address $ B.pack i
+        Atom i -> return $ SMV_Address $ (read $ dropWhile (not . isDigit) i :: Int)
         _ -> impossible $ "parseVal: Address: " <> show v
     T_Bytes _ -> do
       case v of
         Atom i -> return $ SMV_Bytes $ B.pack i
         _ -> impossible $ "parseVal: Bytes: " <> show v
-    T_Array (T_Tuple [T_Token, T_UInt]) _ ->
-      -- This is a Map
-      return $ SMV_Null
-    T_Array (T_Tuple [T_Address, _]) _ ->
-      -- This is a Map
-      return $ SMV_Null
+    T_Array (T_Tuple [T_Token, T_UInt]) _ -> return SMV_Map
+    T_Array (T_Tuple [T_Address, _]) _ -> return SMV_Map
     T_Array (T_Tuple [T_UInt, ty]) _ ->
       case v of
         List (_:elems) -> do
