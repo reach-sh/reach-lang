@@ -275,7 +275,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const reachPath = (exeLoc == '' || exeLoc == './reach')
 		? path.join(workspaceFolder, "reach")
 		: exeLoc;
-	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json --disable-reporting", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
