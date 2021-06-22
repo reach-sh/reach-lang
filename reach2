@@ -4,7 +4,12 @@ IMG='reachsh/reach-cli:latest'
 TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
 
 run_d () {
-  docker run -t --rm -u "$(id -u)" -v "$TMP:/app/tmp" -v "$(pwd):/app/src" "$IMG" "$@"
+  docker run -t --rm \
+    -e "REACH_VERSION" \
+    -u "$(id -ru):$(id -rg)" \
+    -v "$TMP:/app/tmp" \
+    -v "$(pwd):/app/src" \
+    "$IMG" "$@"
 }
 
 run_s () {
