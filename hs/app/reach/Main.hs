@@ -17,15 +17,21 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified NeatInterpolation as N
 
+import qualified Reach.Util as U
 import qualified Reach.Version as V
 
 -- TODO update `ref-usage` docs once stabilized
 
 
+data Effect
+  = Script T.Text
+  | InProcess
+
+
 data Env = Env
   { e_embedDir :: FilePath
   , e_emitRaw :: Bool
-  , e_emit :: IORef T.Text
+  , e_effect :: IORef Effect
   }
 
 type App = ReaderT Env IO ()
@@ -38,21 +44,33 @@ data Cli = Cli
   }
 
 
+script :: App -> App
+script a = do
+  asks e_effect >>= liftIO . flip writeIORef (Script "#!/bin/sh\nset -e\n\n")
+  a
+
+
 write :: T.Text -> App
-write t = asks e_emit >>= liftIO . flip modifyIORef (<> t <> "\n\n")
+write t = asks e_effect >>= liftIO . flip modifyIORef w where
+  w = \case
+    Script t' -> Script $ t' <> t <> "\n\n"
+    InProcess -> U.impossible "Cannot `write` to an in-process `Effect`"
 
 
 writeFrom :: FilePath -> App
 writeFrom p = asks e_embedDir >>= liftIO . T.readFile . (</> p) >>= write
 
 
-runSubApp :: App -> Env -> IO T.Text
-runSubApp a e = do
-  r <- newIORef ""
-  runReaderT a $ e { e_emit = r }
-  readIORef r
+runSubScript :: App -> Env -> IO T.Text
+runSubScript a e = readIORef (e_effect e) >>= \case
+  Script _ -> do
+    r <- newIORef $ Script ""
+    Script r' <- runReaderT a (e { e_effect = r }) >> readIORef r
+    pure r'
+  _ -> U.impossible "`runSubScript` may only be applied to a `Script`"
 
 
+--------------------------------------------------------------------------------
 swap :: T.Text -> T.Text -> T.Text -> T.Text
 swap a b src = T.replace ("${" <> a <> "}") b src
 
@@ -70,6 +88,7 @@ reachImages =
   ]
 
 
+--------------------------------------------------------------------------------
 reachVersion :: App
 reachVersion =
   let v = T.pack V.versionStr
@@ -84,7 +103,7 @@ reachVersionShort :: App
 reachVersionShort =
   let compat = T.pack V.compatibleVersionStr
   in write [N.text|
-    if [ "$$REACH_VERSION" = "stable" ] ; then
+    if [ "$$REACH_VERSION" = "stable" ]; then
       REACH_VERSION_SHORT="$compat"
     else
       REACH_VERSION_SHORT=$(echo "$$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $$1"."$$2}')
@@ -156,7 +175,7 @@ scaffold' isolate quiet app = do
       |]
 
   let scaffIfAbsent n f = do
-        c <- ask >>= liftIO . runSubApp (scaff n f)
+        c <- ask >>= liftIO . runSubScript (scaff n f)
         write [N.text|
           if [ ! -f $n ]; then
           $c
@@ -219,7 +238,7 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
    <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
    <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
 
-  go m i = write [N.text|
+  go m i = script $ write [N.text|
       MODULE="$m"
 
       if [ ! "$m" = "index" ] && [ -d "$m" ]; then
@@ -246,7 +265,7 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
-  f = pure $ do
+  f = pure . script $ do
     realpath
     write [N.text|
       REACH="$$(realpath "$$0")"
@@ -319,7 +338,7 @@ init' = command "init" . info f $ d <> foot where
    <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
 
   go :: FilePath -> T.Text -> App
-  go template app = do
+  go template app = script $ do
     Env {..} <- ask
     let tmpl n = e_embedDir </> "template" </> "init" </> n
 
@@ -377,9 +396,9 @@ run' = command "run" $ info f d where
   --
   -- XXX Can we add eslint on the JS?
   go :: T.Text -> App
-  go app = do
+  go app = script $ do
     let app' = if app == "" then "index" else app
-    doScaffold <- ask >>= liftIO . runSubApp (scaffold' True True app')
+    doScaffold <- ask >>= liftIO . runSubScript (scaffold' True True app')
 
     declareFatalInfiniteReachRunLoop
 
@@ -536,7 +555,7 @@ down = command "down" $ info f d where
 
 --------------------------------------------------------------------------------
 scaffold :: Subcommand
-scaffold = command "scaffold" $ info f d where
+scaffold = command "scaffold" $ info (script <$> f) d where
   d = progDesc "Set up Docker scaffolding for a simple app"
   f = scaffold'
     <$> switch (long "isolate")
@@ -583,7 +602,7 @@ upgrade = command "upgrade" $ info f d where
 update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
-  f = forM_ reachImages $ \i -> write
+  f = script . forM_ reachImages $ \i -> write
     $ "docker pull reachsh/" <> i <> ":" <> T.pack V.compatibleVersionStr
 
 
@@ -591,7 +610,7 @@ update = command "update" $ info (pure f) d where
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
   d = progDesc "Docker kill and rm all images"
-  f = pure $ write [N.text|
+  f = pure . script $ write [N.text|
     echo 'Docker kill all the things...'
     # shellcheck disable=SC2046
     docker kill $$(docker ps -q) >/dev/null 2>&1 || :
@@ -606,8 +625,7 @@ dockerReset = command "docker-reset" $ info f d where
 version :: Subcommand
 version = command "version" $ info f d where
   d = progDesc "Display version"
-  f = let v = T.pack V.versionHeader
-       in pure $ write [N.text| echo $v |]
+  f = pure . liftIO . T.putStrLn $ T.pack V.versionHeader
 
 
 --------------------------------------------------------------------------------
@@ -621,7 +639,7 @@ help' = command "help" $ info f d where
 hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
-  f = pure $ do
+  f = pure . script $ do
     reachVersion
     forM_ reachImages $ \i -> write [N.text|
       echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$$REACH_VERSION" -c 'echo $$REACH_GIT_HASH')"
@@ -635,14 +653,13 @@ whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
 
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
-  f = pure $ write whoami'
+  f = pure . script $ write whoami'
 
 
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
 numericVersion = command "numeric-version" $ info f fullDesc where
-  f = let v = T.pack V.compatibleVersionStr
-       in pure $ write [N.text| echo $v |]
+  f = pure . liftIO . T.putStrLn $ T.pack V.compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -659,19 +676,11 @@ rpcServerDown = command "rpc-server-down" $ info f fullDesc where
 
 --------------------------------------------------------------------------------
 unscaffold :: Subcommand
-unscaffold = command "unscaffold" $ info f fullDesc where
+unscaffold = command "unscaffold" $ info (script <$> f) fullDesc where
   f = unscaffold'
     <$> switch (long "isolate")
     <*> switch (long "quiet")
     <*> strArgument (metavar "APP" <> value "index" <> showDefault)
-
-
---------------------------------------------------------------------------------
-env :: IORef T.Text -> Parser Env
-env emit = Env
-  <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
-  <*> switch (long "emit-raw" <> hidden)
-  <*> pure emit
 
 
 --------------------------------------------------------------------------------
@@ -682,19 +691,26 @@ header' = "https://reach.sh"
 
 main :: IO ()
 main = do
-  emit <- newIORef "#!/bin/sh\nset -e\n\n"
+  eff <- newIORef InProcess
+
+  let env = Env
+        <$> strOption (long "embed-dir" <> value "/app/embed" <> hidden)
+        <*> switch (long "emit-raw" <> hidden)
+        <*> pure eff
 
   let cli = Cli
-        <$> env emit
+        <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
 
   customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
     >>= \Cli {..} -> runReaderT c_cmd c_env
-    >> do
-      case e_emitRaw c_env of
-        True -> readIORef emit >>= T.putStrLn
+    >>  readIORef eff
+    >>= \case
+      InProcess -> pure ()
+      Script t -> case e_emitRaw c_env of
+        True -> T.putStrLn t
         False -> do
-          readIORef emit >>= T.writeFile "/app/tmp/out.sh"
+          T.writeFile "/app/tmp/out.sh" t
           exitImmediately $ ExitFailure 42
 
  where
