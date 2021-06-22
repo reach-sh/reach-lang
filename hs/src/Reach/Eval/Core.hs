@@ -4619,7 +4619,7 @@ evalStmt = \case
                     T_Null ->
                       return (Nothing, Just $ SLV_Null at_c "case")
                     _ -> do
-                      dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, vn)) vt
+                      dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
                       return (Just dv', Just $ SLV_DLVar dv')
                 False ->
                   return (Nothing, Nothing)

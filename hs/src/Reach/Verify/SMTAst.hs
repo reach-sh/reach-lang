@@ -30,27 +30,28 @@ data BindingOrigin
   | O_Assignment
   | O_ReduceVar
   | O_ExportArg
+  | O_SwitchCase DLArg
   deriving (Eq)
 
-instance Show BindingOrigin where
-  show bo =
-    case bo of
-      O_Join who False -> "a dishonest join from " ++ sp who
-      O_Join who True -> "an honest join from " ++ sp who
-      O_ClassJoin who -> "a join by a class member of " <> sp who
-      O_BuiltIn -> "builtin"
-      O_Var -> "function return"
-      O_Assignment -> "loop variable"
-      O_ReduceVar -> "map reduction"
-      O_ExportArg -> "function argument"
-    where
-      sp :: Pretty a => a -> String
-      sp = show . pretty
+instance PrettySubst BindingOrigin where
+  prettySubst = \case
+    O_Join who False -> return $ "a dishonest join from " <> pretty who
+    O_Join who True -> return $ "an honest join from " <> pretty who
+    O_ClassJoin who -> return $ "a join by a class member of " <> pretty who
+    O_BuiltIn -> return $ "builtin"
+    O_Var -> return "function return"
+    O_Assignment -> return "loop variable"
+    O_ReduceVar -> return "map reduction"
+    O_ExportArg -> return "function argument"
+    O_SwitchCase c -> do
+      c' <- prettySubst c
+      return $ "switch case binding for " <> c'
 
 instance IsPure BindingOrigin where
   isPure = \case
     O_ReduceVar -> True
     O_ExportArg -> True
+    O_SwitchCase {} -> True
     -- Rest are `False` to be conservative with the lack of info
     O_Join {} -> False
     O_ClassJoin _ -> False
@@ -109,7 +110,9 @@ data SMTExpr
 
 instance PrettySubst SMTExpr where
   prettySubst = \case
-    SMTModel bo -> return $ "<" <> viaShow bo <> ">"
+    SMTModel bo -> do
+      b' <- prettySubst bo
+      return $ "<" <> b' <> ">"
     SMTProgram de ->  prettySubst de
     SMTSynth se -> prettySubst se
 
@@ -268,9 +271,14 @@ instance Countable SynthExpr where
     SMTMapSet m f ma -> counts m <> counts f <> counts ma
     SMTMapRef m f -> counts m <> counts f
 
+instance Countable BindingOrigin where
+  counts = \case
+    O_SwitchCase d -> counts d
+    _ -> mempty
+
 instance Countable SMTExpr where
   counts = \case
-    SMTModel {} -> mempty
+    SMTModel s -> counts s
     SMTSynth s -> counts s
     SMTProgram de -> counts de
 

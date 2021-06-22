@@ -498,8 +498,7 @@ recoverBindingInfo = \case
   ow@(SMTLet at (DLVar _ Nothing _ i) lv c e) -> do
     v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
     let hasBindingInfo (DLVar _ mb _ _) = isJust mb
-    let sVar = "v" <> show i
-    let dvs = maybe [] (reverse . filter hasBindingInfo) $ M.lookup sVar v2dv
+    let dvs = maybe [] (reverse . filter hasBindingInfo) $ M.lookup ("v" <> show i) v2dv
     case dvs of
       (dv:_) -> return $ SMTLet at dv lv c e
       _ -> return ow
@@ -1032,7 +1031,6 @@ data SwitchMode
 smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> App ()) -> App ()
 smtSwitch sm at ov csm iter = do
   let ova = DLA_Var ov
-  let smte = SMTProgram $ DLE_Arg at ova
   let ovt = argTypeOf ova
   let ovtm = case ovt of
         T_Data m -> m
@@ -1040,6 +1038,7 @@ smtSwitch sm at ov csm iter = do
   ovp <- smt_a at ova
   let cm1 (vn, (mov', l)) = do
         ov_s <- smtVar ov
+        let smte = SMTModel $ O_SwitchCase $ DLA_Var ov
         let vnv = ov_s <> "_vn_" <> vn
         let vt = ovtm M.! vn
         let (ov'p_m, get_ov'p) =
