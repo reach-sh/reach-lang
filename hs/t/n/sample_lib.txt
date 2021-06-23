@@ -6,9 +6,6 @@ Verification failed:
   of theorem: assert
   at ./sample_lib.rsh:9:7:application
 
-  // Violation witness
-
-  // Theorem formalization
   assert(false);
 
   Verifying when NO participants are honest

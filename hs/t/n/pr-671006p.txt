@@ -6,16 +6,24 @@ Verification failed:
   of theorem: while invariant before loop
   at ./pr-671006p.rsh:52:5:invariant
 
-  // Violation witness
-  const v115 = 1;
-  //    ^ from map reduction at reach standard library:146:18:application
-  const sum/32 = 0;
-  //    ^ from loop variable at ./pr-671006p.rsh:31:37:while
-  const balance(0)/167 = 0;
-  //    ^ from loop variable at ./pr-671006p.rsh:31:37:while
+  // Violation Witness
 
-  // Theorem formalization
-  invariant((balance(0)/167 == sum/32) ? (sum/32 == v115) : false);
+  const sum/32 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./pr-671006p.rsh:31:37:while
+  const balance(0)/167 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./pr-671006p.rsh:31:37:while
+  const v115 = <map reduction>;
+  //    ^ could = 1
+  //      from: reach standard library:146:18:application
+
+
+  // Theorem Formalization
+
+  const v120 = (balance(0)/167 == bal/32) ? (bal/32 == v115) : false;
+  //    ^ would be false
+  while invariant before loop(v120);
 
   Verifying when NO participants are honest
 Verification failed:

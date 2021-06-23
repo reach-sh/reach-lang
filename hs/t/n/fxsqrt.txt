@@ -9,9 +9,6 @@ Verification failed:
   at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:333:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
-  // Violation witness
-
-  // Theorem formalization
   assert(false);
 
   Verifying when NO participants are honest

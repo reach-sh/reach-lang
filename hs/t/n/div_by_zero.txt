@@ -8,12 +8,18 @@ Verification failed:
   at ./div_by_zero.rsh:9:21:application
   at ./div_by_zero.rsh:8:13:application call to [unknown function] (defined at: ./div_by_zero.rsh:8:17:function exp)
 
-  // Violation witness
-  const interact_A_x = 0;
-  //    ^ from interaction at ./div_by_zero.rsh:4:12:application
+  // Violation Witness
 
-  // Theorem formalization
-  assert(interact_A_x > 0);
+  const v18 = "A".interact.x;
+  //    ^ could = 0
+  //      from: ./div_by_zero.rsh:6:17:application
+
+
+  // Theorem Formalization
+
+  const v23 = v18 > 0;
+  //    ^ would be false
+  assert(v23);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
