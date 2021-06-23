@@ -268,19 +268,10 @@ smtTypeInv t se = do
     Just (_, i) -> smtAssertCtxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
-redactAbsStrLet :: SMTLet -> App SMTLet
-redactAbsStrLet = \case
-  SMTLet (SrcLoc a b (Just (ReachSourceFile fp))) d l Witness s -> do
-    cwd <- liftIO getCurrentDirectory
-    let at' = SrcLoc a b (Just $ ReachSourceFile $ redactAbsStr cwd fp)
-    return $ SMTLet at' d l Witness s
-  ow -> return ow
-
 smtDeclare :: Solver -> String -> SExpr -> Maybe SMTLet -> App ()
 smtDeclare smt v s ml = do
   smt_trace_r <- asks ctxt_smt_trace
-  ml' <- maybe (return Nothing) (fmap Just . redactAbsStrLet) ml
-  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml')
+  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml)
   liftIO $ void $ SMT.declare smt v s
 
 smtDeclare_v :: String -> DLType -> Maybe SMTLet -> App ()

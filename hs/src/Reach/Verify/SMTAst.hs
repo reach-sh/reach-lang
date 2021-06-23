@@ -20,6 +20,7 @@ import qualified Data.Map as M
 import Data.List (partition)
 import Reach.Util (impossible)
 import Data.Maybe
+import Reach.UnsafeUtil
 
 
 data BindingOrigin
@@ -38,7 +39,7 @@ instance PrettySubst BindingOrigin where
     O_Join who False -> return $ "a dishonest join from " <> pretty who
     O_Join who True -> return $ "an honest join from " <> pretty who
     O_ClassJoin who -> return $ "a join by a class member of " <> pretty who
-    O_BuiltIn -> return $ "builtin"
+    O_BuiltIn -> return "builtin"
     O_Var -> return "function return"
     O_Assignment -> return "loop variable"
     O_ReduceVar -> return "map reduction"
@@ -199,7 +200,8 @@ instance PrettySubst [SMTLet] where
     SMTLet at dv _ Witness se : tl -> do
       env <- ask
       se' <- prettySubst se
-      let wouldBe x = hardline <> "  //    ^ could = " <> x <> hardline <> "  //      from:" <+> pretty (show at)
+      let wouldBe x = hardline <> "  //    ^ could = " <> x <> hardline <>
+                                  "  //      from:" <+> pretty (unsafeRedactAbsStr $ show at)
       let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
