@@ -19,9 +19,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const map0_0/57 = new Map();
-  //    ^ would be <map>
-  const map0_1/70 = map0_0/57[<abstract address 0> <- Just a/27];
+  const map0_1/70 = new Map()[<abstract address 0> <- Just a/27];
   //    ^ would be <map>
   const map0_2/76 = map0_1/70[<abstract address 0> <- Just b/36];
   //    ^ would be <map>

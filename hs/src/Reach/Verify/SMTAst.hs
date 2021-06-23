@@ -125,6 +125,7 @@ instance Show SMTExpr where
 instance CanDupe SynthExpr where
   canDupe = \case
     SMTMapRef {} -> True
+    SMTMapNew -> True
     _ -> False
 
 instance IsPure SynthExpr where
