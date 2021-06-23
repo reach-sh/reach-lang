@@ -760,6 +760,9 @@ jsMapDefns varsHuh = do
         (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> "{};" ] else [])
         <> [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
 
+jsError :: Doc -> Doc
+jsError err = "new Error(" <> err <> ")"
+
 jsPart :: DLInit -> SLPart -> EPProg -> App Doc
 jsPart dli p (EPProg _ _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
@@ -782,15 +785,23 @@ jsPart dli p (EPProg _ _ et) = do
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
+    let who = pretty $ bunpack p
+    let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+>
+                            "as its" <+> nth <+> "argument.`"
+    let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
+    let ctcChk = rejectIf "ctc.sendrecv === undefined" $ iExpect "a contract" "first"
+    let interactChk = rejectIf "typeof(interact) !== 'object'" $ iExpect "an interact object" "second"
     let bodyp' =
           vsep
-            [ "const stdlib = ctc.stdlib;"
+            [ ctcChk
+            , interactChk
+            , "const stdlib = ctc.stdlib;"
             , ctcs
             , maps_defn
             , ctimem'
             , et'
             ]
-    return $ "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
+    return $ "export" <+> jsFunction who ["ctc", "interact"] bodyp'
 
 jsConnInfo :: ConnectorInfo -> App Doc
 jsConnInfo = \case
