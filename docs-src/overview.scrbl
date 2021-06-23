@@ -205,7 +205,7 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 @item{Lines 1 and 2 import the Reach standard library loader and the compiled app backend.}
 
 @item{Line 5 dynamically loads the appropriate network-specific Reach standard library,
-based on the @tech{REACH_CONNECTOR_MODE} environment variable.
+based on the @envref{REACH_CONNECTOR_MODE} environment variable.
 If unspecified, Reach's Ethereum standard library will be used by default.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.}
 
