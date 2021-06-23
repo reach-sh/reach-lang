@@ -26,6 +26,7 @@ import {
   argsSlice, argsSplit,
   makeRandom,
   replaceableThunk,
+  ensureConnectorAvailable,
 } from './shared_impl';
 import {
   mapRef,
@@ -1632,10 +1633,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const implNow = { stdlib: compiledStdlib };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
+    ensureConnectorAvailable(bin._Connectors, connector);
     return deferContract(false, attachP(bin, ctcInfoP), implNow);
   };
 
   const deploy = (bin: Backend): Contract => {
+    ensureConnectorAvailable(bin._Connectors, connector);
     return deferContract(false, deployP(bin), implNow);
   };
 

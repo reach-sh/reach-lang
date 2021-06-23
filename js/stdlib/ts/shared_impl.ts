@@ -355,3 +355,9 @@ export const objectMap = <A,B>(object: {[key:string]: A}, mapFn: ((k:string, a:A
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
 ) => (x:any, y:any): boolean =>
   bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
+
+export const ensureConnectorAvailable = (connectors: { [key: string]: any }, connector: string) => {
+  if (!(connector in connectors)) {
+    throw (new Error(`The application was not compiled for the ${connector} connector, only: ${Object.keys(connectors)}`));
+  }
+}

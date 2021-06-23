@@ -14,6 +14,7 @@ import {
   deferContract,
   makeRandom,
   argsSplit,
+  ensureConnectorAvailable,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -407,6 +408,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     gasLimit = bigNumberify(ngl); };
 
   const deploy = (bin: Backend): Contract => {
+    ensureConnectorAvailable(bin._Connectors, 'ETH');
+
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
     }
@@ -521,6 +524,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // @ts-ignore
       infoP = infoP.getInfo();
     }
+    ensureConnectorAvailable(bin._Connectors, 'ETH');
 
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
 
