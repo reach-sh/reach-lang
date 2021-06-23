@@ -374,7 +374,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   Bytes of different lengths are not compatible; however the shorter bytes may be @tech{padded}.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
-  @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}.}
+  @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}. @secref["ref-networks"]{} discusses how @reachin{Token}s are represented on specific networks.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}, when @reachin{Domain_i} and @reachin{Range} are types.
   The domain of a function is @tech{negative position}.
   The range of a function is @tech{positive position}.}

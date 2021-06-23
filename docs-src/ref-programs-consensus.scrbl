@@ -293,6 +293,10 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
   const randomVal = randomOracle.getRandom.pay(randomFee)();
 }
 
+@margin-note{
+  @secref["ref-networks"]{} discusses how Reach supports specific consensus networks.
+}
+
 A @deftech{remote object} is representation of a foreign @tech{contract} in a Reach application.
 During a @tech{consensus step}, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
