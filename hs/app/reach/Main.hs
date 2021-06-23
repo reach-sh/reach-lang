@@ -33,6 +33,7 @@ data Effect
 data Env = Env
   { e_dirEmbed :: FilePath
   , e_dirProject :: FilePath
+  , e_dirTmp :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   }
@@ -703,6 +704,7 @@ main = do
   let env = Env
         <$> strOption (long "dir-embed" <> value "/app/embed" <> hidden)
         <*> strOption (long "dir-project" <> value "/app/src" <> hidden)
+        <*> strOption (long "dir-tmp" <> value "/app/tmp" <> hidden)
         <*> switch (long "emit-raw" <> hidden)
         <*> pure eff
 
@@ -718,7 +720,7 @@ main = do
       Script t -> case e_emitRaw c_env of
         True -> T.putStrLn t
         False -> do
-          T.writeFile "/app/tmp/out.sh" t
+          T.writeFile (e_dirTmp c_env </> "out.sh") t
           exitImmediately $ ExitFailure 42
 
  where
