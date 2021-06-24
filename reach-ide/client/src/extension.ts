@@ -27,8 +27,8 @@ let client: LanguageClient;
 
 var terminal;
 
-const fs = require('fs')
-const url = require('url')
+const fs = require('fs');
+const url = require('url');
 
 var rootFolder: string;
 
@@ -52,11 +52,11 @@ export function activate(context: ExtensionContext) {
 		}
 	};
 
-	terminal = window.createTerminal({ name: "Reach IDE" });
+	terminal = window.createTerminal({ name: 'Reach IDE' });
 	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
-	const wf = workspace.workspaceFolders[0].uri.path || ".";
-	const reachPath = (reachExecutablePath == './reach')
-		? path.join(wf, "reach")
+	const wf = workspace.workspaceFolders[0].uri.path || '.';
+	const reachPath = (reachExecutablePath === './reach')
+		? path.join(wf, 'reach')
 		: reachExecutablePath;
 	registerCommands(context, reachPath);
 
@@ -92,7 +92,7 @@ export function activate(context: ExtensionContext) {
 	// Inject association for .rsh file type
 	if (workspace.workspaceFolders !== undefined) {
 		rootFolder = url.fileURLToPath( workspace.workspaceFolders[0].uri.toString() );
-	};
+	}
 	associateRshFiles();
 
 	window.registerTreeDataProvider('reach-commands', new CommandsTreeDataProvider());
@@ -106,14 +106,14 @@ const commandHelper = (context, reachPath) => (label) => {
 		terminal.sendText(`${reachPath} ${label}`);
 	});
 	context.subscriptions.push(disposable);
-}
+};
 
 const urlHelper = (context, label, url) => {
 	const disposable = commands.registerCommand(`reach.${label}`, () => {
 		env.openExternal(Uri.parse(url));
 	});
 	context.subscriptions.push(disposable);
-}
+};
 
 function registerCommands(context: ExtensionContext, reachPath: string) {
 	const cmdHelper = commandHelper(context, reachPath);
@@ -156,28 +156,28 @@ function associateRshFiles() {
 }
 
 function injectRshFileAssocation() {
-	var settingsFile:string = `${rootFolder}${path.sep}.vscode/settings.json`;
+	const settingsFile:string = `${rootFolder}${path.sep}.vscode/settings.json`;
 
 	fs.readFile(settingsFile, function (err: any, content: string) {
-		var parseJson;
+		let parseJson: { [x: string]: { [x: string]: string; }; };
 		try {
 			parseJson = JSON.parse(content);
 		} catch {
-			parseJson = {}
+			parseJson = {};
 		}
-		var fileAssoc = parseJson["files.associations"]
-		if (fileAssoc == undefined) {
-			parseJson["files.associations"] = { "*.rsh": "javascript" }
+		let fileAssoc = parseJson['files.associations'];
+		if (fileAssoc === undefined) {
+			parseJson['files.associations'] = { '*.rsh': 'javascript' };
 		} else {
-			parseJson["files.associations"]["*.rsh"] = "javascript";
+			parseJson['files.associations']['*.rsh'] = 'javascript';
 		}
 		fs.writeFile(settingsFile, JSON.stringify(parseJson), function (err: any) {
 			if (err) {
 				console.error(`Could not create .vscode/settings.json: ${err}`);
 				return;
 			}
-		})
-	})
+		});
+	});
 }
 
 export function deactivate(): Thenable<void> | undefined {
