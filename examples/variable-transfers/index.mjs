@@ -1,8 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-export const run = async (n) => {
-  const stdlib = await loadStdlib();
+export const run = async (n, stdlib) => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
@@ -41,7 +40,8 @@ export const run = async (n) => {
 };
 
 (async () => {
-  await run(0);
-  await run(1);
-  await run(2);
+  const stdlib = await loadStdlib();
+  await run(0, stdlib);
+  await run(1, stdlib);
+  await run(2, stdlib);
 })();
