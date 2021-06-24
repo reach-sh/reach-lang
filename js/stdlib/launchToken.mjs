@@ -8,6 +8,7 @@ import * as cfxers from './cfxers.mjs';
 
 export default async function (name, sym) {
   // XXX update this to work in browser (process.env not directly available to libs)
+  stdlib_loader.unsafeAllowMultipleStdlibs();
   const stdlib = await stdlib_loader.loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
