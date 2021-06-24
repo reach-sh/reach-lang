@@ -16,7 +16,9 @@ import {
   truthyEnv,
 } from './shared_impl';
 import type { Stdlib_User } from './interfaces';
+import { doStdlibLoad } from './registry';
 
+export { unsafeAllowMultipleStdlibs } from './registry';
 export { getConnectorMode, getConnector };
 
 // The connectorMode arg is optional;
@@ -39,6 +41,10 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
   }
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);
+
+  // Remember the connector to prevent users from accidentally using multiple stdlibs
+  doStdlibLoad(connector);
+
   let stdlib;
   switch (connector) {
     case 'ETH': stdlib = stdlib_ETH; break;
