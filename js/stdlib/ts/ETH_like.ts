@@ -614,14 +614,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     ): Promise<Array<Log>> => {
       if ( fromBlock > toBlock ) { return []; }
       const ethersC = await getC();
-      // XXX Are we sure that this returns the logs in order? Algo didn't maybe
-      // sort to be safe?
-      return await (await getProvider()).getLogs({
+      const logs = await (await getProvider()).getLogs({
         fromBlock,
         toBlock,
         address: ethersC.address,
         topics: [ethersC.interface.getEventTopic(ok_evt)],
       });
+      return logs.sort((x: Log, y: Log) =>
+          (x.blockNumber == y.blockNumber)
+            ? x.logIndex - y.logIndex
+            : x.blockNumber.toString().localeCompare(y.blockNumber.toString()));
     }
 
     const getInfo = async () => await infoP;
