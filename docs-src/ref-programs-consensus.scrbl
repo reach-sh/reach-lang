@@ -294,7 +294,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 }
 
 @margin-note{
-  @secref["ref-networks"]{} discusses how Reach supports specific consensus networks.
+  @secref["ref-networks"]{} discusses how Reach supports remote objects on specific consensus networks.
 }
 
 A @deftech{remote object} is representation of a foreign @tech{contract} in a Reach application.
