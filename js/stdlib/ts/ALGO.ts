@@ -1571,7 +1571,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          0, mapDataKeys, 2, 1 + viewKeys,
+          appLocalStateNumUInt, mapDataKeys, appGlobalStateNumUInt, 1 + viewKeys,
           undefined, undefined, undefined, undefined,
           NOTE_Reach));
 
@@ -1805,10 +1805,14 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
+const appLocalStateNumUInt = 0;
+const appGlobalStateNumUInt = 2;
+
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<true> => {
   const { ApplicationID, Deployer, creationRound } = info;
   const compiled = await compileFor(bin, info);
   const { appApproval, appClear } = compiled;
+  const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
 
   let dhead = `verifyContract`;
 
@@ -1857,6 +1861,14 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
   chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
   chkeq(appInfo_p['creator'], Deployer, `Deployer does not match contract information`);
+
+  const appInfo_LocalState = appInfo_p['local-state-schema'];
+  chkeq(appInfo_LocalState['num-byte-slice'], mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
+  chkeq(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
+
+  const appInfo_GlobalState = appInfo_p['global-state-schema'];
+  chkeq(appInfo_GlobalState['num-byte-slice'], 1 + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
+  chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
   const catxn = ctxn['application-transaction'];
   chkeq(catxn['approval-program'], appInfo_p['approval-program'], `creationRound Approval program`);
