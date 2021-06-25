@@ -7,7 +7,7 @@ export const unsafeAllowMultipleStdlibs = () => {
 };
 
 export const doStdlibLoad = (connector: Connector) => {
-  if (currentConnector == null || currentConnector == true) {
+  if (currentConnector == null || currentConnector == true || currentConnector == connector) {
     currentConnector = connector;
   } else {
     throw new Error('Cannot load multiple stdlib connectors without using `unsafeAllowMultipleStdlibs`');
