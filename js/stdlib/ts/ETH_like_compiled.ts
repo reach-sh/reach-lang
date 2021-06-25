@@ -97,7 +97,7 @@ const V_Bool = (b: boolean): CBR_Bool => {
 };
 
 const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
-  ...CBR.BT_UInt,
+  ...CBR.BT_UInt(UInt_max),
   defaultValue: ethers.BigNumber.from(0),
   munge: (bv: CBR_UInt): BigNumber => bv,
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),

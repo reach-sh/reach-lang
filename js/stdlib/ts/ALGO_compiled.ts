@@ -67,7 +67,7 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
 }
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
-  ...CBR.BT_UInt,
+  ...CBR.BT_UInt(UInt_max),
   netSize: 8, // UInt64
   toNet: (bv: CBR_UInt): NV => (
     ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)

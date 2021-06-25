@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { checkedBigNumberify } from './shared_backend';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -65,23 +66,22 @@ export const BV_Bool = (val: boolean): CBR_Bool => {
   return BT_Bool.canonicalize(val);
 };
 
-export const BT_UInt: BackendTy<CBR_UInt> = {
+export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
   name: 'UInt',
   canonicalize: (uv: unknown): CBR_UInt => {
     try {
-      const val = ethers.BigNumber.from(uv);
-      return val;
+      return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uv);
     } catch (e) {
       if (typeof(uv) === 'string') {
         throw Error(`String does not represent a BigNumber. ${JSON.stringify(uv)}`);
-      } else {
-        throw Error(`Expected BigNumber, number, or string, but got ${JSON.stringify(uv)}`);
       }
+      throw e;
     }
   },
-};
-export const BV_UInt = (val: BigNumber): CBR_UInt => {
-  return BT_UInt.canonicalize(val);
+});
+
+export const BV_UInt = (val: BigNumber, max: BigNumber): CBR_UInt => {
+  return BT_UInt(max).canonicalize(val);
 };
 
 export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
