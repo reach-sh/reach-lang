@@ -16,7 +16,7 @@ type NetworkAccount = cfxers.Wallet; // XXX or other things
 type Provider = cfxers.providers.Provider;
 
 function notYetSupported(label: string): any {
-  throw Error(`${label} not yet supported on experimental connector CFX`);
+  throw Error(`${label} not yet supported on CFX`);
 }
 
 // XXX incorporate these into setProviderByEnv

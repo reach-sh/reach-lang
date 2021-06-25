@@ -1,3 +1,4 @@
+import { encode, decode } from './cfxaddr_index';
 import type { EpochNumber } from 'js-conflux-sdk';
 
 // XXX check if networkId is "correct"?
@@ -12,6 +13,16 @@ export function address_cfxStandardize(addrC: string): string {
   if (pieces.length !== 3) throw Error(`impossible: bad CFX addr: '${addrC}'`);
 
   return addrC.toUpperCase();
+}
+
+// mimicking cfxsdk.address.encodeCfxAddress
+export function encodeCfxAddress(hexAddress: Buffer, netId: number): string {
+  return encode(hexAddress, netId);
+}
+
+// mimicking cfxsdk.address.decodeCfxAddress
+export function decodeCfxAddress(addr: string): {hexAddress: Buffer, netId: number, type: string} {
+  return decode(addr);
 }
 
 // TODO: 'latest_state' seems to work well; is there a better choice?
