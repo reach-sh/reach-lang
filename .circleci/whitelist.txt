@@ -66,6 +66,7 @@ CFX.view-map
 CFX.nft-dumb
 CFX.popularity-contest
 # "TX with same nonce already inserted"
+CFX.nft-auction
 CFX.workshop-fomo-generalized
 CFX.workshop-trust-fund
 # cause unclear. see: https://app.circleci.com/pipelines/github/reach-sh/reach-lang/2822/workflows/853c6e2d-5115-4508-8b79-96a16cddf2ab/jobs/30702
