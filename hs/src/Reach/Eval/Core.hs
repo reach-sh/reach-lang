@@ -680,7 +680,6 @@ slToDLV = \case
   SLV_Prim {} -> no
   SLV_Form {} -> no
   SLV_Kwd {} -> no
-  SLV_MapCtor {} -> no
   SLV_Map {} -> no
   SLV_Deprecated {} -> no
   where
@@ -1186,18 +1185,15 @@ evalAsEnv obj = case obj of
     return $
       flip M.mapWithKey varm $ \k t ->
         retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t
-  SLV_MapCtor t ->
-    return $
-      M.fromList
-        [("new", retV $ public $ SLV_Prim $ SLPrim_MapCtor t)]
   SLV_Prim SLPrim_Map ->
     return $
       M.fromList $
-        [("reduce", retV $ public $ SLV_Prim $ SLPrim_MapReduce)] <> foldableValueEnv
+        [("new", retV $ public $ SLV_Prim $ SLPrim_Map_new)
+                                                                                      , ("reduce", retV $ public $ SLV_Prim $ SLPrim_Map_reduce)] <> foldableValueEnv
   SLV_Map _ ->
     return $
       M.fromList $
-        [("reduce", delayCall SLPrim_MapReduce)] <> foldableObjectEnv
+        [("reduce", delayCall SLPrim_Map_reduce)] <> foldableObjectEnv
   SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing) ->
     return $
       M.fromList $
@@ -2521,15 +2517,13 @@ evalPrim p sargs =
       aisiPut aisi_res $ \ar ->
         ar {ar_views = M.insert n i' $ ar_views ar}
       retV $ (lvl, SLV_Object at (Just $ ns <> " view") io)
-    SLPrim_Map -> do
+    SLPrim_Map -> illegal_args
+    SLPrim_Map_new -> do
       t <- expect_ty =<< one_arg
-      retV $ (lvl, SLV_MapCtor t)
-    SLPrim_MapCtor t -> do
-      _ <- ensure_public (lvl, SLV_Prim p)
       ensure_mode SLM_ConsensusStep "Map.new"
       mv <- mapNew =<< st2dte t
       retV $ public $ SLV_Map mv
-    SLPrim_MapReduce -> do
+    SLPrim_Map_reduce -> do
       at <- withAt id
       (m, z, f_) <- three_args
       mv <-
@@ -3213,10 +3207,10 @@ evalExpr e = case e of
   JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
   JSMemberDot obj a field -> doDot obj a field
   JSMemberExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
-  JSMemberNew a f lb args rb -> evalExpr $ JSMemberExpression rator a JSLNil a
+  JSMemberNew a f lb args rb -> evalExpr obj
     where
-      rator = JSMemberDot obj a (JSIdentifier a "new")
-      obj = JSMemberExpression f lb args rb
+      rator = JSMemberDot f a (JSIdentifier a "new")
+      obj = JSMemberExpression rator lb args rb
   JSMemberSquare arr a idx _ -> doRef arr a idx
   JSNewExpression _ _ -> illegal
   JSObjectLiteral a plist _ -> locAtf (srcloc_jsa "obj" a) $ do

@@ -359,7 +359,7 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 A spread expression (@reachin{...expr}) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
 
 @(mint-define! '("new"))
-@reachin{new f(a)} is equivalent to @reachin{f(a).new()} and is a convenient short-hand for writing class-oriented programs.
+@reachin{new f(a)} is equivalent to @reachin{f.new(a)} and is a convenient short-hand for writing class-oriented programs.
 
 @subsection{Types}
 

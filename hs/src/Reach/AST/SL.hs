@@ -156,7 +156,6 @@ data SLVal
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
-  | SLV_MapCtor SLType
   | SLV_Map DLMVar
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
@@ -193,7 +192,6 @@ instance Pretty SLVal where
     SLV_Prim p -> "<primitive: " <> pretty (conNameOf p) <> ">"
     SLV_Form f -> "<form: " <> pretty (conNameOf f) <> ">"
     SLV_Kwd k -> pretty k
-    SLV_MapCtor t -> "<mapCtor: " <> pretty t <> ">"
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
@@ -220,7 +218,6 @@ instance SrcLocOf SLVal where
     SLV_Prim _ -> def
     SLV_Form _ -> def
     SLV_Kwd _ -> def
-    SLV_MapCtor {} -> def
     SLV_Map _ -> def
     SLV_Deprecated _ v -> srclocOf v
     where
@@ -452,8 +449,8 @@ data SLPrimitive
   | SLPrim_race
   | SLPrim_lastConsensusTime
   | SLPrim_Map
-  | SLPrim_MapCtor SLType
-  | SLPrim_MapReduce
+  | SLPrim_Map_new
+  | SLPrim_Map_reduce
   | SLPrim_Participant
   | SLPrim_ParticipantClass
   | SLPrim_View
