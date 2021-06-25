@@ -39,7 +39,7 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
 }
 
 // from /scripts/devnet-cfx/default.toml
-const mining_key = "0xaa911f5b5b567af4db867a9d9072f4415fe722b114306baae28b721b6fbb2d99"
+const mining_key = '0xc72b8b13c6256b54ce428f6f67725d47194bc4ef97552867d037acd4fe6e86f3';
 const defaultFaucetWallet = new cfxers.Wallet(mining_key);
 
 export const _getDefaultFaucetNetworkAccount = memoizeThunk(async (): Promise<NetworkAccount> => {
@@ -64,6 +64,15 @@ async function waitCaughtUp(provider: Provider): Promise<void> {
         await Timeout.set(waitMs); // wait 1s between tries
       }
       try {
+        const faddr = defaultFaucetWallet.getAddress();
+        const fbal = await defaultFaucetWallet.provider?.conflux.getBalance(faddr);
+        debug(`Faucet bal`, fbal);
+        // @ts-ignore
+        if (fbal == 0) {
+          const failMsg = `Faucet balance is 0 (${faddr})`;
+          debug(failMsg);
+          throw Error(failMsg);
+        }
         const w = cfxers.Wallet.createRandom().connect(provider);
         const txn = {to: w.getAddress(), value: '1'};
         debug(`sending dummy txn`, txn);
