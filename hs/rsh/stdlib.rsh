@@ -443,22 +443,16 @@ export const makeDeadline = (deadline) => {
   return [ timeRemaining, keepGoing ];
 }
 
-export const Set = () => ({
+export const Set = {
   new: () => {
     const s = new Map(Null);
     return {
       insert: (v) => { s[v] = null; },
       remove: (v) => { delete s[v]; },
-      member: (v) => {
-        const mv = s[v];
-        switch(mv) {
-          case None: return false;
-          case Some: return true;
-        }
-      }
-    }
+      member: ((v) => isSome(s[v])),
+    };
   },
-})
+};
 
 // Intervals
 
