@@ -1,0 +1,1 @@
+reachc: error: ./index.rsh:32:16:dot: Invalid field access. Expected object, got: <SLV_Type>
