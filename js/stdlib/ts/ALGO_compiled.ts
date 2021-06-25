@@ -69,9 +69,13 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
   ...CBR.BT_UInt(UInt_max),
   netSize: 8, // UInt64
-  toNet: (bv: CBR_UInt): NV => (
-    ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
-  ),
+  toNet: (bv: CBR_UInt): NV => {
+    try {
+      return ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
+    } catch (e) {
+      throw new Error(`toNet: ${bv} is out of range [0, ${UInt_max}]`);
+    }
+  },
   fromNet: (nv: NV): CBR_UInt => {
     // debug(`fromNet: UInt`);
     // if (getDEBUG()) console.log(nv);
