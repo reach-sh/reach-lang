@@ -115,6 +115,19 @@ In such scenarios, we recommend that you call this function like so:
 You may instead pass in the string @litchar{'ETH'} or the string @litchar{'ALGO'}
 to select the desired stdlib directly.
 
+By default, this method allows a user to load a standard library for a single connector.
+That is, this method may not be called multiple times with varying @tech{connectors}.
+To bypass this restriction, use @jsin{unsafeAllowMultipleStdlibs}.
+
+@(hrule)
+@(mint-define! '("unsafeAllowMultipleStdlibs"))
+@js{
+  unsafeAllowMultipleStdlibs() => null
+}
+
+@index{unsafeAllowMultipleStdlibs} Calling this function will lift the restriction that
+@jsin{loadStdlib} imposes on loading multiple standard libraries.
+
 @section[#:tag "ref-frontends-js-acc"]{Accounts}
 
 These functions create and interact with @tech{account} representations.
