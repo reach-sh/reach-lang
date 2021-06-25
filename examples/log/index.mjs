@@ -11,7 +11,7 @@ import * as backend from './build/index.main.mjs';
   await Promise.all([
     backend.Alice(
       ctcAlice,
-      { log: console.log },
+      { ...stdlib.hasConsoleLogger },
     ),
   ]);
 })();

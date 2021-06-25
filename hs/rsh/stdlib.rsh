@@ -583,3 +583,7 @@ export const Array_reduceWithIndex = (a, init, f) =>
 
 export const Array_reduceWithIndex1 = (a) => (init, f) =>
   Array_reduceWithIndex(a, init, f);
+
+export const hasConsoleLogger = {
+  log: Fun(true, Null)
+};

@@ -526,6 +526,14 @@ Reach does not natively support randomness and leaves random number generation t
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
 @(hrule)
+@js{
+ hasConsoleLogger}
+
+@deftech{hasConsoleLogger (Frontend)} A value suitable for use as a @tech{participant interact interface} requiring a @litchar{log} function, such as @reachin{hasConsoleLogger}.
+The @jsin{log} function provided takes an arbitrary amount of elements and prints them to stdout.
+This value is provided out of convenience; it is not mandatory to use this implementation.
+
+@(hrule)
 @(mint-define! '("parseFixedPoint"))
 @js{
  parseFixedPoint(FixedPoint) => number}
