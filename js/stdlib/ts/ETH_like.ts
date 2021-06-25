@@ -609,10 +609,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return ok_args_abi.map(a => args[a.name]);
     };
 
-    const getLogs = async (
+    const getLog = async (
       fromBlock: number, toBlock: number, ok_evt: string,
-    ): Promise<Array<Log>> => {
-      if ( fromBlock > toBlock ) { return []; }
+    ): Promise<Log|undefined> => {
+      if ( fromBlock > toBlock ) { return undefined; }
       const ethersC = await getC();
       const logs = await (await getProvider()).getLogs({
         fromBlock,
@@ -620,10 +620,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         address: ethersC.address,
         topics: [ethersC.interface.getEventTopic(ok_evt)],
       });
-      return logs.sort((x: Log, y: Log) =>
-          (x.blockNumber == y.blockNumber)
-            ? x.logIndex - y.logIndex
-            : x.blockNumber.toString().localeCompare(y.blockNumber.toString()));
+      if (logs.length < 1) { return undefined; }
+      return logs.reduce((acc: Log, x: Log) =>
+          (x.blockNumber == acc.blockNumber)
+            ? (x.logIndex < acc.logIndex ? x : acc)
+            : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
     }
 
     const getInfo = async () => await infoP;
@@ -737,8 +738,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       let block_poll_end = block_poll_start;
       while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
         debug(shad, ':', label, 'recv', ok_evt, `--- GET`, block_poll_start, block_poll_end);
-        const es = await getLogs(block_poll_start, block_poll_end, ok_evt);
-        if (es.length == 0) {
+        const ok_e = await getLog(block_poll_start, block_poll_end, ok_evt);
+        if (ok_e == undefined) {
           debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- RETRY`);
           block_poll_start = block_poll_end;
 
@@ -754,7 +755,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         } else {
           debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- OKAY`);
 
-          const ok_e = es[0];
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
           const ok_t = await (await getProvider()).getTransaction(ok_e.transactionHash);
@@ -785,11 +785,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(shad, ':', label, 'recv', ok_evt, `--- MSG --`, ok_vals);
           const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[]; // TODO: typing
 
-          const getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
+          const _getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
             let dhead = [shad, label, 'recv', ok_evt, '--- getLog', l_evt, l_ctc];
             debug(dhead);
             const theBlock = ok_r.blockNumber;
-            const l_e = (await getLogs(theBlock, theBlock, l_evt))[0];
+            const l_e = (await getLog(theBlock, theBlock, l_evt))!;
             dhead = [...dhead, 'log', l_e];
             debug(dhead);
             const l_ed = (await getEventData(l_evt, l_e))[0];
@@ -801,7 +801,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             return l_edu;
           };
           const getOutput = (o_lab:string, o_ctc:any): Promise<any> =>
-            getLog(`oe_${o_lab}`, o_ctc);
+            _getLog(`oe_${o_lab}`, o_ctc);
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           const { from } = ok_t;
