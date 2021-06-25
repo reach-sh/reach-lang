@@ -263,6 +263,10 @@ jobs:
     - workattach
     - run: |
         ./.circleci/record.py >> $BASH_ENV
+    - run:
+        when: always
+        command: |
+          echo "${RECORD_MESSAGE}"
     - slack/notify:
         event: always
         # NOTE: We used to do
