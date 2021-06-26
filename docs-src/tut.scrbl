@@ -2004,7 +2004,7 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 
 @item{Or, maybe you'd like to spend some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
 
-@item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutae of Reach's features.}
+@item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutiae of Reach's features.}
 
 @item{Finally, you may like to repeat a portion of this tutorial, but using @seclink["tut-7-rpc"]{a language other than JavaScript}, like Python or Go!}
 
