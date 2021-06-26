@@ -8,23 +8,9 @@
 
 'reach 0.1';
 
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 const GRID_SIZE = 9;
 const DEADLINE = 10;
-const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
-
-const winner = (countA, countB) => {
-  if (countA > countB) {
-    return A_WINS;
-  } else if (countB > countA) {
-    return B_WINS;
-  } else {
-    return DRAW;
-  }
-}
-
-assert(winner(1, 0) == A_WINS);
-assert(winner(0, 1) == B_WINS);
-assert(winner(1, 1) == DRAW);
 
 const player = {
   ...hasRandom,
@@ -41,6 +27,13 @@ const attacher = {
   ...player,
   acceptWager: Fun([UInt], Null)
 };
+
+const winner = (countA, countB) =>
+  countA > countB ? A_WINS : countA < countB ? B_WINS : DRAW;
+
+assert(winner(1, 0) == A_WINS);
+assert(winner(0, 1) == B_WINS);
+assert(winner(1, 1) == DRAW);
 
 export const main = Reach.App(
   {},
@@ -66,8 +59,8 @@ export const main = Reach.App(
 
     B.pay(wager).timeout(DEADLINE, () => closeTo(A, informTimeout));
 
-    // -> ON DRAW LOOP STARTS HERE
-    var [ loopCount, outcome ] = [ 0, DRAW ];
+    // We want the balance of the contract
+    var outcome = DRAW;
     invariant(balance() == 2 * wager && isOutcome(outcome));
     while (outcome == DRAW) {
       commit();
@@ -94,7 +87,6 @@ export const main = Reach.App(
       // A should not know the location of B's ships
       unknowable(A, B(_shipsB, _saltB));
 
-
       // A guesses B's ship locations
       A.only(() => {
         const guessesA = declassify(interact.guessShips());
@@ -108,58 +100,19 @@ export const main = Reach.App(
       B.publish(guessesB).timeout(DEADLINE, () => closeTo(A, informTimeout));
       commit();
 
-
-      // // A decrypts and stores ships locations on contract public
-      // A.only(() => {
-      //   const [saltA, shipsA] = declassify([_saltA, _shipsA]);
-      // });
-      // A.publish(saltA, shipsA);
-      // checkCommitment(commitA, saltA, shipsA);
-      // commit();
-      // // A decrypts and stores ships locations on contract public
-      // B.only(() => {
-      //   const [saltB, shipsB] = declassify([_saltB, _shipsB]);
-      // });
-      // B.publish(saltB, shipsB);
-      // checkCommitment(commitB, saltB, shipsB);
-
-      // /*
-      //   While loop is to slow due to requiring publish per loop.
-      //   I devnet it took about 2-3 minutes to run a loop of 9
-      //   There would also be the issue of making a transaction per
-      //   per loop, this would cost a fee and require too much input
-      //   from the user.
-
-      //   I also had an issue where when sent to Anybody.publish() would result
-      //   in a race condition between A and B where the participant that did
-      //   not publish logs an error on the front-end.
-
-      //   This is why I replaced the loop with manual checks. this is much
-      //   faster in comparison making only one transaction compared to 9
-      // */
-
-      /* Determine who made the most correct guesses */
-      var [ x, countA, countB ] = [ 0, 0, 0 ];
-      invariant(balance() == wager * 2);
-      while(x < GRID_SIZE) {
-        each([A, B], () => {
-          interact.loadingResult(x);
-        });
-        commit();
-        // B is always the first to pick up this task.
-        // This was originally set to Anybody.publish()
-        // but this caused A to Post bad request (400)
-        // When A tried to pick up the task.
-        B.publish();
-
-        [ x, countA, countB ] = [
-          x + 1,
-          ieq(shipsB[x], guessesA[x]) ? countA + 1 : countA,
-          ieq(shipsA[x], guessesB[x]) ? countB + 1 : countB
-        ];
-
-        continue;
-      }
+      // A decrypts and stores ships locations on contract public
+      A.only(() => {
+        const [saltA, shipsA] = declassify([_saltA, _shipsA]);
+      });
+      A.publish(saltA, shipsA);
+      checkCommitment(commitA, saltA, shipsA);
+      commit();
+      // A decrypts and stores ships locations on contract public
+      B.only(() => {
+        const [saltB, shipsB] = declassify([_saltB, _shipsB]);
+      });
+      B.publish(saltB, shipsB);
+      checkCommitment(commitB, saltB, shipsB);
 
       const countA_0 = ieq(shipsB[0], guessesA[0]) ? 1 : 0;
       const countB_0 = ieq(shipsA[0], guessesB[0]) ? 1 : 0;
@@ -191,16 +144,15 @@ export const main = Reach.App(
       const countA = countA_0 + countA_1 + countA_2 + countA_3 + countA_4 + countA_5 + countA_6 + countA_7 + countA_8;
       const countB = countB_0 + countB_1 + countB_2 + countB_3 + countB_4 + countB_5 + countB_6 + countB_7 + countB_8;
 
+      // Created since data mutation can only be set before continue.
+      // Invalid Reach l-value syntax: `outcome`. Mutation is not allowed unless before `continue`
       const outcome_hold = winner(countA, countB);
 
       each([A, B], () => {
         interact.seeOutcome(outcome_hold);
       });
 
-      [ loopCount, outcome ] = [
-        loopCount + 1,
-        winner(countA, countB)
-      ];
+      outcome = outcome_hold;
 
       continue;
     }

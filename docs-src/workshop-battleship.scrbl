@@ -43,7 +43,20 @@ Let's see how your answers compare to our answers:
 
 @(drstep-dd TAG)
 
-Skip of familiar with RPS:
+The data type representation of this program will be very similar to the Rock Paper Scissors tutorial. The only major difference will be that the interaction interface method getHand
+will take an input of a Uint Array instead of just a Uint. We will also need 2 interaction methods, one for taking the user's ships location selections and one for taking
+the ship location guesses.
+
+Take a moment to construct the interaction interface for the participants yourself before looking at our answers.
+
+@(drstep-dd-stop)
+
+@margin-note{It is worth noting that Reach does not support arbitrarily sized arrays, so we
+could not determine @tt{NUM_OF_WINNERS} at runtime, e.g. from the interaction interface.
+However, we can still write a program that is generic in the size of the array, then
+specialize it when we compile.
+}
+
 Let's start with defining the player objects. If you've already completed the Rock Paper Scissors tutorial, much of this should be familiar already.
 Starting with the player object, we have a few methods that again should be familiar to you. If not, let's break it down and see what's going on.
 First we have the hasRandom interface being added. This is primarily used to allow encryption on the backend as the backend now expects the frontend
@@ -62,194 +75,172 @@ of their selected locations matches where their opponent selected to place their
 Looking at the deployer and the attacher we can see a key difference. The Deployer stores a wager variable within it's object which is inputted when the contract is being deployed.
 The Attacher on the other hand has an interface method acceptWager which returns the wager amount set by the Deployer.
 
-@reach{
-  const DEADLINE = 10;
-  const GRID_SIZE = 9;
-  const player = {
-    ...hasRandom,
-    seeOutcome: Fun([UInt], Null),
-    informTimeout: Fun([], Null),
-    selectShips: Fun([], Array(UInt, GRID_SIZE)),
-    guessShips: Fun([], Array(UInt, GRID_SIZE)),
-  };
-  const deployer = {
-    ...player,
-    wager: UInt,
-  };
-  const attacher = {
-    ...player,
-    acceptWager: Fun([UInt], Null)
-  };
-}
+Our @tech{participant interact interface}, with the addition of some handy logging functions, looks like this so far:
+
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 11 29 " // ..."]
 
 @(drstep-cc TAG)
 
-The next part of the application starts the game by taking the wager amount from the deployer which is then declassified, published (So that the Attacher can view the wager), and the wager paid for.
-I've also included the informTimeout interface method to show how a method, local to the scope of the Reach contract, can be created.
-
-@reach{
-  export const main = Reach.App(
-    {},
-    [Participant('deployer', deployer), Participant('attacher', attacher)],
-    (A, B) => {
-      const informTimeout = () => {
-        each([A, B], () => {
-          interact.informTimeout();
-        });
-      };
-    }
-
-    //...
-
-  )
-}
+A fundamental aspect of a decentralized application is the pattern of communication and transfer among the participants.
+We should write down this structure as comments in our program to serve as an outline and guide us in implementation.
 
 @(drstep-cc-stop1)
-prestart
-@(drstep-cc-stop2)
-@(drstep-ai TAG)
-@(drstep-ii TAG)
-@(drstep-ii-stop)
-@(drstep-de TAG)
+
+Here's what we wrote for our outline:
 
 @reach{
-  // ...
-  
-  A.only(() => {
-    const wager = declassify(interact.wager);
-  });
-  A.publish(wager).pay(wager);
-  commit();
-
-  // B accepts wager given an amount of time to accept
-  B.only(() => {
-    interact.acceptWager(wager);
-  });
-
-  B.pay(wager).timeout(DEADLINE, () => closeTo(A, informTimeout));
-
-  // ...
-
+  // 1. The deployer deploys the contract and sets the wager.
+  // 2. The attacher attaches to the contract and accepts the wager.
+  // 3. While the outcome of the game is a draw:
+  //      3a. Get the user selected ship locations
+  //      3b. Get the guesses that a user makes towards the location of their opponent's ships.
+  //      3c. Calculate the winner based on the most number of correct guesses.
+  // 4. Transfer the wager amount to the winner.
 }
 
+Now the outline needs to be converted to a real program.
+
+@(drstep-cc-stop2)
+
+The body of your application should look something like this:
+
 @reach{
-  var [ loopCount, outcome ] = [ 0, DRAW ];
-  invariant(balance() == 2 * wager && isOutcome(outcome));
-  while (outcome == DRAW) {
+const winner = (countA, countB) =>
+  countA > countB ? A_WINS : countA < countB ? B_WINS : DRAW;
+
+export const main = Reach.App(
+  {},
+  [Participant('deployer', deployer), Participant('attacher', attacher)],
+  (A, B) => {
+    const informTimeout = () => {
+      each([A, B], () => {
+        interact.informTimeout();
+      });
+    };
+
+    A.only(() => {
+      const wager = declassify(interact.wager);
+    });
+    A.publish(wager).pay(wager);
     commit();
 
-    // ...
+    B.only(() => {
+      interact.acceptWager(wager);
+    });
 
+    B.pay(wager).timeout(DEADLINE,
+      () => closeTo(A, informTimeout));
+
+    var outcome = DRAW;
+    invariant(balance() == 2 * wager && isOutcome(outcome));
+    while (outcome == DRAW) {
+      commit();
+
+      A.only(() => {
+        const _shipsA = interact.selectShips();
+        const [_commitA, _saltA] = makeCommitment(interact, _shipsA);
+        const commitA = declassify(_commitA);
+      });
+      A.publish(commitA).timeout(DEADLINE,
+        () => closeTo(B, informTimeout));
+      commit();
+
+      B.only(() => {
+        const _shipsB = interact.selectShips();
+        const [_commitB, _saltB] = makeCommitment(interact, _shipsB);
+        const commitB = declassify(_commitB);
+      });
+      B.publish(commitB).timeout(DEADLINE,
+        () => closeTo(A, informTimeout));
+      commit();
+
+      A.only(() => {
+        const guessesA = declassify(interact.guessShips());
+      });
+      A.publish(guessesA).timeout(DEADLINE,
+        () => closeTo(B, informTimeout));
+      commit();
+
+      B.only(() => {
+        const guessesB = declassify(interact.guessShips());
+      });
+      B.publish(guessesB).timeout(DEADLINE,
+        () => closeTo(A, informTimeout));
+      commit();
+
+      A.only(() => {
+        const [saltA, shipsA] = declassify([_saltA, _shipsA]);
+      });
+      A.publish(saltA, shipsA);
+      checkCommitment(commitA, saltA, shipsA);
+      commit();
+
+      B.only(() => {
+        const [saltB, shipsB] = declassify([_saltB, _shipsB]);
+      });
+      B.publish(saltB, shipsB);
+      checkCommitment(commitB, saltB, shipsB);
+
+      const countA_0 = ieq(shipsB[0], guessesA[0]) ? 1 : 0;
+      const countB_0 = ieq(shipsA[0], guessesB[0]) ? 1 : 0;
+      const countA_1 = ieq(shipsB[1], guessesA[1]) ? 1 : 0;
+      const countB_1 = ieq(shipsA[1], guessesB[1]) ? 1 : 0;
+      const countA_2 = ieq(shipsB[2], guessesA[2]) ? 1 : 0;
+      const countB_2 = ieq(shipsA[2], guessesB[2]) ? 1 : 0;
+      const countA_3 = ieq(shipsB[3], guessesA[3]) ? 1 : 0;
+      const countB_3 = ieq(shipsA[3], guessesB[3]) ? 1 : 0;
+      const countA_4 = ieq(shipsB[4], guessesA[4]) ? 1 : 0;
+      const countB_4 = ieq(shipsA[4], guessesB[4]) ? 1 : 0;
+      const countA_5 = ieq(shipsB[5], guessesA[5]) ? 1 : 0;
+      const countB_5 = ieq(shipsA[5], guessesB[5]) ? 1 : 0;
+      const countA_6 = ieq(shipsB[6], guessesA[6]) ? 1 : 0;
+      const countB_6 = ieq(shipsA[6], guessesB[6]) ? 1 : 0;
+      const countA_7 = ieq(shipsB[7], guessesA[7]) ? 1 : 0;
+      const countB_7 = ieq(shipsA[7], guessesB[7]) ? 1 : 0;
+      const countA_8 = ieq(shipsB[8], guessesA[8]) ? 1 : 0;
+      const countB_8 = ieq(shipsA[8], guessesB[8]) ? 1 : 0;
+
+      const countA = countA_0 + countA_1 + countA_2 + countA_3
+        + countA_4 + countA_5 + countA_6 + countA_7 + countA_8;
+      const countB = countB_0 + countB_1 + countB_2 + countB_3
+        + countB_4 + countB_5 + countB_6 + countB_7 + countB_8;
+
+      const outcome_hold = winner(countA, countB);
+
+      each([A, B], () => {
+        interact.seeOutcome(outcome_hold);
+      });
+
+      outcome = outcome_hold;
+
+      continue;
+    }
+
+    transfer(2 * wager).to(outcome == A_WINS ? A : B);
+    commit();
+
+    exit();
   }
-
-  // ...
+)
 }
 
-This portion of the contract calls the shipSelection method, the array returned from the method
-is encrypted using a salting variable. Notice that _commitA is decassified afterward while _saltA
-is not.
+The overall functionality of application is fairly similar to how Rock Paper Scissors is implemented. The main difference being that
+instead of the getHand() method, we have selectShips() and guessShips(). Both of these methods take an input of an array of unsigned integer
+instead of just an unsigned integer. Another thing to note is that we only have to encrypt the selected ship locations since the outcome
+of the game can't by altered if both players know where each selected their guesses.
+
+The portion used to calculate the outcome of the game is also a deviation from Rock Paper Scissors since we need to compare 2 array. For the
+outcome to be determined we need to compare the array of A's ship selection to B's guesses and vice versa. Looking at the code above, it's clear
+that I've opted to manually compare the arrays of all 9 entries. I had originally started with a while loop, iterating over the entries and
+comparing the selections to the guesses, however, this proved to be very inefficient and slow since either A or B must publish within the
+while loop.
+
+Below is what I had originally created to compary the two arrays:
 
 @reach{
-  // ...After commit() from previous code
-
-  // A selects locations for ships and stores it in contract private.
-  A.only(() => {
-    const _shipsA = interact.selectShips();
-    const [_commitA, _saltA] = makeCommitment(interact, _shipsA);
-    const commitA = declassify(_commitA);
-  });
-  A.publish(commitA).timeout(DEADLINE, () => closeTo(B, informTimeout));
-  commit();
-  // B should not know the location of A's ships
-  unknowable(B, A(_shipsA, _saltA));
-
-  // B selects locations for ships and stores them in contract public
-  B.only(() => {
-    const _shipsB = interact.selectShips();
-    const [_commitB, _saltB] = makeCommitment(interact, _shipsB);
-    const commitB = declassify(_commitB);
-  });
-  B.publish(commitB).timeout(DEADLINE, () => closeTo(A, informTimeout));
-  commit();
-  // A should not know the location of B's ships
-  unknowable(A, B(_shipsB, _saltB));
-
-  // ...
-}
-
-Now it's time to pick up the user's guesses, this time there is no need to
-encrypt the array, instead we simply store the array in their respective
-constants and publish them.
-
-@reach{
-  // ...
-
-  // A guesses B's ship locations
-  A.only(() => {
-    const guessesA = declassify(interact.guessShips());
-  });
-  A.publish(guessesA).timeout(DEADLINE, () => closeTo(B, informTimeout));
-  commit();
-  // B guesses A's ship locations
-  B.only(() => {
-    const guessesB = declassify(interact.guessShips());
-  });
-  B.publish(guessesB).timeout(DEADLINE, () => closeTo(A, informTimeout));
-  commit();
-
-  // ...
-}
-
-After the guesses have been received from both parties, we go ahead and decrypt
-the selected locations using the _salt we had stored. We publish both the salt and
-the location of the ships and use the salt as well as the original commitment to
-verify that the commitment is the digest of the salt and the ships the the checkCommitment
-method.
-
-@reach{
-  // ...
-
-  // A decrypts and stores ships locations on contract public
-  A.only(() => {
-    const [saltA, shipsA] = declassify([_saltA, _shipsA]);
-  });
-  A.publish(saltA, shipsA);
-  checkCommitment(commitA, saltA, shipsA);
-  commit();
-  // A decrypts and stores ships locations on contract public
-  B.only(() => {
-    const [saltB, shipsB] = declassify([_saltB, _shipsB]);
-  });
-  B.publish(saltB, shipsB);
-  checkCommitment(commitB, saltB, shipsB);
-
-  // ...
-}
-
-Warning! This section is not included in the final contract. I've added this in here
-to point out one of the challenges I had while building the application.
-
-I had originally planned on using a loop to iterate over all four array, comparing the
-selection of A to the guesses of B and vice versa. This proved to be extremely inefficient
-as each iteration of the loop a commit as well as requiring A or B to call publish.
-
-
-While loop is to slow due to requiring publish per loop.
-I devnet it took about 2-3 minutes to run a loop of 9
-There would also be the issue of making a transaction per
-per loop, this would cost a fee and require too much input
-from the user.
-
-I also had an issue where when sent to Anybody.publish() would result
-in a race condition between A and B where the participant that did
-not publish logs an error on the front-end.
-
-This is why I replaced the loop with manual checks. this is much
-faster in comparison making only one transaction compared to 9
-
-@reach{
-  // ...
-
+  /* Determine who made the most correct guesses */
   var [ x, countA, countB ] = [ 0, 0, 0 ];
   invariant(balance() == wager * 2);
   while(x < GRID_SIZE) {
@@ -257,10 +248,9 @@ faster in comparison making only one transaction compared to 9
       interact.loadingResult(x);
     });
     commit();
-    // B is always the first to pick up this task.
-    // This was originally set to Anybody.publish()
-    // but this caused A to Post bad request (400)
-    // When A tried to pick up the task.
+
+    // B is always the first to pick up this task. This was originally set to Anybody.publish()
+    // but this caused A to Post bad request (400) When A tried to pick up the task.
     B.publish();
 
     [ x, countA, countB ] = [
@@ -271,86 +261,134 @@ faster in comparison making only one transaction compared to 9
 
     continue;
   }
-  const outcome_hold = winner(countA, countB);
-
-  // ...
 }
 
-So instead of going the route of iterating over each element with a while loop, I have opted for
-manually checking each entry of the array. The count for A is determined by comparing B's ships compared to A's guesses, 
-and the count for B is determined by comparing A's ships compared to B's guesses. The results of these comparisons is 
-is stored in a constant in order to avoid making any commits
+You may notice that B is always the one publishing. This is due to a race condition that is presented when the publish is set to
+@tech{Anybody.publish()}. The result would be a 400 post error on the deployer's end since the attacher was always the first
+to reach the publication. The deployer then tries to publish but fails since the attacher is already publishing. This is not a
+major issue, but somthing to note if trying to reduce errors on the frontend of the application.
 
-@reach{
-  const countA_0 = ieq(shipsB[0], guessesA[0]) ? 1 : 0;
-  const countB_0 = ieq(shipsA[0], guessesB[0]) ? 1 : 0;
+@(drstep-ai TAG)
 
-  const countA_1 = ieq(shipsB[1], guessesA[1]) ? 1 : 0;
-  const countB_1 = ieq(shipsA[1], guessesB[1]) ? 1 : 0;
+There are several assertions that are required throughout the applications. Go ahead and see if you can find all of the before
+proceeding the where I have placed the assertions.
 
-  const countA_2 = ieq(shipsB[2], guessesA[2]) ? 1 : 0;
-  const countB_2 = ieq(shipsA[2], guessesB[2]) ? 1 : 0;
+@(drstep-ai-stop1)
 
-  const countA_3 = ieq(shipsB[3], guessesA[3]) ? 1 : 0;
-  const countB_3 = ieq(shipsA[3], guessesB[3]) ? 1 : 0;
+First up is the assertion used to verify that the winner function opererates correctly. 
 
-  const countA_4 = ieq(shipsB[4], guessesA[4]) ? 1 : 0;
-  const countB_4 = ieq(shipsA[4], guessesB[4]) ? 1 : 0;
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 31 36 " // ..."]
 
-  const countA_5 = ieq(shipsB[5], guessesA[5]) ? 1 : 0;
-  const countB_5 = ieq(shipsA[5], guessesB[5]) ? 1 : 0;
+Next we have the loop invariant. This is the same loop invariant used in Rock Paper Scissors. Basically we want to make sure
+that the @tech{balance()} of the contract is the total amount that the two participants wagered. We also want to verify that
+the @tech{outcome} variable continues to be an outcome, meaning it's values are either 0, 1 or 2. This portion has taken a bit
+of understanding on my part but what I realized what they I was overcomplicated the defenition of a loop invarient. Simply
+defining the work invarient is all that is needed to understand what it is, something that does not vary, stays the same
+throughout the exection of the loop.
 
-  const countA_6 = ieq(shipsB[6], guessesA[6]) ? 1 : 0;
-  const countB_6 = ieq(shipsA[6], guessesB[6]) ? 1 : 0;
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 64 65 " // ..."]
 
-  const countA_7 = ieq(shipsB[7], guessesA[7]) ? 1 : 0;
-  const countB_7 = ieq(shipsA[7], guessesB[7]) ? 1 : 0;
+The next two insertions are important in ensuring that neither party know the ship locations of their opponent.
 
-  const countA_8 = ieq(shipsB[8], guessesA[8]) ? 1 : 0;
-  const countB_8 = ieq(shipsA[8], guessesB[8]) ? 1 : 0;
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 76 77 " // ..."]
 
-  const countA = countA_0 + countA_1 + countA_2 + countA_3 + countA_4 + countA_5 + countA_6 + countA_7 + countA_8;
-  const countB = countB_0 + countB_1 + countB_2 + countB_3 + countB_4 + countB_5 + countB_6 + countB_7 + countB_8;
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 87 88 " // ..."]
 
-  const outcome_hold = winner(countA, countB);
+The assertion here is the @tech{checkCommitment(commitment, salt, x)} method. This method is used to verify that the
+commitment made by A and B when encrypting ship locations is the digest of salt and x, the salt being _saltA and _saltB
+and x being shipsA and shipsB
+
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 103 115 " // ..."]
+
+Again this assertion is the same a Rock Paper Scissors, it is used to verify that exiting the loop will result in an
+outcome that is either @tech{A_WINS} or @tech{B_WINS}.
+
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t
+         'only 160 161 " // ..."]
+
+@(drstep-ii TAG)
+
+Next, we need to insert the appropriate calls to @tech{interact}. Again this is very similar to Rock Paper Scissors. There is only one
+extra interation method to contend with to achieve a working application. Go ahead and try to fill in those interactions before
+moving forward.
+
+@(drstep-ii-stop)
+
+@reachex[#:show-lines? #t "workshop-battleship/index.rsh"
+         #:link #t]
+
+@(drstep-de TAG)
+
+Next, it is time to test our program.
+
+@(drstep-de-stop)
+
+Here's the JavaScript @tech{frontend} I wrote:
+
+@reachex[#:show-lines? #t "workshop-battleship/index.mjs"
+         #:link #t]
+
+Let's see what it looks like when we run the program:
+
+@verbatim{
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "attacher" is honest
+  Verifying when ONLY "deployer" is honest
+Checked 144 theorems; No failures!
+...
+Starting Battleship...
+Attacher being slow
+...
+Attacher accpeted the wager of 5
+Deployer sets ships...
+[
+  0, 1, 1, 1, 0,
+  0, 0, 1, 1
+]
+Attacher sets ships...
+[
+  1, 0, 0, 1, 0,
+  1, 0, 0, 0
+]
+Deployer guesses...
+[
+  0, 1, 1, 0, 0,
+  0, 1, 1, 1
+]
+Attacher guesses...
+[
+  0, 0, 1, 1, 1,
+  0, 0, 1, 0
+]
+Deployer saw outcome 0
+Attacher saw outcome 0
+Balance Before:: Deployer: 10, Attacher: 10
+Balance After:: Deployer: 4.9999, Attacher: 14.9999
 }
 
-And to finish off the loop, below we have we have the results of the outcome. Notice that the outcome of the game is
-returned to the frontend before the loop is completed. This is done so that the frontend will know that draw has occurring.
-If a draw does occur the loop will continue from the beginning. The frontend is notified in order to restart the game from
-the point of the ship selection process.
+@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
-@reach{
-  var [ outcome ] = [ DRAW ];
-  invariant(balance() == 2 * wager && isOutcome(outcome));
-  while (outcome == DRAW) {
-    commit();
+At this point you should have a fully functional Battleship game, CoNgRaDuLaTiOnS!
 
-    // ...
+There are a few things that you can do at this point to expand the application.
+@itemlist[
+  @item{Make it so that the attacher the deployer take turns guessing.}
+  @item{Change the size of the grid}
+  @item{Have ships in various sizes, 1x2, 1x3, 2x3, etc... And use reveal }
+]
 
-    const outcome_hold = winner(countA, countB);
-
-    each([A, B], () => {
-      interact.seeOutcome(outcome_hold);
-    });
-
-    [ outcome ] = [ winner(countA, countB) ];
-
-    continue;
-  }
-
-  // ...
-}
-
-If a draw does not occur then the wile loop exits. After exiting there is assertion 
-
-@reach{
-  // ...
-
-  assert(outcome == A_WINS || outcome == B_WINS);
-  transfer(2 * wager).to(outcome == A_WINS ? A : B);
-  commit();
-
-  exit();
-}
-
+If you found this workshop rewarding, please let us know on @(the-community-link)!
