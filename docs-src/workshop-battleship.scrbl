@@ -4,7 +4,9 @@
 @(define TAG "workshop-battleship")
 @title[#:version reach-vers #:tag TAG]{Workshop: Battleship}
 
-In this workshop, we'll design an application that allows users to wager against each other then play a simplified version of Battleship where each player selects their ship locations and guesses their opponents ship locations all in one turn.
+In this workshop we'll design an application that allows users to wager against each other in a game of Battleships. This is
+a simplified version of Battleship where each player takes one turn to select their ship locations and one more turn to guess
+where their opponent has placed their ships.
 
 @(workshop-deps)
 @(workshop-init TAG)
@@ -330,7 +332,11 @@ moving forward.
 
 @(drstep-de TAG)
 
-Next, it is time to test our program.
+It's time to test our program. Bouncing off the Rock Paper Scissors example, there are only a few key differences here compared
+to RPS. Let's focus on the @tech{selectShips} and the @tech{guessShips} methods. These two methods need to return and array
+instead of a Uint. The size of the array array needs to be the same as the defined GRID_SIZE There also needs to be some randomness
+involved so that the same participant does not win every time. Go ahead and take the time to implement these methods within
+your .mjs file.
 
 @(drstep-de-stop)
 
@@ -382,13 +388,13 @@ Balance After:: Deployer: 4.9999, Attacher: 14.9999
 
 @section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
-At this point you should have a fully functional Battleship game, CoNgRaDuLaTiOnS!
+At this point you should have a fully functional Battleship game, congratulations!
 
 There are a few things that you can do at this point to expand the application.
 @itemlist[
   @item{Make it so that the attacher the deployer take turns guessing.}
   @item{Change the size of the grid}
-  @item{Have ships in various sizes, 1x2, 1x3, 2x3, etc... And use reveal }
+  @item{Have ships in various sizes, 1x2, 1x3, 2x3, etc... }
 ]
 
 If you found this workshop rewarding, please let us know on @(the-community-link)!
