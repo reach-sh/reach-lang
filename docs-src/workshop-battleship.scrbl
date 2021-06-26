@@ -4,7 +4,7 @@
 @(define TAG "workshop-battleship")
 @title[#:version reach-vers #:tag TAG]{Workshop: Battleship}
 
-In this workshop, we'll design an application that allows users to wager against each other then play a simplified version of Battleship which each player selects their ship locations and guesses their opponents ship locations all in one turn.
+In this workshop, we'll design an application that allows users to wager against each other then play a simplified version of Battleship where each player selects their ship locations and guesses their opponents ship locations all in one turn.
 
 @(workshop-deps)
 @(workshop-init TAG)
@@ -40,6 +40,8 @@ Let's see how your answers compare to our answers:
   @item{Bob selects where he thinks Alice placed her ships.}
   @item{The number of correct guesses each has made on the location of thier opponent's ships is counted and either a winner is determined or a draw occurts.}
 ]
+
+@(drstep-dd TAG)
 
 Skip of familiar with RPS:
 Let's start with defining the player objects. If you've already completed the Rock Paper Scissors tutorial, much of this should be familiar already.
@@ -80,6 +82,8 @@ The Attacher on the other hand has an interface method acceptWager which returns
   };
 }
 
+@(drstep-cc TAG)
+
 The next part of the application starts the game by taking the wager amount from the deployer which is then declassified, published (So that the Attacher can view the wager), and the wager paid for.
 I've also included the informTimeout interface method to show how a method, local to the scope of the Reach contract, can be created.
 
@@ -100,8 +104,15 @@ I've also included the informTimeout interface method to show how a method, loca
   )
 }
 
-@reach {
+@(drstep-cc-stop1)
+prestart
+@(drstep-cc-stop2)
+@(drstep-ai TAG)
+@(drstep-ii TAG)
+@(drstep-ii-stop)
+@(drstep-de TAG)
 
+@reach{
   // ...
   
   A.only(() => {
@@ -121,7 +132,7 @@ I've also included the informTimeout interface method to show how a method, loca
 
 }
 
-reach{
+@reach{
   var [ loopCount, outcome ] = [ 0, DRAW ];
   invariant(balance() == 2 * wager && isOutcome(outcome));
   while (outcome == DRAW) {
@@ -138,7 +149,7 @@ This portion of the contract calls the shipSelection method, the array returned 
 is encrypted using a salting variable. Notice that _commitA is decassified afterward while _saltA
 is not.
 
-reach{
+@reach{
   // ...After commit() from previous code
 
   // A selects locations for ships and stores it in contract private.
@@ -170,7 +181,7 @@ Now it's time to pick up the user's guesses, this time there is no need to
 encrypt the array, instead we simply store the array in their respective
 constants and publish them.
 
-reach{
+@reach{
   // ...
 
   // A guesses B's ship locations
@@ -195,7 +206,7 @@ the location of the ships and use the salt as well as the original commitment to
 verify that the commitment is the digest of the salt and the ships the the checkCommitment
 method.
 
-reach{
+@reach{
   // ...
 
   // A decrypts and stores ships locations on contract public
@@ -223,7 +234,6 @@ selection of A to the guesses of B and vice versa. This proved to be extremely i
 as each iteration of the loop a commit as well as requiring A or B to call publish.
 
 
-
 While loop is to slow due to requiring publish per loop.
 I devnet it took about 2-3 minutes to run a loop of 9
 There would also be the issue of making a transaction per
@@ -237,7 +247,7 @@ not publish logs an error on the front-end.
 This is why I replaced the loop with manual checks. this is much
 faster in comparison making only one transaction compared to 9
 
-reach{
+@reach{
   // ...
 
   var [ x, countA, countB ] = [ 0, 0, 0 ];
@@ -271,7 +281,7 @@ manually checking each entry of the array. The count for A is determined by comp
 and the count for B is determined by comparing A's ships compared to B's guesses. The results of these comparisons is 
 is stored in a constant in order to avoid making any commits
 
-reach{
+@reach{
   const countA_0 = ieq(shipsB[0], guessesA[0]) ? 1 : 0;
   const countB_0 = ieq(shipsA[0], guessesB[0]) ? 1 : 0;
 
@@ -310,7 +320,7 @@ returned to the frontend before the loop is completed. This is done so that the 
 If a draw does occur the loop will continue from the beginning. The frontend is notified in order to restart the game from
 the point of the ship selection process.
 
-reach{
+@reach{
   var [ outcome ] = [ DRAW ];
   invariant(balance() == 2 * wager && isOutcome(outcome));
   while (outcome == DRAW) {
@@ -334,7 +344,7 @@ reach{
 
 If a draw does not occur then the wile loop exits. After exiting there is assertion 
 
-reach{
+@reach{
   // ...
 
   assert(outcome == A_WINS || outcome == B_WINS);
