@@ -6,6 +6,8 @@ interface IERC20 {
     function balanceOf(address owner) external view returns (uint256);
 }
 
+error ReachError(uint256 msg);
+
 contract Stdlib {
   function safeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require((z = x + y) >= x, "add overflow"); }
@@ -21,7 +23,13 @@ contract Stdlib {
   function unsafeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x * y; } }
 
-  function checkFunReturn(bool succ, bytes memory returnData, string memory errMsg) internal pure returns (bytes memory) {
+  function reachRequire(bool succ, uint256 errMsg) internal pure {
+    if ( ! succ ) {
+      revert ReachError(errMsg);
+    }
+  }
+
+  function checkFunReturn(bool succ, bytes memory returnData, uint256 errMsg) internal pure returns (bytes memory) {
     if (succ) {
       return returnData;
     } else {
@@ -31,26 +39,26 @@ contract Stdlib {
           revert(add(32, returnData), returnData_size)
         }
       } else {
-        revert(errMsg);
+        revert ReachError(errMsg);
       }
     }
   }
 
   function tokenAllowance(address payable token, address owner, address spender) internal returns (uint256 amt) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.allowance.selector, owner, spender));
-    checkFunReturn(ok, ret, 'token.allowance');
+    checkFunReturn(ok, ret, 0 /*'token.allowance'*/);
     amt = abi.decode(ret, (uint256));
   }
 
   function tokenTransferFrom(address payable token, address sender, address recipient, uint256 amt) internal returns (bool res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transferFrom.selector, sender, recipient, amt));
-    checkFunReturn(ok, ret, 'token.transferFrom');
+    checkFunReturn(ok, ret, 1 /*'token.transferFrom'*/);
     res = abi.decode(ret, (bool));
   }
 
   function tokenTransfer(address payable token, address recipient, uint256 amt) internal returns (bool res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.transfer.selector, recipient, amt));
-    checkFunReturn(ok, ret, 'token.transfer');
+    checkFunReturn(ok, ret, 2 /*'token.transfer'*/);
     res = abi.decode(ret, (bool));
   }
 
@@ -69,13 +77,13 @@ contract Stdlib {
 
   function tokenApprove(address payable token, address spender, uint256 amt) internal returns (bool res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(IERC20.approve.selector, spender, amt));
-    checkFunReturn(ok, ret, 'token.approve');
+    checkFunReturn(ok, ret, 3 /*'token.approve'*/);
     res = abi.decode(ret, (bool));
   }
 
   function tokenBalanceOf(address payable token, address owner) internal returns (uint256 res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0) }(abi.encodeWithSelector(IERC20.balanceOf.selector, owner));
-    checkFunReturn(ok, ret, 'token.balanceOf');
+    checkFunReturn(ok, ret, 4 /*'token.balanceOf'*/);
     res = abi.decode(ret, (uint256));
   }
 }
