@@ -43,9 +43,6 @@ import System.Process
 dontWriteSol :: Bool
 dontWriteSol = False
 
-includeRequireMsg :: Bool
-includeRequireMsg = False
-
 maxDepth :: Int
 maxDepth = 13
 
@@ -103,18 +100,17 @@ solCommas args = hcat $ intersperse (comma <> space) args
 solApply :: Doc -> [Doc] -> Doc
 solApply f args = f <> parens (solCommas args)
 
---- FIXME these add size to the contract without much payoff. A better
---- thing would be to encode a number and then emit a dictionary of
---- what the error codes mean that would be used by our connector
---- stdlib.
-solRequire :: String -> Doc -> Doc
-solRequire umsg a = solApply "require" $ [a] <> mmsg
-  where
-    smsg = unsafeRedactAbsStr umsg
-    mmsg =
-      case includeRequireMsg of
-        True -> [solString smsg]
-        False -> []
+solRequireMsg :: String -> App Doc
+solRequireMsg umsg = do
+  let smsg = unsafeRedactAbsStr umsg
+  idx <- (liftIO . incCounter) =<< (ctxt_requireMsg <$> ask)
+  -- XXX save the full string in a dictionary and emit it
+  return $ solNum idx <+> "/*" <> solString smsg <> "*/"
+
+solRequire :: String -> Doc -> App Doc
+solRequire umsg a = do
+  mmsg <- solRequireMsg umsg
+  return $ solApply "reachRequire" $ [a, mmsg ]
 
 solBinOp :: String -> Doc -> Doc -> Doc
 solBinOp o l r = l <+> pretty o <+> r
@@ -225,6 +221,7 @@ data SolCtxt = SolCtxt
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map DLVar Doc)
   , ctxt_hasViews :: Bool
+  , ctxt_requireMsg :: Counter
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -545,13 +542,13 @@ solExpr sp = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (show (at, fs, mmsg)) <$> solArg a
+      require = solRequire (show (at, fs, mmsg)) =<< solArg a
   DLE_Transfer _ who amt mtok ->
     spa $ solTransfer who amt mtok
   DLE_TokenInit {} -> return emptyDoc
   DLE_CheckPay at fs amt mtok -> do
     let require :: String -> Doc -> App Doc
-        require msg e = spa $ return $ solRequire (show (at, fs, msg)) e
+        require msg e = spa $ solRequire (show (at, fs, msg)) e
     amt' <- solArg amt
     case mtok of
       Nothing -> do
@@ -699,7 +696,7 @@ solCom = \case
       mapM
         (\(amt, ty) -> do
            let approve = solApply "tokenApprove" [ty, av', amt]
-           return $ solRequire "Approving remote ctc to transfer tokens" approve <> semi)
+           flip (<>) semi <$> solRequire "Approving remote ctc to transfer tokens" approve)
         ks'
     checkNonNetTokAllowances <-
       mapM
@@ -707,8 +704,8 @@ solCom = \case
            -- Ensure that the remote ctc transfered the approved funds
            let allowance = solApply "tokenAllowance" [ty, "address(this)", av']
            eq <- solEq allowance "0"
-           let req = solRequire "Ensure remote ctc transferred approved funds" eq <> semi
-           return $ vsep [req])
+           req <- solRequire "Ensure remote ctc transferred approved funds" eq
+           return $ vsep [req <> semi])
         ks'
     -- This is for when we don't know how much non-net tokens we will receive. i.e. `withBill`
     -- The amount of non-network tokens received will be stored in this tuple: nnTokRecvVar
@@ -740,7 +737,7 @@ solCom = \case
              sub <- solPrimApply SUB [getBalance tokArg, paid]
              let s1 = solSet ("uint256" <+> tv_before) sub
              tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
-             s2 <- solRequire "remote did not transfer unexpected non-network tokens" <$> solEq tokRecv "0"
+             s2 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tokRecv "0"
              return (s1, s2 <> semi))
           nnTokRecvZero
     let call' = ".call{value:" <+> netTokPaid <> "}"
@@ -768,10 +765,7 @@ solCom = \case
             return $ sub'l <> nnsub'l <> de'l <> logl
     let e_data = solApply "abi.encodeWithSelector" eargs
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
-    let err_msg =
-          case includeRequireMsg of
-            True -> unsafeRedactAbsStr $ show (at, fs, ("remote " <> f <> " failed"))
-            False -> ""
+    err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
     -- it was before
     return $
@@ -781,7 +775,7 @@ solCom = \case
           <> getUnexpectedNonNetTokBals
           <> [ solSet ("uint256" <+> v_before) e_before
              , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
-             , solApply "checkFunReturn" [v_succ, v_return, solString err_msg] <> semi
+             , solApply "checkFunReturn" [v_succ, v_return, err_msg] <> semi
              ]
           <> checkUnexpectedNonNetTokBals
           <> setDynamicNonNetTokBals
@@ -1017,9 +1011,10 @@ solHandler which h = freshVarMap $
             return (emptyDoc, AM_Memory, SFL_Constructor)
           _ -> do
             eq' <- solEq ("current_state") (solHashStateCheck prev)
+            req <- solRequire (checkMsg "state") eq'
             let hcp =
                   vsep
-                    [ solRequire (checkMsg "state") eq' <> semi
+                    [ req <> semi
                     , -- This is a re-entrancy lock, because we know that
                       -- all methods start by checking the current state.
                       -- When we implement on-chain state, we need to do
@@ -1044,13 +1039,12 @@ solHandler which h = freshVarMap $
             let CBetween ifrom ito = interval
             int_fromp <- check True ifrom
             int_top <- check False ito
-            let req x = solRequire (checkMsg "timeout") x <> semi
-            return $
-              case (int_fromp, int_top) of
-                (Just x, Just y) -> req (solBinOp "&&" x y)
-                (Just x, _) -> req x
-                (_, Just y) -> req y
-                _ -> emptyDoc
+            let req x = flip (<>) semi <$> solRequire (checkMsg "timeout") x
+            case (int_fromp, int_top) of
+              (Just x, Just y) -> req (solBinOp "&&" x y)
+              (Just x, _) -> req x
+              (_, Just y) -> req y
+              _ -> return $ emptyDoc
       let body = vsep [hashCheck, frameDecl, timeoutCheck, ctp]
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
@@ -1189,6 +1183,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   ctxt_typed <- newIORef mempty
   ctxt_typeidx <- newCounter 0
   ctxt_intidx <- newCounter 0
+  ctxt_requireMsg <- newCounter 5
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
   let ctxt_plo = plo
@@ -1261,7 +1256,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                 dom' <- zipWithM mkdom args dom
                 rng' <- solType_p AM_Memory rng
                 let ret = "external view returns" <+> parens rng'
-                let illegal = solRequire "invalid view_i" "false" <> semi
+                illegal <- flip (<>) semi <$> solRequire "invalid view_i" "false"
                 let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                       c' <- solEq "current_view_i" $ solNum i
                       let asnv = "vvs"
