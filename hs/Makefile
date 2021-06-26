@@ -10,11 +10,14 @@ install-mo:
 mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
-package.yaml: package.mo.yaml ../VERSION mo
+package.yaml: package.mo.yaml ../VERSION
 	(. ../VERSION && export VERSION && mo $< > $@)
 
+src/Reach/Version.hs: src/Reach/Version.mo.hs ../VERSION
+	(. ../VERSION && export MAJOR MINOR PATCH && mo $< > $@)
+
 .PHONY: stack
-stack: package.yaml
+stack: package.yaml src/Reach/Version.hs
 
 .PHONY: clean
 clean: hs-clean

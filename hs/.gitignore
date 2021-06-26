@@ -8,3 +8,4 @@ stan.html
 test-reports/
 package.yaml
 .reach/
+src/Reach/Version.hs

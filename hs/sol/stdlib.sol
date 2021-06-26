@@ -6,6 +6,7 @@ interface IERC20 {
     function balanceOf(address owner) external view returns (uint256);
 }
 
+// Generated code includes meaning of numbers
 error ReachError(uint256 msg);
 
 contract Stdlib {
