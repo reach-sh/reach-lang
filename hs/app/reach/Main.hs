@@ -13,7 +13,7 @@ import System.Directory.Extra
 import System.Environment
 import System.Exit
 import System.FilePath
-import System.Posix.Process
+import System.Posix.Files
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -65,13 +65,159 @@ writeFrom :: FilePath -> App
 writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
 
 
-runSubScript :: App -> Env -> IO T.Text
-runSubScript a e = readIORef (e_effect e) >>= \case
+_runSubScript :: App -> Env -> IO T.Text
+_runSubScript a e = readIORef (e_effect e) >>= \case
   Script _ -> do
     r <- newIORef $ Script ""
     Script r' <- runReaderT a (e { e_effect = r }) >> readIORef r
     pure r'
   _ -> U.impossible "`runSubScript` may only be applied to a `Script`"
+
+
+--------------------------------------------------------------------------------
+serviceConnector :: FilePath -> Env -> T.Text -> [T.Text] -> IO T.Text
+serviceConnector name Env {..} rv ports = do
+  let indentPorts = "  "
+  let ports' = case ports of
+        [] -> indentPorts <> "[]"
+        ps -> T.unlines $ map ((indentPorts <> "- ") <>) ps
+
+  fmt <- T.readFile $ e_dirEmbed
+    </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> name <> ".yml"
+
+  pure
+    . swap "REACH_VERSION" rv
+    . swap "PORTS" ports'
+    $ fmt
+
+
+serviceDevnetAlgo :: Env -> T.Text -> [T.Text] -> IO T.Text
+serviceDevnetAlgo env rv ports = do
+  dn <- serviceConnector "devnet-algo" env rv ports
+  db <- serviceConnector "devnet-algo-postgres-db" env rv ports
+  pure $ dn <> db
+
+
+serviceDevnetCfx :: Env -> T.Text -> [T.Text] -> IO T.Text
+serviceDevnetCfx = serviceConnector "devnet-cfx"
+
+
+serviceDevnetEth :: Env -> T.Text -> [T.Text] -> IO T.Text
+serviceDevnetEth = serviceConnector "devnet-eth"
+
+
+-- TODO dynamic `appService'` definition
+mkComposeYml :: T.Text -> T.Text -> [T.Text] -> T.Text
+mkComposeYml appService' appImageTag' svs =
+  let svs' = T.intercalate "" svs
+   in [N.text|
+      version: '3.4'
+      services:
+        $svs'
+
+        $appService':
+          image: $appImageTag'
+          depends_on:
+            - ethereum-devnet
+          environment:
+            - REACH_DEBUG
+            - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+            - ETH_NODE_URI=http://ethereum-devnet:8545
+      |]
+
+
+--------------------------------------------------------------------------------
+data ConnectorMode
+  = DevnetAlgo
+  | DevnetCfx
+  | DevnetEth
+  | LiveAlgo
+  | LiveCfx
+  | LiveEth
+  | BrowserAlgo
+  | BrowserCfx
+  | BrowserEth
+
+
+instance Show ConnectorMode where
+  show = \case
+    DevnetAlgo -> "ALGO-test-dockerized-algod"
+    DevnetCfx -> "CFX-devnet"
+    DevnetEth -> "ETH-test-dockerized-geth"
+    LiveAlgo -> "ALGO-live"
+    LiveCfx -> "CFX-live"
+    LiveEth -> "ETH-live"
+    BrowserAlgo -> "ALGO-browser"
+    BrowserCfx -> "CFX-browser"
+    BrowserEth -> "ETH-browser"
+
+
+connectorModeNonBrowser :: IO ConnectorMode
+connectorModeNonBrowser = lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure DevnetEth) (\case
+  "ALGO" -> pure DevnetAlgo
+  "ALGO-test" -> pure DevnetAlgo
+  "ALGO-test-dockerized" -> pure DevnetAlgo
+
+  "CFX" -> pure DevnetCfx
+  "CFX-devnet" -> pure DevnetCfx
+
+  "ETH" -> pure DevnetEth
+  "ETH-test" -> pure DevnetEth
+  "ETH-test-dockerized" -> pure DevnetEth
+
+  "ALGO-live" -> pure LiveAlgo
+  "CFX-live" -> pure LiveCfx
+  "ETH-live" -> pure LiveEth
+
+  i -> die $ "Illegal non-browser `REACH_CONNECTOR_MODE` environment variable: " <> i)
+
+
+_connectorModeBrowser :: IO ConnectorMode
+_connectorModeBrowser = lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure BrowserEth) (\case
+  "ALGO" -> pure BrowserAlgo
+  "CFX" -> pure BrowserCfx
+  "ETH" -> pure BrowserEth
+  i -> die $ "Illegal browser `REACH_CONNECTOR_MODE` environment variable: " <> i)
+
+
+--------------------------------------------------------------------------------
+data Scaffold = Scaffold
+  { dockerfile :: T.Text
+  , packageJson :: T.Text
+  , composeYml :: T.Text
+  , makefile :: T.Text
+  }
+
+
+mkScaffold :: Bool -> T.Text -> Scaffold
+mkScaffold isolate app = Scaffold
+  { dockerfile = f "Dockerfile"
+  , packageJson = f "package.json"
+  , composeYml = f "docker-compose.yml"
+  , makefile = f "Makefile"
+  }
+ where
+  f a = if isolate then a <> "." <> app else a
+
+
+--------------------------------------------------------------------------------
+data DockerMeta = DockerMeta
+  { appProj :: T.Text
+  , appService :: T.Text
+  , appImage :: T.Text
+  , appImageTag :: T.Text
+  }
+
+
+-- TODO `e_dirProject` doesn't make sense when containerized
+mkDockerMeta :: T.Text -> FilePath -> Bool -> DockerMeta
+mkDockerMeta app dirProject isolate = DockerMeta {..} where
+  appProj = T.toLower . T.pack $ takeBaseName dirProject
+    <> if isolate then ("-" <> T.unpack app) else ""
+
+  appService = "reach-app-" <> appProj
+  appImage = "reachsh/" <> appService
+  appImageTag = appImage <> ":latest"
 
 
 --------------------------------------------------------------------------------
@@ -90,6 +236,30 @@ reachImages =
   , "react-runner"
   , "rpc-server"
   ]
+
+
+--------------------------------------------------------------------------------
+reachVersionInProcess :: IO T.Text
+reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
+  Nothing -> pure $ T.pack V.versionStr
+  Just v -> pure $ T.pack v
+
+
+reachVersionShortInProcess :: IO T.Text
+reachVersionShortInProcess = reachVersionInProcess >>= \case
+  "stable" -> pure $ T.pack V.compatibleVersionStr
+  v -> pure $ a <> "." <> b where
+    f ('v':s) = s
+    f s = s
+    v' = T.splitOn "." . T.pack . f $ T.unpack v
+    a = maybe "0" id $ atMay v' 0
+    b = maybe "0" id $ atMay v' 1
+
+
+reachEx :: IO T.Text
+reachEx = lookupEnv "REACH_EX" >>= \case
+  Just r -> pure $ T.pack r
+  Nothing -> die "Unset `REACH_EX` environment variable"
 
 
 --------------------------------------------------------------------------------
@@ -115,135 +285,83 @@ _reachVersionShortScript =
   |]
 
 
-reachVersionInProcess :: IO T.Text
-reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
-  Nothing -> pure $ T.pack V.versionStr
-  Just v -> pure $ T.pack v
-
-
-reachVersionShortInProcess :: IO T.Text
-reachVersionShortInProcess = reachVersionInProcess >>= \case
-  "stable" -> pure $ T.pack V.compatibleVersionStr
-  v -> pure $ a <> "." <> b where
-    f ('v':s) = s
-    f s = s
-    v' = T.splitOn "." . T.pack . f $ T.unpack v
-    a = maybe "0" id $ atMay v' 0
-    b = maybe "0" id $ atMay v' 1
-
-
+--------------------------------------------------------------------------------
 realpath :: App
 realpath = writeFrom "sh/_common/realpath.sh"
 
 
-ensureConnectorMode :: App
-ensureConnectorMode = writeFrom "sh/_common/ensureConnectorMode.sh"
+_ensureConnectorMode :: App
+_ensureConnectorMode = writeFrom "sh/_common/ensureConnectorMode.sh"
 
 
-declareFatalInfiniteReachRunLoop :: App
-declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteReachRunLoop.sh"
+_declareFatalInfiniteReachRunLoop :: App
+_declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteReachRunLoop.sh"
 
 
 --------------------------------------------------------------------------------
-data Scaffold = Scaffold
-  { dockerfile :: T.Text
-  , packageJson :: T.Text
-  , composeYml :: T.Text
-  , makefile :: T.Text
-  , isolate' :: T.Text
-  , verbose :: T.Text
-  }
-
-
-mkScaffold :: Bool -> Bool -> T.Text -> Scaffold
-mkScaffold isolate quiet app = Scaffold
-  { dockerfile = f "Dockerfile"
-  , packageJson = f "package.json"
-  , composeYml = f "docker-compose.yml"
-  , makefile = f "Makefile"
-  , isolate' = if isolate then "true" else "false"
-  , verbose = if quiet then "false" else "true"
-  }
- where
-  f a = if isolate then a <> "." <> app else a
-
-
 scaffold' :: Bool -> Bool -> T.Text -> App
 scaffold' isolate quiet app = do
-  Env {..} <- ask
-  let Scaffold {..} = mkScaffold isolate quiet app
+  env@(Env {..}) <- ask
 
-  let cpline = case isolate of
-        False -> ""
-        True -> "RUN cp /app/" <> packageJson <> " /app/package.json"
+  liftIO $ do
+    rv <- reachVersionInProcess
+    let Scaffold {..} = mkScaffold isolate app
 
-  let tmpl n =
-          swap "APP" app
-        . swap "MJS" (app <> ".mjs")
-        . swap "RSH" (app <> ".rsh")
-        . swap "MAKEFILE" makefile
-        . swap "DOCKERFILE" dockerfile
-        . swap "PACKAGE_JSON" packageJson
-        . swap "DOCKER_COMPOSE_YML" composeYml
-        . swap "CPLINE" cpline
-       <$> (liftIO . T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> n)
+    let scaff n f = do
+          when (not quiet) . T.putStrLn $ "Writing " <> n <> "..."
+          T.writeFile (e_dirProject </> T.unpack n) f
 
-  let scaff n f = write [N.text|
-        $verbose && echo "Writing $n"
-        cat >"$n" <<EOF
-        $f
-        EOF
-      |]
+    let scaffIfAbsent n f =
+          whenM (not <$> doesFileExist (e_dirProject </> T.unpack n)) $ scaff n f
 
-  let scaffIfAbsent n f = do
-        c <- ask >>= liftIO . runSubScript (scaff n f)
-        write [N.text|
-          if [ ! -f $n ]; then
-          $c
-          fi
-        |]
+    let cpline = case isolate of
+          False -> ""
+          True -> "RUN cp /app/" <> packageJson <> " /app/package.json"
 
-  fmtDockerfile <- tmpl "Dockerfile"
-  fmtPackageJson <- tmpl "package.json"
-  fmtComposeYml <- tmpl "docker-compose.yml"
-  fmtMakefile <- tmpl "Makefile"
-  fmtGitignore <- tmpl ".gitignore"
-  fmtDockerignore <- tmpl ".dockerignore"
+    let DockerMeta {..} = mkDockerMeta app e_dirProject isolate
 
-  reachVersionScript
-  ensureConnectorMode
+    let tmpl n =
+            swap "APP" app
+          . swap "MJS" (app <> ".mjs")
+          . swap "RSH" (app <> ".rsh")
+          . swap "MAKEFILE" makefile
+          . swap "DOCKERFILE" dockerfile
+          . swap "PACKAGE_JSON" packageJson
+          . swap "DOCKER_COMPOSE_YML" composeYml
+          . swap "CPLINE" cpline
+          . swap "PROJ" appProj
+          . swap "SERVICE" appService
+          . swap "IMAGE" appImage
+          . swap "IMAGE_TAG" appImageTag
+          . swap "REACH_VERSION" rv
+         <$> (T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> n)
 
-  write [N.text|
-    PROJ="$$(basename "$$(pwd)" | tr '[:upper:]' '[:lower:]')"
-    "$isolate'" && PROJ="$$PROJ-$app"
+    sAlgo <- serviceDevnetAlgo env rv [ "9392" ]
+    sCfx <- serviceDevnetCfx env rv []
+    sEth <- serviceDevnetEth env rv []
 
-    SERVICE="reach-app-$${PROJ}"
-    IMAGE="reachsh/$${SERVICE}"
-    IMAGE_TAG="$${IMAGE}:latest"
-  |]
+    -- TODO: s/lint/preapp. It's disabled because sometimes our
+    -- generated code trips the linter
+    tmpl "package.json" >>= scaff packageJson
+    tmpl "Dockerfile" >>= scaff dockerfile
+    tmpl "Makefile" >>= scaff makefile
+    scaff composeYml $ mkComposeYml appService appImageTag [ sAlgo, sCfx, sEth ]
 
-  -- TODO: s/lint/preapp. It's disabled because sometimes our
-  -- generated code trips the linter
-  -- TODO: ^ The same goes for js/runner_package.template.json
-  scaff packageJson fmtPackageJson
+    tmpl ".gitignore" >>= scaffIfAbsent ".gitignore"
+    tmpl ".dockerignore" >>= scaffIfAbsent ".dockerignore"
 
-  scaff dockerfile fmtDockerfile
-  scaff composeYml fmtComposeYml
-  scaff makefile fmtMakefile
-
-  scaffIfAbsent ".gitignore" fmtGitignore
-  scaffIfAbsent ".dockerignore" fmtDockerignore
+    when (not quiet) $ putStrLn "Done."
 
 
 unscaffold' :: Bool -> Bool -> T.Text -> App
 unscaffold' isolate quiet app = do
-  let Scaffold {..} = mkScaffold isolate quiet app
-  write [N.text|
-    for file in $dockerfile $packageJson $composeYml $makefile; do
-      if $verbose; then echo deleting $$file; fi
-      rm -f $$file
-    done
-  |]
+  Env {..} <- ask
+  liftIO $ do
+    let Scaffold {..} = mkScaffold isolate app
+    forM_ [ dockerfile, packageJson, composeYml, makefile ] $ \n -> do
+      when (not quiet) . T.putStrLn $ "Deleting " <> n <> "..."
+      removeFile $ e_dirProject </> T.unpack n
+    when (not quiet) $ putStrLn "Done."
 
 
 --------------------------------------------------------------------------------
@@ -275,39 +393,30 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 
 
 --------------------------------------------------------------------------------
--- TODO flesh out `optparse` usage help + defaults
--- TODO extend interface to expose subset of hooks offered by `reachc` CLI
---  * -o|--output DIR
---  * --install-pkgs
---  * --dir-dot-reach
---  * [SOURCE]
---  * [EXPORTS...]
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
-  f = pure . script $ do
+
+  f = go
+    <$> switch (long "disable-reporting" <> hidden)
+    <*> switch (long "error-format-json" <> hidden)
+    <*> switch (long "intermediate-files" <> help "Preserve intermediate build artifacts")
+    <*> switch (long "install-pkgs" <> help "Allow remote library-fetching")
+    <*> optional (strOption (long "dir-dot-reach" <> hidden))
+    <*> optional (strOption (long "output" <> short 'o' <> metavar "DIR" <> help "Directory for output files" <> showDefault))
+    <*> strArgument (metavar "SOURCE" <> value "index.rsh" <> showDefault)
+    <*> many (strArgument (metavar "EXPORTS..."))
+
+  go drp efj ifs ips ddr dop src exps = script $ do
+    reach <- liftIO reachEx
+    rv <- liftIO reachVersionInProcess
     realpath
+
     write [N.text|
-      REACH="$$(realpath "$$0")"
-      export REACH
+      export REACH="$$(realpath "$reach")"
       HS="$$(dirname "$$REACH")/hs"
-
-      reachc_release () {
-        stack build && stack exec -- reachc "$$@"
-      }
-
-      reachc_prof () {
-        stack build --profile --fast && \
-          stack exec --profile -- \
-                reachc --disable-reporting --intermediate-files "$$@" +RTS -p
-      }
-
-      reachc_dev () {
-        stack build --fast && \
-          stack exec -- reachc --disable-reporting --intermediate-files "$$@"
-      }
-
       ID=$$($whoami')
+
       if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
         # TODO test
         ~/.local/bin/reachc --disable-reporting "$@@"
@@ -318,30 +427,57 @@ compile = command "compile" $ info f d where
 
         export STACK_YAML="$${HS}/stack.yaml"
         export REACHC_ID=$${ID}
-        REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
-        export REACHC_HASH
+        export REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
 
         (cd "$$HS" && make stack)
 
-        # TODO replace dollar-@s below
         if [ "x$${REACHC_RELEASE}" = "xY" ]; then
-          reachc_release "$$@"
+          $reachc_release
         elif [ "x$${REACHC_PROFILE}" = "xY" ]; then
-          reachc_prof "$$@"
+          $reachc_prof
         else
-          reachc_dev "$$@"
+          $reachc_dev
         fi
 
       else
-        # TODO "docker: invalid reference format"
         docker run \
           --rm \
           --volume "$$PWD:/app" \
           -e "REACHC_ID=$${ID}" \
-          reachsh/reach:$${REACH_VERSION} \
-          "$$@"
+          reachsh/reach:$rv \
+          $args
       fi
     |]
+
+   where
+    if' b t = if b then t else ""
+
+    opt x a = case x of
+      Nothing -> ""
+      Just t -> a <> "=" <> t
+
+    args = T.intercalate " " $
+      [ if' drp "--disable-reporting"
+      , if' efj "--error-format-json"
+      , if' ifs "--intermediate-files"
+      , if' ips "--install-pkgs"
+      , opt ddr "--dir-dot-reach"
+      , opt dop "--output"
+      , src -- TODO fix directory mismatches between host/container
+      ] <> exps
+
+    drp' = if' (not drp) "--disable-reporting"
+    ifs' = if' (not ifs) "--intermediate-files"
+
+    reachc_release = [N.text| stack build && stack exec -- reachc $args |]
+
+    reachc_dev = [N.text| stack build --fast && stack exec -- reachc $drp' $ifs' $args |]
+
+    reachc_prof = [N.text|
+      stack build --profile --fast \
+        && stack exec --profile -- reachc $drp' $ifs' $args +RTS -p
+    |]
+
 
 
 --------------------------------------------------------------------------------
@@ -373,9 +509,8 @@ init' = command "init" . info f $ d <> foot where
       let rsh = e_dirProject </> T.unpack app <> ".rsh"
       let mjs = e_dirProject </> T.unpack app <> ".mjs"
 
-      let abortIf x = whenM (doesFileExist x) $ do
-            putStrLn $ x <> " already exists."
-            exitImmediately $ ExitFailure 1
+      let abortIf x = whenM (doesFileExist x) . die
+            $ x <> " already exists."
 
       abortIf rsh
       abortIf mjs
@@ -389,169 +524,68 @@ init' = command "init" . info f $ d <> foot where
 
 
 --------------------------------------------------------------------------------
+-- TODO do we need to preserve $APP-as-directory behavior? Test more thoroughly
 run' :: Subcommand
 run' = command "run" $ info f d where
   d = progDesc "Run a simple app"
-  f = go <$> strArgument (metavar "APP" <> value "")
+  f = go
+    <$> switch (long "isolate")
+    <*> strArgument (metavar "APP" <> value "")
 
-  -- reach run args
-  -- check state of scaffolded files
-  -- * if none exist: scaffold in --isolate --quiet mode, set flag UNSCAFFOLD
-  -- * if all exist: just use the existing things
-  -- * if some exist: error
-  -- make build run
-  -- unscaffold if UNSCAFFOLD
-  --
-  -- XXX Can we add eslint on the JS?
-  go :: T.Text -> App
-  go app = script $ do
-    let app' = if app == "" then "index" else app
-    doScaffold <- ask >>= liftIO . runSubScript (scaffold' True True app')
+  go isolate app = do
+    Env {..} <- ask
+    mode <- T.pack . show <$> liftIO connectorModeNonBrowser
+    reach <- liftIO reachEx
 
-    declareFatalInfiniteReachRunLoop
+    (app', dir) <- liftIO $ case app of
+      "" -> pure ("index", e_dirProject)
+      _ -> ifM (not <$> doesDirectoryExist app)
+        (pure (T.pack app, e_dirProject))
+        (pure ("index", if isAbsolute app then app else e_dirProject </> app))
 
-    write [N.text|
-      ANY_CUSTOMIZATION=false
-      if ! [ "x$$REACH_CONNECTOR_MODE" = "x" ]; then
-        ANY_CUSTOMIZATION=true
-      fi
-    |]
+    let Scaffold {..} = mkScaffold isolate app'
 
-    ensureConnectorMode
-    write [N.text| export RUN_FROM_REACH=${RUN_FROM_REACH:-false} |]
+    noneExist <- andM $ fmap not . liftIO . doesFileExist . (dir </>) . T.unpack
+      <$> [ dockerfile, packageJson, composeYml ]
 
-    case app of
-      "" -> write [N.text|
-        BARE_REACH_RUN=true
-        APP="index"
+    when noneExist $ scaffold' isolate True app'
+
+    let isolate' = if isolate then "--isolate" else ""
+    let cleanup = case noneExist of
+          True -> [N.text| $reach unscaffold $isolate' --quiet $app' |]
+          False -> ":"
+
+    let rsh = T.unpack app' <> ".rsh"
+    let mjs = T.unpack app' <> ".mjs"
+    let bjs = "build" </> T.unpack app' <> ".main.mjs"
+
+    let abortIfAbsent p = liftIO . whenM (not <$> doesFileExist p)
+          . die $ p <> " doesn't exist."
+
+    abortIfAbsent rsh
+    abortIfAbsent mjs
+
+    let recompile' = reach <> " compile " <> T.pack rsh <> "\n"
+
+    recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
+      (pure $ Just recompile')
+      $ do
+        b <- modificationTime <$> getFileStatus bjs
+        r <- modificationTime <$> getFileStatus rsh
+        pure $ if r > b then Just recompile' else Nothing
+
+    let DockerMeta {..} = mkDockerMeta app' dir isolate
+
+    -- TODO args to `docker-compose run` (?)
+    script $ do
+      maybe (pure ()) write recompile
+      write [N.text|
+        export REACH_CONNECTOR_MODE=$mode
+        docker build -f $dockerfile --tag=$appImageTag .
+        docker-compose -f $composeYml run --rm $appService
+        docker-compose -f $composeYml down --remove-orphans
+        $cleanup
       |]
-
-      app'' -> write [N.text|
-        BARE_REACH_RUN=false
-        ANY_CUSTOMIZATION=true
-        ARG=$app''
-
-        [ "x$$ARG" = "x--" ] && ARG="index"
-        [ -d "$$ARG"       ] && ARG="$$ARG/index"
-
-        cd "$(dirname "$$ARG")" || exit 1
-        APP="$(basename "$$ARG")"
-      |]
-
-    write [N.text|
-      RSH="$${APP}.rsh"
-      MJS="$${APP}.mjs"
-
-      ! [ -f "$$RSH" ] && (echo "$$RSH doesn't exit"; exit 1)
-      ! [ -f "$$MJS" ] && (echo "$$MJS doesn't exit"; exit 1)
-
-      MAKEFILE=Makefile
-      DOCKERFILE=Dockerfile
-      PACKAGE_JSON=package.json
-      DOCKER_COMPOSE_YML=docker-compose.yml
-
-      NONE_EXIST=true
-      # Note: Makefile excluded from this check
-      [ -f "$$DOCKERFILE" ] || [ -f "$$PACKAGE_JSON" ] || [ -f "$$DOCKER_COMPOSE_YML" ] \
-        && NONE_EXIST=false
-
-      do_scaffold () {
-      $doScaffold
-      }
-
-      if $$NONE_EXIST; then
-        do_scaffold
-
-        cleanup () {
-          # TODO equivalent doUnscaffold
-          # do_unscaffold --isolate --quiet "$$APP"
-          :
-        }
-
-        # Note: do_scaffold has mutated these vars like so:
-        # MAKEFILE="$$MAKEFILE.$app'"
-        # DOCKERFILE="$$Dockerfile.$app'"
-        # PACKAGE_JSON="$$PACKAGE_JSON.$app'"
-        # DOCKER_COMPOSE_YML="$$DOCKER_COMPOSE_YML.$app'"
-      else
-        cleanup () {
-          :
-        }
-
-        ALL_EXIST=false
-        : && [ -f "$$MAKEFILE" ] \
-          && [ -f "$$DOCKERFILE" ] \
-          && [ -f "$$PACKAGE_JSON" ] \
-          && [ -f "$$DOCKER_COMPOSE_YML" ] \
-          && ALL_EXIST=true
-
-        # We trust our scaffolded makefiles,
-        # so we only need to check for infinite recurrsion on:
-        # * reach run ($$BARE_REACH_RUN), since this is the only potential avenue for inf recursion
-        # * a proj with customized scaffolding. ($$ALL_EXIST)
-        # * running from inside another reach run ($$RUN_FROM_REACH)
-        if $$BARE_REACH_RUN && $$ALL_EXIST && $$RUN_FROM_REACH; then
-          fatal_infinite_reach_run_loop
-        fi
-
-        if ! $$ALL_EXIST; then
-          # TODO: more description on err
-          echo "I'm confused, some scaffolded files exist, but not all"
-          exit 1
-        fi
-      fi
-
-      ## TODO abstract and finalize the following ##
-      reach_make () {
-        RUN_FROM_REACH=true make "$$@" REACH="$${REACH}"
-        MAKE_EXIT=$$?
-        if [ $$MAKE_EXIT -ne 0 ]; then
-          cleanup
-          exit $$MAKE_EXIT
-        fi
-      }
-
-      reach_make_f () {
-        reach_make -f "$$MAKEFILE" "$$@"
-      }
-
-      if $$BARE_REACH_RUN; then
-        # Always build from "scaffolded" file
-        reach_make_f build
-        # Run from Makefile if present and not "run from reach"
-        if [ -f Makefile ] && ! $$RUN_FROM_REACH && ! $$ANY_CUSTOMIZATION; then
-          reach_make run "$$@" # TODO thread args correctly
-        else
-          reach_make_f run "$$@" # TODO thread args correctly
-        fi
-      else
-        # It is assumed that if this is being called from within reach run,
-        # then the build step has already been handled.
-        # TODO: better use of makefiles so that we just call make build anyway,
-        # and it is a noop if nothing needs to be done.
-        if ! $$RUN_FROM_REACH; then
-          reach_make_f build
-        fi
-
-        # This is nuts and possibly a little bit wrong.
-        # Easier methods exist but they are outside of POSIX standard.
-        escape_args () {
-          for arg in "$$APP" "$$@"; do
-            escaped_arg=""
-            for word in $$arg; do
-              escaped_arg="$$escaped_arg$$(printf "%s\ " "$$word")"
-            done
-            echo "$${escaped_arg%??}"
-          done
-        }
-        ARGS=$$(escape_args "$$@")
-        # Yes it apparently has to be exactly "$$(echo $$ARGS)" because reasons.
-        # shellcheck disable=SC2116,SC2086
-        reach_make_f run-target ARGS="$$(echo $$ARGS)"
-      fi
-
-      cleanup
-    |]
 
 
 --------------------------------------------------------------------------------
@@ -563,7 +597,7 @@ down = command "down" $ info f d where
 
 --------------------------------------------------------------------------------
 scaffold :: Subcommand
-scaffold = command "scaffold" $ info (script <$> f) d where
+scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
   f = scaffold'
     <$> switch (long "isolate")
@@ -625,7 +659,7 @@ dockerReset = command "docker-reset" $ info f d where
     echo 'Docker rm all the things...'
     # shellcheck disable=SC2046
     docker rm $$(docker ps -qa) >/dev/null 2>&1 || :
-    echo '...done'
+    echo 'Done.'
   |]
 
 
@@ -684,7 +718,7 @@ rpcServerDown = command "rpc-server-down" $ info f fullDesc where
 
 --------------------------------------------------------------------------------
 unscaffold :: Subcommand
-unscaffold = command "unscaffold" $ info (script <$> f) fullDesc where
+unscaffold = command "unscaffold" $ info f fullDesc where
   f = unscaffold'
     <$> switch (long "isolate")
     <*> switch (long "quiet")
@@ -721,7 +755,7 @@ main = do
         True -> T.putStrLn t
         False -> do
           T.writeFile (e_dirTmp c_env </> "out.sh") t
-          exitImmediately $ ExitFailure 42
+          exitWith $ ExitFailure 42
 
  where
   cs = compile

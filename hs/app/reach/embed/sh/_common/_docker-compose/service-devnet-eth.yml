@@ -1,0 +1,2 @@
+ethereum-devnet:
+  image: reachsh/ethereum-devnet:${REACH_VERSION}

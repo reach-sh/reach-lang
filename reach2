@@ -5,7 +5,9 @@ TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
 
 run_d () {
   docker run -t --rm \
+    -e "REACH_EX=$0" \
     -e "REACH_VERSION" \
+    -e "REACH_CONNECTOR_MODE" \
     -u "$(id -ru):$(id -rg)" \
     -v "$TMP:/app/tmp" \
     -v "$(pwd):/app/src" \
@@ -29,4 +31,5 @@ fi
 run_d "$@"
 case "$?" in
   42) run_s ;;
+   1) exit 1 ;;
 esac
