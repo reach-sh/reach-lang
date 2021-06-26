@@ -4,7 +4,7 @@ FROM ubuntu:18.04
 COPY --from=build /build/bin/reach /usr/bin/reach
 COPY app/reach/embed/ /app/embed/
 
-WORKDIR /app
+WORKDIR /app/src
 ENTRYPOINT ["/usr/bin/reach"]
 
 ARG REACH_GIT_HASH

@@ -1,0 +1,2 @@
+devnet-cfx:
+  image: reachsh/devnet-cfx:${REACH_VERSION}
