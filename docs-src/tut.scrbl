@@ -668,7 +668,7 @@ When we run @exec{./reach compile @reachexlink["tut-5-attack/index-bad.rsh"]}, i
 @reachex[#:mode verbatim
          #:show-lines? #t "tut-5-attack/index-bad.txt"
          #:link #t
-         'only 4 22 ""]
+         'only 4 28 ""]
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
 
@@ -678,9 +678,9 @@ There's a lot of information in the compiler output that can help an experienced
 
 @item{Line 8 says that this happens when the program exits on line 45, which directs the programmer to that path through the program.}
 
-@item{Lines 10-14 describe the values that could cause the theorem to fail.}
+@item{Lines 10-17 describe the values that could cause the theorem to fail.}
 
-@item{Lines 16-21 outline the theorem that failed.}
+@item{Lines 20-28 outline the theorem that failed.}
 
 ]
 
@@ -712,7 +712,7 @@ When we run @exec{./reach run}, it reports that this assertion is false:
 @reachex[#:mode verbatim
          #:show-lines? #t "tut-5-attack/index-fails.txt"
          #:link #t
-         'only 3 5 ""]
+         'only 2 6 ""]
 
 It is not enough to correct failures and attacks when you discover them.
 You must @bold{always} add an assertion to your program that would fail to hold if the attack or failure were present.
@@ -2004,7 +2004,7 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 
 @item{Or, maybe you'd like to spend some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
 
-@item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutae of Reach's features.}
+@item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutiae of Reach's features.}
 
 @item{Finally, you may like to repeat a portion of this tutorial, but using @seclink["tut-7-rpc"]{a language other than JavaScript}, like Python or Go!}
 

@@ -6,9 +6,6 @@ Verification failed:
   of theorem: require
   at ./require_false.rsh:6:12:application
 
-  // Violation witness
-
-  // Theorem formalization
   require(false);
 
 Verification failed:

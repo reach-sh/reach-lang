@@ -7,10 +7,15 @@ Verification failed:
   at ./impossible.rsh:8:15:application
   at ./impossible.rsh:5:11:application call to [unknown function] (defined at: ./impossible.rsh:5:15:function exp)
 
-  // Violation witness
+  // Violation Witness
 
-  // Theorem formalization
-  possible(_x/22 < 0);
+  const _x/22 = "A".interact.getX();
+
+
+  // Theorem Formalization
+
+  const v23 = _x/22 < 0;
+  possible(v23);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

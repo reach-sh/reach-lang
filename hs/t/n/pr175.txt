@@ -6,12 +6,18 @@ Verification failed:
   of theorem: assert
   at ./pr175.rsh:9:9:application
 
-  // Violation witness
-  const v19 = 1;
-  //    ^ from function return at ./pr175.rsh:5:22:block
+  // Violation Witness
 
-  // Theorem formalization
-  assert(v19 == 0);
+  const v19 = <function return>;
+  //    ^ could = 1
+  //      from: ./pr175.rsh:5:22:block
+
+
+  // Theorem Formalization
+
+  const v22 = v19 == 0;
+  //    ^ would be false
+  assert(v22);
 
   Verifying when NO participants are honest
 Verification failed:

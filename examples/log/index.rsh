@@ -3,7 +3,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    log: Fun(true, Null),
+    ...hasConsoleLogger,
   });
   deploy();
 

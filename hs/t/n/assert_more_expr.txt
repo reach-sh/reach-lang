@@ -7,14 +7,21 @@ Verification failed:
   at ./assert_more_expr.rsh:11:13:application
   at ./assert_more_expr.rsh:7:11:application call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
-  // Violation witness
-  const _x1/22 = 0;
-  //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:8:32:application
-  const _x2/23 = 1;
-  //    ^ from evaluating interact("A")."getX"() at ./assert_more_expr.rsh:9:32:application
+  // Violation Witness
 
-  // Theorem formalization
-  assert((_x1/22 + _x2/23) == (_x1/22 * 2));
+  const _x1/22 = "A".interact.getX();
+  //    ^ could = 0
+  //      from: ./assert_more_expr.rsh:8:32:application
+  const _x2/23 = "A".interact.getX();
+  //    ^ could = 1
+  //      from: ./assert_more_expr.rsh:9:32:application
+
+
+  // Theorem Formalization
+
+  const v26 = (_x1/22 + _x2/23) == (_x1/22 * 2);
+  //    ^ would be false
+  assert(v26);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

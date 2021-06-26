@@ -115,6 +115,19 @@ In such scenarios, we recommend that you call this function like so:
 You may instead pass in the string @litchar{'ETH'} or the string @litchar{'ALGO'}
 to select the desired stdlib directly.
 
+By default, this method allows a user to load a standard library for a single connector.
+That is, this method may not be called multiple times with varying @tech{connectors}.
+To bypass this restriction, use @jsin{unsafeAllowMultipleStdlibs}.
+
+@(hrule)
+@(mint-define! '("unsafeAllowMultipleStdlibs"))
+@js{
+  unsafeAllowMultipleStdlibs() => null
+}
+
+@index{unsafeAllowMultipleStdlibs} Calling this function will lift the restriction that
+@jsin{loadStdlib} imposes on loading multiple standard libraries.
+
 @section[#:tag "ref-frontends-js-acc"]{Accounts}
 
 These functions create and interact with @tech{account} representations.
@@ -510,6 +523,14 @@ The number of bits generated depends on the particular @tech{consensus network}.
 
 @deftech{hasRandom (Frontend)} A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function, such as @reachin{hasRandom}.
 Reach does not natively support randomness and leaves random number generation to the frontend implementation.
+This value is provided out of convenience; it is not mandatory to use this implementation.
+
+@(hrule)
+@js{
+ hasConsoleLogger}
+
+@deftech{hasConsoleLogger (Frontend)} A value suitable for use as a @tech{participant interact interface} requiring a @litchar{log} function, such as @reachin{hasConsoleLogger}.
+The @jsin{log} function provided takes an arbitrary amount of elements and prints them to stdout.
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
 @(hrule)

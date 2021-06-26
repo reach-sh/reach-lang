@@ -41,3 +41,7 @@ export const parseFixedPoint = (x: { sign: boolean, i: { i: num, scale: num } })
 
 export const parseInt = (x: { sign: boolean, i: num}) =>
   bigNumberify(x.i).toNumber() * (x.sign ? 1 : (- 1));
+
+export const hasConsoleLogger = {
+  log: console.log
+};

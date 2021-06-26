@@ -6,9 +6,6 @@ Verification failed:
   of theorem: assert
   at ./assert_false.rsh:5:11:application
 
-  // Violation witness
-
-  // Theorem formalization
   assert(false);
 
 Verification failed:

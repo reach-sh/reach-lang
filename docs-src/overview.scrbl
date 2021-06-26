@@ -175,10 +175,10 @@ It will print out a detailed error message showing the violation.
 
 @reachex[#:mode verbatim
          #:show-lines? #t "overview/index-error.txt"
-         'only 2 16 "// ..."]
+         'only 2 28 "// ..."]
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
-In this case, it reports that if Alice were to pass an @reachin{interact.request} over @reachin{1} at the start of the program on line 4, then the balance of the contract would not be provably @reachin{0} at the end of the program.
+In this case, it reports that if Alice were to pass an @reachin{interact.request} over @reachin{1} at the start of the program on line 5, then the balance of the contract would not be provably @reachin{0} at the end of the program.
 
 @(hrule)
 
@@ -205,7 +205,7 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 @item{Lines 1 and 2 import the Reach standard library loader and the compiled app backend.}
 
 @item{Line 5 dynamically loads the appropriate network-specific Reach standard library,
-based on the @tech{REACH_CONNECTOR_MODE} environment variable.
+based on the @envref{REACH_CONNECTOR_MODE} environment variable.
 If unspecified, Reach's Ethereum standard library will be used by default.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.}
 

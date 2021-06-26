@@ -1,4 +1,4 @@
-module Reach.AddCounts (add_counts, AC) where
+module Reach.AddCounts (add_counts, AC(..), ac_vdef, ac_visit) where
 
 import Control.Monad.Reader
 import Data.IORef

@@ -34,6 +34,9 @@ const numOfBidders = 5;
   ].concat(
     await Promise.all(
     accBidder_arr.map(async (accBidder, i) => {
+      if (stdlib.connector === 'ETH') {
+        accBidder.setGasLimit(5000000);
+      }
       const before = await getBalance(accBidder);
       const ctcBidder = accBidder.attach(backend, ctcInfo);
       let value = undefined;

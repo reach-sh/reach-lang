@@ -1,8 +1,7 @@
 import * as eci from './ETH_compiled_impl';
-import cfxsdk from 'js-conflux-sdk';
 import type { ETH_Ty } from './ETH_like_interfaces';
 import buffer from 'buffer';
-import { address_cfxStandardize } from './CFX_util';
+import { address_cfxStandardize, decodeCfxAddress, encodeCfxAddress } from './CFX_util';
 import { debug } from './shared_impl';
 
 const { Buffer } = buffer;
@@ -11,10 +10,10 @@ const { Buffer } = buffer;
 let netId = 999;
 
 function address_ethToCfx(addrE: string): string {
+  debug(`address_ethToCfx`, `call`, addrE);
   addrE = addrE.toLowerCase();
   const addrB = Buffer.from(addrE.slice(2), 'hex');
-  // XXX why doesn't ts know about this fn?
-  const addrC = (cfxsdk.address as any).encodeCfxAddress(addrB, netId);
+  const addrC = encodeCfxAddress(addrB, netId);
   return addrC;
 }
 
@@ -22,7 +21,7 @@ function address_ethToCfx(addrE: string): string {
 function address_cfxToEth(addrC: string): string {
   // XXX why doesn't ts know about this fn?
   debug(`address_cfxToEth`, `call`, addrC);
-  const addrObj = (cfxsdk.address as any).decodeCfxAddress(addrC);
+  const addrObj = decodeCfxAddress(addrC);
   const addrE = '0x' + addrObj.hexAddress.toString('hex');
   if (netId !== addrObj.netId) throw Error(`Expected netId=${netId}, got netId=${addrObj.netId}`);
   return addrE;

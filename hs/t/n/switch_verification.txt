@@ -4,35 +4,36 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: assert
-  at ./multiple_binding_locations.rsh:22:13:application
+  at ./switch_verification.rsh:14:13:application
 
   // Violation Witness
 
-  const v18 = "A".interact.x;
-  //    ^ could = 4
-  //      from: ./multiple_binding_locations.rsh:6:17:application
+  const x/20 = "A".interact.amt;
+  //    ^ could = Some(0 )
+  //      from: ./switch_verification.rsh:4:24:application
+  const x/30 = <switch case binding for Some(0 )>;
+  //    ^ could = 0
+  //      from: ./switch_verification.rsh:11:3:switch
 
 
   // Theorem Formalization
 
-  const x/23 = v18 - 4;
-  //    ^ would be 0
-  const v30 = (x/23 + x/23) == 4;
+  const v31 = x/30 == 5;
   //    ^ would be false
-  assert(v30);
+  assert(v31);
 
   Verifying when NO participants are honest
 Verification failed:
   when NO participants are honest
   of theorem: assert
-  at ./multiple_binding_locations.rsh:22:13:application
+  at ./switch_verification.rsh:14:13:application
 
   (details omitted on repeat)
   Verifying when ONLY "A" is honest
 Verification failed:
   when ONLY "A" is honest
   of theorem: assert
-  at ./multiple_binding_locations.rsh:22:13:application
+  at ./switch_verification.rsh:14:13:application
 
   (details omitted on repeat)
 Checked 9 theorems; 3 failures. :'(
