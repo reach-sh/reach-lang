@@ -17,14 +17,17 @@ install-mo:
 mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
-package.json: package.mo.json $(ROOT)/VERSION mo
+package.json: package.mo.json $(ROOT)/VERSION
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
-ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION mo
+ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
+
+ts/stdlib_sol.ts: ../../hs/sol/stdlib.sol
+	(echo "export default" ; cd ../../hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
 
 .PHONY: build
-build: package.json ts/version.ts
+build: package.json ts/version.ts ts/stdlib_sol.ts
 	docker build --tag=$(IMAGE) \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \

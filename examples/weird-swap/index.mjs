@@ -33,7 +33,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
     console.log(`\nPerforming swap of ${fmt(amtA)} ${tokenA.sym} for ${fmt(amtB)} ${tokenB.sym}`);
 
     const getBalance = async (tokenX, who) => {
-      const amt = await tokenX.balanceOf(who);
+      const amt = await stdlib.balanceOf(who, tokenX.id);
       return `${fmt(amt)} ${tokenX.sym}`; };
     const getBalances = async (who) =>
       `${await getBalance(tokenA, who)} & ${await getBalance(tokenB, who)}`;

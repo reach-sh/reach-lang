@@ -19,6 +19,7 @@ import {
 import {
   bigNumberify,
 } from './shared_user';
+import ETHstdlib from './stdlib_sol';
 
 // Types-only imports
 import type { // =>
@@ -296,6 +297,9 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   }
 };
 
+const ReachToken_ABI = ETHstdlib["contracts"]["stdlib.sol:ReachToken"]["abi"];
+const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
+
 const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
   // @ts-ignore
   const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
@@ -356,45 +360,6 @@ const transfer = async (
     return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), gl);
   }
 };
-
-const tokenMetadata = async (token: Token): Promise<any> => {
-  debug(`XXX tokenMetadata`, token);
-  return {};
-};
-
-const ERC20_ABI = [
-  { "constant": false,
-    "inputs": [ { "name": "_spender",
-                  "type": "address" },
-                { "name": "_value",
-                  "type": "uint256" } ],
-    "name": "approve",
-    "outputs": [ { "name": "",
-                   "type": "bool" } ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function" },
-  { "constant": true,
-    "inputs": [ { "name": "account",
-                  "type": "address" } ],
-    "name": "balanceOf",
-    "outputs": [ { "name": "",
-                   "type": "uint256" } ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function" },
-  { "constant": false,
-    "inputs": [ { "name": "_recipient",
-                  "type": "address" },
-                { "name": "_amount",
-                  "type": "uint256" } ],
-    "name": "transfer",
-    "outputs": [ { "name": "",
-                   "type": "bool" } ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function" }
-];
 
 const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
@@ -895,8 +860,30 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`tokenAccept: Unnecessary on ETH`, token);
     return;
   };
+  const tokenMetadata = async (token: Token): Promise<any> => {
+    debug(`tokenMetadata`, token);
+    const tokCtc = new ethers.Contract(token, ReachToken_ABI, networkAccount);
+    const md: any = {};
+    const go = async (f:string, m:string = f): Promise<void> => {
+      debug('tokenMetadata', {f, m});
+      try {
+        const v = await tokCtc[m]();
+        debug('tokenMetadata', {f, m, v});
+        md[f] = v;
+      } catch (e) {
+        debug('tokenMetadata', {f, m, e});
+      }
+    };
+    await go('name');
+    await go('symbol');
+    await go('url');
+    await go('metadata');
+    await go('supply', 'totalSupply');
+    debug(`tokenMetadata`, token, md);
+    return md;
+  };
 
-  return { deploy, attach, networkAccount, setGasLimit, getGasLimit, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept };
+  return { deploy, attach, networkAccount, setGasLimit, getGasLimit, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata };
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {
@@ -1191,7 +1178,6 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
-  tokenMetadata,
   reachStdlib,
 };
 return ethLike;

@@ -798,6 +798,7 @@ solCom = \case
     u' <- solArg dtn_url
     m' <- solArg dtn_metadata
     p' <- solArg dtn_supply
+    -- XXX This is broken, because of array padding on uint8s
     let s x = solApply "string" [ solApply "abi.encodePacked" [ x ] ]
     let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ s n', s s', s u', s m', p' ] ] ]
     addMemVar dv

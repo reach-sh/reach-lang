@@ -22,12 +22,12 @@ export const main = Reach.App(() => {
 
   A.only(() => {
     const { name, symbol, url, metadata, supply, amt, doEarlyTransfer } = declassify(interact.getParams());
-    assume(2 * amt <= supply);
-    assume(2 * amt <= UInt.max);
+    assume(4 * amt <= supply);
+    assume(4 * amt <= UInt.max);
   });
   A.publish(name, symbol, url, metadata, supply, amt, doEarlyTransfer);
-  require(2 * amt <= supply);
-  require(2 * amt <= UInt.max);
+  require(4 * amt <= supply);
+  require(4 * amt <= UInt.max);
 
   const tok1 = new Token({name, symbol, url, metadata, supply});
   /*
@@ -47,7 +47,7 @@ export const main = Reach.App(() => {
 
   const doTransfer = (tokX) => {
     const doTransfer1 = (who) => {
-      transfer(amt, tokX).to(who);
+      transfer(2 * amt, tokX).to(who);
       who.interact.didTransfer(true, amt);
     };
     doTransfer1(A);
@@ -58,9 +58,9 @@ export const main = Reach.App(() => {
   doTransfer(tok1);
   commit();
 
-  A.pay([[amt, tok1]]);
+  A.pay([[2*amt, tok1]]);
   commit();
-  B.pay([[amt, tok1]]);
+  B.pay([[2*amt, tok1]]);
   // XXX tok1.burn(supply);
   // XXX tok1.destroy();
 

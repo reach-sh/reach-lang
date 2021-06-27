@@ -32,7 +32,7 @@ import * as backend from './build/index.main.mjs';
       tok = _tok;
       console.log(`${me}: The token is: ${tok}`);
       await showBalance();
-      console.log(`${me}: The token metadata is:`, await stdlib.tokenMetadata(tok));
+      console.log(`${me}: The token metadata is:`, await acc.tokenMetadata(tok));
       console.log(`${me}: Opt-in to ${tok}:`);
       await acc.tokenAccept(tok);
       await showBalance();

@@ -46,12 +46,12 @@ r () {
   # jb
 
   export REACH_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
-  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
   # PureStake
   # REACH_CONNECTOR_MODE=ALGO-live ALGO_SERVER=https://testnet-algorand.api.purestake.io/ps2 ALGO_PORT='' ALGO_INDEXER_SERVER=https://testnet-algorand.api.purestake.io/idx2 ALGO_INDEXER_PORT='' ${REACH} run
@@ -164,7 +164,6 @@ jb
 # r examples/overview
 # r examples/log
 # r examples/argz
-# r examples/atomic-swap
 # r examples/atomic-swap-auction
 # r examples/chicken-fork
 # r examples/chicken-parallel
@@ -220,6 +219,8 @@ jb
 # exit 0
 
 r examples/mint-basic
+exit 0
+r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
 
