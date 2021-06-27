@@ -1,7 +1,7 @@
 // lightly adapted from @conflux-dev/conflux-address-js@1.0.0
 // @ts-nocheck
 
-const JSBI = require('jsbi')
+import JSBI from 'jsbi';
 const ALPHABET = 'ABCDEFGHJKMNPRSTUVWXYZ0123456789'
 
 const ALPHABET_MAP = {}
