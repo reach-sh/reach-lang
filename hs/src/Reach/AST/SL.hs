@@ -464,6 +464,7 @@ data SLPrimitive
   | SLPrim_setOptions
   | SLPrim_adaptReachAppTupleArgs
   | SLPrim_padTo Integer
+  | SLPrim_Token_new
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

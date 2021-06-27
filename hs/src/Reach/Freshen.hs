@@ -66,6 +66,14 @@ instance Freshen DLLargeArg where
       where
         go (k, v) = (,) k <$> fu v
 
+instance Freshen DLTokenNew where
+  fu (DLTokenNew {..}) = DLTokenNew
+    <$> fu dtn_name
+    <*> fu dtn_sym
+    <*> fu dtn_url
+    <*> fu dtn_metadata
+    <*> fu dtn_supply
+
 instance Freshen DLExpr where
   fu = \case
     DLE_Arg at a -> DLE_Arg at <$> fu a
@@ -89,6 +97,7 @@ instance Freshen DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
+    DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
 
 instance Freshen DLStmt where
   fu = \case

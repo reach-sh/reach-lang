@@ -3,7 +3,7 @@
 export const main = Reach.App(() => {
   const shared = {
     showToken: Fun([Token], Null),
-    didTransfer: Fun([Bool, UInt, Address], Null),
+    didTransfer: Fun([Bool, UInt], Null),
   };
   const A = Participant('Alice', {
     getParams: Fun([], Object({
@@ -30,12 +30,14 @@ export const main = Reach.App(() => {
   require(2 * amt <= UInt.max);
 
   const tok1 = new Token({name, symbol, url, metadata, supply});
+  /*
   if ( doEarlyTransfer ) {
     // We will never do this, but it is here to force a warning to be generated
     transfer([[amt, tok1]]).to(A);
     commit();
     A.pay([amt, tok1]);
   }
+  */
   A.interact.showToken(tok1);
   commit();
 
@@ -44,23 +46,23 @@ export const main = Reach.App(() => {
   commit();
 
   const doTransfer = (tokX) => {
-    const doTransfer1 = (who, other) => {
+    const doTransfer1 = (who) => {
       transfer(amt, tokX).to(who);
-      who.interact.didTransfer(true, amt, other);
+      who.interact.didTransfer(true, amt);
     };
-    doTransfer1(A, B);
-    doTransfer1(B, A);
+    doTransfer1(A);
+    doTransfer1(B);
   };
 
   A.publish();
   doTransfer(tok1);
   commit();
 
-  A.pay([amt, tok1]);
+  A.pay([[amt, tok1]]);
   commit();
-  B.pay([amt, tok1]);
-  tok1.burn(supply);
-  delete tok1;
+  B.pay([[amt, tok1]]);
+  // XXX tok1.burn(supply);
+  // XXX tok1.destroy();
 
   const tok2 = new Token({name, symbol});
   A.interact.showToken(tok2);
@@ -69,8 +71,7 @@ export const main = Reach.App(() => {
 
   A.publish();
   doTransfer(tok2);
-  // Defaults to everything you have
-  tok2.burn();
+  // XXX tok2.burn(/* defaults to all */);
   commit();
 
   exit();

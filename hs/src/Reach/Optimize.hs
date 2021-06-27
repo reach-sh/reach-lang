@@ -181,6 +181,15 @@ instance Optimize DLLargeArg where
       where
         go (k, v) = (,) k <$> opt v
 
+instance Optimize DLTokenNew where
+  opt (DLTokenNew {..}) = DLTokenNew
+    <$> opt dtn_name
+    <*> opt dtn_sym
+    <*> opt dtn_url
+    <*> opt dtn_metadata
+    <*> opt dtn_supply
+
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -244,6 +253,7 @@ instance Optimize DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
+    DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

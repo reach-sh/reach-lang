@@ -168,6 +168,9 @@ data DLLiteral
   | DLL_Bytes B.ByteString
   deriving (Eq, Generic, Show, Ord)
 
+bytesZeroLit :: Integer -> DLLiteral
+bytesZeroLit k = DLL_Bytes $ B.replicate (fromIntegral k) '\0'
+
 instance Pretty DLLiteral where
   pretty = \case
     DLL_Null -> "null"
@@ -399,11 +402,47 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
 data DLWithBill = DLWithBill
-  { amts_recv :: DLVar
-  , tok_billed :: [DLArg]
-  , tok_not_billed :: [DLArg]
+  { dwb_amts_recv :: DLVar
+  , dwb_tok_billed :: [DLArg]
+  , dwb_tok_not_billed :: [DLArg]
   }
   deriving (Eq, Ord, Show)
+
+tokenNameLen :: Integer
+tokenNameLen = 32
+tokenSymLen :: Integer
+tokenSymLen = 8
+tokenURLLen :: Integer
+tokenURLLen = 32
+tokenMetadataLen :: Integer
+tokenMetadataLen = 32
+
+data DLTokenNew = DLTokenNew
+  { dtn_name :: DLArg
+  , dtn_sym :: DLArg
+  , dtn_url :: DLArg
+  , dtn_metadata :: DLArg
+  , dtn_supply :: DLArg }
+  deriving (Eq, Ord, Show)
+
+defaultTokenNew :: DLTokenNew
+defaultTokenNew = DLTokenNew {..}
+  where
+    dtn_name = b tokenNameLen
+    dtn_sym = b tokenSymLen
+    dtn_url = b tokenURLLen
+    dtn_metadata = b tokenMetadataLen
+    dtn_supply = DLA_Constant $ DLC_UInt_max
+    b = DLA_Literal . bytesZeroLit
+
+instance PrettySubst DLTokenNew where
+  prettySubst (DLTokenNew {..}) =
+    render_objM $ M.fromList $
+      [ (("name"::String), dtn_name)
+      , ("sym", dtn_sym)
+      , ("url", dtn_url)
+      , ("metadata", dtn_metadata)
+      , ("supply", dtn_supply) ]
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
@@ -427,6 +466,7 @@ data DLExpr
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
+  | DLE_TokenNew SrcLoc DLTokenNew
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -448,7 +488,6 @@ instance PrettySubst a => PrettySubst (Maybe a) where
       a' <- prettySubst a
       return $ "Just" <+> a'
     Nothing -> return "Nothing"
-
 
 instance PrettySubst DLExpr where
   prettySubst = \case
@@ -529,6 +568,9 @@ instance PrettySubst DLExpr where
         <> parens as'
         <> ".withBill"
         <> parens nn'
+    DLE_TokenNew _ tns -> do
+      tns' <- prettySubst tns
+      return $ "new Token" <> parens tns'
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -561,6 +603,7 @@ instance IsPure DLExpr where
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
     DLE_Remote {} -> False
+    DLE_TokenNew {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -585,6 +628,7 @@ instance IsLocal DLExpr where
     DLE_MapRef {} -> True
     DLE_MapSet {} -> False
     DLE_Remote {} -> False
+    DLE_TokenNew {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -594,6 +638,7 @@ instance CanDupe DLExpr where
         case e of
           DLE_MapRef {} -> False
           DLE_Remote {} -> False
+          DLE_TokenNew {} -> False
           _ -> True
 
 newtype DLAssignment

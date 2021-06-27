@@ -9,3 +9,7 @@ test-reports/
 package.yaml
 .reach/
 src/Reach/Version.hs
+sol/stdlib.sol
+sol/stdlib_openzep.sol
+sol/*.tar.gz
+sol/openzeppelin-contracts*

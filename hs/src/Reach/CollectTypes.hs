@@ -75,6 +75,14 @@ instance CollectsTypes DLArg where
 instance CollectsTypes DLLargeArg where
   cts a = cts (largeArgTypeOf a)
 
+instance CollectsTypes DLTokenNew where
+  cts (DLTokenNew {..}) =
+    cts dtn_name
+    <> cts dtn_sym
+    <> cts dtn_url
+    <> cts dtn_metadata
+    <> cts dtn_supply
+
 instance CollectsTypes DLExpr where
   cts (DLE_Arg _ a) = cts a
   cts (DLE_LArg _ la) = cts $ largeArgTypeOf la
@@ -97,6 +105,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_MapRef _ _ fa) = cts fa
   cts (DLE_MapSet _ _ fa na) = cts fa <> cts na
   cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
+  cts (DLE_TokenNew _ tns) = cts tns
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

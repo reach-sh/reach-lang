@@ -31,6 +31,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
       , st_after_ctor = True
       , st_after_first = False
       , st_toks = mempty
+      , st_toks_c = mempty
       }
   let sco =
         SLScope
@@ -99,6 +100,7 @@ makeEnv cns = do
           , st_after_first = False
           , st_after_ctor = False
           , st_toks = mempty
+          , st_toks_c = mempty
           }
   let e_sco =
         SLScope

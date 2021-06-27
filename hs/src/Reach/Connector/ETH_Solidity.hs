@@ -299,6 +299,13 @@ readDepth v = do
 addOutputEvent :: DLVar -> Doc -> App ()
 addOutputEvent v d = modifyCtxtIO ctxt_outputs $ M.insert v d
 
+doOutputEvent :: DLVar -> App [Doc]
+doOutputEvent dv = do
+  dv_ty' <- solType $ varType dv
+  let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
+  addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
+  return $ ["emit" <+> go solMemVar ""]
+
 class DepthOf a where
   depthOf :: a -> App Int
 
@@ -325,6 +332,10 @@ instance DepthOf DLLargeArg where
     DLLA_Obj m -> depthOf m
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
+
+instance DepthOf DLTokenNew where
+  depthOf (DLTokenNew {..}) =
+    depthOf [ dtn_name, dtn_sym, dtn_url, dtn_metadata, dtn_supply ]
 
 instance DepthOf DLExpr where
   depthOf = \case
@@ -354,6 +365,7 @@ instance DepthOf DLExpr where
           av :
           net :
           pairList ks <> as
+    DLE_TokenNew _ tns -> add1 $ depthOf tns
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -573,6 +585,7 @@ solExpr sp = \case
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
+  DLE_TokenNew {} -> impossible "tokennew"
   where
     spa m = (<> sp) <$> m
 
@@ -752,10 +765,7 @@ solCom = \case
         let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
         -- Non-network tokens received from remote call
         let nnsub'l = [solSet (solMemVar dv <> ".elem1") nnTokRecv | not (null nonNetTokRecv)]
-        dv_ty' <- solType $ varType dv
-        let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
-        addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
-        let logl = ["emit" <+> go solMemVar ""]
+        logl <- doOutputEvent dv
         case rng_ty of
           T_Null ->
             return $ sub'l <> nnsub'l <> logl
@@ -781,6 +791,18 @@ solCom = \case
           <> setDynamicNonNetTokBals
           <> checkNonNetTokAllowances
           <> pv'
+  DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
+  DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ (DLTokenNew {..})) -> do
+    n' <- solArg dtn_name
+    s' <- solArg dtn_sym
+    u' <- solArg dtn_url
+    m' <- solArg dtn_metadata
+    p' <- solArg dtn_supply
+    let s x = solApply "string" [ solApply "abi.encodePacked" [ x ] ]
+    let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ s n', s s', s u', s m', p' ] ] ]
+    addMemVar dv
+    logl <- doOutputEvent dv
+    return $ vsep $ [ solSet (solMemVar dv) rhs ] <> logl
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la

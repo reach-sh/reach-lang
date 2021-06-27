@@ -1,9 +1,19 @@
-interface IERC20 {
-    function allowance(address owner, address spender) external view returns (uint256);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function balanceOf(address owner) external view returns (uint256);
+contract ReachToken is ERC20 {
+  string private _url;
+  string private _metadata;
+  constructor (
+    string memory name_,
+    string memory symbol_,
+    string memory url_,
+    string memory metadata_,
+    uint256 supply_
+  ) ERC20(name_, symbol_) {
+    _mint(_msgSender(), supply_);
+    _url = url_;
+    _metadata = metadata_;
+  }
+  function url() public view returns (string memory) { return _url; }
+  function metadata() public view returns (string memory) { return _metadata; }
 }
 
 // Generated code includes meaning of numbers

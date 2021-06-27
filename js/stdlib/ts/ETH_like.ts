@@ -95,7 +95,7 @@ type ContractInfo = {
 type Digest = string
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
-export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
+export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
 
 // For when you init the contract with the 1st message
@@ -275,20 +275,31 @@ const stepTime = async (): Promise<TransactionReceipt> => {
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
-const balanceOf = async (acc: Account): Promise<BigNumber> => {
+const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
   const { networkAccount } = acc;
-  if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
-
-  if (networkAccount.getBalance) {
+  if (!networkAccount) {
+    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+  }
+  if ( ! token && networkAccount.getBalance ) {
     return bigNumberify(await networkAccount.getBalance());
   }
-
   const addr = await getAddr(acc);
-  if (addr) {
+  if (! addr) {
+    throw Error(`address missing. Got: ${networkAccount}`);
+  }
+
+  if ( ! token ) {
     const provider = await getProvider();
     return bigNumberify(await provider.getBalance(addr));
+  } else {
+    return await balanceOf_token(networkAccount, addr, token);
   }
-  throw Error(`address missing. Got: ${networkAccount}`);
+};
+
+const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
+  // @ts-ignore
+  const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
+  return await tokCtc["balanceOf"](address);
 };
 
 const doTxn = async (
@@ -340,8 +351,15 @@ const transfer = async (
     return await doTxn(dhead, sender.sendTransaction(txn));
   } else {
     const tokCtc = new ethers.Contract(token, ERC20_ABI, sender);
-    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), undefined);
+    // @ts-ignore
+    const gl = from.getGasLimit ? from.getGasLimit() : undefined;
+    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), gl);
   }
+};
+
+const tokenMetadata = async (token: Token): Promise<any> => {
+  debug(`XXX tokenMetadata`, token);
+  return {};
 };
 
 const ERC20_ABI = [
@@ -406,6 +424,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   let gasLimit:BigNumber;
   const setGasLimit = (ngl:any): void => {
     gasLimit = bigNumberify(ngl); };
+  const getGasLimit = (): BigNumber => gasLimit;
 
   const deploy = (bin: Backend): Contract => {
     ensureConnectorAvailable(bin._Connectors, 'ETH');
@@ -577,11 +596,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const actualCall = async () =>
         await doCall({...dhead, kind:'reach'}, ethersC, funcName, [arg], value, gasLimit);
       const callTok = async (tok:Token, amt:BigNumber) => {
-        // @ts-ignore
-        const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-        const tokBalance = await tokCtc["balanceOf"](address);
+        const tokBalance = await balanceOf_token(networkAccount, address, tok);
         debug({...dhead, kind:'token'}, 'balanceOf', tokBalance);
         assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
+        // @ts-ignore
+        const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
         await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit); }
       const maybePayTok = async (i:number) => {
         if ( i < toks.length ) {
@@ -870,9 +889,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     label = newLabel;
     // @ts-ignore
     return this;
-  }
+  };
 
-  return { deploy, attach, networkAccount, setGasLimit, getAddress: selfAddress, stdlib, setDebugLabel };
+  async function tokenAccept(token:Token): Promise<void> {
+    debug(`tokenAccept: Unnecessary on ETH`, token);
+    return;
+  };
+
+  return { deploy, attach, networkAccount, setGasLimit, getGasLimit, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept };
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {
@@ -1167,6 +1191,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  tokenMetadata,
   reachStdlib,
 };
 return ethLike;

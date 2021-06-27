@@ -16,8 +16,24 @@ package.yaml: package.mo.yaml ../VERSION
 src/Reach/Version.hs: src/Reach/Version.mo.hs ../VERSION
 	(. ../VERSION && export MAJOR MINOR PATCH && mo $< > $@)
 
+OPENZEP=4.1.0
+OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
+sol/v$(OPENZEP).tar.gz:
+	(cd sol && wget $(OPENZEP_URL))
+
+ERC20=sol/openzeppelin-contracts-$(OPENZEP)/contracts/token/ERC20
+$(ERC20)/ERC20.sol: sol/v$(OPENZEP).tar.gz
+	(cd sol && tar xzvf v$(OPENZEP).tar.gz)
+	touch $@
+
+sol/stdlib_openzep.sol: $(ERC20)/ERC20.sol sol/stdlib_openzep.sol.sh
+	ERC20=$(ERC20) sol/stdlib_openzep.sol.sh $@
+
+sol/stdlib.sol: sol/stdlib_openzep.sol sol/stdlib_reach.sol
+	cat $^ > $@
+
 .PHONY: stack
-stack: package.yaml src/Reach/Version.hs
+stack: package.yaml src/Reach/Version.hs sol/stdlib.sol
 
 .PHONY: clean
 clean: hs-clean
