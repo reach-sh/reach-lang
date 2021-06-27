@@ -4,7 +4,7 @@
 @(define TAG "workshop-battleship")
 @title[#:version reach-vers #:tag TAG]{Workshop: Battleship}
 
-In this workshop we'll design an application that allows users to wager against each other in a game of Battleships. This is
+In this workshop we'll design an application that allows users to wager against each other in a game of Battleship. This is
 a simplified version of Battleship where each player takes one turn to select their ship locations and one more turn to guess
 where their opponent has placed their ships.
 
@@ -32,7 +32,8 @@ You should write your answers in your Reach program (@tt{index.rsh}) using a com
 Let's see how your answers compare to our answers:
 
 @itemlist[
-  @item{This program involves 2 parties: The Deployer (Alice) who sets the wager and deploys the contract and the Attacher (Bob) who attaches to the contract and accepts the wager.}
+  @item{This program involves 2 parties: The Deployer (Alice) who sets the wager and deploys the contract and the
+    Attacher (Bob) who attaches to the contract and accepts the wager.}
   @item{The game starts by Alice placing a wager and deploying the contract. The contract info is returned to Alice to share with Bob.}
   @item{Bob uses the contract provided by Alice to attach to the contract.}
   @item{Bob can choose to accept the wager or timeout and end the game.}
@@ -40,16 +41,17 @@ Let's see how your answers compare to our answers:
   @item{Bob selects where to place his ships.}
   @item{Alice selects where she thinks Bob placed his ships.}
   @item{Bob selects where he thinks Alice placed her ships.}
-  @item{The number of correct guesses each has made on the location of thier opponent's ships is counted and either a winner is determined or a draw occurts.}
+  @item{The number of correct guesses each has made on the location of thier opponent's ships is counted and either
+    a winner is determined or a draw occurs and game starts over at ship selection.}
 ]
 
 @(drstep-dd TAG)
 
-The data type representation of this program will be very similar to the Rock Paper Scissors tutorial. The only major difference will be that the interaction interface method getHand
-will take an input of a Uint Array instead of just a Uint. We will also need 2 interaction methods, one for taking the user's ships location selections and one for taking
-the ship location guesses.
+The data type representation of this program will be very similar to the Rock Paper Scissors tutorial. The only major difference
+will be that the interaction interface method @tech{getHand()} will take an input of a Uint Array instead of just a Uint. We will
+also need 2 interaction methods, one for taking the user's ship locations and one for taking guesses for their opponent's ship locations.
 
-Take a moment to construct the interaction interface for the participants yourself before looking at our answers.
+Take a moment to construct the interaction interface for the participants yourself before looking at my answers.
 
 @(drstep-dd-stop)
 
@@ -59,25 +61,24 @@ However, we can still write a program that is generic in the size of the array, 
 specialize it when we compile.
 }
 
-Let's start with defining the player objects. If you've already completed the Rock Paper Scissors tutorial, much of this should be familiar already.
-Starting with the player object, we have a few methods that again should be familiar to you. If not, let's break it down and see what's going on.
+Let's start with defining the player objects. If you've already completed the Rock Paper Scissors tutorial, much of this should be familiar to you already.
 First we have the hasRandom interface being added. This is primarily used to allow encryption on the backend as the backend now expects the frontend
-to provide for random.
+to provide for randomness.
 
-The next few, seeOutcome and informTimeout are both used to notify the players when a certain event occurs. seeOutcome is used to return the outcome of the game to both players.
-It return an unsigned integer to the frontend as the outcome of the game. The next interface method, informTimout, is used to notify the player when their opponent has not responded
-to the game on time. This is necessary to avoid losing fund if someone drops out from the game. I have added the DEADLINE constant to this portion of the example to point out that
+The next few, @tech{seeOutcome} and @tech{informTimeout} are both used to notify the players when a certain event occurs. @tech{seeOutcome} is used to return the outcome of the game to both players.
+It returns an unsigned integer to the frontend as the outcome of the game. The next interface method, informTimout, is used to notify the player when their opponent has not responded
+to the game in time. This is necessary to avoid losing funds if someone drops out from the game. I have added the DEADLINE constant to this portion of the example to point out that
 the constant is not used until later in the program.
 
-Now for the more interesting part of the application and the portion that deviated from the tutorial. The selectShips and guessShips interface methods are very similar to getHand
-however you may notice that instead of requesting an unsigned integer from the frontend, they are instead requesting and array of unsigned integers. selectShips is used to 
-return an array from user input on where they user would like to place their ships. The guessShips methods again takes an array from the user which is then used to check how many
+Now for the more interesting part of the application and the portion that deviated from the tutorial. The @tech{selectShips} and @tech{guessShips} interface methods are very similar to @tech{getHand}
+however you may notice that instead of requesting an unsigned integer from the frontend, they are instead requesting an array of unsigned integers. @tech{selectShips} is used to 
+return an array from the user's input on where the user would like to place their ships. The @tech{guessShips} methods again takes an array from the user which is then be used to check how many
 of their selected locations matches where their opponent selected to place their ships.
 
 Looking at the deployer and the attacher we can see a key difference. The Deployer stores a wager variable within it's object which is inputted when the contract is being deployed.
-The Attacher on the other hand has an interface method acceptWager which returns the wager amount set by the Deployer.
+The Attacher on the other hand has an interface method @tech{acceptWager} which returns the wager amount set by the Deployer.
 
-Our @tech{participant interact interface}, with the addition of some handy logging functions, looks like this so far:
+My @tech{participant interact interface} looks like:
 
 @reachex[#:show-lines? #t "workshop-battleship/index.rsh"
          #:link #t
@@ -90,7 +91,7 @@ We should write down this structure as comments in our program to serve as an ou
 
 @(drstep-cc-stop1)
 
-Here's what we wrote for our outline:
+Here's what I wrote for my outline:
 
 @reach{
   // 1. The deployer deploys the contract and sets the wager.
@@ -229,12 +230,12 @@ export const main = Reach.App(
 }
 
 The overall functionality of application is fairly similar to how Rock Paper Scissors is implemented. The main difference being that
-instead of the getHand() method, we have selectShips() and guessShips(). Both of these methods take an input of an array of unsigned integer
+instead of the @tech{getHand} method, we have @tech{selectShips} and @tech{guessShips}. Both of these methods take an input of an array of unsigned integer
 instead of just an unsigned integer. Another thing to note is that we only have to encrypt the selected ship locations since the outcome
-of the game can't by altered if both players know where each selected their guesses.
+of the game can't be altered if both players know where each selected their guesses.
 
-The portion used to calculate the outcome of the game is also a deviation from Rock Paper Scissors since we need to compare 2 array. For the
-outcome to be determined we need to compare the array of A's ship selection to B's guesses and vice versa. Looking at the code above, it's clear
+The portion used to calculate the outcome of the game is also a deviation from Rock Paper Scissors since we need to compare 2 arrays. For the
+outcome to be determined we need to compare the array of A's ship selections to B's guesses and vice-versa. Looking at the code above, it's clear
 that I've opted to manually compare the arrays of all 9 entries. I had originally started with a while loop, iterating over the entries and
 comparing the selections to the guesses, however, this proved to be very inefficient and slow since either A or B must publish within the
 while loop.
