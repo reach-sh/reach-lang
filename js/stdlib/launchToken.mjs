@@ -1,13 +1,13 @@
 // TODO: migrate this file to .ts
 import * as stdlib_loader from './loader.mjs';
-import ETHcompiled from './token.sol.mjs';
+import ETHstdlib from './stdlib_sol';
 import algosdk from 'algosdk';
 import real_ethers from 'ethers';
 import * as cfxers from './cfxers.mjs';
 // import type { EthersLike } from './ETH_like_interfaces';
 
 export default async function (name, sym) {
-  // XXX update this to work in browser (process.env not directly available to libs)
+  // NOTE This does not work in the browser, because process.env not directly available to libs; but we don't care because this is just for testing
   const stdlib = await stdlib_loader.loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
@@ -15,29 +15,24 @@ export default async function (name, sym) {
   const accCreator = await stdlib.newTestAccount(startingBalance);
 
   const ETH_like_launchToken = async (ethers /*: EthersLike */) => {
-    const remoteCtc = ETHcompiled["contracts"]["contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser"];
+    const addr = (acc) => acc.networkAccount.address;
+    const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
     const remoteABI = remoteCtc["abi"];
     const remoteBytecode = remoteCtc["bin"];
     const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
     console.log(`${sym}: deploy`);
-    const contract = await factory.deploy(name, sym);
+    const supply = ethers.BigNumber.from(2).pow(256).sub(1);
+    const contract = await factory.deploy(name, sym, [], [], supply);
     console.log(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
     const deploy_r = await contract.deployTransaction.wait();
     console.log(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
     const id = contract.address;
     console.log(`${sym}: deployed: ${id}`);
     const mint = async (accTo, amt) => {
-      const to = accTo.networkAccount.address;
-      console.log(`${sym}: minting ${amt} ${sym} for ${to}`);
-      const fn = await contract["mint"](to, amt);
-      console.log(`${sym}: mint: wait`);
-      await fn.wait();
+      console.log(`${sym}: minting ${amt} ${sym} for ${addr(accTo)}`);
+      await stdlib.transfer(accCreator, accTo, amt, id);
     };
-    const balanceOf = async (acc) => {
-      const addr = acc.networkAccount.address;
-      return await contract["balanceOf"](addr);
-    };
-    return { name, sym, id, mint, balanceOf };
+    return { name, sym, id, mint };
   };
 
   const ETH_launchToken = async () => {
@@ -85,18 +80,7 @@ export default async function (name, sym) {
             0, undefined, id, params
           ), accFrom);
       };
-      const balanceOf = async (accFrom) => {
-        const taddr = addr(accFrom);
-        console.log(`${sym}: balanceOf of ${taddr}`);
-        const {assets} = await algod.accountInformation(taddr).do();
-        for ( const ai of assets ) {
-          if ( ai['asset-id'] === id ) {
-            return ai['amount'];
-          }
-        }
-        return false;
-      };
-      return { name, sym, id, mint, balanceOf, optOut };
+      return { name, sym, id, mint, optOut };
   };
   const launchTokens = {
     'ETH': ETH_launchToken,

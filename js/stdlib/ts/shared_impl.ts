@@ -201,6 +201,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   getAddress: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
+  tokenMetadata: (token: Token) => Promise<any>,
 }
 
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any, any> | {

@@ -60,7 +60,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   console.log(`\nStarting auction of ${fmt(amtA)} ${zorkmid.sym} for ${gil.sym}`);
 
   const getBalance = async (tokenX, who) => {
-    const amt = await tokenX.balanceOf(who);
+    const amt = await stdlib.balanceOf(who, tokenX.id);
     return `${fmt(amt)} ${tokenX.sym}`; };
 
   const getBalances = async (who) =>

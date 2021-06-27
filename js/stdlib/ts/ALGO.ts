@@ -875,11 +875,6 @@ export {getFaucet, setFaucet};
 
 const NOTE_Reach = new Uint8Array(Buffer.from(`Reach ${VERSION}`));
 
-export const tokenMetadata = async (token:Token): Promise<any> => {
-  debug(`XXX tokenMetadata`, token);
-  return {};
-};
-
 const makeTransferTxn = (
   from: Address,
   to: Address,
@@ -1655,16 +1650,31 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     // @ts-ignore
     await transfer(this, this, 0, token);
   };
+  const tokenMetadata = async (token:Token): Promise<any> => {
+    debug(`XXX tokenMetadata`, token);
+    return {};
+  };
 
-  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel, tokenAccept };
+  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel, tokenAccept, tokenMetadata };
 };
 
-export const balanceOf = async (acc: Account): Promise<BigNumber> => {
+export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
   const { networkAccount } = acc;
-  if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
+  if (!networkAccount) { 
+    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+  }
   const client = await getAlgodClient();
-  const {amount} = await client.accountInformation(networkAccount.addr).do();
-  return bigNumberify(amount);
+  const info = await client.accountInformation(networkAccount.addr).do();
+  if ( ! token ) {
+    return bigNumberify(info.amount);
+  } else {
+    for ( const ai of info.assets ) {
+      if ( ai['asset-id'] === token ) {
+        return ai['amount'];
+      }
+    }
+    return bigNumberify(0);
+  }
 };
 
 
