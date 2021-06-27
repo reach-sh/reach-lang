@@ -47,6 +47,9 @@ instance Sanitize DLLargeArg where
       where
         go (k, v) = (,) k (sani v)
 
+instance Sanitize DLTokenNew where
+  sani (DLTokenNew {..}) = DLTokenNew (sani dtn_name) (sani dtn_sym) (sani dtn_url) (sani dtn_metadata) (sani dtn_supply)
+
 instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
@@ -70,6 +73,7 @@ instance Sanitize DLExpr where
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
     DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) wbill
+    DLE_TokenNew _ tns -> DLE_TokenNew sb (sani tns)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

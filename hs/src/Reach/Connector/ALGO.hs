@@ -293,7 +293,7 @@ nop :: App ()
 nop = return ()
 
 padding :: Integer -> App ()
-padding k = cl $ DLL_Bytes $ B.replicate (fromIntegral k) '\0'
+padding = cl . bytesZeroLit
 
 app_global_get :: B.ByteString -> App ()
 app_global_get k = do
@@ -926,6 +926,7 @@ ce = \case
     cla $ mdaToMaybeLA t mva
     cMapSet mpv
   DLE_Remote {} -> xxx "remote objects"
+  DLE_TokenNew {} -> xxx "token creation"
   where
     show_stack msg at fs = do
       comment $ texty msg

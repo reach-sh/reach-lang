@@ -123,5 +123,6 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   minimumBalance: any
   formatCurrency: any
   formatAddress: any
+  tokenMetadata: any
   reachStdlib: Stdlib_Backend<Ty>
 }

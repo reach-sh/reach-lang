@@ -52,6 +52,14 @@ instance Subst DLPayAmt where
       DLPayAmt <$> subst net
         <*> mapM (\(amt, ty) -> (,) <$> subst amt <*> subst ty) ks
 
+instance Subst DLTokenNew where
+  subst (DLTokenNew {..}) = DLTokenNew
+    <$> subst dtn_name
+    <*> subst dtn_sym
+    <*> subst dtn_url
+    <*> subst dtn_metadata
+    <*> subst dtn_supply
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -75,6 +83,7 @@ instance Subst DLExpr where
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
+    DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
 
 instance Subst DLStmt where
   subst = \case

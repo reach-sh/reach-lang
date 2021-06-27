@@ -999,6 +999,8 @@ smt_e at_dv mdv de = do
       smtMapUpdate at mpv fa mna
     DLE_Remote at _ _ _ _ _ _ ->
       unbound at
+    DLE_TokenNew at _XXX_tns ->
+      unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

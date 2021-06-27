@@ -193,16 +193,17 @@ export const deferContract =
   };
 };
 
-export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
+export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
   attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => Contract,
   stdlib: Object,
   getAddress: () => string,
-  setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo>,
+  setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
+  tokenAccept: (token: Token) => Promise<void>,
 }
 
-export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {
+export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any, any> | {
   networkAccount: NetworkAccount,
 }
 

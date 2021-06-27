@@ -412,6 +412,7 @@ jsExpr = \case
         return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
       JM_View -> impossible "view mapset"
   DLE_Remote {} -> impossible "remote"
+  DLE_TokenNew {} -> impossible "tokennew"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -428,21 +429,43 @@ jsEmitSwitch iter _at ov csm = do
   csm' <- mapM cm1 $ M.toAscList csm
   return $ "switch" <+> parens (ov' <> "[0]") <+> jsBraces (vsep csm')
 
+doGetOutput :: AppT DLVar
+doGetOutput dv = do
+  dv' <- jsVar dv
+  txn' <- jsTxn
+  dvt' <- jsContract $ varType dv
+  jsConstDefn dv $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes dv', dvt']
+
+jsConstDefn :: DLVar -> Doc -> App Doc
+jsConstDefn dv rhs = do
+  dv' <- jsVar dv
+  return $ "const" <+> dv' <+> "=" <+> rhs <> semi
+
 jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote {}) ->
-    case pv of
-      DLV_Eff -> mempty
-      DLV_Let _ dv -> do
-        dv' <- jsVar dv
-        txn' <- jsTxn
-        dvt' <- jsContract $ varType dv
-        return $ "const" <+> dv' <+> "=" <+> "await" <+> txn' <> "." <> jsApply "getOutput" [squotes dv', dvt']
+  DL_Let _ DLV_Eff (DLE_Remote {}) -> mempty
+  DL_Let _ (DLV_Let _ dv) (DLE_Remote at fs _av _f _pa _as _ba) ->
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> doGetOutput dv
+      JM_View -> impossible "view remote"
+      JM_Simulate -> do
+        jsConstDefn dv =<< jsExpr (DLE_Claim at fs CT_Require (DLA_Literal $ DLL_Bool False) (Just $ "cannot simulate remote objects"))
+  DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
+  DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ tns) -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> doGetOutput dv
+      JM_View -> impossible "view output"
+      JM_Simulate -> do
+        let DLTokenNew {..} = tns
+        n' <- jsArg dtn_name
+        s' <- jsArg dtn_sym
+        u' <- jsArg dtn_url
+        m' <- jsArg dtn_metadata
+        p' <- jsArg dtn_supply
+        jsConstDefn dv $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p' ]
   DL_Let _ (DLV_Let _ dv) de -> do
-    dv' <- jsVar dv
-    de' <- jsExpr de
-    return $ "const" <+> dv' <+> "=" <+> de' <> semi
+    jsConstDefn dv =<< jsExpr de
   DL_Let _ DLV_Eff de -> do
     de' <- jsExpr de
     return $ de' <> semi

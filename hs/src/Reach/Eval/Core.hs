@@ -1108,6 +1108,10 @@ evalAsEnv obj = case obj of
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
+  SLV_Type ST_Token ->
+    return $
+      M.fromList $
+        [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new) ]
   SLV_Prim SLPrim_Struct -> return structValueEnv
   SLV_Type (ST_Struct ts) ->
     return $
@@ -1844,12 +1848,17 @@ doFluidRef_dv fv = do
 doFluidRef :: FluidVar -> App SLSVal
 doFluidRef fv = (public . SLV_DLVar) <$> doFluidRef_dv fv
 
+doFluidSet_ :: FluidVar -> DLArg -> App ()
+doFluidSet_ fv da = do
+  at <- withAt id
+  typeEq (fluidVarType fv) (argTypeOf da)
+  saveLift $ DLS_FluidSet at fv da
+
 doFluidSet :: FluidVar -> SLSVal -> App ()
 doFluidSet fv ssv = do
-  at <- withAt id
   sv <- ensure_public ssv
   da <- compileCheckType (fluidVarType fv) sv
-  saveLift $ DLS_FluidSet at fv da
+  doFluidSet_ fv da
 
 lookupBalanceFV :: HasCallStack => Maybe DLArg -> App FluidVar
 lookupBalanceFV mtok = do
@@ -1865,11 +1874,15 @@ lookupBalanceFV mtok = do
       _ -> bad
   return $ FV_balance i
 
+doBalanceInit_ :: Maybe DLArg -> DLArg -> App ()
+doBalanceInit_ mtok amta = do
+  b <- lookupBalanceFV mtok
+  doFluidSet_ b amta
+
 doBalanceInit :: Maybe DLArg -> App ()
 doBalanceInit mtok = do
   at <- withAt id
-  b <- lookupBalanceFV mtok
-  doFluidSet b $ public $ SLV_Int at 0
+  doBalanceInit_ mtok (DLA_Literal $ DLL_Int at 0)
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
 doBalanceAssert mtok lhs op msg = do
@@ -1967,6 +1980,32 @@ typeOfBytes v = do
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
+    SLPrim_Token_new -> do
+      at <- withAt id
+      metam <- mustBeObject =<< one_arg
+      metam' <- mapM (ensure_public . sss_sls) metam
+      let go tns (k, v) = case k of
+            "name" -> bytes (\x -> tns { dtn_name = x}) tokenNameLen
+            "symbol" -> bytes (\x -> tns { dtn_sym = x}) tokenSymLen
+            "url" -> bytes (\x -> tns { dtn_url = x}) tokenURLLen
+            "metadata" -> bytes (\x -> tns { dtn_metadata = x}) tokenMetadataLen
+            "supply" -> do
+              a <- compileCheckType T_UInt v
+              return $ tns { dtn_supply = a }
+            _ -> expect_ $ Err_TokenNew_InvalidKey k
+            where
+              bytes u len = u <$> compileCheckType (T_Bytes len) v
+      tns <- foldM go defaultTokenNew (M.toAscList metam')
+      ensure_mode SLM_ConsensusStep "new Token"
+      tokdv <- ctxt_lift_expr (DLVar at Nothing T_Token) $
+        DLE_TokenNew at tns
+      st <- readSt id
+      setSt $ st
+        { st_toks = st_toks st <> [ tokdv ]
+        , st_toks_c = st_toks_c st <> [ tokdv ] }
+      let supplya = dtn_supply tns
+      doBalanceInit_ (Just $ DLA_Var tokdv) supplya
+      return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       at <- withAt id
       v <- one_arg
@@ -4281,7 +4320,7 @@ doExit = do
   let zero = SLV_Int at 0
   let one mtok = doBalanceAssert mtok zero PEQ "balance zero at application exit"
   one Nothing
-  mapM_ (one . Just . DLA_Var) =<< readSt st_toks
+  mapM_ (one . Just . DLA_Var) =<< readSt st_toks'
   saveLift $ DLS_Stop at
   st <- readSt id
   setSt $ st {st_live = False}

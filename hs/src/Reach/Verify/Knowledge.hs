@@ -135,14 +135,25 @@ knows ctxt from tos = do
   let tons = S.union tos (ctxt_back_ptrs ctxt)
   mapM_ (know1 ctxt from) $ S.toList tons
 
-all_points :: DLArg -> S.Set Point
-all_points = \case
-  DLA_Var v -> S.singleton $ P_Var v
-  DLA_Constant _ -> S.singleton $ P_Con
-  DLA_Literal _ -> S.singleton $ P_Con
-  DLA_Interact who what _ -> S.singleton $ P_Interact who what
+class AllPoints a where
+  all_points :: a -> S.Set Point
 
-kgq_a_all :: KCtxt -> DLArg -> IO ()
+instance AllPoints DLArg where
+  all_points = \case
+    DLA_Var v -> S.singleton $ P_Var v
+    DLA_Constant _ -> S.singleton $ P_Con
+    DLA_Literal _ -> S.singleton $ P_Con
+    DLA_Interact who what _ -> S.singleton $ P_Interact who what
+
+instance AllPoints DLTokenNew where
+  all_points (DLTokenNew {..}) =
+    all_points dtn_name
+    <> all_points dtn_sym
+    <> all_points dtn_url
+    <> all_points dtn_metadata
+    <> all_points dtn_supply
+
+kgq_a_all :: AllPoints a => KCtxt -> a -> IO ()
 kgq_a_all ctxt a =
   mapM_ (flip (knows ctxt) (all_points a)) $ map P_Part (ctxt_ps ctxt)
 
@@ -222,6 +233,8 @@ kgq_e ctxt mv = \case
   DLE_Remote _ _ av _ pamt as _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
+  DLE_TokenNew _ tns ->
+    kgq_a_all ctxt tns
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

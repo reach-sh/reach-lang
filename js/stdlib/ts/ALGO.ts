@@ -162,7 +162,7 @@ type ContractInfo = {
 type Digest = BigNumber
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
-type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>
+type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
 type SimTxn = ISimTxn<Token>
 
@@ -873,10 +873,12 @@ const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
 
 export {getFaucet, setFaucet};
 
-// XXX AlgoSigner doesn't correctly handle msgpacked notes
-// When it does: update {,un}clean_for_AlgoSigner
-// const note = algosdk.encodeObj('Reach');
 const NOTE_Reach = new Uint8Array(Buffer.from(`Reach ${VERSION}`));
+
+export const tokenMetadata = async (token:Token): Promise<any> => {
+  debug(`XXX tokenMetadata`, token);
+  return {};
+};
 
 const makeTransferTxn = (
   from: Address,
@@ -1647,8 +1649,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     // @ts-ignore
     return this;
   }
+  
+  async function tokenAccept(token:Token): Promise<void> {
+    debug(`tokenAccept`, token);
+    // @ts-ignore
+    await transfer(this, this, 0, token);
+  };
 
-  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel };
+  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel, tokenAccept };
 };
 
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {

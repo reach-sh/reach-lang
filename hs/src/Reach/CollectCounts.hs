@@ -102,6 +102,14 @@ instance Countable DLLargeArg where
     DLLA_Data _ _ v -> counts v
     DLLA_Struct kvs -> counts $ map snd kvs
 
+instance Countable DLTokenNew where
+  counts (DLTokenNew {..}) =
+    counts dtn_name
+    <> counts dtn_sym
+    <> counts dtn_url
+    <> counts dtn_metadata
+    <> counts dtn_supply
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -125,6 +133,7 @@ instance Countable DLExpr where
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
     DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
+    DLE_TokenNew _ tns -> counts tns
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
