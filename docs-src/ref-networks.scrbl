@@ -21,6 +21,7 @@ Its @tech{bit width} is 256-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
 Specifically, the @reachin{Token} type refers to the address of the ERC-20 contract.
+@tech{Token minting} launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned.)
 
 @tech{Views} are compiled to @litchar{view} functions.
 A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
@@ -73,6 +74,7 @@ For example, if a program has a @tech{consensus step} where Alice will receive 1
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
 You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
+@tech{Token minting} is not supported on Algorand.
 
 @tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
 This means they are sensitive to the particular compilation details of the particular Reach program.

@@ -223,16 +223,31 @@ Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{a
 @index{acc.setDebugLabel} An @tech{account} may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the @tech{account} address will be used.
 
 @(hrule)
+@(mint-define! '("tokenAccept"))
+@js{
+  acc.tokenAccept(token) => Promise<void>}
+
+@index{acc.tokenAccept} Returns a Promise that completes when the Reach @tech{account} abstraction is ready to accept @tech{non-network tokens} specified by the @jsin{token}.
+This does nothing on some @tech{consensus networks}, but should always be used to ensure your frontend is blockchain agnostic.
+
+@(hrule)
+@(mint-define! '("tokenMetadata"))
+@js{
+  acc.tokenMetadata(token) => Promise<object>}
+
+@index{acc.tokenMetadata} Returns a Promise of the metadata for a @tech{non-network tokens} specified by the @jsin{token}.
+
+@(hrule)
 @(mint-define! '("balanceOf"))
 @js{
- balanceOf(acc) => Promise<amount> }
+ balanceOf(acc, token?) => Promise<amount> }
 
-Returns a Promise for the balance of @tech{network tokens} held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
+Returns a Promise for the balance of @tech{network tokens} (or @tech{non-network tokens} if @jsin{token} is provided) held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
 
 @(hrule)
 @(mint-define! '("transfer"))
 @js{
- transfer(from:acc, to:acc, amount, token) => Promise<void> }
+ transfer(from:acc, to:acc, amount, token?) => Promise<void> }
 
 Performs a transfer of @jsin{amount} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
