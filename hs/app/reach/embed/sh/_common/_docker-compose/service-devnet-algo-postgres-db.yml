@@ -1,6 +1,0 @@
-algorand-postgres-db:
-  image: postgres:11-alpine
-  environment:
-    - POSTGRES_USER=algogrand
-    - POSTGRES_PASSWORD=indexer
-    - POSTGRES_DB=pgdb

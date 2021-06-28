@@ -1,3 +1,10 @@
+algorand-postgres-db:
+  image: postgres:11-alpine
+  environment:
+    - POSTGRES_USER=algogrand
+    - POSTGRES_PASSWORD=indexer
+    - POSTGRES_DB=pgdb
+
 algorand-devnet:
   image: reachsh/algorand-devnet:${REACH_VERSION}
   depends_on:
