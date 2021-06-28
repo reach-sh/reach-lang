@@ -74,6 +74,7 @@ export const main = Reach.App(() => {
   A.publish();
   doTransfer(tok2);
   tok2.burn(/* defaults to all */);
+  tok2.destroy();
   commit();
 
   exit();

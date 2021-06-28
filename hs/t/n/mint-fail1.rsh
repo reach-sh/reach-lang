@@ -62,7 +62,6 @@ export const main = Reach.App(() => {
   A.pay([[2*amt, tok1]]);
   commit();
   B.pay([[2*amt, tok1]]);
-  tok1.burn(supply);
   tok1.destroy();
 
   const md2 = {name, symbol};
