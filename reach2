@@ -20,7 +20,7 @@ run_s () {
 }
 
 if ! (which make docker docker-compose >/dev/null 2>&1); then
-  echo "Reach relies on an installation of make, docker, and docker-compose"
+  echo "Reach relies on an installation of make, docker, and docker-compose."
   exit 1
 fi
 
