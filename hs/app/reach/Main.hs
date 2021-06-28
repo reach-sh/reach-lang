@@ -78,10 +78,9 @@ _runSubScript a e = readIORef (e_effect e) >>= \case
 --------------------------------------------------------------------------------
 serviceConnector :: FilePath -> Env -> T.Text -> [T.Text] -> IO T.Text
 serviceConnector name Env {..} rv ports = do
-  let indentPorts = "  "
   let ports' = case ports of
-        [] -> indentPorts <> "[]"
-        ps -> T.unlines $ map ((indentPorts <> "- ") <>) ps
+        [] -> "[]"
+        ps -> T.intercalate "\n" $ map ("- " <>) ps
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> name <> ".yml"
@@ -93,11 +92,7 @@ serviceConnector name Env {..} rv ports = do
 
 
 serviceDevnetAlgo :: Env -> T.Text -> [T.Text] -> IO T.Text
-serviceDevnetAlgo env rv ports = do
-  dn <- serviceConnector "devnet-algo" env rv ports
-  db <- serviceConnector "devnet-algo-postgres-db" env rv ports
-  pure $ dn <> db
-
+serviceDevnetAlgo = serviceConnector "devnet-algo"
 
 serviceDevnetCfx :: Env -> T.Text -> [T.Text] -> IO T.Text
 serviceDevnetCfx = serviceConnector "devnet-cfx"
@@ -110,21 +105,23 @@ serviceDevnetEth = serviceConnector "devnet-eth"
 -- TODO dynamic `appService'` definition
 mkComposeYml :: T.Text -> T.Text -> [T.Text] -> T.Text
 mkComposeYml appService' appImageTag' svs =
-  let svs' = T.intercalate "" svs
-   in [N.text|
-      version: '3.4'
-      services:
-        $svs'
+  f [N.text|
+     version: '3.4'
+     services:
+       $svs'
 
-        $appService':
-          image: $appImageTag'
-          depends_on:
-            - ethereum-devnet
-          environment:
-            - REACH_DEBUG
-            - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
-            - ETH_NODE_URI=http://ethereum-devnet:8545
-      |]
+       $appService':
+         image: $appImageTag'
+         depends_on:
+           - ethereum-devnet
+         environment:
+           - REACH_DEBUG
+           - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+           - ETH_NODE_URI=http://ethereum-devnet:8545
+    |]
+ where
+  svs' = T.intercalate "\n" svs
+  f = T.intercalate "\n" . fmap T.stripEnd . T.lines
 
 
 --------------------------------------------------------------------------------
