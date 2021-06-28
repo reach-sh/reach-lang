@@ -62,7 +62,7 @@ export const main = Reach.App(() => {
   A.pay([[2*amt, tok1]]);
   commit();
   B.pay([[2*amt, tok1]]);
-  tok1.burn(supply);
+  tok1.burn(supply); // <- fails if removed
   tok1.destroy();
 
   const md2 = {name, symbol};
@@ -74,6 +74,7 @@ export const main = Reach.App(() => {
   A.publish();
   doTransfer(tok2);
   tok2.burn(/* defaults to all */);
+  // tok2.destroy(); // <- fails
   commit();
 
   exit();

@@ -854,6 +854,7 @@ instance Pretty a => Pretty (DLRecv a) where
 
 data FluidVar
   = FV_balance Int
+  | FV_supply Int
   | FV_thisConsensusTime
   | FV_lastConsensusTime
   deriving (Eq, Generic, Ord, Show)
@@ -861,12 +862,14 @@ data FluidVar
 instance Pretty FluidVar where
   pretty = \case
     FV_balance i -> "balance" <> parens (pretty i)
+    FV_supply i -> "supply" <> parens (pretty i)
     FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
   FV_balance _ -> T_UInt
+  FV_supply _ -> T_UInt
   FV_thisConsensusTime -> T_UInt
   FV_lastConsensusTime -> T_UInt
 
@@ -876,6 +879,7 @@ allFluidVars bals =
   , FV_lastConsensusTime
   ]
     <> map FV_balance [0 .. (bals + 1)]
+    <> map FV_supply [0 .. (bals + 1)]
 
 class HasCounter a where
   getCounter :: a -> Counter

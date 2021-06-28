@@ -1871,7 +1871,10 @@ doFluidSet fv ssv = do
   doFluidSet_ fv da
 
 lookupBalanceFV :: HasCallStack => Maybe DLArg -> App FluidVar
-lookupBalanceFV mtok = do
+lookupBalanceFV = lookupBalanceFV_ FV_balance
+
+lookupBalanceFV_ :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
+lookupBalanceFV_ fv mtok = do
   toks <- readSt st_toks
   let bad = expect_ $ Err_Token_DynamicRef
   i <-
@@ -1882,7 +1885,7 @@ lookupBalanceFV mtok = do
           Nothing -> bad
           Just x -> return $ 1 + x
       _ -> bad
-  return $ FV_balance i
+  return $ fv i
 
 ensureCreatedToken :: String -> DLArg -> App ()
 ensureCreatedToken lab a = do
@@ -1894,21 +1897,24 @@ ensureCreatedToken lab a = do
         False -> expect_ $ Err_Token_NotCreated lab
     _ -> expect_ $ Err_Token_DynamicRef
 
-doBalanceInit_ :: Maybe DLArg -> DLArg -> App ()
-doBalanceInit_ mtok amta = do
-  b <- lookupBalanceFV mtok
+doBalanceInit_ :: (Int -> FluidVar) -> Maybe DLArg -> DLArg -> App ()
+doBalanceInit_ fv mtok amta = do
+  b <- lookupBalanceFV_ fv mtok
   doFluidSet_ b amta
 
 doBalanceInit :: Maybe DLArg -> App ()
 doBalanceInit mtok = do
   at <- withAt id
-  doBalanceInit_ mtok (DLA_Literal $ DLL_Int at 0)
+  doBalanceInit_ FV_balance mtok (DLA_Literal $ DLL_Int at 0)
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
-doBalanceAssert mtok lhs op msg = do
+doBalanceAssert = doBalanceAssert_ FV_balance
+
+doBalanceAssert_ :: (Int -> FluidVar) -> Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
+doBalanceAssert_ fv mtok lhs op msg = do
   at <- withAt id
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
-  b <- lookupBalanceFV mtok
+  b <- lookupBalanceFV_ fv mtok
   balance_v <- doFluidRef b
   cmp_v <- evalApplyVals' cmp_rator [balance_v]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
@@ -1917,10 +1923,13 @@ doBalanceAssert mtok lhs op msg = do
       [cmp_v, public $ SLV_Bytes at msg]
 
 doBalanceUpdate :: Maybe DLArg -> PrimOp -> SLVal -> App ()
-doBalanceUpdate mtok op rhs = do
+doBalanceUpdate = doBalanceUpdate_ FV_balance
+
+doBalanceUpdate_ :: (Int -> FluidVar) -> Maybe DLArg -> PrimOp -> SLVal -> App ()
+doBalanceUpdate_ fv mtok op rhs = do
   at <- withAt id
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
-  b <- lookupBalanceFV mtok
+  b <- lookupBalanceFV_ fv mtok
   balance_v <- doFluidRef b
   balance_v' <- evalApplyVals' up_rator [balance_v]
   doFluidSet b balance_v'
@@ -2015,7 +2024,11 @@ evalPrim p sargs =
           Just v -> compileCheckType T_UInt v
           Nothing -> doFluidRef_da =<< lookupBalanceFV (Just toka)
       ensure_mode SLM_ConsensusStep lab
-      tokenPay (Just toka) amta $ bpack lab
+      let mtok_a = Just toka
+      amt_sv <- argToSV amta
+      doBalanceAssert mtok_a amt_sv PLE (bpack lab)
+      doBalanceUpdate mtok_a SUB amt_sv
+      doBalanceUpdate_ FV_supply mtok_a SUB amt_sv
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
@@ -2024,7 +2037,7 @@ evalPrim p sargs =
       let lab = "Token.destroy"
       ensureCreatedToken lab toka
       ensure_mode SLM_ConsensusStep lab
-      doBalanceAssert (Just toka) (SLV_Int at 0) PEQ $ bpack $ "token balance zero at " <> lab
+      doBalanceAssert_ FV_supply (Just toka) (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
       return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
@@ -2043,6 +2056,7 @@ evalPrim p sargs =
             where
               bytes u len = u <$> compileCheckType (T_Bytes len) v
       tns <- foldM go defaultTokenNew (M.toAscList metam')
+      let supplya = dtn_supply tns
       ensure_mode SLM_ConsensusStep "new Token"
       tokdv <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
@@ -2050,8 +2064,9 @@ evalPrim p sargs =
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
         , st_toks_c = S.insert tokdv (st_toks_c st) }
-      let supplya = dtn_supply tns
-      doBalanceInit_ (Just $ DLA_Var tokdv) supplya
+      let mtok_a = Just $ DLA_Var tokdv
+      doBalanceInit_ FV_balance mtok_a supplya
+      doBalanceInit_ FV_supply mtok_a supplya
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       at <- withAt id
