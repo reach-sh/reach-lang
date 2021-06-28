@@ -6,7 +6,7 @@ import {
   memoizeThunk,
   replaceableThunk,
 } from './shared_impl';
-import { process } from './shim';
+import { process, window } from './shim';
 import waitPort from './waitPort';
 import cfxsdk from 'js-conflux-sdk';
 import Timeout from 'await-timeout';
@@ -31,11 +31,56 @@ export function isIsolatedNetwork(): boolean {
 }
 
 export function isWindowProvider(): boolean {
-  return false; // XXX
+  return true; // XXX
+}
+
+export function _getSignStrategy(): string {
+  // XXX expose setSignStrategy for CFX
+  // For now we only support 'secret' by default
+  if (window.prompt) {
+    return 'secret';
+  } else {
+    return 'faucet';
+  }
 }
 
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
-  return notYetSupported(`_getDefaultNetworkAccount`);
+  const provider = await getProvider();
+  const promptFor = (s: string) => {
+    if (!window.prompt) { throw Error(`Can't prompt user with window.prompt`); }
+    return window.prompt(`Please paste your account's ${s}, or click cancel to generate a new one.`);
+  }
+  const ss = _getSignStrategy();
+  let w: cfxers.Wallet|null = null;
+  switch (ss) {
+  case 'secret':
+    const skMay = promptFor('secret key');
+    if (skMay) {
+      const sk = skMay.slice(0, 2) == '0x' ? skMay : '0x' + skMay;
+      w = new cfxers.Wallet(sk);
+    } else {
+      w = cfxers.Wallet.createRandom();
+    }
+    break;
+  case 'mnemonic':
+    const mnemonic = promptFor('mnemonic');
+    w = mnemonic
+      ? cfxers.Wallet.fromMnemonic(mnemonic)
+      : cfxers.Wallet.createRandom();
+    break;
+  case 'window':
+    // XXX ConfluxPortal support
+    w = notYetSupported(`sign strategy 'window'`);
+    break;
+  case 'faucet':
+    w = await _getDefaultFaucetNetworkAccount();
+    break;
+  default:
+    throw Error(`Sign strategy not recognized: '${ss}'`);
+  }
+  if (!w) throw Error(`impossible: no account found for sign strategy '${ss}'`);
+  if (!w.provider) w = w.connect(provider);
+  return w;
 }
 
 // from /scripts/devnet-cfx/default.toml
@@ -98,9 +143,10 @@ const [getProvider, setProvider] = replaceableThunk<Promise<Provider>|Provider>(
     networkId,
   });
 
-  // XXX We need to find a way to wait until catch-up mode is done
-
   const provider = new cfxers.providers.Provider(conflux);
+
+  // XXX is there a better place to wait for this
+  // such that toying with things at the repl doesn't hang if no connection is available?
   await waitCaughtUp(provider);
   return provider;
 });

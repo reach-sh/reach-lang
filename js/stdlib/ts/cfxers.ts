@@ -315,10 +315,9 @@ export class Wallet {
     return new Wallet();
   }
 
-  static fromMnemonic(mnemonic: string): Wallet {
-    // TODO
-    void(mnemonic);
-    throw Error(`Account 'from mnemonic' not supported on Conflux, please use secret key`);
+  static fromMnemonic(mnemonic: string, provider?: providers.Provider): Wallet {
+    const sk = ethers.Wallet.fromMnemonic(mnemonic)._signingKey().privateKey;
+    return new Wallet(sk, provider);
   }
 }
 
