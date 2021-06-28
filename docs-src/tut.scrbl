@@ -1679,19 +1679,7 @@ because @reachexlink["tut-9/index.rsh"] is the same as previous sections.
 
 On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled @reachin{backend}.
-On line 8, we import the @reachin{stdlib} as @reachin{reach}.
-
-@(hrule)
-
-To run on Algorand, change the import on line 8.
-
-@jsin{import * as reach from '@"@"reach-sh/stdlib/ALGO'}
-
-@margin-note{
-If you would like to use @jsin{loadStdlib},
-you should call it like so:
-
-@jsin{const reach = await loadStdlib(process.env)}
+On lines 8 and 9, we load the @reachin{stdlib} as @reachin{reach}.
 
 React compiles the Reach standard libray in such a way that
 it does not have direct access to the environment variables
@@ -1703,7 +1691,7 @@ to achieve the desired effect.
 @reachex[#:mode js
          #:show-lines? #t "tut-9/index.js"
          #:link #t
-         'only 10 14 "// ..."]
+         'only 11 14 "// ..."]
 
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.

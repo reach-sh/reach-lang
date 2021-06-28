@@ -294,6 +294,10 @@ In fact, Reach works for multiple networks, so if we instead run
 Then Reach will instead start up a private Algorand devnet image and use the Algorand @tech{connector}.
 The developer does not need to change anything about their program because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
 
+The same goes for Conflux:
+
+@cmd{REACH_CONNECTOR_MODE=CFX reach run}
+
 @section[#:tag "over-react"]{Web app}
 
 @margin-note{You can @link["https://www.youtube.com/watch?v=jHEKIMNvs-o"]{watch a 7-minute video} on YouTube
@@ -310,9 +314,9 @@ Let's take a look at some snippets from the React @reachexlink["index.js" #:dir 
 
 @reachex[#:mode js
          #:show-lines? #t "overview-react/index.js"
-         'only 7 8 "// ..."]
+         'only 7 9 "// ..."]
 
-At the top of the file, we import the Reach-generated backend as @jsin{backend} and the standard library as @jsin{reach}.
+At the top of the file, we import the Reach-generated backend as @jsin{backend} and we load the standard library as @jsin{reach}.
 
 @reachex[#:mode js
          #:show-lines? #t "overview-react/index.js"
@@ -361,6 +365,12 @@ you can simply use the command
 @cmd{reach react}
 
 This command runs your DApp with the React development server in a Docker container which has Reach and React JavaScript dependencies pre-installed, so it starts up much faster than building them yourself.
+
+As before, you can use @envref{REACH_CONNECTOR_MODE} to  choose your desired @tech{connector}.
+
+@cmd{REACH_CONNECTOR_MODE=ETH reach react}
+@cmd{REACH_CONNECTOR_MODE=ALGO reach react}
+@cmd{REACH_CONNECTOR_MODE=CFX reach react}
 
 @section[#:tag "over-next"]{Next steps}
 

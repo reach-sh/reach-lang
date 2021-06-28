@@ -5,8 +5,8 @@ import * as AppViews from './views/AppViews';
 import * as AliceViews from './views/AliceViews';
 import * as BobViews from './views/BobViews';
 import * as backend from './build/index.main.mjs';
-import * as reach from '@reach-sh/stdlib/ETH';
-
+import {loadStdlib} from '@reach-sh/stdlib';
+const reach = loadStdlib(process.env);
 const {standardUnit} = reach;
 const defaultFundAmtStandard = '10';
 const defaultInfo = 'the cake is a lie';
@@ -26,7 +26,7 @@ class App extends React.Component {
   }
   async componentDidMount() { // from mode: ConnectAccount
     const acc = await reach.getDefaultAccount();
-    const addr = await acc.getAddress();
+    const addr = reach.formatAddress(await acc.getAddress());
     const balAtomic = await reach.balanceOf(acc);
     const bal = reach.formatCurrency(balAtomic, 4);
     try {

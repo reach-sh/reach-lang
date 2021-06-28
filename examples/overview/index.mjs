@@ -2,7 +2,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = await loadStdlib(process.env);
 
   const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(5));
   const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(10));
