@@ -1899,6 +1899,10 @@ you can call:
 
 @cmd{REACH_CONNECTOR_MODE=ALGO ./reach react}
 
+Similarly, to run with Conflux:
+
+@cmd{REACH_CONNECTOR_MODE=CFX ./reach react}
+
 @(hrule) @;; explain npm install
 
 If you'd like to instead use Reach in your own JavaScript project,
