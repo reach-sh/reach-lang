@@ -927,7 +927,11 @@ ce = \case
     cMapSet mpv
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew {} -> xxx "token creation"
-  DLE_TokenBurn {} -> xxx "token burn"
+  DLE_TokenBurn {} ->
+    -- Burning does nothing on Algorand, because we already own it and we're
+    -- the creator, and that's the rule for being able to destroy
+    -- ....unless we need to do the TEAL3 hack
+    xxx "token burn"
   DLE_TokenDestroy {} -> xxx "token destroy"
   where
     show_stack msg at fs = do

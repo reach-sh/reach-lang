@@ -1,5 +1,9 @@
 # These are allowed to fail and we still release
 
+# Unsupported
+ALGO.remote
+ALGO.mint-basic
+
 # Unreliable
 ETH.tut-7-rpc
 ALGO.tut-7-rpc
@@ -53,6 +57,7 @@ CFX.atomic-swap
 CFX.atomic-swap-auction
 CFX.remote
 CFX.weird-swap
+CFX.mint-basic
 
 # CFX known timeouts
 CFX.map-rwrw
