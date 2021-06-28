@@ -30,7 +30,8 @@ contract ReachToken is ERC20 {
   }
 
   function destroy() public virtual {
-    burn(totalSupply());
+    require(_msgSender() == _creator, "must be creator");
+    require(totalSupply() == 0, "must be no supply");
     selfdestruct(payable(_creator));
   }
 }
