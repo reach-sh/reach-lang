@@ -28,11 +28,16 @@ import * as backend from './build/index.main.mjs';
       console.log(`${me}: Checking ${tok} balance:`);
       console.log(`${me}: ${tok} balance: ${fmt(await stdlib.balanceOf(acc, tok))}`);
     };
-    const showToken = async (_tok) => {
+    const showToken = async (_tok, cmd) => {
       tok = _tok;
       console.log(`${me}: The token is: ${tok}`);
       await showBalance();
-      console.log(`${me}: The token metadata is:`, await acc.tokenMetadata(tok));
+      console.log(`${me}: The token computed metadata is:`, cmd);
+      const omd = await acc.tokenMetadata(tok);
+      console.log(`${me}: The token on-chain metadata is:`, omd);
+      for ( const f in cmd ) {
+        assertEq(cmd[f], omd[f]);
+      }
       console.log(`${me}: Opt-in to ${tok}:`);
       await acc.tokenAccept(tok);
       await showBalance();

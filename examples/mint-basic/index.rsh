@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const shared = {
-    showToken: Fun([Token], Null),
+    showToken: Fun(true, Null),
     didTransfer: Fun([Bool, UInt], Null),
   };
   const A = Participant('Alice', {
@@ -29,7 +29,8 @@ export const main = Reach.App(() => {
   require(4 * amt <= supply);
   require(4 * amt <= UInt.max);
 
-  const tok1 = new Token({name, symbol, url, metadata, supply});
+  const md1 = {name, symbol, url, metadata, supply};
+  const tok1 = new Token(md1);
   /*
   if ( doEarlyTransfer ) {
     // We will never do this, but it is here to force a warning to be generated
@@ -38,11 +39,11 @@ export const main = Reach.App(() => {
     A.pay([amt, tok1]);
   }
   */
-  A.interact.showToken(tok1);
+  A.interact.showToken(tok1, md1);
   commit();
 
   B.publish();
-  B.interact.showToken(tok1);
+  B.interact.showToken(tok1, md1);
   commit();
 
   const doTransfer = (tokX) => {
@@ -64,9 +65,10 @@ export const main = Reach.App(() => {
   // XXX tok1.burn(supply);
   // XXX tok1.destroy();
 
-  const tok2 = new Token({name, symbol});
-  A.interact.showToken(tok2);
-  B.interact.showToken(tok2);
+  const md2 = {name, symbol};
+  const tok2 = new Token(md2);
+  A.interact.showToken(tok2, md2);
+  B.interact.showToken(tok2, md2);
   commit();
 
   A.publish();

@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Reach.Connector.ETH_Solidity (connect_eth) where
 
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
@@ -19,7 +21,9 @@ import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
+import qualified NeatInterpolation as N
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -220,6 +224,7 @@ data SolCtxt = SolCtxt
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map DLVar Doc)
+  , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_hasViews :: Bool
   , ctxt_requireMsg :: Counter
   }
@@ -305,6 +310,27 @@ doOutputEvent dv = do
   let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
   addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
   return $ ["emit" <+> go solMemVar ""]
+
+addUint8ArrayToString :: Integer -> App Doc
+addUint8ArrayToString len = do
+  let f = "uint8ArrayToString_" <> show len
+  let ft = T.pack f
+  let lent = T.pack $ show len
+  modifyCtxtIO ctxt_tlfuns $ M.insert f $ DText $ LT.fromStrict $ [N.text|
+    function $ft(uint8[$lent] memory in_arr) internal pure returns (string memory) {
+      bytes memory inter = new bytes($lent);
+      for (uint8 i = 0; i < $lent; i++) {
+          inter[i] = bytes1(in_arr[i]);
+      }
+      return string(inter);
+    }
+    |]
+  return $ pretty f
+
+uint8ArrayToString :: Integer -> Doc -> App Doc
+uint8ArrayToString len a = do
+  f <- addUint8ArrayToString len
+  return $ solApply f [ a ]
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -793,14 +819,15 @@ solCom = \case
           <> pv'
   DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
   DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ (DLTokenNew {..})) -> do
-    n' <- solArg dtn_name
-    s' <- solArg dtn_sym
-    u' <- solArg dtn_url
-    m' <- solArg dtn_metadata
+    let go a = do
+          a' <- solArg a
+          uint8ArrayToString (bytesTypeLen $ argTypeOf a) a'
+    n' <- go dtn_name
+    s' <- go dtn_sym
+    u' <- go dtn_url
+    m' <- go dtn_metadata
     p' <- solArg dtn_supply
-    -- XXX This is broken, because of array padding on uint8s
-    let s x = solApply "string" [ solApply "abi.encodePacked" [ x ] ]
-    let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ s n', s s', s u', s m', p' ] ] ]
+    let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p' ] ] ]
     addMemVar dv
     logl <- doOutputEvent dv
     return $ vsep $ [ solSet (solMemVar dv) rhs ] <> logl
@@ -1209,6 +1236,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   ctxt_requireMsg <- newCounter 5
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
+  ctxt_tlfuns <- newIORef mempty
   let ctxt_plo = plo
   let ctxt_hasViews = isJust mvi
   flip runReaderT (SolCtxt {..}) $ do
@@ -1316,9 +1344,10 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
     typefsp <- getm ctxt_typef
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
+    tlfunsp <- getm ctxt_tlfuns
     -- XXX expose this to Reach? only include if bills?
     let defp = "receive () external payable {}"
-    let ctcbody = vsep $ [state_defn, consp, typefsp, outputsp, hs', defp]
+    let ctcbody = vsep $ [state_defn, consp, typefsp, outputsp, tlfunsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
           HM.fromList $
