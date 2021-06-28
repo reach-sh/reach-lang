@@ -14,6 +14,7 @@ import System.Environment
 import System.Exit
 import System.FilePath
 import System.Posix.Files
+import Text.Parsec (ParsecT, runParserT, char, string, eof, try)
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -127,57 +128,62 @@ mkComposeYml appService' appImageTag' svs =
 
 
 --------------------------------------------------------------------------------
-data ConnectorMode
-  = DevnetAlgo
-  | DevnetCfx
-  | DevnetEth
-  | LiveAlgo
-  | LiveCfx
-  | LiveEth
-  | BrowserAlgo
-  | BrowserCfx
-  | BrowserEth
+data Connector
+  = Algo
+  | Cfx
+  | Eth
 
+data Mode
+  = Devnet
+  | Live
+  | Browser
+
+data ConnectorMode = ConnectorMode Connector Mode
+
+
+instance Show Connector where
+  show = \case
+    Algo -> "ALGO"
+    Cfx -> "CFX"
+    Eth -> "ETH"
+
+instance Show Mode where
+  show = \case
+    Devnet -> "devnet"
+    Live -> "live"
+    Browser -> "browser"
 
 instance Show ConnectorMode where
-  show = \case
-    DevnetAlgo -> "ALGO-test-dockerized-algod"
-    DevnetCfx -> "CFX-devnet"
-    DevnetEth -> "ETH-test-dockerized-geth"
-    LiveAlgo -> "ALGO-live"
-    LiveCfx -> "CFX-live"
-    LiveEth -> "ETH-live"
-    BrowserAlgo -> "ALGO-browser"
-    BrowserCfx -> "CFX-browser"
-    BrowserEth -> "ETH-browser"
+  show (ConnectorMode c m) = show c <> "-" <> show m
+
+
+pConnector :: ParsecT String () IO Connector
+pConnector =
+      f Algo "ALGO"
+  <|> f Cfx "CFX"
+  <|> f Eth "ETH"
+ where f a b = const a <$> string b
+
+
+pMode :: ParsecT String () IO Mode
+pMode =
+      f Devnet "devnet"
+  <|> f Live "live"
+  <|> f Browser "browser"
+  <|> string "" *> pure Devnet
+ where f a b = const a <$> try (char '-' *> string b)
 
 
 connectorModeNonBrowser :: IO ConnectorMode
-connectorModeNonBrowser = lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure DevnetEth) (\case
-  "ALGO" -> pure DevnetAlgo
-  "ALGO-test" -> pure DevnetAlgo
-  "ALGO-test-dockerized" -> pure DevnetAlgo
-
-  "CFX" -> pure DevnetCfx
-  "CFX-devnet" -> pure DevnetCfx
-
-  "ETH" -> pure DevnetEth
-  "ETH-test" -> pure DevnetEth
-  "ETH-test-dockerized" -> pure DevnetEth
-
-  "ALGO-live" -> pure LiveAlgo
-  "CFX-live" -> pure LiveCfx
-  "ETH-live" -> pure LiveEth
-
-  i -> die $ "Illegal non-browser `REACH_CONNECTOR_MODE` environment variable: " <> i)
-
-
-_connectorModeBrowser :: IO ConnectorMode
-_connectorModeBrowser = lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure BrowserEth) (\case
-  "ALGO" -> pure BrowserAlgo
-  "CFX" -> pure BrowserCfx
-  "ETH" -> pure BrowserEth
-  i -> die $ "Illegal browser `REACH_CONNECTOR_MODE` environment variable: " <> i)
+connectorModeNonBrowser = do
+  rcm <- maybe "ETH-devnet" id <$> lookupEnv "REACH_CONNECTOR_MODE"
+  runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
+    >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+    >>= \case
+      ConnectorMode _ Browser -> die
+        $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
+       <> " is only available via the Reach standard library."
+      cm -> pure cm
 
 
 --------------------------------------------------------------------------------
