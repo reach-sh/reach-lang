@@ -413,6 +413,21 @@ jsExpr = \case
       JM_View -> impossible "view mapset"
   DLE_Remote {} -> impossible "remote"
   DLE_TokenNew {} -> impossible "tokennew"
+  DLE_TokenBurn _ ta aa ->
+    (ctxt_mode <$> ask) >>= \case
+      JM_Simulate -> do
+        ta' <- jsArg ta
+        aa' <- jsArg aa
+        return $ jsApply "stdlib.simTokenBurn" ["sim_r", ta', aa']
+      JM_Backend -> return "undefined"
+      JM_View -> impossible "token.burn"
+  DLE_TokenDestroy _ ta ->
+    (ctxt_mode <$> ask) >>= \case
+      JM_Simulate -> do
+        ta' <- jsArg ta
+        return $ jsApply "stdlib.simTokenDestroy" ["sim_r", ta']
+      JM_Backend -> return "undefined"
+      JM_View -> impossible "token.burn"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

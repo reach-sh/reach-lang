@@ -328,9 +328,8 @@ addUint8ArrayToString len = do
   return $ pretty f
 
 uint8ArrayToString :: Integer -> Doc -> App Doc
-uint8ArrayToString len a = do
-  f <- addUint8ArrayToString len
-  return $ solApply f [ a ]
+uint8ArrayToString len a =
+  flip solApply [ a ] <$> addUint8ArrayToString len
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -392,6 +391,8 @@ instance DepthOf DLExpr where
           net :
           pairList ks <> as
     DLE_TokenNew _ tns -> add1 $ depthOf tns
+    DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
+    DLE_TokenDestroy _ t -> add1 $ depthOf t
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -612,6 +613,13 @@ solExpr sp = \case
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
   DLE_TokenNew {} -> impossible "tokennew"
+  DLE_TokenBurn _ ta aa -> do
+    ta' <- solArg ta
+    aa' <- solArg aa
+    return $ solApply "safeReachTokenBurn" [ ta', aa' ] <> sp
+  DLE_TokenDestroy _ ta -> do
+    ta' <- solArg ta
+    return $ solApply "safeReachTokenDestroy" [ ta' ] <> sp
   where
     spa m = (<> sp) <$> m
 
@@ -1233,7 +1241,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   ctxt_typed <- newIORef mempty
   ctxt_typeidx <- newCounter 0
   ctxt_intidx <- newCounter 0
-  ctxt_requireMsg <- newCounter 5
+  ctxt_requireMsg <- newCounter 7
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty

@@ -997,10 +997,10 @@ smt_e at_dv mdv de = do
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa mna ->
       smtMapUpdate at mpv fa mna
-    DLE_Remote at _ _ _ _ _ _ ->
-      unbound at
-    DLE_TokenNew at _XXX_tns ->
-      unbound at
+    DLE_Remote at _ _ _ _ _ _ -> unbound at
+    DLE_TokenNew at _ -> unbound at
+    DLE_TokenBurn at _ _ -> unbound at
+    DLE_TokenDestroy at _ -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

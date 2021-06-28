@@ -84,28 +84,31 @@ instance CollectsTypes DLTokenNew where
     <> cts dtn_supply
 
 instance CollectsTypes DLExpr where
-  cts (DLE_Arg _ a) = cts a
-  cts (DLE_LArg _ la) = cts $ largeArgTypeOf la
-  cts (DLE_Impossible _ _) = mempty
-  cts (DLE_PrimOp _ _ as) = cts as
-  cts (DLE_ArrayRef _ a i) = cts a <> cts i
-  cts (DLE_ArraySet _ a i v) = cts a <> cts i <> cts v
-  cts (DLE_ArrayConcat _ x y) = cts x <> cts y
-  cts (DLE_ArrayZip _ x y) = cts x <> cts y
-  cts (DLE_TupleRef _ t _) = cts t
-  cts (DLE_ObjectRef _ a _) = cts a
-  cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as
-  cts (DLE_Digest _ as) = cts as
-  cts (DLE_Claim _ _ _ a _) = cts a
-  cts (DLE_Transfer _ x y z) = cts x <> cts y <> cts z
-  cts (DLE_TokenInit _ x) = cts x
-  cts (DLE_CheckPay _ _ y z) = cts y <> cts z
-  cts (DLE_Wait _ a) = cts a
-  cts (DLE_PartSet _ _ a) = cts a
-  cts (DLE_MapRef _ _ fa) = cts fa
-  cts (DLE_MapSet _ _ fa na) = cts fa <> cts na
-  cts (DLE_Remote _ _ av _ pamt as _) = cts (av : as) <> cts pamt
-  cts (DLE_TokenNew _ tns) = cts tns
+  cts = \case
+    DLE_Arg _ a -> cts a
+    DLE_LArg _ la -> cts $ largeArgTypeOf la
+    DLE_Impossible _ _ -> mempty
+    DLE_PrimOp _ _ as -> cts as
+    DLE_ArrayRef _ a i -> cts a <> cts i
+    DLE_ArraySet _ a i v -> cts a <> cts i <> cts v
+    DLE_ArrayConcat _ x y -> cts x <> cts y
+    DLE_ArrayZip _ x y -> cts x <> cts y
+    DLE_TupleRef _ t _ -> cts t
+    DLE_ObjectRef _ a _ -> cts a
+    DLE_Interact _ _ _ _ t as -> cts t <> cts as
+    DLE_Digest _ as -> cts as
+    DLE_Claim _ _ _ a _ -> cts a
+    DLE_Transfer _ x y z -> cts x <> cts y <> cts z
+    DLE_TokenInit _ x -> cts x
+    DLE_CheckPay _ _ y z -> cts y <> cts z
+    DLE_Wait _ a -> cts a
+    DLE_PartSet _ _ a -> cts a
+    DLE_MapRef _ _ fa -> cts fa
+    DLE_MapSet _ _ fa na -> cts fa <> cts na
+    DLE_Remote _ _ av _ pamt as _ -> cts (av : as) <> cts pamt
+    DLE_TokenNew _ tns -> cts tns
+    DLE_TokenBurn _ a b -> cts [ a, b ]
+    DLE_TokenDestroy _ a -> cts a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

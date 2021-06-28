@@ -142,6 +142,7 @@ data EvalError
   | Err_Part_DuplicatePart SLPart
   | Err_Sol_Reserved String
   | Err_TokenNew_InvalidKey String
+  | Err_Token_NotCreated String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -542,5 +543,7 @@ instance Show EvalError where
       "`" <> field <> "` is not a valid field name because it is reserved in Solidity."
     Err_TokenNew_InvalidKey f ->
       "`" <> f <> "` is not an expected key of a `new Token` operation"
+    Err_Token_NotCreated lab ->
+      lab <> "must be used on created tokens"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

@@ -134,6 +134,8 @@ instance Countable DLExpr where
     DLE_MapSet _ _ fa na -> counts fa <> counts na
     DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
     DLE_TokenNew _ tns -> counts tns
+    DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
+    DLE_TokenDestroy _ tok -> counts tok
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

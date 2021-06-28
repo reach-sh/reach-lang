@@ -254,6 +254,8 @@ instance Optimize DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
     DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
+    DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
+    DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

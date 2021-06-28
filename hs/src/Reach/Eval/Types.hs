@@ -2,8 +2,8 @@
 
 module Reach.Eval.Types where
 
-import Data.List ((\\))
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL (DLSBlock)
@@ -63,12 +63,9 @@ data SLState = SLState
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
   , st_toks :: [DLVar]
-  , st_toks_c :: [DLVar]
+  , st_toks_c :: S.Set DLVar
   }
   deriving (Eq, Show)
-
-st_toks' :: SLState -> [DLVar]
-st_toks' st = st_toks st \\ st_toks_c st
 
 all_slm_modes :: [SLMode]
 all_slm_modes = enumFrom minBound

@@ -465,6 +465,8 @@ data SLPrimitive
   | SLPrim_adaptReachAppTupleArgs
   | SLPrim_padTo Integer
   | SLPrim_Token_new
+  | SLPrim_Token_burn
+  | SLPrim_Token_destroy
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)
