@@ -1691,7 +1691,7 @@ to achieve the desired effect.
 @reachex[#:mode js
          #:show-lines? #t "tut-9/index.js"
          #:link #t
-         'only 11 14 "// ..."]
+         'only 10 14 "// ..."]
 
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
