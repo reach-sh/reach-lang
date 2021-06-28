@@ -10,7 +10,7 @@ RUN stack build
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
 # --- Deploy
-FROM ethereum/solc:0.8.2 as solc
+FROM ethereum/solc:0.8.5 as solc
 
 FROM alpine:3.12 as dl-deps
 RUN apk add wget unzip --no-cache

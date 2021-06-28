@@ -93,7 +93,7 @@ solContract :: String -> Doc -> Doc
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc
-solVersion = "pragma solidity ^0.8.2;"
+solVersion = "pragma solidity ^0.8.5;"
 
 solStdLib :: Doc
 solStdLib = pretty $ B.unpack stdlib_sol
