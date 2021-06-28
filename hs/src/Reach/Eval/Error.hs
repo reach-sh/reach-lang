@@ -544,6 +544,6 @@ instance Show EvalError where
     Err_TokenNew_InvalidKey f ->
       "`" <> f <> "` is not an expected key of a `new Token` operation"
     Err_Token_NotCreated lab ->
-      lab <> "must be used on created tokens"
+      lab <> " must be used on created tokens"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

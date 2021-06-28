@@ -155,6 +155,8 @@ tealcount () {
 # err export_ret_ty
 # err Err_Part_DuplicatePart
 # err Err_View_UDFun
+# err Err_TokenNew_InvalidKey
+# err Err_Token_NotCreated
 
 # r examples/pkg
 # r examples/zbeq
