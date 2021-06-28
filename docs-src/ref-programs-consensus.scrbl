@@ -282,6 +282,43 @@ It accepts an optional bytes argument, which is included in any reported violati
 @index{checkCommitment} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 This is used in a @tech{consensus step} after @reachin{makeCommitment} was used in a @tech{local step}.
 
+@subsection{Token minting}
+
+@(mint-define! '("burn") '("destroy"))
+@reach{
+  require(supply >= 2 * amt);
+  const tok = new Token({name, symbol, url, metadata, supply});
+  transfer(amt, tok).to(who);
+  tok.burn(amt);
+  tok.burn();
+  tok.destroy();
+}
+
+@margin-note{
+  @secref["ref-networks"] discusses how Reach supports @tech{token minting} on specific consensus networks.
+}
+
+A @tech{non-network token} may be @deftech[#:key "token minting"]{minted} with the expression @reachin{new Token(PARAMS)}, where @reachin{PARAMS} is an object with the following keys:
+@itemlist[
+@item{@litchar{name}: A value of type @reachin{Bytes(32)}; defaults to empty.}
+@item{@litchar{symbol}: A value of type @reachin{Bytes(8)}; defaults to empty.}
+@item{@litchar{url}: A value of type @reachin{Bytes(32)}; defaults to empty.}
+@item{@litchar{metadata}: A value of type @reachin{Bytes(32)}; defaults to empty.}
+@item{@litchar{supply}: A value of type @reachin{UInt}; defaults to @reachin{UInt.max}.}
+]
+
+This returns a @reachin{Token} value and deposits a @reachin{supply} amount of the new @tech{non-network tokens} into the @tech{contract} account associated with the @|DApp|.
+These tokens must be either @tech{burn}ed or @tech{transfer}ed away before the end of the @|DApp|.
+In other words, the @tech{token linearity property} applies to these tokens.
+
+@(hrule)
+
+@reachin{Token.burn(tok, amt)}, or @reachin{tok.burn(amt)}, where @reachin{tok} is a @reachin{Token} value and @reachin{amt} is a @reachin{UInt} value, may be used to @deftech{burn} tokens in the @tech{contract} account, meaning that they are utterly destroyed and can never be recovered.
+
+@(hrule)
+
+@reachin{Token.destroy(tok)}, or @reachin{tok.destroy()}, where @reachin{tok} is a @reachin{Token} value, may be used to destroy the token so that it may never be used again by any users on the @tech{consensus network}.
+
 @subsection{Remote objects}
 
 @(mint-define! '("remote"))
@@ -294,7 +331,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 }
 
 @margin-note{
-  @secref["ref-networks"]{} discusses how Reach supports remote objects on specific consensus networks.
+  @secref["ref-networks"] discusses how Reach supports @tech{remote objects} on specific consensus networks.
 }
 
 A @deftech{remote object} is representation of a foreign @tech{contract} in a Reach application.
