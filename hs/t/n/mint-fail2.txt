@@ -1,0 +1,51 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "token supply zero at Token.destroy"
+  at ./mint-fail2.rsh:77:15:application
+
+  // Violation Witness
+
+  const UInt.max = 30880;
+
+  const v22 = "Alice".interact.getParams();
+  //    ^ could = {amt: 7720, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 30880, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //      from: ./mint-fail2.rsh:24:104:application
+
+
+  // Theorem Formalization
+
+  const v72 = 2 * v22.amt;
+  //    ^ would be 15440
+  const v171 = 0 == (UInt.max - ((UInt.max - v72) - v72));
+  //    ^ would be false
+  assert(v171);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "token supply zero at Token.destroy"
+  at ./mint-fail2.rsh:77:15:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Alice" is honest
+Verification failed:
+  when ONLY "Alice" is honest
+  of theorem: assert
+  msg: "token supply zero at Token.destroy"
+  at ./mint-fail2.rsh:77:15:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Bob" is honest
+Verification failed:
+  when ONLY "Bob" is honest
+  of theorem: assert
+  msg: "token supply zero at Token.destroy"
+  at ./mint-fail2.rsh:77:15:application
+
+  (details omitted on repeat)
+Checked 66 theorems; 4 failures. :'(
