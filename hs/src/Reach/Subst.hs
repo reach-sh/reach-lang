@@ -84,6 +84,8 @@ instance Subst DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
+    DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
+    DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
 
 instance Subst DLStmt where
   subst = \case

@@ -927,6 +927,8 @@ ce = \case
     cMapSet mpv
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew {} -> xxx "token creation"
+  DLE_TokenBurn {} -> xxx "token burn"
+  DLE_TokenDestroy {} -> xxx "token destroy"
   where
     show_stack msg at fs = do
       comment $ texty msg

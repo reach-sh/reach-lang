@@ -27,7 +27,7 @@ $(ERC20)/ERC20.sol: sol/v$(OPENZEP).tar.gz
 	touch $@
 
 sol/stdlib_openzep.sol: $(ERC20)/ERC20.sol sol/stdlib_openzep.sol.sh
-	ERC20=$(ERC20) sol/stdlib_openzep.sol.sh $@
+	ERC20=$(ERC20) sol/stdlib_openzep.sol.sh > $@
 
 sol/stdlib.sol: sol/stdlib_openzep.sol sol/stdlib_reach.sol
 	cat $^ > $@

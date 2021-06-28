@@ -473,6 +473,8 @@ data DLExpr
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
   | DLE_TokenNew SrcLoc DLTokenNew
+  | DLE_TokenBurn SrcLoc DLArg DLArg
+  | DLE_TokenDestroy SrcLoc DLArg
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -577,6 +579,13 @@ instance PrettySubst DLExpr where
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'
+    DLE_TokenBurn _ tok amt -> do
+      tok' <- prettySubst tok
+      amt' <- prettySubst amt
+      return $ "Token(" <> tok' <> ").burn(" <> amt' <> ")"
+    DLE_TokenDestroy _ tok -> do
+      tok' <- prettySubst tok
+      return $ "Token(" <> tok' <> ").destroy()"
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -610,6 +619,8 @@ instance IsPure DLExpr where
     DLE_MapSet {} -> False
     DLE_Remote {} -> False
     DLE_TokenNew {} -> False
+    DLE_TokenBurn {} -> False
+    DLE_TokenDestroy {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -635,6 +646,8 @@ instance IsLocal DLExpr where
     DLE_MapSet {} -> False
     DLE_Remote {} -> False
     DLE_TokenNew {} -> False
+    DLE_TokenBurn {} -> False
+    DLE_TokenDestroy {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -645,6 +658,8 @@ instance CanDupe DLExpr where
           DLE_MapRef {} -> False
           DLE_Remote {} -> False
           DLE_TokenNew {} -> False
+          DLE_TokenBurn {} -> False
+          DLE_TokenDestroy {} -> False
           _ -> True
 
 newtype DLAssignment

@@ -1108,10 +1108,17 @@ evalAsEnv obj = case obj of
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
+  SLV_DLVar (DLVar _ _ T_Token _) ->
+    return $
+      M.fromList $
+        [ ("burn", delayCall SLPrim_Token_burn)
+        , ("destroy", delayCall SLPrim_Token_destroy) ]
   SLV_Type ST_Token ->
     return $
       M.fromList $
-        [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new) ]
+        [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new)
+        , ("burn", retV $ public $ SLV_Prim $ SLPrim_Token_burn)
+        , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy) ]
   SLV_Prim SLPrim_Struct -> return structValueEnv
   SLV_Type (ST_Struct ts) ->
     return $
@@ -1845,6 +1852,9 @@ doFluidRef_dv fv = do
   saveLift $ DLS_FluidRef at dv fv
   return dv
 
+doFluidRef_da :: FluidVar -> App DLArg
+doFluidRef_da fv = DLA_Var <$> doFluidRef_dv fv
+
 doFluidRef :: FluidVar -> App SLSVal
 doFluidRef fv = (public . SLV_DLVar) <$> doFluidRef_dv fv
 
@@ -1873,6 +1883,16 @@ lookupBalanceFV mtok = do
           Just x -> return $ 1 + x
       _ -> bad
   return $ FV_balance i
+
+ensureCreatedToken :: String -> DLArg -> App ()
+ensureCreatedToken lab a = do
+  toks_c <- readSt st_toks_c
+  case a of
+    DLA_Var v ->
+      case S.member v toks_c of
+        True -> return ()
+        False -> expect_ $ Err_Token_NotCreated lab
+    _ -> expect_ $ Err_Token_DynamicRef
 
 doBalanceInit_ :: Maybe DLArg -> DLArg -> App ()
 doBalanceInit_ mtok amta = do
@@ -1980,6 +2000,33 @@ typeOfBytes v = do
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
+    SLPrim_Token_burn -> do
+      (tokv, mamtv) <-
+        case args of
+          [ x ] -> return (x, Nothing)
+          [ x, y ] -> return (x, Just y)
+          _ -> illegal_args
+      toka <- compileCheckType T_Token tokv
+      at <- withAt id
+      let lab = "Token.burn"
+      ensureCreatedToken lab toka
+      amta <-
+        case mamtv of
+          Just v -> compileCheckType T_UInt v
+          Nothing -> doFluidRef_da =<< lookupBalanceFV (Just toka)
+      ensure_mode SLM_ConsensusStep lab
+      tokenPay (Just toka) amta $ bpack lab
+      ctxt_lift_eff $ DLE_TokenBurn at toka amta
+      return $ public $ SLV_Null at lab
+    SLPrim_Token_destroy -> do
+      toka <- compileCheckType T_Token =<< one_arg
+      at <- withAt id
+      let lab = "Token.destroy"
+      ensureCreatedToken lab toka
+      ensure_mode SLM_ConsensusStep lab
+      doBalanceAssert (Just toka) (SLV_Int at 0) PEQ $ bpack $ "token balance zero at " <> lab
+      ctxt_lift_eff $ DLE_TokenDestroy at toka
+      return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
       at <- withAt id
       metam <- mustBeObject =<< one_arg
@@ -2002,7 +2049,7 @@ evalPrim p sargs =
       st <- readSt id
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
-        , st_toks_c = st_toks_c st <> [ tokdv ] }
+        , st_toks_c = S.insert tokdv (st_toks_c st) }
       let supplya = dtn_supply tns
       doBalanceInit_ (Just $ DLA_Var tokdv) supplya
       return $ public $ SLV_DLVar tokdv
@@ -4320,7 +4367,7 @@ doExit = do
   let zero = SLV_Int at 0
   let one mtok = doBalanceAssert mtok zero PEQ "balance zero at application exit"
   one Nothing
-  mapM_ (one . Just . DLA_Var) =<< readSt st_toks'
+  mapM_ (one . Just . DLA_Var) =<< readSt st_toks
   saveLift $ DLS_Stop at
   st <- readSt id
   setSt $ st {st_live = False}

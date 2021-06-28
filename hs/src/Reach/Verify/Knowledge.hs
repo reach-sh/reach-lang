@@ -138,6 +138,9 @@ knows ctxt from tos = do
 class AllPoints a where
   all_points :: a -> S.Set Point
 
+instance (Foldable f, AllPoints a) => AllPoints (f a) where
+  all_points = foldMap all_points
+
 instance AllPoints DLArg where
   all_points = \case
     DLA_Var v -> S.singleton $ P_Var v
@@ -235,6 +238,10 @@ kgq_e ctxt mv = \case
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
   DLE_TokenNew _ tns ->
     kgq_a_all ctxt tns
+  DLE_TokenBurn _ t a ->
+    kgq_a_all ctxt [t, a]
+  DLE_TokenDestroy _ t ->
+    kgq_a_all ctxt t
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

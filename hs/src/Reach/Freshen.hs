@@ -98,6 +98,8 @@ instance Freshen DLExpr where
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
     DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
+    DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
+    DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok
 
 instance Freshen DLStmt where
   fu = \case
