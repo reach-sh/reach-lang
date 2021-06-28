@@ -75,6 +75,7 @@ dependencies:
 - unordered-containers
 - vector
 - yaml
+- neat-interpolation
 
 default-extensions:
 - BangPatterns
