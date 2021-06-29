@@ -532,7 +532,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
-      - REACH_DEBUG
+      - REACH_ALGO_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -950,7 +950,7 @@ $DEPENDS_ON
     depends_on:
       - algorand-postgres-db
     environment:
-      - REACH_DEBUG
+      - REACH_ALGO_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
@@ -1070,7 +1070,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
-      - REACH_DEBUG
+      - REACH_ALGO_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
