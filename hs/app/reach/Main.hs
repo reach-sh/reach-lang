@@ -16,9 +16,9 @@ import System.FilePath
 import System.Posix.Files
 import Text.Parsec (ParsecT, runParserT, char, string, eof, try)
 
+import Reach.CommandLine
 import Reach.Util
 import Reach.Version
-import Reach.CommandLine
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -65,6 +65,23 @@ write t = asks e_effect >>= liftIO . flip modifyIORef w where
 
 writeFrom :: FilePath -> App
 writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
+
+
+swap :: T.Text -> T.Text -> T.Text -> T.Text
+swap a b src = T.replace ("${" <> a <> "}") b src
+
+
+reachImages :: [T.Text]
+reachImages =
+  [ "reach"
+  , "reach-cli"
+  , "ethereum-devnet"
+  , "algorand-devnet"
+  , "devnet-cfx"
+  , "runner"
+  , "react-runner"
+  , "rpc-server"
+  ]
 
 
 _runSubScript :: App -> Env -> IO T.Text
@@ -222,24 +239,6 @@ mkDockerMeta app dirProject isolate = DockerMeta {..} where
   appService = "reach-app-" <> appProj
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
-
-
---------------------------------------------------------------------------------
-swap :: T.Text -> T.Text -> T.Text -> T.Text
-swap a b src = T.replace ("${" <> a <> "}") b src
-
-
-reachImages :: [T.Text]
-reachImages =
-  [ "reach"
-  , "reach-cli"
-  , "ethereum-devnet"
-  , "algorand-devnet"
-  , "devnet-cfx"
-  , "runner"
-  , "react-runner"
-  , "rpc-server"
-  ]
 
 
 --------------------------------------------------------------------------------
@@ -438,6 +437,7 @@ compile = command "compile" $ info f d where
         docker run \
           --rm \
           --volume "$$PWD:/app" \
+          -u "$(id -ru):$(id -rg)" \
           -e "REACHC_ID=$${ID}" \
           reachsh/reach:$rv \
           $args
