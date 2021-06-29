@@ -77,4 +77,20 @@ export const main = Reach.App(() => {
 
 Then, a JavaScript frontend can simply use @jsin{console.log} as the value of the @litchar{log} function.
 
+Reach provides @reachin{hasConsoleLogger} and @tech{hasConsoleLogger (Frontend)} in the standard library
+for default implementations of logging to stdout. It can be used in Reach with:
+
+@reach{
+const A = Participant('Alice', { ...hasConsoleLogger })
+}
+
+and in the Javascript frontend with:
+
+@js{
+ backend.Alice(
+    ctcAlice,
+    { ...stdlib.hasConsoleLogger },
+  ),
+}
+
 The Reach development repository contains an example of this pattern: @reachexlink["log/index.rsh"] and @reachexlink["log/index.mjs"].
