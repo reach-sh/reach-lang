@@ -19,6 +19,7 @@ import Reach.Counter
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
+import Generic.Data (gconIndex)
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -162,6 +163,9 @@ solve fi' = fixedPoint go
 data EPPError
   = Err_ContinueDomination
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode EPPError where
+  errCode e = "REACH_ERR_EPP" <> show (gconIndex e)
 
 instance Show EPPError where
   show Err_ContinueDomination =

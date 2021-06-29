@@ -349,7 +349,7 @@ app_options =
         up m = Right $ opts {dlo_deployMode = m}
 
 --- Utilities
-expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = do
   Env {..} <- ask
   expect_throw (Just e_stack) e_at e
@@ -359,13 +359,13 @@ mkValType v = do
   r <- typeOfM v
   return (v, fmap fst r)
 
-expect_t :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
+expect_t :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
 expect_t v f = (expect_ . f) =<< mkValType v
 
-expect_ts :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
+expect_ts :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
 expect_ts vs f = (expect_ . f) =<< mapM mkValType vs
 
-zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
+zipEq :: (Show e, HasErrorCode e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
 zipEq ce x y =
   if lx == ly
     then return $ zip x y
@@ -4624,9 +4624,10 @@ evalStmt = \case
         return $ SLStmtRes sco []
       ((JSAssign var_a), _) -> do
         let lab = "assign"
-        lhs' <- evalLValue lhs
+        let var_at = srcloc_jsa lab var_a
+        lhs' <- locAtf var_at $ evalLValue lhs
         rhs' <- evalExpr rhs
-        locAtf (srcloc_jsa lab var_a) $ evalAssign rhs' lhs'
+        locAtf var_at $ evalAssign rhs' lhs'
         locAtf (srcloc_after_semi lab var_a asp) $ evalStmt ks
       (jsop, _) ->
         locAtf (srcloc_jsa "assign" $ jsa op) $

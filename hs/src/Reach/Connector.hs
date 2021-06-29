@@ -21,6 +21,7 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Texty
 import Reach.Util
+import Generic.Data (gconIndex)
 
 type ConnectorInfoMap = Object
 
@@ -37,6 +38,9 @@ data Connector = Connector
 data ConnectorError
   = Err_IntLiteralRange Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode ConnectorError where
+  errCode e = "REACH_ERR_CONNECTOR" <> show (gconIndex e)
 
 instance Show ConnectorError where
   show (Err_IntLiteralRange rmin x rmax) =

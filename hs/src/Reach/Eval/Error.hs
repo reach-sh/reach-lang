@@ -19,6 +19,7 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
+import Generic.Data (gconIndex)
 
 data LookupCtx
   = -- Signifies the user referencing a variable from a ctxt (:: String).
@@ -144,6 +145,9 @@ data EvalError
   | Err_TokenNew_InvalidKey String
   | Err_Token_NotCreated String
   deriving (Eq, Generic)
+
+instance HasErrorCode EvalError where
+  errCode e = "REACH_ERR_EVAL" <> show (gconIndex e)
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -442,15 +446,15 @@ instance Show EvalError where
     Err_Only_NotOneClosure slval ->
       "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (show_sv slval)
     Err_Each_NotTuple slval ->
-      "each not given a tuple as an argument, instead got " <> show_sv slval
+      "Each not given a tuple as an argument, instead got " <> show_sv slval
     Err_NotParticipant slval ->
-      "expected a participant as an argument, instead got " <> show_sv slval
+      "Expected a participant as an argument, instead got " <> show_sv slval
     Err_Transfer_NotBound who ->
-      "cannot transfer to unbound participant, " <> bunpack who
+      "Cannot transfer to unbound participant, " <> bunpack who
     Err_Transfer_Class who ->
       "cannot transfer to participant class, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
-      "incompatible states:" <> showStateDiff x y
+      "Incompatible states:" <> showStateDiff x y
     Err_Eval_NotSecretIdent x ->
       ("Invalid binding in PART.only: " <> x <> ".")
         <> " Secret identifiers must be prefixed by _."
@@ -460,21 +464,21 @@ instance Show EvalError where
     Err_Eval_LookupUnderscore ->
       "Invalid identifier reference. The _ identifier may never be read."
     Err_Switch_NotData x ->
-      "switch expects data instance, but got " <> show x
+      "Switch expects data instance, but got " <> show x
     Err_Switch_DoubleCase at0 at1 mc ->
-      "switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
+      "Switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
     Err_Switch_MissingCases cs ->
-      "switch missing cases: " <> show cs
+      "Switch missing cases: " <> show cs
     Err_Switch_ExtraCases cs ->
-      "switch contains extra cases: " <> show cs
+      "Switch contains extra cases: " <> show cs
     Err_Expected t v ->
-      "expected " <> t <> ", got something else: " <> show_sv v
+      "Expected " <> t <> ", got something else: " <> show_sv v
     Err_RecursionDepthLimit ->
-      "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
+      "Recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_Eval_MustBeLive m ->
-      "must be live at " <> m
+      "Must be live at " <> m
     Err_Eval_MustBeInWhileInvariant m ->
-      "must be in while invariant at " <> m
+      "Must be in while invariant at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
     Err_ToConsensus_WhenNoTimeout noMatterWhat ->
@@ -482,11 +486,11 @@ instance Show EvalError where
         True -> "Cannot ignore timeout requirement, unless at least one participant always races or one class might race"
         False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
-      "fork local result must be object with fields `msg` or `when`, but got " <> show t
+      "Fork local result must be object with fields `msg` or `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->
-      "fork consensus block should be arrow with zero or one parameters, but got something else"
+      "Fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_ParallelReduceIncomplete lab ->
-      "parallel reduce incomplete: " <> lab
+      "Parallel reduce incomplete: " <> lab
     Err_ParallelReduceBranchArgs b n args ->
       let numArgs = length args
        in let arguments = if n == 1 then "argument" else "arguments"

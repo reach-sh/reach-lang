@@ -17,11 +17,15 @@ import Reach.AST.LL
 import Reach.Counter
 import Reach.Texty
 import Reach.Util
+import Generic.Data (gconIndex)
 
 -- Remove returns, duplicate continuations, and transform into dk
 data Error
   = Err_Unreachable String
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode Error where
+  errCode e = "REACH_ERR_LINEARIZE" <> show (gconIndex e)
 
 instance Show Error where
   show = \case

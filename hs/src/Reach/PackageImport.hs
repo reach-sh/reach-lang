@@ -20,6 +20,7 @@ import System.PosixCompat.Files
 import System.Process
 import Text.Parsec
 import Text.Printf
+import Generic.Data (gconIndex)
 
 data Env = Env
   { e_at :: SrcLoc
@@ -35,7 +36,10 @@ data PkgError
   | Err_NoRev (Maybe String)
   | Err_Unauthorized
   | Err_InvalidImportSource FilePath ParseError
-  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode PkgError where
+  errCode e = "REACH_ERR_PKG" <> show (gconIndex e)
 
 instance Show PkgError where
   show = \case
@@ -54,7 +58,7 @@ instance Show PkgError where
 
 -- Library
 
-expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasErrorCode e, HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = asks e_at >>= flip expect_thrown e
 
 runGit :: FilePath -> [String] -> App (Either String String)

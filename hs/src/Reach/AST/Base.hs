@@ -17,6 +17,10 @@ import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.UnsafeUtil
+import Generic.Data (gconIndex)
+import qualified System.Console.Pretty as TC
+import Safe (atMay)
+import Data.Maybe (fromMaybe)
 
 --- Source Information
 data ReachSource
@@ -60,6 +64,9 @@ data ImpossibleError
   = Err_Impossible String
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
+instance HasErrorCode ImpossibleError where
+  errCode e = "REACH_ERR_IMPOSSIBLE" <> show (gconIndex e)
+
 instance Show ImpossibleError where
   show = \case
     Err_Impossible msg -> msg
@@ -84,7 +91,16 @@ srcloc_line_col :: SrcLoc -> [Int]
 srcloc_line_col (SrcLoc _ (Just (TokenPn _ l c)) _) = [l, c]
 srcloc_line_col _ = []
 
-expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
+getSrcLine :: Maybe Int -> [String] -> Maybe String
+getSrcLine rowNum fl =
+  case rowNum of
+    Just r -> atMay fl $ r - 1
+    Nothing -> Nothing
+
+errorCodeDocUrl :: HasErrorCode a => a -> String
+errorCodeDocUrl e = "docs.reach.sh/ref-error-codes.html/#%28tech._" <> errCode e <> "%29"
+
+expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
     True ->
@@ -99,14 +115,28 @@ expect_throw mCtx src ce =
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
                       })
-    False ->
+    False -> do
+      let hasColor = unsafeTermSupportsColor
+      let color c = if hasColor then TC.color c else id
+      let style s = if hasColor then TC.style s else id
+      let fileLines = srcloc_file src >>= Just . unsafeReadFile
+      let rowNum = case srcloc_line_col src of
+                  [l, _] -> Just l
+                  _ -> Nothing
+      let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
+      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n\n")
+                      $ getSrcLine rowNum (fromMaybe [] fileLines)
       error . T.unpack . unsafeRedactAbs . T.pack $
-        "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+        style TC.Bold (color TC.Red "error") <> ": " <> style TC.Bold (errCode ce) <> "\n\n" <>
+          " " <> style TC.Bold (show src) ++ "\n\n" <>
+          fileLine <>
+          "    " ++ (take 512 $ show ce)
           <> case concat mCtx of
             [] -> ""
-            ctx -> "\nTrace:\n" <> List.intercalate "\n" (topOfStackTrace ctx)
+            ctx -> "\n\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx)
+          <> "\n\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
 
-expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
+expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
 
 topOfStackTrace :: [SLCtxtFrame] -> [String]
@@ -136,6 +166,11 @@ get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
+
+srcloc_file :: SrcLoc -> Maybe FilePath
+srcloc_file = \case
+  SrcLoc _ _ (Just (ReachSourceFile f)) -> Just f
+  _ -> Nothing
 
 class SrcLocOf a where
   srclocOf :: a -> SrcLoc
@@ -242,3 +277,6 @@ instance Show SLCtxtFrame where
 
 instance SrcLocOf SLCtxtFrame where
   srclocOf (SLC_CloApp at _ _) = at
+
+class Generic a => HasErrorCode a where
+  errCode :: a -> String

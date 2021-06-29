@@ -36,6 +36,7 @@ import System.Directory
 import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
+import Generic.Data (gconIndex)
 
 data Env = Env
   { e_at :: SrcLoc
@@ -66,6 +67,9 @@ data ParserError
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode ParserError where
+  errCode e = "REACH_ERR_PARSER" <> show (gconIndex e)
 
 --- FIXME implement a custom show that is useful
 instance Show ParserError where
