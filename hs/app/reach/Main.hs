@@ -16,12 +16,13 @@ import System.FilePath
 import System.Posix.Files
 import Text.Parsec (ParsecT, runParserT, char, string, eof, try)
 
+import Reach.Util
+import Reach.Version
+import Reach.CommandLine
+
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified NeatInterpolation as N
-
-import qualified Reach.Util as U
-import qualified Reach.Version as V
 
 -- TODO update `ref-usage` docs once stabilized
 
@@ -59,7 +60,7 @@ write :: T.Text -> App
 write t = asks e_effect >>= liftIO . flip modifyIORef w where
   w = \case
     Script t' -> Script $ t' <> t <> "\n\n"
-    InProcess -> U.impossible "Cannot `write` to an in-process `Effect`"
+    InProcess -> impossible "Cannot `write` to an in-process `Effect`"
 
 
 writeFrom :: FilePath -> App
@@ -72,7 +73,7 @@ _runSubScript a e = readIORef (e_effect e) >>= \case
     r <- newIORef $ Script ""
     Script r' <- runReaderT a (e { e_effect = r }) >> readIORef r
     pure r'
-  _ -> U.impossible "`runSubScript` may only be applied to a `Script`"
+  _ -> impossible "`runSubScript` may only be applied to a `Script`"
 
 
 --------------------------------------------------------------------------------
@@ -244,13 +245,13 @@ reachImages =
 --------------------------------------------------------------------------------
 reachVersionInProcess :: IO T.Text
 reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
-  Nothing -> pure $ T.pack V.versionStr
+  Nothing -> pure $ T.pack versionStr
   Just v -> pure $ T.pack v
 
 
 reachVersionShortInProcess :: IO T.Text
 reachVersionShortInProcess = reachVersionInProcess >>= \case
-  "stable" -> pure $ T.pack V.compatibleVersionStr
+  "stable" -> pure $ T.pack compatibleVersionStr
   v -> pure $ a <> "." <> b where
     f ('v':s) = s
     f s = s
@@ -268,7 +269,7 @@ reachEx = lookupEnv "REACH_EX" >>= \case
 --------------------------------------------------------------------------------
 reachVersionScript :: App
 reachVersionScript =
-  let v = T.pack V.versionStr
+  let v = T.pack versionStr
   in write [N.text|
     if [ "x$$REACH_VERSION" = "x" ]; then
       REACH_VERSION="$v"
@@ -278,7 +279,7 @@ reachVersionScript =
 
 _reachVersionShortScript :: App
 _reachVersionShortScript =
-  let compat = T.pack V.compatibleVersionStr
+  let compat = T.pack compatibleVersionStr
   in write [N.text|
     if [ "$$REACH_VERSION" = "stable" ]; then
       REACH_VERSION_SHORT="$compat"
@@ -399,18 +400,9 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
+  f = go <$> compiler
 
-  f = go
-    <$> switch (long "disable-reporting" <> hidden)
-    <*> switch (long "error-format-json" <> hidden)
-    <*> switch (long "intermediate-files" <> help "Preserve intermediate build artifacts")
-    <*> switch (long "install-pkgs" <> help "Allow remote library-fetching")
-    <*> optional (strOption (long "dir-dot-reach" <> hidden))
-    <*> optional (strOption (long "output" <> short 'o' <> metavar "DIR" <> help "Directory for output files" <> showDefault))
-    <*> strArgument (metavar "SOURCE" <> value "index.rsh" <> showDefault)
-    <*> many (strArgument (metavar "EXPORTS..."))
-
-  go drp efj ifs ips ddr dop src exps = script $ do
+  go CompilerToolArgs {..} = script $ do
     reach <- liftIO reachEx
     rv <- liftIO reachVersionInProcess
     realpath
@@ -453,24 +445,24 @@ compile = command "compile" $ info f d where
     |]
 
    where
-    if' b t = if b then t else ""
+    if' b t = if b then T.pack t else ""
 
     opt x a = case x of
       Nothing -> ""
-      Just t -> a <> "=" <> t
+      Just t -> T.pack $ a <> "=" <> t
 
     args = T.intercalate " " $
-      [ if' drp "--disable-reporting"
-      , if' efj "--error-format-json"
-      , if' ifs "--intermediate-files"
-      , if' ips "--install-pkgs"
-      , opt ddr "--dir-dot-reach"
-      , opt dop "--output"
-      , src -- TODO fix directory mismatches between host/container
-      ] <> exps
+      [ if' cta_disableReporting "--disable-reporting"
+      , if' cta_errorFormatJson "--error-format-json"
+      , if' cta_intermediateFiles "--intermediate-files"
+      , if' cta_installPkgs "--install-pkgs"
+      , opt cta_dirDotReach "--dir-dot-reach"
+      , opt cta_outputDir "--output"
+      , T.pack cta_source -- TODO fix directory mismatches between host/container
+      ] <> (T.pack <$> cta_tops)
 
-    drp' = if' (not drp) "--disable-reporting"
-    ifs' = if' (not ifs) "--intermediate-files"
+    drp' = if' (not cta_disableReporting) "--disable-reporting"
+    ifs' = if' (not cta_intermediateFiles) "--intermediate-files"
 
     reachc_release = [N.text| stack build && stack exec -- reachc $args |]
 
@@ -648,7 +640,7 @@ update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = script . forM_ reachImages $ \i -> write
-    $ "docker pull reachsh/" <> i <> ":" <> T.pack V.compatibleVersionStr
+    $ "docker pull reachsh/" <> i <> ":" <> T.pack compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -667,10 +659,10 @@ dockerReset = command "docker-reset" $ info f d where
 
 
 --------------------------------------------------------------------------------
-version :: Subcommand
-version = command "version" $ info f d where
+version' :: Subcommand
+version' = command "version" $ info f d where
   d = progDesc "Display version"
-  f = pure . liftIO . T.putStrLn $ T.pack V.versionHeader
+  f = pure . liftIO . T.putStrLn $ T.pack versionHeader
 
 
 --------------------------------------------------------------------------------
@@ -704,7 +696,7 @@ whoami = command "whoami" $ info f fullDesc where
 --------------------------------------------------------------------------------
 numericVersion :: Subcommand
 numericVersion = command "numeric-version" $ info f fullDesc where
-  f = pure . liftIO . T.putStrLn $ T.pack V.compatibleVersionStr
+  f = pure . liftIO . T.putStrLn $ T.pack compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -774,7 +766,7 @@ main = do
     <> upgrade
     <> update
     <> dockerReset
-    <> version
+    <> version'
     <> hashes
     <> help'
 
