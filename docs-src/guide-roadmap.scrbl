@@ -7,6 +7,8 @@ This section describes in a vague way some of the bigger future plans for Reach'
 These are vague for expediency, but we're willing to elaborate if you ask on @(the-community-link).
 We welcome your contributions on @link["https://github.com/reach-sh/reach-lang"]{GitHub} and on @(the-community-link) to helping make these plans come to fruition.
 
+Last updated: 2021/06/30
+
 @bold{Short term}:
 @itemlist[
 @item{General - Apple Silicon support}
