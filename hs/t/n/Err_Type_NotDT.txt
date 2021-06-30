@@ -1,6 +1,6 @@
 reachc: error: RE0088
 
- ./Err_App_Interact_NotFirstOrder.rsh:4:19:application
+ ./Err_Type_NotDT.rsh:4:19:application
 
  4|   {}, [Participant("A", {f: Fun([], Fun([], UInt))})], (A) => {}
 

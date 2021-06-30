@@ -95,16 +95,16 @@ srcloc_line_col _ = []
 
 getSrcLine :: Maybe Int -> [String] -> Maybe String
 getSrcLine rowNum fl =
-  case rowNum of
-    Just r -> atMay fl $ r - 1
-    Nothing -> Nothing
+  rowNum >>= (\ r -> atMay fl $  r - 1)
 
 urlIntersperse :: Char -> [Char] -> [Char]
-urlIntersperse _ [] = []
-urlIntersperse _ [h] = [h]
-urlIntersperse s (h:t)
-  | isAlpha h = s : h : urlIntersperse s t
-  | otherwise = h  : urlIntersperse s t
+urlIntersperse s xs =
+  case (s, xs) of
+  (_, [])  -> []
+  (_, [h]) -> [h]
+  (_, h:t)
+    | isAlpha h -> s : h : urlIntersperse s t
+    | otherwise -> h : urlIntersperse s t
 
 errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =

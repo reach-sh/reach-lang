@@ -18,6 +18,7 @@ spec_examples_cover_EvalError =
     exceptions =
       [ "Err_App_InvalidArgs"
       , "Err_CannotReturn" -- most attempts were not valid js
+      , "Err_App_Interact_NotFirstOrder"
       , "Err_Decl_IllegalJS"
       , "Err_Each_NotParticipant"
       , "Err_Each_NotTuple"
@@ -34,7 +35,6 @@ spec_examples_cover_EvalError =
       , "Err_While_IllegalInvariant"
       , "Err_Type_Mismatch"
       , "Err_Type_None"
-      , "Err_Type_NotDT"
       , "Err_Type_NotApplicable"
       , "Err_TypeMeets_dMismatch"
       , "Err_View_CannotExpose"
