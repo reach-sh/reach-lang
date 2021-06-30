@@ -69,7 +69,7 @@ data ParserError
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ParserError where
-  errCode e = "REACH_ERR_PARSER" <> show (gconIndex e)
+  errCode e = "RP" <> leftPad 4 '0' (show $ gconIndex e)
 
 --- FIXME implement a custom show that is useful
 instance Show ParserError where

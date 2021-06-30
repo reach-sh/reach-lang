@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL51
+reachc: error: RE0051
 
  ./Err_Obj_IllegalComputedField.rsh:3:12:computed field name
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL51
 
     Invalid computed field name. Fields must be bytes, but got: UInt
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL51%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0051%29
 

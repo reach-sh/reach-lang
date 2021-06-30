@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL98
+reachc: error: RE0098
 
  ./Err_Struct_Key_Invalid.rsh:8:23:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL98
 
     Struct key `$x ` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL98%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0098%29
 

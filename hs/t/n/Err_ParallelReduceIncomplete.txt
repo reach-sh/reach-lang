@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL85
+reachc: error: RE0085
 
  ./Err_ParallelReduceIncomplete.rsh:9:23:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL85
 
     Parallel reduce incomplete: missing invariant
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL85%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0085%29
 

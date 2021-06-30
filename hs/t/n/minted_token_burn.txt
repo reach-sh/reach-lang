@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL44
+reachc: error: RE0044
 
  ./minted_token_burn.rsh:19:7:id ref
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL44
 
     Invalid unbound identifier in expression: MintedToken. Did you mean: ["Token","FixedPoint","interval","intervalCC","intervalCO"]
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL44%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0044%29
 

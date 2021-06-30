@@ -1,8 +1,8 @@
-reachc: error: REACH_ERR_EVAL50
+reachc: error: RE0050
 
  ./Err_NoHeader.rsh
 
     Invalid Reach file. Expected header 'reach 0.1'; at top of file.
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL50%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0050%29
 

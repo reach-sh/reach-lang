@@ -94,7 +94,7 @@
 (define (many-break n)
   (make-list n @(linebreak)))
 (define (stop . args)
-  (apply centered 
+  (apply centered
          (many-break 3) @bold{Stop!} @(linebreak)
          (append args (many-break 4))))
 
@@ -387,3 +387,6 @@ You should start off by initializing your Reach program:
 
 (define (note-ctransfer)
   @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.})
+
+(define (error-version x y)
+  @margin-note{This error will not happen before version @tt{@x} or after version @tt{@y}})

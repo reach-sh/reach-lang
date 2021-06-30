@@ -25,7 +25,7 @@ data Error
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode Error where
-  errCode e = "REACH_ERR_LINEARIZE" <> show (gconIndex e)
+  errCode e = "RL" <> leftPad 4 '0' (show $ gconIndex e)
 
 instance Show Error where
   show = \case

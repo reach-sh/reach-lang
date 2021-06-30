@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL13
+reachc: error: RE0013
 
  ./Err_App_InvalidOption.rsh:4:14:property binding
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL13
 
     deploMode is not a valid app option. Did you mean: ["deployMode","connectors","verifyArithmetic","verifyPerConnector"]
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL13%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0013%29
 

@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL92
+reachc: error: RE0092
 
  ./Err_Expected_Map.rsh:7:17:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL92
 
     Expected map, got: UInt
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL92%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0092%29
 

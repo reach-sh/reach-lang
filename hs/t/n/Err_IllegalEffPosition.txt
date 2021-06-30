@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL95
+reachc: error: RE0095
 
  ./Err_IllegalEffPosition.rsh:8:13:id
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL95
 
     Effects cannot be bound, got: <SLV_Form>
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL95%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0095%29
 

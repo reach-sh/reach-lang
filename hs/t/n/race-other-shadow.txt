@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL58
+reachc: error: RE0058
 
  ./race-other-shadow.rsh:17:24:dot
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL58
 
     Invalid name shadowing. Identifier 'x' is already bound at ./race-other-shadow.rsh:16:15:id. It cannot be bound again at ./race-other-shadow.rsh:17:24:dot
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL58%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0058%29
 

@@ -165,7 +165,7 @@ data EPPError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
-  errCode e = "REACH_ERR_EPP" <> show (gconIndex e)
+  errCode e = "RE" <> leftPad 4 '0' (show $ gconIndex e)
 
 instance Show EPPError where
   show Err_ContinueDomination =

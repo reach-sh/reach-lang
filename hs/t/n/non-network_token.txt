@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL27
+reachc: error: RE0027
 
  ./non-network_token.rsh:12:16:dot
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL27
 
     currency is not a field of <SLV_Form>. Did you mean: ["when","publish","timeout","throwTimeout"]
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL27%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0027%29
 

@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL76
+reachc: error: RE0076
 
  ./Err_Switch_MissingCases.rsh:12:9:switch
 
@@ -10,5 +10,5 @@ Trace:
   in [unknown function] from (./Err_Switch_MissingCases.rsh:11:21:function exp) at (./Err_Switch_MissingCases.rsh:13:35:application)
   in [unknown function] from (./Err_Switch_MissingCases.rsh:9:15:function exp) at (./Err_Switch_MissingCases.rsh:9:11:application)
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL76%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0076%29
 

@@ -1,5 +1,5 @@
 WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./Err_App_InvalidPartSpec.rsh:4:8:tuple
-reachc: error: REACH_ERR_EVAL78
+reachc: error: RE0078
 
  ./Err_App_InvalidPartSpec.rsh:4:22:application
 
@@ -7,5 +7,5 @@ reachc: error: REACH_ERR_EVAL78
 
     Expected bytes, got something else: UInt
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL78%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0078%29
 

@@ -21,6 +21,8 @@ import Generic.Data (gconIndex)
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
 import Data.Maybe (fromMaybe)
+import Data.Char (isAlpha)
+import Reach.Util (leftPad)
 
 --- Source Information
 data ReachSource
@@ -65,7 +67,7 @@ data ImpossibleError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
-  errCode e = "REACH_ERR_IMPOSSIBLE" <> show (gconIndex e)
+  errCode e = "RX" <> leftPad 4 '0' (show $ gconIndex e)
 
 instance Show ImpossibleError where
   show = \case
@@ -97,8 +99,16 @@ getSrcLine rowNum fl =
     Just r -> atMay fl $ r - 1
     Nothing -> Nothing
 
+urlIntersperse :: Char -> [Char] -> [Char]
+urlIntersperse _ [] = []
+urlIntersperse _ [h] = [h]
+urlIntersperse s (h:t)
+  | isAlpha h = s : h : urlIntersperse s t
+  | otherwise = h  : urlIntersperse s t
+
 errorCodeDocUrl :: HasErrorCode a => a -> String
-errorCodeDocUrl e = "docs.reach.sh/ref-error-codes.html/#%28tech._" <> errCode e <> "%29"
+errorCodeDocUrl e =
+  "docs.reach.sh/ref-error-codes.html#%28part._" <> urlIntersperse '.' (errCode e) <> "%29"
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =

@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL88
+reachc: error: RE0088
 
  ./Err_App_Interact_NotFirstOrder.rsh:4:19:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL88
 
     Value of this type cannot exist at runtime: Fun([], UInt)
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL88%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0088%29
 

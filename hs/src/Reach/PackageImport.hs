@@ -39,7 +39,7 @@ data PkgError
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode PkgError where
-  errCode e = "REACH_ERR_PKG" <> show (gconIndex e)
+  errCode e = "RI" <> leftPad 4 '0' (show $ gconIndex e)
 
 instance Show PkgError where
   show = \case

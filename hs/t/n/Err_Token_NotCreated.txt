@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL114
+reachc: error: RE0114
 
  ./Err_Token_NotCreated.rsh:11:14:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL114
 
     Token.destroy must be used on created tokens
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL114%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0114%29
 

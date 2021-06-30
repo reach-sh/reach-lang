@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL23
+reachc: error: RE0023
 
  ./Err_Decls_IllegalJS.rsh:3:1:const
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL23
 
     Invalid Reach declaration; expected exactly one declaration
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL23%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0023%29
 

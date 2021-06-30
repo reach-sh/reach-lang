@@ -40,7 +40,7 @@ data ConnectorError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ConnectorError where
-  errCode e = "REACH_ERR_CONNECTOR" <> show (gconIndex e)
+  errCode e = "RC" <> leftPad 4 '0' (show $ gconIndex e)
 
 instance Show ConnectorError where
   show (Err_IntLiteralRange rmin x rmax) =

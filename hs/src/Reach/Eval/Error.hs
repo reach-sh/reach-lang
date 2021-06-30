@@ -147,7 +147,7 @@ data EvalError
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
-  errCode e = "REACH_ERR_EVAL" <> show (gconIndex e)
+  errCode e = "RE" <> leftPad 4 '0' (show $ gconIndex e)
 
 --- FIXME I think most of these things should be in Pretty
 

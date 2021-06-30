@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL58
+reachc: error: RE0058
 
  ./interact_w_function.rsh:8:7:field
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL58
 
     Invalid name shadowing. Identifier 'function' is already bound at <builtin>. It cannot be bound again at ./interact_w_function.rsh:8:15:property binding
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL58%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0058%29
 

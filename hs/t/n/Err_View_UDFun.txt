@@ -1,4 +1,4 @@
-reachc: error: REACH_ERR_EVAL110
+reachc: error: RE0110
 
  ./Err_View_UDFun.rsh:6:17:application
 
@@ -6,5 +6,5 @@ reachc: error: REACH_ERR_EVAL110
 
     View functions cannot have unconstrained domains.
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL110%29
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0110%29
 
