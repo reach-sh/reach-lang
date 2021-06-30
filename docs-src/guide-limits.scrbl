@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "guide-limits"]{What are Reach's limitations and its future roadmap}
+@title[#:version reach-vers #:tag "guide-limits"]{What are Reach's limitations?}
 
 Today, Reach is a powerful language for building decentralized applications, as demonstrated in @seclink["overview"]{the overview}, @seclink["tut"]{the tutorial}, and the @seclink["workshop"]{workshop series}.
 However, it has a lot of potential for growth.
@@ -19,16 +19,10 @@ Presently, this can be accomplished via the @secref["ref-backends-rpc"], but we'
 
 @(hrule)
 @bold{Computation.} Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like @tech{arrow expressions}, free-form objects, destructuring bindings, robust @reachin{import} and @reachin{export} specificiers, and so on.
-We are working on making the transition for JavaScript developers as seamless as possible by integrating more compatibility through features like syntactic sugar for @reachin{while} patterns, like @jsin{for} in JavaScript, and recursive functions (when they are in a tail-recursive set.)
-We have plans to extend Reach's type system to be able to track more specific features of values, such as @link["https://en.wikipedia.org/wiki/Substructural_type_system"]{substructural types} to allow mutation and arbitrary range integer types, which will be coalesced during compilation.
-Finally, we have plans to allow more exotic features, like non-communicating loops with guaranteed termination, statically computable exceptions, and pay-as-you-go closures, including non-tail-recursion through closure conversion of non-contifiable continuations.
+However, there are some differences that represent limitations, such as the inability to use functions as values at runtime and the need to be finite limits of data.
 
 @(hrule)
-@bold{Verification.} Reach's verifier is robust in the face of many complex and interesting theorems about decentralized application behavior.
-In the longer term, we intend to introduce verification promises that constrain the eventual use of values, refine the knowledge checker to reduce false positives, verify core compiler algorithms, and introduce a model-checking-based assertion mechanism for specifying game theoretic properties of an application, such as that all state changes are Pareto improvements.
-
-@(hrule)
-@bold{Infrastructure.} We intend to build a package system for Reach to allow for sharing composable decentralized applications.
+@bold{Verification.} Reach's verifier is robust in the face of many complex and interesting theorems about decentralized application behavior, but it is inherently conservative and does not presently allow users to manually prove theorems that are conservatively rejected.
 
 @(hrule)
 @bold{Network Integration.} Since Reach is @tech{consensus network}-agnostic, it is not possible for Reach programs to directly integrate with network-specific features, such as observing the blockhash on Ethereum.
@@ -36,9 +30,5 @@ Reach programs can instead interact with these low-level details of their chosen
 
 @(hrule)
 @bold{Communication.}
-Reach's communication language has some limitations that we have plans to remove.
-For example, Reach @tech{linear state} must be linear in the number of participants to the application, rather than in the number of @tech{publications}, because some consensus networks do not support the latter.
-We plan to allow such programs and simply limit which networks they may compile to.
-
-Reach's communication language has some limitations for which we do not have plans for removing.
+Reach's communication language has some limitations that we have plans to remove, which are discussed in @secref["guide-roadmap"], but there are some for which we do not have plans for removing.
 For example, we do not intend to support co-inductive or cyclic state, nor expose an arbitrary consensus heap to programmers.
