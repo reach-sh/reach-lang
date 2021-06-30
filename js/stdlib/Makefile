@@ -23,8 +23,8 @@ package.json: package.mo.json $(ROOT)/VERSION
 ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
-ts/stdlib_sol.ts: ../../hs/sol/stdlib.sol
-	(echo "export default" ; cd ../../hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
+ts/stdlib_sol.ts: $(ROOT)/hs/sol/stdlib.sol
+	(echo "export default" ; cd $(ROOT)/hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
 
 .PHONY: build
 build: package.json ts/version.ts ts/stdlib_sol.ts

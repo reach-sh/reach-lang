@@ -10,9 +10,9 @@ Read the [documentation](https://docs.reach.sh).
 # Development
 
 If you want to work on the Reach compiler, you'll need:
-- stack v2.5.1
+- stack v2.7.1
 - z3 v4.8.10
-- solidity v0.8.0
+- solidity v0.8.5
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 
 Installation on macOS:
