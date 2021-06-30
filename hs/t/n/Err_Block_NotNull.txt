@@ -1,1 +1,10 @@
-reachc: error: ./Err_Block_NotNull.rsh:5:11:application: Invalid block result type. Expected Null, got UInt
+reachc: error: REACH_ERR_EVAL3
+
+ ./Err_Block_NotNull.rsh:6:14:decimal
+
+ 6|       return 1;
+
+    Invalid block result type. Expected Null, got UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL3%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Fork_ResultNotObject.rsh:9:12:application: fork local result must be object with fields `msg` or `when`, but got UInt
+reachc: error: REACH_ERR_EVAL83
+
+ ./Err_Fork_ResultNotObject.rsh:10:9:decimal
+
+ 10|         5),
+
+    Fork local result must be object with fields `msg` or `when`, but got UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL83%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_NotPublicIdent.rsh:5:11:id: Invalid binding: _x. Public identifiers must not be prefixed by _
+reachc: error: REACH_ERR_EVAL70
+
+ ./Err_Eval_NotPublicIdent.rsh:5:11:id
+
+ 5|     const _x = 1;
+
+    Invalid binding: _x. Public identifiers must not be prefixed by _
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL70%29
+

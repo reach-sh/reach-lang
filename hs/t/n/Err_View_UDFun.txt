@@ -1,1 +1,10 @@
-reachc: error: ./Err_View_UDFun.rsh:6:17:application: View functions cannot have unconstrained domains.
+reachc: error: REACH_ERR_EVAL110
+
+ ./Err_View_UDFun.rsh:6:17:application
+
+ 6|   const V = View('Test', {
+
+    View functions cannot have unconstrained domains.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL110%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Obj_SpreadNotObj.rsh:3:12:...obj: Invalid object spread. Expected object, got: 3
+reachc: error: REACH_ERR_EVAL55
+
+ ./Err_Obj_SpreadNotObj.rsh:3:12:...obj
+
+ 3| const x = {...3};
+
+    Invalid object spread. Expected object, got: 3
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL55%29
+

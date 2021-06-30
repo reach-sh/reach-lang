@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_NotObject.rsh:6:16:dot: Invalid field access. Expected object, got: UInt
+reachc: error: REACH_ERR_EVAL39
+
+ ./Err_Eval_NotObject.rsh:6:16:dot
+
+ 6|     return obj.y;
+
+    Invalid field access. Expected object, got: UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL39%29
+

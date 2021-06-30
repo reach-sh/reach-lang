@@ -1,1 +1,10 @@
-reachc: error: ./object_spread_keys.rsh:12:20:dot: x is not a field of Object({"y": UInt}). Did you mean: ["y"]
+reachc: error: REACH_ERR_EVAL27
+
+ ./object_spread_keys.rsh:12:20:dot
+
+ 12|     const z = objY.x;
+
+    x is not a field of Object({"y": UInt}). Did you mean: ["y"]
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL27%29
+

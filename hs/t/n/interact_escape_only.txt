@@ -1,1 +1,10 @@
-reachc: error: ./interact_escape_only.rsh:11:7:dot: Value cannot exist at runtime: A's interaction interface
+reachc: error: REACH_ERR_EVAL87
+
+ ./interact_escape_only.rsh:11:7:dot
+
+ 11|     A.publish(aInteract);
+
+    Value cannot exist at runtime: A's interaction interface
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL87%29
+

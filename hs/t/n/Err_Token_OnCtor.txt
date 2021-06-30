@@ -1,1 +1,10 @@
-reachc: error: ./Err_Token_OnCtor.rsh:14:9:dot: Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens.
+reachc: error: REACH_ERR_EVAL104
+
+ ./Err_Token_OnCtor.rsh:14:9:dot
+
+ 14|       A.publish(tok, amt)
+
+    Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL104%29
+

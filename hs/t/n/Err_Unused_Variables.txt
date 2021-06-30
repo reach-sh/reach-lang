@@ -1,2 +1,11 @@
-reachc: error: ./Err_Unused_Variables.rsh:12:15:id: unused variable: z at ./Err_Unused_Variables.rsh:12:15:id
-unused variable: b at ./Err_Unused_Variables.rsh:13:15:id
+reachc: error: REACH_ERR_EVAL96
+
+ ./Err_Unused_Variables.rsh:12:15:id
+
+ 12|         const z = 5;
+
+    unused variable: z at ./Err_Unused_Variables.rsh:12:15:id
+    unused variable: b at ./Err_Unused_Variables.rsh:13:15:id
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL96%29
+

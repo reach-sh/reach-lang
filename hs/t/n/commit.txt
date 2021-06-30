@@ -1,1 +1,10 @@
-reachc: error: ./commit.rsh:8:7:const: Invalid name shadowing. Identifier 'commit' is already bound at <builtin>. It cannot be bound again at ./commit.rsh:8:13:id
+reachc: error: REACH_ERR_EVAL58
+
+ ./commit.rsh:8:7:const
+
+ 8|       const commit = 5;
+
+    Invalid name shadowing. Identifier 'commit' is already bound at <builtin>. It cannot be bound again at ./commit.rsh:8:13:id
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL58%29
+

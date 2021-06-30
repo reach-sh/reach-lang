@@ -1,1 +1,10 @@
-reachc: error: ./Err_Transfer_Class.rsh:8:19:application: cannot transfer to participant class, Bob
+reachc: error: REACH_ERR_EVAL67
+
+ ./Err_Transfer_Class.rsh:8:19:application
+
+ 8|   transfer(100).to(Bob);
+
+    cannot transfer to participant class, Bob
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL67%29
+

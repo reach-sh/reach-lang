@@ -1,4 +1,14 @@
-reachc: error: ./default.rsh:15:27:application: These types are mismatched: Data({"None": Null, "Some": UInt}) vs UInt
+reachc: error: REACH_ERR_EVAL90
+
+ ./default.rsh:15:27:application
+
+ 15|         default: return mi+1; } })(); });
+
+    These types are mismatched: Data({"None": Null, "Some": UInt}) vs UInt
+
 Trace:
   in [unknown function] from (./default.rsh:12:21:function exp) at (./default.rsh:15:35:application)
   in [unknown function] from (./default.rsh:10:15:function exp) at (./default.rsh:10:11:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL90%29
+

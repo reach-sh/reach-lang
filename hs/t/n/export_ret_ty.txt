@@ -1,1 +1,8 @@
-reachc: error: <top level>: These types are mismatched: Bool vs UInt
+reachc: error: REACH_ERR_EVAL90
+
+ <top level>
+
+    These types are mismatched: Bool vs UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL90%29
+

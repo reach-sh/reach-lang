@@ -1,1 +1,10 @@
-reachc: error: ./Err_TailNotEmpty.rsh:5:5:return: Nowhere to return to
+reachc: error: REACH_ERR_EVAL36
+
+ ./Err_TailNotEmpty.rsh:5:5:return
+
+ 5|     return 0;
+
+    Nowhere to return to
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL36%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_TokenNew_InvalidKey.rsh:9:24:application: `coolness` is not an expected key of a `new Token` operation
+reachc: error: REACH_ERR_EVAL113
+
+ ./Err_TokenNew_InvalidKey.rsh:9:24:application
+
+ 9|   const tok = new Token({coolness: true});
+
+    `coolness` is not an expected key of a `new Token` operation
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL113%29
+

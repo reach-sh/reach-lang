@@ -1,1 +1,10 @@
-reachc: error: ./Err_Transfer_Type.rsh:14:9:dot: Pay amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: Tuple(UInt, Tuple(UInt))
+reachc: error: REACH_ERR_EVAL11
+
+ ./Err_Transfer_Type.rsh:15:14:tuple
+
+ 15|         .pay([amt, [amt]]);
+
+    Pay amount type invalid: expected for network token or tuple of UInt for network token or tuple of UInt and token for non-network token, i.e., Union(UInt, Tuple([Union(UInt, Tuple([UInt, Token])), ...])) but got: Tuple(UInt, Tuple(UInt))
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL11%29
+

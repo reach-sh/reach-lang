@@ -1,1 +1,10 @@
-reachc: error: ./Err_Transfer_DoubleToken.rsh:14:9:dot: Pay amount contains multiple non-network token amounts for the same token, but only one is allowed
+reachc: error: REACH_ERR_EVAL10
+
+ ./Err_Transfer_DoubleToken.rsh:15:14:tuple
+
+ 15|         .pay([amt, [amt, tok], [amt, tok]]);
+
+    Pay amount contains multiple non-network token amounts for the same token, but only one is allowed
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL10%29
+

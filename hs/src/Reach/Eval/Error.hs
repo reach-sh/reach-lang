@@ -32,7 +32,7 @@ data EvalError
   = Err_Apply_ArgCount SrcLoc Int Int
   | Err_Block_Assign JSAssignOp [JSStatement]
   | Err_Block_IllegalJS JSStatement
-  | Err_Block_NotNull DLType SLVal
+  | Err_Block_NotNull DLType
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
@@ -279,7 +279,7 @@ instance Show EvalError where
       "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
       "Invalid statement"
-    Err_Block_NotNull ty _slval ->
+    Err_Block_NotNull ty ->
       -- FIXME explain why null is expected
       "Invalid block result type. Expected Null, got " <> show ty
     Err_Block_Variable ->
@@ -345,7 +345,7 @@ instance Show EvalError where
     Err_Decl_NotRefable slval ->
       "Invalid binding. Expected array or tuple, got: " <> show_sv slval
     Err_Decl_WrongArrayLength nIdents nVals ->
-      "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
+      "Invalid array binding. Cannot unpack " <> show nIdents <> " variables from an array with " <> show nVals <> " elements."
     Err_Dot_InvalidField slval ks k ->
       k <> " is not a field of " <> show_sv slval <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
@@ -378,7 +378,7 @@ instance Show EvalError where
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
-      "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
+      "Invalid array index. Expected an index between 0 and " <> show maxi <> ", but got: " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
@@ -512,7 +512,7 @@ instance Show EvalError where
     Err_IllegalEffPosition v ->
       "Effects cannot be bound, got: " <> show_sv v
     Err_Unused_Variables vars ->
-      intercalate "\n" $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
+      intercalate "\n    " $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
     Err_Struct_Key_Invalid s ->

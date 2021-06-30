@@ -1,1 +1,10 @@
-reachc: error: ./local.rsh:3:23:import from: Cannot install packages; did you mean to run with `--install-pkgs`?
+reachc: error: REACH_ERR_PKG3
+
+ ./local.rsh:3:23:import from
+
+ 3| import { bestNumber } from '@reach-sh/reach-example-package';
+
+    Cannot install packages; did you mean to run with `--install-pkgs`?
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_PKG3%29
+

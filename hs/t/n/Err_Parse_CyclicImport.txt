@@ -1,1 +1,10 @@
-reachc: error: ./Err_Parse_CyclicImport.rsh:3:8:import bare: Cyclic import! ./Err_Parse_CyclicImport.rsh
+reachc: error: REACH_ERR_PARSER0
+
+ ./Err_Parse_CyclicImport.rsh:3:8:import bare
+
+ 3| import './Err_Parse_CyclicImport.rsh'
+
+    Cyclic import! ./Err_Parse_CyclicImport.rsh
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_PARSER0%29
+

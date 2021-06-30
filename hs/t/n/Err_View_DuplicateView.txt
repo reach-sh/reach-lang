@@ -1,1 +1,10 @@
-reachc: error: ./Err_View_DuplicateView.rsh:9:11:application: Duplicated view name: "NFT"
+reachc: error: REACH_ERR_EVAL108
+
+ ./Err_View_DuplicateView.rsh:9:11:application
+
+ 9|       View('NFT', { owner: Address }),
+
+    Duplicated view name: "NFT"
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL108%29
+

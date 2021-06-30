@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_RefOutOfBounds.rsh:6:15:array ref: Invalid array index. Expected (0 <= ix < 3), got 9
+reachc: error: REACH_ERR_EVAL43
+
+ ./Err_Eval_RefOutOfBounds.rsh:6:15:array ref
+
+ 6|     return arr[9];
+
+    Invalid array index. Expected an index between 0 and 3, but got: 9
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL43%29
+

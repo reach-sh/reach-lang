@@ -1,3 +1,13 @@
-reachc: error: ./with.rsh:10:7:with: Invalid statement
+reachc: error: REACH_ERR_EVAL2
+
+ ./with.rsh:10:7:with
+
+ 10|       with (o) {
+
+    Invalid statement
+
 Trace:
   in [unknown function] from (./with.rsh:8:15:function exp) at (./with.rsh:8:11:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL2%29
+

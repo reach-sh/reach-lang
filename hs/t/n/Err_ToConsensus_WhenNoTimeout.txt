@@ -1,1 +1,10 @@
-reachc: error: ./Err_ToConsensus_WhenNoTimeout.rsh:13:13:dot: Cannot optionally transition to consensus or have an empty race without timeout.
+reachc: error: REACH_ERR_EVAL82
+
+ ./Err_ToConsensus_WhenNoTimeout.rsh:13:13:dot
+
+ 13|       Alice.publish().when(go);
+
+    Cannot optionally transition to consensus or have an empty race without timeout.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL82%29
+

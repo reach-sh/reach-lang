@@ -1,1 +1,10 @@
-reachc: error: ./Err_Obj_IllegalComputedField.rsh:3:12:computed field name: Invalid computed field name. Fields must be bytes, but got: UInt
+reachc: error: REACH_ERR_EVAL51
+
+ ./Err_Obj_IllegalComputedField.rsh:3:12:computed field name
+
+ 3| const x = {[ 2+2 ]: "four"}
+
+    Invalid computed field name. Fields must be bytes, but got: UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL51%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_ToConsensus_WhenNoTimeout_noMatterWhat.rsh:11:27:application: Cannot ignore timeout requirement, unless at least one participant always races or one class might race
+reachc: error: REACH_ERR_EVAL82
+
+ ./Err_ToConsensus_WhenNoTimeout_noMatterWhat.rsh:11:27:application
+
+ 11|   const x = parallelReduce(0)
+
+    Cannot ignore timeout requirement, unless at least one participant always races or one class might race
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL82%29
+

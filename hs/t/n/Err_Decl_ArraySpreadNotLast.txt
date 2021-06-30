@@ -1,1 +1,10 @@
-reachc: error: ./Err_Decl_ArraySpreadNotLast.rsh:3:9:array spread: Array spread on left-hand side of binding must occur in last position
+reachc: error: REACH_ERR_EVAL21
+
+ ./Err_Decl_ArraySpreadNotLast.rsh:3:9:array spread
+
+ 3| const [ ...x, y ] = [ 1, 2 ];
+
+    Array spread on left-hand side of binding must occur in last position
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL21%29
+

@@ -4,4 +4,13 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 10 theorems; No failures!
-reachc: error: ./Err_Type_IntLiteralRange.rsh:11:15:decimal: integer literal out of range: 18446744073709551616 not in [0,18446744073709551615]
+reachc: error: REACH_ERR_CONNECTOR0
+
+ ./Err_Type_IntLiteralRange.rsh:11:15:decimal
+
+ 11|     const y = 18446744073709551616;
+
+    integer literal out of range: 18446744073709551616 not in [0,18446744073709551615]
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_CONNECTOR0%29
+

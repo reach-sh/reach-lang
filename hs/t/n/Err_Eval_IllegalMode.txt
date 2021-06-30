@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_IllegalMode.rsh:6:7:dot: Invalid operation. `to consensus` cannot be used in context: consensus step, must be in step. You must `commit` first.
+reachc: error: REACH_ERR_EVAL33
+
+ ./Err_Eval_IllegalMode.rsh:6:7:dot
+
+ 6|     A.publish();
+
+    Invalid operation. `to consensus` cannot be used in context: consensus step, must be in step. You must `commit` first.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL33%29
+

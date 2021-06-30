@@ -1,1 +1,10 @@
-reachc: error: ./Err_NoImpureCondInStep.rsh:36:9:if: Invalid operation. `conditional` cannot be used in context: step, must be in consensus step. You must `publish`, `pay`, or `fork` first.
+reachc: error: REACH_ERR_EVAL33
+
+ ./Err_NoImpureCondInStep.rsh:36:9:if
+
+ 36|         if ( round % 2 == 0 ) {
+
+    Invalid operation. `conditional` cannot be used in context: step, must be in consensus step. You must `publish`, `pay`, or `fork` first.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL33%29
+

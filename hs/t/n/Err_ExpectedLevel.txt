@@ -1,3 +1,13 @@
-reachc: error: ./Err_ExpectedLevel.rsh:8:27:application: Invalid declassify. Expected to declassify something private
+reachc: error: REACH_ERR_EVAL45
+
+ ./Err_ExpectedLevel.rsh:8:27:application
+
+ 8|       const y = declassify(x);
+
+    Invalid declassify. Expected to declassify something private
+
 Trace:
   in [unknown function] from (./Err_ExpectedLevel.rsh:7:15:function exp) at (./Err_ExpectedLevel.rsh:7:11:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL45%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_IllegalWait.rsh:7:9:application: Cannot wait or timeout until after first message in deployMode DM_firstMsg
+reachc: error: REACH_ERR_EVAL29
+
+ ./Err_Eval_IllegalWait.rsh:7:9:application
+
+ 7|     wait(1);
+
+    Cannot wait or timeout until after first message in deployMode DM_firstMsg
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL29%29
+

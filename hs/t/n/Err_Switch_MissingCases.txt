@@ -1,4 +1,14 @@
-reachc: error: ./Err_Switch_MissingCases.rsh:12:9:switch: switch missing cases: ["None"]
+reachc: error: REACH_ERR_EVAL76
+
+ ./Err_Switch_MissingCases.rsh:12:9:switch
+
+ 12|         switch ( mi ) {
+
+    Switch missing cases: ["None"]
+
 Trace:
   in [unknown function] from (./Err_Switch_MissingCases.rsh:11:21:function exp) at (./Err_Switch_MissingCases.rsh:13:35:application)
   in [unknown function] from (./Err_Switch_MissingCases.rsh:9:15:function exp) at (./Err_Switch_MissingCases.rsh:9:11:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL76%29
+

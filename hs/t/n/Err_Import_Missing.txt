@@ -1,1 +1,10 @@
-reachc: error: ./Err_Import_Missing.rsh:4:1:import: Invalid unbound identifier in import: whoops. Did you mean: ["blah"]
+reachc: error: REACH_ERR_EVAL44
+
+ ./Err_Import_Missing.rsh:4:1:import
+
+ 4| import {whoops} from './sample_lib.rsh'
+
+    Invalid unbound identifier in import: whoops. Did you mean: ["blah"]
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL44%29
+

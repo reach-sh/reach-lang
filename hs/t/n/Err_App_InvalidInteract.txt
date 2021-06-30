@@ -1,1 +1,10 @@
-reachc: error: ./Err_App_InvalidInteract.rsh:4:33:property binding: Invalid interact specification. Expected public type, got: UInt
+reachc: error: REACH_ERR_EVAL15
+
+ ./Err_App_InvalidInteract.rsh:4:33:property binding
+
+ 4|   {}, [Participant("A", {getHand: 3})], (A) => { return 0; }
+
+    Invalid interact specification. Expected public type, got: UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL15%29
+

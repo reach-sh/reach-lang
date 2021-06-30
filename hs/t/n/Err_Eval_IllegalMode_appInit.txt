@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_IllegalMode_appInit.rsh:8:31:application: Invalid operation. `Participant Constructor` cannot be used in context: consensus step, must be in app init
+reachc: error: REACH_ERR_EVAL33
+
+ ./Err_Eval_IllegalMode_appInit.rsh:8:31:application
+
+ 8|   transfer(100).to(Participant('C', {}));
+
+    Invalid operation. `Participant Constructor` cannot be used in context: consensus step, must be in app init
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL33%29
+

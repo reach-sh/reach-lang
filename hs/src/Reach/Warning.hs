@@ -10,6 +10,8 @@ import Data.List.Extra (splitOn)
 import Reach.AST.Base (SrcLoc)
 import System.IO (hPutStrLn)
 import System.IO.Extra (stderr)
+import Reach.UnsafeUtil (unsafeTermSupportsColor)
+import qualified System.Console.Pretty as TC
 
 capitalized :: String -> String
 capitalized [] = []
@@ -51,5 +53,8 @@ instance Show Warning where
       "The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:\n" <> msg
 
 emitWarning :: Warning -> IO ()
-emitWarning d =
-  hPutStrLn stderr $ "WARNING: " <> show d
+emitWarning d = do
+  let hasColor = unsafeTermSupportsColor
+  let style s = if hasColor then TC.style s else id
+  let color s = if hasColor then TC.color s else id
+  hPutStrLn stderr $ style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d

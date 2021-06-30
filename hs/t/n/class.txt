@@ -1,1 +1,10 @@
-reachc: error: ./class.rsh:3:1:class: Invalid statement
+reachc: error: REACH_ERR_EVAL2
+
+ ./class.rsh:3:1:class
+
+ 3| class C {
+
+    Invalid statement
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL2%29
+

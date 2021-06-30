@@ -1,1 +1,10 @@
-reachc: error: ./Err_App_Interact_NotFirstOrder.rsh:4:19:application: Value of this type cannot exist at runtime: Fun([], UInt)
+reachc: error: REACH_ERR_EVAL88
+
+ ./Err_App_Interact_NotFirstOrder.rsh:4:19:application
+
+ 4|   {}, [Participant("A", {f: Fun([], Fun([], UInt))})], (A) => {}
+
+    Value of this type cannot exist at runtime: Fun([], UInt)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL88%29
+

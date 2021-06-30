@@ -1,1 +1,10 @@
-reachc: error: ./valid_view_name_digit.rsh:4:18:application: Invalid View name. View names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `2s`
+reachc: error: REACH_ERR_EVAL18
+
+ ./valid_view_name_digit.rsh:4:18:application
+
+ 4|   const v3 = View('2s', { owner: Address });
+
+    Invalid View name. View names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `2s`
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL18%29
+

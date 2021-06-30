@@ -1,4 +1,14 @@
-reachc: error: ./Err_Switch_DoubleCase.rsh:12:9:switch: switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case
+reachc: error: REACH_ERR_EVAL75
+
+ ./Err_Switch_DoubleCase.rsh:14:9:case
+
+ 14|         case None: return 1;
+
+    Switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case
+
 Trace:
   in [unknown function] from (./Err_Switch_DoubleCase.rsh:11:21:function exp) at (./Err_Switch_DoubleCase.rsh:15:35:application)
   in [unknown function] from (./Err_Switch_DoubleCase.rsh:9:15:function exp) at (./Err_Switch_DoubleCase.rsh:9:11:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL75%29
+

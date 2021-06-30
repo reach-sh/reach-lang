@@ -1,1 +1,10 @@
-reachc: error: ./Err_Transfer_NotBound.rsh:8:19:application: cannot transfer to unbound participant, Bob
+reachc: error: REACH_ERR_EVAL66
+
+ ./Err_Transfer_NotBound.rsh:8:19:application
+
+ 8|   transfer(100).to(Bob);
+
+    Cannot transfer to unbound participant, Bob
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL66%29
+

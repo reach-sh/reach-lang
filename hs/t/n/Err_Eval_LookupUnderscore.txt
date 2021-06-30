@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_LookupUnderscore.rsh:6:15:id ref: Invalid identifier reference. The _ identifier may never be read.
+reachc: error: REACH_ERR_EVAL71
+
+ ./Err_Eval_LookupUnderscore.rsh:6:15:id ref
+
+ 6|     const y = _;
+
+    Invalid identifier reference. The _ identifier may never be read.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL71%29
+

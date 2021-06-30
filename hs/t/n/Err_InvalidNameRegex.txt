@@ -1,1 +1,10 @@
-reachc: error: ./Err_InvalidNameRegex.rsh:4:19:application: Invalid Participant name. Participant names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `_A`
+reachc: error: REACH_ERR_EVAL18
+
+ ./Err_InvalidNameRegex.rsh:4:19:application
+
+ 4|   {}, [Participant("_A", {})], (_A) => {}
+
+    Invalid Participant name. Participant names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: `_A`
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL18%29
+

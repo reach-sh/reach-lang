@@ -1,1 +1,10 @@
-reachc: error: ./Err_Sol_Reserved.rsh:5:24:application: `super` is not a valid field name because it is reserved in Solidity.
+reachc: error: REACH_ERR_EVAL112
+
+ ./Err_Sol_Reserved.rsh:5:24:application
+
+ 5|     get: Fun([], Struct([
+
+    `super` is not a valid field name because it is reserved in Solidity.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL112%29
+

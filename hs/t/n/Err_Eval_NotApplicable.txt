@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_NotApplicable.rsh:5:13:application: Invalid function application. Cannot apply: UInt
+reachc: error: REACH_ERR_EVAL37
+
+ ./Err_Eval_NotApplicable.rsh:5:13:application
+
+ 5|     return 0();
+
+    Invalid function application. Cannot apply: UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL37%29
+

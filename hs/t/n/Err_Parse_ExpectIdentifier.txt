@@ -1,1 +1,10 @@
-reachc: error: ./Err_Parse_ExpectIdentifier.rsh:6:27:application: Invalid binding. Expressions cannot appear on the LHS.
+reachc: error: REACH_ERR_EVAL19
+
+ ./Err_Parse_ExpectIdentifier.rsh:6:27:application
+
+ 6|   {}, [], () => { return f(0); }
+
+    Invalid binding. Expressions cannot appear on the LHS.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL19%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Parse_NotCallLike.rsh:6:15:application: Expected a call-like expression, got something else.
+reachc: error: REACH_ERR_PARSER10
+
+ ./Err_Parse_NotCallLike.rsh:6:15:application
+
+ 6|     unknowable(A, false);
+
+    Expected a call-like expression, got something else.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_PARSER10%29
+

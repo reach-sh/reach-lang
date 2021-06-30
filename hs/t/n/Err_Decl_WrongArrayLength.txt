@@ -1,1 +1,10 @@
-reachc: error: ./Err_Decl_WrongArrayLength.rsh:3:7:array: Invalid array binding. nIdents:1 does not match nVals:0
+reachc: error: REACH_ERR_EVAL26
+
+ ./Err_Decl_WrongArrayLength.rsh:3:7:array
+
+ 3| const [ x ] = [];
+
+    Invalid array binding. Cannot unpack 1 variables from an array with 0 elements.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL26%29
+

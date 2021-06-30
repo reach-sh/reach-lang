@@ -1,1 +1,10 @@
-reachc: error: ./Err_ParallelReduceIncomplete.rsh:9:23:application: parallel reduce incomplete: missing invariant
+reachc: error: REACH_ERR_EVAL85
+
+ ./Err_ParallelReduceIncomplete.rsh:9:23:application
+
+ 9|         parallelReduce(null);
+
+    Parallel reduce incomplete: missing invariant
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL85%29
+

@@ -1,4 +1,13 @@
-reachc: error: ./Err_Parse_InvalidImportSource.rsh:3:8:import bare: Invalid import: @bork
+reachc: error: REACH_ERR_PKG4
+
+ ./Err_Parse_InvalidImportSource.rsh:3:8:import bare
+
+ 3| import '@bork';
+
+    Invalid import: @bork
 (line 1, column 6):
 unexpected end of input
 expecting "/" or valid git account character (alphanumeric, -, _, .)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_PKG4%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_NotParticipant.rsh:9:15:application: expected a participant as an argument, instead got Bool
+reachc: error: REACH_ERR_EVAL65
+
+ ./Err_NotParticipant.rsh:9:15:application
+
+ 9|     unknowable(false, A(_x));
+
+    Expected a participant as an argument, instead got Bool
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL65%29
+

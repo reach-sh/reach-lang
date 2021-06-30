@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_IllegalJS.rsh:4:17:block: Invalid Reach expression syntax: JSYieldExpression
+reachc: error: REACH_ERR_EVAL35
+
+ ./Err_Eval_IllegalJS.rsh:5:5:stmt
+
+ 5|     yield 1;
+
+    Invalid Reach expression syntax: JSYieldExpression
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL35%29
+

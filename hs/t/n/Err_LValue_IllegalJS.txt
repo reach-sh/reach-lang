@@ -1,1 +1,10 @@
-reachc: error: ./Err_LValue_IllegalJS.rsh:1:12:after header semicolon: Invalid Reach l-value syntax: `x`. Mutation is not allowed unless before `continue`
+reachc: error: REACH_ERR_EVAL34
+
+ ./Err_LValue_IllegalJS.rsh:3:3:assign
+
+ 3| x = 0;
+
+    Invalid Reach l-value syntax: `x`. Mutation is not allowed unless before `continue`
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL34%29
+

@@ -1,3 +1,13 @@
-reachc: error: ./match_no_closure.rsh:17:15:decimal: Invalid binding. Expected closure, got: UInt
+reachc: error: REACH_ERR_EVAL22
+
+ ./match_no_closure.rsh:17:15:decimal
+
+ 17|         None: 4,
+
+    Invalid binding. Expected closure, got: UInt
+
 Trace:
   in "f" from (./match_no_closure.rsh:16:21:function exp) at (./match_no_closure.rsh:20:18:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL22%29
+

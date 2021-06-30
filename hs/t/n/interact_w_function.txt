@@ -1,1 +1,10 @@
-reachc: error: ./interact_w_function.rsh:8:7:field: Invalid name shadowing. Identifier 'function' is already bound at <builtin>. It cannot be bound again at ./interact_w_function.rsh:8:15:property binding
+reachc: error: REACH_ERR_EVAL58
+
+ ./interact_w_function.rsh:8:7:field
+
+ 8|       function: Fun([], Null)
+
+    Invalid name shadowing. Identifier 'function' is already bound at <builtin>. It cannot be bound again at ./interact_w_function.rsh:8:15:property binding
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL58%29
+

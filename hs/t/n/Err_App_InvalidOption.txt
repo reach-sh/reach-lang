@@ -1,1 +1,10 @@
-reachc: error: ./Err_App_InvalidOption.rsh:4:14:property binding: deploMode is not a valid app option. Did you mean: ["deployMode","connectors","verifyArithmetic","verifyPerConnector"]
+reachc: error: REACH_ERR_EVAL13
+
+ ./Err_App_InvalidOption.rsh:4:14:property binding
+
+ 4|   { deploMode: 'firstMsg' },
+
+    deploMode is not a valid app option. Did you mean: ["deployMode","connectors","verifyArithmetic","verifyPerConnector"]
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL13%29
+

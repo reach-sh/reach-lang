@@ -1,1 +1,10 @@
-reachc: error: ./Err_Strict_Conditional.rsh:9:19:?:: Strict mode expects conditional values to be of type `Bool`, but received: 1
+reachc: error: REACH_ERR_EVAL101
+
+ ./Err_Strict_Conditional.rsh:9:19:?:
+
+ 9|       const x = 1 ? 2 : 3;
+
+    Strict mode expects conditional values to be of type `Bool`, but received: 1
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL101%29
+

@@ -1,1 +1,10 @@
-reachc: error: ./Err_Try_Type_Mismatch.rsh:16:16:block: Every expression thrown within a `try` block must be of the same type. Expected Bool, but received: UInt
+reachc: error: REACH_ERR_EVAL102
+
+ ./Err_Try_Type_Mismatch.rsh:17:11:throw
+
+ 17|           throw 5;
+
+    Every expression thrown within a `try` block must be of the same type. Expected Bool, but received: UInt
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL102%29
+

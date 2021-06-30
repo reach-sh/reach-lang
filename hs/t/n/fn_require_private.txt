@@ -1,1 +1,10 @@
-reachc: error: ./fn_require_private.rsh:5:19:id: Invalid binding: _x. Public identifiers must not be prefixed by _
+reachc: error: REACH_ERR_EVAL70
+
+ ./fn_require_private.rsh:5:19:id
+
+ 5| export const f = (_x) => {
+
+    Invalid binding: _x. Public identifiers must not be prefixed by _
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL70%29
+

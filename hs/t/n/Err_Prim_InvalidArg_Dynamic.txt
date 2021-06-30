@@ -1,4 +1,12 @@
-reachc: error: reach standard library:218:13:application: Invalid arg for Array_iota. The argument must be computable at compile time
+reachc: error: REACH_ERR_EVAL56
+
+ reach standard library:218:13:application
+
+    Invalid arg for Array_iota. The argument must be computable at compile time
+
 Trace:
   in "sqrt" from (reach standard library:217:28:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:20:application)
   in [unknown function] from (./Err_Prim_InvalidArg_Dynamic.rsh:8:17:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:8:13:application)
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL56%29
+

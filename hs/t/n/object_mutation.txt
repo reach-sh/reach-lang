@@ -1,1 +1,10 @@
-reachc: error: ./object_mutation.rsh:5:20:after const semicolon: Invalid Reach l-value syntax: JSMemberDot
+reachc: error: REACH_ERR_EVAL34
+
+ ./object_mutation.rsh:6:12:assign
+
+ 6|     obj0.x = 1;
+
+    Invalid Reach l-value syntax: JSMemberDot
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL34%29
+

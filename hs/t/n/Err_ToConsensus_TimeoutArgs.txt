@@ -1,1 +1,10 @@
-reachc: error: ./Err_ToConsensus_TimeoutArgs.rsh:5:24:application: Invalid Participant.timeout args: the second argument should be an arrow, but got something else
+reachc: error: REACH_ERR_EVAL7
+
+ ./Err_ToConsensus_TimeoutArgs.rsh:5:24:application
+
+ 5|     A.publish().timeout(0, 0);
+
+    Invalid Participant.timeout args: the second argument should be an arrow, but got something else
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL7%29
+

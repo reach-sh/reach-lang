@@ -1,1 +1,10 @@
-reachc: error: ./Err_Fun_NamesIllegal.rsh:3:1:import: Invalid Reach import syntax: JSImportClauseDefault
+reachc: error: REACH_ERR_EVAL48
+
+ ./Err_Fun_NamesIllegal.rsh:3:1:import
+
+ 3| import blah from 'sample_lib.rsh';
+
+    Invalid Reach import syntax: JSImportClauseDefault
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL48%29
+

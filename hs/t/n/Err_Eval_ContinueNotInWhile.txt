@@ -1,1 +1,10 @@
-reachc: error: ./Err_Eval_ContinueNotInWhile.rsh:9:5:continue: Invalid continue. Expected to be inside of a while.
+reachc: error: REACH_ERR_EVAL28
+
+ ./Err_Eval_ContinueNotInWhile.rsh:9:5:continue
+
+ 9|     continue;
+
+    Invalid continue. Expected to be inside of a while.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL28%29
+

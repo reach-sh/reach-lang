@@ -1,1 +1,8 @@
-reachc: error: ./no-commit.rsh:compileDApp: Invalid operation. `exit` cannot be used in context: consensus step, must be in step or app init. You must `commit` first.
+reachc: error: REACH_ERR_EVAL33
+
+ ./no-commit.rsh:compileDApp
+
+    Invalid operation. `exit` cannot be used in context: consensus step, must be in step or app init. You must `commit` first.
+
+For further explanation of this error, see: docs.reach.sh/ref-error-codes.html/#%28tech._REACH_ERR_EVAL33%29
+
