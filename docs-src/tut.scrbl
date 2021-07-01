@@ -36,7 +36,7 @@ Once you've confirmed that they are installed, choose a directory for this proje
 
 Next, install Reach by downloading it from      @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} by running
 
-@cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
+@cmd{curl https://docs.reach.sh/reach -o reach ; chmod +x reach}
 
 You'll know that the download worked if you can run
 

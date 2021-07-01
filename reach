@@ -1535,7 +1535,7 @@ case ${SUBCOMMAND} in
         ;;
     upgrade)
         NEW=reach.$$
-        curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o ${NEW} && \
+        curl https://docs.reach.sh/reach -o ${NEW} && \
             chmod +x ${NEW} && \
             cp -f ${NEW} "${REACH}"
         exit 0

@@ -19,7 +19,7 @@ If you're on Ubuntu, you can run @exec{sudo apt install make} to get it.}
 
 You can install Reach by running:
 
-@cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
+@cmd{curl https://docs.reach.sh/reach -o reach ; chmod +x reach}
 
 in your project repository.
 You can copy this file to other repositories or move it to a directory in your @envref{PATH}, like @exec{~/bin}.
