@@ -1,11 +1,9 @@
-reachc: error: RE0096
+reachc: error[RE0094]: unused variable: z at ./Err_Unused_Variables.rsh:12:15:id
+    unused variable: b at ./Err_Unused_Variables.rsh:13:15:id
 
  ./Err_Unused_Variables.rsh:12:15:id
 
  12|         const z = 5;
 
-    unused variable: z at ./Err_Unused_Variables.rsh:12:15:id
-    unused variable: b at ./Err_Unused_Variables.rsh:13:15:id
-
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0096%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0094%29
 

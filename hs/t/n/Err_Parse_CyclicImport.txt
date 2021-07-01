@@ -1,10 +1,8 @@
-reachc: error: RP0000
+reachc: error[RP0000]: Cyclic import! ./Err_Parse_CyclicImport.rsh
 
  ./Err_Parse_CyclicImport.rsh:3:8:import bare
 
  3| import './Err_Parse_CyclicImport.rsh'
 
-    Cyclic import! ./Err_Parse_CyclicImport.rsh
-
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.P0000%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.P0000%29
 

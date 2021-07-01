@@ -108,7 +108,7 @@ urlIntersperse s xs =
 
 errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
-  "docs.reach.sh/ref-error-codes.html#%28part._" <> urlIntersperse '.' (errCode e) <> "%29"
+  "https://docs.reach.sh/ref-error-codes.html#%28part._" <> urlIntersperse '.' (errCode e) <> "%29"
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
@@ -134,17 +134,16 @@ expect_throw mCtx src ce =
                   [l, _] -> Just l
                   _ -> Nothing
       let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
-      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n\n")
+      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
                       $ getSrcLine rowNum (fromMaybe [] fileLines)
       error . T.unpack . unsafeRedactAbs . T.pack $
-        style TC.Bold (color TC.Red "error") <> ": " <> style TC.Bold (errCode ce) <> "\n\n" <>
-          " " <> style TC.Bold (show src) ++ "\n\n" <>
-          fileLine <>
-          "    " ++ (take 512 $ show ce)
+        style TC.Bold (color TC.Red "error") <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
+          " " <> style TC.Bold (show src) ++ "\n\n"
+          <> fileLine
           <> case concat mCtx of
             [] -> ""
-            ctx -> "\n\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx)
-          <> "\n\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
+            ctx -> "\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx) <> "\n"
+          <> "\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing

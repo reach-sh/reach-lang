@@ -1,13 +1,11 @@
-reachc: error: RE0022
+reachc: error[RE0021]: Invalid binding. Expected closure, got: UInt
 
  ./match_no_closure.rsh:17:15:decimal
 
  17|         None: 4,
 
-    Invalid binding. Expected closure, got: UInt
-
 Trace:
   in "f" from (./match_no_closure.rsh:16:21:function exp) at (./match_no_closure.rsh:20:18:application)
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0022%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0021%29
 

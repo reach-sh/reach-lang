@@ -1,10 +1,8 @@
-reachc: error: RE0058
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'x' is already bound at ./Err_Shadowed.rsh:3:7:id. It cannot be bound again at ./Err_Shadowed.rsh:4:7:id
 
  ./Err_Shadowed.rsh:4:1:const
 
  4| const x = 1;
 
-    Invalid name shadowing. Identifier 'x' is already bound at ./Err_Shadowed.rsh:3:7:id. It cannot be bound again at ./Err_Shadowed.rsh:4:7:id
-
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0058%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0056%29
 

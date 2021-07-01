@@ -45,7 +45,6 @@ data EvalError
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
   | Err_App_InvalidInteract SLValTy
-  | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
   | Err_InvalidNameRegex String String
   | Err_DeclLHS_IllegalJS JSExpression
@@ -54,7 +53,6 @@ data EvalError
   | Err_Decl_NotType String SLValTy
   | Err_Decls_IllegalJS (JSCommaList JSExpression)
   | Err_Decl_IllegalJS JSExpression
-  | Err_Decl_NotRefable SLValTy
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLValTy [String] String
   | Err_Eval_ContinueNotInWhile
@@ -314,8 +312,6 @@ instance Show EvalError where
     Err_App_InvalidInteract val ->
       "Invalid interact specification. Expected public type, got: "
         <> show_sv val
-    Err_App_InvalidPartSpec _slval ->
-      "Invalid participant spec"
     Err_App_InvalidArgs _jes ->
       "Invalid app arguments"
     Err_App_InvalidOption opt opts ->
@@ -342,8 +338,6 @@ instance Show EvalError where
       "Array spread on left-hand side of binding must occur in last position"
     Err_Decl_NotType ty slval ->
       "Invalid binding. Expected " <> ty <> ", got: " <> show_sv slval
-    Err_Decl_NotRefable slval ->
-      "Invalid binding. Expected array or tuple, got: " <> show_sv slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. Cannot unpack " <> show nIdents <> " variables from an array with " <> show nVals <> " elements."
     Err_Dot_InvalidField slval ks k ->

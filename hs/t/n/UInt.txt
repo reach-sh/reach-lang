@@ -1,13 +1,11 @@
-reachc: error: RE0058
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'UInt' is already bound at <builtin>. It cannot be bound again at ./UInt.rsh:9:15:id
 
  ./UInt.rsh:9:9:const
 
  9|         const UInt = 5;
 
-    Invalid name shadowing. Identifier 'UInt' is already bound at <builtin>. It cannot be bound again at ./UInt.rsh:9:15:id
-
 Trace:
   in [unknown function] from (./UInt.rsh:8:17:function exp) at (./UInt.rsh:8:13:application)
 
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0058%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0056%29
 

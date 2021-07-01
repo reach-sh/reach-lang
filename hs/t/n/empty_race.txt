@@ -1,10 +1,8 @@
-reachc: error: RE0082
+reachc: error[RE0080]: Cannot optionally transition to consensus or have an empty race without timeout.
 
  ./empty_race.rsh:11:14:dot
 
  11|       race().publish();
 
-    Cannot optionally transition to consensus or have an empty race without timeout.
-
-For further explanation of this error, see: docs.reach.sh/ref-error-codes.html#%28part._.R.E0082%29
+For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0080%29
 

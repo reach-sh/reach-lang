@@ -388,5 +388,14 @@ You should start off by initializing your Reach program:
 (define (note-ctransfer)
   @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.})
 
-(define (error-version x y)
-  @margin-note{This error will not happen before version @tt{@x} or after version @tt{@y}})
+(define (error x)
+  @section[#:tag x]{@|x|})
+
+(define (error-version #:from [from #f] #:to [to #f])
+ (cond
+  [(and from to)
+    @margin-note{This error will not happen before version @tt{@from} or after version @tt{@to}}]
+  [from
+    @margin-note{This error will not happen before version @tt{@from}}]
+  [to
+    @margin-note{This error will not happen after version @tt{@to}}]))
