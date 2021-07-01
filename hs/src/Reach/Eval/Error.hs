@@ -147,7 +147,8 @@ instance HasErrorCode EvalError where
   errPrefix = const "RE"
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
-  -- Do not modify & add new error codes at the end.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
   errIndex = \case
     Err_Apply_ArgCount {} -> 0
     Err_Block_Assign {} -> 1

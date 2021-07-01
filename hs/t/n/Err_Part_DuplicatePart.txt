@@ -4,5 +4,5 @@ reachc: error[RE0109]: Duplicated participant name: "Alice"
 
  6|   const A2 = Participant('Alice', {});
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0109%29
+For further explanation of this error, see: https://docs.reach.sh/RE0109.html
 

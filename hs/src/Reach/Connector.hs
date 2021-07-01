@@ -40,6 +40,10 @@ data ConnectorError
 
 instance HasErrorCode ConnectorError where
   errPrefix = const "RC"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
   errIndex = \case
     Err_IntLiteralRange {} -> 0
 

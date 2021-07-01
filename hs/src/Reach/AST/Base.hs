@@ -20,7 +20,6 @@ import Reach.UnsafeUtil
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
 import Data.Maybe (fromMaybe)
-import Data.Char (isAlpha)
 import Reach.Util (makeErrCode)
 
 --- Source Information
@@ -62,17 +61,25 @@ instance Pretty SrcLoc where
   pretty = viaShow
 
 data ImpossibleError
-  = Err_Impossible String
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+  = Err_Impossible_InspectForall Int
+  deriving (Eq, Ord, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
   errPrefix = const "RX"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
   errIndex = \case
-    Err_Impossible {} -> 0
+    Err_Impossible_InspectForall {} -> 0
 
 instance Show ImpossibleError where
   show = \case
-    Err_Impossible msg -> msg
+    Err_Impossible_InspectForall tag ->
+      "Cannot inspect value from `forall`: " <> show tag
+
+instance Pretty ImpossibleError where
+  pretty = viaShow
 
 data CompilationError = CompilationError
   { ce_suggestions :: [String]
@@ -98,18 +105,9 @@ getSrcLine :: Maybe Int -> [String] -> Maybe String
 getSrcLine rowNum fl =
   rowNum >>= (\ r -> atMay fl $  r - 1)
 
-urlIntersperse :: Char -> [Char] -> [Char]
-urlIntersperse s xs =
-  case (s, xs) of
-  (_, [])  -> []
-  (_, [h]) -> [h]
-  (_, h:t)
-    | isAlpha h -> s : h : urlIntersperse s t
-    | otherwise -> h : urlIntersperse s t
-
 errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
-  "https://docs.reach.sh/ref-error-codes.html#%28part._" <> urlIntersperse '.' (errCode e) <> "%29"
+  "https://docs.reach.sh/" <> errCode e <> ".html"
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =

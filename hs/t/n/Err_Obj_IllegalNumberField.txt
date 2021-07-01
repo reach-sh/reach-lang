@@ -4,5 +4,5 @@ reachc: error[RE0052]: Invalid field name. Fields must be bytes, but got: uint25
 
  3| const x = {4: "four"}
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0052%29
+For further explanation of this error, see: https://docs.reach.sh/RE0052.html
 

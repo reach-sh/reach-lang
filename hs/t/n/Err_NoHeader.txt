@@ -3,5 +3,5 @@ reachc: error[RE0048]: Invalid Reach file. Expected header 'reach 0.1'; at top o
  ./Err_NoHeader.rsh
 
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0048%29
+For further explanation of this error, see: https://docs.reach.sh/RE0048.html
 

@@ -7,5 +7,5 @@ reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 Trace:
   in [unknown function] from (./strict_value_not_bound.rsh:9:17:function exp) at (./strict_value_not_bound.rsh:9:13:application)
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0003%29
+For further explanation of this error, see: https://docs.reach.sh/RE0003.html
 

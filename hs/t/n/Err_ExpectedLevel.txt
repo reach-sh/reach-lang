@@ -7,5 +7,5 @@ reachc: error[RE0043]: Invalid declassify. Expected to declassify something priv
 Trace:
   in [unknown function] from (./Err_ExpectedLevel.rsh:7:15:function exp) at (./Err_ExpectedLevel.rsh:7:11:application)
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0043%29
+For further explanation of this error, see: https://docs.reach.sh/RE0043.html
 

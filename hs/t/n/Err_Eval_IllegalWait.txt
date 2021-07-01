@@ -4,5 +4,5 @@ reachc: error[RE0027]: Cannot wait or timeout until after first message in deplo
 
  7|     wait(1);
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0027%29
+For further explanation of this error, see: https://docs.reach.sh/RE0027.html
 

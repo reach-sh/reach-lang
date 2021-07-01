@@ -3,5 +3,5 @@ reachc: error[RE0031]: Invalid operation. `exit` cannot be used in context: cons
  ./no-commit.rsh:compileDApp
 
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0031%29
+For further explanation of this error, see: https://docs.reach.sh/RE0031.html
 

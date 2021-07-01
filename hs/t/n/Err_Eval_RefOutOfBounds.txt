@@ -4,5 +4,5 @@ reachc: error[RE0041]: Invalid array index. Expected an index between 0 and 3, b
 
  6|     return arr[9];
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0041%29
+For further explanation of this error, see: https://docs.reach.sh/RE0041.html
 

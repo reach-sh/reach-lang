@@ -4,5 +4,5 @@ reachc: error[RE0019]: Object spread on left-hand side of binding must occur in 
 
  3| const { ...x, y } = { y: 1 };
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0019%29
+For further explanation of this error, see: https://docs.reach.sh/RE0019.html
 

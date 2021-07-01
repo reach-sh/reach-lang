@@ -1,7 +1,9 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "ref-error-codes"]{Error Codes}
+@(define (error x) @section[#:tag x]{@|x|}))
+
+@title[#:version reach-vers #:tag "ref-error-codes" #:style 'toc]{Error Codes}
 
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
@@ -605,12 +607,19 @@ You can fix this by deleting one of the statements (depending on the logic of yo
 @error{RE0031}
 
 This error indicates that you are attempting to use a specific statement or expression in the wrong
-mode. Consult the figure on @Secref["ref-programs"] to see the functionality appropriate
-in each mode.
-
-
+mode. Consult the documentation for the specific keyword to learn more about what mode is
+expected. Additionally, see the figure on @Secref["ref-programs"] for a diagram regarding the modes
+of a Reach application.
 
 @error{RE0032}
+
+This error indicates that you are attempting to mutate a variable in an inappropriate place.
+Variable mutation is only allowed to occur on variables declared via @reachin{var} and immediately
+before a @reachin{continue} statement of a loop.
+
+For example, this code attempts to
+
+
 @error{RE0033}
 @error{RE0034}
 @error{RE0035}

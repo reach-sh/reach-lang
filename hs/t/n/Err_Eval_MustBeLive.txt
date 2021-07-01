@@ -4,5 +4,5 @@ reachc: error[RE0078]: Must be live at to consensus
 
  11|       Alice.publish();
 
-For further explanation of this error, see: https://docs.reach.sh/ref-error-codes.html#%28part._.R.E0078%29
+For further explanation of this error, see: https://docs.reach.sh/RE0078.html
 

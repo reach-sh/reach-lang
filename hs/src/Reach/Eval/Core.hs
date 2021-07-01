@@ -2511,7 +2511,7 @@ evalPrim p sargs =
           dt <- st2dte =<< expect_ty one
           at <- withAt id
           tag <- ctxt_alloc
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ "cannot inspect value from forall: " <> show tag)
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ Err_Impossible_InspectForall tag)
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
