@@ -17,7 +17,6 @@ import Reach.AST.LL
 import Reach.Counter
 import Reach.Texty
 import Reach.Util
-import Generic.Data (gconIndex)
 
 -- Remove returns, duplicate continuations, and transform into dk
 data Error
@@ -25,7 +24,9 @@ data Error
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode Error where
-  errCode e = "RL" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "RL"
+  errIndex = \case
+    Err_Unreachable {} -> 0
 
 instance Show Error where
   show = \case

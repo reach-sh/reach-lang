@@ -36,7 +36,6 @@ import System.Directory
 import System.FilePath
 import Text.Read (readMaybe)
 import Text.Show.Pretty (ppShow)
-import Generic.Data (gconIndex)
 
 data Env = Env
   { e_at :: SrcLoc
@@ -69,7 +68,23 @@ data ParserError
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ParserError where
-  errCode e = "RP" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "RP"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- Do not modify & add new error codes at the end.
+  errIndex = \case
+    Err_Parse_CyclicImport {} -> 0
+    Err_Parser_Arrow_NoFormals {} -> 1
+    Err_Parse_ExpectIdentifier {} -> 2
+    Err_Parse_ExpectIdentifierProp {} -> 3
+    Err_Parse_IllegalBinOp {} -> 4
+    Err_Parse_IllegalLiteral {} -> 5
+    Err_Parse_IllegalUnaOp {} -> 6
+    Err_Parse_ImportAbsolute {} -> 7
+    Err_Parse_ImportDotDot {} -> 8
+    Err_Parse_NotModule {} -> 9
+    Err_Parse_NotCallLike {} -> 10
+    Err_Parse_JSIdentNone {} -> 11
 
 --- FIXME implement a custom show that is useful
 instance Show ParserError where

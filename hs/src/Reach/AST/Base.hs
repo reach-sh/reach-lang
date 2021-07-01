@@ -17,12 +17,11 @@ import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.UnsafeUtil
-import Generic.Data (gconIndex)
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
 import Data.Maybe (fromMaybe)
 import Data.Char (isAlpha)
-import Reach.Util (leftPad)
+import Reach.Util (makeErrCode)
 
 --- Source Information
 data ReachSource
@@ -67,7 +66,9 @@ data ImpossibleError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
-  errCode e = "RX" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "RX"
+  errIndex = \case
+    Err_Impossible {} -> 0
 
 instance Show ImpossibleError where
   show = \case
@@ -288,4 +289,7 @@ instance SrcLocOf SLCtxtFrame where
   srclocOf (SLC_CloApp at _ _) = at
 
 class Generic a => HasErrorCode a where
+  errPrefix :: a -> String
+  errIndex :: a -> Int
   errCode :: a -> String
+  errCode e = makeErrCode (errPrefix e) (errIndex e)

@@ -22,6 +22,7 @@ module Reach.Util
   , uncurry5
   , listDirectoriesRecursive
   , leftPad
+  , makeErrCode
   )
 where
 
@@ -131,3 +132,7 @@ listDirectoriesRecursive dir = do
 
 leftPad :: Int -> a -> [a] -> [a]
 leftPad n e xs = replicate (n - length xs) e <> xs
+
+makeErrCode :: Show a => [Char] -> a -> [Char]
+makeErrCode errType errIndex =
+  errType <> leftPad 4 '0' (show errIndex)

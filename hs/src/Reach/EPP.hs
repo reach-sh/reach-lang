@@ -19,7 +19,6 @@ import Reach.Counter
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
-import Generic.Data (gconIndex)
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -165,7 +164,9 @@ data EPPError
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
-  errCode e = "RE" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "REP"
+  errIndex = \case
+    Err_ContinueDomination {} -> 0
 
 instance Show EPPError where
   show Err_ContinueDomination =

@@ -19,7 +19,6 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
-import Generic.Data (gconIndex)
 
 data LookupCtx
   = -- Signifies the user referencing a variable from a ctxt (:: String).
@@ -145,7 +144,124 @@ data EvalError
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
-  errCode e = "RE" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "RE"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- Do not modify & add new error codes at the end.
+  errIndex = \case
+    Err_Apply_ArgCount {} -> 0
+    Err_Block_Assign {} -> 1
+    Err_Block_IllegalJS {} -> 2
+    Err_Block_NotNull {} -> 3
+    Err_Block_Variable {} -> 4
+    Err_Block_While {} -> 5
+    Err_CannotReturn {} -> 6
+    Err_ToConsensus_TimeoutArgs {} -> 7
+    Err_ToConsensus_NoTimeoutBlock {} -> 8
+    Err_Transfer_DoubleNetworkToken {} -> 9
+    Err_Transfer_DoubleToken {} -> 10
+    Err_Transfer_Type {} -> 11
+    Err_App_Interact_NotFirstOrder {} -> 12
+    Err_App_InvalidOption {} -> 13
+    Err_App_InvalidOptionValue {} -> 14
+    Err_App_InvalidInteract {} -> 15
+    Err_App_InvalidArgs {} -> 16
+    Err_InvalidNameRegex {} -> 17
+    Err_DeclLHS_IllegalJS {} -> 18
+    Err_Decl_ObjectSpreadNotLast {} -> 19
+    Err_Decl_ArraySpreadNotLast {} -> 20
+    Err_Decl_NotType {} -> 21
+    Err_Decls_IllegalJS {} -> 22
+    Err_Decl_IllegalJS {} -> 23
+    Err_Decl_WrongArrayLength {} -> 24
+    Err_Dot_InvalidField {} -> 25
+    Err_Eval_ContinueNotInWhile {} -> 26
+    Err_Eval_IllegalWait {} -> 27
+    Err_Eval_ContinueNotLoopVariable {} -> 28
+    Err_Eval_PartSet_Class {} -> 29
+    Err_Eval_PartSet_Bound {} -> 30
+    Err_Eval_IllegalMode {} -> 31
+    Err_LValue_IllegalJS {} -> 32
+    Err_Eval_IllegalJS {} -> 33
+    Err_Eval_NoReturn {} -> 34
+    Err_Eval_NotApplicable {} -> 35
+    Err_Eval_NotApplicableVals {} -> 36
+    Err_Eval_NotObject {} -> 37
+    Err_Eval_RefNotRefable {} -> 38
+    Err_Eval_RefNotInt {} -> 39
+    Err_Eval_IndirectRefNotArray {} -> 40
+    Err_Eval_RefOutOfBounds {} -> 41
+    Err_Eval_UnboundId {} -> 42
+    Err_ExpectedLevel {} -> 43
+    Err_Form_InvalidArgs {} -> 44
+    Err_Fun_NamesIllegal {} -> 45
+    Err_Import_IllegalJS {} -> 46
+    Err_Module_Return {} -> 47
+    Err_NoHeader {} -> 48
+    Err_Obj_IllegalComputedField {} -> 49
+    Err_Obj_IllegalFieldValues {} -> 50
+    Err_Obj_IllegalMethodDefinition {} -> 51
+    Err_Obj_IllegalNumberField {} -> 52
+    Err_Obj_SpreadNotObj {} -> 53
+    Err_Prim_InvalidArg_Dynamic {} -> 54
+    Err_Prim_InvalidArgs {} -> 55
+    Err_Shadowed {} -> 56
+    Err_TailNotEmpty {} -> 57
+    Err_ToConsensus_Double {} -> 58
+    Err_TopFun_NoName {} -> 59
+    Err_While_IllegalInvariant {} -> 60
+    Err_Only_NotOneClosure {} -> 61
+    Err_Each_NotTuple {} -> 62
+    Err_NotParticipant {} -> 63
+    Err_Transfer_NotBound {} -> 64
+    Err_Transfer_Class {} -> 65
+    Err_Eval_IncompatibleStates {} -> 66
+    Err_Eval_NotSecretIdent {} -> 67
+    Err_Eval_NotPublicIdent {} -> 68
+    Err_Eval_LookupUnderscore {} -> 69
+    Err_Eval_NotSpreadable {} -> 70
+    Err_Zip_ArraysNotEqualLength {} -> 71
+    Err_Switch_NotData {} -> 72
+    Err_Switch_DoubleCase {} -> 73
+    Err_Switch_MissingCases {} -> 74
+    Err_Switch_ExtraCases {} -> 75
+    Err_Expected {} -> 76
+    Err_RecursionDepthLimit {} -> 77
+    Err_Eval_MustBeLive {} -> 78
+    Err_Invalid_Statement {} -> 79
+    Err_ToConsensus_WhenNoTimeout {} -> 80
+    Err_Fork_ResultNotObject {} -> 81
+    Err_Fork_ConsensusBadArrow {} -> 82
+    Err_ParallelReduceIncomplete {} -> 83
+    Err_ParallelReduceBranchArgs {} -> 84
+    Err_Type_None {} -> 85
+    Err_Type_NotDT {} -> 86
+    Err_Type_NotApplicable {} -> 87
+    Err_Type_Mismatch {} -> 88
+    Err_Eval_MustBeInWhileInvariant {} -> 89
+    Err_Expected_Map {} -> 90
+    Err_Prim_Foldable {} -> 91
+    Err_Default_Arg_Position {} -> 92
+    Err_IllegalEffPosition {} -> 93
+    Err_Unused_Variables {} -> 94
+    Err_Remote_NotFun {} -> 95
+    Err_Struct_Key_Invalid {} -> 96
+    Err_Struct_Key_Not_Unique {} -> 97
+    Err_InvalidNameExport {} -> 98
+    Err_Strict_Conditional {} -> 99
+    Err_Try_Type_Mismatch {} -> 100
+    Err_Throw_No_Catch {} -> 101
+    Err_Token_OnCtor {} -> 102
+    Err_Token_InWhile {} -> 103
+    Err_Token_DynamicRef {} -> 104
+    Err_WithBill_Type {} -> 105
+    Err_View_DuplicateView {} -> 106
+    Err_View_CannotExpose {} -> 107
+    Err_View_UDFun {} -> 108
+    Err_Part_DuplicatePart {} -> 109
+    Err_Sol_Reserved {} -> 110
+    Err_TokenNew_InvalidKey {} -> 111
+    Err_Token_NotCreated {} -> 112
 
 --- FIXME I think most of these things should be in Pretty
 

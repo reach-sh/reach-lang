@@ -20,7 +20,6 @@ import System.PosixCompat.Files
 import System.Process
 import Text.Parsec
 import Text.Printf
-import Generic.Data (gconIndex)
 
 data Env = Env
   { e_at :: SrcLoc
@@ -39,7 +38,16 @@ data PkgError
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode PkgError where
-  errCode e = "RI" <> leftPad 4 '0' (show $ gconIndex e)
+  errPrefix = const "RI"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- Do not modify & add new error codes at the end.
+  errIndex = \case
+    Err_Clone {} -> 0
+    Err_Checkout {} -> 1
+    Err_NoRev {} -> 2
+    Err_Unauthorized {} -> 3
+    Err_InvalidImportSource {} -> 4
 
 instance Show PkgError where
   show = \case
