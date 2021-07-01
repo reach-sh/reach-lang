@@ -679,7 +679,7 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
 
-// TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
+// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
 export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   debug(`Setting algod client to default`);
   return await waitAlgodClientFromEnv(envDefaultsALGO(process.env));

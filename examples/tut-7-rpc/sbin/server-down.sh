@@ -13,6 +13,7 @@ echo 'Stopped.'
 echo
 
 docker rm -f server_ethereum-devnet_1
-docker rm -f server_algorand-devnet_1
-docker rm -f server_algorand-postgres-db_1
+docker rm -f server_devnet-algo_1
+docker rm -f server_devnet-algo-pg_1
+docker rm -f server_devnet-cfx_1
 docker network rm server_default

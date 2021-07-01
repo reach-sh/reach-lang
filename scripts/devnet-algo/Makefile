@@ -1,4 +1,4 @@
-IMAGE="reachsh/algorand-devnet"
+IMAGE="reachsh/devnet-algo"
 
 .PHONY: build
 build:
@@ -15,7 +15,7 @@ push:
 
 .PHONY: run
 run: build
-	docker-compose run --service-ports algorand-devnet
+	docker-compose run --service-ports devnet-algo
 
 .PHONY: run-shell
 run-shell: build

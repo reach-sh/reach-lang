@@ -6,7 +6,7 @@ HERE=$(dirname "$0")
 . "${HERE}"/../VERSION
 
 FAILED=false
-# reach, algorand-devnet omitted because CircleCI doesn't build them yet
+# reach, devnet-algo omitted because CircleCI doesn't build them yet
 for NAME in stdlib runner ethereum-devnet ; do
   IMAGE="reachsh/$NAME:$VERSION"
   # if you build it locally, it doesn't have .RepoDigests

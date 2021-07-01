@@ -5,7 +5,7 @@
 # --> show step
 # Some day, make this interactive and imitate
 # https://justine.lol/blinkenlights/index.html
-SUFFIX="_algorand-devnet_1"
+SUFFIX="_devnet-algo_1"
 if [ "x${1}" = "x" ] ; then
   docker container ls --format '{{.Names}}' | grep "${SUFFIX}" | sed "s/${SUFFIX}\$//"
   exit 0

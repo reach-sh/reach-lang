@@ -1,11 +1,11 @@
 version: "3"
 services:
-  algorand-devnet:
-    image: reachsh/algorand-devnet:latest
+  devnet-algo:
+    image: reachsh/devnet-algo:latest
     depends_on:
-      - algorand-postgres-db
+      - devnet-algo-pg
     environment:
-      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_HOST=devnet-algo-pg
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
       - POSTGRES_DB=pgdb
@@ -13,7 +13,7 @@ services:
       - "4180:4180"
       - "8980:8980"
       - "9392:9392"
-  algorand-postgres-db:
+  devnet-algo-pg:
     image: postgres:11-alpine
     environment:
       - POSTGRES_USER=algogrand

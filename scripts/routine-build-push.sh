@@ -5,7 +5,7 @@ set -ex
 HS=$!
 (cd js && make build push) &
 JS=$!
-(cd scripts/algorand-devnet && make build push) &
+(cd scripts/devnet-algo && make build push) &
 ALGO=$!
 (cd scripts/ethereum-devnet && make build push) &
 ETH=$!
