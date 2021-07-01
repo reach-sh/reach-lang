@@ -1,0 +1,6 @@
+depends_on:
+  - ethereum-devnet
+environment:
+  - REACH_DEBUG
+  - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+  - ETH_NODE_URI=http://ethereum-devnet:8545

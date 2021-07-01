@@ -1,2 +1,5 @@
 ethereum-devnet:
   image: reachsh/ethereum-devnet:${REACH_VERSION}
+  container_name: eth-devnet-${APP_SERVICE}
+  networks:
+    - ${NETWORK}

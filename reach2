@@ -3,6 +3,8 @@
 IMG='reachsh/reach-cli:latest'
 TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
 
+export TMP
+
 run_d () {
   docker run -t --rm \
     -e "REACH_EX=$0" \
@@ -11,7 +13,7 @@ run_d () {
     -u "$(id -ru):$(id -rg)" \
     -v "$TMP:/app/tmp" \
     -v "$(pwd):/app/src" \
-    "$IMG" "$@"
+    "$IMG" --dir-project-host="$(pwd)" "$@"
 }
 
 run_s () {

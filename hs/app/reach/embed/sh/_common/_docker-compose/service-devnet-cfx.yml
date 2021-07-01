@@ -1,2 +1,5 @@
 devnet-cfx:
   image: reachsh/devnet-cfx:${REACH_VERSION}
+  container_name: cfx-devnet-${APP_SERVICE}
+  networks:
+    - ${NETWORK}

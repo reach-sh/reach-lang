@@ -1,5 +1,8 @@
 algorand-postgres-db:
   image: postgres:11-alpine
+  container_name: algo-postgres-db-${APP_SERVICE}
+  networks:
+    - ${NETWORK}
   environment:
     - POSTGRES_USER=algogrand
     - POSTGRES_PASSWORD=indexer
@@ -7,6 +10,9 @@ algorand-postgres-db:
 
 algorand-devnet:
   image: reachsh/algorand-devnet:${REACH_VERSION}
+  container_name: algo-devnet-${APP_SERVICE}
+  networks:
+    - ${NETWORK}
   depends_on:
     - algorand-postgres-db
   environment:
