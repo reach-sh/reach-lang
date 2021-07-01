@@ -218,12 +218,20 @@ data DockerMeta = DockerMeta
   }
 
 
-mkDockerMeta :: Env -> T.Text -> Bool -> DockerMeta
-mkDockerMeta Env {..} app isolate = DockerMeta {..} where
+mkDockerMetaConsole :: Env -> T.Text -> Bool -> DockerMeta
+mkDockerMetaConsole Env {..} app isolate = DockerMeta {..} where
   appProj = T.toLower . T.pack $ takeBaseName e_dirProjectHost
     <> if isolate then ("-" <> T.unpack app) else ""
 
   appService = "reach-app-" <> appProj
+  appImage = "reachsh/" <> appService
+  appImageTag = appImage <> ":latest"
+
+
+mkDockerMetaReact :: DockerMeta
+mkDockerMetaReact = DockerMeta {..} where
+  appProj = ""
+  appService = "react-runner"
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
 
@@ -250,6 +258,12 @@ reachEx :: IO T.Text
 reachEx = lookupEnv "REACH_EX" >>= \case
   Just r -> pure $ T.pack r
   Nothing -> die "Unset `REACH_EX` environment variable"
+
+
+reachDebug :: IO T.Text
+reachDebug = lookupEnv "REACH_DEBUG" >>= \case
+  Just r -> pure $ T.pack r
+  Nothing -> pure ""
 
 
 --------------------------------------------------------------------------------
@@ -289,25 +303,44 @@ _declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteRe
 
 
 --------------------------------------------------------------------------------
-scaff :: Bool -> FilePath -> T.Text -> IO ()
-scaff quiet n f = do
-  when (not quiet) . putStrLn $ "Writing " <> takeFileName n <> "..."
-  T.writeFile n f
+data Compose
+  = Console
+  | React
 
 
 -- TODO ensure this works with `run` subdirectories
-withCompose :: DockerMeta -> ConnectorMode -> App -> App
-withCompose DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
+withCompose :: Compose -> DockerMeta -> ConnectorMode -> App -> App
+withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   env@Env {..} <- ask
+  debug <- liftIO reachDebug
 
-  connEnv <- liftIO $ connectorEnv env cm
+  let reachConnectorMode = "ETH-browser" -- TODO
+  let reachIsolatedNetwork = "1" -- TODO
+  let dirProjectHost = T.pack e_dirProjectHost
+
+  connEnv <- case t of
+    Console -> liftIO $ connectorEnv env cm
+    React -> pure [N.text|
+      volumes:
+        - $dirProjectHost:/app/src
+      ports:
+        - "3000:3000"
+      stdin_open: true
+      tty: true
+      environment:
+        - REACH_DEBUG
+        - REACH_CONNECTOR_MODE
+        - REACH_ISOLATED_NETWORK
+        - REACT_APP_REACH_DEBUG=$debug
+        - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
+        - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
+    |]
+
   connSvs <- case m of
     Live -> pure ""
     _ -> liftIO $ do
       rv <- reachVersionInProcess
-      serviceConnector env cm rv ports appService
-
-  let ctx = T.pack e_dirProjectHost
+      serviceConnector env cm rv connPorts appService
 
   let f = [N.text|
      version: '3.5'
@@ -324,17 +357,29 @@ withCompose DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
          networks:
            - $appService
          build:
-           context: $ctx
+           context: $dirProjectHost
          $connEnv
     |]
 
-  liftIO $ scaff True (e_dirTmp </> "docker-compose.yml") f
+  liftIO $ scaff True (e_dirTmp </> "docker-compose.yml") (notw f)
   wrapped
 
  where
-  ports = case (c, m) of
-    (Algo, Devnet) -> ["9392"] -- TODO extra ports for `reach react`
+  notw = T.intercalate "\n" . fmap T.stripEnd . T.lines
+  -- TODO push ports into templates instead (?)
+  connPorts = case (t, c, m) of
+    (Console, Algo, Devnet) -> [ "9392" ]
+    (React, Algo, Browser) -> [ "4180:4180", "8980:8980", "9392:9392" ]
+    (React, Cfx, Browser) -> [ "12537:12537" ]
+    (React, Eth, Browser) -> [ "8545:8545" ]
     _ -> []
+
+
+--------------------------------------------------------------------------------
+scaff :: Bool -> FilePath -> T.Text -> IO ()
+scaff quiet n f = do
+  when (not quiet) . putStrLn $ "Writing " <> takeFileName n <> "..."
+  T.writeFile n f
 
 
 scaffold' :: Bool -> Bool -> T.Text -> App
@@ -344,7 +389,7 @@ scaffold' isolate quiet app = do
   liftIO $ do
     rv <- liftIO reachVersionInProcess
     let Scaffold {..} = mkScaffold env isolate app
-    let DockerMeta {..} = mkDockerMeta env app isolate
+    let DockerMeta {..} = mkDockerMetaConsole env app isolate
 
     let scaffIfAbsent n f =
           whenM (not <$> doesFileExist n) $ scaff quiet n f
@@ -595,12 +640,12 @@ run' = command "run" $ info f d where
         r <- modificationTime <$> getFileStatus rsh
         pure $ if r > b then Just recompile' else Nothing
 
-    let dm@DockerMeta {..} = mkDockerMeta env app' isolate
+    let dm@DockerMeta {..} = mkDockerMetaConsole env app' isolate
     let dockerfile' = T.pack hostDockerfile
     let mode' = T.pack $ show mode
 
     -- TODO args to `docker-compose run`
-    withCompose dm mode . script $ do
+    withCompose Console dm mode . script $ do
       maybe (pure ()) write recompile
       write [N.text|
         export REACH_CONNECTOR_MODE=$mode'
@@ -629,10 +674,31 @@ scaffold = command "scaffold" $ info f d where
 
 
 --------------------------------------------------------------------------------
+-- TODO `USE_EXISTING_DEVNET` (?)
 react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
-  f = undefined
+  f = go <$> compiler
+
+  -- Leverage `optparse` for help/completions/validation/etc but disregard its
+  -- product and instead thread raw command line back through during `compile`
+  -- sub-shell
+  go _ = do
+    let dm@DockerMeta {..} = mkDockerMetaReact
+    let cm = ConnectorMode Eth Browser -- TODO
+    reach <- liftIO reachEx
+
+    -- TODO generalize this pattern for other subcommands?
+    cargs <- liftIO $ do
+      let x "react" = False
+          x a | "--dir-project-host" `T.isPrefixOf` a = False
+              | otherwise = True
+      T.intercalate " " . filter x . fmap T.pack <$> getArgs
+
+    withCompose React dm cm . script $ write [N.text|
+      $reach compile $cargs
+      docker-compose -f $$TMP/docker-compose.yml run --service-ports --rm $appService
+    |]
 
 
 --------------------------------------------------------------------------------
