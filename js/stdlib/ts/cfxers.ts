@@ -475,9 +475,10 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
     try {
       // Note: {...txn} because conflux is going to mutate it >=[
       txnMut = {...txnOrig};
+      debug(`_retryingSendTxn attempt`, txnOrig);
       const transactionHashP = provider.conflux.sendTransaction(txnMut);
       const transactionHash = await transactionHashP;
-      // debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
       updateSentAt(addr, txnMut.epochHeight);
       return {
         transactionHash,
@@ -490,11 +491,10 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       }
     } catch (e) {
       err = e;
-      // debug({
-      //   message: `retrying sendTxn attempt failed`,
-      //   txnOrig, txnMut,
-      //   e, tries, max_tries
-      // });
+      debug(`_retryingSendTxn fail`, {
+        txnOrig, txnMut,
+        e, tries, max_tries
+      });
       continue;
     }
   }
@@ -508,7 +508,7 @@ async function waitReceipt(provider: providers.Provider, txnHash: string): Promi
   const maxTries = 400;
   const waitMs = 50;
   for (let tries = 1; tries <= maxTries; tries++) {
-    const r: any = await provider.conflux.getTransactionReceipt(txnHash);
+    const r: any = await provider.getTransactionReceipt(txnHash);
     if (r) {
       if (r.outcomeStatus !== 0) {
         throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);

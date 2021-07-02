@@ -204,11 +204,11 @@ const getNetworkTimeNumber = async (): Promise<number> => {
   return await provider.getBlockNumber();
 };
 
-const requireIsolatedNetwork = (label: string): void => {
-  if (!isIsolatedNetwork()) {
-    throw Error(`Invalid operation ${label}; network is not isolated`);
-  }
-};
+// const requireIsolatedNetwork = (label: string): void => {
+//   if (!isIsolatedNetwork()) {
+//     throw Error(`Invalid operation ${label}; network is not isolated`);
+//   }
+// };
 
 const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
   argsMay: init ? Some(init.args) : None,
@@ -548,6 +548,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const {getLastBlock, setLastBlock} = (() => {
       let lastBlock: number | null = null;
       const setLastBlock = (n: number): void => {
+        if (typeof n !== 'number') { throw Error(`Expected lastBlock number, got ${lastBlock}: ${typeof lastBlock}`) }
         debug(`lastBlock from`, lastBlock, `to`, n);
         lastBlock = n;
       };
@@ -927,7 +928,7 @@ const fundFromFaucet = async (account: AccountTransferable, value: any) => {
 
 const newTestAccount = async (startingBalance: any): Promise<Account> => {
   debug('newTestAccount(', startingBalance, ')');
-  requireIsolatedNetwork('newTestAccount');
+  // requireIsolatedNetwork('newTestAccount'); // XXX is it ok to just let fundFromFaucet err if it can't do it?
   const acc = await createAccount();
   const to = await getAddr(acc);
 
