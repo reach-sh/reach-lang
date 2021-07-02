@@ -773,11 +773,11 @@ of the Reach file.
 
 @error{RE0043}
 
-This error indicates that there is a mismatch between the expected @tech{security level} of a variable
-and the actual one provided. This may happen if you use a @tech{public} variable where a @tech{private}
+This error indicates that there is a mismatch between the expected security levels of a variable
+and the actual one provided. This may happen if you use a @tech{public} variable where a @tech{secret}
 is expected, or vice versa.
 
-For example, the code below erroneously declassifies the variable @reachin{x}, which is not @tech{private}:
+For example, the code below erroneously declassifies the variable @reachin{x}, which is not @tech{secret}:
 
 @reach{
   const x = 0;
@@ -813,8 +813,166 @@ You can fix this by removing the function name:
 
 @error{RE0046}
 
+This error indicates that there was an invalid syntax used for an @reachin{import}.
+The acceptable @reachin{import} formats are defined in the documentation for the keyword.
+
+For example, the code below erroneously performs a default @reachin{import}:
+
+@reach{
+  import blah from 'sample_lib.rsh';
+}
+
+You can fix this code by explicitly importing the bindings you want:
+
+@reach{
+  import {a,b,c} from 'sample_lib.rsh';
+}
+
+or by binding all the exports to an identifier:
+
+@reach{
+  import * as lib from 'sample_lib.rsh';
+}
 
 @error{RE0047}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that there was a @reachin{return} statement
+at the top level.
+
 @error{RE0048}
+
+This error indicates that the Reach file does not have a header at
+the top of the file. The first top level statement of a Reach module
+must indicate what version of Reach the file uses.
+
+For example, the code below erroneously exports an application
+without specifying what version of Reach it uses:
+
+@reach{
+  export const main = Reach.App(() => {});
+}
+
+Fix this by adding a header to the file:
+
+@reach{
+  "reach 0.1";
+
+  export const main = Reach.App(() => {});
+}
+
 @error{RE0049}
+
+This error indicates that an @reachin{object} has been given a field
+that is not an identifier or a @reachin{string}.
+
+For example, the code below erroneously uses a dynamic string as an object key:
+
+@reach{
+  A.only(() => {
+    const x = declassify(interact.x);
+  });
+  A.publish(x);
+  const o = {
+    [x]: 4,
+  };
+}
+
+You can fix this by using a static string as the key.
+
 @error{RE0050}
+
+@error-version[#:to "v0.1"]
+
+This error indicates an @reachin{Object} has an incorrect number of values
+associated with a field.
+
+@error{RE0051}
+
+This error indicates that the field of an @reachin{Object} uses the incorrect
+syntax for defining a function.
+
+For example, the code below declares a field as a function with the following syntax:
+
+@reach{
+  const o = {
+    f() {
+      return 1;
+    }
+  };
+}
+
+You can fix this by using the following @tech{arrow expression} syntax:
+
+@reach{
+  const o = {
+    f: () => { return 1; }
+  }
+}
+
+
+@error{RE0052}
+
+This error indicates that a @reachin{UInt} has been used as the key of an
+@reachin{Object}. However, only identifiers and values of type @reachin{Bytes}
+are valid object keys.
+
+You can fix this issue by replacing the erroneous key with a static string.
+
+@error{RE0053}
+
+This error indicates that you are attempting to spread a value that is not
+an object. This issue is most likely caused by a typo in your program.
+
+
+@error{RE0054}
+
+This error indicates that the argument provided to @reachin{Array.itoa} is
+not static. @reachin{Array.iota} requires its argument to be computable at
+compile time.
+
+You can fix this issue by providing a static @reachin{UInt} to the function.
+
+@error{RE0055}
+
+This error occurs when you provide a primitive operation with the incorrect
+number of arguments or arguments of the wrong type. Please review the documentation
+for the function you are attempting to use and provide it with the correct arguments.
+
+@error{RE0056}
+
+This error indicates that you are attempting to create a variable, although another
+variable in the scope uses the same name. In Reach, identifier shadowing is
+not allowed. You can fix this issue by renaming your variable or moving one of the
+variable declarations to another scope where it does not conflict with the other.
+
+@error{RE0057}
+
+This error indicates that the compiler expected the tail of a statement block
+to be empty, but it wasn't. This issue may arise if there are statements beyond
+a @reachin{return} or @reachin{exit} statement. These statements are dead code
+and you can fix this issue by deleting them.
+
+
+@error{RE0058}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that you tried to use the @reachin{publish} keyword twice
+in a publication.
+
+@error{RE0059}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that there is a function at the top level without a name.
+You can fix this by naming your function.
+
+@error{RE0060}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that there is an illegal @reachin{while} loop @reachin{invariant}.
+You can fix this issue by providing only one expression to @reachin{invariant}.
+
