@@ -1,0 +1,7 @@
+--- a/daemon/algod/api/server/v2/handlers.go
++++ b/daemon/algod/api/server/v2/handlers.go
+@@ -327,3 +327,3 @@
+	case <-time.After(1 * time.Minute):
+-	case <-ledger.Wait(basics.Round(round + 1)):
++	case <-ledger.Wait(basics.Round(round)):
+	}

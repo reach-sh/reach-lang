@@ -30,6 +30,9 @@ RUN patch -p1 < ${DEVMODE_SHA1}.patch
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install
+COPY reach2.patch .
+RUN patch -p1 < reach2.patch
+RUN make install
 
 ### INDEXER
 WORKDIR ${SRC_PARENT}
@@ -40,7 +43,6 @@ WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 # indexer develop branch as of 2021-03-19
 # RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout e54c4d97df60e2a6768abb3d97919f3412e58597
 # WORKDIR $SRC_PARENT/indexer
-RUN make
 COPY indexer.patch .
 RUN patch -p1 < indexer.patch
 RUN make
