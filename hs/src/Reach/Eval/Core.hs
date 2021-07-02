@@ -3975,7 +3975,7 @@ doFork ks cases mtime mnntpay = do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
-  let tv = jid "t"
+  let tv = jid $ ".t" <> show idx
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
   let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
@@ -4031,7 +4031,7 @@ doFork ks cases mtime mnntpay = do
               -- If there's one case, simply return message.
               --  Otherwise, inject msg into variant representing which case executed
               let msgExpr = ifOneCase (jid "msg") $ JSCallExpression (JSMemberDot (jid partMsgType) a (jid $ partCase n)) a (JSLOne (jid "msg")) a
-              let returnExpr = JSObjectLiteral a (mkCommaTrailingList $ [JSObjectSpread a (jid "t"), JSPropertyIdentRef a "when", JSPropertyNameandValue (JSPropertyIdent a "msg") a [msgExpr]]) a
+              let returnExpr = JSObjectLiteral a (mkCommaTrailingList $ [JSObjectSpread a tv, JSPropertyIdentRef a "when", JSPropertyNameandValue (JSPropertyIdent a "msg") a [msgExpr]]) a
               let stmts =
                     only_body
                       <> [JSReturn a (Just returnExpr) sp]

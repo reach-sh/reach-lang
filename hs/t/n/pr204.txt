@@ -1,0 +1,76 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr204.rsh:77:7:application
+
+  // Violation Witness
+
+  const balance(0)/87 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./pr204.rsh:40:3:while
+
+
+  // Theorem Formalization
+
+  const v82 = 0 == balance(0)/87;
+  //    ^ would be false
+  assert(v82);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./pr204.rsh:59:28:application
+
+  // Violation Witness
+
+  const balance(1)/88 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./pr204.rsh:40:3:while
+  const qty/56 = qty/49;
+  //    ^ could = 2
+  //      from: ./pr204.rsh:53:11:dot
+
+
+  // Theorem Formalization
+
+  const v62 = qty/56 <= balance(1)/88;
+  //    ^ would be false
+  assert(v62);
+
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr204.rsh:77:7:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Buyer" is honest
+Verification failed:
+  when ONLY "Buyer" is honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr204.rsh:77:7:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Owner" is honest
+Verification failed:
+  when ONLY "Owner" is honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./pr204.rsh:59:28:application
+
+  (details omitted on repeat)
+Verification failed:
+  when ONLY "Owner" is honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr204.rsh:77:7:application
+
+  (details omitted on repeat)
+Checked 34 theorems; 6 failures. :'(
