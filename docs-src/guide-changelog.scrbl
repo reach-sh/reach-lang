@@ -10,6 +10,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/01: Algorand connector updated to AVM 0.9 (TEAL 4)}
+@item{2021/07/01: Algorand devnet version updated to 2.7.1, plus @litchar{DevMode} patch}
+@item{2021/07/01: Algorand devnet image renamed to @litchar{devnet-algo}}
 @item{2021/07/01: version tagged}
 ]
 

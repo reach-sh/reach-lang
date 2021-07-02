@@ -79,7 +79,7 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh
@@ -163,7 +163,7 @@ tealcount () {
 # r examples/nim
 # c examples/nim/index-abstract.rsh
 # r examples/secured-loan
-# r examples/overview
+r examples/overview
 # r examples/log
 # r examples/argz
 # r examples/atomic-swap-auction
@@ -220,9 +220,8 @@ tealcount () {
 # r users/ff
 # exit 0
 
-r examples/mint-basic
-exit 0
-r examples/atomic-swap
+# r examples/mint-basic
+# r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
 

@@ -86,11 +86,11 @@ index e3b24ec4..7fc615fd 100644
  	"io"
  	"math"
  	"math/big"
+ 	"math/bits"
 +        "os"
  	"runtime"
- 	"sort"
  	"strings"
-@@ -385,6 +386,15 @@ func eval(program []byte, cx *evalContext) (pass bool, err error) {
+@@ -442,6 +442,15 @@ func eval(program []byte, cx *evalContext) (pass bool, err error) {
  	cx.stack = make([]stackValue, 0, 10)
  	cx.program = program
  

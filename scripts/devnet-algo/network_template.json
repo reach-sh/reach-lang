@@ -7,7 +7,8 @@
         "Stake": 100,
         "Online": true
       }
-    ]
+    ],
+    "DevMode": true
   },
   "Nodes": [
     {

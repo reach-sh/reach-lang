@@ -859,7 +859,7 @@ export function setProviderByName(providerName: ProviderName): void {
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'husband sock drift razor piece february loop nose crew object salon come sketch frost grocery capital young strategy catalog dial seminar sword betray absent army';
+const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
 const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const ledger = getLedger();
   if (ledger !== localhostProviderEnv.ALGO_LEDGER) {

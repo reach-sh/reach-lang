@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^2.5.1",
-    "algosdk": "github:algorand/js-algorand-sdk#d7c9f8946bce78d41db247883622df569d643c0f",
+    "algosdk": "^1.10.0",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.32",
     "express": "^4.17.1",

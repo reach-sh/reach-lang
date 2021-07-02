@@ -18,6 +18,9 @@ else
   export TEAL_DEBUGGER_DIR=/dbg
 fi
 
+# Disable telemetry
+export ALGOTEST=Y
+
 echo Starting algod
 ALOG="${ALGORAND_DATA}/node.log"
 (while true ; do

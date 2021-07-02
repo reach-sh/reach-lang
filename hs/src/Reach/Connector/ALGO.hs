@@ -201,7 +201,7 @@ render ts = tt
   where
     tt = LT.toStrict lt
     lt = LT.unlines lts
-    lts = "#pragma version 3" : (map LT.unwords $ peep_optimize $ DL.toList ts)
+    lts = "#pragma version 4" : (map LT.unwords $ peep_optimize $ DL.toList ts)
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
