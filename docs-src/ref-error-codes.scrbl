@@ -617,14 +617,204 @@ This error indicates that you are attempting to mutate a variable in an inapprop
 Variable mutation is only allowed to occur on variables declared via @reachin{var} and immediately
 before a @reachin{continue} statement of a loop.
 
-For example, this code attempts to
+For example, the code below attempts to mutate a loop variable inproperly:
 
+@reach{
+  var [ x ] = [ 0 ];
+  invariant(balance() == 0);
+  while (true) {
+    commit();
+    x = 1;
+    // ...
+    continue;
+  }
+}
+
+You can fix this issue by moving the mutation directly before the @reachin{continue}:
+
+@reach{
+  var [ x ] = [ 0 ];
+  invariant(balance() == 0);
+  while (true) {
+    commit();
+    // ...
+    x = 1;
+    continue;
+  }
+}
 
 @error{RE0033}
+
+This error indicates you are using an illegal Javascript expression in Reach. Not all Javascript
+expressions are valid Reach, as they are not applicable to the language.
+
 @error{RE0034}
+
+This error indicates that there is nowhere to return to in the current statement block.
+This may occur if you write a @reachin{return} statement at the top level of a file
+or if you've already wrote a @reachin{return} statement.
+
+For example, the code below has two @reachin{return} statements, the first of which will
+always occur, since it is not within a conditional:
+
+@reach{
+  const f = () => {
+    return 0;
+    return 1;
+  };
+}
+
+You can fix this by removing the second @reachin{return} which is dead code:
+
+@reach{
+  const f = () => {
+    return 0;
+  }
+}
+
 @error{RE0035}
+
+This error indicates that a value, which is not a function, is being
+applied as if it were a function. Ensure you are writing the correct name
+of the function you intend to use.
+
+For example, the code below has two variables: @reachin{f} and @reachin{g}:
+
+@reach{
+  const f = () => 2;
+  const g = 2;
+  const h = g();
+}
+
+@reachin{g} is being applied as if it were a function, although we really intended
+on calling @reachin{f}. This can be fixed by ensuring we call a function:
+
+@reach{
+  const f = () => 2;
+  const g = 2;
+  const h = f();
+}
+
 @error{RE0036}
+
+This error indicates that a value, which is not a function, is being
+applied as if it were a function.
+
+For example, the code erroneously tries to create an @reachin{array} the same
+size as @reachin{arr}, but filled with @reachin{1}:
+
+@reach{
+  const a = arr.map(1);
+}
+
+You can fix this code by providing a function to @reachin{Array.map}:
+
+@reach{
+  const a = arr.map((_) => 1);
+}
+
 @error{RE0037}
+
+This error indicates that a value, which is not an @reachin{Object}, is being
+treated as if it were an @reachin{Object}. This error occurs when you try to access
+a field of an erroneous value. This issue is most likely caused by a typo in your
+program.
+
 @error{RE0038}
+
+This error indicates that a value, which is not an @reachin{Array} or @reachin{Tuple}, is being
+treated as if it were. This error occurs when you try to access
+an element of an erroneous value. This issue is most likely caused by a typo in your
+program.
+
 @error{RE0039}
 
+This error indicates that there is an attempt to dereference an @reachin{Array} or @reachin{Tuple}
+with a non-numerical value. You must use a value of type @reachin{UInt} to dereference
+an @reachin{Array}.
+
+@error{RE0040}
+
+This error indicates that you are using a dynamic value to dereference a value which is not an @reachin{Array}.
+This issue is most likely caused by a typo. Please ensure you are dereferencing an @reachin{Array}.
+
+@error{RE0041}
+
+This error indicates that there is an attempt to statically dereference an @reachin{Array} beyond it's bounds.
+Ensure you are using an index that is between @tt{0} and @tt{1} less than the length of the @reachin{Array}.
+
+@error{RE0042}
+
+This error indicates that there is an attempt to reference an identifier that is not in scope. This issue may be
+caused by a typo, a scoping issue, or a missing @reachin{import}.
+
+For example, the code below declares a function with a variable @reachin{x} declared within it. Attempting to reference
+@reachin{x} outside of the function will result in an error:
+
+@reach{
+  const f = () => {
+    const x = 5;
+  }
+  const y = x;
+}
+
+You can fix this issue by returning the value of @reachin{x} from the function:
+
+@reach{
+  const f = () => {
+    const x = 5;
+    return x;
+  }
+  const y = f();
+}
+
+If you are attempting to use a value from a library, simply add the necessary @reachin{import} to the top
+of the Reach file.
+
+@error{RE0043}
+
+This error indicates that there is a mismatch between the expected @tech{security level} of a variable
+and the actual one provided. This may happen if you use a @tech{public} variable where a @tech{private}
+is expected, or vice versa.
+
+For example, the code below erroneously declassifies the variable @reachin{x}, which is not @tech{private}:
+
+@reach{
+  const x = 0;
+  A.only(() => {
+    const y = declassify(x);
+  });
+}
+
+You can fix this issue by simply assigning @reachin{y} to @reachin{x}.
+
+@error{RE0044}
+
+This error indicates that you provided an incorrect number of arguments to a function. You can fix this
+by providing the same amount of arguments expected.
+
+@error{RE0045}
+
+This error indicates that an anonymous function was provided a name, which is not allowed.
+
+For example, the code below names the anonymous function @reachin{m}:
+
+@reach{
+  const x = array(UInt, [0, 1, 2]);
+  const y = x.map(function m(i){ return i + 1; });
+}
+
+You can fix this by removing the function name:
+
+@reach{
+  const x = array(UInt, [0, 1, 2]);
+  const y = x.map(function (i){ return i + 1; });
+}
+
+@error{RE0046}
+
+
+@error{RE0047}
+@error{RE0048}
+@error{RE0049}
+@error{RE0050}

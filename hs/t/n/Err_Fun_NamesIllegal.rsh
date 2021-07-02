@@ -1,9 +1,8 @@
 'reach 0.1';
 
-import blah from 'sample_lib.rsh';
-
-export const main = Reach.App(
-  {}, [], () => {
-    return x;
-  }
-);
+export const main = Reach.App(() => {
+  const Alice = Participant('Alice', {});
+  deploy();
+  const x = array(UInt, [0, 1, 2]);
+  x.map(function m(i){ return i + 1; });
+});

@@ -1,8 +1,8 @@
-reachc: error[RE0046]: Invalid Reach import syntax: JSImportClauseDefault
+reachc: error[RE0045]: Invalid function expression. Anonymous functions must not be named.
 
- ./Err_Fun_NamesIllegal.rsh:3:1:import
+ ./Err_Fun_NamesIllegal.rsh:7:18:function name
 
- 3| import blah from 'sample_lib.rsh';
+ 7|   x.map(function m(i){ return i + 1; });
 
-For further explanation of this error, see: https://docs.reach.sh/RE0046.html
+For further explanation of this error, see: https://docs.reach.sh/RE0045.html
 

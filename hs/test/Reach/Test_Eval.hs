@@ -24,9 +24,7 @@ spec_examples_cover_EvalError =
       , "Err_Each_NotTuple"
       , "Err_ExpectedPublic" -- may not be possible with new enforced _ ident conventions
       , "Err_Eval_IllegalLift"
-      , "Err_Eval_IndirectRefNotArray"
       , "Err_Eval_NoReturn" -- not syntactically possible?
-      , "Err_Eval_NotApplicableVals" -- previous test example subsumed by Err_ToConsensus_TimeoutArgs
       , "Err_Only_NotOneClosure"
       , "Err_Import_IllegalJS"
       , "Err_Obj_IllegalFieldValues" -- not possible with Grammar7?
@@ -38,6 +36,7 @@ spec_examples_cover_EvalError =
       , "Err_Type_NotApplicable"
       , "Err_TypeMeets_dMismatch"
       , "Err_View_CannotExpose"
+      , "Err_Module_Return" -- shadowed by Err_Eval_NoReturn
       ]
 
 spec_examples_cover_ParserError :: Spec
