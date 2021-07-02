@@ -441,7 +441,14 @@ parseVal t v =
                 _ -> return []
           elems' <- parseVals (List elems)
           return $ SMV_Array ty $ reverse elems'
-        _ -> impossible $ "parseVal: Array(" <> show ty <> ")"
+        _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+    T_Array ty sz ->
+      case v of
+        List [ List (Atom "as":Atom "const":_), e ] ->
+          SMV_Array ty . replicate (fromIntegral sz) <$> parseVal ty e
+        List (_:vs) ->
+          SMV_Array ty <$> mapM (parseVal ty) vs
+        _ -> impossible $ "parseVal: Array(" <> show v <> ")"
     T_Tuple ts ->
       case v of
         List (_:vs) ->
@@ -464,7 +471,7 @@ parseVal t v =
                   Nothing -> impossible $ "parseType: Data: Constructor type"
           return $ SMV_Data c [v']
         _ -> impossible $ "parseVal: Data " <> show v
-    _ -> impossible $ "parseVal: " <> show t <> " " <> show v
+    _ -> impossible $ "parseVal: " <> show v <> " : " <> show t
 
 
 parseModel2 :: SMTModel -> App (M.Map String SMTVal)
