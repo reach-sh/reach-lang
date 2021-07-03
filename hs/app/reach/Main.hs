@@ -5,6 +5,7 @@ module Main (main) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
+import Data.Bits
 import Data.Char
 import Data.IORef
 import Options.Applicative
@@ -236,6 +237,14 @@ mkDockerMetaReact = DockerMeta {..} where
   appImageTag = appImage <> ":latest"
 
 
+mkDockerMetaRpc :: Env -> T.Text -> DockerMeta
+mkDockerMetaRpc Env {..} rv = DockerMeta {..} where
+  appProj = T.pack $ takeBaseName e_dirProjectHost
+  appService = "reach-app-" <> appProj
+  appImage = "reachsh/rpc-server"
+  appImageTag = appImage <> ":" <> rv
+
+
 --------------------------------------------------------------------------------
 reachVersionInProcess :: IO T.Text
 reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
@@ -264,6 +273,68 @@ reachDebug :: IO T.Text
 reachDebug = lookupEnv "REACH_DEBUG" >>= \case
   Just r -> pure $ T.pack r
   Nothing -> pure ""
+
+
+rpcKey :: IO T.Text
+rpcKey = lookupEnv "REACH_RPC_KEY" >>= \case
+  Nothing -> f d
+  Just r -> do
+    when (r == d) . putStrLn
+      $ "Warning! Using development RPC key: REACH_RPC_KEY=" <> d <> "."
+    f r
+ where
+  d = "opensesame"
+  f = pure . T.pack
+
+
+rpcPort :: IO T.Text
+rpcPort = lookupEnv "REACH_RPC_PORT" >>= \case
+  Nothing -> pure "3000"
+  Just r -> pure $ T.pack r
+
+
+rpcTlsPassphrase :: IO T.Text
+rpcTlsPassphrase = lookupEnv "REACH_RPC_TLS_PASSPHRASE" >>= \case
+  Nothing -> pure "rpc-demo"
+  Just r -> pure $ T.pack r
+
+
+rpcTlsPair :: Env -> IO (T.Text, T.Text)
+rpcTlsPair Env {..} = do
+  let warnDev = putStrLn
+        "Warning! The current TLS certificate is only suitable for development purposes."
+
+  let embd r = e_dirEmbed </> "sh" </> "_common" </> "rpc" </> r
+  let dock r = e_dirProjectContainer </> "tls" </> r
+  let host r = e_dirProjectHost </> "tls" </> r
+
+  let q e s = lookupEnv e >>= \case
+        Nothing -> pure $ "reach-server." <> s
+        Just r -> do
+          unlessM (doesFileExist $ dock r) . die
+            $ host r <> " doesn't exist!"
+          pure r
+
+  key <- q "REACH_RPC_TLS_KEY" "key"
+  crt <- q "REACH_RPC_TLS_CRT" "crt"
+
+  let orw = ownerReadMode .|. ownerWriteMode
+
+  (,) <$> doesFileExist (dock key) <*> doesFileExist (dock crt) >>= \case
+    (False, False) -> do
+      createDirectoryIfMissing False $ dock ""
+      readFile (embd "tls-default.key") >>= writeFile (dock key)
+      readFile (embd "tls-default.crt") >>= writeFile (dock crt)
+      setFileMode (dock key) orw
+      setFileMode (dock crt) $ orw .|. groupReadMode .|. otherReadMode
+      warnDev
+
+    _ -> do
+      keyC <- readFile (dock key)
+      defC <- readFile (embd "tls-default.key")
+      when (keyC == defC) warnDev
+
+  pure (T.pack key, T.pack crt)
 
 
 --------------------------------------------------------------------------------
@@ -306,6 +377,7 @@ _declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteRe
 data Compose
   = Console
   | React
+  | Rpc
 
 
 -- TODO ensure this works with `run` subdirectories
@@ -314,12 +386,13 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   env@Env {..} <- ask
   debug <- liftIO reachDebug
 
-  let reachConnectorMode = "ETH-browser" -- TODO
+  let reachConnectorMode = "ETH-test-dockerized-geth" -- TODO
   let reachIsolatedNetwork = "1" -- TODO
   let dirProjectHost = T.pack e_dirProjectHost
 
   connEnv <- case t of
     Console -> liftIO $ connectorEnv env cm
+
     React -> pure [N.text|
       volumes:
         - $dirProjectHost:/app/src
@@ -335,6 +408,49 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
         - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
         - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
     |]
+
+    Rpc -> do
+      p <- liftIO rpcPort
+
+      let devnetAlgo = [N.text|
+            - ALGO_SERVER=http://algorand-devnet
+            - ALGO_PORT=4180
+            - ALGO_INDEXER_SERVER=http://algorand-devnet
+            - ALGO_INDEXER_PORT=8980
+          |]
+
+      let devnetEth = [N.text|
+            - ETH_NODE_URI=http://ethereum-devnet:8545
+          |]
+
+      -- TODO `USE_EXISTING_DEVNET`-handling, CFX, consolidate + push config
+      -- out of here
+      let (d, e) = case (c, m) of
+            (Algo, Devnet) -> ("algorand-devnet", devnetAlgo)
+            (Eth, Devnet) -> ("ethereum-devnet", devnetEth)
+            _ -> ("", "")
+
+      pure [N.text|
+        volumes:
+          - $dirProjectHost/build:/app/build
+          - $dirProjectHost/tls:/app/tls
+        ports:
+          - "$p:$p"
+        stdin_open: true
+        tty: true
+        depends_on:
+          - $d
+        environment:
+          - REACH_DEBUG
+          - REACH_CONNECTOR_MODE=$reachConnectorMode
+          - REACH_ISOLATED_NETWORK
+          - REACH_RPC_PORT
+          - REACH_RPC_KEY
+          - REACH_RPC_TLS_KEY
+          - REACH_RPC_TLS_CRT
+          - REACH_RPC_TLS_PASSPHRASE
+          $e
+      |]
 
   connSvs <- case m of
     Live -> pure ""
@@ -369,9 +485,15 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   -- TODO push ports into templates instead (?)
   connPorts = case (t, c, m) of
     (Console, Algo, Devnet) -> [ "9392" ]
+
     (React, Algo, Browser) -> [ "4180:4180", "8980:8980", "9392:9392" ]
     (React, Cfx, Browser) -> [ "12537:12537" ]
     (React, Eth, Browser) -> [ "8545:8545" ]
+
+    (Rpc, Algo, Devnet) -> [ "4180:4180", "8980:8980", "9392:9392" ]
+    (Rpc, Cfx, Devnet) -> [ "12537:12537" ]
+    (Rpc, Eth, Devnet) -> [ "8545:8545" ]
+
     _ -> []
 
 
@@ -697,15 +819,47 @@ react = command "react" $ info f d where
 
     withCompose React dm cm . script $ write [N.text|
       $reach compile $cargs
-      docker-compose -f $$TMP/docker-compose.yml run --service-ports --rm $appService
+      docker-compose -f $$TMP/docker-compose.yml \
+        run --service-ports --rm $appService
     |]
 
 
 --------------------------------------------------------------------------------
+switchUseExistingDevnet :: Parser Bool
+switchUseExistingDevnet = switch $ long "use-existing-devnet"
+
+
 rpcServer :: Subcommand
 rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
-  f = undefined
+  f = go <$> switchUseExistingDevnet
+
+  go _ued = do
+    env <- ask
+
+    cm <- liftIO connectorModeNonBrowser
+    reach <- liftIO reachEx
+    rv <- liftIO reachVersionShortInProcess
+
+    key <- liftIO rpcKey
+    (tlsKey, tlsCrt) <- liftIO $ rpcTlsPair env
+    tlsPassphrase <- liftIO rpcTlsPassphrase
+
+    let dm@DockerMeta {..} = mkDockerMetaRpc env rv
+
+    withCompose Rpc dm cm . script $ write [N.text|
+      $reach compile
+
+      REACH_RPC_TLS_KEY=$tlsKey
+      REACH_RPC_TLS_CRT=$tlsCrt
+      REACH_RPC_TLS_PASSPHRASE=$tlsPassphrase
+      REACH_RPC_KEY=$key
+
+      export REACH_RPC_TLS_KEY REACH_RPC_TLS_CRT REACH_RPC_TLS_PASSPHRASE REACH_RPC_KEY
+
+      REACH_RPC_KEY=$${REACH_RPC_KEY} docker-compose -f $$TMP/docker-compose.yml \
+        run --service-ports --rm $appService
+    |]
 
 
 --------------------------------------------------------------------------------
