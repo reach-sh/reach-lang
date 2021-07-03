@@ -10,6 +10,10 @@ run_d () {
     -e "REACH_EX=$0" \
     -e "REACH_VERSION" \
     -e "REACH_CONNECTOR_MODE" \
+    -e "REACH_RPC_TLS_KEY" \
+    -e "REACH_RPC_TLS_CRT" \
+    -e "REACH_RPC_TLS_PASSPHRASE" \
+    -e "REACH_RPC_KEY" \
     -u "$(id -ru):$(id -rg)" \
     -v "$TMP:/app/tmp" \
     -v "$(pwd):/app/src" \
