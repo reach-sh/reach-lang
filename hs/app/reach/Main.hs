@@ -101,11 +101,11 @@ _runSubScript a e = readIORef (e_effect e) >>= \case
 
 
 --------------------------------------------------------------------------------
-serviceConnector :: Env -> ConnectorMode -> T.Text -> [T.Text] -> T.Text -> IO T.Text
-serviceConnector Env {..} (ConnectorMode c m) rv ports appService' = do
+serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
+serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
   let ports' = case ports of
         [] -> "[]"
-        ps -> T.intercalate "\n" $ map ("- " <>) ps
+        ps -> T.intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
 
@@ -113,7 +113,7 @@ serviceConnector Env {..} (ConnectorMode c m) rv ports appService' = do
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
 
   pure
-    . swap "REACH_VERSION" rv
+    . swap "REACH_VERSION" version''
     . swap "PORTS" ports'
     . swap "NETWORK" appService'
     . swap "APP_SERVICE" appService'
@@ -132,13 +132,16 @@ data Connector
   = Algo
   | Cfx
   | Eth
+  deriving Eq
 
 data Mode
   = Devnet
   | Live
   | Browser
+  deriving Eq
 
 data ConnectorMode = ConnectorMode Connector Mode
+  deriving Eq
 
 
 instance Show Connector where
@@ -155,6 +158,13 @@ instance Show Mode where
 
 instance Show ConnectorMode where
   show (ConnectorMode c m) = show c <> "-" <> show m
+
+
+devnetFor :: Connector -> T.Text
+devnetFor = \case
+  Algo -> "algorand-devnet"
+  Cfx -> "devnet-cfx"
+  Eth -> "ethereum-devnet"
 
 
 pConnector :: ParsecT String () IO Connector
@@ -243,6 +253,14 @@ mkDockerMetaRpc Env {..} rv = DockerMeta {..} where
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
   appImageTag = appImage <> ":" <> rv
+
+
+mkDockerMetaStandaloneDevnet :: Env -> DockerMeta
+mkDockerMetaStandaloneDevnet Env {..} = DockerMeta {..} where
+  appProj = T.pack $ takeBaseName e_dirProjectHost
+  appService = "reach-app-" <> appProj
+  appImage = ""
+  appImageTag = ""
 
 
 --------------------------------------------------------------------------------
@@ -378,6 +396,7 @@ data Compose
   = Console
   | React
   | Rpc
+  | StandaloneDevnet
 
 
 -- TODO ensure this works with `run` subdirectories
@@ -392,6 +411,8 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
 
   connEnv <- case t of
     Console -> liftIO $ connectorEnv env cm
+
+    StandaloneDevnet -> liftIO $ connectorEnv env cm
 
     React -> pure [N.text|
       volumes:
@@ -426,8 +447,8 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
       -- TODO `USE_EXISTING_DEVNET`-handling, CFX, consolidate + push config
       -- out of here
       let (d, e) = case (c, m) of
-            (Algo, Devnet) -> ("algorand-devnet", devnetAlgo)
-            (Eth, Devnet) -> ("ethereum-devnet", devnetEth)
+            (Algo, Devnet) -> (devnetFor c, devnetAlgo)
+            (Eth, Devnet) -> (devnetFor c, devnetEth)
             _ -> ("", "")
 
       pure [N.text|
@@ -452,11 +473,24 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
           $e
       |]
 
-  connSvs <- case m of
-    Live -> pure ""
-    _ -> liftIO $ do
-      rv <- reachVersionInProcess
-      serviceConnector env cm rv connPorts appService
+  connSvs <- case (m, t) of
+    (Live, _) -> pure ""
+    (_, StandaloneDevnet) -> liftIO $ serviceConnector env cm connPorts appService "latest"
+
+    -- TODO fix remaining combos (e.g. `rpc-server` latest vs. REACH_VERSION)
+    (_, _) -> liftIO $ reachVersionInProcess >>= serviceConnector env cm connPorts appService
+
+  let appService' = case t of
+        StandaloneDevnet -> ""
+        _ -> [N.text|
+               $appService:
+                 image: $appImageTag
+                 networks:
+                   - $appService
+                 build:
+                   context: $dirProjectHost
+                 $connEnv
+             |]
 
   let f = [N.text|
      version: '3.5'
@@ -468,13 +502,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
      services:
        $connSvs
 
-       $appService:
-         image: $appImageTag
-         networks:
-           - $appService
-         build:
-           context: $dirProjectHost
-         $connEnv
+       $appService'
     |]
 
   liftIO $ scaff True (e_dirTmp </> "docker-compose.yml") (notw f)
@@ -484,17 +512,11 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   notw = T.intercalate "\n" . fmap T.stripEnd . T.lines
   -- TODO push ports into templates instead (?)
   connPorts = case (t, c, m) of
+    (_, _, Live) -> []
     (Console, Algo, Devnet) -> [ "9392" ]
-
-    (React, Algo, Browser) -> [ "4180:4180", "8980:8980", "9392:9392" ]
-    (React, Cfx, Browser) -> [ "12537:12537" ]
-    (React, Eth, Browser) -> [ "8545:8545" ]
-
-    (Rpc, Algo, Devnet) -> [ "4180:4180", "8980:8980", "9392:9392" ]
-    (Rpc, Cfx, Devnet) -> [ "12537:12537" ]
-    (Rpc, Eth, Devnet) -> [ "8545:8545" ]
-
-    _ -> []
+    (_, Algo, _) -> [ "4180:4180", "8980:8980", "9392:9392" ]
+    (_, Cfx, _) -> [ "12537:12537" ]
+    (_, Eth, _) -> [ "8545:8545" ]
 
 
 --------------------------------------------------------------------------------
@@ -873,7 +895,18 @@ rpcRun = command "rpc-run" $ info f d where
 devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
-  f = undefined
+  f = pure $ do
+    dm <- mkDockerMetaStandaloneDevnet <$> ask
+    cm@(ConnectorMode c m) <- liftIO connectorModeNonBrowser
+
+    unless (m == Devnet) . liftIO
+      $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
+
+    let s = devnetFor c
+
+    withCompose StandaloneDevnet dm cm . script $ write [N.text|
+      docker-compose -f $$TMP/docker-compose.yml run --service-ports --rm $s
+    |]
 
 
 --------------------------------------------------------------------------------
