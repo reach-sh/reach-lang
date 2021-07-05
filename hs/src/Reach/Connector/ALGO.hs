@@ -1,14 +1,15 @@
 module Reach.Connector.ALGO (connect_algo) where
 
-import Control.Monad.Identity
+import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
-import Data.ByteString.Base64 (encodeBase64')
+import Data.ByteString.Base64 (encodeBase64', decodeBase64)
 import Data.ByteString.Builder
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
+import Data.Either
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import qualified Data.List as List
@@ -17,19 +18,15 @@ import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
-import qualified Data.Text.Lazy.IO as LTIO
 import qualified Data.Vector as Vector
 import Data.Word
 import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.BigOpt
 import Reach.Connector
 import Reach.Counter
-import Reach.DeJump
 import Reach.Texty (pretty)
-import Reach.UnrollLoops
 import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
@@ -114,9 +111,6 @@ encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
 texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
 
-template :: LT.Text -> LT.Text
-template x = "\"{{" <> x <> "}}\""
-
 type ScratchSlot = Word8
 
 type TxnIdx = Word8
@@ -137,7 +131,14 @@ type TEALs = DL.DList TEAL
 peep_optimize :: [TEAL] -> [TEAL]
 peep_optimize = \case
   [] -> []
+  [["return"]] -> []
   ["byte", "base64()"] : ["concat"] : l -> peep_optimize l
+  ["byte", x] : ["byte", y] : ["concat"] : l | isBase64 x && isBase64 y ->
+    peep_optimize $ [ "byte", (base64d $ base64u x <> base64u y) ] : l
+  ["byte", x] : l | isBase64_zeros x -> peep_optimize $
+    case B.length $ base64u x of
+      32 -> ["global", "ZeroAddress"] : l
+      len -> ["int", texty len] : ["bzero"] : l
   ["b", x] : b@[y] : l | y == (x <> ":") -> b : peep_optimize l
   ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
   ["btoi"] : ["itob"] : l -> peep_optimize l
@@ -217,54 +218,23 @@ data Shared = Shared
   }
 
 type Lets = M.Map DLVar (App ())
-
-data TxnKind
-  = TK_In
-  | TK_Out
-  | TK_Init
-  deriving (Eq, Show, Ord)
-
-data TxnInfo = TxnInfo
-  { ti_idx :: TxnIdx
-  , ti_kind :: TxnKind
-  }
-  deriving (Eq, Show, Ord)
-
-ti_from :: TxnInfo -> Bool
-ti_from = flip elem [TK_Out, TK_Init] . ti_kind
-
-ti_init :: TxnInfo -> Bool
-ti_init = (==) TK_Init . ti_kind
-
 data Env = Env
   { eShared :: Shared
-  , eWhich :: Int
-  , eLabelR :: IORef Int
+  , eWhich :: String
+  , eLabel :: Counter
   , eOutputR :: IORef TEALs
-  , eTxnsR :: IORef TxnIdx
-  , eTxns :: IORef [TxnInfo]
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
-  , emTimev :: Maybe DLVar
-  , eFinalize :: App ()
+  , eStepInfoR :: IORef (M.Map Int Aeson.Value)
   }
 
-type App = ReaderT Env IO
+recordWhich :: Int -> App a -> App a
+recordWhich w = local (\e -> e { eWhich = (eWhich e) <> " > " <> show w })
 
-withFresh :: App m -> App m
-withFresh m = do
-  eTxnsR' <- liftIO . dupeIORef =<< (eTxnsR <$> ask)
-  eTxns' <- liftIO . dupeIORef =<< (eTxns <$> ask)
-  local
-    (\e ->
-       e
-         { eTxnsR = eTxnsR'
-         , eTxns = eTxns'
-         })
-    m
+type App = ReaderT Env IO
 
 output :: TEAL -> App ()
 output t = do
@@ -280,11 +250,14 @@ label = output . label_
 comment :: LT.Text -> App ()
 comment = output . comment_
 
-or_fail :: App ()
-or_fail = op "assert"
+assert :: App ()
+assert = op "assert"
 
-eq_or_fail :: App ()
-eq_or_fail = op "==" >> or_fail
+asserteq :: App ()
+asserteq = op "==" >> assert
+
+cfail :: App ()
+cfail = code "b" ["fail"]
 
 op :: LT.Text -> App ()
 op = flip code []
@@ -300,10 +273,10 @@ app_global_get k = do
   cl $ DLL_Bytes $ k
   op "app_global_get"
 
-app_global_put :: B.ByteString -> App () -> App ()
-app_global_put k mkv = do
+app_global_put :: B.ByteString -> App ()
+app_global_put k = do
   cl $ DLL_Bytes $ k
-  mkv
+  op "swap"
   op "app_global_put"
 
 app_local_get :: Word8 -> B.ByteString -> App ()
@@ -312,42 +285,51 @@ app_local_get ai k = do
   cl $ DLL_Bytes $ k
   op "app_local_get"
 
-app_local_put :: Word8 -> B.ByteString -> App () -> App ()
-app_local_put ai k mkv = do
+app_local_put :: Word8 -> B.ByteString -> App ()
+app_local_put ai k = do
   cl $ DLL_Int sb $ fromIntegral ai
+  op "swap"
   cl $ DLL_Bytes $ k
-  mkv
+  op "swap"
   op "app_local_put"
 
-check_rekeyto :: App ()
-check_rekeyto = do
+checkRekeyTo :: App ()
+checkRekeyTo = do
   code "txn" ["RekeyTo"]
   code "global" ["ZeroAddress"]
-  eq_or_fail
+  asserteq
 
-bad_ :: LT.Text -> App ()
-bad_ lab = do
-  Env {..} <- ask
-  let Shared {..} = eShared
-  liftIO $ modifyIORef sFailuresR (S.insert lab)
+checkLease :: App ()
+checkLease = do
+  code "txn" ["Lease"]
+  code "global" ["ZeroAddress"]
+  asserteq
+
+checkTimeLimits :: SrcLoc -> App ()
+checkTimeLimits at = do
+  let go f i cmp = do
+        code "gtxns" [ f ]
+        gvLoad GV_timeLimits
+        cTupleRef at (gvType GV_timeLimits) i
+        op cmp
+        assert
+  op "dup"
+  go "FirstValid" 0 ">="
+  go "LastValid" 1 "<="
 
 bad :: LT.Text -> App ()
 bad lab = do
-  bad_ lab
+  Env {..} <- ask
+  let Shared {..} = eShared
+  liftIO $ modifyIORef sFailuresR (S.insert lab)
   output $ comment_ $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
-xxx lab = do
-  let lab' = "This program uses " <> lab
-  when False $
-    liftIO $ LTIO.putStrLn $ "ALGO: " <> lab'
-  bad lab'
+xxx lab = bad $ "This program uses " <> lab
 
 freshLabel :: App LT.Text
 freshLabel = do
-  Env {..} <- ask
-  i <- liftIO $ readIORef eLabelR
-  liftIO $ modifyIORef eLabelR (1 +)
+  i <- (liftIO . incCounter) =<< (eLabel <$> ask)
   return $ "l" <> LT.pack (show i)
 
 store_let :: DLVar -> Bool -> App () -> App a -> App a
@@ -372,7 +354,7 @@ lookup_let dv = do
   case M.lookup dv eLets of
     Just m -> m
     Nothing ->
-      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+      impossible $ eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -409,35 +391,8 @@ sallocLet dv cgen km = do
     cstore
     store_let dv True cload km
 
-talloc :: TxnKind -> App TxnIdx
-talloc tk = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eTxnsR $ (+) 1
-  txni <- liftIO $ readIORef eTxnsR
-  when (txni >= algoMaxTxGroupSize) $ do
-    bad $
-      texty $
-        "Exceeded the maximum size of an atomic transfer group: " <> show algoMaxTxGroupSize
-          <> ".This is caused by too many transfers in one atomic step."
-  let ti = TxnInfo txni tk
-  liftIO $ modifyIORef eTxns $ (:) ti
-  return txni
-
-how_many_txns :: App TxnIdx
-how_many_txns = do
-  Env {..} <- ask
-  liftIO $ readIORef eTxnsR
-
-txn_infos :: App [TxnInfo]
-txn_infos = do
-  Env {..} <- ask
-  liftIO $ readIORef eTxns
-
-from_txns :: App [TxnIdx]
-from_txns = (map ti_idx . filter ti_from) <$> txn_infos
-
-init_txns :: App [TxnIdx]
-init_txns = (map ti_idx . filter ti_init) <$> txn_infos
+-- XXX check that the number of transactions is never more than
+-- algoMaxTxGroupSize
 
 ctobs :: DLType -> App ()
 ctobs = \case
@@ -474,6 +429,23 @@ tint at i = texty $ checkIntLiteralC at connect_algo i
 
 base64d :: B.ByteString -> LT.Text
 base64d bs = "base64(" <> encodeBase64 bs <> ")"
+
+decodeBase64' :: B.ByteString -> B.ByteString
+decodeBase64' = fromRight (impossible "isBase64") . decodeBase64
+
+base64u :: LT.Text -> B.ByteString
+base64u x0 = x3
+  where
+    x1 = f $ LT.stripPrefix "base64(" x0
+    x2 = f $ LT.stripSuffix ")" x1
+    x3 = decodeBase64' $ B.pack $ LT.unpack x2
+    f = fromMaybe (impossible "isBase64")
+
+isBase64 :: LT.Text -> Bool
+isBase64 = LT.isPrefixOf "base64("
+
+isBase64_zeros :: LT.Text -> Bool
+isBase64_zeros t = isBase64 t && B.all (== '\0') (base64u t)
 
 cl :: DLLiteral -> App ()
 cl = \case
@@ -733,7 +705,6 @@ cfor maxi body = do
     cl $ DLL_Int sb 1
     op "+"
     store_idx
-    bad "`b` can only branch forwards, not backwards"
     code "b" [top_lab]
   label end_lab
 
@@ -811,11 +782,15 @@ cTupleRef at tt idx = do
   -- [ Tuple ]
   let ts = typeTupleTypes tt
   let (t, start, end) = computeSubstring ts idx
-  csubstring at start end
+  case (ts, idx) of
+    ([ _ ], 0) ->
+      return ()
+    _ -> do
+      csubstring at start end
   -- [ ValueBs ]
   cfrombs t
-
--- [ Value ]
+  -- [ Value ]
+  return ()
 
 cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
 cTupleSet at tt idx = do
@@ -886,7 +861,7 @@ ce = \case
     cTupleRef at (argTypeOf ta) idx
   DLE_ObjectRef at oa f -> do
     let fts = typeObjectTypes oa
-    let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ List.findIndex ((== f) . fst) fts
+    let fidx = fromIntegral $ fromMaybe (impossible "field") $ List.findIndex ((== f) . fst) fts
     let (t, start, end) = computeSubstring (map snd fts) fidx
     ca oa
     csubstring at start end
@@ -895,14 +870,28 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer _at who amt mtok -> do
-    doTransfer TK_Out (ca who) amt mtok
-  DLE_TokenInit _at tok -> do
+  DLE_Transfer ct_at who ct_amt ct_mtok -> do
+    let ct_always = False
+    let ct_mcsend = Just $ ca who
+    let ct_mcrecv = Just cContractAddr
+    let ct_mcclose = Nothing
+    checkTxn $ CheckTxn {..}
+  DLE_TokenInit ct_at tok -> do
     comment $ "Initializing token"
-    doTransfer TK_Init (code "byte" [tContractAddr]) (DLA_Literal $ DLL_Int sb 0) (Just tok)
-  DLE_CheckPay at fs amt mtok -> do
-    show_stack ("CheckPay" :: String) at fs
-    doCheckPay amt mtok
+    let ct_always = True
+    let ct_mtok = Just tok
+    let ct_amt = DLA_Literal $ DLL_Int sb 0
+    let ct_mcsend = Just cContractAddr
+    let ct_mcrecv = Just cContractAddr
+    let ct_mcclose = Nothing
+    checkTxn $ CheckTxn {..}
+  DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
+    show_stack ("CheckPay" :: String) ct_at fs
+    let ct_always = False
+    let ct_mcsend = Nothing -- Flexible, not necc appl sender
+    let ct_mcrecv = Just $ cContractAddr
+    let ct_mcclose = Nothing
+    checkTxn $ CheckTxn {..}
   DLE_Claim at fs t a mmsg -> do
     show_stack mmsg at fs
     case t of
@@ -912,7 +901,7 @@ ce = \case
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
     where
-      check = ca a >> or_fail
+      check = ca a >> assert
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef _ mpv fa -> do
@@ -939,74 +928,72 @@ ce = \case
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
 
-doTransfer_ :: TxnIdx -> App () -> DLArg -> Maybe DLArg -> App ()
-doTransfer_ txni cwho amt mtok = do
-  (vTypeEnum, fReceiver, fAmount, fSender) <-
-    case mtok of
-      Nothing ->
-        return ("pay", "Receiver", "Amount", "Sender")
-      Just tok -> do
-        code "gtxn" [texty txni, "XferAsset"]
-        ca tok
-        eq_or_fail
-        return ("axfer", "AssetReceiver", "AssetAmount", "Sender")
-  code "gtxn" [texty txni, "TypeEnum"]
+staticZero :: DLArg -> Bool
+staticZero = \case
+  DLA_Literal (DLL_Int _ 0) -> True
+  _ -> False
+
+data CheckTxn = CheckTxn
+  { ct_at :: SrcLoc
+  , ct_mcrecv :: Maybe (App ())
+  , ct_mcsend :: Maybe (App ())
+  , ct_mcclose :: Maybe (App ())
+  , ct_always :: Bool
+  , ct_amt :: DLArg
+  , ct_mtok :: Maybe DLArg }
+
+checkTxn :: CheckTxn -> App ()
+checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
+  let check1 f = do
+        code "dig" [ "1" ]
+        code "gtxns" [f]
+        asserteq
+  let (vTypeEnum, fReceiver, fAmount, fCloseTo, extra) =
+        case ct_mtok of
+          Nothing ->
+            ("pay", "Receiver", "Amount", "CloseRemainderTo", return ())
+          Just tok ->
+            ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
+            where textra = ca tok >> check1 "XferAsset"
+  after_lab <- freshLabel
+  ca ct_amt
+  unless ct_always $ do
+    op "dup"
+    code "bz" [after_lab]
+  gvLoad GV_txnCounter
+  op "dup"
+  cl $ DLL_Int sb 1
+  op "+"
+  gvStore GV_txnCounter
+  -- [ amt, id ]
+  op "swap"
+  -- [ id, amt ]
+  check1 fAmount
+  extra
   code "int" [vTypeEnum]
-  eq_or_fail
-  code "gtxn" [texty txni, fReceiver]
-  cwho
-  cfrombs T_Address
-  eq_or_fail
-  code "gtxn" [texty txni, fAmount]
-  ca amt
-  eq_or_fail
-  code "gtxn" [texty txni, fSender]
-  code "byte" [tContractAddr]
-  cfrombs T_Address
-  eq_or_fail
-
-doTransfer :: TxnKind -> App () -> DLArg -> Maybe DLArg -> App ()
-doTransfer tk cwho amt mtok = do
-  txni <- talloc tk
-  doTransfer_ txni cwho amt mtok
-
-doCheckPay_ :: TxnIdx -> DLArg -> Maybe DLArg -> App ()
-doCheckPay_ txni amt mtok = do
-  (vTypeEnum, fReceiver, fAmount, rmFee, _fSender :: String) <-
-    case mtok of
-      Nothing ->
-        return ("pay", "Receiver", "Amount", True, "Sender")
-      Just tok -> do
-        code "gtxn" [texty txni, "XferAsset"]
-        ca tok
-        eq_or_fail
-        return ("axfer", "AssetReceiver", "AssetAmount", False, "Sender")
-  code "gtxn" [texty txni, "TypeEnum"]
-  code "int" [vTypeEnum]
-  eq_or_fail
-  code "gtxn" [texty txni, fReceiver]
-  code "byte" [tContractAddr]
-  cfrombs T_Address
-  eq_or_fail
-  code "gtxn" [texty txni, fAmount]
-  case rmFee of
-    False ->
-      ca amt
-    True -> do
-      lookup_fee_amount
-      case amt of
-        DLA_Literal (DLL_Int _ 0) ->
-          return ()
-        _ -> do
-          op "-"
-          ca amt
-  eq_or_fail
-  comment "We don't care who the sender is... this means that you can get other people to pay for you if you want."
-
-doCheckPay :: DLArg -> Maybe DLArg -> App ()
-doCheckPay amt mtok = do
-  txni <- talloc TK_In
-  doCheckPay_ txni amt mtok
+  check1 "TypeEnum"
+  cl $ DLL_Int sb 0
+  check1 "Fee"
+  op "dup"
+  checkTimeLimits ct_at
+  code "global" ["ZeroAddress"]
+  check1 "Lease"
+  code "global" ["ZeroAddress"]
+  check1 "RekeyTo"
+  whenJust ct_mcclose $ \cclose -> do
+    cclose
+    cfrombs T_Address
+    check1 fCloseTo
+  whenJust ct_mcrecv $ \crecv -> do
+    crecv
+    cfrombs T_Address
+    check1 fReceiver
+  whenJust ct_mcsend $ \csend -> do
+    csend
+    cfrombs T_Address
+    check1 "Sender"
+  label after_lab
+  op "pop" -- if !always & zero then pop amt ; else pop id
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
@@ -1121,98 +1108,54 @@ ct = \case
     ca a
     false_lab <- freshLabel
     code "bz" [false_lab]
-    withFresh $ ct tt
+    ct tt
     label false_lab
-    withFresh $ ct ft
+    ct ft
   CT_Switch at dv csm ->
-    doSwitch (withFresh . ct) at dv csm
-  CT_Jump {} ->
-    impossible $ "continue after dejump"
+    doSwitch ct at dv csm
+  CT_Jump {} -> xxx "continue"
   CT_From at which msvs -> do
-    check_nextSt
-    halt_should_be isHalt
-    finalize
-    where
-      check_view vis = do
-        let ViewSave vwhich vvs = vis
-        let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
-        let la = DLLA_Tuple $ vconcat vwhich vvs
-        let lat = largeArgTypeOf la
-        let sz = typeSizeOf lat
-        viewSz <- readViewSize
-        case viewSz > 0 of
-          True -> do
-            comment $ "check view bs"
-            cla la
-            ctobs lat
-            padding $ viewSz - sz
-            op "concat"
-          False ->
-            padding viewSz
-        readArgCache argView
-        eq_or_fail
-      zero_view = do
-        padding =<< readViewSize
-        readArgCache argView
-        eq_or_fail
-      (isHalt, check_nextSt) =
-        case msvs of
-          --- XXX fix this so it makes sure it is zero bytes
-          FI_Halt toks ->
-            (True, zero_view >> forM_ toks close_asset >> close_escrow)
-            where
-              close_asset tok =
-                close "axfer" "AssetAmount" "Sender" "AssetCloseTo" $ \txni -> do
-                  code "gtxn" [texty txni, "XferAsset"]
-                  ca tok
-                  eq_or_fail
-              close_escrow =
-                close "pay" "Amount" "Sender" "CloseRemainderTo" $ const $ return ()
-              close vTypeEnum fAmount fSender fCloseTo (extra :: TxnIdx -> App ()) = do
-                txni <- talloc TK_Out
-                extra txni
-                code "gtxn" [texty txni, "TypeEnum"]
-                code "int" [vTypeEnum]
-                eq_or_fail
-                comment $ "We don't check the receiver"
-                code "gtxn" [texty txni, fAmount]
-                cl $ DLL_Int sb 0
-                eq_or_fail
-                code "gtxn" [texty txni, fSender]
-                code "byte" [tContractAddr]
-                cfrombs T_Address
-                eq_or_fail
-                code "gtxn" [texty txni, fCloseTo]
-                code "byte" [tDeployer]
-                cfrombs T_Address
-                eq_or_fail
-          FI_Continue vis svs -> (False, ck)
-            where
-              ck = do
-                check_view vis
-                Env {..} <- ask
-                -- XXX incorporate this logic in svs via EPP
-                let timev = fromMaybe (impossible "no timev") emTimev
-                let delete_timev = \case
-                      [] -> []
-                      (v, a) : more ->
-                        case v == timev || a == DLA_Var timev of
-                          True -> more'
-                          False -> a : more'
-                        where
-                          more' = delete_timev more
-                let svs' = delete_timev svs
-                cstate (HM_Set which) svs'
-                readArgCache argNextSt
-                eq_or_fail
+    isHalt <- do
+      case msvs of
+        FI_Halt toks -> do
+          forM_ toks close_asset
+          close_escrow
+          return True
+          where
+            ct_at = at
+            ct_mcrecv = Nothing
+            ct_mcsend = Just $ cContractAddr
+            ct_always = True
+            ct_amt = DLA_Literal $ DLL_Int sb 0
+            ct_mcclose = Just $ cDeployer
+            close_asset tok = checkTxn $ CheckTxn {..}
+              where ct_mtok = Just tok
+            close_escrow = checkTxn $ CheckTxn {..}
+              where ct_mtok = Nothing
+        FI_Continue vis svs -> do
+          cViewSave at vis
+          cstate (HM_Set which) $ map snd svs
+          return False
+    code "txn" ["OnCompletion"]
+    code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
+    asserteq
+    code "b" ["checkSize"]
 
-finalize :: App ()
-finalize = do
-  m <- eFinalize <$> ask
-  m
-
-ct_k :: CTail -> App () -> App ()
-ct_k t k = local (\e -> e {eFinalize = k}) $ ct t
+cViewSave :: SrcLoc -> ViewSave -> App ()
+cViewSave at (ViewSave vwhich vvs) = do
+  let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
+  let la = DLLA_Tuple $ vconcat vwhich vvs
+  let lat = largeArgTypeOf la
+  let sz = typeSizeOf lat
+  viewSz <- readViewSize
+  when (viewSz > 0) $ do
+    comment $ "check view bs"
+    cla la
+    ctobs lat
+    padding $ viewSz - sz
+    op "concat"
+    xxx "argView"
+    asserteq
 
 data HashMode
   = HM_Set Int
@@ -1222,351 +1165,165 @@ data HashMode
 cstate :: HashMode -> [DLArg] -> App ()
 cstate hm svs = do
   comment ("compute state in " <> texty hm)
-  let which =
-        case hm of
-          HM_Set w -> w
-          HM_Check prev -> prev
   let go a = (argTypeOf a, ca a)
-  let whicha w = DLA_Literal $ DLL_Int sb $ fromIntegral w
-  cdigest $ map go $ whicha which : svs
-
-halt_should_be :: Bool -> App ()
-halt_should_be b = do
-  readArgCache argHalts
-  cfrombs T_Bool
-  cl $ DLL_Bool b
-  eq_or_fail
-
--- Intialization:
---
--- 0. Alice creates the application; gets Id
--- 1. Alice creates the contract account; embeds Id; gets Me
--- 2. Alice creates the handler contracts; embeds Id & Me; gets H_i
--- 3. Alice updates the application; embedding Me & H_i
+  let wa w = DLA_Literal $ DLL_Int sb $ fromIntegral w
+  let compute w = cdigest $ map go $ wa w : svs
+  case hm of
+    HM_Set w -> do
+      compute w
+      app_global_put keyState
+    HM_Check p -> do
+      compute p
+      app_global_get keyState
+      asserteq
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 1
+reachAlgoBackendVersion = 2
 
 -- Template
-tApplicationID :: LT.Text
-tApplicationID = template "ApplicationID"
+template :: LT.Text -> App ()
+template x = code "byte" [ "\"{{" <> x <> "}}\"" ]
 
-tContractAddr :: LT.Text
-tContractAddr = template "ContractAddr"
+cApplicationID :: App ()
+cApplicationID = template "ApplicationID"
 
-tDeployer :: LT.Text
-tDeployer = template "Deployer"
+cContractAddr :: App ()
+cContractAddr = template "ContractAddr"
+
+cDeployer :: App ()
+cDeployer = template "Deployer"
 
 -- State:
-keyHalts :: B.ByteString
-keyHalts = "h"
-
 keyState :: B.ByteString
 keyState = "s"
 
-keyView :: Integer -> B.ByteString
-keyView i = bpack $ "v" <> show i
+keyView :: Word8 -> B.ByteString
+keyView i = "v" <> B.singleton (BI.w2c i)
 
-keyMap :: Integer -> B.ByteString
-keyMap i = bpack $ "m" <> show i
+keyMap :: Word8 -> B.ByteString
+keyMap i = "m" <> B.singleton (BI.w2c i)
 
-keyLast :: B.ByteString
-keyLast = "l"
+data TxnId
+  = TxnAppl
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
--- Txns:
--- 0   : Application call
--- 1   : Transfer fee to the handler account
--- 2   : Zero from handler account
--- 3   : Transfer to contract account
--- 4.. : Transfers from contract to user
-txnAppl :: Word8
-txnAppl = 0
+etexty :: Enum a => a -> LT.Text
+etexty = texty . fromEnum
 
-txnToHandler :: Word8
-txnToHandler = txnAppl + 1
+data ArgId
+  = ArgMethod
+  | ArgSvs
+  | ArgMsg
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
-txnFromHandler :: Word8
-txnFromHandler = txnToHandler + 1
+boundedCount :: forall a . (Enum a, Bounded a) => a -> Integer
+boundedCount _ = 1 + (fromIntegral $ fromEnum $ (maxBound :: a))
 
-txnUser0 :: Word8
-txnUser0 = txnFromHandler + 1
-
--- Args:
--- 0   : Previous state
--- 1   : Next state
--- 2   : View bytes
--- 3   : Handler halts
--- 4   : Fee amount
--- 5   : Last round
--- 6   : Saved values
--- 7   : Handler arguments
--- 8   : Map record
-stdArgTypes :: Integer -> Integer -> [DLType]
-stdArgTypes vbs mbs =
-  [T_Digest, T_Digest, T_Bytes vbs, T_Bool, T_UInt, T_UInt, T_Bytes mbs]
-
-argPrevSt :: Word8
-argPrevSt = 0
-
-argNextSt :: Word8
-argNextSt = argPrevSt + 1
-
-argView :: Word8
-argView = argNextSt + 1
-
-argHalts :: Word8
-argHalts = argView + 1
-
-argFeeAmount :: Word8
-argFeeAmount = argHalts + 1
-
-argLast :: Word8
-argLast = argFeeAmount + 1
-
-argSvs :: Word8
-argSvs = argLast + 1
-
-argMsg :: Word8
-argMsg = argSvs + 1
-
-argMaps :: Word8
-argMaps = argMsg + 1
-
-lastArgIdx :: Word8
-lastArgIdx = argMaps
-
-argCount :: Word8
-argCount = lastArgIdx + 1 -- it's an index, we want count
-
-readArg :: Word8 -> App ()
-readArg which =
-  code "gtxna" [texty txnAppl, "ApplicationArgs", texty which]
-
-lookup_sender :: App ()
-lookup_sender = code "gtxn" [texty txnAppl, "Sender"]
-
-lookup_last :: App ()
-lookup_last = readArgCache argLast >> cfrombs T_UInt
-
-lookup_fee_amount :: App ()
-lookup_fee_amount = readArgCache argFeeAmount >> cfrombs T_UInt
+argCount :: Integer
+argCount = boundedCount ArgMethod
 
 data GlobalVar
-  = GV_Arg Word8
-  | GV_Accounts
-  deriving (Eq, Ord, Show)
+  = GV_txnCounter
+  | GV_timeLimits
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
-globalVarsM :: M.Map GlobalVar ScratchSlot
-globalVarsM =
-  M.fromList $
-    [ (GV_Arg argNextSt, 0)
-    , (GV_Arg argView, 1)
-    , (GV_Arg argHalts, 2)
-    , (GV_Arg argFeeAmount, 3)
-    , (GV_Arg argLast, 4)
-    , (GV_Arg argMaps, 5)
-    , (GV_Accounts, 6)
-    ]
+gvSlot :: GlobalVar -> ScratchSlot
+gvSlot ai = fromIntegral $ fromEnum ai
 
-initGV1 :: GlobalVar -> App ()
-initGV1 gv = do
-  case gv of
-    GV_Arg arg ->
-      readArg arg
-    GV_Accounts ->
-      cl $ DLL_Int sb 0
-  setGV gv
+gvStore :: GlobalVar -> App ()
+gvStore gv = code "store" [texty $ gvSlot gv ]
 
-initHeap :: App a -> App a
-initHeap km = do
-  forM_ (map fst $ M.toAscList globalVarsM) $ initGV1
-  km
+gvLoad :: GlobalVar -> App ()
+gvLoad gv = code "load" [texty $ gvSlot gv ]
 
-readGV_ :: GlobalVar -> ScratchSlot
-readGV_ ai =
-  case M.lookup ai globalVarsM of
-    Just idx -> idx
-    Nothing -> impossible $ show ai <> " not cached"
+gvType :: GlobalVar -> DLType
+gvType = \case
+  GV_txnCounter -> T_UInt
+  GV_timeLimits -> T_Tuple [ T_UInt, T_UInt ]
 
-setGV :: GlobalVar -> App ()
-setGV ai = code "store" [texty $ readGV_ ai]
+defn_checkSize :: App ()
+defn_checkSize = do
+  label "checkSize"
+  gvLoad GV_txnCounter
+  code "global" [ "GroupSize" ]
+  asserteq
+  code "b" [ "done" ]
 
-readGV :: GlobalVar -> App ()
-readGV ai = code "load" [texty $ readGV_ ai]
-
-readArgCache :: Word8 -> App ()
-readArgCache = readGV . GV_Arg
-
-std_footer :: App ()
-std_footer = do
+defn_done :: App ()
+defn_done = do
   label "done"
   cl $ DLL_Int sb 1
   op "return"
 
-runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
-runApp eShared eWhich eLets emTimev m = do
-  eLabelR <- newIORef 0
-  eOutputR <- newIORef mempty
-  let eHP = fromIntegral $ M.size globalVarsM
-  let eSP = 255
-  eTxnsR <- newIORef $ txnUser0 - 1
-  let eVars = mempty
-  -- Everything initial is small
-  let eLetSmalls = M.map (\_ -> True) eLets
-  let eFinalize = return ()
-  eTxns <- newIORef $ mempty
-  flip runReaderT (Env {..}) m
-  readIORef eOutputR
+defn_fail :: App ()
+defn_fail = do
+  label "fail"
+  cl $ DLL_Bool False
+  assert
+
+init_txnCounter :: App ()
+init_txnCounter = do
+  cl $ DLL_Int sb $ boundedCount TxnAppl
+  gvStore GV_txnCounter
+
+bindRound :: DLVar -> App a -> App a
+bindRound dv = store_let dv True (code "global" ["Round"])
 
 readViewSize :: App Integer
 readViewSize = sViewSize <$> (eShared <$> ask)
 
-ch :: Shared -> Int -> CHandler -> IO (Maybe (Aeson.Value, TEALs))
-ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler at int last_timemv from prev svs_ msg timev body) = do
-  let svs = dvdeletem last_timemv svs_
-  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> incCounter (sCounter eShared)
-  argSvsVar <- mkArgVar svs
-  argMsgVar <- mkArgVar msg
-  let eLets0 =
-        M.fromList $
-          [(argSvsVar, op "dup"), (argMsgVar, op "dup")]
-  let eLets1 = M.insert from lookup_sender eLets0
-  let eLets2 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets1
-  let eLets3 = case last_timemv of
-        Nothing -> eLets2
-        Just x -> M.insert x lookup_last eLets2
-  let eLets = eLets3
-  let letArgs' :: DLVar -> App a -> [(DLVar, Integer)] -> App a
-      letArgs' argVar km = \case
-        [] -> op "pop" >> km
-        (dv, i) : more -> do
-          let cgen = ce $ DLE_TupleRef at (DLA_Var argVar) i
-          sallocLet dv cgen $ letArgs' argVar km more
-  let letArgs_ :: Word8 -> DLVar -> [DLVar] -> App a -> App a
-      -- XXX We don't check that there isn't extra data in these
-      letArgs_ _ _ [] km = km
-      letArgs_ argLoc argVar args km = do
-        readArg argLoc
-        letArgs' argVar km (zip args [0 ..])
-  let letArgs :: App a -> App a
-      letArgs = letArgs_ argSvs argSvsVar svs . letArgs_ argMsg argMsgVar msg
-  cbs <-
-    runApp eShared eWhich eLets (Just timev) $
-      initHeap $
-        letArgs $ do
-          comment ("Handler " <> texty eWhich)
-          comment "Check txnAppl"
-          code "gtxn" [texty txnAppl, "TypeEnum"]
-          code "int" ["appl"]
-          eq_or_fail
-          code "gtxn" [texty txnAppl, "ApplicationID"]
-          --- XXX Make this int
-          code "byte" [tApplicationID]
-          cfrombs T_UInt
-          eq_or_fail
-          code "gtxn" [texty txnAppl, "NumAppArgs"]
-          cl $ DLL_Int sb $ fromIntegral $ argCount
-          eq_or_fail
-
-          comment "Check txnToHandler"
-          code "gtxn" [texty txnToHandler, "TypeEnum"]
-          code "int" ["pay"]
-          eq_or_fail
-          code "gtxn" [texty txnToHandler, "Receiver"]
-          code "txn" ["Sender"]
-          eq_or_fail
-          code "gtxn" [texty txnToHandler, "Amount"]
-          code "gtxn" [texty txnFromHandler, "Fee"]
-          cl $ minimumBalance_l
-          op "+"
-          eq_or_fail
-
-          comment "Check txnFromHandler (us)"
-          code "txn" ["GroupIndex"]
-          cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
-          eq_or_fail
-          code "txn" ["TypeEnum"]
-          code "int" ["pay"]
-          eq_or_fail
-          code "txn" ["Amount"]
-          cl $ DLL_Int sb $ 0
-          eq_or_fail
-          code "txn" ["Receiver"]
-          code "gtxn" [texty txnToHandler, "Sender"]
-          eq_or_fail
-          cstate (HM_Check prev) $ map DLA_Var $ dvdeletem last_timemv svs
-          readArg argPrevSt
-          eq_or_fail
-
-          code "txn" ["CloseRemainderTo"]
-          code "gtxn" [texty txnToHandler, "Sender"]
-          eq_or_fail
-
-          comment "Run body"
-          ct_k body $ do
-            txns <- how_many_txns
-            comment "Check GroupSize"
-            code "global" ["GroupSize"]
-            cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-            eq_or_fail
-
-            lookup_fee_amount
-            fts <- from_txns
-            its <- init_txns
-            let ftfees = flip map fts (\i -> code "gtxn" [texty i, "Fee"])
-            let itfee = do
-                  cl $ minimumBalance_l
-                  cl $ DLL_Int sb $ fromIntegral $ length its
-                  op "*"
-            let itfees = if null its then [] else [itfee]
-            csum_ $ itfees <> ftfees
-            eq_or_fail
-
-            -- We don't need to look at timev because the range of valid rounds
-            -- that a txn is valid within is built-in to Algorand, so rather than
-            -- checking that ( last_timev + from <= timev <= last_timev + to ), we
-            -- just check that FirstValid = last_time + from, etc.
-            (case last_timemv of
-               Nothing -> return ()
-               Just last_timev -> do
-                 comment "Check time limits"
-                 let check_time f the_cmp = \case
-                       [] -> nop
-                       as -> do
-                         ca $ DLA_Var last_timev
-                         csum as
-                         op "+"
-                         let go i = do
-                               op "dup"
-                               code "gtxn" [texty i, f]
-                               op the_cmp
-                               or_fail
-                         forM_ [0 .. txns] go
-                         op "pop"
-                 let CBetween ifrom ito = int
-                 check_time "FirstValid" "<=" ifrom
-                 check_time "LastValid" ">=" ito)
-
-            code "b" ["checkAccts"]
-
-          label "checkAccts"
-          code "gtxn" [texty txnAppl, "NumAccounts"]
-          readGV GV_Accounts
-          eq_or_fail
-          code "b" ["done"]
-
-          std_footer
-  let viewBsLen = sViewSize eShared
-  let mapBsLen = sMapArgSize eShared
-  let argSize = typeSizeOf $ T_Tuple $ stdArgTypes viewBsLen mapBsLen <> (map varType [argSvsVar, argMsgVar])
-  let cinfo =
-        Aeson.object $
-          [ ("size", Aeson.Number $ fromIntegral argSize)
-          , ("count", Aeson.Number $ fromIntegral argCount)
-          ]
-  return $ Just (cinfo, cbs)
+ch :: LT.Text -> Int -> CHandler -> App ()
+ch _ _ (C_Loop {}) = return ()
+ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = recordWhich which $ do
+  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
+  let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
+  recordStepInfo which $ Aeson.object $
+    [ ("size", Aeson.Number $ fromIntegral argSize) ]
+  let bindFromArg ai vs m = do
+        code "txna" [ "ApplicationArgs", etexty ai ]
+        op "dup"
+        op "len"
+        av <- mkArgVar vs
+        cl $ DLL_Int sb $ typeSizeOf $ varType av
+        asserteq
+        let go = \case
+              [] -> op "pop" >> m
+              (dv, i) : more -> sallocLet dv cgen $ go more
+                where cgen = ce $ DLE_TupleRef at (DLA_Var av) i
+        store_let av True (op "dup") $
+          go $ zip vs [0..]
+  comment ("Handler " <> texty which)
+  op "dup" -- We assume the method id is on the stack
+  cl $ DLL_Int sb $ fromIntegral $ which
+  op "=="
+  code "bz" [ afterLab ]
+  op "pop" -- Get rid of the method id since it's us
+  let bindVars = id
+        . (store_let from True (code "txn" [ "Sender" ]))
+        . (bindRound timev)
+        . (bindFromArg ArgSvs svs)
+        . (bindFromArg ArgMsg msg)
+  bindVars $ do
+    cstate (HM_Check prev) $ map DLA_Var svs
+    case last_timemv of
+       Nothing -> padding $ typeSizeOf $ gvType GV_timeLimits
+       Just last_timev -> do
+         let go' = \case
+              [] -> cl $ DLL_Int sb 0
+              as -> do
+                ca $ DLA_Var last_timev
+                csum as
+                op "+"
+         let go x = go' x >> ctobs T_UInt
+         let CBetween ifrom ito = int
+         go ifrom
+         go ito
+         op "concat"
+    gvStore GV_timeLimits
+    cl $ DLL_Int at 0
+    checkTimeLimits at
+    ct body
 
 computeViewSize :: Maybe (CPViews, ViewInfos) -> Integer
 computeViewSize = h1
@@ -1646,7 +1403,7 @@ cMapRecAlloc = do
       -- than this number, otherwise the accounts were put in out of order.
 
       -- [ Address, Offset ]
-      readGV GV_Accounts
+      -- XXX readGV GV_Accounts
       -- [ Address, Offset, AccountCount ]
       op "<="
       -- [ Address, Valid ]
@@ -1669,7 +1426,7 @@ cMapRecAlloc = do
   -- bigger, then we need to record it
   op "dup"
   -- [ Offset, Offset ]
-  readGV GV_Accounts
+  -- XXX readGV GV_Accounts
   -- [ Offset, Offset, AccountCount ]
   op ">"
   -- [ Offset, Bigger ]
@@ -1678,14 +1435,14 @@ cMapRecAlloc = do
   -- [ Offset ]
   op "dup"
   -- [ Offset, Offset ]
-  setGV GV_Accounts
+  -- XXX setGV GV_Accounts
   -- [ Offset ]
   label dont_set_lab
 
 cMapRecLoad :: Maybe Word8 -> App ()
 cMapRecLoad mai = do
   -- (maybe [ Offset ] (const []) mai)
-  readArgCache argMaps
+  -- XXX readArgCache argMaps
   -- (maybe [ Offset ] (const []) mai) <> [ MapArg ]
   t <- getMapRecordTy
   case mai of
@@ -1704,17 +1461,18 @@ cMapRecLoad mai = do
 
 cMapRecStore :: App ()
 cMapRecStore = do
-  salloc_ $ \store_val load_val -> do
-    salloc_ $ \store_idx load_idx -> do
+  salloc_ $ \store_val _XXX_load_val -> do
+    salloc_ $ \store_idx _XXX_load_idx -> do
       -- [ Index, Value' ]
       store_val
       -- [ Index ]
       store_idx
       -- [ ]
-      rt <- getMapArgTy
-      cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
+      _XXX_rt <- getMapArgTy
+      return ()
+      -- XXX cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
       -- [ MapArg' ]
-      setGV $ GV_Arg argMaps
+      -- XXX setGV $ GV_Arg argMaps
 
 -- [ ]
 
@@ -1785,6 +1543,10 @@ cMapSet (DLMVar i) = do
 
 -- </MapStuff>
 
+recordStepInfo :: Int -> Aeson.Value -> App ()
+recordStepInfo w v = do
+  (liftIO . flip modifyIORef (M.insert w v)) =<< (eStepInfoR <$> ask)
+
 type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
@@ -1803,39 +1565,31 @@ compile_algo disp pl = do
   let sMapArgSize = typeSizeOf sMapArgTy
   let PLOpts {..} = plo
   let sCounter = plo_counter
-  let shared = Shared {..}
-  let addProg lab t = do
-        modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)
+  let eShared = Shared {..}
+  eStepInfoR <- newIORef mempty
+  let run :: String -> App () -> IO TEALs
+      run lab m = do
+        eLabel <- newCounter 0
+        eOutputR <- newIORef mempty
+        let eHP = fromIntegral $ fromEnum (maxBound :: GlobalVar)
+        let eSP = 255
+        let eVars = mempty
+        let eLets = mempty
+        let eLetSmalls = mempty
+        let eWhich = lab
+        flip runReaderT (Env {..}) m
+        readIORef eOutputR
+  let addProg lab m = do
+        t <- render <$> run lab m
+        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
         disp lab t
-  hm_res <- forM (M.toAscList hm) $ \(hi, hh) -> do
-    mht <- ch shared hi hh
-    case mht of
-      Nothing -> return (Aeson.Null, Aeson.Null, return ())
-      Just (az, ht) -> do
-        let lab = "m" <> show hi
-        let t = render ht
-        disp lab t
-        return
-          ( Aeson.String t
-          , az
-          , do
-              code "gtxn" [texty txnFromHandler, "Sender"]
-              code "byte" [template $ LT.pack lab]
-              op "=="
-              op "||"
-          )
-  let (steps_, stepargs_, hchecks) = unzip3 hm_res
-  let steps = Aeson.Null : steps_
-  let stepargs = Aeson.Null : stepargs_
-  modifyIORef resr $ M.insert "steps" $ aarray steps
-  modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
   let divup :: Integer -> Integer -> Integer
       divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
             Aeson.Number $ fromIntegral size
-  let recordSizeAndKeys :: T.Text -> Integer -> IO [Integer]
+  let recordSizeAndKeys :: T.Text -> Integer -> IO [Word8]
       recordSizeAndKeys prefix size = do
         recordSize prefix size
         let keys = size `divup` algoMaxAppBytesValueLen
@@ -1847,208 +1601,118 @@ compile_algo disp pl = do
   mapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
   recordSize "mapRecord" sMapRecordSize
   recordSize "mapArg" sMapArgSize
-  let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
-  app0m <- simple $ do
-    comment "Check that we're an App"
-    code "txn" ["TypeEnum"]
-    code "int" ["appl"]
-    eq_or_fail
-    check_rekeyto
-    code "txn" ["Sender"]
-    code "byte" [tDeployer]
-    eq_or_fail
-    code "txn" ["ApplicationID"]
-    code "bz" ["init"]
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ 2
-    eq_or_fail
-    code "gtxn" [texty txnToHandler, "TypeEnum"]
-    code "int" ["pay"]
-    eq_or_fail
-    code "gtxn" [texty txnToHandler, "Amount"]
-    cl minimumBalance_l
-    eq_or_fail
-    comment "We don't check the receiver, because we don't know it yet, because the escrow account embeds our id"
-    comment "We don't check the sender, because we don't care... anyone is allowed to fund it. We'll give it back to the deployer, though."
-    code "txn" ["OnCompletion"]
-    code "int" ["UpdateApplication"]
-    eq_or_fail
-    --- XXX if firstMsg mode, then paste a version of handler 1 right here
-    app_global_put keyState $ do
-      cstate (HM_Set 0) []
-    app_global_put keyLast $ do
-      code "global" ["Round"]
-    forM_ viewKeysl $ \i ->
-      app_global_put (keyView i) $ do
-        cl $ DLL_Bytes $ ""
-    app_global_put keyHalts $ do
-      cl $ DLL_Bool $ False
-    code "b" ["done"]
-    label "init"
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ 1
-    eq_or_fail
-    code "txn" ["OnCompletion"]
-    code "int" ["NoOp"]
-    eq_or_fail
-    code "b" ["done"]
-  let cStateSlice size i = do
+  let cStateSlice :: Integer -> Word8 -> App ()
+      cStateSlice size iw = do
+        let i = fromIntegral iw
         let k = algoMaxAppBytesValueLen
         csubstring at (k * i) (min size $ k * (i + 1))
-  appm <- simple $ do
-    check_rekeyto
-    -- It would be possible to allow NoOps to be OptIn, but we are worried
-    -- about the situation where the final state has an OptIn for the final
-    -- participant
-    code "txn" ["OnCompletion"]
-    code "int" ["OptIn"]
-    op "=="
-    code "bz" ["normal"]
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ 1
-    eq_or_fail
+  addProg "appApproval" $ do
+    checkRekeyTo
+    checkLease
     unless (null mapKeysl) $ do
+      -- XXX Allow an OptIn if we are not going to halt
+      code "txn" ["OnCompletion"]
+      code "int" ["OptIn"]
+      op "=="
+      code "bz" ["normal"]
+      code "global" ["GroupSize"]
+      cl $ DLL_Int sb $ 1
+      asserteq
       salloc_ $ \store_whole load_whole -> do
         padding sMapDataSize
         store_whole
         forM_ mapKeysl $ \mi -> do
-          app_local_put 0 (keyMap mi) $ do
-            load_whole
-            cStateSlice sMapDataSize mi
-    code "b" ["done"]
-    label "normal"
-    -- We need this because the map reading code is not abstracted over how to
-    -- access the map records
-    initGV1 $ GV_Arg argMaps
-    -- comment "Check that we're an App"
-    -- code "txn" ["TypeEnum"]
-    -- code "int" ["appl"]
-    -- eq_or_fail
-    comment "Check that everyone's here"
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ txnUser0
-    op ">="
-    or_fail
-    comment "Check txnAppl (us)"
-    code "txn" ["GroupIndex"]
-    cl $ DLL_Int sb $ fromIntegral $ txnAppl
-    eq_or_fail
-    comment "Check txnFromHandler"
-    cl $ DLL_Bool $ False
-    forM_ hchecks id
-    or_fail
-    -- State
-    app_global_get keyState
-    readArg argPrevSt
-    cfrombs T_Digest
-    eq_or_fail
-    app_global_put keyState $ do
-      readArg argNextSt
-      cfrombs T_Digest
-    -- Last
-    app_global_get keyLast
-    readArg argLast
-    cfrombs T_UInt
-    eq_or_fail
-    app_global_put keyLast $ do
-      code "global" ["Round"]
-    -- Maps
-    cl $ DLL_Int sb 0
-    unless (null mapKeysl) $ do
-      afterAccts <- freshLabel
-      forM_ accountsL $ \ai -> do
-        nextAcct <- freshLabel
-        cMapWhen $ Just ai
-        case (ai == 0) of
-          True ->
-            code "bz" [nextAcct]
-          False ->
-            code "bz" [afterAccts]
-        op "pop"
-        cl $ DLL_Int sb $ fromIntegral ai
-        cMapAcct $ Just ai
-        code "txna" ["Accounts", texty ai]
-        eq_or_fail
-        forM_ mapKeysl $ \mi -> do
-          -- Check the previous
-          app_local_get ai (keyMap mi)
-          cMapPrev $ Just ai
+          load_whole
           cStateSlice sMapDataSize mi
-          eq_or_fail
-          -- Set the next
-          app_local_put ai (keyMap mi) $ do
-            cMapNext $ Just ai
-            cStateSlice sMapDataSize mi
-        label nextAcct
-      label afterAccts
-    code "txn" ["NumAccounts"]
-    eq_or_fail
-    -- Views
-    forM_ viewKeysl $ \i ->
-      app_global_put (keyView i) $ do
-        readArg argView
-        cStateSlice sViewSize i
-    -- Halts
-    app_global_put keyHalts $ do
-      readArg argHalts
-      cfrombs T_Bool
-    -- Done
-    app_global_get keyHalts
-    code "bnz" ["halted"]
+          app_local_put 0 (keyMap mi)
+      code "b" ["done"]
+      -- The NON-OptIn case:
+      label "normal"
+    init_txnCounter
+    code "txn" ["NumAppArgs"]
+    cl $ DLL_Int sb $ argCount
+    asserteq
+    -- NOTE Fee - We don't check that the Fee is correct because we're assuming
+    -- that FeePooling is in effect, we check that all the other fees are zero,
+    -- and we assume that "extra" fees aren't charged, so there's no reason to
+    -- ensure it is low enough.
+    code "txna" [ "ApplicationArgs", etexty ArgMethod ]
+    forM_ (M.toAscList hm) $ \(hi, hh) -> do
+      afterLab <- freshLabel
+      ch afterLab hi hh
+      label afterLab
+    cfail
+    -- XXX compile the loops
+    defn_checkSize
+    defn_done
+    defn_fail
+  -- The initial version of the Approval program handles the first call and the
+  -- update so that the escrow and approval can refer to each other
+  addProg "appApproval0" $ do
+    checkRekeyTo
+    checkLease
+    code "txn" ["Sender"]
+    cDeployer
+    asserteq
+    code "txn" ["ApplicationID"]
+    code "bz" ["init"]
+    init_txnCounter
+    checkTxn $ CheckTxn
+      { ct_at = at
+      , ct_mcrecv = Nothing -- XXX calculate the escrow ctc
+      , ct_mcsend = Nothing -- Flexible, not necc appl sender
+      , ct_mcclose = Nothing
+      , ct_always = False
+      , ct_mtok = Nothing
+      , ct_amt = DLA_Literal minimumBalance_l }
+    code "txn" ["OnCompletion"]
+    code "int" ["UpdateApplication"]
+    asserteq
+    --- NOTE firstMsg => do handler 1
+    let (bind_csvs, csvs) =
+          case dli_ctimem dli of
+            Nothing -> (id, mempty)
+            Just v -> (bindRound v, [DLA_Var v])
+    bind_csvs $ cstate (HM_Set 0) csvs
+    forM_ viewKeysl $ \i -> do
+      cl $ DLL_Bytes $ ""
+      app_global_put (keyView i)
+    code "b" ["checkSize"]
+    label "init"
     code "txn" ["OnCompletion"]
     code "int" ["NoOp"]
-    eq_or_fail
-    code "b" ["done"]
-    label "halted"
-    code "txn" ["OnCompletion"]
-    code "int" ["DeleteApplication"]
-    eq_or_fail
-    code "b" ["done"]
-  clearm <- simple $ do
-    comment "We're alone"
+    asserteq
+    code "b" ["checkSize"]
+    defn_checkSize
+    defn_done
+  -- Clear state is only allowed when the program is over.
+  -- NOTE: We could allow this when the local value is 100% None
+  addProg "appClear" $ do
+    checkRekeyTo
+    checkLease
     code "global" ["GroupSize"]
     cl $ DLL_Int sb $ 1
-    eq_or_fail
-    comment "We're halted"
-    app_global_get keyHalts
-    cl $ DLL_Bool $ True
-    eq_or_fail
+    asserteq
+    app_global_get keyState
+    code "global" ["ZeroAddress"]
+    asserteq
     code "b" ["done"]
-  ctcm <- simple $ do
-    comment "Check size"
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ txnUser0
-    op ">="
-    or_fail
-    comment "Check txnAppl"
-    code "gtxn" [texty txnAppl, "TypeEnum"]
+    defn_done
+  -- The escrow account defers to the application
+  addProg "escrow" $ do
+    code "gtxn" [etexty TxnAppl, "TypeEnum"]
     code "int" ["appl"]
-    eq_or_fail
-    code "gtxn" [texty txnAppl, "ApplicationID"]
-    code "byte" [tApplicationID]
+    asserteq
+    code "gtxn" [etexty TxnAppl, "ApplicationID"]
+    cApplicationID
     cfrombs T_UInt
-    eq_or_fail
-    -- XXX we might not need any of this stuff except the appid check
-    comment "Don't check anything else, because app does"
-    comment "Check us"
-    code "txn" ["TypeEnum"]
-    code "int" ["pay"]
-    op "=="
-    code "int" ["axfer"]
-    op "dup2"
-    op "=="
-    op "||"
-    or_fail
-    check_rekeyto
-    code "txn" ["GroupIndex"]
-    cl $ DLL_Int sb $ fromIntegral $ txnUser0
-    op ">="
-    or_fail
+    asserteq
     code "b" ["done"]
-  addProg "appApproval0" $ render app0m
-  addProg "appApproval" $ render appm
-  addProg "appClear" $ render clearm
-  addProg "ctc" $ render ctcm
+    defn_done
+  eStepInfo <- readIORef eStepInfoR
+  modifyIORef resr $
+    M.insert "stepargs" $ aarray $
+      map snd $ M.toAscList eStepInfo
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $
@@ -2065,15 +1729,5 @@ connect_algo = Connector {..}
   where
     conName = "ALGO"
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
-    conGen moutn pil = do
-      let disp_ = conWrite moutn
-      let disp which = disp_ (which <> ".teal")
-      let showp which = conShowP moutn ("algo." <> which)
-      djp <- dejump pil
-      showp "djp" djp
-      -- Once we have backward jumps, throw this out
-      djpu <- unrollLoops djp
-      showp "ul" djpu
-      pl <- bigopt (showp, "pl") djpu
-      res <- compile_algo (disp . T.pack) pl
-      return $ res
+    conGen moutn = compile_algo (disp . T.pack)
+      where disp which = conWrite moutn (which <> ".teal")

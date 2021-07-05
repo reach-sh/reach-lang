@@ -121,24 +121,22 @@ type CompileResultBytes = {
 type NetworkAccount = Wallet;
 
 type StepArgInfo = {
-  count: number,
   size: number,
 };
 
-const reachAlgoBackendVersion = 1;
+const reachAlgoBackendVersion = 2;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval0: string,
   appApproval: string,
   appClear: string,
-  ctc: string,
+  escrow: string,
   viewSize: number,
   viewKeys: number,
   mapDataSize: number,
   mapDataKeys: number,
   mapRecordSize: number,
   mapArgSize: number,
-  steps: Array<string|null>,
   stepargs: Array<StepArgInfo|null>,
   unsupported: Array<string>,
 }}};
@@ -520,7 +518,9 @@ function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported, version } = algob;
   if ( version !== reachAlgoBackendVersion ) {
-    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}; update your compiler and recompile!`);
+    const older = (version === undefined) || (version < reachAlgoBackendVersion);
+    const more = older ? `update your compiler and recompile!` : `updated your standard library and rerun!`;
+    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}; ${more}`);
   }
   if ( unsupported.length > 0 ) {
     const reasons = unsupported.map(s => ` * ${s}`).join('\n');

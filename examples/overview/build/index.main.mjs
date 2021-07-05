@@ -219,92 +219,463 @@ txn RekeyTo
 global ZeroAddress
 ==
 assert
-txn OnCompletion
-int OptIn
+txn Lease
+global ZeroAddress
 ==
-bz normal
-global GroupSize
+assert
+int 1
+store 0
+txn NumAppArgs
+int 3
+==
+assert
+txna ApplicationArgs 0
+// Handler 1
+dup
 int 1
 ==
+bz l0
+pop
+txna ApplicationArgs 1
+dup
+len
+int 8
+==
 assert
-b done
-normal:
-gtxna 0 ApplicationArgs 8
-store 5
-// Check that everyone's here
-global GroupSize
-int 3
+dup
+btoi
+store 255
+pop
+txna ApplicationArgs 2
+dup
+len
+int 8
+==
+assert
+dup
+btoi
+store 254
+pop
+// compute state in HM_Check 0
+int 0
+itob
+load 255
+itob
+concat
+keccak256
+byte base64(cw==)
+app_global_get
+==
+assert
+int 0
+itob
+int 0
+itob
+concat
+store 1
+int 0
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
 >=
 assert
-// Check txnAppl (us)
-txn GroupIndex
-int 0
-==
-assert
-// Check txnFromHandler
-int 0
-gtxn 2 Sender
-byte "{{m1}}"
-==
-||
-gtxn 2 Sender
-byte "{{m2}}"
-==
-||
-gtxn 2 Sender
-byte "{{m3}}"
-==
-||
-assert
-byte base64(cw==)
-app_global_get
-gtxna 0 ApplicationArgs 0
-==
-assert
-byte base64(cw==)
-gtxna 0 ApplicationArgs 1
-app_global_put
-byte base64(bA==)
-app_global_get
-gtxna 0 ApplicationArgs 5
+gtxns LastValid
+load 1
+substring 8 16
 btoi
-==
+<=
 assert
-byte base64(bA==)
+// "CheckPay"
+// "./index.rsh:17:5:dot"
+// "[]"
+// compute state in HM_Set 1
+int 1
+itob
+txn Sender
+concat
+load 254
+itob
+concat
 global Round
+itob
+concat
+keccak256
+byte base64(cw==)
+swap
 app_global_put
-int 0
-txn NumAccounts
-==
-assert
-byte base64(aA==)
-gtxna 0 ApplicationArgs 3
-btoi
-app_global_put
-byte base64(aA==)
-app_global_get
-bnz halted
 txn OnCompletion
 int NoOp
 ==
 assert
-b done
-halted:
+b checkSize
+l0:
+// Handler 2
+dup
+int 2
+==
+bz l1
+pop
+txna ApplicationArgs 1
+dup
+len
+int 48
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 1
+int 1
+itob
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+keccak256
+byte base64(cw==)
+app_global_get
+==
+assert
+int 0
+itob
+int 0
+itob
+concat
+store 1
+int 0
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+// "CheckPay"
+// "./index.rsh:22:5:dot"
+// "[]"
+load 254
+dup
+bz l2
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+dup
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+byte "{{ContractAddr}}"
+dig 1
+gtxns Receiver
+==
+assert
+l2:
+pop
+// compute state in HM_Set 2
+int 2
+itob
+load 255
+concat
+load 254
+itob
+concat
+global Round
+itob
+concat
+keccak256
+byte base64(cw==)
+swap
+app_global_put
+txn OnCompletion
+int NoOp
+==
+assert
+b checkSize
+l1:
+// Handler 3
+dup
+int 3
+==
+bz l3
+pop
+txna ApplicationArgs 1
+dup
+len
+int 48
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+pop
+txna ApplicationArgs 2
+dup
+len
+int 128
+==
+assert
+dup
+store 252
+pop
+// compute state in HM_Check 2
+int 2
+itob
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+keccak256
+byte base64(cw==)
+app_global_get
+==
+assert
+int 0
+itob
+int 0
+itob
+concat
+store 1
+int 0
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+// "CheckPay"
+// "./index.rsh:27:5:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:27:5:dot"
+// "[]"
+load 255
+txn Sender
+==
+assert
+load 254
+dup
+bz l4
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+dup
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+byte "{{ContractAddr}}"
+dig 1
+gtxns Receiver
+==
+assert
+load 255
+dig 1
+gtxns Sender
+==
+assert
+l4:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+dup
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+byte "{{Deployer}}"
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+byte "{{ContractAddr}}"
+dig 1
+gtxns Sender
+==
+assert
+l5:
+pop
 txn OnCompletion
 int DeleteApplication
+==
+assert
+b checkSize
+l3:
+b fail
+checkSize:
+load 0
+global GroupSize
 ==
 assert
 done:
 int 1
 return
+fail:
+int 0
+assert
 `,
   appApproval0: `#pragma version 4
-// Check that we're an App
-txn TypeEnum
-int appl
+txn RekeyTo
+global ZeroAddress
 ==
 assert
-txn RekeyTo
+txn Lease
 global ZeroAddress
 ==
 assert
@@ -314,73 +685,107 @@ byte "{{Deployer}}"
 assert
 txn ApplicationID
 bz init
-global GroupSize
-int 2
-==
-assert
-gtxn 1 TypeEnum
-int pay
-==
-assert
-gtxn 1 Amount
+int 1
+store 0
 int 100000
+dup
+bz l0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
 ==
 assert
-// We don't check the receiver, because we don't know it yet, because the escrow account embeds our id
-// We don't check the sender, because we don't care... anyone is allowed to fund it. We'll give it back to the deployer, though.
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+dup
+dup
+gtxns FirstValid
+load 1
+substring 0 8
+btoi
+>=
+assert
+gtxns LastValid
+load 1
+substring 8 16
+btoi
+<=
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+l0:
+pop
 txn OnCompletion
 int UpdateApplication
 ==
 assert
-byte base64(cw==)
 // compute state in HM_Set 0
 int 0
 itob
-keccak256
-app_global_put
-byte base64(bA==)
 global Round
+itob
+concat
+keccak256
+byte base64(cw==)
+swap
 app_global_put
-byte base64(aA==)
-int 0
-app_global_put
-b done
+b checkSize
 init:
-global GroupSize
-int 1
-==
-assert
 txn OnCompletion
 int NoOp
 ==
 assert
+checkSize:
+load 0
+global GroupSize
+==
+assert
 done:
 int 1
-return
 `,
   appClear: `#pragma version 4
-// We're alone
+txn RekeyTo
+global ZeroAddress
+==
+assert
+txn Lease
+global ZeroAddress
+==
+assert
 global GroupSize
 int 1
 ==
 assert
-// We're halted
-byte base64(aA==)
+byte base64(cw==)
 app_global_get
-int 1
+global ZeroAddress
 ==
 assert
 done:
 int 1
-return
 `,
-  ctc: `#pragma version 4
-// Check size
-global GroupSize
-int 3
->=
-assert
-// Check txnAppl
+  escrow: `#pragma version 4
 gtxn 0 TypeEnum
 int appl
 ==
@@ -390,509 +795,22 @@ byte "{{ApplicationID}}"
 btoi
 ==
 assert
-// Don't check anything else, because app does
-// Check us
-txn TypeEnum
-int pay
-==
-int axfer
-dup2
-==
-||
-assert
-txn RekeyTo
-global ZeroAddress
-==
-assert
-txn GroupIndex
-int 3
->=
-assert
 done:
 int 1
-return
 `,
   mapArgSize: 165,
   mapDataKeys: 0,
   mapDataSize: 0,
   mapRecordSize: 33,
-  stepargs: [null, {
-    count: 9,
-    size: 254
+  stepargs: [{
+    size: 17
     }, {
-    count: 9,
-    size: 286
+    size: 49
     }, {
-    count: 9,
-    size: 414
+    size: 177
     }],
-  steps: [null, `#pragma version 4
-gtxna 0 ApplicationArgs 1
-store 0
-gtxna 0 ApplicationArgs 2
-store 1
-gtxna 0 ApplicationArgs 3
-store 2
-gtxna 0 ApplicationArgs 4
-store 3
-gtxna 0 ApplicationArgs 5
-store 4
-gtxna 0 ApplicationArgs 8
-store 5
-int 0
-store 6
-gtxna 0 ApplicationArgs 7
-dup
-substring 0 8
-btoi
-store 255
-pop
-// Handler 1
-// Check txnAppl
-gtxn 0 TypeEnum
-int appl
-==
-assert
-gtxn 0 ApplicationID
-byte "{{ApplicationID}}"
-btoi
-==
-assert
-gtxn 0 NumAppArgs
-int 9
-==
-assert
-// Check txnToHandler
-gtxn 1 TypeEnum
-int pay
-==
-assert
-gtxn 1 Receiver
-txn Sender
-==
-assert
-gtxn 1 Amount
-gtxn 2 Fee
-int 100000
-+
-==
-assert
-// Check txnFromHandler (us)
-txn GroupIndex
-int 2
-==
-assert
-txn TypeEnum
-int pay
-==
-assert
-txn Amount
-int 0
-==
-assert
-txn Receiver
-gtxn 1 Sender
-==
-assert
-// compute state in HM_Check 0
-int 0
-itob
-keccak256
-gtxna 0 ApplicationArgs 0
-==
-assert
-txn CloseRemainderTo
-gtxn 1 Sender
-==
-assert
-// Run body
-// "CheckPay"
-// "./index.rsh:17:5:dot"
-// "[]"
-gtxn 3 TypeEnum
-int pay
-==
-assert
-gtxn 3 Receiver
-byte "{{ContractAddr}}"
-==
-assert
-gtxn 3 Amount
-load 3
-btoi
-==
-assert
-// We don't care who the sender is... this means that you can get other people to pay for you if you want.
-byte base64()
-load 1
-==
-assert
-// compute state in HM_Set 1
-int 1
-itob
-gtxn 0 Sender
-concat
-load 255
-itob
-concat
-keccak256
-load 0
-==
-assert
-load 2
-btoi
-int 0
-==
-assert
-// Check GroupSize
-global GroupSize
-int 4
-==
-assert
-load 3
-btoi
-int 0
-==
-assert
-// Check time limits
-checkAccts:
-gtxn 0 NumAccounts
-load 6
-==
-assert
-done:
-int 1
-return
-`, `#pragma version 4
-gtxna 0 ApplicationArgs 1
-store 0
-gtxna 0 ApplicationArgs 2
-store 1
-gtxna 0 ApplicationArgs 3
-store 2
-gtxna 0 ApplicationArgs 4
-store 3
-gtxna 0 ApplicationArgs 5
-store 4
-gtxna 0 ApplicationArgs 8
-store 5
-int 0
-store 6
-gtxna 0 ApplicationArgs 6
-dup
-substring 0 32
-store 255
-dup
-substring 32 40
-btoi
-store 254
-pop
-// Handler 2
-// Check txnAppl
-gtxn 0 TypeEnum
-int appl
-==
-assert
-gtxn 0 ApplicationID
-byte "{{ApplicationID}}"
-btoi
-==
-assert
-gtxn 0 NumAppArgs
-int 9
-==
-assert
-// Check txnToHandler
-gtxn 1 TypeEnum
-int pay
-==
-assert
-gtxn 1 Receiver
-txn Sender
-==
-assert
-gtxn 1 Amount
-gtxn 2 Fee
-int 100000
-+
-==
-assert
-// Check txnFromHandler (us)
-txn GroupIndex
-int 2
-==
-assert
-txn TypeEnum
-int pay
-==
-assert
-txn Amount
-int 0
-==
-assert
-txn Receiver
-gtxn 1 Sender
-==
-assert
-// compute state in HM_Check 1
-int 1
-itob
-load 255
-concat
-load 254
-itob
-concat
-keccak256
-gtxna 0 ApplicationArgs 0
-==
-assert
-txn CloseRemainderTo
-gtxn 1 Sender
-==
-assert
-// Run body
-// "CheckPay"
-// "./index.rsh:22:5:dot"
-// "[]"
-gtxn 3 TypeEnum
-int pay
-==
-assert
-gtxn 3 Receiver
-byte "{{ContractAddr}}"
-==
-assert
-gtxn 3 Amount
-load 3
-btoi
--
-load 254
-==
-assert
-// We don't care who the sender is... this means that you can get other people to pay for you if you want.
-byte base64()
-load 1
-==
-assert
-// compute state in HM_Set 2
-int 2
-itob
-load 255
-concat
-load 254
-itob
-concat
-keccak256
-load 0
-==
-assert
-load 2
-btoi
-int 0
-==
-assert
-// Check GroupSize
-global GroupSize
-int 4
-==
-assert
-load 3
-btoi
-int 0
-==
-assert
-// Check time limits
-checkAccts:
-gtxn 0 NumAccounts
-load 6
-==
-assert
-done:
-int 1
-return
-`, `#pragma version 4
-gtxna 0 ApplicationArgs 1
-store 0
-gtxna 0 ApplicationArgs 2
-store 1
-gtxna 0 ApplicationArgs 3
-store 2
-gtxna 0 ApplicationArgs 4
-store 3
-gtxna 0 ApplicationArgs 5
-store 4
-gtxna 0 ApplicationArgs 8
-store 5
-int 0
-store 6
-gtxna 0 ApplicationArgs 6
-dup
-substring 0 32
-store 255
-dup
-substring 32 40
-btoi
-store 254
-pop
-gtxna 0 ApplicationArgs 7
-dup
-substring 0 128
-store 253
-pop
-// Handler 3
-// Check txnAppl
-gtxn 0 TypeEnum
-int appl
-==
-assert
-gtxn 0 ApplicationID
-byte "{{ApplicationID}}"
-btoi
-==
-assert
-gtxn 0 NumAppArgs
-int 9
-==
-assert
-// Check txnToHandler
-gtxn 1 TypeEnum
-int pay
-==
-assert
-gtxn 1 Receiver
-txn Sender
-==
-assert
-gtxn 1 Amount
-gtxn 2 Fee
-int 100000
-+
-==
-assert
-// Check txnFromHandler (us)
-txn GroupIndex
-int 2
-==
-assert
-txn TypeEnum
-int pay
-==
-assert
-txn Amount
-int 0
-==
-assert
-txn Receiver
-gtxn 1 Sender
-==
-assert
-// compute state in HM_Check 2
-int 2
-itob
-load 255
-concat
-load 254
-itob
-concat
-keccak256
-gtxna 0 ApplicationArgs 0
-==
-assert
-txn CloseRemainderTo
-gtxn 1 Sender
-==
-assert
-// Run body
-// "CheckPay"
-// "./index.rsh:27:5:dot"
-// "[]"
-gtxn 3 TypeEnum
-int pay
-==
-assert
-gtxn 3 Receiver
-byte "{{ContractAddr}}"
-==
-assert
-gtxn 3 Amount
-load 3
-btoi
-==
-assert
-// We don't care who the sender is... this means that you can get other people to pay for you if you want.
-// Just "sender correct"
-// "./index.rsh:27:5:dot"
-// "[]"
-load 255
-gtxn 0 Sender
-==
-assert
-gtxn 4 TypeEnum
-int pay
-==
-assert
-gtxn 4 Receiver
-load 255
-==
-assert
-gtxn 4 Amount
-load 254
-==
-assert
-gtxn 4 Sender
-byte "{{ContractAddr}}"
-==
-assert
-byte base64()
-load 1
-==
-assert
-gtxn 5 TypeEnum
-int pay
-==
-assert
-// We don't check the receiver
-gtxn 5 Amount
-int 0
-==
-assert
-gtxn 5 Sender
-byte "{{ContractAddr}}"
-==
-assert
-gtxn 5 CloseRemainderTo
-byte "{{Deployer}}"
-==
-assert
-load 2
-btoi
-int 1
-==
-assert
-// Check GroupSize
-global GroupSize
-int 6
-==
-assert
-load 3
-btoi
-gtxn 4 Fee
-gtxn 5 Fee
-+
-==
-assert
-// Check time limits
-checkAccts:
-gtxn 0 NumAccounts
-load 6
-==
-assert
-done:
-int 1
-return
-`],
   unsupported: [],
-  version: 1,
+  version: 2,
   viewKeys: 0,
   viewSize: 0
   };

@@ -38,7 +38,7 @@ r () {
   ${REACH} compile --install-pkgs
   ${REACH} compile
 
-  # tealcount1 .
+  tealcount1 .
 
   make build
   # make down
@@ -61,7 +61,7 @@ r () {
 tealcount1 () {
   if [ -d "${1}/build" ] ; then
   for t in "${1}"/build/"${2}"*.teal ; do
-    (goal clerk compile "${t}" || true)
+    (cd $(dirname "${t}") && ${ROOT}/scripts/goal-devnet clerk compile $(basename "${t}") || true)
   done
   SIZE=$(wc -c "${1}"/build/"${2}"*tok | tail -1 | awk '{print $1}')
   echo "$1" "$2" - "$SIZE"
