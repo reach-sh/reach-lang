@@ -783,7 +783,7 @@ do_run () {
   if [ "x$APP" = "x" ] ||
        ! [ -f "${RSH}" ] ||
        ! [ -f "${MJS}" ]; then
-    echo "Usage: reach-run APP"
+    echo "Usage: reach run APP"
     echo "  where APP.rsh"
     echo "    and APP.mjs"
     echo "  exists in current directory."
