@@ -35,10 +35,11 @@ r () {
   (cd "$1"
 
   ${REACH} clean
+  rm -f build/*.teal*
   ${REACH} compile --install-pkgs
   ${REACH} compile
 
-  # tealcount1 .
+  tealcount1 .
 
   make build
   # make down
@@ -164,7 +165,7 @@ tealcount () {
 # r examples/nim
 # c examples/nim/index-abstract.rsh
 # r examples/secured-loan
-r examples/overview
+# r examples/overview
 # r examples/log
 # r examples/argz
 # r examples/atomic-swap-auction
@@ -196,7 +197,7 @@ r examples/overview
 # r examples/tut-3
 # r examples/tut-4
 # r examples/tut-5
-# r examples/tut-6
+r examples/tut-6
 # r examples/tut-5-attack
 # r examples/tut-7
 # r examples/tut-8

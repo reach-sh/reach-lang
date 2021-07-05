@@ -522,7 +522,7 @@ function must_be_supported(bin: Backend) {
 // Get these from stdlib
 const MaxTxnLife = 1000;
 const LogicSigMaxSize = 1000;
-const MaxAppProgramLen = 1024;
+const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
@@ -552,10 +552,9 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
   const appApproval_subst = subst_creator(subst_escrow(appApproval));
   const appApproval_bin =
     await compileTEAL('appApproval_subst', appApproval_subst);
-  checkLen(`Approval Contract`, appApproval_bin.result.length, MaxAppProgramLen);
   const appClear_bin =
     await compileTEAL('appClear', appClear);
-  checkLen(`Clear Contract`, appClear_bin.result.length, MaxAppProgramLen);
+  checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), MaxAppProgramLen);
 
   return {
     appApproval: appApproval_bin,
