@@ -617,7 +617,7 @@ This error indicates that you are attempting to mutate a variable in an inapprop
 Variable mutation is only allowed to occur on variables declared via @reachin{var} and immediately
 before a @reachin{continue} statement of a loop.
 
-For example, the code below attempts to mutate a loop variable inproperly:
+For example, the code below attempts to mutate a loop variable improperly:
 
 @reach{
   var [ x ] = [ 0 ];
