@@ -29,9 +29,6 @@ import {
   ensureConnectorAvailable,
 } from './shared_impl';
 import {
-  mapRef,
-} from './shared_backend';
-import {
   isBigNumber,
   bigNumberify,
   bigNumberToNumber,
@@ -120,10 +117,6 @@ type CompileResultBytes = {
 
 type NetworkAccount = Wallet;
 
-type StepArgInfo = {
-  size: number,
-};
-
 const reachAlgoBackendVersion = 2;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -137,7 +130,6 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   mapDataKeys: number,
   mapRecordSize: number,
   mapArgSize: number,
-  stepargs: Array<StepArgInfo|null>,
   unsupported: Array<string>,
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
@@ -146,8 +138,7 @@ type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 type CompiledBackend = {
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
-  ctc: CompileResultBytes,
-  steps: Array<CompileResultBytes|null>,
+  escrow: CompileResultBytes,
 };
 
 type ContractInfo = {
@@ -326,15 +317,15 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
 
 export const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
+  const client = await getAlgodClient();
   while (true) {
-    const params = await (await getAlgodClient()).getTransactionParams().do();
+    const params = await client.getTransactionParams().do();
     debug('fillTxn: got params:', params);
     if (params.firstRound !== 0) {
       return params;
     }
     debug(`...but firstRound is 0, so let's wait and try again.`);
-    // Assumption: firstRound will move past 0 on its own.
-    await Timeout.set(1000);
+    await client.statusAfterBlock(1);
   }
 };
 
@@ -531,18 +522,14 @@ function must_be_supported(bin: Backend) {
 // Get these from stdlib
 const MaxTxnLife = 1000;
 const LogicSigMaxSize = 1000;
-const MaxAppArgs = 16;
-const MaxAppTotalArgLen = 2048;
 const MaxAppProgramLen = 1024;
 const MaxAppTxnAccounts = 4;
-const HowManyAccounts = MaxAppTxnAccounts + 1;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   const { ApplicationID, Deployer } = info;
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
-
-  const { appApproval, appClear, ctc, steps, stepargs } = algob;
+  const { appApproval, appClear, escrow } = algob;
 
   const subst_appid = (x: string) =>
     replaceUint8Array(
@@ -557,29 +544,12 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
     if ( actual > expected ) {
         throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
 
-  const ctc_bin = await compileTEAL('ctc_subst', subst_creator(subst_appid(ctc)));
-  checkLen(`Escrow Contract`, ctc_bin.result.length, LogicSigMaxSize);
-  const subst_ctc = (x: string) =>
-    replaceAddr('ContractAddr', ctc_bin.hash, x);
+  const escrow_bin = await compileTEAL('escrow_subst', subst_appid(escrow));
+  checkLen(`Escrow Contract`, escrow_bin.result.length, LogicSigMaxSize);
+  const subst_escrow = (x: string) =>
+    replaceAddr('ContractAddr', escrow_bin.hash, x);
 
-  let appApproval_subst = appApproval;
-  const stepCode_bin: Array<CompileResultBytes|null> =
-    await Promise.all(steps.map(async (mc, mi) => {
-      if ( !mc ) { return null; }
-      const mN = `m${mi}`;
-      const mc_subst = subst_creator(subst_ctc(subst_appid(mc)));
-      const cr = await compileTEAL(mN, mc_subst);
-      checkLen(`${mN} Contract`, cr.result.length, LogicSigMaxSize);
-      const sa = stepargs[mi];
-      if ( sa ) {
-        checkLen(`${mN} Contract Arguments Count`, sa.count, MaxAppArgs);
-        checkLen(`${mN} Contract Arguments Length`, sa.size, MaxAppTotalArgLen);
-      }
-      appApproval_subst =
-        replaceAddr(mN, cr.hash, appApproval_subst);
-      return cr;
-  }));
-
+  const appApproval_subst = subst_creator(subst_escrow(appApproval));
   const appApproval_bin =
     await compileTEAL('appApproval_subst', appApproval_subst);
   checkLen(`Approval Contract`, appApproval_bin.result.length, MaxAppProgramLen);
@@ -587,15 +557,16 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
     await compileTEAL('appClear', appClear);
   checkLen(`Clear Contract`, appClear_bin.result.length, MaxAppProgramLen);
 
-  return { appApproval: appApproval_bin,
+  return {
+    appApproval: appApproval_bin,
     appClear: appClear_bin,
-    ctc: ctc_bin,
-    steps: stepCode_bin,
+    escrow: escrow_bin,
   };
 }
 
 // const ui8z = new Uint8Array();
 
+const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: any): String => Buffer.from(x).toString('base64');
 
@@ -639,6 +610,7 @@ const doQuery = async (dhead:string, query: ApiCall<any>, pred: ((x:any) => bool
   const res = await doQuery_(dhead, query);
   const txns = res.transactions;
   const ptxns = txns.filter(pred);
+  debug(dhead, {ptxns});
 
   if ( ptxns.length == 0 ) {
     return { succ: false, round: res['current-round'] };
@@ -994,19 +966,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(shad, ': attach', ApplicationID, 'created at', lastRound);
 
     const bin_comp = await compileFor(bin, ctcInfo);
-    const escrowAddr = bin_comp.ctc.hash;
+    const escrowAddr = bin_comp.escrow.hash;
     void(addressToHex);
     // XXX const escrowAddrRaw = T_Address.canonicalize(addressToHex(escrowAddr));
     await verifyContract(ctcInfo, bin);
-    const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
+    const escrow_prog = algosdk.makeLogicSig(bin_comp.escrow.result, []);
 
     const { viewSize, viewKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
-    const mapRecordTy =
-      T_Tuple([ T_Bool, mapDataTy, mapDataTy, T_Address ]);
-    const mapArgTy =
-      T_Array(mapRecordTy, HowManyAccounts);
     const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
     const emptyMapData =
       // This is a bunch of Nones
@@ -1065,11 +1033,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       timeout_delay: false | BigNumber,
       sim_p: (fake: Recv) => Promise<SimRes>,
     ): Promise<Recv> => {
-      if ( hasLastTime !== false ) {
-        const ltidx = hasLastTime.toNumber();
-        tys.splice(ltidx, 1);
-        args.splice(ltidx, 1);
-      }
+      void (hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv(funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
@@ -1082,10 +1046,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
       debug(dhead, '--- START');
-
-      const handler = bin_comp.steps[funcNum];
-      if ( ! handler ) {
-        throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
 
       const [ svs, msg ] = argsSplit(args, evt_cnt);
       const [ svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
@@ -1106,63 +1066,35 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const { isHalt } = sim_r;
       const sim_txns = sim_r.txns;
 
-      // Views
-      const [ view_ty, view_v ] = sim_r.view;
-      debug(dhead, 'VIEW', { view_ty, view_v });
-      const view_tysz = view_ty.netSize;
-      const padding = Math.max(viewSize - view_tysz, 0);
-      const padding_ty = T_Bytes(padding);
-      const padding_v = padding_ty.canonicalize('');
-      const [ view_typ, view_vp ] =
-        viewSize > 0 ?
-        [ T_Tuple([view_ty, padding_ty]), [ view_v,  padding_v] ]:
-        [ padding_ty, padding_v ];
-      debug(dhead, 'VIEWP', { view_typ, view_vp });
-
       // Maps
-      const { mapRefs, mapsPrev, mapsNext } = sim_r;
-      type MapRecord = [ boolean, any, any, any ];
+      const { mapRefs } = sim_r;
       const mapAccts: Array<Address> = [ ];
-      const mapArg: Array<MapRecord> = [ ];
-      const emptyRec = (caddr:any): MapRecord =>
-        [ false, emptyMapData, emptyMapData, caddr ];
-      const getMapData = (maps:any, addr:any) =>
-        maps.map((m: any) => mapRef(m, addr));
-      const mkMapRecord = (isSender:boolean) => (addr:Address) => {
-        const caddr = T_Address.canonicalize(addr);
+      mapRefs.forEach((caddr:Address) => {
+        const addr = cbr2algo_addr(caddr);
+        if ( addressEq(thisAcc.addr, addr) ) { return; }
         const addrIdx =
-          mapArg.findIndex((mr:MapRecord) => addressEq(mr[3], caddr));
+          mapAccts.findIndex((other:Address) => addressEq(other, addr));
         const present = addrIdx !== -1;
-        if (present) { return; }
-        const refIdx =
-          mapRefs.findIndex((other:Address) => addressEq(other, caddr));
-        const used = refIdx !== -1;
-        const record = (rec:MapRecord) => {
-          mapArg.push(rec);
-          if ( ! isSender ) {
-            mapAccts.push(addr);
-          }
+        if ( present ) { return; }
+        mapAccts.push(addr);
+      });
+      if ( mapAccts.length > MaxAppTxnAccounts ) {
+        throw Error(`Application references too many local state cells in one step. Reach should catch this problem statically.`);
+      }
+      debug(dhead, 'MAP', { mapAccts });
+      if ( hasMaps ) { await ensureOptIn(); }
+      const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
+
+      const sign_escrow = async (txn: Txn): Promise<STX> => {
+        const tx_obj = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
+        return {
+          tx: tx_obj.blob,
+          txID: tx_obj.txID,
+          lastRound: txn.lastRound,
         };
-        if ( used ) {
-          record([ true, getMapData(mapsPrev, caddr), getMapData(mapsNext, caddr), caddr ]);
-        } else if ( isSender ) {
-          record(emptyRec(caddr));
-        }
       };
-      mkMapRecord(true)(thisAcc.addr);
-      mapRefs.map(cbr2algo_addr).forEach(mkMapRecord(false));
-      const missingAccts = (HowManyAccounts - mapArg.length);
-      const zero_caddr = T_Address.canonicalize('0x00');
-      for ( let i = 0; i < missingAccts; i++ ) {
-        mapArg.push(emptyRec(zero_caddr));
-      }
-      debug(dhead, 'MAP', { mapArg, mapArgTy, mapAccts });
-      debug(dhead, 'MAPARG', mapArg );
-      if ( hasMaps ) {
-        await ensureOptIn();
-      }
-      const mapAcctsReal =
-        (mapAccts.length === 0) ? undefined : mapAccts;
+      const sign_me =
+        async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
 
       while ( true ) {
         const params = await getTxnParams();
@@ -1178,62 +1110,64 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         debug(dhead, '--- ASSEMBLE w/', params);
 
-        let txnToContract_value_idx: number = -1;
-        let totalFromFee: number = 0;
-        const txnExtraTxns =
-          sim_txns.map(
-            (t: SimTxn, i: number): Txn => {
-              const { tok } = t;
-              let amt: BigNumber = bigNumberify(0);
-              let from: Address = escrowAddr;
-              let to: Address = escrowAddr;
-              let closeTo: Address|undefined = undefined;
-              if ( t.kind === 'from' ) {
-                from = escrowAddr;
-                // @ts-ignore
-                to = cbr2algo_addr(t.to);
-                amt = t.amt;
-              } else if ( t.kind === 'init' ) {
-                from = escrowAddr;
-                to = escrowAddr;
-                totalFromFee += raw_minimumBalance;
-                amt = t.amt;
-              } else if ( t.kind === 'halt' ) {
-                from = escrowAddr;
-                to = Deployer;
-                closeTo = Deployer;
-              } else if ( t.kind === 'to' ) {
-                from = thisAcc.addr;
-                to = escrowAddr;
-                amt = t.amt;
-              } else {
-                assert(false, 'sim txn kind');
-              }
-              const txn = makeTransferTxn(from, to, amt, tok, params, closeTo);
-              if ( from === escrowAddr ) {
-                totalFromFee += txn.fee;
-              }
-              if ( t.kind === 'to' && ! tok ) {
-                txnToContract_value_idx = i;
-              }
-              return txn;
-        } );
-        debug(dhead, '--- totalFromFee =', totalFromFee);
-        assert(txnToContract_value_idx !== -1, 'sim txn no value');
-        txnExtraTxns[txnToContract_value_idx] =
-          makeTransferTxn(thisAcc.addr, escrowAddr,
-                          value.add(totalFromFee),
-                          undefined, params);
+        let extraFees: number = 0;
+        type Signer = (x:Txn) => Promise<STX>;
+        const txnExtraTxns: Array<Txn> = [];
+        const txnExtraTxns_signers: Array<Signer> = [];
+        const processSimTxn = (t: SimTxn) => {
+          const { tok } = t;
+          let always: boolean = false;
+          let amt: BigNumber = bigNumberify(0);
+          let from: Address = escrowAddr;
+          let to: Address = escrowAddr;
+          let closeTo: Address|undefined = undefined;
+          let signer: Signer = sign_escrow;
+          if ( t.kind === 'from' ) {
+            from = escrowAddr;
+            // @ts-ignore
+            to = cbr2algo_addr(t.to);
+            amt = t.amt;
+          } else if ( t.kind === 'init' ) {
+            processSimTxn({
+              kind: 'to',
+              amt: minimumBalance,
+              tok: undefined,
+            });
+            from = escrowAddr;
+            to = escrowAddr;
+            always = true;
+            amt = t.amt;
+          } else if ( t.kind === 'halt' ) {
+            from = escrowAddr;
+            to = Deployer;
+            closeTo = Deployer;
+            always = true;
+          } else if ( t.kind === 'to' ) {
+            from = thisAcc.addr;
+            to = escrowAddr;
+            amt = t.amt;
+            signer = sign_me;
+          } else {
+            assert(false, 'sim txn kind');
+          }
+          if ( ! always && amt.eq(0) ) { return; }
+          const txn = makeTransferTxn(from, to, amt, tok, params, closeTo);
+          extraFees += txn.fee;
+          txn.fee = 0;
+          txnExtraTxns.push(txn);
+          txnExtraTxns_signers.push(signer);
+        };
+        sim_txns.forEach(processSimTxn);
+        debug(dhead, '--- extraFee =', extraFees);
 
-      const actual_args =
-        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, view_vp, isHalt, bigNumberify(totalFromFee), lastRound, svs, msg, mapArg ];
-      const actual_tys =
-        [ T_Digest, T_Digest, view_typ, T_Bool, T_UInt, T_UInt, T_Tuple(svs_tys), T_Tuple(msg_tys), mapArgTy ];
+      const actual_args = [ svs, msg ];
+      const actual_tys = [ T_Tuple(svs_tys), T_Tuple(msg_tys) ];
       debug(dhead, '--- ARGS =', actual_args);
 
       const safe_args: Array<NV> = actual_args.map(
         // @ts-ignore
         (m, i) => actual_tys[i].toNet(m));
+      safe_args.unshift(new Uint8Array([funcNum]));
       safe_args.forEach((x) => {
         if (! ( x instanceof Uint8Array ) ) {
           // The types say this is impossible now,
@@ -1241,11 +1175,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
         }
       });
-      const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
       debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
-
-      const handler_sig = algosdk.makeLogicSig(handler.result, []);
-      debug(dhead, '--- PREPARED');
 
         const whichAppl =
           isHalt ?
@@ -1256,64 +1186,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           whichAppl(
             thisAcc.addr, params, ApplicationID, safe_args,
             mapAcctsReal, undefined, undefined, NOTE_Reach);
-        const txnFromHandler =
-          algosdk.makePaymentTxnWithSuggestedParams(
-            handler.hash,
-            thisAcc.addr,
-            0,
-            thisAcc.addr,
-            NOTE_Reach,
-            params);
-        debug(dhead, '--- txnFromHandler =', txnFromHandler);
-        const txnToHandler =
-          algosdk.makePaymentTxnWithSuggestedParams(
-            thisAcc.addr,
-            handler.hash,
-            txnFromHandler.fee + raw_minimumBalance,
-            undefined, NOTE_Reach,
-            params);
-        debug(dhead, '--- txnToHandler =', txnToHandler);
-        const txns = [
-          txnAppl,
-          txnToHandler,
-          txnFromHandler,
-          ...txnExtraTxns ];
+        txnAppl.fee += extraFees;
+        const txns = [ txnAppl, ...txnExtraTxns ];
         algosdk.assignGroupID(txns);
         regroup(thisAcc, txns);
 
-        const signLSTO = (txn: Txn, ls: any): STX => {
-          const tx_obj = algosdk.signLogicSigTransactionObject(txn, ls);
-          return {
-            tx: tx_obj.blob,
-            txID: tx_obj.txID,
-            lastRound: txn.lastRound,
-          };
-        };
-        const sign_me = async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
 
         const txnAppl_s = await sign_me(txnAppl);
-        const txnFromHandler_s = signLSTO(txnFromHandler, handler_sig);
-        const txnToHandler_s = await sign_me(txnToHandler);
         const txnExtraTxns_s =
           await Promise.all(
             txnExtraTxns.map(
-              async (t: Txn, i:number): Promise<STX> => {
-                const st = sim_txns[i];
-                debug('txnExtraTxns_s', {t, i, st});
-                const t_s =
-                  st.kind === 'to' ?
-                    await sign_me(t)
-                  : signLSTO(t, ctc_prog);
-                return t_s;
-        }));
+              async (t: Txn, i:number): Promise<STX> =>
+                await txnExtraTxns_signers[i](t)
+        ));
 
-        const txns_s = [
-          txnAppl_s,
-          txnToHandler_s,
-          txnFromHandler_s,
-          ...txnExtraTxns_s,
-        ];
-
+        const txns_s = [ txnAppl_s, ...txnExtraTxns_s ];
         debug(dhead, '--- SEND:', txns_s.length);
         let res;
         try {
@@ -1357,14 +1244,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       // Ignoring this, because no ALGO dev node
       void(waitIfNotPresent);
       const indexer = await getIndexer();
+      const client = await getAlgodClient();
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
       debug(dhead, '--- START');
-
-      const handler = bin_comp.steps[funcNum];
-      if ( ! handler ) {
-        throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
+      const funcNumB64 = base64ify([funcNum]);
 
       const timeoutRound =
         timeout_delay ?
@@ -1372,51 +1257,37 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         undefined;
 
       while ( true ) {
-        let hquery = indexer.searchForTransactions()
-          .address(handler.hash)
-          .addressRole('sender')
+        let query = indexer.searchForTransactions()
+          .applicationID(ApplicationID)
+          .txType('appl')
           // Look at the next one after the last message
           // XXX when we implement firstMsg, this won't work on the first
           // message
           .minRound(lastRound + 1);
         if ( timeoutRound ) {
-          hquery = hquery.maxRound(timeoutRound);
+          query = query.maxRound(timeoutRound);
         }
 
-        const hres = await doQuery(dhead, hquery);
-        if ( ! hres.succ ) {
-          const currentRound = hres.round;
+        const correctStep = (txn:any): boolean =>
+          txn['application-transaction']['application-args'][0] === funcNumB64;
+        const res = await doQuery(dhead, query, correctStep);
+        if ( ! res.succ ) {
+          const currentRound = res.round;
           if ( timeoutRound && timeoutRound < currentRound ) {
             debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
             return { didTimeout: true };
           }
-
-          // XXX perhaps wait until a new round has happened using wait
-          await Timeout.set(2000);
+          await client.statusAfterBlock(currentRound + 1);
           continue;
         }
-        const htxn = hres.txn;
-        debug(dhead, '--- htxn =', htxn);
-
-        const theRound = htxn['confirmed-round'];
-        let query = indexer.searchForTransactions()
-          .applicationID(ApplicationID)
-          .txType('appl')
-          .round(theRound);
-        const res =
-          // XXX move predicate into indexer query
-          await doQuery(dhead, query, ((x:any) => x.group === htxn.group));
-        if ( ! res.succ ) {
-          // XXX This is probably really bad
-          continue;
-        }
-        const {txn} = res;
+        const txn = res.txn;
         debug(dhead, '--- txn =', txn);
+        const theRound = txn['confirmed-round'];
 
         const ctc_args_all: Array<string> =
           txn['application-transaction']['application-args'];
         debug(dhead, {ctc_args_all});
-        const argMsg = 7; // from ALGO.hs
+        const argMsg = 2; // from ALGO.hs
         const ctc_args_s: string = ctc_args_all[argMsg];
 
         /** @description base64->hex->arrayify */
@@ -1434,13 +1305,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const args_un = argsSlice(ctc_args, evt_cnt);
         debug(dhead, '--- args_un =', args_un);
 
-        const argFeeAmount = 3; // from ALGO.hs
-        const totalFromFee =
-          T_UInt.fromNet(reNetify(ctc_args_all[argFeeAmount]));
-        debug(dhead, '--- totalFromFee =', totalFromFee);
-
-        const fromAddr =
-          htxn['payment-transaction'].receiver;
+        const fromAddr = txn['sender'];
         const from =
           T_Address.canonicalize({addr: fromAddr});
         debug(dhead, '--- from =', from, '=', fromAddr);
@@ -1577,7 +1442,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     const bin_comp = await compileFor(bin, { ApplicationID, Deployer, creationRound: 0 });
-    const escrowAddr = bin_comp.ctc.hash;
+    const escrowAddr = bin_comp.escrow.hash;
 
     const params = await getTxnParams();
     const txnUpdate =
@@ -1594,6 +1459,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         raw_minimumBalance,
         undefined, NOTE_Reach,
         params);
+    txnUpdate.fee += txnToContract.fee;
+    txnToContract.fee = 0;
 
     const txns = [
       txnUpdate,
@@ -1859,18 +1726,17 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
     const cres = await doQuery(dhead, cquery);
     if ( ! cres.succ ) {
       if ( cres.round < creationRound ) {
-        debug(dhead, '-- waiting for creationRound');
-        await Timeout.set(1000);
+        debug(dhead, `-- waiting for`, {creationRound});
+        await client.statusAfterBlock(creationRound);
         continue;
       } else {
-        chk(false, `Not created in stated round`);
-        break;
+        chk(false, `Not created in stated round: ${creationRound}`);
       }
     } else {
       ctxn = cres.txn;
-      break;
     }
   }
+
   debug(dhead, '-- ctxn =', ctxn);
   const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 

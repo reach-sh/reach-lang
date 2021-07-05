@@ -230,6 +230,7 @@ int 3
 ==
 assert
 txna ApplicationArgs 0
+btoi
 // Handler 1
 dup
 int 1
@@ -274,19 +275,33 @@ itob
 concat
 store 1
 int 0
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l1
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l2
+l1:
+pop
+l2:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l3
+dig 1
+gtxns LastValid
+>=
 assert
+b l4
+l3:
+pop
+l4:
+pop
 // "CheckPay"
 // "./index.rsh:17:5:dot"
 // "[]"
@@ -315,7 +330,7 @@ l0:
 dup
 int 2
 ==
-bz l1
+bz l5
 pop
 txna ApplicationArgs 1
 dup
@@ -365,25 +380,39 @@ itob
 concat
 store 1
 int 0
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l6
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l7
+l6:
+pop
+l7:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l8
+dig 1
+gtxns LastValid
+>=
 assert
+b l9
+l8:
+pop
+l9:
+pop
 // "CheckPay"
 // "./index.rsh:22:5:dot"
 // "[]"
 load 254
 dup
-bz l2
+bz l10
 load 0
 dup
 int 1
@@ -405,19 +434,33 @@ gtxns Fee
 ==
 assert
 dup
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l11
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l12
+l11:
+pop
+l12:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l13
+dig 1
+gtxns LastValid
+>=
 assert
+b l14
+l13:
+pop
+l14:
+pop
 global ZeroAddress
 dig 1
 gtxns Lease
@@ -433,7 +476,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l2:
+l10:
 pop
 // compute state in HM_Set 2
 int 2
@@ -455,12 +498,12 @@ int NoOp
 ==
 assert
 b checkSize
-l1:
+l5:
 // Handler 3
 dup
 int 3
 ==
-bz l3
+bz l15
 pop
 txna ApplicationArgs 1
 dup
@@ -512,19 +555,33 @@ itob
 concat
 store 1
 int 0
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l16
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l17
+l16:
+pop
+l17:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l18
+dig 1
+gtxns LastValid
+>=
 assert
+b l19
+l18:
+pop
+l19:
+pop
 // "CheckPay"
 // "./index.rsh:27:5:dot"
 // "[]"
@@ -537,7 +594,7 @@ txn Sender
 assert
 load 254
 dup
-bz l4
+bz l20
 load 0
 dup
 int 1
@@ -559,19 +616,33 @@ gtxns Fee
 ==
 assert
 dup
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l21
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l22
+l21:
+pop
+l22:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l23
+dig 1
+gtxns LastValid
+>=
 assert
+b l24
+l23:
+pop
+l24:
+pop
 global ZeroAddress
 dig 1
 gtxns Lease
@@ -582,17 +653,17 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-byte "{{ContractAddr}}"
+load 255
 dig 1
 gtxns Receiver
 ==
 assert
-load 255
+byte "{{ContractAddr}}"
 dig 1
 gtxns Sender
 ==
 assert
-l4:
+l20:
 pop
 int 0
 load 0
@@ -616,19 +687,33 @@ gtxns Fee
 ==
 assert
 dup
-dup
-gtxns FirstValid
 load 1
 substring 0 8
 btoi
->=
+dup
+bz l26
+dig 1
+gtxns FirstValid
+<=
 assert
-gtxns LastValid
+b l27
+l26:
+pop
+l27:
 load 1
 substring 8 16
 btoi
-<=
+dup
+bz l28
+dig 1
+gtxns LastValid
+>=
 assert
+b l29
+l28:
+pop
+l29:
+pop
 global ZeroAddress
 dig 1
 gtxns Lease
@@ -649,14 +734,14 @@ dig 1
 gtxns Sender
 ==
 assert
-l5:
+l25:
 pop
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b checkSize
-l3:
+l15:
 b fail
 checkSize:
 load 0
@@ -683,10 +768,10 @@ txn Sender
 byte "{{Deployer}}"
 ==
 assert
-txn ApplicationID
-bz init
 int 1
 store 0
+txn ApplicationID
+bz init
 int 100000
 dup
 bz l0
@@ -709,20 +794,6 @@ int 0
 dig 1
 gtxns Fee
 ==
-assert
-dup
-dup
-gtxns FirstValid
-load 1
-substring 0 8
-btoi
->=
-assert
-gtxns LastValid
-load 1
-substring 8 16
-btoi
-<=
 assert
 global ZeroAddress
 dig 1
@@ -802,13 +873,6 @@ int 1
   mapDataKeys: 0,
   mapDataSize: 0,
   mapRecordSize: 33,
-  stepargs: [{
-    size: 17
-    }, {
-    size: 49
-    }, {
-    size: 177
-    }],
   unsupported: [],
   version: 2,
   viewKeys: 0,

@@ -38,14 +38,15 @@ r () {
   ${REACH} compile --install-pkgs
   ${REACH} compile
 
-  tealcount1 .
+  # tealcount1 .
 
   make build
   # make down
 
-  # jb
+  jb
 
   export REACH_DEBUG=1
+  export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
   REACH_CONNECTOR_MODE=ALGO ${REACH} run
@@ -79,7 +80,7 @@ tealcount () {
 
 #######
 
-jb
+# jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh

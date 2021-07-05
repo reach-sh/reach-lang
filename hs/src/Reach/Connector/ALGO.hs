@@ -29,6 +29,7 @@ import Reach.Counter
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
+import Reach.Warning
 import Safe (atMay)
 import Text.Read
 
@@ -70,6 +71,9 @@ algoMaxAppBytesValueLen = 64
 
 algoMaxAppTxnAccounts :: Word8
 algoMaxAppTxnAccounts = 4 -- plus sender
+
+algoMaxAppTotalArgLen :: Integer
+algoMaxAppTotalArgLen = 2048
 
 algoMinimumBalance :: Integer
 algoMinimumBalance = 100000
@@ -228,7 +232,6 @@ data Env = Env
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
-  , eStepInfoR :: IORef (M.Map Int Aeson.Value)
   }
 
 recordWhich :: Int -> App a -> App a
@@ -308,14 +311,31 @@ checkLease = do
 checkTimeLimits :: SrcLoc -> App ()
 checkTimeLimits at = do
   let go f i cmp = do
-        code "gtxns" [ f ]
+        skipLab <- freshLabel
+        afterLab <- freshLabel
+        -- [ txn ]
         gvLoad GV_timeLimits
         cTupleRef at (gvType GV_timeLimits) i
+        -- [ txn, tl ]
+        op "dup"
+        -- [ txn, tl, tl ]
+        code "bz" [ skipLab ]
+        -- [ txn, tl ]
+        code "dig" [ "1" ]
+        -- [ txn, tl, txn ]
+        code "gtxns" [ f ]
+        -- [ txn, tl, fv ]
         op cmp
         assert
-  op "dup"
-  go "FirstValid" 0 ">="
-  go "LastValid" 1 "<="
+        code "b" [ afterLab ]
+        label skipLab
+        op "pop"
+        label afterLab
+  -- [ txn ]
+  go "FirstValid" 0 "<="
+  go "LastValid" 1 ">="
+  op "pop"
+  -- [ ]
 
 bad :: LT.Text -> App ()
 bad lab = do
@@ -872,9 +892,10 @@ ce = \case
       go a = (argTypeOf a, ca a)
   DLE_Transfer ct_at who ct_amt ct_mtok -> do
     let ct_always = False
-    let ct_mcsend = Just $ ca who
-    let ct_mcrecv = Just cContractAddr
+    let ct_mcrecv = Just $ ca who
+    let ct_mcsend = Just cContractAddr
     let ct_mcclose = Nothing
+    let ct_noTimeLimits = False
     checkTxn $ CheckTxn {..}
   DLE_TokenInit ct_at tok -> do
     comment $ "Initializing token"
@@ -884,13 +905,20 @@ ce = \case
     let ct_mcsend = Just cContractAddr
     let ct_mcrecv = Just cContractAddr
     let ct_mcclose = Nothing
-    checkTxn $ CheckTxn {..}
+    let ct_noTimeLimits = False
+    let cta = CheckTxn {..}
+    checkTxn $ cta
+      { ct_mtok = Nothing
+      , ct_amt = DLA_Literal $ minimumBalance_l
+      , ct_mcsend = Nothing }
+    checkTxn $ cta
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
     show_stack ("CheckPay" :: String) ct_at fs
     let ct_always = False
     let ct_mcsend = Nothing -- Flexible, not necc appl sender
     let ct_mcrecv = Just $ cContractAddr
     let ct_mcclose = Nothing
+    let ct_noTimeLimits = False
     checkTxn $ CheckTxn {..}
   DLE_Claim at fs t a mmsg -> do
     show_stack mmsg at fs
@@ -939,6 +967,7 @@ data CheckTxn = CheckTxn
   , ct_mcsend :: Maybe (App ())
   , ct_mcclose :: Maybe (App ())
   , ct_always :: Bool
+  , ct_noTimeLimits :: Bool
   , ct_amt :: DLArg
   , ct_mtok :: Maybe DLArg }
 
@@ -974,8 +1003,9 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   check1 "TypeEnum"
   cl $ DLL_Int sb 0
   check1 "Fee"
-  op "dup"
-  checkTimeLimits ct_at
+  unless ct_noTimeLimits $ do
+    op "dup"
+    checkTimeLimits ct_at
   code "global" ["ZeroAddress"]
   check1 "Lease"
   code "global" ["ZeroAddress"]
@@ -1128,6 +1158,7 @@ ct = \case
             ct_always = True
             ct_amt = DLA_Literal $ DLL_Int sb 0
             ct_mcclose = Just $ cDeployer
+            ct_noTimeLimits = False
             close_asset tok = checkTxn $ CheckTxn {..}
               where ct_mtok = Just tok
             close_escrow = checkTxn $ CheckTxn {..}
@@ -1278,8 +1309,8 @@ ch _ _ (C_Loop {}) = return ()
 ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = recordWhich which $ do
   let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
-  recordStepInfo which $ Aeson.object $
-    [ ("size", Aeson.Number $ fromIntegral argSize) ]
+  when (argSize > algoMaxAppTotalArgLen) $
+    xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
   let bindFromArg ai vs m = do
         code "txna" [ "ApplicationArgs", etexty ai ]
         op "dup"
@@ -1543,10 +1574,6 @@ cMapSet (DLMVar i) = do
 
 -- </MapStuff>
 
-recordStepInfo :: Int -> Aeson.Value -> App ()
-recordStepInfo w v = do
-  (liftIO . flip modifyIORef (M.insert w v)) =<< (eStepInfoR <$> ask)
-
 type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
@@ -1566,7 +1593,6 @@ compile_algo disp pl = do
   let PLOpts {..} = plo
   let sCounter = plo_counter
   let eShared = Shared {..}
-  eStepInfoR <- newIORef mempty
   let run :: String -> App () -> IO TEALs
       run lab m = do
         eLabel <- newCounter 0
@@ -1637,6 +1663,7 @@ compile_algo disp pl = do
     -- and we assume that "extra" fees aren't charged, so there's no reason to
     -- ensure it is low enough.
     code "txna" [ "ApplicationArgs", etexty ArgMethod ]
+    cfrombs T_UInt
     forM_ (M.toAscList hm) $ \(hi, hh) -> do
       afterLab <- freshLabel
       ch afterLab hi hh
@@ -1654,9 +1681,9 @@ compile_algo disp pl = do
     code "txn" ["Sender"]
     cDeployer
     asserteq
+    init_txnCounter
     code "txn" ["ApplicationID"]
     code "bz" ["init"]
-    init_txnCounter
     checkTxn $ CheckTxn
       { ct_at = at
       , ct_mcrecv = Nothing -- XXX calculate the escrow ctc
@@ -1664,6 +1691,7 @@ compile_algo disp pl = do
       , ct_mcclose = Nothing
       , ct_always = False
       , ct_mtok = Nothing
+      , ct_noTimeLimits = True
       , ct_amt = DLA_Literal minimumBalance_l }
     code "txn" ["OnCompletion"]
     code "int" ["UpdateApplication"]
@@ -1709,15 +1737,13 @@ compile_algo disp pl = do
     asserteq
     code "b" ["done"]
     defn_done
-  eStepInfo <- readIORef eStepInfoR
-  modifyIORef resr $
-    M.insert "stepargs" $ aarray $
-      map snd $ M.toAscList eStepInfo
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $
       aarray $
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
+  unless (null sFailures) $ do
+    emitWarning $ W_ALGOUnsupported $ S.toList $ S.map show sFailures
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
