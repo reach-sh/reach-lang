@@ -355,6 +355,18 @@ rpcTlsPair Env {..} = do
   pure (T.pack key, T.pack crt)
 
 
+rpcServer'' :: IO T.Text
+rpcServer'' = lookupEnv "REACH_RPC_SERVER" >>= \case
+  Nothing -> pure "127.0.0.1"
+  Just r -> pure $ T.pack r
+
+
+rpcTlsRejectUnverified :: IO T.Text
+rpcTlsRejectUnverified = lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED" >>= \case
+  Nothing -> pure "0"
+  Just r -> pure $ T.pack r
+
+
 --------------------------------------------------------------------------------
 reachVersionScript :: App
 reachVersionScript =
@@ -794,8 +806,8 @@ run' = command "run" $ info f d where
       write [N.text|
         export REACH_CONNECTOR_MODE=$mode'
         docker build -f $dockerfile' --tag=$appImageTag .
-        docker-compose -f $$TMP/docker-compose.yml run --rm $appService
-        docker-compose -f $$TMP/docker-compose.yml down --remove-orphans
+        docker-compose -f "$$TMP/docker-compose.yml" run --rm $appService
+        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
         $cleanup
       |]
 
@@ -841,7 +853,7 @@ react = command "react" $ info f d where
 
     withCompose React dm cm . script $ write [N.text|
       $reach compile $cargs
-      docker-compose -f $$TMP/docker-compose.yml \
+      docker-compose -f "$$TMP/docker-compose.yml" \
         run --service-ports --rm $appService
     |]
 
@@ -849,6 +861,15 @@ react = command "react" $ info f d where
 --------------------------------------------------------------------------------
 switchUseExistingDevnet :: Parser Bool
 switchUseExistingDevnet = switch $ long "use-existing-devnet"
+
+
+rpcServer' :: T.Text -> IO T.Text
+rpcServer' appService = do
+  reach <- reachEx
+  pure [N.text|
+    $reach compile
+    docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $appService
+  |]
 
 
 rpcServer :: Subcommand
@@ -860,7 +881,6 @@ rpcServer = command "rpc-server" $ info f d where
     env <- ask
 
     cm <- liftIO connectorModeNonBrowser
-    reach <- liftIO reachEx
     rv <- liftIO reachVersionShortInProcess
 
     key <- liftIO rpcKey
@@ -868,10 +888,9 @@ rpcServer = command "rpc-server" $ info f d where
     tlsPassphrase <- liftIO rpcTlsPassphrase
 
     let dm@DockerMeta {..} = mkDockerMetaRpc env rv
+    run <- liftIO $ rpcServer' appService
 
     withCompose Rpc dm cm . script $ write [N.text|
-      $reach compile
-
       REACH_RPC_TLS_KEY=$tlsKey
       REACH_RPC_TLS_CRT=$tlsCrt
       REACH_RPC_TLS_PASSPHRASE=$tlsPassphrase
@@ -879,16 +898,95 @@ rpcServer = command "rpc-server" $ info f d where
 
       export REACH_RPC_TLS_KEY REACH_RPC_TLS_CRT REACH_RPC_TLS_PASSPHRASE REACH_RPC_KEY
 
-      REACH_RPC_KEY=$${REACH_RPC_KEY} docker-compose -f $$TMP/docker-compose.yml \
-        run --service-ports --rm $appService
+      $run
     |]
 
 
 --------------------------------------------------------------------------------
 rpcRun :: Subcommand
-rpcRun = command "rpc-run" $ info f d where
-  d = progDesc "Run an RPC server + frontend with development configuration"
-  f = undefined
+rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse where
+  desc = progDesc "Run an RPC server + frontend with development configuration"
+  fdoc = footerDoc . Just
+     $  text "Example:"
+   <$$> text " $ reach rpc-run python3 -u ./index.py"
+
+  f = go <$> strArgument (metavar "EXECUTABLE")
+         <*> many (strArgument (metavar "ARG"))
+
+  go exe args = do
+    env <- ask
+
+    cm <- liftIO connectorModeNonBrowser
+    rv <- liftIO reachVersionShortInProcess
+
+    key <- liftIO rpcKey
+    port <- liftIO rpcPort
+    server <- liftIO rpcServer''
+    (tlsKey, tlsCrt) <- liftIO $ rpcTlsPair env
+    passphrase <- liftIO rpcTlsPassphrase
+    reject <- liftIO rpcTlsRejectUnverified
+
+    let args' = T.intercalate " " args
+
+    let dm@DockerMeta {..} = mkDockerMetaRpc env rv
+    runServer <- liftIO $ rpcServer' appService
+
+    withCompose Rpc dm cm . script $ write [N.text|
+      if ! (which curl >/dev/null 2>&1); then
+        echo "\`reach rpc-run\` relies on an installation of \`curl\` - please install it."
+        exit 1
+      fi
+
+      REACH_RPC_KEY=$key
+      REACH_RPC_PORT=$port
+      REACH_RPC_SERVER=$server
+      REACH_RPC_TLS_CRT=$tlsCrt
+      REACH_RPC_TLS_KEY=$tlsKey
+      REACH_RPC_TLS_PASSPHRASE=$passphrase
+      REACH_RPC_TLS_REJECT_UNVERIFIED=$reject
+
+      export REACH_RPC_KEY
+      export REACH_RPC_PORT
+      export REACH_RPC_SERVER
+      export REACH_RPC_TLS_CRT
+      export REACH_RPC_TLS_KEY
+      export REACH_RPC_TLS_PASSPHRASE
+      export REACH_RPC_TLS_REJECT_UNVERIFIED
+
+      $runServer &
+      spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
+
+      # Be patient while rpc-server comes online...
+      i=0
+      s=0
+      while [ "$$i" -lt 30 ]; do
+        sleep 1
+        i=$$((i+1))
+        s=$$(curl \
+          --http1.1 \
+          -sk \
+          -o /dev/null \
+          -w '%{http_code}' \
+          -H "X-API-Key: $key" \
+          -X POST \
+          "https://$server:$port/health" || :)
+
+        [ "$$s" -eq 200 ] && break
+      done
+
+      killbg () {
+        echo
+        pkill -TERM -P "$$spid"
+        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
+      }
+
+      [ ! "$$s" -eq 200 ] \
+        && killbg \
+        && echo "RPC server returned HTTP $$s after $$i seconds." \
+        && exit 1
+
+      sh -c "$exe $args'"; killbg
+    |]
 
 
 --------------------------------------------------------------------------------
@@ -905,7 +1003,7 @@ devnet = command "devnet" $ info f d where
     let s = devnetFor c
 
     withCompose StandaloneDevnet dm cm . script $ write [N.text|
-      docker-compose -f $$TMP/docker-compose.yml run --service-ports --rm $s
+      docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $s
     |]
 
 
