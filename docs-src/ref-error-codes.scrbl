@@ -976,3 +976,463 @@ You can fix this by naming your function.
 This error indicates that there is an illegal @reachin{while} loop @reachin{invariant}.
 You can fix this issue by providing only one expression to @reachin{invariant}.
 
+@error{RE0070}
+
+This error indicates that you are attempting to spread a value as if it were
+@reachin{Tuple}, @reachin{Array}, or @reachin{Struct}, but it is not. This issue
+is likely caused by a typo in your code.
+
+For example, the code below erroneously spreads the wrong values:
+
+@reach{
+  const xi = 1;
+  const xa = [2, 3];
+  add(1, ...xi);
+}
+
+You can fix this code by spreading a tuple-like value for the second argument of @reachin{add}:
+
+@reach{
+  const xi = 1;
+  const xa = [2, 3];
+  add(1, ...xa);
+}
+
+@error{RE0071}
+
+This error indicates that the two @reachin{Array}s given to @reachin{Array.zip} are not of
+equal length. You can fix this error by providing two @reachin{Array}s of equal length to
+the function.
+
+@error{RE0072}
+
+This error indicates that a @reachin{switch} statement was supplied with a value that is not a
+@reachin{Data} instance.
+
+For example, the code below expects a @reachin{Maybe} type, but is erroneously provided with an @reachin{UInt}:
+
+@reach{
+  const f = (mx) => {
+    switch (mx) {
+      case Some: { return mx; }
+      case None: { return 0; }
+    };
+  };
+
+  f(1);
+}
+
+You can fix this code by providing a value with the correct @reachin{Type} to the @reachin{switch} statement:
+
+@reach{
+  const f = (mx) => {
+    switch (mx) {
+      case Some: { return mx; }
+      case None: { return 0; }
+    };
+  };
+
+  f(Maybe(UInt).Some(1));
+}
+
+@error{RE0073}
+
+This error indicates that there are multiple cases for the same variant in a @reachin{switch} statement or
+@reachin{match} expression.
+
+You can fix this error by deleting one of the branches, ensuring there are only
+one branch per variant.
+
+@error{RE0074}
+
+This error indicates that a @reachin{switch} statement or @reachin{match} expression does not have a case
+for every variant of a @reachin{Data} instance.
+
+You can fix this issue by adding the missing cases listed
+in the error message.
+
+@error{RE0075}
+
+This error indicates that a @reachin{switch} statement or @reachin{match} expression contains cases
+for unknown variants. These erroneous variants are not listed in the @reachin{Data} definition.
+
+You can fix this issue by adding the unknown variant to the @reachin{Data} definition or removing the case.
+
+@error{RE0076}
+
+This error indicates that the @reachin{Type} of a value you provided to a function or operation does
+not match the expected @reachin{Type}.
+
+For example, the code below erroneously provides a number as the second argument to @reachin{assert}:
+
+@reach{
+  assert(2 == 2, 5);
+}
+
+However, the second argument of @reachin{assert} is expected to be of type @reach{Bytes}. You can fix this
+issue by providing a value of the correct type:
+
+@reach{
+  assert(2 == 2, "5th assertion")
+}
+
+@error{RE0077}
+
+This error indicates that the depth of recursion for a function call exceeded the limit allowed.
+This issue may indicate that the recursive function does not have a base case.
+
+You can fix this issue by re-writing your recursive function into an iterative set of
+statements, e.g. @reachin{while} loop.
+
+@error{RE0078}
+
+This error indicates that the program is no longer live by the time it reaches a publication.
+That is, the program will have already @reachin{exit}ed before the given point.
+
+For example, the code below will always @reachin{exit} before calling @reachin{publish}:
+
+@reach{
+  const f = () => { exit(); };
+  f();
+  Alice.publish();
+  commit();
+}
+
+You can fix this code by wrapping the @reachin{exit} in a conditional:
+
+@reach{
+  const f = () => { exit(); };
+  if (/* ... */) {
+    f();
+  }
+  Alice.publish();
+  commit();
+}
+
+@error{RE0079}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that a statement is being used in place of an expression.
+Refer to the documentation for the statement you are attempting to use for more
+information on how to use it.
+
+@error{RE0080}
+
+This error indicates that there is an attempt to conditionally transition to @tech{consensus}
+without a @reachin{timeout}. When making a conditional publication, such as @reachin{A.publish(x).when(shouldPublish)},
+there needs to be a timeout associated with the publication if @reachin{shouldPublish} is not statically @reachin{true}.
+
+In @reachin{parallelReduce} or @reachin{fork}, a @reachin{timeout} is required unless one @reachin{Participant}
+always races, the @reachin{when} field in their @tt{PUBLISH_EXPR} is statically @reachin{true}, or if one
+@reachin{ParticipantClass} will attempt to race.
+
+For example, the code below erroneously attempts to publish a value if a certain condition holds:
+
+@reach{
+  A.only(() => {
+    const { x, shouldPublish } = declassify(interact.getParams());
+  });
+  A.publish(x)
+   .when(shouldPublish);
+  commit();
+}
+
+You can fix this issue by providing a @reachin{timeout} case for
+
+@reach{
+  A.only(() => {
+    const { x, shouldPublish, deadline } = declassify(interact.getParams());
+  });
+  A.publish(x)
+   .when(shouldPublish)
+   .timeout(deadline, () => closeTo(Bob));
+  commit();
+}
+
+@error{RE0081}
+
+This error indicates that the result of @tt{PUBLISH_EXPR} for a @reachin{fork} or @reachin{parallelReduce}
+is not of the right @reachin{Type}. It is expected to be an @reachin{Object} with a @reachin{when} field,
+and optionally a @reachin{msg} field.
+
+For example, the code below erroneously tries to publish a value in a @reachin{parallelReduce} case:
+
+@reach{
+  parallelReduce(/* ... */)
+    // ...
+    .case(Alice,
+      (() => {
+        const x = declassify(interact.x);
+        return x;
+      })
+    // ...
+    )
+}
+
+This code can be fixed by using an @reachin{Object} and assigning the value to be published to
+the @reachin{msg} field of the object:
+
+@reach{
+  parallelReduce(/* ... */)
+    // ...
+    .case(Alice,
+      (() => {
+        const x = declassify(interact.x);
+        return {
+          msg: x;
+        }
+      })
+    // ...
+    )
+}
+
+@error{RE0082}
+
+This error indicates that the parameters of a @tt{CONSENSUS_EXPR} in a @reachin{fork} or
+@reachin{parallelReduce} are incorrect. The function provided should either accept zero
+parameters or one parameter, which represents the @reachin{msg} of the @reachin{PUBLISH_EXPR}.
+
+For example, the code below erroneously tries to publish multiple values and bind them in
+the function provided to @tt{CONSENSUS_EXPR}:
+
+@reach{
+  parallelReduce(/* ... */)
+    // ...
+    .case(Alice,
+      (() => ({
+        msg: [declassify(interact.x), declassify(interact.y)];
+        when: declassify(interact.shouldGo())
+      })),
+      ((x, y) => {
+        // ...
+      })
+    )
+}
+
+You can fix this code by changing the arrow expression to accept one parameter. You can
+either destructure the argument with a @reachin{const} assignment or as part of the function
+syntax:
+
+@reach{
+  parallelReduce(/* ... */)
+    // ...
+    .case(Alice,
+      (() => ({
+        msg: [declassify(interact.x), declassify(interact.y)];
+        when: declassify(interact.shouldGo())
+      })),
+      (([ x, y ]) => {
+        // ...
+      })
+    )
+}
+
+@error{RE0083}
+
+This error indicates that not all the components of the @reachin{parallelReduce} statement are provided.
+Please refer to the documentation of @reachin{parallelReduce} to see the required components.
+
+You can fix this error by adding any components the compiler has listed.
+
+@error{RE0084}
+
+This error indicates that you have provided the wrong number of arguments to a component of
+@reachin{parallelReduce}. Please refer to the documentation for the specific component you
+are trying to use.
+
+For example, the code below erroneously supplies a closure as the second argument to @reachin{timeRemaining}.
+
+@reach{
+  parallelReduce([ 0 ])
+    .invariant(balance() == balance())
+    .while(true)
+    .case(A,
+      (() => { when: true }),
+      (() => {
+        return [ x + 1]
+      })
+    )
+    .timeRemaining(1, () => {});
+}
+
+However, @reachin{timeRemaining} is a shorthand for a timeout which automatically publishes and returns the
+@reachin{parallelReduce} accumulator. The component only expects one argument. You can fix this code by removing
+the second argument supplied.
+
+@reachin{RE0085}
+
+This error indicates that your program would contain a value at runtime which would not be allowed. This
+error usually stems from not fully applying a primitive function or using a value incorrectly, such
+as the @tech{participant interact interface} of a @reachin{Participant}.
+
+For example, the code below erroneously tries to publish @reachin{Alice}'s interact interface:
+
+@reach{
+  Alice.only(() => {
+    const aInteract = declassify(interact);
+  });
+  Alice.publish(aInteract);
+}
+
+You can fix this code by specifying a specific field of @reachin{Alice}'s interact interface to @reachin{publish}:
+
+@reach{
+  Alice.only(() => {
+    const aX = declassify(interact.x);
+  });
+  Alice.publish(aX);
+}
+
+@error{RE0086}
+
+This error indicates that the @reachin{Type} of a value cannot exist at runtime. This error
+may be caused by a @reachin{Fun} in a @tech{participant interact interface} having a return
+type of another @reachin{Fun}.
+
+For examples of this error and how to fix it, see @secref["RE0012"].
+
+@error{RE0087}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that you are attempting to apply a non-function value as if it were a function. This
+issue is most likely caused by a typo with an identifier.
+
+@error{RE0088}
+
+This error indicates that there is a mismatch between the actual @reachin{Type} of a value and the expected
+@reachin{Type} of a value.
+
+For example, the code below erroneously returns a @reachin{Bool} when the type annotation states that
+the function should return an @reachin{UInt}.
+
+@reach{
+export const f =
+  is(((x) => true),
+     Fun([UInt], UInt));
+}
+
+You can fix this code by returning an @reachin{UInt} from the function or changing the return type of the function.
+
+This error may be caused by using a value of the incorrect type in an operation. The code below erroneously uses
+a @reachin{Maybe} value in an @reachin{+} expression:
+
+@reach{
+  A.only(() => {
+    const mi = declassify(interact.get1());
+    const i = (() => {
+      switch (mi) {
+      case None: return 42;
+      default: return mi+1; } })(); });
+}
+
+In this code, @reachin{mi} is still of @reachin{Maybe} type. You can fix this code by changing @reachin{default}
+to @reachin{case Some}, which will re-bind @reachin{mi} to the value contained within @reachin{Some}:
+
+@reach{
+  A.only(() => {
+    const mi = declassify(interact.get1());
+    const i = (() => {
+      switch (mi) {
+      case None: return 42;
+      case Some: return mi+1; } })(); });
+}
+
+@error{RE0089}
+
+This error indicates that a @reachin{Map.reduce} is being performed outside of an @reachin{invariant}, which
+is the only place map reductions are allowed to occur.
+
+For example, the code below erroneously attempts to keep the sum of the @reachin{Map} as a loop variable:
+
+@reach{
+  var [keepGoing, sum] = [true, m.sum()];
+  invariant(balance() == sum);
+  while (keepGoing) {
+    commit();
+
+    Alice.pay(1);
+    m[Alice] = fromSome(m[Alice], 0) + 1;
+
+    [keepGoing, sum ] = [true,  m.sum()];
+    continue;
+  }
+}
+
+You can fix this code by moving any @reachin{Map} reductions to inside the @reachin{invariant}:
+
+@reach{
+  var keepGoing = true;
+  invariant(balance() == m.sum());
+  while (keepGoing) {
+    commit();
+
+    Alice.pay(1);
+    m[Alice] = fromSome(m[Alice], 0) + 1;
+
+    keepGoing = true;
+    continue;
+  }
+}
+
+@error{RE0090}
+
+This error indicates that a @reachin{Map} was expected in an expression, but a value
+of a different type was provided. This issue is most likely caused by a typo in an
+identifier.
+
+@error{RE0091}
+
+This error indicates that you are attempting to create a @reachin{Foldable} value, which is
+not possible. @reachin{Foldable} is an interface that @reachin{Array} and @reachin{Map} implement.
+
+For example, the code below erroneously tries to create a @reachin{Foldable} value:
+
+@reach{
+  const container = Foldable();
+}
+
+You can fix this code by instead creating a @reachin{Map} or an @reachin{Array}.
+
+@error{RE0092}
+
+This error indicates that there are normal parameters listed after parameters with default arguments
+in a function definition. Parameters with default arguments must come after all other arguments.
+
+For example, the code below erroneously lists its parameters:
+
+@reach{
+  const f = (name = "Reach", msg) => {
+    // ...
+  }
+}
+
+You can fix this error by rearranging the parameters so that the ones with default arguments are last:
+
+@reach{
+  const f = (msg, name = "Reach") => {
+    // ...
+  }
+}
+
+@error{RE0093}
+
+This error indicates that you are attempting to bind an effect or statement, which is not allowed.
+
+For example, the code below supplies a statement as an argument to a function:
+
+@reach{
+  closeTo(Bob,
+    each([Alice, Bob], () => {
+      interact.showResult(5); }));
+}
+
+The result of @reachin{each} cannot be bound as a function argument. You can fix this code by
+wrapping the statement in an @tech{arrow expression}:
+
+@reach{
+  closeTo(Bob, () => {
+    each([Alice, Bob], () => {
+      interact.showResult(5); })});
+}

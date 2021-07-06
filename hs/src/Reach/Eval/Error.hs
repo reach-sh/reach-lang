@@ -563,7 +563,7 @@ instance Show EvalError where
     Err_Transfer_NotBound who ->
       "Cannot transfer to unbound participant, " <> bunpack who
     Err_Transfer_Class who ->
-      "cannot transfer to participant class, " <> bunpack who
+      "Cannot transfer to participant class, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
       "Incompatible states:" <> showStateDiff x y
     Err_Eval_NotSecretIdent x ->
