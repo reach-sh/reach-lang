@@ -16,6 +16,37 @@ the Reach compiler.
   * Any other advice
 }
 
+@error{RC0000}
+
+This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
+@tech{connector}.
+
+For example, the code below uses a value to large for the @reachin{ALGO} connector:
+
+@reach{
+  const y = 18446744073709551616;
+}
+
+You can fix this by using a smaller number or using a different @tech{connector}.
+
+@error{RE0000}
+
+This error indicates that you provided an incorrect number of arguments to a function.
+
+For example, the code below applies one value to @reachin{f}:
+
+@reach{
+  const f = () => { return 3 };
+  const x = f(5);
+}
+
+You can fix this by providing the same amount of arguments expected:
+
+@reach{
+  const f = () => { return 3 };
+  const x = f();
+}
+
 @error{RE0001}
 
 This error indicates that a program uses an invalid assignment operator.
@@ -976,6 +1007,165 @@ You can fix this by naming your function.
 This error indicates that there is an illegal @reachin{while} loop @reachin{invariant}.
 You can fix this issue by providing only one expression to @reachin{invariant}.
 
+@error{RE0061}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that @reachin{Participant.only} was not supplied a single thunk
+as its argument.
+
+You can fix this by providing the expected value to the function.
+
+@error{RE0062}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that @reachin{each} was not given a @reachin{Tuple} of @reachin{Participant}s
+as its first argument.
+
+You can fix this by providing the expected value to the function.
+
+@error{RE0063}
+
+This error indicates that a given function expects a @reachin{Participant} or @reachin{ParticipantClass}
+as an argument, but it was given something else.
+
+For example, the code below erroneously provides @reachin{false} instead of a @reachin{Participant} to
+@reachin{unknowable}:
+
+@reach{
+  A.only(() => {
+    const _x = interact.x;
+  });
+  unknowable(false, A(_x));
+}
+
+You can fix this by passing a @reachin{Participant} as the first argument to @reachin{unknowable}:
+
+@reach{
+  A.only(() => {
+    const _x = interact.x;
+  });
+  unknowable(B, A(_x));
+}
+
+@error{RE0064}
+
+This error indicates that the program is attempting to transfer funds to a @reachin{Participant}
+that is not yet bound to an @reachin{Address}.
+
+For example, the code below transfers funds to @reachin{Bob} before he has a set @reachin{Address}:
+
+@reach{
+  Alice.publish().pay(100);
+  transfer(100).to(Bob);
+}
+
+You can fix this by using @reachin{Participant.set} first or having @reachin{Bob} publish before the
+@reachin{transfer}:
+
+@reach{
+  Bob.publish();
+  commit();
+  Alice.publish().pay(100);
+  transfer(100).to(Bob);
+}
+
+@error{RE0065}
+
+This error indicates that you are attempting to @reachin{transfer} funds to a @reachin{ParticipantClass}.
+This is not possible because @reachin{transfer} expects a single @reachin{Address} to transfer to.
+
+For example, the code below erroneously attempts to transfer the @reachin{balance} of the @tech{contract} to a class:
+
+@reach{
+  const Alice = Participant('Alice', {});
+  const Bob   = ParticipantClass('Bob', {});
+  deploy();
+  Alice.publish().pay(100);
+  transfer(100).to(Bob);
+}
+
+You can fix this code by specifying a specific @reachin{Address} to use. For example, the
+class could @reachin{race} to specify their own address:
+
+@reach{
+  const Alice = Participant('Alice', {});
+  const Bob   = ParticipantClass('Bob', {});
+  deploy();
+  Alice.publish().pay(100);
+  commit();
+  Bob.only(() => {
+    const b = this;
+  });
+  Bob.publish(b);
+  transfer(100).to(b);
+  commit();
+}
+
+@error{RE0066}
+
+This error indicates that the state of the program differs in the @tech{continuation} of a
+branching statement. That is, if a Reach program may execute multiple different code paths at
+runtime, the @tech{continuation} of those branches must make the same assumption about state.
+
+For example, this error may be caused by having one branch end in @tech{consensus step} and
+the other in a @tech{step}. You can fix this by ensuring both branches end in the same mode.
+
+Another example is a @reachin{Participant} makes their first publication in the branch
+of a conditional. You can fix this by having the @reachin{Participant} make their first
+publication before the conditional statement.
+
+@error{RE0067}
+
+This error indicates that you are attempting to bind a @tech{secret} value to an identifier
+of the wrong format. @tech{secret} identifiers must be prefixed with @reachin{_}.
+
+For example, the code below erroneously assigns a @tech{secret} value to a @tech{public} identifier, @reachin{x}:
+
+@reach{
+  A.only(() => {
+    const x = interact.x;
+  });
+}
+
+You can fix this by either changing the identifier to start with @reachin{_} or using @reachin{declassify}
+to make the value @tech{public}:
+
+@reach{
+  A.only(() => {
+    const _x = interact.x;
+  });
+  // or
+  A.only(() => {
+    const x = declassify(interact.x);
+  });
+}
+
+@error{RE0068}
+
+This error indicates that you are attempting to bind a @tech{public} value to an identifier
+of the wrong format. @tech{public} identifiers cannot be prefixed with @reachin{_}.
+
+For example, the code below erroneously assigns a @tech{public} value to a @tech{secret} identifier, @reachin{_x}:
+
+@reach{
+  const _x = 1;
+}
+
+You can fix this by removing the @reachin{_} prefix:
+
+@reach{
+  const x = 1;
+}
+
+@error{RE0069}
+
+This error indicates that you are attempting to read the value of @reachin{_}. Any binding to @reachin{_} is
+ignored and therefore cannot be read from.
+
+You can fix this by using another identifier and referencing it as usual.
+
 @error{RE0070}
 
 This error indicates that you are attempting to spread a value as if it were
@@ -1119,7 +1309,7 @@ information on how to use it.
 
 @error{RE0080}
 
-This error indicates that there is an attempt to conditionally transition to @tech{consensus}
+This error indicates that there is an attempt to conditionally transition to consensus
 without a @reachin{timeout}. When making a conditional publication, such as @reachin{A.publish(x).when(shouldPublish)},
 there needs to be a timeout associated with the publication if @reachin{shouldPublish} is not statically @reachin{true}.
 
@@ -1436,3 +1626,456 @@ wrapping the statement in an @tech{arrow expression}:
     each([Alice, Bob], () => {
       interact.showResult(5); })});
 }
+
+@error{RE0094}
+
+This error indicates that there are unused variables in your program. This error will
+only occur with @reachin{'use strict'}.
+
+You can fix this error by either deleting the unused variables or removing @tech{strict mode}, @reachin{'use strict'}.
+
+@error{RE0095}
+
+This error indicates that a field in a @reachin{Remote} object is not a function. You
+can fix this by ensuring your @reachin{Remote} object only contains fields that are functions.
+This fix may require changes to the foreign contract you are attempting to connect to.
+
+@error{RE0096}
+
+This error indicates that the key supplied to a @reachin{Struct} does not match the required regex.
+@reachin{Struct} keys must satisfy the regex: @tt{[_a-zA-Z][_a-zA-Z0-9]*}.
+
+For example, the code below provides an erroneous key value:
+
+@reach{
+  const s = Struct([["$x ", UInt]]);
+}
+
+You can fix this by removing any illegal characters:
+
+@reach{
+  const s = Struct([["x", UInt]]);
+}
+
+@error{RE0097}
+
+This error indicates that a key in a @reachin{Struct} has been used more than once.
+Every key must be unique in a @reachin{Struct}.
+
+For example, the code below erroneously uses the same key twice:
+
+@reach{
+  const s = Struct([["x", UInt], ["y", UInt], ["x", UInt]]);
+}
+
+You can fix this by renaming one of the @reachin{"x"} fields:
+
+@reach{
+  const s = Struct([["x", UInt], ["y", UInt], ["x2", UInt]]);
+}
+
+@error{RE0098}
+
+This error indicates that you are attempting to export a name that the
+Reach backend already produces. For example, the names provided in @reachin{Participant},
+@reachin{ParticipantClass}, and @reachin{View} will be exported by the Reach backend.
+
+Reach exports a few names from the backend automatically, such as @reachin{getExports}.
+Therefore, you cannot export a @reachin{Participant} named @reachin{getExports} as such:
+
+@reach{
+  const P = Participant('getExports', {});
+}
+
+You can fix this error by choosing a different name.
+
+@error{RE0099}
+
+This error indicates that you are attempting to use a value that is not a @reachin{Bool}
+in a condition, while using @tech{strict mode}.
+
+For example, the code below erroneously uses a number as the condition to @reachin{if}:
+
+@reach{
+  const y = declassify(interact.getInt());
+  const x = y ? 2 : 3;
+}
+
+You can fix this code by using a @reachin{Bool} instead. The following code will consider
+any number that is not @reachin{0} @reachin{true}:
+
+@reach{
+  const y = declassify(interact.getInt());
+  const x = (y != 0) ? 2 : 3;
+}
+
+@error{RE0100}
+
+This error indicates that there are multiple @reachin{throw} statements inside a @reachin{try}
+block and the values thrown are of different @reachin{Type}s.
+
+You can fix this error by ensuring that every value thrown is of the same type. It may be necessary
+to create a new @reachin{Data} instance that can handle different types.
+
+For example, the code below erroneously throws a @reachin{UInt} and a @reachin{Bool}:
+
+@reach{
+  Alice.only(() => {
+    const transferAll = declassify(interact.transferAll);
+  });
+  Alice.publish(transferAll);
+
+  try {
+    if (transferAll) {
+      throw true;
+    } else {
+      throw 1;
+    }
+  } catch (e) {
+    if (e == true) {
+      transfer(balance()).to(Alice);
+    } else {
+      transfer(e).to(Alice);
+    }
+  }
+}
+
+You can fix this code by abstracting the @reachin{Type}s of values thrown into a new @reachin{Data} type:
+
+@reach{
+  const TransferType = Data({
+    CERTAIN_AMT: UInt,
+    TRANSFER_ALL: Null
+  });
+
+  Alice.only(() => {
+    const transferAll = declassify(interact.transferAll);
+  });
+  Alice.publish(transferAll);
+
+  try {
+    if (transferAll) {
+      throw TransferType.TRANSFER_ALL();
+    } else {
+      throw TransferType.CERTAIN_AMT(1);
+    }
+  } catch (e) {
+    switch (e) {
+      case CERTAIN_AMT: {
+        transfer(e).to(Alice);
+      }
+      case TRANSFER_ALL: {
+        transfer(balance()).to(Alice);
+      }
+    }
+  }
+}
+
+@error{RE0101}
+
+This error occurs when you attempt to use a @reachin{throw} statement outside of a @reachin{try}
+block.
+
+You can fix this error by moving your @reachin{throw} statement inside the appropiate block of code
+or wrapping the necessary code into a @reachin{try/catch} block.
+
+@error{RE0102}
+
+This error indicates that you are attempting to @reachin{pay} on the first publication of
+a program that uses @reachin{setOptions({ deployMode: 'firstMsg' })}. This is not possible
+because the contract will not yet exist. Therefore, it cannot receive tokens.
+
+You can fix this by either using a different @reachin{deployMode} or paying into the
+contract after the first publication.
+
+@error{RE0103}
+
+This error indicates that you are attempting to @reachin{publish} a @reachin{Token} within
+a @reachin{while} loop. This is not currently possible in Reach. You must publish @reachin{Token}
+values outside of loops.
+
+For example, the code below erroneously publishes a @reachin{Token} inside a loop:
+
+@reach{
+  var [] = [];
+  invariant(balance() == balance());
+  while ( true ) {
+    commit();
+    A.only(() => {
+      const [tok, amt] = declassify(interact.get()); });
+    A.publish(tok, amt)
+      .pay([amt, [amt, tok]]);
+    continue;
+  }
+}
+
+You can fix this code by publishing @reachin{tok} before the loop:
+
+@reach{
+  A.only(() => {
+    const [tok, amt] = declassify(interact.get()); });
+  A.publish(tok, amt);
+
+  var rounds = 0;
+  invariant(balance() == rounds * amt && balance(tok) == rounds * amt);
+  while ( true ) {
+    commit();
+
+    A.pay([amt, [amt, tok]]);
+
+    rounds = rounds + 1;
+    continue;
+  }
+}
+
+@error{RE0104}
+
+This error indicates that you are attempting to reference a @reachin{Token} that
+was computed dynamically. Reach does not yet support this.
+
+For example, the code below attempts to transfer the balance of an @reachin{array} of @reachin{Token}s
+to a @reachin{Participant}:
+
+@reach{
+  const allTokens = array(Token, toks);
+  Foldable_forEach(allTokens, (tok) => transfer(balance(tok), tok).to(Who));
+}
+
+You can work around this issue by writing out the @reachin{Token} values explicitly:
+
+@reach{
+  const nonNetPayAmt = [ [balance(tok), tok], [balance(tok2), tok2] ];
+  transfer([ balance(), ...nonNetPayAmt ]).to(Who);
+}
+
+@error{RE0105}
+
+This error indicates that the incorrect arguments were supplied to @reachin{withBill}.
+@reachin{withBill} either expects zero arguments, when only receiving @tech{network tokens}
+or a @reachin{Tuple} of @reachin{Token}s when receiving @tech{non-network tokens}.
+
+For example, the code below erroneously provides multiple @tech{non-network tokens} to
+@reachin{withBill}:
+
+@reach{
+  const [ returned, [gilRecv, zmdRecv], randomValue ] =
+    randomOracle.getRandom.pay(stipend).withBill(gil, zmd)();
+}
+
+You can fix this by wrapping all the arguments into a single @reachin{Tuple}:
+
+@reach{
+  const [ returned, [gilRecv, zmdRecv], randomValue ] =
+    randomOracle.getRandom.pay(stipend).withBill([gil, zmd])();
+}
+
+@error{RE0106}
+
+This error indicates that a program declared multiple @reachin{View}s with the same
+name.
+
+You can fix this error by renaming the duplicate @reachin{View}s, ensuring that every name is unique.
+
+@error{RE0107}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that the value of a @reachin{View} cannot be exposed. This would
+only occur if the value cannot be represented at runtime.
+
+@error{RE0108}
+
+This error indicates that a @reachin{View} function has an unconstrained domain. Every
+@reachin{View} must explicitly state the @reachin{Type} of function arguments it accepts.
+
+If your @reachin{View} function relies on a varying number of arguments or @reachin{Type}s, you
+can either abstract the arguments into a new @reachin{Data} type or make separate @reachin{View}s.
+
+@error{RE0109}
+
+This error indicates that there are multiple @reachin{Participant}s or @reachin{ParticipantClass}es
+with the same name. Each participant name must be unique.
+
+You can fix this error by renaming the duplicate names.
+
+@error{RE0110}
+
+This error indicates that a @reachin{Struct} contains an invalid field name.
+A field name may be invalid if it is a reserved word in the @tech{connector} you are targetting.
+
+For example, the code below erroneously uses the field name @reachin{"super"}, which is
+reserved in Solidity:
+
+@reach{
+  const A = Participant('A', {
+    get: Fun([], Struct([
+      ['super', Address]
+    ]))
+  });
+}
+
+You can fix this by renaming the erroneous field names:
+
+@reach{
+  const A = Participant('A', {
+    get: Fun([], Struct([
+      ['super1', Address]
+    ]))
+  });
+}
+
+@error{RE0111}
+
+This error indicates that an unexpected key was provided to the @reachin{Token} constructor.
+You may find the acceptable parameters in the following section: @tech{token minting}.
+
+@error{RE0112}
+
+This error indicates that you are attempting to @reachin{destroy} a @reachin{Token}
+you did not create.
+
+You can fix this by removing the erroneous statement.
+
+@error{REP0000}
+
+This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
+statement.
+
+For example, the code below does not make any publications before continuing the loop:
+
+@reach{
+  var x = 0;
+  invariant(balance() == 0);
+  while (true) {
+    x = x + 1;
+    continue;
+  }
+}
+
+You can fix this code by making a publication within the @reachin{loop}:
+
+@reach{
+  var x = 0;
+  invariant(balance() == 0);
+  while (true) {
+    commit();
+    Alice.publish();
+    x = x + 1;
+    continue;
+  }
+}
+
+Note that the body a @reachin{while} starts in a @tech{consensus step} so you must first
+@reachin{commit} before making a publication.
+
+@error{RI0000}
+
+This error indicates that @tt{git clone} has failed when trying to download the dependencies
+of your project. This error will tell you the issue that was encountered.
+
+@error{RI0001}
+
+This error indicates that @tt{git checkout} has failed when trying to checkout the specific
+revision of your dependency. This error will tell you the issue that was encountered.
+
+@error{RI0002}
+
+This error indicates that the dependency required by your project does not contain either
+the branch specified, or a @tt{master/main} branch.
+
+Please ensure you have specified the correct import.
+
+@error{RI0003}
+
+This error indicates that your project dependencies need to be retrieved but you did not specify
+@reachin{--install-pkgs} with your @tt{reach} command.
+
+You can fix this by specifying the needed flag with your command.
+
+@error{RI0004}
+
+This error indicates that the syntax you used to specify your import is incorrect.
+
+You can fix this by using the correct syntax. Please view the documentation for @tech{package imports}.
+
+@error{RL0000}
+
+This error indicates that the given code must not be reachable because it would
+result in an error if reached. This error may be caused for different reasons,
+which will be explained if encountered.
+
+One reason this code could be encountered is if there is a branch within a @reachin{while}
+loop, which does not contain a @reachin{continue} statement when it is expected.
+You can fix this by explicitly adding the @reachin{continue} statement to the erroneous block
+of code.
+
+@error{RP0000}
+
+This error indicates that there is a @link["https://en.wikipedia.org/wiki/Circular_dependency"]{circular dependency} in the @reachin{import}s of your application.
+
+You can fix this by refactoring your code to remove the cyclic imports.
+
+@error{RP0001}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that you have specified a function without an argument list.
+
+You can fix this by adding an argument list.
+
+@error{RP0002}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that an identifier was expected during parsing, but an expression
+was received.
+
+@error{RP0003}
+
+This error indicates that a key or a key/value pair was expected in a
+destructuring assignment, but an object method was received.
+
+For example, the code below creates a method within an destructuring assignment:
+
+@reach{
+  const {x() { return 1 }} = {x: 2};
+}
+
+You can fix this code by simply specifying @reachin{x} in the assignment:
+
+@reach{
+  const { x } = {x: 2};
+}
+
+@error{RP0004}
+
+This error indicates that an unsupported binary operator was encountered.
+Reach is a subset of Javascript and does not support all of the binary operators
+Javascript supports.
+
+You can fix this by utilizing different operators or functions depending
+on the logic of your program.
+
+@error{RP0005}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that an unsupported literal was encountered.
+Reach is a subset of Javascript and does not support all of the literals that
+Javascript supports.
+
+@error{RP0006}
+
+This error indicates that an unsupported unary operator was encountered.
+Reach is a subset of Javascript and does not support all of the unary operators
+Javascript supports.
+
+You can fix this by utilizing different operators or functions depending
+on the logic of your program.
+
+@error{RP0007}
+
+This error indicates that you are attempting to @reachin{import} a file using an absolute
+path which is not supported.
+
+You can fix this by using a relative path for your @reachin{import}.

@@ -15,7 +15,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy.IO as LTIO
-import Generics.Deriving
+import Generics.Deriving hiding (conName)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -34,8 +34,14 @@ data Connector = Connector
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   }
 
+instance Eq Connector where
+  l == r = conName l == conName r
+
+instance Show Connector where
+  show = T.unpack . conName
+
 data ConnectorError
-  = Err_IntLiteralRange Integer Integer Integer
+  = Err_IntLiteralRange Connector Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ConnectorError where
@@ -48,8 +54,8 @@ instance HasErrorCode ConnectorError where
     Err_IntLiteralRange {} -> 0
 
 instance Show ConnectorError where
-  show (Err_IntLiteralRange rmin x rmax) =
-    "integer literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
+  show (Err_IntLiteralRange con rmin x rmax) =
+    "integer literal out of range for " <> show con <> ": " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conWriteH doWrite moutn which c =
@@ -68,7 +74,7 @@ checkIntLiteralC :: SrcLoc -> Connector -> Integer -> Integer
 checkIntLiteralC at c x =
   case rmin <= x && x <= rmax of
     True -> x
-    False -> expect_thrown at $ Err_IntLiteralRange rmin x rmax
+    False -> expect_thrown at $ Err_IntLiteralRange c rmin x rmax
   where
     rmin = 0
     rmax = case conCons c DLC_UInt_max of
