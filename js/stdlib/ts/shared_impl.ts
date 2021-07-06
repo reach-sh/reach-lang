@@ -24,7 +24,7 @@ export type CurrencyAmount = string | number | BigNumber
 
 export type {Connector} from './ConnectorMode';
 
-let DEBUG: boolean = process.env.REACH_DEBUG ? true : false;
+let DEBUG: boolean = truthyEnv(process.env.REACH_DEBUG);
 
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
