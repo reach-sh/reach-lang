@@ -524,6 +524,7 @@ const MaxTxnLife = 1000;
 const LogicSigMaxSize = 1000;
 const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
+const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   const { ApplicationID, Deployer } = info;
@@ -554,7 +555,7 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
     await compileTEAL('appApproval_subst', appApproval_subst);
   const appClear_bin =
     await compileTEAL('appClear', appClear);
-  checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), MaxAppProgramLen);
+  checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), (1 + MaxExtraAppProgramPages) * MaxAppProgramLen);
 
   return {
     appApproval: appApproval_bin,
@@ -1421,7 +1422,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
 
-    const { appApproval0, appClear, viewKeys, mapDataKeys } = algob;
+    const { appApproval, appApproval0, appClear, viewKeys, mapDataKeys } = algob;
     const Deployer = thisAcc.addr;
 
     const appApproval0_subst =
@@ -1430,7 +1431,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await compileTEAL('appApproval0', appApproval0_subst);
     const appClear_bin =
       await compileTEAL('appClear', appClear);
+    const appApproval_bin =
+      await compileTEAL('appApproval', appApproval);
+    const extraPages =
+      Math.ceil((appClear_bin.result.length + appApproval_bin.result.length) / MaxAppProgramLen) - 1;
 
+    debug(`deploy`, {extraPages});
     const createRes =
       await sign_and_send_sync(
         'ApplicationCreate',
@@ -1443,15 +1449,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
           appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
           undefined, undefined, undefined, undefined,
-          NOTE_Reach));
+          NOTE_Reach, undefined, undefined, extraPages));
 
     const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
+    debug(`created`, {ApplicationID});
+
     const bin_comp = await compileFor(bin, { ApplicationID, Deployer, creationRound: 0 });
     const escrowAddr = bin_comp.escrow.hash;
 
+    debug(`updating`);
     const params = await getTxnParams();
     const txnUpdate =
       algosdk.makeApplicationUpdateTxn(

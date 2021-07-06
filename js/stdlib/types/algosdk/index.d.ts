@@ -74,6 +74,7 @@ declare module 'algosdk' {
   declare type ARG_note = Uint8Array;
   declare type ARG_lease = Uint8Array;
   declare type ARG_rekeyTo = string;
+  declare type ARG_extraPages = number;
 
   declare function makePaymentTxnWithSuggestedParams(
       from: Address, to: Address, amount: number,
@@ -113,7 +114,8 @@ declare module 'algosdk' {
     foreignAssets?: ARG_appForeignAssets,
     note?: ARG_note,
     lease?: ARG_lease,
-    rekeyTo?: ARG_reKeyTo
+    rekeyTo?: ARG_reKeyTo,
+    extraPages?: ARG_extraPages,
   ): Txn;
   declare function makeApplicationOptInTxn(
     from: Address,

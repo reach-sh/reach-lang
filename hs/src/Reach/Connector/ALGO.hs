@@ -352,6 +352,9 @@ freshLabel = do
   i <- (liftIO . incCounter) =<< (eLabel <$> ask)
   return $ "l" <> LT.pack (show i)
 
+loopLabel :: Int -> LT.Text
+loopLabel w = "loop" <> LT.pack (show w)
+
 store_let :: DLVar -> Bool -> App () -> App a -> App a
 store_let dv small cgen m = do
   Env {..} <- ask
@@ -1143,7 +1146,10 @@ ct = \case
     ct ft
   CT_Switch at dv csm ->
     doSwitch ct at dv csm
-  CT_Jump {} -> xxx "continue"
+  CT_Jump _at which svs (DLAssignment msgm) -> do
+    cla $ DLLA_Tuple $ map DLA_Var svs
+    cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
+    code "b" [ loopLabel which ]
   CT_From at which msvs -> do
     isHalt <- do
       case msvs of
@@ -1304,10 +1310,30 @@ bindRound dv = store_let dv True (code "global" ["Round"])
 readViewSize :: App Integer
 readViewSize = sViewSize <$> (eShared <$> ask)
 
+bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
+bindFromTuple at vs m = do
+  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
+  av <- mkArgVar vs
+  let go = \case
+        [] -> op "pop" >> m
+        (dv, i) : more -> sallocLet dv cgen $ go more
+          where cgen = ce $ DLE_TupleRef at (DLA_Var av) i
+  store_let av True (op "dup") $
+    go $ zip vs [0..]
+
+cloop :: Int -> CHandler -> App ()
+cloop _ (C_Handler {}) = return ()
+cloop which (C_Loop at svs vars body) = do
+  label $ loopLabel which
+  -- [ svs, vars ]
+  let bindVars = id
+        . (bindFromTuple at vars)
+        . (bindFromTuple at svs)
+  bindVars $ ct body
+
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
 ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = recordWhich which $ do
-  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
@@ -1315,15 +1341,9 @@ ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = 
         code "txna" [ "ApplicationArgs", etexty ai ]
         op "dup"
         op "len"
-        av <- mkArgVar vs
-        cl $ DLL_Int sb $ typeSizeOf $ varType av
+        cl $ DLL_Int sb $ typeSizeOf $ (T_Tuple $ map varType vs)
         asserteq
-        let go = \case
-              [] -> op "pop" >> m
-              (dv, i) : more -> sallocLet dv cgen $ go more
-                where cgen = ce $ DLE_TupleRef at (DLA_Var av) i
-        store_let av True (op "dup") $
-          go $ zip vs [0..]
+        bindFromTuple at vs m
   comment ("Handler " <> texty which)
   op "dup" -- We assume the method id is on the stack
   cl $ DLL_Int sb $ fromIntegral $ which
@@ -1636,7 +1656,7 @@ compile_algo disp pl = do
     checkRekeyTo
     checkLease
     unless (null mapKeysl) $ do
-      -- XXX Allow an OptIn if we are not going to halt
+      -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
       code "int" ["OptIn"]
       op "=="
@@ -1669,7 +1689,8 @@ compile_algo disp pl = do
       ch afterLab hi hh
       label afterLab
     cfail
-    -- XXX compile the loops
+    forM_ (M.toAscList hm) $ \(hi, hh) ->
+      cloop hi hh
     defn_checkSize
     defn_done
     defn_fail
