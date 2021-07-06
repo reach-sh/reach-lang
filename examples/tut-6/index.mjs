@@ -40,7 +40,7 @@ import * as backend from './build/index.main.mjs';
     backend.Bob(ctcBob, {
       ...Player('Bob'),
       acceptWager: async (amt) => { // <-- async now
-        if ( true || Math.random() <= 0.5 ) {
+        if ( Math.random() <= 0.5 ) {
           for ( let i = 0; i < 10; i++ ) {
             console.log(`  Bob takes his sweet time...`);
             await stdlib.wait(1); }
