@@ -831,17 +831,22 @@ export function setProviderByName(providerName: ProviderName): void {
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
-const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
-  const ledger = getLedger();
-  if (ledger !== localhostProviderEnv.ALGO_LEDGER) {
-    throw Error(`Cannot automatically use faucet for ledger '${ledger}'; if you want to use a custom faucet, use setFaucet`);
+const [getFaucet, setFaucet_] = replaceableThunk(async (): Promise<Account> => {
+  if ( ! isIsolatedNetwork() ) {
+    throw Error(`Cannot automatically use faucet for non-isolated network; if you want to use a custom faucet, use setFaucet`);
   }
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
   return await connectAccount(FAUCET);
 });
-
+let settedFaucet = false;
+const setFaucet = (x:Promise<Account>) => {
+  settedFaucet = true;
+  setFaucet_(x);
+};
+const isIsolatedNetwork = (): boolean =>
+  (settedFaucet || getLedger() === localhostProviderEnv.ALGO_LEDGER);
 export {getFaucet, setFaucet};
 
 const NOTE_Reach = new Uint8Array(Buffer.from(`Reach ${VERSION}`));
@@ -1101,7 +1106,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
           params.lastRound = lastRound + tdn;
           debug(dhead, '--- TIMECHECK', { params, timeout_delay, tdn });
-          if ( params.firstRound > params.lastRound ) {
+          // We add one, because the firstRound field is actually the current
+          // round, which we couldn't possibly be in, because it already
+          // happened.
+          if ( params.firstRound + 1 > params.lastRound ) {
             debug(dhead, '--- FAIL/TIMEOUT');
             return {didTimeout: true};
           }
@@ -1272,7 +1280,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const res = await doQuery(dhead, query, correctStep);
         if ( ! res.succ ) {
           const currentRound = res.round;
-          if ( timeoutRound && timeoutRound < currentRound ) {
+          if ( timeoutRound && timeoutRound <= currentRound ) {
             debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
             return { didTimeout: true };
           }
@@ -1432,7 +1440,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
-          appLocalStateNumUInt, mapDataKeys, appGlobalStateNumUInt, 1 + viewKeys,
+          appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
+          appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
           undefined, undefined, undefined, undefined,
           NOTE_Reach));
 
@@ -1672,10 +1681,14 @@ export const getNetworkTime = async () => bigNumberify(await getLastRound());
 
 export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
+  const client = await getAlgodClient();
   let currentTime = await getNetworkTime();
   while (currentTime.lt(targetTime)) {
     debug('waitUntilTime: iteration:', currentTime, '->', targetTime);
-    const status = await (await getAlgodClient()).statusAfterBlock(currentTime.toNumber()).do();
+    if ( isIsolatedNetwork() ) {
+      await fundFromFaucet(await getFaucet(), 0);
+    }
+    const status = await client.statusAfterBlock(currentTime.toNumber() + 1).do();
     currentTime = bigNumberify(status['last-round']);
     onProg({currentTime, targetTime});
   }
@@ -1690,7 +1703,9 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
 };
 
 const appLocalStateNumUInt = 0;
-const appGlobalStateNumUInt = 2;
+const appLocalStateNumBytes = 0;
+const appGlobalStateNumUInt = 0;
+const appGlobalStateNumBytes = 1;
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<true> => {
   const { ApplicationID, Deployer, creationRound } = info;
@@ -1746,11 +1761,11 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   chkeq(appInfo_p['creator'], Deployer, `Deployer does not match contract information`);
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
-  chkeq(appInfo_LocalState['num-byte-slice'], mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
+  chkeq(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes + mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
   chkeq(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
 
   const appInfo_GlobalState = appInfo_p['global-state-schema'];
-  chkeq(appInfo_GlobalState['num-byte-slice'], 1 + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
+  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
   const catxn = ctxn['application-transaction'];
