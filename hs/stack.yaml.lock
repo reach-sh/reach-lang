@@ -26,12 +26,12 @@ packages:
   original:
     hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
 - completed:
-    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
+    hackage: pretty-simple-4.0.0.0@sha256:a65be4ef40734eae1da7a88c9b73dbf1848f5a60b634dc4776fae60cafc85386,4071
     pantry-tree:
-      size: 1406
-      sha256: 7ee6639e988993d0b48b8f83160072c9cd9d945ef33691b0a0fd52b0aa04cd06
+      size: 1229
+      sha256: dee251957a221350624b0f0ebbc3598dffc69310b94156e7c81f231d98311a6c
   original:
-    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
+    hackage: pretty-simple-4.0.0.0@sha256:a65be4ef40734eae1da7a88c9b73dbf1848f5a60b634dc4776fae60cafc85386,4071
 - completed:
     hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
     pantry-tree:
@@ -97,12 +97,12 @@ packages:
     version: 0.0.1.0
     git: https://github.com/reach-sh/stan.git
     pantry-tree:
-      size: 5007
-      sha256: 95104fae7efea0270bc86dc36c68acf3424d3aa60f40672cc9fa07b99e37aa69
-    commit: f6b85556b90cb8b639449d205be6367bafc984f2
+      size: 5139
+      sha256: b3d22df4d35234a76c941608ed98b90026891894259ada486e2146235f712a0f
+    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
   original:
     git: https://github.com/reach-sh/stan.git
-    commit: f6b85556b90cb8b639449d205be6367bafc984f2
+    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
 - completed:
     name: language-javascript
     version: 0.7.1.0

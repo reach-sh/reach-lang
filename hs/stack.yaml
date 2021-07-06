@@ -17,7 +17,7 @@ extra-deps:
   - dir-traverse-0.2.3.0@sha256:adcc128f201ff95131b15ffe41365dc99c50dc3fa3a910f021521dc734013bfa,2137
   - extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
   - microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
-  - pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
+  - pretty-simple-4.0.0.0@sha256:a65be4ef40734eae1da7a88c9b73dbf1848f5a60b634dc4776fae60cafc85386,4071
   - trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
   - trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
   - trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441  
@@ -29,7 +29,8 @@ extra-deps:
   - git: https://github.com/reach-sh/shell-monad.git
     commit: d8465680410807a782920ba8dca040d38da735f8
   - git: https://github.com/reach-sh/stan.git
-    commit: f6b85556b90cb8b639449d205be6367bafc984f2
+    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
+    # ^ from branch "reach-fork-2"
   - git: https://github.com/reach-sh/language-javascript.git
     commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
     # ^ from branch "reach-1"
