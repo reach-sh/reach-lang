@@ -63,7 +63,9 @@ r () {
 tealcount1 () {
   if [ -d "${1}/build" ] ; then
   for t in "${1}"/build/"${2}"*.teal ; do
-    (cd $(dirname "${t}") && ${ROOT}/scripts/goal-devnet clerk compile $(basename "${t}") || true)
+    td=$(dirname "${t}")
+    tn=$(basename "${t}")
+    (cd "${td}" && ("${ROOT}/scripts/goal-devnet" clerk compile "${tn}" || true))
   done
   SIZE=$(wc -c "${1}"/build/"${2}"*tok | tail -1 | awk '{print $1}')
   echo "$1" "$2" - "$SIZE"
