@@ -1,0 +1,100 @@
+#!/bin/sh
+: 'Generated with gen-reach'
+set -e
+_REACH="$0"
+_REALREACH="$(realpath "$_REACH")"
+REACH="$_REALREACH"
+HERE="$(dirname "$_REALREACH")"
+REACH_VERSION='0.1.2'
+_lint () { :
+}
+_compile () { :
+	_HS="$HERE"'/..'
+	echo 'hs=' "$_HS"
+	echo 'args=' "$@"
+}
+_usage () { :
+	echo 'Usage: reach COMMAND
+where COMMAND is one of
+ compile  --- compile an app
+ init     --- set up source files for a simple app
+ run      --- run a simple app
+ scaffold --- set up Docker scaffolding for a simple app
+ upgrade  --- upgrade Reach
+ update   --- update Reach Docker images
+ version  --- display version
+ help     --- show this info
+'
+}
+_version () { :
+	echo reach "$REACH_VERSION"
+}
+_numericVersion () { :
+	echo "$REACH_VERSION"
+}
+_update () { :
+	docker pull 'reachsh/'reach':'"$REACH_VERSION"
+	docker pull 'reachsh/'stdlib':'"$REACH_VERSION"
+	docker pull 'reachsh/'runner':'"$REACH_VERSION"
+	docker pull 'reachsh/''ethereum-devnet'':'"$REACH_VERSION"
+	docker pull 'reachsh/''algorand-devnet'':'"$REACH_VERSION"
+}
+_upgrade () { :
+	_NEW='reach.new'
+	curl 'https://raw.githubusercontent.com/reach-sh/reach-lang/hs/sbin/master/reach' '-o' "$_NEW" && 	chmod '+x' "$_NEW" && 	cp '-f' "$_NEW" "$REACH"
+}
+_scaffold () { :
+}
+_unscaffold () { :
+}
+_run () { :
+}
+_init () { :
+}
+_ZERO=0
+if test \( "$#" -eq "$_ZERO" \)
+then :
+	_usage
+	exit 1
+fi
+_SUBCOMMAND="$1"
+shift
+echo "$_REACH" "$_SUBCOMMAND"
+case "$_SUBCOMMAND" in compile) :
+	_compile "$@"
+	exit 0
+: ;; run) :
+	_run "$@"
+	exit 0
+: ;; init) :
+	_init
+	exit 0
+: ;; lint) :
+	_lint "$@"
+	exit 0
+: ;; update) :
+	_update
+	exit 0
+: ;; upgrade) :
+	_upgrade
+	exit 0
+: ;; 'version|--version') :
+	_version
+	exit 0
+: ;; 'numeric-version|--numeric-version') :
+	_numericVersion
+	exit 0
+: ;; 'help|--help') :
+	_usage
+	exit 0
+: ;; scaffold) :
+	_scaffold
+	exit 0
+: ;; unscaffold) :
+	_unscaffold
+	exit 0
+: ;; *) :
+	_usage
+	exit 1
+;; esac
+
