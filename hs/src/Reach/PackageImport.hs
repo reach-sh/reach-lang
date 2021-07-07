@@ -1,4 +1,4 @@
-module Reach.PackageImport (packageImport) where
+module Reach.PackageImport (packageImport, PkgError(..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader

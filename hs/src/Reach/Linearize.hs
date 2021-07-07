@@ -1,4 +1,4 @@
-module Reach.Linearize (linearize) where
+module Reach.Linearize (linearize, Error(..)) where
 
 import Control.Monad.Reader
 import Data.IORef

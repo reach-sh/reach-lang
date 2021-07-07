@@ -1464,7 +1464,7 @@ However, @reachin{timeRemaining} is a shorthand for a timeout which automaticall
 @reachin{parallelReduce} accumulator. The component only expects one argument. You can fix this code by removing
 the second argument supplied.
 
-@reachin{RE0085}
+@error{RE0085}
 
 This error indicates that your program would contain a value at runtime which would not be allowed. This
 error usually stems from not fully applying a primitive function or using a value incorrectly, such
@@ -2148,3 +2148,25 @@ You can fix this by providing a call-like expression to the function:
 This error indicates that Reach expected to parse an identifier, but none was given.
 
 You can fix this error by adding an identifier name to the erroneous location.
+
+@error{RX0000}
+
+This error indicates that you are trying to inspect or use the value produced from @reachin{forall}
+outside of an @reachin{assert}.
+
+For example, the code below attempts to verify that all @reachin{UInt}s are greater than or
+equal to zero via a @reachin{require}:
+
+@reach{
+  const x = forall(UInt);
+  require(x >= 0);
+}
+
+This is invalid because the result of @reachin{forall} is an abstract value, which cannot exist
+at runtime. You can fix this code by verifying the claim via an @reachin{assert}:
+
+@reach{
+  const x = forall(UInt);
+  assert(x >= 0);
+}
+

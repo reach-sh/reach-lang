@@ -7,6 +7,7 @@ module Reach.Connector
   , checkIntLiteralC
   , conWrite
   , conShowP
+  , ConnectorError(..)
   )
 where
 
