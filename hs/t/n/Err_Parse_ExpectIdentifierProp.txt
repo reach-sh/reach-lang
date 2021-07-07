@@ -5,3 +5,4 @@ reachc: error[RP0003]: Expected identifier or one name and value in object prope
  5|     const {x() { return 1 }} = {x: 2};
 
 For further explanation of this error, see: https://docs.reach.sh/RP0003.html
+
