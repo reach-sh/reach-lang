@@ -177,7 +177,7 @@ If a @tech{consensus transfer} specifies a single @tech{participant}, which has 
 
 If a @tech{consensus transfer} specificies a single @tech{participant class}, then all members of that class will attempt to perform the transfer, but only one will succeed.
 
-A @tech{consensus transfer} binds the identifiers @reachin{ID_0} through @reachin{ID_n} for all @tech{participants} to the values included in the @tech{consensus transfer}.
+A @tech{consensus transfer} binds the identifiers @reachin{ID_0} through @reachin{ID_n} for all @tech{participants} to the values included in the @tech{consensus transfer}, overwriting any bindings that already exist for those identifiers.
 If an existing @tech{participant}, not included in @reachin{PART_EXPR}, has previously bound one of these identifiers, then the program is not @tech{valid}. In other words, the following program is not valid:
 
 @reach{
@@ -193,7 +193,8 @@ If an existing @tech{participant}, not included in @reachin{PART_EXPR}, has prev
 
 because @reachin{Claire} is not included in the @reachin{race}.
 However, if we were to rename @reachin{Claire}'s @reachin{x} into @reachin{y}, then it would be valid, because although @reachin{Alice} and @reachin{Bob} both bind @reachin{x}, they participate in the @reachin{race}, so it is allowed.
-In the tail of this program, @reachin{x} is bound to either @reachin{1} or @reachin{2}.
+In the tail of this program, @reachin{x} is bound to either @reachin{1} or @reachin{2}, i.e., either @reachin{Alice} or @reachin{Bob}'s value is overwritten.
+This overwriting applies even if @reachin{Alice} wins and @reachin{Alice} is a participant class, i.e., the value of @reachin{x} in the tail is guaranteed to be the single value that was agreed upon in the consensus.
 
 @subsection{@tt{fork}}
 
