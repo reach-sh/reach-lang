@@ -8,8 +8,8 @@ export TMP
 run_d () {
   docker run -t --rm \
     -e "REACH_EX=$0" \
-    -e "REACH_VERSION" \
     -e "REACH_CONNECTOR_MODE" \
+    -e "REACH_DEBUG" \
     -e "REACH_RPC_KEY" \
     -e "REACH_RPC_PORT"  \
     -e "REACH_RPC_SERVER" \
@@ -17,6 +17,7 @@ run_d () {
     -e "REACH_RPC_TLS_KEY" \
     -e "REACH_RPC_TLS_PASSPHRASE" \
     -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
+    -e "REACH_VERSION" \
     -u "$(id -ru):$(id -rg)" \
     -v "$TMP:/app/tmp" \
     -v "$(pwd):/app/src" \
