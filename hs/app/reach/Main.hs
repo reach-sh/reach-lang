@@ -34,100 +34,6 @@ data Effect
   | InProcess
 
 
-data Env = Env
-  { e_dirEmbed :: FilePath
-  , e_dirProjectContainer :: FilePath
-  , e_dirProjectHost :: FilePath
-  , e_dirTmp :: FilePath
-  , e_emitRaw :: Bool
-  , e_effect :: IORef Effect
-  }
-
-type App = ReaderT Env IO ()
-type Subcommand = Mod CommandFields App
-
-
-data Cli = Cli
-  { c_env :: Env
-  , c_cmd :: App
-  }
-
-
-script :: App -> App
-script a = do
-  asks e_effect >>= liftIO . flip writeIORef (Script "#!/bin/sh\nset -e\n\n")
-  a
-
-
-write :: T.Text -> App
-write t = asks e_effect >>= liftIO . flip modifyIORef w where
-  w = \case
-    Script t' -> Script $ t' <> t <> "\n\n"
-    InProcess -> impossible "Cannot `write` to an in-process `Effect`"
-
-
-writeFrom :: FilePath -> App
-writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
-
-
-swap :: T.Text -> T.Text -> T.Text -> T.Text
-swap a b src = T.replace ("${" <> a <> "}") b src
-
-
-swap' :: T.Text -> String -> T.Text -> T.Text
-swap' a b src = swap a (T.pack b) src
-
-
-reachImages :: [T.Text]
-reachImages =
-  [ "reach"
-  , "reach-cli"
-  , "ethereum-devnet"
-  , "algorand-devnet"
-  , "devnet-cfx"
-  , "runner"
-  , "react-runner"
-  , "rpc-server"
-  ]
-
-
-_runSubScript :: App -> Env -> IO T.Text
-_runSubScript a e = readIORef (e_effect e) >>= \case
-  Script _ -> do
-    r <- newIORef $ Script ""
-    Script r' <- runReaderT a (e { e_effect = r }) >> readIORef r
-    pure r'
-  _ -> impossible "`runSubScript` may only be applied to a `Script`"
-
-
---------------------------------------------------------------------------------
-serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
-serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
-  let ports' = case ports of
-        [] -> "[]"
-        ps -> T.intercalate "\n    " $ map ("- " <>) ps
-
-  let n = show m <> "-" <> (toLower <$> show c)
-
-  fmt <- T.readFile $ e_dirEmbed
-    </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
-
-  pure
-    . swap "REACH_VERSION" version''
-    . swap "PORTS" ports'
-    . swap "NETWORK" appService'
-    . swap "APP_SERVICE" appService'
-    $ fmt
-
-
-connectorEnv :: Env -> ConnectorMode -> IO T.Text
-connectorEnv Env {..} (ConnectorMode c m) = do
-  let c' = toLower <$> show c
-  T.readFile $ e_dirEmbed </> "sh" </> "_common" </> "_docker-compose"
-    </> "service-" <> show m <> "-" <> c' <> "-env.yml"
-
-
---------------------------------------------------------------------------------
 data Connector
   = Algo
   | Cfx
@@ -160,6 +66,245 @@ instance Show ConnectorMode where
   show (ConnectorMode c m) = show c <> "-" <> show m
 
 
+data Var = Var
+  { reachEx :: T.Text
+  , connectorMode :: ConnectorMode
+  , debug :: Bool
+  , rpcKey :: T.Text
+  , rpcPort :: T.Text
+  , rpcServer'' :: T.Text
+  , rpcTlsCrt :: T.Text
+  , rpcTlsKey :: T.Text
+  , rpcTlsPassphrase :: T.Text
+  , rpcTlsRejectUnverified :: Bool
+  , version'' :: T.Text
+  , versionShort :: T.Text
+  }
+
+
+data Env = Env
+  { e_dirEmbed :: FilePath
+  , e_dirProjectContainer :: FilePath
+  , e_dirProjectHost :: FilePath
+  , e_dirTmp :: FilePath
+  , e_emitRaw :: Bool
+  , e_effect :: IORef Effect
+  , e_var :: Var
+  }
+
+
+type App = ReaderT Env IO ()
+type AppT a = ReaderT Env IO a
+type Subcommand = Mod CommandFields App
+
+
+data Cli = Cli
+  { c_env :: Env
+  , c_cmd :: App
+  }
+
+
+--------------------------------------------------------------------------------
+defRpcKey :: T.Text
+defRpcKey = "opensesame"
+
+
+warnDefRpcKey :: App
+warnDefRpcKey = do
+  Var {..} <- asks e_var
+  when (rpcKey == defRpcKey) . liftIO . T.putStrLn
+    $ "Warning! Using development RPC key: REACH_RPC_KEY=" <> defRpcKey <> "."
+
+
+dieConnectorModeNonBrowser :: App
+dieConnectorModeNonBrowser = connectorMode <$> asks e_var >>= \case
+  ConnectorMode _ Browser -> liftIO . die
+    $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
+   <> " is only available via the Reach standard library."
+  _ -> pure ()
+
+
+warnScaffoldDefRpcTlsPair :: App
+warnScaffoldDefRpcTlsPair = do
+  Env {..} <- ask
+
+  let warnDev = putStrLn
+        "Warning! The current TLS certificate is only suitable for development purposes."
+
+  let embd r = e_dirEmbed </> "sh" </> "_common" </> "rpc" </> r
+  let dock r = e_dirProjectContainer </> "tls" </> r
+  let host r = e_dirProjectHost </> "tls" </> r
+  let orw = ownerReadMode .|. ownerWriteMode
+  let key = T.unpack $ rpcTlsKey e_var
+  let crt = T.unpack $ rpcTlsCrt e_var
+
+  liftIO $ (,) <$> doesFileExist (dock key) <*> doesFileExist (dock crt) >>= \case
+    (False, False) -> do
+      createDirectoryIfMissing False $ dock ""
+      readFile (embd "tls-default.key") >>= writeFile (dock key)
+      readFile (embd "tls-default.crt") >>= writeFile (dock crt)
+      setFileMode (dock key) orw
+      setFileMode (dock crt) $ orw .|. groupReadMode .|. otherReadMode
+      warnDev
+
+    (False, True) -> die $ host key <> " doesn't exist!"
+    (True, False) -> die $ host crt <> " doesn't exist!"
+
+    _ -> do
+      keyC <- readFile (dock key)
+      defC <- readFile (embd "tls-default.key")
+      when (keyC == defC) warnDev
+
+
+mkVar :: IO Var
+mkVar = do
+  let packed = pure . T.pack
+  let q e n = lookupEnv e >>= maybe n packed
+
+  rpcPort <- q "REACH_RPC_PORT" (pure "3000")
+  rpcServer'' <- q "REACH_RPC_SERVER" (pure "127.0.0.1")
+  rpcKey <- q "REACH_RPC_KEY" (pure defRpcKey)
+  rpcTlsPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure "rpc-demo")
+  rpcTlsKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
+  rpcTlsCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
+  version'' <- q "REACH_VERSION" (packed versionStr)
+
+  debug <- lookupEnv "REACH_DEBUG" >>= maybe (pure False) (const $ pure True)
+
+  rpcTlsRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
+    >>= maybe (pure True) (pure . (/= "0"))
+
+  reachEx <- lookupEnv "REACH_EX"
+    >>= maybe (die "Unset `REACH_EX` environment variable") packed
+
+  connectorMode <- do
+    rcm <- maybe "ETH-devnet" id <$> lookupEnv "REACH_CONNECTOR_MODE"
+    runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
+      >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+
+  let versionShort = case version'' of
+        "stable" -> T.pack compatibleVersionStr
+        v -> a <> "." <> b where
+          f ('v':s) = s
+          f s = s
+          v' = T.splitOn "." . T.pack . f $ T.unpack v
+          a = maybe "0" id $ atMay v' 0
+          b = maybe "0" id $ atMay v' 1
+
+  pure Var {..}
+
+
+--------------------------------------------------------------------------------
+script :: App -> App
+script wrapped = do
+  Var {..} <- asks e_var
+  let debug' = if debug then "REACH_DEBUG=1\n" else ""
+
+  let rpcTlsRejectUnverified' = case rpcTlsRejectUnverified of
+        True -> ""
+        False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
+
+  let connectorMode' = T.pack $ show connectorMode
+
+  asks e_effect >>= liftIO . flip writeIORef (Script
+     $ [N.text|
+          #!/bin/sh
+          set -e
+       |]
+    <> "\n\n"
+    <> debug'
+    <> rpcTlsRejectUnverified'
+    <> [N.text|
+          REACH_CONNECTOR_MODE=$connectorMode'
+          REACH_RPC_KEY=$rpcKey
+          REACH_RPC_PORT=$rpcPort
+          REACH_RPC_SERVER=$rpcServer''
+          REACH_RPC_TLS_CRT=$rpcTlsCrt
+          REACH_RPC_TLS_KEY=$rpcTlsKey
+          REACH_RPC_TLS_PASSPHRASE=$rpcTlsPassphrase
+          REACH_VERSION=$version''
+
+          export REACH_CONNECTOR_MODE
+          export REACH_DEBUG
+          export REACH_RPC_KEY
+          export REACH_RPC_PORT
+          export REACH_RPC_SERVER
+          export REACH_RPC_TLS_CRT
+          export REACH_RPC_TLS_KEY
+          export REACH_RPC_TLS_PASSPHRASE
+          export REACH_RPC_TLS_PASSPHRASE
+          export REACH_RPC_TLS_REJECT_UNVERIFIED
+          export REACH_VERSION
+      |]
+    <> "\n\n")
+
+  wrapped
+
+
+write :: T.Text -> App
+write t = asks e_effect >>= liftIO . flip modifyIORef w where
+  w = \case
+    Script t' -> Script $ t' <> t <> "\n\n"
+    InProcess -> impossible "Cannot `write` to an in-process `Effect`"
+
+
+writeFrom :: FilePath -> App
+writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
+
+
+realpath :: App
+realpath = writeFrom "sh/_common/realpath.sh"
+
+
+swap :: T.Text -> T.Text -> T.Text -> T.Text
+swap a b src = T.replace ("${" <> a <> "}") b src
+
+
+swap' :: T.Text -> String -> T.Text -> T.Text
+swap' a b src = swap a (T.pack b) src
+
+
+reachImages :: [T.Text]
+reachImages =
+  [ "reach"
+  , "reach-cli"
+  , "ethereum-devnet"
+  , "algorand-devnet"
+  , "devnet-cfx"
+  , "runner"
+  , "react-runner"
+  , "rpc-server"
+  ]
+
+
+--------------------------------------------------------------------------------
+serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
+serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
+  let ports' = case ports of
+        [] -> "[]"
+        ps -> T.intercalate "\n    " $ map ("- " <>) ps
+
+  let n = show m <> "-" <> (toLower <$> show c)
+
+  fmt <- T.readFile $ e_dirEmbed
+    </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
+
+  pure
+    . swap "REACH_VERSION" version''
+    . swap "PORTS" ports'
+    . swap "NETWORK" appService'
+    . swap "APP_SERVICE" appService'
+    $ fmt
+
+
+connectorEnv :: Env -> ConnectorMode -> IO T.Text
+connectorEnv Env {..} (ConnectorMode c m) = do
+  let c' = toLower <$> show c
+  T.readFile $ e_dirEmbed </> "sh" </> "_common" </> "_docker-compose"
+    </> "service-" <> show m <> "-" <> c' <> "-env.yml"
+
+
+--------------------------------------------------------------------------------
 devnetFor :: Connector -> T.Text
 devnetFor = \case
   Algo -> "algorand-devnet"
@@ -184,18 +329,6 @@ pMode =
  where f a b = const a <$> try (char '-' *> string b)
 
 
-connectorModeNonBrowser :: IO ConnectorMode
-connectorModeNonBrowser = do
-  rcm <- maybe "ETH-devnet" id <$> lookupEnv "REACH_CONNECTOR_MODE"
-  runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
-    >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
-    >>= \case
-      ConnectorMode _ Browser -> die
-        $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
-       <> " is only available via the Reach standard library."
-      cm -> pure cm
-
-
 --------------------------------------------------------------------------------
 data Scaffold = Scaffold
   { containerDockerfile :: FilePath
@@ -215,9 +348,7 @@ mkScaffold Env {..} isolate app = Scaffold
   , hostDockerfile = f $ e_dirProjectHost </> "Dockerfile"
   , hostPackageJson = f $ e_dirProjectHost </> "package.json"
   , hostMakefile = f $ e_dirProjectHost </> "Makefile"
-  }
- where
-  f a = if isolate then a <> "." <> T.unpack app else a
+  } where f a = if isolate then a <> "." <> T.unpack app else a
 
 
 --------------------------------------------------------------------------------
@@ -247,12 +378,12 @@ mkDockerMetaReact = DockerMeta {..} where
   appImageTag = appImage <> ":latest"
 
 
-mkDockerMetaRpc :: Env -> T.Text -> DockerMeta
-mkDockerMetaRpc Env {..} rv = DockerMeta {..} where
+mkDockerMetaRpc :: Env -> DockerMeta
+mkDockerMetaRpc Env {..} = DockerMeta {..} where
   appProj = T.pack $ takeBaseName e_dirProjectHost
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
-  appImageTag = appImage <> ":" <> rv
+  appImageTag = appImage <> ":" <> versionShort e_var
 
 
 mkDockerMetaStandaloneDevnet :: Env -> DockerMeta
@@ -261,146 +392,6 @@ mkDockerMetaStandaloneDevnet Env {..} = DockerMeta {..} where
   appService = "reach-app-" <> appProj
   appImage = ""
   appImageTag = ""
-
-
---------------------------------------------------------------------------------
-reachVersionInProcess :: IO T.Text
-reachVersionInProcess = lookupEnv "REACH_VERSION" >>= \case
-  Nothing -> pure $ T.pack versionStr
-  Just v -> pure $ T.pack v
-
-
-reachVersionShortInProcess :: IO T.Text
-reachVersionShortInProcess = reachVersionInProcess >>= \case
-  "stable" -> pure $ T.pack compatibleVersionStr
-  v -> pure $ a <> "." <> b where
-    f ('v':s) = s
-    f s = s
-    v' = T.splitOn "." . T.pack . f $ T.unpack v
-    a = maybe "0" id $ atMay v' 0
-    b = maybe "0" id $ atMay v' 1
-
-
-reachEx :: IO T.Text
-reachEx = lookupEnv "REACH_EX" >>= \case
-  Just r -> pure $ T.pack r
-  Nothing -> die "Unset `REACH_EX` environment variable"
-
-
-reachDebug :: IO T.Text
-reachDebug = lookupEnv "REACH_DEBUG" >>= \case
-  Just r -> pure $ T.pack r
-  Nothing -> pure ""
-
-
-rpcKey :: IO T.Text
-rpcKey = lookupEnv "REACH_RPC_KEY" >>= \case
-  Nothing -> f d
-  Just r -> do
-    when (r == d) . putStrLn
-      $ "Warning! Using development RPC key: REACH_RPC_KEY=" <> d <> "."
-    f r
- where
-  d = "opensesame"
-  f = pure . T.pack
-
-
-rpcPort :: IO T.Text
-rpcPort = lookupEnv "REACH_RPC_PORT" >>= \case
-  Nothing -> pure "3000"
-  Just r -> pure $ T.pack r
-
-
-rpcTlsPassphrase :: IO T.Text
-rpcTlsPassphrase = lookupEnv "REACH_RPC_TLS_PASSPHRASE" >>= \case
-  Nothing -> pure "rpc-demo"
-  Just r -> pure $ T.pack r
-
-
-rpcTlsPair :: Env -> IO (T.Text, T.Text)
-rpcTlsPair Env {..} = do
-  let warnDev = putStrLn
-        "Warning! The current TLS certificate is only suitable for development purposes."
-
-  let embd r = e_dirEmbed </> "sh" </> "_common" </> "rpc" </> r
-  let dock r = e_dirProjectContainer </> "tls" </> r
-  let host r = e_dirProjectHost </> "tls" </> r
-
-  let q e s = lookupEnv e >>= \case
-        Nothing -> pure $ "reach-server." <> s
-        Just r -> do
-          unlessM (doesFileExist $ dock r) . die
-            $ host r <> " doesn't exist!"
-          pure r
-
-  key <- q "REACH_RPC_TLS_KEY" "key"
-  crt <- q "REACH_RPC_TLS_CRT" "crt"
-
-  let orw = ownerReadMode .|. ownerWriteMode
-
-  (,) <$> doesFileExist (dock key) <*> doesFileExist (dock crt) >>= \case
-    (False, False) -> do
-      createDirectoryIfMissing False $ dock ""
-      readFile (embd "tls-default.key") >>= writeFile (dock key)
-      readFile (embd "tls-default.crt") >>= writeFile (dock crt)
-      setFileMode (dock key) orw
-      setFileMode (dock crt) $ orw .|. groupReadMode .|. otherReadMode
-      warnDev
-
-    _ -> do
-      keyC <- readFile (dock key)
-      defC <- readFile (embd "tls-default.key")
-      when (keyC == defC) warnDev
-
-  pure (T.pack key, T.pack crt)
-
-
-rpcServer'' :: IO T.Text
-rpcServer'' = lookupEnv "REACH_RPC_SERVER" >>= \case
-  Nothing -> pure "127.0.0.1"
-  Just r -> pure $ T.pack r
-
-
-rpcTlsRejectUnverified :: IO T.Text
-rpcTlsRejectUnverified = lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED" >>= \case
-  Nothing -> pure "0"
-  Just r -> pure $ T.pack r
-
-
---------------------------------------------------------------------------------
-reachVersionScript :: App
-reachVersionScript =
-  let v = T.pack versionStr
-  in write [N.text|
-    if [ "x$$REACH_VERSION" = "x" ]; then
-      REACH_VERSION="$v"
-    fi
-  |]
-
-
-_reachVersionShortScript :: App
-_reachVersionShortScript =
-  let compat = T.pack compatibleVersionStr
-  in write [N.text|
-    if [ "$$REACH_VERSION" = "stable" ]; then
-      REACH_VERSION_SHORT="$compat"
-    else
-      REACH_VERSION_SHORT=$(echo "$$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $$1"."$$2}')
-    fi
-  |]
-
-
---------------------------------------------------------------------------------
-realpath :: App
-realpath = writeFrom "sh/_common/realpath.sh"
-
-
-_ensureConnectorMode :: App
-_ensureConnectorMode = writeFrom "sh/_common/ensureConnectorMode.sh"
-
-
-_declareFatalInfiniteReachRunLoop :: App
-_declareFatalInfiniteReachRunLoop = writeFrom "sh/_common/declareFatalInfiniteReachRunLoop.sh"
 
 
 --------------------------------------------------------------------------------
@@ -415,11 +406,12 @@ data Compose
 withCompose :: Compose -> DockerMeta -> ConnectorMode -> App -> App
 withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   env@Env {..} <- ask
-  debug <- liftIO reachDebug
+  let Var {..} = e_var
 
   let reachConnectorMode = "ETH-test-dockerized-geth" -- TODO
   let reachIsolatedNetwork = "1" -- TODO
   let dirProjectHost = T.pack e_dirProjectHost
+  let debug' = if debug then "1" else ""
 
   connEnv <- case t of
     Console -> liftIO $ connectorEnv env cm
@@ -437,14 +429,12 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
         - REACH_DEBUG
         - REACH_CONNECTOR_MODE
         - REACH_ISOLATED_NETWORK
-        - REACT_APP_REACH_DEBUG=$debug
+        - REACT_APP_REACH_DEBUG=$debug'
         - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
         - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
     |]
 
     Rpc -> do
-      p <- liftIO rpcPort
-
       let devnetAlgo = [N.text|
             - ALGO_SERVER=http://algorand-devnet
             - ALGO_PORT=4180
@@ -468,7 +458,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
           - $dirProjectHost/build:/app/build
           - $dirProjectHost/tls:/app/tls
         ports:
-          - "$p:$p"
+          - "$rpcPort:$rpcPort"
         stdin_open: true
         tty: true
         depends_on:
@@ -490,7 +480,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
     (_, StandaloneDevnet) -> liftIO $ serviceConnector env cm connPorts appService "latest"
 
     -- TODO fix remaining combos (e.g. `rpc-server` latest vs. REACH_VERSION)
-    (_, _) -> liftIO $ reachVersionInProcess >>= serviceConnector env cm connPorts appService
+    (_, _) -> liftIO $ serviceConnector env cm connPorts appService version''
 
   let appService' = case t of
         StandaloneDevnet -> ""
@@ -543,12 +533,9 @@ scaffold' isolate quiet app = do
   env@Env {..} <- ask
 
   liftIO $ do
-    rv <- liftIO reachVersionInProcess
     let Scaffold {..} = mkScaffold env isolate app
     let DockerMeta {..} = mkDockerMetaConsole env app isolate
-
-    let scaffIfAbsent n f =
-          whenM (not <$> doesFileExist n) $ scaff quiet n f
+    let scaffIfAbsent n f = whenM (not <$> doesFileExist n) $ scaff quiet n f
 
     let cpline = case isolate of
           False -> ""
@@ -567,7 +554,7 @@ scaffold' isolate quiet app = do
           . swap "SERVICE" appService
           . swap "IMAGE" appImage
           . swap "IMAGE_TAG" appImageTag
-          . swap "REACH_VERSION" rv
+          . swap "REACH_VERSION" (version'' e_var)
          <$> (T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> n)
 
     -- TODO: s/lint/preapp. It's disabled because sometimes our
@@ -627,77 +614,79 @@ compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
 
-  go CompilerToolArgs {..} = script $ do
-    reach <- liftIO reachEx
-    rv <- liftIO reachVersionInProcess
-    realpath
+  go CompilerToolArgs {..} = do
+    Var {..} <- asks e_var
+    script $ do
+      realpath
 
-    write [N.text|
-      export REACH="$$(realpath "$reach")"
-      HS="$$(dirname "$$REACH")/hs"
-      ID=$$($whoami')
+      write [N.text|
+        REACH="$$(realpath "$reachEx")"
+        HS="$$(dirname "$$REACH")/hs"
+        ID=$$($whoami')
 
-      if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-        # TODO test
-        ~/.local/bin/reachc --disable-reporting "$@@"
+        export REACH
 
-      elif [ -z "$${REACH_DOCKER}" ] \
-        && [ -d "$${HS}/.stack-work" ] \
-        && (which stack > /dev/null 2>&1); then
+        if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
+          # TODO test
+          ~/.local/bin/reachc --disable-reporting "$@@"
 
-        export STACK_YAML="$${HS}/stack.yaml"
-        export REACHC_ID=$${ID}
-        export REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+        elif [ -z "$${REACH_DOCKER}" ] \
+          && [ -d "$${HS}/.stack-work" ] \
+          && (which stack > /dev/null 2>&1); then
 
-        (cd "$$HS" && make stack)
+          export STACK_YAML="$${HS}/stack.yaml"
+          export REACHC_ID=$${ID}
+          export REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
 
-        if [ "x$${REACHC_RELEASE}" = "xY" ]; then
-          $reachc_release
-        elif [ "x$${REACHC_PROFILE}" = "xY" ]; then
-          $reachc_prof
+          (cd "$$HS" && make stack)
+
+          if [ "x$${REACHC_RELEASE}" = "xY" ]; then
+            $reachc_release
+          elif [ "x$${REACHC_PROFILE}" = "xY" ]; then
+            $reachc_prof
+          else
+            $reachc_dev
+          fi
+
         else
-          $reachc_dev
+          docker run \
+            --rm \
+            --volume "$$PWD:/app" \
+            -u "$(id -ru):$(id -rg)" \
+            -e "REACHC_ID=$${ID}" \
+            reachsh/reach:$version'' \
+            $args
         fi
+      |]
 
-      else
-        docker run \
-          --rm \
-          --volume "$$PWD:/app" \
-          -u "$(id -ru):$(id -rg)" \
-          -e "REACHC_ID=$${ID}" \
-          reachsh/reach:$rv \
-          $args
-      fi
-    |]
+     where
+      if' b t = if b then T.pack t else ""
 
-   where
-    if' b t = if b then T.pack t else ""
+      opt x a = case x of
+        Nothing -> ""
+        Just t -> T.pack $ a <> "=" <> t
 
-    opt x a = case x of
-      Nothing -> ""
-      Just t -> T.pack $ a <> "=" <> t
+      args = T.intercalate " " $
+        [ if' cta_disableReporting "--disable-reporting"
+        , if' cta_errorFormatJson "--error-format-json"
+        , if' cta_intermediateFiles "--intermediate-files"
+        , if' cta_installPkgs "--install-pkgs"
+        , opt cta_dirDotReach "--dir-dot-reach"
+        , opt cta_outputDir "--output"
+        , T.pack cta_source -- TODO fix directory mismatches between host/container
+        ] <> (T.pack <$> cta_tops)
 
-    args = T.intercalate " " $
-      [ if' cta_disableReporting "--disable-reporting"
-      , if' cta_errorFormatJson "--error-format-json"
-      , if' cta_intermediateFiles "--intermediate-files"
-      , if' cta_installPkgs "--install-pkgs"
-      , opt cta_dirDotReach "--dir-dot-reach"
-      , opt cta_outputDir "--output"
-      , T.pack cta_source -- TODO fix directory mismatches between host/container
-      ] <> (T.pack <$> cta_tops)
+      drp' = if' (not cta_disableReporting) "--disable-reporting"
+      ifs' = if' (not cta_intermediateFiles) "--intermediate-files"
 
-    drp' = if' (not cta_disableReporting) "--disable-reporting"
-    ifs' = if' (not cta_intermediateFiles) "--intermediate-files"
+      reachc_release = [N.text| stack build && stack exec -- reachc $args |]
 
-    reachc_release = [N.text| stack build && stack exec -- reachc $args |]
+      reachc_dev = [N.text| stack build --fast && stack exec -- reachc $drp' $ifs' $args |]
 
-    reachc_dev = [N.text| stack build --fast && stack exec -- reachc $drp' $ifs' $args |]
-
-    reachc_prof = [N.text|
-      stack build --profile --fast \
-        && stack exec --profile -- reachc $drp' $ifs' $args +RTS -p
-    |]
+      reachc_prof = [N.text|
+        stack build --profile --fast \
+          && stack exec --profile -- reachc $drp' $ifs' $args +RTS -p
+      |]
 
 
 
@@ -725,19 +714,16 @@ init' = command "init" . info f $ d <> foot where
 
       fmtInitRsh <- T.readFile $ tmpl' </> "index.rsh"
       fmtInitMjs <- T.readFile $ tmpl' </> "index.mjs"
-      rvs <- reachVersionShortInProcess
 
       let rsh = e_dirProjectContainer </> T.unpack app <> ".rsh"
       let mjs = e_dirProjectContainer </> T.unpack app <> ".mjs"
-
-      let abortIf x = whenM (doesFileExist x) . die
-            $ x <> " already exists."
+      let abortIf x = whenM (doesFileExist x) . die $ x <> " already exists."
 
       abortIf rsh
       abortIf mjs
 
       T.putStrLn $ "Writing " <> app <> ".rsh..."
-      T.writeFile rsh $ swap "REACH_VERSION_SHORT" rvs fmtInitRsh
+      T.writeFile rsh $ swap "REACH_VERSION_SHORT" (versionShort e_var) fmtInitRsh
 
       T.putStrLn $ "Writing " <> app <> ".mjs..."
       T.writeFile mjs $ swap "APP" app fmtInitMjs
@@ -754,9 +740,10 @@ run' = command "run" $ info f d where
     <*> strArgument (metavar "APP" <> value "")
 
   go isolate app = do
+    dieConnectorModeNonBrowser
+
     env@Env {..} <- ask
-    mode <- liftIO connectorModeNonBrowser
-    reach <- liftIO reachEx
+    let Var {..} = e_var
 
     (app', dir) <- liftIO $ case app of
       "" -> pure ("index", e_dirProjectContainer)
@@ -774,7 +761,7 @@ run' = command "run" $ info f d where
 
     let isolate' = if isolate then "--isolate" else ""
     let cleanup = case noneExist of
-          True -> [N.text| $reach unscaffold $isolate' --quiet $app' |]
+          True -> [N.text| $reachEx unscaffold $isolate' --quiet $app' |]
           False -> ":"
 
     let rsh = T.unpack app' <> ".rsh"
@@ -787,7 +774,7 @@ run' = command "run" $ info f d where
     abortIfAbsent rsh
     abortIfAbsent mjs
 
-    let recompile' = reach <> " compile " <> T.pack rsh <> "\n"
+    let recompile' = reachEx <> " compile " <> T.pack rsh <> "\n"
 
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
@@ -798,10 +785,10 @@ run' = command "run" $ info f d where
 
     let dm@DockerMeta {..} = mkDockerMetaConsole env app' isolate
     let dockerfile' = T.pack hostDockerfile
-    let mode' = T.pack $ show mode
+    let mode' = T.pack $ show connectorMode
 
     -- TODO args to `docker-compose run`
-    withCompose Console dm mode . script $ do
+    withCompose Console dm connectorMode . script $ do
       maybe (pure ()) write recompile
       write [N.text|
         export REACH_CONNECTOR_MODE=$mode'
@@ -840,9 +827,9 @@ react = command "react" $ info f d where
   -- product and instead thread raw command line back through during `compile`
   -- sub-shell
   go _ = do
+    Var {..} <- asks e_var
     let dm@DockerMeta {..} = mkDockerMetaReact
     let cm = ConnectorMode Eth Browser -- TODO
-    reach <- liftIO reachEx
 
     -- TODO generalize this pattern for other subcommands?
     cargs <- liftIO $ do
@@ -852,7 +839,7 @@ react = command "react" $ info f d where
       T.intercalate " " . filter x . fmap T.pack <$> getArgs
 
     withCompose React dm cm . script $ write [N.text|
-      $reach compile $cargs
+      $reachEx compile $cargs
       docker-compose -f "$$TMP/docker-compose.yml" \
         run --service-ports --rm $appService
     |]
@@ -863,11 +850,11 @@ switchUseExistingDevnet :: Parser Bool
 switchUseExistingDevnet = switch $ long "use-existing-devnet"
 
 
-rpcServer' :: T.Text -> IO T.Text
+rpcServer' :: T.Text -> AppT T.Text
 rpcServer' appService = do
-  reach <- reachEx
+  Var {..} <- asks e_var
   pure [N.text|
-    $reach compile
+    $reachEx compile
     docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $appService
   |]
 
@@ -878,28 +865,15 @@ rpcServer = command "rpc-server" $ info f d where
   f = go <$> switchUseExistingDevnet
 
   go _ued = do
-    env <- ask
+    env@Env {..} <- ask
+    let Var {..} = e_var
+    let dm@DockerMeta {..} = mkDockerMetaRpc env
 
-    cm <- liftIO connectorModeNonBrowser
-    rv <- liftIO reachVersionShortInProcess
+    dieConnectorModeNonBrowser
+    warnDefRpcKey
+    warnScaffoldDefRpcTlsPair
 
-    key <- liftIO rpcKey
-    (tlsKey, tlsCrt) <- liftIO $ rpcTlsPair env
-    tlsPassphrase <- liftIO rpcTlsPassphrase
-
-    let dm@DockerMeta {..} = mkDockerMetaRpc env rv
-    run <- liftIO $ rpcServer' appService
-
-    withCompose Rpc dm cm . script $ write [N.text|
-      REACH_RPC_TLS_KEY=$tlsKey
-      REACH_RPC_TLS_CRT=$tlsCrt
-      REACH_RPC_TLS_PASSPHRASE=$tlsPassphrase
-      REACH_RPC_KEY=$key
-
-      export REACH_RPC_TLS_KEY REACH_RPC_TLS_CRT REACH_RPC_TLS_PASSPHRASE REACH_RPC_KEY
-
-      $run
-    |]
+    rpcServer' appService >>= withCompose Rpc dm connectorMode . script . write
 
 
 --------------------------------------------------------------------------------
@@ -914,43 +888,25 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
          <*> many (strArgument (metavar "ARG"))
 
   go exe args = do
-    env <- ask
-
-    cm <- liftIO connectorModeNonBrowser
-    rv <- liftIO reachVersionShortInProcess
-
-    key <- liftIO rpcKey
-    port <- liftIO rpcPort
-    server <- liftIO rpcServer''
-    (tlsKey, tlsCrt) <- liftIO $ rpcTlsPair env
-    passphrase <- liftIO rpcTlsPassphrase
-    reject <- liftIO rpcTlsRejectUnverified
+    env@Env {..} <- ask
+    let Var {..} = e_var
 
     let args' = T.intercalate " " args
 
-    let dm@DockerMeta {..} = mkDockerMetaRpc env rv
-    runServer <- liftIO $ rpcServer' appService
+    let dm@DockerMeta {..} = mkDockerMetaRpc env
+    runServer <- rpcServer' appService
 
-    withCompose Rpc dm cm . script $ write [N.text|
+    dieConnectorModeNonBrowser
+    warnDefRpcKey
+    warnScaffoldDefRpcTlsPair
+
+    withCompose Rpc dm connectorMode . script $ write [N.text|
       if ! (which curl >/dev/null 2>&1); then
         echo "\`reach rpc-run\` relies on an installation of \`curl\` - please install it."
         exit 1
       fi
 
-      REACH_RPC_KEY=$key
-      REACH_RPC_PORT=$port
-      REACH_RPC_SERVER=$server
-      REACH_RPC_TLS_CRT=$tlsCrt
-      REACH_RPC_TLS_KEY=$tlsKey
-      REACH_RPC_TLS_PASSPHRASE=$passphrase
-      REACH_RPC_TLS_REJECT_UNVERIFIED=$reject
-
-      export REACH_RPC_KEY
-      export REACH_RPC_PORT
-      export REACH_RPC_SERVER
-      export REACH_RPC_TLS_CRT
-      export REACH_RPC_TLS_KEY
-      export REACH_RPC_TLS_PASSPHRASE
+      [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
       export REACH_RPC_TLS_REJECT_UNVERIFIED
 
       $runServer &
@@ -967,9 +923,9 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
           -sk \
           -o /dev/null \
           -w '%{http_code}' \
-          -H "X-API-Key: $key" \
+          -H "X-API-Key: $rpcKey" \
           -X POST \
-          "https://$server:$port/health" || :)
+          "https://$rpcServer'':$rpcPort/health" || :)
 
         [ "$$s" -eq 200 ] && break
       done
@@ -994,15 +950,17 @@ devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = pure $ do
-    dm <- mkDockerMetaStandaloneDevnet <$> ask
-    cm@(ConnectorMode c m) <- liftIO connectorModeNonBrowser
+    env@Env {..} <- ask
+    let Var {..} = e_var
+    let cm@(ConnectorMode c m) = connectorMode
+    let s = devnetFor c
+
+    dieConnectorModeNonBrowser
 
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
 
-    let s = devnetFor c
-
-    withCompose StandaloneDevnet dm cm . script $ write [N.text|
+    withCompose StandaloneDevnet (mkDockerMetaStandaloneDevnet env) cm . script $ write [N.text|
       docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $s
     |]
 
@@ -1055,10 +1013,10 @@ help' = command "help" $ info f d where
 hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
-  f = pure . script $ do
-    reachVersionScript
-    forM_ reachImages $ \i -> write [N.text|
-      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$$REACH_VERSION" -c 'echo $$REACH_GIT_HASH')"
+  f = pure $ do
+    Var {..} <- asks e_var
+    script . forM_ reachImages $ \i -> write [N.text|
+      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$version''" -c 'echo $$REACH_GIT_HASH')"
     |]
 
 
@@ -1108,6 +1066,7 @@ header' = "https://reach.sh"
 main :: IO ()
 main = do
   eff <- newIORef InProcess
+  var <- mkVar
 
   let env = Env
         <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
@@ -1116,6 +1075,7 @@ main = do
         <*> strOption (long "dir-tmp" <> value "/app/tmp" <> internal)
         <*> switch (long "emit-raw" <> internal)
         <*> pure eff
+        <*> pure var
 
   let cli = Cli
         <$> env
