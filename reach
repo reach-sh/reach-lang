@@ -101,7 +101,7 @@ HERE="$(dirname "$REACH")"
 
 # XXX Get from VERSION in Haskell version
 REACH_DEFAULT_VERSION=0.1
-# REACH_FULL_VERSION=0.1.2
+# REACH_FULL_VERSION=0.1.3
 
 # XXX RV_TAG* is no longer used b/c
 #   the reach version is no longer embedded into package.json
