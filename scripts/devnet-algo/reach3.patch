@@ -1,0 +1,48 @@
+diff --git a/data/transactions/transaction.go b/data/transactions/transaction.go
+index c0e3e863..def320ab 100644
+--- a/data/transactions/transaction.go
++++ b/data/transactions/transaction.go
+@@ -344,6 +344,7 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
+ 			}
+ 		}
+ 
++                effectiveEPP := tx.ExtraProgramPages
+ 		// Schemas and ExtraProgramPages may only be set during application creation
+ 		if tx.ApplicationID != 0 {
+ 			if tx.LocalStateSchema != (basics.StateSchema{}) ||
+@@ -353,6 +354,9 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
+ 			if tx.ExtraProgramPages != 0 {
+ 				return fmt.Errorf("tx.ExtraProgramPages is immutable")
+ 			}
++                        // Because we are not inspecting the ledger, assume
++                        // that epp is set to max
++                        effectiveEPP = uint32(proto.MaxExtraAppProgramPages)
+ 		}
+ 
+ 		// Limit total number of arguments
+@@ -396,7 +400,7 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
+ 
+ 		lap := len(tx.ApprovalProgram)
+ 		lcs := len(tx.ClearStateProgram)
+-		pages := int(1 + tx.ExtraProgramPages)
++		pages := int(1 + effectiveEPP)
+ 		if lap > pages*proto.MaxAppProgramLen {
+ 			return fmt.Errorf("approval program too long. max len %d bytes", pages*proto.MaxAppProgramLen)
+ 		}
+diff --git a/ledger/apply/application.go b/ledger/apply/application.go
+index dc9da312..60cd57d7 100644
+--- a/ledger/apply/application.go
++++ b/ledger/apply/application.go
+@@ -199,6 +199,12 @@ func updateApplication(ac *transactions.ApplicationCallTxnFields, balances Balan
+ 	// Fill in the new programs
+ 	record.AppParams = cloneAppParams(record.AppParams)
+ 	params := record.AppParams[appIdx]
++        proto := balances.ConsensusParams()
++        allowed := int(1 + params.ExtraProgramPages)*proto.MaxAppProgramLen
++        actual := len(ac.ApprovalProgram) + len(ac.ClearStateProgram)
++        if actual > allowed {
++          return fmt.Errorf("updateApplication app programs too long, %d. max total len %d bytes", actual, allowed)
++        }
+ 	params.ApprovalProgram = ac.ApprovalProgram
+ 	params.ClearStateProgram = ac.ClearStateProgram
+ 

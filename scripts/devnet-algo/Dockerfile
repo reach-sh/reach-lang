@@ -33,6 +33,9 @@ RUN make install
 COPY reach2.patch .
 RUN patch -p1 < reach2.patch
 RUN make install
+COPY reach3.patch .
+RUN patch -p1 < reach3.patch
+RUN make install
 
 ### INDEXER
 WORKDIR ${SRC_PARENT}
@@ -63,6 +66,8 @@ ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
 COPY algorand_network/ ${ALGORAND_NETWORK}/
 COPY algorand_data/* ${ALGORAND_DATA}/
+
+RUN chmod -R 700 ${ALGORAND_DATA}/kmd*
 
 # pre-run some stuff so that it starts up faster
 COPY prime-algod.sh /
