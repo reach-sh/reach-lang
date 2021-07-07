@@ -11,7 +11,7 @@ the Reach compiler.
 @;{
   What is a "good" error description?
   * Intuitive explanation
-  * Example errorneous program
+  * Example erroneous program
   * How to fix to fix that program (use active language.)
   * Any other advice
 }
@@ -21,13 +21,27 @@ the Reach compiler.
 This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
 @tech{connector}.
 
-For example, the code below uses a value to large for the @reachin{ALGO} connector:
+For example, the code below uses a value too large for the @reachin{ALGO} connector:
 
 @reach{
   const y = 18446744073709551616;
 }
 
-You can fix this by using a smaller number or using a different @tech{connector}.
+You can fix this error by having your frontend provide the value and accessing it
+via the @tech{participant interact interface}:
+
+@reach{
+  const A = Participant('A', {
+    // extend participant interact interface
+    y: UInt,
+  });
+  A.only(() => {
+    const y = declassify(interact.y);
+  });
+}
+
+Alternatively, you can fix this by not compiling to the given @tech{connector}, in which
+case, your application will no longer be blockchain agnostic.
 
 @error{RE0000}
 
@@ -143,7 +157,7 @@ per loop:
 }
 
 Reach requires the @reachin{invariant} to reason about the @reachin{while} loop during verification. You
-can fix this by addiing a @reachin{var} and @reachin{invariant} declaration before the loop:
+can fix this by adding a @reachin{var} and @reachin{invariant} declaration before the loop:
 
 @reach{
   var rounds = 0;
@@ -177,7 +191,7 @@ For example, the following code erroneously attempts to @reachin{closeTo(Bob)} i
 }
 
 However, the second argument of the @reachin{timeout} branch must be a thunk. You can fix this by
-wrappping @reachin{closeTo(Bob)} in an @tech{arrow expression}:
+wrapping @reachin{closeTo(Bob)} in an @tech{arrow expression}:
 
 @reach{
   Alice
@@ -422,7 +436,7 @@ on the left:
 
 @error{RE0019}
 
-This error indicates that an object spead is occuring before the last position in a
+This error indicates that an object spread is occurring before the last position in a
 destructuring assignment. It must come last due to the fact it binds the remaining
 elements to the given variable.
 
@@ -441,7 +455,7 @@ You can fix this by moving @reachin{...x} to the last position:
 
 @error{RE0020}
 
-This error indicates that an array spead is occuring before the last position in a
+This error indicates that an array spread is occurring before the last position in a
 destructuring assignment. It must come last due to the fact it binds the remaining
 elements to the given variable.
 
@@ -639,7 +653,7 @@ You can fix this by deleting one of the statements (depending on the logic of yo
 
 This error indicates that you are attempting to use a specific statement or expression in the wrong
 mode. Consult the documentation for the specific keyword to learn more about what mode is
-expected. Additionally, see the figure on @Secref["ref-programs"] for a diagram regarding the modes
+expected. Additionally, see the figure on @secref["ref-programs"] for a diagram regarding the modes
 of a Reach application.
 
 @error{RE0032}
@@ -959,7 +973,7 @@ an object. This issue is most likely caused by a typo in your program.
 
 @error{RE0054}
 
-This error indicates that the argument provided to @reachin{Array.itoa} is
+This error indicates that the argument provided to @reachin{Array.iota} is
 not static. @reachin{Array.iota} requires its argument to be computable at
 compile time.
 
@@ -1632,7 +1646,8 @@ wrapping the statement in an @tech{arrow expression}:
 This error indicates that there are unused variables in your program. This error will
 only occur with @reachin{'use strict'}.
 
-You can fix this error by either deleting the unused variables or removing @tech{strict mode}, @reachin{'use strict'}.
+You can fix this error by either replacing the unused variable names with @reachin{_} or
+subsequently using @reachin{void(x)}.
 
 @error{RE0095}
 
@@ -1776,7 +1791,7 @@ You can fix this code by abstracting the @reachin{Type}s of values thrown into a
 This error occurs when you attempt to use a @reachin{throw} statement outside of a @reachin{try}
 block.
 
-You can fix this error by moving your @reachin{throw} statement inside the appropiate block of code
+You can fix this error by moving your @reachin{throw} statement inside the appropriate block of code
 or wrapping the necessary code into a @reachin{try/catch} block.
 
 @error{RE0102}
@@ -1901,7 +1916,7 @@ You can fix this error by renaming the duplicate names.
 @error{RE0110}
 
 This error indicates that a @reachin{Struct} contains an invalid field name.
-A field name may be invalid if it is a reserved word in the @tech{connector} you are targetting.
+A field name may be invalid if it is a reserved word in the @tech{connector} you are targeting.
 
 For example, the code below erroneously uses the field name @reachin{"super"}, which is
 reserved in Solidity:
@@ -2079,3 +2094,57 @@ This error indicates that you are attempting to @reachin{import} a file using an
 path which is not supported.
 
 You can fix this by using a relative path for your @reachin{import}.
+
+@error{RP0008}
+
+This error indicates that you are trying to @reachin{import} a path
+that is accessing its parent directory via @reachin{..}. This type of
+import is not allowed. Please view the documentation for @tech{package imports}.
+
+For example, the code below erroneously @reachin{import}s a file from its parent
+directory:
+
+@reach{
+  "reach 0.1";
+  import "../a.rsh";
+}
+
+You can fix this error by moving your file, @reachin{"../a.rsh"}, to the same
+directory your program is in. Then, reference it using a relative import:
+
+@reach{
+  "reach 0.1";
+  import "./a.rsh";
+}
+
+@error{RP0009}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that the Reach file could not be parsed as a module.
+
+@error{RP0010}
+
+This error indicates that a call-like expression was expected, but another
+value was provided.
+
+For example, the code below erroneously passes @reachin{_x}, a @tech{secret} value of
+@reachin{Bob}, to @reachin{unknowable}:
+
+@reach{
+  unknowable(A, _x);
+}
+
+You can fix this by providing a call-like expression to the function:
+
+@reach{
+  unknowable(A, B(_x));
+}
+
+@error{RP0011}
+
+@error-version[#:to "v0.1"]
+
+This error indicates that Reach expected to parse an identifier, but none was given.
+
+You can fix this error by adding an identifier name to the erroneous location.
