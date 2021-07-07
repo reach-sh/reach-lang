@@ -461,7 +461,7 @@ base64u x0 = x3
   where
     x1 = f $ LT.stripPrefix "base64(" x0
     x2 = f $ LT.stripSuffix ")" x1
-    x3 = decodeBase64' $ B.pack $ LT.unpack x2
+    x3 = decodeBase64' $ bpack $ LT.unpack x2
     f = fromMaybe (impossible "isBase64")
 
 isBase64 :: LT.Text -> Bool
