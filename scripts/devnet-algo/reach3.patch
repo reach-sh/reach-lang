@@ -1,5 +1,5 @@
 diff --git a/data/transactions/transaction.go b/data/transactions/transaction.go
-index c0e3e863..def320ab 100644
+index c0e3e863..df3010e5 100644
 --- a/data/transactions/transaction.go
 +++ b/data/transactions/transaction.go
 @@ -344,6 +344,7 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
@@ -20,15 +20,26 @@ index c0e3e863..def320ab 100644
  		}
  
  		// Limit total number of arguments
-@@ -396,7 +400,7 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
+@@ -396,15 +400,15 @@ func (tx Transaction) WellFormed(spec SpecialAddresses, proto config.ConsensusPa
  
  		lap := len(tx.ApprovalProgram)
  		lcs := len(tx.ClearStateProgram)
 -		pages := int(1 + tx.ExtraProgramPages)
 +		pages := int(1 + effectiveEPP)
  		if lap > pages*proto.MaxAppProgramLen {
- 			return fmt.Errorf("approval program too long. max len %d bytes", pages*proto.MaxAppProgramLen)
+-			return fmt.Errorf("approval program too long. max len %d bytes", pages*proto.MaxAppProgramLen)
++			return fmt.Errorf("approval program too long, %d. max len %d bytes", lap, pages*proto.MaxAppProgramLen)
  		}
+ 		if lcs > pages*proto.MaxAppProgramLen {
+-			return fmt.Errorf("clear state program too long. max len %d bytes", pages*proto.MaxAppProgramLen)
++			return fmt.Errorf("clear state program too long, %d. max len %d bytes", lcs, pages*proto.MaxAppProgramLen)
+ 		}
+ 		if lap+lcs > pages*proto.MaxAppTotalProgramLen {
+-			return fmt.Errorf("app programs too long. max total len %d bytes", pages*proto.MaxAppTotalProgramLen)
++			return fmt.Errorf("app programs too long, %d. max total len %d bytes", lap+lcs, pages*proto.MaxAppTotalProgramLen)
+ 		}
+ 
+ 		if tx.LocalStateSchema.NumEntries() > proto.MaxLocalSchemaEntries {
 diff --git a/ledger/apply/application.go b/ledger/apply/application.go
 index dc9da312..60cd57d7 100644
 --- a/ledger/apply/application.go
