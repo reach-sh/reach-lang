@@ -584,13 +584,11 @@ csum = csum_ . map ca
 
 cconcatbs :: [(DLType, App ())] -> App ()
 cconcatbs l = do
+  let totlen = typeSizeOf $ T_Tuple $ map fst l
   check_concat_len totlen
-  mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
-  where
-    go may_concat (t, m) = m >> ctobs t >> may_concat
-    no_concat = nop
-    yes_concat = op "concat"
-    totlen = typeSizeOf $ T_Tuple $ map fst l
+  padding 0
+  forM_ l $ \(t, m) ->
+    m >> ctobs t >> op "concat"
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =

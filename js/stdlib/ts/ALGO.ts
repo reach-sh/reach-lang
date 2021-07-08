@@ -662,6 +662,18 @@ export const [getIndexer, setIndexer] = replaceableThunk(async () => {
   return await waitIndexerFromEnv(envDefaultsALGO(process.env));
 });
 
+// This function should be provided by the indexer, but it isn't so we simulate
+// something decent. This function is allowed to "fail" by not really waiting
+// until the round
+const indexer_statusAfterBlock = async (round: number): Promise<void> => {
+  const client = await getAlgodClient();
+  await client.statusAfterBlock(round);
+  // XXX Don't move on to next step if not actually this round
+  // const indexer = await getIndexer();
+  // XXX Wait until the indexer has seen it, but using health check
+  await Timeout.set(500);
+};
+
 interface ALGO_Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
@@ -1252,7 +1264,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       // Ignoring this, because no ALGO dev node
       void(waitIfNotPresent);
       const indexer = await getIndexer();
-      const client = await getAlgodClient();
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
@@ -1285,7 +1296,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
             return { didTimeout: true };
           }
-          await client.statusAfterBlock(currentRound + 1);
+          await indexer_statusAfterBlock(currentRound + 1);
           continue;
         }
         const txn = res.txn;
@@ -1750,7 +1761,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
     if ( ! cres.succ ) {
       if ( cres.round < creationRound ) {
         debug(dhead, `-- waiting for`, {creationRound});
-        await client.statusAfterBlock(creationRound);
+        await indexer_statusAfterBlock(creationRound);
         continue;
       } else {
         chk(false, `Not created in stated round: ${creationRound}`);
