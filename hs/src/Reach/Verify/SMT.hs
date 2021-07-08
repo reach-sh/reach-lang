@@ -397,81 +397,103 @@ parseType ty = do
       return $ T_Array (T_Tuple rs') (fromIntegral $ length rs)
     _ ->  impossible $ "parseType: " <> show ty
 
-parseVal :: DLType -> SExpr -> App SMTVal
-parseVal t v =
-  case t of
-    T_Bool -> do
-      return $ SMV_Bool (v == Atom "true")
-    T_Null -> return $ SMV_Null
-    T_Digest -> do
-      case v of
-        Atom i -> return $ SMV_Digest i
-        _ -> impossible $ "parseVal: Digest: " <> show v
-    T_Token -> do
-      case v of
-        Atom i -> return $ SMV_Token i
-        _ -> impossible $ "parseVal: Digest: " <> show v
-    T_UInt ->
-      case v of
-        Atom i -> do
-          let val = fromMaybe (impossible "parseVal UInt") (readMaybe i :: Maybe Int)
-          return $ SMV_Int val
-        _ -> impossible $ "parseVal: UInt: " <> show v
-    T_Address -> do
-      case v of
-        Atom i -> do
-          let val = fromMaybe (impossible "parseVal Address") (readMaybe $ dropWhile (not . isDigit) i :: Maybe Int)
-          return $ SMV_Address $ val
-        _ -> impossible $ "parseVal: Address: " <> show v
-    T_Bytes _ -> do
-      case v of
-        Atom i -> return $ SMV_Bytes $ bpack i
-        _ -> impossible $ "parseVal: Bytes: " <> show v
-    T_Array (T_Tuple [T_Token, T_UInt]) _ -> return SMV_Map
-    T_Array (T_Tuple [T_Address, _]) _ -> return SMV_Map
-    T_Array (T_Tuple [T_UInt, ty]) _ ->
-      case v of
-        List (_:elems) -> do
-          let parseVals = \case
-                List (Atom "store":this) -> parseVals (List this)
-                List [rst, _, x] -> do
-                  el <- parseVal ty x
-                  rs <- parseVals rst
-                  return $ el : rs
-                _ -> return []
-          elems' <- parseVals (List elems)
-          return $ SMV_Array ty $ reverse elems'
-        _ -> impossible $ "parseVal: Array(" <> show v <> ")"
-    T_Array ty sz ->
-      case v of
-        List [ List (Atom "as":Atom "const":_), e ] ->
-          SMV_Array ty . replicate (fromIntegral sz) <$> parseVal ty e
-        List (_:vs) ->
-          SMV_Array ty <$> mapM (parseVal ty) vs
-        _ -> impossible $ "parseVal: Array(" <> show v <> ")"
-    T_Tuple ts ->
-      case v of
-        List (_:vs) ->
-          SMV_Tuple <$> zipWithM parseVal ts vs
-        _ -> impossible $ "parseVal: Tuple " <> show v
-    T_Object ts ->
-      case v of
-        List (_:vs) -> do
-          fields <- mapM (\ ((s, vt), mv) -> parseVal vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
-          return $ SMV_Object $ M.fromList fields
-        _ -> impossible $ "parseVal: Object " <> show v
-    T_Data ts ->
-      case v of
-        List [Atom con, vv] -> do
-          let c = case dropWhile (/= '_') con of
-                    _:c' -> c'
-                    _ -> impossible "parseType: Data: Constructor name"
-          v' <- case M.lookup c ts of
-                  Just vt -> parseVal vt vv
-                  Nothing -> impossible $ "parseType: Data: Constructor type"
-          return $ SMV_Data c [v']
-        _ -> impossible $ "parseVal: Data " <> show v
-    _ -> impossible $ "parseVal: " <> show v <> " : " <> show t
+parseVal :: M.Map SExpr SExpr -> DLType -> SExpr -> App SMTVal
+parseVal env t v = do
+  case v of
+    -- Parse let bindings and add them to the subst env
+    List [Atom "let", List envs, e] -> do
+          let env' = M.fromList $ map (\case
+                List [k, v'] -> (k, v')
+                _ -> impossible "parseVal: encountered non-pair let binding") envs
+          parseVal (M.union env' env) t e
+    -- Sub var if encountered
+    Atom ident
+      | M.member (Atom ident) env -> do
+        let mv = M.lookup v env
+        maybe (impossible "parseVal: lookup") (parseVal env t) mv
+    _ ->
+      case t of
+        T_Bool -> do
+          case v of
+            Atom "true"  -> return $ SMV_Bool True
+            Atom "false" -> return $ SMV_Bool False
+            _ -> impossible $ "parseVal: Bool: " <> show v
+        T_UInt -> do
+          let err = impossible $ "parseVal: UInt: " <> show v
+          case v of
+            Atom i -> return $ SMV_Int $ fromMaybe err (readMaybe i :: Maybe Int)
+            _ -> err
+        T_Null -> return SMV_Null
+        T_Digest -> do
+          case v of
+            Atom i -> return $ SMV_Digest i
+            _ -> impossible $ "parseVal: Digest: " <> show v
+        T_Token -> do
+          case v of
+            Atom i -> return $ SMV_Token i
+            _ -> impossible $ "parseVal: Digest: " <> show v
+        T_Address -> do
+          let err = impossible $ "parseVal: Address: " <> show v
+          case v of
+            Atom i -> return $ SMV_Address $
+              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Int)
+            _ -> err
+        T_Bytes _ -> do
+          case v of
+            Atom i -> return $ SMV_Bytes $ bpack i
+            _ -> impossible $ "parseVal: Bytes: " <> show v
+        T_Array (T_Tuple [T_Token, T_UInt]) _ -> return SMV_Map
+        T_Array (T_Tuple [T_Address, _]) _ -> return SMV_Map
+        T_Array (T_Tuple [T_UInt, ty]) _ ->
+          case v of
+            List elems -> do
+              elems' <- parseArray env ty (List elems)
+              return $ SMV_Array ty $ reverse elems'
+            _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+        T_Array ty sz ->
+          case v of
+            List [ List (Atom "as":Atom "const":_), e ] ->
+              SMV_Array ty . replicate (fromIntegral sz) <$> parseVal env ty e
+            List vs -> do
+              elems' <- parseArray env ty (List vs)
+              return $ SMV_Array ty $ reverse elems'
+            _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+        T_Tuple ts ->
+          case v of
+            List (_:vs) -> do
+              SMV_Tuple <$> zipWithM (parseVal env) ts vs
+            _ -> impossible $ "parseVal: Tuple " <> show v
+        T_Object ts ->
+          case v of
+            List (_:vs) -> do
+              fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
+              return $ SMV_Object $ M.fromList fields
+            _ -> impossible $ "parseVal: Object " <> show v
+        T_Data ts ->
+          case v of
+            List [Atom con, vv] -> do
+              let c = case dropWhile (/= '_') con of
+                        _:c' -> c'
+                        _ -> impossible "parseType: Data: Constructor name"
+              v' <- case M.lookup c ts of
+                      Just vt -> parseVal env vt vv
+                      Nothing -> impossible $ "parseType: Data: Constructor type"
+              return $ SMV_Data c [v']
+            _ -> impossible $ "parseVal: Data " <> show v
+        _ -> impossible $ "parseVal: " <> show v <> " : " <> show t
+      where
+        parseArray env' ty = \case
+          List [Atom "store", arr, _, el] -> do
+            elP <- parseVal env' ty el
+            parseArray env' ty arr >>= \case
+              [SMV_Array _ xs] -> return $ elP : xs
+              ow -> return $ elP : ow
+          ow ->
+            case M.lookup ow env' of
+              Just x -> do
+                vs <- parseVal env' t x
+                return [vs]
+              _ -> return []
 
 
 parseModel2 :: SMTModel -> App (M.Map String SMTVal)
@@ -481,7 +503,7 @@ parseModel2 pm = M.fromList <$> aux (M.toList pm)
       [] -> return []
       (v, (tyse, vse)) : tl -> do
         ty <- parseType tyse
-        ve <- parseVal ty vse
+        ve <- parseVal mempty ty vse
         rst <- aux tl
         return $ (v, ve) : rst
 
