@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define (error x) @section[#:tag x]{@|x|}))
+@(define (error x) @section[#:tag x]{@|x|})
 
 @title[#:version reach-vers #:tag "ref-error-codes" #:style 'toc]{Error Codes}
 
