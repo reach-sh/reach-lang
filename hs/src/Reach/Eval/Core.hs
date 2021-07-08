@@ -1413,6 +1413,7 @@ evalForm f args = do
       case mmode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
+          -- XXX Default to 0 for all non-network tokens if `paySpec` specified
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] $ JSDecimal a "0"
           at <- withAt id
           case_args <-
@@ -4155,24 +4156,24 @@ doFork ks cases mtime mnntpay = do
   -- START: Non-network token pay
   pay_expr <-
     case mnntpay of
-      Just (JSArrayLiteral _ ts _) -> do
+      Just (JSArrayLiteral aa ts _) -> do
         let network_pay_var = jid "networkTokenPay"
         let nnts = map (jse_expect_id at) $ jsa_flatten ts
         let nnts_js =
               map
                 (\i ->
-                   JSArrayLiteral a [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] a)
+                   JSArrayLiteral aa [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] aa)
                 [0 .. length nnts - 1]
         let nnts_ret =
               toList $
                 mapWithIndex
                   (\i nnt ->
                      JSArrayLiteral
-                       a
+                       aa
                        [ JSArrayElement (jid $ "amt" <> show i)
                        , JSArrayElement (jid $ show $ pretty nnt)
                        ]
-                       a)
+                       aa)
                   (Seq.fromList nnts)
         let verifyPaySpec =
               toList $
@@ -4181,17 +4182,17 @@ doFork ks cases mtime mnntpay = do
                      JSExpressionStatement
                        (JSCallExpression
                           (jid "assert")
-                          a
+                          aa
                           (toJSCL
-                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq a) (jid nnt)
-                             , JSStringLiteral a ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
+                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq aa) (jid nnt)
+                             , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
                              ])
-                          a)
+                          aa)
                        sp)
                   (Seq.fromList nnts)
-        let pay_var tl = JSArrayLiteral a (intercalate [JSArrayComma a] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) a
-        let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp] <> verifyPaySpec <> [JSReturn a (Just (pay_var nnts_ret)) sp]
-        let pay_call = jsCallThunk a $ jsThunkStmts a pay_ss
+        let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
+        let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
+        let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
         return pay_call
       _ -> return pay_e
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_expr) a

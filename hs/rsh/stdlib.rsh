@@ -193,7 +193,7 @@ export const Foldable_size1 =
   (c) => () => Foldable_size(c);
 
 export const Foldable_average = (c) =>
-  Foldable_sum(c) / Foldable_size(s);
+  Foldable_sum(c) / Foldable_size(c);
 export const Foldable_average1 = (c) => () =>
   Foldable_average(c);
 
