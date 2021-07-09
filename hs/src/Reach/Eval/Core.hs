@@ -1443,23 +1443,23 @@ evalForm f args = do
       at <- withAt id
       x <- one_arg
       retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing Nothing Nothing
-    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef -> do
+    SLForm_parallel_reduce_partial {..} -> do
       aa <- withAt $ \at -> (at, args)
-      case pr_mode of
+      case slpr_mode of
         Just PRM_Invariant -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just x) pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_minv = Just x, .. }
         Just PRM_While -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime pr_mpay pr_mdef
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mwhile = Just x, .. }
         Just PRM_Case ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime pr_mpay pr_mdef
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_cases = slpr_cases <> [aa], .. }
         Just PRM_PaySpec -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime (Just x) pr_mdef
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mpay = Just x, .. }
         Just PRM_Def -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay (Just x)
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mdef = Just x, .. }
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
@@ -1471,16 +1471,7 @@ evalForm f args = do
           retV $
             public $
               SLV_Form $
-                SLForm_parallel_reduce_partial
-                  pr_at
-                  Nothing
-                  pr_init
-                  pr_minv
-                  pr_mwhile
-                  pr_cases
-                  (makeTimeoutArgs prm aa)
-                  pr_mpay
-                  pr_mdef
+                SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mtime = makeTimeoutArgs prm aa, .. }
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
