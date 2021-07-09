@@ -1946,8 +1946,9 @@ You may find the acceptable parameters in the following section: @tech{token min
 
 @error{RE0112}
 
-This error indicates that you are attempting to @reachin{destroy} a @reachin{Token}
-you did not create.
+This error indicates that you are attempting to perform an invalid operation on a @reachin{Token}.
+Some @reachin{Token} methods such as @reachin{destroy}, @reachin{burn}, and
+@reachin{supply} are only valid for tokens that were created in your program.
 
 You can fix this by removing the erroneous statement.
 

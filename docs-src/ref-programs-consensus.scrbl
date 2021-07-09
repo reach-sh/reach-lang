@@ -284,12 +284,13 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 
 @subsection{Token minting}
 
-@(mint-define! '("burn") '("destroy"))
+@(mint-define! '("burn") '("destroy") '("supply"))
 @reach{
   require(supply >= 2 * amt);
   const tok = new Token({name, symbol, url, metadata, supply});
   transfer(amt, tok).to(who);
   tok.burn(amt);
+  assert(tok.supply() == supply - amt);
   tok.burn();
   tok.destroy();
 }
