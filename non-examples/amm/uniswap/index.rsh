@@ -140,13 +140,13 @@ export const main = Reach.App(() => {
           transfer(amtIns[0], tokA).to(this);
           transfer(amtIns[1], tokB).to(this);
 
-          const ptoks = totalSupply == poolSupply
-            // This is first deposit
-            ? sqrt(amtIns.product(), 10)
-            : Array.zip(market.tokens, amtIns)
-                .map(([ o, inAmt ]) => (inAmt / o.bal) / poolSupply)
-                .average();
-          transfer(ptoks, pool).to(this);
+          // const ptoks = totalSupply == poolSupply
+          //   // This is first deposit
+          //   ? sqrt(amtIns.product(), 10)
+          //   : Array.zip(market.tokens, amtIns)
+          //       .map(([ o, inAmt ]) => (inAmt / o.bal) / poolSupply)
+          //       .average();
+          // transfer(ptoks, pool).to(this);
 
           // const k = market.k.match({
           //   Some: ((i) => {
