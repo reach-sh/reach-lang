@@ -270,6 +270,7 @@ data ParallelReduceMode
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
   | PRM_PaySpec
+  | PRM_Def
   deriving (Eq, Generic, Show)
 
 data SLForm
@@ -307,6 +308,7 @@ data SLForm
       , slpr_cases :: [(SrcLoc, [JSExpression])]
       , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
       , slpr_mpay :: Maybe JSExpression
+      , slpr_mdef :: Maybe JSExpression
       }
   | SLForm_wait
   deriving (Eq, Generic)
