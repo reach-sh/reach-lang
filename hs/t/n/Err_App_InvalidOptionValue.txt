@@ -1,1 +1,8 @@
-reachc: error: ./Err_App_InvalidOptionValue.rsh:4:15:property binding: Invalid value for app option, deployMode: factory is not a deployMode. Did you mean: ["firstMsg","constructor"]
+reachc: error[RE0014]: Invalid value for app option, deployMode: factory is not a deployMode. Did you mean: ["firstMsg","constructor"]
+
+ ./Err_App_InvalidOptionValue.rsh:4:15:property binding
+
+ 4|   { deployMode: 'factory' },
+
+For further explanation of this error, see: https://docs.reach.sh/RE0014.html
+

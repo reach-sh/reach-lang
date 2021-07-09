@@ -349,7 +349,7 @@ app_options =
         up m = Right $ opts {dlo_deployMode = m}
 
 --- Utilities
-expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = do
   Env {..} <- ask
   expect_throw (Just e_stack) e_at e
@@ -359,13 +359,13 @@ mkValType v = do
   r <- typeOfM v
   return (v, fmap fst r)
 
-expect_t :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
+expect_t :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
 expect_t v f = (expect_ . f) =<< mkValType v
 
-expect_ts :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
+expect_ts :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
 expect_ts vs f = (expect_ . f) =<< mapM mkValType vs
 
-zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
+zipEq :: (Show e, HasErrorCode e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
 zipEq ce x y =
   if lx == ly
     then return $ zip x y
@@ -2511,7 +2511,7 @@ evalPrim p sargs =
           dt <- st2dte =<< expect_ty one
           at <- withAt id
           tag <- ctxt_alloc
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ "cannot inspect value from forall: " <> show tag)
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ Err_Impossible_InspectForall tag)
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -3332,10 +3332,11 @@ evalExpr e = case e of
     unaryToPrim op
       >>= \x -> doCallV x (jsa op) [ue]
   JSVarInitExpression _ _ -> illegal
-  JSYieldExpression _ _ -> illegal
-  JSYieldFromExpression _ _ _ -> illegal
+  JSYieldExpression ann _ -> illegalAt ann
+  JSYieldFromExpression ann _ _ -> illegalAt ann
   where
     illegal = expect_ $ Err_Eval_IllegalJS e
+    illegalAt annot = locAtf (srcloc_jsa "stmt" annot) illegal
     doCallV ratorv a rands =
       locAtf (srcloc_jsa "application" a) $
         evalApply ratorv rands
@@ -3609,11 +3610,11 @@ destructDecls = \case
 enforcePrivateUnderscore :: SLEnv -> App ()
 enforcePrivateUnderscore = mapM_ enf . M.toList
   where
-    enf (k, (SLSSVal _ secLev _)) = case secLev of
+    enf (k, SLSSVal at secLev _) = case secLev of
       Secret
         | not (isSpecialIdent k)
             && not (isSecretIdent k) ->
-          expect_ $ Err_Eval_NotSecretIdent k
+          locAt at $ expect_ $ Err_Eval_NotSecretIdent k
       _ -> return ()
 
 doOnlyExpr :: ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> App (SLEnv, DLType, SLVal)
@@ -3688,7 +3689,7 @@ doOnly sco ((who, vas), only_at, only_cloenv, only_synarg) = locAt only_at $ do
     T_Null -> do
       saveLift $ DLS_Only only_at who alifts
       return $ sco {sco_penvs = M.insert who penv' $ sco_penvs sco}
-    ty -> expect_ $ Err_Block_NotNull ty only_v
+    ty -> locAt (srclocOf only_v) $ expect_ $ Err_Block_NotNull ty
 
 doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do
@@ -3721,6 +3722,7 @@ getBindingOrigin _ = Nothing
 compilePayAmt :: TransferType -> SLVal -> App DLPayAmt
 compilePayAmt tt v = do
   at <- withAt id
+  let v_at = srclocOf_ at v
   (t, ae) <- typeOf v
   case (t, ae) of
     (T_UInt, _) -> do
@@ -3731,7 +3733,7 @@ compilePayAmt tt v = do
             (T_UInt, gae) -> do
               let ((seenNet, sks), DLPayAmt _ tks) = sa
               when seenNet $
-                expect_ $ Err_Transfer_DoubleNetworkToken tt
+                locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
               a <- compileArgExpr gae
               return $ ((True, sks), DLPayAmt a tks)
             (T_Tuple [T_UInt, T_Token], DLAE_Tuple [amt_ae, token_ae]) -> do
@@ -3739,12 +3741,12 @@ compilePayAmt tt v = do
               amt_a <- compileArgExpr amt_ae
               token_a <- compileArgExpr token_ae
               when (token_a `elem` sks) $ do
-                expect_ $ Err_Transfer_DoubleToken tt
+                locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
               let sks' = token_a : sks
               return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
-            _ -> expect_t v $ Err_Transfer_Type tt
+            _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
       snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
-    _ -> expect_t v $ Err_Transfer_Type tt
+    _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
 doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
 doToConsensus ks whos vas msg amt_e when_e mtime = do
@@ -3983,13 +3985,13 @@ doFork ks cases mtime mnntpay = do
   let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
         let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
         (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
-        (_, (_, res_ty, _)) <-
+        (_, (_, res_ty, only_sv)) <-
           case res_sv of
             SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
               captureLifts $
                 doOnlyExpr ((who_, vas), only_at, only_cloenv, only_synarg)
             _ -> impossible "not each"
-        res_ty_m <- mustBeObjectTy Err_Fork_ResultNotObject res_ty
+        res_ty_m <- locAt (srclocOf only_sv) $ mustBeObjectTy Err_Fork_ResultNotObject res_ty
         let resHas = flip M.member res_ty_m
         let tDot field def =
               bool def (JSMemberDot tv a $ jid field) $ resHas field
@@ -4253,9 +4255,9 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
               t_fn' <- injectContinueIntoBody t_fn
               callTimeout [t_d, t_fn']
           (PRM_Timeout, [t_e]) -> callTimeout [t_e]
-          (PRM_Timeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
-          (PRM_ThrowTimeout, _) -> expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
-          (PRM_TimeRemaining, _) -> expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
+          (PRM_Timeout, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
+          (PRM_ThrowTimeout, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
+          (PRM_TimeRemaining, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
           _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
         where
           semi = JSSemiAuto
@@ -4315,7 +4317,7 @@ evalStmtTrampoline sp ks ev =
     Nothing ->
       typeOf ev >>= \case
         (T_Null, _) -> evalStmt ks
-        (ty, _) -> expect_ $ Err_Block_NotNull ty ev
+        (ty, _) -> locAt (srclocOf ev) $ expect_ $ Err_Block_NotNull ty
 
 findStmtTrampoline :: SLVal -> Maybe (JSSemi -> [JSStatement] -> App SLStmtRes)
 findStmtTrampoline = \case
@@ -4609,12 +4611,13 @@ evalStmt = \case
       ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) -> do
         let lab = "continue"
         ensure_mode SLM_ConsensusStep lab
-        rhs_sv <- locAtf (srcloc_jsa lab var_a) $ evalExpr rhs
+        let var_at = srcloc_jsa lab var_a
+        rhs_sv <- locAtf var_at $ evalExpr rhs
         sco <- e_sco <$> ask
-        locAtf (srcloc_jsa lab cont_a) $ do
+        locAtf var_at $ do
           whilem <-
             case sco_while_vars sco of
-              Nothing -> expect_ $ Err_Eval_ContinueNotInWhile
+              Nothing -> locAtf (srcloc_jsa lab cont_a) $ expect_ $ Err_Eval_ContinueNotInWhile
               Just x -> return $ x
           doWhileLikeContinueEval lhs whilem rhs_sv
         -- NOTE We could/should look at sco_must_ret and see if it is
@@ -4624,9 +4627,10 @@ evalStmt = \case
         return $ SLStmtRes sco []
       ((JSAssign var_a), _) -> do
         let lab = "assign"
-        lhs' <- evalLValue lhs
+        let var_at = srcloc_jsa lab var_a
+        lhs' <- locAtf var_at $ evalLValue lhs
         rhs' <- evalExpr rhs
-        locAtf (srcloc_jsa lab var_a) $ evalAssign rhs' lhs'
+        locAtf var_at $ evalAssign rhs' lhs'
         locAtf (srcloc_after_semi lab var_a asp) $ evalStmt ks
       (jsop, _) ->
         locAtf (srcloc_jsa "assign" $ jsa op) $
@@ -4676,7 +4680,7 @@ evalStmt = \case
             case M.lookup k m of
               Nothing -> return $ M.insert k v m
               Just (at0, _, _) ->
-                expect_ $ Err_Switch_DoubleCase at0 at1 (Just k)
+                locAt at1 $ expect_ $ Err_Switch_DoubleCase at0 at1 (Just k)
       let case_minserts cs v m = M.unions $ m : map (flip M.singleton v) cs
       let add_case (seenDefault, casem0) = \case
             JSCase ca ve _ body ->
@@ -4687,7 +4691,7 @@ evalStmt = \case
             JSDefault ca _ body ->
               case seenDefault of
                 Just at_c' ->
-                  expect_ $ Err_Switch_DoubleCase at_c at_c' Nothing
+                  locAt at_c' $ expect_ $ Err_Switch_DoubleCase at_c at_c' Nothing
                 Nothing -> return $ ((Just at_c), case_minserts (M.keys varm) (at_c, False, body) casem0)
               where
                 at_c = srcloc_jsa "case" ca at'
@@ -4762,17 +4766,20 @@ evalStmt = \case
           _ -> impossible "switch mvar"
       locAtf (srcloc_after_semi "switch" a sp) $ retSeqn fr ks_ne
   ((JSThrow a e _) : _) -> do
-    (dv_ty, dv) <- locAtf (srcloc_jsa "throw" a) (evalExpr e) >>= compileTypeOf . snd
+    let throwAtf = srcloc_jsa "throw" a
+    (dv_ty, dv) <- locAtf throwAtf (evalExpr e) >>= compileTypeOf . snd
     curSt <- readSt id
     exn_ref <- asks e_exn
     exn <- liftIO $ readIORef exn_ref
     -- Ensure we are throwing inside of a `try` block
-    unless (e_exn_in_throw exn) $ expect_ Err_Throw_No_Catch
+    unless (e_exn_in_throw exn) $
+      locAtf throwAtf $
+        expect_ Err_Throw_No_Catch
     -- Set or ensure the type that this `try` block is expected to catch
     case e_exn_ty exn of
       Nothing -> liftIO $ modifyIORef exn_ref (\ex -> ex {e_exn_ty = Just dv_ty})
       Just ty
-        | ty /= dv_ty -> expect_ $ Err_Try_Type_Mismatch ty dv_ty
+        | ty /= dv_ty -> locAtf throwAtf $ expect_ $ Err_Try_Type_Mismatch ty dv_ty
         | otherwise -> return ()
     saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ e_exn_mode exn)
     liftIO $ modifyIORef exn_ref (\ex -> ex {e_exn_st = Just curSt})

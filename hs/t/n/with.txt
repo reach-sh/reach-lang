@@ -1,3 +1,11 @@
-reachc: error: ./with.rsh:10:7:with: Invalid statement
+reachc: error[RE0002]: Invalid statement
+
+ ./with.rsh:10:7:with
+
+ 10|       with (o) {
+
 Trace:
   in [unknown function] from (./with.rsh:8:15:function exp) at (./with.rsh:8:11:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0002.html
+

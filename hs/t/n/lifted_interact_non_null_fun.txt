@@ -1,3 +1,11 @@
-reachc: error: ./lifted_interact_non_null_fun.rsh:8:19:application: Invalid block result type. Expected Null, got UInt
+reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
+
+ ./lifted_interact_non_null_fun.rsh:8:19:application
+
+ 8|       A.interact.f();
+
 Trace:
   in [unknown function] from (./lifted_interact_non_null_fun.rsh:8:19:function exp) at (./lifted_interact_non_null_fun.rsh:8:19:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0003.html
+

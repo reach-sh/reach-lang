@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_PartSet_Class.rsh:14:12:application: C is a class and cannot be bound
+reachc: error[RE0029]: C is a class and cannot be bound
+
+ ./Err_Eval_PartSet_Class.rsh:14:12:application
+
+ 14|       C.set(addr);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0029.html
+

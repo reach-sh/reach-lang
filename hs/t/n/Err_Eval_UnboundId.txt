@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_UnboundId.rsh:9:12:id ref: Invalid unbound identifier in expression: alfa. Did you mean: ["alpha","Data","abs","add","and"]
+reachc: error[RE0042]: Invalid unbound identifier in expression: alfa. Did you mean: ["alpha","Data","abs","add","and"]
+
+ ./Err_Eval_UnboundId.rsh:9:12:id ref
+
+ 9|     return alfa;
+
+For further explanation of this error, see: https://docs.reach.sh/RE0042.html
+

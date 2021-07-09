@@ -1,3 +1,11 @@
-reachc: error: ./strict_value_not_bound.rsh:10:23:after expr stmt semicolon: Invalid block result type. Expected Null, got UInt
+reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
+
+ ./strict_value_not_bound.rsh:10:21:application
+
+ 10|         interact.get();
+
 Trace:
   in [unknown function] from (./strict_value_not_bound.rsh:9:17:function exp) at (./strict_value_not_bound.rsh:9:13:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0003.html
+

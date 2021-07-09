@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_MustBeLive.rsh:11:13:dot: must be live at to consensus
+reachc: error[RE0078]: Must be live at to consensus
+
+ ./Err_Eval_MustBeLive.rsh:11:13:dot
+
+ 11|       Alice.publish();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0078.html
+

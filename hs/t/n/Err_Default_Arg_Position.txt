@@ -1,1 +1,8 @@
-reachc: error: ./Err_Default_Arg_Position.rsh:8:28:function exp: Parameters with default arguments must come after all other function arguments.
+reachc: error[RE0092]: Parameters with default arguments must come after all other function arguments.
+
+ ./Err_Default_Arg_Position.rsh:8:28:function exp
+
+ 8|       const f = (a = 1, b) => a + b;
+
+For further explanation of this error, see: https://docs.reach.sh/RE0092.html
+

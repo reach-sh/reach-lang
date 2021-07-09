@@ -1,1 +1,8 @@
-reachc: error: ./Err_Token_InWhile.rsh:20:11:dot: Token published within while, which Reach cannot track, yet.
+reachc: error[RE0103]: Token published within while, which Reach cannot track, yet.
+
+ ./Err_Token_InWhile.rsh:20:11:dot
+
+ 20|         A.publish(tok, amt)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0103.html
+

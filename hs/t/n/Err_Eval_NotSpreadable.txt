@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_NotSpreadable.rsh:3:8:spread: Value not spreadable in spread context. Expected tuple or array, got: 2
+reachc: error[RE0070]: Value not spreadable in spread context. Expected tuple or array, got: 2
+
+ ./Err_Eval_NotSpreadable.rsh:3:8:spread
+
+ 3| add(1, ...2);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0070.html
+

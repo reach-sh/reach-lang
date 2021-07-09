@@ -1,3 +1,11 @@
-reachc: error: ./part_field.rsh:8:27:dot: wager is not a field of A's interaction interface. Did you mean: ["getWager"]
+reachc: error[RE0025]: wager is not a field of A's interaction interface. Did you mean: ["getWager"]
+
+ ./part_field.rsh:8:27:dot
+
+ 8|       declassify(interact.wager);
+
 Trace:
   in [unknown function] from (./part_field.rsh:7:15:function exp) at (./part_field.rsh:7:11:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0025.html
+

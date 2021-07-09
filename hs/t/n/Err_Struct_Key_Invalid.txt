@@ -1,1 +1,8 @@
-reachc: error: ./Err_Struct_Key_Invalid.rsh:8:23:application: Struct key `$x ` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*
+reachc: error[RE0096]: Struct key `$x ` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*
+
+ ./Err_Struct_Key_Invalid.rsh:8:23:application
+
+ 8|       const s = Struct([["$x ", UInt]]);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0096.html
+

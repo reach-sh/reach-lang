@@ -1,1 +1,8 @@
-reachc: error: ./Err_Apply_ArgCount.rsh:6:27:application: Invalid function application. Expected 0 args, got 1 for function defined at ./Err_Apply_ArgCount.rsh:3:14:function exp
+reachc: error[RE0000]: Invalid function application. Expected 0 args, got 1 for function defined at ./Err_Apply_ArgCount.rsh:3:14:function exp
+
+ ./Err_Apply_ArgCount.rsh:6:27:application
+
+ 6|   {}, [], () => { return f(5); }
+
+For further explanation of this error, see: https://docs.reach.sh/RE0000.html
+

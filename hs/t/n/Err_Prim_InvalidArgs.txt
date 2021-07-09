@@ -1,1 +1,8 @@
-reachc: error: ./Err_Prim_InvalidArgs.rsh:3:34:application: Invalid args for makeEnum. got: [Bytes(4)]
+reachc: error[RE0055]: Invalid args for makeEnum. got: [Bytes(4)]
+
+ ./Err_Prim_InvalidArgs.rsh:3:34:application
+
+ 3| const [ isBlah, BLAH ] = makeEnum("blah");
+
+For further explanation of this error, see: https://docs.reach.sh/RE0055.html
+

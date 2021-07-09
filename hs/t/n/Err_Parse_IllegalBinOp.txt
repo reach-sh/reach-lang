@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_IllegalBinOp.rsh:3:1:const: Illegal binary operation: JSBinOpIn (JSAnnot (TokenPn 28 3 15) [WhiteSpace (TokenPn 27 3 14) " "])
+reachc: error[RP0004]: Illegal binary operation: JSBinOpIn (JSAnnot (TokenPn 28 3 15) [WhiteSpace (TokenPn 27 3 14) " "])
+
+ ./Err_Parse_IllegalBinOp.rsh:3:1:const
+
+ 3| const b = "k" in {"k": 5}; 
+
+For further explanation of this error, see: https://docs.reach.sh/RP0004.html
+

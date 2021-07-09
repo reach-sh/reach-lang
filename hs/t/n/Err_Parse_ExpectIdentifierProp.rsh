@@ -2,6 +2,6 @@
 
 export const main = Reach.App(
   {}, [], () => {
-    const {x: 1} = {x: 2};
+    const {x() { return 1 }} = {x: 2};
   }
 );

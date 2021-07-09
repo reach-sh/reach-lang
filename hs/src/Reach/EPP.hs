@@ -1,4 +1,4 @@
-module Reach.EPP (epp) where
+module Reach.EPP (epp, EPPError(..)) where
 
 import Control.Monad.Reader
 import Data.Foldable
@@ -162,6 +162,15 @@ solve fi' = fixedPoint go
 data EPPError
   = Err_ContinueDomination
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode EPPError where
+  errPrefix = const "REP"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
+  errIndex = \case
+    Err_ContinueDomination {} -> 0
 
 instance Show EPPError where
   show Err_ContinueDomination =

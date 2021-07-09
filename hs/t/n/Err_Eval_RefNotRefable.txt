@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_RefNotRefable.rsh:6:15:array ref: Invalid element reference. Expected array or tuple, got: UInt
+reachc: error[RE0038]: Invalid element reference. Expected array or tuple, got: UInt
+
+ ./Err_Eval_RefNotRefable.rsh:6:15:array ref
+
+ 6|     return arr[0];
+
+For further explanation of this error, see: https://docs.reach.sh/RE0038.html
+

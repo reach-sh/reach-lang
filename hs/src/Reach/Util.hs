@@ -21,6 +21,8 @@ module Reach.Util
   , uncurry4
   , uncurry5
   , listDirectoriesRecursive
+  , leftPad
+  , makeErrCode
   )
 where
 
@@ -127,3 +129,10 @@ listDirectoriesRecursive dir = do
   (ds, _) <- partitionM doesDirectoryExist =<< listContents dir
   rest <- concatMapM listDirectoriesRecursive ds
   pure $ ds <> rest
+
+leftPad :: Int -> a -> [a] -> [a]
+leftPad n e xs = replicate (n - length xs) e <> xs
+
+makeErrCode :: Show a => [Char] -> a -> [Char]
+makeErrCode errType errIndex =
+  errType <> leftPad 4 '0' (show errIndex)

@@ -296,8 +296,8 @@ jsExpr = \case
     jsArg a
   DLE_LArg _ la ->
     jsLargeArg la
-  DLE_Impossible at msg ->
-    expect_thrown at $ Err_Impossible msg
+  DLE_Impossible at err ->
+    expect_thrown at err
   DLE_PrimOp _ p as ->
     jsPrimApply p <$> mapM jsArg as
   DLE_ArrayRef _ aa ia -> do

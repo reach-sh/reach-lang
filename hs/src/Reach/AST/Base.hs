@@ -17,6 +17,10 @@ import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.UnsafeUtil
+import qualified System.Console.Pretty as TC
+import Safe (atMay)
+import Data.Maybe (fromMaybe)
+import Reach.Util (makeErrCode)
 
 --- Source Information
 data ReachSource
@@ -57,12 +61,25 @@ instance Pretty SrcLoc where
   pretty = viaShow
 
 data ImpossibleError
-  = Err_Impossible String
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+  = Err_Impossible_InspectForall Int
+  deriving (Eq, Ord, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode ImpossibleError where
+  errPrefix = const "RX"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
+  errIndex = \case
+    Err_Impossible_InspectForall {} -> 0
 
 instance Show ImpossibleError where
   show = \case
-    Err_Impossible msg -> msg
+    Err_Impossible_InspectForall tag ->
+      "Cannot inspect value from `forall`: " <> show tag
+
+instance Pretty ImpossibleError where
+  pretty = viaShow
 
 data CompilationError = CompilationError
   { ce_suggestions :: [String]
@@ -84,7 +101,15 @@ srcloc_line_col :: SrcLoc -> [Int]
 srcloc_line_col (SrcLoc _ (Just (TokenPn _ l c)) _) = [l, c]
 srcloc_line_col _ = []
 
-expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
+getSrcLine :: Maybe Int -> [String] -> Maybe String
+getSrcLine rowNum fl =
+  rowNum >>= (\ r -> atMay fl $  r - 1)
+
+errorCodeDocUrl :: HasErrorCode a => a -> String
+errorCodeDocUrl e =
+  "https://docs.reach.sh/" <> errCode e <> ".html"
+
+expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
     True ->
@@ -99,14 +124,27 @@ expect_throw mCtx src ce =
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
                       })
-    False ->
+    False -> do
+      let hasColor = unsafeTermSupportsColor
+      let color c = if hasColor then TC.color c else id
+      let style s = if hasColor then TC.style s else id
+      let fileLines = srcloc_file src >>= Just . unsafeReadFile
+      let rowNum = case srcloc_line_col src of
+                  [l, _] -> Just l
+                  _ -> Nothing
+      let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
+      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
+                      $ getSrcLine rowNum (fromMaybe [] fileLines)
       error . T.unpack . unsafeRedactAbs . T.pack $
-        "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+        style TC.Bold (color TC.Red "error") <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
+          " " <> style TC.Bold (show src) ++ "\n\n"
+          <> fileLine
           <> case concat mCtx of
             [] -> ""
-            ctx -> "\nTrace:\n" <> List.intercalate "\n" (topOfStackTrace ctx)
+            ctx -> "\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx) <> "\n"
+          <> "\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
 
-expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
+expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
 
 topOfStackTrace :: [SLCtxtFrame] -> [String]
@@ -136,6 +174,11 @@ get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
+
+srcloc_file :: SrcLoc -> Maybe FilePath
+srcloc_file = \case
+  SrcLoc _ _ (Just (ReachSourceFile f)) -> Just f
+  _ -> Nothing
 
 class SrcLocOf a where
   srclocOf :: a -> SrcLoc
@@ -242,3 +285,9 @@ instance Show SLCtxtFrame where
 
 instance SrcLocOf SLCtxtFrame where
   srclocOf (SLC_CloApp at _ _) = at
+
+class Generic a => HasErrorCode a where
+  errPrefix :: a -> String
+  errIndex :: a -> Int
+  errCode :: a -> String
+  errCode e = makeErrCode (errPrefix e) (errIndex e)

@@ -1,1 +1,8 @@
-reachc: error: ./Err_Dot_InvalidField.rsh:6:30:dot: x is not a field of Object({})
+reachc: error[RE0025]: x is not a field of Object({})
+
+ ./Err_Dot_InvalidField.rsh:6:30:dot
+
+ 6|   {}, [], () => { return obj.x; }
+
+For further explanation of this error, see: https://docs.reach.sh/RE0025.html
+

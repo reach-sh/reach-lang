@@ -1,1 +1,0 @@
-reachc: error: ./Err_App_Interact_NotFirstOrder.rsh:4:19:application: Value of this type cannot exist at runtime: Fun([], UInt)

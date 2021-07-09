@@ -1,1 +1,8 @@
-reachc: error: ./Err_Expected_Map.rsh:7:17:application: Expected map, got: UInt
+reachc: error[RE0090]: Expected map, got: UInt
+
+ ./Err_Expected_Map.rsh:7:17:application
+
+ 7|       Map.reduce(0, 1, 2);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0090.html
+

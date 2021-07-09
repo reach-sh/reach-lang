@@ -1,0 +1,8 @@
+reachc: error[RE0036]: Invalid function. Cannot apply: UInt
+
+ ./Err_Eval_NotApplicableVals.rsh:8:25:application
+
+ 8|       Array.iota(10).map(1);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0036.html
+

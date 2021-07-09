@@ -1,1 +1,8 @@
-reachc: error: ./Err_Token_NotCreated.rsh:11:14:application: Token.destroy must be used on created tokens
+reachc: error[RE0112]: Token.destroy must be used on created tokens
+
+ ./Err_Token_NotCreated.rsh:11:14:application
+
+ 11|   tok.destroy();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0112.html
+

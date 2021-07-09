@@ -1,1 +1,8 @@
-reachc: error: ./Err_ToConsensus_NoTimeoutBlock.rsh:8:23:application: Timeout delay given without timeout block
+reachc: error[RE0008]: Timeout delay given without timeout block
+
+ ./Err_ToConsensus_NoTimeoutBlock.rsh:8:23:application
+
+ 8|       A.pay(0).timeout(1);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0008.html
+

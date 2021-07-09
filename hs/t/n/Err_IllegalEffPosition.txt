@@ -1,1 +1,8 @@
-reachc: error: ./Err_IllegalEffPosition.rsh:8:13:id: Effects cannot be bound, got: <SLV_Form>
+reachc: error[RE0093]: Effects cannot be bound, got: <SLV_Form>
+
+ ./Err_IllegalEffPosition.rsh:8:13:id
+
+ 8|       const x = A.pay(0);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0093.html
+

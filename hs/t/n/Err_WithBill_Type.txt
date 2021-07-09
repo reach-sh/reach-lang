@@ -1,1 +1,8 @@
-reachc: error: ./Err_WithBill_Type.rsh:13:24:application: `withBill` expects no arguments or a Tuple of Tokens, but received: UInt
+reachc: error[RE0105]: `withBill` expects no arguments or a Tuple of Tokens, but received: UInt
+
+ ./Err_WithBill_Type.rsh:13:24:application
+
+ 13|       ctc.f.withBill(1)();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0105.html
+

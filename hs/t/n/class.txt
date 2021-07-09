@@ -1,1 +1,8 @@
-reachc: error: ./class.rsh:3:1:class: Invalid statement
+reachc: error[RE0002]: Invalid statement
+
+ ./class.rsh:3:1:class
+
+ 3| class C {
+
+For further explanation of this error, see: https://docs.reach.sh/RE0002.html
+

@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_ImportDotDot.rsh:3:8:import bare: Invalid import: dotdot path imports are not supported: ../blah.rsh
+reachc: error[RP0008]: Invalid import: dotdot path imports are not supported: ../blah.rsh
+
+ ./Err_Parse_ImportDotDot.rsh:3:8:import bare
+
+ 3| import '../blah.rsh'
+
+For further explanation of this error, see: https://docs.reach.sh/RP0008.html
+

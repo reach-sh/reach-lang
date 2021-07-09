@@ -1,1 +1,0 @@
-reachc: error: ./Err_Decl_NotRefable.rsh:3:7:array: Value not spreadable in lhs array context. Expected tuple or array, got: 10

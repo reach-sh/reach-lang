@@ -1,1 +1,8 @@
-reachc: error: ./match_no_case_obj.rsh:17:26:decimal: expected object, got something else: UInt
+reachc: error[RE0076]: Expected object, got something else: UInt
+
+ ./match_no_case_obj.rsh:17:26:decimal
+
+ 17|       const i = mx.match(4);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0076.html
+

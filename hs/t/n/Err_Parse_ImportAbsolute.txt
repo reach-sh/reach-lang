@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_ImportAbsolute.rsh:3:8:import bare: Invalid import: absolute path imports are not supported: /tmp/blah.rsh
+reachc: error[RP0007]: Invalid import: absolute path imports are not supported: /tmp/blah.rsh
+
+ ./Err_Parse_ImportAbsolute.rsh:3:8:import bare
+
+ 3| import '/tmp/blah.rsh'
+
+For further explanation of this error, see: https://docs.reach.sh/RP0007.html
+

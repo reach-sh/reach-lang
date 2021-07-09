@@ -31,7 +31,7 @@ data EvalError
   = Err_Apply_ArgCount SrcLoc Int Int
   | Err_Block_Assign JSAssignOp [JSStatement]
   | Err_Block_IllegalJS JSStatement
-  | Err_Block_NotNull DLType SLVal
+  | Err_Block_NotNull DLType
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
@@ -44,7 +44,6 @@ data EvalError
   | Err_App_InvalidOption SLVar [SLVar]
   | Err_App_InvalidOptionValue SLVar String
   | Err_App_InvalidInteract SLValTy
-  | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
   | Err_InvalidNameRegex String String
   | Err_DeclLHS_IllegalJS JSExpression
@@ -53,7 +52,6 @@ data EvalError
   | Err_Decl_NotType String SLValTy
   | Err_Decls_IllegalJS (JSCommaList JSExpression)
   | Err_Decl_IllegalJS JSExpression
-  | Err_Decl_NotRefable SLValTy
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLValTy [String] String
   | Err_Eval_ContinueNotInWhile
@@ -144,6 +142,127 @@ data EvalError
   | Err_TokenNew_InvalidKey String
   | Err_Token_NotCreated String
   deriving (Eq, Generic)
+
+instance HasErrorCode EvalError where
+  errPrefix = const "RE"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
+  errIndex = \case
+    Err_Apply_ArgCount {} -> 0
+    Err_Block_Assign {} -> 1
+    Err_Block_IllegalJS {} -> 2
+    Err_Block_NotNull {} -> 3
+    Err_Block_Variable {} -> 4
+    Err_Block_While {} -> 5
+    Err_CannotReturn {} -> 6
+    Err_ToConsensus_TimeoutArgs {} -> 7
+    Err_ToConsensus_NoTimeoutBlock {} -> 8
+    Err_Transfer_DoubleNetworkToken {} -> 9
+    Err_Transfer_DoubleToken {} -> 10
+    Err_Transfer_Type {} -> 11
+    Err_App_Interact_NotFirstOrder {} -> 12
+    Err_App_InvalidOption {} -> 13
+    Err_App_InvalidOptionValue {} -> 14
+    Err_App_InvalidInteract {} -> 15
+    Err_App_InvalidArgs {} -> 16
+    Err_InvalidNameRegex {} -> 17
+    Err_DeclLHS_IllegalJS {} -> 18
+    Err_Decl_ObjectSpreadNotLast {} -> 19
+    Err_Decl_ArraySpreadNotLast {} -> 20
+    Err_Decl_NotType {} -> 21
+    Err_Decls_IllegalJS {} -> 22
+    Err_Decl_IllegalJS {} -> 23
+    Err_Decl_WrongArrayLength {} -> 24
+    Err_Dot_InvalidField {} -> 25
+    Err_Eval_ContinueNotInWhile {} -> 26
+    Err_Eval_IllegalWait {} -> 27
+    Err_Eval_ContinueNotLoopVariable {} -> 28
+    Err_Eval_PartSet_Class {} -> 29
+    Err_Eval_PartSet_Bound {} -> 30
+    Err_Eval_IllegalMode {} -> 31
+    Err_LValue_IllegalJS {} -> 32
+    Err_Eval_IllegalJS {} -> 33
+    Err_Eval_NoReturn {} -> 34
+    Err_Eval_NotApplicable {} -> 35
+    Err_Eval_NotApplicableVals {} -> 36
+    Err_Eval_NotObject {} -> 37
+    Err_Eval_RefNotRefable {} -> 38
+    Err_Eval_RefNotInt {} -> 39
+    Err_Eval_IndirectRefNotArray {} -> 40
+    Err_Eval_RefOutOfBounds {} -> 41
+    Err_Eval_UnboundId {} -> 42
+    Err_ExpectedLevel {} -> 43
+    Err_Form_InvalidArgs {} -> 44
+    Err_Fun_NamesIllegal {} -> 45
+    Err_Import_IllegalJS {} -> 46
+    Err_Module_Return {} -> 47
+    Err_NoHeader {} -> 48
+    Err_Obj_IllegalComputedField {} -> 49
+    Err_Obj_IllegalFieldValues {} -> 50
+    Err_Obj_IllegalMethodDefinition {} -> 51
+    Err_Obj_IllegalNumberField {} -> 52
+    Err_Obj_SpreadNotObj {} -> 53
+    Err_Prim_InvalidArg_Dynamic {} -> 54
+    Err_Prim_InvalidArgs {} -> 55
+    Err_Shadowed {} -> 56
+    Err_TailNotEmpty {} -> 57
+    Err_ToConsensus_Double {} -> 58
+    Err_TopFun_NoName {} -> 59
+    Err_While_IllegalInvariant {} -> 60
+    Err_Only_NotOneClosure {} -> 61
+    Err_Each_NotTuple {} -> 62
+    Err_NotParticipant {} -> 63
+    Err_Transfer_NotBound {} -> 64
+    Err_Transfer_Class {} -> 65
+    Err_Eval_IncompatibleStates {} -> 66
+    Err_Eval_NotSecretIdent {} -> 67
+    Err_Eval_NotPublicIdent {} -> 68
+    Err_Eval_LookupUnderscore {} -> 69
+    Err_Eval_NotSpreadable {} -> 70
+    Err_Zip_ArraysNotEqualLength {} -> 71
+    Err_Switch_NotData {} -> 72
+    Err_Switch_DoubleCase {} -> 73
+    Err_Switch_MissingCases {} -> 74
+    Err_Switch_ExtraCases {} -> 75
+    Err_Expected {} -> 76
+    Err_RecursionDepthLimit {} -> 77
+    Err_Eval_MustBeLive {} -> 78
+    Err_Invalid_Statement {} -> 79
+    Err_ToConsensus_WhenNoTimeout {} -> 80
+    Err_Fork_ResultNotObject {} -> 81
+    Err_Fork_ConsensusBadArrow {} -> 82
+    Err_ParallelReduceIncomplete {} -> 83
+    Err_ParallelReduceBranchArgs {} -> 84
+    Err_Type_None {} -> 85
+    Err_Type_NotDT {} -> 86
+    Err_Type_NotApplicable {} -> 87
+    Err_Type_Mismatch {} -> 88
+    Err_Eval_MustBeInWhileInvariant {} -> 89
+    Err_Expected_Map {} -> 90
+    Err_Prim_Foldable {} -> 91
+    Err_Default_Arg_Position {} -> 92
+    Err_IllegalEffPosition {} -> 93
+    Err_Unused_Variables {} -> 94
+    Err_Remote_NotFun {} -> 95
+    Err_Struct_Key_Invalid {} -> 96
+    Err_Struct_Key_Not_Unique {} -> 97
+    Err_InvalidNameExport {} -> 98
+    Err_Strict_Conditional {} -> 99
+    Err_Try_Type_Mismatch {} -> 100
+    Err_Throw_No_Catch {} -> 101
+    Err_Token_OnCtor {} -> 102
+    Err_Token_InWhile {} -> 103
+    Err_Token_DynamicRef {} -> 104
+    Err_WithBill_Type {} -> 105
+    Err_View_DuplicateView {} -> 106
+    Err_View_CannotExpose {} -> 107
+    Err_View_UDFun {} -> 108
+    Err_Part_DuplicatePart {} -> 109
+    Err_Sol_Reserved {} -> 110
+    Err_TokenNew_InvalidKey {} -> 111
+    Err_Token_NotCreated {} -> 112
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -275,7 +394,7 @@ instance Show EvalError where
       "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
       "Invalid statement"
-    Err_Block_NotNull ty _slval ->
+    Err_Block_NotNull ty ->
       -- FIXME explain why null is expected
       "Invalid block result type. Expected Null, got " <> show ty
     Err_Block_Variable ->
@@ -310,8 +429,6 @@ instance Show EvalError where
     Err_App_InvalidInteract val ->
       "Invalid interact specification. Expected public type, got: "
         <> show_sv val
-    Err_App_InvalidPartSpec _slval ->
-      "Invalid participant spec"
     Err_App_InvalidArgs _jes ->
       "Invalid app arguments"
     Err_App_InvalidOption opt opts ->
@@ -338,10 +455,8 @@ instance Show EvalError where
       "Array spread on left-hand side of binding must occur in last position"
     Err_Decl_NotType ty slval ->
       "Invalid binding. Expected " <> ty <> ", got: " <> show_sv slval
-    Err_Decl_NotRefable slval ->
-      "Invalid binding. Expected array or tuple, got: " <> show_sv slval
     Err_Decl_WrongArrayLength nIdents nVals ->
-      "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
+      "Invalid array binding. Cannot unpack " <> show nIdents <> " variables from an array with " <> show nVals <> " elements."
     Err_Dot_InvalidField slval ks k ->
       k <> " is not a field of " <> show_sv slval <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
@@ -374,7 +489,7 @@ instance Show EvalError where
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
-      "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
+      "Invalid array index. Expected an index between 0 and " <> show maxi <> ", but got: " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
@@ -442,15 +557,15 @@ instance Show EvalError where
     Err_Only_NotOneClosure slval ->
       "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (show_sv slval)
     Err_Each_NotTuple slval ->
-      "each not given a tuple as an argument, instead got " <> show_sv slval
+      "Each not given a tuple as an argument, instead got " <> show_sv slval
     Err_NotParticipant slval ->
-      "expected a participant as an argument, instead got " <> show_sv slval
+      "Expected a participant as an argument, instead got " <> show_sv slval
     Err_Transfer_NotBound who ->
-      "cannot transfer to unbound participant, " <> bunpack who
+      "Cannot transfer to unbound participant, " <> bunpack who
     Err_Transfer_Class who ->
-      "cannot transfer to participant class, " <> bunpack who
+      "Cannot transfer to participant class, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
-      "incompatible states:" <> showStateDiff x y
+      "Incompatible states:" <> showStateDiff x y
     Err_Eval_NotSecretIdent x ->
       ("Invalid binding in PART.only: " <> x <> ".")
         <> " Secret identifiers must be prefixed by _."
@@ -460,21 +575,21 @@ instance Show EvalError where
     Err_Eval_LookupUnderscore ->
       "Invalid identifier reference. The _ identifier may never be read."
     Err_Switch_NotData x ->
-      "switch expects data instance, but got " <> show x
+      "Switch expects data instance, but got " <> show x
     Err_Switch_DoubleCase at0 at1 mc ->
-      "switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
+      "Switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
     Err_Switch_MissingCases cs ->
-      "switch missing cases: " <> show cs
+      "Switch missing cases: " <> show cs
     Err_Switch_ExtraCases cs ->
-      "switch contains extra cases: " <> show cs
+      "Switch contains extra cases: " <> show cs
     Err_Expected t v ->
-      "expected " <> t <> ", got something else: " <> show_sv v
+      "Expected " <> t <> ", got something else: " <> show_sv v
     Err_RecursionDepthLimit ->
-      "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
+      "Recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_Eval_MustBeLive m ->
-      "must be live at " <> m
+      "Must be live at " <> m
     Err_Eval_MustBeInWhileInvariant m ->
-      "must be in while invariant at " <> m
+      "Must be in while invariant at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
     Err_ToConsensus_WhenNoTimeout noMatterWhat ->
@@ -482,11 +597,11 @@ instance Show EvalError where
         True -> "Cannot ignore timeout requirement, unless at least one participant always races or one class might race"
         False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
-      "fork local result must be object with fields `msg` or `when`, but got " <> show t
+      "Fork local result must be object with fields `msg` or `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->
-      "fork consensus block should be arrow with zero or one parameters, but got something else"
+      "Fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_ParallelReduceIncomplete lab ->
-      "parallel reduce incomplete: " <> lab
+      "Parallel reduce incomplete: " <> lab
     Err_ParallelReduceBranchArgs b n args ->
       let numArgs = length args
        in let arguments = if n == 1 then "argument" else "arguments"
@@ -508,7 +623,7 @@ instance Show EvalError where
     Err_IllegalEffPosition v ->
       "Effects cannot be bound, got: " <> show_sv v
     Err_Unused_Variables vars ->
-      intercalate "\n" $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
+      intercalate "\n    " $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
     Err_Struct_Key_Invalid s ->

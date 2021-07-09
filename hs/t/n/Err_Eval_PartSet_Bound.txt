@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_PartSet_Bound.rsh:17:22:application: B is bound and cannot be rebound
+reachc: error[RE0030]: B is bound and cannot be rebound
+
+ ./Err_Eval_PartSet_Bound.rsh:17:22:application
+
+ 17|       Participant.set(B, b);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0030.html
+

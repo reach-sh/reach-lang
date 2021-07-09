@@ -1,1 +1,8 @@
-reachc: error: ./Err_InvalidNameExport.rsh:6:17:application: Invalid Participant name: `getExports`. Reach exports this identifier in the backend.
+reachc: error[RE0098]: Invalid Participant name: `getExports`. Reach exports this identifier in the backend.
+
+ ./Err_InvalidNameExport.rsh:6:17:application
+
+ 6|     [Participant('getExports', {})],
+
+For further explanation of this error, see: https://docs.reach.sh/RE0098.html
+

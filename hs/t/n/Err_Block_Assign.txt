@@ -1,1 +1,8 @@
-reachc: error: ./Err_Block_Assign.rsh:4:21:assign: Invalid assignment
+reachc: error[RE0001]: Invalid assignment
+
+ ./Err_Block_Assign.rsh:4:21:assign
+
+ 4|   {}, [], () => { x *= 0; }
+
+For further explanation of this error, see: https://docs.reach.sh/RE0001.html
+

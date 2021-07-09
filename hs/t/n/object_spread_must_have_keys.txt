@@ -1,1 +1,8 @@
-reachc: error: ./object_spread_must_have_keys.rsh:3:7:object: x is not a field of Object({"y": UInt}). Did you mean: ["y"]
+reachc: error[RE0025]: x is not a field of Object({"y": UInt}). Did you mean: ["y"]
+
+ ./object_spread_must_have_keys.rsh:3:7:object
+
+ 3| const { x, y } = { y: 1 };
+
+For further explanation of this error, see: https://docs.reach.sh/RE0025.html
+

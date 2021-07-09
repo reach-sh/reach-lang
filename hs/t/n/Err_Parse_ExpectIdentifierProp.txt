@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_ExpectIdentifierProp.rsh:5:11:object: Invalid binding. Expressions cannot appear on the LHS.
+reachc: error[RP0003]: Expected identifier or one name and value in object properties list, got something else.
+
+ ./Err_Parse_ExpectIdentifierProp.rsh:5:11:object
+
+ 5|     const {x() { return 1 }} = {x: 2};
+
+For further explanation of this error, see: https://docs.reach.sh/RP0003.html
+

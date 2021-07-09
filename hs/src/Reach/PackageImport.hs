@@ -1,4 +1,4 @@
-module Reach.PackageImport (packageImport) where
+module Reach.PackageImport (packageImport, PkgError(..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -35,7 +35,20 @@ data PkgError
   | Err_NoRev (Maybe String)
   | Err_Unauthorized
   | Err_InvalidImportSource FilePath ParseError
-  deriving (Eq, ErrorMessageForJson, ErrorSuggestions)
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode PkgError where
+  errPrefix = const "RI"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
+  errIndex = \case
+    Err_Clone {} -> 0
+    Err_Checkout {} -> 1
+    Err_NoRev {} -> 2
+    Err_Unauthorized {} -> 3
+    Err_InvalidImportSource {} -> 4
 
 instance Show PkgError where
   show = \case
@@ -54,7 +67,7 @@ instance Show PkgError where
 
 -- Library
 
-expect_ :: (HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasErrorCode e, HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = asks e_at >>= flip expect_thrown e
 
 runGit :: FilePath -> [String] -> App (Either String String)

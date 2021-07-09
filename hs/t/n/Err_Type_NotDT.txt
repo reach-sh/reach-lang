@@ -1,0 +1,8 @@
+reachc: error[RE0086]: Value of this type cannot exist at runtime: Fun([], UInt)
+
+ ./Err_Type_NotDT.rsh:4:19:application
+
+ 4|   {}, [Participant("A", {f: Fun([], Fun([], UInt))})], (A) => {}
+
+For further explanation of this error, see: https://docs.reach.sh/RE0086.html
+

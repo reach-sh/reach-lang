@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {}, [Participant("A", {})], (A) => {
-    return 0;
-    return 1;
+    exit();
+    const x = 5;
   }
 );

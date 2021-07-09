@@ -1,4 +1,4 @@
-module Reach.Linearize (linearize) where
+module Reach.Linearize (linearize, Error(..)) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -22,6 +22,15 @@ import Reach.Util
 data Error
   = Err_Unreachable String
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance HasErrorCode Error where
+  errPrefix = const "RL"
+  -- These indices are part of an external interface; they
+  -- are used in the documentation of Error Codes.
+  -- If you delete a constructor, do NOT re-allocate the number.
+  -- Add new error codes at the end.
+  errIndex = \case
+    Err_Unreachable {} -> 0
 
 instance Show Error where
   show = \case

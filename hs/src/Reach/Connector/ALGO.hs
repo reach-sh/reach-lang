@@ -833,7 +833,7 @@ ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
-  DLE_Impossible at msg -> expect_thrown at $ Err_Impossible msg
+  DLE_Impossible at err -> expect_thrown at err
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do

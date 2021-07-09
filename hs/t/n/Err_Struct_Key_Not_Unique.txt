@@ -1,1 +1,8 @@
-reachc: error: ./Err_Struct_Key_Not_Unique.rsh:8:23:application: All Struct keys must be unique, but `x` is not. This Struct already has keys: x, y
+reachc: error[RE0097]: All Struct keys must be unique, but `x` is not. This Struct already has keys: x, y
+
+ ./Err_Struct_Key_Not_Unique.rsh:8:23:application
+
+ 8|       const s = Struct([["x", UInt], ["y", UInt], ["x", UInt]]);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0097.html
+

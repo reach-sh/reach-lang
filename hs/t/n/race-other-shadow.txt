@@ -1,1 +1,8 @@
-reachc: error: ./race-other-shadow.rsh:17:24:dot: Invalid name shadowing. Identifier 'x' is already bound at ./race-other-shadow.rsh:16:15:id. It cannot be bound again at ./race-other-shadow.rsh:17:24:dot
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'x' is already bound at ./race-other-shadow.rsh:16:15:id. It cannot be bound again at ./race-other-shadow.rsh:17:24:dot
+
+ ./race-other-shadow.rsh:17:24:dot
+
+ 17|       race(Alice, Bob).publish(x);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+

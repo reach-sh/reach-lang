@@ -1,1 +1,8 @@
-reachc: error: ./Err_Throw_No_Catch.rsh:7:12:block: `throw` statements may only occur inside of `try/catch` blocks.
+reachc: error[RE0101]: `throw` statements may only occur inside of `try/catch` blocks.
+
+ ./Err_Throw_No_Catch.rsh:8:7:throw
+
+ 8|       throw 10;
+
+For further explanation of this error, see: https://docs.reach.sh/RE0101.html
+

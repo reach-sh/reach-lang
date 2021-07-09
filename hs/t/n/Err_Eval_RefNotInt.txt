@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_RefNotInt.rsh:6:15:array ref: Invalid array index. Expected uint256, got: Bytes(5)
+reachc: error[RE0039]: Invalid array index. Expected uint256, got: Bytes(5)
+
+ ./Err_Eval_RefNotInt.rsh:6:15:array ref
+
+ 6|     return arr["hello"];
+
+For further explanation of this error, see: https://docs.reach.sh/RE0039.html
+

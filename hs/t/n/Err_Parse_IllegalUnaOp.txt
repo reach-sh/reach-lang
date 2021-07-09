@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_IllegalUnaOp.rsh:6:19:return: Illegal unary operator: JSUnaryOpIncr (JSAnnot (TokenPn 84 6 26) [WhiteSpace (TokenPn 83 6 25) " "])
+reachc: error[RP0006]: Illegal unary operator: JSUnaryOpIncr (JSAnnot (TokenPn 84 6 26) [WhiteSpace (TokenPn 83 6 25) " "])
+
+ ./Err_Parse_IllegalUnaOp.rsh:6:19:return
+
+ 6|   {}, [], () => { return ++x; }
+
+For further explanation of this error, see: https://docs.reach.sh/RP0006.html
+

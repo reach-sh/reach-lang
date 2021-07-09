@@ -1,1 +1,8 @@
-reachc: error: ./Err_Obj_IllegalMethodDefinition.rsh:3:11:obj: Invalid function field. Instead of {f() {...}}, write {f: () => {...}}
+reachc: error[RE0051]: Invalid function field. Instead of {f() {...}}, write {f: () => {...}}
+
+ ./Err_Obj_IllegalMethodDefinition.rsh:3:11:obj
+
+ 3| const x = {f() { return 0; }};
+
+For further explanation of this error, see: https://docs.reach.sh/RE0051.html
+

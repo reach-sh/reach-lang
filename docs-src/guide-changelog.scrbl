@@ -10,6 +10,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.2 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/08: @secref["ref-error-codes"] created}
 @item{2021/06/20: @tech{Token minting} introduced, with implementation on ETH.}
 @item{... many interesting things ...}
 @item{2020/09/01: version tagged}

@@ -76,6 +76,8 @@ dependencies:
 - vector
 - yaml
 - neat-interpolation
+- pretty-terminal
+- generic-data
 
 default-extensions:
 - BangPatterns

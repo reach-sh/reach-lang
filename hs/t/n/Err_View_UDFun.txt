@@ -1,1 +1,8 @@
-reachc: error: ./Err_View_UDFun.rsh:6:17:application: View functions cannot have unconstrained domains.
+reachc: error[RE0108]: View functions cannot have unconstrained domains.
+
+ ./Err_View_UDFun.rsh:6:17:application
+
+ 6|   const V = View('Test', {
+
+For further explanation of this error, see: https://docs.reach.sh/RE0108.html
+

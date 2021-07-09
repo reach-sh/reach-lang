@@ -1,4 +1,12 @@
-reachc: error: ./Err_Switch_ExtraCases.rsh:12:9:switch: switch contains extra cases: ["Mone"]
+reachc: error[RE0075]: Switch contains extra cases: ["Mone"]
+
+ ./Err_Switch_ExtraCases.rsh:12:9:switch
+
+ 12|         switch ( mi ) {
+
 Trace:
   in [unknown function] from (./Err_Switch_ExtraCases.rsh:11:21:function exp) at (./Err_Switch_ExtraCases.rsh:15:35:application)
   in [unknown function] from (./Err_Switch_ExtraCases.rsh:9:15:function exp) at (./Err_Switch_ExtraCases.rsh:9:11:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0075.html
+

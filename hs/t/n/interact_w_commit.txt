@@ -1,1 +1,8 @@
-reachc: error: ./interact_w_commit.rsh:5:3:field: Invalid name shadowing. Identifier 'commit' is already bound at <builtin>. It cannot be bound again at ./interact_w_commit.rsh:5:9:property binding
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'commit' is already bound at <builtin>. It cannot be bound again at ./interact_w_commit.rsh:5:9:property binding
+
+ ./interact_w_commit.rsh:5:3:field
+
+ 5|   commit: Fun([], UInt)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+

@@ -1,1 +1,8 @@
-reachc: error: ./Err_Decl_ObjectSpreadNotLast.rsh:3:9:object spread: Object spread on left-hand side of binding must occur in last position
+reachc: error[RE0019]: Object spread on left-hand side of binding must occur in last position
+
+ ./Err_Decl_ObjectSpreadNotLast.rsh:3:9:object spread
+
+ 3| const { ...x, y } = { y: 1 };
+
+For further explanation of this error, see: https://docs.reach.sh/RE0019.html
+

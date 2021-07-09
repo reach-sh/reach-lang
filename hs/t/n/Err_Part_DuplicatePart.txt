@@ -1,1 +1,8 @@
-reachc: error: ./Err_Part_DuplicatePart.rsh:6:25:application: Duplicated participant name: "Alice"
+reachc: error[RE0109]: Duplicated participant name: "Alice"
+
+ ./Err_Part_DuplicatePart.rsh:6:25:application
+
+ 6|   const A2 = Participant('Alice', {});
+
+For further explanation of this error, see: https://docs.reach.sh/RE0109.html
+

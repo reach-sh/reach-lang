@@ -1,1 +1,8 @@
-reachc: error: ./lifted_interact_nonfun.rsh:8:28:application: Value cannot exist at runtime: <form: SLForm_liftInteract>
+reachc: error[RE0085]: Value cannot exist at runtime: <form: SLForm_liftInteract>
+
+ ./lifted_interact_nonfun.rsh:8:28:application
+
+ 8|       require(A.interact.x == 5);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0085.html
+

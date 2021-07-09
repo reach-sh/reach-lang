@@ -1,4 +1,11 @@
-reachc: error: ./Err_Eval_IncompatibleStates.rsh:6:15:application: incompatible states:
+reachc: error[RE0066]: Incompatible states:
 The expected state of the program varies between branches because:
   * Expected a publication to have been made by this point.
   * The number of active participants vary between states:  vs "A". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?
+
+ ./Err_Eval_IncompatibleStates.rsh:6:15:application
+
+ 6|       .timeout(1, () => {});
+
+For further explanation of this error, see: https://docs.reach.sh/RE0066.html
+

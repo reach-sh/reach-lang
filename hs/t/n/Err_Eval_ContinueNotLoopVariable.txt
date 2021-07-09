@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_ContinueNotLoopVariable.rsh:10:7:continue: Invalid loop variable update. Expected loop variable, got: y
+reachc: error[RE0028]: Invalid loop variable update. Expected loop variable, got: y
+
+ ./Err_Eval_ContinueNotLoopVariable.rsh:9:16:continue
+
+ 9|       [ x, y ] = [ x + 1, x ];
+
+For further explanation of this error, see: https://docs.reach.sh/RE0028.html
+

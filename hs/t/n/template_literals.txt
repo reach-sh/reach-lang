@@ -1,3 +1,11 @@
-reachc: error: ./template_literals.rsh:9:9:const: Invalid Reach expression syntax: JSTemplateLiteral
+reachc: error[RE0033]: Invalid Reach expression syntax: JSTemplateLiteral
+
+ ./template_literals.rsh:9:9:const
+
+ 9|         const template = `I will gladly pay you ${DAY} for a hamburger today`;
+
 Trace:
   in [unknown function] from (./template_literals.rsh:7:17:function exp) at (./template_literals.rsh:7:13:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0033.html
+

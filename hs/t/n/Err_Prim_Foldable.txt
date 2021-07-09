@@ -1,1 +1,8 @@
-reachc: error: ./Err_Prim_Foldable.rsh:8:25:application: Instances of Foldable cannot be created. Did you mean to call a function provided by `Foldable`?
+reachc: error[RE0091]: Instances of Foldable cannot be created. Did you mean to call a function provided by `Foldable`?
+
+ ./Err_Prim_Foldable.rsh:8:25:application
+
+ 8|       const x = Foldable();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0091.html
+

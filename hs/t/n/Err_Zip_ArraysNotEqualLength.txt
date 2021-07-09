@@ -1,1 +1,8 @@
-reachc: error: ./Err_Zip_ArraysNotEqualLength.rsh:6:32:application: Zip requires arrays of equal length, but got 5 and 3
+reachc: error[RE0071]: Zip requires arrays of equal length, but got 5 and 3
+
+ ./Err_Zip_ArraysNotEqualLength.rsh:6:32:application
+
+ 6|     const a = Array.iota(5).zip(Array.iota(3));
+
+For further explanation of this error, see: https://docs.reach.sh/RE0071.html
+

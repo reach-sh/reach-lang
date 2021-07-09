@@ -1,1 +1,8 @@
-reachc: error: ./Err_Eval_MustBeInWhileInvariant.rsh:9:15:application: must be in while invariant at Map.reduce
+reachc: error[RE0089]: Must be in while invariant at Map.reduce
+
+ ./Err_Eval_MustBeInWhileInvariant.rsh:9:15:application
+
+ 9|       m.reduce(0, (acc, x) => acc + x);
+
+For further explanation of this error, see: https://docs.reach.sh/RE0089.html
+

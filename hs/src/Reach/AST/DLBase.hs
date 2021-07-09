@@ -453,7 +453,7 @@ instance PrettySubst DLTokenNew where
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
-  | DLE_Impossible SrcLoc String
+  | DLE_Impossible SrcLoc ImpossibleError
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
@@ -501,7 +501,7 @@ instance PrettySubst DLExpr where
   prettySubst = \case
     DLE_Arg _ a -> prettySubst a
     DLE_LArg _ a -> prettySubst a
-    DLE_Impossible _ msg -> return $ "impossible" <> parens (pretty msg)
+    DLE_Impossible _ err -> return $ "impossible" <> parens (pretty err)
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do
       c' <- prettySubst c
       t' <- prettySubst t

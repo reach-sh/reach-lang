@@ -1,1 +1,7 @@
-reachc: error: ./Err_NoHeader.rsh: Invalid Reach file. Expected header 'reach 0.1'; at top of file.
+reachc: error[RE0048]: Invalid Reach file. Expected header 'reach 0.1'; at top of file.
+
+ ./Err_NoHeader.rsh
+
+
+For further explanation of this error, see: https://docs.reach.sh/RE0048.html
+

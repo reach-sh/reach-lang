@@ -1,1 +1,8 @@
-reachc: error: ./valid_participant_name_space.rsh:4:24:application: Invalid Participant name. Participant names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: ` `
+reachc: error[RE0017]: Invalid Participant name. Participant names must be of the format [a-zA-Z][_a-zA-Z0-9]* but received: ` `
+
+ ./valid_participant_name_space.rsh:4:24:application
+
+ 4|   const A = Participant(' ', {});
+
+For further explanation of this error, see: https://docs.reach.sh/RE0017.html
+

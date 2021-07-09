@@ -1,0 +1,8 @@
+reachc: error[RE0040]: Invalid indirect element reference. Expected array, got: UInt
+
+ ./Err_Eval_IndirectRefNotArray.rsh:12:14:array ref
+
+ 12|   const a = x[y];
+
+For further explanation of this error, see: https://docs.reach.sh/RE0040.html
+

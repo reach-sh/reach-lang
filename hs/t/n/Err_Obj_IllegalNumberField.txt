@@ -1,1 +1,8 @@
-reachc: error: ./Err_Obj_IllegalNumberField.rsh:3:12:number: Invalid field name. Fields must be bytes, but got: uint256
+reachc: error[RE0052]: Invalid field name. Fields must be bytes, but got: uint256
+
+ ./Err_Obj_IllegalNumberField.rsh:3:12:number
+
+ 3| const x = {4: "four"}
+
+For further explanation of this error, see: https://docs.reach.sh/RE0052.html
+

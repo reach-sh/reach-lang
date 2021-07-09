@@ -548,8 +548,8 @@ solExpr sp = \case
   DLE_Arg _ a -> spa $ solArg a
   DLE_LArg {} ->
     impossible "large arg"
-  DLE_Impossible at msg ->
-    expect_thrown at $ Err_Impossible msg
+  DLE_Impossible at err ->
+    expect_thrown at err
   DLE_PrimOp _ p args -> do
     args' <- mapM solArg args
     spa $ solPrimApply p args'

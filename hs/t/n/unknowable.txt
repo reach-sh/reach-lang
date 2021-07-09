@@ -1,1 +1,8 @@
-reachc: error: ./unknowable.rsh:8:7:const: Invalid name shadowing. Identifier 'unknowable' is already bound at <builtin>. It cannot be bound again at ./unknowable.rsh:8:13:id
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'unknowable' is already bound at <builtin>. It cannot be bound again at ./unknowable.rsh:8:13:id
+
+ ./unknowable.rsh:8:7:const
+
+ 8|       const unknowable = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+

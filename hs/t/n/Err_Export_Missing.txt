@@ -1,1 +1,8 @@
-reachc: error: ./Err_Export_Missing.rsh:8:1:export: Invalid unbound identifier in export: x. Did you mean: ["fx","eq","ge","gt","is"]
+reachc: error[RE0042]: Invalid unbound identifier in export: x. Did you mean: ["fx","eq","ge","gt","is"]
+
+ ./Err_Export_Missing.rsh:8:1:export
+
+ 8| export {x};
+
+For further explanation of this error, see: https://docs.reach.sh/RE0042.html
+

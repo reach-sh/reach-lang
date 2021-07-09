@@ -1,1 +1,8 @@
-reachc: error: ./Err_Form_InvalidArgs.rsh:5:11:application: Invalid args. Expected 1 but got 2
+reachc: error[RE0044]: Invalid args. Expected 1 but got 2
+
+ ./Err_Form_InvalidArgs.rsh:5:11:application
+
+ 5|     A.only(() => {
+
+For further explanation of this error, see: https://docs.reach.sh/RE0044.html
+

@@ -1,1 +1,8 @@
-reachc: error: ./Err_Fork_ConsensusBadArrow.rsh:9:12:application: fork consensus block should be arrow with zero or one parameters, but got something else
+reachc: error[RE0082]: Fork consensus block should be arrow with zero or one parameters, but got something else
+
+ ./Err_Fork_ConsensusBadArrow.rsh:9:12:application
+
+ 9|       .case(A, (() => ({
+
+For further explanation of this error, see: https://docs.reach.sh/RE0082.html
+

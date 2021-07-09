@@ -1,1 +1,8 @@
-reachc: error: ./Err_Module_Return.rsh:3:1:return: Nowhere to return to
+reachc: error[RE0034]: Nowhere to return to
+
+ ./Err_Module_Return.rsh:3:1:return
+
+ 3| return 0;
+
+For further explanation of this error, see: https://docs.reach.sh/RE0034.html
+

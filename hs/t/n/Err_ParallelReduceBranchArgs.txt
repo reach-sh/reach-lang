@@ -1,1 +1,8 @@
-reachc: error: ./Err_ParallelReduceBranchArgs.rsh:9:23:application: The `timeRemaining` branch of `parallelReduce` expects 1 argument, but received 2
+reachc: error[RE0084]: The `timeRemaining` branch of `parallelReduce` expects 1 argument, but received 2
+
+ ./Err_ParallelReduceBranchArgs.rsh:18:24:application
+
+ 18|          .timeRemaining(1, () => {});
+
+For further explanation of this error, see: https://docs.reach.sh/RE0084.html
+

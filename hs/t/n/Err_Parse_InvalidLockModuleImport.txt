@@ -1,1 +1,8 @@
-reachc: error: ./Err_Parse_InvalidLockModuleImport.rsh:5:27:import from: Cannot install packages; did you mean to run with `--install-pkgs`?
+reachc: error[RI0003]: Cannot install packages; did you mean to run with `--install-pkgs`?
+
+ ./Err_Parse_InvalidLockModuleImport.rsh:5:27:import from
+
+ 5| import { fourTimesThree } from
+
+For further explanation of this error, see: https://docs.reach.sh/RI0003.html
+

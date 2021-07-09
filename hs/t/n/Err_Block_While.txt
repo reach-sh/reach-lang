@@ -1,1 +1,8 @@
-reachc: error: ./Err_Block_While.rsh:3:1:while: Invalid `while` syntax
+reachc: error[RE0005]: Invalid `while` syntax
+
+ ./Err_Block_While.rsh:3:1:while
+
+ 3| while (true) {
+
+For further explanation of this error, see: https://docs.reach.sh/RE0005.html
+

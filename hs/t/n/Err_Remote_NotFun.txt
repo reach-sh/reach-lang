@@ -1,1 +1,8 @@
-reachc: error: ./Err_Remote_NotFun.rsh:13:23:application: Remote type not a function, "x" has type UInt
+reachc: error[RE0095]: Remote type not a function, "x" has type UInt
+
+ ./Err_Remote_NotFun.rsh:13:23:application
+
+ 13|     const ctx = remote(ca, { x: UInt });
+
+For further explanation of this error, see: https://docs.reach.sh/RE0095.html
+
