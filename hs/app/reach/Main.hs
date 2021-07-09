@@ -360,10 +360,13 @@ data DockerMeta = DockerMeta
   }
 
 
+appProj' :: FilePath -> T.Text
+appProj' = T.toLower . T.pack . takeBaseName . dropTrailingPathSeparator
+
+
 mkDockerMetaConsole :: Env -> T.Text -> Bool -> DockerMeta
 mkDockerMetaConsole Env {..} app isolate = DockerMeta {..} where
-  appProj = T.toLower . T.pack $ takeBaseName e_dirProjectHost
-    <> if isolate then ("-" <> T.unpack app) else ""
+  appProj = appProj' e_dirProjectHost <> if isolate then ("-" <> app) else ""
 
   appService = "reach-app-" <> appProj
   appImage = "reachsh/" <> appService
@@ -380,7 +383,7 @@ mkDockerMetaReact = DockerMeta {..} where
 
 mkDockerMetaRpc :: Env -> DockerMeta
 mkDockerMetaRpc Env {..} = DockerMeta {..} where
-  appProj = T.pack $ takeBaseName e_dirProjectHost
+  appProj = appProj' e_dirProjectHost
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
   appImageTag = appImage <> ":" <> versionShort e_var
@@ -388,7 +391,7 @@ mkDockerMetaRpc Env {..} = DockerMeta {..} where
 
 mkDockerMetaStandaloneDevnet :: Env -> DockerMeta
 mkDockerMetaStandaloneDevnet Env {..} = DockerMeta {..} where
-  appProj = T.pack $ takeBaseName e_dirProjectHost
+  appProj = appProj' e_dirProjectHost
   appService = "reach-app-" <> appProj
   appImage = ""
   appImageTag = ""
@@ -559,9 +562,9 @@ scaffold' isolate quiet app = do
 
     -- TODO: s/lint/preapp. It's disabled because sometimes our
     -- generated code trips the linter
-    tmpl "package.json" >>= scaff quiet containerPackageJson
-    tmpl "Dockerfile" >>= scaff quiet containerDockerfile
-    tmpl "Makefile" >>= scaff quiet containerMakefile
+    tmpl "package.json" >>= scaffIfAbsent containerPackageJson
+    tmpl "Dockerfile" >>= scaffIfAbsent containerDockerfile
+    tmpl "Makefile" >>= scaffIfAbsent containerMakefile
 
     tmpl ".gitignore" >>= scaffIfAbsent (e_dirProjectContainer </> ".gitignore")
     tmpl ".dockerignore" >>= scaffIfAbsent (e_dirProjectContainer </> ".dockerignore")
@@ -731,50 +734,51 @@ init' = command "init" . info f $ d <> foot where
 
 
 --------------------------------------------------------------------------------
--- TODO do we need to preserve $APP-as-directory behavior? Test more thoroughly
 run' :: Subcommand
-run' = command "run" $ info f d where
+run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
-  f = go
-    <$> switch (long "isolate")
-    <*> strArgument (metavar "APP" <> value "")
+  f = go <$> switch (long "isolate")
+         <*> strArgument (metavar "APP" <> value "")
+         <*> many (strArgument (metavar "ARG"))
 
-  go isolate app = do
+  go isolate app args = do
     dieConnectorModeNonBrowser
 
     env@Env {..} <- ask
     let Var {..} = e_var
 
-    (app', dir) <- liftIO $ case app of
-      "" -> pure ("index", e_dirProjectContainer)
+    (app', dirContainer, dirHost, dirRel) <- liftIO $ case app of
+      "" -> pure ("index", e_dirProjectContainer, T.pack e_dirProjectHost, ".")
       _ -> ifM (not <$> doesDirectoryExist app)
-        (pure (T.pack app, e_dirProjectContainer))
-        (pure ("index", if isAbsolute app then app else e_dirProjectContainer </> app))
+        (pure (T.pack app, e_dirProjectContainer, T.pack e_dirProjectHost, "."))
+        $ case isAbsolute app of
+          True -> die $ "Please replace " <> app <> " with a relative path."
+          False -> pure ("index", e_dirProjectContainer </> app, T.pack $ e_dirProjectHost </> app, app)
 
-    let Scaffold {..} = mkScaffold env isolate app'
+    let env' = env { e_dirProjectContainer = dirContainer, e_dirProjectHost = T.unpack dirHost }
+    let Scaffold {..} = mkScaffold env' isolate app'
 
-    -- TODO scaffold Dockerfile, package.json and Makefile individually (if absent)
-    noneExist <- andM $ fmap not . liftIO . doesFileExist . (dir </>)
-      <$> [ containerMakefile, containerPackageJson, containerDockerfile ]
+    toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
+      [ (containerMakefile, hostMakefile)
+      , (containerPackageJson, hostPackageJson)
+      , (containerDockerfile, hostDockerfile)
+      ]
 
-    when noneExist $ scaffold' isolate True app'
+    cleanup <- T.intercalate "\n" <$> forM toClean (pure . T.pack . ("rm " <>) . snd)
 
-    let isolate' = if isolate then "--isolate" else ""
-    let cleanup = case noneExist of
-          True -> [N.text| $reachEx unscaffold $isolate' --quiet $app' |]
-          False -> ":"
+    local (const env') $ scaffold' isolate True app'
 
-    let rsh = T.unpack app' <> ".rsh"
-    let mjs = T.unpack app' <> ".mjs"
-    let bjs = "build" </> T.unpack app' <> ".main.mjs"
+    let rsh = dirContainer </> T.unpack app' <> ".rsh"
+    let mjs = dirContainer </> T.unpack app' <> ".mjs"
+    let bjs = dirContainer </> "build" </> T.unpack app' <> ".main.mjs"
 
     let abortIfAbsent p = liftIO . whenM (not <$> doesFileExist p)
-          . die $ p <> " doesn't exist."
+          . die $ takeFileName p <> " doesn't exist."
 
     abortIfAbsent rsh
     abortIfAbsent mjs
 
-    let recompile' = reachEx <> " compile " <> T.pack rsh <> "\n"
+    let recompile' = reachEx <> " compile " <> T.pack (dirRel </> T.unpack app' <> ".rsh\n")
 
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
@@ -785,17 +789,23 @@ run' = command "run" $ info f d where
 
     let dm@DockerMeta {..} = mkDockerMetaConsole env app' isolate
     let dockerfile' = T.pack hostDockerfile
-    let mode' = T.pack $ show connectorMode
+    let args' = T.intercalate " " . map (<> "'") . map ("'" <>) $ app' : args
 
-    -- TODO args to `docker-compose run`
     withCompose Console dm connectorMode . script $ do
       maybe (pure ()) write recompile
       write [N.text|
-        export REACH_CONNECTOR_MODE=$mode'
-        docker build -f $dockerfile' --tag=$appImageTag .
-        docker-compose -f "$$TMP/docker-compose.yml" run --rm $appService
-        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
+        cd $dirHost
+
+        set +e
+        docker build -f $dockerfile' --tag=$appImageTag . \
+          && docker-compose -f "$$TMP/docker-compose.yml" run --rm $appService $args'
+        RES="$?"
+        set -e
+
         $cleanup
+        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
+
+        exit "$$RES"
       |]
 
 
