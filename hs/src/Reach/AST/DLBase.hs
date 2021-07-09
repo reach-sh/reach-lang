@@ -419,7 +419,7 @@ tokenNameLen = 32
 tokenSymLen :: Integer
 tokenSymLen = 8
 tokenURLLen :: Integer
-tokenURLLen = 32
+tokenURLLen = 96
 tokenMetadataLen :: Integer
 tokenMetadataLen = 32
 

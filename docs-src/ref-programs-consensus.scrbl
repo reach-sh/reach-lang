@@ -309,8 +309,9 @@ A @tech{non-network token} may be @deftech[#:key "token minting"]{minted} with t
 @itemlist[
 @item{@litchar{name}: A value of type @reachin{Bytes(32)}; defaults to empty.}
 @item{@litchar{symbol}: A value of type @reachin{Bytes(8)}; defaults to empty.}
-@item{@litchar{url}: A value of type @reachin{Bytes(32)}; defaults to empty.}
-@item{@litchar{metadata}: A value of type @reachin{Bytes(32)}; defaults to empty.}
+@item{@litchar{url}: A value of type @reachin{Bytes(96)}; defaults to empty.}
+@item{@litchar{metadata}: A value of type @reachin{Bytes(32)}; defaults to empty.
+This value is intended to be a @tech{digest} of a larger metadata document.}
 @item{@litchar{supply}: A value of type @reachin{UInt}; defaults to @reachin{UInt.max}.}
 ]
 
