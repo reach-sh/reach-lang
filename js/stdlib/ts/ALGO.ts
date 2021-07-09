@@ -1359,7 +1359,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
         debug({i});
-        const ik = base64ify(`${prefix}${i}`);
+        const ik = Buffer.concat([Buffer.from(prefix), new Uint8Array([i])]).toString('base64');
         debug({ik});
         const st = (src.find((x:any) => x.key === ik)).value;
         debug({st});

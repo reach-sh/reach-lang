@@ -63,23 +63,20 @@ typeObjectTypes a =
 
 -- Algorand constants
 
-algoMaxTxGroupSize :: TxnIdx
-algoMaxTxGroupSize = 16
-
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
 
-algoMaxAppTxnAccounts :: Word8
-algoMaxAppTxnAccounts = 4 -- plus sender
+-- NOTE: Could check with verifier
+-- algoMaxAppTxnAccounts :: Word8
+-- algoMaxAppTxnAccounts = 4 -- plus sender
+-- algoMaxTxGroupSize :: TxnIdx
+-- algoMaxTxGroupSize = 16
 
 algoMaxAppTotalArgLen :: Integer
 algoMaxAppTotalArgLen = 2048
 
 algoMinimumBalance :: Integer
 algoMinimumBalance = 100000
-
-accountsL :: [Word8]
-accountsL = take (fromIntegral $ algoMaxAppTxnAccounts + 1) [0 ..]
 
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
@@ -116,8 +113,6 @@ texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
 
 type ScratchSlot = Word8
-
-type TxnIdx = Word8
 
 type TEAL = [LT.Text]
 
@@ -1161,13 +1156,6 @@ cp km = \case
   DT_Return _ -> km
   DT_Com m k -> cm (cp km k) m
 
-cwhen :: App () -> App ()
-cwhen cbody = do
-  after_lab <- freshLabel
-  code "bz" [after_lab]
-  cbody
-  label after_lab
-
 ct :: CTail -> App ()
 ct = \case
   CT_Com m k -> cm (ct k) m
@@ -1218,15 +1206,28 @@ cViewSave at (ViewSave vwhich vvs) = do
   let la = DLLA_Tuple $ vconcat vwhich vvs
   let lat = largeArgTypeOf la
   let sz = typeSizeOf lat
-  viewSz <- readViewSize
-  when (viewSz > 0) $ do
-    comment $ "check view bs"
+  Shared {..} <- eShared <$> ask
+  when (sViewSize > 0) $ do
     cla la
     ctobs lat
-    padding $ viewSz - sz
+    padding $ sViewSize - sz
     op "concat"
-    xxx "argView"
-    asserteq
+    -- [ ViewData ]
+    forM_ sViewKeysl $ \vi -> do
+      -- [ ViewData ]
+      cl $ DLL_Bytes $ keyView vi
+      -- [ ViewData, Key ]
+      code "dig" [ "1" ]
+      -- [ ViewData, Key, ViewData ]
+      cStateSlice at sViewSize vi
+      -- [ ViewData, Key, ViewData' ]
+      op "app_global_put"
+      -- [ ViewData ]
+      return ()
+    -- [ ViewData ]
+    op "pop"
+    -- [ ]
+    return ()
 
 data HashMode
   = HM_Set Int
@@ -1340,9 +1341,6 @@ init_txnCounter = do
 
 bindRound :: DLVar -> App a -> App a
 bindRound dv = store_let dv True (code "global" ["Round"])
-
-readViewSize :: App Integer
-readViewSize = sViewSize <$> (eShared <$> ask)
 
 bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
 bindFromTuple at vs m = do
@@ -1555,10 +1553,9 @@ compile_algo disp pl = do
           case dli_ctimem dli of
             Nothing -> (id, mempty)
             Just v -> (bindRound v, [DLA_Var v])
+    -- XXX ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) csvs
+    cViewSave at (ViewSave 0 mempty)
     bind_csvs $ cstate (HM_Set 0) csvs
-    forM_ sViewKeysl $ \i -> do
-      cl $ DLL_Bytes $ ""
-      app_global_put (keyView i)
     code "b" ["checkSize"]
     label "init"
     code "txn" ["OnCompletion"]
