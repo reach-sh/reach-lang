@@ -61,7 +61,7 @@ const {
 const UInt_max: BigNumber =
   ethers.BigNumber.from(2).pow(256).sub(1);
 
-const digest = makeDigest((t:AnyETH_Ty, v:any) => {
+const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
   if (t.paramType === 'tuple()') {
     if (Array.isArray(v) && v.length === 0) {

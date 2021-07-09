@@ -50,7 +50,7 @@ export type ALGO_Ty<BV extends CBR_Val> = {
 }
 
 export const digest =
-  makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
+  makeDigest('sha256', (t:ALGO_Ty<any>, v:any) => t.toNet(v));
 
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,

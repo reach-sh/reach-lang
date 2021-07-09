@@ -300,13 +300,15 @@ export function truthyEnv(v: string|undefined|null): v is string {
 export const envDefault = <T>(v: string|undefined|null, d: T): string|T =>
   (v === undefined || v === null) ? d : v;
 
-export const makeDigest = (prep: any) => (t:any, v:any) => {
+type DigestMode = 'keccak256' | 'sha256';
+export const makeDigest = (mode: DigestMode, prep: any) => (t:any, v:any) => {
   void(hexlify);
   // const args = [t, v];
   // debug('digest(', args, ') =>');
   const kekCat = prep(t, v);
   // debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
-  const r = ethers.utils.keccak256(kekCat);
+  const f = mode === 'keccak256' ? ethers.utils.keccak256 : ethers.utils.sha256;
+  const r = f(kekCat);
   // debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };

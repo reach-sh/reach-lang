@@ -66,12 +66,6 @@ typeObjectTypes a =
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 64
 
--- NOTE: Could check with verifier
--- algoMaxAppTxnAccounts :: Word8
--- algoMaxAppTxnAccounts = 4 -- plus sender
--- algoMaxTxGroupSize :: TxnIdx
--- algoMaxTxGroupSize = 16
-
 algoMaxAppTotalArgLen :: Integer
 algoMaxAppTotalArgLen = 2048
 
@@ -395,9 +389,6 @@ sallocLet dv cgen km = do
     cgen
     cstore
     store_let dv True cload km
-
--- XXX check that the number of transactions is never more than
--- algoMaxTxGroupSize
 
 ctobs :: DLType -> App ()
 ctobs = \case

@@ -56,15 +56,13 @@ The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generate
 @tech{contracts} that manage one instance of the @|DApp|'s
 execution.
 
-It uses finite on-chain state: two integers and one byte string.
-The @|DApp| consists of one application, one contract-controlled escrow account, and many contract-controlled handlers for each of the @tech{publications} of your Reach program.
-During compilation, the connector produces intermediate outputs for each of these contracts.
-These contracts embed references to each through their template arguments, which is done automatically by the Reach standard library implementation.
+It uses finite on-chain state.
+The @|DApp| consists of one application and one contract-controlled escrow account.
 
-It relies on versions of @tt{algod} that support TEAL 3, such as the Algorand BetaNet 2.5.2 release from mid-March 2021.
+It relies on versions of @tt{algod} that support TEAL version 4, such as Algorand 2.7.1 from July 2021.
 It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
 
-Algorand uses the Keccak256 algorithm to perform @tech{digest}s.
+Algorand uses the SHA256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 64-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://developer.algorand.org/docs/features/asa/"]{Algorand Standard Assets} (ASAs).
@@ -74,6 +72,7 @@ For example, if a program has a @tech{consensus step} where Alice will receive 1
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
 You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
+
 @tech{Token minting} is not supported on Algorand.
 
 @tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
