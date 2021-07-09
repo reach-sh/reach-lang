@@ -128,8 +128,6 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   viewKeys: number,
   mapDataSize: number,
   mapDataKeys: number,
-  mapRecordSize: number,
-  mapArgSize: number,
   unsupported: Array<string>,
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;

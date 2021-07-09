@@ -177,7 +177,7 @@ tealcount () {
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
-# r examples/map-sender
+r examples/map-sender
 # r examples/map-any
 # r examples/map-vary
 # r examples/map-rwrw # XXX
@@ -225,7 +225,7 @@ tealcount () {
 # exit 0
 
 # r examples/mint-basic
-r examples/atomic-swap
+# r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
 

@@ -136,6 +136,8 @@ peep_optimize :: [TEAL] -> [TEAL]
 peep_optimize = \case
   [] -> []
   [["return"]] -> []
+  -- This relies on knowing what "done" is
+  ["assert"] : ["b", "done"] : x -> peep_optimize $ ["return"] : x
   ["byte", "base64()"] : ["concat"] : l -> peep_optimize l
   ["byte", x] : ["byte", y] : ["concat"] : l | isBase64 x && isBase64 y ->
     peep_optimize $ [ "byte", (base64d $ base64u x <> base64u y) ] : l
@@ -212,13 +214,11 @@ data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
   , sCounter :: Counter
   , sViewSize :: Integer
+  , sViewKeysl :: [Word8]
   , sMaps :: DLMapInfos
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
-  , sMapRecordTy :: DLType
-  , sMapRecordSize :: Integer
-  , sMapArgTy :: DLType
-  , sMapArgSize :: Integer
+  , sMapKeysl :: [Word8]
   }
 
 type Lets = M.Map DLVar (App ())
@@ -276,25 +276,12 @@ app_global_get k = do
   cl $ DLL_Bytes $ k
   op "app_global_get"
 
+-- XXX inline to remove swap
 app_global_put :: B.ByteString -> App ()
 app_global_put k = do
   cl $ DLL_Bytes $ k
   op "swap"
   op "app_global_put"
-
-app_local_get :: Word8 -> B.ByteString -> App ()
-app_local_get ai k = do
-  cl $ DLL_Int sb $ fromIntegral ai
-  cl $ DLL_Bytes $ k
-  op "app_local_get"
-
-app_local_put :: Word8 -> B.ByteString -> App ()
-app_local_put ai k = do
-  cl $ DLL_Int sb $ fromIntegral ai
-  op "swap"
-  cl $ DLL_Bytes $ k
-  op "swap"
-  op "app_local_put"
 
 checkRekeyTo :: App ()
 checkRekeyTo = do
@@ -601,7 +588,7 @@ check_concat_len totlen =
           <> " This is caused by a Reach data type being too large."
 
 cdigest :: [(DLType, App ())] -> App ()
-cdigest l = cconcatbs l >> op "keccak256"
+cdigest l = cconcatbs l >> op "sha256"
 
 csubstring :: SrcLoc -> Integer -> Integer -> App ()
 csubstring at b c =
@@ -822,8 +809,54 @@ cTupleSet at tt idx = do
   ctobs t
   -- [ Tuple, Value'Bs ]
   csplice at start end tot
+  -- [ Tuple' ]
+  return ()
 
--- [ Tuple' ]
+cMapLoad :: App ()
+cMapLoad = do
+  Shared {..} <- eShared <$> ask
+  -- [ Address ]
+  padding 0
+  -- [ Address, MapData_0 ]
+  forM_ sMapKeysl $ \mi -> do
+    -- [ Address, MapData_N ]
+    code "dig" [ "1" ]
+    -- [ Address, MapData_N, Address ]
+    cl $ DLL_Bytes $ keyMap mi
+    -- [ Address, MapData_N, Address, Key ]
+    op "app_local_get"
+    -- [ Address, MapData_N, NewPiece ]
+    op "concat"
+    -- [ Address, MapData_N+1 ]
+    return ()
+  -- [ Address, MapData_k ]
+  op "swap"
+  op "pop"
+  -- [ MapData ]
+  return ()
+
+cMapStore :: SrcLoc -> App ()
+cMapStore at = do
+  Shared {..} <- eShared <$> ask
+  -- [ Address, MapData' ]
+  forM_ sMapKeysl $ \mi -> do
+    -- [ Address, MapData' ]
+    code "dig" ["1"]
+    -- [ Address, MapData', Address ]
+    cl $ DLL_Bytes $ keyMap mi
+    -- [ Address, MapData', Address, Key ]
+    code "dig" ["2"]
+    -- [ Address, MapData', Address, Key, MapData' ]
+    cStateSlice at sMapDataSize mi
+    -- [ Address, MapData', Address, Key, Value ]
+    op "app_local_put"
+    -- [ Address, MapData' ]
+    return ()
+  -- [ Address, MapData' ]
+  op "pop"
+  op "pop"
+  -- [ ]
+  return ()
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -933,23 +966,26 @@ ce = \case
       check = ca a >> assert
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
-  DLE_MapRef _ mpv fa -> do
+  DLE_MapRef _ (DLMVar i) fa -> do
     ca fa
-    cMapRecAlloc
-    cMapRef mpv
-  DLE_MapSet _ mpv fa mva -> do
+    cMapLoad
+    mdt <- getMapDataTy
+    cTupleRef sb mdt $ fromIntegral i
+  DLE_MapSet at mpv@(DLMVar i) fa mva -> do
     ca fa
-    cMapRecAlloc
-    t <- getMapTy mpv
-    cla $ mdaToMaybeLA t mva
-    cMapSet mpv
+    op "dup"
+    cMapLoad
+    mdt <- getMapDataTy
+    mt <- getMapTy mpv
+    cla $ mdaToMaybeLA mt mva
+    cTupleSet at mdt $ fromIntegral i
+    cMapStore at
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew {} -> xxx "token creation"
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy
-    -- ....unless we need to do the TEAL3 hack
-    xxx "token burn"
+    return ()
   DLE_TokenDestroy {} -> xxx "token destroy"
   where
     show_stack msg at fs = do
@@ -1384,7 +1420,6 @@ computeViewSize = h1
     h3 (ViewInfo vs _) = typeSizeOf $ T_Tuple $ T_UInt : h4 vs
     h4 = map varType
 
--- <MapStuff>
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
   ms <- ((sMaps . eShared) <$> ask)
@@ -1399,200 +1434,13 @@ mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
 getMapDataTy :: App DLType
 getMapDataTy = (sMapDataTy . eShared) <$> ask
 
-mkMapRecordTy :: DLType -> DLType
-mkMapRecordTy x =
-  --         present?, prev, next, account
-  T_Tuple $ [T_Bool, x, x, T_Address]
-
-getMapRecordTy :: App DLType
-getMapRecordTy = (sMapRecordTy . eShared) <$> ask
-
-mkMapArgTy :: DLType -> DLType
-mkMapArgTy t = T_Array t $ fromIntegral $ length accountsL
-
-getMapArgTy :: App DLType
-getMapArgTy = (sMapArgTy . eShared) <$> ask
-
-mapRecSlot_when :: Word8
-mapRecSlot_when = 0
-
-mapRecSlot_prev :: Word8
-mapRecSlot_prev = mapRecSlot_when + 1
-
-mapRecSlot_next :: Word8
-mapRecSlot_next = mapRecSlot_prev + 1
-
-mapRecSlot_acct :: Word8
-mapRecSlot_acct = mapRecSlot_next + 1
-
-cMapRecAlloc :: App ()
-cMapRecAlloc = do
-  -- [ Address ]
-  found_lab <- freshLabel
-  bad_lab <- freshLabel
-  forM_ accountsL $ \ai -> do
-    -- [ Address ]
-    cMapWhen $ Just ai
-    -- [ Address, When ]
-    cwhen $ do
-      -- [ Address ]
-      op "dup"
-      -- [ Address, Address ]
-      cl $ DLL_Int sb $ fromIntegral ai
-      -- [ Address, Address, Offset ]
-      op "swap"
-      -- [ Address, Offset, Address ]
-      cMapAcct $ Just ai
-      -- [ Address, Offset, Address, Address ]
-      op "=="
-      -- [ Address, Offset, Bool ]
-      code "bnz" [found_lab]
-
-      -- If it is not found, then the current account count must be greater
-      -- than this number, otherwise the accounts were put in out of order.
-
-      -- [ Address, Offset ]
-      -- XXX readGV GV_Accounts
-      -- [ Address, Offset, AccountCount ]
-      op "<="
-      -- [ Address, Valid ]
-      op "assert"
-  -- [ Address ]
-  label bad_lab
-  -- [ Address ]
-  cl $ DLL_Bool False
-  -- [ Address, #f ]
-  op "assert"
-  -- dead
-  label found_lab
-  -- [ Address, Offset ]
-  op "swap"
-  -- [ Offset, Address ]
-  op "pop"
-  -- [ Offset ]
-
-  -- We need to record that we've seen this many accounts, so if this is
-  -- bigger, then we need to record it
-  op "dup"
-  -- [ Offset, Offset ]
-  -- XXX readGV GV_Accounts
-  -- [ Offset, Offset, AccountCount ]
-  op ">"
-  -- [ Offset, Bigger ]
-  dont_set_lab <- freshLabel
-  code "bz" [dont_set_lab]
-  -- [ Offset ]
-  op "dup"
-  -- [ Offset, Offset ]
-  -- XXX setGV GV_Accounts
-  -- [ Offset ]
-  label dont_set_lab
-
-cMapRecLoad :: Maybe Word8 -> App ()
-cMapRecLoad mai = do
-  -- (maybe [ Offset ] (const []) mai)
-  -- XXX readArgCache argMaps
-  -- (maybe [ Offset ] (const []) mai) <> [ MapArg ]
-  t <- getMapRecordTy
-  case mai of
-    Just ai -> do
-      -- [ MapArg ]
-      cArrayRef sb t True (Left $ DLA_Literal $ DLL_Int sb $ fromIntegral ai)
-    Nothing -> do
-      -- [ Offset, MapArg ]
-      op "swap"
-      -- [ MapArg, Offset ]
-      salloc_ $ \cstore cload -> do
-        cstore
-        cArrayRef sb t True (Right $ cload)
-
--- [ Record ]
-
-cMapRecStore :: App ()
-cMapRecStore = do
-  salloc_ $ \store_val _XXX_load_val -> do
-    salloc_ $ \store_idx _XXX_load_idx -> do
-      -- [ Index, Value' ]
-      store_val
-      -- [ Index ]
-      store_idx
-      -- [ ]
-      _XXX_rt <- getMapArgTy
-      return ()
-      -- XXX cArraySet sb (arrTypeLen rt) (Just $ readArgCache argMaps) (Right $ load_idx) load_val
-      -- [ MapArg' ]
-      -- XXX setGV $ GV_Arg argMaps
-
--- [ ]
-
-cMap_slot :: Word8 -> Maybe Word8 -> App ()
-cMap_slot slot mai = do
-  -- (maybe [ Offset ] (const []) mai)
-  cMapRecLoad mai
-  -- [ Record ]
-  t <- getMapRecordTy
-  cTupleRef sb t $ fromIntegral slot
-
--- [ Field ]
-
-cMapWhen :: Maybe Word8 -> App ()
-cMapWhen = cMap_slot mapRecSlot_when
-
-cMapPrev :: Maybe Word8 -> App ()
-cMapPrev = cMap_slot mapRecSlot_prev
-
-cMapNext :: Maybe Word8 -> App ()
-cMapNext = cMap_slot mapRecSlot_next
-
-cMapAcct :: Maybe Word8 -> App ()
-cMapAcct = cMap_slot mapRecSlot_acct
-
-cMapRef :: DLMVar -> App ()
-cMapRef (DLMVar i) = do
-  -- [ Offset ]
-  cMapPrev Nothing
-  -- [ Maps ]
-  t <- getMapDataTy
-  cTupleRef sb t $ fromIntegral i
-
--- [ MapValue ]
-
-cMapSet :: DLMVar -> App ()
-cMapSet (DLMVar i) = do
-  -- [ Offset, NewValue ]
-  op "swap"
-  -- [ NewValue, Offset ]
-  op "dup"
-  -- [ NewValue, Offset, Offset ]
-  cMapPrev Nothing
-  -- [ NewValue, Offset, Maps ]
-  dt <- getMapDataTy
-  code "dig" ["2"]
-  -- [ NewValue, Offset, Maps, NewValue ]
-  cTupleSet sb dt $ fromIntegral i
-  -- [ NewValue, Offset, Maps' ]
-  op "swap"
-  -- [ NewValue, Maps', Offset ]
-  op "dup"
-  -- [ NewValue, Maps', Offset, Offset ]
-  cMapRecLoad Nothing
-  -- [ NewValue, Maps', Offset, Record ]
-  code "dig" ["2"]
-  -- [ NewValue, Maps', Offset, Record, Maps' ]
-  rt <- getMapRecordTy
-  cTupleSet sb rt $ fromIntegral mapRecSlot_prev
-  -- [ NewValue, Maps', Offset, Record' ]
-  cMapRecStore
-  -- [ NewValue, Maps' ]
-  op "pop"
-  -- [ NewValue ]
-  op "pop"
-
--- [ ]
-
--- </MapStuff>
-
 type Disp = String -> T.Text -> IO ()
+
+cStateSlice :: SrcLoc -> Integer -> Word8 -> App ()
+cStateSlice at size iw = do
+  let i = fromIntegral iw
+  let k = algoMaxAppBytesValueLen
+  csubstring at (k * i) (min size $ k * (i + 1))
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
@@ -1604,12 +1452,24 @@ compile_algo disp pl = do
   let sViewSize = computeViewSize vi
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
-  let sMapRecordTy = mkMapRecordTy sMapDataTy
-  let sMapRecordSize = typeSizeOf sMapRecordTy
-  let sMapArgTy = mkMapArgTy sMapRecordTy
-  let sMapArgSize = typeSizeOf sMapArgTy
   let PLOpts {..} = plo
   let sCounter = plo_counter
+  let divup :: Integer -> Integer -> Integer
+      divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
+  let recordSize prefix size = do
+        modifyIORef resr $
+          M.insert (prefix <> "Size") $
+            Aeson.Number $ fromIntegral size
+  let recordSizeAndKeys :: T.Text -> Integer -> IO [Word8]
+      recordSizeAndKeys prefix size = do
+        recordSize prefix size
+        let keys = size `divup` algoMaxAppBytesValueLen
+        modifyIORef resr $
+          M.insert (prefix <> "Keys") $
+            Aeson.Number $ fromIntegral keys
+        return $ take (fromIntegral keys) [0 ..]
+  sViewKeysl <- recordSizeAndKeys "view" sViewSize
+  sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
   let eShared = Shared {..}
   let run :: String -> App () -> IO TEALs
       run lab m = do
@@ -1627,33 +1487,10 @@ compile_algo disp pl = do
         t <- render <$> run lab m
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
         disp lab t
-  let divup :: Integer -> Integer -> Integer
-      divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
-  let recordSize prefix size = do
-        modifyIORef resr $
-          M.insert (prefix <> "Size") $
-            Aeson.Number $ fromIntegral size
-  let recordSizeAndKeys :: T.Text -> Integer -> IO [Word8]
-      recordSizeAndKeys prefix size = do
-        recordSize prefix size
-        let keys = size `divup` algoMaxAppBytesValueLen
-        modifyIORef resr $
-          M.insert (prefix <> "Keys") $
-            Aeson.Number $ fromIntegral keys
-        return $ take (fromIntegral keys) [0 ..]
-  viewKeysl <- recordSizeAndKeys "view" sViewSize
-  mapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
-  recordSize "mapRecord" sMapRecordSize
-  recordSize "mapArg" sMapArgSize
-  let cStateSlice :: Integer -> Word8 -> App ()
-      cStateSlice size iw = do
-        let i = fromIntegral iw
-        let k = algoMaxAppBytesValueLen
-        csubstring at (k * i) (min size $ k * (i + 1))
   addProg "appApproval" $ do
     checkRekeyTo
     checkLease
-    unless (null mapKeysl) $ do
+    unless (null sMapKeysl) $ do
       -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
       code "int" ["OptIn"]
@@ -1662,13 +1499,9 @@ compile_algo disp pl = do
       code "global" ["GroupSize"]
       cl $ DLL_Int sb $ 1
       asserteq
-      salloc_ $ \store_whole load_whole -> do
-        padding sMapDataSize
-        store_whole
-        forM_ mapKeysl $ \mi -> do
-          load_whole
-          cStateSlice sMapDataSize mi
-          app_local_put 0 (keyMap mi)
+      code "txn" ["Sender"]
+      padding sMapDataSize
+      cMapStore at
       code "b" ["done"]
       -- The NON-OptIn case:
       label "normal"
@@ -1682,6 +1515,8 @@ compile_algo disp pl = do
     -- ensure it is low enough.
     code "txna" [ "ApplicationArgs", etexty ArgMethod ]
     cfrombs T_UInt
+    -- NOTE This could be compiled to a jump table if that were possible or to
+    -- a tree to be O(log n) rather than O(n)
     forM_ (M.toAscList hm) $ \(hi, hh) -> do
       afterLab <- freshLabel
       ch afterLab hi hh
@@ -1721,7 +1556,7 @@ compile_algo disp pl = do
             Nothing -> (id, mempty)
             Just v -> (bindRound v, [DLA_Var v])
     bind_csvs $ cstate (HM_Set 0) csvs
-    forM_ viewKeysl $ \i -> do
+    forM_ sViewKeysl $ \i -> do
       cl $ DLL_Bytes $ ""
       app_global_put (keyView i)
     code "b" ["checkSize"]
