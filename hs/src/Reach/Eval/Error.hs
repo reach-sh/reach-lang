@@ -141,6 +141,7 @@ data EvalError
   | Err_Sol_Reserved String
   | Err_TokenNew_InvalidKey String
   | Err_Token_NotCreated String
+  | Err_ParallelReduce_DefineBlock
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -263,6 +264,7 @@ instance HasErrorCode EvalError where
     Err_Sol_Reserved {} -> 110
     Err_TokenNew_InvalidKey {} -> 111
     Err_Token_NotCreated {} -> 112
+    Err_ParallelReduce_DefineBlock {} -> 113
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -660,5 +662,7 @@ instance Show EvalError where
       "`" <> f <> "` is not an expected key of a `new Token` operation"
     Err_Token_NotCreated lab ->
       lab <> " must be used on created tokens"
+    Err_ParallelReduce_DefineBlock ->
+      "`define` expects an argument of the form: `() => DEFINE_BLOCK`, where `DEFINE_BLOCK` is a statement block."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

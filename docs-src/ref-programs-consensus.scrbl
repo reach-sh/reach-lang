@@ -147,9 +147,11 @@ const [ keepGoing, as, bs ] =
 
 A @deftech{parallel reduce statement} is written:
 
+@(mint-define! '("paySpec") '("define"))
 @reach{
 const LHS =
   parallelReduce(INIT_EXPR)
+  .define(() => DEFINE_BLOCK)
   .invariant(INVARIANT_EXPR)
   .while(COND_EXPR)
   .paySpec(TOKENS_EXPR)
@@ -163,9 +165,13 @@ const LHS =
 
 The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component of a @reachin{while} loop; and,
 the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
+the @reachin{DEFINE_BLOCK} is like the @reachin{BLOCK} of a @reachin{while} loop;
 while the @reachin{.case}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
+
+The @reachin{.define} component may define bindings that reference the @reachin{LHS} values. These bindings are accessible
+from every component of the @reachin{parallelReduce} statement, except for the @reachin{INIT_EXPR}.
 
 @subsubsection{@tt{.timeRemaining}}
 

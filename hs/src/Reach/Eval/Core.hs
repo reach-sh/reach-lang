@@ -1088,7 +1088,7 @@ evalAsEnv obj = case obj of
           Just _ -> []
       go key mode =
         [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime mpay))]
-  SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay) ->
+  SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef) ->
     return $
       M.fromList $
         gom "invariant" PRM_Invariant pr_minv
@@ -1098,13 +1098,14 @@ evalAsEnv obj = case obj of
           <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
           <> gom "throwTimeout" PRM_ThrowTimeout pr_mtime
           <> gom "paySpec" PRM_PaySpec pr_mpay
+          <> gom "define" PRM_Def pr_mdef
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay))]
+        [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef))]
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
@@ -1441,21 +1442,24 @@ evalForm f args = do
     SLForm_parallel_reduce -> do
       at <- withAt id
       x <- one_arg
-      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing Nothing
-    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay -> do
+      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing Nothing Nothing
+    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef -> do
       aa <- withAt $ \at -> (at, args)
       case pr_mode of
         Just PRM_Invariant -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just x) pr_mwhile pr_cases pr_mtime pr_mpay
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just x) pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef
         Just PRM_While -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime pr_mpay
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just x) pr_cases pr_mtime pr_mpay pr_mdef
         Just PRM_Case ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime pr_mpay
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime pr_mpay pr_mdef
         Just PRM_PaySpec -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime (Just x)
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime (Just x) pr_mdef
+        Just PRM_Def -> do
+          x <- one_arg
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay (Just x)
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
@@ -1476,6 +1480,7 @@ evalForm f args = do
                   pr_cases
                   (makeTimeoutArgs prm aa)
                   pr_mpay
+                  pr_mdef
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -4208,8 +4213,8 @@ doFork ks cases mtime mnntpay = do
   -- liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
-doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> Maybe JSExpression -> App [JSStatement]
-doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr_mpay = locAt pr_at $ do
+doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> Maybe JSExpression -> Maybe JSExpression -> App [JSStatement]
+doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef = locAt pr_at $ do
   idx <- ctxt_alloc
   let prid x = ".pr" <> (show idx) <> "." <> x
   case pr_mode of
@@ -4295,7 +4300,11 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
-  let pr_ss = [var_s, inv_s, while_s]
+  block_s <- case pr_mdef of
+                  Just (JSArrowExpression _ _ sb@JSStatementBlock {}) -> return sb
+                  Just ow -> locAtf (srcloc_jsa "define" $ jsa ow) $ expect_ Err_ParallelReduce_DefineBlock
+                  Nothing -> return $ JSStatementBlock a [] a sp
+  let pr_ss = [var_s, block_s, inv_s, while_s]
   -- liftIO $ putStrLn $ "ParallelReduce"
   -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
@@ -4517,7 +4526,7 @@ evalStmt = \case
       (rhs_lvl, rhs_v) <- evalExpr rhs
       case rhs_v of
         SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
-          pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay
+          pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay slpr_mdef
           evalStmt (pr_ss <> ks)
         _ -> do
           addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs

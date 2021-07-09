@@ -1952,6 +1952,12 @@ Some @reachin{Token} methods such as @reachin{destroy}, @reachin{burn}, and
 
 You can fix this by removing the erroneous statement.
 
+@error{RE0113}
+
+This error indicates that you provided an incorrect value to the @reachin{.define} component of a
+@reachin{parallelReduce} statement. The argument to @reachin{.define} should be of the form: @reachin{() => DEFINE_BLOCK}.
+Please review the @reachin{parallelReduce} documentation for information on how @reachin{.define} works.
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}

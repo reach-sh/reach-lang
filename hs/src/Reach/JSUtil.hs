@@ -176,3 +176,41 @@ instance HasJSAnnot JSBinOp where
     JSBinOpStrictNeq a -> a
     JSBinOpTimes a -> a
     JSBinOpUrsh a -> a
+
+instance HasJSAnnot JSExpression where
+  jsa = \case
+    JSIdentifier a _ -> a
+    JSDecimal a _ -> a
+    JSLiteral a _ -> a
+    JSHexInteger a _ -> a
+    JSOctal a _ -> a
+    JSStringLiteral a _ -> a
+    JSRegEx a _ -> a
+    JSArrayLiteral a _ _ -> a
+    JSAssignExpression a _ _ -> jsa a
+    JSAwaitExpression a _ -> a
+    JSCallExpression a _ _ _ -> jsa a
+    JSCallExpressionDot a _ _ -> jsa a
+    JSCallExpressionSquare a _ _ _ -> jsa a
+    JSClassExpression a _ _ _ _ _ -> a
+    JSCommaExpression a _ _ -> jsa a
+    JSExpressionBinary a _ _ -> jsa a
+    JSExpressionParen a _ _ -> a
+    JSExpressionPostfix a _ -> jsa a
+    JSExpressionTernary a _ _ _ _ -> jsa a
+    JSArrowExpression _ a _ -> a
+    JSFunctionExpression a _ _ _ _ _ -> a
+    JSGeneratorExpression a _ _ _ _ _ _ -> a
+    JSMemberDot a _ _ -> jsa a
+    JSMemberExpression a _ _ _ -> jsa a
+    JSMemberNew a _ _ _ _ -> a
+    JSMemberSquare a _ _ _ -> jsa a
+    JSNewExpression a _ -> a
+    JSObjectLiteral a _ _ -> a
+    JSSpreadExpression a _ -> a
+    JSTemplateLiteral _ a _ _ -> a
+    JSUnaryExpression a _ -> jsa a
+    JSVarInitExpression a _ -> jsa a
+    JSYieldExpression a _ -> a
+    JSYieldFromExpression a _ _ -> a
+
