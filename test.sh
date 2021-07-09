@@ -180,7 +180,7 @@ tealcount () {
 # r examples/map-sender
 # r examples/map-any
 # r examples/map-vary
-# r examples/map-rwrw # XXX
+r examples/map-rwrw
 # r examples/map-multi
 # r examples/map-big
 # r examples/maybe-send
@@ -208,7 +208,7 @@ tealcount () {
 # r examples/view-bytes
 # r examples/view-fun
 # r examples/view-maybe
-r examples/view-map
+# r examples/view-map
 # r examples/view-steps
 # r examples/weird-swap
 # r examples/workshop-fomo

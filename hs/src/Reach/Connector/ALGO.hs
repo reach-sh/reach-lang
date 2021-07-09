@@ -63,8 +63,24 @@ typeObjectTypes a =
 
 -- Algorand constants
 
+algoMaxLocalSchemaEntries :: Integer
+algoMaxLocalSchemaEntries = 16
+algoMaxLocalSchemaEntries_usable :: Integer
+algoMaxLocalSchemaEntries_usable = algoMaxLocalSchemaEntries
+
+algoMaxGlobalSchemaEntries :: Integer
+algoMaxGlobalSchemaEntries = 64
+algoMaxGlobalSchemaEntries_usable :: Integer
+algoMaxGlobalSchemaEntries_usable = algoMaxGlobalSchemaEntries - 1
+
 algoMaxAppBytesValueLen :: Integer
-algoMaxAppBytesValueLen = 64
+algoMaxAppBytesValueLen = 128
+
+algoMaxAppBytesValueLen_usable :: Integer
+algoMaxAppBytesValueLen_usable =
+  -- We guarantee that every key is exactly one byte, so all the rest of the
+  -- space goes to the value
+  algoMaxAppBytesValueLen - 1
 
 algoMaxAppTotalArgLen :: Integer
 algoMaxAppTotalArgLen = 2048
@@ -313,11 +329,14 @@ checkTimeLimits at = do
   op "pop"
   -- [ ]
 
+bad_io :: IORef (S.Set LT.Text) -> LT.Text -> IO ()
+bad_io x = modifyIORef x . S.insert
+
 bad :: LT.Text -> App ()
 bad lab = do
   Env {..} <- ask
   let Shared {..} = eShared
-  liftIO $ modifyIORef sFailuresR (S.insert lab)
+  liftIO $ bad_io sFailuresR lab
   output $ comment_ $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
@@ -808,7 +827,7 @@ cMapLoad = do
     -- [ Address, MapData_N ]
     code "dig" [ "1" ]
     -- [ Address, MapData_N, Address ]
-    cl $ DLL_Bytes $ keyMap mi
+    cl $ DLL_Bytes $ keyVary mi
     -- [ Address, MapData_N, Address, Key ]
     op "app_local_get"
     -- [ Address, MapData_N, NewPiece ]
@@ -829,7 +848,7 @@ cMapStore at = do
     -- [ Address, MapData' ]
     code "dig" ["1"]
     -- [ Address, MapData', Address ]
-    cl $ DLL_Bytes $ keyMap mi
+    cl $ DLL_Bytes $ keyVary mi
     -- [ Address, MapData', Address, Key ]
     code "dig" ["2"]
     -- [ Address, MapData', Address, Key, MapData' ]
@@ -1206,7 +1225,7 @@ cViewSave at (ViewSave vwhich vvs) = do
     -- [ ViewData ]
     forM_ sViewKeysl $ \vi -> do
       -- [ ViewData ]
-      cl $ DLL_Bytes $ keyView vi
+      cl $ DLL_Bytes $ keyVary vi
       -- [ ViewData, Key ]
       code "dig" [ "1" ]
       -- [ ViewData, Key, ViewData ]
@@ -1259,13 +1278,13 @@ cDeployer = template "Deployer"
 
 -- State:
 keyState :: B.ByteString
-keyState = "s"
+keyState = B.singleton $ BI.w2c 255
 
-keyView :: Word8 -> B.ByteString
-keyView i = "v" <> B.singleton (BI.w2c i)
-
-keyMap :: Word8 -> B.ByteString
-keyMap i = "m" <> B.singleton (BI.w2c i)
+-- NOTE: We should check that we aren't given 255, but we know that we'll fail
+-- anyways, because you aren't allowed that many local/global keys, so we're
+-- safe
+keyVary :: Word8 -> B.ByteString
+keyVary = B.singleton . BI.w2c
 
 data TxnId
   = TxnAppl
@@ -1428,7 +1447,7 @@ type Disp = String -> T.Text -> IO ()
 cStateSlice :: SrcLoc -> Integer -> Word8 -> App ()
 cStateSlice at size iw = do
   let i = fromIntegral iw
-  let k = algoMaxAppBytesValueLen
+  let k = algoMaxAppBytesValueLen_usable
   csubstring at (k * i) (min size $ k * (i + 1))
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
@@ -1449,16 +1468,18 @@ compile_algo disp pl = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
             Aeson.Number $ fromIntegral size
-  let recordSizeAndKeys :: T.Text -> Integer -> IO [Word8]
-      recordSizeAndKeys prefix size = do
+  let recordSizeAndKeys :: T.Text -> Integer -> Integer -> IO [Word8]
+      recordSizeAndKeys prefix size limit = do
         recordSize prefix size
-        let keys = size `divup` algoMaxAppBytesValueLen
+        let keys = size `divup` algoMaxAppBytesValueLen_usable
+        when (keys > limit) $ do
+          bad_io sFailuresR $ "Too many " <> (LT.fromStrict prefix) <> " keys, " <> texty keys <> ", but limit is " <> texty limit
         modifyIORef resr $
           M.insert (prefix <> "Keys") $
             Aeson.Number $ fromIntegral keys
         return $ take (fromIntegral keys) [0 ..]
-  sViewKeysl <- recordSizeAndKeys "view" sViewSize
-  sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize
+  sViewKeysl <- recordSizeAndKeys "view" sViewSize algoMaxGlobalSchemaEntries_usable
+  sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
   let eShared = Shared {..}
   let run :: String -> App () -> IO TEALs
       run lab m = do
