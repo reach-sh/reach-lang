@@ -862,7 +862,9 @@ const isIsolatedNetwork = (): boolean =>
   (settedFaucet || getLedger() === localhostProviderEnv.ALGO_LEDGER);
 export {getFaucet, setFaucet};
 
-const NOTE_Reach = new Uint8Array(Buffer.from(`Reach ${VERSION}`));
+const str2note = (x:string) => new Uint8Array(Buffer.from(x));
+const NOTE_Reach_str = `Reach ${VERSION}`;
+const NOTE_Reach = str2note(NOTE_Reach_str);
 
 const makeTransferTxn = (
   from: Address,
@@ -871,16 +873,18 @@ const makeTransferTxn = (
   token: Token|undefined,
   ps: TxnParams,
   closeTo: Address|undefined = undefined,
+  tag: number|undefined = undefined,
 ): Txn => {
   const valuen = bigNumberToNumber(value);
+  const note = tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
   const txn =
     token ?
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         from, to, closeTo, undefined,
-        valuen, NOTE_Reach, bigNumberToNumber(token), ps)
+        valuen, note, bigNumberToNumber(token), ps)
     :
       algosdk.makePaymentTxnWithSuggestedParams(
-        from, to, valuen, closeTo, NOTE_Reach, ps);
+        from, to, valuen, closeTo, note, ps);
   return txn;
 };
 
@@ -1134,6 +1138,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         type Signer = (x:Txn) => Promise<STX>;
         const txnExtraTxns: Array<Txn> = [];
         const txnExtraTxns_signers: Array<Signer> = [];
+        let sim_i = 0;
         const processSimTxn = (t: SimTxn) => {
           const { tok } = t;
           let always: boolean = false;
@@ -1171,7 +1176,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             assert(false, 'sim txn kind');
           }
           if ( ! always && amt.eq(0) ) { return; }
-          const txn = makeTransferTxn(from, to, amt, tok, params, closeTo);
+          const txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
           extraFees += txn.fee;
           txn.fee = 0;
           txnExtraTxns.push(txn);
