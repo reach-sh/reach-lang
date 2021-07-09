@@ -1,0 +1,8 @@
+reachc: error[RE0112]: Token.supply must be used on created tokens
+
+ ./Err_Token_NotCreated_supply.rsh:11:23:application
+
+ 11|   const x = tok.supply();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0112.html
+

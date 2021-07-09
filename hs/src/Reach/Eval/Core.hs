@@ -1112,13 +1112,15 @@ evalAsEnv obj = case obj of
     return $
       M.fromList $
         [ ("burn", delayCall SLPrim_Token_burn)
-        , ("destroy", delayCall SLPrim_Token_destroy) ]
+        , ("destroy", delayCall SLPrim_Token_destroy)
+        , ("supply", delayCall SLPrim_Token_supply) ]
   SLV_Type ST_Token ->
     return $
       M.fromList $
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new)
         , ("burn", retV $ public $ SLV_Prim $ SLPrim_Token_burn)
-        , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy) ]
+        , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy)
+        , ("supply", retV $ public $ SLV_Prim $ SLPrim_Token_supply) ]
   SLV_Prim SLPrim_Struct -> return structValueEnv
   SLV_Type (ST_Struct ts) ->
     return $
@@ -1870,8 +1872,8 @@ doFluidSet fv ssv = do
   da <- compileCheckType (fluidVarType fv) sv
   doFluidSet_ fv da
 
-lookupBalanceFV :: HasCallStack => Maybe DLArg -> App FluidVar
-lookupBalanceFV = lookupBalanceFV_ FV_balance
+lookupBalanceFV :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
+lookupBalanceFV = lookupBalanceFV_
 
 lookupBalanceFV_ :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
 lookupBalanceFV_ fv mtok = do
@@ -2022,7 +2024,7 @@ evalPrim p sargs =
       amta <-
         case mamtv of
           Just v -> compileCheckType T_UInt v
-          Nothing -> doFluidRef_da =<< lookupBalanceFV (Just toka)
+          Nothing -> doFluidRef_da =<< lookupBalanceFV FV_balance (Just toka)
       ensure_mode SLM_ConsensusStep lab
       let mtok_a = Just toka
       amt_sv <- argToSV amta
@@ -2081,10 +2083,18 @@ evalPrim p sargs =
       retV $ (lvl, SLV_RaceParticipant at (S.fromList ps))
     SLPrim_balance -> do
       fv <- case args of
-        [] -> lookupBalanceFV Nothing
-        [v] -> lookupBalanceFV . Just =<< compileCheckType T_Token v
+        [] -> lookupBalanceFV FV_balance Nothing
+        [v] -> lookupBalanceFV FV_balance . Just =<< compileCheckType T_Token v
         _ -> illegal_args
       doFluidRef fv
+    SLPrim_Token_supply -> do
+      s <- case args of
+        [v] -> do
+          da <- compileCheckType T_Token v
+          ensureCreatedToken "Token.supply" da
+          lookupBalanceFV FV_supply $ Just da
+        _ -> illegal_args
+      doFluidRef s
     SLPrim_fluid_read fv -> doFluidRef fv
     SLPrim_lastConsensusTime -> do
       ensure_can_wait

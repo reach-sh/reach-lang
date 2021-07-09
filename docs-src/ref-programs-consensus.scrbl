@@ -319,6 +319,10 @@ In other words, the @tech{token linearity property} applies to these tokens.
 
 @reachin{Token.destroy(tok)}, or @reachin{tok.destroy()}, where @reachin{tok} is a @reachin{Token} value, may be used to destroy the token so that it may never be used again by any users on the @tech{consensus network}.
 
+@(hrule)
+
+@reachin{Token.supply(tok)}, or @reachin{tok.supply()}, where @reachin{tok} is a @reachin{Token} value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been @tech{burn}t.
+
 @subsection{Remote objects}
 
 @(mint-define! '("remote"))
