@@ -411,7 +411,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   env@Env {..} <- ask
   let Var {..} = e_var
 
-  let reachConnectorMode = "ETH-test-dockerized-geth" -- TODO
+  let reachConnectorMode = T.pack $ show cm
   let reachIsolatedNetwork = "1" -- TODO
   let dirProjectHost = T.pack e_dirProjectHost
   let debug' = if debug then "1" else ""
