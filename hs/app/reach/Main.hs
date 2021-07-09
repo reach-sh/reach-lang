@@ -405,7 +405,6 @@ data Compose
   | StandaloneDevnet
 
 
--- TODO ensure this works with `run` subdirectories
 withCompose :: Compose -> DockerMeta -> ConnectorMode -> App -> App
 withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
   env@Env {..} <- ask
