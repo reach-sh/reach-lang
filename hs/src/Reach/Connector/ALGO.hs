@@ -1597,7 +1597,7 @@ compile_algo disp pl = do
       aarray $
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
   unless (null sFailures) $ do
-    emitWarning $ W_ALGOUnsupported $ S.toList $ S.map show sFailures
+    emitWarning $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion

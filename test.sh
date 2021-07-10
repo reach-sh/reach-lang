@@ -189,11 +189,12 @@ tealcount () {
 # r examples/nft-auction
 # r examples/nft-dumb
 # r examples/nim
-r examples/overview
+# r examples/overview
 # r examples/popularity-contest
 # r examples/pr202105-zet
 # r examples/race
 # r examples/remote
+c examples/remote/index.rsh
 # r examples/secured-loan
 # r examples/timeoutception
 # r examples/tut-3
