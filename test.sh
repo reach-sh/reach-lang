@@ -44,10 +44,10 @@ r () {
   make build
   # make down
 
-  jb
+  # jb
 
   export REACH_DEBUG=1
-  export REACH_ALGO_DEBUG=1
+  # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
   REACH_CONNECTOR_MODE=ALGO ${REACH} run
@@ -194,7 +194,7 @@ tealcount () {
 # r examples/pr202105-zet
 # r examples/race
 # r examples/remote
-c examples/remote/index.rsh
+# c examples/remote/index.rsh
 # r examples/secured-loan
 # r examples/timeoutception
 # r examples/tut-3
@@ -202,7 +202,7 @@ c examples/remote/index.rsh
 # r examples/tut-5
 # r examples/tut-6
 # r examples/tut-5-attack
-# r examples/tut-7 # XXX test debigger
+r examples/tut-7 # XXX test debigger
 # r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers

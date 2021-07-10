@@ -63,6 +63,9 @@ typeObjectTypes a =
 
 -- Algorand constants
 
+algoMinTxnFee :: Integer
+algoMinTxnFee = 1000
+
 algoMaxLocalSchemaEntries :: Integer
 algoMaxLocalSchemaEntries = 16
 algoMaxLocalSchemaEntries_usable :: Integer
@@ -690,6 +693,7 @@ cfor :: Integer -> (App () -> App ()) -> App ()
 cfor maxi body = do
   top_lab <- freshLabel
   end_lab <- freshLabel
+  comment "<for>"
   salloc_ $ \store_idx load_idx -> do
     cl $ DLL_Int sb 0
     store_idx
@@ -704,6 +708,7 @@ cfor maxi body = do
     op "+"
     store_idx
     code "b" [top_lab]
+  comment "</for>"
   label end_lab
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
@@ -1518,8 +1523,14 @@ compile_algo disp pl = do
     code "b" [ "checkSize" ]
     label "checkSize"
     gvLoad GV_txnCounter
+    op "dup"
     code "global" [ "GroupSize" ]
     asserteq
+    cl $ DLL_Int sb $ algoMinTxnFee
+    op "*"
+    code "txn" ["Fee"]
+    op "<="
+    assert
     code "b" [ "done" ]
     defn_done
     label "alloc"
