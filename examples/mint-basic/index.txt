@@ -5,3 +5,6 @@ Verifying for generic connector
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
 Checked 62 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * "This program uses token creation"
+ * "This program uses token destroy"

@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const A = Participant('Alice', {
     getParams: Fun([], Object({
       name: Bytes(32), symbol: Bytes(8),
-      url: Bytes(32), metadata: Bytes(32),
+      url: Bytes(96), metadata: Bytes(32),
       supply: UInt,
       amt: UInt,
       doEarlyTransfer: Bool,
