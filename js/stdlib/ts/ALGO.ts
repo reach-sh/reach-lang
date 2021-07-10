@@ -2,7 +2,6 @@ export const connector = 'ALGO';
 
 // XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
-import base32 from 'hi-base32';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
@@ -42,7 +41,6 @@ import {
   PayAmt,
   ALGO_Ty,
   NV,
-  addressToHex,
   addressFromHex,
   stdlib as compiledStdlib,
   typeDefs,
@@ -120,7 +118,6 @@ type NetworkAccount = Wallet;
 const reachAlgoBackendVersion = 2;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
-  appApproval0: string,
   appApproval: string,
   appClear: string,
   escrow: string,
@@ -134,17 +131,15 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 type CompiledBackend = {
+  ApplicationID: number,
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
   escrow: CompileResultBytes,
 };
 
-type ContractInfo = {
-  getInfo?: () => Promise<ContractInfo>,
-  creationRound: number,
-  ApplicationID: number,
-  Deployer: Address,
-};
+type ContractInfo = [ number, number ];
+const makeContractInfo = (id:number): ContractInfo =>
+  [ reachAlgoBackendVersion, id ];
 
 type Digest = BigNumber
 type Recv = IRecv<Address>
@@ -497,12 +492,6 @@ const replaceAll = (orig: string, what: string, whatp: string): string => {
   }
 };
 
-const replaceUint8Array = (label: string, arr: Uint8Array, x:string): string =>
-  replaceAll(x, `"{{${label}}}"`, `base32(${base32.encode(arr).toString()})`);
-
-const replaceAddr = (label: string, addr: Address, x:string): string =>
-  replaceUint8Array(label, algosdk.decodeAddress(addr).publicKey, x);
-
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported, version } = algob;
@@ -525,44 +514,40 @@ const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  const { ApplicationID, Deployer } = info;
+  if ( ! Array.isArray(info) ) {
+    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an (unknown) version of Reach.`); }
+  const [ version, ...moreInfo ] = info;
+  if ( version !== reachAlgoBackendVersion ) {
+    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with version ${version} of the Reach Algorand connector, but this is version ${reachAlgoBackendVersion}.`); }
+  const [ ApplicationID ] = moreInfo;
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
   const { appApproval, appClear, escrow } = algob;
 
   const subst_appid = (x: string) =>
-    replaceUint8Array(
-      'ApplicationID',
-      T_UInt.toNet(bigNumberify(ApplicationID)),
-      x);
-  const subst_creator = (x: string) =>
-    replaceAddr('Deployer', Deployer, x);
+    replaceAll(x, '{{ApplicationID}}', `${ApplicationID}`);
 
   const checkLen = (label:string, actual:number, expected:number): void => {
     debug(`checkLen`, {label, actual, expected});
     if ( actual > expected ) {
         throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
 
-  const escrow_bin = await compileTEAL('escrow_subst', subst_appid(escrow));
-  checkLen(`Escrow Contract`, escrow_bin.result.length, LogicSigMaxSize);
-  const subst_escrow = (x: string) =>
-    replaceAddr('ContractAddr', escrow_bin.hash, x);
-
-  const appApproval_subst = subst_creator(subst_escrow(appApproval));
   const appApproval_bin =
-    await compileTEAL('appApproval_subst', appApproval_subst);
+    await compileTEAL('appApproval_subst', appApproval);
   const appClear_bin =
     await compileTEAL('appClear', appClear);
   checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), (1 + MaxExtraAppProgramPages) * MaxAppProgramLen);
+  const escrow_bin =
+    await compileTEAL('escrow_subst', subst_appid(escrow));
+  checkLen(`Escrow Contract`, escrow_bin.result.length, LogicSigMaxSize);
 
   return {
+    ApplicationID,
     appApproval: appApproval_bin,
     appClear: appClear_bin,
     escrow: escrow_bin,
   };
 }
-
-// const ui8z = new Uint8Array();
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
@@ -958,6 +943,15 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
   }
 }
 
+const makeIsMethod = (i:number) => (txn:any): boolean =>
+  txn['application-transaction']['application-args'][0] === base64ify([i]);
+        
+/** @description base64->hex->arrayify */
+const reNetify = (x: string): NV => {
+  const s: string = Buffer.from(x, 'base64').toString('hex');
+  return ethers.utils.arrayify('0x' + s);
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -980,16 +974,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
-    const { Deployer, ApplicationID } = ctcInfo;
-    let lastRound = ctcInfo.creationRound;
-    debug(shad, ': attach', ApplicationID, 'created at', lastRound);
+    const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
+      await verifyContract(ctcInfo, bin);
+    debug(shad, 'attach', {ApplicationID, allocRound, ctorRound} );
+    let lastRound = ctorRound;
 
-    const bin_comp = await compileFor(bin, ctcInfo);
-    const escrowAddr = bin_comp.escrow.hash;
-    void(addressToHex);
-    // XXX const escrowAddrRaw = T_Address.canonicalize(addressToHex(escrowAddr));
-    await verifyContract(ctcInfo, bin);
-    const escrow_prog = algosdk.makeLogicSig(bin_comp.escrow.result, []);
+    const escrowAddr = compiled.escrow.hash;
+    const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
 
     const { viewSize, viewKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
@@ -1214,7 +1205,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         algosdk.assignGroupID(txns);
         regroup(thisAcc, txns);
 
-
         const txnAppl_s = await sign_me(txnAppl);
         const txnExtraTxns_s =
           await Promise.all(
@@ -1271,7 +1261,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
       debug(dhead, '--- START');
-      const funcNumB64 = base64ify([funcNum]);
 
       const timeoutRound =
         timeout_delay ?
@@ -1290,8 +1279,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           query = query.maxRound(timeoutRound);
         }
 
-        const correctStep = (txn:any): boolean =>
-          txn['application-transaction']['application-args'][0] === funcNumB64;
+        const correctStep = makeIsMethod(funcNum);
         const res = await doQuery(dhead, query, correctStep);
         if ( ! res.succ ) {
           const currentRound = res.round;
@@ -1311,13 +1299,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, {ctc_args_all});
         const argMsg = 2; // from ALGO.hs
         const ctc_args_s: string = ctc_args_all[argMsg];
-
-        /** @description base64->hex->arrayify */
-        const reNetify = (x: string): NV => {
-          const s: string = Buffer.from(x, 'base64').toString('hex');
-          debug(dhead, '--- reNetify(', x, ') = ', s);
-          return ethers.utils.arrayify('0x' + s);
-        };
 
         debug(dhead, '--- tys =', tys);
         const msgTy = T_Tuple(tys);
@@ -1352,7 +1333,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const creationTime = async () =>
-      bigNumberify((await getInfo()).creationRound);
+      bigNumberify(ctorRound);
 
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
       const bs = new Uint8Array(size);
@@ -1435,20 +1416,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     must_be_supported(bin);
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
-
-    const { appApproval, appApproval0, appClear, viewKeys, mapDataKeys } = algob;
-    const Deployer = thisAcc.addr;
-
-    const appApproval0_subst =
-      replaceAddr('Deployer', Deployer, appApproval0);
-    const appApproval0_bin =
-      await compileTEAL('appApproval0', appApproval0_subst);
-    const appClear_bin =
-      await compileTEAL('appClear', appClear);
-    const appApproval_bin =
-      await compileTEAL('appApproval', appApproval);
+    const { viewKeys, mapDataKeys } = algob;
+    const { appApproval, appClear } =
+      await compileFor(bin, makeContractInfo(0));
     const extraPages =
-      Math.ceil((appClear_bin.result.length + appApproval_bin.result.length) / MaxAppProgramLen) - 1;
+      Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
     debug(`deploy`, {extraPages});
     const createRes =
@@ -1458,8 +1430,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         algosdk.makeApplicationCreateTxn(
           thisAcc.addr, await getTxnParams(),
           algosdk.OnApplicationComplete.NoOpOC,
-          appApproval0_bin.result,
-          appClear_bin.result,
+          appApproval.result,
+          appClear.result,
           appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
           appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
           undefined, undefined, undefined, undefined,
@@ -1470,57 +1442,32 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     debug(`created`, {ApplicationID});
+    const ctcInfo = makeContractInfo(ApplicationID);
+    const { escrow } = await compileFor(bin, ctcInfo);
+    const escrowAddr = escrow.hash;
 
-    const bin_comp = await compileFor(bin, { ApplicationID, Deployer, creationRound: 0 });
-    const escrowAddr = bin_comp.escrow.hash;
-
-    debug(`updating`);
+    debug(`funding escrow`);
+    // @ts-ignore
+    await transfer({ networkAccount: thisAcc }, { networkAccount: { addr: escrow.hash } }, minimumBalance );
+    debug(`call ctor`);
     const params = await getTxnParams();
-    const txnUpdate =
-      algosdk.makeApplicationUpdateTxn(
-        thisAcc.addr, params,
-        ApplicationID, bin_comp.appApproval.result,
-        appClear_bin.result,
-        undefined, undefined, undefined, undefined,
-        NOTE_Reach);
-    const txnToContract =
-      algosdk.makePaymentTxnWithSuggestedParams(
-        thisAcc.addr,
-        escrowAddr,
-        raw_minimumBalance,
-        undefined, NOTE_Reach,
-        params);
-    txnUpdate.fee += txnToContract.fee;
-    txnToContract.fee = 0;
-
-    const txns = [
-      txnUpdate,
-      txnToContract,
-    ];
-    algosdk.assignGroupID(txns);
-    regroup(thisAcc, txns);
-
-    const txnUpdate_s =
-      await signTxn(thisAcc, txnUpdate);
-    const txnToContract_s =
-      await signTxn(thisAcc, txnToContract);
-
-    const txns_s = [
-      txnUpdate_s,
-      txnToContract_s,
-    ];
-
-    let updateRes;
+    const ctor_args =
+      [ new Uint8Array([0]),
+        T_Address.toNet( T_Address.canonicalize(escrowAddr) ),
+        T_Tuple([]).toNet([]) ];
+    debug({ctor_args});
+    const txnCtor =
+      algosdk.makeApplicationNoOpTxn(
+        thisAcc.addr, params, ApplicationID, ctor_args,
+        undefined, undefined, undefined, NOTE_Reach);
+    debug({txnCtor});
+    const txnCtor_s = await signTxn(thisAcc, txnCtor);
     try {
-        updateRes = await sendAndConfirm( txns_s );
+      await sendAndConfirm( [ txnCtor_s ] );
     } catch (e) {
       throw Error(`deploy: ${JSON.stringify(e)}`);
     }
-
-    const creationRound = updateRes['confirmed-round'];
-    const getInfo = async (): Promise<ContractInfo> =>
-      ({ ApplicationID, creationRound, Deployer });
-
+    const getInfo = async (): Promise<ContractInfo> => ctcInfo;
     debug(shad, 'application created');
     return await attachP(bin, getInfo());
   };
@@ -1730,10 +1677,16 @@ const appLocalStateNumBytes = 0;
 const appGlobalStateNumUInt = 0;
 const appGlobalStateNumBytes = 1;
 
-export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<true> => {
-  const { ApplicationID, Deployer, creationRound } = info;
+type VerifyResult = {
+  compiled: CompiledBackend,
+  ApplicationID: number,
+  allocRound: number,
+  ctorRound: number,
+  Deployer: Address,
+};
+export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
-  const { appApproval, appClear } = compiled;
+  const { ApplicationID, appApproval, appClear } = compiled;
   const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
 
   let dhead = `verifyContract`;
@@ -1748,17 +1701,10 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
     const es = JSON.stringify(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
+  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
-  const client = await getAlgodClient();
-  const appInfo = await client.getApplicationByID(ApplicationID).do();
-  const appInfo_p = appInfo['params'];
-  debug(dhead, '-- appInfo_p =', appInfo_p);
-  const indexer = await getIndexer();
-  const cquery = indexer.searchForTransactions()
-    .applicationID(ApplicationID)
-    .txType('appl')
-    .round(creationRound);
-  let ctxn = null;
+  // XXX it should be okay to wait in this function
+  /*
   while ( ! ctxn ) {
     const cres = await doQuery(dhead, cquery);
     if ( ! cres.succ ) {
@@ -1773,15 +1719,16 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
       ctxn = cres.txn;
     }
   }
+  */
 
-  debug(dhead, '-- ctxn =', ctxn);
-  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
-
-  chk(ctxn, `Cannot query for creationRound accuracy`);
+  const client = await getAlgodClient();
+  const appInfo = await client.getApplicationByID(ApplicationID).do();
+  const appInfo_p = appInfo['params'];
+  debug(dhead, {appInfo_p});
   chk(appInfo_p, `Cannot lookup ApplicationId`);
   chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
   chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
-  chkeq(appInfo_p['creator'], Deployer, `Deployer does not match contract information`);
+  const Deployer = appInfo_p['creator'];
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
   chkeq(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes + mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
@@ -1791,17 +1738,57 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
-  const catxn = ctxn['application-transaction'];
-  chkeq(catxn['approval-program'], appInfo_p['approval-program'], `creationRound Approval program`);
-  chkeq(catxn['clear-state-program'], appInfo_p['clear-state-program'], `creationRound ClearState program`);
-  chkeq(catxn['on-completion'], 'update', `creationRound on-completion`);
-  chkeq(ctxn['sender'], Deployer, `creationRound Deployer`);
+  const indexer = await getIndexer();
+  const ilq = indexer.lookupApplications(ApplicationID).includeAll();
+  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
+  debug(dhead, {ilr});
+  const appInfo_i = ilr.application;
+  debug(dhead, {appInfo_i});
+  chkeq(appInfo_i['deleted'], false, `Application must not be deleted`);
+  // First, we learn from the indexer when it was made
+  const allocRound = appInfo_i['created-at-round'];
+
+  // Next, we check that it was created with this program and wasn't created
+  // with a different program first (which could have modified the state)
+  const iaq = indexer.searchForTransactions()
+    .applicationID(ApplicationID)
+    .txType('appl')
+    .round(allocRound);
+  const iar = await doQuery(`${dhead} alloc`, iaq);
+  // @ts-ignore
+  const iat = iar.txn;
+  chk(iat, `Cannot query for allocation transaction`);
+  debug({iat});
+  const iatat = iat['application-transaction'];
+  debug({iatat});
+  chkeq(iatat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
+  chkeq(iatat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
+
+  // Next, we check that the constructor was called with the actual escrow
+  // address and not something else
+  const icq = indexer.searchForTransactions()
+    .applicationID(ApplicationID)
+    .txType('appl');
+  const isCtor = makeIsMethod(0);
+  const icr = await doQuery(`${dhead} ctor`, icq, isCtor);
+  // @ts-ignore
+  const ict = icr.txn;
+  chk(ict, `Cannot query for constructor transaction`);
+  debug({ict});
+  const ctorRound = ict['confirmed-round']
+  const ictat = ict['application-transaction'];
+  debug({ictat});
+  const aescrow_b64 = ictat['application-args'][1];
+  const aescrow_ui8 = reNetify(aescrow_b64);
+  const aescrow_cbr = T_Address.fromNet(aescrow_ui8);
+  const aescrow_algo = cbr2algo_addr(aescrow_cbr);
+  chkeq( aescrow_algo, compiled.escrow.hash, `Must be constructed with proper escrow account address` );
 
   // Note: (after deployMode:firstMsg is implemented)
   // 1. (above) attach initial args to ContractInfo
   // 2. verify contract storage matches expectations based on initial args
 
-  return true;
+  return { compiled, ApplicationID, allocRound, ctorRound, Deployer };
 };
 
 /**

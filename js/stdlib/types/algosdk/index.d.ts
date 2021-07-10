@@ -207,6 +207,7 @@ declare module 'algosdk' {
     // XXX
     lookupTransactionByID(id: any): any
     searchForTransactions(): any
+    lookupApplications(id: any): any
   }
 
   // XXX

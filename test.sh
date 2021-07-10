@@ -180,7 +180,7 @@ tealcount () {
 # r examples/map-sender
 # r examples/map-any
 # r examples/map-vary
-r examples/map-rwrw
+# r examples/map-rwrw
 # r examples/map-multi
 # r examples/map-big
 # r examples/maybe-send
@@ -189,7 +189,7 @@ r examples/map-rwrw
 # r examples/nft-auction
 # r examples/nft-dumb
 # r examples/nim
-# r examples/overview
+r examples/overview
 # r examples/popularity-contest
 # r examples/pr202105-zet
 # r examples/race

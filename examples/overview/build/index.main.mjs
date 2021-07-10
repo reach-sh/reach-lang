@@ -225,12 +225,24 @@ global ZeroAddress
 assert
 int 1
 store 0
+txn ApplicationID
+bz alloc
+int 0
+bzero
+app_global_get
+dup
+substring 0 32
+store 2
+substring 32 64
+store 3
 txn NumAppArgs
 int 3
 ==
 assert
 txna ApplicationArgs 0
 btoi
+dup
+bz ctor
 // Handler 1
 dup
 int 1
@@ -259,13 +271,15 @@ store 254
 pop
 // compute state in HM_Check 0
 int 0
+bzero
+int 0
 itob
+concat
 load 255
 itob
 concat
-keccak256
-byte base64(cw==)
-app_global_get
+sha256
+load 2
 ==
 assert
 int 0
@@ -306,8 +320,11 @@ pop
 // "./index.rsh:17:5:dot"
 // "[]"
 // compute state in HM_Set 1
+int 0
+bzero
 int 1
 itob
+concat
 txn Sender
 concat
 load 254
@@ -316,15 +333,13 @@ concat
 global Round
 itob
 concat
-keccak256
-byte base64(cw==)
-swap
-app_global_put
+sha256
+store 2
 txn OnCompletion
 int NoOp
 ==
 assert
-b checkSize
+b updateState
 l0:
 // Handler 2
 dup
@@ -358,8 +373,11 @@ int 0
 assert
 pop
 // compute state in HM_Check 1
+int 0
+bzero
 int 1
 itob
+concat
 load 255
 concat
 load 254
@@ -368,9 +386,8 @@ concat
 load 253
 itob
 concat
-keccak256
-byte base64(cw==)
-app_global_get
+sha256
+load 2
 ==
 assert
 int 0
@@ -471,7 +488,7 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-byte "{{ContractAddr}}"
+load 3
 dig 1
 gtxns Receiver
 ==
@@ -479,8 +496,11 @@ assert
 l10:
 pop
 // compute state in HM_Set 2
+int 0
+bzero
 int 2
 itob
+concat
 load 255
 concat
 load 254
@@ -489,15 +509,13 @@ concat
 global Round
 itob
 concat
-keccak256
-byte base64(cw==)
-swap
-app_global_put
+sha256
+store 2
 txn OnCompletion
 int NoOp
 ==
 assert
-b checkSize
+b updateState
 l5:
 // Handler 3
 dup
@@ -533,8 +551,11 @@ dup
 store 252
 pop
 // compute state in HM_Check 2
+int 0
+bzero
 int 2
 itob
+concat
 load 255
 concat
 load 254
@@ -543,9 +564,8 @@ concat
 load 253
 itob
 concat
-keccak256
-byte base64(cw==)
-app_global_get
+sha256
+load 2
 ==
 assert
 int 0
@@ -658,7 +678,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-byte "{{ContractAddr}}"
+load 3
 dig 1
 gtxns Sender
 ==
@@ -724,116 +744,77 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-byte "{{Deployer}}"
+global CreatorAddress
 dig 1
 gtxns CloseRemainderTo
 ==
 assert
-byte "{{ContractAddr}}"
+load 3
 dig 1
 gtxns Sender
 ==
 assert
 l25:
 pop
+global ZeroAddress
+store 2
 txn OnCompletion
 int DeleteApplication
 ==
 assert
-b checkSize
+b updateState
 l15:
-b fail
+int 0
+assert
+updateState:
+int 0
+bzero
+load 2
+load 3
+concat
+app_global_put
 checkSize:
 load 0
 global GroupSize
 ==
-assert
+return
 done:
 int 1
 return
-fail:
-int 0
-assert
-`,
-  appApproval0: `#pragma version 4
-txn RekeyTo
-global ZeroAddress
-==
-assert
-txn Lease
-global ZeroAddress
-==
-assert
-txn Sender
-byte "{{Deployer}}"
-==
-assert
-int 1
-store 0
-txn ApplicationID
-bz init
-int 100000
-dup
-bz l0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
-int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-l0:
-pop
-txn OnCompletion
-int UpdateApplication
-==
-assert
-// compute state in HM_Set 0
-int 0
-itob
-global Round
-itob
-concat
-keccak256
-byte base64(cw==)
-swap
-app_global_put
-b checkSize
-init:
+alloc:
 txn OnCompletion
 int NoOp
 ==
 assert
-checkSize:
-load 0
-global GroupSize
+int 0
+bzero
+int 64
+bzero
+app_global_put
+b checkSize
+ctor:
+txn Sender
+global CreatorAddress
 ==
 assert
-done:
-int 1
+txna ApplicationArgs 1
+store 3
+// compute state in HM_Set 0
+int 0
+bzero
+int 0
+itob
+concat
+global Round
+itob
+concat
+sha256
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
 `,
   appClear: `#pragma version 4
 txn RekeyTo
@@ -848,11 +829,13 @@ global GroupSize
 int 1
 ==
 assert
-byte base64(cw==)
+int 0
+bzero
 app_global_get
+substring 0 32
 global ZeroAddress
 ==
-assert
+return
 done:
 int 1
 `,
@@ -862,17 +845,14 @@ int appl
 ==
 assert
 gtxn 0 ApplicationID
-byte "{{ApplicationID}}"
-btoi
+int {{ApplicationID}}
 ==
-assert
+return
 done:
 int 1
 `,
-  mapArgSize: 165,
   mapDataKeys: 0,
   mapDataSize: 0,
-  mapRecordSize: 33,
   unsupported: [],
   version: 2,
   viewKeys: 0,

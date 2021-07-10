@@ -264,9 +264,6 @@ assert = op "assert"
 asserteq :: App ()
 asserteq = op "==" >> assert
 
-cfail :: App ()
-cfail = code "b" ["fail"]
-
 op :: LT.Text -> App ()
 op = flip code []
 
@@ -275,18 +272,6 @@ nop = return ()
 
 padding :: Integer -> App ()
 padding = cl . bytesZeroLit
-
-app_global_get :: B.ByteString -> App ()
-app_global_get k = do
-  cl $ DLL_Bytes $ k
-  op "app_global_get"
-
--- XXX inline to remove swap
-app_global_put :: B.ByteString -> App ()
-app_global_put k = do
-  cl $ DLL_Bytes $ k
-  op "swap"
-  op "app_global_put"
 
 checkRekeyTo :: App ()
 checkRekeyTo = do
@@ -1188,6 +1173,8 @@ ct = \case
         FI_Halt toks -> do
           forM_ toks close_asset
           close_escrow
+          code "global" [ "ZeroAddress" ]
+          gvStore GV_stateHash
           return True
           where
             ct_at = at
@@ -1208,7 +1195,7 @@ ct = \case
     code "txn" ["OnCompletion"]
     code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
     asserteq
-    code "b" ["checkSize"]
+    code "b" ["updateState"]
 
 cViewSave :: SrcLoc -> ViewSave -> App ()
 cViewSave at (ViewSave vwhich vvs) = do
@@ -1253,38 +1240,28 @@ cstate hm svs = do
   case hm of
     HM_Set w -> do
       compute w
-      app_global_put keyState
+      gvStore GV_stateHash
     HM_Check p -> do
       compute p
-      app_global_get keyState
+      gvLoad GV_stateHash
       asserteq
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
 reachAlgoBackendVersion = 2
 
--- Template
-template :: LT.Text -> App ()
-template x = code "byte" [ "\"{{" <> x <> "}}\"" ]
-
-cApplicationID :: App ()
-cApplicationID = template "ApplicationID"
-
-cContractAddr :: App ()
-cContractAddr = template "ContractAddr"
-
-cDeployer :: App ()
-cDeployer = template "Deployer"
-
 -- State:
 keyState :: B.ByteString
-keyState = B.singleton $ BI.w2c 255
+keyState = ""
 
--- NOTE: We should check that we aren't given 255, but we know that we'll fail
--- anyways, because you aren't allowed that many local/global keys, so we're
--- safe
 keyVary :: Word8 -> B.ByteString
 keyVary = B.singleton . BI.w2c
+
+cContractAddr :: App ()
+cContractAddr = gvLoad GV_contractAddr
+
+cDeployer :: App ()
+cDeployer = code "global" ["CreatorAddress"]
 
 data TxnId
   = TxnAppl
@@ -1308,6 +1285,8 @@ argCount = boundedCount ArgMethod
 data GlobalVar
   = GV_txnCounter
   | GV_timeLimits
+  | GV_stateHash
+  | GV_contractAddr
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -1323,31 +1302,17 @@ gvType :: GlobalVar -> DLType
 gvType = \case
   GV_txnCounter -> T_UInt
   GV_timeLimits -> T_Tuple [ T_UInt, T_UInt ]
+  GV_stateHash -> T_Digest
+  GV_contractAddr -> T_Address
 
-defn_checkSize :: App ()
-defn_checkSize = do
-  label "checkSize"
-  gvLoad GV_txnCounter
-  code "global" [ "GroupSize" ]
-  asserteq
-  code "b" [ "done" ]
+keyState_ty :: DLType
+keyState_ty = T_Tuple [gvType GV_stateHash, gvType GV_contractAddr]
 
 defn_done :: App ()
 defn_done = do
   label "done"
   cl $ DLL_Int sb 1
   op "return"
-
-defn_fail :: App ()
-defn_fail = do
-  label "fail"
-  cl $ DLL_Bool False
-  assert
-
-init_txnCounter :: App ()
-init_txnCounter = do
-  cl $ DLL_Int sb $ boundedCount TxnAppl
-  gvStore GV_txnCounter
 
 bindRound :: DLVar -> App a -> App a
 bindRound dv = store_let dv True (code "global" ["Round"])
@@ -1500,22 +1465,29 @@ compile_algo disp pl = do
   addProg "appApproval" $ do
     checkRekeyTo
     checkLease
+    cl $ DLL_Int sb $ boundedCount TxnAppl
+    gvStore GV_txnCounter
+    code "txn" ["ApplicationID"]
+    code "bz" ["alloc"]
+    cl $ DLL_Bytes keyState
+    op "app_global_get"
+    op "dup"
+    cTupleRef at keyState_ty 0
+    gvStore GV_stateHash
+    cTupleRef at keyState_ty 1
+    gvStore GV_contractAddr
     unless (null sMapKeysl) $ do
       -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
       code "int" ["OptIn"]
       op "=="
       code "bz" ["normal"]
-      code "global" ["GroupSize"]
-      cl $ DLL_Int sb $ 1
-      asserteq
       code "txn" ["Sender"]
       padding sMapDataSize
       cMapStore at
-      code "b" ["done"]
+      code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"
-    init_txnCounter
     code "txn" ["NumAppArgs"]
     cl $ DLL_Int sb $ argCount
     asserteq
@@ -1525,66 +1497,86 @@ compile_algo disp pl = do
     -- ensure it is low enough.
     code "txna" [ "ApplicationArgs", etexty ArgMethod ]
     cfrombs T_UInt
+    op "dup"
+    code "bz" [ "ctor" ]
     -- NOTE This could be compiled to a jump table if that were possible or to
     -- a tree to be O(log n) rather than O(n)
     forM_ (M.toAscList hm) $ \(hi, hh) -> do
       afterLab <- freshLabel
       ch afterLab hi hh
       label afterLab
-    cfail
+    cl $ DLL_Bool False
+    assert
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
-    defn_checkSize
+    label "updateState"
+    cl $ DLL_Bytes keyState
+    gvLoad GV_stateHash
+    gvLoad GV_contractAddr
+    op "concat"
+    op "app_global_put"
+    code "b" [ "checkSize" ]
+    label "checkSize"
+    gvLoad GV_txnCounter
+    code "global" [ "GroupSize" ]
+    asserteq
+    code "b" [ "done" ]
     defn_done
-    defn_fail
-  -- The initial version of the Approval program handles the first call and the
-  -- update so that the escrow and approval can refer to each other
-  addProg "appApproval0" $ do
-    checkRekeyTo
-    checkLease
-    code "txn" ["Sender"]
-    cDeployer
-    asserteq
-    init_txnCounter
-    code "txn" ["ApplicationID"]
-    code "bz" ["init"]
-    checkTxn $ CheckTxn
-      { ct_at = at
-      , ct_mcrecv = Nothing -- XXX calculate the escrow ctc
-      , ct_mcsend = Nothing -- Flexible, not necc appl sender
-      , ct_mcclose = Nothing
-      , ct_always = False
-      , ct_mtok = Nothing
-      , ct_noTimeLimits = True
-      , ct_amt = DLA_Literal minimumBalance_l }
-    code "txn" ["OnCompletion"]
-    code "int" ["UpdateApplication"]
-    asserteq
-    --- NOTE firstMsg => do handler 1
-    let (bind_csvs, csvs) =
-          case dli_ctimem dli of
-            Nothing -> (id, mempty)
-            Just v -> (bindRound v, [DLA_Var v])
-    -- XXX ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) csvs
-    cViewSave at (ViewSave 0 mempty)
-    bind_csvs $ cstate (HM_Set 0) csvs
-    code "b" ["checkSize"]
-    label "init"
+    label "alloc"
     code "txn" ["OnCompletion"]
     code "int" ["NoOp"]
     asserteq
-    code "b" ["checkSize"]
-    defn_checkSize
-    defn_done
+    cl $ DLL_Bytes keyState
+    padding $ typeSizeOf keyState_ty
+    op "app_global_put"
+    code "b" [ "checkSize" ]
+    label "ctor"
+    -- NOTE We are trusting the creator to tell us the correct contractAddr. If
+    -- they don't, this whole app is screwed. It would technically be possible
+    -- to figure this out by keccak-ing (or something) the source of escrow
+    -- with our own appid. We're not going to do that because we know
+    -- applications-with-transactions are coming and the escrow account is
+    -- almost dead.
+    --
+    -- Since we can't check it anyways, we're not even going to bother ensuring
+    -- that there's a pay with it,
+    --
+    -- We could with:
+    when False $
+      checkTxn $ CheckTxn
+        { ct_at = at
+        , ct_mcrecv = Nothing -- XXX calculate the escrow ctc
+        , ct_mcsend = Nothing -- Flexible, not necc appl sender
+        , ct_mcclose = Nothing
+        , ct_always = False
+        , ct_mtok = Nothing
+        , ct_noTimeLimits = True
+        , ct_amt = DLA_Literal minimumBalance_l }
+    code "txn" ["Sender"]
+    cDeployer
+    asserteq
+    code "txna" [ "ApplicationArgs", etexty ArgSvs ]
+    -- NOTE We could/should check this is address-length
+    gvStore GV_contractAddr
+    -- NOTE firstMsg => do handler 1
+    let (bind_csvs, csvs) =
+          case dli_ctimem dli of
+            Nothing -> (id, mempty)
+            Just v -> (bindRound v, [(v, DLA_Var v)])
+    bind_csvs $ ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) csvs
   -- Clear state is only allowed when the program is over.
-  -- NOTE: We could allow this when the local value is 100% None
+  -- NOTE: This is hand-coded, without the library so it can be smaller and
+  -- thus not take away from the approval program.
+  -- XXX: We could allow this when the local value is 100% None
   addProg "appClear" $ do
     checkRekeyTo
     checkLease
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ 1
+    code "global" [ "GroupSize" ]
+    cl $ DLL_Int sb 1
     asserteq
-    app_global_get keyState
+    cl $ DLL_Bytes keyState
+    op "app_global_get"
+    cTupleRef at keyState_ty 0
     code "global" ["ZeroAddress"]
     asserteq
     code "b" ["done"]
@@ -1595,8 +1587,7 @@ compile_algo disp pl = do
     code "int" ["appl"]
     asserteq
     code "gtxn" [etexty TxnAppl, "ApplicationID"]
-    cApplicationID
-    cfrombs T_UInt
+    code "int" [ "{{ApplicationID}}" ]
     asserteq
     code "b" ["done"]
     defn_done
