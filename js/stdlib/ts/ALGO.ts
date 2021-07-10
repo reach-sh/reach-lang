@@ -137,10 +137,7 @@ type CompiledBackend = {
   escrow: CompileResultBytes,
 };
 
-type ContractInfo = [ number, number ];
-const makeContractInfo = (id:number): ContractInfo =>
-  [ reachAlgoBackendVersion, id ];
-
+type ContractInfo = number;
 type Digest = BigNumber
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
@@ -514,12 +511,9 @@ const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  if ( ! Array.isArray(info) ) {
-    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an (unknown) version of Reach.`); }
-  const [ version, ...moreInfo ] = info;
-  if ( version !== reachAlgoBackendVersion ) {
-    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with version ${version} of the Reach Algorand connector, but this is version ${reachAlgoBackendVersion}.`); }
-  const [ ApplicationID ] = moreInfo;
+  if ( ! Number.isInteger(info) ) {
+    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an earlier version of Reach.`); }
+  const ApplicationID = info;
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
   const { appApproval, appClear, escrow } = algob;
@@ -1417,8 +1411,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(shad, 'deploy');
     const algob = bin._Connectors.ALGO;
     const { viewKeys, mapDataKeys } = algob;
-    const { appApproval, appClear } =
-      await compileFor(bin, makeContractInfo(0));
+    const { appApproval, appClear } = await compileFor(bin, 0);
     const extraPages =
       Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
@@ -1442,7 +1435,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     debug(`created`, {ApplicationID});
-    const ctcInfo = makeContractInfo(ApplicationID);
+    const ctcInfo = ApplicationID;
     const { escrow } = await compileFor(bin, ctcInfo);
     const escrowAddr = escrow.hash;
 
