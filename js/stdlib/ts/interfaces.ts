@@ -40,6 +40,9 @@ export interface Stdlib_Backend_Shared extends Stdlib_Backend_Shared_User {
   simMapRef: (sim_r: unknown, mapi: number, f: string) => MaybeRep<unknown>
   simMapSet: (sim_r: unknown, mapi: number, f: string, v: unknown) => unknown
   simMapDupe: (sim_r: unknown, mapi: number, mapo: unknown) => void,
+  simTokenNew: any, // XXX
+  simTokenBurn: any, // XXX
+  simTokenDestroy: any, // XXX
   bytesConcat: (b1: string, b2: string) => string
 };
 

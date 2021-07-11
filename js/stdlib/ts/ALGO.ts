@@ -842,6 +842,7 @@ export {getFaucet, setFaucet};
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
+const NOTE_Reach_tag = (tag:any) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
 const makeTransferTxn = (
   from: Address,
@@ -853,7 +854,7 @@ const makeTransferTxn = (
   tag: number|undefined = undefined,
 ): Txn => {
   const valuen = bigNumberToNumber(value);
-  const note = tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
+  const note = NOTE_Reach_tag(tag);
   const txn =
     token ?
       algosdk.makeAssetTransferTxnWithSuggestedParams(
@@ -1068,7 +1069,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const sim_r = await sim_p( fake_res );
       debug(dhead , '--- SIMULATE', sim_r);
       const { isHalt } = sim_r;
-      const sim_txns = sim_r.txns;
 
       // Maps
       const { mapRefs } = sim_r;
@@ -1123,49 +1123,67 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txnExtraTxns_signers: Array<Signer> = [];
         let sim_i = 0;
         const processSimTxn = (t: SimTxn) => {
-          const { tok } = t;
-          let always: boolean = false;
-          let amt: BigNumber = bigNumberify(0);
-          let from: Address = escrowAddr;
-          let to: Address = escrowAddr;
-          let closeTo: Address|undefined = undefined;
           let signer: Signer = sign_escrow;
-          if ( t.kind === 'from' ) {
-            from = escrowAddr;
-            // @ts-ignore
-            to = cbr2algo_addr(t.to);
-            amt = t.amt;
-          } else if ( t.kind === 'init' ) {
-            processSimTxn({
-              kind: 'to',
-              amt: minimumBalance,
-              tok: undefined,
-            });
-            from = escrowAddr;
-            to = escrowAddr;
-            always = true;
-            amt = t.amt;
-          } else if ( t.kind === 'halt' ) {
-            from = escrowAddr;
-            to = Deployer;
-            closeTo = Deployer;
-            always = true;
-          } else if ( t.kind === 'to' ) {
-            from = thisAcc.addr;
-            to = escrowAddr;
-            amt = t.amt;
-            signer = sign_me;
+          let txn;
+          if ( t.kind === 'tokenNew' ) {
+            const zaddr = undefined;
+            txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
+              escrowAddr, NOTE_Reach_tag(sim_i++), bigNumberToNumber(t.p), 6,
+              false, zaddr, zaddr, zaddr, zaddr,
+              t.s, t.n, t.u, t.m, params,
+            );
+          } else if ( t.kind === 'tokenBurn' ) {
+            // There's no burning on Algorand
+            return;
+          } else if ( t.kind === 'tokenDestroy' ) {
+            txn = algosdk.makeAssetDestroyTxnWithSuggestedParams(
+              escrowAddr, NOTE_Reach_tag(sim_i++),
+              bigNumberToNumber(t.tok), params,
+            );
           } else {
-            assert(false, 'sim txn kind');
+            const { tok } = t;
+            let always: boolean = false;
+            let amt: BigNumber = bigNumberify(0);
+            let from: Address = escrowAddr;
+            let to: Address = escrowAddr;
+            let closeTo: Address|undefined = undefined;
+            if ( t.kind === 'from' ) {
+              from = escrowAddr;
+              // @ts-ignore
+              to = cbr2algo_addr(t.to);
+              amt = t.amt;
+            } else if ( t.kind === 'init' ) {
+              processSimTxn({
+                kind: 'to',
+                amt: minimumBalance,
+                tok: undefined,
+              });
+              from = escrowAddr;
+              to = escrowAddr;
+              always = true;
+              amt = t.amt;
+            } else if ( t.kind === 'halt' ) {
+              from = escrowAddr;
+              to = Deployer;
+              closeTo = Deployer;
+              always = true;
+            } else if ( t.kind === 'to' ) {
+              from = thisAcc.addr;
+              to = escrowAddr;
+              amt = t.amt;
+              signer = sign_me;
+            } else {
+              assert(false, 'sim txn kind');
+            }
+            if ( ! always && amt.eq(0) ) { return; }
+            txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
           }
-          if ( ! always && amt.eq(0) ) { return; }
-          const txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
           extraFees += txn.fee;
           txn.fee = 0;
           txnExtraTxns.push(txn);
           txnExtraTxns_signers.push(signer);
         };
-        sim_txns.forEach(processSimTxn);
+        sim_r.txns.forEach(processSimTxn);
         debug(dhead, '--- extraFee =', extraFees);
 
       const actual_args = [ svs, msg ];

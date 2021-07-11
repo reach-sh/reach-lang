@@ -222,17 +222,31 @@ export type ISimRes<Digest, Token, ConnectorTy> = {
 };
 
 export type ISimTxn<Token> = {
-  kind: "to"|"init",
+  kind: 'to'|'init',
   amt: BigNumber,
   tok: Token|undefined,
 } | {
-  kind: "from",
+  kind: 'from',
   to: string,
   amt: BigNumber,
   tok: Token|undefined,
 } | {
-  kind: "halt",
+  kind: 'halt',
   tok: Token|undefined,
+} | {
+  kind: 'tokenNew',
+  n: any,
+  s: any,
+  u: any
+  m: any,
+  p: BigNumber,
+} | {
+  kind: 'tokenBurn',
+  tok: Token,
+  amt: BigNumber,
+} | {
+  kind: 'tokenDestroy',
+  tok: Token,
 };
 
 /**

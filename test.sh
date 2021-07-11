@@ -44,7 +44,7 @@ r () {
   make build
   # make down
 
-  # jb
+  jb
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
@@ -202,7 +202,7 @@ tealcount () {
 # r examples/tut-5
 # r examples/tut-6
 # r examples/tut-5-attack
-r examples/tut-7 # XXX test debigger
+# r examples/tut-7 # XXX test debigger
 # r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
@@ -226,7 +226,7 @@ r examples/tut-7 # XXX test debigger
 # exit 0
 
 # r examples/mint-basic
-# r examples/atomic-swap
+r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
 

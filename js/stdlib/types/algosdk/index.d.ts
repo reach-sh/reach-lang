@@ -76,6 +76,18 @@ declare module 'algosdk' {
   declare type ARG_rekeyTo = string;
   declare type ARG_extraPages = number;
 
+  declare function makeAssetCreateTxnWithSuggestedParams(
+    from:Address, note:ARG_note, total: number, decimals:number,
+    defaultFrozen:boolean,
+    manager: Address|undefined, reserve: Address|undefined,
+    freeze: Address|undefined, freeze: Address|undefined, unitName: string,
+    assetName: string, assetURL: string, assetMetadataHash: string,
+    params: TxnParams, rekeyTo?: ARG_reKeyTo,
+  ): Txn;
+  declare function makeAssetDestroyTxnWithSuggestedParams(
+      from: Address, note: ARG_note, assetIndex: number,
+      params: TxnParams, rekeyTo?: ARG_reKeyTo,
+  ): Txn;
   declare function makePaymentTxnWithSuggestedParams(
       from: Address, to: Address, amount: number,
       closeRemainderTo: Address|undefined,

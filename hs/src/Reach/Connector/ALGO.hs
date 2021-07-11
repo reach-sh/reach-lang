@@ -276,16 +276,19 @@ nop = return ()
 padding :: Integer -> App ()
 padding = cl . bytesZeroLit
 
+czaddr :: App ()
+czaddr = code "global" ["ZeroAddress"]
+
 checkRekeyTo :: App ()
 checkRekeyTo = do
   code "txn" ["RekeyTo"]
-  code "global" ["ZeroAddress"]
+  czaddr
   asserteq
 
 checkLease :: App ()
 checkLease = do
   code "txn" ["Lease"]
-  code "global" ["ZeroAddress"]
+  czaddr
   asserteq
 
 checkTimeLimits :: SrcLoc -> App ()
@@ -924,7 +927,6 @@ ce = \case
     let ct_mcrecv = Just $ ca who
     let ct_mcsend = Just cContractAddr
     let ct_mcclose = Nothing
-    let ct_noTimeLimits = False
     checkTxn $ CheckTxn {..}
   DLE_TokenInit ct_at tok -> do
     comment $ "Initializing token"
@@ -934,7 +936,6 @@ ce = \case
     let ct_mcsend = Just cContractAddr
     let ct_mcrecv = Just cContractAddr
     let ct_mcclose = Nothing
-    let ct_noTimeLimits = False
     let cta = CheckTxn {..}
     checkTxn $ cta
       { ct_mtok = Nothing
@@ -947,7 +948,6 @@ ce = \case
     let ct_mcsend = Nothing -- Flexible, not necc appl sender
     let ct_mcrecv = Just $ cContractAddr
     let ct_mcclose = Nothing
-    let ct_noTimeLimits = False
     checkTxn $ CheckTxn {..}
   DLE_Claim at fs t a mmsg -> do
     show_stack mmsg at fs
@@ -976,12 +976,54 @@ ce = \case
     cTupleSet at mdt $ fromIntegral i
     cMapStore at
   DLE_Remote {} -> xxx "remote objects"
-  DLE_TokenNew {} -> xxx "token creation"
+  DLE_TokenNew at (DLTokenNew {..}) -> do
+    checkTxnAlloc
+    let vTypeEnum = "acfg"
+    let ct_mcsend = Just cContractAddr
+    checkTxnInit at vTypeEnum ct_mcsend
+    let i = cl . DLL_Int at
+    let za = czaddr
+    i 0 >> checkTxn1 "ConfigAsset"
+    ca dtn_supply >> checkTxn1 "ConfigAssetTotal"
+    i 6 >> checkTxn1 "ConfigAssetDecimals"
+    i 0 >> checkTxn1 "ConfigAssetDefaultFrozen"
+    ca dtn_sym >> checkTxn1 "ConfigAssetUnitName"
+    ca dtn_name >> checkTxn1 "ConfigAssetName"
+    ca dtn_url >> checkTxn1 "ConfigAssetURL"
+    ca dtn_metadata >> checkTxn1 "ConfigAssetMetadataHash"
+    za >> checkTxn1 "ConfigAssetManager"
+    za >> checkTxn1 "ConfigAssetReserve"
+    za >> checkTxn1 "ConfigAssetFreeze"
+    za >> checkTxn1 "ConfigAssetClawback"
+    op "gaids"
+    -- This doesn't work because the appl gets index 0 and all the others go
+    -- after. I could try to re-arrange things so that the appl is always
+    -- last... ugghhhhh
+    xxx $ "token creation"
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy
     return ()
-  DLE_TokenDestroy {} -> xxx "token destroy"
+  DLE_TokenDestroy at aida -> do
+    checkTxnAlloc
+    let vTypeEnum = "acfg"
+    let ct_mcsend = Just cContractAddr
+    checkTxnInit at vTypeEnum ct_mcsend
+    let i0 = cl $ DLL_Int at 0
+    let b0 = padding 0
+    ca aida >> checkTxn1 "ConfigAsset"
+    i0 >> checkTxn1 "ConfigAssetTotal"
+    i0 >> checkTxn1 "ConfigAssetDecimals"
+    i0 >> checkTxn1 "ConfigAssetDefaultFrozen"
+    b0 >> checkTxn1 "ConfigAssetUnitName"
+    b0 >> checkTxn1 "ConfigAssetName"
+    b0 >> checkTxn1 "ConfigAssetURL"
+    b0 >> checkTxn1 "ConfigAssetMetadataHash"
+    b0 >> checkTxn1 "ConfigAssetManager"
+    b0 >> checkTxn1 "ConfigAssetReserve"
+    b0 >> checkTxn1 "ConfigAssetFreeze"
+    b0 >> checkTxn1 "ConfigAssetClawback"
+    op "pop"
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -995,20 +1037,50 @@ staticZero = \case
 
 data CheckTxn = CheckTxn
   { ct_at :: SrcLoc
-  , ct_mcrecv :: Maybe (App ())
   , ct_mcsend :: Maybe (App ())
+  , ct_mcrecv :: Maybe (App ())
   , ct_mcclose :: Maybe (App ())
   , ct_always :: Bool
-  , ct_noTimeLimits :: Bool
   , ct_amt :: DLArg
   , ct_mtok :: Maybe DLArg }
 
+checkTxn1 :: LT.Text -> App ()
+checkTxn1 f = do
+  code "dig" [ "1" ]
+  code "gtxns" [f]
+  asserteq
+
+checkTxnAlloc :: App ()
+checkTxnAlloc = do
+  gvLoad GV_txnCounter
+  op "dup"
+  cl $ DLL_Int sb 1
+  op "+"
+  gvStore GV_txnCounter
+
+checkTxnInit :: SrcLoc -> LT.Text -> Maybe (App ()) -> App ()
+checkTxnInit at vTypeEnum ct_mcsend = do
+  -- [ txn ]
+  code "int" [vTypeEnum]
+  checkTxn1 "TypeEnum"
+  cl $ DLL_Int sb 0
+  checkTxn1 "Fee"
+  op "dup"
+  checkTimeLimits at
+  czaddr
+  checkTxn1 "Lease"
+  czaddr
+  checkTxn1 "RekeyTo"
+  whenJust ct_mcsend $ \csend -> do
+    csend
+    cfrombs T_Address
+    checkTxn1 "Sender"
+  -- [ txn ]
+  return ()
+
 checkTxn :: CheckTxn -> App ()
 checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
-  let check1 f = do
-        code "dig" [ "1" ]
-        code "gtxns" [f]
-        asserteq
+  let check1 = checkTxn1
   let (vTypeEnum, fReceiver, fAmount, fCloseTo, extra) =
         case ct_mtok of
           Nothing ->
@@ -1021,27 +1093,13 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   unless ct_always $ do
     op "dup"
     code "bz" [after_lab]
-  gvLoad GV_txnCounter
-  op "dup"
-  cl $ DLL_Int sb 1
-  op "+"
-  gvStore GV_txnCounter
+  checkTxnAlloc
   -- [ amt, id ]
   op "swap"
   -- [ id, amt ]
   check1 fAmount
   extra
-  code "int" [vTypeEnum]
-  check1 "TypeEnum"
-  cl $ DLL_Int sb 0
-  check1 "Fee"
-  unless ct_noTimeLimits $ do
-    op "dup"
-    checkTimeLimits ct_at
-  code "global" ["ZeroAddress"]
-  check1 "Lease"
-  code "global" ["ZeroAddress"]
-  check1 "RekeyTo"
+  checkTxnInit ct_at vTypeEnum ct_mcsend
   whenJust ct_mcclose $ \cclose -> do
     cclose
     cfrombs T_Address
@@ -1050,10 +1108,6 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
     crecv
     cfrombs T_Address
     check1 fReceiver
-  whenJust ct_mcsend $ \csend -> do
-    csend
-    cfrombs T_Address
-    check1 "Sender"
   label after_lab
   op "pop" -- if !always & zero then pop amt ; else pop id
 
@@ -1178,7 +1232,7 @@ ct = \case
         FI_Halt toks -> do
           forM_ toks close_asset
           close_escrow
-          code "global" [ "ZeroAddress" ]
+          czaddr
           gvStore GV_stateHash
           return True
           where
@@ -1188,7 +1242,6 @@ ct = \case
             ct_always = True
             ct_amt = DLA_Literal $ DLL_Int sb 0
             ct_mcclose = Just $ cDeployer
-            ct_noTimeLimits = False
             close_asset tok = checkTxn $ CheckTxn {..}
               where ct_mtok = Just tok
             close_escrow = checkTxn $ CheckTxn {..}
@@ -1551,18 +1604,6 @@ compile_algo disp pl = do
     --
     -- Since we can't check it anyways, we're not even going to bother ensuring
     -- that there's a pay with it,
-    --
-    -- We could with:
-    when False $
-      checkTxn $ CheckTxn
-        { ct_at = at
-        , ct_mcrecv = Nothing -- XXX calculate the escrow ctc
-        , ct_mcsend = Nothing -- Flexible, not necc appl sender
-        , ct_mcclose = Nothing
-        , ct_always = False
-        , ct_mtok = Nothing
-        , ct_noTimeLimits = True
-        , ct_amt = DLA_Literal minimumBalance_l }
     code "txn" ["Sender"]
     cDeployer
     asserteq
@@ -1588,7 +1629,7 @@ compile_algo disp pl = do
     cl $ DLL_Bytes keyState
     op "app_global_get"
     cTupleRef at keyState_ty 0
-    code "global" ["ZeroAddress"]
+    czaddr
     asserteq
     code "b" ["done"]
     defn_done

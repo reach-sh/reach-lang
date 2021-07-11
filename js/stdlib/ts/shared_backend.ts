@@ -108,3 +108,20 @@ export const simMapSet = (sim_r:any, mapi:number, f: any, nv: any): void => {
   simMapLog(sim_r, f);
   sim_r.mapsNext[mapi][f] = nv;
 };
+
+export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any): any => {
+  sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p});
+  // XXX This 0 is a hack... on Algorand we can't know at simulation time what
+  // this is going to be... so this will cause a runtime exception from
+  // something if it gets looked at (i.e. if you try to create an immediately
+  // use it)
+  return 0;
+};
+
+export const simTokenBurn = (sim_r:any, tok:any, amt:any): void => {
+  sim_r.txns.push({kind: 'tokenBurn', tok, amt});
+};
+
+export const simTokenDestroy = (sim_r:any, tok:any): void => {
+  sim_r.txns.push({kind: 'tokenDestroy', tok});
+};
