@@ -977,10 +977,17 @@ ce = \case
     cMapStore at
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew at (DLTokenNew {..}) -> do
+    let ct_at = at
+    let ct_always = True
+    let ct_mtok = Nothing
+    let ct_mcsend = Nothing
+    let ct_mcrecv = Just cContractAddr
+    let ct_mcclose = Nothing
+    let ct_amt = DLA_Literal $ minimumBalance_l
+    checkTxn $ CheckTxn {..}
     checkTxnAlloc
     let vTypeEnum = "acfg"
-    let ct_mcsend = Just cContractAddr
-    checkTxnInit at vTypeEnum ct_mcsend
+    checkTxnInit at vTypeEnum $ Just cContractAddr
     let i = cl . DLL_Int at
     let za = czaddr
     i 0 >> checkTxn1 "ConfigAsset"
@@ -996,10 +1003,8 @@ ce = \case
     za >> checkTxn1 "ConfigAssetFreeze"
     za >> checkTxn1 "ConfigAssetClawback"
     op "gaids"
-    -- This doesn't work because the appl gets index 0 and all the others go
-    -- after. I could try to re-arrange things so that the appl is always
-    -- last... ugghhhhh
-    xxx $ "token creation"
+    -- XXX This is broken because indexer is broken.
+    xxx "token creation"
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy
@@ -1024,6 +1029,7 @@ ce = \case
     b0 >> checkTxn1 "ConfigAssetFreeze"
     b0 >> checkTxn1 "ConfigAssetClawback"
     op "pop"
+    -- XXX We could get the minimum balance back
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -1321,10 +1327,6 @@ cContractAddr = gvLoad GV_contractAddr
 cDeployer :: App ()
 cDeployer = code "global" ["CreatorAddress"]
 
-data TxnId
-  = TxnAppl
-  deriving (Eq, Ord, Show, Enum, Bounded)
-
 etexty :: Enum a => a -> LT.Text
 etexty = texty . fromEnum
 
@@ -1523,7 +1525,7 @@ compile_algo disp pl = do
   addProg "appApproval" $ do
     checkRekeyTo
     checkLease
-    cl $ DLL_Int sb $ boundedCount TxnAppl
+    cl $ DLL_Int sb 0
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
     code "bz" ["alloc"]
@@ -1577,7 +1579,14 @@ compile_algo disp pl = do
     label "checkSize"
     gvLoad GV_txnCounter
     op "dup"
+    op "dup"
+    -- The size is correct
+    cl $ DLL_Int sb $ 1
+    op "+"
     code "global" [ "GroupSize" ]
+    asserteq
+    -- We're last
+    code "txn" ["GroupIndex"]
     asserteq
     cl $ DLL_Int sb $ algoMinTxnFee
     op "*"
@@ -1635,11 +1644,15 @@ compile_algo disp pl = do
     defn_done
   -- The escrow account defers to the application
   addProg "escrow" $ do
-    code "gtxn" [etexty TxnAppl, "TypeEnum"]
+    code "global" ["GroupSize"]
+    cl $ DLL_Int sb 1
+    op "-"
+    op "dup"
+    code "gtxns" ["TypeEnum"]
     code "int" ["appl"]
     asserteq
-    code "gtxn" [etexty TxnAppl, "ApplicationID"]
-    code "int" [ "{{ApplicationID}}" ]
+    code "gtxns" ["ApplicationID"]
+    code "int" ["{{ApplicationID}}"]
     asserteq
     code "b" ["done"]
     defn_done

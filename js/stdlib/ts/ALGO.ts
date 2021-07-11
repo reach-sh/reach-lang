@@ -558,7 +558,7 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
+const doQuery_ = async (dhead:string, query: ApiCall<any>, alwaysRetry: boolean = false): Promise<any> => {
   debug(dhead, '--- QUERY =', query);
   let retries = 10;
   let res;
@@ -567,12 +567,13 @@ const doQuery_ = async (dhead:string, query: ApiCall<any>): Promise<any> => {
       res = await query.do();
       break;
     } catch (e) {
-      if ( e.errno === -111 ) {
-        debug(dhead, '--- NO CONNECTION, RETRYING', retries--);
-        await Timeout.set(500);
-      } else {
+      if ( e.errno === -111 || e.code === "ECONNRESET" ) {
+        debug(dhead, 'NO CONNECTION');
+      } else if ( ! alwaysRetry || retries <= 0 ) {
         throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
       }
+      debug(dhead, 'RETRYING', retries--, {e});
+      await Timeout.set(500);
     }
   }
   debug(dhead, '--- RESULT =', res);
@@ -1126,6 +1127,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let signer: Signer = sign_escrow;
           let txn;
           if ( t.kind === 'tokenNew' ) {
+            processSimTxn({
+              kind: 'to',
+              amt: minimumBalance,
+              tok: undefined,
+            });
             const zaddr = undefined;
             txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
               escrowAddr, NOTE_Reach_tag(sim_i++), bigNumberToNumber(t.p), 6,
@@ -1140,6 +1146,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               escrowAddr, NOTE_Reach_tag(sim_i++),
               bigNumberToNumber(t.tok), params,
             );
+            // XXX We could get the minimum balance back after
           } else {
             const { tok } = t;
             let always: boolean = false;
@@ -1213,7 +1220,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             thisAcc.addr, params, ApplicationID, safe_args,
             mapAcctsReal, undefined, undefined, NOTE_Reach);
         txnAppl.fee += extraFees;
-        const txns = [ txnAppl, ...txnExtraTxns ];
+        const txns = [ ...txnExtraTxns, txnAppl ];
         algosdk.assignGroupID(txns);
         regroup(thisAcc, txns);
 
@@ -1225,7 +1232,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 await txnExtraTxns_signers[i](t)
         ));
 
-        const txns_s = [ txnAppl_s, ...txnExtraTxns_s ];
+        const txns_s = [ ...txnExtraTxns_s, txnAppl_s ];
         debug(dhead, '--- SEND:', txns_s.length);
         let res;
         try {
@@ -1751,7 +1758,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
   const indexer = await getIndexer();
   const ilq = indexer.lookupApplications(ApplicationID).includeAll();
-  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
+  const ilr = await doQuery_(`${dhead} app lookup`, ilq, true);
   debug(dhead, {ilr});
   const appInfo_i = ilr.application;
   debug(dhead, {appInfo_i});

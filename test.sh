@@ -225,8 +225,8 @@ tealcount () {
 # r users/ff
 # exit 0
 
-# r examples/mint-basic
-r examples/atomic-swap
+r examples/mint-basic
+# r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
 
