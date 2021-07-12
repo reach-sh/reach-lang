@@ -76,7 +76,7 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   arrp[idx] = elem;
   return arrp;
 }
-export const mapRef = (m: any, f: any): any => {
+export const mapRef = <A>(m: {[key: string]: A}, f: string): ['Some', A]|['None', null] => {
   const v = m[f];
   // console.log(`Reading map ${JSON.stringify(m)} field ${JSON.stringify(f)} => ${JSON.stringify(v)}`);
   if ( v === undefined ) {
