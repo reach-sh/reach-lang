@@ -19,6 +19,8 @@ You only need to install the package directly if you are running your frontend w
 
 These libraries provide a standard interface that support developing @tech{frontends}.
 
+@(local-table-of-contents)
+
 @section[#:tag "ref-frontends-js-types"]{Types}
 
 The table below shows the JavaScript representation of each of the Reach types:

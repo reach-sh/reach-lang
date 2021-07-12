@@ -8,6 +8,8 @@
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
 
+@(local-table-of-contents)
+
 @;{
   What is a "good" error description?
   * Intuitive explanation
