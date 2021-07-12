@@ -6,22 +6,31 @@ TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
 export TMP
 
 run_d () {
-  docker run -t --rm \
-    -e "REACH_EX=$0" \
-    -e "REACH_CONNECTOR_MODE" \
-    -e "REACH_DEBUG" \
-    -e "REACH_RPC_KEY" \
-    -e "REACH_RPC_PORT"  \
-    -e "REACH_RPC_SERVER" \
-    -e "REACH_RPC_TLS_CRT" \
-    -e "REACH_RPC_TLS_KEY" \
-    -e "REACH_RPC_TLS_PASSPHRASE" \
-    -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
-    -e "REACH_VERSION" \
-    -u "$(id -ru):$(id -rg)" \
-    -v "$TMP:/app/tmp" \
-    -v "$(pwd):/app/src" \
-    "$IMG" --dir-project-host="$(pwd)" "$@"
+  if [ "$CIRCLECI" = "true" ]; then
+    REACH_EX="$0" ~/.local/bin/reach \
+      --dir-embed="$(dirname "$(realpath "$0")")/hs/app/reach/embed" \
+      --dir-project-container="$(pwd)" \
+      --dir-project-host="$(pwd)" \
+      --dir-tmp="$TMP" \
+      "$@"
+  else
+    docker run -t --rm \
+      -e "REACH_EX=$0" \
+      -e "REACH_CONNECTOR_MODE" \
+      -e "REACH_DEBUG" \
+      -e "REACH_RPC_KEY" \
+      -e "REACH_RPC_PORT"  \
+      -e "REACH_RPC_SERVER" \
+      -e "REACH_RPC_TLS_CRT" \
+      -e "REACH_RPC_TLS_KEY" \
+      -e "REACH_RPC_TLS_PASSPHRASE" \
+      -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
+      -e "REACH_VERSION" \
+      -u "$(id -ru):$(id -rg)" \
+      -v "$TMP:/app/tmp" \
+      -v "$(pwd):/app/src" \
+      "$IMG" --dir-project-host="$(pwd)" "$@"
+  fi
 }
 
 run_s () {
@@ -34,7 +43,7 @@ if ! (which make docker docker-compose >/dev/null 2>&1); then
   exit 1
 fi
 
-if [ "$(docker image ls -q $IMG)" = '' ]; then
+if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
   if ! (docker pull "$IMG" && run_d update && run_s); then exit 1; fi
 fi
 
