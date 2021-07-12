@@ -164,13 +164,14 @@ jobs:
         git diff --exit-code HEAD~ guide-changelog.scrbl
     - slack/notify:
         event: fail
+        channel: 'CMY2TF38D, CMY3E5B3J' # general, reach-lang
         custom: |
           {
             "blocks": [{
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "Changelog has changed!"
+                "text": "[Changelog](https://docs.reach.sh/guide-changelog.html) has changed!"
               }
             ]
           }
