@@ -629,8 +629,7 @@ compile = command "compile" $ info f d where
         export REACH
 
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-          # TODO test
-          ~/.local/bin/reachc --disable-reporting "$@@"
+          ~/.local/bin/reachc --disable-reporting $args
 
         elif [ -z "$${REACH_DOCKER}" ] \
           && [ -d "$${HS}/.stack-work" ] \
