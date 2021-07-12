@@ -50,6 +50,7 @@ const processShim: Process = (() => {
 type Window = {
   ethereum?: ethers.providers.ExternalProvider,
   AlgoSigner?: any, // TODO
+  conflux?: any, // TODO
   prompt?: (s: string) => string | null,
   reach?: any, // TODO
 };

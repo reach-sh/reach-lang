@@ -12,7 +12,7 @@ import cfxsdk from 'js-conflux-sdk';
 import Timeout from 'await-timeout';
 const { Conflux } = cfxsdk;
 
-type NetworkAccount = cfxers.Wallet; // XXX or other things
+type NetworkAccount = cfxers.IWallet; // XXX or other things
 type Provider = cfxers.providers.Provider;
 
 function notYetSupported(label: string): any {
@@ -37,9 +37,13 @@ export function isWindowProvider(): boolean {
 export function _getSignStrategy(): string {
   // XXX expose setSignStrategy for CFX
   // For now we only support 'secret' by default
-  if (window.prompt) {
+  if (window.conflux) {
+    // XXX this should be more lenient about letting cp load later
+    return 'window';
+  } else if (window.prompt) {
     return 'secret';
   } else {
+    // XXX this should only work on the devnet
     return 'faucet';
   }
 }
@@ -51,7 +55,7 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
     return window.prompt(`Please paste your account's ${s}, or click cancel to generate a new one.`);
   }
   const ss = _getSignStrategy();
-  let w: cfxers.Wallet|null = null;
+  let w: cfxers.IWallet|null = null;
   switch (ss) {
   case 'secret':
     const skMay = promptFor('secret key');
@@ -70,7 +74,9 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
     break;
   case 'window':
     // XXX ConfluxPortal support
-    w = notYetSupported(`sign strategy 'window'`);
+    const cp = await getConfluxPortal();
+    const addr = (await cp.enable())[0];
+    w = new cfxers.BrowserWallet(cp, addr);
     break;
   case 'faucet':
     w = await _getDefaultFaucetNetworkAccount();
@@ -165,6 +171,16 @@ function providerEnvByName(providerName: any): void {
   void(providerName);
   return notYetSupported(`providerEnvByName`);
 }
+
+async function getConfluxPortal(): Promise<cfxers.CP> {
+  const maxTries = 10;
+  for (let tries = 1; tries <= maxTries; tries++) {
+    if (window.conflux) return window.conflux;
+    await Timeout.set(100);
+  }
+  throw Error(`Couldn't find window.conflux`);
+}
+
 
 export { ethLikeCompiled };
 export { cfxers as ethers };

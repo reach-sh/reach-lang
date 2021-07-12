@@ -7,6 +7,7 @@ export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
 import Timeout from 'await-timeout';
 import { debug } from './shared_impl';
+import { window } from './shim';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -65,7 +66,7 @@ function conform(args: any[], tys: ParamType[]): any[] {
 export class Signer {
   static isSigner(x: any) {
     // XXX
-    return x instanceof Wallet;
+    return x && x.sendTransaction instanceof Function;
   }
 }
 
@@ -140,10 +141,10 @@ export class Contract implements IContract {
   }
 
   _makeHandler(abiFn: any): any {
-    const iface = this.interface;
+    const {_wallet, interface: iface} = this;
     const fname: string = abiFn.name;
     const mut: string = abiFn.stateMutability;
-    const from = this._wallet.getAddress();
+    const from = _wallet.getAddress();
     const self = this;
     // XXX this should always be safe but maybe error handling around it just in case?
     // XXX handle the case where the same method name can have multiple input sizes/types?
@@ -164,10 +165,17 @@ export class Contract implements IContract {
         // Note: this usage of `.call` here is because javascript is insane.
         // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
         // @ts-ignore
-        const transactionReceipt = await self._contract[fname].call(...argsConformed).sendTransaction(txn).executed();
-        debug(`cfxers:handler`, fname, 'receipt');
-        debug(transactionReceipt);
-        const { transactionHash } = transactionReceipt;
+        const cfc = self._contract[fname].call(...argsConformed);
+        debug(`cfxers:handler`, fname, `cfc`, cfc);
+        const {to, data} = cfc; // ('to' is just ctc address)
+        const txnDat = {...txn, to, data};
+        debug(`cfxers:handler`, fname, `txnDat`, txnDat);
+        const res = await _wallet.sendTransaction({...txnDat});
+        const {transactionHash} = await res.wait();
+
+        // debug(`cfxers:handler`, fname, 'receipt');
+        // debug(transactionReceipt);
+        // const { transactionHash } = transactionReceipt;
         return {
           // XXX not sure what the distinction is supposed to be here
           wait: async () => {
@@ -237,11 +245,13 @@ export class ContractFactory {
     // @ts-ignore
     const ccc = contract.constructor.call(...argsConformed);
     // debug(`cfxers:Contract.deploy`, `cfx ctc constructed`, ccc);
-    // const data = ccc.data;
-    // const txnDat = {...txn, data};
+    const data = ccc.data;
+    const txnDat = {...txn, data};
     // const resultP = conflux.sendTransaction(txnDat);
-    const resultP = ccc.sendTransaction(txn);
-    const hash = await resultP;
+    // const resultP = ccc.sendTransaction(txn);
+    const resultP = wallet.sendTransaction({...txnDat});
+    const hash = (await resultP).transactionHash;
+    // const receiptP = await (await resultP).wait(); // <- no, I didn't add all the stuff to wait()
     const receiptP = waitReceipt(wallet.provider, hash);
 
     const txnRes = await conflux.getTransactionByHash(hash);
@@ -256,7 +266,87 @@ export class ContractFactory {
   }
 }
 
-export class Wallet {
+export interface IWallet {
+  provider?: providers.Provider
+  connect: (provider: providers.Provider) => this
+  getAddress(): string
+  sendTransaction(txn: any): Promise<{
+    transactionHash: string,
+    wait: () => Promise<{transactionHash: string}>,
+  }>
+}
+
+export interface CP {
+  enable: () => Promise<string[]>
+  sendAsync: any // TODO
+}
+
+export class BrowserWallet implements IWallet {
+  cp: CP
+  address: string
+  provider?: providers.Provider
+
+  // Call await cp.enable() before this
+  constructor(cp: CP, address: string, provider?: providers.Provider) {
+    this.cp = cp;
+    this.address = address
+    this.provider = provider; // XXX just use cp?
+  }
+
+  connect(provider: providers.Provider): this {
+    if (this.provider) {
+      throw Error(`impossible: BrowserWallet already connected`);
+    }
+    this.provider = provider;
+    return this;
+  }
+  _requireConnected() {
+    if (!this.provider) {
+      throw Error(`Wallet has no Provider, please call .connect()`);
+    }
+  }
+
+  // XXX canonicalize?
+  getAddress(): string { return this.address; }
+
+  async sendTransaction(txnOrig: any): Promise<{
+    transactionHash: string,
+    wait: () => Promise<{transactionHash: string}>,
+  }> {
+    this._requireConnected();
+    const {provider, address: from} = this;
+    if (!provider) throw Error(`Impossible: provider is undefined`);
+    // @ts-ignore // leaning on window.BigInt for the num -> hexnum conversion
+    const value: string = '0x' + window.BigInt(txnOrig.value || '0').toString(16);
+    const txn = {...txnOrig, value, from};
+    const est = await provider.conflux.estimateGasAndCollateral({...txn});
+    console.log({txn, est}); // DELETEME
+    return await new Promise((resolve, reject) => {
+      this.cp.sendAsync({
+        method: 'cfx_sendTransaction',
+        params: [txn],
+        from,
+        value,
+      }, (err: any, data: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          const transactionHash = data.result;
+          resolve({
+            transactionHash,
+            wait: async () => {
+              await waitReceipt(provider, transactionHash)
+              // XXX return the whole receipt?
+              return {transactionHash};
+            }
+          });
+        };
+      });
+    });
+  }
+}
+
+export class Wallet implements IWallet {
   privateKey?: string;
   account?: cfxsdk.Account;
   provider?: providers.Provider;
@@ -412,9 +502,9 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
 }
 
 async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
-  // XXX is 5s enough time on testnet/mainnet?
+  // XXX is 20s enough time on testnet/mainnet?
   // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
-  const maxTries = 100;
+  const maxTries = 400;
   const waitMs = 50;
   for (let tries = 1; tries <= maxTries; tries++) {
     const r: any = await provider.conflux.getTransactionReceipt(txnHash);
