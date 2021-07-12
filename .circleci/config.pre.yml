@@ -159,6 +159,22 @@ jobs:
         git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
         git push origin gh-pages
     - slack_fail
+    - run: |
+        git checkout gh-pages
+        git diff --exit-code HEAD~ guide-changelog.scrbl
+    - slack/notify:
+        event: fail
+        custom: |
+          {
+            "blocks": [{
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "Changelog has changed!"
+              }
+            ]
+          }
+
   "sh-check":
     executor: standard
     steps:
