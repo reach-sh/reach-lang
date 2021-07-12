@@ -32,7 +32,7 @@ const NUM_PROVIDERS = 2;
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
       console.log(`Admin will ${counter > 2 ? '' : 'not '}close pool`);
-      return counter > 2;
+      return { when: counter > 2, msg: null };
     },
   });
 
@@ -54,6 +54,13 @@ const NUM_PROVIDERS = 2;
         } else {
           return { when: false, msg: { liquidity: 0 }};
         }
+      },
+      depositMaybe: (isAlive, market) => {
+        const deposit = {
+          amtIns: [0, 0],
+          ratios: [0, 0],
+        };
+        return { when: false, msg: deposit };
       }
     });
   });

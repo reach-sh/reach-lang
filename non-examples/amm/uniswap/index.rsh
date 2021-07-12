@@ -7,13 +7,16 @@ export const NUM_OF_TOKENS = 2;
 const MUInt = Maybe(UInt);
 
 const MkArray = (ty) =>
-  Array(ty, NUM_OF_TOKENS)
+  Array(ty, NUM_OF_TOKENS);
+
+export const getReserves = (market) => market.tokens;
+
+const min = (a, b) => a < b ? a : b;
 
 export const main = Reach.App(() => {
   // Types
   const Market = Object({
-    k: MUInt,
-    tokens: MkArray(Object({ bal: UInt })),
+    k: UInt
   });
 
   const State = Tuple(Bool, Market);
@@ -32,7 +35,10 @@ export const main = Reach.App(() => {
     formulaValuation: UInt,
     tokA: Token,
     tokB: Token,
-    shouldClosePool: Fun([State], Bool),
+    shouldClosePool: Fun([State], Object({
+      when: Bool,
+      msg : Null,
+    })),
   });
   const Provider = ParticipantClass('Provider', {
     withdrawMaybe: Fun([State], Object({
@@ -58,53 +64,59 @@ export const main = Reach.App(() => {
   Admin.publish(tokA, tokB);
   require(tokA != tokB);
 
+  assert(balance(tokA) == 0, "Starting with 0 balance of TokA");
+  assert(balance(tokB) == 0, "Starting with 0 balance of TokB");
   const initialMarket = {
-    k: MUInt.None(),
-    tokens: Array.replicate(NUM_OF_TOKENS, { bal: 0 }),
+    k: balance(tokA) * balance(tokB)
   };
 
-  const totalSupply = 100;
+  const totalSupply = UInt.max;
   const pool = new Token({ supply: totalSupply });
 
-  const constantProduct = (market) => {
-    const mk = market.k;
-    const x = balance(tokA);
-    const y = balance(tokB);
-    const cp = maybe(mk, true, (k) => k >= x * y);
-    // const bc =
-    //   market.tokens[0].bal == balance(tokA) &&
-    //   market.tokens[1].bal == balance(tokB);
-    return cp;
-  };
+  const mint = (inp, b) => ( inp / b ) * pool.supply();
+  const firstMint = (inA, inB) => sqrt(inA * inB, 10);
 
-  const [ alive, market, poolSupply ] =
-    parallelReduce([ true, initialMarket, totalSupply ])
-      .invariant(balance() == 0 && constantProduct(market))
+  const [ alive, market ] =
+    parallelReduce([ true, initialMarket ])
+      .define(() => {
+        const st = [ alive, market ];
+        const wrap = (f, onlyIfAlive) => {
+          const { when, msg } = declassify(f(st));
+          return { when: (declassify(onlyIfAlive) ? alive : true) && when, msg };
+        }
+        const constantProduct = (m) => {
+          const x = balance(tokA);
+          const y = balance(tokB);
+          return x * y == m.k;
+        };
+      })
+      .invariant(
+        balance() == 0 &&
+        constantProduct(market)
+      )
       .while(alive)
       .paySpec([ pool, tokA, tokB ])
       .case(Admin,
-        (() => ({
-          when: alive && declassify(interact.shouldClosePool([ alive, market ]))
-        })),
+        (() => wrap(interact.shouldClosePool, true)),
         (() => [ 0, [0, pool], [ 0, tokA ], [ 0, tokB ] ]),
         (() => {
-          return [ false, market, poolSupply ]; })
+          return [ false, market ]; })
       )
       .case(Provider,
         (() => {
-          const { when, msg } = declassify(interact.withdrawMaybe([ alive, market ]));
-          assume(msg.liquidity < poolSupply);
+          const { when, msg } = declassify(interact.withdrawMaybe(st));
+          assume(msg.liquidity < pool.supply());
           return { when, msg };
         }),
         (({ liquidity }) => [ 0, [ liquidity, pool ], [ 0, tokA ], [ 0, tokB ] ]),
         (({ liquidity }) => {
-          require(liquidity < poolSupply);
+          require(liquidity < pool.supply());
 
           // Balances have fees incorporated
-          const balances = array(UInt, [balance(tokA), balance(tokB)]);
+          const balances = array(UInt, [ balance(tokA), balance(tokB) ]);
 
           // Amount of each token in reserve to return to Provider
-          const amtOuts = balances.map(bal => liquidity * bal / poolSupply);
+          const amtOuts = balances.map(bal => liquidity * bal / pool.supply());
 
           // Payout provider
           transfer(amtOuts[0], tokA).to(this);
@@ -112,63 +124,67 @@ export const main = Reach.App(() => {
 
           // Burn the liquidity tokens
           pool.burn(liquidity);
-          const poolSupplyP = poolSupply - liquidity;
+
+          const k = balance(tokA) * balance(tokB);
 
           // Update market
-          const marketP = {
-            ...market,
-            tokens: Array.zip(market.tokens, amtOuts)
-                      .map(([ o, out ]) => ({ bal: o.bal - out })),
-          }
+          const marketP = { k }
 
           // Inform frontend of their payout
           const currentProvider = this;
           Provider.interact.withdrawDone(currentProvider == this, amtOuts);
 
-          return [ true, marketP, poolSupplyP ];
+          return [ true, marketP ];
         })
       )
       .case(Provider,
         (() => {
-          const { when, msg } = declassify(interact.depositMaybe([ alive, market ]));
+          const { when, msg } = wrap(interact.depositMaybe, true);
+          const { amtIns } = msg;
+          if (market.k > 0) {
+            assume(mint(amtIns[0], balance(tokA)) < balance(pool));
+            assume(mint(amtIns[1], balance(tokB)) < balance(pool));
+          } else {
+            assume(firstMint(amtIns[0], amtIns[1]) < balance(pool));
+          }
+
           return { when, msg };
         }),
         (({ amtIns }) => [0, [ 0, pool ], [ amtIns[0], tokA ], [ amtIns[1], tokB] ]),
         (({ amtIns, ratios }) => {
 
-          // Temp satisfy verifier
-          transfer(amtIns[0], tokA).to(this);
-          transfer(amtIns[1], tokB).to(this);
+          const inA = amtIns[0];
+          const inB = amtIns[1];
 
-          // const ptoks = totalSupply == poolSupply
-          //   // This is first deposit
-          //   ? sqrt(amtIns.product(), 10)
-          //   : Array.zip(market.tokens, amtIns)
-          //       .map(([ o, inAmt ]) => (inAmt / o.bal) / poolSupply)
-          //       .average();
-          // transfer(ptoks, pool).to(this);
+          const f = (inp, b) => {
+            assert(inp <= b, "amtIn <= balance(tok)");
+            const res = mint(inp, b);
+            require(res < balance(pool), "liquidity minted less than balance");
+            return res;
+          }
 
-          // const k = market.k.match({
-          //   Some: ((i) => {
+          const sMinted = market.k == 0
+            // If first deposit, use geometric mean
+            ? firstMint(inA, inB)
+            : min( f(inA, balance(tokA)), f(inB, balance(tokB)) );
 
-          //   }),
-          //   None: (() => {
-          //     return sqrt(x * y);
-          //   }),
-          // });
+          // require(sMinted < balance(pool), "liquidity minted less than balance");
+          // This needs to be `require`d, but does not halt
+          if (sMinted < balance(pool)) {
+            transfer(sMinted, pool).to(this);
+          }
 
-          // const marketP = {
-          //   k,
-          //   tokens: Array.zip(market.tokens, amtIns)
-          //             .map(([ o, inAmt ]) => ({ bal: o.bal + inAmt })),
-          // }
+          // Update K
+          const k = balance(tokA) * balance(tokB);
 
-          return [ true, market, poolSupply ];
+          const marketP = { k };
+
+          return [ true, marketP ];
         })
       )
       .timeout(10, () => {
         Anybody.publish();
-        return [ false, market, poolSupply ]; });
+        return [ false, market ]; });
 
   pool.burn(balance(pool));
   transfer(balance(tokA), tokA).to(Admin);
