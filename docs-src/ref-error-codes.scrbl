@@ -91,9 +91,9 @@ immediately before a @reachin{continue}.
 @error{RE0002}
 
 This error indicates that a program uses an invalid statement.
-Reach is a strict subset of Javascript and does not accept every statement
-that is valid Javascript. It may be necessary to express your program
-with different constructs than you would Javascript.
+Reach is a strict subset of JavaScript and does not accept every statement
+that is valid JavaScript. It may be necessary to express your program
+with different constructs than you would JavaScript.
 
 For example, the code below erroneously uses a @jsin{for} loop, which is not
 supported in Reach:
@@ -692,7 +692,7 @@ You can fix this issue by moving the mutation directly before the @reachin{conti
 
 @error{RE0033}
 
-This error indicates you are using an illegal Javascript expression in Reach. Not all Javascript
+This error indicates you are using an illegal JavaScript expression in Reach. Not all JavaScript
 expressions are valid Reach, as they are not applicable to the language.
 
 @error{RE0034}
@@ -2074,8 +2074,8 @@ You can fix this code by simply specifying @reachin{x} in the assignment:
 @error{RP0004}
 
 This error indicates that an unsupported binary operator was encountered.
-Reach is a subset of Javascript and does not support all of the binary operators
-Javascript supports.
+Reach is a subset of JavaScript and does not support all of the binary operators
+JavaScript supports.
 
 You can fix this by utilizing different operators or functions depending
 on the logic of your program.
@@ -2085,14 +2085,14 @@ on the logic of your program.
 @error-version[#:to "v0.1"]
 
 This error indicates that an unsupported literal was encountered.
-Reach is a subset of Javascript and does not support all of the literals that
-Javascript supports.
+Reach is a subset of JavaScript and does not support all of the literals that
+JavaScript supports.
 
 @error{RP0006}
 
 This error indicates that an unsupported unary operator was encountered.
-Reach is a subset of Javascript and does not support all of the unary operators
-Javascript supports.
+Reach is a subset of JavaScript and does not support all of the unary operators
+JavaScript supports.
 
 You can fix this by utilizing different operators or functions depending
 on the logic of your program.

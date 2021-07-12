@@ -105,7 +105,7 @@ Returns the first piece of @jsin{getConnectorMode()}.
 In environments where the reach stdlib has implicit access to @jsin{process.env},
 you may omit the @jsin{env} argument, in which case @jsin{process.env} will be used.
 
-If the reach stdlib is being used with javascript bundlers like webpack
+If the reach stdlib is being used with JavaScript bundlers like webpack
 -- as it is with React, for example --
 then the reach stdlib does not have implicit access to @jsin{process.env}.
 In such scenarios, we recommend that you call this function like so:
@@ -555,14 +555,14 @@ This value is provided out of convenience; it is not mandatory to use this imple
 @js{
  parseFixedPoint(FixedPoint) => number}
 
-Parses a @reachin{FixedPoint} number into a Javascript number.
+Parses a @reachin{FixedPoint} number into a JavaScript number.
 
 @(hrule)
 @(mint-define! '("parseInt"))
 @js{
  parseInt(Int) => number}
 
-Parses a signed @reachin{Int} into a Javascript number.
+Parses a signed @reachin{Int} into a JavaScript number.
 
 @(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))

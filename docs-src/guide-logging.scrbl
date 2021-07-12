@@ -84,7 +84,7 @@ for default implementations of logging to stdout. It can be used in Reach with:
 const A = Participant('Alice', { ...hasConsoleLogger })
 }
 
-and in the Javascript frontend with:
+and in the JavaScript frontend with:
 
 @js{
  backend.Alice(
