@@ -156,15 +156,17 @@ jobs:
         [ -f index.html ] || exit 1
         git add .
         # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
-        git diff-index --quiet HEAD || git commit -m "[ci skip] docs for ${CIRCLE_SHA1}"
+        git diff-index --quiet HEAD || (git commit -m "[ci skip] docs for ${CIRCLE_SHA1}" && touch .did_change)
         git push origin gh-pages
     - slack_fail
     - run: |
-        git checkout gh-pages
-        git diff --exit-code HEAD~ guide-changelog.html
+        if [ -f .did_change ]; then
+          git diff --exit-code HEAD~ guide-changelog.html
+        fi
     - slack/notify:
         event: fail
-        channel: 'CMY2TF38D, CMY3E5B3J' # general, reach-lang
+        channel: 'CMY2TF38D' # general
+        # (CMY3E5B3J = reach-lang)
         custom: |
           {
             "blocks": [{
