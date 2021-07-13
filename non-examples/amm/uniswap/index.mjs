@@ -8,59 +8,95 @@ const NUM_PROVIDERS = 2;
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
+
   // Create tokens to swap
   const zmd = await launchToken("zorkmid", "ZMD");
   const gil = await launchToken("gil", "GIL");
 
+
+  // Supply ZMD and GIL to account
+  const gimmeTokens = async (acc) => {
+    await zmd.mint(acc, startingBalance);
+    await gil.mint(acc, startingBalance);
+  }
+
+
+  // Create & Fund Admin
   const accAdmin = await stdlib.newTestAccount(startingBalance);
+  await gimmeTokens(accAdmin);
+
+
+  // Create & Fund Providers
   const accProviders = await Promise.all(
     Array.from({ length: NUM_PROVIDERS }, () =>
       stdlib.newTestAccount(startingBalance))
   );
 
+  for (let i = 0; i < accProviders.length; ++i) {
+    const accProvider = accProviders[i];
+    await gimmeTokens(accProvider);
+  }
+
+
+  // Deploy contract
   const ctcAdmin = accAdmin.deploy(backend);
   const ctcInfo = ctcAdmin.getInfo();
 
-  // How do I query the token for balanceOf[who] (Address)
-  const providerValues = {};
-  // Just used to see if everybody withdrew
-  let counter = 0;
 
+  // Track who withdrew/deposited
+  const withdrew  = {};
+  const deposited = {};
+
+
+  // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
-    formulaValuation: 3,
+    tokAAmt: stdlib.parseCurrency(20),
+    tokBAmt: stdlib.parseCurrency(10),
     tokA: zmd.id,
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
-      console.log(`Admin will ${counter > 2 ? '' : 'not '}close pool`);
-      return { when: counter > 2, msg: null };
+      const everyoneWent = false;
+      console.log(`Admin will ${everyoneWent ? '' : 'not '}close pool`);
+      return { when: everyoneWent, msg: null };
     },
   });
 
+
+  // Provider backends
   const provBackends = accProviders.map((accProvider, i) => {
     const ctcProvider = accProvider.attach(backend, ctcInfo);
     const who = `Provider ${i}`;
+    withdrew[who] = false;
+    deposited[who] = false;
     return backend.Provider(ctcProvider, {
+      ...stdlib.hasConsoleLogger,
       withdrawDone: (isMe, amtOuts) => {
         if (isMe) {
-          counter += 1;
+          withdrew[who] = true;
           console.log(`${who} withdrew ${amtOuts}`);
         }
       },
-      withdrawMaybe: (isAlive, market, pool) => {
-        const providerPoolToks = providerValues[who];
-        if (providerPoolToks != undefined) {
-          console.log(`${who} wants to withdraw ${providerPoolToks}`);
-          return { when: true, msg: providerPoolToks };
+      withdrawMaybe: ([ alive, market ]) => {
+        if (deposited[who]) {
+          return { when: true, msg: { liquidity: deposited[who] } };
         } else {
           return { when: false, msg: { liquidity: 0 }};
         }
       },
-      depositMaybe: (isAlive, market) => {
+      depositMaybe: ([ isAlive, market ]) => {
+        const amt = Math.floor(Math.random() * 10);
         const deposit = {
-          amtIns: [0, 0],
-          ratios: [0, 0],
+          amtA: stdlib.parseCurrency(amt * 2), // * k
+          amtB: stdlib.parseCurrency(amt),
         };
-        return { when: false, msg: deposit };
+        console.log(`${who} tries to deposit: ${deposit.amtA} ZMD & ${deposit.amtB} GIL`);
+        return { when: true, msg: deposit };
+      },
+      depositDone: (isMe, amtA, amtB, poolTokens) => {
+        if (isMe) {
+          deposited[who] = poolTokens;
+          console.log(`${who} received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`);
+        }
       }
     });
   });
