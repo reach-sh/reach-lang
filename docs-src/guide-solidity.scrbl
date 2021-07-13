@@ -33,7 +33,7 @@ It abstracts these details into higher-level patterns of operation that roughly 
 @item{@bold{Frontend} --- A developer builds a user interface that connects to the middleware and potentially a wallet, like MetaMask, and provides a high-level user-facing perspective on the software.
 This is mostly insulated from the details of the particular protocol and contract, but is typically specialized to the consensus network, because the user interface surfaces details about the underlying network.}
 
-@item{@bold{Testing} --- Developers typically use tools like Truffle Suite or a developer instance of @tt{geth} to launch a test consensus network and then build a suite of unit and end-to-end tests of their application, typically be either directly interacting with the middleware or the smart contract itself.
+@item{@bold{Testing} --- Developers typically use tools like Truffle Suite or a developer instance of @tt{geth} to launch a test consensus network and then build a suite of unit and end-to-end tests of their application, typically by either directly interacting with the middleware or the smart contract itself.
 This same testing environment may be used to back a sample version of the frontend.}
 
 @item{@bold{Verification} --- High quality @|DApps| are verified and audited for a variety of properties, from basic checking of things like integer and buffer overflows, to checking of the absence of famous attacks like reentrancy attacks, to more thorough checking of properties related to the particular domain of the application.
