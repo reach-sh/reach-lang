@@ -73,7 +73,7 @@ Reach developers design and build user interfaces just like they do in Solidity-
 Reach developers can easily build their interface with JavaScript using the Reach standard library; soon, they will be able to use the language of their choice using the Reach RPC server.}
 
 @item{@bold{Testing} --- Reach facilitates testing in two ways.
-First, the Reach language embeds a high-quality property-based-testing system via the @reachin{assert} and @reachin{forall} primitives, which can be used in a basic way to write simple test cases.
+First, the Reach language embeds a high-quality property-based testing system via the @reachin{assert} and @reachin{forall} primitives, which can be used in a basic way to write simple test cases.
 Second, the Reach deployment tool, @exec{reach run}, allows for the easy construction and running of automate test suites for the workflows of a @|DApp|.
 In both cases, it is not necessary for Reach developers to directly manage their own development networks or otherwise interact with the consensus networks they're testing with in any way.}
 
