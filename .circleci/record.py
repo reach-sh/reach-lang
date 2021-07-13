@@ -67,7 +67,10 @@ for c in conns:
     tfails = cfails[c]
     tfailc = len(tfails)
     if tfailc > 0:
-        msg = ' '.join(map(fmte, tfails))
+        upto = 20
+        msg = ' '.join(map(fmte, tfails[:upto]))
+        if tfailc > upto:
+            msg += ' (+ ' + str(tfailc - upto) + ' more not shown)'
         POST += f"\\n- *{c}* {tfailc}: {msg}"
 
 EXIT = 0
