@@ -49,6 +49,9 @@ WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 COPY indexer.patch .
 RUN patch -p1 < indexer.patch
 RUN make
+COPY indexer2.patch .
+RUN patch -p1 < indexer2.patch
+RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM alpine:latest

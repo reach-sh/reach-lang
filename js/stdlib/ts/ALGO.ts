@@ -1061,7 +1061,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         time: bigNumberify(0), // This should not be read.
         value: value,
         from: pks,
-        getOutput: (async (o_lab:string, o_ctc:any): Promise<any> => {
+        getOutput: (async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+          void(o_mode);
           void(o_lab);
           void(o_ctc);
           throw Error(`Algorand does not support remote calls, and Reach should not have generated a call to this function`);
@@ -1313,6 +1314,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
 
+        const same_group = ((x:any) => x.group === txn.group);
+        const all_query = indexer.searchForTransactions()
+          .txType('acfg')
+          .assetID(0)
+          .round(theRound);
+        const all_res = await doQuery_(dhead, all_query);
+        // NOTE: Move this filter into the query when the indexer supports it
+        const all_txns_raw = all_res.transactions.filter(same_group);
+        const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
+        const all_txns = all_txns_raw.sort(group_order);
+        debug(dhead, 'all_txns', all_txns);
+
         const ctc_args_all: Array<string> =
           txn['application-transaction']['application-args'];
         debug(dhead, {ctc_args_all});
@@ -1336,10 +1349,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         lastRound = theRound;
         debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', lastRound);
 
-        const getOutput = (o_lab:String, o_ctc:any): Promise<any> => {
-          void(o_lab);
-          void(o_ctc);
-          throw Error(`Algorand does not support remote calls`);
+        let tokenNews = 0;
+        const getOutput = (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+          if ( o_mode === 'tokenNew' ) {
+            // NOTE: I'm making a dangerous assumption that the created tokens
+            // are viewed in the order they were created. It would be better to
+            // be able to have the JS simulator determine where they are
+            // exactly, but it is not available for receives. :'(
+            const tn_txn = all_txns[tokenNews++];
+            debug(dhead, {tn_txn});
+            return tn_txn['created-asset-index'];
+          } else {
+            void(o_lab);
+            void(o_ctc);
+            throw Error(`Algorand does not support remote calls`);
+          }
         };
 
         return {
@@ -1515,7 +1539,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
   const tokenMetadata = async (token:Token): Promise<any> => {
     debug(`XXX tokenMetadata`, token);
-    return {};
+    return { name, symbol, url, metadata, supply };
   };
 
   return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel, tokenAccept, tokenMetadata };

@@ -1028,8 +1028,6 @@ ce = \case
     za >> checkTxn1 "ConfigAssetFreeze"
     za >> checkTxn1 "ConfigAssetClawback"
     op "gaids"
-    -- XXX This is broken because indexer is broken.
-    xxx "token creation"
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy

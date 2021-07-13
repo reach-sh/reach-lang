@@ -784,8 +784,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(dhead);
             return l_edu;
           };
-          const getOutput = (o_lab:string, o_ctc:any): Promise<any> =>
-            _getLog(`oe_${o_lab}`, o_ctc);
+          const getOutput = (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+            void(o_mode);
+            return _getLog(`oe_${o_lab}`, o_ctc);
+          };
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           const { from } = ok_t;

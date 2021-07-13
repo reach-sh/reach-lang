@@ -1,0 +1,604 @@
+From ac7f352a259d6f761c4f17369bce757a297536b0 Mon Sep 17 00:00:00 2001
+From: Will Winder <wwinder.unh@gmail.com>
+Date: Mon, 12 Jul 2021 14:17:23 -0400
+Subject: [PATCH 1/4] Support assets with null characts in strings.
+
+---
+ idb/postgres/internal/encoding/encode.go      | 46 +++++++++++++++
+ .../internal/encoding/encoding_test.go        | 43 ++++++++++++++
+ idb/postgres/postgres.go                      |  6 +-
+ idb/postgres/postgres_integration_test.go     | 59 +++++++++++++++++++
+ 4 files changed, 152 insertions(+), 2 deletions(-)
+
+diff --git a/idb/postgres/internal/encoding/encode.go b/idb/postgres/internal/encoding/encode.go
+index e0c4fd75..0d60bdf9 100644
+--- a/idb/postgres/internal/encoding/encode.go
++++ b/idb/postgres/internal/encoding/encode.go
+@@ -2,6 +2,7 @@ package encoding
+ 
+ import (
+ 	"encoding/base64"
++	"strings"
+ 
+ 	"github.com/algorand/go-codec/codec"
+ 
+@@ -53,7 +54,52 @@ func convertEvalDelta(evalDelta types.EvalDelta) types.EvalDelta {
+ 	return evalDelta
+ }
+ 
++func desanitizeNull(str string) string {
++	if str != "" {
++		return strings.ReplaceAll(str, "\\u0000", "\x00")
++	}
++	return str
++}
++
++// SanitizeNullForQuery converts a string into something postgres can store in a jsonb column.
++func SanitizeNullForQuery(str string) string {
++	if str != "" {
++		result := strings.ReplaceAll(str, "\x00", "\\u0000")
++		if len(result) != len(str) {
++			// Escape the escapes if this is going to be used in a query.
++			return strings.ReplaceAll(result, "\\", "\\\\")
++		}
++	}
++	return str
++}
++
++// sanitizeNull converts a string into something postgres can store in a jsonb column.
++func sanitizeNull(str string) string {
++	if str != "" {
++		return strings.ReplaceAll(str, "\x00", "\\u0000")
++	}
++	return str
++}
++
++// SanitizeParams sanitizes all AssetParams that need it.
++func SanitizeParams(params types.AssetParams) types.AssetParams {
++	params.AssetName = sanitizeNull(params.AssetName)
++	params.UnitName = sanitizeNull(params.UnitName)
++	params.URL = sanitizeNull(params.URL)
++	return params
++}
++
++// DesanitizeParams desanitizes all AssetParams that need it.
++func DesanitizeParams(params types.AssetParams) types.AssetParams {
++	params.AssetName = desanitizeNull(params.AssetName)
++	params.UnitName = desanitizeNull(params.UnitName)
++	params.URL = desanitizeNull(params.URL)
++	return params
++}
++
+ func convertSignedTxnWithAD(stxn types.SignedTxnWithAD) types.SignedTxnWithAD {
++	stxn.Txn.AssetParams = SanitizeParams(stxn.Txn.AssetParams)
++
+ 	stxn.EvalDelta = convertEvalDelta(stxn.EvalDelta)
+ 	return stxn
+ }
+diff --git a/idb/postgres/internal/encoding/encoding_test.go b/idb/postgres/internal/encoding/encoding_test.go
+index 60aa2463..057615fa 100644
+--- a/idb/postgres/internal/encoding/encoding_test.go
++++ b/idb/postgres/internal/encoding/encoding_test.go
+@@ -84,3 +84,46 @@ func TestJSONEncoding(t *testing.T) {
+ 
+ 	assert.Equal(t, x, xx)
+ }
++
++func TestSanitizeNull(t *testing.T) {
++	tests := []struct {
++		name     string
++		input    string
++		expected string
++		query    string
++	}{
++		{
++			name:     "simple",
++			input:    "nothing-to-do",
++			expected: "nothing-to-do",
++			query:    "nothing-to-do",
++		},
++		{
++			name:     "weird",
++			input:    "no/th/ing-to-do",
++			expected: "no/th/ing-to-do",
++			query:    "no/th/ing-to-do",
++		},
++		{
++			name:     "weirder",
++			input:    "no\thing\\-to-do",
++			expected: "no\thing\\-to-do",
++			query:    "no\thing\\-to-do",
++		},
++		{
++			name:     "embedded null",
++			input:    "has >\000< null",
++			expected: "has >\\u0000< null",
++			query:    "has >\\\\u0000< null",
++		},
++	}
++
++	for _, test := range tests {
++		t.Run(test.name+" sanitizeNull", func(t *testing.T) {
++			assert.Equal(t, test.expected, sanitizeNull(test.input))
++		})
++		t.Run(test.name+" SanitizeNullForQuery", func(t *testing.T) {
++			assert.Equal(t, test.query, SanitizeNullForQuery(test.input))
++		})
++	}
++}
+diff --git a/idb/postgres/postgres.go b/idb/postgres/postgres.go
+index 58a2fa0a..9607a068 100644
+--- a/idb/postgres/postgres.go
++++ b/idb/postgres/postgres.go
+@@ -1024,7 +1024,7 @@ ON CONFLICT (addr, assetid) DO UPDATE SET amount = account_asset.amount + EXCLUD
+ 					if au.Config != nil {
+ 						var outparams []byte
+ 						if au.Config.IsNew {
+-							outparams = encoding.EncodeJSON(au.Config.Params)
++							outparams = encoding.EncodeJSON(encoding.SanitizeParams(au.Config.Params))
+ 						} else {
+ 							row := getacfg.QueryRow(au.AssetID)
+ 							var paramjson []byte
+@@ -2075,7 +2075,7 @@ func (db *IndexerDb) yieldAccountsThread(req *getAccountsRequest) {
+ 				if dup {
+ 					continue
+ 				}
+-				ap := assetParams[i]
++				ap := encoding.DesanitizeParams(assetParams[i])
+ 
+ 				tma := models.Asset{
+ 					Index:            assetid,
+@@ -2589,6 +2589,7 @@ func (db *IndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan
+ 		partNumber++
+ 	}
+ 	if filter.Name != "" {
++		filter.Name = encoding.SanitizeNullForQuery(filter.Name)
+ 		whereParts = append(whereParts, fmt.Sprintf("a.params ->> 'an' ILIKE $%d", partNumber))
+ 		whereArgs = append(whereArgs, "%"+filter.Name+"%")
+ 		partNumber++
+@@ -2672,6 +2673,7 @@ func (db *IndexerDb) yieldAssetsThread(ctx context.Context, filter idb.AssetsQue
+ 			out <- idb.AssetRow{Error: err}
+ 			break
+ 		}
++		params = encoding.DesanitizeParams(params)
+ 		rec := idb.AssetRow{
+ 			AssetID:      index,
+ 			Creator:      creatorAddr,
+diff --git a/idb/postgres/postgres_integration_test.go b/idb/postgres/postgres_integration_test.go
+index 3323dcd6..37db06de 100644
+--- a/idb/postgres/postgres_integration_test.go
++++ b/idb/postgres/postgres_integration_test.go
+@@ -31,6 +31,65 @@ func getAccounting(round uint64, cache map[uint64]bool) *accounting.State {
+ 	return accountingState
+ }
+ 
++// TestEmbeddedNullString make sure we're able to import cheeky assets.
++func TestEmbeddedNullString(t *testing.T) {
++	db, shutdownFunc := setupIdb(t, test.MakeGenesis())
++	defer shutdownFunc()
++
++	assetID := uint64(1)
++	nameWithNull := "my\000coin"
++	unitWithNull := "m\000c"
++	urlWithNull := "http://its\000happening.com"
++	txn, txnRow := test.MakeAssetConfigOrPanic(
++		test.Round, 0, assetID, math.MaxUint64, 0, false, unitWithNull, nameWithNull, urlWithNull, test.AccountA)
++
++	// Test 1: import/accounting should work.
++	importTxns(t, db, test.Round, txn)
++	accountTxns(t, db, test.Round, txnRow)
++
++	// Test 2: search for asset
++	assets, _ := db.Assets(context.Background(), idb.AssetsQuery{Name: nameWithNull})
++	num := 0
++	var creator types.Address
++	for asset := range assets {
++		require.NoError(t, asset.Error)
++		require.Equal(t, nameWithNull, asset.Params.AssetName)
++		require.Equal(t, unitWithNull, asset.Params.UnitName)
++		require.Equal(t, urlWithNull, asset.Params.URL)
++		copy(creator[:], asset.Creator[:])
++		num++
++	}
++	require.Equal(t, 1, num)
++
++	// Test 3: serialize transaction with weird asset
++	transactions, _ := db.Transactions(context.Background(), idb.TransactionFilter{})
++	num = 0
++	for tx := range transactions {
++		require.NoError(t, tx.Error)
++		var txn sdk_types.SignedTxn
++		require.NoError(t, msgpack.Decode(tx.TxnBytes, &txn))
++		require.Equal(t, nameWithNull, txn.Txn.AssetParams.AssetName)
++		require.Equal(t, unitWithNull, txn.Txn.AssetParams.UnitName)
++		require.Equal(t, urlWithNull, txn.Txn.AssetParams.URL)
++		num++
++	}
++	require.Equal(t, 1, num)
++
++	// Test 4: serialize account with weird asset
++	accounts, _ := db.GetAccounts(context.Background(), idb.AccountQueryOptions{EqualToAddress: creator[:], IncludeAssetParams: true})
++	num = 0
++	for acct := range accounts {
++		require.NoError(t, acct.Error)
++		require.NotNil(t, acct.Account.CreatedAssets)
++		require.Len(t, *acct.Account.CreatedAssets, 1)
++		require.Equal(t, nameWithNull, *((*acct.Account.CreatedAssets)[0].Params.Name))
++		require.Equal(t, unitWithNull, *((*acct.Account.CreatedAssets)[0].Params.UnitName))
++		require.Equal(t, urlWithNull, *((*acct.Account.CreatedAssets)[0].Params.Url))
++		num++
++	}
++	require.Equal(t, 1, num)
++}
++
+ // TestMaxRoundOnUninitializedDB makes sure we return 0 when getting the max round on a new DB.
+ func TestMaxRoundOnUninitializedDB(t *testing.T) {
+ 	_, connStr, shutdownFunc := setupPostgres(t)
+
+From d7e6b8f93317d10b9581b1df16c2018d2b25f1e8 Mon Sep 17 00:00:00 2001
+From: Will Winder <wwinder.unh@gmail.com>
+Date: Mon, 12 Jul 2021 14:52:25 -0400
+Subject: [PATCH 2/4] Some cleanup.
+
+---
+ idb/postgres/internal/encoding/encode.go      | 19 +++-------------
+ .../internal/encoding/encoding_test.go        |  6 +++++
+ idb/postgres/postgres_integration_test.go     | 22 +++++++++++++++----
+ 3 files changed, 27 insertions(+), 20 deletions(-)
+
+diff --git a/idb/postgres/internal/encoding/encode.go b/idb/postgres/internal/encoding/encode.go
+index 0d60bdf9..b6857781 100644
+--- a/idb/postgres/internal/encoding/encode.go
++++ b/idb/postgres/internal/encoding/encode.go
+@@ -55,30 +55,17 @@ func convertEvalDelta(evalDelta types.EvalDelta) types.EvalDelta {
+ }
+ 
+ func desanitizeNull(str string) string {
+-	if str != "" {
+-		return strings.ReplaceAll(str, "\\u0000", "\x00")
+-	}
+-	return str
++	return strings.ReplaceAll(str, `\u0000`, "\x00")
+ }
+ 
+ // SanitizeNullForQuery converts a string into something postgres can store in a jsonb column.
+ func SanitizeNullForQuery(str string) string {
+-	if str != "" {
+-		result := strings.ReplaceAll(str, "\x00", "\\u0000")
+-		if len(result) != len(str) {
+-			// Escape the escapes if this is going to be used in a query.
+-			return strings.ReplaceAll(result, "\\", "\\\\")
+-		}
+-	}
+-	return str
++	return strings.ReplaceAll(str, "\x00", `\\u0000`)
+ }
+ 
+ // sanitizeNull converts a string into something postgres can store in a jsonb column.
+ func sanitizeNull(str string) string {
+-	if str != "" {
+-		return strings.ReplaceAll(str, "\x00", "\\u0000")
+-	}
+-	return str
++	return strings.ReplaceAll(str, "\x00", `\u0000`)
+ }
+ 
+ // SanitizeParams sanitizes all AssetParams that need it.
+diff --git a/idb/postgres/internal/encoding/encoding_test.go b/idb/postgres/internal/encoding/encoding_test.go
+index 057615fa..43c20dc0 100644
+--- a/idb/postgres/internal/encoding/encoding_test.go
++++ b/idb/postgres/internal/encoding/encoding_test.go
+@@ -116,6 +116,12 @@ func TestSanitizeNull(t *testing.T) {
+ 			expected: "has >\\u0000< null",
+ 			query:    "has >\\\\u0000< null",
+ 		},
++		{
++			name:     "embedded null and slashes",
++			input:    "has >\000< nu\\ll",
++			expected: `has >\u0000< nu\ll`,
++			query:    `has >\\u0000< nu\ll`,
++		},
+ 	}
+ 
+ 	for _, test := range tests {
+diff --git a/idb/postgres/postgres_integration_test.go b/idb/postgres/postgres_integration_test.go
+index 37db06de..3f4c93a5 100644
+--- a/idb/postgres/postgres_integration_test.go
++++ b/idb/postgres/postgres_integration_test.go
+@@ -47,9 +47,23 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	importTxns(t, db, test.Round, txn)
+ 	accountTxns(t, db, test.Round, txnRow)
+ 
+-	// Test 2: search for asset
+-	assets, _ := db.Assets(context.Background(), idb.AssetsQuery{Name: nameWithNull})
++	// Test 2: search for weird asset with no results
++	assets, _ := db.Assets(context.Background(), idb.AssetsQuery{Name: "No\001Issu\\es"})
+ 	num := 0
++	for asset := range assets {
++		require.NoError(t, asset.Error)
++		num++
++	}
++	assets, _ = db.Assets(context.Background(), idb.AssetsQuery{Name: "No\000Issu\\es"})
++	for asset := range assets {
++		require.NoError(t, asset.Error)
++		num++
++	}
++	require.Equal(t, 0, num)
++
++	// Test 3: search for asset with results serialized properly
++	assets, _ = db.Assets(context.Background(), idb.AssetsQuery{Name: nameWithNull})
++	num = 0
+ 	var creator types.Address
+ 	for asset := range assets {
+ 		require.NoError(t, asset.Error)
+@@ -61,7 +75,7 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	}
+ 	require.Equal(t, 1, num)
+ 
+-	// Test 3: serialize transaction with weird asset
++	// Test 4: serialize transaction with weird asset
+ 	transactions, _ := db.Transactions(context.Background(), idb.TransactionFilter{})
+ 	num = 0
+ 	for tx := range transactions {
+@@ -75,7 +89,7 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	}
+ 	require.Equal(t, 1, num)
+ 
+-	// Test 4: serialize account with weird asset
++	// Test 5: serialize account with weird asset
+ 	accounts, _ := db.GetAccounts(context.Background(), idb.AccountQueryOptions{EqualToAddress: creator[:], IncludeAssetParams: true})
+ 	num = 0
+ 	for acct := range accounts {
+
+From 69aba11eb97c0606cac0888f66b325116aec714b Mon Sep 17 00:00:00 2001
+From: Will Winder <wwinder.unh@gmail.com>
+Date: Mon, 12 Jul 2021 16:24:38 -0400
+Subject: [PATCH 3/4] Add desanitize test.
+
+---
+ idb/postgres/internal/encoding/encoding_test.go | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/idb/postgres/internal/encoding/encoding_test.go b/idb/postgres/internal/encoding/encoding_test.go
+index 43c20dc0..8b736131 100644
+--- a/idb/postgres/internal/encoding/encoding_test.go
++++ b/idb/postgres/internal/encoding/encoding_test.go
+@@ -131,5 +131,8 @@ func TestSanitizeNull(t *testing.T) {
+ 		t.Run(test.name+" SanitizeNullForQuery", func(t *testing.T) {
+ 			assert.Equal(t, test.query, SanitizeNullForQuery(test.input))
+ 		})
++		t.Run(test.name+" Desanitize", func(t *testing.T) {
++			assert.Equal(t, test.input, desanitizeNull(test.expected))
++		})
+ 	}
+ }
+
+From 953291fc2de51b1bc2f62e92bf766aaa0af75fd1 Mon Sep 17 00:00:00 2001
+From: Will Winder <wwinder.unh@gmail.com>
+Date: Tue, 13 Jul 2021 10:07:41 -0400
+Subject: [PATCH 4/4] PR Feedback + uni-directional encoding policy
+
+---
+ README.md                                     |  2 +
+ idb/postgres/internal/encoding/encode.go      | 44 +++++++++----------
+ .../internal/encoding/encoding_test.go        |  9 ++--
+ idb/postgres/postgres.go                      |  7 ++-
+ idb/postgres/postgres_integration_test.go     | 38 +++++++++++-----
+ 5 files changed, 55 insertions(+), 45 deletions(-)
+
+diff --git a/README.md b/README.md
+index c2642cea..30071c60 100644
+--- a/README.md
++++ b/README.md
+@@ -69,6 +69,8 @@ Indexer works by fetching blocks one at a time, processing the block data, and l
+ 
+ As of April 2020, storing all the raw blocks is about 100 GB and the PostgreSQL database of transactions and accounts is about 1 GB. Much of that size difference is the Indexer ignoring cryptographic signature data; relying on `algod` to validate blocks. Dropping that, the Indexer can focus on the 'what happened' details of transactions and accounts.
+ 
++Postgres should be configured to use UTF-8 encoding.
++
+ There are two primary modes of operation:
+ * [Database updater](#database-updater)
+ * [Read only](#read-only)
+diff --git a/idb/postgres/internal/encoding/encode.go b/idb/postgres/internal/encoding/encode.go
+index b6857781..449589ee 100644
+--- a/idb/postgres/internal/encoding/encode.go
++++ b/idb/postgres/internal/encoding/encode.go
+@@ -54,39 +54,37 @@ func convertEvalDelta(evalDelta types.EvalDelta) types.EvalDelta {
+ 	return evalDelta
+ }
+ 
+-func desanitizeNull(str string) string {
+-	return strings.ReplaceAll(str, `\u0000`, "\x00")
+-}
+-
+-// SanitizeNullForQuery converts a string into something postgres can store in a jsonb column.
+-func SanitizeNullForQuery(str string) string {
++// EncodeStringForQuery converts a string into something postgres can use to query a jsonb column.
++func EncodeStringForQuery(str string) string {
+ 	return strings.ReplaceAll(str, "\x00", `\\u0000`)
+ }
+ 
+-// sanitizeNull converts a string into something postgres can store in a jsonb column.
+-func sanitizeNull(str string) string {
++// EncodeString converts a string into something postgres can store in a jsonb column.
++func EncodeString(str string) string {
+ 	return strings.ReplaceAll(str, "\x00", `\u0000`)
+ }
+ 
+-// SanitizeParams sanitizes all AssetParams that need it.
+-func SanitizeParams(params types.AssetParams) types.AssetParams {
+-	params.AssetName = sanitizeNull(params.AssetName)
+-	params.UnitName = sanitizeNull(params.UnitName)
+-	params.URL = sanitizeNull(params.URL)
+-	return params
+-}
+-
+-// DesanitizeParams desanitizes all AssetParams that need it.
+-func DesanitizeParams(params types.AssetParams) types.AssetParams {
+-	params.AssetName = desanitizeNull(params.AssetName)
+-	params.UnitName = desanitizeNull(params.UnitName)
+-	params.URL = desanitizeNull(params.URL)
++// EncodeAssetParams sanitizes all AssetParams that need it.
++// The AssetParams encoding policy needs to take into account that algod accepts
++// any user defined string that go accepts. The notable part here is that postgres
++// does not allow the null character:
++//                            https://www.postgresql.org/docs/11/datatype-json.html
++// Our policy is a uni-directional encoding. If the AssetParam object contains
++// any zero byte characters, they are converted to `\\u0000`. When the AssetParams
++// are returned by '/v2/assets' or '/v2/accounts', the response contains the
++// encoded string instead of a zero byte.
++//
++// Note that '/v2/transactions' returns the raw transaction bytes, so this
++// endpoint returns the correct string complete with zero bytes.
++func EncodeAssetParams(params types.AssetParams) types.AssetParams {
++	params.AssetName = EncodeString(params.AssetName)
++	params.UnitName = EncodeString(params.UnitName)
++	params.URL = EncodeString(params.URL)
+ 	return params
+ }
+ 
+ func convertSignedTxnWithAD(stxn types.SignedTxnWithAD) types.SignedTxnWithAD {
+-	stxn.Txn.AssetParams = SanitizeParams(stxn.Txn.AssetParams)
+-
++	stxn.Txn.AssetParams = EncodeAssetParams(stxn.Txn.AssetParams)
+ 	stxn.EvalDelta = convertEvalDelta(stxn.EvalDelta)
+ 	return stxn
+ }
+diff --git a/idb/postgres/internal/encoding/encoding_test.go b/idb/postgres/internal/encoding/encoding_test.go
+index 8b736131..b37f4f69 100644
+--- a/idb/postgres/internal/encoding/encoding_test.go
++++ b/idb/postgres/internal/encoding/encoding_test.go
+@@ -126,13 +126,10 @@ func TestSanitizeNull(t *testing.T) {
+ 
+ 	for _, test := range tests {
+ 		t.Run(test.name+" sanitizeNull", func(t *testing.T) {
+-			assert.Equal(t, test.expected, sanitizeNull(test.input))
++			assert.Equal(t, test.expected, EncodeString(test.input))
+ 		})
+-		t.Run(test.name+" SanitizeNullForQuery", func(t *testing.T) {
+-			assert.Equal(t, test.query, SanitizeNullForQuery(test.input))
+-		})
+-		t.Run(test.name+" Desanitize", func(t *testing.T) {
+-			assert.Equal(t, test.input, desanitizeNull(test.expected))
++		t.Run(test.name+" EncodeStringForQuery", func(t *testing.T) {
++			assert.Equal(t, test.query, EncodeStringForQuery(test.input))
+ 		})
+ 	}
+ }
+diff --git a/idb/postgres/postgres.go b/idb/postgres/postgres.go
+index 9607a068..a4de4920 100644
+--- a/idb/postgres/postgres.go
++++ b/idb/postgres/postgres.go
+@@ -1024,7 +1024,7 @@ ON CONFLICT (addr, assetid) DO UPDATE SET amount = account_asset.amount + EXCLUD
+ 					if au.Config != nil {
+ 						var outparams []byte
+ 						if au.Config.IsNew {
+-							outparams = encoding.EncodeJSON(encoding.SanitizeParams(au.Config.Params))
++							outparams = encoding.EncodeJSON(encoding.EncodeAssetParams(au.Config.Params))
+ 						} else {
+ 							row := getacfg.QueryRow(au.AssetID)
+ 							var paramjson []byte
+@@ -2075,7 +2075,7 @@ func (db *IndexerDb) yieldAccountsThread(req *getAccountsRequest) {
+ 				if dup {
+ 					continue
+ 				}
+-				ap := encoding.DesanitizeParams(assetParams[i])
++				ap := assetParams[i]
+ 
+ 				tma := models.Asset{
+ 					Index:            assetid,
+@@ -2589,7 +2589,7 @@ func (db *IndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan
+ 		partNumber++
+ 	}
+ 	if filter.Name != "" {
+-		filter.Name = encoding.SanitizeNullForQuery(filter.Name)
++		filter.Name = encoding.EncodeStringForQuery(filter.Name)
+ 		whereParts = append(whereParts, fmt.Sprintf("a.params ->> 'an' ILIKE $%d", partNumber))
+ 		whereArgs = append(whereArgs, "%"+filter.Name+"%")
+ 		partNumber++
+@@ -2673,7 +2673,6 @@ func (db *IndexerDb) yieldAssetsThread(ctx context.Context, filter idb.AssetsQue
+ 			out <- idb.AssetRow{Error: err}
+ 			break
+ 		}
+-		params = encoding.DesanitizeParams(params)
+ 		rec := idb.AssetRow{
+ 			AssetID:      index,
+ 			Creator:      creatorAddr,
+diff --git a/idb/postgres/postgres_integration_test.go b/idb/postgres/postgres_integration_test.go
+index 3f4c93a5..ee96a27a 100644
+--- a/idb/postgres/postgres_integration_test.go
++++ b/idb/postgres/postgres_integration_test.go
+@@ -39,7 +39,10 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	assetID := uint64(1)
+ 	nameWithNull := "my\000coin"
+ 	unitWithNull := "m\000c"
+-	urlWithNull := "http://its\000happening.com"
++	urlWithNull := "https://its\000happening.com"
++	encodedNameWithNull := encoding.EncodeString("my\000coin")
++	encodedUnitWithNull := encoding.EncodeString("m\000c")
++	encodedUrlWithNull := encoding.EncodeString("https://its\000happening.com")
+ 	txn, txnRow := test.MakeAssetConfigOrPanic(
+ 		test.Round, 0, assetID, math.MaxUint64, 0, false, unitWithNull, nameWithNull, urlWithNull, test.AccountA)
+ 
+@@ -64,22 +67,33 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	// Test 3: search for asset with results serialized properly
+ 	assets, _ = db.Assets(context.Background(), idb.AssetsQuery{Name: nameWithNull})
+ 	num = 0
+-	var creator types.Address
+ 	for asset := range assets {
+ 		require.NoError(t, asset.Error)
+-		require.Equal(t, nameWithNull, asset.Params.AssetName)
+-		require.Equal(t, unitWithNull, asset.Params.UnitName)
+-		require.Equal(t, urlWithNull, asset.Params.URL)
+-		copy(creator[:], asset.Creator[:])
++		require.Equal(t, encodedNameWithNull, asset.Params.AssetName)
++		require.Equal(t, encodedUnitWithNull, asset.Params.UnitName)
++		require.Equal(t, encodedUrlWithNull, asset.Params.URL)
+ 		num++
+ 	}
+ 	require.Equal(t, 1, num)
+ 
+-	// Test 4: serialize transaction with weird asset
++	// Test 4: search for asset using the escaped encoding name.
++	assets, _ = db.Assets(context.Background(), idb.AssetsQuery{Name: encoding.EncodeStringForQuery(nameWithNull)})
++	num = 0
++	for asset := range assets {
++		require.NoError(t, asset.Error)
++		require.Equal(t, encodedNameWithNull, asset.Params.AssetName)
++		require.Equal(t, encodedUnitWithNull, asset.Params.UnitName)
++		require.Equal(t, encodedUrlWithNull, asset.Params.URL)
++		num++
++	}
++	require.Equal(t, 1, num)
++
++	// Test 5: serialize transaction with weird asset
+ 	transactions, _ := db.Transactions(context.Background(), idb.TransactionFilter{})
+ 	num = 0
+ 	for tx := range transactions {
+ 		require.NoError(t, tx.Error)
++		// Note: These are created from the TxnBytes, so they have the exact name with embedded null.
+ 		var txn sdk_types.SignedTxn
+ 		require.NoError(t, msgpack.Decode(tx.TxnBytes, &txn))
+ 		require.Equal(t, nameWithNull, txn.Txn.AssetParams.AssetName)
+@@ -89,16 +103,16 @@ func TestEmbeddedNullString(t *testing.T) {
+ 	}
+ 	require.Equal(t, 1, num)
+ 
+-	// Test 5: serialize account with weird asset
+-	accounts, _ := db.GetAccounts(context.Background(), idb.AccountQueryOptions{EqualToAddress: creator[:], IncludeAssetParams: true})
++	// Test 6: serialize account with weird asset
++	accounts, _ := db.GetAccounts(context.Background(), idb.AccountQueryOptions{EqualToAddress: test.AccountA[:], IncludeAssetParams: true})
+ 	num = 0
+ 	for acct := range accounts {
+ 		require.NoError(t, acct.Error)
+ 		require.NotNil(t, acct.Account.CreatedAssets)
+ 		require.Len(t, *acct.Account.CreatedAssets, 1)
+-		require.Equal(t, nameWithNull, *((*acct.Account.CreatedAssets)[0].Params.Name))
+-		require.Equal(t, unitWithNull, *((*acct.Account.CreatedAssets)[0].Params.UnitName))
+-		require.Equal(t, urlWithNull, *((*acct.Account.CreatedAssets)[0].Params.Url))
++		require.Equal(t, encodedNameWithNull, *((*acct.Account.CreatedAssets)[0].Params.Name))
++		require.Equal(t, encodedUnitWithNull, *((*acct.Account.CreatedAssets)[0].Params.UnitName))
++		require.Equal(t, encodedUrlWithNull, *((*acct.Account.CreatedAssets)[0].Params.Url))
+ 		num++
+ 	}
+ 	require.Equal(t, 1, num)
