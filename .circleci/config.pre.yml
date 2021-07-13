@@ -161,7 +161,7 @@ jobs:
     - slack_fail
     - run: |
         git checkout gh-pages
-        git diff --exit-code HEAD~ guide-changelog.scrbl
+        git diff --exit-code HEAD~ guide-changelog.html
     - slack/notify:
         event: fail
         channel: 'CMY2TF38D, CMY3E5B3J' # general, reach-lang
@@ -171,9 +171,9 @@ jobs:
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "[Changelog](https://docs.reach.sh/guide-changelog.html) has changed!"
+                "text": "<https://docs.reach.sh/guide-changelog.html|Changelog> has changed!"
               }
-            ]
+            }]
           }
 
   "sh-check":
