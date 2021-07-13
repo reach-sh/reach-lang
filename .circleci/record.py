@@ -75,7 +75,11 @@ POST += "\\n*"
 if blackc > 0:
     POST += f"DO NOT "
     EXIT = 1
-POST += "RELEASE*"
+if (env('CIRCLE_BRANCH') == 'master'):
+    POST += "RELEASE"
+else:
+    POST += "MERGE"
+POST += "*"
 
 # XXX make branch a link
 print(f"export RECORD_MESSAGE='*{SYM}* {env('CIRCLE_USERNAME')}/{env('CIRCLE_BRANCH')} > examples: {PRE} <{env('CIRCLE_BUILD_URL')}|more...>{POST}'")
