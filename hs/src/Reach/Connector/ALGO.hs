@@ -140,36 +140,53 @@ comment_ t = ["//", t]
 
 type TEALs = DL.DList TEAL
 
-peep_optimize :: [TEAL] -> [TEAL]
-peep_optimize = \case
+optimize :: [TEAL] -> [TEAL]
+optimize ts0 = tsN
+  where
+    ts1 = opt_b ts0
+    ts2 = opt_bs ts1
+    tsN = ts2
+
+opt_bs :: [TEAL] -> [TEAL]
+opt_bs = \case
+  [] -> []
+  ["byte", x] : l | isBase64_zeros x ->
+    case B.length $ base64u x of
+      0 -> ["byte", x] : opt_bs l
+      32 -> opt_bs $ ["global", "ZeroAddress"] : l
+      len -> opt_bs $ ["int", texty len] : ["bzero"] : l
+  x : l -> x : opt_bs l
+
+opt_b :: [TEAL] -> [TEAL]
+opt_b = foldr (\a b -> opt_b1 $ a : b) mempty
+
+opt_b1 :: [TEAL] -> [TEAL]
+opt_b1 = \case
   [] -> []
   [["return"]] -> []
   -- This relies on knowing what "done" is
-  ["assert"] : ["b", "done"] : x -> peep_optimize $ ["return"] : x
-  ["byte", "base64()"] : ["concat"] : l -> peep_optimize l
+  ["assert"] : ["b", "done"] : x -> ["return"] : x
+  ["byte", "base64()"] : ["concat"] : l -> l
+  ["byte", "base64()"] : b@["load", _] : ["concat"] : l -> opt_b1 $ b : l
   ["byte", x] : ["byte", y] : ["concat"] : l | isBase64 x && isBase64 y ->
-    peep_optimize $ [ "byte", (base64d $ base64u x <> base64u y) ] : l
-  ["byte", x] : l | isBase64_zeros x -> peep_optimize $
-    case B.length $ base64u x of
-      32 -> ["global", "ZeroAddress"] : l
-      len -> ["int", texty len] : ["bzero"] : l
-  ["b", x] : b@[y] : l | y == (x <> ":") -> b : peep_optimize l
-  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> peep_optimize l
-  ["btoi"] : ["itob"] : l -> peep_optimize l
-  ["itob"] : ["btoi"] : l -> peep_optimize l
+    opt_b1 $ [ "byte", (base64d $ base64u x <> base64u y) ] : l
+  ["b", x] : b@[y] : l | y == (x <> ":") -> b : l
+  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> l
+  ["btoi"] : ["itob"] : l -> l
+  ["itob"] : ["btoi"] : l -> l
   a@["load", x] : ["load", y] : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
-      peep_optimize $ a : ["dup"] : l
+      a : ["dup"] : l
   a@["store", x] : ["load", y] : l
     | x == y ->
-      ["dup"] : peep_optimize (a : l)
+      ["dup"] : a : l
   a@["substring", s0, _] : b@["int", x] : c@["getbyte"] : l ->
     case mse of
       Just (s0x, s0xp1) ->
-        peep_optimize $ ["substring", s0x, s0xp1] : l
+        opt_b1 $ ["substring", s0x, s0xp1] : l
       Nothing ->
-        a : (peep_optimize $ b : c : l)
+        a : b : c : l
     where
       mse = do
         s0n <- parse s0
@@ -182,9 +199,9 @@ peep_optimize = \case
   a@["substring", s0, _] : b@["substring", s1, e1] : l ->
     case mse of
       Just (s2, e2) ->
-        peep_optimize $ ["substring", s2, e2] : l
+        opt_b1 $ ["substring", s2, e2] : l
       Nothing ->
-        a : (peep_optimize $ b : l)
+        a : b : l
     where
       mse = do
         s0n <- parse s0
@@ -195,18 +212,18 @@ peep_optimize = \case
         case s2n < 256 && e2n < 256 of
           True -> return $ (texty s2n, texty e2n)
           False -> mempty
-  --a@["int", x] : b@["itob"] : l ->
-  --  case itob x of
-  --    Nothing ->
-  --      a : (peep_optimize $ b : l)
-  --    Just xbs ->
-  --      peep_optimize $ ["byte", xbs ] : l
-  x : l -> x : peep_optimize l
+  a@["int", x] : b@["itob"] : l ->
+    case itob x of
+      Nothing ->
+        a : b : l
+      Just xbs ->
+        opt_b1 $ ["byte", xbs] : l
+  x : l -> x : l
   where
     parse :: LT.Text -> Maybe Integer
     parse = readMaybe . LT.unpack
-    _itob :: LT.Text -> Maybe LT.Text
-    _itob x_lt = do
+    itob :: LT.Text -> Maybe LT.Text
+    itob x_lt = do
       x <- parse x_lt
       let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
       return $ base64d x_bs
@@ -216,7 +233,7 @@ render ts = tt
   where
     tt = LT.toStrict lt
     lt = LT.unlines lts
-    lts = "#pragma version 4" : (map LT.unwords $ peep_optimize $ DL.toList ts)
+    lts = "#pragma version 4" : (map LT.unwords $ optimize $ DL.toList ts)
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -273,11 +290,14 @@ op = flip code []
 nop :: App ()
 nop = return ()
 
+dont_concat_first :: [App ()]
+dont_concat_first = nop : repeat (op "concat")
+
 padding :: Integer -> App ()
 padding = cl . bytesZeroLit
 
 czaddr :: App ()
-czaddr = code "global" ["ZeroAddress"]
+czaddr = padding $ typeSizeOf T_Address
 
 checkRekeyTo :: App ()
 checkRekeyTo = do
@@ -569,9 +589,11 @@ cconcatbs :: [(DLType, App ())] -> App ()
 cconcatbs l = do
   let totlen = typeSizeOf $ T_Tuple $ map fst l
   check_concat_len totlen
-  padding 0
-  forM_ l $ \(t, m) ->
-    m >> ctobs t >> op "concat"
+  case l of
+    [] -> padding 0
+    _ -> do
+      forM_ (zip l dont_concat_first) $ \((t, m), a) ->
+        m >> ctobs t >> a
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =
@@ -814,17 +836,20 @@ cMapLoad :: App ()
 cMapLoad = do
   Shared {..} <- eShared <$> ask
   -- [ Address ]
-  padding 0
-  -- [ Address, MapData_0 ]
-  forM_ sMapKeysl $ \mi -> do
-    -- [ Address, MapData_N ]
-    code "dig" [ "1" ]
-    -- [ Address, MapData_N, Address ]
+  -- [ Address, MapData_0? ]
+  forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
+    -- [ Address, MapData_N? ]
+    case doConcat of
+      True -> code "dig" [ "1" ]
+      False -> op "dup"
+    -- [ Address, MapData_N?, Address ]
     cl $ DLL_Bytes $ keyVary mi
-    -- [ Address, MapData_N, Address, Key ]
+    -- [ Address, MapData_N?, Address, Key ]
     op "app_local_get"
-    -- [ Address, MapData_N, NewPiece ]
-    op "concat"
+    -- [ Address, MapData_N?, NewPiece ]
+    case doConcat of
+      True -> op "concat"
+      False -> nop
     -- [ Address, MapData_N+1 ]
     return ()
   -- [ Address, MapData_k ]

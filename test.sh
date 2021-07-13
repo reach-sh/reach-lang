@@ -44,7 +44,7 @@ r () {
   make build
   # make down
 
-  jb
+  # jb
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
@@ -176,7 +176,7 @@ tealcount () {
 # r examples/chicken-race
 # r examples/exports
 # r examples/many-args
-# r examples/ttt
+r examples/ttt
 # r examples/map-sender
 # r examples/map-any
 # r examples/map-vary
@@ -225,7 +225,7 @@ tealcount () {
 # r users/ff
 # exit 0
 
-r examples/mint-basic
+# r examples/mint-basic
 # r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
