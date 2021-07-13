@@ -10,6 +10,7 @@ void(debug);
 
 type BigNumber = ethers.BigNumber;
 export type num = BigNumber | number
+export type MaybeRep<A> = ['Some', A] | [ 'None', null ]
 
 export interface AnyBackendTy {
   name: string,
@@ -76,7 +77,7 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   arrp[idx] = elem;
   return arrp;
 }
-export const mapRef = <A>(m: {[key: string]: A}, f: string): ['Some', A]|['None', null] => {
+export const mapRef = <A>(m: {[key: string]: A}, f: string): MaybeRep<A> => {
   const v = m[f];
   // console.log(`Reading map ${JSON.stringify(m)} field ${JSON.stringify(f)} => ${JSON.stringify(v)}`);
   if ( v === undefined ) {
