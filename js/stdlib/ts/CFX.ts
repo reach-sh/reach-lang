@@ -14,6 +14,8 @@ export const {
   setProviderByEnv,
   setProviderByName,
   providerEnvByName,
+  getSignStrategy,
+  setSignStrategy,
   balanceOf,
   transfer,
   connectAccount,

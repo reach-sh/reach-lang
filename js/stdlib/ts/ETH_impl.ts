@@ -310,12 +310,22 @@ const doHealthcheck = async (theUrl: string): Promise<void> => {
   });
 };
 
+function getSignStrategy(): string {
+  throw Error(`getSignStrategy not yet implemented on ETH`);
+}
+function setSignStrategy(ss: string) {
+  void(ss);
+  throw Error(`setSignStrategy not yet implemented on ETH`);
+}
+
 export { ethers };
 export const providerLib = {
   getProvider,
   setProvider,
   setProviderByName,
   setProviderByEnv,
+  setSignStrategy,
+  getSignStrategy,
   providerEnvByName,
 }
 export const standardUnit = 'ETH';

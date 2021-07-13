@@ -319,8 +319,6 @@ export class BrowserWallet implements IWallet {
     // @ts-ignore // leaning on window.BigInt for the num -> hexnum conversion
     const value: string = '0x' + window.BigInt(txnOrig.value || '0').toString(16);
     const txn = {...txnOrig, value, from};
-    const est = await provider.conflux.estimateGasAndCollateral({...txn});
-    console.log({txn, est}); // DELETEME
     return await new Promise((resolve, reject) => {
       this.cp.sendAsync({
         method: 'cfx_sendTransaction',
