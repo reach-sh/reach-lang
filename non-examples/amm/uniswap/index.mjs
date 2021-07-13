@@ -50,15 +50,21 @@ const NUM_PROVIDERS = 2;
 
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
-    tokAAmt: stdlib.parseCurrency(20),
-    tokBAmt: stdlib.parseCurrency(10),
+    tokAAmt: 20,
+    tokBAmt: 10,
     tokA: zmd.id,
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
-      const everyoneWent = false;
-      console.log(`Admin will ${everyoneWent ? '' : 'not '}close pool`);
+      const everyoneWent = Object.keys(withdrew).every(k => {
+        // console.log(withdrew, k, withdrew[k]);
+        return withdrew[k] == true;
+      });
+      // console.log(`Admin will ${everyoneWent ? '' : 'not '}close pool`);
       return { when: everyoneWent, msg: null };
     },
+    inform: (x, tokAAmt, tokBAmt) => {
+      console.log(`Admin received ${x} pool tokens for their deposit of ${tokAAmt} ZMD & ${tokBAmt} GIL`);
+    }
   });
 
 
@@ -69,11 +75,13 @@ const NUM_PROVIDERS = 2;
     withdrew[who] = false;
     deposited[who] = false;
     return backend.Provider(ctcProvider, {
-      ...stdlib.hasConsoleLogger,
+      log: (s, x) => {
+        console.log(s.padStart(30), x.toString());
+      },
       withdrawDone: (isMe, amtOuts) => {
         if (isMe) {
           withdrew[who] = true;
-          console.log(`${who} withdrew ${amtOuts}`);
+          console.log(`${who} withdrew ${amtOuts[0]} ZMD & ${amtOuts[1]} GIL`);
         }
       },
       withdrawMaybe: ([ alive, market ]) => {
@@ -84,10 +92,10 @@ const NUM_PROVIDERS = 2;
         }
       },
       depositMaybe: ([ isAlive, market ]) => {
-        const amt = Math.floor(Math.random() * 10);
+        const amt = Math.floor(Math.random() * 10) + 1;
         const deposit = {
-          amtA: stdlib.parseCurrency(amt * 2), // * k
-          amtB: stdlib.parseCurrency(amt),
+          amtA: amt * 2, // * k
+          amtB: amt,
         };
         console.log(`${who} tries to deposit: ${deposit.amtA} ZMD & ${deposit.amtB} GIL`);
         return { when: true, msg: deposit };

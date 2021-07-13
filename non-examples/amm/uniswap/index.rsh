@@ -7,7 +7,13 @@ const MkArray = (ty) => Array(ty, NUM_OF_TOKENS);
 
 const min = (a, b) => a < b ? a : b;
 
+const avg = (a, b) => (a + b) / 2;
+
 export const main = Reach.App(() => {
+  // setOptions({
+  //   connectors: [ETH],
+  //   verifyPerConnector: true,
+  // });
   // Types
   const Market = Object({
     k: UInt
@@ -56,6 +62,7 @@ export const main = Reach.App(() => {
       when: Bool,
       msg : Null,
     })),
+    inform: Fun([UInt, UInt, UInt], Null),
   });
 
   const Trader = ParticipantClass('Trader', {
@@ -74,15 +81,18 @@ export const main = Reach.App(() => {
     const tokB = declassify(interact.tokB);
     const tokAAmt = declassify(interact.tokAAmt);
     const tokBAmt = declassify(interact.tokBAmt);
+    const initMint = sqrt(tokAAmt * tokBAmt, 3);
     assume(tokA != tokB);
     assume(tokAAmt > 0 && tokBAmt > 0);
+    assume(initMint < UInt.max);
   });
 
-  Admin.publish(tokA, tokB, tokAAmt, tokBAmt)
+  Admin.publish(tokA, tokB, tokAAmt, tokBAmt, initMint)
     .pay([ [ tokAAmt, tokA ], [ tokBAmt, tokB ] ]);
 
   require(tokA != tokB);
   require(tokAAmt > 0 && tokBAmt > 0);
+  require(initMint < UInt.max);
 
   const initialMarket = {
     k: balance(tokA) * balance(tokB)
@@ -91,11 +101,25 @@ export const main = Reach.App(() => {
   const totalSupply = UInt.max;
   const pool = new Token({ supply: totalSupply });
 
-  // Calculates how much LP tokens to mint
-  const mint = (amtIn, bal) => ( amtIn / bal ) * pool.supply();
+  // Payout admin geometric mean
+  // if (initMint < balance(pool)) {
+  transfer(initMint, pool).to(Admin);
+  Admin.interact.inform(initMint, tokAAmt, tokBAmt);
+  // }
 
-  const [ alive, market ] =
-    parallelReduce([ true, initialMarket ])
+  // Calculates how much LP tokens to mint
+  const mint = (amtIn, bal, poolMinted) => {
+    // const fAmtIn = fx(1)(Pos, amtIn); // 2 decimal places
+    // const fBal = fx(1)(Pos, bal);
+    // const fSupply = fx(1)(Pos, pool.supply());
+    // const t = fxdiv(fSupply, fBal, 100);
+    // const u = fxmul(t, fAmtIn);
+    // return fxfloor(fxrescale(u, 1)).i;
+    return (poolMinted * amtIn) / bal;
+  };
+
+  const [ alive, market, poolMinted ] =
+    parallelReduce([ true, initialMarket, initMint ])
       .define(() => {
         const st = [ alive, market ];
         const wrap = (f, onlyIfAlive) => {
@@ -114,23 +138,23 @@ export const main = Reach.App(() => {
       .case(Admin,
         (() => wrap(interact.shouldClosePool, true)),
         ((_) => [ 0, [0, pool], [ 0, tokA ], [ 0, tokB ] ]),
-        (() => { return [ false, market ]; })
+        (() => { return [ false, market, poolMinted ]; })
       )
       .case(Provider,
         (() => {
           const { when, msg } = declassify(interact.withdrawMaybe(st));
-          assume(msg.liquidity < pool.supply());
+          assume(msg.liquidity < poolMinted, "liquidity < poolMinted");
           return { when, msg };
         }),
         (({ liquidity }) => [ 0, [ liquidity, pool ], [ 0, tokA ], [ 0, tokB ] ]),
         (({ liquidity }) => {
-          require(liquidity < pool.supply());
+          require(liquidity < poolMinted, "liquidity < poolMinted");
 
           // Balances have fees incorporated
           const balances = array(UInt, [ balance(tokA), balance(tokB) ]);
 
           // Amount of each token in reserve to return to Provider
-          const amtOuts = balances.map(bal => liquidity * bal / pool.supply());
+          const amtOuts = balances.map(bal => liquidity * bal / poolMinted);
 
           // Payout provider
           const currentProvider = this;
@@ -144,9 +168,10 @@ export const main = Reach.App(() => {
           const marketP = { k: balance(tokA) * balance(tokB) }
 
           // Inform frontend of their payout
-          Provider.interact.withdrawDone(currentProvider == this, amtOuts);
+          Provider.only(() => {
+            interact.withdrawDone(currentProvider == this, amtOuts) });
 
-          return [ true, marketP ];
+          return [ true, marketP, poolMinted - liquidity ];
         })
       )
       .case(Provider,
@@ -157,12 +182,13 @@ export const main = Reach.App(() => {
           // Ensure minted amount is less than pool balance
           interact.log("amtA", amtA);
           interact.log("balance(tokA)", balance(tokA));
-          interact.log("mintA", mint(amtA, balance(tokA)));
+          interact.log("poolMinted", poolMinted);
+          interact.log("mintA", mint(amtA, balance(tokA), poolMinted));
           interact.log("amtB", amtB);
           interact.log("balance(tokB)", balance(tokB));
-          interact.log("mintB", mint(amtB, balance(tokB)));
+          interact.log("mintB", mint(amtB, balance(tokB), poolMinted));
           const minted =
-            min( mint(amtA, balance(tokA)), mint(amtB, balance(tokB) ));
+            avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
 
           assume(minted > 0, "minted > 0");
           assume(minted < balance(pool), "assume minted < balance(pool)");
@@ -182,9 +208,11 @@ export const main = Reach.App(() => {
           const marketP = { k: balance(tokA) * balance(tokB) }
 
           // Inform frontend of their deposit
-          Provider.interact.depositDone(currentProvider == this, amtA, amtB, minted);
+          // Provider.interact.depositDone(currentProvider == this, amtA, amtB, minted);
+          Provider.only(() => {
+            interact.depositDone(currentProvider == this, amtA, amtB, minted) });
 
-          return [ true, marketP ];
+          return [ true, marketP, poolMinted + minted ];
         })
       )
       .case(Trader,
@@ -221,12 +249,12 @@ export const main = Reach.App(() => {
           // Inform frontend of their deposit
           Trader.interact.tradeDone(currentTrader == this, [ amtA, amtB ]);
 
-          return [ true, market ];
+          return [ true, market, poolMinted ];
         })
       )
       .timeout(1024, () => {
         Anybody.publish();
-        return [ false, market ]; });
+        return [ false, market, poolMinted ]; });
 
   pool.burn(balance(pool));
   transfer(balance(tokA), tokA).to(Admin);
