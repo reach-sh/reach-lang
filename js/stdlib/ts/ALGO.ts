@@ -187,9 +187,9 @@ async function wait1port(server: string, port: string | number) {
   return await waitPort(server, port);
 };
 
-type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
+// type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
 
-const [getSignStrategy, setSignStrategy] = replaceableThunk<SignStrategy>(() => 'mnemonic');
+const [getSignStrategy, setSignStrategy] = replaceableThunk<string>(() => 'mnemonic');
 export { getSignStrategy, setSignStrategy };
 
 const [getAlgoSigner, setAlgoSigner] = replaceableThunk<Promise<AlgoSigner>>(async () => {

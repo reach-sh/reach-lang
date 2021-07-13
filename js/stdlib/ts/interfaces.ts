@@ -80,6 +80,8 @@ export interface ProviderLib {
   setProviderByEnv: (env: ProviderEnv) => void
   setProviderByName: (providerName: ProviderName) => void
   providerEnvByName: (providerName: ProviderName) => ProviderEnv
+  getSignStrategy: () => string
+  setSignStrategy: (ss: string) => void
 };
 
 type FixedPoint = { sign: boolean, i: { i: BigNumber, scale: BigNumber } }

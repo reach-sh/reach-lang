@@ -34,19 +34,30 @@ export function isWindowProvider(): boolean {
   return true; // XXX
 }
 
-export function _getSignStrategy(): string {
-  // XXX expose setSignStrategy for CFX
-  // For now we only support 'secret' by default
-  if (window.conflux) {
-    // XXX this should be more lenient about letting cp load later
-    return 'window';
-  } else if (window.prompt) {
+// /**
+//  * Strategies for deciding what getDefaultAccount returns.
+//  */
+// type SignStrategy
+//   = 'secret'   // window.prompt for secret
+//   | 'mnemonic' // window.prompt for mnemonic
+//   | 'faucet'   // use the faucet account
+//   | 'window'   // use window.conflux
+//   | 'ConfluxPortal' // same as 'window'
+
+export const [getSignStrategy, setSignStrategy] = replaceableThunk<string>(() => {
+  // XXX make window.conflux the default at some point
+  // if (window.conflux) {
+  //   // XXX this should be more lenient about letting cp load later
+  //   return 'window';
+  // }
+
+  if (window.prompt) {
     return 'secret';
   } else {
     // XXX this should only work on the devnet
     return 'faucet';
   }
-}
+});
 
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   const provider = await getProvider();
@@ -54,9 +65,9 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
     if (!window.prompt) { throw Error(`Can't prompt user with window.prompt`); }
     return window.prompt(`Please paste your account's ${s}, or click cancel to generate a new one.`);
   }
-  const ss = _getSignStrategy();
+  const ss = getSignStrategy();
   let w: cfxers.IWallet|null = null;
-  switch (ss) {
+  switch (ss.toLowerCase()) {
   case 'secret':
     const skMay = promptFor('secret key');
     if (skMay) {
@@ -73,7 +84,7 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
       : cfxers.Wallet.createRandom();
     break;
   case 'window':
-    // XXX ConfluxPortal support
+  case 'confluxportal':
     const cp = await getConfluxPortal();
     const addr = (await cp.enable())[0];
     w = new cfxers.BrowserWallet(cp, addr);
@@ -190,6 +201,8 @@ export const providerLib = {
   setProviderByName,
   setProviderByEnv,
   providerEnvByName,
+  getSignStrategy,
+  setSignStrategy,
 }
 export const _verifyContractCode = false; // XXX
 export const _warnTxNoBlockNumber = false; // XXX ?
