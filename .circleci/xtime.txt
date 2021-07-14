@@ -1,0 +1,34 @@
+# These are allowed to timeout and we still release
+
+# nondeterministic timeout; fixable?
+ETH.rent-seeking
+
+# ALGO known timeouts that shouldn't prevent release
+# (but we should give them more time in CI, or use a faster devnet)
+ALGO.atomic-swap-auction
+ALGO.chicken-fork
+ALGO.chicken-parallel
+ALGO.chicken-race
+ALGO.popularity-contest
+ALGO.workshop-fomo
+ALGO.workshop-fomo-generalized
+ALGO.workshop-trust-fund
+
+# ALGO known nondeterministic timeouts
+# Are these indicative of real errors, or just CI BS?
+ALGO.map-any
+ALGO.map-big
+ALGO.map-multi
+ALGO.map-sender
+ALGO.map-vary
+ALGO.nft-auction
+ALGO.nim
+ALGO.tut-6
+ALGO.tut-7-array
+ALGO.view-bytes
+ALGO.view-map
+
+# CFX known timeouts
+CFX.map-rwrw
+CFX.map-vary
+

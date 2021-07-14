@@ -1,4 +1,5 @@
 /.built
 /output
 /record.py
-/whitelist.txt
+/xfail.txt
+/xtime.txt
