@@ -16,10 +16,9 @@ ALGO.map-rwrw
 ALGO.raffle
 ALGO.rent-seeking
 
-# nondeterministic failure? or was this fixed?
-# see: https://circleci.com/api/v1.1/project/github/reach-sh/reach-lang/30442/output/105/0?file=true&allocation-id=60d36ccc2940820c56751e82-0-build%2F5D5F1140
-# and: https://circleci.com/api/v1.1/project/github/reach-sh/reach-lang/30289/output/105/0?file=true&allocation-id=60d365b2b822354a9e115b15-0-build%2F494B7702
-# ETH.view-map
+# nondeterministic failure
+# https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
+ETH.view-map
 
 # CFX known failures w/ launchToken::mint
 CFX.atomic-swap
