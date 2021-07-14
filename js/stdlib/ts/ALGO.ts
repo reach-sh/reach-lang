@@ -568,7 +568,7 @@ const doQuery_ = async (dhead:string, query: ApiCall<any>, alwaysRetry: boolean 
       res = await query.do();
       break;
     } catch (e) {
-      if ( e.errno === -111 || e.code === "ECONNRESET" ) {
+      if ( e?.errno === -111 || e?.code === "ECONNRESET" || e?.response?.text === "{\"message\":\"accounting not initialized\"}\n" ) {
         debug(dhead, 'NO CONNECTION');
       } else if ( ! alwaysRetry || retries <= 0 ) {
         throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);

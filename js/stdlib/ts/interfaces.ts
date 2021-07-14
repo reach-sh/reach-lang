@@ -136,7 +136,7 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   getNetworkTime: () => Promise<BigNumber>
   wait: (timeDelta: BigNumber) => Promise<BigNumber>
   waitUntilTime: (time: BigNumber) => Promise<BigNumber>
-  verifyContract: (ctcInfo: CtcInfo, backend: Backend) => Promise<true>
+  verifyContract: (ctcInfo: CtcInfo, backend: Backend) => Promise<any>
   /** @description the display name of the standard unit of currency for the network */
   standardUnit: string
   /** @description the display name of the atomic (smallest) unit of currency for the network */
