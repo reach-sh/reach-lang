@@ -16,9 +16,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v112 = 0 == v22.supply;
+  const v114 = 0 == v22.supply;
   //    ^ would be false
-  assert(v112);
+  assert(v114);
 
 Verification failed:
   when ALL participants are honest
@@ -37,9 +37,17 @@ Verification failed:
 
   const v72 = 2 * v22.amt;
   //    ^ would be 0
-  const v167 = 0 == ((((v22.supply - v72) - v72) + v72) + v72);
+  const v169 = 0 == ((((v22.supply - v72) - v72) + v72) + v72);
   //    ^ would be false
-  assert(v167);
+  assert(v169);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail1.rsh:78:7:application
+
+  assert(false);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -53,6 +61,13 @@ Verification failed:
   when NO participants are honest
   of theorem: assert
   msg: "balance zero at application exit"
+  at ./mint-fail1.rsh:78:7:application
+
+  (details omitted on repeat)
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
   at ./mint-fail1.rsh:78:7:application
 
   (details omitted on repeat)
@@ -71,6 +86,13 @@ Verification failed:
   at ./mint-fail1.rsh:78:7:application
 
   (details omitted on repeat)
+Verification failed:
+  when ONLY "Alice" is honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail1.rsh:78:7:application
+
+  (details omitted on repeat)
   Verifying when ONLY "Bob" is honest
 Verification failed:
   when ONLY "Bob" is honest
@@ -86,4 +108,11 @@ Verification failed:
   at ./mint-fail1.rsh:78:7:application
 
   (details omitted on repeat)
-Checked 58 theorems; 8 failures. :'(
+Verification failed:
+  when ONLY "Bob" is honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail1.rsh:78:7:application
+
+  (details omitted on repeat)
+Checked 62 theorems; 12 failures. :'(

@@ -20,9 +20,9 @@ Verification failed:
 
   const v72 = 2 * v22.amt;
   //    ^ would be 15440
-  const v171 = 0 == (UInt.max - ((UInt.max - v72) - v72));
+  const v175 = 0 == (UInt.max - ((UInt.max - v72) - v72));
   //    ^ would be false
-  assert(v171);
+  assert(v175);
 
   Verifying when NO participants are honest
 Verification failed:

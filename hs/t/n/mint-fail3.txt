@@ -1,0 +1,36 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail3.rsh:83:7:application
+
+  assert(false);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail3.rsh:83:7:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Alice" is honest
+Verification failed:
+  when ONLY "Alice" is honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail3.rsh:83:7:application
+
+  (details omitted on repeat)
+  Verifying when ONLY "Bob" is honest
+Verification failed:
+  when ONLY "Bob" is honest
+  of theorem: assert
+  msg: "token destroyed at application exit"
+  at ./mint-fail3.rsh:83:7:application
+
+  (details omitted on repeat)
+Checked 72 theorems; 4 failures. :'(
