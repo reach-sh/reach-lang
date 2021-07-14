@@ -46,17 +46,17 @@ export const main = Reach.App(() => {
   B.interact.showToken(tok1, md1);
   commit();
 
-  const doTransfer = (tokX) => {
-    const doTransfer1 = (who) => {
-      transfer(2 * amt, tokX).to(who);
-      who.interact.didTransfer(true, amt);
-    };
-    doTransfer1(A);
-    doTransfer1(B);
+  const doTransfer1 = (who, tokX) => {
+    transfer(2 * amt, tokX).to(who);
+    who.interact.didTransfer(true, amt);
   };
 
+  B.publish();
+  doTransfer1(B, tok1);
+  commit();
+
   A.publish();
-  doTransfer(tok1);
+  doTransfer1(A, tok1);
   commit();
 
   A.pay([[2*amt, tok1]]);
@@ -71,8 +71,12 @@ export const main = Reach.App(() => {
   B.interact.showToken(tok2, md2);
   commit();
 
+  B.publish();
+  doTransfer1(B, tok2);
+  commit();
+
   A.publish();
-  doTransfer(tok2);
+  doTransfer1(A, tok2);
   tok2.burn(/* defaults to all */);
   commit();
 

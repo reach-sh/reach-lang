@@ -73,7 +73,8 @@ For example, if a program has a @tech{consensus step} where Alice will receive 1
 You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
 
-@tech{Token minting} is not supported on Algorand.
+@tech{Token minting} creates an ASA owned and managed by the contract account.
+Freezing, clawback, reserves, and separate managers are not supported.
 
 @tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
 This means they are sensitive to the particular compilation details of the particular Reach program.

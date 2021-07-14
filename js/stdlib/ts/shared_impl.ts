@@ -18,9 +18,11 @@ export {
   hexlify
 } from './shared_backend';
 
+export const bigNumberToBigInt = (x:BigNumber): bigint => BigInt(x.toHexString());
+
 type BigNumber = ethers.BigNumber;
 
-export type CurrencyAmount = string | number | BigNumber
+export type CurrencyAmount = string | number | BigNumber | bigint
 
 export type {Connector} from './ConnectorMode';
 
@@ -345,7 +347,6 @@ export const makeRandom = (width:number) => {
 
   return { randomUInt, hasRandom };
 };
-
 
 export const makeArith = (m:BigNumber) => {
   const check = (x: BigNumber) =>

@@ -77,7 +77,7 @@ declare module 'algosdk' {
   declare type ARG_extraPages = number;
 
   declare function makeAssetCreateTxnWithSuggestedParams(
-    from:Address, note:ARG_note, total: number, decimals:number,
+    from:Address, note:ARG_note, total: bigint, decimals:number,
     defaultFrozen:boolean,
     manager: Address|undefined, reserve: Address|undefined,
     freeze: Address|undefined, freeze: Address|undefined, unitName: string,
@@ -89,7 +89,7 @@ declare module 'algosdk' {
       params: TxnParams, rekeyTo?: ARG_reKeyTo,
   ): Txn;
   declare function makePaymentTxnWithSuggestedParams(
-      from: Address, to: Address, amount: number,
+      from: Address, to: Address, amount: bigint,
       closeRemainderTo: Address|undefined,
       note: ARG_note, params: TxnParams
   ): Txn;
@@ -97,7 +97,7 @@ declare module 'algosdk' {
       from: Address, to: Address,
       closeRemainderTo: Address|undefined,
       revocationTarget: Address|undefined,
-      amount: number,
+      amount: bigint,
       note: ARG_note,
       id: number,
       params: TxnParams
@@ -206,6 +206,7 @@ declare module 'algosdk' {
     // XXX
     dryrun(req: any): ApiCall<any>
     getApplicationByID(id: number): ApiCall<any>
+    getAssetByID(id: number): ApiCall<any>
   }
 
   declare class Indexer {

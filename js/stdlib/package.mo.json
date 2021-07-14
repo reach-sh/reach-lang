@@ -53,7 +53,7 @@
   "homepage": "https://github.com/reach-sh/reach-lang#readme",
   "scripts": {
     "beautify": "js-beautify --indent-size=2 --end-with-newline --brace-style=collapse-preserve-inline --replace dist/mjs/*.mjs",
-    "build": "concurrently \"webpack --config webpack.config.js\" \"tsc -p tsconfig-esm.json\" \"tsc -p tsconfig-cjs.json\"",
+    "build": "tsc -p tsconfig-esm.json && concurrently \"webpack --config webpack.config.js\" \"tsc -p tsconfig-cjs.json\"",
     "format": "eslint --ext .mjs --fix dist/mjs/",
     "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs",
     "webpack": "webpack --config webpack.config.js",

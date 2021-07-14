@@ -4,7 +4,10 @@ import { checkedBigNumberify } from './shared_backend';
 
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
-export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
+export const bigNumberify = (x: any): BigNumber => {
+  const xp = typeof x === 'number' ? BigInt(x) : x;
+  return BigNumber.from(xp);
+};
 export const bigNumberToNumber = (x: any) =>
   bigNumberify(x).toNumber();
 

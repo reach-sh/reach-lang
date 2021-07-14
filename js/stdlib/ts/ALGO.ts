@@ -26,6 +26,7 @@ import {
   makeRandom,
   replaceableThunk,
   ensureConnectorAvailable,
+  bigNumberToBigInt,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -854,7 +855,7 @@ const makeTransferTxn = (
   closeTo: Address|undefined = undefined,
   tag: number|undefined = undefined,
 ): Txn => {
-  const valuen = bigNumberToNumber(value);
+  const valuen = bigNumberToBigInt(value);
   const note = NOTE_Reach_tag(tag);
   const txn =
     token ?
@@ -1134,9 +1135,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               tok: undefined,
             });
             const zaddr = undefined;
+            const ap = bigNumberToBigInt(t.p);
+            debug(`tokenNew`, t.p, ap);
             txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
-              escrowAddr, NOTE_Reach_tag(sim_i++), bigNumberToNumber(t.p), 6,
-              false, zaddr, zaddr, zaddr, zaddr,
+              escrowAddr, NOTE_Reach_tag(sim_i++), ap, 6,
+              false, escrowAddr, zaddr, zaddr, zaddr,
               t.s, t.n, t.u, t.m, params,
             );
           } else if ( t.kind === 'tokenBurn' ) {
@@ -1192,6 +1195,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           txnExtraTxns_signers.push(signer);
         };
         sim_r.txns.forEach(processSimTxn);
+        debug(dhead, 'txnExtraTxns', txnExtraTxns);
         debug(dhead, '--- extraFee =', extraFees);
 
       const actual_args = [ svs, msg ];
@@ -1314,17 +1318,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
 
-        const same_group = ((x:any) => x.group === txn.group);
-        const all_query = indexer.searchForTransactions()
-          .txType('acfg')
-          .assetID(0)
-          .round(theRound);
-        const all_res = await doQuery_(dhead, all_query);
-        // NOTE: Move this filter into the query when the indexer supports it
-        const all_txns_raw = all_res.transactions.filter(same_group);
-        const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
-        const all_txns = all_txns_raw.sort(group_order);
-        debug(dhead, 'all_txns', all_txns);
+        let all_txns: Array<any>|undefined = undefined;
+        const get_all_txns = async () => {
+          if ( all_txns ) { return; }
+          const all_query = indexer.searchForTransactions()
+            .txType('acfg')
+            .assetID(0)
+            .round(theRound);
+          const all_res = await doQuery_(dhead, all_query);
+          // NOTE: Move this filter into the query when the indexer supports it
+          const same_group = ((x:any) => x.group === txn.group && x['asset-config-transaction']['asset-id'] === 0);
+          const all_txns_raw = all_res.transactions.filter(same_group);
+          const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
+          all_txns = all_txns_raw.sort(group_order);
+          debug(dhead, 'all_txns', all_txns);
+        };
 
         const ctc_args_all: Array<string> =
           txn['application-transaction']['application-args'];
@@ -1350,14 +1358,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', lastRound);
 
         let tokenNews = 0;
-        const getOutput = (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
           if ( o_mode === 'tokenNew' ) {
+            await get_all_txns();
             // NOTE: I'm making a dangerous assumption that the created tokens
             // are viewed in the order they were created. It would be better to
             // be able to have the JS simulator determine where they are
             // exactly, but it is not available for receives. :'(
+            // @ts-ignore
             const tn_txn = all_txns[tokenNews++];
-            debug(dhead, {tn_txn});
+            debug(dhead, "tn_txn", tn_txn);
             return tn_txn['created-asset-index'];
           } else {
             void(o_lab);
@@ -1538,7 +1548,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     await transfer(this, this, 0, token);
   };
   const tokenMetadata = async (token:Token): Promise<any> => {
-    debug(`XXX tokenMetadata`, token);
+    debug(`tokenMetadata`, token);
+    const client = await getAlgodClient();
+    const tokenRes = await client.getAssetByID(bigNumberToNumber(token)).do();
+    debug({tokenRes});
+    const tokenInfo = tokenRes['params'];
+    debug({tokenInfo});
+    const name = tokenInfo['name'];
+    const symbol = tokenInfo['unit-name'];
+    const url = tokenInfo['url'];
+    const mhr = tokenInfo['metadata-hash'];
+    const metadata = mhr ? T_Bytes(32).fromNet(reNetify(mhr)) : undefined;
+    const supply = bigNumberify(tokenInfo['total']);
     return { name, symbol, url, metadata, supply };
   };
 
@@ -1594,9 +1615,11 @@ export const atomicUnit = 'μALGO';
  * @example  parseCurrency(100).toString() // => '100000000'
  */
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
-  const numericAmt =
+  // @ts-ignore
+  const numericAmt: number =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
+    : typeof amt === 'bigint' ? Number(amt)
     : amt;
   return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
 }
