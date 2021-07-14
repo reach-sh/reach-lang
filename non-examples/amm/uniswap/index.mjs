@@ -3,6 +3,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 
 const NUM_PROVIDERS = 2;
+const NUM_TRADERS = 2;
 
 (async () => {
   const stdlib = await loadStdlib();
@@ -37,6 +38,16 @@ const NUM_PROVIDERS = 2;
     await gimmeTokens(accProvider);
   }
 
+  // Create & Fund Traders
+  const accTraders = await Promise.all(
+    Array.from({ length: NUM_TRADERS }, () =>
+      stdlib.newTestAccount(startingBalance))
+  );
+
+  for (let i = 0; i < accTraders.length; ++i) {
+    const accTrader = accTraders[i];
+    await gimmeTokens(accTrader);
+  }
 
   // Deploy contract
   const ctcAdmin = accAdmin.deploy(backend);
@@ -46,12 +57,16 @@ const NUM_PROVIDERS = 2;
   // Track who withdrew/deposited
   const withdrew  = {};
   const deposited = {};
-
+  const traded = {};
+  const toks = {
+    [zmd.id]: "ZMD",
+    [gil.id]: "GIL"
+  };
 
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
-    tokAAmt: 20,
-    tokBAmt: 10,
+    tokAAmt: stdlib.parseCurrency(20),
+    tokBAmt: stdlib.parseCurrency(10),
     tokA: zmd.id,
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
@@ -63,7 +78,7 @@ const NUM_PROVIDERS = 2;
       return { when: everyoneWent, msg: null };
     },
     inform: (x, tokAAmt, tokBAmt) => {
-      console.log(`Admin received ${x} pool tokens for their deposit of ${tokAAmt} ZMD & ${tokBAmt} GIL`);
+      console.log("\x1b[34m", `Admin received ${x} pool tokens for their deposit of ${tokAAmt} ZMD & ${tokBAmt} GIL`,'\x1b[0m');
     }
   });
 
@@ -81,35 +96,80 @@ const NUM_PROVIDERS = 2;
       withdrawDone: (isMe, amtOuts) => {
         if (isMe) {
           withdrew[who] = true;
-          console.log(`${who} withdrew ${amtOuts[0]} ZMD & ${amtOuts[1]} GIL`);
+          console.log("\x1b[31m", `${who} withdrew ${amtOuts[0]} ZMD & ${amtOuts[1]} GIL`,'\x1b[0m');
         }
       },
       withdrawMaybe: ([ alive, market ]) => {
-        if (deposited[who]) {
+        if (withdrew[who] == false && deposited[who]) {
+          console.log("\x1b[31m", `${who} tries to withdraw ${deposited[who]} liquidity`,'\x1b[0m');
           return { when: true, msg: { liquidity: deposited[who] } };
         } else {
           return { when: false, msg: { liquidity: 0 }};
         }
       },
       depositMaybe: ([ isAlive, market ]) => {
-        const amt = Math.floor(Math.random() * 10) + 1;
-        const deposit = {
-          amtA: amt * 2, // * k
-          amtB: amt,
-        };
-        console.log(`${who} tries to deposit: ${deposit.amtA} ZMD & ${deposit.amtB} GIL`);
-        return { when: true, msg: deposit };
+        if (deposited[who] == false) {
+          const amt = Math.floor(Math.random() * 10) + 1;
+          const deposit = {
+            amtA: stdlib.parseCurrency(amt * 2), // * k
+            amtB: stdlib.parseCurrency(amt),
+          };
+          console.log("\x1b[34m", `${who} tries to deposit: ${deposit.amtA} ZMD & ${deposit.amtB} GIL`,'\x1b[0m');
+          return { when: true, msg: deposit };
+        } else {
+          return { when: false, msg: { amtA: 0, amtB: 0 }};
+        }
       },
       depositDone: (isMe, amtA, amtB, poolTokens) => {
         if (isMe) {
           deposited[who] = poolTokens;
-          console.log(`${who} received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`);
+          console.log("\x1b[34m", `${who} received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`,'\x1b[0m');
         }
       }
     });
   });
 
-  const backends = [ adminBackend, provBackends ];
+  const traderBackends = accTraders.map((accTrader, i) => {
+    const ctcTrader = accTrader.attach(backend, ctcInfo);
+    const who = `Trader ${i}`;
+    traded[who] = false;
+    return backend.Trader(ctcTrader, {
+      log: (s, x) => {
+        console.log(s.padStart(30), x.toString());
+      },
+      logMarket: (s, x) => {
+        console.log(s.padStart(30), x.k.toString());
+      },
+      tradeMaybe: ([ alive, market ]) => {
+        const idx = Math.floor(Math.random() * 2);
+        const amt = stdlib.parseCurrency(Math.floor(Math.random() * 10) + 1);
+
+        const trade =
+          (idx == 0)
+            ? ({
+              amtA: amt,
+              amtB: 0,
+              amtInTok: zmd.id,
+            })
+          : ({
+              amtA: 0,
+              amtB: amt,
+              amtInTok: gil.id,
+            });
+
+        console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok]}`,'\x1b[0m')
+        return { when: traded[who] == false, msg: trade };
+      },
+      tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
+        if (isMe) {
+          traded[who] = true;
+          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok]} for ${amtOut} ${toks[amtOutTok]}`,'\x1b[0m');
+        }
+      }
+    });
+  });
+
+  const backends = [ adminBackend, provBackends, traderBackends ];
   await Promise.all(backends);
 
   console.log(`Uniswap finished`);
