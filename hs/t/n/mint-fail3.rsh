@@ -11,6 +11,7 @@ export const main = Reach.App(() => {
       url: Bytes(96), metadata: Bytes(32),
       supply: UInt,
       amt: UInt,
+      doEarlyTransfer: Bool,
     })),
     ...shared,
   });
@@ -20,16 +21,24 @@ export const main = Reach.App(() => {
   deploy();
 
   A.only(() => {
-    const { name, symbol, url, metadata, supply, amt } = declassify(interact.getParams());
+    const { name, symbol, url, metadata, supply, amt, doEarlyTransfer } = declassify(interact.getParams());
     assume(4 * amt <= supply);
     assume(4 * amt <= UInt.max);
   });
-  A.publish(name, symbol, url, metadata, supply, amt);
+  A.publish(name, symbol, url, metadata, supply, amt, doEarlyTransfer);
   require(4 * amt <= supply);
   require(4 * amt <= UInt.max);
 
   const md1 = {name, symbol, url, metadata, supply};
   const tok1 = new Token(md1);
+  /*
+  if ( doEarlyTransfer ) {
+    // We will never do this, but it is here to force a warning to be generated
+    transfer([[amt, tok1]]).to(A);
+    commit();
+    A.pay([amt, tok1]);
+  }
+  */
   A.interact.showToken(tok1, md1);
   commit();
 
@@ -45,9 +54,11 @@ export const main = Reach.App(() => {
   B.publish();
   doTransfer1(B, tok1);
   commit();
+
   A.publish();
   doTransfer1(A, tok1);
   commit();
+
   A.pay([[2*amt, tok1]]);
   commit();
   B.pay([[2*amt, tok1]]);
@@ -63,15 +74,10 @@ export const main = Reach.App(() => {
   B.publish();
   doTransfer1(B, tok2);
   commit();
+
   A.publish();
   doTransfer1(A, tok2);
   tok2.burn(/* defaults to all */);
-  commit();
-  A.pay([[2*amt, tok2]]);
-  commit();
-  B.pay([[2*amt, tok2]]);
-  tok2.burn();
-  tok2.destroy();
   commit();
 
   exit();

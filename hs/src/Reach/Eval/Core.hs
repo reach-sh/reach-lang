@@ -2035,8 +2035,11 @@ evalPrim p sargs =
       let lab = "Token.destroy"
       ensureCreatedToken lab toka
       ensure_mode SLM_ConsensusStep lab
-      doBalanceAssert_ FV_supply (Just toka) (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
+      let mtoka = Just toka
+      doBalanceAssert_ FV_destroyed mtoka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
+      doBalanceAssert_ FV_supply mtoka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
+      doBalanceInit_ FV_destroyed mtoka $ DLA_Literal $ DLL_Bool True
       return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
       at <- withAt id
@@ -2065,6 +2068,7 @@ evalPrim p sargs =
       let mtok_a = Just $ DLA_Var tokdv
       doBalanceInit_ FV_balance mtok_a supplya
       doBalanceInit_ FV_supply mtok_a supplya
+      doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       at <- withAt id
@@ -4392,9 +4396,12 @@ doExit = do
   ensure_live "exit"
   at <- withAt id
   let zero = SLV_Int at 0
-  let one mtok = doBalanceAssert mtok zero PEQ "balance zero at application exit"
+  let lab = "application exit"
+  let one mtok = doBalanceAssert mtok zero PEQ $ "balance zero at " <> lab
   one Nothing
   mapM_ (one . Just . DLA_Var) =<< readSt st_toks
+  let mintedEnsureDestroyed tokv = doBalanceAssert_ FV_destroyed (Just $ DLA_Var tokv) (SLV_Bool at True) PEQ $ "token destroyed at " <> lab
+  mapM_ mintedEnsureDestroyed =<< readSt st_toks_c
   saveLift $ DLS_Stop at
   st <- readSt id
   setSt $ st {st_live = False}

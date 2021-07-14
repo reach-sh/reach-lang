@@ -49,10 +49,10 @@ import * as backend from './build/index.main.mjs';
         console.log(`${me}: Received transfer of ${fmt(amt)} for ${tok}`);
       }
       await showBalance();
-      console.log(`${me}: Doing transfer for ${tok}`);
       // This next line is weird.
-      await stdlib.transfer(acc, other, amt, tok);
-      await showBalance();
+      // console.log(`${me}: Doing transfer for ${tok}`);
+      // await stdlib.transfer(acc, other, amt, tok);
+      // await showBalance();
     };
     const getParams = () => ({
       name: `Gil`, symbol: `GIL`,
@@ -60,7 +60,6 @@ import * as backend from './build/index.main.mjs';
       metadata: `It's shiny!`,
       supply: stdlib.parseCurrency(1000),
       amt: stdlib.parseCurrency(10),
-      doEarlyTransfer: false,
     });
     const io = {
       getParams,
@@ -71,8 +70,6 @@ import * as backend from './build/index.main.mjs';
     console.log(`${me}: Starting backend...`);
     await role(ctc, io);
     console.log(`${me}: Done...`);
-    await didTransfer(false, amt);
-    console.log(`${me}: Really done`);
   };
 
   await Promise.all([

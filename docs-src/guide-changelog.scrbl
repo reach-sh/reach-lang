@@ -10,6 +10,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/01: Minted tokens must be destroyed by end of application.}
 @item{2021/07/01: Token minting support added to Algorand.}
 @item{2021/07/01: Token URL metadata increased to 96 bytes.}
 @item{2021/07/01: Algorand @reachin{digest} switched to SHA256 (to save compute cost).}

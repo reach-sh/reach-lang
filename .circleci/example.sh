@@ -37,7 +37,7 @@ for CONN in ETH ALGO CFX ; do
     case "${CONN}" in
       ALGO) TIMEOUT=$((4 * 60)) ;;
       CFX) TIMEOUT=$((6 * 60)) ;;
-      ETH) TIMEOUT=$((2 * 60)) ;;
+      ETH) TIMEOUT=$((4 * 60)) ;;
     esac
     timeout --foreground "${TIMEOUT}" ./one.sh run "${WHICH}"
     EXIT=$?
