@@ -6,7 +6,8 @@ ENV CIRCLE_USERNAME="jeapostrophe"
 ENV CIRCLE_BRANCH="master"
 ENV CIRCLE_BUILD_URL="https://circleci.com/gh/reach-sh/reach-lang/27839"
 
-COPY whitelist.txt /
+COPY xfail.txt /
+COPY xtime.txt /
 COPY record.py /
 
 ENTRYPOINT ["/record.py"]

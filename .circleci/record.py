@@ -9,11 +9,11 @@ def env(k):
 
 conns = [ 'ETH', 'ALGO', 'CFX' ]
 
-bad = set()
 cfails = {}
 for c in conns:
-    cfails[c] = []
-time = set()
+    cfails[c] = []  # the list of examplename that have failed for CONN c
+time = set() # the set of CONN.examplename that timed out
+fail = set() # the set of CONN.examplename that exited nonzero (and not via timeout)
 
 DIR = "/tmp/workspace/record"
 recs = sorted(Path(DIR).iterdir())
@@ -31,37 +31,46 @@ for rp in recs:
             k = f'{c}_STATUS'
             if p[k] == "fail-time":
                 time.add(cme)
+            if p[k] == "fail":
+                fail.add(cme)
             if p[k].startswith("fail"):
                 cfails[c].append(me)
-                bad.add(cme)
 
 source_dir = Path(__file__).resolve().parent
-wlp = source_dir / 'whitelist.txt'
-wlf = open(wlp, "r")
-def no_hash(x): return x.startswith("#")
-whitelist = set( filterfalse(no_hash, wlf.read().splitlines()) )
-blacklist = bad - whitelist
+def no_blank(x): return not x or x.startswith("#") or x.isspace()
+def read_to_set(fp):
+    with open(fp, 'r') as f:
+        return set(filterfalse(no_blank, f.read().splitlines()))
 
-badc = len(bad)
-blackc = len(blacklist)
-nblackc = badc - blackc
+# x = expected
+xfail = read_to_set(source_dir / 'xfail.txt')
+xtime = read_to_set(source_dir / 'xtime.txt')
+
+# nx = unexpected
+nxfail = fail - xfail
+nxtime = time - xtime
+nxft = nxfail.union(nxtime)
+nxftc = len(nxft)
+
+ftc = len(fail.union(time))
+xftc = ftc - nxftc
 total = len(recs) * len(conns)
 
 SYM = "OKAY"
 PRE = f"{total} passed!"
 POST = ""
 
-if badc > 0:
+if ftc > 0:
     SYM = "FAIL"
-    PRE = f"{badc} of {total} failed!"
-    if nblackc > 0:
-        PRE += f" ({nblackc} expected)"
+    PRE = f"{ftc} of {total} failed!"
+    if xftc > 0:
+        PRE += f" ({xftc} expected)"
 
 for c in conns:
     def fmte(e):
         x = f"<{urls[e]}|{e}>"
         ce = f"{c}.{e}"
-        if ce in blacklist: x = f"*{x}*"
+        if ce in nxft: x = f"*{x}*"
         if ce in time: x = f"{x} (t)"
         return x
     tfails = cfails[c]
@@ -75,7 +84,7 @@ for c in conns:
 
 EXIT = 0
 POST += "\\n*"
-if blackc > 0:
+if nxftc > 0:
     POST += f"DO NOT "
     EXIT = 1
 if (env('CIRCLE_BRANCH') == 'master'):

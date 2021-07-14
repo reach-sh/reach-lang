@@ -16,41 +16,10 @@ ALGO.map-rwrw
 ALGO.raffle
 ALGO.rent-seeking
 
-# nondeterministic timeout; fixable?
-ETH.rent-seeking
-
 # nondeterministic failure? or was this fixed?
 # see: https://circleci.com/api/v1.1/project/github/reach-sh/reach-lang/30442/output/105/0?file=true&allocation-id=60d36ccc2940820c56751e82-0-build%2F5D5F1140
 # and: https://circleci.com/api/v1.1/project/github/reach-sh/reach-lang/30289/output/105/0?file=true&allocation-id=60d365b2b822354a9e115b15-0-build%2F494B7702
 # ETH.view-map
-
-# ALGO known timeouts that shouldn't prevent release
-# (but we should give them more time in CI, or use a faster devnet)
-ALGO.atomic-swap-auction
-ALGO.chicken-fork
-ALGO.chicken-parallel
-ALGO.chicken-race
-ALGO.popularity-contest
-ALGO.workshop-fomo
-ALGO.workshop-fomo-generalized
-ALGO.workshop-trust-fund
-
-# ALGO known nondeterministic timeouts
-# Are these indicative of real errors, or just CI BS?
-ALGO.map-any
-ALGO.map-big
-ALGO.map-multi
-ALGO.map-sender
-ALGO.map-vary
-ALGO.nft-auction
-ALGO.nim
-ALGO.tut-6
-ALGO.tut-7-array
-ALGO.view-bytes
-ALGO.view-map
-
-# CFX known failures that shouldn't prevent release
-# (but we should work on fixing them soon)
 
 # CFX known failures w/ launchToken::mint
 CFX.atomic-swap
@@ -58,10 +27,6 @@ CFX.atomic-swap-auction
 CFX.remote
 CFX.weird-swap
 CFX.mint-basic
-
-# CFX known timeouts
-CFX.map-rwrw
-CFX.map-vary
 
 # CFX known failures: misc
 CFX.view-map

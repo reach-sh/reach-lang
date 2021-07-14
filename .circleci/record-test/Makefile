@@ -7,12 +7,15 @@ check: output
 output: .built
 	docker run -it --rm $(IMAGE) | tee $@
 
-.built: Dockerfile record.py whitelist.txt example
+.built: Dockerfile record.py xfail.txt xtime.txt example
 	docker build --tag=$(IMAGE) .
 	echo > $@
 
 record.py: ../record.py
 	cp $^ $@
 
-whitelist.txt: ../whitelist.txt
+xfail.txt: ../xfail.txt
+	cp $^ $@
+
+xtime.txt: ../xtime.txt
 	cp $^ $@
