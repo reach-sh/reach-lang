@@ -21,6 +21,8 @@ export const main = Reach.App(
     checkCommitment(...commitment, obj);
     commit();
 
+    Bob.publish();
+    commit();
     Bob.only(() => {
       interact.showObj(obj, ...commitment);
     });
