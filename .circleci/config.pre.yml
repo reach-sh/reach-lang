@@ -234,7 +234,7 @@ jobs:
     - stack_deps
     - run:
         command: (cd hs && make hs-test-xml)
-        no_output_timeout: 20m
+        no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
     - slack_fail
