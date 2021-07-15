@@ -142,7 +142,6 @@ const {
   isWindowProvider,
   _getDefaultNetworkAccount,
   _getDefaultFaucetNetworkAccount,
-  _verifyContractCode = true,
   _warnTxNoBlockNumber = true,
   standardUnit,
   atomicUnit,
@@ -988,23 +987,19 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
   chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
   const creation_block = logs[0].blockNumber;
 
-  if (!_verifyContractCode) {
-    console.log(`WARNING: Do not trust this contract, we have not verified its bytecode`);
-  } else {
-    debug(`verifyContract: checking code...`);
-    // From https://github.com/ConsenSys/bytecode-verifier/blob/78d7f9703092e5a8e70f5b68204924c380311bc5/src/verifier.js
-    const SWARM_INFO_START = 'a165627a7a72305820';
-    const actual_raw = await provider.getCode(address);
-    const actual_ep = actual_raw.search(SWARM_INFO_START);
-    const actual = actual_raw.slice(0,actual_ep);
+  debug(`verifyContract: checking code...`);
+  // From https://github.com/ConsenSys/bytecode-verifier/blob/78d7f9703092e5a8e70f5b68204924c380311bc5/src/verifier.js
+  const SWARM_INFO_START = 'a165627a7a72305820';
+  const actual_raw = await provider.getCode(address);
+  const actual_ep = actual_raw.search(SWARM_INFO_START);
+  const actual = actual_raw.slice(0,actual_ep);
 
-    const expected_raw = Bytecode;
-    const expected_sp = expected_raw.lastIndexOf('6080604052');
-    const expected_ep = expected_raw.search(SWARM_INFO_START);
-    const expected = '0x' + expected_raw.slice(expected_sp, expected_ep);
+  const expected_raw = Bytecode;
+  const expected_sp = expected_raw.lastIndexOf('6080604052');
+  const expected_ep = expected_raw.search(SWARM_INFO_START);
+  const expected = '0x' + expected_raw.slice(expected_sp, expected_ep);
 
-    chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
-  }
+  chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
 
   // We are not checking the balance or the contract storage, because we know
   // that the code is correct and we know that the code mandates the way that
