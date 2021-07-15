@@ -10,7 +10,7 @@ Verification failed:
   // Violation Witness
 
   const v22 = "Alice".interact.getParams();
-  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
@@ -29,7 +29,7 @@ Verification failed:
   // Violation Witness
 
   const v22 = "Alice".interact.getParams();
-  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
