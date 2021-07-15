@@ -7,6 +7,8 @@ import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import * as msgpack from '@msgpack/msgpack';
 
+import type { Transaction } from 'algosdk';
+
 // DEBUG: uncomment this for debugging in browser
 // @ts-ignore
 // import algosdk__src__transaction from 'algosdk/src/transaction';
@@ -67,43 +69,36 @@ type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array // length 64
 type AlgoSigner = {
-  sign: (txn: TXN) => Promise<{blob: string /* base64 */, txID: string}>,
+  sign: (txn: Transaction) => Promise<{blob: string /* base64 */, txID: string}>,
   accounts: (args: {ledger: string}) => Promise<Array<{address: string}>>,
 }
-// TODO: find the proper algo terminology for Wallet
-// XXX this doesn't quite match whatever algosdk thinks a Wallet is,
-// because this also includes AlgoSigner
+
+// algosdk.Account = {addr, sk}
+// This is slightly different:
+// Must have sk w/ optional AlgoSigner
+// or AlgoSigner w/ optional sk
 type Wallet = {
-    addr: Address,
-    sk?: SecretKey,
-    AlgoSigner?: AlgoSigner,
-  }
+  addr: Address,
+  sk: SecretKey,
+  AlgoSigner?: AlgoSigner,
+} | {
+  addr: Address,
+  sk?: SecretKey,
+  AlgoSigner: AlgoSigner,
+};
 type SignedTxn = Uint8Array;
-type Txn = {
-    txID: () => TxIdWrapper,
-    lastRound: number,
-    fee: number,
-    group?: any,
-    signTxn: (sk: SecretKey) => SignedTxn,
-  }
 type TxnParams = {
-  flatFee: boolean,
+  flatFee?: boolean,
   fee: number,
   firstRound: number,
   lastRound: number,
-  genesisID: number,
+  genesisID: string,
   genesisHash: string,
 }
-// type StatusInfo = {
-//    'last-round': number,
-//  }
-type TxIdWrapper = {
-    toString: () => string
-  }
 type TxnInfo = {
-    'confirmed-round': number,
-    'application-index'?: number,
-  }
+  'confirmed-round': number,
+  'application-index'?: number,
+};
 type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,
@@ -316,14 +311,11 @@ export const getTxnParams = async (): Promise<TxnParams> => {
       return params;
     }
     debug(`...but firstRound is 0, so let's wait and try again.`);
-    await client.statusAfterBlock(1);
+    await client.statusAfterBlock(1).do();
   }
 };
 
-// XXX
-type TXN = any;
-
-function regroup(thisAcc: NetworkAccount, txns: Array<Txn>): Array<TXN> {
+function regroup(thisAcc: NetworkAccount, txns: Array<Transaction>): Array<Transaction> {
   // Sorry this is so dumb.
   // Basically, if these go thru AlgoSigner,
   // it will mangle them,
@@ -469,7 +461,7 @@ const clean_for_AlgoSigner = (txnOrig: any) => {
 const sign_and_send_sync = async (
   label: string,
   networkAccount: NetworkAccount,
-  txn: Txn,
+  txn: Transaction,
 ): Promise<TxnInfo> => {
   const txn_s = await signTxn(networkAccount, txn);
   try {
@@ -559,7 +551,7 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const doQuery_ = async (dhead:string, query: ApiCall<any>, alwaysRetry: boolean = false): Promise<any> => {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
   debug(dhead, '--- QUERY =', query);
   let retries = 10;
   let res;
@@ -577,6 +569,7 @@ const doQuery_ = async (dhead:string, query: ApiCall<any>, alwaysRetry: boolean 
       await Timeout.set(500);
     }
   }
+  if (!res) { throw Error(`impossible: query res is empty`); }
   debug(dhead, '--- RESULT =', res);
   return res;
 };
@@ -854,7 +847,7 @@ const makeTransferTxn = (
   ps: TxnParams,
   closeTo: Address|undefined = undefined,
   tag: number|undefined = undefined,
-): Txn => {
+): Transaction => {
   const valuen = bigNumberToBigInt(value);
   const note = NOTE_Reach_tag(tag);
   const txn =
@@ -887,7 +880,7 @@ export const transfer = async (
     txn);
 };
 
-async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Promise<STX> {
+async function signTxn(networkAccount: NetworkAccount, txnOrig: Transaction): Promise<STX> {
   const {sk, AlgoSigner} = networkAccount;
   if (sk && !AlgoSigner) {
     const tx = txnOrig.signTxn(sk);
@@ -943,7 +936,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Prom
 
 const makeIsMethod = (i:number) => (txn:any): boolean =>
   txn['application-transaction']['application-args'][0] === base64ify([i]);
-        
+
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
   const s: string = Buffer.from(x, 'base64').toString('hex');
@@ -1093,7 +1086,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if ( hasMaps ) { await ensureOptIn(); }
       const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
 
-      const sign_escrow = async (txn: Txn): Promise<STX> => {
+      const sign_escrow = async (txn: Transaction): Promise<STX> => {
         const tx_obj = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
         return {
           tx: tx_obj.blob,
@@ -1102,7 +1095,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         };
       };
       const sign_me =
-        async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
+        async (x: Transaction): Promise<STX> => await signTxn(thisAcc, x);
 
       while ( true ) {
         const params = await getTxnParams();
@@ -1122,8 +1115,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, '--- ASSEMBLE w/', params);
 
         let extraFees: number = 0;
-        type Signer = (x:Txn) => Promise<STX>;
-        const txnExtraTxns: Array<Txn> = [];
+        type Signer = (x: Transaction) => Promise<STX>;
+        const txnExtraTxns: Array<Transaction> = [];
         const txnExtraTxns_signers: Array<Signer> = [];
         let sim_i = 0;
         const processSimTxn = (t: SimTxn) => {
@@ -1234,7 +1227,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txnExtraTxns_s =
           await Promise.all(
             txnExtraTxns.map(
-              async (t: Txn, i:number): Promise<STX> =>
+              async (t: Transaction, i:number): Promise<STX> =>
                 await txnExtraTxns_signers[i](t)
         ));
 
