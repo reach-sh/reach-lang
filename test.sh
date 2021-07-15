@@ -146,6 +146,7 @@ tealcount () {
 # fc hs/t/n/pr-671006p.rsh
 # c hs/t/y/pr190.rsh
 # c hs/t/y/pr190b.rsh
+c hs/t/y/pr206.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -190,8 +191,8 @@ tealcount () {
 # r examples/nft-dumb
 # r examples/workshop-fomo
 # r examples/workshop-trust-fund
-r examples/object-digest
-r examples/view-map
+# r examples/object-digest
+# r examples/view-map
 # r examples/nim
 # r examples/overview
 # r examples/popularity-contest

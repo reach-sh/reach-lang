@@ -337,6 +337,12 @@ readVars = do
   vsr <- ce_vars <$> ask
   S.toAscList <$> (liftIO $ readIORef vsr)
 
+addVars :: SrcLoc -> CTail -> CApp CTail
+addVars at k = do
+  udvs <- readVars
+  let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
+  return $ foldl' add_udv_def k udvs
+
 -- End-point Construction
 
 itsame :: SLPart -> EApp Bool
@@ -569,7 +575,7 @@ be_c = \case
           (k'c, k'l) <- inKont $ be_c k
           setHandler kontj $ do
             kont_svs <- ce_readSave kontsp
-            C_Loop at kont_svs [] <$> k'c
+            C_Loop at kont_svs [] <$> (addVars at =<< k'c)
           inLoop $ fg_saves $ kontsp
           let gk = CT_Jump at kontj <$> ce_readSave kontsp <*> pure mempty
           return (gk, k'l)
@@ -589,7 +595,7 @@ be_c = \case
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     setHandler this_loopj $ do
       loop_svs <- ce_readSave this_loopsp
-      loopc <- (liftIO . optimize) =<< loop_top
+      loopc <- (liftIO . optimize) =<< addVars at =<< loop_top
       return $ C_Loop at loop_svs loop_vars loopc
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
@@ -655,10 +661,7 @@ be_s = \case
             be_c ok_c
     setHandler this_h $ do
       svs <- ce_readSave prev
-      ok_c' <- ok_c'm
-      udvs <- readVars
-      let add_udv_def uk udv = CT_Com (DL_Var at udv) uk
-      let ok_c'' = foldl' add_udv_def ok_c' udvs
+      ok_c'' <- addVars at =<< ok_c'm
       return $ C_Handler at int_ok last_time_mv from_v prev svs msg_vs time_v ok_c''
     -- It is only a solo send if we are the only sender AND we are not a
     -- class

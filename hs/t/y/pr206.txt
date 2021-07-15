@@ -1,0 +1,9 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "HandcraftedFeeAcct" is honest
+  Verifying when ONLY "HandcraftedTaxAcct" is honest
+  Verifying when ONLY "Merchant" is honest
+  Verifying when ONLY "PotentialBuyer" is honest
+Checked 156 theorems; No failures!
