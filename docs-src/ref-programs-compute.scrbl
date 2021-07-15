@@ -361,7 +361,7 @@ A spread expression (@reachin{...expr}) may appear in the list of operands to a 
 @(mint-define! '("new"))
 @reachin{new f(a)} is equivalent to @reachin{f.new(a)} and is a convenient short-hand for writing class-oriented programs.
 
-@subsection{Types}
+@subsection[#:tag "ref-programs-types"]{Types}
 
 Reach's @deftech{type}s are represented with programs by the following identifiers and constructors:
 

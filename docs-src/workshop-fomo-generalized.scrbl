@@ -38,6 +38,7 @@ Let's compare answers for how funds should change ownership in this generalized 
 The data type representation of this program will basically be the same as the
 regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
 @reachin{Address}, we will track the last @tt{N} Buyers as an @reachin{Array(Address, N)}.
+@(drstep-dd-datatype-mn)
 
 You should take the time now to fill out the interaction interface for the participants.
 

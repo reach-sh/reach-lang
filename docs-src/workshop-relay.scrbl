@@ -64,6 +64,7 @@ Which pieces of information go with which participants?
 Which are functions and which are values?
 Finally, how should the Relay account information and Bob's identity be represented?
 (Hint: Reach has a type named @reachin{Address} that represents an account @tech{address}!)
+@(drstep-dd-datatype-mn)
 
 @(drstep-dd-stop)
 

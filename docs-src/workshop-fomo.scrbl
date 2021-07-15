@@ -63,6 +63,7 @@ in the program:
   @item{What data type will represent the ticket price set by the Funder?}
   @item{What data type will represent the Buyer's decision to purchase a ticket?}
 ]
+@(drstep-dd-datatype-mn)
 
 Now that we've decided what data types to use, we need to determine how the programs will obtain this information. We need to outline the @tech{participant interact interface} for each participant.
 

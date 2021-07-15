@@ -102,6 +102,8 @@
   @section[#:tag (format "~a-pr" t)]{Problem Analysis})
 (define (drstep-dd t)
   @section[#:tag (format "~a-dd" t)]{Data Definition})
+(define (drstep-dd-datatype-mn)
+  @margin-note{Refer to @secref["ref-programs-types"] for a reminder of what data types are available in Reach.})
 (define (drstep-cc t)
   @section[#:tag (format "~a-cc" t)]{Communication Construction})
 (define (drstep-ai t)

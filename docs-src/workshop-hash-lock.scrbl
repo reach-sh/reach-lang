@@ -60,6 +60,7 @@ So, for this program, we should decide:
  @item{What data type will represent the amount Alice transfers?}
  @item{What data type will represent Alice's password?}
 ]
+@(drstep-dd-datatype-mn)
 
 After deciding those things, you should think about how the program will be provided this values.
 In other words:
