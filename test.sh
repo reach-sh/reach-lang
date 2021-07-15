@@ -46,7 +46,7 @@ r () {
 
   jb
 
-  # export REACH_DEBUG=1
+  export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
@@ -188,6 +188,10 @@ tealcount () {
 # r examples/multisig
 # r examples/nft-auction
 # r examples/nft-dumb
+# r examples/workshop-fomo
+# r examples/workshop-trust-fund
+r examples/object-digest
+r examples/view-map
 # r examples/nim
 # r examples/overview
 # r examples/popularity-contest
@@ -225,7 +229,7 @@ tealcount () {
 # r users/ff
 # exit 0
 
-r examples/mint-basic
+# r examples/mint-basic
 # r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)

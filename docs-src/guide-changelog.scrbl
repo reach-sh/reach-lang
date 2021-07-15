@@ -10,21 +10,21 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
-@item{2021/07/01: Minted tokens must be destroyed by end of application.}
-@item{2021/07/01: Token minting support added to Algorand.}
-@item{2021/07/01: Token URL metadata increased to 96 bytes.}
-@item{2021/07/01: Algorand @reachin{digest} switched to SHA256 (to save compute cost).}
-@item{2021/07/01: Algorand connector updated to AVM 0.9 (TEAL version 4)}
-@item{2021/07/01: Algorand devnet version updated to 2.7.1, plus @litchar{DevMode} patch}
-@item{2021/07/01: Algorand devnet image renamed to @litchar{devnet-algo}}
-@item{2021/07/01: version tagged}
+@item{2021/07/14: Minted tokens must be destroyed by end of application.}
+@item{2021/07/14: Token minting support added to Algorand.}
+@item{2021/07/14: Token URL metadata increased to 96 bytes.}
+@item{2021/07/14: Algorand @reachin{digest} switched to SHA256 (to save compute cost).}
+@item{2021/07/14: Algorand connector updated to AVM 0.9 (TEAL version 4)}
+@item{2021/07/14: Algorand devnet version updated to 2.7.1, plus @litchar{DevMode} patch}
+@item{2021/07/14: Algorand devnet image renamed to @litchar{devnet-algo}}
+@item{2021/07/14: version tagged}
 ]
 
 @section[#:style 'hidden-number]{0.1.2: 2020/09 - 2021/07}
 
 Version 0.1.2 is the current Reach release version.
 
-It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the standard library.
+It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 
 @itemlist[
 @item{2021/07/09: @reachin{.define} component added to @reachin{parallelReduce}}
