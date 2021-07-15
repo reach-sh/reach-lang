@@ -44,9 +44,9 @@ r () {
   make build
   # make down
 
-  jb
+  # jb
 
-  export REACH_DEBUG=1
+  # export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
@@ -208,7 +208,7 @@ tealcount () {
 # r examples/tut-6
 # r examples/tut-5-attack
 # r examples/tut-7 # XXX test debigger
-# r examples/tut-8
+r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
 # r examples/view-bytes
@@ -228,7 +228,8 @@ tealcount () {
 # r examples/pr-1cc66
 
 # r users/ff
-r users/7639df8
+# r users/7639df8
+# r users/eb68c3d
 # exit 0
 
 # r examples/mint-basic

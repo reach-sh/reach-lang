@@ -83,16 +83,7 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
-type Hash = string;
-
-type ContractInfo = {
-  address: Address,
-  creation_block: number,
-  transactionHash: Hash,
-  init?: ContractInitInfo,
-};
-
-
+type ContractInfo = Address;
 type Digest = string
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
@@ -423,12 +414,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(shad, `: waiting for receipt:`, contract.deployTransaction.hash);
         const deploy_r = await contract.deployTransaction.wait();
         debug(shad, `: got receipt;`, deploy_r.blockNumber);
-        const info: ContractInfo = {
-          address: contract.address,
-          creation_block: deploy_r.blockNumber,
-          transactionHash: deploy_r.transactionHash,
-          init,
-        };
+        const info: ContractInfo = contract.address;
+        // XXX creation_block: deploy_r.blockNumber,
+        // XXX transactionHash: deploy_r.transactionHash,
         resolveInfo(info);
       })();
 
@@ -493,21 +481,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
   const attach = (
     bin: Backend,
-    infoP: ContractInfo | Promise<ContractInfo>,
+    infoP: Promise<ContractInfo>,
   ): Contract => {
-    // unofficially: infoP can also be Contract
-    // This should be considered deprecated
-    // TODO: remove at next Reach version bump?
-    // @ts-ignore
-    if (infoP.getInfo) {
-      console.log(
-        `Calling attach with another Contract is deprecated.`
-        + ` Please replace accBob.attach(backend, ctcAlice)`
-        + ` with accBob.attach(bin, ctcAlice.getInfo())`
-      );
-      // @ts-ignore
-      infoP = infoP.getInfo();
-    }
     ensureConnectorAvailable(bin._Connectors, 'ETH');
 
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
@@ -521,9 +496,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       const getLastBlock = async (): Promise<number> => {
         if (typeof lastBlock === 'number') { return lastBlock; }
-        const info = await infoP;
-        setLastBlock(info.creation_block);
-        return info.creation_block;
+        // This causes lastBlock to be set
+        await getC();
+        return await getLastBlock();
       }
       return {getLastBlock, setLastBlock};
     })();
@@ -536,18 +511,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       setLastBlock(o.blockNumber);
     };
 
+    let theCreationTime: number|undefined = undefined;
     const getC = (() => {
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
-        await verifyContract(info, bin);
+        const { creation_block } = await verifyContract(info, bin);
+        theCreationTime = creation_block;
+        setLastBlock(creation_block);
+        const address = info;
         debug(shad, `: contract verified`);
         if (!ethers.Signer.isSigner(networkAccount)) {
           throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
         }
         // TODO: remove "as" when we figure out how to type the interface for ctors
-        _ethersC = new ethers.Contract(info.address, ABI, networkAccount) as EthersLikeContract;
+        _ethersC = new ethers.Contract(address, ABI, networkAccount) as EthersLikeContract;
         return _ethersC;
       }
     })();
@@ -820,8 +799,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return p;
     }
 
-    const creationTime = async () =>
-      bigNumberify((await getInfo()).creation_block);
+    const creationTime = async () => {
+      await getC();
+      // @ts-ignore
+      return bigNumberify(theCreationTime);
+    };
 
     const viewlib: IViewLib = {
       viewMapRef: async (...args: any): Promise<any> => {
@@ -969,136 +951,66 @@ const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Pr
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
-// * it was deployed at exactly creation_block.
-// Throws an Error if any verifications fail
-const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
+type VerifyResult = {
+  creation_block: number,
+};
+const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const { address, creation_block, transactionHash, init } = ctcInfo;
-  const { argsMay } = initOrDefaultArgs(init);
+  const address = ctcInfo;
   const factory = new ethers.ContractFactory(ABI, Bytecode);
-  debug('verifyContract:', address)
-  debug(ctcInfo);
+  debug('verifyContract', {address});
 
-  debug('verifyContract: checking for receipt by txn hash', transactionHash);
-  // This await is to make sure we've given time for the ctc to actually deploy
-  // https://github.com/reach-sh/reach-lang/issues/134
-  // TODO: check stuff on the receipt?
-  const r = await fetchAndRejectInvalidReceiptFor(transactionHash);
-  debug('verifyContract: got receipt', r);
+  const chk = (p: boolean, msg: string) => {
+    if ( !p ) {
+      throw Error(`verifyContract failed: ${msg}`);
+    }
+  };
+  const chkeq = (a: any, e:any, msg:string) => {
+    const as = JSON.stringify(a);
+    const es = JSON.stringify(e);
+    chk(as === es, `${msg}: expected ${es}, got ${as}`);
+  };
 
   const provider = await getProvider();
-  const maxTries = isIsolatedNetwork() ? 1 : 2; // TODO: fine-tune the number of tries?
-  let logs: Log[] = [];
-  let now: number = 0;
-  for (let tries = 0; logs.length < 1 && tries < maxTries; tries++) {
-    if (tries > 0) {
-      const waitTillBlock = Math.max(now, creation_block) + 1;
-      debug(
-        'Failed to fetch logs. Waiting some more before we try again',
-        {tries, creation_block, now, waitTillBlock},
-      );
-      // Let logs show up by just waiting for another block
-      // https://github.com/reach-sh/reach-lang/issues/134
-      await waitUntilTime(bigNumberify(waitTillBlock));
-    }
-    now = await getNetworkTimeNumber();
+  const now = await getNetworkTimeNumber();
+  const deployEvent = 'e0';
+  debug('verifyContract: getLogs', {deployEvent, now});
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
+  // "Keep in mind that many backends will discard old events"
+  // TODO: find another way to validate creation block if much time has passed?
+  const logs = await provider.getLogs({
+    fromBlock: 0,
+    toBlock: now,
+    address: address,
+    topics: [factory.interface.getEventTopic(deployEvent)],
+  });
+  debug('verifyContract', logs);
+  chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
+  const creation_block = logs[0].blockNumber;
 
-    const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
-    debug('verifyContract: checking logs for', deployEvent, 'from', creation_block, 'to', now, '...');
-    // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
-    // "Keep in mind that many backends will discard old events"
-    // TODO: find another way to validate creation block if much time has passed?
-    logs = await provider.getLogs({
-      fromBlock: creation_block,
-      toBlock: now,
-      address: address,
-      topics: [factory.interface.getEventTopic(deployEvent)],
-    });
-  }
-  if (logs.length < 1) {
-    throw Error(`Contract was claimed to be deployed at ${creation_block},`
-     + ` but the current block is ${now} and it hasn't been deployed yet.`
-    );
-  }
+  if (!_verifyContractCode) {
+    console.log(`WARNING: Do not trust this contract, we have not verified its bytecode`);
+  } else {
+    debug(`verifyContract: checking code...`);
+    // From https://github.com/ConsenSys/bytecode-verifier/blob/78d7f9703092e5a8e70f5b68204924c380311bc5/src/verifier.js
+    const SWARM_INFO_START = 'a165627a7a72305820';
+    const actual_raw = await provider.getCode(address);
+    const actual_ep = actual_raw.search(SWARM_INFO_START);
+    const actual = actual_raw.slice(0,actual_ep);
 
-  const log = logs[0];
-  if (log.blockNumber !== creation_block) {
-    throw Error(
-      `Contract was deployed at blockNumber ${log.blockNumber},`
-      + ` but was claimed to be deployed at ${creation_block}.`
-    );
-  }
+    const expected_raw = Bytecode;
+    const expected_sp = expected_raw.lastIndexOf('6080604052');
+    const expected_ep = expected_raw.search(SWARM_INFO_START);
+    const expected = '0x' + expected_raw.slice(expected_sp, expected_ep);
 
-  if (!_verifyContractCode) return true;
-
-  debug(`verifyContract: checking code...`)
-  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
-  // We can safely getCode at the current block;
-  // Reach programs don't change their ETH code over time.
-  const actual = await provider.getCode(address);
-
-  // XXX should this also pass {value}, like factory.deploy() does?
-  const deployData = factory.getDeployTransaction(...argsMay).data;
-  if (typeof deployData !== 'string') {
-    // TODO: could also be Ethers.utils.bytes, apparently? Or undefined... why?
-    throw Error(`Impossible: deployData is not string ${deployData}`);
-  }
-  if (!deployData.startsWith(backend._Connectors.ETH.Bytecode)) {
-    throw Error(`Impossible: contract with args is not prefixed by backend Bytecode`);
-  }
-
-  // FIXME this is based on empirical observation, feels hacky
-  // deployData looks like this: [init][setup][body][teardown]
-  // actual looks like this:     [init][body]
-  // XXX the labels "init", "setup", and "teardown" are probably misleading
-  // FIXME: for 0-arg contract deploys, it appears that:
-  // * "init" is of length 13
-  // * "setup" is not consistent in content, but is of length 156
-  // * "teardown" is of length 0
-  // FIXME: for n-arg contract deploys, it appears that:
-  // * "init" is of length 13
-  // * "setup" is of length >= 0 (and probably >= 156)
-  // * "teardown" is of length >= 0
-  const initLen = 13;
-  const setupLen = 156;
-  const expected = deployData.slice(0, initLen) + deployData.slice(initLen + setupLen);
-
-  if (expected.length <= 0) {
-    throw Error(`Impossible: contract expectation is empty`);
-  }
-
-  if (actual !== expected) {
-    // FIXME: Empirical observation says that 0-arg contract deploys
-    // should === expected. However, this is fragile (?), so it's ok
-    // to only pass the next check.
-
-    // FIXME: the 13-char header is also fragile, but we're just
-    // running with that assumption for now.
-
-    const deployNoInit = deployData.slice(initLen);
-    const actualNoInit = actual.slice(initLen);
-    if (actualNoInit.length === 0 || !deployNoInit.includes(actualNoInit)) {
-      // FIXME: this display is not so helful for the n-arg contract deploy case.
-      const displayLen = 60;
-      console.log('--------------------------------------------');
-      console.log('expected start: ' + expected.slice(0, displayLen));
-      console.log('actual   start: ' + actual.slice(0, displayLen));
-      console.log('--------------------------------------------');
-      console.log('expected   end: ' + expected.slice(expected.length - displayLen));
-      console.log('actual     end: ' + actual.slice(actual.length - displayLen));
-      console.log('--------------------------------------------');
-      console.log('expected   len: ' + expected.length);
-      console.log('actual     len: ' + actual.length);
-      console.log('--------------------------------------------');
-      throw Error(`Contract bytecode does not match expected bytecode.`);
-    }
+    chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
   }
 
   // We are not checking the balance or the contract storage, because we know
   // that the code is correct and we know that the code mandates the way that
   // those things are initialized
 
-  return true;
+  return { creation_block };
 };
 
 /**
