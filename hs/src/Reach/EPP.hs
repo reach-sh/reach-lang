@@ -434,8 +434,8 @@ be_t :: BAppT2 DLTail
 be_t = \case
   DT_Return at -> retb0 $ const $ return $ DT_Return at
   DT_Com m k -> do
-    m'p <- be_m m
     k'p <- be_t k
+    m'p <- be_m m
     retb2
       m'p
       k'p
@@ -500,7 +500,11 @@ be_c = \case
     let remember_toks = local (\e -> e {be_toks = toks <> be_toks e})
     (k'c, k'l) <- remember_toks $ be_c k
     (c'c, c'l) <- withConsensus True $ be_m c
-    return $ (,) (mkCom CT_Com <$> c'c <*> k'c) (mkCom ET_Com <$> c'l <*> k'l)
+    let backwards f xm ym = do
+          y <- ym
+          x <- xm
+          return $ f x y
+    return $ (,) (backwards (mkCom CT_Com) c'c k'c) (backwards (mkCom ET_Com) c'l k'l)
   LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
     (f'c, f'l) <- be_c f
