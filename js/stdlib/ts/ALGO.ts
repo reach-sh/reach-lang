@@ -975,7 +975,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
       await verifyContract(ctcInfo, bin);
     debug(shad, 'attach', {ApplicationID, allocRound, ctorRound} );
-    let lastRound = ctorRound;
+    let realLastRound = ctorRound;
 
     const escrowAddr = compiled.escrow.hash;
     const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
@@ -1025,7 +1025,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
-      return await waitUntilTime(bigNumberify(lastRound).add(delta));
+      return await waitUntilTime(bigNumberify(realLastRound).add(delta));
     };
 
     const sendrecv = async (
@@ -1108,7 +1108,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const params = await getTxnParams();
         if ( timeout_delay ) {
           const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
-          params.lastRound = lastRound + tdn;
+          params.lastRound = realLastRound + tdn;
           debug(dhead, '--- TIMECHECK', { params, timeout_delay, tdn });
           // We add one, because the firstRound field is actually the current
           // round, which we couldn't possibly be in, because it already
@@ -1279,8 +1279,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       waitIfNotPresent: boolean,
       timeout_delay: false | BigNumber,
     ): Promise<Recv> => {
-      // Ignoring this, because no ALGO dev node
-      void(waitIfNotPresent);
       const indexer = await getIndexer();
 
       const funcName = `m${funcNum}`;
@@ -1289,7 +1287,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       const timeoutRound =
         timeout_delay ?
-        lastRound + timeout_delay.toNumber() :
+        realLastRound + timeout_delay.toNumber() :
         undefined;
 
       while ( true ) {
@@ -1299,7 +1297,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // Look at the next one after the last message
           // XXX when we implement firstMsg, this won't work on the first
           // message
-          .minRound(lastRound + 1);
+          .minRound(realLastRound + 1);
         if ( timeoutRound ) {
           query = query.maxRound(timeoutRound);
         }
@@ -1312,7 +1310,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
             return { didTimeout: true };
           }
-          await indexer_statusAfterBlock(currentRound + 1);
+          if ( waitIfNotPresent ) {
+            await waitUntilTime(bigNumberify(currentRound + 1));
+          } else {
+            await indexer_statusAfterBlock(currentRound + 1);
+          }
           continue;
         }
         const txn = res.txn;
@@ -1354,9 +1356,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           T_Address.canonicalize({addr: fromAddr});
         debug(dhead, '--- from =', from, '=', fromAddr);
 
-        const oldLastRound = lastRound;
-        lastRound = theRound;
-        debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', lastRound);
+        const oldLastRound = realLastRound;
+        realLastRound = theRound;
+        debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', realLastRound);
 
         let tokenNews = 0;
         const getOutput = async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
@@ -1380,7 +1382,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return {
           didTimeout: false,
           data: args_un,
-          time: bigNumberify(lastRound),
+          time: bigNumberify(realLastRound),
           from, getOutput,
         };
       }

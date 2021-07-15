@@ -39,7 +39,7 @@ r () {
   ${REACH} compile --install-pkgs
   ${REACH} compile
 
-  tealcount1 .
+  # tealcount1 .
 
   make build
   # make down
@@ -146,7 +146,7 @@ tealcount () {
 # fc hs/t/n/pr-671006p.rsh
 # c hs/t/y/pr190.rsh
 # c hs/t/y/pr190b.rsh
-c hs/t/y/pr206.rsh
+# c hs/t/y/pr206.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -228,6 +228,7 @@ c hs/t/y/pr206.rsh
 # r examples/pr-1cc66
 
 # r users/ff
+r users/7639df8
 # exit 0
 
 # r examples/mint-basic
