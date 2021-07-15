@@ -75,8 +75,11 @@ const NUM_TRADERS = 2;
         Object.keys(traded).every(k => traded[k] == true);
       return { when: everyoneWent, msg: null };
     },
-    inform: (x, tokAAmt, tokBAmt) => {
+    depositDone: (x, tokAAmt, tokBAmt) => {
       console.log("\x1b[34m", `Admin received ${x} pool tokens for their deposit of ${tokAAmt} ZMD & ${tokBAmt} GIL`,'\x1b[0m');
+    },
+    withdrawDone: (tokAAmt, tokBAmt) => {
+      console.log("\x1b[34m", `Admin withdrew ${tokAAmt} ZMD & ${tokBAmt} GIL`,'\x1b[0m');
     }
   });
 

@@ -53,7 +53,6 @@ export const main = Reach.App(() => {
   const Provider = ParticipantClass('Provider', ProviderInterface);
 
   const Admin = Participant('Admin', {
-    ...ProviderInterface,
     tokA: Token,
     tokAAmt: UInt,
     tokB: Token,
@@ -62,7 +61,8 @@ export const main = Reach.App(() => {
       when: Bool,
       msg : Null,
     })),
-    inform: Fun([UInt, UInt, UInt], Null),
+    depositDone: Fun([UInt, UInt, UInt], Null),
+    withdrawDone: Fun([UInt, UInt], Null),
   });
 
   const Trader = ParticipantClass('Trader', {
@@ -108,7 +108,7 @@ export const main = Reach.App(() => {
   const initMint_ = s18(initMint);
   // Payout admin geometric mean
   transfer(initMint_, pool).to(Admin);
-  Admin.interact.inform(initMint_, tokAAmt, tokBAmt);
+  Admin.interact.depositDone(initMint_, tokAAmt, tokBAmt);
 
   // Calculates how many LP tokens to mint
   const mint = (amtIn, bal, poolMinted) => {
@@ -133,6 +133,7 @@ export const main = Reach.App(() => {
         };
       })
       .invariant(balance() == 0 && constantProduct())
+      // alive || poolMinted > 0 takes too long to verify
       .while(alive)
       .paySpec([ pool, tokA, tokB ])
       .case(Admin,
@@ -266,6 +267,7 @@ export const main = Reach.App(() => {
         return [ false, market, poolMinted ]; });
 
   pool.burn(balance(pool));
+  Admin.interact.withdrawDone(balance(tokA), balance(tokB));
   transfer(balance(tokA), tokA).to(Admin);
   transfer(balance(tokB), tokB).to(Admin);
   commit();
