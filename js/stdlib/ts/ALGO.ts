@@ -873,12 +873,13 @@ export const transfer = async (
   to: Account,
   value: any,
   token: Token|undefined = undefined,
+  tag: number|undefined = undefined,
 ): Promise<TxnInfo> => {
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
-  const txn = makeTransferTxn(sender.addr, receiver, valuebn, token, ps);
+  const txn = makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag);
 
   return await sign_and_send_sync(
     `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuebn}`,
@@ -1593,7 +1594,9 @@ export const createAccount = async (): Promise<Account> => {
 
 export const fundFromFaucet = async (account: Account, value: any) => {
   const faucet = await getFaucet();
-  await transfer(faucet, account, value);
+  debug('fundFromFaucet');
+  const tag = Math.round(Math.random() * (2 ** 32));
+  await transfer(faucet, account, value, undefined, tag);
 };
 
 export const newTestAccount = async (startingBalance: any) => {
