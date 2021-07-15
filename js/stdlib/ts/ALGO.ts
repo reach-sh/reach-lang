@@ -1627,6 +1627,29 @@ const raw_minimumBalance = 100000;
 export const minimumBalance: BigNumber =
   bigNumberify(raw_minimumBalance);
 
+// lol I am not importing leftpad for this
+/** @example lpad('asdf', '0', 6); // => '00asdf' */
+function lpad(str: string, padChar: string, nChars: number) {
+  const padding = padChar.repeat(Math.max(nChars - str.length, 0));
+  return padding + str;
+}
+
+/** @example rdrop('asfdfff', 'f'); // => 'asfd' */
+function rdrop(str: string, char: string) {
+  while (str[str.length - 1] === char) {
+    str = str.slice(0, str.length - 1);
+  }
+  return str;
+}
+
+/** @example ldrop('007', '0'); // => '7' */
+function ldrop(str: string, char: string) {
+  while (str[0] === char) {
+    str = str.slice(1);
+  }
+  return str;
+}
+
 /**
  * @description  Format currency by network
  * @param amt  the amount in the {@link atomicUnit} of the network.
@@ -1635,18 +1658,23 @@ export const minimumBalance: BigNumber =
  *   This argument defaults to maximum precision.
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
+ * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
 export function formatCurrency(amt: any, decimals: number = 6): string {
-  // Recall that 1 algo = 10^6 microalgos
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-  // Use decimals+1 and then slice it off to truncate instead of round
-  const algosStr = algosdk
-    .microalgosToAlgos(bigNumberify(amt).toNumber())
-    .toFixed(decimals+1);
-  // Have to roundtrip thru Number to drop trailing zeroes
-  return Number(algosStr.slice(0, algosStr.length - 1)).toString();
+  const amtStr = amt.toString();
+  const splitAt = Math.max(amtStr.length - 6, 0);
+  const lPredropped = amtStr.slice(0, splitAt);
+  const l = ldrop(lPredropped, '0') || '0';
+  if (decimals === 0) { return l; }
+
+  const rPre = lpad(amtStr.slice(splitAt), '0', 6);
+  const rSliced = rPre.slice(0, decimals);
+  const r = rdrop(rSliced, '0');
+
+  return r ? `${l}.${r}` : l;
 }
 
 // XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
