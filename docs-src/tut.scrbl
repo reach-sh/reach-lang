@@ -1574,7 +1574,7 @@ y
 Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
-{"address":"0xc2a875afbdFb39b1341029A7deceC03750519Db6","creation_block":18,"args":[],"value":{"type":"BigNumber","hex":"0x00"},"creator":"0x2486Cf6C788890885D71667BBCCD1A783131547D"}
+"0xc2a875afbdFb39b1341029A7deceC03750519Db6"
 Your balance is 1000
 Do you accept the wager of 10?
 y

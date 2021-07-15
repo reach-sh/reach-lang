@@ -204,7 +204,7 @@ export const providerLib = {
   getSignStrategy,
   setSignStrategy,
 }
-export const _verifyContractCode = false; // XXX
+export const _verifyContractCode = true;
 export const _warnTxNoBlockNumber = false; // XXX ?
 export const standardUnit = 'CFX';
 export const atomicUnit = 'Drip';

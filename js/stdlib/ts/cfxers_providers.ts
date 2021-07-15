@@ -64,6 +64,10 @@ export class Provider {
     return ethifyOkReceipt(r);
   }
 
+  async getCode(address: string, defaultEpoch: EpochNumber | undefined = undefined): Promise<string> {
+    return await this.conflux.getCode(address, defaultEpoch);
+  };
+
   on(...argz: any) {
     void(argz);
     throw Error(`on not yet implemented`);
