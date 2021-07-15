@@ -19,7 +19,8 @@ COPY package.json /stdlib/
 RUN npm link
 
 COPY ts /stdlib/ts
-COPY types /stdlib/types
+# uncomment if we ever need custom types again
+# COPY types /stdlib/types
 
 # We need .gitignore for eslint, weirdly
 COPY tsconfig*.json \
