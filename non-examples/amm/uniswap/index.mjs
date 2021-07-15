@@ -70,11 +70,9 @@ const NUM_TRADERS = 2;
     tokA: zmd.id,
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
-      const everyoneWent = Object.keys(withdrew).every(k => {
-        // console.log(withdrew, k, withdrew[k]);
-        return withdrew[k] == true;
-      });
-      // console.log(`Admin will ${everyoneWent ? '' : 'not '}close pool`);
+      const everyoneWent =
+        Object.keys(withdrew).every(k => withdrew[k] == true) &&
+        Object.keys(traded).every(k => traded[k] == true);
       return { when: everyoneWent, msg: null };
     },
     inform: (x, tokAAmt, tokBAmt) => {
