@@ -390,6 +390,9 @@ You should start off by initializing your Reach program:
 (define (note-ctransfer)
   @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.})
 
+(define (note-view-xref)
+  @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. They are @seclink["ref-frontends-js-view"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.})
+
 (define (error-version #:from [from #f] #:to [to #f])
  (cond
   [(and from to)

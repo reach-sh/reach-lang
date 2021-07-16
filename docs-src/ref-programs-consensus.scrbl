@@ -25,13 +25,14 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 @secref["ref-programs-only-step"] are allowed in @tech{consensus steps} and are executed by @tech{backends} once they observe the completion of the @tech{consensus step} (i.e., after the associated @tech{commit statement}.)
 
 @subsection[#:tag "ref-programs-consensus-view"]{View Objects}
+@(note-view-xref)
 
 @reach{
   vNFT.owner.set(creator);
 }
 
 If @reachin{VIEW} is a @deftech{view object}, then its fields are the elements of the associated @tech{view}.
-Each of these fields are bound to an object with an @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps dominated by the current step (unless otherwise overridden.)
+Each of these fields are bound to an object with an @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps @tech{dominated} by the current step (unless otherwise overridden.)
 If this function is not provided with an argument, then the corresponding @tech{view} is unset.
 
 For example, consider the following program:
@@ -114,7 +115,7 @@ A @tech{continue statement} may be written without the preceding identifier upda
  [] = [];
  continue; }
 
-A @tech{continue statement} must be dominated by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
+A @tech{continue statement} must be @tech{dominated} by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
 @subsection{@tt{parallelReduce}}

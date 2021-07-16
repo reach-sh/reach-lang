@@ -110,7 +110,8 @@ Each @reachin{participantName} must be unique.
 
 @reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
 
-@subsection{View Definition}
+@subsection[#:tag "ref-programs-appinit-view"]{View Definition}
+@(note-view-xref)
 
 @(mint-define! '("View"))
 @reach{

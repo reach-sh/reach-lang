@@ -36,7 +36,7 @@ The rest of this section is structured according to the contexts of the differen
 @figure["fig:app-steps" @elem{The modes of a Reach application}
   ]{@image["images/reference/StepDiagram.png" #:style "fig"]}
 
-@section[#:tag "ref-programs-valid"]{Validity}
+@section[#:tag "ref-programs-valid"]{Validity and other concepts}
 
 Reach imposes further restrictions on syntactically well-formed programs.
 These restrictions are described throughout this manual using the term @deftech{valid} to refer to constructions that obey the restrictions,
@@ -67,6 +67,27 @@ Consequently, identifiers which appear inside of a
 MAY be prefixed by an underscore.
 This will cause a compiler error if any value bound to that
 identifier is public.
+
+@subsection{Domination}
+
+A term Y is said to be "@deftech{dominated}" by a term X if all paths in the control-flow graph of the application from the root to Y pass through X.
+In most cases, this corresponds to "X appears above Y at the same or lower level of indentation" in the program source code.
+
+For example, in the following program:
+
+@reach{
+ f();
+ if ( p() ) {
+  g();
+ } else {
+  h();
+ }
+ m();
+}
+
+@reachin{f} dominates @reachin{p}, @reachin{g}, @reachin{h}, and @reachin{m}.
+But no other term dominates any other term.
+In particular, @reachin{g} does not dominate @reachin{m} because it is possible to reach @reachin{m} without going through @reachin{g}, such as when @reachin{p()} is false.
 
 @include-section["ref-programs-module.scrbl"]
 @include-section["ref-programs-appinit.scrbl"]

@@ -46,10 +46,10 @@ r () {
 
   jb
 
-  # export REACH_DEBUG=1
+  export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=CFX ${REACH} run
+  # REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
@@ -168,7 +168,7 @@ tealcount () {
 # r examples/nim
 # c examples/nim/index-abstract.rsh
 # r examples/secured-loan
-r examples/overview # XXX test debigger
+# r examples/overview # XXX test debigger
 # r examples/log
 # r examples/argz
 # r examples/atomic-swap-auction
@@ -232,7 +232,7 @@ r examples/overview # XXX test debigger
 # r users/eb68c3d
 # exit 0
 
-# r examples/mint-basic
+r examples/mint-basic
 # r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)
