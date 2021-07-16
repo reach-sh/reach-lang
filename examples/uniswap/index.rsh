@@ -54,15 +54,11 @@ export const main = Reach.App(() => {
 
   const Admin = Participant('Admin', {
     tokA: Token,
-    tokAAmt: UInt,
     tokB: Token,
-    tokBAmt: UInt,
     shouldClosePool: Fun([State], Object({
       when: Bool,
       msg : Null,
     })),
-    depositDone: Fun([UInt, UInt, UInt], Null),
-    withdrawDone: Fun([UInt, UInt], Null),
   });
 
   const Trader = ParticipantClass('Trader', {

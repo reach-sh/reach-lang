@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when ONLY "Admin" is honest
   Verifying when ONLY "Provider" is honest
   Verifying when ONLY "Trader" is honest
-Checked 351 theorems; No failures!
+Checked 415 theorems; No failures!
