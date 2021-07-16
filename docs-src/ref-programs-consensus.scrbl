@@ -290,7 +290,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 
 @subsection{Token minting}
 
-@(mint-define! '("burn") '("destroy") '("supply"))
+@(mint-define! '("burn") '("destroy") '("supply") '("destroyed"))
 @reach{
   require(supply >= 2 * amt);
   const tok = new Token({name, symbol, url, metadata, supply});
@@ -298,6 +298,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
   tok.burn(amt);
   assert(tok.supply() == supply - amt);
   tok.burn();
+  assert(tok.destroyed() == false);
   tok.destroy();
 }
 
@@ -327,6 +328,11 @@ In other words, the @tech{token linearity property} applies to these tokens.
 
 @reachin{Token.destroy(tok)}, or @reachin{tok.destroy()}, where @reachin{tok} is a @reachin{Token} value, may be used to destroy the token so that it may never be used again by any users on the @tech{consensus network}.
 This must be called before the application exits.
+
+@(hrule)
+
+@reachin{Token.destroyed(tok)}, or @reachin{tok.destroyed()}, where @reachin{tok} is a @reachin{Token} value, returns whether @reachin{destroy}
+has been called on @reachin{tok} yet.
 
 @(hrule)
 
