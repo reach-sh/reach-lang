@@ -216,7 +216,7 @@ export function closeTo(Who, after = (() => null), nonNetPayAmt = []) {
 
 export const sqrt = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], _) =>
-    (x == 1)
+    (x < 2)
     ? [ x, x ]
     : (x < z)
       ? [ x, ((y / x + x) / 2) ]

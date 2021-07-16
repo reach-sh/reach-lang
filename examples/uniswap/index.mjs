@@ -2,7 +2,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 
-const NUM_PROVIDERS = 2;
+const NUM_PROVIDERS = 3;
 const NUM_TRADERS = 2;
 
 (async () => {
@@ -65,8 +65,6 @@ const NUM_TRADERS = 2;
 
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
-    tokAAmt: stdlib.parseCurrency(20),
-    tokBAmt: stdlib.parseCurrency(10),
     tokA: zmd.id,
     tokB: gil.id,
     shouldClosePool: ([ isAlive, market ]) => {
@@ -75,12 +73,6 @@ const NUM_TRADERS = 2;
         Object.keys(traded).every(k => traded[k] == true);
       return { when: everyoneWent, msg: null };
     },
-    depositDone: (x, tokAAmt, tokBAmt) => {
-      console.log("\x1b[34m", `Admin received ${x} pool tokens for their deposit of ${tokAAmt} ZMD & ${tokBAmt} GIL`,'\x1b[0m');
-    },
-    withdrawDone: (tokAAmt, tokBAmt) => {
-      console.log("\x1b[34m", `Admin withdrew ${tokAAmt} ZMD & ${tokBAmt} GIL`,'\x1b[0m');
-    }
   });
 
 
@@ -110,7 +102,7 @@ const NUM_TRADERS = 2;
       },
       depositMaybe: ([ isAlive, market ]) => {
         if (deposited[who] == false) {
-          const amt = Math.floor(Math.random() * 10) + 1;
+          const amt = Math.floor(Math.random() * 10) + 10;
           const deposit = {
             amtA: stdlib.parseCurrency(amt * 2), // * k
             amtB: stdlib.parseCurrency(amt),

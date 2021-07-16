@@ -1114,6 +1114,7 @@ evalAsEnv obj = case obj of
       M.fromList $
         [ ("burn", delayCall SLPrim_Token_burn)
         , ("destroy", delayCall SLPrim_Token_destroy)
+        , ("destroyed", delayCall SLPrim_Token_destroyed)
         , ("supply", delayCall SLPrim_Token_supply) ]
   SLV_Type ST_Token ->
     return $
@@ -1121,6 +1122,7 @@ evalAsEnv obj = case obj of
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new)
         , ("burn", retV $ public $ SLV_Prim $ SLPrim_Token_burn)
         , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy)
+        , ("destroyed", retV $ public $ SLV_Prim $ SLPrim_Token_destroyed)
         , ("supply", retV $ public $ SLV_Prim $ SLPrim_Token_supply) ]
   SLV_Prim SLPrim_Struct -> return structValueEnv
   SLV_Type (ST_Struct ts) ->
@@ -2094,6 +2096,14 @@ evalPrim p sargs =
           da <- compileCheckType T_Token v
           ensureCreatedToken "Token.supply" da
           lookupBalanceFV FV_supply $ Just da
+        _ -> illegal_args
+      doFluidRef s
+    SLPrim_Token_destroyed -> do
+      s <- case args of
+        [v] -> do
+          da <- compileCheckType T_Token v
+          ensureCreatedToken "Token.destroyed" da
+          lookupBalanceFV FV_destroyed $ Just da
         _ -> illegal_args
       doFluidRef s
     SLPrim_fluid_read fv -> doFluidRef fv
