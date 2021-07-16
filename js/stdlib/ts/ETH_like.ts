@@ -990,14 +990,37 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
   debug(`verifyContract: checking code...`);
   // From https://github.com/ConsenSys/bytecode-verifier/blob/78d7f9703092e5a8e70f5b68204924c380311bc5/src/verifier.js
   const SWARM_INFO_START = 'a165627a7a72305820';
+  const CTOR = '6080604052';
   const actual_raw = await provider.getCode(address);
-  const actual_ep = actual_raw.search(SWARM_INFO_START);
+  const actual_raw_len = actual_raw.length;
+  const actual_ep = actual_raw.indexOf(SWARM_INFO_START);
   const actual = actual_raw.slice(0,actual_ep);
+  const actual_len = actual.length;
 
   const expected_raw = Bytecode;
-  const expected_sp = expected_raw.lastIndexOf('6080604052');
-  const expected_ep = expected_raw.search(SWARM_INFO_START);
+  const expected_raw_len = expected_raw.length;
+  const expected_sp = expected_raw.indexOf(CTOR);
+  const expected_ep = expected_raw.indexOf(SWARM_INFO_START);
   const expected = '0x' + expected_raw.slice(expected_sp, expected_ep);
+  const expected_len = expected.length;
+
+  /*
+  const indexesOf = (x:string, y:string): Array<number> => {
+    const res = [];
+    let i = 0;
+    while ( true ) {
+      const j = x.indexOf(y, i);
+      if ( j === -1 ) { break; }
+      res.push(j);
+      i = j + 1;
+    }
+    return res;
+  };
+  const expected_sps = indexesOf(expected_raw, CTOR);
+  const expected_eps = indexesOf(expected_raw, SWARM_INFO_START);
+  */
+
+  debug({actual_raw_len, actual_len, actual_ep, expected_raw_len, expected_sp, expected_ep, expected_len});
 
   chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
 
