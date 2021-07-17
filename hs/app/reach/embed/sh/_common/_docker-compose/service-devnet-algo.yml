@@ -1,6 +1,6 @@
-algorand-postgres-db:
+devnet-algo-pg:
   image: postgres:11-alpine
-  container_name: algo-postgres-db
+  container_name: devnet-algo-pg
   networks:
     - ${NETWORK}
   labels:
@@ -12,9 +12,9 @@ algorand-postgres-db:
     - POSTGRES_PASSWORD=indexer
     - POSTGRES_DB=pgdb
 
-algorand-devnet:
-  image: reachsh/algorand-devnet:${REACH_VERSION}
-  container_name: algo-devnet
+devnet-algo:
+  image: reachsh/devnet-algo:${REACH_VERSION}
+  container_name: devnet-algo
   networks:
     - ${NETWORK}
   ports:
@@ -24,10 +24,10 @@ algorand-devnet:
     - "sh.reach.dir-tmp=${DIR_TMP_HOST}"
     - "sh.reach.dir-project=${DIR_PROJECT_HOST}"
   depends_on:
-    - algorand-postgres-db
+    - devnet-algo-pg
   environment:
     - REACH_DEBUG
-    - POSTGRES_HOST=algorand-postgres-db
+    - POSTGRES_HOST=devnet-algo-pg
     - POSTGRES_USER=algogrand
     - POSTGRES_PASSWORD=indexer
     - POSTGRES_DB=pgdb
