@@ -139,7 +139,8 @@ export const main = Reach.App(() => {
           if (poolMinted - poolBurnt > 0) {
             const { when, msg } = declassify(interact.withdrawMaybe(st));
             assume(poolMinted > 0);
-            assume(msg.liquidity <= poolMinted, "liquidity < poolMinted");
+            assume(poolMinted > poolBurnt);
+            assume(msg.liquidity <= poolMinted - poolBurnt, "liquidity < poolMinted");
             assume(balance(tokA) > 0 && balance(tokB) > 0, "bal(tokA) > 0 && bal(tokB) > 0");
             assume(pool.supply() == totalSupply - poolBurnt, "pool.supply() == totalSupply - poolBurnt");
             return { when, msg };
@@ -150,15 +151,19 @@ export const main = Reach.App(() => {
         (({ liquidity }) => [ 0, [ liquidity, pool ], [ 0, tokA ], [ 0, tokB ] ]),
         (({ liquidity }) => {
           require(poolMinted > 0);
-          require(liquidity <= poolMinted, "liquidity < poolMinted");
+          require(poolMinted > poolBurnt);
+          require(liquidity <= poolMinted - poolBurnt, "liquidity < poolMinted");
           require(balance(tokA) > 0 && balance(tokB) > 0, "bal(tokA) > 0 && bal(tokB) > 0");
           require(pool.supply() == totalSupply - poolBurnt, "pool.supply() == totalSupply - poolBurnt");
+
+          const poolStart = poolMinted - poolBurnt;
+          // require(poolStart > 0);
 
           // Balances have fees incorporated
           const balances = array(UInt, [ balance(tokA), balance(tokB) ]);
 
           // Amount of each token in reserve to return to Provider
-          const amtOuts = balances.map(bal => liquidity * bal / poolMinted);
+          const amtOuts = balances.map(bal => liquidity * bal / poolStart);
 
           // Payout provider
           const currentProvider = this;
@@ -186,7 +191,7 @@ export const main = Reach.App(() => {
           if (when) {
             const { amtA, amtB } = msg;
             const minted =
-              (balance(tokA) == 0 && balance(tokB) == 0)
+              (pool.supply() - balance(pool) == 0)
                 ? s18(sqrt(amtA * amtB, 4))
                 : avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
             assume(minted > 0, "minted > 0");
