@@ -1,17 +1,17 @@
 #!/bin/sh
 
 IMG='reachsh/reach-cli:latest'
-TMP=$(mktemp -d -p /tmp 'reach.XXXXXXXXXX')
-
+TMP=$(mktemp -d -p /tmp "reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 export TMP
 
 run_d () {
   if [ "$CIRCLECI" = "true" ]; then
     REACH_EX="$0" ~/.local/bin/reach \
-      --dir-embed="$(dirname "$(realpath "$0")")/hs/app/reach/embed" \
+      --dir-embed="$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed" \
       --dir-project-container="$(pwd)" \
       --dir-project-host="$(pwd)" \
-      --dir-tmp="$TMP" \
+      --dir-tmp-container="$TMP" \
+      --dir-tmp-host="$TMP" \
       "$@"
   else
     docker run -t --rm \
@@ -29,7 +29,7 @@ run_d () {
       -u "$(id -ru):$(id -rg)" \
       -v "$TMP:/app/tmp" \
       -v "$(pwd):/app/src" \
-      "$IMG" --dir-project-host="$(pwd)" "$@"
+      "$IMG" --dir-project-host="$(pwd)" --dir-tmp-host="$TMP" "$@"
   fi
 }
 

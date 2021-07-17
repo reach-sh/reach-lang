@@ -84,9 +84,10 @@ data Var = Var
 
 data Env = Env
   { e_dirEmbed :: FilePath
-  , e_dirProjectContainer :: FilePath
-  , e_dirProjectHost :: FilePath
-  , e_dirTmp :: FilePath
+  , e_dirPwdContainer :: FilePath
+  , e_dirPwdHost :: FilePath
+  , e_dirTmpContainer :: FilePath
+  , e_dirTmpHost :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
@@ -128,12 +129,14 @@ warnScaffoldDefRpcTlsPair :: App
 warnScaffoldDefRpcTlsPair = do
   Env {..} <- ask
 
-  let warnDev = putStrLn
-        "Warning! The current TLS certificate is only suitable for development purposes."
+  let warnDev = putStrLn "Warning! The current TLS certificate is only suitable for development purposes."
 
   let embd r = e_dirEmbed </> "sh" </> "_common" </> "rpc" </> r
-  let dock r = e_dirProjectContainer </> "tls" </> r
-  let host r = e_dirProjectHost </> "tls" </> r
+
+  -- TODO replace with Project
+  let dock r = e_dirPwdContainer </> "tls" </> r
+  let host r = e_dirPwdHost </> "tls" </> r
+
   let orw = ownerReadMode .|. ownerWriteMode
   let key = T.unpack $ rpcTlsKey e_var
   let crt = T.unpack $ rpcTlsCrt e_var
@@ -278,13 +281,19 @@ reachImages =
 
 
 --------------------------------------------------------------------------------
-serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
-serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
+serviceConnector :: Env -> ConnectorMode -> Compose -> [T.Text] -> T.Text -> T.Text -> IO T.Text
+serviceConnector Env {..} (ConnectorMode c m) compose ports appService' version'' = do
   let ports' = case ports of
         [] -> "[]"
         ps -> T.intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
+
+  let (sad, dph) = case compose of
+        StandaloneDevnet -> ("True", "")
+        Console (Project {..}) -> ("False", T.pack projDirHost)
+        React (Project {..}) -> ("False", T.pack projDirHost)
+        Rpc (Project {..}) -> ("False", T.pack projDirHost)
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
@@ -292,8 +301,11 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
   pure
     . swap "REACH_VERSION" version''
     . swap "PORTS" ports'
-    . swap "NETWORK" appService'
-    . swap "APP_SERVICE" appService'
+    . swap "NETWORK" "reach-devnet"
+    . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
+    . swap "STANDALONE_DEVNET" sad
+    . swap "DIR_TMP_HOST" (T.pack e_dirTmpHost)
+    . swap "DIR_PROJECT_HOST" dph
     $ fmt
 
 
@@ -330,6 +342,13 @@ pMode =
 
 
 --------------------------------------------------------------------------------
+data Project = Project
+  { projName :: T.Text
+  , projDirContainer :: FilePath
+  , projDirHost :: FilePath
+  , projDirRel :: FilePath
+  }
+
 data Scaffold = Scaffold
   { containerDockerfile :: FilePath
   , containerPackageJson :: FilePath
@@ -339,90 +358,141 @@ data Scaffold = Scaffold
   , hostMakefile :: FilePath
   }
 
+-- TODO make this more amenable to ergonomic pattern-matching
+data Compose
+  = Console Project
+  | React Project
+  | Rpc Project
+  | StandaloneDevnet
 
-mkScaffold :: Env -> Bool -> T.Text -> Scaffold
-mkScaffold Env {..} isolate app = Scaffold
-  { containerDockerfile = f $ e_dirProjectContainer </> "Dockerfile"
-  , containerPackageJson = f $ e_dirProjectContainer </> "package.json"
-  , containerMakefile = f $ e_dirProjectContainer </> "Makefile"
-  , hostDockerfile = f $ e_dirProjectHost </> "Dockerfile"
-  , hostPackageJson = f $ e_dirProjectHost </> "package.json"
-  , hostMakefile = f $ e_dirProjectHost </> "Makefile"
-  } where f a = if isolate then a <> "." <> T.unpack app else a
-
-
---------------------------------------------------------------------------------
 data DockerMeta = DockerMeta
   { appProj :: T.Text
   , appService :: T.Text
   , appImage :: T.Text
   , appImageTag :: T.Text
+  , compose :: Compose
   }
+
+
+mkScaffold :: Project -> Bool -> Scaffold
+mkScaffold Project {..} isolate = Scaffold
+  { containerDockerfile = f $ projDirContainer </> "Dockerfile"
+  , containerPackageJson = f $ projDirContainer </> "package.json"
+  , containerMakefile = f $ projDirContainer </> "Makefile"
+  , hostDockerfile = f $ projDirHost </> "Dockerfile"
+  , hostPackageJson = f $ projDirHost </> "package.json"
+  , hostMakefile = f $ projDirHost </> "Makefile"
+  } where f a = if isolate then a <> "." <> T.unpack projName else a
 
 
 appProj' :: FilePath -> T.Text
 appProj' = T.toLower . T.pack . takeBaseName . dropTrailingPathSeparator
 
 
-mkDockerMetaConsole :: Env -> T.Text -> Bool -> DockerMeta
-mkDockerMetaConsole Env {..} app isolate = DockerMeta {..} where
-  appProj = appProj' e_dirProjectHost <> if isolate then ("-" <> app) else ""
-
+mkDockerMetaConsole :: Project -> Bool -> DockerMeta
+mkDockerMetaConsole p@Project {..} isolate = DockerMeta {..} where
+  appProj = appProj' projDirHost <> if isolate then ("-" <> projName) else ""
   appService = "reach-app-" <> appProj
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
+  compose = Console p
 
 
-mkDockerMetaReact :: DockerMeta
-mkDockerMetaReact = DockerMeta {..} where
+mkDockerMetaReact :: Project -> DockerMeta
+mkDockerMetaReact p = DockerMeta {..} where
   appProj = ""
   appService = "react-runner"
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
+  compose = React p
 
 
-mkDockerMetaRpc :: Env -> DockerMeta
-mkDockerMetaRpc Env {..} = DockerMeta {..} where
-  appProj = appProj' e_dirProjectHost
+mkDockerMetaRpc :: Env -> Project -> DockerMeta
+mkDockerMetaRpc Env {..} p@Project {..} = DockerMeta {..} where
+  appProj = appProj' projDirHost
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
   appImageTag = appImage <> ":" <> versionShort e_var
+  compose = Rpc p
 
 
-mkDockerMetaStandaloneDevnet :: Env -> DockerMeta
-mkDockerMetaStandaloneDevnet Env {..} = DockerMeta {..} where
-  appProj = appProj' e_dirProjectHost
-  appService = "reach-app-" <> appProj
+mkDockerMetaStandaloneDevnet :: DockerMeta
+mkDockerMetaStandaloneDevnet = DockerMeta {..} where
+  appProj = "reach-devnet"
+  appService = ""
   appImage = ""
   appImageTag = ""
+  compose = StandaloneDevnet
 
 
 --------------------------------------------------------------------------------
-data Compose
-  = Console
-  | React
-  | Rpc
-  | StandaloneDevnet
+-- TODO prevent `..`
+projectFrom :: FilePath -> AppT Project
+projectFrom a = do
+  Env {..} <- ask
+  liftIO $ case a of
+    "" -> pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
+    _ -> ifM (not <$> doesDirectoryExist a)
+      (pure $ Project (T.pack a) e_dirPwdContainer e_dirPwdHost ".")
+      $ case isAbsolute a of
+        True -> die $ "Please replace " <> a <> " with a relative path."
+        False -> pure $ Project "index" (e_dirPwdContainer </> a) (e_dirPwdHost </> a) a
 
 
-withCompose :: Compose -> DockerMeta -> ConnectorMode -> App -> App
-withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
+projectPwdIndex :: AppT Project
+projectPwdIndex = do
+  Env {..} <- ask
+  pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
+
+
+scaff :: Bool -> FilePath -> T.Text -> IO ()
+scaff quiet n f = do
+  when (not quiet) . putStrLn $ "Writing " <> takeFileName n <> "..."
+  T.writeFile n f
+
+
+scaffIfAbsent :: Bool -> FilePath -> T.Text -> IO ()
+scaffIfAbsent quiet n f = whenM (not <$> doesFileExist n) $ scaff quiet n f
+
+
+readScaff :: FilePath -> AppT T.Text
+readScaff p = do
+  Env {..} <- ask
+  liftIO . T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> p
+
+
+withCompose :: DockerMeta -> App -> App
+withCompose DockerMeta {..} wrapped = do
   env@Env {..} <- ask
   let Var {..} = e_var
+  let cm@(ConnectorMode c m) = connectorMode
+
+  -- TODO push ports into templates instead (?)
+  let connPorts = case (compose, c, m) of
+        (_, _, Live) -> []
+        (Console _, Algo, Devnet) -> [ "9392" ]
+        (_, Algo, _) -> [ "4180:4180", "8980:8980", "9392:9392" ]
+        (_, Cfx, _) -> [ "12537:12537" ]
+        (_, Eth, _) -> [ "8545:8545" ]
 
   let reachConnectorMode = T.pack $ show cm
   let reachIsolatedNetwork = "1" -- TODO
-  let dirProjectHost = T.pack e_dirProjectHost
   let debug' = if debug then "1" else ""
 
-  connEnv <- case t of
-    Console -> liftIO $ connectorEnv env cm
+  let projDirHost' = case compose of
+        StandaloneDevnet -> ""
+        Console (Project {..}) -> T.pack projDirHost
+        React (Project {..}) -> T.pack projDirHost
+        Rpc (Project {..}) -> T.pack projDirHost
 
+  connEnv <- case compose of
     StandaloneDevnet -> liftIO $ connectorEnv env cm
 
-    React -> pure [N.text|
+    Console _ -> liftIO $ connectorEnv env cm
+
+    React _ -> pure [N.text|
       volumes:
-        - $dirProjectHost:/app/src
+        - $projDirHost':/app/src
       ports:
         - "3000:3000"
       stdin_open: true
@@ -436,7 +506,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
         - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
     |]
 
-    Rpc -> do
+    Rpc _ -> do
       let devnetAlgo = [N.text|
             - ALGO_SERVER=http://algorand-devnet
             - ALGO_PORT=4180
@@ -444,21 +514,17 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
             - ALGO_INDEXER_PORT=8980
           |]
 
-      let devnetEth = [N.text|
-            - ETH_NODE_URI=http://ethereum-devnet:8545
-          |]
-
       -- TODO `USE_EXISTING_DEVNET`-handling, CFX, consolidate + push config
       -- out of here
       let (d, e) = case (c, m) of
             (Algo, Devnet) -> (devnetFor c, devnetAlgo)
-            (Eth, Devnet) -> (devnetFor c, devnetEth)
+            (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://ethereum-devnet:8545")
             _ -> ("", "")
 
       pure [N.text|
         volumes:
-          - $dirProjectHost/build:/app/build
-          - $dirProjectHost/tls:/app/tls
+          - $projDirHost'/build:/app/build
+          - $projDirHost'/tls:/app/tls
         ports:
           - "$rpcPort:$rpcPort"
         stdin_open: true
@@ -477,22 +543,38 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
           $e
       |]
 
-  connSvs <- case (m, t) of
+  connSvs <- case (m, compose) of
     (Live, _) -> pure ""
-    (_, StandaloneDevnet) -> liftIO $ serviceConnector env cm connPorts appService "latest"
+    (_, cmp@StandaloneDevnet) -> liftIO $ serviceConnector env cm cmp connPorts appService "latest"
 
     -- TODO fix remaining combos (e.g. `rpc-server` latest vs. REACH_VERSION)
-    (_, _) -> liftIO $ serviceConnector env cm connPorts appService version''
+    (_, cmp) -> liftIO $ serviceConnector env cm cmp connPorts appService version''
 
-  let appService' = case t of
+  let topLevelNets = case m of
+        Live -> "{}"
+        _ -> [N.text|
+               reach-devnet:
+                 name: reach-devnet
+             |]
+
+  let svcNets = case m of
+        Live -> "[]"
+        _ -> "- reach-devnet"
+
+  let e_dirTmpHost' = T.pack e_dirTmpHost
+  let appService' = case compose of
         StandaloneDevnet -> ""
         _ -> [N.text|
                $appService:
                  image: $appImageTag
                  networks:
-                   - $appService
+                   $svcNets
+                 labels:
+                   - "sh.reach.standalone-devnet=False"
+                   - "sh.reach.dir-tmp=$e_dirTmpHost'"
+                   - "sh.reach.dir-project=$projDirHost'"
                  build:
-                   context: $dirProjectHost
+                   context: $projDirHost'
                  $connEnv
              |]
 
@@ -500,8 +582,7 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
      version: '3.5'
 
      networks:
-       $appService:
-         name: $appService
+       $topLevelNets
 
      services:
        $connSvs
@@ -509,74 +590,73 @@ withCompose t DockerMeta {..} cm@(ConnectorMode c m) wrapped = do
        $appService'
     |]
 
-  liftIO $ scaff True (e_dirTmp </> "docker-compose.yml") (notw f)
+  liftIO $ scaff True (e_dirTmpContainer </> "docker-compose.yml") (notw f)
   wrapped
 
  where
   notw = T.intercalate "\n" . fmap T.stripEnd . T.lines
-  -- TODO push ports into templates instead (?)
-  connPorts = case (t, c, m) of
-    (_, _, Live) -> []
-    (Console, Algo, Devnet) -> [ "9392" ]
-    (_, Algo, _) -> [ "4180:4180", "8980:8980", "9392:9392" ]
-    (_, Cfx, _) -> [ "12537:12537" ]
-    (_, Eth, _) -> [ "8545:8545" ]
 
 
 --------------------------------------------------------------------------------
-scaff :: Bool -> FilePath -> T.Text -> IO ()
-scaff quiet n f = do
-  when (not quiet) . putStrLn $ "Writing " <> takeFileName n <> "..."
-  T.writeFile n f
+argAppOrDir :: Parser FilePath
+argAppOrDir = strArgument
+  $ metavar "APP or DIR"
+ <> help "May be either a module name without its extension (e.g. \"index\") \
+         \or a relative directory path"
+ <> value ""
 
 
-scaffold' :: Bool -> Bool -> T.Text -> App
-scaffold' isolate quiet app = do
-  env@Env {..} <- ask
+switchUseExistingDevnet :: Parser Bool
+switchUseExistingDevnet = switch $ long "use-existing-devnet"
 
+
+--------------------------------------------------------------------------------
+scaffold' :: Bool -> Bool -> Project -> App
+scaffold' isolate quiet proj@Project {..} = do
+  Env {..} <- ask
+
+  let Scaffold {..} = mkScaffold proj isolate
+  let DockerMeta {..} = mkDockerMetaConsole proj isolate
+  let scaffIfAbsent' n f = liftIO $ scaffIfAbsent quiet n f
+
+  let cpline = case isolate of
+        False -> ""
+        True -> "RUN cp /app/" <> T.pack (takeFileName hostPackageJson) <> " /app/package.json"
+
+  -- TODO prune
+  let tmpl p =
+          swap "APP" projName
+        . swap "MJS" (projName <> ".mjs")
+        . swap "RSH" (projName <> ".rsh")
+        . swap' "MAKEFILE" (takeFileName hostMakefile)
+        . swap' "DOCKERFILE" (takeFileName hostDockerfile)
+        . swap' "PACKAGE_JSON" (takeFileName hostPackageJson)
+        . swap "CPLINE" cpline
+        . swap "PROJ" appProj -- TODO
+        . swap "SERVICE" appService
+        . swap "IMAGE" appImage
+        . swap "IMAGE_TAG" appImageTag
+        . swap "REACH_VERSION" (version'' e_var)
+       <$> readScaff p
+
+  -- TODO: s/lint/preapp. It's disabled because sometimes our
+  -- generated code trips the linter
+  tmpl "package.json" >>= scaffIfAbsent' containerPackageJson
+  tmpl "Dockerfile" >>= scaffIfAbsent' containerDockerfile
+  tmpl "Makefile" >>= scaffIfAbsent' containerMakefile
+
+  tmpl ".gitignore" >>= scaffIfAbsent' (projDirContainer </> ".gitignore")
+  tmpl ".dockerignore" >>= scaffIfAbsent' (projDirContainer </> ".dockerignore")
+
+  when (not quiet) . liftIO $ putStrLn "Done."
+
+
+unscaffold' :: Bool -> Bool -> FilePath -> App
+unscaffold' isolate quiet appOrDir = do
+  Scaffold {..} <- flip mkScaffold isolate <$> projectFrom appOrDir
   liftIO $ do
-    let Scaffold {..} = mkScaffold env isolate app
-    let DockerMeta {..} = mkDockerMetaConsole env app isolate
-    let scaffIfAbsent n f = whenM (not <$> doesFileExist n) $ scaff quiet n f
-
-    let cpline = case isolate of
-          False -> ""
-          True -> "RUN cp /app/" <> T.pack (takeFileName hostPackageJson) <> " /app/package.json"
-
-    -- TODO prune
-    let tmpl n =
-            swap "APP" app
-          . swap "MJS" (app <> ".mjs")
-          . swap "RSH" (app <> ".rsh")
-          . swap' "MAKEFILE" (takeFileName hostMakefile)
-          . swap' "DOCKERFILE" (takeFileName hostDockerfile)
-          . swap' "PACKAGE_JSON" (takeFileName hostPackageJson)
-          . swap "CPLINE" cpline
-          . swap "PROJ" appProj
-          . swap "SERVICE" appService
-          . swap "IMAGE" appImage
-          . swap "IMAGE_TAG" appImageTag
-          . swap "REACH_VERSION" (version'' e_var)
-         <$> (T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> n)
-
-    -- TODO: s/lint/preapp. It's disabled because sometimes our
-    -- generated code trips the linter
-    tmpl "package.json" >>= scaffIfAbsent containerPackageJson
-    tmpl "Dockerfile" >>= scaffIfAbsent containerDockerfile
-    tmpl "Makefile" >>= scaffIfAbsent containerMakefile
-
-    tmpl ".gitignore" >>= scaffIfAbsent (e_dirProjectContainer </> ".gitignore")
-    tmpl ".dockerignore" >>= scaffIfAbsent (e_dirProjectContainer </> ".dockerignore")
-
-    when (not quiet) $ putStrLn "Done."
-
-
-unscaffold' :: Bool -> Bool -> T.Text -> App
-unscaffold' isolate quiet app = do
-  env <- ask
-  liftIO $ do
-    let Scaffold {..} = mkScaffold env isolate app
     forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n -> do
+      -- TODO each by whether file exists
       when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
       removeFile n
     when (not quiet) $ putStrLn "Done."
@@ -614,7 +694,7 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
-  f = go <$> compiler
+  f = go <$> compiler -- TODO appOrDir
 
   go CompilerToolArgs {..} = do
     Var {..} <- asks e_var
@@ -706,6 +786,7 @@ init' = command "init" . info f $ d <> foot where
 
   go template app = do
     Env {..} <- ask
+    Project {..} <- projectPwdIndex
     let tmpl n = e_dirEmbed </> "template" </> "init" </> n
 
     liftIO $ do
@@ -716,8 +797,8 @@ init' = command "init" . info f $ d <> foot where
       fmtInitRsh <- T.readFile $ tmpl' </> "index.rsh"
       fmtInitMjs <- T.readFile $ tmpl' </> "index.mjs"
 
-      let rsh = e_dirProjectContainer </> T.unpack app <> ".rsh"
-      let mjs = e_dirProjectContainer </> T.unpack app <> ".mjs"
+      let rsh = projDirContainer </> T.unpack app <> ".rsh"
+      let mjs = projDirContainer </> T.unpack app <> ".mjs"
       let abortIf x = whenM (doesFileExist x) . die $ x <> " already exists."
 
       abortIf rsh
@@ -736,25 +817,17 @@ run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
   f = go <$> switch (long "isolate")
-         <*> strArgument (metavar "APP" <> value "")
+         <*> argAppOrDir
          <*> many (strArgument (metavar "ARG"))
 
-  go isolate app args = do
+  go isolate appOrDir args = do
     dieConnectorModeNonBrowser
 
-    env@Env {..} <- ask
+    Env {..} <- ask
+    proj@Project {..} <- projectFrom appOrDir
+
     let Var {..} = e_var
-
-    (app', dirContainer, dirHost, dirRel) <- liftIO $ case app of
-      "" -> pure ("index", e_dirProjectContainer, T.pack e_dirProjectHost, ".")
-      _ -> ifM (not <$> doesDirectoryExist app)
-        (pure (T.pack app, e_dirProjectContainer, T.pack e_dirProjectHost, "."))
-        $ case isAbsolute app of
-          True -> die $ "Please replace " <> app <> " with a relative path."
-          False -> pure ("index", e_dirProjectContainer </> app, T.pack $ e_dirProjectHost </> app, app)
-
-    let env' = env { e_dirProjectContainer = dirContainer, e_dirProjectHost = T.unpack dirHost }
-    let Scaffold {..} = mkScaffold env' isolate app'
+    let Scaffold {..} = mkScaffold proj isolate
 
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
       [ (containerMakefile, hostMakefile)
@@ -764,11 +837,11 @@ run' = command "run" . info f $ d <> noIntersperse where
 
     cleanup <- T.intercalate "\n" <$> forM toClean (pure . T.pack . ("rm " <>) . snd)
 
-    local (const env') $ scaffold' isolate True app'
+    scaffold' isolate True proj
 
-    let rsh = dirContainer </> T.unpack app' <> ".rsh"
-    let mjs = dirContainer </> T.unpack app' <> ".mjs"
-    let bjs = dirContainer </> "build" </> T.unpack app' <> ".main.mjs"
+    let rsh = projDirContainer </> T.unpack projName <> ".rsh"
+    let mjs = projDirContainer </> T.unpack projName <> ".mjs"
+    let bjs = projDirContainer </> "build" </> T.unpack projName <> ".main.mjs"
 
     let abortIfAbsent p = liftIO . whenM (not <$> doesFileExist p)
           . die $ takeFileName p <> " doesn't exist."
@@ -776,7 +849,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     abortIfAbsent rsh
     abortIfAbsent mjs
 
-    let recompile' = reachEx <> " compile " <> T.pack (dirRel </> T.unpack app' <> ".rsh\n")
+    let recompile' = reachEx <> " compile " <> T.pack (projDirRel </> T.unpack projName <> ".rsh\n")
 
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
@@ -785,14 +858,15 @@ run' = command "run" . info f $ d <> noIntersperse where
         r <- modificationTime <$> getFileStatus rsh
         pure $ if r > b then Just recompile' else Nothing
 
-    let dm@DockerMeta {..} = mkDockerMetaConsole env app' isolate
+    let dm@DockerMeta {..} = mkDockerMetaConsole proj isolate
     let dockerfile' = T.pack hostDockerfile
-    let args' = T.intercalate " " . map (<> "'") . map ("'" <>) $ app' : args
+    let projDirHost' = T.pack projDirHost
+    let args' = T.intercalate " " . map (<> "'") . map ("'" <>) $ projName : args
 
-    withCompose Console dm connectorMode . script $ do
+    withCompose dm . script $ do
       maybe (pure ()) write recompile
       write [N.text|
-        cd $dirHost
+        cd $projDirHost'
 
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
@@ -801,16 +875,56 @@ run' = command "run" . info f $ d <> noIntersperse where
         set -e
 
         $cleanup
-        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
-
         exit "$$RES"
       |]
 
 
 --------------------------------------------------------------------------------
+-- TODO fix crazy names like `reach2021-07-13t23-40-21z-5smc_algorand-devnet_run_1`
+downProject :: Project -> App
+downProject Project {..} = script $ do
+  let pdh = T.pack projDirHost
+  realpath
+  write [N.text|
+    dend () { docker-compose -f "$$1/docker-compose.yml" down --volumes --remove-orphans; }
+    insp () { docker inspect --format="{{ index .Config.Labels \"$$1\" }}" "$$2"; }
+    real () {
+      i="$(insp "$$1" "$$2")"
+      ([ "x$$i" = "x" ] && echo "") || realpath "$$i"
+    }
+
+    ds="$(docker container ls -q)"
+
+    if [ "$$ds" = "" ]; then
+      dend "$$TMP"
+    else
+      echo "$$ds" | while IFS= read -r d; do
+        if [ "$(real "sh.reach.dir-project" "$$d")" = "$(realpath "$pdh")" ]; then
+          dend "$(real "sh.reach.dir-tmp" "$$d")"
+          break
+        fi
+
+        if [ "$(insp "sh.reach.standalone-devnet" "$$d")" = "True" ]; then
+          (docker exec "$$d" killall -INT geth 2>/dev/null && sleep 3 && dend "$$TMP") \
+            || dend "$(real "sh.reach.dir-tmp" "$$d")"
+          break
+        fi
+      done
+    fi
+  |]
+
+
 down :: Subcommand
 down = command "down" $ info f d where
   d = progDesc "Halt any Dockerized devnets for this app"
+  f = go <$> argAppOrDir
+  go a = do
+    p <- projectFrom a
+    withCompose (mkDockerMetaConsole p False) $ downProject p
+
+
+reactDown :: Subcommand
+reactDown = command "react-down" $ info (pure f) fullDesc where
   f = undefined
 
 
@@ -818,10 +932,11 @@ down = command "down" $ info f d where
 scaffold :: Subcommand
 scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
-  f = scaffold'
+  f = go
     <$> switch (long "isolate")
     <*> switch (long "quiet")
-    <*> strArgument (metavar "APP" <> value "index" <> showDefault)
+    <*> argAppOrDir
+  go i q a = projectFrom a >>= scaffold' i q
 
 
 --------------------------------------------------------------------------------
@@ -836,28 +951,23 @@ react = command "react" $ info f d where
   -- sub-shell
   go _ = do
     Var {..} <- asks e_var
-    let dm@DockerMeta {..} = mkDockerMetaReact
-    let cm = ConnectorMode Eth Browser -- TODO
+    dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
 
     -- TODO generalize this pattern for other subcommands?
     cargs <- liftIO $ do
       let x "react" = False
           x a | "--dir-project-host" `T.isPrefixOf` a = False
+          x a | "--dir-tmp-host" `T.isPrefixOf` a = False
               | otherwise = True
       T.intercalate " " . filter x . fmap T.pack <$> getArgs
 
-    withCompose React dm cm . script $ write [N.text|
+    withCompose dm . script $ write [N.text|
       $reachEx compile $cargs
-      docker-compose -f "$$TMP/docker-compose.yml" \
-        run --service-ports --rm $appService
+      docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $appService
     |]
 
 
 --------------------------------------------------------------------------------
-switchUseExistingDevnet :: Parser Bool
-switchUseExistingDevnet = switch $ long "use-existing-devnet"
-
-
 rpcServer' :: T.Text -> AppT T.Text
 rpcServer' appService = do
   Var {..} <- asks e_var
@@ -873,18 +983,18 @@ rpcServer = command "rpc-server" $ info f d where
   f = go <$> switchUseExistingDevnet
 
   go _ued = do
-    env@Env {..} <- ask
-    let Var {..} = e_var
-    let dm@DockerMeta {..} = mkDockerMetaRpc env
+    env <- ask
+    dm@DockerMeta {..} <- mkDockerMetaRpc env <$> projectPwdIndex
 
     dieConnectorModeNonBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair
 
-    rpcServer' appService >>= withCompose Rpc dm connectorMode . script . write
+    withCompose dm . script $ do
+      rpcServer' appService >>= write
+      write "docker-compose -f \"$TMP/docker-compose.yml\" down --volumes --remove-orphans"
 
 
---------------------------------------------------------------------------------
 rpcRun :: Subcommand
 rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse where
   desc = progDesc "Run an RPC server + frontend with development configuration"
@@ -897,18 +1007,17 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
 
   go exe args = do
     env@Env {..} <- ask
-    let Var {..} = e_var
-
-    let args' = T.intercalate " " args
-
-    let dm@DockerMeta {..} = mkDockerMetaRpc env
+    dm@DockerMeta {..} <- mkDockerMetaRpc env <$> projectPwdIndex
     runServer <- rpcServer' appService
+
+    let Var {..} = e_var
+    let args' = T.intercalate " " args
 
     dieConnectorModeNonBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair
 
-    withCompose Rpc dm connectorMode . script $ write [N.text|
+    withCompose dm . script $ write [N.text|
       if ! (which curl >/dev/null 2>&1); then
         echo "\`reach rpc-run\` relies on an installation of \`curl\` - please install it."
         exit 1
@@ -941,7 +1050,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
       killbg () {
         echo
         pkill -TERM -P "$$spid"
-        docker-compose -f "$$TMP/docker-compose.yml" down --remove-orphans
+        docker-compose -f "$$TMP/docker-compose.yml" down --volumes --remove-orphans
       }
 
       [ ! "$$s" -eq 200 ] \
@@ -958,9 +1067,9 @@ devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = pure $ do
-    env@Env {..} <- ask
+    Env {..} <- ask
     let Var {..} = e_var
-    let cm@(ConnectorMode c m) = connectorMode
+    let ConnectorMode c m = connectorMode
     let s = devnetFor c
 
     dieConnectorModeNonBrowser
@@ -968,7 +1077,7 @@ devnet = command "devnet" $ info f d where
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
 
-    withCompose StandaloneDevnet (mkDockerMetaStandaloneDevnet env) cm . script $ write [N.text|
+    withCompose mkDockerMetaStandaloneDevnet . script $ write [N.text|
       docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $s
     |]
 
@@ -1045,30 +1154,29 @@ numericVersion = command "numeric-version" $ info f fullDesc where
 
 
 --------------------------------------------------------------------------------
-reactDown :: Subcommand
-reactDown = command "react-down" $ info f fullDesc where
-  f = undefined
-
-
---------------------------------------------------------------------------------
-rpcServerDown :: Subcommand
-rpcServerDown = command "rpc-server-down" $ info f fullDesc where
-  f = undefined
-
-
---------------------------------------------------------------------------------
 unscaffold :: Subcommand
 unscaffold = command "unscaffold" $ info f fullDesc where
   f = unscaffold'
     <$> switch (long "isolate")
     <*> switch (long "quiet")
-    <*> strArgument (metavar "APP" <> value "index" <> showDefault)
+    <*> argAppOrDir
 
 
 --------------------------------------------------------------------------------
 -- TODO better header
 header' :: String
 header' = "https://reach.sh"
+
+
+failNonAbsPaths :: Env -> IO ()
+failNonAbsPaths Env {..} =
+  mapM_ (\p -> unless (isAbsolute p) . die $ p <> " is not an absolute path.")
+    [ e_dirEmbed
+    , e_dirPwdContainer
+    , e_dirPwdHost
+    , e_dirTmpContainer
+    , e_dirTmpHost
+    ]
 
 
 main :: IO ()
@@ -1080,7 +1188,8 @@ main = do
         <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
         <*> strOption (long "dir-project-container" <> value "/app/src" <> internal)
         <*> strOption (long "dir-project-host" <> internal)
-        <*> strOption (long "dir-tmp" <> value "/app/tmp" <> internal)
+        <*> strOption (long "dir-tmp-container" <> value "/app/tmp" <> internal)
+        <*> strOption (long "dir-tmp-host" <> internal)
         <*> switch (long "emit-raw" <> internal)
         <*> pure eff
         <*> pure var
@@ -1090,14 +1199,16 @@ main = do
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
 
   customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
-    >>= \Cli {..} -> runReaderT c_cmd c_env
+    >>= \Cli {..} -> do
+      failNonAbsPaths c_env
+      runReaderT c_cmd c_env
     >>  readIORef eff
     >>= \case
       InProcess -> pure ()
       Script t -> case e_emitRaw c_env of
         True -> T.putStrLn t
         False -> do
-          T.writeFile (e_dirTmp c_env </> "out.sh") t
+          T.writeFile (e_dirTmpContainer c_env </> "out.sh") t
           exitWith $ ExitFailure 42
 
  where
@@ -1122,6 +1233,5 @@ main = do
     <> commandGroup "hidden subcommands"
     <> numericVersion
     <> reactDown
-    <> rpcServerDown
     <> unscaffold
     <> whoami
