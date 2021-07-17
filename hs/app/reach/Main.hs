@@ -125,17 +125,15 @@ dieConnectorModeNonBrowser = connectorMode <$> asks e_var >>= \case
   _ -> pure ()
 
 
-warnScaffoldDefRpcTlsPair :: App
-warnScaffoldDefRpcTlsPair = do
+warnScaffoldDefRpcTlsPair :: Project -> App
+warnScaffoldDefRpcTlsPair Project {..} = do
   Env {..} <- ask
 
   let warnDev = putStrLn "Warning! The current TLS certificate is only suitable for development purposes."
 
   let embd r = e_dirEmbed </> "sh" </> "_common" </> "rpc" </> r
-
-  -- TODO replace with Project
-  let dock r = e_dirPwdContainer </> "tls" </> r
-  let host r = e_dirPwdHost </> "tls" </> r
+  let dock r = projDirContainer </> "tls" </> r
+  let host r = projDirHost </> "tls" </> r
 
   let orw = ownerReadMode .|. ownerWriteMode
   let key = T.unpack $ rpcTlsKey e_var
@@ -992,11 +990,12 @@ rpcServer = command "rpc-server" $ info f d where
 
   go _ued = do
     env <- ask
-    dm@DockerMeta {..} <- mkDockerMetaRpc env <$> projectPwdIndex
+    prj <- projectPwdIndex
+    let dm@DockerMeta {..} = mkDockerMetaRpc env prj
 
     dieConnectorModeNonBrowser
     warnDefRpcKey
-    warnScaffoldDefRpcTlsPair
+    warnScaffoldDefRpcTlsPair prj
 
     withCompose dm . script $ do
       rpcServer' appService >>= write
@@ -1015,7 +1014,9 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
 
   go exe args = do
     env@Env {..} <- ask
-    dm@DockerMeta {..} <- mkDockerMetaRpc env <$> projectPwdIndex
+    prj <- projectPwdIndex
+
+    let dm@DockerMeta {..} = mkDockerMetaRpc env prj
     runServer <- rpcServer' appService
 
     let Var {..} = e_var
@@ -1023,7 +1024,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
 
     dieConnectorModeNonBrowser
     warnDefRpcKey
-    warnScaffoldDefRpcTlsPair
+    warnScaffoldDefRpcTlsPair prj
 
     withCompose dm . script $ write [N.text|
       if ! (which curl >/dev/null 2>&1); then
