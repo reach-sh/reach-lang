@@ -271,12 +271,12 @@ reachImages :: [T.Text]
 reachImages =
   [ "reach"
   , "reach-cli"
-  , "ethereum-devnet"
-  , "algorand-devnet"
-  , "devnet-cfx"
-  , "runner"
   , "react-runner"
   , "rpc-server"
+  , "runner"
+  , "devnet-algo"
+  , "devnet-cfx"
+  , "ethereum-devnet"
   ]
 
 
@@ -319,7 +319,7 @@ connectorEnv Env {..} (ConnectorMode c m) = do
 --------------------------------------------------------------------------------
 devnetFor :: Connector -> T.Text
 devnetFor = \case
-  Algo -> "algorand-devnet"
+  Algo -> "devnet-algo"
   Cfx -> "devnet-cfx"
   Eth -> "ethereum-devnet"
 
@@ -508,9 +508,9 @@ withCompose DockerMeta {..} wrapped = do
 
     Rpc _ -> do
       let devnetAlgo = [N.text|
-            - ALGO_SERVER=http://algorand-devnet
+            - ALGO_SERVER=http://devnet-algo
             - ALGO_PORT=4180
-            - ALGO_INDEXER_SERVER=http://algorand-devnet
+            - ALGO_INDEXER_SERVER=http://devnet-algo
             - ALGO_INDEXER_PORT=8980
           |]
 
