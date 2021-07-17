@@ -426,17 +426,25 @@ mkDockerMetaStandaloneDevnet = DockerMeta {..} where
 
 
 --------------------------------------------------------------------------------
--- TODO prevent `..`
 projectFrom :: FilePath -> AppT Project
 projectFrom a = do
   Env {..} <- ask
-  liftIO $ case a of
-    "" -> pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
-    _ -> ifM (not <$> doesDirectoryExist a)
-      (pure $ Project (T.pack a) e_dirPwdContainer e_dirPwdHost ".")
-      $ case isAbsolute a of
-        True -> die $ "Please replace " <> a <> " with a relative path."
-        False -> pure $ Project "index" (e_dirPwdContainer </> a) (e_dirPwdHost </> a) a
+  liftIO $ do
+    when (isAbsolute a) . die $ "Please replace " <> a <> " with a relative path."
+    case a of
+      ""  -> pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
+      "." -> pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
+
+      _ -> ifM (andM [ pure . (< 2) . length $ splitDirectories a, not <$> doesDirectoryExist a ])
+        (pure $ Project (T.pack a) e_dirPwdContainer e_dirPwdHost ".")
+        $ do
+          let dph = e_dirPwdHost </> a
+          let dpc = e_dirPwdContainer </> a
+          let f x = when (any (== "..") $ splitDirectories x) . die
+                      $ x <> " cannot contain parent directories (\"..\")."
+          f dph
+          f dpc
+          pure $ Project "index" dpc dph a
 
 
 projectPwdIndex :: AppT Project
@@ -602,7 +610,7 @@ argAppOrDir :: Parser FilePath
 argAppOrDir = strArgument
   $ metavar "APP or DIR"
  <> help "May be either a module name without its extension (e.g. \"index\") \
-         \or a relative directory path"
+         \or a relative sub-directory path"
  <> value ""
 
 
