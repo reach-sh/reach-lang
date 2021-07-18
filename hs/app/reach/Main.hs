@@ -289,9 +289,7 @@ serviceConnector Env {..} (ConnectorMode c m) compose ports appService' version'
 
   let (sad, dph) = case compose of
         StandaloneDevnet -> ("True", "")
-        Console (Project {..}) -> ("False", T.pack projDirHost)
-        React (Project {..}) -> ("False", T.pack projDirHost)
-        Rpc (Project {..}) -> ("False", T.pack projDirHost)
+        WithProject _ Project {..} -> ("False", T.pack projDirHost)
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
@@ -356,11 +354,13 @@ data Scaffold = Scaffold
   , hostMakefile :: FilePath
   }
 
--- TODO make this more amenable to ergonomic pattern-matching
+data WP
+  = Console
+  | React
+  | Rpc
+
 data Compose
-  = Console Project
-  | React Project
-  | Rpc Project
+  = WithProject WP Project
   | StandaloneDevnet
 
 data DockerMeta = DockerMeta
@@ -393,7 +393,7 @@ mkDockerMetaConsole p@Project {..} isolate = DockerMeta {..} where
   appService = "reach-app-" <> appProj
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
-  compose = Console p
+  compose = WithProject Console p
 
 
 mkDockerMetaReact :: Project -> DockerMeta
@@ -402,7 +402,7 @@ mkDockerMetaReact p = DockerMeta {..} where
   appService = "react-runner"
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
-  compose = React p
+  compose = WithProject React p
 
 
 mkDockerMetaRpc :: Env -> Project -> DockerMeta
@@ -411,7 +411,7 @@ mkDockerMetaRpc Env {..} p@Project {..} = DockerMeta {..} where
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
   appImageTag = appImage <> ":" <> versionShort e_var
-  compose = Rpc p
+  compose = WithProject Rpc p
 
 
 mkDockerMetaStandaloneDevnet :: DockerMeta
@@ -476,7 +476,7 @@ withCompose DockerMeta {..} wrapped = do
   -- TODO push ports into templates instead (?)
   let connPorts = case (compose, c, m) of
         (_, _, Live) -> []
-        (Console _, Algo, Devnet) -> [ "9392" ]
+        (WithProject Console _, Algo, Devnet) -> [ "9392" ]
         (_, Algo, _) -> [ "4180:4180", "8980:8980", "9392:9392" ]
         (_, Cfx, _) -> [ "12537:12537" ]
         (_, Eth, _) -> [ "8545:8545" ]
@@ -487,16 +487,14 @@ withCompose DockerMeta {..} wrapped = do
 
   let projDirHost' = case compose of
         StandaloneDevnet -> ""
-        Console (Project {..}) -> T.pack projDirHost
-        React (Project {..}) -> T.pack projDirHost
-        Rpc (Project {..}) -> T.pack projDirHost
+        WithProject _ Project {..} -> T.pack projDirHost
 
   connEnv <- case compose of
     StandaloneDevnet -> liftIO $ connectorEnv env cm
 
-    Console _ -> liftIO $ connectorEnv env cm
+    WithProject Console _ -> liftIO $ connectorEnv env cm
 
-    React _ -> pure [N.text|
+    WithProject React _ -> pure [N.text|
       volumes:
         - $projDirHost':/app/src
       ports:
@@ -512,7 +510,7 @@ withCompose DockerMeta {..} wrapped = do
         - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
     |]
 
-    Rpc _ -> do
+    WithProject Rpc _ -> do
       let devnetAlgo = [N.text|
             - ALGO_SERVER=http://devnet-algo
             - ALGO_PORT=4180
