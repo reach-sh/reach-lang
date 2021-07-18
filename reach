@@ -36,7 +36,6 @@ run_d () {
 run_s () {
   chmod 700 "$TMP/out.sh"
   sh -ac "$TMP/out.sh" "$0"
-  exit 0
 }
 
 if ! (which make curl docker docker-compose >/dev/null 2>&1); then
@@ -51,5 +50,6 @@ fi
 run_d "$@"
 case "$?" in
   42) run_s ;;
+  50) curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && exit 0 ;;
    1) exit 1 ;;
 esac
