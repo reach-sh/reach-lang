@@ -1093,7 +1093,11 @@ devnet = command "devnet" $ info f d where
 upgrade :: Subcommand
 upgrade = command "upgrade" $ info f d where
   d = progDesc "Upgrade Reach"
-  f = undefined
+  f = pure $ do
+    Var {..} <- asks e_var
+    script $ write [N.text|
+      curl https://docs.reach.sh/reach -o "$reachEx" && chmod +x "$reachEx"
+    |]
 
 
 --------------------------------------------------------------------------------

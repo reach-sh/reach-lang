@@ -36,10 +36,11 @@ run_d () {
 run_s () {
   chmod 700 "$TMP/out.sh"
   sh -ac "$TMP/out.sh" "$0"
+  exit 0
 }
 
-if ! (which make docker docker-compose >/dev/null 2>&1); then
-  echo "Reach relies on an installation of make, docker, and docker-compose."
+if ! (which make curl docker docker-compose >/dev/null 2>&1); then
+  echo "Reach relies on an installation of make, curl, docker, and docker-compose."
   exit 1
 fi
 
