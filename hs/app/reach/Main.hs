@@ -1130,7 +1130,9 @@ version' = command "version" $ info f d where
 help' :: Subcommand
 help' = command "help" $ info f d where
   d = progDesc "Show usage"
-  f = undefined
+  f = pure $ do
+    Var {..} <- asks e_var
+    script $ write [N.text| $reachEx --help |]
 
 
 --------------------------------------------------------------------------------
