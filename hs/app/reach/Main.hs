@@ -1093,14 +1093,9 @@ devnet = command "devnet" $ info f d where
 upgrade :: Subcommand
 upgrade = command "upgrade" $ info f d where
   d = progDesc "Upgrade Reach"
-  f = pure $ do
-    Var {..} <- asks e_var
-    script $ write [N.text|
-      curl https://docs.reach.sh/reach -o "$reachEx" && chmod +x "$reachEx"
-    |]
+  f = pure . liftIO . exitWith $ ExitFailure 50
 
 
---------------------------------------------------------------------------------
 update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
