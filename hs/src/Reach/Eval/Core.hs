@@ -13,7 +13,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, intercalate, transpose, unzip5, (\\))
+import Data.List (elemIndex, groupBy, intercalate, transpose, unzip5, (\\), intersperse)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -1415,9 +1415,18 @@ evalForm f args = do
       case mmode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
-          -- XXX Default to 0 for all non-network tokens if `paySpec` specified
-          let default_pay = jsArrowExpr a [JSIdentifier a "_"] $ JSDecimal a "0"
           at <- withAt id
+          let def_pay =
+                case mpay of
+                  Just (JSArrayLiteral aa ts ae) -> do
+                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
+                    let tok_pays = JSDecimal a "0" : map (\ i ->
+                          JSArrayLiteral aa [
+                            JSArrayElement (JSDecimal aa "0"), JSArrayComma aa, JSArrayElement (JSIdentifier aa i)
+                          ] ae) tok_ids
+                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  _ -> JSDecimal a "0"
+          let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           case_args <-
             case args of
               [w, x, y, z] -> return $ ForkCase at w x y z
@@ -2091,21 +2100,17 @@ evalPrim p sargs =
         _ -> illegal_args
       doFluidRef fv
     SLPrim_Token_supply -> do
-      s <- case args of
-        [v] -> do
-          da <- compileCheckType T_Token v
-          ensureCreatedToken "Token.supply" da
-          lookupBalanceFV FV_supply $ Just da
-        _ -> illegal_args
-      doFluidRef s
+      v <- one_arg
+      da <- compileCheckType T_Token v
+      ensureCreatedToken "Token.supply" da
+      sr <- lookupBalanceFV FV_supply $ Just da
+      doFluidRef sr
     SLPrim_Token_destroyed -> do
-      s <- case args of
-        [v] -> do
-          da <- compileCheckType T_Token v
-          ensureCreatedToken "Token.destroyed" da
-          lookupBalanceFV FV_destroyed $ Just da
-        _ -> illegal_args
-      doFluidRef s
+      v <- one_arg
+      da <- compileCheckType T_Token v
+      ensureCreatedToken "Token.destroyed" da
+      dr <- lookupBalanceFV FV_destroyed $ Just da
+      doFluidRef dr
     SLPrim_fluid_read fv -> doFluidRef fv
     SLPrim_lastConsensusTime -> do
       ensure_can_wait

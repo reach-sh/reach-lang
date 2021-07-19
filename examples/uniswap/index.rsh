@@ -131,7 +131,6 @@ export const main = Reach.App(() => {
       .paySpec([ pool, tokA, tokB ])
       .case(Admin,
         (() => wrap(interact.shouldClosePool, true)),
-        ((_) => [ 0, [0, pool], [ 0, tokA ], [ 0, tokB ] ]),
         (() => { return [ false, market, poolMinted, poolBurnt ]; })
       )
       .case(Provider,
