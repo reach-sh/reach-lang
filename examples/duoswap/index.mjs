@@ -9,7 +9,6 @@ const NUM_TRADERS = 2;
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
-
   // Create tokens to swap
   const zmd = await launchToken("zorkmid", "ZMD");
   const gil = await launchToken("gil", "GIL");
@@ -17,13 +16,18 @@ const NUM_TRADERS = 2;
 
   // Supply ZMD and GIL to account
   const gimmeTokens = async (acc) => {
+    if (stdlib.connector == 'ALGO') {
+      await acc.tokenAccept(zmd.id);
+      await acc.tokenAccept(gil.id);
+    }
     await zmd.mint(acc, startingBalance);
     await gil.mint(acc, startingBalance);
   }
 
 
   // Create & Fund Admin
-  const accAdmin = await stdlib.newTestAccount(startingBalance);
+  const accAdmin = await stdlib.newTestAccount(startingBalance)
+  await accAdmin.setDebugLabel('Admin');
   await gimmeTokens(accAdmin);
 
 
@@ -35,6 +39,7 @@ const NUM_TRADERS = 2;
 
   for (let i = 0; i < accProviders.length; ++i) {
     const accProvider = accProviders[i];
+    await accProvider.setDebugLabel(`Provider ${i}`);
     await gimmeTokens(accProvider);
   }
 
@@ -150,8 +155,11 @@ const NUM_TRADERS = 2;
               amtInTok: gil.id,
             });
 
-        console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok]}`,'\x1b[0m')
-        return { when: traded[who] == false, msg: trade };
+        const didNotTrade = traded[who] == false;
+        if (didNotTrade) {
+          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok]}`,'\x1b[0m')
+        }
+        return { when: didNotTrade, msg: trade };
       },
       tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
         if (isMe) {
@@ -165,6 +173,6 @@ const NUM_TRADERS = 2;
   const backends = [ adminBackend, provBackends, traderBackends ];
   await Promise.all(backends);
 
-  console.log(`Uniswap finished`);
+  console.log(`Duoswap finished`);
 
 })();

@@ -108,8 +108,8 @@ export const main = Reach.App(() => {
 
   assert(balance(pool) == totalSupply);
 
-  const [ alive, market, poolMinted, poolBurnt ] =
-    parallelReduce([ true, initialMarket, 0, 0 ])
+  const [ alive, market, poolMinted ] =
+    parallelReduce([ true, initialMarket, 0 ])
       .define(() => {
         const st = [ alive, market ];
         const wrap = (f, onlyIfAlive) => {
@@ -124,24 +124,22 @@ export const main = Reach.App(() => {
       })
       .invariant(
         balance() == 0 &&
-        pool.supply() == totalSupply - poolBurnt &&
-        pool.supply() == balance(pool) + poolMinted - poolBurnt &&
+        pool.supply() == totalSupply &&
+        totalSupply == balance(pool) + poolMinted &&
         constantProduct())
-      .while(alive || poolMinted - poolBurnt > 0)
+      .while(alive || poolMinted > 0)
       .paySpec([ pool, tokA, tokB ])
       .case(Admin,
         (() => wrap(interact.shouldClosePool, true)),
-        (() => { return [ false, market, poolMinted, poolBurnt ]; })
+        (() => { return [ false, market, poolMinted ]; })
       )
       .case(Provider,
         (() => {
-          if (poolMinted - poolBurnt > 0) {
+          if (poolMinted > 0) {
             const { when, msg } = declassify(interact.withdrawMaybe(st));
             assume(poolMinted > 0);
-            assume(poolMinted > poolBurnt);
-            assume(msg.liquidity <= poolMinted - poolBurnt, "liquidity < poolMinted");
+            assume(msg.liquidity <= poolMinted, "liquidity <= poolMinted");
             assume(balance(tokA) > 0 && balance(tokB) > 0, "bal(tokA) > 0 && bal(tokB) > 0");
-            assume(pool.supply() == totalSupply - poolBurnt, "pool.supply() == totalSupply - poolBurnt");
             return { when, msg };
           } else {
             return { when: false, msg: { liquidity: 0 }};
@@ -150,27 +148,19 @@ export const main = Reach.App(() => {
         (({ liquidity }) => [ 0, [ liquidity, pool ], [ 0, tokA ], [ 0, tokB ] ]),
         (({ liquidity }) => {
           require(poolMinted > 0);
-          require(poolMinted > poolBurnt);
-          require(liquidity <= poolMinted - poolBurnt, "liquidity < poolMinted");
+          require(liquidity <= poolMinted, "liquidity <= poolMinted");
           require(balance(tokA) > 0 && balance(tokB) > 0, "bal(tokA) > 0 && bal(tokB) > 0");
-          require(pool.supply() == totalSupply - poolBurnt, "pool.supply() == totalSupply - poolBurnt");
-
-          const poolStart = poolMinted - poolBurnt;
-          // require(poolStart > 0);
 
           // Balances have fees incorporated
           const balances = array(UInt, [ balance(tokA), balance(tokB) ]);
 
           // Amount of each token in reserve to return to Provider
-          const amtOuts = balances.map(bal => liquidity * bal / poolStart);
+          const amtOuts = balances.map(bal => liquidity * bal / poolMinted);
 
           // Payout provider
           const currentProvider = this;
           transfer(amtOuts[0], tokA).to(currentProvider);
           transfer(amtOuts[1], tokB).to(currentProvider);
-
-          // Burn the liquidity tokens
-          pool.burn(liquidity);
 
           // Update market
           const marketP = { k: balance(tokA) * balance(tokB) }
@@ -179,7 +169,7 @@ export const main = Reach.App(() => {
           Provider.only(() => {
             interact.withdrawDone(currentProvider == this, amtOuts) });
 
-          return [ true, marketP, poolMinted, poolBurnt + liquidity ];
+          return [ true, marketP, poolMinted - liquidity ];
         })
       )
       .case(Provider,
@@ -190,7 +180,7 @@ export const main = Reach.App(() => {
           if (when) {
             const { amtA, amtB } = msg;
             const minted =
-              (pool.supply() - balance(pool) == 0)
+              (poolMinted == 0)
                 ? s18(sqrt(amtA * amtB, 4))
                 : avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
             assume(minted > 0, "minted > 0");
@@ -216,7 +206,7 @@ export const main = Reach.App(() => {
           Provider.only(() => {
             interact.depositDone(currentProvider == this, amtA, amtB, minted) });
 
-          return [ true, marketP, poolMinted + minted, poolBurnt ];
+          return [ true, marketP, poolMinted + minted ];
         })
       )
       .case(Trader,
@@ -271,12 +261,12 @@ export const main = Reach.App(() => {
           }
           const marketP = { k: balance(tokA) * balance(tokB) };
 
-          return [ true, marketP, poolMinted, poolBurnt ];
+          return [ true, marketP, poolMinted ];
         })
       )
       .timeout(1024, () => {
         Anybody.publish();
-        return [ false, market, poolMinted, poolBurnt ]; });
+        return [ false, market, poolMinted ]; });
 
   pool.burn(balance(pool));
   if (!pool.destroyed()) {
