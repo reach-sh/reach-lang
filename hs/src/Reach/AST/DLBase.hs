@@ -295,7 +295,7 @@ render_dasM as = do
 render_objM :: Pretty k => PrettySubst v => M.Map k v -> PrettySubstApp Doc
 render_objM env = do
   ps <- mapM render_p $ M.toAscList env
-  return $ braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) ps)
+  return $ braces $ nest $ hardline <> (concatWith (surround (comma <> hardline)) ps)
   where
     render_p (k, oa) = do
       o' <- prettySubst oa

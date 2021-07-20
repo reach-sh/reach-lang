@@ -6,19 +6,19 @@ import qualified Data.Map.Strict as M
 import Reach.Texty
 
 pform :: Doc -> Doc -> Doc
-pform f xs = group $ parens $ f <+> xs
+pform f xs = parens $ f <+> xs
 
 pform_ :: Doc -> Doc
 pform_ f = pform f mempty
 
 pbrackets :: [Doc] -> Doc
-pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
+pbrackets xs = render_nest $ vsep $ punctuate comma xs
 
 render_das :: Pretty a => [a] -> Doc
 render_das as = hsep $ punctuate comma $ map pretty as
 
 render_nest :: Doc -> Doc
-render_nest inner = nest 2 $ braces (hardline <> inner <> " ")
+render_nest inner = nest $ braces (hardline <> inner <> " ")
 
 prettyIf :: Pretty c => c -> Doc -> Doc -> Doc
 prettyIf ca t f =
@@ -56,16 +56,16 @@ prettyStop = "exit" <> parens (emptyDoc) <> semi
 prettyMap :: Pretty a => Pretty b => Pretty c => a -> b -> a -> c -> Doc
 prettyMap ans x a f =
   "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
-    <+> braces (nest 2 $ hardline <> pretty f)
+    <+> braces (nest $ hardline <> pretty f)
 
 prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => a -> b -> c -> d -> e -> f -> Doc
 prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
-    <+> braces (nest 2 $ hardline <> pretty f)
+    <+> braces (nest $ hardline <> pretty f)
 
 prettyToConsensus__ :: (Pretty a, Pretty b, Pretty s, Pretty d, Pretty k2) => M.Map s a -> b -> Maybe (d, k2) -> Doc
 prettyToConsensus__ send recv mtime =
-  "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <> send' <> recv')
+  "publish" <> parens emptyDoc <> nest (hardline <> mtime' <> send' <> recv')
   where
     mtime' = prettyTimeout mtime
     send' = prettySends send <> hardline
@@ -91,7 +91,6 @@ prettyToConsensus :: Pretty c => Pretty d => Pretty s => (a -> Doc) -> (b -> Doc
 prettyToConsensus fa fb send (ltv, win, msg, amtv, tv, body) mtime =
   "publish" <> parens emptyDoc
     <> nest
-      2
       (hardline <> mtime'
          <> concatWith (surround hardline) (map go $ M.toList send)
          <> hardline
