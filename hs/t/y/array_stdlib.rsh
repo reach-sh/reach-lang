@@ -25,5 +25,6 @@ export const main =
         assert(a.find((p) => p > 0) == Maybe(UInt).Some(1));
         assert(a.reduceWithIndex(0, (acc, e, idx) => acc + e + idx) == 20);
         assert(array(Bool, [false, true]).withIndex() == array(Tuple(Bool, UInt), [[false, 0], [true, 1]]));
+        assert(a.slice(2, 2) == array(UInt, [2, 3]));
       });
     });

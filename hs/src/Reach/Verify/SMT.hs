@@ -933,7 +933,9 @@ smt_la :: SrcLoc -> DLLargeArg -> App SExpr
 smt_la at_de dla = do
   let t = largeArgTypeOf dla
   s <- smtTypeSort t
-  let cons as = smtApply (s ++ "_cons") <$> mapM (smt_a at_de) as
+  let cons = \case
+        [] -> return $ Atom $ s <> "_cons"
+        as -> smtApply (s ++ "_cons") <$> mapM (smt_a at_de) as
   case dla of
     DLLA_Array _ as -> cons as
     DLLA_Tuple as -> cons as

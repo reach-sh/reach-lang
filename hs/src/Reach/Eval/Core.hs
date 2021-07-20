@@ -1176,6 +1176,7 @@ evalAsEnv obj = case obj of
         , ("reduceWithIndex", retStdLib "Array_reduceWithIndex")
         , ("indexOf", retStdLib "Array_indexOf")
         , ("replicate", retStdLib "Array_replicate")
+        , ("slice", retStdLib "Array_slice")
         , ("elemType", retV $ public $ SLV_Prim $ SLPrim_array_elemType)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
         , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
@@ -1205,7 +1206,7 @@ evalAsEnv obj = case obj of
     return $
       M.fromList $
         [("new", retV $ public $ SLV_Prim $ SLPrim_Map_new)
-                                                                                      , ("reduce", retV $ public $ SLV_Prim $ SLPrim_Map_reduce)] <> foldableValueEnv
+        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_Map_reduce)] <> foldableValueEnv
   SLV_Map _ ->
     return $
       M.fromList $
@@ -1250,6 +1251,7 @@ evalAsEnv obj = case obj of
              , ("withIndex", delayStdlib "Array_withIndex1")
              , ("mapWithIndex", delayStdlib "Array_mapWithIndex1")
              , ("reduceWithIndex", delayStdlib "Array_reduceWithIndex1")
+             , ("slice", delayStdlib "Array_slice1")
              , ("map", delayCall SLPrim_array_map)
              , ("reduce", delayCall SLPrim_array_reduce)
              , ("zip", delayCall SLPrim_array_zip)

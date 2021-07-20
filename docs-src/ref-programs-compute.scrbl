@@ -986,6 +986,17 @@ array satisfies the predicate, @reachin{None} is returned.
 is paired with its index. For example, @reachin{array(Bool, [false, true]).withIndex()} returns
 @reachin{array(Tuple(Bool, UInt), [[false, 0], [true, 1]])}.
 
+@subsubsection{@tt{Array.slice} && @tt{.slice}}
+
+@(mint-define! '("slice"))
+@reach{
+  Array.slice(arr, start, length)
+  arr.slice(start, length)
+}
+
+@index{Array.slice} @reachin{Array.slice(arr, start, length)} returns a portion of @reachin{arr}, starting from
+the @reachin{start} index, up to the @reachin{start + index} index.
+
 @subsection{Mapping group operations}
 
 @reachin{Map} is a @reachin{Foldable} container. @tech{Mappings} may be aggregated with the following

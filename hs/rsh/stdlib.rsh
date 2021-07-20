@@ -583,3 +583,9 @@ export const Array_reduceWithIndex1 = (a) => (init, f) =>
 export const hasConsoleLogger = {
   log: Fun(true, Null)
 };
+
+export const Array_slice = (a, start, len) =>
+  Array.iota(len).map((i) => a[start + i]);
+
+export const Array_slice1 = (a) => (start, len) =>
+  Array_slice(a, start, len);
