@@ -9,7 +9,7 @@ COPY package.json /js-deps/
 COPY package-lock.json /js-deps/maybe
 ARG REFRESH_LOCK
 ENV REFRESH_LOCK="${REFRESH_LOCK}"
-RUN [ "x${REFRESH_LOCK}" -eq "xY" ] || mv /js-deps/maybe /js-deps/package-lock.json
+RUN [ "x${REFRESH_LOCK}" = "xY" ] || mv /js-deps/maybe /js-deps/package-lock.json
 RUN npm install
 
 ENTRYPOINT ["bin/sh"]

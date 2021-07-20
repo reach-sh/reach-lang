@@ -1124,7 +1124,7 @@ This is statically known.
 A @deftech{data instance} is written @reachin{DATA.VARIANT(VALUE)}, where @reachin{DATA} is @reachin{Data} type, @reachin{VARIANT} is the name of one of @reachin{DATA}'s variants, and @reachin{VALUE} is a value matching the type of the variant.
 As a special case, when the type of a variant is @reachin{Null}, the @reachin{VALUE} may be omitted, as shown in the definition of @reachin{burger} in the same above.
 
-@tech{Data instances} are consumed by @reachin{switch} statements.
+@tech{Data instances} are consumed by @reachin{switch} statements and @reachin{match} expressions.
 
 @subsection{@tt{Maybe}}
 

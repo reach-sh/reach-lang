@@ -44,13 +44,13 @@ r () {
   make build
   # make down
 
-  jb
+  # jb
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -147,6 +147,8 @@ tealcount () {
 # c hs/t/y/pr190.rsh
 # c hs/t/y/pr190b.rsh
 # c hs/t/y/pr206.rsh
+c hs/t/y/pr220.rsh
+fc hs/t/n/pr220.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -228,7 +230,9 @@ tealcount () {
 # r examples/pr-1cc66
 
 # r users/ff
-r users/7639df8
+# r users/7639df8
+# r users/eb68c3d
+# r users/220
 # exit 0
 
 # r examples/mint-basic

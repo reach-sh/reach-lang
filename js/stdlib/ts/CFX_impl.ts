@@ -105,7 +105,11 @@ const mining_key = '0xc72b8b13c6256b54ce428f6f67725d47194bc4ef97552867d037acd4fe
 const defaultFaucetWallet = new cfxers.Wallet(mining_key);
 
 export const _getDefaultFaucetNetworkAccount = memoizeThunk(async (): Promise<NetworkAccount> => {
-  if (!defaultFaucetWallet.provider) defaultFaucetWallet.connect(await getProvider());
+  if (!defaultFaucetWallet.provider) {
+    const provider = await getProvider();
+    // Async things can cause this state to change...
+    if (!defaultFaucetWallet.provider) defaultFaucetWallet.connect(provider);
+  }
   return defaultFaucetWallet;
 });
 
@@ -204,7 +208,6 @@ export const providerLib = {
   getSignStrategy,
   setSignStrategy,
 }
-export const _verifyContractCode = false; // XXX
 export const _warnTxNoBlockNumber = false; // XXX ?
 export const standardUnit = 'CFX';
 export const atomicUnit = 'Drip';

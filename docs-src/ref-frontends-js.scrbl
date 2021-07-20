@@ -314,6 +314,9 @@ This @jsin{bin} argument is the @filepath{input.mjs} module produced by the Java
 
 @(hrule)
 
+@subsection[#:tag "ref-frontends-js-view"]{View Access}
+@(note-view-xref)
+
 @(mint-define! '("getViews"))
 @js{
  ctc.getViews() => Object }
