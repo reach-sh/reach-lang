@@ -147,6 +147,8 @@ tealcount () {
 # c hs/t/y/pr190.rsh
 # c hs/t/y/pr190b.rsh
 # c hs/t/y/pr206.rsh
+c hs/t/y/pr220.rsh
+fc hs/t/n/pr220.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -194,7 +196,7 @@ tealcount () {
 # r examples/object-digest
 # r examples/view-map
 # r examples/nim
-r examples/overview
+# r examples/overview
 # r examples/popularity-contest
 # r examples/pr202105-zet
 # r examples/race
@@ -207,7 +209,7 @@ r examples/overview
 # r examples/tut-5
 # r examples/tut-6
 # r examples/tut-5-attack
-r examples/tut-7 # XXX test debigger
+# r examples/tut-7 # XXX test debigger
 # r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
@@ -230,9 +232,10 @@ r examples/tut-7 # XXX test debigger
 # r users/ff
 # r users/7639df8
 # r users/eb68c3d
+# r users/220
 # exit 0
 
-r examples/mint-basic
+# r examples/mint-basic
 # r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)

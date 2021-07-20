@@ -96,8 +96,10 @@ data JSContracts = JSContracts
   , jsc_i2t :: IORef (M.Map Int Doc)
   }
 
-newtype JSCtxtWhile
-  = JSCtxtWhile (Maybe (JSCtxtWhile, Maybe DLVar, DLBlock, ETail, ETail))
+data JSCtxtWhile
+  = JWhile_None
+  | JWhile_Diverge
+  | JWhile_Some JSCtxtWhile (Maybe DLVar) DLBlock ETail ETail
 
 data JSMode
   = JM_Simulate
@@ -729,7 +731,7 @@ jsETail = \case
             return recvp
     let defp = "const" <+> txn <+> "=" <+> "await" <+> parens callp <> semi
     return $ vsep [defp, k_p]
-  ET_While _ asn cond body k -> do
+  ET_While at asn cond body k -> do
     timev_ <- ctxt_timev <$> ask
     let mtimev' =
           case timev_ of
@@ -747,7 +749,8 @@ jsETail = \case
             Just x -> x
     let newCtxt_tv = local (\e -> e {ctxt_timev = timev'})
     oldWhile <- ctxt_while <$> ask
-    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = JSCtxtWhile $ Just (oldWhile, timev', cond, body, k)})
+    let newWhile = JWhile_Some oldWhile timev' cond body k
+    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = newWhile})
     cond' <- jsBlockNewScope cond
     body' <- newCtxt' $ jsETail body
     k' <- newCtxt_tv $ jsETail k
@@ -758,8 +761,8 @@ jsETail = \case
       JM_Simulate -> do
         asn' <- jsAsn AM_WhileSim asn
         return $ asn' <> hardline <> jsIf cond' body' k'
-      JM_View -> impossible "view while"
-  ET_Continue _ asn -> do
+      JM_View -> impossible $ "view while " <> show at
+  ET_Continue at asn -> do
     asn'o <- jsAsn AM_ContinueOuter asn
     asn'i <-
       (ctxt_mode <$> ask) >>= \case
@@ -769,10 +772,11 @@ jsETail = \case
           return $ asn_ <> hardline <> "continue" <> semi
         JM_Simulate ->
           (ctxt_while <$> ask) >>= \case
-            JSCtxtWhile Nothing -> impossible "continue not in while"
-            JSCtxtWhile (Just (woldWhile, wtimev', wcond, wbody, wk)) -> do
+            JWhile_None -> impossible $ "continue not in while: " <> show at
+            JWhile_Diverge -> impossible $ "diverging while " <> show at
+            JWhile_Some woldWhile wtimev' wcond wbody wk -> do
               let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
-              let newCtxt_noWhile = newCtxt . local (\e -> e {ctxt_while = JSCtxtWhile Nothing})
+              let newCtxt_noWhile = newCtxt . local (\e -> e {ctxt_while = JWhile_Diverge})
               let newCtxt_oldWhile = newCtxt . local (\e -> e {ctxt_while = woldWhile})
               asn_ <- jsAsn AM_ContinueInnerSim asn
               wcond' <- jsBlockNewScope wcond
@@ -807,7 +811,7 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
   let ctxt_txn = 0
-  let ctxt_while = JSCtxtWhile Nothing
+  let ctxt_while = JWhile_None
   let ctxt_mode = JM_Backend
   let ctxt_timev = Nothing
   let ctxt_maps = dli_maps dli
@@ -995,7 +999,7 @@ backend_js outn crs pl = do
   let ctxt_who = "Module"
   let ctxt_txn = 0
   let ctxt_mode = JM_Backend
-  let ctxt_while = JSCtxtWhile Nothing
+  let ctxt_while = JWhile_None
   let ctxt_timev = Nothing
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty

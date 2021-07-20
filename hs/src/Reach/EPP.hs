@@ -173,11 +173,13 @@ instance HasErrorCode EPPError where
     Err_ContinueDomination {} -> 0
 
 instance Show EPPError where
-  show Err_ContinueDomination =
-    "Continue must be dominated by communication"
+  show = \case
+    Err_ContinueDomination ->
+      "`continue` must be dominated by communication"
 
 data BEnv = BEnv
   { be_prev :: Int
+  , be_prevs :: S.Set Int
   , be_savec :: Counter
   , be_handlerc :: Counter
   , be_interval :: CInterval DLArg
@@ -531,7 +533,8 @@ be_c = \case
     (more, s'l) <-
       captureMore $
         local (\e -> e { be_interval = default_interval
-                       , be_prev = this }) $ do
+                       , be_prev = this
+                       , be_prevs = S.singleton this }) $ do
           be_s s
     toks <- be_toks <$> ask
     mvis <-
@@ -556,8 +559,10 @@ be_c = \case
     let DLBlock cond_at cond_fs cond_l cond_a = cond
     this_loopj <- newHandler "While"
     this_loopsp <- newSavePoint "While"
-    let inBlock prev = local (\e -> e {be_prev = prev})
-    let inLoop = inBlock this_loopsp
+    let inBlock the_prev the_prevs =
+          local (\e -> e { be_prev = the_prev
+                         , be_prevs = S.union (be_prevs e) the_prevs })
+    let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
     -- <Kont>
     (goto_kont, k'l) <-
       -- XXX This is a convoluted hack because Solidity does not allow empty
@@ -571,7 +576,7 @@ be_c = \case
         False -> do
           kontsp <- newSavePoint "While Kont"
           kontj <- newHandler "While Kont"
-          let inKont = inBlock kontsp
+          let inKont = inBlock kontsp (S.fromList [ this_loopsp, kontsp ])
           (k'c, k'l) <- inKont $ be_c k
           setHandler kontj $ do
             kont_svs <- ce_readSave kontsp
@@ -606,8 +611,9 @@ be_c = \case
     fg_use $ asn
     (this_loopj, this_loopsp) <-
       fromMaybe (impossible "no loop") . be_loop <$> ask
-    prev <- be_prev <$> ask
-    when (this_loopsp == prev) $
+    prevs <- be_prevs <$> ask
+    -- liftIO $ putStrLn $ "continue at " <> show at <> ": " <> show (this_loopsp, prevs)
+    when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
@@ -695,6 +701,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   be_more <- newIORef False
   let be_loop = Nothing
   let be_prev = 0
+  let be_prevs = mempty
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
