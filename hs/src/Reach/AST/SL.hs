@@ -470,6 +470,7 @@ data SLPrimitive
   | SLPrim_Token_new
   | SLPrim_Token_burn
   | SLPrim_Token_destroy
+  | SLPrim_Token_destroyed
   deriving (Eq, Generic)
 
 type SLSVal = (SecurityLevel, SLVal)

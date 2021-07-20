@@ -609,7 +609,7 @@ smtAssert se = do
 checkUsing :: App SMT.Result
 checkUsing = do
   smt <- ctxt_smt <$> ask
-  let our_tactic = List [Atom "then", Atom "simplify", Atom "qflia"]
+  let our_tactic = List [Atom "then", Atom "simplify", Atom "auflia"]
   res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
     Atom "unsat" -> return Unsat

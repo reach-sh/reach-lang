@@ -13,7 +13,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, intercalate, transpose, unzip5, (\\))
+import Data.List (elemIndex, groupBy, intercalate, transpose, unzip5, (\\), intersperse)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -1114,6 +1114,7 @@ evalAsEnv obj = case obj of
       M.fromList $
         [ ("burn", delayCall SLPrim_Token_burn)
         , ("destroy", delayCall SLPrim_Token_destroy)
+        , ("destroyed", delayCall SLPrim_Token_destroyed)
         , ("supply", delayCall SLPrim_Token_supply) ]
   SLV_Type ST_Token ->
     return $
@@ -1121,6 +1122,7 @@ evalAsEnv obj = case obj of
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_Token_new)
         , ("burn", retV $ public $ SLV_Prim $ SLPrim_Token_burn)
         , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy)
+        , ("destroyed", retV $ public $ SLV_Prim $ SLPrim_Token_destroyed)
         , ("supply", retV $ public $ SLV_Prim $ SLPrim_Token_supply) ]
   SLV_Prim SLPrim_Struct -> return structValueEnv
   SLV_Type (ST_Struct ts) ->
@@ -1413,8 +1415,18 @@ evalForm f args = do
       case mmode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
-          let default_pay = jsArrowExpr a [JSIdentifier a "_"] $ JSDecimal a "0"
           at <- withAt id
+          let def_pay =
+                case mpay of
+                  Just (JSArrayLiteral aa ts ae) -> do
+                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
+                    let tok_pays = JSDecimal a "0" : map (\ i ->
+                          JSArrayLiteral aa [
+                            JSArrayElement (JSDecimal aa "0"), JSArrayComma aa, JSArrayElement (JSIdentifier aa i)
+                          ] ae) tok_ids
+                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  _ -> JSDecimal a "0"
+          let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           case_args <-
             case args of
               [w, x, y, z] -> return $ ForkCase at w x y z
@@ -2088,13 +2100,17 @@ evalPrim p sargs =
         _ -> illegal_args
       doFluidRef fv
     SLPrim_Token_supply -> do
-      s <- case args of
-        [v] -> do
-          da <- compileCheckType T_Token v
-          ensureCreatedToken "Token.supply" da
-          lookupBalanceFV FV_supply $ Just da
-        _ -> illegal_args
-      doFluidRef s
+      v <- one_arg
+      da <- compileCheckType T_Token v
+      ensureCreatedToken "Token.supply" da
+      sr <- lookupBalanceFV FV_supply $ Just da
+      doFluidRef sr
+    SLPrim_Token_destroyed -> do
+      v <- one_arg
+      da <- compileCheckType T_Token v
+      ensureCreatedToken "Token.destroyed" da
+      dr <- lookupBalanceFV FV_destroyed $ Just da
+      doFluidRef dr
     SLPrim_fluid_read fv -> doFluidRef fv
     SLPrim_lastConsensusTime -> do
       ensure_can_wait
@@ -4155,24 +4171,24 @@ doFork ks cases mtime mnntpay = do
   -- START: Non-network token pay
   pay_expr <-
     case mnntpay of
-      Just (JSArrayLiteral _ ts _) -> do
+      Just (JSArrayLiteral aa ts _) -> do
         let network_pay_var = jid "networkTokenPay"
         let nnts = map (jse_expect_id at) $ jsa_flatten ts
         let nnts_js =
               map
                 (\i ->
-                   JSArrayLiteral a [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] a)
+                   JSArrayLiteral aa [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] aa)
                 [0 .. length nnts - 1]
         let nnts_ret =
               toList $
                 mapWithIndex
                   (\i nnt ->
                      JSArrayLiteral
-                       a
+                       aa
                        [ JSArrayElement (jid $ "amt" <> show i)
                        , JSArrayElement (jid $ show $ pretty nnt)
                        ]
-                       a)
+                       aa)
                   (Seq.fromList nnts)
         let verifyPaySpec =
               toList $
@@ -4181,17 +4197,17 @@ doFork ks cases mtime mnntpay = do
                      JSExpressionStatement
                        (JSCallExpression
                           (jid "assert")
-                          a
+                          aa
                           (toJSCL
-                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq a) (jid nnt)
-                             , JSStringLiteral a ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
+                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq aa) (jid nnt)
+                             , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
                              ])
-                          a)
+                          aa)
                        sp)
                   (Seq.fromList nnts)
-        let pay_var tl = JSArrayLiteral a (intercalate [JSArrayComma a] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) a
-        let pay_ss = [JSConstant a (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit a pay_e) sp] <> verifyPaySpec <> [JSReturn a (Just (pay_var nnts_ret)) sp]
-        let pay_call = jsCallThunk a $ jsThunkStmts a pay_ss
+        let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
+        let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
+        let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
         return pay_call
       _ -> return pay_e
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_expr) a

@@ -193,7 +193,7 @@ export const Foldable_size1 =
   (c) => () => Foldable_size(c);
 
 export const Foldable_average = (c) =>
-  Foldable_sum(c) / Foldable_size(s);
+  Foldable_sum(c) / Foldable_size(c);
 export const Foldable_average1 = (c) => () =>
   Foldable_average(c);
 
@@ -216,7 +216,9 @@ export function closeTo(Who, after = (() => null), nonNetPayAmt = []) {
 
 export const sqrt = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], _) =>
-    (x < z)
+    (x < 2)
+    ? [ x, x ]
+    : (x < z)
       ? [ x, ((y / x + x) / 2) ]
       : [ z, x ]
       )[1];

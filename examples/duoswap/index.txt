@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Admin" is honest
+  Verifying when ONLY "Provider" is honest
+  Verifying when ONLY "Trader" is honest
+Checked 397 theorems; No failures!
