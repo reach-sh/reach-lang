@@ -142,6 +142,7 @@ data EvalError
   | Err_TokenNew_InvalidKey String
   | Err_Token_NotCreated String
   | Err_ParallelReduce_DefineBlock
+  | Err_Expected_Type String SLVal
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -265,6 +266,7 @@ instance HasErrorCode EvalError where
     Err_TokenNew_InvalidKey {} -> 111
     Err_Token_NotCreated {} -> 112
     Err_ParallelReduce_DefineBlock {} -> 113
+    Err_Expected_Type {} -> 114
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -664,5 +666,7 @@ instance Show EvalError where
       lab <> " must be used on created tokens"
     Err_ParallelReduce_DefineBlock ->
       "`define` expects an argument of the form: `() => DEFINE_BLOCK`, where `DEFINE_BLOCK` is a statement block."
+    Err_Expected_Type lab sv ->
+      "Expected a `Type`, but received " <> show (pretty sv) <> " for " <> lab
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

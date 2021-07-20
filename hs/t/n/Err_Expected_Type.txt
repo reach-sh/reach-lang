@@ -1,0 +1,8 @@
+reachc: error[RE0114]: Expected a `Type`, but received <primitive: SLPrim_Array> for value of Some
+
+ ./Err_Expected_Type.rsh:8:9:property binding
+
+ 8|     Some: Array,
+
+For further explanation of this error, see: https://docs.reach.sh/RE0114.html
+

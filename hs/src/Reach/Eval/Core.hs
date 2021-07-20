@@ -2122,7 +2122,7 @@ evalPrim p sargs =
         [(SLV_Bool _ True), (SLV_Type rng)] -> do
           retV $ (lvl, SLV_Type $ ST_UDFun rng)
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] -> do
-          dom <- mapM expect_ty dom_arr
+          dom <- mapM (expect_ty "Fun domain") dom_arr
           retV $ (lvl, SLV_Type $ ST_Fun (SLTypeFun dom rng Nothing Nothing Nothing Nothing))
         _ -> illegal_args
     SLPrim_is_type -> do
@@ -2387,7 +2387,7 @@ evalPrim p sargs =
               when (S.member k seenKeys) $
                 expect_ $ Err_Struct_Key_Not_Unique (S.toList seenKeys) k
               liftIO $ writeIORef seenKeysRef $ S.insert k seenKeys
-              t <- expect_ty tv
+              t <- expect_ty ("value of " <> k) tv
               return (k, t)
             _ -> illegal_args
       kts <- mapM go as
@@ -2420,7 +2420,7 @@ evalPrim p sargs =
       at <- withAt id
       (,) lvl <$> (SLV_Object at Nothing <$> (evalObjEnv =<< evalAsEnv sv))
     SLPrim_Tuple -> do
-      vs <- mapM expect_ty $ map snd sargs
+      vs <- mapM (expect_ty "Tuple argument") $ map snd sargs
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
     SLPrim_tuple_set -> do
       at <- withAt id
@@ -2436,7 +2436,9 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_Object -> do
       objm <- mustBeObject =<< one_arg
-      vm <- mapM (expect_ty . sss_val) objm
+      vm <- mapWithKeyM (\ k v -> do
+        locAt (sss_at v) $
+          expect_ty ("value of " <> k) (sss_val v)) objm
       retV $ (lvl, SLV_Type $ ST_Object vm)
     SLPrim_Object_has -> do
       at <- withAt id
@@ -2534,7 +2536,7 @@ evalPrim p sargs =
     SLPrim_forall {} ->
       case sargs of
         [(olvl, one)] -> do
-          dt <- st2dte =<< expect_ty one
+          dt <- st2dte =<< expect_ty "forall" one
           at <- withAt id
           tag <- ctxt_alloc
           dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ Err_Impossible_InspectForall tag)
@@ -2554,7 +2556,9 @@ evalPrim p sargs =
     SLPrim_part_setted {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_Data -> do
       argm <- mustBeObject =<< one_arg
-      varm <- mapM (expect_ty . sss_val) argm
+      varm <- mapWithKeyM (\ k v -> do
+        locAt (sss_at v) $
+          expect_ty ("value of " <> k) (sss_val v)) argm
       retV $ (lvl, SLV_Type $ ST_Data varm)
     SLPrim_Data_variant t vn vt -> do
       at <- withAt id
@@ -2646,7 +2650,7 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Object at (Just $ ns <> " view") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
-      t <- expect_ty =<< one_arg
+      t <- expect_ty "Map.new" =<< one_arg
       ensure_mode SLM_ConsensusStep "Map.new"
       mv <- mapNew =<< st2dte t
       retV $ public $ SLV_Map mv
@@ -2679,7 +2683,7 @@ evalPrim p sargs =
     SLPrim_Refine -> do
       at <- withAt id
       let mkClo = jsClo at "refine"
-      t <- first_arg >>= expect_ty
+      t <- first_arg >>= expect_ty "Refine"
       t' <- case t of
         ST_Fun (SLTypeFun {..}) -> do
           (_, domp2, rngp2, mmsgs) <- three_mfourth_args
@@ -2711,7 +2715,7 @@ evalPrim p sargs =
       return $ public $ SLV_Type t'
     SLPrim_is -> do
       (x, y) <- two_args
-      t <- expect_ty y
+      t <- expect_ty "is" y
       case t of
         ST_Fun tf ->
           case x of
@@ -2726,7 +2730,9 @@ evalPrim p sargs =
       (av, ri) <- two_args
       aa <- compileCheckType T_Address av
       rm_ <- mustBeObject ri
-      rm <- mapM (expect_ty . sss_val) rm_
+      rm <- mapWithKeyM (\ k v -> do
+        locAt (sss_at v) $
+          expect_ty ("value of " <> k) (sss_val v)) rm_
       at <- withAt id
       let go k = \case
             ST_Fun stf ->
@@ -2908,9 +2914,10 @@ evalPrim p sargs =
     illegal_args = expect_ts args $ Err_Prim_InvalidArgs p
     retV = return
     rator = SLV_Prim p
-    expect_ty = \case
-      SLV_Type t -> return $ t
-      _ -> illegal_args
+    expect_ty lab v =
+      case v of
+        SLV_Type t -> return $ t
+        _ -> expect_ $ Err_Expected_Type lab v
     zero_args = case args of
       [] -> return ()
       _ -> illegal_args

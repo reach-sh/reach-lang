@@ -1960,6 +1960,31 @@ This error indicates that you provided an incorrect value to the @reachin{.defin
 @reachin{parallelReduce} statement. The argument to @reachin{.define} should be of the form: @reachin{() => DEFINE_BLOCK}.
 Please review the @reachin{parallelReduce} documentation for information on how @reachin{.define} works.
 
+@error{RE0114}
+
+This error indicates that you provided an incorrect value to a function. The function expected
+to receive a @reachin{Type}, but received something else. This issue can arise when a
+@reachin{Type} constructor does not have any arguments applied to it.
+
+For example, the code below erroneously creates an @reachin{Object} type with a field @reachin{name}:
+
+@reach{
+  const Person = Object({
+    name: Bytes
+  });
+}
+
+This code is incorrect because @reachin{Bytes} is not a type; it is a function that accepts an @reachin{UInt} and returns
+a @reachin{Type}. This code can be fixed by providing an argument to @reachin{Bytes} that represents the length:
+
+@reach{
+  const Person = Object({
+    name: Bytes(32)
+  });
+}
+
+For more information about data types, visit @secref["ref-programs-types"].
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
