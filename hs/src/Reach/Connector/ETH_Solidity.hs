@@ -65,7 +65,7 @@ solNum :: Show n => n -> Doc
 solNum i = pretty $ "uint256(" ++ show i ++ ")"
 
 solBraces :: Doc -> Doc
-solBraces body = braces (nest 2 $ hardline <> body)
+solBraces body = braces (nest $ hardline <> body)
 
 data SolFunctionLike
   = SFL_Constructor

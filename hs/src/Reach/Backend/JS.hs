@@ -78,7 +78,7 @@ jsIf :: Doc -> Doc -> Doc -> Doc
 jsIf cap ttp ftp = jsWhen cap ttp <> hardline <> "else" <+> jsBraces ftp
 
 jsBraces :: Doc -> Doc
-jsBraces body = braces (nest 2 $ hardline <> body)
+jsBraces body = braces (nest $ hardline <> body)
 
 jsObject :: Pretty k => M.Map k Doc -> Doc
 jsObject m = jsBraces $ vsep $ punctuate comma $ map jsObjField $ M.toList m

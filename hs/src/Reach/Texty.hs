@@ -5,13 +5,12 @@ module Reach.Texty
   , pretty
   , prettyl
   , (<+>)
-  , group --- XXX remove
   , emptyDoc
   , viaShow
   , vsep
   , hcat
   , hsep
-  , nest --- XXX remove int arg
+  , nest
   , concatWith --- XXX remove
   , punctuate
   , enclose
@@ -21,7 +20,7 @@ module Reach.Texty
   , parens
   , braces
   , brackets
-  , hardline --- XXX remove
+  , hardline
   , semi
   , comma
   , space
@@ -44,7 +43,7 @@ data Doc
   | DCat Doc Doc
   | DVSep [Doc]
   | DHSep [Doc]
-  | DNest Integer Doc
+  | DNest Doc
   deriving (Eq)
 
 instance Show Doc where
@@ -63,7 +62,7 @@ render_ = \case
     x_ <- render_ x
     xs_ <- render_ (DHSep xs)
     return $ x_ <> " " <> xs_
-  DNest dn d -> local (dn +) $ render_ d
+  DNest d -> local (2 +) $ render_ d
   DNewline -> do
     n <- ask
     return $ "\n" <> (LT.replicate (fromIntegral n) " ")
@@ -79,7 +78,7 @@ render = runIdentity . flip runReaderT 0 . render_
 
 render_obj :: Pretty k => Pretty v => M.Map k v -> Doc
 render_obj env =
-  braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toAscList env)
+  braces $ nest $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toAscList env)
   where
     render_p (k, oa) = pretty k <+> "=" <+> pretty oa
 
@@ -151,9 +150,6 @@ infixr 6 <+>
 (<+>) :: Doc -> Doc -> Doc
 x <+> y = x <> " " <> y
 
-group :: Doc -> Doc
-group = id
-
 emptyDoc :: Doc
 emptyDoc = mempty
 
@@ -166,7 +162,7 @@ hsep = DHSep
 hcat :: [Doc] -> Doc
 hcat = concatWith (<>)
 
-nest :: Integer -> Doc -> Doc
+nest :: Doc -> Doc
 nest = DNest
 
 concatWith :: Foldable f => (Doc -> Doc -> Doc) -> f Doc -> Doc
