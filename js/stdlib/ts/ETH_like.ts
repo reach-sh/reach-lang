@@ -468,13 +468,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return impl;
     }
 
-    switch (bin._Connectors.ETH.deployMode) {
+    const { deployMode } = bin._Connectors.ETH;
+    switch (deployMode) {
       case 'DM_firstMsg':
         return attachDeferDeploy();
       case 'DM_constructor':
         return performDeploy();
       default:
-        throw Error(`Unrecognized deployMode: ${bin._Connectors.ETH.deployMode}`);
+        throw Error(`Unrecognized deployMode: ${deployMode}`);
     };
   };
 
@@ -954,7 +955,7 @@ type VerifyResult = {
   creation_block: number,
 };
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
-  const { ABI, Bytecode } = backend._Connectors.ETH;
+  const { ABI, Bytecode, deployMode } = backend._Connectors.ETH;
   const address = ctcInfo;
   const factory = new ethers.ContractFactory(ABI, Bytecode);
   debug('verifyContract', {address});
@@ -972,56 +973,49 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
 
   const provider = await getProvider();
   const now = await getNetworkTimeNumber();
-  const deployEvent = 'e0';
-  debug('verifyContract: getLogs', {deployEvent, now});
-  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
-  // "Keep in mind that many backends will discard old events"
-  // TODO: find another way to validate creation block if much time has passed?
-  const logs = await provider.getLogs({
-    fromBlock: 0,
-    toBlock: now,
-    address: address,
-    topics: [factory.interface.getEventTopic(deployEvent)],
-  });
-  debug('verifyContract', logs);
-  chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
-  const creation_block = logs[0].blockNumber;
+  const getLogs = async (event:string): Promise<any> => {
+    debug('verifyContract: getLogs', {event, now});
+    const logs = await provider.getLogs({
+      fromBlock: 0,
+      toBlock: now,
+      address: address,
+      topics: [factory.interface.getEventTopic(event)],
+    });
+    debug('verifyContract', logs);
+    chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
+    return logs[0];
+  };
+  const e0log = await getLogs('e0');
+  const creation_block = e0log.blockNumber;
 
   debug(`verifyContract: checking code...`);
-  // From https://github.com/ConsenSys/bytecode-verifier/blob/78d7f9703092e5a8e70f5b68204924c380311bc5/src/verifier.js
-  const SWARM_INFO_START = 'a165627a7a72305820';
-  const CTOR = '6080604052';
-  const actual_raw = await provider.getCode(address);
-  const actual_raw_len = actual_raw.length;
-  const actual_ep = actual_raw.indexOf(SWARM_INFO_START);
-  const actual = actual_raw.slice(0,actual_ep);
-  const actual_len = actual.length;
+  const dt = await provider.getTransaction( e0log.transactionHash );
+  debug('dt', dt);
 
-  const expected_raw = Bytecode;
-  const expected_raw_len = expected_raw.length;
-  const expected_sp = expected_raw.indexOf(CTOR);
-  const expected_ep = expected_raw.indexOf(SWARM_INFO_START);
-  const expected = '0x' + expected_raw.slice(expected_sp, expected_ep);
-  const expected_len = expected.length;
-
-  /*
-  const indexesOf = (x:string, y:string): Array<number> => {
-    const res = [];
-    let i = 0;
-    while ( true ) {
-      const j = x.indexOf(y, i);
-      if ( j === -1 ) { break; }
-      res.push(j);
-      i = j + 1;
+  const ctorArgs = await (async (): Promise<any> => {
+    switch ( deployMode ) {
+      case 'DM_firstMsg': {
+        const e1log = await getLogs('e1');
+        const iface = new real_ethers.utils.Interface(ABI);
+        const e1p = iface.parseLog(e1log);
+        debug(`e1p`, e1p);
+        return e1p.args;
+      }
+      case 'DM_constructor':
+        return [];
+      default:
+        throw Error(`Unrecognized deployMode: ${deployMode}`);
     }
-    return res;
-  };
-  const expected_sps = indexesOf(expected_raw, CTOR);
-  const expected_eps = indexesOf(expected_raw, SWARM_INFO_START);
-  */
+  })();
 
-  debug({actual_raw_len, actual_len, actual_ep, expected_raw_len, expected_sp, expected_ep, expected_len});
+  const deployData = factory.getDeployTransaction(...ctorArgs, { value: dt.value }).data;
+  chkeq(typeof deployData, 'string', `deployData type`);
+  chk(deployData.startsWith(Bytecode), `deployData starts with bytecode`);
 
+  // We don't actually check the live contract code, but instead compare what
+  // we would have done to deploy it with how it was actually deployed.
+  const actual = dt.data;
+  const expected = deployData;
   chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
 
   // We are not checking the balance or the contract storage, because we know
