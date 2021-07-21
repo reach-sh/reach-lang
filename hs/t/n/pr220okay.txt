@@ -1,0 +1,14 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "A" is honest
+Checked 21 theorems; No failures!
+reachc: error[REP0000]: `continue` must be dominated by communication
+
+ ./pr220okay.rsh:18:5:continue
+
+ 18|     continue;
+
+For further explanation of this error, see: https://docs.reach.sh/REP0000.html
+
