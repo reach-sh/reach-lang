@@ -1777,7 +1777,7 @@ type VerifyResult = {
   Deployer: Address,
 };
 
-export async function queryCtorTxn(dhead: string, ApplicationID: number) {
+async function queryCtorTxn(dhead: string, ApplicationID: number) {
   const indexer = await getIndexer();
   const icq = indexer.searchForTransactions()
     .applicationID(ApplicationID)
