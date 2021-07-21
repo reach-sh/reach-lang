@@ -38,7 +38,11 @@ push-all:
 
 .PHONY: routine-build-push
 routine-build-push:
-	scripts/routine-build-push.sh
+	scripts/routine.sh build-push
+
+.PHONY: routine-build
+routine-build:
+	scripts/routine.sh build
 
 .PHONY: rebuild-and-run-all-examples
 rebuild-and-run-all-examples:
