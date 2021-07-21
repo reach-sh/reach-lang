@@ -26,14 +26,14 @@ run-all:
 .PHONY: build-all
 build-all:
 	cd hs && $(MAKE) build build-circle-docker
-	cd scripts/ethereum-devnet && $(MAKE) build
+	cd scripts/devnet-eth && $(MAKE) build
 	cd js && $(MAKE) build
 	cd examples && $(MAKE) clean-all build-all
 
 .PHONY: push-all
 push-all:
 	cd hs && $(MAKE) push push-circle-docker
-	cd scripts/ethereum-devnet && $(MAKE) push
+	cd scripts/devnet-eth && $(MAKE) push
 	cd js && $(MAKE) push
 
 .PHONY: routine-build-push

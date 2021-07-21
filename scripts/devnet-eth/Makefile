@@ -1,4 +1,4 @@
-IMAGE="reachsh/ethereum-devnet"
+IMAGE="reachsh/devnet-eth"
 
 .PHONY: build
 build:

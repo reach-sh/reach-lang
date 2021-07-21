@@ -519,8 +519,8 @@ x-app-base: &app-base
 services:
   devnet-cfx:
     image: reachsh/devnet-cfx:${REACH_VERSION}
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  devnet-eth:
+    image: reachsh/devnet-eth:${REACH_VERSION}
   devnet-algo:
     image: reachsh/devnet-algo:${REACH_VERSION}
     depends_on:
@@ -550,11 +550,11 @@ services:
   ${SERVICE}-ETH-devnet: &default-app
     <<: *app-base
     depends_on:
-      - ethereum-devnet
+      - devnet-eth
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-devnet
-      - ETH_NODE_URI=http://ethereum-devnet:8545
+      - ETH_NODE_URI=http://devnet-eth:8545
   ${SERVICE}-ALGO-live:
     <<: *app-base
     environment:
@@ -907,7 +907,7 @@ react_compose () {
       ETH*)
         DEPENDS_ON='
     depends_on:
-      - ethereum-devnet
+      - devnet-eth
 '
         ;;
     esac
@@ -931,8 +931,8 @@ services:
       - REACT_APP_REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE}
       - REACT_APP_REACH_ISOLATED_NETWORK=${REACH_ISOLATED_NETWORK}
 $DEPENDS_ON
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  devnet-eth:
+    image: reachsh/devnet-eth:${REACH_VERSION}
     ports:
       - '8545:8545'
   devnet-cfx:
@@ -1096,12 +1096,12 @@ EOF
   cat<<EOF > docker-compose.yml.devnet
 version: '3.4'
 services:
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:latest
+  devnet-eth:
+    image: reachsh/devnet-eth:latest
     ports:
       - '8545:8545'
 EOF
-    DEVNET_NAME=ethereum-devnet
+    DEVNET_NAME=devnet-eth
     ;;
 
   esac
@@ -1133,7 +1133,7 @@ rpc_server_compose () {
       if $USE_EXISTING_DEVNET ; then
         echo 'using existing devnet'
         DEPENDS_ON='
-      - ETH_NODE_URI=http://ethereum-devnet:8545
+      - ETH_NODE_URI=http://devnet-eth:8545
 '
       else
         # XXX CFX
@@ -1150,11 +1150,11 @@ rpc_server_compose () {
 '
       else
         DEPENDS_ON='
-      - ETH_NODE_URI=http://ethereum-devnet:8545
-    # Does not technically depend on ethereum-devnet.
+      - ETH_NODE_URI=http://devnet-eth:8545
+    # Does not technically depend on devnet-eth.
     # This is just to get it to run both.
     depends_on:
-      - ethereum-devnet
+      - devnet-eth
 '
       fi
     fi
@@ -1184,8 +1184,8 @@ services:
       - REACH_RPC_TLS_CRT
       - REACH_RPC_TLS_PASSPHRASE
 $DEPENDS_ON
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  devnet-eth:
+    image: reachsh/devnet-eth:${REACH_VERSION}
     ports:
       - '8545:8545'
   devnet-algo:
@@ -1443,7 +1443,7 @@ do_docker_reset () {
   echo '...done'
 }
 
-REACH_IMAGES='reach ethereum-devnet devnet-algo devnet-cfx runner react-runner rpc-server'
+REACH_IMAGES='reach devnet-eth devnet-algo devnet-cfx runner react-runner rpc-server'
 
 do_update() {
   for IMG in $REACH_IMAGES ; do

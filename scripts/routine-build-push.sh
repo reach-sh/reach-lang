@@ -7,7 +7,7 @@ HS=$!
 JS=$!
 (cd scripts/devnet-algo && make build push) &
 ALGO=$!
-(cd scripts/ethereum-devnet && make build push) &
+(cd scripts/devnet-eth && make build push) &
 ETH=$!
 (cd scripts/devnet-cfx && make build push) &
 CFX=$!

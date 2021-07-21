@@ -4,8 +4,8 @@ x-app-base: &app-base
 services:
   devnet-cfx:
     image: reachsh/devnet-cfx:0.1
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:0.1
+  devnet-eth:
+    image: reachsh/devnet-eth:0.1
   reach-app-remote-ETH-live:
     <<: *app-base
     environment:
@@ -17,11 +17,11 @@ services:
   reach-app-remote-ETH-devnet: &default-app
     <<: *app-base
     depends_on:
-      - ethereum-devnet
+      - devnet-eth
     environment:
       - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-devnet
-      - ETH_NODE_URI=http://ethereum-devnet:8545
+      - ETH_NODE_URI=http://devnet-eth:8545
   reach-app-remote-ALGO-devnet: *default-app
   reach-app-remote-CFX-devnet:
     <<: *app-base

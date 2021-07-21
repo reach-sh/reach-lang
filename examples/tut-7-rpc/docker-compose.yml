@@ -14,8 +14,8 @@ x-client-env: &client-env
   extra_hosts:
     - 'host.docker.internal:172.17.0.1'
 services:
-  ethereum-devnet:
-    image: reachsh/ethereum-devnet:0.1
+  devnet-eth:
+    image: reachsh/devnet-eth:0.1
   devnet-algo:
     image: reachsh/devnet-algo:0.1
     depends_on:
@@ -37,12 +37,12 @@ services:
   server-ETH: &default-server
     <<: *server-base
     depends_on:
-      - ethereum-devnet
+      - devnet-eth
     environment:
       - REACH_DEBUG
       - REACH_RPC_PORT=3000
       - REACH_CONNECTOR_MODE=ETH-devnet
-      - ETH_NODE_URI=http://ethereum-devnet:8545
+      - ETH_NODE_URI=http://devnet-eth:8545
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
       - REACH_RPC_TLS_KEY=reach-server.key
       - REACH_RPC_TLS_CRT=reach-server.crt

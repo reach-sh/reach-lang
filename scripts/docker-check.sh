@@ -7,7 +7,7 @@ HERE=$(dirname "$0")
 
 FAILED=false
 # reach, devnet-algo omitted because CircleCI doesn't build them yet
-for NAME in stdlib runner ethereum-devnet ; do
+for NAME in stdlib runner devnet-eth ; do
   IMAGE="reachsh/$NAME:$VERSION"
   # if you build it locally, it doesn't have .RepoDigests
   LOCAL_SHA="$(docker inspect --format='{{.Id}}' "$IMAGE")"
