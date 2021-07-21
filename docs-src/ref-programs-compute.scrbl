@@ -995,7 +995,7 @@ is paired with its index. For example, @reachin{array(Bool, [false, true]).withI
 }
 
 @index{Array.slice} @reachin{Array.slice(arr, start, length)} returns a portion of @reachin{arr}, starting from
-the @reachin{start} index, up to the @reachin{start + index} index.
+the @reachin{start} index, up to the @reachin{start + length} index.
 
 @subsection{Mapping group operations}
 
