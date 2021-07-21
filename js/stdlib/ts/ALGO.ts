@@ -1516,6 +1516,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`deploy: ${JSON.stringify(e)}`);
     }
     const getInfo = async (): Promise<ContractInfo> => ctcInfo;
+    await waitCtorTxn(shad, ctcInfo);
     debug(shad, 'application created');
     return await attachP(bin, getInfo());
   };
@@ -1775,6 +1776,36 @@ type VerifyResult = {
   ctorRound: number,
   Deployer: Address,
 };
+
+export async function queryCtorTxn(dhead: string, ApplicationID: number) {
+  const indexer = await getIndexer();
+  const icq = indexer.searchForTransactions()
+    .applicationID(ApplicationID)
+    .txType('appl');
+  const isCtor = makeIsMethod(0);
+  const icr = await doQuery(`${dhead} ctor`, icq, isCtor);
+  debug({icr});
+  return icr;
+}
+
+async function waitCtorTxn(shad: string, ApplicationID: number): Promise<void> {
+  // Note(Dan): Yes, doQuery_ offers retrying, but doQuery has the filtering,
+  // and finding the right design point for refactoring is hard,
+  // so, I'm just doing some more retrying here.
+  // Let's try exponential backoff for a change.
+  const maxTries = 14; // SUM(2^n)[1 <= n <= 14] = wait up to 32766 ms
+  let icr: any = null;
+  for (let tries = 1; tries <= maxTries; tries++) {
+    const waitMs = 2 ** tries;
+    debug(shad, 'waitCtorTxn waiting (ms)', waitMs);
+    await Timeout.set(waitMs);
+    debug(shad, 'waitCtorTxn trying attempt #', tries, 'of', maxTries);
+    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID);
+    if (icr && icr.txn) return;
+  }
+  throw Error(`Indexer could not find application ${ApplicationID}.`);
+}
+
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
@@ -1857,11 +1888,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
   // Next, we check that the constructor was called with the actual escrow
   // address and not something else
-  const icq = indexer.searchForTransactions()
-    .applicationID(ApplicationID)
-    .txType('appl');
-  const isCtor = makeIsMethod(0);
-  const icr = await doQuery(`${dhead} ctor`, icq, isCtor);
+  const icr = await queryCtorTxn(dhead, ApplicationID);
   // @ts-ignore
   const ict = icr.txn;
   chk(ict, `Cannot query for constructor transaction`);
