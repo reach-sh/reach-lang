@@ -214,10 +214,29 @@ export class ContractFactory {
   // XXX this code can return Contract directly
   // Should it wait?
   async deploy(...args: any): Promise<Contract> {
+    const {abi, wallet} = this;
+    debug(`deploy`, {wallet});
+    wallet._requireConnected();
+    if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
+    const {conflux} = wallet.provider;
+
+    const deployTxn = this.getDeployTransaction(...args);
+    const resultP = wallet.sendTransaction(deployTxn);
+    const hash = (await resultP).transactionHash;
+    const receiptP = waitReceipt(wallet.provider, hash);
+
+    const txnRes = await conflux.getTransactionByHash(hash);
+    debug(`deploy result`, {hash, txnRes});
+
+    return new Contract(undefined, abi, wallet, receiptP, hash);
+  };
+
+  // XXX Unlike ethers, this requires having a wallet
+  getDeployTransaction(...args: any): any {
     // Note: can't bind keyword "interface"
     const {abi, bytecode: bcode, interface: iface, wallet} = this;
+    debug(`getDeployTransaction`, {wallet});
     const bytecode = bcode.slice(0, 2) === '0x' || bcode === '' ? bcode : '0x' + bcode;
-    wallet._requireConnected();
     if (!wallet.provider) throw Error(`Impossible: provider is undefined`);
     const {conflux} = wallet.provider;
 
@@ -246,23 +265,7 @@ export class ContractFactory {
     const ccc = contract.constructor.call(...argsConformed);
     // debug(`cfxers:Contract.deploy`, `cfx ctc constructed`, ccc);
     const data = ccc.data;
-    const txnDat = {...txn, data};
-    // const resultP = conflux.sendTransaction(txnDat);
-    // const resultP = ccc.sendTransaction(txn);
-    const resultP = wallet.sendTransaction({...txnDat});
-    const hash = (await resultP).transactionHash;
-    // const receiptP = await (await resultP).wait(); // <- no, I didn't add all the stuff to wait()
-    const receiptP = waitReceipt(wallet.provider, hash);
-
-    const txnRes = await conflux.getTransactionByHash(hash);
-    debug(`deploy result`, {hash, txnRes});
-
-    return new Contract(undefined, abi, wallet, receiptP, hash);
-  }
-  getDeployTransaction() {
-    // XXX
-    debug(`cfxers:getDeployTransaction`, `error`);
-    throw Error(`XXX getDeployTransaction on CFX`);
+    return {...txn, data};
   }
 }
 

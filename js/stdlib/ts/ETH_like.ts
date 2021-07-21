@@ -957,7 +957,7 @@ type VerifyResult = {
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
   const { ABI, Bytecode, deployMode } = backend._Connectors.ETH;
   const address = ctcInfo;
-  const factory = new ethers.ContractFactory(ABI, Bytecode);
+  const iface = new real_ethers.utils.Interface(ABI);
   debug('verifyContract', {address});
 
   const chk = (p: boolean, msg: string) => {
@@ -979,7 +979,7 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
       fromBlock: 0,
       toBlock: now,
       address: address,
-      topics: [factory.interface.getEventTopic(event)],
+      topics: [iface.getEventTopic(event)],
     });
     debug('verifyContract', logs);
     chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
@@ -996,7 +996,6 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
     switch ( deployMode ) {
       case 'DM_firstMsg': {
         const e1log = await getLogs('e1');
-        const iface = new real_ethers.utils.Interface(ABI);
         const e1p = iface.parseLog(e1log);
         debug(`e1p`, e1p);
         return e1p.args;
@@ -1008,14 +1007,10 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
     }
   })();
 
-  const deployData = factory.getDeployTransaction(...ctorArgs, { value: dt.value }).data;
-  chkeq(typeof deployData, 'string', `deployData type`);
-  chk(deployData.startsWith(Bytecode), `deployData starts with bytecode`);
-
   // We don't actually check the live contract code, but instead compare what
   // we would have done to deploy it with how it was actually deployed.
   const actual = dt.data;
-  const expected = deployData;
+  const expected = Bytecode + iface.encodeDeploy(ctorArgs).slice(2);
   chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
 
   // We are not checking the balance or the contract storage, because we know
