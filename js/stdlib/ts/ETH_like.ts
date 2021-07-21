@@ -32,6 +32,7 @@ import type { // =>
   IBackendViewInfo,
   IBackendViewsInfo,
   IContract,
+  IRecvArgs, ISendRecvArgs,
   IRecv,
   OnProgress,
 } from './shared_impl';
@@ -64,7 +65,10 @@ type Log = real_ethers.providers.Log;
 // node --unhandled-rejections=strict
 
 type DeployMode = 'DM_firstMsg' | 'DM_constructor';
+const reachBackendVersion = 1;
+const reachEthBackendVersion = 1;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
+  version: number,
   ABI: string,
   Bytecode: string,
   deployMode: DeployMode,
@@ -85,6 +89,8 @@ type NetworkAccount = {
 
 type ContractInfo = Address;
 type Digest = string
+type SendRecvArgs = ISendRecvArgs<Digest, Address, Token, AnyETH_Ty>;
+type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
@@ -382,7 +388,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   const getGasLimit = (): BigNumber => gasLimit;
 
   const deploy = (bin: Backend): Contract => {
-    ensureConnectorAvailable(bin._Connectors, 'ETH');
+    ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
@@ -428,21 +434,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         new Promise((resolve) => { setImpl = resolve; });
       const implNow = {
         stdlib,
-        sendrecv: async (
-          funcNum: number, evt_cnt: number,
-          hasLastTime: (BigNumber | false),
-          tys: Array<AnyETH_Ty>,
-          args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
-          onlyIf: boolean, soloSend: boolean,
-          timeout_delay: BigNumber | false, sim_p: any,
-        ): Promise<Recv> => {
+        sendrecv: async (srargs:SendRecvArgs): Promise<Recv> => {
+          const { funcNum, evt_cnt, out_tys, args, pay, onlyIf, soloSend, timeout_delay } = srargs;
           debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
-          void(evt_cnt);
-          void(sim_p);
-          // TODO: munge/unmunge roundtrip?
-          void(hasLastTime);
-          void(tys);
-          void(out_tys);
           const [ value, toks ] = pay;
 
           // The following must be true for the first sendrecv.
@@ -461,7 +455,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          return await impl.recv(funcNum, evt_cnt, out_tys, false,timeout_delay);
+          return await impl.recv({funcNum, evt_cnt, out_tys, waitIfNotPresent: false, timeout_delay});
         },
       };
       const impl: Contract = deferContract(true, implP, implNow);
@@ -483,7 +477,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     bin: Backend,
     infoP: Promise<ContractInfo>,
   ): Contract => {
-    ensureConnectorAvailable(bin._Connectors, 'ETH');
+    ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
 
@@ -592,16 +586,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     const getInfo = async () => await infoP;
 
-    const sendrecv_impl = async (
-      funcNum: number, evt_cnt: number,
-      hasLastTime: (BigNumber | false), tys: Array<AnyETH_Ty>,
-      args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
-      onlyIf: boolean, soloSend: boolean,
-      timeout_delay: BigNumber | false,
-    ): Promise<Recv> => {
-      void(hasLastTime);
+    const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
+      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay } = srargs;
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv_impl(funcNum, out_tys, waitIfNotPresent, timeout_delay);
+        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay});
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -672,26 +660,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return {didTimeout: true};
     };
 
-    const sendrecv = async (
-      funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
-      tys: Array<AnyETH_Ty>,
-      args: Array<any>, pay: PayAmt, out_tys: Array<AnyETH_Ty>,
-      onlyIf: boolean, soloSend: boolean,
-      timeout_delay: BigNumber | false, sim_p: any,
-    ): Promise<Recv> => {
-      void(sim_p);
-      return await sendrecv_impl(funcNum, evt_cnt, hasLastTime, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay);
-    }
-
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv_impl = async (
-      okNum: number, out_tys: Array<AnyETH_Ty>,
-      waitIfNotPresent: boolean,
-      timeout_delay: BigNumber | false,
-    ): Promise<Recv> => {
-      const isFirstMsgDeploy = (okNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
+    const recv = async (rargs:RecvArgs): Promise<Recv> => {
+      const { funcNum, out_tys, waitIfNotPresent, timeout_delay } = rargs;
+      const isFirstMsgDeploy = (funcNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
       const lastBlock = await getLastBlock();
-      const ok_evt = `e${okNum}`;
+      const ok_evt = `e${funcNum}`;
       debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- START`);
 
       // look after the last block
@@ -780,14 +754,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       debug(shad, ':', label, 'recv', ok_evt, timeout_delay, '--- TIMEOUT');
       return {didTimeout: true} ;
-    };
-
-    const recv = async (
-      okNum: number, ok_cnt: number, out_tys: Array<AnyETH_Ty>,
-      waitIfNotPresent: boolean, timeout_delay: BigNumber | false,
-    ): Promise<Recv> => {
-      void(ok_cnt);
-      return await recv_impl(okNum, out_tys, waitIfNotPresent, timeout_delay);
     };
 
     const wait = async (delta: BigNumber) => {

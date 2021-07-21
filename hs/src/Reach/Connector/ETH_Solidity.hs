@@ -1421,6 +1421,9 @@ try_compile_sol solf opt = do
         Left m -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
         Right x -> return $ Right (me, x)
 
+reachEthBackendVersion :: Int
+reachEthBackendVersion = 1
+
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
   let shortEnough (_, CompiledSolRec {..}) =
@@ -1464,11 +1467,13 @@ compile_sol cinfo solf = do
           Left rA -> try1 $ Left rA
   (which, CompiledSolRec {..}) <- tryA
   return $ Aeson.Object $ HM.union cinfo $
-    HM.fromList $ [ ("ABI", Aeson.String csrAbi)
-                  , ("Bytecode", Aeson.String $ "0x" <> csrCode)
-                  , ("Which", Aeson.String $ T.pack which)
-                  , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
-                  ]
+    HM.fromList $
+      [ ("ABI", Aeson.String csrAbi)
+      , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+      , ("Which", Aeson.String $ T.pack which)
+      , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
+      , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
+      ]
 
 connect_eth :: Connector
 connect_eth = Connector {..}

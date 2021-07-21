@@ -21,7 +21,10 @@ import {
 import {
   CurrencyAmount, OnProgress,
   IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
-  IAccount, IContract, IRecv, ISimRes, ISimTxn,
+  IRecvArgs, ISendRecvArgs,
+  IAccount, IContract, IRecv,
+  // ISimRes,
+  ISimTxn,
   deferContract,
   debug, envDefault,
   argsSlice, argsSplit,
@@ -41,7 +44,6 @@ import {
 import waitPort from './waitPort';
 import {
   Token,
-  PayAmt,
   ALGO_Ty,
   NV,
   addressFromHex,
@@ -111,6 +113,7 @@ type CompileResultBytes = {
 
 type NetworkAccount = Wallet;
 
+const reachBackendVersion = 1;
 const reachAlgoBackendVersion = 2;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -135,10 +138,12 @@ type CompiledBackend = {
 
 type ContractInfo = number;
 type Digest = BigNumber
+type SendRecvArgs = ISendRecvArgs<Digest, Address, Token, AnyALGO_Ty>;
+type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
+// type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
 type SimTxn = ISimTxn<Token>
 
 // Helpers
@@ -484,12 +489,7 @@ const replaceAll = (orig: string, what: string, whatp: string): string => {
 
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
-  const { unsupported, version } = algob;
-  if ( version !== reachAlgoBackendVersion ) {
-    const older = (version === undefined) || (version < reachAlgoBackendVersion);
-    const more = older ? `update your compiler and recompile!` : `updated your standard library and rerun!`;
-    throw Error(`This Reach compiled backend does not match the expectations of this Reach standard library: expected ${reachAlgoBackendVersion}, but got ${version}; ${more}`);
-  }
+  const { unsupported } = algob;
   if ( unsupported.length > 0 ) {
     const reasons = unsupported.map(s => ` * ${s}`).join('\n');
     throw Error(`This Reach application is not supported on Algorand for the following reasons:\n${reasons}`);
@@ -1032,22 +1032,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return await waitUntilTime(bigNumberify(realLastRound).add(delta));
     };
 
-    const sendrecv = async (
-      funcNum: number,
-      evt_cnt: number,
-      hasLastTime: (BigNumber | false),
-      tys: Array<AnyALGO_Ty>,
-      args: Array<any>,
-      pay: PayAmt,
-      out_tys: Array<AnyALGO_Ty>,
-      onlyIf: boolean,
-      soloSend: boolean,
-      timeout_delay: false | BigNumber,
-      sim_p: (fake: Recv) => Promise<SimRes>,
-    ): Promise<Recv> => {
-      void (hasLastTime);
+    const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
+      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay, sim_p } = srargs;
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv(funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
+        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay});
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -1276,13 +1264,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
-    const recv = async (
-      funcNum: number,
-      evt_cnt: number,
-      tys: Array<AnyALGO_Ty>,
-      waitIfNotPresent: boolean,
-      timeout_delay: false | BigNumber,
-    ): Promise<Recv> => {
+    const recv = async (rargs:RecvArgs): Promise<Recv> => {
+      const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay } = rargs;
       const indexer = await getIndexer();
 
       const funcName = `m${funcNum}`;
@@ -1347,8 +1330,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const argMsg = 2; // from ALGO.hs
         const ctc_args_s: string = ctc_args_all[argMsg];
 
-        debug(dhead, '--- tys =', tys);
-        const msgTy = T_Tuple(tys);
+        debug(dhead, '--- out_tys =', out_tys);
+        const msgTy = T_Tuple(out_tys);
         const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
         debug(dhead, {ctc_args});
 
@@ -1535,12 +1518,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const implNow = { stdlib: compiledStdlib };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
-    ensureConnectorAvailable(bin._Connectors, connector);
+    ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
     return deferContract(false, attachP(bin, ctcInfoP), implNow);
   };
 
   const deploy = (bin: Backend): Contract => {
-    ensureConnectorAvailable(bin._Connectors, connector);
+    ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
     return deferContract(false, deployP(bin), implNow);
   };
 

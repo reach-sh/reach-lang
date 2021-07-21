@@ -73,6 +73,7 @@ export type IViewLib = {
 };
 
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
+  _backendVersion: number,
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
 };
@@ -105,24 +106,34 @@ export type IRecvNoTimeout<RawAddress> =  {
 };
 
 export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
-  didTimeout: true
-}
+  didTimeout: true,
+};
+
+export type ISendRecvArgs<Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+  funcNum: number,
+  evt_cnt: number,
+  hasLastTime: (BigNumber | false),
+  tys: Array<ConnectorTy>,
+  args: Array<any>,
+  pay: MkPayAmt<Token>,
+  out_tys: Array<ConnectorTy>,
+  onlyIf: boolean,
+  soloSend: boolean,
+  timeout_delay: BigNumber | false,
+  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, Token, ConnectorTy>>,
+};
+
+export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
+  funcNum: number, evt_cnt: number, out_tys: Array<ConnectorTy>,
+  waitIfNotPresent: boolean,
+  timeout_delay: BigNumber | false,
+};
 
 export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
   creationTime: () => Promise<BigNumber>,
-  sendrecv: (
-    funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
-    tys: Array<ConnectorTy>,
-    args: Array<any>, value: MkPayAmt<Token>, out_tys: Array<ConnectorTy>,
-    onlyIf: boolean, soloSend: boolean,
-    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, Token, ConnectorTy>>,
-  ) => Promise<IRecv<RawAddress>>,
-  recv: (
-    okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
-    waitIfNotPresent: boolean,
-    timeout_delay: BigNumber | false,
-  ) => Promise<IRecv<RawAddress>>,
+  sendrecv: (args:ISendRecvArgs<Digest, RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
+  recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
   selfAddress: () => CBR_Address, // Not RawAddress!
@@ -375,8 +386,20 @@ export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
 ) => (x:any, y:any): boolean =>
   bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
 
-export const ensureConnectorAvailable = (connectors: { [key: string]: any }, connector: string) => {
-  if (!(connector in connectors)) {
-    throw (new Error(`The application was not compiled for the ${connector} connector, only: ${Object.keys(connectors)}`));
+export const ensureConnectorAvailable = (bin:any, conn: string, jsVer: number, connVer: number) => {
+  checkVersion(bin._backendVersion, jsVer, `JavaScript backend`);
+  const connectors = bin._Connectors;
+  const conn_bin = connectors[conn];
+  if ( ! conn_bin ) {
+    throw (new Error(`The application was not compiled for the ${conn} connector, only: ${Object.keys(connectors)}`));
   }
-}
+  checkVersion(conn_bin.version, connVer, `${conn} backend`);
+};
+
+export const checkVersion = (actual:number, expected:number, label:string): void => {
+  if ( actual !== expected ) {
+    const older = (actual === undefined) || (actual < expected);
+    const more = older ? `update your compiler and recompile!` : `updated your standard library and rerun!`;
+    throw Error(`This Reach compiled ${label} does not match the expectations of this Reach standard library: expected ${expected}, but got ${actual}; ${more}`);
+  }
+};

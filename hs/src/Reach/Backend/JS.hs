@@ -58,6 +58,9 @@ jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
 jsApply :: Doc -> [Doc] -> Doc
 jsApply f args = f <> parens (hcat $ punctuate (comma <> space) args)
 
+jsApplyKws :: Doc -> M.Map String Doc -> Doc
+jsApplyKws f m = jsApply f [ jsObject m ]
+
 jsFunction_ :: Doc -> [Doc] -> Doc -> Doc
 jsFunction_ name args body =
   "function" <+> jsApply name args <+> jsBraces body <> semi
@@ -669,15 +672,16 @@ jsETail = \case
           delays' <- jsSum delays
           timef <- withCtxt $ jsTimeoutFlag
           return (delays', jsIf timef k_top k_okp)
-    let recvp =
-          jsApply
-            "ctc.recv"
-            [ pretty which
-            , pretty $ length msg_vs
-            , jsArray msg_ctcs
-            , "false"
-            , delayp
-            ]
+    let a_funcNum = pretty which
+    let a_evt_cnt = pretty $ length msg_vs
+    let a_out_tys = jsArray msg_ctcs
+    let a_timeout_delay = delayp
+    let recvp = jsApplyKws "ctc.recv" $ M.fromList $
+          [ ("funcNum", a_funcNum)
+          , ("evt_cnt", a_evt_cnt)
+          , ("out_tys", a_out_tys)
+          , ("waitIfNotPresent", "false")
+          , ("timeout_delay", a_timeout_delay) ]
     callp <-
       withCtxt $
         case from_me of
@@ -711,21 +715,20 @@ jsETail = \case
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
             last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
-            let sendp =
-                  jsApply
-                    "ctc.sendrecv"
-                    [ pretty which
-                    , pretty (length msg_vs)
-                    , last_timev'
-                    , jsArray msgts
-                    , vs
-                    , amtp
-                    , jsArray msg_ctcs
-                    , whena'
-                    , soloSend'
-                    , delayp
-                    , parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
-                    ]
+            let a_sim_p = parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
+            let sendp = jsApplyKws "ctc.sendrecv" $ M.fromList $
+                  [ ("funcNum", a_funcNum)
+                  , ("evt_cnt", a_evt_cnt)
+                  , ("hasLastTime", last_timev')
+                  , ("tys", jsArray msgts)
+                  , ("args", vs)
+                  , ("pay", amtp)
+                  , ("out_tys", a_out_tys)
+                  , ("onlyIf", whena')
+                  , ("soloSend", soloSend')
+                  , ("waitIfNotPresent", "false")
+                  , ("timeout_delay", a_timeout_delay)
+                  , ("sim_p", a_sim_p) ]
             return sendp
           Nothing ->
             return recvp
@@ -974,6 +977,9 @@ jsMaps ms = do
           M.fromList $
             [("mapDataTy" :: String, mapDataTy')]
 
+reachBackendVersion :: Int
+reachBackendVersion = 1
+
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let DLInit {..} = dli
@@ -982,6 +988,7 @@ jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
           , "/* eslint-disable */"
           , "export const _version =" <+> jsString versionStr <> semi
+          , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr

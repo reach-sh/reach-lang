@@ -50,7 +50,7 @@ r () {
   # export REACH_ALGO_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -149,7 +149,7 @@ tealcount () {
 # c hs/t/y/pr206.rsh
 # c hs/t/y/pr220.rsh
 # fc hs/t/n/pr220.rsh
-fc hs/t/n/pr220okay.rsh
+# fc hs/t/n/pr220okay.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -229,6 +229,10 @@ fc hs/t/n/pr220okay.rsh
 # r examples/raffle
 # r examples/rent-seeking
 # r examples/pr-1cc66
+jb
+r examples/overview
+exit 0
+r examples/realtime
 
 # r users/ff
 # r users/7639df8
