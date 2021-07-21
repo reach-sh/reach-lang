@@ -10,9 +10,11 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/21: Renamed Ethereum devnet Docker image to @litchar{devnet-eth}.}
+@item{2021/07/21: Renamed connector modes to use naming convention @litchar{$NET-devnet}, rather than exposing implementation.}
+@item{2021/07/21: Ethereum contract bytecode verification changed to directly compare deployment data}
 @item{2021/07/20: @reachin{Array.slice()} added.}
 @item{2021/07/19: @reachin{Token.destroyed()} added.}
-@item{2021/07/15: Ethereum contract bytecode verification changed to match @link["https://github.com/ConsenSys/bytecode-verifier"]{Consensys bytecode verifier}/}
 @item{2021/07/15: Ethereum contract info (i.e. @jsin{ctc.getInfo()}) reduced to address only.}
 @item{2021/07/14: Algorand contract info (i.e. @jsin{ctc.getInfo()}) reduced to application id only.}
 @item{2021/07/14: Minted tokens must be destroyed by end of application.}

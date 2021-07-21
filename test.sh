@@ -49,7 +49,7 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=CFX ${REACH} run
+  # REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
@@ -83,7 +83,7 @@ tealcount () {
 
 #######
 
-jb
+# jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh
@@ -149,6 +149,7 @@ jb
 # c hs/t/y/pr206.rsh
 # c hs/t/y/pr220.rsh
 # fc hs/t/n/pr220.rsh
+fc hs/t/n/pr220okay.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
@@ -176,7 +177,7 @@ jb
 # r examples/atomic-swap-auction
 # r examples/chicken-fork
 # r examples/chicken-parallel
-r examples/chicken-race
+# r examples/chicken-race
 # r examples/exports
 # r examples/many-args
 # r examples/ttt
@@ -196,7 +197,7 @@ r examples/chicken-race
 # r examples/object-digest
 # r examples/view-map
 # r examples/nim
-r examples/overview
+# r examples/overview
 # r examples/popularity-contest
 # r examples/pr202105-zet
 # r examples/race
@@ -235,7 +236,7 @@ r examples/overview
 # r users/220
 # exit 0
 
-r examples/mint-basic
+# r examples/mint-basic
 # r examples/atomic-swap
 
 # (cd examples/abstract-simul && make build)

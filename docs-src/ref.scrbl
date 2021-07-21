@@ -119,16 +119,16 @@ It then
 @itemlist[
   @item{
     The environment variable @defenv{REACH_CONNECTOR_MODE} specifies which context to run in.
-    The default, if this variable is unset or empty, is @conmode{ETH-test-dockerized-geth}.
+    The default, if this variable is unset or empty, is @conmode{ETH-devnet}.
     The options are:
 
     @itemlist[
       @item{@defconmode{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envref{ETH_NODE_URI}.}
       @item{@defconmode{ETH-browser}, which uses Ethereum via a browser extension, like MetaMask.}
-      @item{@defconmode{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
+      @item{@defconmode{ETH-devnet}, which uses a Dockerized private Ethereum network.}
       @item{@defconmode{ALGO-live}, which uses a live Algorand network node, specified by the environment variables documented in @seclink["ref-network-algo"]{the Algorand connector section}.}
       @item{@defconmode{ALGO-browser}, which uses Algorand via a browser extension, like AlgoSigner.}
-      @item{@defconmode{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
+      @item{@defconmode{ALGO-devnet}, which uses a Dockerized private Algorand network.}
     ]
   }
   @item{

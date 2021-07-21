@@ -70,10 +70,10 @@ to its full, canonical name. The canonical connector modes are:
 
 @item{@conmode{ETH-live}}
 @item{@conmode{ETH-browser}}
-@item{@conmode{ETH-test-dockerized-geth}, for @jsin{'ETH'}, @jsin{'ETH-test'}, and @jsin{'ETH-test-dockerized'}.}
+@item{@conmode{ETH-devnet}, for @jsin{'ETH'}.}
 @item{@conmode{ALGO-live}}
 @item{@conmode{ALGO-browser}}
-@item{@conmode{ALGO-test-dockerized-algod}, for @jsin{'ALGO'}, @jsin{'ALGO-test'}, and @jsin{'ALGO-test-dockerized'}.}
+@item{@conmode{ALGO-devnet}, for @jsin{'ALGO'}.}
 
 ]
 
@@ -349,7 +349,7 @@ this is the current block number, represented as a @litchar{BigNumber}.
 Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
 In @tech{isolated testing modes}, this will also force time to pass on the network, usually by sending trivial transactions.
 An @deftech{isolated testing modes} is a @envref{REACH_CONNECTOR_MODE} that matches
-@litchar{$NET-test-dockerized-$IMPL} for all valid @litchar{$NET} and @litchar{$IMPL}, or when @defenv{REACH_ISOLATED_NETWORK} is set.
+@litchar{$NET-devnet} for all valid @litchar{$NET}, or when @defenv{REACH_ISOLATED_NETWORK} is set.
 
 You may provide an optional @jsin{onProgress} callback, used for reporting progress,
 which may be called many times up until the specified @tech{time}.

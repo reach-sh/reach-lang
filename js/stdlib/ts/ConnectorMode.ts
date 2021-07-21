@@ -3,10 +3,10 @@ import { envDefault } from './shared_impl';
 export type Connector = 'ETH' | 'ALGO' | 'CFX';
 
 export type ConnectorMode =
-  'ETH-test-dockerized-geth' |
+  'ETH-devnet' |
   'ETH-live' |
   'ETH-browser' |
-  'ALGO-test-dockerized-algod' |
+  'ALGO-devnet' |
   'ALGO-live' |
   'ALGO-browser' |
   'CFX-devnet' |
@@ -14,12 +14,12 @@ export type ConnectorMode =
   'CFX-browser';
 
 // Order is significant, earlier = default for shared prefix
-// e.g. ETH defaults to ETH-test-dockerized-geth
+// e.g. ETH defaults to ETH-devnet
 const knownConnectorModes: Array<ConnectorMode> = [
-  'ETH-test-dockerized-geth',
+  'ETH-devnet',
   'ETH-live',
   'ETH-browser',
-  'ALGO-test-dockerized-algod',
+  'ALGO-devnet',
   'ALGO-live',
   'ALGO-browser',
   'CFX-devnet',

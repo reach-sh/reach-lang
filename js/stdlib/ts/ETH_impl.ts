@@ -132,7 +132,7 @@ export function setProviderByName(providerName: ProviderName): void  {
 
 const localhostProviderEnv: ProviderByURI = {
   ETH_NODE_URI: 'http://localhost:8545',
-  REACH_CONNECTOR_MODE: 'ETH-test-dockerized-geth',
+  REACH_CONNECTOR_MODE: 'ETH-devnet',
   REACH_DO_WAIT_PORT: 'yes',
   REACH_ISOLATED_NETWORK: 'yes',
 }
@@ -201,7 +201,7 @@ function windowLooksIsolated() {
 
 function connectorModeIsolatedNetwork(connectorMode: string): 'yes' | 'no' {
   switch (connectorMode) {
-  case 'ETH-test-dockerized-geth': return 'yes';
+  case 'ETH-devnet': return 'yes';
   default: return 'no';
   }
 }
@@ -209,7 +209,7 @@ function connectorModeIsolatedNetwork(connectorMode: string): 'yes' | 'no' {
 function guessConnectorMode(env: Partial<ProviderByName & ProviderByURI>): string|undefined {
   if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
     // take a guess if ETH_NODE_URI is set
-    return env.ETH_NODE_URI.toLowerCase().includes('localhost') ? 'ETH-test-dockerized-geth' : 'ETH-live';
+    return env.ETH_NODE_URI.toLowerCase().includes('localhost') ? 'ETH-devnet' : 'ETH-live';
   } else {
     // abstain from guessing
     return undefined;

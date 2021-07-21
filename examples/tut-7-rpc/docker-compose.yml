@@ -41,7 +41,7 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_RPC_PORT=3000
-      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+      - REACH_CONNECTOR_MODE=ETH-devnet
       - ETH_NODE_URI=http://ethereum-devnet:8545
       - REACH_RPC_KEY=INSERT-YOUR-OWN-PRESHARED-KEY
       - REACH_RPC_TLS_KEY=reach-server.key
@@ -54,7 +54,7 @@ services:
     environment:
       - REACH_DEBUG
       - REACH_RPC_PORT=3000
-      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - REACH_CONNECTOR_MODE=ALGO-devnet
       - ALGO_SERVER=http://devnet-algo
       - ALGO_PORT=4180
       - ALGO_INDEXER_SERVER=http://devnet-algo

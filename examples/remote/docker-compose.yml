@@ -14,15 +14,15 @@ services:
       - REACH_CONNECTOR_MODE=ETH-live
       - ETH_NODE_URI
       - ETH_NODE_NETWORK
-  reach-app-remote-ETH-test-dockerized-geth: &default-app
+  reach-app-remote-ETH-devnet: &default-app
     <<: *app-base
     depends_on:
       - ethereum-devnet
     environment:
       - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
+      - REACH_CONNECTOR_MODE=ETH-devnet
       - ETH_NODE_URI=http://ethereum-devnet:8545
-  reach-app-remote-ALGO-test-dockerized-algod: *default-app
+  reach-app-remote-ALGO-devnet: *default-app
   reach-app-remote-CFX-devnet:
     <<: *app-base
     depends_on:
