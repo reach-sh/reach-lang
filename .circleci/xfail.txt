@@ -44,6 +44,7 @@ CFX.popularity-contest
 
 # "TX with same nonce already inserted"
 CFX.nft-auction
+CFX.rent-seeking
 CFX.workshop-fomo-generalized
 CFX.workshop-trust-fund
 
