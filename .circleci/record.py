@@ -91,7 +91,7 @@ if (env('CIRCLE_BRANCH') == 'master'):
     POST += "RELEASE"
 else:
     POST += "MERGE"
-POST += "*"
+POST += f"* {env('CIRCLE_SHA1')[:8]}"
 
 # XXX make branch a link
 print(f"export RECORD_MESSAGE='*{SYM}* {env('CIRCLE_USERNAME')}/{env('CIRCLE_BRANCH')} > examples: {PRE} <{env('CIRCLE_BUILD_URL')}|more...>{POST}'")
