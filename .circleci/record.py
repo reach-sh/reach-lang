@@ -85,13 +85,15 @@ for c in conns:
 EXIT = 0
 POST += "\\n*"
 if nxftc > 0:
-    POST += f"DO NOT "
+    POST += f":warning: DO NOT "
     EXIT = 1
+else:
+    POST += f":pizza: "
 if (env('CIRCLE_BRANCH') == 'master'):
     POST += "RELEASE"
 else:
     POST += "MERGE"
-POST += f"* {env('CIRCLE_SHA1')[:8]}"
+POST += f"*: `{env('CIRCLE_SHA1')[:8]}`"
 
 # XXX make branch a link
 print(f"export RECORD_MESSAGE='*{SYM}* {env('CIRCLE_USERNAME')}/{env('CIRCLE_BRANCH')} > examples: {PRE} <{env('CIRCLE_BUILD_URL')}|more...>{POST}'")
