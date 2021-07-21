@@ -551,6 +551,15 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
+function looksLikeAccountingNotInitialized(e: any) {
+  const responseText = e?.response?.text || null;
+  // TODO: trust the response to be json and parse it?
+  // const json = JSON.parse(responseText) || {};
+  // const msg: string = (json.message || '').toLowerCase();
+  const msg = (responseText || '').toLowerCase();
+  return msg.includes(`accounting not initialized`);
+}
+
 const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
   debug(dhead, '--- QUERY =', query);
   let retries = 10;
@@ -560,8 +569,10 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
       res = await query.do();
       break;
     } catch (e) {
-      if ( e?.errno === -111 || e?.code === "ECONNRESET" || e?.response?.text === "{\"message\":\"accounting not initialized\"}\n" ) {
+      if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
+      } else if ( looksLikeAccountingNotInitialized(e) ) {
+        debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       } else if ( ! alwaysRetry || retries <= 0 ) {
         throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
       }
