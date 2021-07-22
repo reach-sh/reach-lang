@@ -208,13 +208,12 @@ jobs:
             | cat > ~/.local/bin/z3
         chmod +x ~/.local/bin/*
     - stack_deps
+    - srd_yes
     - run: |
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
         (cd hs && make build)
         (cd hs && stack install)
-    - srd_yes
-    - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
         mkdir -p /tmp/workspace/docker
