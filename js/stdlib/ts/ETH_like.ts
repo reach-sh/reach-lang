@@ -536,7 +536,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const callTok = async (tok:Token, amt:BigNumber) => {
         const tokBalance = await balanceOf_token(networkAccount, address, tok);
         debug({...dhead, kind:'token'}, 'balanceOf', tokBalance);
-        assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
+        assert(tokBalance.gte(amt), `local account token balance is insufficient for tok ${tok}: ${tokBalance} < ${amt}`);
         // @ts-ignore
         const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
         await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit); }
