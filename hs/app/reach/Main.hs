@@ -279,29 +279,26 @@ reachImages =
 
 
 --------------------------------------------------------------------------------
-serviceConnector :: Env -> ConnectorMode -> Compose -> [T.Text] -> T.Text -> T.Text -> IO T.Text
-serviceConnector Env {..} (ConnectorMode c m) compose ports appService' version'' = do
+serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
+serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
   let ports' = case ports of
         [] -> "[]"
         ps -> T.intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
-
-  let (sad, dph) = case compose of
-        StandaloneDevnet -> ("True", "")
-        WithProject _ Project {..} -> ("False", T.pack projDirHost)
+  let d = devnetFor c
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
+
+  let labels = [N.text| - "sh.reach.devnet-for=$d" |]
 
   pure
     . swap "REACH_VERSION" version''
     . swap "PORTS" ports'
     . swap "NETWORK" "reach-devnet"
     . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
-    . swap "STANDALONE_DEVNET" sad
-    . swap "DIR_TMP_HOST" (T.pack e_dirTmpHost)
-    . swap "DIR_PROJECT_HOST" dph
+    . swap "LABELS" labels
     $ fmt
 
 
@@ -518,11 +515,18 @@ withCompose DockerMeta {..} wrapped = do
             - ALGO_INDEXER_PORT=8980
           |]
 
-      -- TODO `USE_EXISTING_DEVNET`-handling, CFX, consolidate + push config
+      let devnetCfx = [N.text|
+            - CFX_DEBUG
+            - CFX_NODE_URI=http://devnet-cfx:12537
+            - CFX_NETWORK_ID=999
+          |]
+
+      -- TODO `USE_EXISTING_DEVNET`-handling, consolidate + push config
       -- out of here
       let (d, e) = case (c, m) of
             (Algo, Devnet) -> (devnetFor c, devnetAlgo)
             (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://ethereum-devnet:8545")
+            (Cfx, Devnet) -> (devnetFor c, devnetCfx)
             _ -> ("", "")
 
       pure [N.text|
@@ -549,10 +553,10 @@ withCompose DockerMeta {..} wrapped = do
 
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
-    (_, cmp@StandaloneDevnet) -> liftIO $ serviceConnector env cm cmp connPorts appService "latest"
+    (_, StandaloneDevnet) -> liftIO $ serviceConnector env cm connPorts appService "latest"
 
     -- TODO fix remaining combos (e.g. `rpc-server` latest vs. REACH_VERSION)
-    (_, cmp) -> liftIO $ serviceConnector env cm cmp connPorts appService version''
+    (_, _) -> liftIO $ serviceConnector env cm connPorts appService version''
 
   let topLevelNets = case m of
         Live -> "{}"
@@ -574,7 +578,6 @@ withCompose DockerMeta {..} wrapped = do
                  networks:
                    $svcNets
                  labels:
-                   - "sh.reach.standalone-devnet=False"
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
                    - "sh.reach.dir-project=$projDirHost'"
                  build:
@@ -817,6 +820,14 @@ init' = command "init" . info f $ d <> foot where
 
 
 --------------------------------------------------------------------------------
+-- Tell `docker-compose` to skip connector containers if they're already running
+devnetDeps :: AppT T.Text
+devnetDeps = do
+  ConnectorMode c' _ <- asks $ connectorMode . e_var
+  let c = devnetFor c'
+  pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
+
+
 run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
@@ -829,6 +840,7 @@ run' = command "run" . info f $ d <> noIntersperse where
 
     Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir
+    dd <- devnetDeps
 
     let Var {..} = e_var
     let Scaffold {..} = mkScaffold proj isolate
@@ -874,7 +886,7 @@ run' = command "run" . info f $ d <> noIntersperse where
 
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
-          && docker-compose -f "$$TMP/docker-compose.yml" run --rm $appService $args'
+          && docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --rm $appService $args'
         RES="$?"
         set -e
 
@@ -884,47 +896,34 @@ run' = command "run" . info f $ d <> noIntersperse where
 
 
 --------------------------------------------------------------------------------
--- TODO fix crazy names like `reach2021-07-13t23-40-21z-5smc_algorand-devnet_run_1`
-downProject :: Project -> App
-downProject Project {..} = script $ do
-  let pdh = T.pack projDirHost
-  realpath
-  write [N.text|
-    dend () { docker-compose -f "$$1/docker-compose.yml" down --volumes --remove-orphans; }
-    insp () { docker inspect --format="{{ index .Config.Labels \"$$1\" }}" "$$2"; }
-    real () {
-      i="$(insp "$$1" "$$2")"
-      ([ "x$$i" = "x" ] && echo "") || realpath "$$i"
-    }
-
-    ds="$(docker container ls -q)"
-
-    if [ "$$ds" = "" ]; then
-      dend "$$TMP"
-    else
-      echo "$$ds" | while IFS= read -r d; do
-        if [ "$(real "sh.reach.dir-project" "$$d")" = "$(realpath "$pdh")" ]; then
-          dend "$(real "sh.reach.dir-tmp" "$$d")"
-          break
-        fi
-
-        if [ "$(insp "sh.reach.standalone-devnet" "$$d")" = "True" ]; then
-          (docker exec "$$d" killall -INT geth 2>/dev/null && sleep 3 && dend "$$TMP") \
-            || dend "$(real "sh.reach.dir-tmp" "$$d")"
-          break
-        fi
-      done
-    fi
-  |]
-
-
+-- TODO deprecation messages for `reach rpc-down` and `reach react-down`
 down :: Subcommand
 down = command "down" $ info f d where
-  d = progDesc "Halt any Dockerized devnets for this app"
-  f = go <$> argAppOrDir
-  go a = do
-    p <- projectFrom a
-    withCompose (mkDockerMetaConsole p False) $ downProject p
+  d = progDesc "Halt all Dockerized Reach services and devnets"
+  f = pure $ do
+    script $ do
+      write [N.text|
+        name () { docker inspect --format="{{ index .Name }}" "$$1"; }
+
+        docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
+          printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
+          docker stop "$$d" >/dev/null && printf 'Done.\n'
+        done
+      |]
+
+      forM_ (devnetFor <$> [ Algo, Eth, Cfx ]) $ \c -> write [N.text|
+        docker ps -aqf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
+          printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
+          ((docker exec "$$d" killall -w -INT geth 2>/dev/null && docker rm "$$d" >/dev/null) \
+            || docker stop "$$d" >/dev/null) \
+            && printf 'Done.\n'
+        done
+      |]
+
+      write [N.text|
+        printf 'Removing network "reach-devnet"... '
+        docker network rm reach-devnet >/dev/null && printf 'Done.\n'
+      |]
 
 
 reactDown :: Subcommand
@@ -956,6 +955,7 @@ react = command "react" $ info f d where
   go _ = do
     Var {..} <- asks e_var
     dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
+    dd <- devnetDeps
 
     -- TODO generalize this pattern for other subcommands?
     cargs <- liftIO $ do
@@ -967,7 +967,7 @@ react = command "react" $ info f d where
 
     withCompose dm . script $ write [N.text|
       $reachEx compile $cargs
-      docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $appService
+      docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
     |]
 
 
@@ -975,9 +975,10 @@ react = command "react" $ info f d where
 rpcServer' :: T.Text -> AppT T.Text
 rpcServer' appService = do
   Var {..} <- asks e_var
+  dd <- devnetDeps
   pure [N.text|
     $reachEx compile
-    docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $appService
+    docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
   |]
 
 
@@ -995,9 +996,7 @@ rpcServer = command "rpc-server" $ info f d where
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
 
-    withCompose dm . script $ do
-      rpcServer' appService >>= write
-      write "docker-compose -f \"$TMP/docker-compose.yml\" down --volumes --remove-orphans"
+    withCompose dm . script $ rpcServer' appService >>= write
 
 
 rpcRun :: Subcommand
@@ -1075,6 +1074,7 @@ devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = pure $ do
     Env {..} <- ask
+    dd <- devnetDeps
     let Var {..} = e_var
     let ConnectorMode c m = connectorMode
     let s = devnetFor c
@@ -1085,7 +1085,7 @@ devnet = command "devnet" $ info f d where
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
 
     withCompose mkDockerMetaStandaloneDevnet . script $ write [N.text|
-      docker-compose -f "$$TMP/docker-compose.yml" run --service-ports --rm $s
+      docker-compose -f "$$TMP/docker-compose.yml" run --name reach-devnet $dd --service-ports --rm $s
     |]
 
 

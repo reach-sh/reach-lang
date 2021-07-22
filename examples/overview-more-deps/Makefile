@@ -15,10 +15,6 @@ build: build/index.main.mjs
 run:
 	$(REACH) run index
 
-.PHONY: run-target
-run-target: build
-	docker-compose -f "docker-compose.yml" run --rm reach-app-over-$${REACH_CONNECTOR_MODE} $(ARGS)
-
 .PHONY: down
 down:
-	docker-compose -f "docker-compose.yml" down --remove-orphans
+	$(REACH) down

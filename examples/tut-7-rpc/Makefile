@@ -44,20 +44,13 @@ build: server/build/index.main.mjs \
        client-lib-js \
        client-lib-py \
        client-lib-go
-	cd client-js && docker build -f Dockerfile --tag=reachsh/reach-app-tut-7-rpc-client-js:latest .
-	cd client-go && docker build -f Dockerfile --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
+	cd client-js && docker build --tag=reachsh/reach-app-tut-7-rpc-client-js:latest .
+	cd client-go && docker build --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
 	cd client-py && docker build \
-	  -f Dockerfile \
 	  --build-arg VERSION=$(shell cat ../../rpc-client/py/VERSION) \
 	  --tag=reachsh/reach-app-tut-7-rpc-client-py:latest .
 
+# TODO restore `rpc-server` image in CI
 .PHONY: run
-run: test
-
-.PHONY: test
-test: build
+run:
 	REACH_DEBUG=1 sbin/test-on.sh "${REACH_CONNECTOR_MODE}" js py go
-
-.PHONY: run_old
-run_old: build
-	REACH_DEBUG=1 docker-compose -f "docker-compose.yml" up --remove-orphans reach-app-tut-7-rpc-server reach-app-tut-7-rpc

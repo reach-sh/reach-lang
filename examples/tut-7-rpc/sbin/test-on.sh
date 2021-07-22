@@ -3,7 +3,7 @@
 # (Run from tut-7-rpc)
 set -e
 
-export REACH_CONNECTOR_MODE="$1"
+export REACH_CONNECTOR_MODE="${1:-ETH-devnet}"
 shift
 
 sbin/server-up.sh
