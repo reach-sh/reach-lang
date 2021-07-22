@@ -4,6 +4,7 @@
 set -e
 
 CLIENT="$1"
+CONTAINER="tut-7-rpc_client-${CLIENT}-only_1"
 REACH_RPC_KEY=$(cat REACH_RPC_KEY.txt)
 export REACH_RPC_KEY
 
@@ -12,10 +13,12 @@ if [ "$CLIENT" = "" ]; then
   exit 1
 fi
 
-docker rm -f "tut-7-rpc_client-${CLIENT}-only_1"
+if docker container inspect "$CONTAINER" >/dev/null 2>&1; then
+  docker rm -f "$CONTAINER"
+  echo
+fi
 
-echo
 echo "Running client ${CLIENT}..."
 docker-compose -f "docker-compose.yml" up --remove-orphans --force-recreate "client-${CLIENT}-only"
-echo 'Ran.'
+echo "Client ${CLIENT} completed."
 echo

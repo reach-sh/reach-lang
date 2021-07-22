@@ -13,7 +13,7 @@ build: build/index.main.mjs
 
 .PHONY: down
 down:
-	docker-compose -f "docker-compose.yml" down
+	$(REACH) down
 
 .PHONY: run
 run: build check
