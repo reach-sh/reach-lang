@@ -161,6 +161,7 @@ mkVar :: IO Var
 mkVar = do
   let packed = pure . T.pack
   let q e n = lookupEnv e >>= maybe n packed
+  let m e n f = lookupEnv e >>= maybe n (\case "" -> n; j -> f j)
 
   rpcPort <- q "REACH_RPC_PORT" (pure "3000")
   rpcServer'' <- q "REACH_RPC_SERVER" (pure "127.0.0.1")
@@ -179,7 +180,7 @@ mkVar = do
     >>= maybe (die "Unset `REACH_EX` environment variable") packed
 
   connectorMode <- do
-    rcm <- maybe "ETH-devnet" id <$> lookupEnv "REACH_CONNECTOR_MODE"
+    rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
     runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
       >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
 
