@@ -1814,7 +1814,7 @@ and define some button handlers in order to attach to the deployed contract.
 Finally, we call a small helper function from @reachexlink{tut-9/views/render.js}
 to render our App component.
 
-@(hrule) @;; explain reach react and reach react-down
+@(hrule) @;; explain reach react
 
 As a convenience for running the React development server,
 you can call:
