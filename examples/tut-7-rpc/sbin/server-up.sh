@@ -11,7 +11,16 @@ export REACH_RPC_KEY
 
 echo
 echo 'Starting server...'
-(cd server && "${ROOT}/reach" rpc-server &)
+cd server
+"${ROOT}/reach" rpc-server &
+pid=$!
+cd ..
+
 sleep 10
-echo 'Server started...'
-echo
+
+if pgrep -P "$pid" >/dev/null; then
+  echo 'Server started...'
+  echo
+else
+  exit 1
+fi
