@@ -565,7 +565,7 @@ Parses a @reachin{FixedPoint} number into a JavaScript number.
 @js{
  numberToFixedPoint(number) => FixedPoint}
 
-Parses a Javascript number into a @reachin{FixedPoint}.
+Parses a JavaScript number into a @reachin{FixedPoint}.
 
 @(hrule)
 @(mint-define! '("parseInt"))
@@ -579,7 +579,7 @@ Parses a signed @reachin{Int} into a JavaScript number.
 @js{
  numberToInt(number) => Int}
 
-Parses a Javascript number into an @reachin{Int}.
+Parses a JavaScript number into an @reachin{Int}.
 
 @(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
