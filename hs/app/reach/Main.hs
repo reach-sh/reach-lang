@@ -897,7 +897,6 @@ run' = command "run" . info f $ d <> noIntersperse where
 
 
 --------------------------------------------------------------------------------
--- TODO deprecation messages for `reach rpc-down` and `reach react-down`
 down :: Subcommand
 down = command "down" $ info f d where
   d = progDesc "Halt all Dockerized Reach services and devnets"
@@ -927,9 +926,19 @@ down = command "down" $ info f d where
       |]
 
 
+mkReplacedDown :: String -> Subcommand
+mkReplacedDown n = command n $ info (pure f) d where
+  m = "`reach " <> n <> "` has been replaced by `reach down` - please use that instead."
+  d = progDesc m
+  f = liftIO . die $ m
+
+
 reactDown :: Subcommand
-reactDown = command "react-down" $ info (pure f) fullDesc where
-  f = undefined
+reactDown = mkReplacedDown "react-down"
+
+
+rpcServerDown :: Subcommand
+rpcServerDown = mkReplacedDown "rpc-server-down"
 
 
 --------------------------------------------------------------------------------
@@ -1242,5 +1251,6 @@ main = do
     <> commandGroup "hidden subcommands"
     <> numericVersion
     <> reactDown
+    <> rpcServerDown
     <> unscaffold
     <> whoami
