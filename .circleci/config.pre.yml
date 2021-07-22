@@ -97,9 +97,9 @@ commands:
           fi
           # Reset locale
           sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
-                    && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
-                    && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
-                    && locale-gen en_US.UTF-8'
+                   && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
+                   && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
+                   && locale-gen en_US.UTF-8'
           # Setup package
           (cd hs && make package.yaml)
       - restore_cache:
@@ -217,7 +217,10 @@ jobs:
         (cd js && make build)
         (cd js/stdlib && make check)
         mkdir -p /tmp/workspace/docker
-        docker save reachsh/runner:latest | gzip > /tmp/workspace/docker/runner.tar.gz
+        docker save reachsh/runner:latest     | gzip > /tmp/workspace/docker/runner.tar.gz
+        docker save reachsh/rpc-server:latest | gzip > /tmp/workspace/docker/rpc-server.tar.gz
+        docker save reachsh/reach:latest      | gzip > /tmp/workspace/docker/reach.tar.gz
+        docker save reachsh/reach-cli:latest  | gzip > /tmp/workspace/docker/reach-cli.tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
