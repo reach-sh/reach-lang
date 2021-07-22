@@ -10,6 +10,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/22: @jsin{numberToFixedPoint()} and @jsin{numberToInt()} added.}
 @item{2021/07/21: Renamed Ethereum devnet Docker image to @litchar{devnet-eth}.}
 @item{2021/07/21: Renamed connector modes to use naming convention @litchar{$NET-devnet}, rather than exposing implementation.}
 @item{2021/07/21: Ethereum contract bytecode verification changed to directly compare deployment data}

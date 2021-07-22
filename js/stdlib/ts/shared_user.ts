@@ -45,3 +45,21 @@ export const parseInt = (x: { sign: boolean, i: num}) =>
 export const hasConsoleLogger = {
   log: console.log
 };
+
+export const numberToFixedPoint = (n: number) => {
+  const ns = n.toString();
+  const decs = ns.includes('.')
+    ? ns.split('.')[1].length
+    : 0;
+  const scale = 10 ** decs;
+  return {
+    sign: n >= 0,
+    i: { scale: bigNumberify(scale), i: bigNumberify(n * scale) }
+  };
+};
+
+export const numberToInt = (n: number) => {
+  const sign = n >= 0;
+  const i = bigNumberify(sign ? n : (- n));
+  return { sign, i };
+};

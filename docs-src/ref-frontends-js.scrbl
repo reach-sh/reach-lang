@@ -561,11 +561,25 @@ This value is provided out of convenience; it is not mandatory to use this imple
 Parses a @reachin{FixedPoint} number into a JavaScript number.
 
 @(hrule)
+@(mint-define! '("numberToFixedPoint"))
+@js{
+ numberToFixedPoint(number) => FixedPoint}
+
+Parses a Javascript number into a @reachin{FixedPoint}.
+
+@(hrule)
 @(mint-define! '("parseInt"))
 @js{
  parseInt(Int) => number}
 
 Parses a signed @reachin{Int} into a JavaScript number.
+
+@(hrule)
+@(mint-define! '("numberToInt"))
+@js{
+ numberToInt(number) => Int}
+
+Parses a Javascript number into an @reachin{Int}.
 
 @(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
