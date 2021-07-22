@@ -211,16 +211,25 @@ jobs:
     - run: |
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
+        (cd hs && make build)
         (cd hs && stack install)
     - srd_yes
     - run: |
         (cd js && make build)
-        # (cd js/stdlib && make check)
-        # mkdir -p /tmp/workspace/docker
-        # docker save reachsh/runner:latest     | gzip > /tmp/workspace/docker/runner.tar.gz
-        # docker save reachsh/rpc-server:latest | gzip > /tmp/workspace/docker/rpc-server.tar.gz
-        # docker save reachsh/reach:latest      | gzip > /tmp/workspace/docker/reach.tar.gz
-        # docker save reachsh/reach-cli:latest  | gzip > /tmp/workspace/docker/reach-cli.tar.gz
+        (cd js/stdlib && make check)
+        mkdir -p /tmp/workspace/docker
+
+        echo 'docker save reachsh/runner:latest...'
+        docker save reachsh/runner:latest | gzip > /tmp/workspace/docker/runner.tar.gz
+
+        echo 'docker save reachsh/rpc-server:latest...'
+        docker save reachsh/rpc-server:latest | gzip > /tmp/workspace/docker/rpc-server.tar.gz
+
+        echo 'docker save reachsh/reach:latest...'
+        docker save reachsh/reach:latest | gzip > /tmp/workspace/docker/reach.tar.gz
+
+        echo 'docker save reachsh/reach-cli:latest...'
+        docker save reachsh/reach-cli:latest | gzip > /tmp/workspace/docker/reach-cli.tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
