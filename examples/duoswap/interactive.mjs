@@ -97,7 +97,7 @@ const runDuoSwapLP = async () => {
     depositDone: (isMe, amtA, amtB, poolTokens) => {
       if (isMe) {
         deposited[accProvider] = poolTokens;
-        console.log("\x1b[34m", `I received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`,'\x1b[0m');
+        console.log("\x1b[34m", `I received ${poolTokens} pool tokens for my deposit of ${amtA} ZMD & ${amtB} GIL`,'\x1b[0m');
       }
     },
     depositMaybe: async ([ isAlive, market ]) => {
