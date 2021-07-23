@@ -9,11 +9,6 @@ ETH.tut-7-rpc
 ALGO.tut-7-rpc
 CFX.tut-7-rpc
 
-# Interactive
-ETH.duoswap-interactive
-ALGO.duoswap-interactive
-CFX.duoswap-interactive
-
 # Too big
 ALGO.ttt
 ALGO.raffle

@@ -1,7 +1,6 @@
 'reach 0.1';
 
 export const Common = {
-  ...hasConsoleLogger,
   hear: Fun([Address], Null),
 };
 
@@ -9,10 +8,10 @@ export const main = Reach.App(() => {
   const Manager = Participant('Manager', {
     ...Common,
     printInfo: Fun([], Null),
+    getPoolInfo: Fun([], Address),
   });
   const Listener = ParticipantClass('Listener', {
     ...Common,
-    getPoolInfo: Fun([], Tuple(Bool, Address)),
   });
 
   deploy();
@@ -25,12 +24,12 @@ export const main = Reach.App(() => {
   while (true) {
     commit();
 
-    Listener.only(() => {
-      const [ when, poolInfo ] = declassify(interact.getPoolInfo());
+    Manager.only(() => {
+      const poolInfo = declassify(interact.getPoolInfo());
     });
 
-    Listener.publish(poolInfo)
-      .when(when)
+    Manager
+      .publish(poolInfo)
       .timeout(false);
 
     Manager.interact.hear(poolInfo);

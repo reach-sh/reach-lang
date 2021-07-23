@@ -75,6 +75,8 @@ export const main = Reach.App(() => {
   const Tokens = View('Tokens', {
     aTok : Token,
     bTok : Token,
+    // aBal : UInt,
+    // bBal : UInt,
   });
 
   deploy();
@@ -121,6 +123,8 @@ export const main = Reach.App(() => {
     parallelReduce([ true, initialMarket, 0 ])
       .define(() => {
         const st = [ alive, market ];
+        // Tokens.aBal.set(balance(tokA));
+        // Tokens.bBal.set(balance(tokB));
         const wrap = (f, onlyIfAlive) => {
           const { when, msg } = declassify(f(st));
           return { when: (declassify(onlyIfAlive) ? alive : true) && when, msg };

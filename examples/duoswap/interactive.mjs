@@ -1,12 +1,8 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import * as listenerBackend from './build/announcer.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
-import { runManager } from './announcer.mjs';
+import { runManager, runListener } from './announcer.mjs';
 import { runTokens } from './tokens.mjs';
-
-const stdlib = await loadStdlib();
-const startingBalance = stdlib.parseCurrency(9999);
 
 // Track who withdrew/deposited
 const withdrew  = {};
@@ -23,21 +19,24 @@ const isZmdOrGil = (ans) => {
   throw Error('Only `ZMD` or `GIL` are valid answers.');
 }
 
-const fmt = (x) => stdlib.formatCurrency(x, 4);
+const fmt = (stdlib, x) => stdlib.formatCurrency(x, 4);
 
-const getBalance = async (tokenX, who) => {
+const getBalance = async (stdlib, tokenX, who) => {
   const amt = await stdlib.balanceOf(who, tokenX.id);
-  return `${fmt(amt)} ${tokenX.sym}`; };
+  return `${fmt(stdlib, amt)} ${tokenX.sym}`; };
 
-const getBalances = async (who, zmd, gil) =>
-  `${await getBalance(zmd, who)} & ${await getBalance(gil, who)}`;
+const getBalances = async (stdlib, who, zmd, gil) =>
+  `${await getBalance(stdlib, zmd, who)} & ${await getBalance(stdlib, gil, who)}`;
 
 const runDuoSwapAdmin = async () => {
+
+  const stdlib = await loadStdlib();
+  const startingBalance = stdlib.parseCurrency(9999);
 
   // Create & Fund Admin
   const accAdmin = await stdlib.newTestAccount(startingBalance)
   await accAdmin.setDebugLabel('Admin');
-  const _ = await ask.ask(`Fund: ${accAdmin.getAddress()}`);
+  await ask.ask(`Fund: ${accAdmin.getAddress()}`);
   const res = await ask.ask(`Enter token info:`, JSON.parse);
   const zmd = { id: res.zmd, sym: 'zmd', name: 'zorkmid' };
   const gil = { id: res.gil, sym: 'gil', name: 'gil' };
@@ -45,9 +44,8 @@ const runDuoSwapAdmin = async () => {
   // Deploy contract
   const ctcAdmin = accAdmin.deploy(backend);
   const ctcInfo = ctcAdmin.getInfo();
-  const listenerInfo = await ask.ask(`Paste announcer ctc info:`);
-  const ctcListener = accAdmin.attach(listenerBackend, listenerInfo)
   const poolAddr = (await ctcInfo).toString();
+  await ask.ask(`Enter Pool Address Into Announcer Manager: ${poolAddr}`);
   const connectionInfo = { poolAddr, zmd, gil };
   console.log(`Connection Info: `, JSON.stringify(connectionInfo));
 
@@ -61,25 +59,14 @@ const runDuoSwapAdmin = async () => {
     },
   });
 
-  // Pool info for sharing
-  let sharedPool = false;
-  const backendListener = listenerBackend.Listener(ctcListener, {
-    hear: (poolInfo) => {
-      console.log(`Listener hears!`, poolInfo);
-      // Do not share pool again once shared
-      if (poolInfo = poolAddr) {
-        sharedPool = true;
-      }
-    },
-    getPoolInfo: () => {
-      return [ !sharedPool, poolAddr ]
-    },
-  });
-
-  await Promise.all([ backendListener, adminBackend ]);
+  await Promise.all([ adminBackend ]);
 };
 
 const runDuoSwapLP = async () => {
+
+  const stdlib = await loadStdlib();
+  const startingBalance = stdlib.parseCurrency(9999);
+
   // Create & Fund Admin
   const accProvider = await stdlib.newTestAccount(startingBalance)
   await accProvider.setDebugLabel('Provider');
@@ -116,7 +103,7 @@ const runDuoSwapLP = async () => {
     depositMaybe: async ([ isAlive, market ]) => {
       const wantsToDeposit = await ask.ask(`Do you want to deposit? (y/n)`, ask.yesno);
       if (wantsToDeposit) {
-        const myBals = await getBalances(accProvider, zmd, gil);
+        const myBals = await getBalances(stdlib, accProvider, zmd, gil);
         const amtA = await ask.ask(`How much ZMD do you want to deposit? (Bal: ${myBals})`, parseInt);
         const amtB = await ask.ask(`How much GIL do you want to deposit? (Bal: ${myBals})`, parseInt);
         const deposit = { amtA: stdlib.parseCurrency(amtA), amtB: stdlib.parseCurrency(amtB) }
@@ -133,6 +120,10 @@ const runDuoSwapLP = async () => {
 }
 
 const runDuoSwapTrader = async () => {
+
+  const stdlib = await loadStdlib();
+  const startingBalance = stdlib.parseCurrency(9999);
+
   // Create & Fund Admin
   const accTrader = await stdlib.newTestAccount(startingBalance)
   await accTrader.setDebugLabel('Trader');
@@ -159,7 +150,7 @@ const runDuoSwapTrader = async () => {
       if (wantsToTrade) {
         const options = ['ZMD', 'GIL'].join('\n');
         const tokType = await ask.ask(`What token do you want to input?\n${options}`, isZmdOrGil);
-        const myBal = await getBalance(tokType === 'ZMD' ? zmd : gil, accTrader);
+        const myBal = await getBalance(stdlib, tokType === 'ZMD' ? zmd : gil, accTrader);
         const amt = await ask.ask(`How much do you want to trade? (You have ${myBal})`);
         const trade =
           (tokType == 'ZMD')
@@ -180,24 +171,38 @@ const options = [
   '2: DuoSwap Liquidity Provider',
   '3: DuoSwap Trader',
   '4: DuoSwap Announcer',
-  '5: DuoSwap Tokens',
+  '5: DuoSwap Listener',
+  '6: DuoSwap Token Funder',
 ].join('\n');
 
-const answer = await ask.ask(`Who are you?\n${options}`, parseInt);
+export const runInteractive = async () => {
+  const answer = await ask.ask(`Who are you?\n${options}`, parseInt);
 
-if (answer == 1) {
-  // Creates a pool and sends info to announcer/cache
-  await runDuoSwapAdmin();
-}
-if (answer == 2) {
-  await runDuoSwapLP();
-}
-if (answer == 3) {
-  await runDuoSwapTrader();
-}
-if (answer == 4) {
-  await runManager();
-}
-if (answer == 5) {
-  await runTokens();
+  switch (answer) {
+    case 1: {
+      // Creates a pool and sends info to announcer/cache
+      await runDuoSwapAdmin();
+      return;
+    }
+    case 2: {
+      await runDuoSwapLP();
+      return;
+    }
+    case 3: {
+      await runDuoSwapTrader();
+      return;
+    }
+    case 4: {
+      await runManager();
+      return;
+    }
+    case 5: {
+      await runListener();
+      return;
+    }
+    case 6: {
+      await runTokens();
+      return;
+    }
+  }
 }
