@@ -1,6 +1,4 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
-import { ETH_connectToken } from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 import * as listenerBackend from './build/announcer.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
@@ -33,19 +31,6 @@ const getBalance = async (tokenX, who) => {
 
 const getBalances = async (who, zmd, gil) =>
   `${await getBalance(zmd, who)} & ${await getBalance(gil, who)}`;
-
-
-// Supply ZMD and GIL to account
-const gimmeTokens = async (acc, zmd, gil) => {
-  if (stdlib.connector == 'ALGO') {
-    await acc.tokenAccept(zmd.id);
-    await acc.tokenAccept(gil.id);
-  }
-  // const startingBalance_ = stdlib.parseCurrency(1);
-  // console.log(`acc:`, acc);
-  await zmd.mint(acc, startingBalance);
-  await gil.mint(acc, startingBalance);
-}
 
 const runDuoSwapAdmin = async () => {
 
