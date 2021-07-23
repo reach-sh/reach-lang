@@ -33,7 +33,9 @@ Starting to compute Fibonacci
 
 How can we do something like this in Reach?
 
-The key is to use @tech{participant interact interfaces} to share arbitrary information with the @tech{frontend}, which has the available to log to a console or any other tracing service.
+The key is to use @tech{participant interact interfaces} to share arbitrary
+information with the @tech{frontend}, which has the ability to log to a
+console or any other tracing service.
 For example:
 @reach{
 export const main = Reach.App(() => {

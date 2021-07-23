@@ -1358,7 +1358,8 @@ Instead, we'll go under the covers of @exec{reach run}, as well as build a versi
 @(hrule)
 
 In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a fresh instance of a private developer test network.
-Since in this section, we will customize this and build a non-automated version of @|RPS|, as well as give the option to connect to a real Ethereum network.
+In this section we'll introduce customizations in support of a non-automated
+version of @|RPS| and provide the option to connect to a real Ethereum network.
 
 We'll start by running
 
