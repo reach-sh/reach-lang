@@ -63,7 +63,7 @@ The main part of the program looks like this:
 
 @item{Line 9 specifies that the program identifier @reachin{B} will represent the Bob @tech{participant}.}
 
-@item{Lines 10 and 111 specify the interface for Bob, which includes a function named @litchar{want}, that takes a number and returns @reachin{null}, as well as a function named @litchar{got}, that receives the information.}
+@item{Lines 10 and 11 specify the interface for Bob, which includes a function named @litchar{want}, that takes a number and returns @reachin{null}, as well as a function named @litchar{got}, that receives the information.}
 
 @item{Finally, line 13, @tech{deploys} the @|DApp|.}
 
