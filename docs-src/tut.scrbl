@@ -67,7 +67,7 @@ You should follow along by copying each part of the program and seeing how thing
 If you're like us, you may find it beneficial to type each line out, rather than copying & pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
 
 Let's start by creating a file named @exec{index.rsh}.
-It doesn't matter where you put this file, but we recommend putting in the current directory, which would be @exec{~/reach/tut} if you're following along exactly.
+It doesn't matter where you put this file, but we recommend putting it in the current directory, which would be @exec{~/reach/tut} if you're following along exactly.
 In all the subsequent code samples, we'll label the files based on the chapter of the tutorial you're reading.
 For example, start off by typing the following into @exec{index.rsh}:
 
@@ -216,7 +216,7 @@ Let's return to the Reach program and look inside of the body of the program for
 
 In a real-life game of @|RPS|, Alice and Bob simultaneously decide what hand they will play and reveal it at the same time.
 "Simultaneity" is a complex concept that is hard to realize in practice.
-For example, if you've ever player against a little kid, you may notice them trying to see what you're going to choose and delaying until the last minute to show their hand so they will win.
+For example, if you've ever played against a little kid, you may notice them trying to see what you're going to choose and delaying until the last minute to show their hand so they will win.
 In a decentralized application, it is not possible to have simultaneity.
 Instead, we have to select a particular participant who will "go first".
 In this case, we'll choose Alice.
@@ -321,15 +321,15 @@ In @seclink["tut-4"]{the next step}, we'll add some stakes to the game, because 
 
 @(check:many
   @list{2 and 3; Reach programs specify a two-way interface between the frontend and the backend via the @tech{participant interact interface}.}
-  "Reach programs allows interaction with a user interface through which of the following methods"
+  "Reach programs allow interaction with a user interface through which of the following methods?"
   "by forcing you to write a custom backend for the user interface that connects to the generated smart contract,"
   "by allowing the frontends to provide values directly to the Reach application,"
   "by allowing the Reach program to callback to the frontend via the interact object.")
 
 @(check:multi
   @list{2; the @reachin{publish} primitive does everything for you.}
-  "How do participants in a Reach application share information with each other and find out what what others have shared?"
-  "Reach generates a smart contract, but you need to implement a process to scan the blockchain for events that corresponding to sharing;"
+  "How do participants in a Reach application share information with each other and find out what others have shared?"
+  "Reach generates a smart contract, but you need to implement a process to scan the blockchain for events that correspond to sharing;"
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;}
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.})
 
@@ -471,7 +471,7 @@ Before, it would compute the outcome and then commit the state; but now, it need
 
 @itemlist[
 
-@item{Lines 33 through 35 computes the amounts given to each participant depending on the outcome by determining how many @reachin{wager} amounts each party gets.
+@item{Lines 33 through 35 compute the amounts given to each participant depending on the outcome by determining how many @reachin{wager} amounts each party gets.
 If the outcome is @reachin{2}, @litchar{Alice wins}, then she gets two portions; while if it is @reachin{0}, @litchar{Bob wins}, then he gets two portions; otherwise they each get one portion.}
 
 @item{Lines 36 and 37 transfer the corresponding amounts.
@@ -649,7 +649,7 @@ But, it is better to use verification to show that @emph{no flaw} exists and @em
 
 Reach includes some such assertions automatically in every program.
 That's why every version of @|RPS| has said that a number of theorems were checked.
-We can see what these theorems do by deliberating inserting an error in the program.
+We can see what these theorems do by deliberately inserting an error into the program.
 
 Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
@@ -891,7 +891,7 @@ Alice went from 10 to 9.9999.
 Bob went from 10 to 9.9999.
 }
 
-Except now, behind the scenes, and without any changes to the frontend, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
+Except now, behind the scenes, and without any changes to the frontend, Alice takes two steps in our program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
 
 When we compile this version of the application, Reach's @seclink["guide-assert"]{automatic formal verification} engine proves many theorems and protects us against a plethora of mistakes one might make when writing even a simple application like this.
 Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
