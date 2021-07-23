@@ -29,7 +29,7 @@ const fmt = (x) => stdlib.formatCurrency(x, 4);
 
 const getBalance = async (tokenX, who) => {
   const amt = await stdlib.balanceOf(who, tokenX.id);
-  return `${fmt(amt)} / ${amt} ${tokenX.sym}`; };
+  return `${fmt(amt)} ${tokenX.sym}`; };
 
 const getBalances = async (who, zmd, gil) =>
   `${await getBalance(zmd, who)} & ${await getBalance(gil, who)}`;

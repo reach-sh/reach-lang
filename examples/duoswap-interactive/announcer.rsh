@@ -38,9 +38,6 @@ export const main = Reach.App(() => {
 
     commit();
 
-    // each([ Manager, Listener ], () => {
-    //   interact.hear(poolInfo) });
-
     Manager.publish();
 
     continue;
