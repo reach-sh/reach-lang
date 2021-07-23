@@ -6,7 +6,9 @@ export const runManager = async () => {
   const startingBalance = stdlib.parseCurrency(99999999999);
 
   const manager = await stdlib.newTestAccount(startingBalance);
-  manager.setGasLimit(5000000);
+  if (stdlib.connector == 'ETH') {
+    manager.setGasLimit(5000000);
+  }
 
   const ctcManager = manager.deploy(listenerBackend);
 
@@ -15,11 +17,8 @@ export const runManager = async () => {
   const backendManager = listenerBackend.Manager(ctcManager, {
     hear: (poolInfo) => {
       console.log(`Manager hears!`, poolInfo);
-      if (poolInfo in cache) {
-        return;
-      } else {
+      if (! (poolInfo in cache) ) {
         cache[poolInfo] = true;
-        console.log(poolInfo, `:`, true);
       }
     },
     printInfo: async () => {
