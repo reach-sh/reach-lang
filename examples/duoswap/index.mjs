@@ -1,11 +1,12 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
+import { runInteractive } from './interactive.mjs';
 
 const NUM_PROVIDERS = 3;
 const NUM_TRADERS = 2;
 
-(async () => {
+export const runAutomated = async () => {
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
@@ -174,5 +175,13 @@ const NUM_TRADERS = 2;
   await Promise.all(backends);
 
   console.log(`Duoswap finished`);
+};
 
+(async () => {
+  if (process.argv.slice(2).length > 0) {
+    await runInteractive();
+  } else {
+    await runAutomated();
+  }
+  process.exit();
 })();

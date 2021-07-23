@@ -7,9 +7,10 @@ const MkArray = (ty) => Array(ty, NUM_OF_TOKENS);
 const avg = (a, b) => (a + b) / 2;
 
 const getAmtOut = (amtIn, reserveIn, reserveOut) => {
-  const reserveProduct = reserveOut * reserveIn;
-  const adjustedReserveIn = reserveIn + amtIn;
-  return reserveOut - ( (reserveProduct * 1000) / (adjustedReserveIn * 997) );
+  const amtInWithFee = amtIn * 997;
+  const num = amtInWithFee * reserveOut;
+  const den = (reserveIn * 1000) + amtInWithFee;
+  return num / den;
 }
 
 export const main = Reach.App(() => {
@@ -71,6 +72,13 @@ export const main = Reach.App(() => {
     tradeDone: Fun([Bool, Tuple(UInt, Token, UInt, Token)], Null),
   });
 
+  const Tokens = View('Tokens', {
+    aTok : Token,
+    bTok : Token,
+    // aBal : UInt,
+    // bBal : UInt,
+  });
+
   deploy();
 
   const s18 = (x) => x / 1000 / 1000 / 1000 / 1000 / 1000 / 1000;
@@ -87,6 +95,9 @@ export const main = Reach.App(() => {
 
   require(UInt.max > 0);
   require(tokA != tokB);
+
+  Tokens.aTok.set(tokA);
+  Tokens.bTok.set(tokB);
 
   assert(balance(tokA) == 0);
   assert(balance(tokB) == 0);
@@ -112,6 +123,8 @@ export const main = Reach.App(() => {
     parallelReduce([ true, initialMarket, 0 ])
       .define(() => {
         const st = [ alive, market ];
+        // Tokens.aBal.set(balance(tokA));
+        // Tokens.bBal.set(balance(tokB));
         const wrap = (f, onlyIfAlive) => {
           const { when, msg } = declassify(f(st));
           return { when: (declassify(onlyIfAlive) ? alive : true) && when, msg };
@@ -214,27 +227,32 @@ export const main = Reach.App(() => {
           const { when, msg } = wrap(interact.tradeMaybe, true);
           const { amtA, amtB, amtInTok } = msg;
 
-          assume(amtInTok == tokA || amtInTok == tokB, "amtInTok == tokA or tokB");
-
-          const balCheck = balance(tokA) > 0 && balance(tokB) > 0;
-          if (amtInTok == tokA) {
-            // in: A out: B
-            assume(amtA > 0, "amtA > 0");
-            assume(amtB == 0, "amtB == 0");
-            const out = getAmtOut(amtA, balance(tokA), balance(tokB));
-            assume(out <= balance(tokB), "out <= bal(tokB)");
-            const kp = newK(amtA, tokA, out, tokB);
-            assume(kp >= market.k, "kp == market.k");
-            return { when: when && balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok }};
+          if (!when) {
+            return { when: false, msg: { amtA: 0, amtB: 0, calcK: 0, amtOut: 0, amtInTok: tokA }};
           } else {
-            // in: B out: A
-            assume(amtA == 0, "amtA == 0");
-            assume(amtB > 0, "amtB > 0");
-            const out = getAmtOut(amtB, balance(tokB), balance(tokA));
-            assume(out <= balance(tokA), "out <= bal(tokA)");
-            const kp = newK(amtB, tokB, out, tokA);
-            assume(kp >= market.k, "kp == market.k");
-            return { when: when && balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok }};
+
+            assume(amtInTok == tokA || amtInTok == tokB, "amtInTok == tokA or tokB");
+
+            const balCheck = balance(tokA) > 0 && balance(tokB) > 0;
+            if (amtInTok == tokA) {
+              // in: A out: B
+              assume(amtA > 0, "amtA > 0");
+              assume(amtB == 0, "amtB == 0");
+              const out = getAmtOut(amtA, balance(tokA), balance(tokB));
+              assume(out <= balance(tokB), "out <= bal(tokB)");
+              const kp = newK(amtA, tokA, out, tokB);
+              assume(kp >= market.k, "kp == market.k");
+              return { when: balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok }};
+            } else {
+              // in: B out: A
+              assume(amtA == 0, "amtA == 0");
+              assume(amtB > 0, "amtB > 0");
+              const out = getAmtOut(amtB, balance(tokB), balance(tokA));
+              assume(out <= balance(tokA), "out <= bal(tokA)");
+              const kp = newK(amtB, tokB, out, tokA);
+              assume(kp >= market.k, "kp == market.k");
+              return { when: balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok }};
+            }
           }
         }),
         (({ amtA, amtB }) => [ 0, [ 0, pool ], [ amtA, tokA], [ amtB, tokB ] ]),
@@ -266,7 +284,7 @@ export const main = Reach.App(() => {
       )
       .timeout(1024, () => {
         Anybody.publish();
-        return [ false, market, poolMinted ]; });
+        return [ true, market, poolMinted ]; });
 
   pool.burn(balance(pool));
   if (!pool.destroyed()) {
