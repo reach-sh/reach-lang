@@ -34,7 +34,7 @@ Once you've confirmed that they are installed, choose a directory for this proje
 
 @cmd{mkdir -p ~/reach/tut && cd ~/reach/tut}
 
-Next, install Reach by downloading it from      @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} by running
+Next, download Reach by running
 
 @cmd{curl https://docs.reach.sh/reach -o reach ; chmod +x reach}
 
