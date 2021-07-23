@@ -716,7 +716,9 @@ compile = command "compile" $ info f d where
 
         export REACH
 
-        if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
+        if   [ ! "$$REACH_CI_EXECUTOR" = "adhoc-machine" ] \
+          && [ "$$CIRCLECI" = "true" ] \
+          && [ -x ~/.local/bin/reachc ]; then
           ~/.local/bin/reachc --disable-reporting $args
 
         elif [ -z "$${REACH_DOCKER}" ] \
