@@ -1,6 +1,6 @@
 depends_on:
-  - ethereum-devnet
+  - devnet-eth
 environment:
   - REACH_DEBUG
   - REACH_CONNECTOR_MODE=ETH-devnet
-  - ETH_NODE_URI=http://ethereum-devnet:8545
+  - ETH_NODE_URI=http://devnet-eth:8545
