@@ -275,7 +275,7 @@ reachImages =
   , "runner"
   , "devnet-algo"
   , "devnet-cfx"
-  , "ethereum-devnet"
+  , "devnet-eth"
   ]
 
 
@@ -315,7 +315,7 @@ devnetFor :: Connector -> T.Text
 devnetFor = \case
   Algo -> "devnet-algo"
   Cfx -> "devnet-cfx"
-  Eth -> "ethereum-devnet"
+  Eth -> "devnet-eth"
 
 
 pConnector :: ParsecT String () IO Connector
@@ -526,7 +526,7 @@ withCompose DockerMeta {..} wrapped = do
       -- out of here
       let (d, e) = case (c, m) of
             (Algo, Devnet) -> (devnetFor c, devnetAlgo)
-            (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://ethereum-devnet:8545")
+            (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
             (Cfx, Devnet) -> (devnetFor c, devnetCfx)
             _ -> ("", "")
 
@@ -899,48 +899,65 @@ run' = command "run" . info f $ d <> noIntersperse where
 
 
 --------------------------------------------------------------------------------
+down' :: App
+down' = script $ do
+  write [N.text|
+    name () { docker inspect --format="{{ index .Name }}" "$$1"; }
+
+    docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
+      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
+      docker stop "$$d" >/dev/null && printf 'Done.\n'
+    done
+  |]
+
+  forM_ (devnetFor <$> [ Algo, Cfx, Eth ]) $ \c -> write [N.text|
+    # Stop devnet containers w/ status == running
+    docker ps -qf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
+      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
+
+      haltDevnetEth () {
+        docker exec "$$d" which killall >/dev/null \
+          && docker exec "$$d" killall -w -INT geth 2>/dev/null \
+          && docker rm -v "$$d" >/dev/null
+      }
+
+      (haltDevnetEth || docker stop "$$d" >/dev/null) \
+        && printf 'Done.\n'
+    done
+
+    # Remove devnet stragglers (containers w/ status != running)
+    docker ps -aqf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
+      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
+      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
+    done
+  |]
+
+  write [N.text|
+    [ ! "$(docker network ls -qf 'name=reach-devnet' | wc -l)" -eq 0 ] \
+      && printf 'Removing network "reach-devnet"... ' \
+      && docker network rm reach-devnet >/dev/null \
+      && printf 'Done.\n'
+  |]
+
+
 down :: Subcommand
-down = command "down" $ info f d where
+down = command "down" $ info (pure down') d where
   d = progDesc "Halt all Dockerized Reach services and devnets"
-  f = pure $ do
-    script $ do
-      write [N.text|
-        name () { docker inspect --format="{{ index .Name }}" "$$1"; }
-
-        docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
-          printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-          docker stop "$$d" >/dev/null && printf 'Done.\n'
-        done
-      |]
-
-      forM_ (devnetFor <$> [ Algo, Eth, Cfx ]) $ \c -> write [N.text|
-        docker ps -aqf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
-          printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-          ((docker exec "$$d" killall -w -INT geth 2>/dev/null && docker rm "$$d" >/dev/null) \
-            || docker stop "$$d" >/dev/null) \
-            && printf 'Done.\n'
-        done
-      |]
-
-      write [N.text|
-        printf 'Removing network "reach-devnet"... '
-        docker network rm reach-devnet >/dev/null && printf 'Done.\n'
-      |]
 
 
-mkReplacedDown :: String -> Subcommand
-mkReplacedDown n = command n $ info (pure f) d where
-  m = "`reach " <> n <> "` has been replaced by `reach down` - please use that instead."
+mkDeprecatedDown :: String -> Subcommand
+mkDeprecatedDown n = command n $ info (pure f) d where
+  m = "`reach " <> n <> "` has been deprecated. Please use `reach down` instead."
   d = progDesc m
-  f = liftIO . die $ m
-
+  f = do
+    liftIO . putStrLn $ m
+    down'
 
 reactDown :: Subcommand
-reactDown = mkReplacedDown "react-down"
-
+reactDown = mkDeprecatedDown "react-down"
 
 rpcServerDown :: Subcommand
-rpcServerDown = mkReplacedDown "rpc-server-down"
+rpcServerDown = mkDeprecatedDown "rpc-server-down"
 
 
 --------------------------------------------------------------------------------
