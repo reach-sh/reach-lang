@@ -1686,7 +1686,6 @@ it does not have direct access to the environment variables
 which are used to select the desired standard library.
 This is why you need to pass @jsin{process.env} as an argument
 to achieve the desired effect.
-}
 
 @reachex[#:mode js
          #:show-lines? #t "tut-9/index.js"
