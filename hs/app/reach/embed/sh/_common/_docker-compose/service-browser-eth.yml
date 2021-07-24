@@ -1,6 +1,6 @@
 devnet-eth:
   image: reachsh/devnet-eth:${REACH_VERSION}
-  container_name: eth-devnet
+  container_name: devnet-eth
   networks:
     - ${NETWORK}
   ports:

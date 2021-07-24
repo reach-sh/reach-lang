@@ -117,6 +117,11 @@ warnDefRpcKey = do
     $ "Warning! Using development RPC key: REACH_RPC_KEY=" <> defRpcKey <> "."
 
 
+warnDeprecatedUseExistingDevnet :: Bool -> App
+warnDeprecatedUseExistingDevnet u = when u . liftIO . putStrLn
+  $ "`--use-existing-devnet` is deprecated and no longer necessary - please remove."
+
+
 dieConnectorModeNonBrowser :: App
 dieConnectorModeNonBrowser = connectorMode <$> asks e_var >>= \case
   ConnectorMode _ Browser -> liftIO . die
@@ -615,7 +620,9 @@ argAppOrDir = strArgument
 
 
 switchUseExistingDevnet :: Parser Bool
-switchUseExistingDevnet = switch $ long "use-existing-devnet"
+switchUseExistingDevnet = switch
+  $ long "use-existing-devnet"
+ <> help "This switch has been deprecated and is no longer necessary"
 
 
 --------------------------------------------------------------------------------
@@ -933,10 +940,10 @@ down' = script $ do
   |]
 
   write [N.text|
-    [ ! "$(docker network ls -qf 'name=reach-devnet' | wc -l)" -eq 0 ] \
-      && printf 'Removing network "reach-devnet"... ' \
-      && docker network rm reach-devnet >/dev/null \
-      && printf 'Done.\n'
+    if [ ! "$(docker network ls -qf 'name=reach-devnet' | wc -l)" -eq 0 ]; then
+      printf 'Removing network "reach-devnet"... '
+      docker network rm reach-devnet >/dev/null && printf 'Done.\n'
+    fi
   |]
 
 
@@ -1016,7 +1023,7 @@ rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
   f = go <$> switchUseExistingDevnet
 
-  go _ued = do
+  go ued = do
     env <- ask
     prj <- projectPwdIndex
     let dm@DockerMeta {..} = mkDockerMetaRpc env prj
@@ -1024,6 +1031,7 @@ rpcServer = command "rpc-server" $ info f d where
     dieConnectorModeNonBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
+    warnDeprecatedUseExistingDevnet ued
 
     withCompose dm . script $ rpcServer' appService >>= write
 
@@ -1052,12 +1060,9 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
 
+    -- TODO detect if process is already listening on $REACH_RPC_PORT
+    -- `lsof -i` cannot necessarily be used without `sudo`
     withCompose dm . script $ write [N.text|
-      if ! (which curl >/dev/null 2>&1); then
-        echo "\`reach rpc-run\` relies on an installation of \`curl\` - please install it."
-        exit 1
-      fi
-
       [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
       export REACH_RPC_TLS_REJECT_UNVERIFIED
 
@@ -1085,7 +1090,6 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
       killbg () {
         echo
         pkill -TERM -P "$$spid"
-        docker-compose -f "$$TMP/docker-compose.yml" down --volumes --remove-orphans
       }
 
       [ ! "$$s" -eq 200 ] \
