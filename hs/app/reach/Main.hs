@@ -110,6 +110,10 @@ defRpcKey :: T.Text
 defRpcKey = "opensesame"
 
 
+defRpcTlsPassphrase :: T.Text
+defRpcTlsPassphrase = "rpc-demo"
+
+
 warnDefRpcKey :: App
 warnDefRpcKey = do
   Var {..} <- asks e_var
@@ -171,7 +175,7 @@ mkVar = do
   rpcPort <- q "REACH_RPC_PORT" (pure "3000")
   rpcServer'' <- q "REACH_RPC_SERVER" (pure "127.0.0.1")
   rpcKey <- q "REACH_RPC_KEY" (pure defRpcKey)
-  rpcTlsPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure "rpc-demo")
+  rpcTlsPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure defRpcTlsPassphrase)
   rpcTlsKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
   rpcTlsCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
   version'' <- q "REACH_VERSION" (packed versionStr)
@@ -211,6 +215,8 @@ script wrapped = do
         True -> ""
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
 
+  let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
+
   let connectorMode' = T.pack $ show connectorMode
 
   asks e_effect >>= liftIO . flip writeIORef (Script
@@ -221,14 +227,17 @@ script wrapped = do
     <> "\n\n"
     <> debug'
     <> rpcTlsRejectUnverified'
+
+    -- Don't leak production `REACH_RPC_KEY` or `REACH_RPC_TLS_PASSPHRASE`
+    <> defOrBlank "REACH_RPC_KEY" defRpcKey rpcKey
+    <> defOrBlank "REACH_RPC_TLS_PASSPHRASE" defRpcTlsPassphrase rpcTlsPassphrase
+
     <> [N.text|
           REACH_CONNECTOR_MODE=$connectorMode'
-          REACH_RPC_KEY=$rpcKey
           REACH_RPC_PORT=$rpcPort
           REACH_RPC_SERVER=$rpcServer''
           REACH_RPC_TLS_CRT=$rpcTlsCrt
           REACH_RPC_TLS_KEY=$rpcTlsKey
-          REACH_RPC_TLS_PASSPHRASE=$rpcTlsPassphrase
           REACH_VERSION=$version''
 
           export REACH_CONNECTOR_MODE
@@ -1090,7 +1099,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
           -sk \
           -o /dev/null \
           -w '%{http_code}' \
-          -H "X-API-Key: $rpcKey" \
+          -H "X-API-Key: $$REACH_RPC_KEY" \
           -X POST \
           "https://$rpcServer'':$rpcPort/health" || :)
 
