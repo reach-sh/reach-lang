@@ -67,10 +67,10 @@ Its @tech{bit width} is 64-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://developer.algorand.org/docs/features/asa/"]{Algorand Standard Assets} (ASAs).
 Specifically, the @reachin{Token} type refers to the id of the ASA.
-Reach programs that use @tech{non-network tokens} deployed on Algorand are inherently vulnerable to a denial-of-service attack due the ability of Algorand accounts to "opt-out" of a token.
+Reach programs that use @tech{non-network tokens} deployed on Algorand are inherently vulnerable to a denial-of-service attack due to the ability of Algorand accounts to "opt-out" of a token.
 For example, if a program has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
-You can alleviate this problem by ensuring that any @tech{non-network token} transfers occurs as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
+You can alleviate this problem by ensuring that any @tech{non-network token} transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
 
 @tech{Token minting} creates an ASA owned and managed by the contract account.
@@ -82,8 +82,8 @@ We hope to work with the Algorand community to define a standard for @tech{views
 @tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
 
 @tech{Linear state} is compiled into Application Local State.
-This means that participants that must explicitly "opt-in" to storing this state on their account (which increases their minimum balance.)
-The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to this.
+This means that participants must explicitly "opt-in" to storing this state on their account (which increases their minimum balance).
+The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to do this.
 This "opt-in" requirement means that @|DApps| with @tech{linear state} deployed on Algorand can deadlock and be held hostage:
 Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two, the consensus must store a value associated with Bob, and then she can receive her 10 ALGO back, then the program terminates.
 On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
