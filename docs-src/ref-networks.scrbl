@@ -21,7 +21,7 @@ Its @tech{bit width} is 256-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
 Specifically, the @reachin{Token} type refers to the address of the ERC-20 contract.
-@tech{Token minting} launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned.)
+@tech{Token minting} launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned).
 
 @tech{Views} are compiled to @litchar{view} functions.
 A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
@@ -35,7 +35,7 @@ the Solidity code implementing the @tech{contract}.
 
 A few details of Ethereum leak through to Reach.
 In Ethereum, @tech{time} corresponds to block numbers.
-The node that a given @tech{participant} is connected to does not instantly know that it's blocks are correctly and may revert past transactions after it reaches consensus with the rest of the network.
+The node that a given @tech{participant} is connected to does not instantly know that its blocks are correct and may revert past transactions after it reaches consensus with the rest of the network.
 This means that Reach applications must not make externally observable effects until after such consensus is reached.
 
 @tech{Backends} must respect the following environment variables:
