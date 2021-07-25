@@ -122,8 +122,8 @@ warnDeprecatedUseExistingDevnet u = when u . liftIO . putStrLn
   $ "`--use-existing-devnet` is deprecated and no longer necessary - please remove."
 
 
-dieConnectorModeNonBrowser :: App
-dieConnectorModeNonBrowser = connectorMode <$> asks e_var >>= \case
+dieConnectorModeBrowser :: App
+dieConnectorModeBrowser = connectorMode <$> asks e_var >>= \case
   ConnectorMode _ Browser -> liftIO . die
     $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
    <> " is only available via the Reach standard library."
@@ -492,6 +492,29 @@ withCompose DockerMeta {..} wrapped = do
         StandaloneDevnet -> ""
         WithProject _ Project {..} -> T.pack projDirHost
 
+  let devnetAlgo = [N.text|
+        - ALGO_SERVER=http://devnet-algo
+        - ALGO_PORT=4180
+        - ALGO_INDEXER_SERVER=http://devnet-algo
+        - ALGO_INDEXER_PORT=8980
+      |]
+
+  let devnetCfx = [N.text|
+        - CFX_DEBUG
+        - CFX_NODE_URI=http://devnet-cfx:12537
+        - CFX_NETWORK_ID=999
+      |]
+
+  let (deps, extraEnv) = case (c, m) of
+        (_, Live) -> ("", "")
+        -- TODO verify there are no mismatches between `Devnet`/`Browser` defs
+        (Algo, Devnet) -> (devnetFor c, devnetAlgo)
+        (Algo, Browser) -> (devnetFor c, devnetAlgo)
+        (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
+        (Eth, Browser) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
+        (Cfx, Devnet) -> (devnetFor c, devnetCfx)
+        (Cfx, Browser) -> (devnetFor c, devnetCfx)
+
   connEnv <- case compose of
     StandaloneDevnet -> liftIO $ connectorEnv env cm
 
@@ -504,6 +527,8 @@ withCompose DockerMeta {..} wrapped = do
         - "3000:3000"
       stdin_open: true
       tty: true
+      depends_on:
+        - $deps
       environment:
         - REACH_DEBUG
         - REACH_CONNECTOR_MODE
@@ -511,58 +536,39 @@ withCompose DockerMeta {..} wrapped = do
         - REACT_APP_REACH_DEBUG=$debug'
         - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
         - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
+        $extraEnv
     |]
 
-    WithProject Rpc _ -> do
-      let devnetAlgo = [N.text|
-            - ALGO_SERVER=http://devnet-algo
-            - ALGO_PORT=4180
-            - ALGO_INDEXER_SERVER=http://devnet-algo
-            - ALGO_INDEXER_PORT=8980
-          |]
+    WithProject Rpc _ -> pure [N.text|
+      volumes:
+        - $projDirHost'/build:/app/build
+        - $projDirHost'/tls:/app/tls
+      ports:
+        - "$rpcPort:$rpcPort"
+      stdin_open: true
+      tty: true
+      depends_on:
+        - $deps
+      environment:
+        - REACH_DEBUG
+        - REACH_CONNECTOR_MODE=$reachConnectorMode
+        - REACH_ISOLATED_NETWORK
+        - REACH_RPC_PORT
+        - REACH_RPC_KEY
+        - REACH_RPC_TLS_KEY
+        - REACH_RPC_TLS_CRT
+        - REACH_RPC_TLS_PASSPHRASE
+        $extraEnv
+    |]
 
-      let devnetCfx = [N.text|
-            - CFX_DEBUG
-            - CFX_NODE_URI=http://devnet-cfx:12537
-            - CFX_NETWORK_ID=999
-          |]
-
-      -- TODO `USE_EXISTING_DEVNET`-handling, consolidate + push config
-      -- out of here
-      let (d, e) = case (c, m) of
-            (Algo, Devnet) -> (devnetFor c, devnetAlgo)
-            (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
-            (Cfx, Devnet) -> (devnetFor c, devnetCfx)
-            _ -> ("", "")
-
-      pure [N.text|
-        volumes:
-          - $projDirHost'/build:/app/build
-          - $projDirHost'/tls:/app/tls
-        ports:
-          - "$rpcPort:$rpcPort"
-        stdin_open: true
-        tty: true
-        depends_on:
-          - $d
-        environment:
-          - REACH_DEBUG
-          - REACH_CONNECTOR_MODE=$reachConnectorMode
-          - REACH_ISOLATED_NETWORK
-          - REACH_RPC_PORT
-          - REACH_RPC_KEY
-          - REACH_RPC_TLS_KEY
-          - REACH_RPC_TLS_CRT
-          - REACH_RPC_TLS_PASSPHRASE
-          $e
-      |]
+  let mkConnSvs = liftIO . serviceConnector env cm connPorts appService
 
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
-    (_, StandaloneDevnet) -> liftIO $ serviceConnector env cm connPorts appService "latest"
-
-    -- TODO fix remaining combos (e.g. `rpc-server` latest vs. REACH_VERSION)
-    (_, _) -> liftIO $ serviceConnector env cm connPorts appService version''
+    (_, StandaloneDevnet) -> mkConnSvs "latest"
+    (_, WithProject Console _) -> mkConnSvs version''
+    (_, WithProject React _) -> mkConnSvs version''
+    (_, WithProject Rpc _) -> mkConnSvs "latest"
 
   let topLevelNets = case m of
         Live -> "{}"
@@ -846,7 +852,7 @@ run' = command "run" . info f $ d <> noIntersperse where
          <*> many (strArgument (metavar "ARG"))
 
   go isolate appOrDir args = do
-    dieConnectorModeNonBrowser
+    dieConnectorModeBrowser
 
     Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir
@@ -979,32 +985,36 @@ scaffold = command "scaffold" $ info f d where
 
 
 --------------------------------------------------------------------------------
--- TODO `USE_EXISTING_DEVNET` (?)
 react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
-  f = go <$> compiler
+  f = go <$> switchUseExistingDevnet <*> compiler
 
   -- Leverage `optparse` for help/completions/validation/etc but disregard its
   -- product and instead thread raw command line back through during `compile`
   -- sub-shell
-  go _ = do
-    Var {..} <- asks e_var
-    dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
-    dd <- devnetDeps
+  go ued _ = do
+    warnDeprecatedUseExistingDevnet ued
 
-    -- TODO generalize this pattern for other subcommands?
-    cargs <- liftIO $ do
-      let x "react" = False
-          x a | "--dir-project-host" `T.isPrefixOf` a = False
-          x a | "--dir-tmp-host" `T.isPrefixOf` a = False
-              | otherwise = True
-      T.intercalate " " . filter x . fmap T.pack <$> getArgs
+    v@Var { connectorMode = ConnectorMode c _, ..} <- asks e_var
 
-    withCompose dm . script $ write [N.text|
-      $reachEx compile $cargs
-      docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
-    |]
+    local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
+      dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
+      dd <- devnetDeps
+
+      -- TODO generalize this pattern for other subcommands?
+      cargs <- liftIO $ do
+        let x "react" = False
+            x "--use-existing-devnet" = False
+            x a | "--dir-project-host" `T.isPrefixOf` a = False
+            x a | "--dir-tmp-host" `T.isPrefixOf` a = False
+                | otherwise = True
+        T.intercalate " " . filter x . fmap T.pack <$> getArgs
+
+      withCompose dm . script $ write [N.text|
+        $reachEx compile $cargs
+        docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
+      |]
 
 
 --------------------------------------------------------------------------------
@@ -1028,7 +1038,7 @@ rpcServer = command "rpc-server" $ info f d where
     prj <- projectPwdIndex
     let dm@DockerMeta {..} = mkDockerMetaRpc env prj
 
-    dieConnectorModeNonBrowser
+    dieConnectorModeBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
     warnDeprecatedUseExistingDevnet ued
@@ -1056,7 +1066,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     let Var {..} = e_var
     let args' = T.intercalate " " args
 
-    dieConnectorModeNonBrowser
+    dieConnectorModeBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
 
@@ -1112,7 +1122,7 @@ devnet = command "devnet" $ info f d where
     let ConnectorMode c m = connectorMode
     let s = devnetFor c
 
-    dieConnectorModeNonBrowser
+    dieConnectorModeBrowser
 
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
