@@ -348,7 +348,7 @@ this is the current block number, represented as a @litchar{BigNumber}.
 
 Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
 In @tech{isolated testing modes}, this will also force time to pass on the network, usually by sending trivial transactions.
-An @deftech{isolated testing modes} is a @envref{REACH_CONNECTOR_MODE} that matches
+An @deftech{isolated testing mode} is a @envref{REACH_CONNECTOR_MODE} that matches
 @litchar{$NET-devnet} for all valid @litchar{$NET}, or when @defenv{REACH_ISOLATED_NETWORK} is set.
 
 You may provide an optional @jsin{onProgress} callback, used for reporting progress,
