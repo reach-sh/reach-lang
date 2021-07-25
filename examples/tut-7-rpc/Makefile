@@ -50,7 +50,6 @@ build: server/build/index.main.mjs \
 	  --build-arg VERSION=$(shell cat ../../rpc-client/py/VERSION) \
 	  --tag=reachsh/reach-app-tut-7-rpc-client-py:latest .
 
-# TODO restore `rpc-server` image in CI
 .PHONY: run
 run:
 	REACH_DEBUG=1 sbin/test-on.sh "${REACH_CONNECTOR_MODE}" js py go
