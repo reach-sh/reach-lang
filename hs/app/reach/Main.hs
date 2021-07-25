@@ -121,9 +121,14 @@ warnDefRpcKey = do
     $ "Warning! Using development RPC key: REACH_RPC_KEY=" <> defRpcKey <> "."
 
 
-warnDeprecatedUseExistingDevnet :: Bool -> App
-warnDeprecatedUseExistingDevnet u = when u . liftIO . putStrLn
+warnDeprecatedFlagUseExistingDevnet :: Bool -> App
+warnDeprecatedFlagUseExistingDevnet u = when u . liftIO . putStrLn
   $ "`--use-existing-devnet` is deprecated and no longer necessary - please remove."
+
+
+warnDeprecatedFlagIsolate :: Bool -> App
+warnDeprecatedFlagIsolate i = when i . liftIO . putStrLn
+  $ "`--isolate` is deprecated and no longer has any effect - please remove."
 
 
 dieConnectorModeBrowser :: App
@@ -276,10 +281,6 @@ swap :: T.Text -> T.Text -> T.Text -> T.Text
 swap a b src = T.replace ("${" <> a <> "}") b src
 
 
-swap' :: T.Text -> String -> T.Text -> T.Text
-swap' a b src = swap a (T.pack b) src
-
-
 reachImages :: [T.Text]
 reachImages =
   [ "reach"
@@ -384,24 +385,24 @@ data DockerMeta = DockerMeta
   }
 
 
-mkScaffold :: Project -> Bool -> Scaffold
-mkScaffold Project {..} isolate = Scaffold
-  { containerDockerfile = f $ projDirContainer </> "Dockerfile"
-  , containerPackageJson = f $ projDirContainer </> "package.json"
-  , containerMakefile = f $ projDirContainer </> "Makefile"
-  , hostDockerfile = f $ projDirHost </> "Dockerfile"
-  , hostPackageJson = f $ projDirHost </> "package.json"
-  , hostMakefile = f $ projDirHost </> "Makefile"
-  } where f a = if isolate then a <> "." <> T.unpack projName else a
+mkScaffold :: Project -> Scaffold
+mkScaffold Project {..} = Scaffold
+  { containerDockerfile = projDirContainer </> "Dockerfile"
+  , containerPackageJson = projDirContainer </> "package.json"
+  , containerMakefile = projDirContainer </> "Makefile"
+  , hostDockerfile = projDirHost </> "Dockerfile"
+  , hostPackageJson = projDirHost </> "package.json"
+  , hostMakefile = projDirHost </> "Makefile"
+  }
 
 
 appProj' :: FilePath -> T.Text
 appProj' = T.toLower . T.pack . takeBaseName . dropTrailingPathSeparator
 
 
-mkDockerMetaConsole :: Project -> Bool -> DockerMeta
-mkDockerMetaConsole p@Project {..} isolate = DockerMeta {..} where
-  appProj = appProj' projDirHost <> if isolate then ("-" <> projName) else ""
+mkDockerMetaConsole :: Project -> DockerMeta
+mkDockerMetaConsole p@Project {..} = DockerMeta {..} where
+  appProj = appProj' projDirHost
   appService = "reach-app-" <> appProj
   appImage = "reachsh/" <> appService
   appImageTag = appImage <> ":latest"
@@ -639,32 +640,27 @@ switchUseExistingDevnet = switch
  <> help "This switch has been deprecated and is no longer necessary"
 
 
+switchIsolate :: Parser Bool
+switchIsolate = switch
+  $ long "isolate"
+ <> help "This switch has been deprecated and no longer has any effect"
+ <> hidden
+
+
 --------------------------------------------------------------------------------
 scaffold' :: Bool -> Bool -> Project -> App
-scaffold' isolate quiet proj@Project {..} = do
+scaffold' i quiet proj@Project {..} = do
+  warnDeprecatedFlagIsolate i
   Env {..} <- ask
 
-  let Scaffold {..} = mkScaffold proj isolate
-  let DockerMeta {..} = mkDockerMetaConsole proj isolate
+  let Scaffold {..} = mkScaffold proj
+  let DockerMeta {..} = mkDockerMetaConsole proj
   let scaffIfAbsent' n f = liftIO $ scaffIfAbsent quiet n f
 
-  let cpline = case isolate of
-        False -> ""
-        True -> "RUN cp /app/" <> T.pack (takeFileName hostPackageJson) <> " /app/package.json"
-
-  -- TODO prune
   let tmpl p =
           swap "APP" projName
         . swap "MJS" (projName <> ".mjs")
-        . swap "RSH" (projName <> ".rsh")
-        . swap' "MAKEFILE" (takeFileName hostMakefile)
-        . swap' "DOCKERFILE" (takeFileName hostDockerfile)
-        . swap' "PACKAGE_JSON" (takeFileName hostPackageJson)
-        . swap "CPLINE" cpline
-        . swap "PROJ" appProj -- TODO
-        . swap "SERVICE" appService
-        . swap "IMAGE" appImage
-        . swap "IMAGE_TAG" appImageTag
+        . swap "PROJ" appProj
         . swap "REACH_VERSION" (version'' e_var)
        <$> readScaff p
 
@@ -681,8 +677,10 @@ scaffold' isolate quiet proj@Project {..} = do
 
 
 unscaffold' :: Bool -> Bool -> FilePath -> App
-unscaffold' isolate quiet appOrDir = do
-  Scaffold {..} <- flip mkScaffold isolate <$> projectFrom appOrDir
+unscaffold' i quiet appOrDir = do
+  warnDeprecatedFlagIsolate i
+  Scaffold {..} <- mkScaffold <$> projectFrom appOrDir
+
   liftIO $ do
     forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n -> do
       -- TODO each by whether file exists
@@ -855,11 +853,12 @@ devnetDeps = do
 run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
-  f = go <$> switch (long "isolate")
+  f = go <$> switchIsolate
          <*> argAppOrDir
          <*> many (strArgument (metavar "ARG"))
 
-  go isolate appOrDir args = do
+  go i appOrDir args = do
+    warnDeprecatedFlagIsolate i
     dieConnectorModeBrowser
 
     Env {..} <- ask
@@ -867,7 +866,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     dd <- devnetDeps
 
     let Var {..} = e_var
-    let Scaffold {..} = mkScaffold proj isolate
+    let Scaffold {..} = mkScaffold proj
 
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
       [ (containerMakefile, hostMakefile)
@@ -877,7 +876,7 @@ run' = command "run" . info f $ d <> noIntersperse where
 
     cleanup <- T.intercalate "\n" <$> forM toClean (pure . T.pack . ("rm " <>) . snd)
 
-    scaffold' isolate True proj
+    scaffold' False True proj
 
     let rsh = projDirContainer </> T.unpack projName <> ".rsh"
     let mjs = projDirContainer </> T.unpack projName <> ".mjs"
@@ -898,7 +897,7 @@ run' = command "run" . info f $ d <> noIntersperse where
         r <- modificationTime <$> getFileStatus rsh
         pure $ if r > b then Just recompile' else Nothing
 
-    let dm@DockerMeta {..} = mkDockerMetaConsole proj isolate
+    let dm@DockerMeta {..} = mkDockerMetaConsole proj
     let dockerfile' = T.pack hostDockerfile
     let projDirHost' = T.pack projDirHost
     let args' = T.intercalate " " . map (<> "'") . map ("'" <>) $ projName : args
@@ -986,7 +985,7 @@ scaffold :: Subcommand
 scaffold = command "scaffold" $ info f d where
   d = progDesc "Set up Docker scaffolding for a simple app"
   f = go
-    <$> switch (long "isolate")
+    <$> switchIsolate
     <*> switch (long "quiet")
     <*> argAppOrDir
   go i q a = projectFrom a >>= scaffold' i q
@@ -1002,7 +1001,7 @@ react = command "react" $ info f d where
   -- product and instead thread raw command line back through during `compile`
   -- sub-shell
   go ued _ = do
-    warnDeprecatedUseExistingDevnet ued
+    warnDeprecatedFlagUseExistingDevnet ued
 
     v@Var { connectorMode = ConnectorMode c _, ..} <- asks e_var
 
@@ -1049,7 +1048,7 @@ rpcServer = command "rpc-server" $ info f d where
     dieConnectorModeBrowser
     warnDefRpcKey
     warnScaffoldDefRpcTlsPair prj
-    warnDeprecatedUseExistingDevnet ued
+    warnDeprecatedFlagUseExistingDevnet ued
 
     withCompose dm . script $ rpcServer' appService >>= write
 
@@ -1216,7 +1215,7 @@ numericVersion = command "numeric-version" $ info f fullDesc where
 unscaffold :: Subcommand
 unscaffold = command "unscaffold" $ info f fullDesc where
   f = unscaffold'
-    <$> switch (long "isolate")
+    <$> switchIsolate
     <*> switch (long "quiet")
     <*> argAppOrDir
 
