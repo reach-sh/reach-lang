@@ -682,10 +682,10 @@ unscaffold' i quiet appOrDir = do
   Scaffold {..} <- mkScaffold <$> projectFrom appOrDir
 
   liftIO $ do
-    forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n -> do
-      -- TODO each by whether file exists
-      when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
-      removeFile n
+    forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n ->
+      whenM (doesFileExist n) $ do
+        when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
+        removeFile n
     when (not quiet) $ putStrLn "Done."
 
 
