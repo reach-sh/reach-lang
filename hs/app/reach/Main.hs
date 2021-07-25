@@ -494,7 +494,6 @@ withCompose DockerMeta {..} wrapped = do
         (_, Eth, _) -> [ "8545:8545" ]
 
   let reachConnectorMode = T.pack $ show cm
-  let reachIsolatedNetwork = "1" -- TODO
   let debug' = if debug then "1" else ""
 
   let projDirHost' = case compose of
@@ -544,7 +543,7 @@ withCompose DockerMeta {..} wrapped = do
         - REACH_ISOLATED_NETWORK
         - REACT_APP_REACH_DEBUG=$debug'
         - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
-        - REACT_APP_REACH_ISOLATED_NETWORK=$reachIsolatedNetwork
+        - REACT_APP_REACH_ISOLATED_NETWORK=$${REACH_ISOLATED_NETWORK}
         $extraEnv
     |]
 
