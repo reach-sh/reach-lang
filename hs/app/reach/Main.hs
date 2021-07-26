@@ -1160,12 +1160,12 @@ update = command "update" $ info (pure f) d where
 --------------------------------------------------------------------------------
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
-  d = progDesc "Docker kill and rm all images"
+  d = progDesc "Docker kill and rm all containers"
   f = pure . script $ write [N.text|
-    echo 'Docker kill all the things...'
+    echo 'Killing all Docker containers...'
     # shellcheck disable=SC2046
     docker kill $$(docker ps -q) >/dev/null 2>&1 || :
-    echo 'Docker rm all the things...'
+    echo 'Removing all Docker containers...'
     # shellcheck disable=SC2046
     docker rm $$(docker ps -qa) >/dev/null 2>&1 || :
     echo 'Done.'
