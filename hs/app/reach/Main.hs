@@ -647,6 +647,12 @@ switchIsolate = switch
  <> hidden
 
 
+switchQuiet :: Parser Bool
+switchQuiet = switch
+  $ long "quiet"
+ <> help "Withhold progress messages"
+
+
 --------------------------------------------------------------------------------
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
@@ -676,17 +682,26 @@ scaffold' i quiet proj@Project {..} = do
   when (not quiet) . liftIO $ putStrLn "Done."
 
 
-unscaffold' :: Bool -> Bool -> FilePath -> App
-unscaffold' i quiet appOrDir = do
-  warnDeprecatedFlagIsolate i
-  Scaffold {..} <- mkScaffold <$> projectFrom appOrDir
+scaffold :: Subcommand
+scaffold = command "scaffold" $ info f d where
+  d = progDesc "Set up Docker scaffolding for a simple app"
+  f = go <$> switchIsolate <*> switchQuiet <*> argAppOrDir
+  go i q a = projectFrom a >>= scaffold' i q
 
-  liftIO $ do
-    forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n ->
-      whenM (doesFileExist n) $ do
-        when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
-        removeFile n
-    when (not quiet) $ putStrLn "Done."
+
+unscaffold :: Subcommand
+unscaffold = command "unscaffold" $ info f fullDesc where
+  f = go <$> switchIsolate <*> switchQuiet <*> argAppOrDir
+  go i quiet appOrDir = do
+    warnDeprecatedFlagIsolate i
+    Scaffold {..} <- mkScaffold <$> projectFrom appOrDir
+
+    liftIO $ do
+      forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n ->
+        whenM (doesFileExist n) $ do
+          when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
+          removeFile n
+      when (not quiet) $ putStrLn "Done."
 
 
 --------------------------------------------------------------------------------
@@ -981,17 +996,6 @@ rpcServerDown = mkDeprecatedDown "rpc-server-down"
 
 
 --------------------------------------------------------------------------------
-scaffold :: Subcommand
-scaffold = command "scaffold" $ info f d where
-  d = progDesc "Set up Docker scaffolding for a simple app"
-  f = go
-    <$> switchIsolate
-    <*> switch (long "quiet")
-    <*> argAppOrDir
-  go i q a = projectFrom a >>= scaffold' i q
-
-
---------------------------------------------------------------------------------
 react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
@@ -1175,6 +1179,11 @@ version' = command "version" $ info f d where
   f = pure . liftIO . T.putStrLn $ T.pack versionHeader
 
 
+numericVersion :: Subcommand
+numericVersion = command "numeric-version" $ info f fullDesc where
+  f = pure . liftIO . T.putStrLn $ T.pack compatibleVersionStr
+
+
 --------------------------------------------------------------------------------
 help' :: Subcommand
 help' = command "help" $ info f d where
@@ -1203,21 +1212,6 @@ whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
   f = pure . script $ write whoami'
-
-
---------------------------------------------------------------------------------
-numericVersion :: Subcommand
-numericVersion = command "numeric-version" $ info f fullDesc where
-  f = pure . liftIO . T.putStrLn $ T.pack compatibleVersionStr
-
-
---------------------------------------------------------------------------------
-unscaffold :: Subcommand
-unscaffold = command "unscaffold" $ info f fullDesc where
-  f = unscaffold'
-    <$> switchIsolate
-    <*> switch (long "quiet")
-    <*> argAppOrDir
 
 
 --------------------------------------------------------------------------------
