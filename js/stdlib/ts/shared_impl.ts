@@ -47,7 +47,7 @@ export const debug = (...msgs: any) => {
         : msg);
     void(betterMsgs);
     // Print objects for indentation, colors, etc...
-    console.log(new Date(), `DEBUG:`, ...msgs);
+    console.log(new Date(), `DEBUG:`, ...betterMsgs);
   }
 };
 

@@ -51,6 +51,7 @@ import {
   typeDefs,
 } from './ALGO_compiled';
 import { process, window } from './shim';
+import { ApiCall, EventCache, looksLikeAccountingNotInitialized, QueryResult } from './ALGO_EventCache';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
 export * from './shared_user';
 
@@ -102,9 +103,6 @@ type TxnInfo = {
   'application-index'?: number,
 };
 type TxId = string;
-type ApiCall<T> = {
-  do: () => Promise<T>,
-};
 type CompileResultBytes = {
   src: String,
   result: Uint8Array,
@@ -551,15 +549,6 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-function looksLikeAccountingNotInitialized(e: any) {
-  const responseText = e?.response?.text || null;
-  // TODO: trust the response to be json and parse it?
-  // const json = JSON.parse(responseText) || {};
-  // const msg: string = (json.message || '').toLowerCase();
-  const msg = (responseText || '').toLowerCase();
-  return msg.includes(`accounting not initialized`);
-}
-
 const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
   debug(dhead, '--- QUERY =', query);
   let retries = 10;
@@ -584,10 +573,6 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
   debug(dhead, '--- RESULT =', res);
   return res;
 };
-
-type QueryResult =
-  | { succ: true, txn: any }
-  | { succ: false, round: number }
 
 const doQuery = async (dhead:string, query: ApiCall<any>, pred: ((x:any) => boolean) = ((x) => { void(x); return true; })): Promise<QueryResult> => {
   const res = await doQuery_(dhead, query);
@@ -974,10 +959,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
 
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<Contract> => {
+    const eventCache = new EventCache();
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
     const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
-      await verifyContract(ctcInfo, bin);
+      await verifyContract_(ctcInfo, bin, eventCache);
     debug(shad, 'attach', {ApplicationID, allocRound, ctorRound} );
     let realLastRound = ctorRound;
 
@@ -1278,19 +1264,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         undefined;
 
       while ( true ) {
-        let query = indexer.searchForTransactions()
-          .applicationID(ApplicationID)
-          .txType('appl')
-          // Look at the next one after the last message
-          // XXX when we implement firstMsg, this won't work on the first
-          // message
-          .minRound(realLastRound + 1);
-        if ( timeoutRound ) {
-          query = query.maxRound(timeoutRound);
-        }
-
         const correctStep = makeIsMethod(funcNum);
-        const res = await doQuery(dhead, query, correctStep);
+
+        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound, maxRound: timeoutRound }, correctStep);
+        debug(`EventCache res: `, res);
         if ( ! res.succ ) {
           const currentRound = res.round;
           if ( timeoutRound && timeoutRound <= currentRound ) {
@@ -1532,7 +1509,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     // @ts-ignore
     return this;
   }
-  
+
   async function tokenAccept(token:Token): Promise<void> {
     debug(`tokenAccept`, token);
     // @ts-ignore
@@ -1559,7 +1536,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
   const { networkAccount } = acc;
-  if (!networkAccount) { 
+  if (!networkAccount) {
     throw Error(`acc.networkAccount missing. Got: ${acc}`);
   }
   const client = await getAlgodClient();
@@ -1801,6 +1778,10 @@ async function waitCtorTxn(shad: string, ApplicationID: number): Promise<void> {
 }
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
+  return verifyContract_(info, bin, new EventCache());
+}
+
+export const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
   const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
@@ -1866,11 +1847,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
-  const iaq = indexer.searchForTransactions()
-    .applicationID(ApplicationID)
-    .txType('appl')
-    .round(allocRound);
-  const iar = await doQuery(`${dhead} alloc`, iaq);
+  const iar = await eventCache.query(dhead, ApplicationID, { specRound: allocRound }, (_: any) => true);
   // @ts-ignore
   const iat = iar.txn;
   chk(iat, `Cannot query for allocation transaction`);
