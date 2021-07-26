@@ -1,43 +1,47 @@
 'reach 0.1';
 
-const Player =
-      { getHand: Fun([], UInt),
-        seeOutcome: Fun([UInt], Null) };
-const Alice =
-      { ...Player,
-        wager: UInt };
-const Bob =
-      { ...Player,
-        acceptWager: Fun([UInt], Null) };
+const Player = {
+  getHand: Fun([], UInt),
+  seeOutcome: Fun([UInt], Null),
+};
 
-export const main =
-  Reach.App(
-    {},
-    [Participant('Alice', Alice), Participant('Bob', Bob)],
-    (A, B) => {
-      A.only(() => {
-        const wager = declassify(interact.wager);
-        const handA = declassify(interact.getHand()); });
-      A.publish(wager, handA)
-        .pay(wager);
-      commit();
+export const main = Reach.App(() => {
+  const Alice = Participant('Alice', {
+    ...Player,
+    wager: UInt,
+  });
+  const Bob   = Participant('Bob', {
+    ...Player,
+    acceptWager: Fun([UInt], Null),
+  });
+  deploy();
 
-      unknowable(B, A(handA));
-      B.only(() => {
-        interact.acceptWager(wager);
-        const handB = declassify(interact.getHand()); });
-      B.publish(handB)
-        .pay(wager);
+  Alice.only(() => {
+    const wager = declassify(interact.wager);
+    const handAlice = declassify(interact.getHand());
+  });
+  Alice.publish(wager, handAlice)
+    .pay(wager);
+  commit();
 
-      const outcome = (handA + (4 - handB)) % 3;
-      const [forA, forB] =
-            outcome == 2 ? [2, 0] :
-            outcome == 0 ? [0, 2] :
-            [1, 1];
-      transfer(forA * wager).to(A);
-      transfer(forB * wager).to(B);
-      commit();
+  unknowable(Bob, Alice(handAlice));
+  Bob.only(() => {
+    interact.acceptWager(wager);
+    const handBob = declassify(interact.getHand());
+  });
+  Bob.publish(handBob)
+    .pay(wager);
 
-      each([A, B], () => {
-        interact.seeOutcome(outcome); });
-      exit(); });
+  const outcome = (handAlice + (4 - handBob)) % 3;
+  const            [forAlice, forBob] =
+    outcome == 2 ? [       2,      0] :
+    outcome == 0 ? [       0,      2] :
+    /* tie      */ [       1,      1];
+  transfer(forAlice * wager).to(Alice);
+  transfer(forBob * wager).to(Bob);
+  commit();
+
+  each([Alice, Bob], () => {
+    interact.seeOutcome(outcome);
+  });
+});

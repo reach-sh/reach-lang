@@ -1,26 +1,34 @@
 'reach 0.1';
 
-const Player =
-      { getHand: Fun([], UInt),
-        seeOutcome: Fun([UInt], Null) };
+const Player = {
+  getHand: Fun([], UInt),
+  seeOutcome: Fun([UInt], Null),
+};
 
-export const main =
-  Reach.App(
-    {},
-    [Participant('Alice', Player), Participant('Bob', Player)],
-    (A, B) => {
-      A.only(() => {
-        const handA = declassify(interact.getHand()); });
-      A.publish(handA);
-      commit();
+export const main = Reach.App(() => {
+  const Alice = Participant('Alice', {
+    ...Player,
+  });
+  const Bob   = Participant('Bob', {
+    ...Player,
+  });
+  deploy();
 
-      B.only(() => {
-        const handB = declassify(interact.getHand()); });
-      B.publish(handB);
+  Alice.only(() => {
+    const handAlice = declassify(interact.getHand());
+  });
+  Alice.publish(handAlice);
+  commit();
 
-      const outcome = (handA + (4 - handB)) % 3;
-      commit();
+  Bob.only(() => {
+    const handBob = declassify(interact.getHand());
+  });
+  Bob.publish(handBob);
 
-      each([A, B], () => {
-        interact.seeOutcome(outcome); });
-      exit(); });
+  const outcome = (handAlice + (4 - handBob)) % 3;
+  commit();
+
+  each([Alice, Bob], () => {
+    interact.seeOutcome(outcome);
+  });
+});

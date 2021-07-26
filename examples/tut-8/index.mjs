@@ -1,10 +1,9 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
+const stdlib = loadStdlib(process.env);
 
 (async () => {
-  const stdlib = await loadStdlib();
-
   const isAlice = await ask(
     `Are you Alice?`,
     yesno
@@ -64,15 +63,14 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
       stdlib.parseCurrency
     );
     interact.wager = amt;
+    interact.deadline = 10;
   } else {
     interact.acceptWager = async (amt) => {
       const accepted = await ask(
         `Do you accept the wager of ${fmt(amt)}?`,
         yesno
       );
-      if (accepted) {
-        return;
-      } else {
+      if (!accepted) {
         process.exit(0);
       }
     };
@@ -84,6 +82,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     'Paper': 1, 'P': 1, 'p': 1,
     'Scissors': 2, 'S': 2, 's': 2,
   };
+
   interact.getHand = async () => {
     const hand = await ask(`What hand will you play?`, (x) => {
       const hand = HANDS[x];

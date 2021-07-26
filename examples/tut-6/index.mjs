@@ -1,8 +1,8 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
 
 (async () => {
-  const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -36,6 +36,7 @@ import * as backend from './build/index.main.mjs';
     backend.Alice(ctcAlice, {
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
+      deadline: 10,
     }),
     backend.Bob(ctcBob, {
       ...Player('Bob'),
@@ -43,7 +44,8 @@ import * as backend from './build/index.main.mjs';
         if ( Math.random() <= 0.5 ) {
           for ( let i = 0; i < 10; i++ ) {
             console.log(`  Bob takes his sweet time...`);
-            await stdlib.wait(1); }
+            await stdlib.wait(1);
+          }
         } else {
           console.log(`Bob accepts the wager of ${fmt(amt)}.`);
         }

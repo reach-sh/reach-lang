@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable("Bob", handA/26)
-  at ./index-fails.rsh:25:17:application
+  of theorem unknowable("Bob", handAlice/26)
+  at ./index-fails.rsh:27:13:application
 
-  Bob knows of handA/26 because it is published.
+  Bob knows of handAlice/26 because it is published.
 
 Verifying for generic connector
   Verifying when ALL participants are honest
