@@ -364,11 +364,14 @@ do_init () {
 'reach ${REACH_VERSION_SHORT}';
 
 export const main = Reach.App(() => {
-  const Alice = Participant('Alice', {});
-  const Bob   = Participant('Bob', {});
+  const Alice = Participant('Alice', {
+    // Specify Alice's interact interface here
+  });
+  const Bob   = Participant('Bob', {
+    // Specify Bob's interact interface here
+  });
   deploy();
   // write your program here
-
 });
 EOF
 
@@ -376,9 +379,9 @@ EOF
   cat >"${MJS}" <<EOF
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/${APP}.main.mjs';
+const stdlib = loadStdlib(process.env);
 
 (async () => {
-  const stdlib = await loadStdlib(process.env);
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
@@ -389,10 +392,12 @@ import * as backend from './build/${APP}.main.mjs';
 
   await Promise.all([
     backend.Alice(ctcAlice, {
-      ...stdlib.hasRandom
+      ...stdlib.hasRandom,
+      // implement Alice's interact object here
     }),
     backend.Bob(ctcBob, {
-      ...stdlib.hasRandom
+      ...stdlib.hasRandom,
+      // implement Bob's interact object here
     }),
   ]);
 
