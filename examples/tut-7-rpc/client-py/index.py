@@ -50,7 +50,7 @@ def main():
         rpc_callbacks(
             '/backend/Alice',
             ctc_alice,
-            dict(wager=rpc('/stdlib/parseCurrency', 5), **player('Alice')))
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
 
     alice = Thread(target=play_alice)
     alice.start()

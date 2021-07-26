@@ -158,7 +158,8 @@ it as a concurrent thread, which begins running in the background on line 56.
 @tech{participant interact interface} to the server with @pyin{rpc_callbacks}.
 The interface includes methods and values created by @pyin{player('Alice')},
 and adds an additional @pyin{wager} value which is set to the result of
-@pyin{rpc('/stdlib/parseCurrency', 5)}.
+@pyin{rpc('/stdlib/parseCurrency', 5)},
+as well as setting a @pyin{deadline} of @pyin{10}.
 
 Bob's interface is likewise defined and spawned as another thread, which also
 begins running concurrently on line 68.

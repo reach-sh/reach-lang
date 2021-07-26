@@ -42,6 +42,7 @@ import { mkRPC } from '@reach-sh/rpc-client';
     rpcCallbacks(`/backend/Alice`, ctcAlice, {
       ...Player('Alice'),
       wager: await rpc(`/stdlib/parseCurrency`, 5),
+      deadline: 10,
     }),
 
     rpcCallbacks(`/backend/Bob`, ctcBob, {

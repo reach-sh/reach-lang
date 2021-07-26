@@ -75,6 +75,7 @@ func main() {
 
     d := player("Alice")
     d["wager"] = rpc("/stdlib/parseCurrency", 5).(jsono)
+    d["deadline"] = 10
 
     rpcCallbacks("/backend/Alice", ctcAlice, d)
   }
