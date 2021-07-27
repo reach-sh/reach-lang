@@ -28,7 +28,7 @@ const runB = async () => {
   const startingBalance = stdlib.parseCurrency(10);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
-  const info = await ask.ask(`Enter contract info:`, parseInt);
+  const info = await ask.ask(`Enter contract info:`, (stdlib.connector == 'ALGO' ? parseInt : ((x) => x)));
   const ctcBob = accBob.attach(backend, info);
   await Promise.all([ backend.B(ctcBob, {}) ]);
   console.log(`B Finished`);

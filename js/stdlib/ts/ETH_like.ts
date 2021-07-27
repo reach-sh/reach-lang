@@ -267,6 +267,84 @@ const stepTime = async (): Promise<TransactionReceipt> => {
 };
 
 // ****************************************************************************
+// Event Cache
+// ****************************************************************************
+
+const getMinBlock = (logs: any[]) =>
+  logs.reduce((acc: Log, x: Log) =>
+    (x.blockNumber == acc.blockNumber)
+      ? (x.logIndex < acc.logIndex ? x : acc)
+      : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
+
+class EventCache {
+
+  cache: any[] = []
+
+  constructor() {
+    this.cache = [];
+  }
+
+  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: () => Promise<any[]>) {
+    debug(`EventCache.query`, fromBlock, toBlock, topic);
+    if (fromBlock > toBlock) {
+      return undefined;
+    }
+    // Clear cache of stale transactions
+    this.cache = this.cache.filter((x) => x.blockNumber >= fromBlock);
+
+    // Check to see if the transaction we want is in the cache
+    const initLogs = this.cache.filter((x) => x.topics.includes(topic));
+    if(initLogs.length > 0) {
+      debug(`Found transaction in Event Cache`);
+      return getMinBlock(initLogs);
+    }
+
+    debug(`Transaction not in Event Cache. Querying network...`);
+
+    // If no results, then contact network
+    this.cache = await getLogs();
+
+    // Check for pred again
+    const foundLogs = this.cache.filter((x) => x.topics.includes(topic.toString()));
+
+    if (foundLogs.length < 1) {
+      return undefined;
+    }
+
+    return getMinBlock(foundLogs);
+  }
+
+  async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
+    const topic = iface.getEventTopic(event);
+    const getLogs = async () => {
+      const provider = await getProvider();
+      return await provider.getLogs({
+        fromBlock,
+        toBlock,
+        address: address
+      });
+    };
+    return await this.query_(fromBlock, toBlock, topic, getLogs);
+  }
+
+  async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
+    const ethersC = await getC();
+    const topic = ethersC.interface.getEventTopic(ok_evt);
+    const getLogs = async () => {
+      const provider = await getProvider();
+      debug(`event cache query: `, fromBlock, toBlock);
+      return await provider.getLogs({
+        fromBlock,
+        toBlock,
+        address: ethersC.address
+      });
+    };
+    return await this.query_(fromBlock, toBlock, topic, getLogs);
+  }
+}
+
+
+// ****************************************************************************
 // Common Interface Exports
 // ****************************************************************************
 
@@ -479,6 +557,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   ): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
+    const eventCache = new EventCache();
+
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
 
     // Attached state
@@ -511,7 +591,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
-        const { creation_block } = await verifyContract(info, bin);
+        const { creation_block } = await verifyContract_(info, bin, eventCache);
         theCreationTime = creation_block;
         setLastBlock(creation_block);
         const address = info;
@@ -569,19 +649,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const getLog = async (
       fromBlock: number, toBlock: number, ok_evt: string,
     ): Promise<Log|undefined> => {
-      if ( fromBlock > toBlock ) { return undefined; }
-      const ethersC = await getC();
-      const logs = await (await getProvider()).getLogs({
-        fromBlock,
-        toBlock,
-        address: ethersC.address,
-        topics: [ethersC.interface.getEventTopic(ok_evt)],
-      });
-      if (logs.length < 1) { return undefined; }
-      return logs.reduce((acc: Log, x: Log) =>
-          (x.blockNumber == acc.blockNumber)
-            ? (x.logIndex < acc.logIndex ? x : acc)
-            : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
+      return await eventCache.query(fromBlock, toBlock, ok_evt, getC);
     }
 
     const getInfo = async () => await infoP;
@@ -675,7 +743,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       let block_poll_end = block_poll_start;
       while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
         debug(shad, ':', label, 'recv', ok_evt, `--- GET`, block_poll_start, block_poll_end);
-        const ok_e = await getLog(block_poll_start, block_poll_end, ok_evt);
+        const ok_e = await eventCache.query(block_poll_start, block_poll_end, ok_evt, getC);
         if (ok_e == undefined) {
           debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- RETRY`);
           block_poll_start = block_poll_end;
@@ -921,6 +989,9 @@ type VerifyResult = {
   creation_block: number,
 };
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
+  return await verifyContract_(ctcInfo, backend, new EventCache());
+}
+const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const { ABI, Bytecode, deployMode } = backend._Connectors.ETH;
   const address = ctcInfo;
   const iface = new real_ethers.utils.Interface(ABI);
@@ -941,15 +1012,9 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
   const now = await getNetworkTimeNumber();
   const getLogs = async (event:string): Promise<any> => {
     debug('verifyContract: getLogs', {event, now});
-    const logs = await provider.getLogs({
-      fromBlock: 0,
-      toBlock: now,
-      address: address,
-      topics: [iface.getEventTopic(event)],
-    });
-    debug('verifyContract', logs);
-    chk(logs.length > 0, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
-    return logs[0];
+    const log = await eventCache.queryContract(0, now, address, event, iface);
+    chk(log != undefined, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
+    return log;
   };
   const e0log = await getLogs('e0');
   const creation_block = e0log.blockNumber;
