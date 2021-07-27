@@ -51,7 +51,7 @@ import {
   typeDefs,
 } from './ALGO_compiled';
 import { process, window } from './shim';
-import { ApiCall, EventCache, looksLikeAccountingNotInitialized, QueryResult } from './ALGO_EventCache';
+import { EventCache, doQuery_ } from './ALGO_EventCache';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
 export * from './shared_user';
 
@@ -547,46 +547,6 @@ const format_failed_request = (e: any) => {
      `no req, but ${JSON.stringify(Object.keys(ep))}`;
   const msg = e.text ? JSON.parse(e.text) : e;
   return `\n${db64}\n${JSON.stringify(msg)}`;
-};
-
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
-  debug(dhead, '--- QUERY =', query);
-  let retries = 10;
-  let res;
-  while ( retries > 0 ) {
-    try {
-      res = await query.do();
-      break;
-    } catch (e) {
-      if ( e?.errno === -111 || e?.code === "ECONNRESET") {
-        debug(dhead, 'NO CONNECTION');
-      } else if ( looksLikeAccountingNotInitialized(e) ) {
-        debug(dhead, 'ACCOUNTING NOT INITIALIZED');
-      } else if ( ! alwaysRetry || retries <= 0 ) {
-        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
-      }
-      debug(dhead, 'RETRYING', retries--, {e});
-      await Timeout.set(500);
-    }
-  }
-  if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, '--- RESULT =', res);
-  return res;
-};
-
-const doQuery = async (dhead:string, query: ApiCall<any>, pred: ((x:any) => boolean) = ((x) => { void(x); return true; })): Promise<QueryResult> => {
-  const res = await doQuery_(dhead, query);
-  const txns = res.transactions;
-  const ptxns = txns.filter(pred);
-  debug(dhead, {ptxns});
-
-  if ( ptxns.length == 0 ) {
-    return { succ: false, round: res['current-round'] };
-  }
-
-  const txn = ptxns.reduce((accum: any, x: any) =>
-    (x['confirmed-round'] < accum['confirmed-round']) ? x : accum, ptxns[0]);
-  return { succ: true, txn };
 };
 
 // ****************************************************************************
@@ -1748,13 +1708,9 @@ type VerifyResult = {
   Deployer: Address,
 };
 
-async function queryCtorTxn(dhead: string, ApplicationID: number) {
-  const indexer = await getIndexer();
-  const icq = indexer.searchForTransactions()
-    .applicationID(ApplicationID)
-    .txType('appl');
+async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: EventCache) {
   const isCtor = makeIsMethod(0);
-  const icr = await doQuery(`${dhead} ctor`, icq, isCtor);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, {}, isCtor);
   debug({icr});
   return icr;
 }
@@ -1771,7 +1727,7 @@ async function waitCtorTxn(shad: string, ApplicationID: number): Promise<void> {
     debug(shad, 'waitCtorTxn waiting (ms)', waitMs);
     await Timeout.set(waitMs);
     debug(shad, 'waitCtorTxn trying attempt #', tries, 'of', maxTries);
-    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID);
+    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID, new EventCache());
     if (icr && icr.txn) return;
   }
   throw Error(`Indexer could not find application ${ApplicationID}.`);
@@ -1859,7 +1815,7 @@ export const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCac
 
   // Next, we check that the constructor was called with the actual escrow
   // address and not something else
-  const icr = await queryCtorTxn(dhead, ApplicationID);
+  const icr = await queryCtorTxn(dhead, ApplicationID, eventCache);
   // @ts-ignore
   const ict = icr.txn;
   chk(ict, `Cannot query for constructor transaction`);

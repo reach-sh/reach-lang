@@ -69,18 +69,19 @@ export class EventCache {
     debug(dhead, `EventCache.query`, ApplicationID, minRound, specRound, maxRound, this.currentRound);
 
     // Clear cache of stale transactions
-    const filterRound = minRound || specRound!;
+    const filterRound = minRound || specRound || 0;
     this.cache = this.cache.filter(x => x['confirmed-round'] > filterRound);
 
     // Check to see if the transaction we want is in cache
     const initPtxns = this.cache.filter(pred);
     if (initPtxns.length != 0) {
+      debug(`Found transaction in Event Cache`);
       const txn = chooseMinRoundTxn(initPtxns)
       this.currentRound = txn['confirmed-round'];
       return { succ: true, txn };
     }
 
-    debug(`EventCache.query miss. Querying network...`);
+    debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
     const indexer = await getIndexer();
