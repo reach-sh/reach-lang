@@ -593,11 +593,11 @@ type QueryResult =
 // Event Cache
 // ****************************************************************************
 
-export const chooseMinRoundTxn = (ptxns: any[]) =>
+const chooseMinRoundTxn = (ptxns: any[]) =>
   ptxns.reduce((accum: any, x: any) =>
       (x['confirmed-round'] < accum['confirmed-round']) ? x : accum, ptxns[0])
 
-export const chooseMaxRoundTxn = (ptxns: any[]) =>
+const chooseMaxRoundTxn = (ptxns: any[]) =>
   ptxns.reduce((accum: any, x: any) =>
     (x['confirmed-round'] > accum['confirmed-round']) ? x : accum, ptxns[0])
 
@@ -607,7 +607,7 @@ export type RoundInfo = {
   specRound?: number,
 }
 
-export class EventCache {
+class EventCache {
 
   cache: any[] = [];
 
@@ -1870,7 +1870,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
   return verifyContract_(info, bin, new EventCache());
 }
 
-export const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
+const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
   const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
