@@ -38,6 +38,8 @@ import Data.Functor
 import Data.Char (isDigit)
 import Data.Containers.ListUtils (nubOrd)
 import Text.Read (readMaybe)
+import Reach.UnsafeUtil (unsafeTermSupportsColor)
+import qualified System.Console.Pretty as TC
 
 --- SMT Helpers
 
@@ -420,8 +422,11 @@ parseVal env t v = do
             _ -> impossible $ "parseVal: Bool: " <> show v
         T_UInt -> do
           let err = impossible $ "parseVal: UInt: " <> show v
+          let readInt i = fromMaybe err (readMaybe i :: Maybe Int)
           case v of
-            Atom i -> return $ SMV_Int $ fromMaybe err (readMaybe i :: Maybe Int)
+            Atom i -> return $ SMV_Int $ readInt i
+            -- SMT can produce negative values when dealing with unsafe arithmetic (sub wraparound etc.)
+            List [Atom "-", Atom i] -> return $ SMV_Int $ - (readInt i)
             _ -> err
         T_Null -> return SMV_Null
         T_Digest -> do
@@ -528,7 +533,10 @@ display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> 
 display_fail tat f tk mmsg repeated mrd mdv = do
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
-  iputStrLn $ "Verification failed:"
+  let hasColor = unsafeTermSupportsColor
+  let color c = if hasColor then TC.color c else id
+  let style s = if hasColor then TC.style s else id
+  iputStrLn $ color TC.Red $ style TC.Bold "Verification failed:"
   mode <- ctxt_mode
   iputStrLn $ "  when " ++ (show $ pretty mode)
   iputStrLn $ "  of theorem: " ++ (show $ pretty tk)
