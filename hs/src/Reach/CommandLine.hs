@@ -16,15 +16,18 @@ data CompilerToolArgs = CompilerToolArgs
 compiler :: Parser CompilerToolArgs
 compiler =
   CompilerToolArgs
-    <$> switch (long "intermediate-files")
-    <*> switch (long "disable-reporting")
-    <*> switch (long "error-format-json")
-    <*> switch (long "install-pkgs")
+    <$> switch (long "intermediate-files"
+        <> help "Store intermediate files in output DIR")
+    <*> switch (long "disable-reporting" <> internal)
+    <*> switch (long "error-format-json" <> internal)
+    <*> switch (long "install-pkgs"
+        <> help "Allow Reach to fetch remote package imports")
     <*> optional
       (strOption
          (long "dir-dot-reach"
             <> metavar "DIR-DOT-REACH"
             <> help "Package imports cache+lock directory"
+            <> internal
             <> showDefault))
     <*> optional
       (strOption
