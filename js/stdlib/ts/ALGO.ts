@@ -597,6 +597,10 @@ export const chooseMinRoundTxn = (ptxns: any[]) =>
   ptxns.reduce((accum: any, x: any) =>
       (x['confirmed-round'] < accum['confirmed-round']) ? x : accum, ptxns[0])
 
+export const chooseMaxRoundTxn = (ptxns: any[]) =>
+  ptxns.reduce((accum: any, x: any) =>
+    (x['confirmed-round'] > accum['confirmed-round']) ? x : accum, ptxns[0])
+
 export type RoundInfo = {
   minRound?: number,
   maxRound?: number,
@@ -617,21 +621,27 @@ export class EventCache {
     const { minRound, maxRound, specRound } = roundInfo;
     debug(dhead, `EventCache.query`, ApplicationID, minRound, specRound, maxRound, this.currentRound);
 
-    // Clear cache of stale transactions
+    // Clear cache of stale transactions.
+    // Cache's min bound will be `minRound || specRound`
     const filterRound = minRound || specRound || 0;
     this.cache = this.cache.filter(x => x['confirmed-round'] > filterRound);
 
+    // When checking predicate, only choose transactions that are below
+    // max round, or the specific round we're looking for.
+    const filterFn = (x: any) => pred(x)
+      && (maxRound ? x['confirmed-round'] <= maxRound : true)
+      && (specRound ? x['confirmed-round'] == specRound : true);
+
     // Check to see if the transaction we want is in cache
-    const initPtxns = this.cache.filter(pred);
+    const initPtxns = this.cache.filter(filterFn);
+
     if (initPtxns.length != 0) {
       debug(`Found transaction in Event Cache`);
       const txn = chooseMinRoundTxn(initPtxns)
-      this.currentRound = txn['confirmed-round'];
       return { succ: true, txn };
     }
 
     debug(`Transaction not in Event Cache. Querying network...`);
-
     // If no results, then contact network
     const indexer = await getIndexer();
 
@@ -641,10 +651,10 @@ export class EventCache {
         .txType('appl')
 
     if (minRound) {
-      query = query.minRound(minRound + 1);
-    }
-    if (maxRound) {
-      query = query.maxRound(maxRound);
+      // If cache has: [100, 200]
+      // & querying  : [150, 1000]
+      // We already searched cache for [150, 200] so query network for [201, 1000]
+      query = query.minRound(Math.max(this.currentRound, minRound) + 1);
     }
     if (specRound) {
       query = query.round(specRound);
@@ -652,10 +662,15 @@ export class EventCache {
 
     const res: any = await doQuery_(dhead, query);
     this.cache = res.transactions;
-    this.currentRound = res['current-round'];
+
+    // Update current round
+    this.currentRound =
+      (res.transactions.length == 0)
+        ? Math.min(res['current-round'], maxRound || 0)
+        : chooseMaxRoundTxn(res.transactions)['confirmed-round'];
 
     // Check for pred again
-    const ptxns = this.cache.filter(pred);
+    const ptxns = this.cache.filter(filterFn);
 
     if ( ptxns.length == 0 ) {
       return { succ: false, round: this.currentRound };
@@ -1036,8 +1051,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
   };
 
-  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<Contract> => {
-    const eventCache = new EventCache();
+  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache()): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
     const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
@@ -1565,9 +1579,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`deploy: ${JSON.stringify(e)}`);
     }
     const getInfo = async (): Promise<ContractInfo> => ctcInfo;
-    await waitCtorTxn(shad, ctcInfo);
+    const eventCache = new EventCache();
+    await waitCtorTxn(shad, ctcInfo, eventCache);
     debug(shad, 'application created');
-    return await attachP(bin, getInfo());
+    return await attachP(bin, getInfo(), eventCache);
   };
 
   const implNow = { stdlib: compiledStdlib };
@@ -1833,7 +1848,7 @@ async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: Ev
   return icr;
 }
 
-async function waitCtorTxn(shad: string, ApplicationID: number): Promise<void> {
+async function waitCtorTxn(shad: string, ApplicationID: number, eventCache: EventCache): Promise<void> {
   // Note(Dan): Yes, doQuery_ offers retrying, but doQuery has the filtering,
   // and finding the right design point for refactoring is hard,
   // so, I'm just doing some more retrying here.
@@ -1845,7 +1860,7 @@ async function waitCtorTxn(shad: string, ApplicationID: number): Promise<void> {
     debug(shad, 'waitCtorTxn waiting (ms)', waitMs);
     await Timeout.set(waitMs);
     debug(shad, 'waitCtorTxn trying attempt #', tries, 'of', maxTries);
-    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID, new EventCache());
+    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID, eventCache);
     if (icr && icr.txn) return;
   }
   throw Error(`Indexer could not find application ${ApplicationID}.`);

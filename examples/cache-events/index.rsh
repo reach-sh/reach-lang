@@ -3,6 +3,7 @@
 export const main = Reach.App(() => {
   const A = Participant('A', {
     get: Fun([], UInt),
+    spawn: Fun([], Null),
   });
   const B = Participant('B', {
 
@@ -13,7 +14,7 @@ export const main = Reach.App(() => {
 
   var [ i ] = [ 0 ];
   invariant(balance() == 0);
-  while ( i < 20 ) {
+  while ( i < 50 ) {
     commit();
 
     A.only(() => {
@@ -26,6 +27,8 @@ export const main = Reach.App(() => {
   }
 
   commit();
+
+  A.interact.spawn();
 
   B.publish();
 

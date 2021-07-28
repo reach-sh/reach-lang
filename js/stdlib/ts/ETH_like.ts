@@ -276,24 +276,39 @@ const getMinBlock = (logs: any[]) =>
       ? (x.logIndex < acc.logIndex ? x : acc)
       : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
 
+const getMaxBlock = (logs: any[]) =>
+  logs.reduce((acc: Log, x: Log) =>
+    (x.blockNumber == acc.blockNumber)
+      ? (x.logIndex > acc.logIndex ? x : acc)
+      : (x.blockNumber.toString() > acc.blockNumber.toString() ? x : acc), logs[0]);
+
+
 class EventCache {
 
-  cache: any[] = []
+  cache: any[] = [];
+
+  currentBlock = 0;
 
   constructor() {
     this.cache = [];
   }
 
-  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: () => Promise<any[]>) {
+  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: (currentBlock: number) => Promise<any[]>) {
     debug(`EventCache.query`, fromBlock, toBlock, topic);
     if (fromBlock > toBlock) {
       return undefined;
     }
     // Clear cache of stale transactions
+    // Cache's min bound will be `fromBlock`
     this.cache = this.cache.filter((x) => x.blockNumber >= fromBlock);
 
+    // When checking for topic, only choose blocks that are lte `toBlock`
+    const filterFn = (x: any) =>
+      x.topics.includes(topic.toString())
+      && x.blockNumber <= toBlock;
+
     // Check to see if the transaction we want is in the cache
-    const initLogs = this.cache.filter((x) => x.topics.includes(topic));
+    const initLogs = this.cache.filter(filterFn);
     if(initLogs.length > 0) {
       debug(`Found transaction in Event Cache`);
       return getMinBlock(initLogs);
@@ -302,10 +317,15 @@ class EventCache {
     debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
-    this.cache = await getLogs();
+    this.cache = await getLogs(this.currentBlock);
+
+    this.currentBlock =
+      (this.cache.length == 0)
+        ? toBlock
+        : getMaxBlock(this.cache).blockNumber;
 
     // Check for pred again
-    const foundLogs = this.cache.filter((x) => x.topics.includes(topic.toString()));
+    const foundLogs = this.cache.filter(filterFn);
 
     if (foundLogs.length < 1) {
       return undefined;
@@ -316,10 +336,10 @@ class EventCache {
 
   async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
     const topic = iface.getEventTopic(event);
-    const getLogs = async () => {
+    const getLogs = async (currentBlock: number) => {
       const provider = await getProvider();
       return await provider.getLogs({
-        fromBlock,
+        fromBlock: Math.max(currentBlock, fromBlock),
         toBlock,
         address: address
       });
@@ -330,11 +350,10 @@ class EventCache {
   async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
     const ethersC = await getC();
     const topic = ethersC.interface.getEventTopic(ok_evt);
-    const getLogs = async () => {
+    const getLogs = async (currentBlock: number) => {
       const provider = await getProvider();
-      debug(`event cache query: `, fromBlock, toBlock);
       return await provider.getLogs({
-        fromBlock,
+        fromBlock: Math.max(currentBlock, fromBlock),
         toBlock,
         address: ethersC.address
       });
