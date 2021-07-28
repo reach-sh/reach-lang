@@ -139,6 +139,11 @@ dieConnectorModeBrowser = connectorMode <$> asks e_var >>= \case
   _ -> pure ()
 
 
+diePathContainsParentDir :: FilePath -> IO ()
+diePathContainsParentDir x = when (any (== "..") $ splitDirectories x) . die
+  $ x <> " cannot contain parent directories (\"..\")."
+
+
 warnScaffoldDefRpcTlsPair :: Project -> App
 warnScaffoldDefRpcTlsPair Project {..} = do
   Env {..} <- ask
@@ -271,6 +276,10 @@ write t = asks e_effect >>= liftIO . flip modifyIORef w where
 
 writeFrom :: FilePath -> App
 writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
+
+
+putStrLnPacked :: String -> App
+putStrLnPacked = liftIO . T.putStrLn . T.pack
 
 
 realpath :: App
@@ -451,10 +460,8 @@ projectFrom a = do
         $ do
           let dph = e_dirPwdHost </> a
           let dpc = e_dirPwdContainer </> a
-          let f x = when (any (== "..") $ splitDirectories x) . die
-                      $ x <> " cannot contain parent directories (\"..\")."
-          f dph
-          f dpc
+          diePathContainsParentDir dph
+          diePathContainsParentDir dpc
           pure $ Project "index" dpc dph a
 
 
@@ -638,13 +645,14 @@ switchUseExistingDevnet :: Parser Bool
 switchUseExistingDevnet = switch
   $ long "use-existing-devnet"
  <> help "This switch has been deprecated and is no longer necessary"
+ <> internal
 
 
 switchIsolate :: Parser Bool
 switchIsolate = switch
   $ long "isolate"
  <> help "This switch has been deprecated and no longer has any effect"
- <> hidden
+ <> internal
 
 
 switchQuiet :: Parser Bool
@@ -736,10 +744,16 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
 compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
-  f = go <$> compiler -- TODO appOrDir
+  f = go <$> compiler
 
   go CompilerToolArgs {..} = do
     Var {..} <- asks e_var
+
+    liftIO $ do
+      diePathContainsParentDir cta_source
+      maybe (pure ()) diePathContainsParentDir cta_dirDotReach
+      maybe (pure ()) diePathContainsParentDir cta_outputDir
+
     script $ do
       realpath
 
@@ -798,7 +812,7 @@ compile = command "compile" $ info f d where
         , if' cta_installPkgs "--install-pkgs"
         , opt cta_dirDotReach "--dir-dot-reach"
         , opt cta_outputDir "--output"
-        , T.pack cta_source -- TODO fix directory mismatches between host/container
+        , T.pack cta_source
         ] <> (T.pack <$> cta_tops)
 
       drp' = if' (not cta_disableReporting) "--disable-reporting"
@@ -1160,28 +1174,47 @@ update = command "update" $ info (pure f) d where
 --------------------------------------------------------------------------------
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
-  d = progDesc "Docker kill and rm all containers"
-  f = pure . script $ write [N.text|
-    echo 'Killing all Docker containers...'
-    # shellcheck disable=SC2046
-    docker kill $$(docker ps -q) >/dev/null 2>&1 || :
-    echo 'Removing all Docker containers...'
-    # shellcheck disable=SC2046
-    docker rm $$(docker ps -qa) >/dev/null 2>&1 || :
-    echo 'Done.'
-  |]
+  d = progDesc "Kill and remove all Docker containers"
+  f = go <$> switch (short 'y'
+            <> long "even-non-reach"
+            <> help "Acknowledge non-interactively that ALL containers will be halted")
+
+  go = \case
+    True -> script $ write reset
+    False -> script $ write [N.text|
+      echo "Are you sure? This will halt non-Reach containers as well."
+      printf 'Type "y" to continue... '
+      read -r c
+
+      case "$$c" in
+        y|Y)
+          $reset
+          ;;
+      esac
+    |]
+
+   where
+    reset = [N.text|
+      echo 'Killing all Docker containers...'
+      # shellcheck disable=SC2046
+      docker kill $$(docker ps -q) >/dev/null 2>&1 || :
+      echo 'Removing all Docker containers...'
+      # shellcheck disable=SC2046
+      docker rm $$(docker ps -qa) >/dev/null 2>&1 || :
+      echo 'Done.'
+    |]
 
 
 --------------------------------------------------------------------------------
 version' :: Subcommand
-version' = command "version" $ info f d where
+version' = command "version" $ info (pure f) d where
   d = progDesc "Display version"
-  f = pure . liftIO . T.putStrLn $ T.pack versionHeader
+  f = putStrLnPacked versionHeader
 
 
 numericVersion :: Subcommand
-numericVersion = command "numeric-version" $ info f fullDesc where
-  f = pure . liftIO . T.putStrLn $ T.pack compatibleVersionStr
+numericVersion = command "numeric-version" $ info (pure f) fullDesc where
+  f = putStrLnPacked compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
