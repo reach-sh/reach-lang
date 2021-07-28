@@ -353,7 +353,7 @@ class EventCache {
     const getLogs = async (currentBlock: number) => {
       const provider = await getProvider();
       return await provider.getLogs({
-        fromBlock: Math.max(currentBlock, fromBlock),
+        fromBlock: (currentBlock > fromBlock && currentBlock < toBlock) ? currentBlock : fromBlock,
         toBlock,
         address: ethersC.address
       });

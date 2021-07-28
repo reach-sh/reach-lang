@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
 
   var [ i ] = [ 0 ];
   invariant(balance() == 0);
-  while ( i < 50 ) {
+  while ( i < 25 ) {
     commit();
 
     A.only(() => {
