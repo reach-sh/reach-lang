@@ -9,7 +9,7 @@ build/%.main.mjs: %.rsh
 
 .PHONY: build
 build: build/index.main.mjs
-	docker build -f Dockerfile --tag=reachsh/reach-app-over:latest .
+	docker build -f Dockerfile --tag=reachsh/reach-app-overview-more-deps:latest .
 
 .PHONY: run
 run:
