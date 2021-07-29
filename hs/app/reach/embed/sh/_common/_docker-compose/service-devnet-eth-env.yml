@@ -3,4 +3,4 @@ depends_on:
 environment:
   - REACH_DEBUG
   - REACH_CONNECTOR_MODE=ETH-devnet
-  - ETH_NODE_URI=http://devnet-eth:8545
+  - ETH_NODE_URI=http://reach-devnet-eth:8545

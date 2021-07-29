@@ -1,6 +1,7 @@
 devnet-cfx:
-  image: reachsh/devnet-cfx:${REACH_VERSION}
-  container_name: cfx-devnet
+  image:          reachsh/devnet-cfx:${REACH_VERSION}
+  hostname:       reach-devnet-cfx
+  container_name: reach-devnet-cfx
   networks:
     - ${NETWORK}
   ports:

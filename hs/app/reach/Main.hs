@@ -936,9 +936,14 @@ run' = command "run" . info f $ d <> noIntersperse where
       write [N.text|
         cd $projDirHost'
 
+        CNAME="$appService"
+        CS=$(docker ps -aq -f "name=$appService" | wc -l)
+
+        if [ "$$CS" -gt 0 ]; then CNAME="$${CNAME}-$${CS}"; fi
+
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
-          && docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --rm $appService $args'
+          && docker-compose -f "$$TMP/docker-compose.yml" run --name $$CNAME $dd --rm $appService $args'
         RES="$?"
         set -e
 
@@ -1146,6 +1151,7 @@ devnet = command "devnet" $ info f d where
     let Var {..} = e_var
     let ConnectorMode c m = connectorMode
     let s = devnetFor c
+    let n = "reach-" <> s
 
     dieConnectorModeBrowser
 
@@ -1153,7 +1159,7 @@ devnet = command "devnet" $ info f d where
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
 
     withCompose mkDockerMetaStandaloneDevnet . script $ write [N.text|
-      docker-compose -f "$$TMP/docker-compose.yml" run --name reach-devnet $dd --service-ports --rm $s
+      docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s
     |]
 
 
