@@ -25,4 +25,4 @@ import rightpad from 'rightpad';
   // Note: rightpad is not in the default set of node deps.
   // This is just a trivial example of using more node deps.
   console.log(rightpad('123', 6) + '!')
-})(); 
+})();
