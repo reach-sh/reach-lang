@@ -1,5 +1,5 @@
 {
-  "name": "@reach-sh/over",
+  "name": "@reach-sh/overview-more-deps",
   "type": "module",
   "dependencies": {
     "rightpad": "^1.0.1"
