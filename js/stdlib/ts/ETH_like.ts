@@ -317,11 +317,12 @@ class EventCache {
     debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
+    const currentTime = await getNetworkTimeNumber();
     this.cache = await getLogs(this.currentBlock + 1);
 
     this.currentBlock =
       (this.cache.length == 0)
-        ? toBlock
+        ? currentTime
         : getMaxBlock(this.cache).blockNumber;
 
     // Check for pred again
