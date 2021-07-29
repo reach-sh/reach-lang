@@ -322,7 +322,7 @@ class EventCache {
 
     this.currentBlock =
       (this.cache.length == 0)
-        ? currentTime
+        ? Math.min(currentTime, toBlock)
         : getMaxBlock(this.cache).blockNumber;
 
     // Check for pred again

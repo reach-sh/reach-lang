@@ -623,8 +623,8 @@ class EventCache {
 
     // Clear cache of stale transactions.
     // Cache's min bound will be `minRound || specRound`
-    const filterRound = minRound ?? specRound! - 1;
-    this.cache = this.cache.filter(x => x['confirmed-round'] > filterRound);
+    const filterRound = minRound ?? specRound!;
+    this.cache = this.cache.filter(x => x['confirmed-round'] >= filterRound);
 
     // When checking predicate, only choose transactions that are below
     // max round, or the specific round we're looking for.
@@ -663,7 +663,7 @@ class EventCache {
     // Update current round
     this.currentRound =
       (res.transactions.length == 0)
-        ? Math.min(res['current-round'], maxRound || 0)
+        ? (maxRound ? Math.min(res['current-round'], maxRound) : res['current-round'])
         : chooseMaxRoundTxn(res.transactions)['confirmed-round'];
 
     // Check for pred again
@@ -1355,7 +1355,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       while ( true ) {
         const correctStep = makeIsMethod(funcNum);
 
-        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound, maxRound: timeoutRound }, correctStep);
+        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + 1, maxRound: timeoutRound }, correctStep);
         debug(`EventCache res: `, res);
         if ( ! res.succ ) {
           const currentRound = res.round;
