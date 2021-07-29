@@ -317,7 +317,7 @@ class EventCache {
     debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
-    this.cache = await getLogs(this.currentBlock);
+    this.cache = await getLogs(this.currentBlock + 1);
 
     this.currentBlock =
       (this.cache.length == 0)
