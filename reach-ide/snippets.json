@@ -4,13 +4,11 @@
 		"body": [
 			"'reach 0.1';",
 			"",
-			"export const main =",
-			"	Reach.App(",
-			"		{},",
-			"		[Participant('A', {})],",
-			"		(A) => {",
-			"      $0",
-			"		});",
+			"export const main = Reach.App(() => {",
+			"  const A = Participant('A', {});",
+			"  deploy();",
+			"  $0",
+			"});",
 			""
 		],
 		"description": "Simple Reach program"
@@ -18,9 +16,16 @@
 	"Only - Local Step": {
 		"prefix": "only",
 		"body": [
-			"${1:Participant}.only(() => ${0:LocalStep});"
+			"${1:Participant}.only(() => {${0:LocalStep}});"
 		],
 		"description": "Have a participant perform actions."
+	},
+	"Declassify": {
+		"prefix": "declassify_interact",
+		"body": [
+			"declassify(interact.${1:Field})${0}"
+		],
+		"description": "Declasify an interact value"
 	},
 	"Each - Local Step": {
 		"prefix": "each",
@@ -29,18 +34,31 @@
 		],
 		"description": "Have multiple participants perform actions."
 	},
+	"Publish": {
+		"prefix": "publish",
+		"body": [
+			"${1:Participant}.publish(${0:Variables});"
+		],
+		"description": "Have a Participant make a publication"
+	},
 	"Parallel Reduce": {
 		"prefix": "parallelReduce",
 		"body": [
-			"parallelReduce(${1:INIT_EXPR})",
+			"parallelReduce([ ${1:INIT_EXPR} ])",
 			"  .invariant(${2:INVARIANT_EXPR})",
 			"  .while(${3:COND_EXPR})",
 			"  .case(${4:PART_EXPR},",
-			"    ${5:PUBLISH_EXPR},",
-			"    ${6:PAY_EXPR},",
-			"    ${7:CONSENSUS_EXPR}",
-			"   )",
-			"   .timeout(${8:DEADLINE}, () => ${9:TIMEOUT_BLOCK});"
+			"    (() => ({",
+			"			 when: ${5:PUBLISH_WHEN_EXPR},",
+			"			 msg: ${6:PUBLISH_MSG_EXPR}",
+			"    })),",
+			"    ((msg) => ${7:PAY_EXPR}),",
+			"    ((msg) => {",
+			"      ${8:CONSENSUS_EXPR}",
+			"    }))",
+			"   .timeout(${9:DEADLINE}, () => {",
+			"     ${10:TIMEOUT_BLOCK}",
+			"   });"
 		],
 		"description": "parallelReduce"
 	}
@@ -68,5 +86,12 @@
 			"ParticipantClass('${1:NAME}', { ${0} })"
 		],
 		"description": "Participant Class constructor"
+	},
+	"View": {
+		"prefix": "View",
+		"body": [
+			"View('${1:NAME}', { ${0} })"
+		],
+		"description": "View constructor"
 	}
 }
