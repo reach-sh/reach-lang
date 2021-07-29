@@ -1,6 +1,7 @@
 devnet-algo-pg:
-  image: postgres:11-alpine
-  container_name: devnet-algo-pg
+  image:          postgres:11-alpine
+  hostname:       reach-devnet-algo-pg
+  container_name: reach-devnet-algo-pg
   networks:
     - ${NETWORK}
   labels:
@@ -11,8 +12,9 @@ devnet-algo-pg:
     - POSTGRES_DB=pgdb
 
 devnet-algo:
-  image: reachsh/devnet-algo:${REACH_VERSION}
-  container_name: devnet-algo
+  image:          reachsh/devnet-algo:${REACH_VERSION}
+  hostname:       reach-devnet-algo
+  container_name: reach-devnet-algo
   networks:
     - ${NETWORK}
   ports:
@@ -23,7 +25,7 @@ devnet-algo:
     - devnet-algo-pg
   environment:
     - REACH_ALGO_DEBUG
-    - POSTGRES_HOST=devnet-algo-pg
+    - POSTGRES_HOST=reach-devnet-algo-pg
     - POSTGRES_USER=algogrand
     - POSTGRES_PASSWORD=indexer
     - POSTGRES_DB=pgdb
