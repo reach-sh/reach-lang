@@ -32,6 +32,8 @@ import {
   replaceableThunk,
   ensureConnectorAvailable,
   bigNumberToBigInt,
+  argMax,
+  argMin,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -594,12 +596,10 @@ type QueryResult =
 // ****************************************************************************
 
 const chooseMinRoundTxn = (ptxns: any[]) =>
-  ptxns.reduce((accum: any, x: any) =>
-      (x['confirmed-round'] < accum['confirmed-round']) ? x : accum, ptxns[0])
+  argMin(ptxns, (x: any) => x['confirmed-round']);
 
 const chooseMaxRoundTxn = (ptxns: any[]) =>
-  ptxns.reduce((accum: any, x: any) =>
-    (x['confirmed-round'] > accum['confirmed-round']) ? x : accum, ptxns[0])
+  argMax(ptxns, (x: any) => x['confirmed-round']);
 
 export type RoundInfo = {
   minRound?: number,
@@ -623,7 +623,7 @@ class EventCache {
 
     // Clear cache of stale transactions.
     // Cache's min bound will be `minRound || specRound`
-    const filterRound = minRound || specRound || 0;
+    const filterRound = minRound ?? specRound! - 1;
     this.cache = this.cache.filter(x => x['confirmed-round'] > filterRound);
 
     // When checking predicate, only choose transactions that are below
@@ -650,14 +650,11 @@ class EventCache {
         .applicationID(ApplicationID)
         .txType('appl')
 
-    if (minRound) {
+    if (filterRound) {
       // If cache has: [100, 200]
       // & querying  : [150, 1000]
       // We already searched cache for [150, 200] so query network for [201, 1000]
-      query = query.minRound(Math.max(this.currentRound, minRound) + 1);
-    }
-    if (specRound) {
-      query = query.round(specRound);
+      query = query.minRound(Math.max(this.currentRound + 1, filterRound));
     }
 
     const res: any = await doQuery_(dhead, query);
@@ -1843,7 +1840,7 @@ type VerifyResult = {
 
 async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: EventCache) {
   const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, {}, isCtor);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
   debug({icr});
   return icr;
 }
