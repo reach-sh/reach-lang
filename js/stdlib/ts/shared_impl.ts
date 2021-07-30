@@ -121,19 +121,20 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> =
   out_tys: Array<ConnectorTy>,
   onlyIf: boolean,
   soloSend: boolean,
-  timeoutAt: TimeArg | null,
+  timeoutAt: TimeArg | undefined,
   sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ConnectorTy>>,
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
   funcNum: number, evt_cnt: number, out_tys: Array<ConnectorTy>,
   waitIfNotPresent: boolean,
-  timeoutAt: TimeArg | null,
+  timeoutAt: TimeArg | undefined,
 };
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
   creationTime: () => Promise<BigNumber>,
+  creationSecs: () => Promise<BigNumber>,
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   waitTime: (v:BigNumber) => Promise<BigNumber>,
@@ -144,7 +145,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   stdlib: Object,
 };
 
-type ContractIndex = 'getInfo' | 'creationTime' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
+type ContractIndex = 'getInfo' | 'creationTime' | 'creationSecs' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
 
 export const deferContract =
   <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
@@ -170,6 +171,8 @@ export const deferContract =
     getInfo: delay('getInfo'),
     // @ts-ignore
     creationTime: delay('creationTime'),
+    // @ts-ignore
+    creationSecs: delay('creationSecs'),
     // @ts-ignore
     sendrecv: mnow('sendrecv'),
     // @ts-ignore
@@ -205,6 +208,7 @@ export const deferContract =
     waitSecs: wrap('waitSecs'),
     getInfo: wrap('getInfo'),
     creationTime: wrap('creationTime'),
+    creationSecs: wrap('creationSecs'),
     iam: wrap('iam'),
     selfAddress: wrap('selfAddress'),
     getViews: wrap('getViews'),
@@ -440,9 +444,10 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
   return current;
 };
 
-export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | null, nowTime: BigNumber): Promise<boolean> => {
+export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
   if ( ! timeoutAt ) { return false; }
   const [ mode, val ] = timeoutAt;
+  const nowTime = bigNumberify(nowTimeN);
   if ( mode === 'time' ) {
     return val.lt(nowTime);
   } else if ( mode === 'secs' ) {

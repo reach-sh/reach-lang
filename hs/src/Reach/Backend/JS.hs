@@ -673,11 +673,11 @@ jsETail = \case
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-
       case mto of
-        Nothing -> return ("false", k_okp)
+        Nothing -> return ("undefined", k_okp)
         Just (delays, k_to) -> do
           k_top <- withCtxt $ jsETail k_to
           delays' <- case delays of
-                      Nothing -> return "null"
+                      Nothing -> return "undefined"
                       Just x -> jsTimeArg x
           timef <- withCtxt $ jsTimeoutFlag
           return (delays', jsIf timef k_top k_okp)
@@ -690,7 +690,7 @@ jsETail = \case
           , ("evt_cnt", a_evt_cnt)
           , ("out_tys", a_out_tys)
           , ("waitIfNotPresent", "false")
-          , ("timeout_delay", a_timeout_delay) ]
+          , ("timeoutAt", a_timeout_delay) ]
     callp <-
       withCtxt $
         case from_me of
@@ -728,7 +728,7 @@ jsETail = \case
                   , ("onlyIf", whena')
                   , ("soloSend", soloSend')
                   , ("waitIfNotPresent", "false")
-                  , ("timeout_delay", a_timeout_delay)
+                  , ("timeoutAt", a_timeout_delay)
                   , ("sim_p", a_sim_p) ]
             return sendp
           Nothing ->
@@ -985,7 +985,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 1
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep

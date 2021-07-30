@@ -146,7 +146,7 @@ color s gInter asn0 = do
   readIORef asnr
 
 colorProgram :: PLProg -> IO ColorGraphs
-colorProgram (PLProg _ _ _ _ _ (CPProg _ _ (CHandlers handlers))) = do
+colorProgram (PLProg _ _ _ _ _ (CPProg _ _ _ (CHandlers handlers))) = do
   e_tv <- newIORef mempty
   e_ti <- newIORef mempty
   flip runReaderT (Env {..}) $ makeInterferenceGraph handlers

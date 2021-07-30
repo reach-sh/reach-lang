@@ -1216,7 +1216,7 @@ evt0Emit = "emit" <+> evt0Body <> semi
 evt0Defn = "event" <+> evt0Body <> semi
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at csvs mvi hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   let ctxt_emit = emptyDoc
@@ -1248,13 +1248,13 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
     consp <-
       case plo_deployMode of
         DM_constructor -> do
-          let (ctimem', csvs_, withC) =
+          let (ctimem', cvs, withC) =
                 case dli_ctimem of
                   Nothing -> (mempty, mempty, id)
                   Just (tv, sv) ->
                     ( [ solSet (solMemVar tv) solBlockTime
                       , solSet (solMemVar sv) solBlockSecs ]
-                    , [tv, sv]
+                    , [ tv, sv ]
                     , (\m -> do
                          extendVarMap $ M.fromList $
                            [ (tv, solMemVar tv)
@@ -1262,9 +1262,8 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
                          m)
                     )
           let dli' = vsep $ ctimem'
-          (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList csvs_)
-          let csvs_m = map (\x -> (x, DLA_Var x)) csvs_
-          consbody <- withC $ solCTail (CT_From at 0 (FI_Continue (ViewSave 0 []) csvs_m))
+          (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList cvs)
+          consbody <- withC $ solCTail (CT_From at 0 (FI_Continue (ViewSave 0 []) $ asnLike csvs))
           let consbody' = vsep [evt0Emit, cfDecl, dli', consbody]
           let cDefn = solFunctionLike SFL_Constructor [] "payable" consbody'
           return $ vsep [cfDefn, cDefn]

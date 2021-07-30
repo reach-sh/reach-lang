@@ -273,6 +273,9 @@ instance PrettySubst DLArg where
       DLA_Interact who m _ ->
         return $ pretty who <> ".interact." <> pretty m
 
+asnLike :: [DLVar] -> [(DLVar, DLArg)]
+asnLike = map (\x -> (x, DLA_Var x))
+
 class CanDupe a where
   canDupe :: a -> Bool
 

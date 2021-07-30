@@ -209,11 +209,11 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg at vi hs) =
+  ul (CPProg at csvs vi hs) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll vi here.
-    CPProg at vi <$> ul hs
+    CPProg at csvs vi <$> ul hs
 
 instance Unroll EPPs where
   ul (EPPs m) = pure $ EPPs m

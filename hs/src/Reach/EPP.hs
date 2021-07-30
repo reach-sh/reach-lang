@@ -274,9 +274,6 @@ fg_saves sp = do
   fg_record $ \f -> f {fid_saves = S.insert sp $ fid_saves f}
 
 -- Views
-asnLike :: [DLVar] -> [(DLVar, DLArg)]
-asnLike = map (\x -> (x, DLA_Var x))
-
 assignView :: BApp ViewSave
 assignView = do
   BEnv {..} <- ask
@@ -726,7 +723,8 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   dex' <-
     flip runReaderT (BEnv {..}) $
       mapM mk_eb dex
-  cp <- (CPProg at mvm . CHandlers) <$> mapM mkh hs
+  csvs <- mkh $ ce_readSave 0
+  cp <- (CPProg at csvs mvm . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

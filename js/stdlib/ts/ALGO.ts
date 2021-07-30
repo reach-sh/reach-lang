@@ -24,6 +24,7 @@ import {
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
   // ISimRes,
+  TimeArg,
   ISimTxn,
   deferContract,
   debug, envDefault,
@@ -496,7 +497,7 @@ function must_be_supported(bin: Backend) {
 }
 
 // Get these from stdlib
-const MaxTxnLife = 1000;
+// const MaxTxnLife = 1000;
 const LogicSigMaxSize = 1000;
 const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
@@ -598,9 +599,9 @@ const chooseMinRoundTxn = (ptxns: any[]) =>
 const chooseMaxRoundTxn = (ptxns: any[]) =>
   argMax(ptxns, (x: any) => x['confirmed-round']);
 
-export type RoundInfo = {
+type RoundInfo = {
   minRound?: number,
-  maxRound?: number,
+  timeoutAt?: TimeArg,
   specRound?: number,
 }
 
@@ -615,8 +616,11 @@ class EventCache {
   }
 
   async query(dhead: string, ApplicationID: number, roundInfo: RoundInfo, pred: ((x:any) => boolean)): Promise<QueryResult> {
-    const { minRound, maxRound, specRound } = roundInfo;
-    debug(dhead, `EventCache.query`, ApplicationID, minRound, specRound, maxRound, this.currentRound);
+    const { minRound, timeoutAt, specRound } = roundInfo;
+    const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
+    const maxRound = h('time');
+    const maxSecs = h('secs');
+    debug(dhead, `EventCache.query`, {ApplicationID, minRound, specRound, timeoutAt, maxRound, maxSecs}, this.currentRound);
 
     // Clear cache of stale transactions.
     // Cache's min bound will be `minRound || specRound`
@@ -627,6 +631,7 @@ class EventCache {
     // max round, or the specific round we're looking for.
     const filterFn = (x: any) => pred(x)
       && (maxRound ? x['confirmed-round'] <= maxRound : true)
+      && (maxSecs ? x['round-time'] <= maxSecs : true)
       && (specRound ? x['confirmed-round'] == specRound : true);
 
     // Check to see if the transaction we want is in cache
@@ -1169,17 +1174,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       while ( true ) {
         const params = await getTxnParams();
-        if ( timeoutAt ) {
-          const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
-          params.lastRound = realLastRound + tdn;
-          debug(dhead, '--- TIMECHECK', { params, timeoutAt, tdn });
-          // We add one, because the firstRound field is actually the current
-          // round, which we couldn't possibly be in, because it already
-          // happened.
-          if ( params.firstRound + 1 > params.lastRound ) {
-            debug(dhead, '--- FAIL/TIMEOUT');
-            return {didTimeout: true};
-          }
+        // We add one, because the firstRound field is actually the current
+        // round, which we couldn't possibly be in, because it already
+        // happened.
+        debug(dhead, '--- TIMECHECK', { params, timeoutAt });
+        if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
+          debug(dhead, '--- FAIL/TIMEOUT');
+          return {didTimeout: true};
         }
 
         debug(dhead, '--- ASSEMBLE w/', params);
@@ -1343,20 +1344,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const dhead = `${shad}: ${label} recv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
-      const timeoutRound =
-        timeoutAt ?
-        realLastRound + timeout_delay.toNumber() :
-        undefined;
-
       while ( true ) {
         const correctStep = makeIsMethod(funcNum);
-
-        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + 1, maxRound: timeoutRound }, correctStep);
+        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + 1, timeoutAt }, correctStep);
         debug(`EventCache res: `, res);
         if ( ! res.succ ) {
           const currentRound = res.round;
-          if ( timeoutRound && timeoutRound <= currentRound ) {
-            debug(dhead, '--- RECVD timeout', {timeoutRound, currentRound});
+          if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound) ) {
+            debug(dhead, '--- RECVD timeout', {timeoutAt, currentRound});
             return { didTimeout: true };
           }
           if ( waitIfNotPresent ) {
@@ -1442,6 +1437,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const creationTime = async () =>
       bigNumberify(ctorRound);
+    const creationSecs = async () =>
+      await getTimeSecs(await creationTime());
 
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
       const bs = new Uint8Array(size);
@@ -1517,7 +1514,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    return { getInfo, creationTime, creationSecs, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {

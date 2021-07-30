@@ -240,12 +240,14 @@ type ViewInfos = M.Map Int ViewInfo
 type CPViews = DLViews
 
 data CPProg
-  = CPProg SrcLoc (Maybe (CPViews, ViewInfos)) CHandlers
+  = CPProg SrcLoc [DLVar] (Maybe (CPViews, ViewInfos)) CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ vis chs) =
-    "views:" <+> pretty vis <> hardline <> pretty chs
+  pretty (CPProg _ csvs vis chs) =
+    "csvs:" <+> pretty csvs <> hardline
+    <> "views:" <+> pretty vis <> hardline
+    <> pretty chs
 
 newtype EPPs = EPPs (M.Map SLPart EPProg)
   deriving (Eq)

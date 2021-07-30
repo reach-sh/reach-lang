@@ -1475,7 +1475,7 @@ cStateSlice at size iw = do
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at vi (CHandlers hm) = cpp
+  let CPProg at csvs vi (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -1617,28 +1617,14 @@ compile_algo disp pl = do
     -- NOTE We could/should check this is address-length
     gvStore GV_contractAddr
     -- NOTE firstMsg => do handler 1
-    let (bind_csvs, csvs) =
+    let bind_csvs =
           case dli_ctimem dli of
-            Nothing -> (id, mempty)
-            Just (tv, sv) -> (bindTime tv . bindSecs sv, [(tv, DLA_Var tv), (sv, DLA_Var sv)])
-    bind_csvs $ ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) csvs
-  -- Clear state is only allowed when the program is over.
-  -- NOTE: This is hand-coded, without the library so it can be smaller and
-  -- thus not take away from the approval program.
-  -- XXX: We could allow this when the local value is 100% None
+            Nothing -> id
+            Just (tv, sv) -> bindTime tv . bindSecs sv
+    bind_csvs $ ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) $ asnLike csvs
+  -- Clear state is never allowed
   addProg "appClear" $ do
-    checkRekeyTo
-    checkLease
-    code "global" [ "GroupSize" ]
-    cl $ DLL_Int sb 1
-    asserteq
-    cl $ DLL_Bytes keyState
-    op "app_global_get"
-    cTupleRef at keyState_ty 0
-    czaddr
-    asserteq
-    code "b" ["done"]
-    defn_done
+    cl $ DLL_Bool False
   -- The escrow account defers to the application
   addProg "escrow" $ do
     code "global" ["GroupSize"]

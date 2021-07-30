@@ -650,7 +650,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const lastBlock = await getLastBlock();
       let block_send_attempt = lastBlock;
       let block_repeat_count = 0;
-      while ( ! await checkTimeout(getTimeSecs, timeoutAt, bigNumberify(block_send_attempt)) ) {
+      while ( ! await checkTimeout(getTimeSecs, timeoutAt, block_send_attempt) ) {
         debug(...dhead, 'TRY');
         try {
           debug(...dhead, 'ARG', arg, pay);
@@ -701,18 +701,19 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const isFirstMsgDeploy = (funcNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
       const lastBlock = await getLastBlock();
       const ok_evt = `e${funcNum}`;
-      debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- START`);
+      const dhead = { t: 'recv', label, ok_evt };
+      debug(dhead, `START`);
 
       // look after the last block
       const block_poll_start_init: number =
         lastBlock + (isFirstMsgDeploy ? 0 : 1);
       let block_poll_start: number = block_poll_start_init;
       let block_poll_end = block_poll_start;
-      while ( ! await checkTimeout(getTimeSecs, timeoutAt, bigNumberify(block_poll_start)) ) {
-        debug(shad, ':', label, 'recv', ok_evt, `--- GET`, block_poll_start, block_poll_end);
+      while ( ! await checkTimeout(getTimeSecs, timeoutAt, block_poll_start) ) {
+        debug(dhead, `GET`, { block_poll_start, block_poll_end });
         const ok_e = await eventCache.query(block_poll_start, block_poll_end, ok_evt, getC);
         if (ok_e == undefined) {
-          debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- RETRY`);
+          debug(dhead, `RETRY`);
           block_poll_start = block_poll_end;
 
           await Timeout.set(1);
@@ -725,11 +726,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
           continue;
         } else {
-          debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- OKAY`);
+          debug(dhead, `OKAY`);
 
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
-          void(ok_r);
+          debug(dhead, 'ok_r', ok_r);
           const ok_t = await (await getProvider()).getTransaction(ok_e.transactionHash);
+          debug(dhead, 'ok_t', ok_t);
+
           // The .gas field doesn't exist on this anymore, apparently?
           // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
@@ -748,28 +751,27 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           }
 
-          debug(shad, ':', label, 'recv', ok_evt, `--- AT`, ok_r.blockNumber);
+          const theBlock = ok_r.blockNumber;
+          debug(dhead, `AT`, theBlock);
           updateLast(ok_r);
           const ok_ed = await getEventData(ok_evt, ok_e);
-          debug(shad, ':', label, 'recv', ok_evt, `--- DATA --`, ok_ed);
+          debug(dhead, `DATA`, ok_ed);
           const ok_vals = ok_ed[0][1];
-
-          debug(shad, ':', label, 'recv', ok_evt, `--- MSG --`, ok_vals);
+          debug(dhead, `MSG`, ok_vals);
           const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[]; // TODO: typing
 
           const _getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
-            let dhead = [shad, label, 'recv', ok_evt, '--- getLog', l_evt, l_ctc];
-            debug(dhead);
-            const theBlock = ok_r.blockNumber;
+            let dheadl = [ dhead, 'getLog', l_evt, l_ctc];
+            debug(dheadl);
             const l_e = (await getLog(theBlock, theBlock, l_evt))!;
-            dhead = [...dhead, 'log', l_e];
-            debug(dhead);
+            dheadl = [...dheadl, 'log', l_e];
+            debug(dheadl);
             const l_ed = (await getEventData(l_evt, l_e))[0];
-            dhead = [...dhead, 'data', l_ed];
-            debug(dhead);
+            dheadl = [...dheadl, 'data', l_ed];
+            debug(dheadl);
             const l_edu = l_ctc.unmunge(l_ed);
-            dhead = [...dhead, 'unmunge', l_edu];
-            debug(dhead);
+            dheadl = [...dheadl, 'unmunge', l_edu];
+            debug(dheadl);
             return l_edu;
           };
           const getOutput = (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
@@ -777,13 +779,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             return _getLog(`oe_${o_lab}`, o_ctc);
           };
 
-          debug(`${shad}: ${label} recv ${ok_evt} ${timeoutAt} --- OKAY --- ${JSON.stringify(ok_vals)}`);
+          debug(dhead, `OKAY`, ok_vals);
+          const theBlockBN = bigNumberify(theBlock);
           const { from } = ok_t;
+          const theSecsBN = await getTimeSecs(theBlockBN);
           return {
             data, getOutput, from,
             didTimeout: false,
-            time: bigNumberify(ok_r.blockNumber),
-            secs: bigNumberify(ok_t.timestamp),
+            time: theBlockBN,
+            secs: theSecsBN,
           };
         }
       }
@@ -797,6 +801,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // @ts-ignore
       return bigNumberify(theCreationTime);
     };
+    const creationSecs = async () =>
+      await getTimeSecs(await creationTime());
 
     const viewlib: IViewLib = {
       viewMapRef: async (...args: any): Promise<any> => {
@@ -823,7 +829,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
+    return { getInfo, creationTime, creationSecs, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
   };
 
   function setDebugLabel(newLabel: string): Account {
