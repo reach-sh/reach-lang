@@ -17,6 +17,7 @@ ALGO.duoswap
 # nondeterministic failure
 # https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
 ETH.view-map
+ALGO.view-map
 
 # nondeterministic failure
 # https://trello.com/c/Fo70yr87/1430-nondet-algonft-dumb-failure-ctc-not-deployed-yet
