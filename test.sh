@@ -204,8 +204,8 @@ jb
 # r examples/remote
 # c examples/remote/index.rsh
 # r examples/secured-loan
-r examples/timeoutception
-r examples/tut-3
+# r examples/timeoutception
+# r examples/tut-3
 # r examples/tut-4
 # r examples/tut-5
 # r examples/tut-6

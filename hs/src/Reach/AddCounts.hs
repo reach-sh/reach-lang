@@ -50,6 +50,11 @@ instance (AC a, Traversable t) => AC (t a) where
 instance {-# OVERLAPS #-} (AC a, AC b) => AC (a, b) where
   ac (x, y) = (,) <$> ac x <*> ac y
 
+instance {-# OVERLAPS #-} (AC a, AC b) => AC (Either a b) where
+  ac = \case
+    Left x -> Left <$> ac x
+    Right x -> Right <$> ac x
+
 viaVisit :: Countable a => AppT a
 viaVisit a = do
   ac_visit a

@@ -38,6 +38,11 @@ instance (Traversable t, Erase a) => Erase (t a) where
 instance {-# OVERLAPS #-} (Erase a, Erase b) => Erase (a, b) where
   el (x, y) = (,) <$> el x <*> el y
 
+instance {-# OVERLAPS #-} (Erase a, Erase b) => Erase (Either a b) where
+  el = \case
+    Left x -> Left <$> el x
+    Right x -> Right <$> el x
+
 instance Erase DLVar where
   el = viaCount
 
