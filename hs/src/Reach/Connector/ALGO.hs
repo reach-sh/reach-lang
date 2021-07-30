@@ -1416,6 +1416,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
           clhs
           ca rhsa
           op cmp
+          assert
     let checkFrom_ = checkTime1 ">="
     let checkTo_ = checkTime1 "<"
     let makeCheck check_ = \case
@@ -1426,8 +1427,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
     let checkBoth v xx yy = do
           cv v
           checkFrom_ (op "dup") xx
-          checkTo_ (op "dup") yy
-          op "pop"
+          checkTo_ (return ()) yy
     let CBetween ifrom ito = int
     case (ifrom, ito) of
       (Nothing, Nothing) -> return ()

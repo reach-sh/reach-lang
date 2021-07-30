@@ -158,6 +158,11 @@ instance (Traversable t, Optimize a) => Optimize (t a) where
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
   opt (x, y) = (,) <$> opt x <*> opt y
 
+instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (Either a b) where
+  opt = \case
+    Left x -> Left <$> opt x
+    Right x -> Right <$> opt x
+
 instance Optimize IType where
   opt = return
 

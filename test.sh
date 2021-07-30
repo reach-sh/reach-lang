@@ -55,8 +55,6 @@ r () {
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
-  # PureStake
-  # REACH_CONNECTOR_MODE=ALGO-live ALGO_SERVER=https://testnet-algorand.api.purestake.io/ps2 ALGO_PORT='' ALGO_INDEXER_SERVER=https://testnet-algorand.api.purestake.io/idx2 ALGO_INDEXER_PORT='' ${REACH} run
 )
 }
 

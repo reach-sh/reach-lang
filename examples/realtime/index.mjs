@@ -6,7 +6,6 @@ import * as backend from './build/index.main.mjs';
   const startingBalance = stdlib.parseCurrency(10);
   const [ accAlice ] =
     await stdlib.newTestAccounts(1, startingBalance);
-  console.log(accAlice);
   const ctcAlice = accAlice.deploy(backend);
 
   const interact = {

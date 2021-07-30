@@ -1364,8 +1364,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txn = res.txn;
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
-        const theSecs = txn['round-time'];
-        assert(theSecs, `txn missing round-time`);
+        // const theSecs = txn['round-time'];
+        // ^ The contract actually uses `global LatestTimestamp` which is the
+        // time of the PREVIOUS round.
+        const theSecs = await getTimeSecs(bigNumberify(theRound - 1));
 
         let all_txns: Array<any>|undefined = undefined;
         const get_all_txns = async () => {

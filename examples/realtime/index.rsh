@@ -13,29 +13,31 @@ export const main = Reach.App(() => {
 
   const aStep = (lab, tN) => {
     const entry = (step) =>
-      [ step, lab, tN,
+      [ ...step, lab,
         lastConsensusTime(),
         lastConsensusSecs() ];
-    A.interact.log(entry('before wait'));
-    wait(tN);
-    A.interact.log(entry('after wait'));
+    const wt = tN();
+    A.interact.log(entry(['before wait', wt]));
+    wait(wt);
+    const tt = tN();
+    A.interact.log(entry(['after wait', wt, tt]));
     A.publish()
-     .timeout(tN, () => {
-       A.interact.log(entry('in timeout'));
+     /*.timeout(tt, () => {
+       A.interact.log(entry(['in timeout', wt, tt]));
        A.publish();
        commit();
-       A.interact.log(entry('after timeout'));
+       A.interact.log(entry(['after timeout', wt, tt]));
        exit();
-     });
+     })*/;
     commit();
-    A.interact.log(entry('after commit'));
+    A.interact.log(entry(['after commit', wt, tt]));
   };
 
-  aStep('default (relativeBlocks)', t);
-  aStep('relativeBlocks', relativeTime(t));
-  aStep('absoluteBlocks', absoluteTime(lastConsensusTime() + t));
-  aStep('relativeSecs', relativeSecs(t));
-  aStep('absoluteSecs', absoluteSecs(lastConsensusSecs() + t));
+  aStep('default (relativeBlocks)', () => t);
+  aStep('relativeBlocks', () => relativeTime(t));
+  aStep('absoluteBlocks', () => absoluteTime(lastConsensusTime() + t));
+  aStep('relativeSecs', () => relativeSecs(t));
+  aStep('absoluteSecs', () => absoluteSecs(lastConsensusSecs() + t));
 
   exit();
 });

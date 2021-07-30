@@ -31,8 +31,8 @@ interval_from :: CInterval a -> Maybe a
 interval_from (CBetween froml _) = froml
 
 interval_add_from :: CInterval a -> a -> CInterval a
-interval_add_from (CBetween _ _) x =
-  CBetween (Just x) (Just x)
+interval_add_from (CBetween _ tol) x =
+  CBetween (Just x) tol
 
 interval_add_to :: CInterval a -> a -> CInterval a
 interval_add_to (CBetween froml _) x =
@@ -623,7 +623,7 @@ be_s = \case
     int <- be_interval <$> ask
     let int' =
           case c of
-            (DL_Let _ _ (DLE_Wait _ amt)) -> interval_add_from int amt
+            (DL_Let _ _ (DLE_Wait _ ta)) -> interval_add_from int ta
             _ -> int
     k' <- local (\e -> e {be_interval = int'}) $ be_s k
     c'e <- withConsensus False $ ee_m c
@@ -641,9 +641,9 @@ be_s = \case
         Nothing -> do
           let int_ok = interval_no_to int
           return $ (int_ok, return $ Nothing)
-        Just (delay_a, to_s) -> do
-          let int_ok = interval_add_to int delay_a
-          let int_to = interval_add_from int delay_a
+        Just (ta, to_s) -> do
+          let int_ok = interval_add_to int ta
+          let int_to = interval_add_from int ta
           let delay_as = interval_from int_to
           to_s'm <-
             local (\e -> e { be_interval = int_to }) $

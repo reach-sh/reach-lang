@@ -426,7 +426,7 @@ export const argMin = (xs: any[], f: (_:any) => any) =>
 
 export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): ((k:number, bal:any) => Promise<Array<X>>) =>
   (k:number, bal:any): Promise<Array<X>> =>
-    Promise.all((new Array(k)).map((_:any): Promise<X> => newTestAccount(bal)));
+    Promise.all((new Array(k)).fill(1).map((_:any): Promise<X> => newTestAccount(bal)));
 
 export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumber>, step: (target:BigNumber) => Promise<BigNumber>) => async (target: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
