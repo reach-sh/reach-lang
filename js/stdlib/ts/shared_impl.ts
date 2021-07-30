@@ -403,3 +403,17 @@ export const checkVersion = (actual:number, expected:number, label:string): void
     throw Error(`This Reach compiled ${label} does not match the expectations of this Reach standard library: expected ${expected}, but got ${actual}; ${more}`);
   }
 };
+
+const argHelper = (xs: any[], f: (_:any) => any, op: (a: any, b: any) => boolean) => {
+  if (xs.length == 0) {
+    return undefined;
+  }
+  return xs.reduce((accum: any, x: any) =>
+    op(f(x), f(accum)) ? x : accum, xs[0]);
+}
+
+export const argMax = (xs: any[], f: (_:any) => any) =>
+  argHelper(xs, f, (a, b) => a > b);
+
+export const argMin = (xs: any[], f: (_:any) => any) =>
+  argHelper(xs, f, (a, b) => a < b);
