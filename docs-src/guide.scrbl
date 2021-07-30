@@ -31,3 +31,4 @@ The following guides are available:
 @include-section["guide-limits.scrbl"]
 @include-section["guide-roadmap.scrbl"]
 @include-section["guide-changelog.scrbl"]
+@include-section["guide-upgrading.scrbl"]

@@ -53,4 +53,5 @@ we welcome @link["https://github.com/reach-sh/reach-lang/pulls"]{Pull Requests} 
 @include-section["guide.scrbl"]
 @include-section["workshop.scrbl"]
 @include-section["ref.scrbl"]
+@include-section["community.scrbl"]
 @index-section[]
