@@ -34,6 +34,9 @@ import {
   bigNumberToBigInt,
   argMax,
   argMin,
+  make_newTestAccounts,
+  make_waitUntilX,
+  checkTimeout,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -68,7 +71,6 @@ type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 // XXX Copy/pasted type defs from types/algosdk
 // This is so that this module can be exported without our custom types/algosdk
 // The unused ones are commented out
-type Round = number
 type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array // length 64
@@ -139,13 +141,11 @@ type CompiledBackend = {
 };
 
 type ContractInfo = number;
-type Digest = BigNumber
-type SendRecvArgs = ISendRecvArgs<Digest, Address, Token, AnyALGO_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Digest, Address, Token, AnyALGO_Ty>;
+type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-// type SimRes = ISimRes<Digest, Token, AnyALGO_Ty>
 type SimTxn = ISimTxn<Token>
 
 // Helpers
@@ -194,9 +194,6 @@ if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
 
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
-
-const getLastRound = async (): Promise<Round> =>
-  (await (await getAlgodClient()).status().do())['last-round'];
 
 export const waitForConfirmation = async (txId: TxId, untilRound: number|undefined): Promise<TxnInfo> => {
   const doOrDie = async (p: Promise<any>): Promise<any> => {
@@ -576,7 +573,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       } else if ( ! alwaysRetry || retries <= 0 ) {
-        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
+        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`); // `
       }
       debug(dhead, 'RETRYING', retries--, {e});
       await Timeout.set(500);
@@ -723,13 +720,15 @@ export const [getIndexer, setIndexer] = replaceableThunk(async () => {
 // This function should be provided by the indexer, but it isn't so we simulate
 // something decent. This function is allowed to "fail" by not really waiting
 // until the round
-const indexer_statusAfterBlock = async (round: number): Promise<void> => {
+const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
   const client = await getAlgodClient();
-  await client.statusAfterBlock(round);
-  // XXX Don't move on to next step if not actually this round
-  // const indexer = await getIndexer();
-  // XXX Wait until the indexer has seen it, but using health check
-  await Timeout.set(500);
+  let now = bigNumberify(0);
+  while ( (now = await getNetworkTime()).lt(round) ) {
+    await client.statusAfterBlock(round);
+    // XXX Get the indexer to index one and wait
+    await Timeout.set(500);
+  }
+  return now;
 };
 
 interface ALGO_Provider {
@@ -1103,14 +1102,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
-    const wait = async (delta: BigNumber): Promise<BigNumber> => {
-      return await waitUntilTime(bigNumberify(realLastRound).add(delta));
-    };
-
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay, sim_p } = srargs;
+      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay});
+        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -1119,7 +1114,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       void(toks); // <-- rely on simulation because of ordering
 
       const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
+      const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
       const [ svs, msg ] = argsSplit(args, evt_cnt);
@@ -1128,6 +1123,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         didTimeout: false,
         data: msg,
         time: bigNumberify(0), // This should not be read.
+        secs: bigNumberify(0), // This should not be read.
         value: value,
         from: pks,
         getOutput: (async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
@@ -1173,10 +1169,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       while ( true ) {
         const params = await getTxnParams();
-        if ( timeout_delay ) {
+        if ( timeoutAt ) {
           const tdn = Math.min(MaxTxnLife, timeout_delay.toNumber());
           params.lastRound = realLastRound + tdn;
-          debug(dhead, '--- TIMECHECK', { params, timeout_delay, tdn });
+          debug(dhead, '--- TIMECHECK', { params, timeoutAt, tdn });
           // We add one, because the firstRound field is actually the current
           // round, which we couldn't possibly be in, because it already
           // happened.
@@ -1326,7 +1322,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             return await doRecv(false);
           }
 
-          if ( timeout_delay ) {
+          if ( timeoutAt ) {
             // If there can be a timeout, then keep waiting for it
             continue;
           } else {
@@ -1340,15 +1336,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay } = rargs;
+      const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt } = rargs;
       const indexer = await getIndexer();
 
       const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
+      const dhead = `${shad}: ${label} recv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
       const timeoutRound =
-        timeout_delay ?
+        timeoutAt ?
         realLastRound + timeout_delay.toNumber() :
         undefined;
 
@@ -1373,6 +1369,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const txn = res.txn;
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
+        const theSecs = txn['round-time'];
+        assert(theSecs, `txn missing round-time`);
 
         let all_txns: Array<any>|undefined = undefined;
         const get_all_txns = async () => {
@@ -1436,6 +1434,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           didTimeout: false,
           data: args_un,
           time: bigNumberify(realLastRound),
+          secs: bigNumberify(theSecs),
           from, getOutput,
         };
       }
@@ -1518,7 +1517,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {
@@ -1662,6 +1661,8 @@ export const newTestAccount = async (startingBalance: any) => {
   return account;
 };
 
+export const newTestAccounts = make_newTestAccounts(newTestAccount);
+
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'ALGO';
 
@@ -1800,28 +1801,37 @@ export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSig
   return await connectAccount(networkAccount);
 };
 
-export const getNetworkTime = async () => bigNumberify(await getLastRound());
-
-export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  const onProg = onProgress || (() => {});
-  const client = await getAlgodClient();
-  let currentTime = await getNetworkTime();
-  while (currentTime.lt(targetTime)) {
-    debug('waitUntilTime: iteration:', currentTime, '->', targetTime);
-    if ( isIsolatedNetwork() ) {
-      await fundFromFaucet(await getFaucet(), 0);
-    }
-    const status = await client.statusAfterBlock(currentTime.toNumber() + 1).do();
-    currentTime = bigNumberify(status['last-round']);
-    onProg({currentTime, targetTime});
-  }
-  debug('waitUntilTime: ended:', currentTime, '->', targetTime);
-  return currentTime;
+export const getNetworkTime = async (): Promise<BigNumber> => {
+  const indexer = await getIndexer();
+  const hc = await indexer.makeHealthCheck().do();
+  return bigNumberify(hc['round']);
 };
+const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
+  const now = bigNumberToNumber(now_bn);
+  const indexer = await getIndexer();
+  const info = await indexer.lookupBlock(now).do();
+  return bigNumberify(info['timestamp']);
+};
+export const getNetworkSecs = async (): Promise<BigNumber> =>
+  await getTimeSecs(await getNetworkTime());
+
+const stepTime = async (target: BigNumber): Promise<BigNumber> => {
+  if ( isIsolatedNetwork() ) {
+    await fundFromFaucet(await getFaucet(), 0);
+  }
+  return await indexer_statusAfterBlock(bigNumberToNumber(target));
+};
+export const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
+
+const stepSecs = async (target: BigNumber): Promise<BigNumber> => {
+  void(target);
+  const now = await stepTime((await getNetworkTime()).add(1));
+  return await getTimeSecs(now);
+};
+export const waitUntilSecs = make_waitUntilX('secs', getNetworkSecs, stepSecs);
 
 export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
-  debug('wait: delta=', delta, 'now=', now, 'until=', now.add(delta));
   return await waitUntilTime(now.add(delta), onProgress);
 };
 

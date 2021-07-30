@@ -19,11 +19,17 @@ instance CollectsTypes a => CollectsTypes (M.Map k a) where
   cts m = foldMap cts m
 
 instance CollectsTypes a => CollectsTypes (Maybe a) where
-  cts (Nothing) = mempty
-  cts (Just x) = cts x
+  cts = \case
+    Nothing -> mempty
+    Just x -> cts x
 
 instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
+
+instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (Either a b) where
+  cts = \case
+    Left x -> cts x
+    Right x -> cts x
 
 instance (CollectsTypes a, CollectsTypes b, CollectsTypes c) => CollectsTypes (a, b, c) where
   cts (x, y, z) = cts x <> cts y <> cts z
@@ -155,7 +161,7 @@ instance CollectsTypes DLSend where
   cts (DLSend {..}) = cts ds_msg <> cts ds_pay <> cts ds_when
 
 instance CollectsTypes a => CollectsTypes (DLRecv a) where
-  cts (DLRecv {..}) = cts dr_from <> cts dr_msg <> cts dr_time <> cts dr_k
+  cts (DLRecv {..}) = cts dr_from <> cts dr_msg <> cts dr_time <> cts dr_secs <> cts dr_k
 
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
@@ -196,7 +202,7 @@ instance CollectsTypes DLVarCat where
   cts _ = mempty
 
 instance CollectsTypes CHandler where
-  cts (C_Handler _ int last_timev fs _ svs msg timev body) = cts int <> cts last_timev <> cts fs <> cts svs <> cts msg <> cts timev <> cts body
+  cts (C_Handler _ int fs _ svs msg timev secsv body) = cts int <> cts fs <> cts svs <> cts msg <> cts timev <> cts secsv <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
 
 instance CollectsTypes CHandlers where

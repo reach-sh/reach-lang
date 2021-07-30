@@ -32,7 +32,6 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
-      , et_tc_last_timev :: Maybe DLVar
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -41,7 +40,8 @@ data ETail
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_out :: [DLVar]
       , et_tc_from_timev :: DLVar
-      , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
+      , et_tc_from_secsv :: DLVar
+      , et_tc_from_mtime :: (Maybe (Maybe DLTimeArg, ETail))
       , et_tc_cons :: ETail
       }
   | ET_While
@@ -67,7 +67,7 @@ instance Pretty ETail where
           <> pretty k
         where
           whichp = viaShow which
-      ET_ToConsensus _ fs prev last_timev which msend msg out timev mtime k ->
+      ET_ToConsensus _ fs prev which msend msg out timev secsv mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -77,11 +77,11 @@ instance Pretty ETail where
                    M.fromList $
                      [ ("from" :: String, pretty fs)
                      , ("prev", pretty prev)
-                     , ("last_time", pretty last_timev)
                      , ("which", pretty which)
                      , ("msg", (cm $ map pretty msg))
                      , ("out", (cm $ map pretty out))
                      , ("timev", pretty timev)
+                     , ("secsv", pretty secsv)
                      ])
               <> hardline
           kp = ns $ pretty k
@@ -138,33 +138,34 @@ data CTail
   deriving (Eq)
 
 instance Pretty CTail where
-  pretty (CT_Com e k) = pretty e <> hardline <> pretty k
-  pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
-  pretty (CT_Switch _ ov csm) = prettySwitch ov csm
-  pretty (CT_From _ which fi) = pform "from" $ pretty which <> "," <+> pretty fi
-  pretty (CT_Jump _ which vars assignment) = pform "jump!" args
-    where
-      args = pretty which <+> pretty vars <+> pretty assignment
+  pretty = \case
+    CT_Com e k -> pretty e <> hardline <> pretty k
+    CT_If _ ca tt ft -> prettyIfp ca tt ft
+    CT_Switch _ ov csm -> prettySwitch ov csm
+    CT_From _ which fi -> pform "from" $ pretty which <> "," <+> pretty fi
+    CT_Jump _ which vars assignment -> pform "jump!" args
+      where
+        args = pretty which <+> pretty vars <+> pretty assignment
 
 data CInterval a
-  = CBetween [a] [a]
+  = CBetween (Maybe a) (Maybe a)
   deriving (Show, Eq)
 
 instance Pretty a => Pretty (CInterval a) where
   pretty (CBetween f t) = pform "between" $ go f <+> go t
     where
-      go = brackets . render_das
+      go = brackets . pretty
 
 data CHandler
   = C_Handler
       { ch_at :: SrcLoc
-      , ch_int :: CInterval DLArg
-      , ch_last_timev :: Maybe DLVar
+      , ch_int :: CInterval DLTimeArg
       , ch_from :: DLVar
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
       , ch_timev :: DLVar
+      , ch_secsv :: DLVar
       , ch_body :: CTail
       }
   | C_Loop
@@ -176,17 +177,17 @@ data CHandler
   deriving (Eq)
 
 instance Pretty CHandler where
-  pretty (C_Handler _ int last_timev fs last_i svs msg timev body) =
+  pretty (C_Handler _ int fs last_i svs msg timev secsv body) =
     pbrackets
       [ pretty fs
       , pretty int
-      , "last_timev = " <> pretty last_timev
       , "last = " <> pretty last_i
       , pretty svs
       , pretty (map varType svs)
       , pretty msg
       , pretty (map varType msg)
       , "timev = " <> pretty timev
+      , "secsv = " <> pretty secsv
       , render_nest $ pretty body
       ]
   pretty (C_Loop _ svs vars body) =

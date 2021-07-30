@@ -189,7 +189,6 @@ instance Optimize DLTokenNew where
     <*> opt dtn_metadata
     <*> opt dtn_supply
 
-
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -374,7 +373,7 @@ instance Optimize LLConsensus where
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
 
-opt_mtime :: AppT (Maybe (DLArg, LLStep))
+opt_mtime :: AppT (Maybe (DLTimeArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt d) <*> (newScope $ opt s))
@@ -395,9 +394,8 @@ instance Optimize LLStep where
       LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
       where
         send' = M.fromList <$> mapM opt_send (M.toList send)
-        (last_timev, cons) = dr_k recv
-        cons' = newScope $ focusc $ opt cons
-        recv' = (\k -> recv {dr_k = k}) <$> ((,) <$> opt last_timev <*> cons')
+        k' = newScope $ focusc $ opt $ dr_k recv
+        recv' = (\k -> recv {dr_k = k}) <$> k'
         mtime' = opt_mtime mtime
 
 instance Optimize DLInit where
@@ -454,7 +452,7 @@ instance Optimize CTail where
 instance Optimize CHandler where
   opt = \case
     C_Handler {..} -> do
-      C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev <$> opt ch_body
+      C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body
     C_Loop {..} -> do
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
 

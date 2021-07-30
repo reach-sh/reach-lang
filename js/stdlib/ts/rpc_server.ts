@@ -98,6 +98,9 @@ export const mkStdlibProxy = async (lib: any) => {
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
 
+    newTestAccounts: async (num:number, bal: any) =>
+      (await lib.newTestAccounts(num, bal)).map(account.track),
+
     getDefaultAccount: async () =>
       account.track(await lib.getDefaultAccount()),
 

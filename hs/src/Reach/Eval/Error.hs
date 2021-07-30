@@ -8,6 +8,7 @@ where
 import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
+import qualified Data.Set as S
 import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -143,6 +144,7 @@ data EvalError
   | Err_Token_NotCreated String
   | Err_ParallelReduce_DefineBlock
   | Err_Expected_Type String SLVal
+  | Err_TimeArg_NotStatic
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -267,6 +269,7 @@ instance HasErrorCode EvalError where
     Err_Token_NotCreated {} -> 112
     Err_ParallelReduce_DefineBlock {} -> 113
     Err_Expected_Type {} -> 114
+    Err_TimeArg_NotStatic {} -> 115
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -341,12 +344,27 @@ showStateDiff x y =
       x
       y
       st_pdvs
-      (\xParts yParts ->
-         let showParts = intercalate ", " . map (show . fst) . M.toList
-          in "The number of active participants vary between states: " <> showParts xParts <> " vs " <> showParts yParts
-               <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
-
--- XXX tokens
+      (\xs ys ->
+          "The active participants vary between states: " <> showM xs <> " vs " <> showM ys <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
+    <> showDiff
+        x
+        y
+        st_toks
+        (\xs ys ->
+          "The non-network tokens vary between states: " <> showL xs <> " vs " <> showL ys <> ". Ensure all needed tokens are available before the branch.")
+    <> showDiff
+        x
+        y
+        st_toks_c
+        (\xs ys ->
+          "The created non-network tokens vary between states: " <> showS xs <> " vs " <> showS ys <> ". Ensure all needed tokens created before the branch.")
+    where
+      showM :: Show k => M.Map k v -> String
+      showM = showL . M.keys
+      showS :: Show v => S.Set v -> String
+      showS = showL . S.toAscList
+      showL :: Show v => [v] -> String
+      showL = intercalate ", " . map show
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
@@ -668,5 +686,7 @@ instance Show EvalError where
       "`define` expects an argument of the form: `() => DEFINE_BLOCK`, where `DEFINE_BLOCK` is a statement block."
     Err_Expected_Type lab sv ->
       "Expected a `Type`, but received " <> show (pretty sv) <> " for " <> lab
+    Err_TimeArg_NotStatic ->
+      "Time argument must be statically determined as either time (Left) or seconds (Right)"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

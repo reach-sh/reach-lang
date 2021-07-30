@@ -45,7 +45,7 @@ data DKTail
       { dk_tc_at :: SrcLoc
       , dk_tc_send :: M.Map SLPart DLSend
       , dk_tc_recv :: DLRecv DKTail
-      , dk_tc_mtime :: Maybe (DLArg, DKTail)
+      , dk_tc_mtime :: Maybe (DLTimeArg, DKTail)
       }
   | DK_If SrcLoc DLArg DKTail DKTail
   | DK_Switch SrcLoc DLVar (SwitchCases DKTail)

@@ -25,22 +25,22 @@ shouldTrace = False
 
 -- Helpers
 default_interval :: CInterval a
-default_interval = CBetween [] []
+default_interval = CBetween Nothing Nothing
 
-interval_from :: CInterval a -> [a]
+interval_from :: CInterval a -> Maybe a
 interval_from (CBetween froml _) = froml
 
 interval_add_from :: CInterval a -> a -> CInterval a
-interval_add_from (CBetween froml tol) x =
-  CBetween (x : froml) (x : tol)
+interval_add_from (CBetween _ _) x =
+  CBetween (Just x) (Just x)
 
 interval_add_to :: CInterval a -> a -> CInterval a
-interval_add_to (CBetween froml tol) x =
-  CBetween froml (x : tol)
+interval_add_to (CBetween froml _) x =
+  CBetween froml (Just x)
 
 interval_no_to :: CInterval a -> CInterval a
 interval_no_to (CBetween froml _) =
-  CBetween froml []
+  CBetween froml Nothing
 
 -- Flow
 type DLVarS = S.Set DLVar
@@ -182,7 +182,7 @@ data BEnv = BEnv
   , be_prevs :: S.Set Int
   , be_savec :: Counter
   , be_handlerc :: Counter
-  , be_interval :: CInterval DLArg
+  , be_interval :: CInterval DLTimeArg
   , be_handlers :: IORef (M.Map Int (CApp CHandler))
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
@@ -634,7 +634,7 @@ be_s = \case
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
   LLS_ToConsensus at send recv mtime -> do
-    let DLRecv from_v msg_vs time_v (last_time_mv, ok_c) = recv
+    let DLRecv from_v msg_vs time_v secs_v ok_c = recv
     prev <- be_prev <$> ask
     signalMore
     this_h <- newHandler "ToConsensus"
@@ -649,7 +649,7 @@ be_s = \case
           let int_to = interval_add_from int delay_a
           let delay_as = interval_from int_to
           to_s'm <-
-            local (\e -> e {be_interval = int_to}) $
+            local (\e -> e { be_interval = int_to }) $
               be_s to_s
           let mtime'm = Just . (,) delay_as <$> to_s'm
           return $ (int_ok, mtime'm)
@@ -662,13 +662,12 @@ be_s = \case
                })
           $ do
             fg_use $ int_ok
-            fg_use $ last_time_mv
-            fg_defn $ from_v : time_v : msg_vs
+            fg_defn $ from_v : time_v : secs_v : msg_vs
             be_c ok_c
     setHandler this_h $ do
       svs <- ce_readSave prev
       ok_c'' <- addVars at =<< ok_c'm
-      return $ C_Handler at int_ok last_time_mv from_v prev svs msg_vs time_v ok_c''
+      return $ C_Handler at int_ok from_v prev svs msg_vs time_v secs_v ok_c''
     -- It is only a solo send if we are the only sender AND we are not a
     -- class
     let soloSend0 = (M.size send) == 1
@@ -683,7 +682,7 @@ be_s = \case
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev last_time_mv this_h mfrom msg_vs out_vs time_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev this_h mfrom msg_vs out_vs time_v secs_v mtime' ok_l'
     return $ ok_l''m
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock

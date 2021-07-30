@@ -26,6 +26,7 @@ data Deprecation
   = D_ParticipantTuples SrcLoc
   | D_SnakeToCamelCase String
   | D_ReachAppArgs
+  | D_UntypedTimeArg
   deriving (Eq)
 
 data Warning
@@ -47,6 +48,8 @@ instance Show Deprecation where
        in "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`"
     D_ReachAppArgs ->
       "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk."
+    D_UntypedTimeArg ->
+      "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs."
 
 instance Show Warning where
   show = \case

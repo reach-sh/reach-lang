@@ -176,6 +176,13 @@ Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account
 @jsin{bigNumberify} is transparently applied to the @jsin{balance} argument.
 
 @(hrule)
+@(mint-define! '("newTestAccounts"))
+@js{
+ newTestAccounts(howMany, balance) => Promise<Array<acc>> }
+
+Returns a Promise for an array of @jsin{howMany} test accounts, using @jsin{newTestAccount}.
+
+@(hrule)
 @(mint-define! '("createAccount"))
 @js{
   createAccount() => Promise<acc> }

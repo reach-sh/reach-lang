@@ -10,6 +10,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/07/24: Added @jsin{newTestAccounts}, @jsin{waitUntilSecs}, and @jsin{getNetworkSecs} to JavaScript standard library.}
+@item{2021/07/24: Added @reachin{relativeTime}, @reachin{absoluteTime}, @reachin{relativeSecs}, @reachin{absoluteSecs}, @reachin{baseWaitTime}, @reachin{baseWaitSecs}, and @reachin{lastConsensusSecs} to Reach, with support in @reachin{wait} and @reachin{.timeout}.}
 @item{2021/07/22: @jsin{numberToFixedPoint()} and @jsin{numberToInt()} added.}
 @item{2021/07/21: Renamed Ethereum devnet Docker image to @litchar{devnet-eth}.}
 @item{2021/07/21: Renamed connector modes to use naming convention @litchar{$NET-devnet}, rather than exposing implementation.}

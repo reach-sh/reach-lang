@@ -367,8 +367,17 @@ fluidRef fv = do
     Nothing -> impossible $ "fluid ref unbound: " <> show fv
     Just x -> return x
 
+fluidSet_ :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
+fluidSet_ fv fvv = local (\e@DFEnv {..} -> e {eFVE = M.insert fv fvv eFVE})
+
 fluidSet :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
-fluidSet fv fvv = local (\e@DFEnv {..} -> e {eFVE = M.insert fv fvv eFVE})
+fluidSet fv fvv m = fluidSet_ fv fvv $ more m
+  where
+    more =
+      case fv of
+        FV_lastConsensusTime -> fluidSet_ FV_baseWaitTime fvv
+        FV_lastConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
+        _ -> id
 
 withWhileFVMap :: FVMap -> DFApp a -> DFApp a
 withWhileFVMap fvm' = local (\e -> e {eFVMm = Just fvm'})
@@ -472,8 +481,10 @@ df_con = \case
     -- the purpose of lifting fluid variable interactions, so we instead build
     -- it into this pass
     tct <- fluidRef FV_thisConsensusTime
+    tcs <- fluidRef FV_thisConsensusSecs
     fluidSet FV_lastConsensusTime tct $
-      LLC_FromConsensus at1 at2 <$> df_step t
+      fluidSet FV_lastConsensusSecs tcs $
+        LLC_FromConsensus at1 at2 <$> df_step t
   DK_ViewIs at vn vk mva k -> do
     mva' <- maybe (return $ Nothing) (\eb -> Just <$> df_eb eb) mva
     k' <- df_con k
@@ -484,13 +495,8 @@ df_step :: DKTail -> DFApp LLStep
 df_step = \case
   DK_Stop at -> return $ LLS_Stop at
   DK_ToConsensus at send recv mtime -> do
-    let k = dr_k recv
-    let cvt = \case
-          DLA_Var v -> v
-          _ -> impossible $ "lct not a variable"
-    ltv <- fmap (cvt . snd) <$> fluidRefm FV_lastConsensusTime
-    k' <- df_con k
-    let recv' = recv {dr_k = (ltv, k')}
+    k' <- df_con $ dr_k recv
+    let recv' = recv {dr_k = k'}
     mtime' <-
       case mtime of
         Nothing -> return $ Nothing

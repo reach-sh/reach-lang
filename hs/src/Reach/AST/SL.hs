@@ -448,8 +448,8 @@ data SLPrimitive
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_fluid_read FluidVar
+  | SLPrim_fluid_read_canWait FluidVar
   | SLPrim_race
-  | SLPrim_lastConsensusTime
   | SLPrim_Map
   | SLPrim_Map_new
   | SLPrim_Map_reduce

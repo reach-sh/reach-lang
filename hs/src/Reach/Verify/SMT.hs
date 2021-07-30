@@ -67,11 +67,6 @@ uint256_le lhs rhs = smtApply ple [lhs, rhs]
   where
     ple = if use_bitvectors then "bvule" else "<="
 
-uint256_lt :: SExpr -> SExpr -> SExpr
-uint256_lt lhs rhs = smtApply plt [lhs, rhs]
-  where
-    plt = if use_bitvectors then "bvult" else "<"
-
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
 
@@ -1265,19 +1260,14 @@ smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
   LLS_ToConsensus at send recv mtime -> do
-    let DLRecv whov msgvs timev (last_timemv, next_n) = recv
-    timev' <- smt_v at timev
+    let DLRecv whov msgvs timev secsv next_n = recv
     let timeout = case mtime of
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
-    let bind_time = pathAddUnbound at (Just timev) Nothing
-    let order_time =
-          case last_timemv of
-            Nothing -> mempty
-            Just last_timev -> do
-              last_timev' <- smt_v at last_timev
-              smtAssertCtxt $ uint256_lt last_timev' timev'
-    let after = freshAddrs $ bind_time <> order_time <> smt_n next_n
+    let bind_time = do
+          pathAddUnbound at (Just timev) Nothing
+          pathAddUnbound at (Just secsv) Nothing
+    let after = freshAddrs $ bind_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
           let maybe_pathAdd v mde se = do
@@ -1528,7 +1518,10 @@ _verify_smt mc ctxt_vst smt lp = do
     mapM_ defineMap $ M.toList ctxt_maps
     case dli_ctimem of
       Nothing -> mempty
-      Just ctimev -> pathAddUnbound at (Just ctimev) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var ctimev)
+      Just (ctimev, csecsv) -> do
+        let go v = pathAddUnbound at (Just v) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var v)
+        go ctimev
+        go csecsv
     case mc of
       Just _ -> mempty
       Nothing -> do

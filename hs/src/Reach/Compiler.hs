@@ -54,7 +54,7 @@ compile copts = do
   dirDotReach' <- makeAbsolute $ dirDotReach copts
   let doPkgs = installPkgs copts
   djp <- gatherDeps_top (source copts) doPkgs dirDotReach'
-  interOut outn "bundle.js" $ render $ pretty djp
+  -- interOut outn "bundle.js" $ render $ pretty djp
   unless doPkgs $ do
     (avail, compileDApp) <- evalBundle all_connectors djp
     let chosen = fromMaybe avail $ tops copts

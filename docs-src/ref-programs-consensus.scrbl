@@ -318,8 +318,7 @@ This value is intended to be a @tech{digest} of a larger metadata document.}
 ]
 
 This returns a @reachin{Token} value and deposits a @reachin{supply} amount of the new @tech{non-network tokens} into the @tech{contract} account associated with the @|DApp|.
-These tokens must be either @tech{burn}ed or @tech{transfer}ed away before the end of the @|DApp|.
-In other words, the @tech{token linearity property} applies to these tokens.
+These tokens must be destroyed by the end of the @|DApp|.
 
 @(hrule)
 

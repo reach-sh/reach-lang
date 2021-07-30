@@ -29,6 +29,12 @@ class PrettySubst a where
 instance {-# OVERLAPPABLE #-} PrettySubst a => Pretty a where
   pretty = runIdentity . flip runReaderT mempty . prettySubst
 
+instance (PrettySubst a, PrettySubst b) => PrettySubst (Either a b) where
+  prettySubst = \case
+    Left x -> f "Left" x
+    Right x -> f "Right" x
+    where f l x = (l <+>) <$> prettySubst x
+
 data DeployMode
   = DM_constructor
   | DM_firstMsg
@@ -52,6 +58,9 @@ data DLType
 
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
+
+eitherT :: DLType -> DLType -> DLType
+eitherT lt rt = T_Data $ M.fromList $ [("Left", lt), ("Right", rt)]
 
 dataTypeMap :: DLType -> M.Map SLVar DLType
 dataTypeMap = \case
@@ -137,7 +146,7 @@ instance Pretty SLParts where
 type DLMapInfos = M.Map DLMVar DLMapInfo
 
 data DLInit = DLInit
-  { dli_ctimem :: Maybe DLVar
+  { dli_ctimem :: Maybe (DLVar, DLVar)
   , dli_maps :: DLMapInfos
   }
   deriving (Eq, Generic)
@@ -153,7 +162,10 @@ instance Pretty DLInit where
     where
       ctimem' = case dli_ctimem of
         Nothing -> "// no ctime" <> hardline
-        Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
+        Just (t, s) -> mconcat $
+          [ "const" <+> pretty t <+> "=" <+> "creationTime();" <> hardline
+          , "const" <+> pretty s <+> "=" <+> "creationSecs();" <> hardline
+          ]
 
 data DLConstant
   = DLC_UInt_max
@@ -450,6 +462,8 @@ instance PrettySubst DLTokenNew where
       , ("metadata", dtn_metadata)
       , ("supply", dtn_supply) ]
 
+type DLTimeArg = Either DLArg DLArg
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -467,7 +481,7 @@ data DLExpr
   | DLE_Transfer SrcLoc DLArg DLArg (Maybe DLArg)
   | DLE_TokenInit SrcLoc DLArg
   | DLE_CheckPay SrcLoc [SLCtxtFrame] DLArg (Maybe DLArg)
-  | DLE_Wait SrcLoc DLArg
+  | DLE_Wait SrcLoc DLTimeArg
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
@@ -836,6 +850,7 @@ data DLRecv a = DLRecv
   { dr_from :: DLVar
   , dr_msg :: [DLVar]
   , dr_time :: DLVar
+  , dr_secs :: DLVar
   , dr_k :: a
   }
   deriving (Eq, Generic)
@@ -849,6 +864,7 @@ instance Pretty a => Pretty (DLRecv a) where
              [ ("from" :: String, pretty dr_from)
              , ("msg", pretty dr_msg)
              , ("time", pretty dr_time)
+             , ("secs", pretty dr_secs)
              ])
       <> render_nest (pretty dr_k)
 
@@ -858,6 +874,10 @@ data FluidVar
   | FV_destroyed Int
   | FV_thisConsensusTime
   | FV_lastConsensusTime
+  | FV_baseWaitTime
+  | FV_thisConsensusSecs
+  | FV_lastConsensusSecs
+  | FV_baseWaitSecs
   deriving (Eq, Generic, Ord, Show)
 
 instance Pretty FluidVar where
@@ -867,6 +887,10 @@ instance Pretty FluidVar where
     FV_destroyed i -> "destroyed" <> parens (pretty i)
     FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
+    FV_baseWaitTime -> "baseWaitTime"
+    FV_thisConsensusSecs -> "thisConsensusSecs"
+    FV_lastConsensusSecs -> "lastConsensusSecs"
+    FV_baseWaitSecs -> "baseWaitSecs"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
@@ -875,11 +899,19 @@ fluidVarType = \case
   FV_destroyed _ -> T_Bool
   FV_thisConsensusTime -> T_UInt
   FV_lastConsensusTime -> T_UInt
+  FV_baseWaitTime -> T_UInt
+  FV_thisConsensusSecs -> T_UInt
+  FV_lastConsensusSecs -> T_UInt
+  FV_baseWaitSecs -> T_UInt
 
 allFluidVars :: Int -> [FluidVar]
 allFluidVars bals =
   [ FV_thisConsensusTime
   , FV_lastConsensusTime
+  , FV_baseWaitTime
+  , FV_thisConsensusSecs
+  , FV_lastConsensusSecs
+  , FV_baseWaitSecs
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks

@@ -589,3 +589,17 @@ export const Array_slice = (a, start, len) =>
 
 export const Array_slice1 = (a) => (start, len) =>
   Array_slice(a, start, len);
+
+// Time helpers
+const makeTimeHelper = (time, relative) => (value) => {
+  const T = Either(UInt, UInt);
+  const mk = time ? T.Left : T.Right;
+  const last = time ? baseWaitTime : baseWaitSecs;
+  const base = relative ? last() : 0;
+  return mk(base + value);
+};
+export const relativeTime = makeTimeHelper(true, true);
+export const absoluteTime = makeTimeHelper(true, false);
+export const relativeSecs = makeTimeHelper(false, true);
+export const absoluteSecs = makeTimeHelper(false, false);
+

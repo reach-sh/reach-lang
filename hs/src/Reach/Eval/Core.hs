@@ -37,10 +37,6 @@ import Reach.Parser
 import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Warning
-  ( Deprecation (D_ParticipantTuples, D_SnakeToCamelCase)
-  , Warning (W_Deprecated)
-  , emitWarning
-  )
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
@@ -65,7 +61,7 @@ data AppEnv = AppEnv
 data AppRes = AppRes
   { ar_pie :: M.Map SLPart InteractEnv
   , ar_views :: DLViews
-  , ar_ctimem :: Maybe DLVar
+  , ar_ctimem :: Maybe (DLVar, DLVar)
   }
 
 data AppInitSt
@@ -521,7 +517,10 @@ base_env =
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_balance)
-    , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
+    , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
+    , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
+    , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
+    , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
     , ("Digest", SLV_Type ST_Digest)
     , ("Null", SLV_Type ST_Null)
     , ("Bool", SLV_Type ST_Bool)
@@ -1268,8 +1267,6 @@ evalAsEnv obj = case obj of
       retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
     delayStdlib :: SLVar -> App SLSVal
     delayStdlib = doApply <=< lookStdlib
-    lookStdlib :: SLVar -> App SLVal
-    lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
     doCall :: SLPrimitive -> App SLSVal
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
@@ -1287,6 +1284,9 @@ evalAsEnv obj = case obj of
     retV = return
     retStdLib :: SLVar -> App SLSVal
     retStdLib n = (retV . public) =<< lookStdlib n
+
+lookStdlib :: SLVar -> App SLVal
+lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
 
 evalDot_ :: SLVal -> SLObjEnv -> String -> App SLSVal
 evalDot_ obj env field =
@@ -1372,6 +1372,21 @@ doClaim ct ca mmsg =
       at <- withAt id
       fs <- e_stack <$> ask
       ctxt_lift_eff $ DLE_Claim at fs ct ca mmsg
+
+compileTimeArg :: SLVal -> App DLTimeArg
+compileTimeArg = \case
+  SLV_Data _ dm "Left" v | correctData dm ->
+    Left <$> compileCheckType T_UInt v
+  SLV_Data _ dm "Right" v | correctData dm ->
+    Right <$> compileCheckType T_UInt v
+  SLV_DLVar (DLVar _ _ (T_Data dm) _) | correctData dm ->
+    expect_ Err_TimeArg_NotStatic
+  v -> do
+    f <- lookStdlib "relativeTime"
+    liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
+    compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
+  where
+    correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
 
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
@@ -1582,9 +1597,10 @@ evalForm f args = do
       ensure_mode SLM_Step "wait"
       amt_e <- one_arg
       amt_sv <- locStMode SLM_ConsensusPure $ evalExpr amt_e
-      amt_da <- compileCheckType T_UInt =<< ensure_public amt_sv
+      amt_ta <- compileTimeArg =<< ensure_public amt_sv
+      doBaseWaitUpdate amt_ta
       at <- withAt id
-      ctxt_lift_eff $ DLE_Wait at amt_da
+      ctxt_lift_eff $ DLE_Wait at amt_ta
       return $ public $ SLV_Null at "wait"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
@@ -1882,6 +1898,11 @@ doFluidSet fv ssv = do
   da <- compileCheckType (fluidVarType fv) sv
   doFluidSet_ fv da
 
+doBaseWaitUpdate :: DLTimeArg -> App ()
+doBaseWaitUpdate = \case
+  Left x -> doFluidSet_ FV_baseWaitTime x
+  Right x -> doFluidSet_ FV_baseWaitSecs x
+
 lookupBalanceFV :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
 lookupBalanceFV = lookupBalanceFV_
 
@@ -2114,10 +2135,10 @@ evalPrim p sargs =
       dr <- lookupBalanceFV FV_destroyed $ Just da
       doFluidRef dr
     SLPrim_fluid_read fv -> doFluidRef fv
-    SLPrim_lastConsensusTime -> do
+    SLPrim_fluid_read_canWait fv -> do
       ensure_can_wait
       zero_args
-      evalPrim (SLPrim_fluid_read $ FV_lastConsensusTime) []
+      evalPrim (SLPrim_fluid_read $ fv) []
     SLPrim_op op -> evalPrimOp op sargs
     SLPrim_Fun ->
       case map snd sargs of
@@ -2856,7 +2877,9 @@ evalPrim p sargs =
         let yes = do
               time_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
               doFluidSet FV_lastConsensusTime $ public $ SLV_DLVar time_dv
-              return $ Just time_dv
+              secs_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
+              doFluidSet FV_lastConsensusSecs $ public $ SLV_DLVar secs_dv
+              return $ Just (time_dv, secs_dv)
         case dlo_deployMode dlo of
           DM_constructor -> yes
           DM_firstMsg -> no
@@ -3897,8 +3920,12 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
           locSt st_pure $
             evalApplyVals' req_rator $
               [whoc_v, public $ SLV_Bytes at $ "sender correct"]
-        dr_time <- ctxt_mkvar $ DLVar at Nothing T_UInt
-        doFluidSet FV_thisConsensusTime $ public $ SLV_DLVar dr_time
+        let go fv = do
+              v <- ctxt_mkvar $ DLVar at Nothing T_UInt
+              doFluidSet fv $ public $ SLV_DLVar v
+              return v
+        dr_time <- go FV_thisConsensusTime
+        dr_secs <- go FV_thisConsensusSecs
         k_cr <- evalStmt ks
         let mktc_recv dr_k = DLRecv {..}
         return $ (mktc_recv, k_cr)
@@ -3932,11 +3959,13 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
         delay_sv <- locSt st_pure $ evalExpr delay_e >>= ensure_public
         case delay_sv of
           SLV_Bool _ False -> do
-            when mustHaveTimeoutNoMatterWhat $ expect_ $ Err_ToConsensus_WhenNoTimeout True
+            when mustHaveTimeoutNoMatterWhat $
+              expect_ $ Err_ToConsensus_WhenNoTimeout True
             setSt k_st
             return $ (Nothing, k_cr)
           _ -> do
-            delay_da <- compileCheckType T_UInt delay_sv
+            delay_ta <- compileTimeArg delay_sv
+            doBaseWaitUpdate delay_ta
             case mtimeb of
               Nothing ->
                 expect_ $ Err_ToConsensus_NoTimeoutBlock
@@ -3946,7 +3975,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
                 setSt k_st
                 mergeSt time_st
                 fcr <- combineStmtRes True Public k_cr time_st time_cr
-                return $ (Just (delay_da, time_lifts), fcr)
+                return $ (Just (delay_ta, time_lifts), fcr)
   -- Prepare final result
   saveLift $ DLS_ToConsensus at tc_send tc_recv tc_mtime
   return $ fcr

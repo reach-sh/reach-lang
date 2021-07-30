@@ -156,8 +156,7 @@ instance AC ETail where
       et_tc_cons' <- ac et_tc_cons
       et_tc_from_mtime' <- ac et_tc_from_mtime
       ac_visit et_tc_from_me
-      ac_visit et_tc_last_timev
-      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_last_timev et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_mtime' et_tc_cons'
+      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_mtime' et_tc_cons'
     ET_While {..} -> do
       et_w_k' <- ac et_w_k
       et_w_body' <- ac et_w_body
@@ -198,7 +197,7 @@ instance AC CHandler where
       return $ C_Loop cl_at cl_svs cl_vars body'
     C_Handler {..} -> fresh $ do
       ch_body' <- ac ch_body
-      return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
+      return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
 
 instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
   ac (DLinExportBlock at vs a) =
@@ -236,7 +235,7 @@ instance AC DLSend where
 instance {-# OVERLAPS #-} AC a => AC (DLRecv a) where
   ac (DLRecv {..}) = do
     dr_k' <- ac dr_k
-    return $ DLRecv dr_from dr_msg dr_time dr_k'
+    return $ DLRecv dr_from dr_msg dr_time dr_secs dr_k'
 
 instance AC LLConsensus where
   ac = \case

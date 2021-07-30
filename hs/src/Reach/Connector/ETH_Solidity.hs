@@ -167,8 +167,10 @@ solMapVar mpv = pretty mpv
 solMapRef :: DLMVar -> Doc
 solMapRef mpv = pretty mpv <> "_ref"
 
-solBlockNumber :: Doc
-solBlockNumber = "uint256(block.number)"
+solBlockTime :: Doc
+solBlockTime = "uint256(block.number)"
+solBlockSecs :: Doc
+solBlockSecs = "uint256(block.timestamp)"
 
 solEncode :: [Doc] -> Doc
 solEncode = solApply "abi.encode"
@@ -1053,12 +1055,11 @@ solArgDefn = solArgDefn_ "_a"
 solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
-    C_Handler at interval last_timemv from prev svs msg timev ct -> do
+    C_Handler at interval from prev svs msg timev secsv ct -> do
       let checkMsg s = s <> " check at " <> show at
       let fromm = M.singleton from "payable(msg.sender)"
-      let given_mm = M.fromList [(timev, solBlockNumber)]
+      let given_mm = M.fromList [(timev, solBlockTime), (secsv, solBlockSecs)]
       extendVarMap $ given_mm <> fromm
-      timev' <- solVar timev
       (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
       evtDefn <- solEvent which svs msg
       let ret = "payable"
@@ -1081,28 +1082,19 @@ solHandler which h = freshVarMap $
                     ]
             return (hcp, AM_Call, SFL_Function True (solMsg_fun which))
       argDefn <- solArgDefn am svs msg
-      timeoutCheck <-
-        case last_timemv of
-          Nothing -> return emptyDoc
-          Just last_timev -> do
-            last_timev' <- solVar last_timev
-            let check sign mv =
-                  case mv of
-                    [] -> return Nothing
-                    mvs -> do
-                      mvs' <- mapM solArg mvs
-                      let go_sum x y = solPrimApply ADD [x, y]
-                      sum' <- foldlM go_sum last_timev' mvs'
-                      Just <$> solPrimApply (if sign then PGE else PLT) [timev', sum']
-            let CBetween ifrom ito = interval
-            int_fromp <- check True ifrom
-            int_top <- check False ito
-            let req x = flip (<>) semi <$> solRequire (checkMsg "timeout") x
-            case (int_fromp, int_top) of
-              (Just x, Just y) -> req (solBinOp "&&" x y)
-              (Just x, _) -> req x
-              (_, Just y) -> req y
-              _ -> return $ emptyDoc
+      let req x = flip (<>) semi <$> solRequire (checkMsg "timeout") x
+      let checkTime1 op ta = do
+            let ( v, a ) = case ta of
+                              Left x -> ( timev, x )
+                              Right x -> ( secsv, x )
+            v' <- solVar v
+            a' <- solArg a
+            req =<< solPrimApply op [ v', a' ]
+      let checkTime op = \case
+            Nothing -> return []
+            Just x -> (\y->[y]) <$> checkTime1 op x
+      let CBetween ifrom ito = interval
+      timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
       let body = vsep [hashCheck, frameDecl, timeoutCheck, ctp]
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
@@ -1259,11 +1251,14 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
           let (ctimem', csvs_, withC) =
                 case dli_ctimem of
                   Nothing -> (mempty, mempty, id)
-                  Just v ->
-                    ( [solSet (solMemVar v) solBlockNumber]
-                    , [v]
+                  Just (tv, sv) ->
+                    ( [ solSet (solMemVar tv) solBlockTime
+                      , solSet (solMemVar sv) solBlockSecs ]
+                    , [tv, sv]
                     , (\m -> do
-                         extendVarMap $ M.singleton v (solMemVar v)
+                         extendVarMap $ M.fromList $
+                           [ (tv, solMemVar tv)
+                           , (sv, solMemVar sv) ]
                          m)
                     )
           let dli' = vsep $ ctimem'

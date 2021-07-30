@@ -90,8 +90,8 @@ instance (Pretty k, Pretty v) => Pretty (M.Map k v) where
 
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pretty = \case
-    Left x -> pretty x
-    Right x -> pretty x
+    Left x -> "Left" <+> pretty x
+    Right x -> "Right" <+> pretty x
 
 instance {-# OVERLAPS #-} Pretty String where
   pretty = DText . LT.pack
@@ -100,8 +100,9 @@ instance {-# OVERLAPS #-} Pretty B.ByteString where
   pretty = viaShow
 
 instance Pretty a => Pretty (Maybe a) where
-  pretty Nothing = "Nothing"
-  pretty (Just x) = "Just" <+> pretty x
+  pretty = \case
+    Nothing -> "Nothing"
+    Just x -> "Just" <+> pretty x
 
 prettyl :: Pretty a => [a] -> Doc
 prettyl l = "[" <> (concatWith (\x y -> x <> ", " <> y) $ map pretty l) <> "]"

@@ -81,7 +81,7 @@ instance DeJump CHandler where
   dj (C_Loop {}) = impossible $ "dejump loop"
   dj (C_Handler {..}) = do
     ch_body' <- dj ch_body
-    return $ C_Handler ch_at ch_int ch_last_timev ch_from ch_last ch_svs ch_msg ch_timev ch_body'
+    return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
 
 dejump :: PLProg -> IO PLProg
 dejump (PLProg at plo dli dex epps cp) = do

@@ -85,7 +85,7 @@ export const getViewsHelper =
         objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
             getView1(views.views, v, k, vi)))));
 
-export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
+export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
 
 export type WPArgs = {
   host: string | undefined,
@@ -102,6 +102,7 @@ export type IRecvNoTimeout<RawAddress> =  {
   data: Array<unknown>,
   from: RawAddress,
   time: BigNumber,
+  secs: BigNumber,
   getOutput: (o_mode:string, o_lab:string, o_ctc:any) => Promise<any>,
 };
 
@@ -109,46 +110,48 @@ export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
   didTimeout: true,
 };
 
-export type ISendRecvArgs<Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type TimeArg = [ ('time' | 'secs'), BigNumber ];
+
+export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   funcNum: number,
   evt_cnt: number,
-  hasLastTime: (BigNumber | false),
   tys: Array<ConnectorTy>,
   args: Array<any>,
   pay: MkPayAmt<Token>,
   out_tys: Array<ConnectorTy>,
   onlyIf: boolean,
   soloSend: boolean,
-  timeout_delay: BigNumber | false,
-  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Digest, Token, ConnectorTy>>,
+  timeoutAt: TimeArg | null,
+  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ConnectorTy>>,
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
   funcNum: number, evt_cnt: number, out_tys: Array<ConnectorTy>,
   waitIfNotPresent: boolean,
-  timeout_delay: BigNumber | false,
+  timeoutAt: TimeArg | null,
 };
 
-export type IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
   creationTime: () => Promise<BigNumber>,
-  sendrecv: (args:ISendRecvArgs<Digest, RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
+  sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
-  wait: (delta: BigNumber) => Promise<BigNumber>,
+  waitTime: (v:BigNumber) => Promise<BigNumber>,
+  waitSecs: (v:BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
   selfAddress: () => CBR_Address, // Not RawAddress!
   getViews: () => {[key: string]: {[key: string]: (() => Promise<any>)}},
   stdlib: Object,
 };
 
-type ContractIndex = 'getInfo' | 'creationTime' | 'sendrecv' | 'recv' | 'wait' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
+type ContractIndex = 'getInfo' | 'creationTime' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
 
 export const deferContract =
-  <ContractInfo, Digest, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
+  <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     shouldError: boolean,
-    implP:Promise<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>,
-    implNow: Partial<IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy>>):
-  IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy> => {
+    implP:Promise<IContract<ContractInfo, RawAddress, Token, ConnectorTy>>,
+    implNow: Partial<IContract<ContractInfo, RawAddress, Token, ConnectorTy>>):
+  IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
 
   const not_yet = (which:ContractIndex) => (...args: any[]): any => {
     void(args);
@@ -163,7 +166,7 @@ export const deferContract =
 
   // impl starts with a shim that deploys on first sendrecv,
   // then replaces itself with the real impl once deployed.
-  let impl: IContract<ContractInfo, Digest, RawAddress, Token, ConnectorTy> = {
+  let impl: IContract<ContractInfo, RawAddress, Token, ConnectorTy> = {
     getInfo: delay('getInfo'),
     // @ts-ignore
     creationTime: delay('creationTime'),
@@ -172,7 +175,9 @@ export const deferContract =
     // @ts-ignore
     recv: mnow('recv'),
     // @ts-ignore
-    wait: not_yet('wait'),
+    waitTime: not_yet('waitTime'),
+    // @ts-ignore
+    waitSecs: not_yet('waitSecs'),
     // @ts-ignore
     iam: mnow('iam'),
     // @ts-ignore
@@ -196,7 +201,8 @@ export const deferContract =
   return {
     sendrecv: wrap('sendrecv'),
     recv: wrap('recv'),
-    wait: wrap('wait'),
+    waitTime: wrap('waitTime'),
+    waitSecs: wrap('waitSecs'),
     getInfo: wrap('getInfo'),
     creationTime: wrap('creationTime'),
     iam: wrap('iam'),
@@ -221,15 +227,11 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Digest, Token, ConnectorTy> = {
-  prevSt: Digest,
-  prevSt_noPrevTime: Digest,
+export type ISimRes<Token, ConnectorTy> = {
   txns: Array<ISimTxn<Token>>,
   mapRefs: Array<string>,
   mapsPrev: any,
   mapsNext: any,
-  nextSt: Digest,
-  nextSt_noTime: Digest,
   view: [ ConnectorTy, any ],
   isHalt : boolean,
 };
@@ -417,3 +419,37 @@ export const argMax = (xs: any[], f: (_:any) => any) =>
 
 export const argMin = (xs: any[], f: (_:any) => any) =>
   argHelper(xs, f, (a, b) => a < b);
+
+export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): ((k:number, bal:any) => Promise<Array<X>>) =>
+  (k:number, bal:any): Promise<Array<X>> =>
+    Promise.all((new Array(k)).map((_:any): Promise<X> => newTestAccount(bal)));
+
+export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumber>, step: (target:BigNumber) => Promise<BigNumber>) => async (target: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  const onProg = onProgress || (() => {});
+  let current = await getCurrent();
+  const notify = () => {
+    const o = { current, target };
+    debug(`waitUntilX:`, label, o);
+    onProg(o);
+  };
+  while (current.lt(target)) {
+    current = await step(current.add(1));
+    notify();
+  }
+  notify();
+  return current;
+};
+
+export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | null, nowTime: BigNumber): Promise<boolean> => {
+  if ( ! timeoutAt ) { return false; }
+  const [ mode, val ] = timeoutAt;
+  if ( mode === 'time' ) {
+    return val.lt(nowTime);
+  } else if ( mode === 'secs' ) {
+    const nowSecs = await getTimeSecs(nowTime);
+    return val.lt(nowSecs);
+  } else {
+    throw new Error(`invalid TimeArg mode`);
+  }
+};
+

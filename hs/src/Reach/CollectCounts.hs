@@ -60,6 +60,11 @@ instance Countable Bool where
 instance (Countable x, Countable y) => Countable (x, y) where
   counts (a, b) = counts a <> counts b
 
+instance (Countable x, Countable y) => Countable (Either x y) where
+  counts = \case
+    Left a -> counts a
+    Right a -> counts a
+
 instance (Countable x, Countable y, Countable z) => Countable (x, y, z) where
   counts (a, b, c) = counts a <> counts b <> counts c
 

@@ -135,9 +135,12 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   getFaucet: () => Promise<Acc> // XXX
   fundFromFaucet: (acc: Acc, balance: BigNumber) => Promise<void>
   newTestAccount: (balance: BigNumber) => Promise<Acc>
+  newTestAccounts: (num: number, balance: BigNumber) => Promise<Array<Acc>>
   getNetworkTime: () => Promise<BigNumber>
-  wait: (timeDelta: BigNumber) => Promise<BigNumber>
   waitUntilTime: (time: BigNumber) => Promise<BigNumber>
+  wait: (delta: BigNumber) => Promise<BigNumber>
+  getNetworkSecs: () => Promise<BigNumber>
+  waitUntilSecs: (secs: BigNumber) => Promise<BigNumber>
   verifyContract: (ctcInfo: CtcInfo, backend: Backend) => Promise<any>
   /** @description the display name of the standard unit of currency for the network */
   standardUnit: string

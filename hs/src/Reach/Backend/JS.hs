@@ -6,7 +6,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.List (elemIndex, foldl')
+import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Scientific as Sci
@@ -382,11 +382,14 @@ jsExpr = \case
             [ ("amt", amt')
             , ("tok", mtok')
             ]
-  DLE_Wait _ amt -> do
+  DLE_Wait _ amtt -> do
+    let (which, amt) = case amtt of
+                         Left t -> ("waitTime", t)
+                         Right t -> ("waitSecs", t)
     amt' <- jsArg amt
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> return $ jsApply "void" [amt']
-      JM_Backend -> return $ "await" <+> jsApply "ctc.wait" [amt']
+      JM_Backend -> return $ "await" <+> jsApply ("ctc." <> which) [amt']
       JM_View -> impossible "view wait"
   DLE_PartSet _ who what -> do
     rwho <- ctxt_who <$> ask
@@ -598,6 +601,14 @@ jsSimTxn kind kvs =
   jsApply "sim_r.txns.push" $
     [jsObject $ M.fromList $ [("kind", jsString kind)] <> kvs]
 
+jsTimeArg :: AppT DLTimeArg
+jsTimeArg ta = do
+  let (lab, a) = case ta of
+                   Left x -> ("time", x)
+                   Right x -> ("secs", x)
+  a' <- jsArg a
+  return $ jsArray $ [ jsString lab, a' ]
+
 jsETail :: AppT ETail
 jsETail = \case
   ET_Com m k -> jsCom m <> return hardline <> jsETail k
@@ -640,7 +651,7 @@ jsETail = \case
             timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
             let svs' = dvdeletep timev svs
             common [] vis' <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
-  ET_ToConsensus at fs_ok prev last_timemv which from_me msg_vs _out timev mto k_ok -> do
+  ET_ToConsensus _at fs_ok _prev which from_me msg_vs _out timev secsv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
     let withCtxt =
@@ -654,22 +665,20 @@ jsETail = \case
     let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
     timev' <- jsVar timev
     let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
+    secsv' <- jsVar secsv
+    let secs_defp = "const" <+> secsv' <+> "=" <+> txn <> ".secs" <> semi <> hardline
     fs_ok' <- withCtxt $ jsFromSpec fs_ok
-    let k_defp = msg_vs_defp <> time_defp <> fs_ok'
+    let k_defp = msg_vs_defp <> time_defp <> secs_defp <> fs_ok'
     k_ok' <- withCtxt $ jsETail k_ok
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-
       case mto of
         Nothing -> return ("false", k_okp)
         Just (delays, k_to) -> do
-          let jsSum [] = impossible "no delay"
-              jsSum [x] = jsArg x
-              jsSum (x : xs) = do
-                x' <- jsArg x
-                xs' <- jsSum xs
-                return $ jsApply "stdlib.add" [x', xs']
           k_top <- withCtxt $ jsETail k_to
-          delays' <- jsSum delays
+          delays' <- case delays of
+                      Nothing -> return "null"
+                      Just x -> jsTimeArg x
           timef <- withCtxt $ jsTimeoutFlag
           return (delays', jsIf timef k_top k_okp)
     let a_funcNum = pretty which
@@ -688,12 +697,8 @@ jsETail = \case
           Just (args, amt, whena, svs, soloSend) -> do
             let svs_as = map DLA_Var svs
             amtp <- jsPayAmt amt
-            let svs_noPrevTime = dvdeletem last_timemv svs
-            let mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
             let withSim = local (\e -> e {ctxt_mode = JM_Simulate})
             sim_body_core <- withSim $ jsETail k_ok
-            svs_d <- mkStDigest svs
-            svs_nptd <- mkStDigest svs_noPrevTime
             let dupeMap (mpv, _) = do
                   return $
                     (jsApply "stdlib.simMapDupe" $
@@ -704,8 +709,6 @@ jsETail = \case
                   vsep
                     [ "const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };"
                     , vsep dupeMaps
-                    , "sim_r.prevSt =" <+> svs_d <> semi
-                    , "sim_r.prevSt_noPrevTime =" <+> svs_nptd <> semi
                     , k_defp
                     , sim_body_core
                     , "return sim_r;"
@@ -714,12 +717,10 @@ jsETail = \case
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
-            last_timev' <- jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
             let a_sim_p = parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
             let sendp = jsApplyKws "ctc.sendrecv" $ M.fromList $
                   [ ("funcNum", a_funcNum)
                   , ("evt_cnt", a_evt_cnt)
-                  , ("hasLastTime", last_timev')
                   , ("tys", jsArray msgts)
                   , ("args", vs)
                   , ("pay", amtp)
@@ -823,9 +824,12 @@ jsPart dli p (EPProg _ _ et) = do
     ctimem' <-
       case dli_ctimem of
         Nothing -> mempty
-        Just v -> do
-          v' <- jsVar v
-          return $ "const" <+> v' <+> "=" <+> "await ctc.creationTime();"
+        Just (tv, sv) -> do
+          tv' <- jsVar tv
+          sv' <- jsVar sv
+          return $ vsep $
+            [ "const" <+> tv' <+> "=" <+> "await ctc.creationTime();"
+            , "const" <+> sv' <+> "=" <+> "await ctc.creationSecs();" ]
     maps_defn <- jsMapDefns True
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t

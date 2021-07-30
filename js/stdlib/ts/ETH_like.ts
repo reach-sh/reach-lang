@@ -3,11 +3,8 @@ import { ethers as real_ethers } from 'ethers';
 import {
   assert,
   eq,
-  ge,
-  lt,
 } from './shared_backend';
 import {
-  memoizeThunk,
   replaceableThunk,
   debug,
   getViewsHelper,
@@ -15,9 +12,13 @@ import {
   makeRandom,
   argsSplit,
   ensureConnectorAvailable,
+  make_newTestAccounts,
+  make_waitUntilX,
+  checkTimeout,
 } from './shared_impl';
 import {
   bigNumberify,
+  bigNumberToNumber,
 } from './shared_user';
 import ETHstdlib from './stdlib_sol';
 
@@ -88,11 +89,10 @@ type NetworkAccount = {
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 type ContractInfo = Address;
-type Digest = string
-type SendRecvArgs = ISendRecvArgs<Digest, Address, Token, AnyETH_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Digest, Address, Token, AnyETH_Ty>;
+type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
 
@@ -161,7 +161,7 @@ const {
 } = ethLikeCompiled;
 const {
   T_Address, T_Tuple,
-  add, addressEq,
+  addressEq,
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
 
@@ -202,21 +202,6 @@ const getNetworkTimeNumber = async (): Promise<number> => {
   return await provider.getBlockNumber();
 };
 
-const fastForwardTo = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  // console.log(`>>> FFWD TO: ${targetTime}`);
-  const onProg: OnProgress = onProgress || (() => {});
-  requireIsolatedNetwork('fastForwardTo');
-  let currentTime;
-  while (lt(currentTime = await getNetworkTime(), targetTime)) {
-    onProg({ currentTime, targetTime });
-    await stepTime();
-  }
-  // Also report progress at completion time
-  onProg({ currentTime, targetTime });
-  // console.log(`<<< FFWD TO: ${targetTime} complete. It's ${currentTime}`);
-  return currentTime;
-};
-
 const requireIsolatedNetwork = (label: string): void => {
   if (!isIsolatedNetwork()) {
     throw Error(`Invalid operation ${label}; network is not isolated`);
@@ -227,44 +212,6 @@ const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
   argsMay: init ? Some(init.args) : None,
   value: init ? init.value : bigNumberify(0),
 });
-
-// onProgress callback is optional, it will be given an obj
-// {currentTime, targetTime}
-const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  const onProg: OnProgress = onProgress || (() => {});
-  const provider = await getProvider();
-  return await new Promise((resolve) => {
-    const onBlock = async (currentTimeNum: number | BigNumber) => {
-      const currentTime = bigNumberify(currentTimeNum)
-      // Does not block on the progress fn if it is async
-      onProg({ currentTime, targetTime });
-      if (ge(currentTime, targetTime)) {
-        provider.off('block', onBlock);
-        resolve(currentTime);
-      }
-    };
-    provider.on('block', onBlock);
-
-    // Also "re-emit" the current block
-    // Note: this sometimes causes the starting block
-    // to be processed twice, which should be harmless.
-    getNetworkTime().then(onBlock);
-  });
-};
-
-const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
-  const provider = await getProvider();
-  const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
-});
-
-const stepTime = async (): Promise<TransactionReceipt> => {
-  requireIsolatedNetwork('stepTime');
-  const faucet = await getFaucet();
-  const acc = await getDummyAccount();
-  return await transfer(faucet, acc, parseCurrency(0));
-};
 
 // ****************************************************************************
 // Event Cache
@@ -533,7 +480,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const implNow = {
         stdlib,
         sendrecv: async (srargs:SendRecvArgs): Promise<Recv> => {
-          const { funcNum, evt_cnt, out_tys, args, pay, onlyIf, soloSend, timeout_delay } = srargs;
+          const { funcNum, evt_cnt, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
           debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
           const [ value, toks ] = pay;
 
@@ -542,7 +489,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             assert(onlyIf, `verifyContract: onlyIf must be true`);
             assert(soloSend, `verifyContract: soloSend must be true`);
             assert(eq(funcNum, 1), `verifyContract: funcNum must be 1`);
-            assert(!timeout_delay, `verifyContract: no timeout`);
+            assert(!timeoutAt, `verifyContract: no timeout`);
             assert(toks.length == 0, `verifyContract: no tokens`);
           } catch (e) {
             throw Error(`impossible: Deferred deploy sendrecv assumptions violated.\n${e}`);
@@ -553,7 +500,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          return await impl.recv({funcNum, evt_cnt, out_tys, waitIfNotPresent: false, timeout_delay});
+          return await impl.recv({funcNum, evt_cnt, out_tys, waitIfNotPresent: false, timeoutAt});
         },
       };
       const impl: Contract = deferContract(true, implP, implNow);
@@ -675,9 +622,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const getInfo = async () => await infoP;
 
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeout_delay } = srargs;
+      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay});
+        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
         return await doRecv(true);
       }
@@ -687,7 +634,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
 
-      const dhead = [shad, label, 'send', funcName, timeout_delay, 'SEND'];
+      const dhead = [shad, label, 'send', funcName, timeoutAt, 'SEND'];
       debug(...dhead, 'ARGS', args);
       const [ args_svs, args_msg ] = argsSplit(args, evt_cnt );
       const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
@@ -703,7 +650,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const lastBlock = await getLastBlock();
       let block_send_attempt = lastBlock;
       let block_repeat_count = 0;
-      while (!timeout_delay || lt(block_send_attempt, add(lastBlock, timeout_delay))) {
+      while ( ! await checkTimeout(getTimeSecs, timeoutAt, bigNumberify(block_send_attempt)) ) {
         debug(...dhead, 'TRY');
         try {
           debug(...dhead, 'ARG', arg, pay);
@@ -721,7 +668,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               block_repeat_count++;
             }
             block_send_attempt = current_block;
-            if ( /* timeout_delay && */ block_repeat_count > 32) {
+            if ( block_repeat_count > 32) {
               if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
                 let error = e;
                 while (error.error) { error = error.error; }
@@ -750,22 +697,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, out_tys, waitIfNotPresent, timeout_delay } = rargs;
+      const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
       const isFirstMsgDeploy = (funcNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
       const lastBlock = await getLastBlock();
       const ok_evt = `e${funcNum}`;
-      debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- START`);
+      debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- START`);
 
       // look after the last block
       const block_poll_start_init: number =
         lastBlock + (isFirstMsgDeploy ? 0 : 1);
       let block_poll_start: number = block_poll_start_init;
       let block_poll_end = block_poll_start;
-      while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
+      while ( ! await checkTimeout(getTimeSecs, timeoutAt, bigNumberify(block_poll_start)) ) {
         debug(shad, ':', label, 'recv', ok_evt, `--- GET`, block_poll_start, block_poll_end);
         const ok_e = await eventCache.query(block_poll_start, block_poll_end, ok_evt, getC);
         if (ok_e == undefined) {
-          debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- RETRY`);
+          debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- RETRY`);
           block_poll_start = block_poll_end;
 
           await Timeout.set(1);
@@ -778,7 +725,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
           continue;
         } else {
-          debug(shad, ':', label, 'recv', ok_evt, timeout_delay, `--- OKAY`);
+          debug(shad, ':', label, 'recv', ok_evt, timeoutAt, `--- OKAY`);
 
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
@@ -830,28 +777,20 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             return _getLog(`oe_${o_lab}`, o_ctc);
           };
 
-          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeoutAt} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           const { from } = ok_t;
           return {
             data, getOutput, from,
             didTimeout: false,
             time: bigNumberify(ok_r.blockNumber),
+            secs: bigNumberify(ok_t.timestamp),
           };
         }
       }
 
-      debug(shad, ':', label, 'recv', ok_evt, timeout_delay, '--- TIMEOUT');
+      debug(shad, ':', label, 'recv', ok_evt, timeoutAt, '--- TIMEOUT');
       return {didTimeout: true} ;
     };
-
-    const wait = async (delta: BigNumber) => {
-      const lastBlock = await getLastBlock();
-      // Don't wait from current time, wait from last_block
-      debug('=====Waiting', delta, 'from', lastBlock, ':', address);
-      const p = await waitUntilTime(add(lastBlock, delta));
-      debug('=====Done waiting', delta, 'from', lastBlock, ':', address);
-      return p;
-    }
 
     const creationTime = async () => {
       await getC();
@@ -884,8 +823,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    // Note: wait is the local one not the global one of the same name.
-    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, getViews, stdlib };
+    return { getInfo, creationTime, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -979,27 +917,43 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
     throw e;
   }
 };
+const newTestAccounts = make_newTestAccounts(newTestAccount);
 
 const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
+const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
+  const now = bigNumberToNumber(now_bn);
+  const provider = await getProvider();
+  const { timestamp } = await provider.getBlock(now);
+  return bigNumberify(timestamp);
+};
+const getNetworkSecs = async (): Promise<BigNumber> =>
+  await getTimeSecs(await getNetworkTime());
+
+const stepTime = async (target: BigNumber): Promise<BigNumber> => {
+  void(target);
+  if ( isIsolatedNetwork() ) {
+    await fundFromFaucet(await getFaucet(), 0);
+  } else {
+    await Timeout.set(500);
+  }
+  return await getNetworkTime();
+};
+const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
+
+const stepSecs = async (target: BigNumber): Promise<BigNumber> => {
+  void(target);
+  const now = await stepTime((await getNetworkTime()).add(1));
+  return await getTimeSecs(now);
+};
+const waitUntilSecs = make_waitUntilX('secs', getNetworkSecs, stepSecs);
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
 const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
-  return await waitUntilTime(add(now, delta), onProgress);
-};
-
-// onProgress callback is optional, it will be given an obj
-// {currentTime, targetTime}
-const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  targetTime = bigNumberify(targetTime);
-  if (isIsolatedNetwork()) {
-    return await fastForwardTo(targetTime, onProgress);
-  } else {
-    return await actuallyWaitUntilTime(targetTime, onProgress);
-  }
+  return await waitUntilTime(now.add(delta), onProgress);
 };
 
 // Check the contract info and the associated deployed bytecode;
@@ -1140,9 +1094,12 @@ const ethLike = {
   createAccount,
   fundFromFaucet,
   newTestAccount,
+  newTestAccounts,
   getNetworkTime,
-  wait,
   waitUntilTime,
+  wait,
+  getNetworkSecs,
+  waitUntilSecs,
   verifyContract,
   standardUnit,
   atomicUnit,

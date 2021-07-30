@@ -83,7 +83,7 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh
@@ -171,7 +171,7 @@ tealcount () {
 # r examples/nim
 # c examples/nim/index-abstract.rsh
 # r examples/secured-loan
-# r examples/overview # XXX test debigger
+r examples/overview # XXX test debigger
 # r examples/log
 # r examples/argz
 # r examples/atomic-swap-auction
@@ -204,8 +204,8 @@ tealcount () {
 # r examples/remote
 # c examples/remote/index.rsh
 # r examples/secured-loan
-# r examples/timeoutception
-# r examples/tut-3
+r examples/timeoutception
+r examples/tut-3
 # r examples/tut-4
 # r examples/tut-5
 # r examples/tut-6
@@ -229,10 +229,10 @@ tealcount () {
 # r examples/raffle
 # r examples/rent-seeking
 # r examples/pr-1cc66
-jb
-r examples/overview
-exit 0
+
+# jb
 r examples/realtime
+exit 0
 
 # r users/ff
 # r users/7639df8

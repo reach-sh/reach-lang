@@ -98,7 +98,7 @@ data DLSStmt
       { dls_tc_at :: SrcLoc
       , dls_tc_send :: M.Map SLPart DLSend
       , dls_tc_recv :: DLRecv DLStmts
-      , dls_tc_mtime :: Maybe (DLArg, DLStmts)
+      , dls_tc_mtime :: Maybe (DLTimeArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While

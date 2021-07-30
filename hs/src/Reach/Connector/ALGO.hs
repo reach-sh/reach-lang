@@ -311,35 +311,6 @@ checkLease = do
   czaddr
   asserteq
 
-checkTimeLimits :: SrcLoc -> App ()
-checkTimeLimits at = do
-  let go f i cmp = do
-        skipLab <- freshLabel
-        afterLab <- freshLabel
-        -- [ txn ]
-        gvLoad GV_timeLimits
-        cTupleRef at (gvType GV_timeLimits) i
-        -- [ txn, tl ]
-        op "dup"
-        -- [ txn, tl, tl ]
-        code "bz" [ skipLab ]
-        -- [ txn, tl ]
-        code "dig" [ "1" ]
-        -- [ txn, tl, txn ]
-        code "gtxns" [ f ]
-        -- [ txn, tl, fv ]
-        op cmp
-        assert
-        code "b" [ afterLab ]
-        label skipLab
-        op "pop"
-        label afterLab
-  -- [ txn ]
-  go "FirstValid" 0 "<="
-  go "LastValid" 1 ">="
-  op "pop"
-  -- [ ]
-
 bad_io :: IORef (S.Set LT.Text) -> LT.Text -> IO ()
 bad_io x = modifyIORef x . S.insert
 
@@ -489,9 +460,12 @@ ca_boolb = \case
 cas_boolbs :: [DLArg] -> Maybe B.ByteString
 cas_boolbs = mconcat . map ca_boolb
 
+cv :: DLVar -> App ()
+cv = lookup_let
+
 ca :: DLArg -> App ()
 ca = \case
-  DLA_Var v -> lookup_let v
+  DLA_Var v -> cv v
   DLA_Constant c -> cl $ conCons connect_algo c
   DLA_Literal c -> cl c
   DLA_Interact {} -> impossible "consensus interact"
@@ -575,15 +549,6 @@ cprim = \case
     call o = \args -> do
       forM_ args ca
       op o
-
-csum_ :: [App ()] -> App ()
-csum_ = \case
-  [] -> cl $ DLL_Int sb 0
-  [m] -> m
-  m : ms -> csum_ ms >> m >> op "+"
-
-csum :: [DLArg] -> App ()
-csum = csum_ . map ca
 
 cconcatbs :: [(DLType, App ())] -> App ()
 cconcatbs l = do
@@ -1012,7 +977,7 @@ ce = \case
     checkTxn $ CheckTxn {..}
     checkTxnAlloc
     let vTypeEnum = "acfg"
-    checkTxnInit at vTypeEnum $ Just cContractAddr
+    checkTxnInit vTypeEnum $ Just cContractAddr
     let i = cl . DLL_Int at
     let za = czaddr
     i 0 >> checkTxn1 "ConfigAsset"
@@ -1036,7 +1001,7 @@ ce = \case
     checkTxnAlloc
     let vTypeEnum = "acfg"
     let ct_mcsend = Just cContractAddr
-    checkTxnInit at vTypeEnum ct_mcsend
+    checkTxnInit vTypeEnum ct_mcsend
     let i0 = cl $ DLL_Int at 0
     let b0 = padding 0
     ca aida >> checkTxn1 "ConfigAsset"
@@ -1087,15 +1052,13 @@ checkTxnAlloc = do
   op "+"
   gvStore GV_txnCounter
 
-checkTxnInit :: SrcLoc -> LT.Text -> Maybe (App ()) -> App ()
-checkTxnInit at vTypeEnum ct_mcsend = do
+checkTxnInit :: LT.Text -> Maybe (App ()) -> App ()
+checkTxnInit vTypeEnum ct_mcsend = do
   -- [ txn ]
   code "int" [vTypeEnum]
   checkTxn1 "TypeEnum"
   cl $ DLL_Int sb 0
   checkTxn1 "Fee"
-  op "dup"
-  checkTimeLimits at
   czaddr
   checkTxn1 "Lease"
   czaddr
@@ -1128,7 +1091,7 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   -- [ id, amt ]
   check1 fAmount
   extra
-  checkTxnInit ct_at vTypeEnum ct_mcsend
+  checkTxnInit vTypeEnum ct_mcsend
   whenJust ct_mcclose $ \cclose -> do
     cclose
     cfrombs T_Address
@@ -1367,7 +1330,6 @@ argCount = boundedCount ArgMethod
 
 data GlobalVar
   = GV_txnCounter
-  | GV_timeLimits
   | GV_stateHash
   | GV_contractAddr
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -1384,7 +1346,6 @@ gvLoad gv = code "load" [texty $ gvSlot gv ]
 gvType :: GlobalVar -> DLType
 gvType = \case
   GV_txnCounter -> T_UInt
-  GV_timeLimits -> T_Tuple [ T_UInt, T_UInt ]
   GV_stateHash -> T_Digest
   GV_contractAddr -> T_Address
 
@@ -1397,8 +1358,10 @@ defn_done = do
   cl $ DLL_Int sb 1
   op "return"
 
-bindRound :: DLVar -> App a -> App a
-bindRound dv = store_let dv True (code "global" ["Round"])
+bindTime :: DLVar -> App a -> App a
+bindTime dv = store_let dv True (code "global" ["Round"])
+bindSecs :: DLVar -> App a -> App a
+bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
 bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
 bindFromTuple at vs m = do
@@ -1423,7 +1386,7 @@ cloop which (C_Loop at svs vars body) = do
 
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
-ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = recordWhich which $ do
+ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
@@ -1442,28 +1405,39 @@ ch afterLab which (C_Handler at int last_timemv from prev svs msg timev body) = 
   op "pop" -- Get rid of the method id since it's us
   let bindVars = id
         . (store_let from True (code "txn" [ "Sender" ]))
-        . (bindRound timev)
+        . (bindTime timev)
+        . (bindSecs secsv)
         . (bindFromArg ArgSvs svs)
         . (bindFromArg ArgMsg msg)
   bindVars $ do
     cstate (HM_Check prev) $ map DLA_Var svs
-    case last_timemv of
-       Nothing -> padding $ typeSizeOf $ gvType GV_timeLimits
-       Just last_timev -> do
-         let go' = \case
-              [] -> cl $ DLL_Int sb 0
-              as -> do
-                ca $ DLA_Var last_timev
-                csum as
-                op "+"
-         let go x = go' x >> ctobs T_UInt
-         let CBetween ifrom ito = int
-         go ifrom
-         go ito
-         op "concat"
-    gvStore GV_timeLimits
-    cl $ DLL_Int at 0
-    checkTimeLimits at
+    let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
+        checkTime1 cmp clhs rhsa = do
+          clhs
+          ca rhsa
+          op cmp
+    let checkFrom_ = checkTime1 ">="
+    let checkTo_ = checkTime1 "<"
+    let makeCheck check_ = \case
+          Left x -> check_ (cv timev) x
+          Right x -> check_ (cv secsv) x
+    let checkFrom = makeCheck checkFrom_
+    let checkTo = makeCheck checkTo_
+    let checkBoth v xx yy = do
+          cv v
+          checkFrom_ (op "dup") xx
+          checkTo_ (op "dup") yy
+          op "pop"
+    let CBetween ifrom ito = int
+    case (ifrom, ito) of
+      (Nothing, Nothing) -> return ()
+      (Just x, Nothing) -> checkFrom x
+      (Nothing, Just y) -> checkTo y
+      (Just x, Just y) ->
+        case (x, y) of
+          (Left xx, Left yy) -> checkBoth timev xx yy
+          (Right xx, Right yy) -> checkBoth secsv xx yy
+          (_, _) -> checkFrom x >> checkFrom y
     ct body
 
 computeViewSize :: Maybe (CPViews, ViewInfos) -> Integer
@@ -1646,7 +1620,7 @@ compile_algo disp pl = do
     let (bind_csvs, csvs) =
           case dli_ctimem dli of
             Nothing -> (id, mempty)
-            Just v -> (bindRound v, [(v, DLA_Var v)])
+            Just (tv, sv) -> (bindTime tv . bindSecs sv, [(tv, DLA_Var tv), (sv, DLA_Var sv)])
     bind_csvs $ ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) csvs
   -- Clear state is only allowed when the program is over.
   -- NOTE: This is hand-coded, without the library so it can be smaller and
