@@ -27,6 +27,8 @@ Specifically, the @reachin{Token} type refers to the address of the ERC-20 contr
 A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
 @tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
 
+In Ethereum, @tech{network time} corresponds to block numbers and @tech{network seconds} correspond to the Unix timestamp of the block.
+
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
 
@@ -34,7 +36,6 @@ During compilation, the connector produces one intermediate output: @filepath{in
 the Solidity code implementing the @tech{contract}.
 
 A few details of Ethereum leak through to Reach.
-In Ethereum, @tech{time} corresponds to block numbers.
 The node that a given @tech{participant} is connected to does not instantly know that its blocks are correct and may revert past transactions after it reaches consensus with the rest of the network.
 This means that Reach applications must not make externally observable effects until after such consensus is reached.
 
@@ -89,6 +90,10 @@ Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two
 On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
 However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
 We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
+
+In Algorand, @tech{network time} corresponds to round numbers and @tech{network seconds} correspond to the Unix timestamp of the previous round.
+(This is because the current round's timestamp is not determined until after it is finalized.
+This means that a @tech{network second}-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
 
 This connector does not support different @reachin{deployMode}s and treats them all as @reachin{'constructor'}.
 

@@ -19,12 +19,13 @@ When the computation terminates, all @tech{participants} agree on the outcome, b
 
 At the start of a Reach computation, the set of @tech{participants} is not necessarily known and can evolve throughout the execution of the application.
 
-A @deftech{consensus network} is a network protocol with a @tech{network token}, a set of @tech{non-network tokens}, a set of @tech{accounts}, a set of @tech{contracts}, and a @tech{time}.
+A @deftech{consensus network} is a network protocol with a @tech{network token}, a set of @tech{non-network tokens}, a set of @tech{accounts}, a set of @tech{contracts}, and a @tech{network time}.
 A @deftech{network token} is an opaque unit of account.
 A @deftech{non-network token} is an opaque unit of account;
 typical @tech{consensus networks} allow the set of @tech{non-network tokens} to grow over time and be issued by @tech{accounts}.
-A @tech{consensus network}'s @deftech{time} is some monotonically increasing discrete value from a totally ordered set.
-A @deftech{time delta} represents the difference between two points in @tech{time} as a discrete number of @tech{time} units.
+A @tech{consensus network}'s @deftech{network time} is some monotonically increasing discrete value from a totally ordered set; typically, it is the height of the blockchain for consensus networks that use blockchains.
+A @deftech{time delta} represents the difference between two points in @tech{network time} as a discrete number of @tech{network time} units.
+Each @tech{network time} corresponds to some @deftech{network second}, which has a connection to real time; typically, it is a @link["https://en.wikipedia.org/wiki/Unix_time"]{Unix time}.
 @tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} and @tech{non-network tokens} between @tech{accounts}.
 An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
 @tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}.
@@ -36,7 +37,7 @@ For example, in UTXO-based networks, there is not typically an explicitly repres
 However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.
 
 Similarly, Reach's notion of time may appear overly abstract ("monotonically increasing ... totally ordered set") if you know that many consensus networks are based on blockchains and use the chain length, also called the height or block number, as a notion of time.
-In this case, @tech{time} would be a natural number, which is a prototypical model of a totally ordered set.
+In this case, @tech{network time} would be a natural number, which is a prototypical model of a totally ordered set.
 However, Reach is flexible enough to support non-blockchain-based consensus networks, so it does not mandate this particular natural number-based notion of time.
 
 Finally, Reach's definition of @tech{consensus network} does not require any particular technology or features of this.

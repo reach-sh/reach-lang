@@ -1377,18 +1377,52 @@ The exact algorithm used depends on the @tech{connector}.
 The @deftech{balance} primitive returns the balance of the @tech{contract} @tech{account} for the @|DApp|.
 It takes an optional @tech{non-network token} value, in which case it returns the balance of the given token.
 
-@subsection{@tt{lastConsensusTime}}
+@subsection{@tt{lastConsensusTime} and @tt{lastConsensusSecs}}
 
 @(mint-define! '("lastConsensusTime"))
 @reach{
  lastConsensusTime() }
 
-The @deftech{lastConsensusTime} primitive returns the @tech{time} of the last @tech{publication} of the @|DApp|.
+The @deftech{lastConsensusTime} primitive returns the @tech{network time} of the last @tech{publication} of the @|DApp|.
 This may not be available if there was no such previous publication, such as at the beginning of an application where @reachin{deployMode} is @reachin{'firstMsg'}.
 
 @margin-note{Why is there no @tt{thisConsensusTime}?
 Some networks do not support observing the time of a consensus operation until after it has finalized.
 This aides scalability, because it increases the number of times when an operation could be finalized.}
+
+@(hrule)
+
+@(mint-define! '("lastConsensusSecs"))
+@reach{
+ lastConsensusSecs() }
+
+@deftech{lastConsensusSecs} is like @tech{lastConsensusTime}, except it returns the @tech{network seconds}.
+
+@subsection{@tt{baseWaitTime} and @tt{baseWaitSecs}}
+
+@(mint-define! '("baseWaitTime") '("baseWaitSecs"))
+@reach{
+ baseWaitTime()
+ baseWaitSecs() }
+
+These primitives return the @tech{network time} (@tech{network seconds}) of that a relative @tech{time argument} refers to.
+This is either the same as @reachin{lastConsensusTime} (@reachin{lastConsensusSecs}) or the deadline of the previous @reachin{wait} or @reachin{.timeout}.
+
+@subsection{Time arguments - @tt{relativeTime}, @tt{absoluteTime}, @tt{relativeSecs}, @tt{absoluteSecs}}
+
+@(mint-define! '("relativeTime") '("absoluteTime") '("relativeSecs") '("absoluteSecs"))
+@reach{
+ relativeTime(amt)
+ absoluteTime(time)
+ relativeSecs(amt)
+ absoluteSecs(secs)
+}
+
+These functions return @deftech{time arguments}, which are instances of the type @reachin{Either(UInt, UInt)}, where @reachin{Left} variants refer to absolute @tech{network time} and @reachin{Right} variants refer to absolute @tech{network seconds}.
+
+The @reachin{absoluteTime} and @reachin{absoluteSecs} are equivalent to @reachin{Left} and @reachin{Right} variant tags.
+
+The @reachin{relativeTime} and @reachin{relativeSecs} are add @reachin{baseWaitTime} and @reachin{baseWaitSecs} to their arguments before tagging with the appropriate variant.
 
 @subsection{@tt{makeDeadline}}
 

@@ -343,29 +343,44 @@ These functions interact with the @tech{consensus network} itself.
  getNetworkTime() => Promise<time>
 }
 
-Returns a Promise for the current consensus network @tech{time}.
-For @litchar{ETH} and @litchar{ALGO},
-this is the current block number, represented as a @litchar{BigNumber}.
+Returns a Promise for the current consensus @tech{network time},
+represented as a @litchar{BigNumber}.
 
 @(hrule)
 @(mint-define! '("waitUntilTime"))
 @js{
- waitUntilTime(time, onProgress) => Promise<time>
+ waitUntilTime(time, onProgress?) => Promise<time>
 }
 
-Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
+Returns a Promise that will only be resolved after the specified consensus @tech{network time}.
 In @tech{isolated testing modes}, this will also force time to pass on the network, usually by sending trivial transactions.
 An @deftech{isolated testing mode} is a @envref{REACH_CONNECTOR_MODE} that matches
 @litchar{$NET-devnet} for all valid @litchar{$NET}, or when @defenv{REACH_ISOLATED_NETWORK} is set.
 
 You may provide an optional @jsin{onProgress} callback, used for reporting progress,
-which may be called many times up until the specified @tech{time}.
-It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
+which may be called many times up until the specified @tech{network time}.
+It will receive an object with keys @jsin{current} and @jsin{target},
+
+@(hrule)
+@(mint-define! '("getNetworkSecs"))
+@js{
+ getNetworkSecs() => Promise<secs>
+}
+
+Like @jsin{getNetworkTime}, but returns a @tech{network seconds} Promise.
+
+@(hrule)
+@(mint-define! '("waitUntilSecs"))
+@js{
+ waitUntilSecs(secs, onProgress?) => Promise<secs>
+}
+
+Like @jsin{waitUntilSecs}, but waits for a certain @tech{network seconds} deadline.
 
 @(hrule)
 @(mint-define! '("wait"))
 @js{
- wait(timedelta, onProgress) => Promise<time>
+ wait(timedelta, onProgress?) => Promise<time>
 }
 
 Returns a Promise that will only be resolved after the specified @tech{time delta} has elapsed.

@@ -937,7 +937,7 @@ For a longer discussion, refer to @seclink["guide-timeout"]{the guide chapter on
 
 @(hrule)
 
-In Reach, non-participation is handled through a "timeout" mechanism whereby each @tech{consensus transfer} can be paired with a @tech{step} that occurs for all @tech{participants} if the @tech{originator} of the @tech{consensus transfer} fails to make the required @tech{publication} before a particular @tech{time}.
+In Reach, non-participation is handled through a "timeout" mechanism whereby each @tech{consensus transfer} can be paired with a @tech{step} that occurs for all @tech{participants} if the @tech{originator} of the @tech{consensus transfer} fails to make the required @tech{publication} before a particular @tech{network time}.
 We'll integrate this mechanism into our version of @|RPS| and deliberately insert non-participation into our JavaScript testing program to watch the consequences play out.
 
 First, we'll modify the @tech{participant interact interface} to allow the @tech{frontend} to be informed that a timeout occurred.
@@ -971,7 +971,7 @@ Similar to how she provides the wager, we will have Alice also provide the deadl
 
 @item{Line 31 adds the @jsin{deadline} field to Alice's @tech{participant interact interface}.
 It is defined as some number of @tech{time delta} units,
-which are an abstraction of the underlying notion of @tech{time} in the @tech{consensus network}.
+which are an abstraction of the underlying notion of @tech{network time} in the @tech{consensus network}.
 In many networks, like Ethereum, this number is a number of blocks.}
 
 ]

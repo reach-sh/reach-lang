@@ -128,8 +128,8 @@ where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant
 @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
 @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to a @tech{pay amount},
 @reachin{WHEN_EXPR} is a @tech{public} @tech{expression} evaluating to a boolean and determines if the @tech{consensus transfer} takes place,
-@reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number,
-@reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
+@reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time argument},
+@reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after the @reachin{DELAY_EXPR} @tech{time argument} passes without @reachin{PART} executing this @tech{consensus transfer}.
 
 All of the expressions within a @tech{consensus transfer} are evaluated in a @deftech{pure} context, which may not alter the state of the
 application.
@@ -339,9 +339,10 @@ variant signifying what case was chosen.
 
 @(mint-define! '("wait"))
 @reach{
- wait(AMOUNT); }
+ wait(TIME); }
 
-A @deftech{wait statement}, written @reachin{wait(AMOUNT);}, delays the computation until @reachin{AMOUNT} @tech{time delta} units have passed. @reachin{AMOUNT} must be @tech{pure} and only reference values known by the @tech{consensus state}.
+A @deftech{wait statement}, written @reachin{wait(TIME);}, delays the computation until the @reachin{TIME} @tech{time argument} passes.
+@reachin{TIME} must be @tech{pure} and only reference values known by the @tech{consensus state}.
 It may only occur in a @tech{step}.
 
 @subsection{@tt{exit}}
