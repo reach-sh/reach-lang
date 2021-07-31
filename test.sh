@@ -47,9 +47,9 @@ r () {
   # jb
 
   export REACH_DEBUG=1
-  export REACH_ALGO_DEBUG=1
+  # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
-  # REACH_CONNECTOR_MODE=CFX ${REACH} run
+  REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
@@ -81,7 +81,7 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh
@@ -173,8 +173,8 @@ r examples/overview
 # r examples/tut-5
 # r examples/tut-6
 # r examples/tut-5-attack
-# r examples/tut-7 # XXX test debigger
-r examples/tut-8
+r examples/tut-7 # XXX test debigger
+# r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
 # r examples/view-bytes

@@ -59,6 +59,10 @@ export class Provider {
     return await this.conflux.getEpochNumber(defaultEpochTag);
   }
 
+  async getBlock(which: number): Promise<any> {
+    return await this.conflux.getBlockByEpochNumber(which, true);
+  }
+
   async getTransactionReceipt(transactionHash: string): Promise<any> {
     const r = await this.conflux.getTransactionReceipt(transactionHash);
     return ethifyOkReceipt(r);
