@@ -93,7 +93,7 @@ instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
     DLE_LArg _ la -> cts $ largeArgTypeOf la
-    DLE_Impossible _ _ -> mempty
+    DLE_Impossible {} -> mempty
     DLE_PrimOp _ _ as -> cts as
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v

@@ -248,7 +248,7 @@ data SLExits
   | MayExit
   deriving (Eq, Show)
 
-type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal, Bool)]
+type SLStmtRets = [(SrcLoc, Maybe DLType, SLSVal, Bool)]
 
 -- XXX move SLStmtRes in SLScope as an IORef
 data SLStmtRes = SLStmtRes SLScope SLStmtRets
@@ -2562,7 +2562,7 @@ evalPrim p sargs =
           dt <- st2dte =<< expect_ty "forall" one
           at <- withAt id
           tag <- ctxt_alloc
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at $ Err_Impossible_InspectForall tag)
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at tag Err_Impossible_InspectForall)
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -3108,7 +3108,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
                     --- error could be introduced.
                     body_lifts'
                 _ ->
-                  return $ DLS_Prompt body_at (Left ret) body_lifts
+                  return $ DLS_Prompt body_at (DLVar at Nothing T_Null ret)  body_lifts
         saveLifts lifts'
         return $ SLAppRes clo_sco'' $ (lvl, v)
   case rs of
@@ -3127,19 +3127,14 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       case all_same of
         True -> no_prompt $ (lvl, xv)
         False -> do
-          let go (r_at, rmi, (_, rv), _) = do
-                (rlifts, (rty, rda)) <-
-                  captureLifts $ locAt r_at $ compileTypeOf rv
-                let retsm =
-                      case rmi of
-                        Nothing -> mempty
-                        Just ri -> M.singleton ri (rlifts, rda)
-                return $ (retsm, rty)
-          (retsms, tys) <- unzip <$> mapM go rs
-          let retsm = mconcat retsms
+          let go (r_at, mrty, (_, v), _) =
+                case mrty of
+                  Nothing -> locAt r_at $ expect_ $ Err_Type_None v
+                  Just t -> return $ t
+          tys <- mapM go rs
           r_ty <- locAt body_at $ typeEqs tys
           let dv = DLVar body_at Nothing r_ty ret
-          saveLift $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
+          saveLift $ DLS_Prompt body_at dv body_lifts
           return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
@@ -3452,7 +3447,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
                   captureLifts $ locAt e_at' $ compileTypeOf ev
                 let elifts' =
                       elifts <> dlifts
-                        <> (return $ DLS_Return e_at' ret $ Right da)
+                        <> (return $ DLS_Return e_at' ret da)
                 return $ (elifts', e_ty)
           (tlifts', t_ty) <- add_ret t_at' tlifts tv
           (flifts', f_ty) <- add_ret f_at' flifts fv
@@ -3460,7 +3455,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
           at' <- withAt id
           let ans_dv = DLVar at' Nothing t_ty ret
           theIf <- checkCond om $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
-          saveLift $ DLS_Prompt at' (Right (ans_dv, mempty)) $ return theIf
+          saveLift $ DLS_Prompt at' ans_dv $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
     _ -> do
       (n_at', ne, oe) <- case cv of
@@ -4728,10 +4723,12 @@ evalStmt = \case
                 RS_CannotReturn -> expect_ $ Err_CannotReturn
                 _ -> return $ x
             Nothing -> expect_ $ Err_Eval_NoReturn
-          evi <- ctxt_alloc
-          saveLift $ DLS_Return at' ret (Left evi)
+          (mt, da) <- typeOfM (snd sev) >>= \case
+            Just (t, dae) -> (,) (Just t) <$> compileArgExpr dae
+            Nothing -> return $ (Nothing, DLA_Literal $ DLL_Null)
+          saveLift $ DLS_Return at' ret da
           expect_empty_tail lab a sp ks
-          return $ SLStmtRes sco [(at', Just evi, sev, False)]
+          return $ SLStmtRes sco [(at', mt, sev, False)]
   (JSSwitch a _ de _ _ cases _ sp : ks) -> do
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
@@ -4980,7 +4977,7 @@ combineStmtRets addNull lvl lrets rst rrets = do
   lst <- readSt id
   let yes lab st =
         case st_live st of
-          True -> [(at, Nothing, (lvl, SLV_Null at $ "empty " <> lab), False)]
+          True -> [(at, Just T_Null, (lvl, SLV_Null at $ "empty " <> lab), False)]
           False -> []
   let no _ _ = []
   let mnull = if addNull then yes else no

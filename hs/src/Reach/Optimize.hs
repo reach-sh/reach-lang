@@ -198,7 +198,8 @@ instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
     DLE_LArg at a -> DLE_LArg at <$> opt a
-    DLE_Impossible at lab -> return $ DLE_Impossible at lab
+    DLE_Impossible at tag lab ->
+      return $ DLE_Impossible at tag lab
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'

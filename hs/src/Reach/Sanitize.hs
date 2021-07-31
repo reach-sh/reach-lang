@@ -54,7 +54,7 @@ instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
     DLE_LArg _ a -> DLE_LArg sb $ sani a
-    DLE_Impossible _ m -> DLE_Impossible sb m
+    DLE_Impossible _ t m -> DLE_Impossible sb t m
     DLE_PrimOp _ f as -> DLE_PrimOp sb f (sani as)
     DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani a) (sani i)
     DLE_ArraySet _ a i v -> DLE_ArraySet sb (sani a) (sani i) (sani v)

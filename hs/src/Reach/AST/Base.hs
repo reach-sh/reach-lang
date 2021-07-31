@@ -61,7 +61,7 @@ instance Pretty SrcLoc where
   pretty = viaShow
 
 data ImpossibleError
-  = Err_Impossible_InspectForall Int
+  = Err_Impossible_InspectForall
   deriving (Eq, Ord, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
@@ -71,12 +71,12 @@ instance HasErrorCode ImpossibleError where
   -- If you delete a constructor, do NOT re-allocate the number.
   -- Add new error codes at the end.
   errIndex = \case
-    Err_Impossible_InspectForall {} -> 0
+    Err_Impossible_InspectForall -> 0
 
 instance Show ImpossibleError where
   show = \case
-    Err_Impossible_InspectForall tag ->
-      "Cannot inspect value from `forall`: " <> show tag
+    Err_Impossible_InspectForall ->
+      "Cannot inspect value from `forall`"
 
 instance Pretty ImpossibleError where
   pretty = viaShow

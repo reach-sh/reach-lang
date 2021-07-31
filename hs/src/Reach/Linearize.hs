@@ -38,8 +38,7 @@ instance Show Error where
 
 type DKApp = ReaderT DKEnv IO
 
-type LLRetRHS = (DLStmts, Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
-
+type LLRetRHS = (DLVar, DLStmts)
 type LLRets = M.Map Int LLRetRHS
 
 data Handler = Handler
@@ -66,7 +65,7 @@ setRetsToEmpty = restoreRets mempty
 abortRets :: DKApp a -> DKApp a
 abortRets = local (\e -> e { eRets = M.map h $ eRets e })
   where
-    h (_, rv) = (mempty, rv)
+    h (dv, _) = (dv, mempty)
 
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
 withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
@@ -114,42 +113,22 @@ dk1 at_top ks s =
           DK_Switch at v <$> mapM cm1 csm
           where
             cm1 (dv', c) = (\x -> (dv', x)) <$> dk_ at (c <> ks)
-    DLS_Return at ret eda -> do
+    DLS_Return at ret da -> do
       rv <- lookupRet ret
       case rv of
         Nothing ->
           impossible $ "unknown ret " <> show ret
-        Just (rks, Nothing) -> do
-          dk_ at rks
-          -- OLD dk_ at ks
-        Just (rks, (Just (dv, retsm))) -> do
-          let nks = rks
-          -- OLD let nks = ks
-          case eda of
-            Left reti ->
-              case M.lookup reti retsm of
-                Nothing -> impossible $ "missing return da"
-                Just (das, da) ->
-                  case das <> (return $ DLS_Return at ret (Right da)) <> nks of
-                    s' Seq.:<| ks' ->
-                      dk1 at ks' s'
-                    _ ->
-                      impossible $ "no cons"
-            Right da ->
-              com'' (DKC_Set at dv da) nks
-    DLS_Prompt at (Left ret) ss ->
-      withReturn ret (ks, Nothing) $ do
-        -- In this case, and the next one, we include `ks` in the
-        -- continuation/body, because the body may actually be a LocalSwitch/If
-        -- that will ignore the continuation. If we were *really* doing CPS
-        -- then we wouldn't do this and instead we would remove the `abortRets`
-        -- thing and in fact we'd remove Var/Set altogether and just turn them
-        -- into Lets. Is it worth doing it *this* way? I'm not sure... my
-        -- assumption is that duplicating code is bad so we should avoid it at
-        -- all costs.
-        dk_ at (ss <> ks)
-    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
-      withReturn ret (ks, (Just (dv, retms))) $ do
+        Just (dv, rks) -> do
+          com'' (DKC_Set at dv da) rks
+    DLS_Prompt at dv@(DLVar _ _ _ ret) ss -> do
+      -- We include `ks` in the continuation/body, because the body may
+      -- actually be a LocalSwitch/If that will ignore the continuation. If we
+      -- were *really* doing CPS then we wouldn't do this and instead we would
+      -- remove the `abortRets` thing and in fact we'd remove Var/Set
+      -- altogether and just turn them into Lets. Is it worth doing it *this*
+      -- way? I'm not sure... my assumption is that duplicating code is bad so
+      -- we should avoid it at all costs.
+      withReturn ret (dv, ks) $ do
         com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at

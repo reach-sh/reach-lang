@@ -954,8 +954,7 @@ smt_e at_dv mdv de = do
     DLE_Arg at (DLA_Interact _ _ _) -> unbound at
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
-    DLE_Impossible _ _ ->
-      unbound at_dv
+    DLE_Impossible {} -> unbound at_dv
     DLE_PrimOp at cp args -> do
       let f = case cp of
                 SELF_ADDRESS -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness

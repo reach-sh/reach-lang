@@ -89,8 +89,8 @@ data DLSStmt
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
-  | DLS_Return SrcLoc Int (Either Int DLArg)
-  | DLS_Prompt SrcLoc (Either Int (DLVar, M.Map Int (DLStmts, DLArg))) DLStmts
+  | DLS_Return SrcLoc Int DLArg
+  | DLS_Prompt SrcLoc DLVar DLStmts
   | DLS_Stop SrcLoc
   | DLS_Unreachable SrcLoc [SLCtxtFrame] String
   | DLS_Only SrcLoc SLPart DLStmts
@@ -129,16 +129,10 @@ instance Pretty DLSStmt where
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
       DLS_Switch _ ov sa csm ->
         prettySwitch (pretty ov <+> braces (pretty sa)) csm
-      DLS_Return _ ret sv ->
-        "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
+      DLS_Return _ ret rv ->
+        "throw" <> parens (pretty rv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
-        "prompt" <> parens pret <+> ns bodys <> semi
-        where
-          pret =
-            case ret of
-              Left dv -> "const" <+> pretty dv
-              Right (dv, retm) ->
-                "let" <+> pretty dv <+> "with" <+> render_obj retm
+        "prompt" <> parens (pretty ret) <+> ns bodys <> semi
       DLS_Stop _ ->
         prettyStop
       DLS_Unreachable {} ->
@@ -198,7 +192,7 @@ instance HasPurity DLSStmt where
     DLS_If _ _ a _ _ -> hasPurity a
     DLS_Switch _ _ a _ -> hasPurity a
     DLS_Return _ ret _ -> ImpureUnless $ S.singleton ret
-    DLS_Prompt _ ret ss -> rme ret $ hasPurity ss
+    DLS_Prompt _ (DLVar _ _ _ ret) ss -> rm ret $ hasPurity ss
     DLS_Stop {} -> fb False
     DLS_Unreachable {} -> fb True
     DLS_Only _ _ ss -> hasPurity ss
@@ -213,9 +207,6 @@ instance HasPurity DLSStmt where
     DLS_Try _ b _ h -> hasPurity b <> hasPurity h
     DLS_ViewIs {} -> fb False
     where
-      rme = \case
-        Left r -> rm r
-        Right (DLVar _ _ _ r,_) -> rm r
       rm r = \case
         ImpureUnless rs -> impureUnless $ S.delete r rs
         x -> x
