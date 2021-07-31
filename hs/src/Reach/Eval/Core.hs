@@ -3095,6 +3095,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
         locAt body_at $
           locSco clo_sco' $
             evalStmt body
+  let body_sa = mkAnnot body_lifts
   let no_prompt (lvl, v) = do
         let lifts' =
               case body_lifts of
@@ -3108,7 +3109,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
                     --- error could be introduced.
                     body_lifts'
                 _ ->
-                  return $ DLS_Prompt body_at (DLVar at Nothing T_Null ret)  body_lifts
+                  return $ DLS_Prompt body_at (DLVar at Nothing T_Null ret)  body_sa body_lifts
         saveLifts lifts'
         return $ SLAppRes clo_sco'' $ (lvl, v)
   case rs of
@@ -3134,7 +3135,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
           tys <- mapM go rs
           r_ty <- locAt body_at $ typeEqs tys
           let dv = DLVar body_at Nothing r_ty ret
-          saveLift $ DLS_Prompt body_at dv body_lifts
+          saveLift $ DLS_Prompt body_at dv body_sa body_lifts
           return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
@@ -3455,7 +3456,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
           at' <- withAt id
           let ans_dv = DLVar at' Nothing t_ty ret
           theIf <- checkCond om $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
-          saveLift $ DLS_Prompt at' ans_dv $ return theIf
+          saveLift $ DLS_Prompt at' ans_dv sa $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
     _ -> do
       (n_at', ne, oe) <- case cv of

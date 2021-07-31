@@ -38,7 +38,7 @@ instance Show Error where
 
 type DKApp = ReaderT DKEnv IO
 
-type LLRetRHS = (DLVar, DLStmts)
+type LLRetRHS = (SrcLoc -> DLArg -> DKCommon, DLStmts)
 type LLRets = M.Map Int LLRetRHS
 
 data Handler = Handler
@@ -118,18 +118,16 @@ dk1 at_top ks s =
       case rv of
         Nothing ->
           impossible $ "unknown ret " <> show ret
-        Just (dv, rks) -> do
-          com'' (DKC_Set at dv da) rks
-    DLS_Prompt at dv@(DLVar _ _ _ ret) ss -> do
-      -- We include `ks` in the continuation/body, because the body may
-      -- actually be a LocalSwitch/If that will ignore the continuation. If we
-      -- were *really* doing CPS then we wouldn't do this and instead we would
-      -- remove the `abortRets` thing and in fact we'd remove Var/Set
-      -- altogether and just turn them into Lets. Is it worth doing it *this*
-      -- way? I'm not sure... my assumption is that duplicating code is bad so
-      -- we should avoid it at all costs.
-      withReturn ret (dv, ks) $ do
-        com'' (DKC_Var at dv) (ss <> ks)
+        Just (mkcom, rks) -> do
+          com'' (mkcom at da) rks
+    DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss -> do
+      -- It might be possible to turn some of these just into lets
+      let mkcom a b = DKC_Set a dv b
+      let (rks, rk') =
+            case isLocal s of
+              True -> (mempty, (DK_Com <$> (DKC_LocalDo at <$> dk_ at ss) <*> dk_ at ks))
+              False -> (ks, dk_ at (ss <> ks))
+      withReturn ret (mkcom, rks) $ DK_Com (DKC_Var at dv) <$> rk'
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Unreachable at fs m ->
@@ -239,6 +237,7 @@ instance CanLift DKCommon where
     DKC_ArrayReduce _ _ _ _ _ _ f -> canLift f
     DKC_Var {} -> True
     DKC_Set {} -> True
+    DKC_LocalDo _ t -> canLift t
     DKC_LocalIf _ _ t f -> canLift t && canLift f
     DKC_LocalSwitch _ _ csm -> canLift csm
     DKC_MapReduce _ _ _ _ _ _ _ f -> canLift f
@@ -404,6 +403,7 @@ df_com mkk back = \case
         DKC_ArrayReduce a b c d e f x -> DL_ArrayReduce a b c d e f <$> df_bl x
         DKC_Var a b -> return $ DL_Var a b
         DKC_Set a b c -> return $ DL_Set a b c
+        DKC_LocalDo a x -> DL_LocalDo a <$> df_t x
         DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
           where
