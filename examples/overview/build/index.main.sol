@@ -530,7 +530,6 @@ contract ReachContract is Stdlib {
     _f.v28 = uint256(block.number);
     _f.v29 = uint256(block.timestamp);
     
-    
     bool nsvs;
     current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
@@ -547,12 +546,13 @@ contract ReachContract is Stdlib {
     
     
     
-    reachRequire(msg.value == uint256(0), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     emit e1(_a);
+    reachRequire(msg.value == uint256(0), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     T1 memory nsvs;
     nsvs.v33 = payable(msg.sender);
     nsvs.v34 = _a.msg.v34;
     current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
+    
     
     }
   
@@ -564,12 +564,13 @@ contract ReachContract is Stdlib {
     
     
     
-    reachRequire(msg.value == _a.svs.v34, uint256(9) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     emit e2(_a);
+    reachRequire(msg.value == _a.svs.v34, uint256(9) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     T1 memory nsvs;
     nsvs.v33 = _a.svs.v33;
     nsvs.v34 = _a.svs.v34;
     current_state = uint256(keccak256(abi.encode(uint256(2), nsvs)));
+    
     
     }
   
@@ -581,12 +582,13 @@ contract ReachContract is Stdlib {
     
     
     
+    emit e3(_a);
     reachRequire(msg.value == uint256(0), uint256(11) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
     reachRequire((_a.svs.v33 == payable(msg.sender)), uint256(12) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
     _a.svs.v33.transfer(_a.svs.v34);
-    emit e3(_a);
     current_state = 0x0;
     selfdestruct(payable(msg.sender));
+    
     
     }
   

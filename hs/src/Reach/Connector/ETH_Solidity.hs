@@ -216,7 +216,6 @@ data SolCtxt = SolCtxt
   , ctxt_varm :: IORef VarMap
   , ctxt_mvars :: IORef (S.Set DLVar)
   , ctxt_depths :: IORef (M.Map DLVar Int)
-  , ctxt_emit :: Doc
   , ctxt_typei :: IORef (M.Map DLType Int)
   , ctxt_typem :: IORef (M.Map DLType Doc)
   , ctxt_typed :: IORef (M.Map Int Doc)
@@ -963,19 +962,14 @@ solCTail = \case
     svs' <- mapM go_svs svs
     let go_asn (v, a) = solSet ("la.msg." <> solRawVar v) <$> solArg a
     asn' <- mapM go_asn (M.toAscList asnm)
-    emit' <- ctxt_emit <$> ask
     argDefn <- solArgDefn_ "la" AM_Memory svs (map fst $ M.toAscList asnm)
-    return $
-      vsep $
-        [ emit'
-        , argDefn <> semi
-        ]
-          <> svs'
-          <> asn'
-          <> [solApply (solLoop_fun which) ["la"] <> semi]
+    return $ vsep $
+      [ argDefn <> semi ]
+      <> svs'
+      <> asn'
+      <> [solApply (solLoop_fun which) ["la"] <> semi]
   CT_From _ which (FI_Continue (ViewSave vi vvs) svs) -> do
     (setl, sete) <- solHashStateSet which svs
-    emit' <- ctxt_emit <$> ask
     viewl <-
       (ctxt_hasViews <$> ask) >>= \case
         False -> return []
@@ -988,10 +982,9 @@ solCTail = \case
               <> [ solSet "current_view_i" vi'
                  , solSet "current_view_bs" $ solEncode [asnv]
                  ]
-    return $ vsep $ [emit'] <> viewl <> setl <> [solSet ("current_state") sete]
+    return $ vsep $ viewl <> setl <> [solSet ("current_state") sete]
   CT_From _ _ (FI_Halt _toks) -> do
     -- XXX we could "selfdestruct" our token holdings, based on _toks
-    emit' <- ctxt_emit <$> ask
     hv <- ctxt_hasViews <$> ask
     let mviewl =
           case hv of
@@ -1000,11 +993,10 @@ solCTail = \case
               [ solSet "current_view_i" "0x0"
               , "delete current_view_bs;"
               ]
-    return $
-      vsep $
-        [emit', solSet "current_state" "0x0"]
-          <> mviewl
-          <> [solApply "selfdestruct" ["payable(msg.sender)"] <> semi]
+    return $ vsep $
+        [solSet "current_state" "0x0"]
+        <> mviewl
+        <> [solApply "selfdestruct" ["payable(msg.sender)"] <> semi]
 
 solFrame :: Int -> S.Set DLVar -> App (Doc, Doc)
 solFrame i sim = do
@@ -1025,17 +1017,11 @@ solCTail_top which svs msg mmsg ct = do
         Just _ -> solEventEmit which
         Nothing -> emptyDoc
   extendVarMap $ svsm <> msgm
-  ct' <- local
-    (\e ->
-       e
-         { ctxt_emit = emitp
-         , ctxt_handler_num = which
-         })
-    $ do
+  ct' <- local (\e -> e { ctxt_handler_num = which }) $ do
       solCTail ct
   mvars <- readMemVars
   (frameDefn, frameDecl) <- solFrame which mvars
-  return (frameDefn, frameDecl, ct')
+  return (frameDefn, frameDecl, vsep [ emitp, ct' ])
 
 solArgType :: [DLVar] -> [DLVar] -> App Doc
 solArgType svs msg = do
@@ -1219,7 +1205,6 @@ solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at csvs mvi hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
-  let ctxt_emit = emptyDoc
   ctxt_varm <- newIORef mempty
   ctxt_mvars <- newIORef mempty
   ctxt_depths <- newIORef mempty

@@ -48,9 +48,9 @@ r () {
 
   export REACH_DEBUG=1
   export REACH_ALGO_DEBUG=1
-  REACH_CONNECTOR_MODE=ETH ${REACH} run
+  # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -127,7 +127,7 @@ tealcount () {
 # err Err_TimeArg_NotStatic
 
 # c hs/t/y/announcer.rsh
-c hs/t/y/fork.rsh
+# c hs/t/y/fork.rsh
 
 # r examples/pkg
 # r examples/zbeq
@@ -160,7 +160,7 @@ c hs/t/y/fork.rsh
 # r examples/object-digest
 # r examples/view-map
 # r examples/nim
-# r examples/overview
+r examples/overview
 # r examples/popularity-contest
 # r examples/pr202105-zet
 # r examples/race
@@ -174,7 +174,7 @@ c hs/t/y/fork.rsh
 # r examples/tut-6
 # r examples/tut-5-attack
 # r examples/tut-7 # XXX test debigger
-# r examples/tut-8
+r examples/tut-8
 # r examples/tut-7-array
 # r examples/variable-transfers
 # r examples/view-bytes
