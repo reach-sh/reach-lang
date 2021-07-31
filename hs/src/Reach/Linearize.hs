@@ -38,7 +38,7 @@ instance Show Error where
 
 type DKApp = ReaderT DKEnv IO
 
-type LLRetRHS = (SrcLoc -> DLArg -> DKCommon, DLStmts)
+type LLRetRHS = (DLVar, DLStmts)
 type LLRets = M.Map Int LLRetRHS
 
 data Handler = Handler
@@ -52,82 +52,52 @@ data DKEnv = DKEnv
   }
 
 lookupRet :: Int -> DKApp (Maybe LLRetRHS)
-lookupRet r = do
-  DKEnv {..} <- ask
-  return $ M.lookup r eRets
-
-restoreRets :: LLRets -> DKApp a -> DKApp a
-restoreRets rets' = local (\e -> e {eRets = rets'})
-
-setRetsToEmpty :: DKApp a -> DKApp a
-setRetsToEmpty = restoreRets mempty
-
-abortRets :: DKApp a -> DKApp a
-abortRets = local (\e -> e { eRets = M.map h $ eRets e })
-  where
-    h (dv, _) = (dv, mempty)
+lookupRet r = M.lookup r <$> asks eRets
 
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
-withReturn rv rvv = local (\e@DKEnv {..} -> e {eRets = M.insert rv rvv eRets})
+withReturn rv rvv = local (\e -> e {eRets = M.insert rv rvv $ eRets e})
 
-dkc :: DLSStmt -> DKApp DKCommon
-dkc = \case
-  DLS_Let at mdv de ->
-    return $ DKC_Let at mdv de
-  DLS_ArrayMap at ans x a f ->
-    DKC_ArrayMap at ans x a <$> dk_block at f
-  DLS_ArrayReduce at ans x z b a f ->
-    DKC_ArrayReduce at ans x z b a <$> dk_block at f
-  DLS_If at ca _ ts fs ->
-    DKC_LocalIf at ca <$> dk_ at ts <*> dk_ at fs
-  DLS_Switch at dv _ cm ->
-    DKC_LocalSwitch at dv <$> mapM cm1 cm
-    where
-      cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
-  DLS_MapReduce at mri ans x z b a f ->
-    DKC_MapReduce at mri ans x z b a <$> dk_block at f
-  DLS_FluidSet at fv a -> return $ DKC_FluidSet at fv a
-  DLS_FluidRef at v fv -> return $ DKC_FluidRef at v fv
-  DLS_Only at who ss -> DKC_Only at who <$> dk_ at ss
-  _ -> impossible "dkc"
+abortRets :: DKApp a -> DKApp a
+abortRets = local (\e -> e { eRets = M.map (\(x,_)->(x, mempty)) $ eRets e })
 
 dk_block :: SrcLoc -> DLSBlock -> DKApp DKBlock
-dk_block _at (DLSBlock at fs l a) =
-  DKBlock at fs <$> (setRetsToEmpty $ dk_ at l) <*> pure a
+dk_block _ (DLSBlock at fs l a) =
+  DKBlock at fs <$> dk_ at l <*> pure a
 
 dk1 :: SrcLoc -> DLStmts -> DLSStmt -> DKApp DKTail
 dk1 at_top ks s =
   case s of
-    DLS_Let {} -> com
-    DLS_ArrayMap {} -> com
-    DLS_ArrayReduce {} -> com
+    DLS_Let at mdv de -> com $ DKC_Let at mdv de
+    DLS_ArrayMap at ans x a f ->
+      com' $ DKC_ArrayMap at ans x a <$> dk_block at f
+    DLS_ArrayReduce at ans x z b a f ->
+      com' $ DKC_ArrayReduce at ans x z b a <$> dk_block at f
     DLS_If at c _ t f ->
       case isLocal s of
-        True -> com
+        True -> do
+          com' $ DKC_LocalIf at c <$> dk_ at t <*> dk_ at f
         False ->
           DK_If at c <$> dk_ at (t <> ks) <*> dk_ at (f <> ks)
     DLS_Switch at v _ csm ->
       case isLocal s of
-        True -> com
+        True ->
+          com' $ DKC_LocalSwitch at v <$> mapM cm1 csm
+          where
+            cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
         False ->
           DK_Switch at v <$> mapM cm1 csm
           where
             cm1 (dv', c) = (\x -> (dv', x)) <$> dk_ at (c <> ks)
     DLS_Return at ret da -> do
-      rv <- lookupRet ret
-      case rv of
-        Nothing ->
-          impossible $ "unknown ret " <> show ret
-        Just (mkcom, rks) -> do
-          com'' (mkcom at da) rks
+      lookupRet ret >>= \case
+        Nothing -> impossible $ "unknown ret " <> show ret
+        Just (dv, rks) ->
+          com'' (DKC_Set at dv da) rks
     DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss -> do
       -- It might be possible to turn some of these just into lets
-      let mkcom a b = DKC_Set a dv b
-      let (rks, rk') =
-            case isLocal s of
-              True -> (mempty, (DK_Com <$> (DKC_LocalDo at <$> dk_ at ss) <*> dk_ at ks))
-              False -> (ks, dk_ at (ss <> ks))
-      withReturn ret (mkcom, rks) $ DK_Com (DKC_Var at dv) <$> rk'
+      -- let ks' = ss <> (return $ DLS_Unreachable at [] $ "prompt did not return: " <> show dv)
+      withReturn ret (dv, ks) $
+        com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Unreachable at fs m ->
@@ -136,13 +106,8 @@ dk1 at_top ks s =
       let cs = dr_k recv
       cs' <- dk_ at (cs <> ks)
       let recv' = recv {dr_k = cs'}
-      let mtime' =
-            case mtime of
-              Just (delay_da, time_ss) ->
-                (\x y -> Just (x, y)) <$> pure delay_da <*> dk_ at (time_ss <> ks)
-              Nothing ->
-                return $ Nothing
-      DK_ToConsensus at send recv' <$> mtime'
+      let go (ta, time_ss) = (,) ta <$> dk_ at (time_ss <> ks)
+      DK_ToConsensus at send recv' <$> mapM go mtime
     DLS_FromConsensus at ss ->
       DK_FromConsensus at at_top <$> dk_ at (ss <> ks)
     DLS_While at asn inv_b cond_b body -> do
@@ -151,29 +116,29 @@ dk1 at_top ks s =
       DK_While at asn <$> block inv_b <*> block cond_b <*> body' <*> dk_ at ks
     DLS_Continue at asn ->
       return $ DK_Continue at asn
-    DLS_FluidSet {} -> com
-    DLS_FluidRef {} -> com
-    DLS_MapReduce {} -> com
-    DLS_Only {} -> com
+    DLS_FluidSet at fv a -> com $ DKC_FluidSet at fv a
+    DLS_FluidRef at v fv -> com $ DKC_FluidRef at v fv
+    DLS_MapReduce at mri ans x z b a f ->
+      com' $ DKC_MapReduce at mri ans x z b a <$> dk_block at f
+    DLS_Only at who ss ->
+      com' $ DKC_Only at who <$> dk_ at ss
     DLS_Throw at da _ -> do
-      handler <- asks eExnHandler
-      case handler of
-        Nothing -> impossible "dk: encountered `throw` without an exception handler"
-        Just h ->
-          com'' (DKC_Let at (DLV_Let DVC_Many $ hV h) $ DLE_Arg at da) $ hS h
+      asks eExnHandler >>= \case
+        Nothing ->
+          impossible "dk: encountered `throw` without an exception handler"
+        Just (Handler {..}) ->
+          com'' (DKC_Let at (DLV_Let DVC_Many hV) $ DLE_Arg at da) hS
     DLS_Try at e hv hs ->
-      local
-        (\env ->
-           env {eExnHandler = Just (Handler hv (hs <> ks))})
-        $ dk_ at (e <> ks)
+      local (\env -> env {eExnHandler = Just (Handler hv (hs <> ks))}) $
+        dk_ at (e <> ks)
     DLS_ViewIs at vn vk mva -> do
       mva' <- maybe (return $ Nothing) (\eb -> Just <$> dk_eb eb) mva
       DK_ViewIs at vn vk mva' <$> dk_ at ks
   where
-    com :: DKApp DKTail
-    com = com' =<< (abortRets $ dkc s)
-    com' :: DKCommon -> DKApp DKTail
-    com' m = com'' m ks
+    com :: DKCommon -> DKApp DKTail
+    com = flip com'' ks
+    com' :: DKApp DKCommon -> DKApp DKTail
+    com' m = com =<< abortRets m
     com'' :: DKCommon -> DLStmts -> DKApp DKTail
     com'' m ks' = DK_Com m <$> dk_ (srclocOf s) ks'
 
@@ -184,8 +149,7 @@ dk_ at = \case
 
 dk_eb :: DLSExportBlock -> DKApp DKExportBlock
 dk_eb (DLinExportBlock at vs b) =
-  resetDK $
-    DLinExportBlock at vs <$> dk_block at b
+  resetDK $ DLinExportBlock at vs <$> dk_block at b
 
 resetDK :: DKApp a -> DKApp a
 resetDK = local (const $ DKEnv {..})

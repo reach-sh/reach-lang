@@ -3096,7 +3096,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
           locSco clo_sco' $
             evalStmt body
   let body_sa = mkAnnot body_lifts
-  let no_prompt (lvl, v) = do
+  let no_prompt mt (lvl, v) = do
         let lifts' =
               case body_lifts of
                 body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
@@ -3109,13 +3109,18 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
                     --- error could be introduced.
                     body_lifts'
                 _ ->
-                  return $ DLS_Prompt body_at (DLVar at Nothing T_Null ret)  body_sa body_lifts
+                  return $ DLS_Prompt body_at (DLVar at Nothing t ret) body_sa body_lifts''
+                  where
+                    (t, body_lifts'') =
+                      case mt of
+                        Just x -> (x, body_lifts)
+                        Nothing -> (T_Null, body_lifts <> (return $ DLS_Return body_at ret (DLA_Literal $ DLL_Null)))
         saveLifts lifts'
         return $ SLAppRes clo_sco'' $ (lvl, v)
   case rs of
-    [] -> no_prompt $ public $ SLV_Null body_at "clo app"
-    [(_, _, x, False)] -> no_prompt $ x
-    (_, _, (xlvl, xv), _) : more -> do
+    [] -> no_prompt Nothing $ public $ SLV_Null body_at "clo app"
+    [(_, mt, x, False)] -> no_prompt mt $ x
+    (_, mt, (xlvl, xv), _) : more -> do
       let msvs = map (\(_a, _b, c, _d) -> c) more
       let mlvls = map fst msvs
       let mvs = map snd msvs
@@ -3126,7 +3131,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       -- srcloc
       let all_same = False && all (== xv) mvs
       case all_same of
-        True -> no_prompt $ (lvl, xv)
+        True -> no_prompt mt $ (lvl, xv)
         False -> do
           let go (r_at, mrty, (_, v), _) =
                 case mrty of
@@ -3134,9 +3139,9 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
                   Just t -> return $ t
           tys <- mapM go rs
           r_ty <- locAt body_at $ typeEqs tys
-          let dv = DLVar body_at Nothing r_ty ret
-          saveLift $ DLS_Prompt body_at dv body_sa body_lifts
-          return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar dv))
+          let retv = DLVar body_at Nothing r_ty ret
+          saveLift $ DLS_Prompt body_at retv body_sa body_lifts
+          return $ SLAppRes clo_sco'' (lvl, (SLV_DLVar retv))
 
 evalApplyVals :: SLVal -> [SLSVal] -> App SLAppRes
 evalApplyVals = evalApplyValsAux False

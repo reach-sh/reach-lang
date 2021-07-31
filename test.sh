@@ -91,11 +91,11 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-c users/4501aa.rsh
 
-# r examples/overview # XXX test debigger
+r examples/overview # XXX test debigger
 # r examples/ttt
-# r examples/tut-7 # XXX test debigger
+r examples/tut-7 # XXX test debigger
+c users/4501aa.rsh
 
 # (cd examples/abstract-simul && make build)
 
