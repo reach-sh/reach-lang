@@ -507,15 +507,15 @@ withCompose DockerMeta {..} wrapped = do
         WithProject _ Project {..} -> T.pack projDirHost
 
   let devnetAlgo = [N.text|
-        - ALGO_SERVER=http://devnet-algo
+        - ALGO_SERVER=http://reach-devnet-algo
         - ALGO_PORT=4180
-        - ALGO_INDEXER_SERVER=http://devnet-algo
+        - ALGO_INDEXER_SERVER=http://reach-devnet-algo
         - ALGO_INDEXER_PORT=8980
       |]
 
   let devnetCfx = [N.text|
         - CFX_DEBUG
-        - CFX_NODE_URI=http://devnet-cfx:12537
+        - CFX_NODE_URI=http://reach-devnet-cfx:12537
         - CFX_NETWORK_ID=999
       |]
 
@@ -524,8 +524,8 @@ withCompose DockerMeta {..} wrapped = do
         -- TODO verify there are no mismatches between `Devnet`/`Browser` defs
         (Algo, Devnet) -> (devnetFor c, devnetAlgo)
         (Algo, Browser) -> (devnetFor c, devnetAlgo)
-        (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
-        (Eth, Browser) -> (devnetFor c, "- ETH_NODE_URI=http://devnet-eth:8545")
+        (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
+        (Eth, Browser) -> (devnetFor c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
         (Cfx, Devnet) -> (devnetFor c, devnetCfx)
         (Cfx, Browser) -> (devnetFor c, devnetCfx)
 
@@ -956,9 +956,16 @@ down' = script $ do
   write [N.text|
     name () { docker inspect --format="{{ index .Name }}" "$$1"; }
 
-    docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
+    # Stop app containers w/ status == running
+    docker ps -qf label=sh.reach.dir-tmp | while IFS= read -r d; do
       printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
       docker stop "$$d" >/dev/null && printf 'Done.\n'
+    done
+
+    # Remove app stragglers (containers w/ status != running)
+    docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
+      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
+      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
     done
   |]
 
@@ -966,15 +973,7 @@ down' = script $ do
     # Stop devnet containers w/ status == running
     docker ps -qf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
       printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-
-      haltDevnetEth () {
-        docker exec "$$d" which killall >/dev/null \
-          && docker exec "$$d" killall -w -INT geth 2>/dev/null \
-          && docker rm -v "$$d" >/dev/null
-      }
-
-      (haltDevnetEth || docker stop "$$d" >/dev/null) \
-        && printf 'Done.\n'
+      docker stop "$$d" >/dev/null && printf 'Done.\n'
     done
 
     # Remove devnet stragglers (containers w/ status != running)
@@ -1041,7 +1040,8 @@ react = command "react" $ info f d where
 
       withCompose dm . script $ write [N.text|
         $reachEx compile $cargs
-        docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
+        docker-compose -f "$$TMP/docker-compose.yml" run \
+          --name $appService $dd --service-ports --rm $appService
       |]
 
 
