@@ -382,9 +382,9 @@ export const mkStdlibNetworkCommon = async lib => {
     const begin = await getNetworkTime();
 
     let prog0 = 1;
-    const first = await wait(1, ({ currentTime }) => {
+    const first = await wait(1, ({ current }) => {
       it(`prog0: ${prog0}`, () => {
-        expect(ge(currentTime, 0) && le(currentTime, add(begin, prog0)))
+        expect(ge(current, 0) && le(current, add(begin, prog0)))
           .toBe(true);
         prog0++;
       });
@@ -393,9 +393,9 @@ export const mkStdlibNetworkCommon = async lib => {
       .toBe(true);
 
     let prog1 = 1;
-    const second = await wait(1, ({ currentTime }) => {
+    const second = await wait(1, ({ current }) => {
       it(`prog1: ${prog1}`, () => {
-        expect(ge(currentTime, 1) && le(currentTime, add(begin, prog1 + 1)))
+        expect(ge(current, 1) && le(current, add(begin, prog1 + 1)))
           .toBe(true);
         prog1++;
       });
@@ -404,9 +404,9 @@ export const mkStdlibNetworkCommon = async lib => {
       .toBe(true);
 
     let prog2 = 1;
-    const third = await waitUntilTime(add(second, 5), ({ currentTime }) => {
+    const third = await waitUntilTime(add(second, 5), ({ current }) => {
       it(`prog2: ${prog2}`, () => {
-        expect(ge(currentTime, 2) && le(currentTime, add(begin, prog2 + 2)))
+        expect(ge(current, 2) && le(current, add(begin, prog2 + 2)))
           .toBe(true);
         prog2++;
       });

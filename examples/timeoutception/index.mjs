@@ -14,9 +14,9 @@ console.log(`getting started...`);
   console.log(`At ${beforeTime} A starts with ${beforeBal}`);
 
   const ask = async () => {
-    await stdlib.wait(15, ({currentTime, targetTime}) => {
-      if (currentTime < targetTime) {
-        console.log(`At ${currentTime} A is waiting for ${targetTime - currentTime} more...`);
+    await stdlib.wait(15, ({current, target}) => {
+      if (current < target) {
+        console.log(`At ${current} A is waiting for ${target - current} more...`);
       }
     });
     return 2;
