@@ -1409,7 +1409,7 @@ First, let's look at the @reachexlink["tut-8/docker-compose.yml"] file:
 @itemlist[
 
 @item{Lines 2 and 3 define a service for starting our application.
-Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've stayed in the same directory througout the tutorial.}
+Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've stayed in the same directory throughout the tutorial.}
 
 @item{Lines 5 and 6 define the Reach private developer test network service for Conflux.}
 
