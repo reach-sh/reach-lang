@@ -8,22 +8,22 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/32 = <loop variable>;
+  const sum/42 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/167 = <loop variable>;
+  const balance(0)/190 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const v115 = <map reduction>;
+  const v133 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:146:18:application
 
 
   // Theorem Formalization
 
-  const v120 = (balance(0)/167 == bal/32) ? (bal/32 == v115) : false;
+  const v138 = (balance(0)/190 == bal/42) ? (bal/42 == v133) : false;
   //    ^ would be false
-  while invariant before loop(v120);
+  while invariant before loop(v138);
 
   Verifying when NO participants are honest
 Verification failed:

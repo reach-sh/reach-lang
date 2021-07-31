@@ -9,16 +9,16 @@ Verification failed:
 
   // Violation Witness
 
-  const balance(0)/87 = <loop variable>;
+  const balance(0)/103 = <loop variable>;
   //    ^ could = 1
   //      from: ./pr204.rsh:40:3:while
 
 
   // Theorem Formalization
 
-  const v82 = 0 == balance(0)/87;
+  const v94 = 0 == balance(0)/103;
   //    ^ would be false
-  assert(v82);
+  assert(v94);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -29,19 +29,19 @@ Verification failed:
 
   // Violation Witness
 
-  const balance(1)/88 = <loop variable>;
+  const balance(1)/104 = <loop variable>;
   //    ^ could = 1
   //      from: ./pr204.rsh:40:3:while
-  const qty/56 = qty/49;
+  const qty/67 = qty/60;
   //    ^ could = 2
   //      from: ./pr204.rsh:53:11:dot
 
 
   // Theorem Formalization
 
-  const v62 = qty/56 <= balance(1)/88;
+  const v74 = qty/67 <= balance(1)/104;
   //    ^ would be false
-  assert(v62);
+  assert(v74);
 
 Verification failed:
   when NO participants are honest

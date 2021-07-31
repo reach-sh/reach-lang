@@ -1383,7 +1383,7 @@ compileTimeArg = \case
     expect_ Err_TimeArg_NotStatic
   v -> do
     f <- lookStdlib "relativeTime"
-    liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
+    -- liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)

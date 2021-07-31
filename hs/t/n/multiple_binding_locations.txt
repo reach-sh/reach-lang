@@ -8,18 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v18 = "A".interact.x;
-  //    ^ could = 4
+  const v26 = "A".interact.x;
+  //    ^ could = 7
   //      from: ./multiple_binding_locations.rsh:6:17:application
 
 
   // Theorem Formalization
 
-  const x/23 = v18 - 4;
-  //    ^ would be 0
-  const v30 = (x/23 + x/23) == 4;
+  const x/32 = v26 - 4;
+  //    ^ would be 3
+  const v40 = (x/32 + x/32) == 4;
   //    ^ would be false
-  assert(v30);
+  assert(v40);
 
   Verifying when NO participants are honest
 Verification failed:

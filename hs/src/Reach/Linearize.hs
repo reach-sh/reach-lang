@@ -360,11 +360,11 @@ fluidRefm fv = do
   DFEnv {..} <- ask
   return $ M.lookup fv eFVE
 
-fluidRef :: FluidVar -> DFApp (SrcLoc, DLArg)
-fluidRef fv = do
+fluidRef :: SrcLoc -> FluidVar -> DFApp (SrcLoc, DLArg)
+fluidRef at fv = do
   r <- fluidRefm fv
   case r of
-    Nothing -> impossible $ "fluid ref unbound: " <> show fv
+    Nothing -> impossible $ "fluid ref unbound: " <> show fv <> " at: " <> show at
     Just x -> return x
 
 fluidSet_ :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
@@ -375,8 +375,8 @@ fluidSet fv fvv m = fluidSet_ fv fvv $ more m
   where
     more =
       case fv of
-        FV_lastConsensusTime -> fluidSet_ FV_baseWaitTime fvv
-        FV_lastConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
+        FV_thisConsensusTime -> fluidSet_ FV_baseWaitTime fvv
+        FV_thisConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
         _ -> id
 
 withWhileFVMap :: FVMap -> DFApp a -> DFApp a
@@ -400,11 +400,11 @@ block_unpackFVMap :: SrcLoc -> DKBlock -> DFApp DKBlock
 block_unpackFVMap uat (DKBlock at fs t a) =
   (\x -> DKBlock at fs x a) <$> unpackFVMap uat t
 
-expandFromFVMap :: DLAssignment -> DFApp DLAssignment
-expandFromFVMap (DLAssignment updatem) = do
+expandFromFVMap :: SrcLoc -> DLAssignment -> DFApp DLAssignment
+expandFromFVMap at (DLAssignment updatem) = do
   fvm <- readWhileFVMap
   let go (fv, dv) = do
-        (_, da) <- fluidRef fv
+        (_, da) <- fluidRef at fv
         return $ (dv, da)
   fvm'l <- mapM go $ M.toList fvm
   let updatem' = M.union (M.fromList $ fvm'l) updatem
@@ -415,7 +415,7 @@ df_com mkk back = \case
   DK_Com (DKC_FluidSet at fv da) k ->
     fluidSet fv (at, da) (back k)
   DK_Com (DKC_FluidRef at dv fv) k -> do
-    (at', da) <- fluidRef fv
+    (at', da) <- fluidRef at fv
     mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv) (DLE_Arg at' da)) <*> back k
   DK_Com m k -> do
     m' <-
@@ -471,17 +471,17 @@ df_con = \case
     let block b = df_bl =<< block_unpackFVMap at b
     (makeWhile, k') <-
       withWhileFVMap fvm $
-        (,) <$> (LLC_While at <$> expandFromFVMap asn <*> block inv <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
+        (,) <$> (LLC_While at <$> expandFromFVMap at asn <*> block inv <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
     makeWhile <$> df_con k'
   DK_Continue at asn ->
-    LLC_Continue at <$> expandFromFVMap asn
+    LLC_Continue at <$> expandFromFVMap at asn
   DK_FromConsensus at1 at2 t -> do
     -- This was formerly done inside of Eval.hs, but that meant that these refs
     -- and sets would dominate the lifted ones in the step body, which defeats
     -- the purpose of lifting fluid variable interactions, so we instead build
     -- it into this pass
-    tct <- fluidRef FV_thisConsensusTime
-    tcs <- fluidRef FV_thisConsensusSecs
+    tct <- fluidRef at1 FV_thisConsensusTime
+    tcs <- fluidRef at1 FV_thisConsensusSecs
     fluidSet FV_lastConsensusTime tct $
       fluidSet FV_lastConsensusSecs tcs $
         LLC_FromConsensus at1 at2 <$> df_step t

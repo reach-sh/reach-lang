@@ -1962,9 +1962,9 @@ Please review the @reachin{parallelReduce} documentation for information on how 
 
 @error{RE0114}
 
-This error indicates that you provided an incorrect value to a function. The function expected
-to receive a @reachin{Type}, but received something else. This issue can arise when a
-@reachin{Type} constructor does not have any arguments applied to it.
+This error indicates that you provided an incorrect value to a function.
+The function expected to receive a @reachin{Type}, but received something else.
+This issue can arise when a @reachin{Type} constructor does not have any arguments applied to it.
 
 For example, the code below erroneously creates an @reachin{Object} type with a field @reachin{name}:
 
@@ -1984,6 +1984,18 @@ a @reachin{Type}. This code can be fixed by providing an argument to @reachin{By
 }
 
 For more information about data types, visit @secref["ref-programs-types"].
+
+@error{RE0115}
+
+This error indicates that a @tech{time argument}'s type is not known at compile-time.
+
+For example, if @reachin{x} is not known at compile-time, then
+
+@reach{
+  wait(x ? relativeTime(10) : relativeSecs(10));
+}
+
+results in this error.
 
 @error{REP0000}
 

@@ -81,7 +81,7 @@ tealcount () {
 
 #######
 
-jb
+# jb
 
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/n/Err_TimeMustBeSimple.rsh
@@ -119,50 +119,15 @@ jb
 # c hs/t/y/lhs_array_spread.rsh
 # c hs/t/y/pr20210311.rsh
 # c hs/t/n/class_addr.rsh
-# c hs/t/y/pr1165.rsh
-# c hs/t/y/1202.rsh
-# c hs/t/y/rest-empty.rsh
-# c hs/t/y/rest-tuple.rsh
-# c hs/t/y/rest_parameter.rsh
-# c hs/t/y/pr138.rsh
-# c hs/t/y/adapt_tuple.rsh
-# c hs/t/y/tuple-parts.rsh
-# c hs/t/y/no-tail-if.rsh
-# c hs/t/n/interact_nonlocal.rsh
-# c hs/t/y/pr-b4469.rsh
-# c hs/t/y/pr-88b8c.rsh
-# c hs/t/y/pr-149.rsh
-# c hs/t/y/pr-e017b.rsh
-# c hs/t/y/pr-202105281833.rsh
-# c hs/t/y/map-mt.rsh
-# fc hs/t/n/map-dset.rsh
-# c hs/t/y/lazy-ifs.rsh
-# c hs/t/y/pr-20210603.rsh
-# c hs/t/y/pr-3e579.rsh
-# c hs/t/y/pr179.rsh
-# c hs/t/y/pr-671006.rsh
-# fc hs/t/n/pr-671006p.rsh
-# c hs/t/y/pr190.rsh
-# c hs/t/y/pr190b.rsh
-# c hs/t/y/pr206.rsh
-# c hs/t/y/pr220.rsh
-# fc hs/t/n/pr220.rsh
-# fc hs/t/n/pr220okay.rsh
 
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-# err Err_Pay_DoubleToken
-# err Err_Pay_DoubleNetworkToken
-# err Err_Pay_Type
-# err Err_Token_NotOnFirst
-# err Err_Token_OnCtor
-# err Err_Token_InWhile
-# err export_ret_ty
-# err Err_Part_DuplicatePart
-# err Err_View_UDFun
-# err Err_TokenNew_InvalidKey
 # err Err_Token_NotCreated
+# err Err_TimeArg_NotStatic
+
+# c hs/t/y/announcer.rsh
+c hs/t/y/fork.rsh
 
 # r examples/pkg
 # r examples/zbeq
@@ -229,8 +194,8 @@ jb
 # r examples/pr-1cc66
 
 # jb
-r examples/realtime
-exit 0
+# r examples/realtime
+# exit 0
 
 # r users/ff
 # r users/7639df8

@@ -1,0 +1,8 @@
+reachc: error[RE0115]: Time argument must be statically determined as either time (Left) or seconds (Right)
+
+ ./Err_TimeArg_NotStatic.rsh:13:7:application
+
+ 13|   wait(x ? relativeTime(10) : relativeSecs(10));
+
+For further explanation of this error, see: https://docs.reach.sh/RE0115.html
+

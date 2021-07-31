@@ -11,18 +11,18 @@ Verification failed:
 
   const UInt.max = 4;
 
-  const v22 = "Alice".interact.getParams();
+  const v31 = "Alice".interact.getParams();
   //    ^ could = {amt: 1, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 4, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail2.rsh:24:104:application
 
 
   // Theorem Formalization
 
-  const v72 = 2 * v22.amt;
+  const v84 = 2 * v31.amt;
   //    ^ would be 2
-  const v175 = 0 == (UInt.max - ((UInt.max - v72) - v72));
+  const v190 = 0 == (UInt.max - ((UInt.max - v84) - v84));
   //    ^ would be false
-  assert(v175);
+  assert(v190);
 
   Verifying when NO participants are honest
 Verification failed:

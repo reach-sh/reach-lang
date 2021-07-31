@@ -8,19 +8,19 @@ Verification failed:
 
   // Violation Witness
 
-  const v20 = selfAddress(""C"", true, 19 );
+  const v29 = selfAddress(""C"", true, 28 );
   //    ^ could = <abstract address 0>
   //      from: ./class_addr.rsh:8:13:application
-  const v27 = selfAddress(""C"", true, 26 );
+  const v37 = selfAddress(""C"", true, 36 );
   //    ^ could = <abstract address 1>
   //      from: ./class_addr.rsh:13:13:application
 
 
   // Theorem Formalization
 
-  const v33 = v20 == v27;
+  const v44 = v29 == v37;
   //    ^ would be false
-  require(v33);
+  require(v44);
 
   Verifying when NO participants are honest
   Verifying when ONLY "C" is honest

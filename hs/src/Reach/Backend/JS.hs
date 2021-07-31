@@ -6,7 +6,6 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Scientific as Sci
@@ -102,7 +101,7 @@ data JSContracts = JSContracts
 data JSCtxtWhile
   = JWhile_None
   | JWhile_Diverge
-  | JWhile_Some JSCtxtWhile (Maybe DLVar) DLBlock ETail ETail
+  | JWhile_Some JSCtxtWhile DLBlock ETail ETail
 
 data JSMode
   = JM_Simulate
@@ -115,7 +114,6 @@ data JSCtxt = JSCtxt
   , ctxt_txn :: Int
   , ctxt_mode :: JSMode
   , ctxt_while :: JSCtxtWhile
-  , ctxt_timev :: Maybe DLVar
   , ctxt_ctcs :: Maybe JSContracts
   , ctxt_maps :: M.Map DLMVar DLMapInfo
   }
@@ -618,20 +616,15 @@ jsETail = \case
       _ -> return $ "return" <> semi
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus at which msvs k ->
+  ET_FromConsensus _at _which msvs k ->
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> jsETail k
       JM_View -> impossible "view from"
       JM_Simulate -> do
-        let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
-        let mkStDigest svs_ = jsDigest $ vconcat which svs_
-        let common extra vis' nextSt' nextSt_noTime' isHalt' =
+        let common extra isHalt' =
               vsep $
                 extra
-                  <> [ "sim_r.nextSt =" <+> nextSt' <> semi
-                     , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
-                     , "sim_r.view =" <+> vis' <> semi
-                     , "sim_r.isHalt =" <+> isHalt' <> semi
+                  <> [ "sim_r.isHalt =" <+> isHalt' <> semi
                      ]
         case msvs of
           FI_Halt toks -> do
@@ -642,25 +635,13 @@ jsETail = \case
             let close_escrow = close Nothing
             let close_asset = close . Just
             closes <- (<>) <$> forM toks close_asset <*> ((\x -> [x]) <$> close_escrow)
-            vis' <- jsArray <$> jsContractAndVals []
-            common closes vis' <$> jsDigest [] <*> jsDigest [] <*> (jsCon $ DLL_Bool True)
-          FI_Continue vis svs -> do
-            vis' <- do
-              let ViewSave vwhich vvs = vis
-              jsArray <$> jsContractAndVals (vconcat vwhich vvs)
-            timev <- (fromMaybe (impossible "no timev") . ctxt_timev) <$> ask
-            let svs' = dvdeletep timev svs
-            common [] vis' <$> mkStDigest svs <*> mkStDigest svs' <*> (jsCon $ DLL_Bool False)
+            common closes <$> (jsCon $ DLL_Bool True)
+          FI_Continue _vis _svs -> do
+            common [] <$> (jsCon $ DLL_Bool False)
   ET_ToConsensus _at fs_ok _prev which from_me msg_vs _out timev secsv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
-    let withCtxt =
-          local
-            (\e ->
-               e
-                 { ctxt_txn = (ctxt_txn e) + 1
-                 , ctxt_timev = Just timev
-                 })
+    let withCtxt = local (\e -> e { ctxt_txn = (ctxt_txn e) + 1 })
     txn <- withCtxt jsTxn
     let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
     timev' <- jsVar timev
@@ -736,28 +717,12 @@ jsETail = \case
     let defp = "const" <+> txn <+> "=" <+> "await" <+> parens callp <> semi
     return $ vsep [defp, k_p]
   ET_While at asn cond body k -> do
-    timev_ <- ctxt_timev <$> ask
-    let mtimev' =
-          case timev_ of
-            Nothing -> Just Nothing
-            Just timev -> foldl' go Nothing (M.toList asnm)
-              where
-                go mtv (v, a) =
-                  case a == DLA_Var timev of
-                    True -> Just $ Just v
-                    False -> mtv
-                DLAssignment asnm = asn
-    let timev' =
-          case mtimev' of
-            Nothing -> impossible "no timev in while"
-            Just x -> x
-    let newCtxt_tv = local (\e -> e {ctxt_timev = timev'})
     oldWhile <- ctxt_while <$> ask
-    let newWhile = JWhile_Some oldWhile timev' cond body k
-    let newCtxt' = newCtxt_tv . local (\e -> e {ctxt_while = newWhile})
+    let newWhile = JWhile_Some oldWhile cond body k
+    let newCtxt' = local (\e -> e {ctxt_while = newWhile})
     cond' <- jsBlockNewScope cond
     body' <- newCtxt' $ jsETail body
-    k' <- newCtxt_tv $ jsETail k
+    k' <- jsETail k
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> do
         asn' <- jsAsn AM_While asn
@@ -778,10 +743,9 @@ jsETail = \case
           (ctxt_while <$> ask) >>= \case
             JWhile_None -> impossible $ "continue not in while: " <> show at
             JWhile_Diverge -> impossible $ "diverging while " <> show at
-            JWhile_Some woldWhile wtimev' wcond wbody wk -> do
-              let newCtxt = local (\e -> e {ctxt_timev = wtimev'})
-              let newCtxt_noWhile = newCtxt . local (\e -> e {ctxt_while = JWhile_Diverge})
-              let newCtxt_oldWhile = newCtxt . local (\e -> e {ctxt_while = woldWhile})
+            JWhile_Some woldWhile wcond wbody wk -> do
+              let newCtxt_noWhile = local (\e -> e {ctxt_while = JWhile_Diverge})
+              let newCtxt_oldWhile = local (\e -> e {ctxt_while = woldWhile})
               asn_ <- jsAsn AM_ContinueInnerSim asn
               wcond' <- jsBlockNewScope wcond
               wbody' <- newCtxt_noWhile $ jsETail wbody
@@ -817,7 +781,6 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_txn = 0
   let ctxt_while = JWhile_None
   let ctxt_mode = JM_Backend
-  let ctxt_timev = Nothing
   let ctxt_maps = dli_maps dli
   local (const JSCtxt {..}) $ do
     let DLInit {..} = dli
@@ -1011,7 +974,6 @@ backend_js outn crs pl = do
   let ctxt_txn = 0
   let ctxt_mode = JM_Backend
   let ctxt_while = JWhile_None
-  let ctxt_timev = Nothing
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty
   d <-

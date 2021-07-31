@@ -9,16 +9,16 @@ Verification failed:
 
   // Violation Witness
 
-  const v22 = "Alice".interact.getParams();
+  const v31 = "Alice".interact.getParams();
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
   // Theorem Formalization
 
-  const v114 = 0 == v22.supply;
+  const v128 = 0 == v31.supply;
   //    ^ would be false
-  assert(v114);
+  assert(v128);
 
 Verification failed:
   when ALL participants are honest
@@ -28,18 +28,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v22 = "Alice".interact.getParams();
+  const v31 = "Alice".interact.getParams();
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
   // Theorem Formalization
 
-  const v72 = 2 * v22.amt;
+  const v84 = 2 * v31.amt;
   //    ^ would be 0
-  const v169 = 0 == ((((v22.supply - v72) - v72) + v72) + v72);
+  const v184 = 0 == ((((v31.supply - v84) - v84) + v84) + v84);
   //    ^ would be false
-  assert(v169);
+  assert(v184);
 
 Verification failed:
   when ALL participants are honest

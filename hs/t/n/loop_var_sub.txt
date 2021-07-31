@@ -8,19 +8,19 @@ Verification failed:
 
   // Violation Witness
 
-  const x/23 = <loop variable>;
+  const x/33 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/45 = <loop variable>;
+  const balance(0)/60 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
   // Theorem Formalization
 
-  const v64 = (balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  const v83 = (balance(0)/60 + 1) == [(x/33[0] + 2), x/33[1] ][0];
   //    ^ would be false
-  while invariant after loop(v64);
+  while invariant after loop(v83);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -30,19 +30,19 @@ Verification failed:
 
   // Violation Witness
 
-  const x/23 = <loop variable>;
+  const x/33 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/45 = <loop variable>;
+  const balance(0)/60 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
   // Theorem Formalization
 
-  const v83 = (balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  const v106 = (balance(0)/60 + 1) == [(x/33[0] + 2), x/33[1] ][0];
   //    ^ would be false
-  while invariant after loop(v83);
+  while invariant after loop(v106);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -52,19 +52,19 @@ Verification failed:
 
   // Violation Witness
 
-  const x/23 = <loop variable>;
+  const x/33 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/45 = <loop variable>;
+  const balance(0)/60 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
   // Theorem Formalization
 
-  const v102 = (balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  const v129 = (balance(0)/60 + 1) == [(x/33[0] + 2), x/33[1] ][0];
   //    ^ would be false
-  while invariant after loop(v102);
+  while invariant after loop(v129);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -74,18 +74,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/23 = <loop variable>;
+  const x/33 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/45 = <loop variable>;
+  const balance(0)/60 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
   // Theorem Formalization
 
-  const v121 = (balance(0)/45 + 1) == [(x/23[0] + 2), x/23[1] ][0];
+  const v152 = (balance(0)/60 + 1) == [(x/33[0] + 2), x/33[1] ][0];
   //    ^ would be false
-  while invariant after loop(v121);
+  while invariant after loop(v152);
 
 Checked 18 theorems; 4 failures. :'(
