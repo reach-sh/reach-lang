@@ -4,8 +4,8 @@
 @title[#:version reach-vers #:tag "guide-roadmap"]{Reach's Roadmap}
 
 This section describes in a vague way some of the bigger future plans for Reach's development.
-These are vague for expediency, but we're willing to elaborate if you ask on @(the-community-link).
-We welcome your contributions on @link["https://github.com/reach-sh/reach-lang"]{GitHub} and on @(the-community-link) to helping make these plans come to fruition.
+These are vague for expediency, but we're willing to elaborate if you ask in @(the-community-link).
+We welcome your contributions on @link["https://github.com/reach-sh/reach-lang"]{GitHub} and in @(the-community-link) to help bring these plans to fruition.
 
 Last updated: 2021/06/30
 
