@@ -368,10 +368,8 @@ data Project = Project
 data Scaffold = Scaffold
   { containerDockerfile :: FilePath
   , containerPackageJson :: FilePath
-  , containerMakefile :: FilePath
   , hostDockerfile :: FilePath
   , hostPackageJson :: FilePath
-  , hostMakefile :: FilePath
   }
 
 data WP
@@ -396,10 +394,8 @@ mkScaffold :: Project -> Scaffold
 mkScaffold Project {..} = Scaffold
   { containerDockerfile = projDirContainer </> "Dockerfile"
   , containerPackageJson = projDirContainer </> "package.json"
-  , containerMakefile = projDirContainer </> "Makefile"
   , hostDockerfile = projDirHost </> "Dockerfile"
   , hostPackageJson = projDirHost </> "package.json"
-  , hostMakefile = projDirHost </> "Makefile"
   }
 
 
@@ -670,7 +666,6 @@ scaffold' i quiet proj@Project {..} = do
   -- generated code trips the linter
   tmpl "package.json" >>= scaffIfAbsent' containerPackageJson
   tmpl "Dockerfile" >>= scaffIfAbsent' containerDockerfile
-  tmpl "Makefile" >>= scaffIfAbsent' containerMakefile
 
   tmpl ".gitignore" >>= scaffIfAbsent' (projDirContainer </> ".gitignore")
   tmpl ".dockerignore" >>= scaffIfAbsent' (projDirContainer </> ".dockerignore")
@@ -693,7 +688,7 @@ unscaffold = command "unscaffold" $ info f fullDesc where
     Scaffold {..} <- mkScaffold <$> projectFrom appOrDir
 
     liftIO $ do
-      forM_ [ containerDockerfile, containerPackageJson, containerMakefile ] $ \n ->
+      forM_ [ containerDockerfile, containerPackageJson ] $ \n ->
         whenM (doesFileExist n) $ do
           when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
           removeFile n
@@ -886,8 +881,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let Scaffold {..} = mkScaffold proj
 
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
-      [ (containerMakefile, hostMakefile)
-      , (containerPackageJson, hostPackageJson)
+      [ (containerPackageJson, hostPackageJson)
       , (containerDockerfile, hostDockerfile)
       ]
 
