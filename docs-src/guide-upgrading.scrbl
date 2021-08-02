@@ -3,32 +3,27 @@
 
 @title[#:version reach-vers #:tag "guide-upgrading"]{Upgrading Reach}
 
-Upgrading Reach means (1) replacing your current @link["https://github.com/reach-sh/reach-lang/blob/master/reach"]{reach} script file with the latest script file, (2) replacing your current Reach Docker @emph{images} with the latest images, and (3) removing your current Reach Docker @emph{containers} built from the replaced images. The following directions assume that you installed the @link["https://github.com/reach-sh/reach-lang/blob/master/reach"]{reach} script file in @exec{~/reach}:
+The directions below show you how to upgrade Reach. They assume that you installed the @link["https://github.com/reach-sh/reach-lang/blob/master/reach"]{reach} script file in @exec{~/reach}.
 
 @itemize[#:style 'ordered
 
 @item{
-  Download the latest reach script file:
+  Download the latest @exec{reach} script file:
   @cmd{cd ~/reach}
   @cmd{reach upgrade}
   This command renames your current @link["https://github.com/reach-sh/reach-lang/blob/master/reach"]{reach} script file to something like @emph{reach.20040}, and downloads the lastest.
 }
 
 @item{
-  Remove @emph{all} Docker @emph{containers} (including those associated with Reach):
+  Remove @emph{all} Docker @emph{containers} (including those NOT associated with Reach):
   @cmd{reach docker-reset}
-}
-
-@item{
-  Remove Reach Docker @emph{images} (but not non-Reach ones):
-  @cmd{docker rmi $(docker images -f=reference="reachsh/*" -q)}
 }
 
 @item{
   Download the latest Reach Docker images:
   @cmd{reach update}
 
-  You can list the new Reach Docker images by running @exec{reach hashes} or @exec{docker images}:
+  You can list the new Reach Docker images by running @exec{reach hashes} or @exec{docker images} as in the examples below:
 
   @verbatim{
     $ reach hashes
