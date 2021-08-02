@@ -1,8 +1,8 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/${APP}.main.mjs';
+const stdlib = loadStdlib(process.env);
 
 (async () => {
-  const stdlib = await loadStdlib(process.env);
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
@@ -13,10 +13,12 @@ import * as backend from './build/${APP}.main.mjs';
 
   await Promise.all([
     backend.Alice(ctcAlice, {
-      ...stdlib.hasRandom
+      ...stdlib.hasRandom,
+      // implement Alice's interact object here
     }),
     backend.Bob(ctcBob, {
-      ...stdlib.hasRandom
+      ...stdlib.hasRandom,
+      // implement Bob's interact object here
     }),
   ]);
 
