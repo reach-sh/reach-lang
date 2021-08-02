@@ -584,17 +584,6 @@ withCompose DockerMeta {..} wrapped = do
     (_, WithProject React _) -> mkConnSvs version''
     (_, WithProject Rpc _) -> mkConnSvs "latest"
 
-  let topLevelNets = case m of
-        Live -> "{}"
-        _ -> [N.text|
-               reach-devnet:
-                 name: reach-devnet
-             |]
-
-  let svcNets = case m of
-        Live -> "[]"
-        _ -> "- reach-devnet"
-
   let e_dirTmpHost' = T.pack e_dirTmpHost
   let appService' = case compose of
         StandaloneDevnet -> ""
@@ -602,7 +591,7 @@ withCompose DockerMeta {..} wrapped = do
                $appService:
                  image: $appImageTag
                  networks:
-                   $svcNets
+                   - reach-devnet
                  labels:
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
                    - "sh.reach.dir-project=$projDirHost'"
@@ -615,7 +604,8 @@ withCompose DockerMeta {..} wrapped = do
      version: '3.5'
 
      networks:
-       $topLevelNets
+       reach-devnet:
+         name: reach-devnet
 
      services:
        $connSvs
@@ -941,7 +931,8 @@ run' = command "run" . info f $ d <> noIntersperse where
 
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
-          && docker-compose -f "$$TMP/docker-compose.yml" run --name $$CNAME $dd --rm $appService $args'
+          && docker-compose -f "$$TMP/docker-compose.yml" run \
+            --name "$$CNAME" $dd --rm $appService $args'
         RES="$?"
         set -e
 
