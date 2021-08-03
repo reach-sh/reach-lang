@@ -160,6 +160,38 @@ data SLVal
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
+-- | Equivalence operation on flattened or simplified structures.
+class Equiv a where
+  equiv :: a -> a -> Bool
+
+instance Equiv SLVal where
+  equiv (SLV_Null _ s1) (SLV_Null _ s2) = s1 == s2
+  equiv (SLV_Bool _ b1) (SLV_Bool _ b2) = b1 == b2
+  equiv (SLV_Int _ i1) (SLV_Int _ i2) = i1 == i2
+  equiv (SLV_Bytes _ v1) (SLV_Bytes _ v2) = v1 == v2
+  equiv (SLV_Array _ t xs) (SLV_Array _ t2 ys) = t == t2 && xs == ys
+  equiv (SLV_Tuple _ v1) (SLV_Tuple _ v2) = v1 == v2
+  equiv (SLV_Struct _ xs) (SLV_Struct _ ys) = xs == ys
+  equiv (SLV_DLC d1) (SLV_DLC d2) = d1 == d2
+  equiv (SLV_DLVar d1) (SLV_DLVar d2) = d1 == d2
+  equiv (SLV_Connector t1) (SLV_Connector t2) = t1 == t2
+  equiv (SLV_Prim p1) (SLV_Prim p2) = p1 == p2
+  equiv (SLV_Kwd k1) (SLV_Kwd k2)  = k1 == k2
+  equiv (SLV_Deprecated d v) (SLV_Deprecated d2 v2) = d == d2 && v == v2
+  equiv SLV_Anybody SLV_Anybody = True
+
+  -- un-inspected structures
+
+  equiv (SLV_Participant _ _ _ _) _ = False
+  equiv (SLV_RaceParticipant _ _) _ = False
+  equiv (SLV_Map _) _ = False
+  equiv (SLV_Data _ _ _ _) _ = False
+  equiv (SLV_Form _) _ = False
+  equiv (SLV_Type _) _ = False
+  equiv (SLV_Object _ _ _) _ = False
+  equiv (SLV_Clo _ _ _) _ = False
+  equiv _ _ = False
+
 instance Show SLVal where
   show = show . pretty
 
