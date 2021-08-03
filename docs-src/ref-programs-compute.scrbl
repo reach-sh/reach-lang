@@ -175,7 +175,7 @@ This may be useful for ignoring unwanted values, for example:
  return f(2, false);
  return; }
 
-A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}.
+A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression}, evaluates to the same @tech{value} as @reachin{EXPR}.
 As a special case, @reachin{return;} is interpreted the same as @reachin{return null;}.
 
 A @tech{return statement} returns its value to the surrounding function application.
@@ -232,7 +232,7 @@ A @tech{conditional statement} may only include a @tech{consensus transfer} in @
 A @deftech{switch statement},
 written @reachin{switch (VAR) { CASE ... }},
 where @reachin{VAR} is a variable bound to a @tech{data instance}
-and @reachin{CASE} is either @reachin{case VARIANT: STMT ...}, where @reachin{VARIANT} is a variant, or @reachin{default: STMT ...}, @reachin{STMT} is a sequence of statements,
+and @reachin{CASE} is either @reachin{case VARIANT: STMT ...}, where @reachin{VARIANT} is a variant, or @reachin{default: STMT ...}, and @reachin{STMT} is a sequence of statements,
 selects the appropriate sequence of statements based on which variant @reachin{VAR} holds.
 Within the body of a @reachin{switch} case, @reachin{VAR} has the type of variant; i.e. in a @reachin{Some} case of a @reachin{Maybe(UInt)} @reachin{switch}, the variable is bound to an integer.
 
@@ -354,7 +354,7 @@ The identifier @reachin{this} has a special meaning inside of a @tech{local step
  interact.random()
  declassify( _coinFlip ) }
 
-A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)}, where @reachin{EXPR_rator} and @reachin{EXPR_rand_0} through @reachin{EXPR_rand_n} are @tech{expressions} that evaluate to one value.
+A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)}, is an @tech{expression} where @reachin{EXPR_rator} and @reachin{EXPR_rand_0} through @reachin{EXPR_rand_n} are @tech{expressions} that evaluate to one value.
 @reachin{EXPR_rator} must evaluate to an abstraction over @reachin{n} values or a primitive of arity @reachin{n}.
 A spread expression (@reachin{...expr}) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
 
@@ -363,7 +363,7 @@ A spread expression (@reachin{...expr}) may appear in the list of operands to a 
 
 @subsection[#:tag "ref-programs-types"]{Types}
 
-Reach's @deftech{type}s are represented with programs by the following identifiers and constructors:
+Reach's @deftech{type}s are represented in programs by the following identifiers and constructors:
 
 @itemlist[
   @item{@(mint-define! '("Null")) @reachin{Null}.}
@@ -392,7 +392,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
   @item{@(mint-define! '("Refine")) @reachin{Refine(Type_0, Predicate, ?Message)}, where @reachin{Predicate} is a unary function returning a boolean, which denotes a @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement type}, that is instances of @reachin{Type_0} that satisfy @reachin{Predicate}.
-  When a refinement type appears in a @deftech{negative position} (such as in a @reachin{is} or in the domain of a @reachin{Fun} of a @tech{participant interact interface}), it introduces an @reachin{assert};
+  When a refinement type appears in a @deftech{negative position} (such as in an @reachin{is} or in the domain of a @reachin{Fun} of a @tech{participant interact interface}), it introduces an @reachin{assert};
   while when it is in a @deftech{positive position}, it introduces an @reachin{assume}.
   @reachin{Message} is an optional string to display if the predicate fails verification.
 
@@ -466,7 +466,7 @@ Reach provides syntactic sugar for defining signed @reachin{FixedPoint} numbers,
 may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
-Since @reachin{Bytes} types are specialized in their length, literals typically needed to be @tech{padded} to be useful.
+Since @reachin{Bytes} types are specialized in their length, literals typically need to be @tech{padded} to be useful.
 
 @subsection{Operator expression}
 
@@ -521,7 +521,7 @@ values of type: @reachin{Int}, and @reachin{FixedPoint}.
 
 @margin-note{Bitwise operations are not supported by all @tech{consensus networks} and greatly decrease the efficiency of verification.}
 
-A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}.
+A @deftech{binary expression} is written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}.
 Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers.
 Since all numbers in Reach are integers, operations like @reachin{/} truncate their result.
 Boolean operations, like @reachin{&&}, only operate on booleans.
@@ -572,7 +572,7 @@ Specialized functions exist for equality checking on each supported type.
 
 @(hrule)
 
-If @reachin{verifyArithmetic} is @reachin{true}, then arithmetic operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enable @tech{consensus networks}.
+If @reachin{verifyArithmetic} is @reachin{true}, then arithmetic operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enabled @tech{consensus networks}.
 If it is @reachin{false}, then the @tech{connector} will ensure this dynamically.
 
 @subsection{xor}
@@ -592,8 +592,8 @@ If it is @reachin{false}, then the @tech{connector} will ensure this dynamically
  Bytes(16).pad('abc');
 }
 
-@reachin{Bytes} are like @reachin{Array}s in that they fixedly and exactly sized.
-This means that two @reachin{Bytes} of different lengths are usable in the same contexts.
+@reachin{Bytes} are like @reachin{Array}s in that they are fixed and exactly sized.
+This means that two @reachin{Bytes} of different lengths are not interchangeable.
 
 For example, @reachin{'You win!'} and @reachin{'You lose!'} cannot both be provided to an @reachin{interact} function, because the second is one character longer.
 Most of the time this is good, because it is a signal that you should use a @reachin{Data} type instead, so that the formatting and display logic is entirely controlled by the @tech{frontend}.
@@ -789,7 +789,7 @@ satisfy the predicate, @tt{f}.
   Map.min(c)
   c.min() }
 
-@index{Foldable.min} @reachin{Foldable.min(arr)} returns the lowest number in a container of @tt{UInt}s.
+@index{Foldable.min} @reachin{Foldable.min(c)} returns the lowest number in a container of @tt{UInt}s.
 
 @subsubsection{@tt{Foldable.max} && @tt{.max}}
 
@@ -1157,7 +1157,7 @@ As a special case, when the type of a variant is @reachin{Null}, the @reachin{VA
 
 This means it is a function that returns a @reachin{Data} type specialized to a particular type in the @reachin{Some} variant.
 
-@reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
+@reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of one argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
 
 @(mint-define! '("isNone") '("isSome"))
 @reach{
@@ -1166,9 +1166,9 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
   isSome(m); // true
 }
 
-@index{isNone} @reachin{isNone} is a convenience method that determines whether the variant is @tt{isNone}.
+@index{isNone} @reachin{isNone} is a convenience method that determines whether the variant is @reachin{None}.
 
-@index{isSome} @reachin{isSome} is a convenience method that determines whether the variant is @tt{isSome}.
+@index{isSome} @reachin{isSome} is a convenience method that determines whether the variant is @reachin{Some}.
 
 
 @(mint-define! '("fromSome"))
@@ -1206,8 +1206,7 @@ carry additional information about the error.
 @reach{
   either(e, onLeft, onRight) }
 
-@index{either} @reachin{either(e, onLeft, onRight)} For an @tt{Either} value, @tt{e}, @tt{either}
-will either apply the function @tt{onLeft} or @tt{onRight} to the appropriate variant value.
+@index{either} @reachin{either(e, onLeft, onRight)} will either apply the function @tt{onLeft} or @tt{onRight} depending on @tt{e}.
 
 @(mint-define! '("isLeft") '("isRight") '("fromLeft") '("fromRight"))
 @reach{
@@ -1301,7 +1300,7 @@ while the regular conditional expression only evaluates one branch.
  ((...xs) => Foldable.sum(xs))(1, 2, 3)
 }
 
-An @deftech{arrow expression}, written @reachin{(LHS_0, ..., LHS_n) => EXPR}, where @reachin{LHS_0} through @reachin{LHS_n} are left-hand sides and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values compatible with the respective left-hand side.
+An @deftech{arrow expression}, written @reachin{(LHS_0, ..., LHS_n) => EXPR}, where @reachin{LHS_0} through @reachin{LHS_n} are left-hand sides and @reachin{EXPR} is an @tech{expression}, evaluates to a function which is an abstraction of @reachin{EXPR} over @reachin{n} values compatible with the respective left-hand side.
 Like @tech{function definition}s, @tech{arrow expression}s may use default argument notation and @tech{rest parameter}s.
 
 @subsection{@tt{makeEnum}}
@@ -1405,7 +1404,7 @@ This aides scalability, because it increases the number of times when an operati
  baseWaitTime()
  baseWaitSecs() }
 
-These primitives return the @tech{network time} (@tech{network seconds}) of that a relative @tech{time argument} refers to.
+These primitives return the @tech{network time} (@tech{network seconds}) that a relative @tech{time argument} refers to.
 This is either the same as @reachin{lastConsensusTime} (@reachin{lastConsensusSecs}) or the deadline of the previous @reachin{wait} or @reachin{.timeout}.
 
 @subsection{Time arguments - @tt{relativeTime}, @tt{absoluteTime}, @tt{relativeSecs}, @tt{absoluteSecs}}
@@ -1422,7 +1421,7 @@ These functions return @deftech{time arguments}, which are instances of the type
 
 The @reachin{absoluteTime} and @reachin{absoluteSecs} are equivalent to @reachin{Left} and @reachin{Right} variant tags.
 
-The @reachin{relativeTime} and @reachin{relativeSecs} are add @reachin{baseWaitTime} and @reachin{baseWaitSecs} to their arguments before tagging with the appropriate variant.
+The @reachin{relativeTime} and @reachin{relativeSecs} functions add @reachin{baseWaitTime} and @reachin{baseWaitSecs} to their arguments before tagging with the appropriate variant.
 
 @subsection{@tt{makeDeadline}}
 
@@ -1430,7 +1429,7 @@ The @reachin{relativeTime} and @reachin{relativeSecs} are add @reachin{baseWaitT
 @reach{
   const [ timeRemaining, keepGoing ] = makeDeadline(10); }
 
-@index{makeDeadline} @reachin{makeDeadline(deadline)} takes an @reachin{UInt} as an argument and returns a pair of functions
+@index{makeDeadline} @reachin{makeDeadline(deadline)} takes a @reachin{UInt} as an argument and returns a pair of functions
 that can be used for dealing with absolute deadlines. It internally determines the end time based off of the deadline
 and the last consensus time—at the time of calling @reachin{makeDeadline}. @tt{timeRemaining} will calculate the difference
 between the end time and the current last consensus time. @tt{keepGoing} determines whether the current last consensus time
@@ -1486,7 +1485,7 @@ This pattern is so common that it can be abbreviated as @reachin{.timeRemaining}
 @reach{
  compose(f, g) }
 
-@index{compose} Creates a new function that applies it's argument to @tt{g}, then pipes the result to the function @tt{f}.
+@index{compose} Creates a new function that applies its argument to @tt{g}, then pipes the result to the function @tt{f}.
 The argument type of @tt{f} must be the return type of @tt{g}.
 
 
@@ -1498,7 +1497,7 @@ The argument type of @tt{f} must be the return type of @tt{g}.
 
 @index{sqrt} Calculates an approximate square root of the first argument. This method utilizes
 the @link["https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method"]{Babylonian Method} for computing
-the square root. The second argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
+the square root. The second argument must be a @reachin{UInt} whose value is known at compile time, which represents the number
 of iterations the algorithm should perform.
 
 For reference, when performing @reachin{5} iterations, the algorithm can reliably calculate the square root
@@ -1511,8 +1510,8 @@ square root up to @tt{580} squared, or @tt{336,400}.
 @reach{
   pow (2, 40, 10) // => 1,099,511,627,776 }
 
-@index{pow} @reachin{pow(base, power, precision)} Calculates the approximate value of raising base to power.
-The third argument must be an @reachin{UInt} whose value is known at compile time, which represents the number
+@index{pow} @reachin{pow(base, power, precision)} calculates the approximate value of raising base to power.
+The third argument must be a @reachin{UInt} whose value is known at compile time, which represents the number
 of iterations the algorithm should perform. For reference, @tt{6} iterations provides enough accuracy to calculate
 up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
@@ -1649,13 +1648,13 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
   fxpow(base, power, 10, 1000000); // 1.259921 }
 
 @index{fxpow} @reachin{fxpow(base, power, precision, scalePrecision)} approximates the power of the fixed number, @tt{base},
-raised to the fixed point number, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+raised to the fixed point number, @tt{power}. The third argument must be a @reachin{UInt} whose value is known
 at compile time, which represents the number of iterations the algorithm should perform.
 The @tt{scalePrecision} argument must be a @tt{UInt} and represents the scale of the return value. Choosing a larger
 @tt{scalePrecision} allows for more precision when approximating the power, as demonstrated in the example below:
 
 @index{fxpowi} @reachin{fxpowi(base, power, precision)} approximates the power of the fixed number, @tt{base},
-raised to the @reachin{Int}, @tt{power}. The third argument must be an @reachin{UInt} whose value is known
+raised to the @reachin{Int}, @tt{power}. The third argument must be a @reachin{UInt} whose value is known
 at compile time, which represents the number of iterations the algorithm should perform. For reference, @tt{6} iterations
 provides enough accuracy to calculate up to @tt{2^64 - 1}, so the largest power it can compute is @tt{63}.
 
@@ -1665,7 +1664,7 @@ provides enough accuracy to calculate up to @tt{2^64 - 1}, so the largest power 
 
 @index{fxpowui} @reachin{fxpowui(base, power, precision)} approximates the power of
 the fixed number, @tt{base}, raised to the @reachin{UInt}, @tt{power}. The third
-argument must be an @reachin{UInt} whose value is known at compile time.
+argument must be a @reachin{UInt} whose value is known at compile time.
 
 @index{fxcmp} @reachin{fxcmp(op, x, y)} applies the comparison
 operator to the two fixed point numbers after unifying their scales.
