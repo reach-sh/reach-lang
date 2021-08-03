@@ -675,9 +675,9 @@ scaffold' i quiet proj@Project {..} = do
 
 scaffold :: Subcommand
 scaffold = command "scaffold" $ info f d where
-  d = progDesc "Set up Docker scaffolding for a simple app"
-  f = go <$> switchIsolate <*> switchQuiet <*> argAppOrDir
-  go i q a = projectFrom a >>= scaffold' i q
+  d = progDesc "Set up Docker scaffolding for a simple app in the current directory"
+  f = go <$> switchIsolate <*> switchQuiet
+  go i q = projectPwdIndex >>= scaffold' i q
 
 
 unscaffold :: Subcommand
@@ -815,9 +815,8 @@ compile = command "compile" $ info f d where
 --------------------------------------------------------------------------------
 init' :: Subcommand
 init' = command "init" . info f $ d <> foot where
-  d = progDesc "Set up source files for a simple app"
+  d = progDesc "Set up source files for a simple app in the current directory"
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
-         <*> argument str (metavar "APP" <> value "index" <> showDefault)
 
   -- TODO list available templates?
   foot = footerDoc . Just
@@ -825,10 +824,11 @@ init' = command "init" . info f $ d <> foot where
    <$$> text ""
    <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
 
-  go template app = do
+  go template = do
     Env {..} <- ask
     Project {..} <- projectPwdIndex
     let tmpl n = e_dirEmbed </> "template" </> "init" </> n
+    let app = "index" -- Used to be configurable via CLI; now we try to nudge default of "index"
 
     liftIO $ do
       tmpl' <- ifM (doesDirectoryExist $ tmpl template)
