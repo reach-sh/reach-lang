@@ -49,10 +49,9 @@ data DLVal
   | V_Bool Bool
   | V_UInt Integer
   | V_Bytes Integer
-  -- TODO
-  -- | V_Digest
-  -- | V_Address
-  -- | V_Token
+  | V_Digest String
+  | V_Address String
+  | V_Token String
   | V_Array [Integer]
   | V_Tuple [DLVal]
   | V_Object (M.Map SLVar DLVal)
