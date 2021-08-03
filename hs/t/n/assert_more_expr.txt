@@ -9,19 +9,19 @@ Verification failed:
 
   // Violation Witness
 
-  const _x1/31 = "A".interact.getX();
-  //    ^ could = 1
-  //      from: ./assert_more_expr.rsh:8:32:application
-  const _x2/32 = "A".interact.getX();
+  const _x1/20 = "A".interact.getX();
   //    ^ could = 0
+  //      from: ./assert_more_expr.rsh:8:32:application
+  const _x2/21 = "A".interact.getX();
+  //    ^ could = 1
   //      from: ./assert_more_expr.rsh:9:32:application
 
 
   // Theorem Formalization
 
-  const v35 = (_x1/31 + _x2/32) == (_x1/31 * 2);
+  const v24 = (_x1/20 + _x2/21) == (_x1/20 * 2);
   //    ^ would be false
-  assert(v35);
+  assert(v24);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

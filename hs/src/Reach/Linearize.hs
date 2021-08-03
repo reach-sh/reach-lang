@@ -38,8 +38,8 @@ instance Show Error where
 
 type DKApp = ReaderT DKEnv IO
 
-type LLRetRHS = (DLVar, DLStmts)
-type LLRets = M.Map Int LLRetRHS
+type LLRetRHS = (DLVar, Bool, DLStmts)
+type LLRet = (Int, LLRetRHS)
 
 data Handler = Handler
   { hV :: DLVar
@@ -47,18 +47,27 @@ data Handler = Handler
   }
 
 data DKEnv = DKEnv
-  { eRets :: LLRets
+  { eRet :: [LLRet]
   , eExnHandler :: Maybe Handler
   }
 
-lookupRet :: Int -> DKApp (Maybe LLRetRHS)
-lookupRet r = M.lookup r <$> asks eRets
-
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
-withReturn rv rvv = local (\e -> e {eRets = M.insert rv rvv $ eRets e})
+withReturn rv rvv = local (\e -> e { eRet = (rv, rvv) : eRet e })
 
-abortRets :: DKApp a -> DKApp a
-abortRets = local (\e -> e { eRets = M.map (\(x,_)->(x, mempty)) $ eRets e })
+data DKBranchMode
+  = DKBM_Con
+  | DKBM_CPS
+  | DKBM_Do
+
+getDKBM :: IsLocal a => a -> DKApp DKBranchMode
+getDKBM x =
+  case isLocal x of
+    False -> return $ DKBM_Con
+    True -> do
+      asks eRet >>= \case
+        [] -> return $ DKBM_Do
+        (_, (_, True, _)) : _ -> return $ DKBM_Con
+        (_, (_, False, _)) : _ -> return $ DKBM_CPS
 
 dk_block :: SrcLoc -> DLSBlock -> DKApp DKBlock
 dk_block _ (DLSBlock at fs l a) =
@@ -72,32 +81,45 @@ dk1 at_top ks s =
       com' $ DKC_ArrayMap at ans x a <$> dk_block at f
     DLS_ArrayReduce at ans x z b a f ->
       com' $ DKC_ArrayReduce at ans x z b a <$> dk_block at f
-    DLS_If at c _ t f ->
+    DLS_If at c _ t f -> do
+      let con (t', f') = return $ DK_If at c t' f'
+      let loc ks' (t', f') = DK_Com (DKC_LocalIf at c t' f') <$> dk_ at ks'
+      let loc_noret = loc ks
+      let loc_ret = loc mempty
+      (mk, ks') <- getDKBM s >>= \case
+        DKBM_Con -> return $ (con, ks)
+        DKBM_Do -> return $ (loc_noret, mempty)
+        DKBM_CPS -> return $ (loc_ret, ks)
+      mk =<< (,) <$> dk_ at (t <> ks') <*> dk_ at (f <> ks')
+    DLS_Switch at v _ csm -> do
+      let con csm' = return $ DK_Switch at v csm'
+      let loc ks' csm' = DK_Com (DKC_LocalSwitch at v csm') <$> dk_ at ks'
+      let loc_noret = loc ks
+      let loc_ret = loc mempty
+      (mk, ks') <- getDKBM s >>= \case
+        DKBM_Con -> return $ (con, ks)
+        DKBM_Do -> return $ (loc_noret, mempty)
+        DKBM_CPS -> return $ (loc_ret, ks)
+      let cm1 (dv', l) = (,) dv' <$> dk_ at (l <> ks')
+      mk =<< mapM cm1 csm
+    DLS_Return at ret da ->
+      asks eRet >>= \case
+        [] -> impossible $ "return not in prompt"
+        (ret', (dv, _, rks)) : more ->
+          case ret == ret' of
+            False ->
+              impossible $ "return not nested: " <> show (ret, ret')
+            True ->
+              DK_Com (DKC_Set at dv da) <$> (local (\e -> e { eRet = more }) $ dk_ at rks)
+    DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss ->
       case isLocal s of
         True -> do
-          com' $ DKC_LocalIf at c <$> dk_ at t <*> dk_ at f
+          ss' <- withReturn ret (dv, False, mempty) $ dk_ at ss
+          ks' <- dk_ at ks
+          return $ DK_Com (DKC_Var at dv) $ DK_Com (DKC_LocalDo at ss') ks'
         False ->
-          DK_If at c <$> dk_ at (t <> ks) <*> dk_ at (f <> ks)
-    DLS_Switch at v _ csm ->
-      case isLocal s of
-        True ->
-          com' $ DKC_LocalSwitch at v <$> mapM cm1 csm
-          where
-            cm1 (dv', l) = (\x -> (dv', x)) <$> dk_ at l
-        False ->
-          DK_Switch at v <$> mapM cm1 csm
-          where
-            cm1 (dv', c) = (\x -> (dv', x)) <$> dk_ at (c <> ks)
-    DLS_Return at ret da -> do
-      lookupRet ret >>= \case
-        Nothing -> impossible $ "unknown ret " <> show ret
-        Just (dv, rks) ->
-          com'' (DKC_Set at dv da) rks
-    DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss -> do
-      -- It might be possible to turn some of these just into lets
-      -- let ks' = ss <> (return $ DLS_Unreachable at [] $ "prompt did not return: " <> show dv)
-      withReturn ret (dv, ks) $
-        com'' (DKC_Var at dv) (ss <> ks)
+          withReturn ret (dv, True, ks) $
+            com'' (DKC_Var at dv) (ss <> ks)
     DLS_Stop at ->
       return $ DK_Stop at
     DLS_Unreachable at fs m ->
@@ -138,7 +160,7 @@ dk1 at_top ks s =
     com :: DKCommon -> DKApp DKTail
     com = flip com'' ks
     com' :: DKApp DKCommon -> DKApp DKTail
-    com' m = com =<< abortRets m
+    com' m = com =<< m
     com'' :: DKCommon -> DLStmts -> DKApp DKTail
     com'' m ks' = DK_Com m <$> dk_ (srclocOf s) ks'
 
@@ -154,12 +176,12 @@ dk_eb (DLinExportBlock at vs b) =
 resetDK :: DKApp a -> DKApp a
 resetDK = local (const $ DKEnv {..})
   where
-    eRets = mempty
+    eRet = mempty
     eExnHandler = Nothing
 
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex dvs ss) = do
-  let eRets = mempty
+  let eRet = mempty
   let eExnHandler = Nothing
   flip runReaderT (DKEnv {..}) $ do
     dex' <- mapM dk_eb dex
@@ -271,6 +293,8 @@ instance LiftCon DKTail where
     DK_Continue at asn -> return $ DK_Continue at asn
     DK_ViewIs at vn vk a k ->
       DK_ViewIs at vn vk a <$> lc k
+    DK_Label at w k -> DK_Label at w <$> lc k
+    DK_Goto at w -> return $ DK_Goto at w
 
 liftcon :: DKProg -> IO DKProg
 liftcon (DKProg at opts sps dli dex dvs k) = do

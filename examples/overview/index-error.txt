@@ -9,16 +9,16 @@ Verification failed:
 
   // Violation Witness
 
-  const request/27 = "Alice".interact.request;
+  const request/16 = "Alice".interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:5:24:application
 
 
   // Theorem Formalization
 
-  const v64 = 0 == (request/27 - (request/27 - 1));
+  const v53 = 0 == (request/16 - (request/16 - 1));
   //    ^ would be false
-  assert(v64);
+  assert(v53);
 
   Verifying when NO participants are honest
 Verification failed:

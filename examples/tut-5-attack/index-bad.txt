@@ -9,26 +9,26 @@ Verification failed:
 
   // Violation Witness
 
-  const wager/26 = "Alice".interact.wager;
+  const wager/15 = "Alice".interact.wager;
   //    ^ could = 2
   //      from: ./index-bad.rsh:9:28:application
-  const handAlice/32 = "Alice".interact.getHand();
-  //    ^ could = 0
-  //      from: ./index-bad.rsh:21:50:application
-  const handBob/43 = "Bob".interact.getHand();
+  const handAlice/21 = "Alice".interact.getHand();
   //    ^ could = 2
+  //      from: ./index-bad.rsh:21:50:application
+  const handBob/32 = "Bob".interact.getHand();
+  //    ^ could = 4
   //      from: ./index-bad.rsh:29:48:application
 
 
   // Theorem Formalization
 
-  const outcome/52 = (handAlice/32 + (4 - handBob/43)) % 3;
+  const outcome/41 = (handAlice/21 + (4 - handBob/32)) % 3;
   //    ^ would be 2
-  const v59 = (outcome/52 == 2) ? [1, 0 ] : (outcome/52 == 0) ? [0, 2 ] : [1, 1 ];
+  const v48 = (outcome/41 == 2) ? [1, 0 ] : (outcome/41 == 0) ? [0, 2 ] : [1, 1 ];
   //    ^ would be [1, 0 ]
-  const v79 = 0 == (((wager/26 + wager/26) - (v59[0] * wager/26)) - (v59[1] * wager/26));
+  const v68 = 0 == (((wager/15 + wager/15) - (v48[0] * wager/15)) - (v48[1] * wager/15));
   //    ^ would be false
-  assert(v79);
+  assert(v68);
 
   Verifying when NO participants are honest
 Verification failed:

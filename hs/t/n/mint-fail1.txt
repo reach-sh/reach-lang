@@ -9,16 +9,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v31 = "Alice".interact.getParams();
-  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  const UInt.max = 4;
+
+  const v20 = "Alice".interact.getParams();
+  //    ^ could = {amt: 1, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 4, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
   // Theorem Formalization
 
-  const v128 = 0 == v31.supply;
+  const v109 = 0 == v20.supply;
   //    ^ would be false
-  assert(v128);
+  assert(v109);
 
 Verification failed:
   when ALL participants are honest
@@ -28,18 +30,20 @@ Verification failed:
 
   // Violation Witness
 
-  const v31 = "Alice".interact.getParams();
-  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  const UInt.max = 4;
+
+  const v20 = "Alice".interact.getParams();
+  //    ^ could = {amt: 1, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 4, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
 
   // Theorem Formalization
 
-  const v84 = 2 * v31.amt;
-  //    ^ would be 0
-  const v184 = 0 == ((((v31.supply - v84) - v84) + v84) + v84);
+  const v69 = 2 * v20.amt;
+  //    ^ would be 2
+  const v157 = 0 == ((((v20.supply - v69) - v69) + v69) + v69);
   //    ^ would be false
-  assert(v184);
+  assert(v157);
 
 Verification failed:
   when ALL participants are honest

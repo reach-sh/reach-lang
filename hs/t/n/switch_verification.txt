@@ -8,19 +8,19 @@ Verification failed:
 
   // Violation Witness
 
-  const x/28 = "A".interact.amt;
+  const x/16 = "A".interact.amt;
   //    ^ could = Some(0 )
   //      from: ./switch_verification.rsh:4:24:application
-  const x/40 = <switch case binding for Some(0 )>;
+  const x/28 = <switch case binding for Some(0 )>;
   //    ^ could = 0
   //      from: ./switch_verification.rsh:11:3:switch
 
 
   // Theorem Formalization
 
-  const v41 = x/40 == 5;
+  const v29 = x/28 == 5;
   //    ^ would be false
-  assert(v41);
+  assert(v29);
 
   Verifying when NO participants are honest
 Verification failed:

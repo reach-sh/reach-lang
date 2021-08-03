@@ -33,7 +33,7 @@ instance Pretty DKCommon where
     DKC_Var _at dv -> "let" <+> pretty dv <> semi
     DKC_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DKC_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
-    DKC_LocalIf _at ca t f -> prettyIfp ca t f
+    DKC_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
     DKC_LocalSwitch _at ov csm -> prettySwitch (pretty ov <+> "{ local}") csm
     DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
     DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
@@ -62,6 +62,8 @@ data DKTail
       }
   | DK_Continue SrcLoc DLAssignment
   | DK_ViewIs SrcLoc SLPart SLVar (Maybe DKExportBlock) DKTail
+  | DK_Label SrcLoc Int DKTail
+  | DK_Goto SrcLoc Int
   deriving (Eq, Generic)
 
 instance Pretty DKTail where
@@ -79,6 +81,8 @@ instance Pretty DKTail where
     DK_Continue _at asn -> prettyContinue asn
     DK_ViewIs _ vn vk a k ->
       prettyViewIs vn vk a <> hardline <> pretty k
+    DK_Label _ w k -> "label " <> pretty w <> ":" <> hardline <> pretty k
+    DK_Goto _ w -> "goto " <> pretty w <> ";"
 
 data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
   deriving (Eq)

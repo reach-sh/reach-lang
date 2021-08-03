@@ -9,13 +9,13 @@ Verification failed:
 
   // Violation Witness
 
-  const _x/31 = "A".interact.getX();
+  const _x/20 = "A".interact.getX();
 
 
   // Theorem Formalization
 
-  const v32 = _x/31 < 0;
-  possible(v32);
+  const v21 = _x/20 < 0;
+  possible(v21);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

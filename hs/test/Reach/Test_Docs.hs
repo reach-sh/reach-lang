@@ -40,7 +40,7 @@ allErrorCodes =
   , (errPrefix (Linearize.Err_Unreachable ""), gconNum @Linearize.Error)
   , (errPrefix Err_Unauthorized, gconNum @PkgError)
   , (errPrefix Err_Parse_JSIdentNone, gconNum @ParserError)
-  , (errPrefix (Err_Impossible_InspectForall 0), gconNum @ImpossibleError)
+  , (errPrefix Err_Impossible_InspectForall, gconNum @ImpossibleError)
   ]
 
 buildDocs :: IO ()

@@ -612,7 +612,16 @@ smtAssert se = do
 checkUsing :: App SMT.Result
 checkUsing = do
   smt <- ctxt_smt <$> ask
-  let our_tactic = List [Atom "then", Atom "simplify", Atom "auflia"]
+  let t_smt = Atom "smt"
+  let t_simplify = Atom "simplify"
+  let t_def = Atom "auflia"
+  let ms_short = Atom "100"
+  let t_bin op x y = List [ Atom op, x, y ]
+  let t_then = t_bin "then"
+  let t_or = t_bin "or-else"
+  --let t_par_or = t_bin "par-or"
+  let t_timeout = t_bin "try-for"
+  let our_tactic = t_then t_simplify (t_or (t_or (t_timeout t_smt ms_short) (t_timeout t_def ms_short)) t_def)
   res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
     Atom "unsat" -> return Unsat
