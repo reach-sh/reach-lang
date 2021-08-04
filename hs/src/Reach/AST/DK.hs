@@ -32,7 +32,7 @@ instance Pretty DKCommon where
     DKC_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
     DKC_Var _at dv -> "let" <+> pretty dv <> semi
     DKC_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
-    DKC_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
+    DKC_LocalDo _at k -> "do" <+> render_nest (pretty k) <> semi
     DKC_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
     DKC_LocalSwitch _at ov csm -> prettySwitch (pretty ov <+> "{ local}") csm
     DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f

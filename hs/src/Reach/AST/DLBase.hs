@@ -760,8 +760,8 @@ instance Pretty DLStmt where
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
-    DL_LocalIf _at ca t f -> prettyIfp ca t f
-    DL_LocalSwitch _at ov csm -> prettySwitch ov csm
+    DL_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
+    DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
 
