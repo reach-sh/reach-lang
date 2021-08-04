@@ -801,7 +801,7 @@ jsPart dli p (EPProg _ _ et) = do
     let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+>
                             "as its" <+> nth <+> "argument.`"
     let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
-    let ctcChk = rejectIf "ctc.sendrecv === undefined" $ iExpect "a contract" "first"
+    let ctcChk = rejectIf "typeof(ctc) !== 'object' || ctc.sendrecv === undefined" $ iExpect "a contract" "first"
     let interactChk = rejectIf "typeof(interact) !== 'object'" $ iExpect "an interact object" "second"
     let bodyp' =
           vsep
