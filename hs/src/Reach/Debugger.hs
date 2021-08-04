@@ -3,19 +3,19 @@
 module Reach.Debugger where
 
 import Control.Monad.Reader
-
+import Data.IORef
 import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 
--- NOTE: let several base types be Integer/String as a placeholder for now
-
 type ConsensusEnv = M.Map DLVar DLVal
 
-type Balances = [Double]
+type Balance = Integer
 
-type Ledger = M.Map Account Balances
+type Token = String
+
+type Ledger = M.Map Account (M.Map Token Balance)
 
 type Frontend = ( Account, SLPart, M.Map DLVar DLVal, [ DLTail ] )
 
@@ -23,47 +23,41 @@ type Frontends = [ Frontend ]
 
 type NewPartActions = M.Map SLPart [ DLTail ]
 
-type State = (Ledger, ConsensusEnv, Frontends, NewPartActions, Action)
+type State = (Ledger, ConsensusEnv, Frontends, NewPartActions, DAppCode)
 
--- possible backend actions
+data DAppCode
+  = DAppLLCons LLConsensus
+  | DAppLLStep LLStep
+
 data Action
-  = ConsAction LLConsensus
-  | StepAction LLStep
-
-data Contract = Contract
-  { contr_contract_info :: Integer
-  , address :: String
-  , contr_token :: String
-  }
+  = ContinueAction -- run until breakpoint or error
+  | NextAction Integer -- proceeds through the next N computation steps
+  | BTAction -- print the backtrace
+  | ShowAction String -- print the variable described by this string
 
 data Account = Account
-  { nw_acc :: Integer
-  , backend :: LLProg
-  , contract :: Contract
-  , acc_contract_info :: Integer
-  , acc_token :: String
+  { acc_address :: Integer
   }
+  deriving (Eq, Ord, Show)
 
 data DLVal
   = V_Null
   | V_Bool Bool
   | V_UInt Integer
-  | V_Bytes Integer
-  | V_Digest String
-  | V_Address String
-  | V_Token String
-  | V_Array [Integer]
+  | V_Bytes String
+  | V_Digest DLVal
+  | V_Address Account
+  | V_Array [DLVal]
   | V_Tuple [DLVal]
   | V_Object (M.Map SLVar DLVal)
   | V_Data (M.Map SLVar DLVal)
   | V_Struct [(SLVar, DLVal)]
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 type App = ReaderT Env IO
 
 data Env = Env
-  { e_id :: Integer
-  , e_state :: State
+  { e_state :: IORef Session
   }
 
 -- Identify program states
