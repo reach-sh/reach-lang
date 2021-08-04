@@ -616,12 +616,13 @@ checkUsing = do
   let t_simplify = Atom "simplify"
   let t_def = Atom "auflia"
   let ms_short = Atom "100"
+  let ms_too_long = Atom $ show $ (1000 * 60 * 2 :: Integer)
   let t_bin op x y = List [ Atom op, x, y ]
   let t_then = t_bin "then"
-  let t_or = t_bin "or-else"
-  --let t_par_or = t_bin "par-or"
+  -- let t_or = t_bin "or-else"
+  let t_par_or = t_bin "par-or"
   let t_timeout = t_bin "try-for"
-  let our_tactic = t_then t_simplify (t_or (t_or (t_timeout t_smt ms_short) (t_timeout t_def ms_short)) t_def)
+  let our_tactic = t_timeout (t_then t_simplify (t_par_or (t_timeout t_smt ms_short) t_def)) ms_too_long
   res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
     Atom "unsat" -> return Unsat
@@ -1324,8 +1325,12 @@ smt_s = \case
           when' <- smt_a at whena
           case should of
             True -> do
-              smtAssert $ when'
-              r <- checkUsing
+              r <-
+                case when' of
+                  -- It is possible that this is bad, because 
+                  Atom "true" -> return Sat
+                  Atom "false" -> return Unsat
+                  _ -> smtAssert when' >> checkUsing
               case r of
                 -- If this context is satisfiable, then whena can be true, so
                 -- we need to evaluate it

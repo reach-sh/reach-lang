@@ -96,9 +96,10 @@ tealcount () {
 #c examples/rent-seeking/index.rsh
 #c examples/timeoutception/index.rsh
 #r examples/raffle
-#r examples/duoswap
+# r examples/duoswap
 # r examples/ttt
-# c users/4501aa.rsh
+c hs/t/y/pr190b.rsh
+c users/4501aa.rsh
 
 # (cd examples/abstract-simul && make build)
 

@@ -18,7 +18,8 @@ class Optimize a where
   opt :: AppT a
 
 data Focus
-  = F_All
+  = F_Ctor
+  | F_All
   | F_One SLPart
   | F_Consensus
   deriving (Eq, Ord, Show)
@@ -51,14 +52,17 @@ data Env = Env
 focus :: Focus -> App a -> App a
 focus f = local (\e -> e {eFocus = f})
 
-focusa :: App a -> App a
-focusa = focus F_All
+focus_ctor :: App a -> App a
+focus_ctor = focus F_Ctor
 
-focusp :: SLPart -> App a -> App a
-focusp = focus . F_One
+focus_all :: App a -> App a
+focus_all = focus F_All
 
-focusc :: App a -> App a
-focusc = focus F_Consensus
+focus_one :: SLPart -> App a -> App a
+focus_one = focus . F_One
+
+focus_con :: App a -> App a
+focus_con = focus F_Consensus
 
 newScope :: App x -> App x
 newScope m = do
@@ -121,6 +125,12 @@ updateLookup up = do
   Env {..} <- ask
   let writeHuh f =
         case eFocus of
+          F_Ctor ->
+            case f of
+              F_Ctor -> True
+              F_All -> False
+              F_Consensus -> False
+              F_One _ -> True
           F_All -> True
           F_Consensus -> True
           F_One _ -> f == eFocus
@@ -130,7 +140,7 @@ updateLookup up = do
 
 mkEnv0 :: [SLPart] -> IO Env
 mkEnv0 eParts = do
-  let eFocus = F_All
+  let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
           map (\x -> (x, mempty)) $ F_All : F_Consensus : map F_One eParts
@@ -337,7 +347,7 @@ instance Optimize DLStmt where
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_Only at ep l -> do
       let w = case ep of
-            Left p -> focusp p
+            Left p -> focus_one p
             Right _ -> id
       l' <- w $ opt l
       case l' of
@@ -375,21 +385,21 @@ instance Optimize LLConsensus where
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
-      LLC_FromConsensus at1 at2 <$> (focusa $ opt s)
+      LLC_FromConsensus at1 at2 <$> (focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
 
 opt_mtime :: AppT (Maybe (DLTimeArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
-  Just (d, s) -> Just <$> (pure (,) <*> (focusc $ opt d) <*> (newScope $ opt s))
+  Just (d, s) -> Just <$> (pure (,) <*> (focus_con $ opt d) <*> (newScope $ opt s))
 
 instance Optimize DLPayAmt where
   opt (DLPayAmt {..}) = DLPayAmt <$> opt pa_net <*> opt pa_ks
 
 opt_send :: AppT (SLPart, DLSend)
 opt_send (p, DLSend isClass args amta whena) =
-  focusp p $
+  focus_one p $
     (,) p <$> (DLSend isClass <$> opt args <*> opt amta <*> opt whena)
 
 instance Optimize LLStep where
@@ -400,7 +410,7 @@ instance Optimize LLStep where
       LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
       where
         send' = M.fromList <$> mapM opt_send (M.toList send)
-        k' = newScope $ focusc $ opt $ dr_k recv
+        k' = newScope $ focus_con $ opt $ dr_k recv
         recv' = (\k -> recv {dr_k = k}) <$> k'
         mtime' = opt_mtime mtime
 
@@ -419,7 +429,7 @@ instance Optimize LLProg where
     let psl = M.keys m
     env0 <- liftIO $ mkEnv0 psl
     local (\_ -> env0) $
-      focusa $
+      focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> opt s
 
 -- This is a bit of a hack...
