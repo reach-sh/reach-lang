@@ -3099,30 +3099,38 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
           locSco clo_sco' $
             evalStmt body
   let body_sa = mkAnnot body_lifts
-  let no_prompt mt (lvl, v) = do
-        let lifts' =
-              case body_lifts of
-                body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
-                  | the_ret_label == ret ->
-                    --- We don't check that the_val is v, because
-                    --- we're relying on the invariant that there
-                    --- was only one Return... this should be
-                    --- true, but if something changes in the
-                    --- future, this might be a place that an
-                    --- error could be introduced.
-                    body_lifts'
-                _ ->
-                  return $ DLS_Prompt body_at (DLVar at Nothing t ret) body_sa body_lifts''
-                  where
-                    (t, body_lifts'') =
-                      case mt of
-                        Just x -> (x, body_lifts)
-                        Nothing -> (T_Null, body_lifts <> (return $ DLS_Return body_at ret (DLA_Literal $ DLL_Null)))
-        saveLifts lifts'
-        return $ SLAppRes clo_sco'' $ (lvl, v)
+
+  let saveAndRet lifts (lvl, v) = do
+        saveLifts lifts
+        return $ SLAppRes clo_sco'' (lvl, v)
+
+  -- let promptAndStatic :: DLStmts -> (SecurityLevel, SLVal) -> App SLAppRes
+  let promptAndStatic mt (lvl, v) =
+        saveAndRet stmt (lvl, v)
+          where
+            stmt = return $ DLS_Prompt body_at (DLVar at Nothing t ret) body_sa body_lifts''
+            (t, body_lifts'') =
+              case mt of
+                Just x -> (x, body_lifts)
+                Nothing -> (T_Null, body_lifts <> (return $ DLS_Return body_at ret (DLA_Literal $ DLL_Null)))
+
+  -- let maybeNoPromptStatic :: (SecurityLevel, SLVal) -> App SLAppRes
+  let maybeNoPromptStatic mt (lvl, v) =
+        case body_lifts of
+          body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
+            | the_ret_label == ret ->
+              --- We don't check that the_val is v, because
+              --- we're relying on the invariant that there
+              --- was only one Return... this should be
+              --- true, but if something changes in the
+              --- future, this might be a place that an
+              --- error could be introduced.
+              saveAndRet body_lifts' (lvl, v)
+          _ ->
+            promptAndStatic mt (lvl, v)
   case rs of
-    [] -> no_prompt Nothing $ public $ SLV_Null body_at "clo app"
-    [(_, mt, x, False)] -> no_prompt mt $ x
+    [] -> maybeNoPromptStatic Nothing $ public $ SLV_Null body_at "clo app"
+    [(_, mt, x, False)] -> maybeNoPromptStatic mt x
     (_, mt, (xlvl, xv), _) : more -> do
       let msvs = map (\(_a, _b, c, _d) -> c) more
       let mlvls = map fst msvs
@@ -3130,9 +3138,9 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       let lvl = mconcat $ xlvl : mlvls
       -- We check equivalence here with Equiv typeclass. it's shallow checking but performant
       let all_same = all (equiv xv) mvs
-      -- let all_same = False && all (equiv xv) mvs
       case all_same of
-        True -> no_prompt mt $ (lvl, xv)
+        -- only remove the prompt if there was a single return
+        True -> promptAndStatic mt (lvl, xv)
         False -> do
           let go (r_at, mrty, (_, v), _) =
                 case mrty of
