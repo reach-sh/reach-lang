@@ -160,6 +160,14 @@ data SLVal
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
 
+class NewerVar a where
+  containsVarNewerThan :: Int -> a -> Bool
+
+instance NewerVar SLVal where
+  containsVarNewerThan ret (SLV_DLVar (DLVar _ _ _ i)) = ret < i
+  containsVarNewerThan _ _ = False
+
+
 -- | Equivalence operation on flattened or simplified structures.
 class (Eq a) => Equiv a where
   equiv :: a -> a -> Bool
