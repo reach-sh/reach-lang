@@ -10,6 +10,7 @@ import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import Data.Either
+import Data.Function
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import qualified Data.List as List
@@ -26,6 +27,7 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Connector
 import Reach.Counter
+import Reach.FixedPoint
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
@@ -36,6 +38,21 @@ import Text.Read
 -- import Debug.Trace
 
 -- General tools that could be elsewhere
+
+longestPathBetween :: forall a . Ord a => M.Map a (M.Map a Int) -> a -> a -> ([(a, Int)], Int)
+longestPathBetween g f _d = r f (fixedPoint h)
+  where
+    r x y = fromMaybe ([], 0) $ M.lookup x y
+    h :: M.Map a ([(a, Int)], Int) -> M.Map a ([(a, Int)], Int)
+    h m =
+      flip M.mapWithKey g $ \n cs ->
+        List.maximumBy (compare `on` snd) $
+          flip map (M.toAscList cs) $ \(t, c) ->
+            let (p, pc) = r t m
+                p' = (t, c) : p
+                c' = pc + c
+                c'' = if n `elem` map fst p' then 0 else c'
+            in (p', c'')
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -91,11 +108,17 @@ algoMaxAppTotalArgLen = 2048
 algoMinimumBalance :: Integer
 algoMinimumBalance = 100000
 
-algoMaxTxGroupSize :: Int
+algoMaxTxGroupSize :: Integer
 algoMaxTxGroupSize = 16
+
+algoMaxAppProgramCost :: Integer
+algoMaxAppProgramCost = 700
 
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
+
+tealVersionPragma :: LT.Text
+tealVersionPragma = "#pragma version 4"
 
 -- Algo specific stuff
 
@@ -231,12 +254,66 @@ opt_b1 = \case
       let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
       return $ base64d x_bs
 
-render :: TEALs -> T.Text
-render ts = tt
-  where
-    tt = LT.toStrict lt
-    lt = LT.unlines lts
-    lts = "#pragma version 4" : (map LT.unwords $ optimize $ DL.toList ts)
+checkCost :: [TEAL] -> IO ()
+checkCost ts = do
+  (cgr :: IORef (M.Map String (M.Map String Int))) <- newIORef $ mempty
+  let lTop = "TOP"
+  let lBot = "BOT"
+  (labr :: IORef String) <- newIORef $ lTop
+  (cr :: IORef Int) <- newIORef $ 0
+  let l2s = LT.unpack
+  let rec c = modifyIORef cr (c +)
+  let jump_ t = do
+        lab <- readIORef labr
+        c <- readIORef cr
+        let ff = max c
+        let fg = Just . ff . fromMaybe 0
+        let f = M.alter fg t
+        let g = Just . f . fromMaybe mempty
+        modifyIORef cgr $ M.alter g lab
+  let switch t = do
+        writeIORef labr t
+        writeIORef cr 0
+  let jump t = rec 1 >> jump_ (l2s t ++ ":")
+  forM_ ts $ \case
+    ["sha256"] -> rec 35
+    ["keccak256"] -> rec 130
+    ["sha512_256"] -> rec 45
+    ["ed25519verify"] -> rec 1900
+    ["divmodw"] -> rec 20
+    ["sqrt"] -> rec 4
+    ["expw"] -> rec 10
+    ["b+"] -> rec 10
+    ["b-"] -> rec 10
+    ["b/"] -> rec 20
+    ["b*"] -> rec 20
+    ["b%"] -> rec 20
+    ["b|"] -> rec 6
+    ["b&"] -> rec 6
+    ["b^"] -> rec 6
+    ["b~"] -> rec 4
+    ["b|"] -> rec 6
+    ["bnz", lab'] -> jump lab'
+    ["bz", lab'] -> jump lab'
+    ["b", lab'] -> do
+      jump lab'
+      switch ""
+    ["return"] -> do
+      jump lBot
+      switch ""
+    ["callsub", _lab'] ->
+      impossible "callsub"
+    com : _ | LT.isPrefixOf "//" com -> return ()
+    [lab'] | LT.isSuffixOf ":" lab' -> do
+      let lab'' = l2s lab'
+      jump_ lab''
+      switch lab''
+    _ -> rec 1
+  cg <- readIORef cgr
+  let (p, c) = longestPathBetween cg lTop (l2s lBot)
+  when (fromIntegral c > algoMaxAppProgramCost) $
+    emitWarning $ W_ALGOConservative $
+      [ "This program could take " <> show c <> " units of cost, but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p ]
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -247,7 +324,7 @@ data Shared = Shared
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
   , sMapKeysl :: [Word8]
-  , sTxnCounts :: IORef (M.Map Int TxnCountRec)
+  , sTxnCounts :: IORef (CostGraph Int)
   }
 
 type Lets = M.Map DLVar (App ())
@@ -269,11 +346,18 @@ type App = ReaderT Env IO
 recordWhich :: Int -> App a -> App a
 recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
 
-data TxnCountRec = TxnCountRec
-  { tcr_count :: Int
-  , tcr_edges :: S.Set Int
+type CostGraph a = M.Map a (CostRecord a)
+data CostRecord a = CostRecord
+  { cr_n :: Int
+  , cr_max :: S.Set a
   }
   deriving (Show)
+type TxnCountRec = CostRecord Int
+updateCostRecord :: Ord a => IORef (CostGraph a) -> a -> (CostRecord a -> CostRecord a) -> IO ()
+updateCostRecord cgr lab f = do
+  let g = Just . f . fromMaybe (CostRecord 0 mempty)
+  modifyIORef cgr $ M.alter g lab
+
 dupeTxnCount :: App a -> App a
 dupeTxnCount m = do
   c' <- (liftIO . dupeCounter) =<< asks eTxnCount
@@ -281,29 +365,30 @@ dupeTxnCount m = do
 incTxnCount :: App ()
 incTxnCount = do
   void $ (liftIO . incCounter) =<< asks eTxnCount
-
 updateTxnCount :: (TxnCountRec -> TxnCountRec) -> App ()
 updateTxnCount f = do
   Env {..} <- ask
   let Shared {..} = eShared
-  let g = Just . f . fromMaybe (TxnCountRec 0 mempty)
-  liftIO $ modifyIORef sTxnCounts $ M.alter g eWhich
+  liftIO $ updateCostRecord sTxnCounts eWhich f
 addTxnCountEdge :: Int -> App ()
 addTxnCountEdge w' = do
   addTxnCount
-  updateTxnCount (\t -> t { tcr_edges = S.insert w' (tcr_edges t) })
+  updateTxnCount (\t -> t { cr_max = S.insert w' (cr_max t) })
 addTxnCount :: App ()
 addTxnCount = do
   c <- (liftIO . readCounter) =<< asks eTxnCount
-  updateTxnCount (\t -> t { tcr_count = max c (tcr_count t) })
-checkTxnCount :: (LT.Text -> IO ()) -> M.Map Int TxnCountRec -> IO ()
-checkTxnCount b tcs = do
-  let chase i = tcr_count + (sum $ map chase $ S.toAscList tcr_edges)
-        where TxnCountRec {..} = tcs M.! i
+  updateTxnCount (\t -> t { cr_n = max c (cr_n t) })
+checkTxnCount :: (LT.Text -> IO ()) -> CostGraph Int -> IO ()
+checkTxnCount bad' tcs = do
+  -- XXX Do this not dumb
+  let maximum' :: [Int] -> Int
+      maximum' l = maximum $ 0 : l
+  let chase i = cr_n + (maximum' $ map chase $ S.toAscList cr_max)
+        where CostRecord {..} = tcs M.! i
   forM_ (M.keys tcs) $ \which -> do
     let amt = chase which
-    when (amt > algoMaxTxGroupSize) $ do
-      b $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
+    when (fromIntegral amt > algoMaxTxGroupSize) $ do
+      bad' $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
 
 output :: TEAL -> App ()
 output t = do
@@ -1563,8 +1648,15 @@ compile_algo disp pl = do
         eTxnCount <- newCounter 1
         flip runReaderT (Env {..}) m
         readIORef eOutputR
+  let bad' = bad_io sFailuresR
   let addProg lab m = do
-        t <- render <$> run m
+        ts <- run m
+        let tsl = DL.toList ts
+        let tsl' = optimize tsl
+        checkCost tsl'
+        let lts = tealVersionPragma : (map LT.unwords tsl')
+        let lt = LT.unlines lts
+        let t = LT.toStrict lt
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
         disp lab t
   addProg "appApproval" $ do
@@ -1683,7 +1775,7 @@ compile_algo disp pl = do
     asserteq
     code "b" ["done"]
     defn_done
-  checkTxnCount (bad_io sFailuresR) =<< readIORef sTxnCounts
+  checkTxnCount bad' =<< readIORef sTxnCounts
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $

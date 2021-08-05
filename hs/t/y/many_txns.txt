@@ -4,5 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
 Checked 54 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * This program could take 906 units of cost, but the limit is 700: [("l1:",129),("l2:",44),("l3:",44),("l4:",44),("l5:",44),("l6:",44),("l7:",44),("l8:",44),("l9:",44),("l10:",44),("l11:",44),("l12:",44),("l13:",44),("l14:",44),("l15:",44),("l16:",44),("l17:",44),("l18:",42),("updateState:",8),("checkSize:",5),("done:",16),("BOT:",2)]
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * Step 1 could have too many txns: could have 19 but limit is 16

@@ -98,13 +98,11 @@ tealcount () {
 #r examples/raffle
 # r examples/duoswap
 # r examples/ttt
-# c hs/t/y/localifret.rsh
-# c hs/t/y/pr190b.rsh
-# c users/4501aa.rsh
-# c hs/t/y/exception_return.rsh
 
-c hs/t/y/many_txns.rsh
 c examples/ttt/index.rsh
+# c examples/duoswap/index.rsh
+c hs/t/y/many_txns.rsh
+c hs/t/y/pr190b.rsh
 
 # (cd examples/abstract-simul && make build)
 

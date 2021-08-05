@@ -5,3 +5,5 @@ Verifying for generic connector
   Verifying when ONLY "Auctioneer" is honest
   Verifying when ONLY "Bidder" is honest
 Checked 118 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * This program could take 866 units of cost, but the limit is 700: [("l0:",31),("l6:",0),("l7:",0),("l8:",4),("l9:",0),("l10:",0),("l12:",196),("l13:",56),("loop5:",38),("l20:",56),("loop6:",32),("l21:",95),("l22:",52),("loop2:",28),("l15:",40),("loop3:",11),("l16:",60),("l17:",47),("l18:",47),("l19:",42),("updateState:",8),("checkSize:",5),("done:",16),("BOT:",2)]

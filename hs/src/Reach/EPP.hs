@@ -16,6 +16,7 @@ import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
+import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
@@ -94,19 +95,6 @@ instance Pretty FlowOutputData where
 
 fod_savel :: FlowOutputData -> [DLVar]
 fod_savel = S.toAscList . fod_save
-
-fixedPoint_ :: forall a. Eq a => a -> (a -> a) -> a
-fixedPoint_ x0 f = h x0
-  where
-    h :: a -> a
-    h x =
-      let x' = f x
-       in case x == x' of
-            True -> x
-            False -> h x'
-
-fixedPoint :: (Eq a, Monoid a) => (a -> a) -> a
-fixedPoint = fixedPoint_ mempty
 
 solve :: FlowInput -> FlowOutput
 solve fi' = fixedPoint go

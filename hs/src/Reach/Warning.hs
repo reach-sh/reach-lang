@@ -33,6 +33,7 @@ data Warning
   = W_Deprecated Deprecation
   | W_SolidityOptimizeFailure String
   | W_ALGOUnsupported [String]
+  | W_ALGOConservative [String]
   deriving (Eq)
 
 instance Show Deprecation where
@@ -58,6 +59,8 @@ instance Show Warning where
       "The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:\n" <> msg
     W_ALGOUnsupported rs ->
       "Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:\n" <> (intercalate "\n" $ map (" * " <>) rs)
+    W_ALGOConservative rs ->
+      "Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:\n" <> (intercalate "\n" $ map (" * " <>) rs)
 
 emitWarning :: Warning -> IO ()
 emitWarning d = do
