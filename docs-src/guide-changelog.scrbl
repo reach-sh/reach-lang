@@ -6,7 +6,7 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-@section[#:style 'hidden-number]{0.1.3: 2020/07 - present}
+@section[#:style 'hidden-number]{0.1.3: 2021/07 - present}
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
