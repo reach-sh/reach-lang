@@ -2,19 +2,27 @@
 
 make build || exit 1
 
-REACH_CONNECTOR="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
-DOCKER_COMPOSE_YML_DEFAULT="docker-compose.${REACH_CONNECTOR}.yml"
-DOCKER_COMPOSE_YML="${1:-"${DOCKER_COMPOSE_YML_DEFAULT}"}"
+R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
+R="${R:-ETH}"
+D="devnet-$(echo "$R" | tr '[:upper:]' '[:lower:]')"
 
-docker-compose -f "$DOCKER_COMPOSE_YML" up -d alice bob || exit 1
+alias reach_bg='REACH_CONNECTOR_MODE=$R ../../reach'
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-docker attach tut-8_alice_1 < Alice.in > Alice.out &
-APID=$!
-docker attach tut-8_bob_1 < Bob.in > Bob.out &
-BPID=$!
+reach_bg devnet >/dev/null 2>&1 &
+
+printf 'Bringing up %s...' "$D"
+while true; do
+  if [ "$(docker ps -qf "label=sh.reach.devnet-for=$D" | wc -l)" -gt 0 ]; then break; fi
+  printf '.'
+  sleep 1
+done
+printf ' Done.\n'
+
+reach_bg run index alice < Alice.in > Alice.out &
+reach_bg run index bob   < Bob.in   > Bob.out   &
 
 exec 3> Alice.in
 exec 4< Alice.out
@@ -99,6 +107,3 @@ get_Alice
 get_Bob
 get_Alice
 get_Bob
-
-kill "${APID}" "${BPID}"
-kill -9 "${APID}" "${BPID}"

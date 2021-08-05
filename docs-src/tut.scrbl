@@ -1316,64 +1316,58 @@ Instead, we'll go under the covers of @exec{reach run}, as well as build a versi
 
 @(hrule)
 
-In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a fresh instance of a private developer test network.
+In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a containerized private developer test network.
 In this section we'll introduce customizations in support of a non-automated version of @|RPS| and provide the option to connect to a real Ethereum network.
 
-We'll start by running
-
-@cmd{./reach scaffold}
-
-which will automatically generate the following files for us:
-
-@itemlist[
-
-@item{@exec{package.json} --- A Node.js package file that connects our @exec{index.mjs} to the Reach standard library.}
-
-@item{@exec{Dockerfile} --- A Docker image script that builds our package efficiently and runs it.}
-
-@item{@exec{docker-compose.yml} --- A Docker Compose script that connects our Docker image to a fresh instance of the Reach private developer test network.}
-
-@item{@exec{Makefile} --- A @exec{Makefile} that easily rebuilds and runs the Docker image.}
-
-]
-
-We're going to leave the first two files unchanged.
-You can look at them at @reachexlink["tut-8/package.json"] and @reachexlink["tut-8/Dockerfile"], but the details aren't especially important.
-However, we'll customize the other two files.
-
-First, let's look at the @reachexlink["tut-8/docker-compose.yml"] file:
-
-@reachex[#:mode yaml
-         "tut-8/docker-compose.yml"]
-
-@itemlist[
-
-@item{Lines 2 and 3 define a service for starting our application.
-Your line 3 will say @litchar{tut}, rather than @litchar{tut-8}, if you've stayed in the same directory throughout the tutorial.}
-
-@item{Lines 5 and 6 define the Reach private developer test network service for Conflux.}
-
-@item{Lines 7 and 8 define the Reach private developer test network service for Ethereum.}
-
-@item{Lines 9 through 26 define the Reach private developer test network service for Algorand.}
-
-@item{Lines 27 through 82 define services that allow the application to be run with different networks; including line 27, which defines @litchar{reach-app-tut-8-ETH-live} for connecting to a live network.}
-
-@item{We'll also add lines 85 through 90 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
-]
-
-With these in place, we can run
-
-@cmd{docker-compose run WHICH}
-
-where @exec{WHICH} is @litchar{reach-app-tut-8-ETH-live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
-If we use the live version, then we have to define the environment variable @envref{ETH_NODE_URI} as the URI of our Ethereum node.
-
-We'll modify the @reachexlink["tut-8/Makefile"] to have commands to run each of these variants:
+Although it's possible to run everything you're about to see directly from the command line, we recommend writing a @exec{Makefile} for convenience.
+For the purposes of this exercise it will look like @reachexlink["tut-8/Makefile"]:
 
 @reachex[#:mode makefile
          "tut-8/Makefile"
-         'only 37 44 ""]
+         'only 1 1 ""]
+
+@itemlist[
+@item{
+Line 1 defines a variable which points to the @exec{reach} script's location.
+If you've been following the tutorials exactly, your line should instead be
+@verbatim{REACH = ./reach}
+since the script was downloaded to the @exec{~/reach/tut} directory where you're building this project.
+}
+]
+
+@reachex[#:mode makefile
+         "tut-8/Makefile"
+         'only 7 16 ""]
+
+@itemlist[
+
+@item{
+Lines 7 through 9 define a target with which Alice and Bob may play on our private developer test network.
+This is exactly equivalent to running
+@cmd{./reach run}
+from the command line.
+}
+
+@item{
+Lines 11 through 16 define a target with which Alice and Bob may play on a live Ethereum network.
+You should replace the address in @exec{ETH_NODE_URI} with your intended target and remove @exec{REACH_ISOLATED_NETWORK} when connecting to a public test/main-net.
+
+Alternatively, you can override @exec{ETH_NODE_URI} from the command line like so:
+@cmd{ETH_NODE_URI=http://live-net-host:2345 make run-live}
+Our @exec{Makefile} uses the special @exec{:-} assignment operator to check for an existing value and supply the given default when missing.
+}
+
+]
+
+@margin-note{
+Don't overlook the @exec{\} characters at the ends of lines 13 through 15!
+These are used to improve readability and indicate that lines 13 through 16 should be interpreted as a single command rather than separately.
+}
+
+The @exec{run-devnet} and @exec{run-live} targets may be executed from the command line with:
+@cmd{make run-devnet}
+and
+@cmd{make run-live}
 
 However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let's modify the JavaScript @tech{frontend} and make them interactive.
@@ -1446,7 +1440,7 @@ Next we define a few helper functions and start the participant interaction inte
          "tut-8/index.mjs"
          'only 55 59 "  // ..."]
 
-First we define a timeout handler.
+Then we define a timeout handler.
 
 @reachex[#:mode js
          "tut-8/index.mjs"
@@ -1476,22 +1470,18 @@ Lastly, we choose the appropriate backend function and await its completion.
 
 We can now run
 
-@cmd{make build}
+@cmd{make run-devnet}
 
-to rebuild the images, then
+in one terminal in this directory to play as Alice and
 
-@cmd{make run-alice}
+@cmd{make run-devnet}
 
-in one terminal in this directory and
-
-@cmd{make run-bob}
-
-in another terminal in this directory.
+in another terminal in this directory to play as Bob.
 
 Here's an example run:
 
 @verbatim{
-$ make run-alice
+$ make run-devnet
 Are you Alice?
 y
 Starting Rock, Paper, Scissors as Alice
@@ -1512,7 +1502,7 @@ Your balance is now 989.9999}
 and
 
 @verbatim{
-$ make run-bob
+$ make run-devnet
 Are you Alice?
 n
 Starting Rock, Paper, Scissors as Bob
@@ -1533,11 +1523,13 @@ Your balance is now 1009.9999}
 
 Of course, when you run the exact amounts and addresses may be different.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-8/index.rsh"], @reachexlink["tut-8/index.mjs"], @reachexlink["tut-8/package.json"], @reachexlink["tut-8/Dockerfile"], @reachexlink["tut-8/docker-compose.yml"], and @reachexlink["tut-8/Makefile"] to make sure you copied everything down correctly!}
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-8/index.rsh"], @reachexlink["tut-8/index.mjs"], @reachexlink["tut-8/package.json"], @reachexlink["tut-8/Dockerfile"], and @reachexlink["tut-8/Makefile"] to make sure you copied everything down correctly!}
 
 @(hrule)
 
-If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 34 to line 54, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+If we were to instead run
+@cmd{REACH_CONNECTOR_MODE=ALGO make run-devnet}
+we'd see equivalent output from running our application on a private Algorand devnet.
 
 @(hrule)
 
