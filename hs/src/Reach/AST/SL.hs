@@ -161,36 +161,125 @@ data SLVal
   deriving (Eq, Generic)
 
 -- | Equivalence operation on flattened or simplified structures.
-class Equiv a where
+class (Eq a) => Equiv a where
   equiv :: a -> a -> Bool
 
+instance (Equiv a) => Equiv (Maybe a) where
+  equiv a b = case (a, b) of
+    (Nothing, Nothing) -> True
+    (Just a', Just b') -> equiv a' b'
+    _ -> False
+
+instance (Equiv a) => Equiv (S.Set a) where
+  equiv s1 s2 = equiv (S.toList s1) (S.toList s2)
+
+instance Equiv B.ByteString where
+  equiv = (==)
+
+instance Equiv Char where
+  equiv = (==)
+
+instance Equiv Int where
+  equiv = (==)
+
+instance Equiv Integer where
+  equiv = (==)
+
+instance Equiv Bool where
+  equiv = (==)
+
+instance Equiv SLTypeFun where
+  equiv (SLTypeFun {stf_pre = pre1, stf_post = post1}) (SLTypeFun {stf_pre = pre2, stf_post = post2}) =
+    equiv pre1 pre2 && equiv post1 post2
+
+instance Equiv SLSSVal where
+  equiv (SLSSVal {sss_val = v1}) (SLSSVal { sss_val = v2}) = equiv v1 v2
+
+instance Equiv DLMVar where
+  equiv (DLMVar a) (DLMVar b) = equiv a b
+
+instance (Equiv a) => Equiv [a] where
+  equiv xs ys = all (\(x,y) -> equiv x y) $ zip xs ys
+
+instance (Equiv b, Equiv a) => Equiv (M.Map a b) where
+  equiv m1 m2 = equiv (M.toList m1) (M.toList m2)
+
+instance (Equiv a, Equiv b) => Equiv (a, b) where
+  equiv (a,b) (a2,b2) = equiv a a2 && equiv b b2
+
+
+instance Equiv SLForm where
+  equiv a b = case (a,b) of
+    (SLForm_App, SLForm_App) -> True
+    (SLForm_each, SLForm_each) -> True
+    ((SLForm_EachAns parts _ _ _), (SLForm_EachAns parts2 _ _ _)) -> equiv parts parts2
+    ((SLForm_Part_Only p _), (SLForm_Part_Only p2 _)) -> equiv p p2
+    ((SLForm_liftInteract p _ _), (SLForm_liftInteract p2 _ _)) -> equiv p p2
+    ((SLForm_Part_ToConsensus {slptc_whos = who, slptc_mv = mv}), (SLForm_Part_ToConsensus {slptc_whos = who2, slptc_mv = mv2})) ->
+      equiv who who2 && equiv mv mv2
+    (SLForm_unknowable, SLForm_unknowable) -> True
+    (SLForm_fork, SLForm_fork) -> True
+    (SLForm_parallel_reduce, SLForm_parallel_reduce) -> True
+    (SLForm_wait, SLForm_wait) -> True
+    -- these partials are left unchecked
+    (SLForm_parallel_reduce_partial{}, _) -> False
+    (SLForm_fork_partial{}, _) -> False
+    _ -> False
+
+instance Equiv SLType where
+  equiv a b = case (a,b) of
+    (ST_Null, ST_Null) -> True
+    (ST_Bool, ST_Bool) -> True
+    (ST_UInt, ST_UInt) -> True
+    (ST_Digest, ST_Digest) -> True
+    (ST_Address, ST_Address) -> True
+    (ST_Token, ST_Token) -> True
+    ((ST_Bytes i), (ST_Bytes i2)) -> equiv i i2
+    ((ST_Array s1 _len1), (ST_Array s2 _len2)) -> equiv s1 s2
+    ((ST_Tuple xs), (ST_Tuple ys)) -> equiv xs ys
+    ((ST_Object m), (ST_Object m2)) -> equiv m m2
+    ((ST_Data m), (ST_Data m2)) -> equiv m m2
+    ((ST_Struct s), (ST_Struct s2)) -> equiv s s2
+    ((ST_Fun f), (ST_Fun f2)) -> equiv f f2
+    ((ST_UDFun f), (ST_UDFun f2)) -> equiv f f2
+    ((ST_Type s1), (ST_Type s2)) -> equiv s1 s2
+    ((ST_Refine _sLType v _m), (ST_Refine _sLType2 v2 _m2)) -> equiv v v2
+    _ -> False
+
+instance Equiv DLVar where
+  equiv (DLVar _ sl _dl i) (DLVar _ sl2 _dl2 i2) =
+    equiv (fmap snd sl) (fmap snd sl2) && i == i2
+
+instance Equiv DLConstant where
+  equiv DLC_UInt_max DLC_UInt_max = True
+
 instance Equiv SLVal where
-  equiv (SLV_Null _ s1) (SLV_Null _ s2) = s1 == s2
-  equiv (SLV_Bool _ b1) (SLV_Bool _ b2) = b1 == b2
-  equiv (SLV_Int _ i1) (SLV_Int _ i2) = i1 == i2
-  equiv (SLV_Bytes _ v1) (SLV_Bytes _ v2) = v1 == v2
-  equiv (SLV_Array _ t xs) (SLV_Array _ t2 ys) = t == t2 && xs == ys
-  equiv (SLV_Tuple _ v1) (SLV_Tuple _ v2) = v1 == v2
-  equiv (SLV_Struct _ xs) (SLV_Struct _ ys) = xs == ys
-  equiv (SLV_DLC d1) (SLV_DLC d2) = d1 == d2
-  equiv (SLV_DLVar d1) (SLV_DLVar d2) = d1 == d2
-  equiv (SLV_Connector t1) (SLV_Connector t2) = t1 == t2
-  equiv (SLV_Prim p1) (SLV_Prim p2) = p1 == p2
-  equiv (SLV_Kwd k1) (SLV_Kwd k2)  = k1 == k2
-  equiv (SLV_Deprecated d v) (SLV_Deprecated d2 v2) = d == d2 && v == v2
-  equiv SLV_Anybody SLV_Anybody = True
-
-  -- un-inspected structures
-
-  equiv (SLV_Participant _ _ _ _) _ = False
-  equiv (SLV_RaceParticipant _ _) _ = False
-  equiv (SLV_Map _) _ = False
-  equiv (SLV_Data _ _ _ _) _ = False
-  equiv (SLV_Form _) _ = False
-  equiv (SLV_Type _) _ = False
-  equiv (SLV_Object _ _ _) _ = False
-  equiv (SLV_Clo _ _ _) _ = False
-  equiv _ _ = False
+  equiv a b = case (a,b) of
+    ((SLV_Null _ _), (SLV_Null _ _)) -> True
+    ((SLV_Bool _ b1), (SLV_Bool _ b2)) -> equiv b1 b2
+    ((SLV_Int _ i1), (SLV_Int _ i2)) -> equiv i1 i2
+    ((SLV_Bytes _ v1), (SLV_Bytes _ v2)) -> equiv v1 v2
+    -- Array types can be ignored
+    ((SLV_Array _ _ xs), (SLV_Array _ _ ys)) -> equiv xs ys
+    ((SLV_Tuple _ v1), (SLV_Tuple _ v2)) -> v1 == v2
+    ((SLV_Struct _ xs), (SLV_Struct _ ys)) -> xs == ys
+    ((SLV_DLC d1), (SLV_DLC d2)) -> equiv d1 d2
+    ((SLV_DLVar d1), (SLV_DLVar d2)) -> equiv d1 d2
+    ((SLV_Connector t1), (SLV_Connector t2)) -> t1 == t2
+    ((SLV_Prim p1), (SLV_Prim p2)) -> p1 == p2
+    ((SLV_Kwd k1), (SLV_Kwd k2))  -> k1 == k2
+    ((SLV_Deprecated d v), (SLV_Deprecated d2 v2)) -> d == d2 && v == v2
+    (SLV_Anybody, SLV_Anybody) -> True
+    ((SLV_Participant _ s sl dl), (SLV_Participant _ s2 sl2 dl2)) -> equiv s s2 && equiv sl sl2 && equiv dl dl2
+    ((SLV_RaceParticipant _ slSet1), (SLV_RaceParticipant _ slSet2)) -> equiv slSet1 slSet2
+    ((SLV_Map v1), (SLV_Map v2)) -> equiv v1 v2
+    ((SLV_Data _ _m1 _ val1), (SLV_Data _ _m2 _ val2)) -> equiv val1 val2
+    ((SLV_Form f1), (SLV_Form f2)) -> equiv f1 f2
+    ((SLV_Type t1), (SLV_Type t2)) -> equiv t1 t2
+    ((SLV_Object _ _ slenv1), (SLV_Object _ _ slenv2)) -> equiv slenv1 slenv2
+    -- Closures are the only uninspected structure
+    ((SLV_Clo _ _ _), _) -> False
+    _ -> False
 
 instance Show SLVal where
   show = show . pretty
