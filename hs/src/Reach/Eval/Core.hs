@@ -3133,7 +3133,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       let lvl = mconcat $ xlvl : mlvls
       -- We check equivalence here with Equiv typeclass. it's shallow checking but performant
       let all_same = all (equiv xv) mvs
-      case all_same of
+      case all_same && not (containsVarNewerThan ret xv) of
         -- only remove the prompt if there was a single return
         True -> promptAndStatic mt (lvl, xv)
         False -> do
