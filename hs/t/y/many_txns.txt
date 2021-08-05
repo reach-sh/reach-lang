@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+Checked 54 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * Step 1 could have too many txns: could have 19 but limit is 16

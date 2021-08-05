@@ -101,7 +101,10 @@ tealcount () {
 # c hs/t/y/localifret.rsh
 # c hs/t/y/pr190b.rsh
 # c users/4501aa.rsh
-c hs/t/y/exception_return.rsh
+# c hs/t/y/exception_return.rsh
+
+c hs/t/y/many_txns.rsh
+c examples/ttt/index.rsh
 
 # (cd examples/abstract-simul && make build)
 

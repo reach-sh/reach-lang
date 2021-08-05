@@ -91,6 +91,9 @@ algoMaxAppTotalArgLen = 2048
 algoMinimumBalance :: Integer
 algoMinimumBalance = 100000
 
+algoMaxTxGroupSize :: Int
+algoMaxTxGroupSize = 16
+
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
 
@@ -244,12 +247,13 @@ data Shared = Shared
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
   , sMapKeysl :: [Word8]
+  , sTxnCounts :: IORef (M.Map Int TxnCountRec)
   }
 
 type Lets = M.Map DLVar (App ())
 data Env = Env
   { eShared :: Shared
-  , eWhich :: String
+  , eWhich :: Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
   , eHP :: ScratchSlot
@@ -257,12 +261,49 @@ data Env = Env
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
+  , eTxnCount :: Counter
   }
 
-recordWhich :: Int -> App a -> App a
-recordWhich w = local (\e -> e { eWhich = (eWhich e) <> " > " <> show w })
-
 type App = ReaderT Env IO
+
+recordWhich :: Int -> App a -> App a
+recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
+
+data TxnCountRec = TxnCountRec
+  { tcr_count :: Int
+  , tcr_edges :: S.Set Int
+  }
+  deriving (Show)
+dupeTxnCount :: App a -> App a
+dupeTxnCount m = do
+  c' <- (liftIO . dupeCounter) =<< asks eTxnCount
+  local (\e -> e { eTxnCount = c' }) m
+incTxnCount :: App ()
+incTxnCount = do
+  void $ (liftIO . incCounter) =<< asks eTxnCount
+
+updateTxnCount :: (TxnCountRec -> TxnCountRec) -> App ()
+updateTxnCount f = do
+  Env {..} <- ask
+  let Shared {..} = eShared
+  let g = Just . f . fromMaybe (TxnCountRec 0 mempty)
+  liftIO $ modifyIORef sTxnCounts $ M.alter g eWhich
+addTxnCountEdge :: Int -> App ()
+addTxnCountEdge w' = do
+  addTxnCount
+  updateTxnCount (\t -> t { tcr_edges = S.insert w' (tcr_edges t) })
+addTxnCount :: App ()
+addTxnCount = do
+  c <- (liftIO . readCounter) =<< asks eTxnCount
+  updateTxnCount (\t -> t { tcr_count = max c (tcr_count t) })
+checkTxnCount :: (LT.Text -> IO ()) -> M.Map Int TxnCountRec -> IO ()
+checkTxnCount b tcs = do
+  let chase i = tcr_count + (sum $ map chase $ S.toAscList tcr_edges)
+        where TxnCountRec {..} = tcs M.! i
+  forM_ (M.keys tcs) $ \which -> do
+    let amt = chase which
+    when (amt > algoMaxTxGroupSize) $ do
+      b $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
 
 output :: TEAL -> App ()
 output t = do
@@ -354,7 +395,7 @@ lookup_let dv = do
   case M.lookup dv eLets of
     Just m -> m
     Nothing ->
-      impossible $ eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -683,10 +724,10 @@ cfor :: Integer -> (App () -> App ()) -> App ()
 cfor maxi body = do
   top_lab <- freshLabel
   end_lab <- freshLabel
-  comment "<for>"
   salloc_ $ \store_idx load_idx -> do
     cl $ DLL_Int sb 0
     store_idx
+    comment $ "<for> " <> texty maxi
     label top_lab
     load_idx
     cl $ DLL_Int sb maxi
@@ -1046,6 +1087,7 @@ checkTxn1 f = do
 
 checkTxnAlloc :: App ()
 checkTxnAlloc = do
+  incTxnCount
   gvLoad GV_txnCounter
   op "dup"
   cl $ DLL_Int sb 1
@@ -1209,14 +1251,15 @@ ct = \case
     ca a
     false_lab <- freshLabel
     code "bz" [false_lab]
-    ct tt
+    nct tt
     label false_lab
-    ct ft
+    nct ft
   CT_Switch at dv csm ->
-    doSwitch ct at dv csm
+    doSwitch nct at dv csm
   CT_Jump _at which svs (DLAssignment msgm) -> do
     cla $ DLLA_Tuple $ map DLA_Var svs
     cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
+    addTxnCountEdge which
     code "b" [ loopLabel which ]
   CT_From at which msvs -> do
     isHalt <- do
@@ -1246,6 +1289,9 @@ ct = \case
     code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
     asserteq
     code "b" ["updateState"]
+    addTxnCount
+  where
+    nct = dupeTxnCount . ct
 
 cViewSave :: SrcLoc -> ViewSave -> App ()
 cViewSave at (ViewSave vwhich vvs) = do
@@ -1376,7 +1422,7 @@ bindFromTuple at vs m = do
 
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
-cloop which (C_Loop at svs vars body) = do
+cloop which (C_Loop at svs vars body) = recordWhich which $ do
   label $ loopLabel which
   -- [ svs, vars ]
   let bindVars = id
@@ -1479,6 +1525,7 @@ compile_algo disp pl = do
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
+  sTxnCounts <- newIORef mempty
   let sViewSize = computeViewSize vi
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
@@ -1503,8 +1550,8 @@ compile_algo disp pl = do
   sViewKeysl <- recordSizeAndKeys "view" sViewSize algoMaxGlobalSchemaEntries_usable
   sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
   let eShared = Shared {..}
-  let run :: String -> App () -> IO TEALs
-      run lab m = do
+  let run :: App () -> IO TEALs
+      run m = do
         eLabel <- newCounter 0
         eOutputR <- newIORef mempty
         let eHP = fromIntegral $ fromEnum (maxBound :: GlobalVar)
@@ -1512,11 +1559,12 @@ compile_algo disp pl = do
         let eVars = mempty
         let eLets = mempty
         let eLetSmalls = mempty
-        let eWhich = lab
+        let eWhich = 0
+        eTxnCount <- newCounter 1
         flip runReaderT (Env {..}) m
         readIORef eOutputR
   let addProg lab m = do
-        t <- render <$> run lab m
+        t <- render <$> run m
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
         disp lab t
   addProg "appApproval" $ do
@@ -1548,10 +1596,6 @@ compile_algo disp pl = do
     code "txn" ["NumAppArgs"]
     cl $ DLL_Int sb $ argCount
     asserteq
-    -- NOTE Fee - We don't check that the Fee is correct because we're assuming
-    -- that FeePooling is in effect, we check that all the other fees are zero,
-    -- and we assume that "extra" fees aren't charged, so there's no reason to
-    -- ensure it is low enough.
     code "txna" [ "ApplicationArgs", etexty ArgMethod ]
     cfrombs T_UInt
     op "dup"
@@ -1639,6 +1683,7 @@ compile_algo disp pl = do
     asserteq
     code "b" ["done"]
     defn_done
+  checkTxnCount (bad_io sFailuresR) =<< readIORef sTxnCounts
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $
