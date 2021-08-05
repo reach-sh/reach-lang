@@ -1478,7 +1478,7 @@ We'll see how these three functions are used below.}
 
 @itemlist[
 
-@item{Lines 16 through 19 present the user with the choice of creating a test account if they can or inputing a secret to load an existing account.}
+@item{Lines 16 through 19 present the user with the choice of creating a test account if they can or inputting a secret to load an existing account.}
 
 @item{Line 21 creates the test account as before.}
 
@@ -1609,10 +1609,6 @@ Of course, when you run the exact amounts and addresses may be different.
 @(hrule)
 
 If we were to edit @reachexlink["tut-8/docker-compose.yml"], and move the @litchar{&default-app} on line 34 to line 54, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
-
-@margin-note{We can also change line 32 of @reachexlink["tut-8/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{100} instead of just @reachin{10}.
-This is because Algorand does not support an input-enabled developer network that only runs rounds when transactions are present, so it is possible that timeouts will occur unexpectedly.
-We've commonly observed this on machines under heavy CPU load.}
 
 @(hrule)
 
