@@ -917,11 +917,7 @@ run' = command "run" . info f $ d <> noIntersperse where
       maybe (pure ()) write recompile
       write [N.text|
         cd $projDirHost'
-
-        CNAME="$appService"
-        CS=$(docker ps -aq -f "name=$appService" | wc -l)
-
-        if [ "$$CS" -gt 0 ]; then CNAME="$${CNAME}-$${CS}"; fi
+        CNAME="$appService-$$$$"
 
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
