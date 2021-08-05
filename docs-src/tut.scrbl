@@ -1511,7 +1511,7 @@ y
 Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
-"0xc2a875afbdFb39b1341029A7deceC03750519Db6"
+"0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"
 Your balance is 1000
 Do you accept the wager of 10?
 y
