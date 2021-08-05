@@ -4835,8 +4835,9 @@ evalStmt = \case
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"
       locAtf (srcloc_after_semi "switch" a sp) $ brSeqn fr ks_ne
-  ((JSThrow a e _) : _) -> do
-    let throwAtf = srcloc_jsa "throw" a
+  ((JSThrow a e sp) : ks) -> do
+    let lab = "throw"
+    let throwAtf = srcloc_jsa lab a
     (dv_ty, dv) <- locAtf throwAtf (evalExpr e) >>= compileTypeOf . snd
     curSt <- readSt id
     exn_ref <- asks e_exn
@@ -4847,16 +4848,22 @@ evalStmt = \case
         expect_ Err_Throw_No_Catch
     -- Set or ensure the type that this `try` block is expected to catch
     case e_exn_ty exn of
-      Nothing -> liftIO $ modifyIORef exn_ref (\ex -> ex {e_exn_ty = Just dv_ty})
-      Just ty
-        | ty /= dv_ty -> locAtf throwAtf $ expect_ $ Err_Try_Type_Mismatch ty dv_ty
-        | otherwise -> return ()
+      Nothing ->
+        liftIO $ modifyIORef exn_ref (\ex -> ex {e_exn_ty = Just dv_ty})
+      Just ty ->
+        case ty == dv_ty of
+          True ->
+            return ()
+          False ->
+            locAtf throwAtf $ expect_ $ Err_Try_Type_Mismatch ty dv_ty
     saveLift =<< withAt (\at -> DLS_Throw at dv $ not $ isConsensusStep $ e_exn_mode exn)
     liftIO $ modifyIORef exn_ref (\ex -> ex {e_exn_st = Just curSt})
     forM_ (e_exn_st exn) mergeSt
     st <- asks e_st
     liftIO $ modifyIORef st (\s -> s {st_live = False})
-    asks (SLStmtRes . e_sco) <*> pure []
+    sco <- asks e_sco
+    expect_empty_tail lab a sp ks
+    return $ SLStmtRes sco []
   ((JSTry try_a (JSBlock _ stmts _) [JSCatch _ _ ce _ (JSBlock _ handler _)] _) : ks) -> do
     locAtf (srcloc_jsa "try" try_a) $ do
       at <- withAt id

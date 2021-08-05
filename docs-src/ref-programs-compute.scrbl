@@ -180,13 +180,16 @@ As a special case, @reachin{return;} is interpreted the same as @reachin{return 
 
 A @tech{return statement} returns its value to the surrounding function application.
 
-A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}. For example,
+A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}.
+For example,
 
 @reach{
  { return 1;
    return 2; } }
 
 is @tech{invalid}, because the first @reachin{return}'s @tech{tail} is not empty.
+
+Furthermore, a @reachin{return} must have an empty @tech{continuation} (i.e. it must be in @deftech{tail position}.)
 
 @subsection{@tt{if}}
 
@@ -217,6 +220,8 @@ is erroneous, because the identifier @reachin{z} is not bound outside the @tech{
 
 A @tech{conditional statement} may only include a @tech{consensus transfer} in @reachin{NOT_FALSE} or @reachin{FALSE} if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
 
+If one branch of a conditional contains a @reachin{return}, then both must.
+
 @subsection{@tt{switch}}
 
 @(mint-define! '("switch") '("case") '("default"))
@@ -241,6 +246,8 @@ All cases have empty @tech{tails}, i.e. the @tech{tail} of the @tech{switch stat
 A @tech{switch statement} may only include a @tech{consensus transfer} in its cases if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
 
 It is @tech{invalid} for a case to appear multiple times, or be missing, or to be superfluous (i.e. for a variant that does not exist in the @reachin{Data} type of @reachin{VAR}).
+
+If one case of a @reachin{switch} contains a @reachin{return}, then all must.
 
 @subsection{Block statements}
 
@@ -271,8 +278,11 @@ of code to execute with a specified handler should an exception be thrown.
 
 A @deftech{throw statement},
 written @reachin{throw EXPR}, will transfer control flow to the exception handler, binding @tt{EXPR}
-to @tt{VAR}. Any value that is able to exist at runtime may be thrown. For example, @reachin{Int}s
+to @tt{VAR}.
+Any value that is able to exist at runtime may be thrown.
+For example, @reachin{Int}s
 and @reachin{Array}s are valid values to throw, but a function is not.
+A @reachin{throw} must have an empty @tech{tail}.
 
 @subsection{Expression statements}
 
