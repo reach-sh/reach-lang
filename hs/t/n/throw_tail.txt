@@ -1,0 +1,11 @@
+reachc: error[RE0057]: Invalid statement block. Expected empty tail, but found 1 more statements
+
+ ./throw_tail.rsh:5:12:after throw semicolon
+
+ 5|     throw 5;
+
+Trace:
+  in "returnsFromCatch" from (./throw_tail.rsh:3:29:function exp) at (./throw_tail.rsh:35:30:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0057.html
+

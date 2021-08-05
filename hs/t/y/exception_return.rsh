@@ -3,7 +3,6 @@
 const returnsFromCatch = () => {
   try {
     throw 5;
-    return false;
   } catch (e) {
     return true;
   }
@@ -13,9 +12,8 @@ const returnsFromTry = (x) => {
   try {
     if (x < x) {
       throw false;
-    } else {
-      return true;
     }
+    return true;
   } catch (e) {
     return false;
   }
