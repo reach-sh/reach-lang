@@ -207,6 +207,21 @@ instance (Equiv b, Equiv a) => Equiv (M.Map a b) where
 instance (Equiv a, Equiv b) => Equiv (a, b) where
   equiv (a,b) (a2,b2) = equiv a a2 && equiv b b2
 
+instance Equiv DLType where
+  equiv a b = case (a,b) of
+    (T_Null, T_Null) -> True
+    (T_Bool, T_Bool) -> True
+    (T_UInt, T_UInt) -> True
+    (T_Bytes i1, T_Bytes i2) -> equiv i1 i2
+    (T_Digest, T_Digest) -> True
+    (T_Address, T_Address) -> True
+    (T_Token, T_Token) -> True
+    (T_Array _ i1, T_Array _ i2) -> equiv i1 i2
+    (T_Tuple xs, T_Tuple ys) -> equiv xs ys
+    (T_Object m1, T_Object m2) -> equiv m1 m2
+    (T_Data m1, T_Data m2) -> equiv m1 m2
+    (T_Struct xs, T_Struct ys) -> equiv xs ys
+    _ -> False
 
 instance Equiv SLForm where
   equiv a b = case (a,b) of
@@ -247,8 +262,7 @@ instance Equiv SLType where
     _ -> False
 
 instance Equiv DLVar where
-  equiv (DLVar _ sl _dl i) (DLVar _ sl2 _dl2 i2) =
-    equiv (fmap snd sl) (fmap snd sl2) && i == i2
+  equiv (DLVar _ _ _dl i1) (DLVar _ _ _dl2 i2) = equiv i1 i2
 
 instance Equiv DLConstant where
   equiv DLC_UInt_max DLC_UInt_max = True
@@ -259,7 +273,6 @@ instance Equiv SLVal where
     ((SLV_Bool _ b1), (SLV_Bool _ b2)) -> equiv b1 b2
     ((SLV_Int _ i1), (SLV_Int _ i2)) -> equiv i1 i2
     ((SLV_Bytes _ v1), (SLV_Bytes _ v2)) -> equiv v1 v2
-    -- Array types can be ignored
     ((SLV_Array _ _ xs), (SLV_Array _ _ ys)) -> equiv xs ys
     ((SLV_Tuple _ v1), (SLV_Tuple _ v2)) -> v1 == v2
     ((SLV_Struct _ xs), (SLV_Struct _ ys)) -> xs == ys
@@ -273,7 +286,7 @@ instance Equiv SLVal where
     ((SLV_Participant _ s sl dl), (SLV_Participant _ s2 sl2 dl2)) -> equiv s s2 && equiv sl sl2 && equiv dl dl2
     ((SLV_RaceParticipant _ slSet1), (SLV_RaceParticipant _ slSet2)) -> equiv slSet1 slSet2
     ((SLV_Map v1), (SLV_Map v2)) -> equiv v1 v2
-    ((SLV_Data _ _m1 _ val1), (SLV_Data _ _m2 _ val2)) -> equiv val1 val2
+    ((SLV_Data _ m1 var1 val1), (SLV_Data _ m2 var2 val2)) -> equiv m1 m2 && equiv var1 var2 && equiv val1 val2
     ((SLV_Form f1), (SLV_Form f2)) -> equiv f1 f2
     ((SLV_Type t1), (SLV_Type t2)) -> equiv t1 t2
     ((SLV_Object _ _ slenv1), (SLV_Object _ _ slenv2)) -> equiv slenv1 slenv2
