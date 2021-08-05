@@ -15,7 +15,7 @@ import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Util
-import Reach.Warning (Deprecation)
+import Reach.Warning (Deprecation(..))
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -182,11 +182,45 @@ instance Equiv Char where
 instance Equiv Int where
   equiv = (==)
 
+instance Equiv T.Text where
+  equiv = (==)
+
 instance Equiv Integer where
   equiv = (==)
 
 instance Equiv Bool where
   equiv = (==)
+
+instance (Equiv a, Equiv b) => Equiv (Either a b) where
+  equiv x y = case (x,y) of
+    (Left a, Left b) -> equiv a b
+    (Right a, Right b) -> equiv a b
+    _ -> False
+
+instance Equiv PrimOp where
+  equiv = (==)
+
+instance Equiv SecurityLevel where
+  equiv = (==)
+
+instance Equiv FluidVar where
+  equiv = (==)
+
+instance Equiv DLArg where
+  equiv a b = case (a,b) of
+    (DLA_Var v1, DLA_Var v2) -> equiv v1 v2
+    (DLA_Constant c1, DLA_Constant c2) -> equiv c1 c2
+    (DLA_Literal lit1, DLA_Literal lit2) -> equiv lit1 lit2
+    (DLA_Interact part1 s1 t1, DLA_Interact part2 s2 t2) -> equiv part1 part2 && equiv s1 s2 && equiv t1 t2
+    _ -> False
+
+instance Equiv DLLiteral where
+  equiv a b = case (a,b) of
+    (DLL_Null, DLL_Null) -> True
+    (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
+    (DLL_Int _ x, DLL_Int _ y) -> equiv x y
+    (DLL_Bytes b1, DLL_Bytes b2) -> equiv b1 b2
+    _ -> False
 
 instance Equiv SLTypeFun where
   equiv (SLTypeFun {stf_pre = pre1, stf_post = post1}) (SLTypeFun {stf_pre = pre2, stf_post = post2}) =
@@ -208,19 +242,25 @@ instance (Equiv a, Equiv b) => Equiv (a, b) where
   equiv (a,b) (a2,b2) = equiv a a2 && equiv b b2
 
 instance Equiv DLType where
+  -- this is safe to use Eq with
+  equiv = (==)
+
+
+instance Equiv ClaimType where
   equiv a b = case (a,b) of
-    (T_Null, T_Null) -> True
-    (T_Bool, T_Bool) -> True
-    (T_UInt, T_UInt) -> True
-    (T_Bytes i1, T_Bytes i2) -> equiv i1 i2
-    (T_Digest, T_Digest) -> True
-    (T_Address, T_Address) -> True
-    (T_Token, T_Token) -> True
-    (T_Array _ i1, T_Array _ i2) -> equiv i1 i2
-    (T_Tuple xs, T_Tuple ys) -> equiv xs ys
-    (T_Object m1, T_Object m2) -> equiv m1 m2
-    (T_Data m1, T_Data m2) -> equiv m1 m2
-    (T_Struct xs, T_Struct ys) -> equiv xs ys
+    (CT_Assert, CT_Assert) -> True
+    (CT_Assume b1, CT_Assume b2) -> equiv b1 b2
+    (CT_Require, CT_Require) -> True
+    (CT_Possible, CT_Possible) -> True
+    (CT_Unknowable part1 args1, CT_Unknowable part2 args2) -> equiv args1 args2 && equiv part1 part2
+    _ -> False
+
+instance Equiv Deprecation where
+  equiv a b = case (a,b) of
+    (D_ParticipantTuples _, D_ParticipantTuples _) -> True
+    (D_SnakeToCamelCase _, D_SnakeToCamelCase _ ) -> True
+    (D_ReachAppArgs, D_ReachAppArgs) -> True
+    (D_UntypedTimeArg, D_UntypedTimeArg) -> True
     _ -> False
 
 instance Equiv SLForm where
@@ -274,14 +314,14 @@ instance Equiv SLVal where
     ((SLV_Int _ i1), (SLV_Int _ i2)) -> equiv i1 i2
     ((SLV_Bytes _ v1), (SLV_Bytes _ v2)) -> equiv v1 v2
     ((SLV_Array _ _ xs), (SLV_Array _ _ ys)) -> equiv xs ys
-    ((SLV_Tuple _ v1), (SLV_Tuple _ v2)) -> v1 == v2
-    ((SLV_Struct _ xs), (SLV_Struct _ ys)) -> xs == ys
+    ((SLV_Tuple _ v1), (SLV_Tuple _ v2)) -> equiv v1 v2
+    ((SLV_Struct _ xs), (SLV_Struct _ ys)) -> equiv xs ys
     ((SLV_DLC d1), (SLV_DLC d2)) -> equiv d1 d2
     ((SLV_DLVar d1), (SLV_DLVar d2)) -> equiv d1 d2
-    ((SLV_Connector t1), (SLV_Connector t2)) -> t1 == t2
-    ((SLV_Prim p1), (SLV_Prim p2)) -> p1 == p2
-    ((SLV_Kwd k1), (SLV_Kwd k2))  -> k1 == k2
-    ((SLV_Deprecated d v), (SLV_Deprecated d2 v2)) -> d == d2 && v == v2
+    ((SLV_Connector t1), (SLV_Connector t2)) -> equiv t1 t2
+    ((SLV_Prim p1), (SLV_Prim p2)) -> equiv p1 p2
+    ((SLV_Kwd k1), (SLV_Kwd k2))  -> equiv k1 k2
+    ((SLV_Deprecated d1 v1), (SLV_Deprecated d2 v2)) -> equiv d1 d2 && equiv v1 v2
     (SLV_Anybody, SLV_Anybody) -> True
     ((SLV_Participant _ s sl dl), (SLV_Participant _ s2 sl2 dl2)) -> equiv s s2 && equiv sl sl2 && equiv dl dl2
     ((SLV_RaceParticipant _ slSet1), (SLV_RaceParticipant _ slSet2)) -> equiv slSet1 slSet2
@@ -507,6 +547,9 @@ data SLKwd
   | SLK_yield
   deriving (Bounded, Enum, Eq, Generic)
 
+instance Equiv SLKwd where
+  equiv = (==)
+
 instance Show SLKwd where
   show k = drop 4 $ conNameOf k
 
@@ -617,6 +660,81 @@ data SLPrimitive
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
   deriving (Eq, Generic)
+
+instance Equiv SLPrimitive where
+  equiv a b = case (a,b) of
+    (SLPrim_makeEnum, SLPrim_makeEnum) -> True
+    (SLPrim_declassify, SLPrim_declassify) -> True
+    (SLPrim_digest, SLPrim_digest) -> True
+    (SLPrim_commit, SLPrim_commit) -> True
+    (SLPrim_committed, SLPrim_committed) -> True
+    (SLPrim_claim ct1, SLPrim_claim ct2) -> equiv ct1 ct2
+    (SLPrim_localf _ _sLPart s1 e1, SLPrim_localf _ _sLPart2 s2 e2) -> equiv s1 s2 && equiv e1 e2
+    (SLPrim_is_type, SLPrim_is_type) -> True
+    (SLPrim_type_eq, SLPrim_type_eq) -> True
+    (SLPrim_typeOf, SLPrim_typeOf) -> True
+    (SLPrim_Fun, SLPrim_Fun) -> True
+    (SLPrim_Refine, SLPrim_Refine) -> True
+    (SLPrim_Bytes, SLPrim_Bytes) -> True
+    (SLPrim_Data, SLPrim_Data) -> True
+    (SLPrim_Data_variant m1 var1 t1, SLPrim_Data_variant m2 var2 t2) -> equiv m1 m2 && equiv var1 var2 && equiv t1 t2
+    (SLPrim_data_match, SLPrim_data_match) -> True
+    (SLPrim_Array, SLPrim_Array) -> True
+    (SLPrim_Array_iota, SLPrim_Array_iota) -> True
+    (SLPrim_array, SLPrim_array) -> True
+    (SLPrim_array_elemType, SLPrim_array_elemType) -> True
+    (SLPrim_array_length, SLPrim_array_length) -> True
+    (SLPrim_array_set, SLPrim_array_set) -> True
+    (SLPrim_array_concat, SLPrim_array_concat) -> True
+    (SLPrim_array_map, SLPrim_array_map) -> True
+    (SLPrim_array_reduce, SLPrim_array_reduce) -> True
+    (SLPrim_array_zip, SLPrim_array_zip) -> True
+    (SLPrim_Struct, SLPrim_Struct) -> True
+    (SLPrim_Struct_fromTuple xs, SLPrim_Struct_fromTuple ys) -> equiv xs ys
+    (SLPrim_Struct_fromObject xs, SLPrim_Struct_fromObject ys) -> equiv xs ys
+    (SLPrim_Struct_toTuple, SLPrim_Struct_toTuple) -> True
+    (SLPrim_Struct_toObject, SLPrim_Struct_toObject) -> True
+    (SLPrim_Tuple, SLPrim_Tuple) -> True
+    (SLPrim_tuple_length, SLPrim_tuple_length) -> True
+    (SLPrim_tuple_set, SLPrim_tuple_set) -> True
+    (SLPrim_Object, SLPrim_Object) -> True
+    (SLPrim_Object_has, SLPrim_Object_has) -> True
+    (SLPrim_App_Delay _ _js env1, SLPrim_App_Delay _ _js2 env2) -> equiv env1 env2
+    (SLPrim_op p1, SLPrim_op p2) -> equiv p1 p2
+    (SLPrim_transfer, SLPrim_transfer) -> True
+    (SLPrim_transfer_amt_to val1, SLPrim_transfer_amt_to val2) -> equiv val1 val2
+    (SLPrim_exit, SLPrim_exit) -> True
+    (SLPrim_exitted, SLPrim_exitted) -> True
+    (SLPrim_forall, SLPrim_forall) -> True
+    (SLPrim_PrimDelay _ prim1 vals1 vals1', SLPrim_PrimDelay _ prim2 vals2 vals2') -> equiv prim1 prim2 && equiv vals1 vals2 && equiv vals1' vals2'
+    (SLPrim_part_set, SLPrim_part_set) -> True
+    (SLPrim_part_setted _ part1 arg1, SLPrim_part_setted _ part2 arg2) -> equiv part1 part2 && equiv arg1 arg2
+    (SLPrim_fluid_read fv1, SLPrim_fluid_read fv2) -> equiv fv1 fv2
+    (SLPrim_fluid_read_canWait fv1, SLPrim_fluid_read_canWait fv2) -> equiv fv1 fv2
+    (SLPrim_race, SLPrim_race) -> True
+    (SLPrim_Map, SLPrim_Map) -> True
+    (SLPrim_Map_new, SLPrim_Map_new) -> True
+    (SLPrim_Map_reduce, SLPrim_Map_reduce) -> True
+    (SLPrim_Participant, SLPrim_Participant) -> True
+    (SLPrim_ParticipantClass, SLPrim_ParticipantClass) -> True
+    (SLPrim_View, SLPrim_View) -> True
+    (SLPrim_Foldable, SLPrim_Foldable) -> True
+    (SLPrim_is, SLPrim_is) -> True
+    (SLPrim_remote, SLPrim_remote) -> True
+    (SLPrim_remotef _ arg1 s1 t1 mv1 _mval _mRemote, SLPrim_remotef _ arg2 s2 t2 mv2 _mval2 _mRemote2) ->
+      equiv arg1 arg2 && equiv s1 s2 && equiv t1 t2 && equiv mv1 mv2
+    (SLPrim_balance, SLPrim_balance) -> True
+    (SLPrim_Token_supply, SLPrim_Token_supply) -> True
+    (SLPrim_viewis _ part1 var1 t1, SLPrim_viewis _ part2 var2 t2) -> equiv part1 part2 && equiv var1 var2 && equiv t1 t2
+    (SLPrim_deploy, SLPrim_deploy) -> True
+    (SLPrim_setOptions, SLPrim_setOptions) -> True
+    (SLPrim_adaptReachAppTupleArgs, SLPrim_adaptReachAppTupleArgs) -> True
+    (SLPrim_padTo i1, SLPrim_padTo i2) -> equiv i1 i2
+    (SLPrim_Token_new, SLPrim_Token_new) -> True
+    (SLPrim_Token_burn, SLPrim_Token_burn) -> True
+    (SLPrim_Token_destroy, SLPrim_Token_destroy) -> True
+    (SLPrim_Token_destroyed, SLPrim_Token_destroyed) -> True
+    _ -> False
 
 type SLSVal = (SecurityLevel, SLVal)
 
