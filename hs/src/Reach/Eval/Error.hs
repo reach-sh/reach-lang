@@ -145,6 +145,8 @@ data EvalError
   | Err_ParallelReduce_DefineBlock
   | Err_Expected_Type String SLVal
   | Err_TimeArg_NotStatic
+  | Err_Return_MustBeTail
+  | Err_Return_BothSidesMust
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -270,6 +272,8 @@ instance HasErrorCode EvalError where
     Err_ParallelReduce_DefineBlock {} -> 113
     Err_Expected_Type {} -> 114
     Err_TimeArg_NotStatic {} -> 115
+    Err_Return_MustBeTail -> 116
+    Err_Return_BothSidesMust -> 117
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -688,5 +692,9 @@ instance Show EvalError where
       "Expected a `Type`, but received " <> show (pretty sv) <> " for " <> lab
     Err_TimeArg_NotStatic ->
       "Time argument must be statically determined as either time (Left) or seconds (Right)"
+    Err_Return_MustBeTail ->
+      "`return`s must be in tail position"
+    Err_Return_BothSidesMust ->
+      "If one side of a branch `return`s, the other side must as well"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

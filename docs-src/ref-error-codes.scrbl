@@ -1997,6 +1997,52 @@ For example, if @reachin{x} is not known at compile-time, then
 
 results in this error.
 
+@error{RE0116}
+
+This error means that a @reachin{return} statement, typically inside of an @reachin{if} statement, does not occur in tail position.
+
+For example, this function would have this error:
+
+@reach{
+    const f = (x) => {
+      if ( x > 20 ) {
+        return 0;
+      } else {
+        return 1;
+      }
+      return 2;
+    };
+}
+
+The third @reachin{return} can never be reached, so the way to correct the program is to remove it.
+
+@error{RE0117}
+
+This error means that only one branch of a conditional (@reachin{if} or @reachin{switch}) contains @reachin{return} statement.
+
+For example, this function would have this error:
+
+@reach{
+    const f = (x) => {
+      if ( x > 20 ) {
+        return 0;
+      }
+      return 1;
+    };
+}
+
+It should be corrected by moving the tail of the @reachin{if} into the @reachin{else} branch:
+
+@reach{
+    const f = (x) => {
+      if ( x > 20 ) {
+        return 0;
+      } else {
+        return 1;
+      }
+    };
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}

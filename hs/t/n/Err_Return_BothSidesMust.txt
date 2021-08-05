@@ -1,0 +1,12 @@
+reachc: error[RE0117]: If one side of a branch `return`s, the other side must as well
+
+ ./Err_Return_BothSidesMust.rsh:14:7:if
+
+ 14|       if ( x > 15 ) { return 10; }
+
+Trace:
+  in "g" from (./Err_Return_BothSidesMust.rsh:13:18:function exp) at (./Err_Return_BothSidesMust.rsh:17:16:application)
+  in [unknown function] from (./Err_Return_BothSidesMust.rsh:10:13:function exp) at (./Err_Return_BothSidesMust.rsh:10:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0117.html
+

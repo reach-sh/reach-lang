@@ -4645,16 +4645,13 @@ evalStmt = \case
           at <- withAt id
           om <- readSt st_mode
           saveLift =<< (checkCond om $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts)
-          let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
+          let levelHelp = map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
           let trets' = levelHelp trets
           let frets' = levelHelp frets
-          let addNull = sco_must_ret sco' /= RS_MayBeEmpty
-          ir <-
-            locSt st_t $
-              combineStmtRes addNull clvl trets' st_f frets'
+          rets' <- brCombineRets trets' frets'
           setSt st_t
           mergeSt st_f
-          retSeqn ir ks_ne
+          brSeqn (SLStmtRes sco rets') ks_ne
         _ -> do
           (n_at', ns, os) <- case cv of
             SLV_Bool _ False -> return (f_at', fs, ts)
@@ -4749,7 +4746,6 @@ evalStmt = \case
             case ks_ne of
               [] -> sco
               _ -> sco {sco_must_ret = RS_MayBeEmpty}
-      let addNull = sco_must_ret sco' /= RS_MayBeEmpty
       let case_insert k v@(at1, _, _) m =
             case M.lookup k m of
               Nothing -> return $ M.insert k v m
@@ -4817,7 +4813,7 @@ evalStmt = \case
                           return $ (Just case_st, case_rets')
                         (Just st', Just rets') -> do
                           st'' <- stMerge st' case_st
-                          rets'' <- locSt st'' $ combineStmtRets addNull de_lvl rets' case_st case_rets'
+                          rets'' <- brCombineRets rets' case_rets'
                           return $ (Just st'', rets'')
                         _ -> impossible $ "switch"
                     let casemm'' = M.insert vn (mdv', case_lifts) casemm'
@@ -4838,7 +4834,7 @@ evalStmt = \case
             select at_c body mvv
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"
-      locAtf (srcloc_after_semi "switch" a sp) $ retSeqn fr ks_ne
+      locAtf (srcloc_after_semi "switch" a sp) $ brSeqn fr ks_ne
   ((JSThrow a e _) : _) -> do
     let throwAtf = srcloc_jsa "throw" a
     (dv_ty, dv) <- locAtf throwAtf (evalExpr e) >>= compileTypeOf . snd
@@ -4974,11 +4970,8 @@ retSeqn sr ks = do
       return $ SLStmtRes sco1 (rets0 <> rets1)
 
 combineStmtRes :: Bool -> SecurityLevel -> SLStmtRes -> SLState -> SLStmtRes -> App SLStmtRes
-combineStmtRes addNull lvl (SLStmtRes _ lrets) rst (SLStmtRes sco rrets) =
-  SLStmtRes sco <$> combineStmtRets addNull lvl lrets rst rrets
-
-combineStmtRets :: Bool -> SecurityLevel -> SLStmtRets -> SLState -> SLStmtRets -> App SLStmtRets
-combineStmtRets addNull lvl lrets rst rrets = do
+combineStmtRes addNull lvl (SLStmtRes _ lrets) rst (SLStmtRes sco rrets) = do
+  let ret = return . SLStmtRes sco
   at <- withAt id
   lst <- readSt id
   let yes lab st =
@@ -4988,10 +4981,26 @@ combineStmtRets addNull lvl lrets rst rrets = do
   let no _ _ = []
   let mnull = if addNull then yes else no
   case (lrets, rrets) of
-    ([], []) -> return []
-    ([], _) -> return $ mnull "left" lst <> rrets
-    (_, []) -> return $ lrets <> mnull "right" rst
-    (_, _) -> return $ lrets <> rrets
+    ([], []) -> ret []
+    ([], _) -> ret $ mnull "left" lst <> rrets
+    (_, []) -> ret $ lrets <> mnull "right" rst
+    (_, _) -> ret $ lrets <> rrets
+
+brSeqn :: SLStmtRes -> [JSStatement] -> App SLStmtRes
+brSeqn sr@(SLStmtRes sco rets) ks = do
+  case dropEmptyJSStmts ks of
+    [] -> return $ sr
+    ks' ->
+      case rets of
+        [] -> locSco sco $ evalStmt ks'
+        _ -> expect_ $ Err_Return_MustBeTail
+
+brCombineRets :: SLStmtRets -> SLStmtRets -> App SLStmtRets
+brCombineRets lrets rrets =
+  case (lrets, rrets) of
+    ([], []) -> return $ []
+    ((_ : _), (_ : _)) -> return $ lrets <> rrets
+    _ -> expect_ $ Err_Return_BothSidesMust
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> [JSStatement] -> App ()
 expect_empty_tail lab a sp = \case

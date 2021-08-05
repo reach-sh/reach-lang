@@ -62,8 +62,7 @@ data DKTail
       }
   | DK_Continue SrcLoc DLAssignment
   | DK_ViewIs SrcLoc SLPart SLVar (Maybe DKExportBlock) DKTail
-  | DK_Label SrcLoc Int DKTail
-  | DK_Goto SrcLoc Int
+  | DK_Unreachable SrcLoc [SLCtxtFrame] String
   deriving (Eq, Generic)
 
 instance Pretty DKTail where
@@ -81,8 +80,7 @@ instance Pretty DKTail where
     DK_Continue _at asn -> prettyContinue asn
     DK_ViewIs _ vn vk a k ->
       prettyViewIs vn vk a <> hardline <> pretty k
-    DK_Label _ w k -> "label " <> pretty w <> ":" <> hardline <> pretty k
-    DK_Goto _ w -> "goto " <> pretty w <> ";"
+    DK_Unreachable {} -> "unreachable;"
 
 data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
   deriving (Eq)
