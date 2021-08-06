@@ -9,14 +9,14 @@ Verification failed:
   // Violation Witness
 
   const v15 = "A".interact.x;
-  //    ^ could = 7
+  //    ^ could = 4
   //      from: ./multiple_binding_locations.rsh:6:17:application
 
 
   // Theorem Formalization
 
   const x/21 = v15 - 4;
-  //    ^ would be 3
+  //    ^ would be 0
   const v29 = (x/21 + x/21) == 4;
   //    ^ would be false
   assert(v29);

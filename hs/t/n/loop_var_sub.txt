@@ -9,10 +9,10 @@ Verification failed:
   // Violation Witness
 
   const x/22 = <loop variable>;
-  //    ^ could = [21238, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/47 = <loop variable>;
-  //    ^ could = 21238
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
@@ -31,10 +31,10 @@ Verification failed:
   // Violation Witness
 
   const x/22 = <loop variable>;
-  //    ^ could = [21238, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/47 = <loop variable>;
-  //    ^ could = 21238
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
@@ -53,10 +53,10 @@ Verification failed:
   // Violation Witness
 
   const x/22 = <loop variable>;
-  //    ^ could = [21238, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/47 = <loop variable>;
-  //    ^ could = 21238
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
 
@@ -75,10 +75,10 @@ Verification failed:
   // Violation Witness
 
   const x/22 = <loop variable>;
-  //    ^ could = [21238, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/47 = <loop variable>;
-  //    ^ could = 21238
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
 

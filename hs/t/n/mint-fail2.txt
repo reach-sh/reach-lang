@@ -9,17 +9,17 @@ Verification failed:
 
   // Violation Witness
 
-  const UInt.max = 4;
+  const UInt.max = 30880;
 
   const v20 = "Alice".interact.getParams();
-  //    ^ could = {amt: 1, doEarlyTransfer: false, metadata: "Bytes!val!1", name: "Bytes!val!0", supply: 4, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //    ^ could = {amt: 7720, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 30880, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail2.rsh:24:104:application
 
 
   // Theorem Formalization
 
   const v69 = 2 * v20.amt;
-  //    ^ would be 2
+  //    ^ would be 15440
   const v163 = 0 == (UInt.max - ((UInt.max - v69) - v69));
   //    ^ would be false
   assert(v163);

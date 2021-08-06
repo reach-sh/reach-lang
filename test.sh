@@ -100,9 +100,10 @@ tealcount () {
 # r examples/ttt
 
 # c examples/ttt/index.rsh
-# c examples/duoswap/index.rsh
+c examples/raffle/index.rsh
+c examples/duoswap/index.rsh
 # c hs/t/y/many_txns.rsh
-c hs/t/y/pr190b.rsh
+# c hs/t/y/pr190b.rsh
 
 # (cd examples/abstract-simul && make build)
 

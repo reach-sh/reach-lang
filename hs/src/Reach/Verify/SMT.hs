@@ -12,6 +12,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import qualified Data.Text as T
+import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -615,14 +616,16 @@ checkUsing = do
   let t_smt = Atom "smt"
   let t_simplify = Atom "simplify"
   let t_def = Atom "auflia"
+  let ms_micro = Atom "10"
   let ms_short = Atom "100"
   let ms_too_long = Atom $ show $ (1000 * 60 * 2 :: Integer)
   let t_bin op x y = List [ Atom op, x, y ]
   let t_then = t_bin "then"
-  -- let t_or = t_bin "or-else"
-  let t_par_or = t_bin "par-or"
+  let t_or = t_bin "or-else"
+  -- let t_par_or = t_bin "par-or"
   let t_timeout = t_bin "try-for"
-  let our_tactic = t_timeout (t_then t_simplify (t_par_or (t_timeout t_smt ms_short) t_def)) ms_too_long
+  let _our_tactic = t_timeout (t_then t_simplify (t_or (t_or (t_timeout t_def ms_micro) (t_timeout t_smt ms_short)) t_def)) ms_too_long
+  let our_tactic = t_timeout (Atom "default") ms_too_long
   res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
     Atom "unsat" -> return Unsat
@@ -636,7 +639,7 @@ checkUsing = do
           , "  Result: " ++ SMT.showsSExpr res ""
           ]
 
-verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
+verify1 :: HasCallStack => SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
   smtAssert $ if isPossible then se else smtNot se
@@ -667,7 +670,7 @@ verify1 at mf tk se mmsg = smtNewScope $ do
       dspd <- liftIO $ readIORef dr
       let sv = case se of
                 Atom id' -> id'
-                _ -> impossible "verify1: expected atom"
+                x -> impossible $ "verify1: expected atom, got: " <> show x
       mdv <- sv2dv sv
       display_fail at mf tk mmsg (elem se dspd) mm mdv
       liftIO $ modifyIORef dr $ S.insert se

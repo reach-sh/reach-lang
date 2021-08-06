@@ -4,3 +4,5 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 11 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * This program contains a loop, which cannot be tracked accurately for cost.

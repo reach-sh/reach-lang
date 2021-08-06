@@ -10,13 +10,13 @@ Verification failed:
   // Violation Witness
 
   const wager/15 = "Alice".interact.wager;
-  //    ^ could = 2
+  //    ^ could = 1
   //      from: ./index-bad.rsh:9:28:application
   const handAlice/21 = "Alice".interact.getHand();
-  //    ^ could = 2
+  //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
   const handBob/32 = "Bob".interact.getHand();
-  //    ^ could = 4
+  //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
 
