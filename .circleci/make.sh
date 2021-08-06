@@ -1,30 +1,32 @@
 #!/bin/sh
+. ./shared.sh
 
 DEST=config.gen.yml
 
+CONNS="ETH ALGO CFX"
+
 cat config.pre.yml > "${DEST}"
-for ep in ../examples/* ; do
-  if [ -d "${ep}" ] ; then
-    e=$(basename "${ep}")
+for conn in ${CONNS} ; do
+  for m in $(seq 0 $((HOW_MANY_MACHINES - 1))) ; do
     cat >>"${DEST}" <<END
     - "example":
-        name: "examples.${e}"
-        which: "${e}"
+        name: "examples.${conn}.${m}"
+        connector: "${conn}"
+        rank: "${m}"
         requires:
           - "build"
 END
-  fi
+  done
 done
 
 cat >>"${DEST}" <<END
     - "example-sink":
         requires:
 END
-for ep in ../examples/* ; do
-  if [ -d "${ep}" ] ; then
-    e=$(basename "${ep}")
+for conn in ${CONNS} ; do
+  for m in $(seq 0 $((HOW_MANY_MACHINES - 1))) ; do
     cat >>"${DEST}" <<END
-          - "examples.${e}"
+          - "examples.${conn}.${m}"
 END
-  fi
+  done
 done

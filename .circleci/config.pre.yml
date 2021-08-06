@@ -5,22 +5,19 @@ orbs:
   slack: "circleci/slack@4.3.3"
 
 executors:
-  standard:
-    parameters:
-      image:
-        description: "docker image"
-        default: "cimg/base:stable-18.04"
-        type: string
-      class:
-        description: "resource class"
-        default: "small"
-        type: string
+  fake:
     docker:
-    - image: <<parameters.image>>
+    - image: "cimg/base:stable-18.04"
       auth:
         username: $DOCKER_LOGIN
         password: $DOCKER_PASSWORD
-    resource_class: <<parameters.class>>
+    resource_class: "small"
+    environment:
+      LC_ALL: "en_US.UTF-8"
+  real:
+    machine:
+    - image: "ubuntu-2004:202107-02"
+    resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
 
@@ -124,7 +121,7 @@ commands:
 
 jobs:
   "docs-render":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - docs_deps
@@ -138,7 +135,7 @@ jobs:
           - docs
     - slack_fail
   "docs-deploy":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - workattach
@@ -179,7 +176,7 @@ jobs:
           }
 
   "sh-check":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - shellcheck/install
@@ -187,9 +184,7 @@ jobs:
         make sh-lint
     - slack_fail
   "build":
-    executor:
-      name: standard
-      class: "medium"
+    executor: real
     steps:
     - checkout
     - run: |
@@ -224,9 +219,7 @@ jobs:
           - docker
     - slack_fail
   "hs-test":
-    executor:
-      name: standard
-      class: "medium"
+    executor: real
     steps:
     - checkout
     - docs_deps
@@ -239,7 +232,7 @@ jobs:
         path: "hs/test-reports"
     - slack_fail
   "hs-check":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - restore_bin
@@ -250,7 +243,7 @@ jobs:
         path: hs/stan.html
     - slack_fail
   "js-test":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - restore_bin
@@ -259,30 +252,28 @@ jobs:
     - slack_fail
   "example":
     parameters:
-      which:
-        description: "which example directory"
+      connector:
+        description: "which connector"
         type: string
-    executor: standard
+      rank:
+        description: "parallel rank"
+        type: string
+    executor: real
     steps:
     - checkout
     - restore_bin
-    - run: |
-        cd examples && ../.circleci/example.sh <<parameters.which>>
     - run:
         when: always
         command: |
-          if [ ! -f /tmp/status ] ; then
-            echo 'export STATUS="fail"' > /tmp/status
-          fi
-          cat /tmp/status
           mkdir -p /tmp/workspace/record
-          mv /tmp/status /tmp/workspace/record/${CIRCLE_JOB}
+    - run: |
+        cd .circleci && ./example.sh <<parameters.connector>> <<parameters.rank>>
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
           - record
   "example-sink":
-    executor: standard
+    executor: fake
     steps:
     - checkout
     - workattach

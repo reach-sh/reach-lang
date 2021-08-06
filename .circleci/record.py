@@ -20,21 +20,19 @@ recs = sorted(Path(DIR).iterdir())
 urls = {}
 for rp in recs:
     with open(rp) as rf:
-        o = rf.read()
-        # Convert `export K=V\n...` into `{ "K":V, ... }
-        m = o.replace("=", "\":").replace("export ", "\"").replace("\"\n", "\",")
-        p = json.loads("{" + m + " \"okay\": true}")
-        me = str(rp).replace(f"{DIR}/examples.", "")
-        urls[me] = p['EXAMPLE_URL']
-        for c in conns:
-            cme = f"{c}.{me}"
-            k = f'{c}_STATUS'
-            if p[k] == "fail-time":
-                time.add(cme)
-            if p[k] == "fail":
-                fail.add(cme)
-            if p[k].startswith("fail"):
-                cfails[c].append(me)
+        o = json.load(rf)
+        cme = str(rp).replace(f"{DIR}/examples/", "")
+        cmel = cme.split(".")
+        c = cmel[0]
+        me = cmel[1]
+        urls[cme] = o[1]
+        stat = o[0]
+        if stat == "fail-time":
+            time.add(cme)
+        if stat == "fail":
+            fail.add(cme)
+        if stat.startswith("fail"):
+            cfails[c].append(me)
 
 source_dir = Path(__file__).resolve().parent
 def no_blank(x): return not x or x.startswith("#") or x.isspace()
@@ -68,8 +66,8 @@ if ftc > 0:
 
 for c in conns:
     def fmte(e):
-        x = f"<{urls[e]}|{e}>"
         ce = f"{c}.{e}"
+        x = f"<{urls[ce]}|{e}>"
         if ce in nxft: x = f"*{x}*"
         if ce in time: x = f"{x} (t)"
         return x
