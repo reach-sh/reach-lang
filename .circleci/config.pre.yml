@@ -16,7 +16,7 @@ executors:
       LC_ALL: "en_US.UTF-8"
   real:
     machine:
-    - image: "ubuntu-2004:202107-02"
+      image: "ubuntu-2004:202107-02"
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
