@@ -164,8 +164,15 @@ class NewerVar a where
   containsVarNewerThan :: Int -> a -> Bool
 
 instance NewerVar SLVal where
-  containsVarNewerThan ret (SLV_DLVar (DLVar _ _ _ i)) = ret < i
-  containsVarNewerThan _ _ = False
+  containsVarNewerThan ret c = case c of
+    (SLV_DLVar (DLVar _ _ _ i)) -> ret < i
+    (SLV_Participant _ _ _ (Just (DLVar _ _ _ i))) -> ret < i
+    (SLV_Array _ _ vs) -> all (containsVarNewerThan ret) vs
+    (SLV_Tuple _ vs) -> all (containsVarNewerThan ret) vs
+    (SLV_Struct _ vs) -> all (containsVarNewerThan ret) $ map snd vs
+    (SLV_Data _ _ _ v) -> containsVarNewerThan ret v
+    (SLV_Deprecated _ v ) -> containsVarNewerThan ret v
+    _ -> False
 
 
 -- | Equivalence operation on flattened or simplified structures.
