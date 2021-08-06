@@ -1,4 +1,4 @@
-module Reach.Optimize (optimize, Optimize) where
+module Reach.Optimize (optimize_, optimize, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -7,7 +7,9 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.Counter
 import Reach.Sanitize
+import Reach.UnrollLoops
 import Reach.Util
 
 type App = ReaderT Env IO
@@ -47,6 +49,7 @@ data Env = Env
   { eFocus :: Focus
   , eParts :: [SLPart]
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
+  , eCounter :: Counter
   }
 
 focus :: Focus -> App a -> App a
@@ -138,8 +141,8 @@ updateLookup up = do
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
-mkEnv0 :: [SLPart] -> IO Env
-mkEnv0 eParts = do
+mkEnv0 :: Counter -> [SLPart] -> IO Env
+mkEnv0 eCounter eParts = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -339,9 +342,9 @@ instance Optimize DLStmt where
       DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
       where
         cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt l)
-    DL_ArrayMap at ans x a f -> do
+    s@(DL_ArrayMap at ans x a f) -> maybeUnroll s x $
       DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
-    DL_ArrayReduce at ans x z b a f -> do
+    s@(DL_ArrayReduce at ans x z b a f) -> maybeUnroll s x $ do
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> opt f
@@ -357,6 +360,20 @@ instance Optimize DLStmt where
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
         t' -> return $ DL_LocalDo at t'
+    where
+      maybeUnroll :: DLStmt -> DLArg -> App DLStmt -> App DLStmt
+      maybeUnroll s x def =
+        case argTypeOf x of
+          T_Array _ n ->
+            case n <= 1 of
+              True -> do
+                c <- asks eCounter
+                let at = srclocOf s
+                let t = DL_LocalDo at $ DT_Com s $ DT_Return at
+                UnrollWrapper _ t' <- liftIO $ unrollLoops $ UnrollWrapper c t
+                return t'
+              _ -> def
+          _ -> def
 
 instance Optimize DLTail where
   opt = \case
@@ -427,7 +444,7 @@ instance Optimize LLProg where
   opt (LLProg at opts ps dli dex dvs s) = do
     let SLParts m = ps
     let psl = M.keys m
-    env0 <- liftIO $ mkEnv0 psl
+    env0 <- liftIO $ mkEnv0 (getCounter opts) psl
     local (\_ -> env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> opt s
@@ -483,8 +500,11 @@ instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =
     PLProg at plo dli <$> opt dex <*> pure epps <*> opt cp
 
-optimize :: Optimize a => a -> IO a
-optimize t = do
-  env0 <- mkEnv0 []
+optimize_ :: Optimize a => Counter -> a -> IO a
+optimize_ c t = do
+  env0 <- mkEnv0 c []
   flip runReaderT env0 $
     opt t
+
+optimize :: (HasCounter a, Optimize a) => a -> IO a
+optimize t = optimize_ (getCounter t) t

@@ -2,6 +2,7 @@ module Reach.BigOpt (bigopt) where
 
 import qualified Data.Text as T
 import Reach.AddCounts
+import Reach.AST.DLBase
 import Reach.Optimize
 import Reach.Util
 
@@ -9,7 +10,7 @@ i2t :: Integer -> T.Text
 i2t = s2t . show
 
 -- Top-down and then bottom-up optimization
-bigopt :: (Optimize a, AC a, Eq a) => (T.Text -> a -> IO (), T.Text) -> a -> IO a
+bigopt :: (HasCounter a, Optimize a, AC a, Eq a) => (T.Text -> a -> IO (), T.Text) -> a -> IO a
 bigopt (showp, lab) = rec (0 :: Integer)
   where
     rec i x0 = do

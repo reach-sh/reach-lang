@@ -181,6 +181,7 @@ data BEnv = BEnv
   , be_viewr :: IORef ViewInfos
   , be_views :: ViewsInfo
   , be_inConsensus :: Bool
+  , be_counter :: Counter
   }
 
 type BApp = ReaderT BEnv IO
@@ -583,9 +584,10 @@ be_c = \case
           be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
+    cnt <- asks be_counter
     setHandler this_loopj $ do
       loop_svs <- ce_readSave this_loopsp
-      loopc <- (liftIO . optimize) =<< addVars at =<< loop_top
+      loopc <- (liftIO . optimize_ cnt) =<< addVars at =<< loop_top
       return $ C_Loop at loop_svs loop_vars loopc
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
@@ -678,6 +680,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
 epp :: LLProg -> IO PLProg
 epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   -- Step 1: Analyze the program to compute basic blocks
+  let be_counter = llo_counter
   be_savec <- newCounter 1
   be_handlerc <- newCounter 1
   be_handlers <- newIORef mempty

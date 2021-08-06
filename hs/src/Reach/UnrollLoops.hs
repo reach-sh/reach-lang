@@ -1,4 +1,4 @@
-module Reach.UnrollLoops (unrollLoops) where
+module Reach.UnrollLoops (UnrollWrapper(..), unrollLoops) where
 
 import Control.Monad.Reader
 import Data.Foldable
@@ -221,6 +221,15 @@ instance Unroll EPPs where
 instance Unroll PLProg where
   ul (PLProg at opts dli dex ep cp) =
     PLProg at opts dli <$> ul dex <*> ul ep <*> ul cp
+
+data UnrollWrapper a
+  = UnrollWrapper Counter a
+
+instance HasCounter (UnrollWrapper a) where
+  getCounter (UnrollWrapper c _) = c
+
+instance Unroll a => Unroll (UnrollWrapper a) where
+  ul (UnrollWrapper c s) = UnrollWrapper c <$> ul s
 
 unrollLoops :: (HasCounter a, Unroll a) => a -> IO a
 unrollLoops x = do
