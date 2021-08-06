@@ -15,8 +15,14 @@ executors:
     environment:
       LC_ALL: "en_US.UTF-8"
   real:
+    parameters:
+      dlc:
+        description: "enable Docker Layer Caching"
+        default: false
+        type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
+      docker_layer_caching: <<parameters.dlc>>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -54,25 +60,18 @@ commands:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*FAIL* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > ${CIRCLE_JOB} <${CIRCLE_BUILD_URL}|more...>" }}]}
-  srd_yes:
-    steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
-          version: '20.10.6'
-  srd_no:
-    steps:
-      - setup_remote_docker:
-          docker_layer_caching: false
-          version: '20.10.6'
   restore_bin:
     description: "Restore the build binaries"
     steps:
       - workattach
-      - srd_no
       - run: |
           mkdir -p ~/.local
           ln -sf /tmp/workspace/bin ~/.local/bin
           ls ~/.local/bin/*
+  and_restore_docker:
+    description: "Restore the build Docker images"
+    steps:
+      - run: |
           zcat /tmp/workspace/docker/runner.tar.gz | docker load
           source ./VERSION
           docker tag reachsh/runner:latest reachsh/runner:${VERSION}
@@ -184,7 +183,9 @@ jobs:
         make sh-lint
     - slack_fail
   "build":
-    executor: real
+    executor:
+      name: real
+      dlc: true
     steps:
     - checkout
     - run: |
@@ -206,7 +207,6 @@ jobs:
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
         (cd hs && stack install)
-    - srd_yes
     - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
@@ -262,10 +262,9 @@ jobs:
     steps:
     - checkout
     - restore_bin
-    - run:
-        when: always
-        command: |
-          mkdir -p /tmp/workspace/record
+    - and_restore_docker
+    - run: |
+        mkdir -p /tmp/workspace/record
     - run: |
         cd .circleci && ./example.sh <<parameters.connector>> <<parameters.rank>>
     - persist_to_workspace:
