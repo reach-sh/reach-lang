@@ -261,6 +261,7 @@ checkCost ts = do
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
   (cr :: IORef Int) <- newIORef $ 0
+  hasForR <- newIORef $ False
   let l2s = LT.unpack
   let rec c = modifyIORef cr (c +)
   let jump_ t = do
@@ -303,7 +304,10 @@ checkCost ts = do
       switch ""
     ["callsub", _lab'] ->
       impossible "callsub"
-    com : _ | LT.isPrefixOf "//" com -> return ()
+    [ "//", com ] -> do
+      when (com == "<for>") $ do
+        writeIORef hasForR True
+      return ()
     [lab'] | LT.isSuffixOf ":" lab' -> do
       let lab'' = l2s lab'
       jump_ lab''
@@ -311,9 +315,18 @@ checkCost ts = do
     _ -> rec 1
   cg <- readIORef cgr
   let (p, c) = longestPathBetween cg lTop (l2s lBot)
-  when (fromIntegral c > algoMaxAppProgramCost) $
-    emitWarning $ W_ALGOConservative $
-      [ "This program could take " <> show c <> " units of cost, but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p ]
+  hasFor <- readIORef hasForR
+  let whenl x e =
+        case x of
+          True -> [ e ]
+          False -> []
+  let cs = []
+        <> (whenl hasFor $
+              "This program contains a loop, which cannot be tracked accurately for cost.")
+        <> (whenl (fromIntegral c > algoMaxAppProgramCost) $
+              "This program could take " <> show c <> " units of cost, but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p)
+  unless (null cs) $
+    emitWarning $ W_ALGOConservative cs
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -812,7 +825,7 @@ cfor maxi body = do
   salloc_ $ \store_idx load_idx -> do
     cl $ DLL_Int sb 0
     store_idx
-    comment $ "<for> " <> texty maxi
+    comment $ "<for>"
     label top_lab
     load_idx
     cl $ DLL_Int sb maxi
@@ -1186,6 +1199,9 @@ checkTxnInit vTypeEnum ct_mcsend = do
   checkTxn1 "TypeEnum"
   cl $ DLL_Int sb 0
   checkTxn1 "Fee"
+  -- XXX We could move this into the escrow, since it will always be happening.
+  -- The problem, though, is that we use this ALSO for when the user pays us...
+  -- and when can we check THOSE?
   czaddr
   checkTxn1 "Lease"
   czaddr
