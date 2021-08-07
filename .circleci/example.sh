@@ -1,7 +1,7 @@
 #!/bin/bash
 CONN="$1"
-RANK="$2"
-source ./shared.sh
+SIZE="$2"
+RANK="$3"
 
 banner () {
   echo
@@ -22,7 +22,7 @@ case "${CONN}" in
 esac
 
 cd ../examples || exit 1
-for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${HOW_MANY_MACHINES} == ${RANK}") ; do
+for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}") ; do
   banner "${WHICH}" - clean
   ./one.sh clean "${WHICH}"
   STATUS="fail"

@@ -1,32 +1,37 @@
 #!/bin/sh
-. ./shared.sh
+TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
+TOTAL=$((TOTALP1 - 1))
 
-DEST=config.gen.yml
+PRE=config.pre.yml
+MID=config.mid.yml
+END=config.end.yml
 
-CONNS="ETH ALGO CFX"
-
-cat config.pre.yml > "${DEST}"
-for conn in ${CONNS} ; do
-  for m in $(seq 0 $((HOW_MANY_MACHINES - 1))) ; do
-    cat >>"${DEST}" <<END
-    - "examples":
-        name: "examples.${conn}.${m}"
-        connector: "${conn}"
-        rank: "${m}"
-        requires:
-          - "build"
-END
-  done
-done
-
-cat >>"${DEST}" <<END
+cat >>"${END}" <<END
     - "examples-sink":
         requires:
 END
-for conn in ${CONNS} ; do
-  for m in $(seq 0 $((HOW_MANY_MACHINES - 1))) ; do
-    cat >>"${DEST}" <<END
-          - "examples.${conn}.${m}"
+
+for CONN in ETH ALGO CFX ; do
+  case "${CONN}" in
+    ALGO) PER=8 ;;
+    CFX) PER=8 ;;
+    ETH) PER=16 ;;
+  esac
+  SIZE=$(((TOTAL + (PER - 1)) / PER))
+  for RANK in $(seq 0 $((SIZE - 1))) ; do
+    cat >>"${MID}" <<END
+    - "examples":
+        name: "examples.${CONN}.${RANK}"
+        connector: "${CONN}"
+        size: "${SIZE}"
+        rank: "${RANK}"
+        requires:
+          - "build"
+END
+    cat >>"${END}" <<END
+          - "examples.${CONN}.${RANK}"
 END
   done
 done
+
+cat "${PRE}" "${MID}" "${END}" > config.gen.yml
