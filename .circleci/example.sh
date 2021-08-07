@@ -22,7 +22,7 @@ case "${CONN}" in
 esac
 
 cd ../examples || exit 1
-for WHICH in $(find . -maxdepth 1 -type d | sort | awk "NR % ${HOW_MANY_MACHINES} == ${RANK}") ; do
+for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | awk "NR % ${HOW_MANY_MACHINES} == ${RANK}") ; do
   banner "${WHICH}" - clean
   ./one.sh clean "${WHICH}"
   STATUS="fail"

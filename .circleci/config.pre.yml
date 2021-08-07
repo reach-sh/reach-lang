@@ -223,7 +223,6 @@ jobs:
     executor: real
     steps:
     - checkout
-    - docs_deps
     - restore_bin
     - stack_deps
     - run:
@@ -244,7 +243,7 @@ jobs:
         path: hs/stan.html
     - slack_fail
   "js-test":
-    executor: fake
+    executor: real
     steps:
     - checkout
     - restore_bin

@@ -128,10 +128,12 @@ else
     REACH_VERSION_SHORT=$(echo "$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $1"."$2}')
 fi
 
-if ! (which make docker docker-compose > /dev/null 2>&1) ; then
-  echo "Reach relies on an installation of make, docker, and docker-compose"
-  exit 1
-fi
+for DEP in make docker docker-compose ; do
+  if ! (which "${DEP}" > /dev/null 2>&1) ; then
+    echo "Reach relies on an installation of ${DEP}"
+    exit 1
+  fi
+done
 
 # shellcheck disable=SC2016
 fatal_infinite_reach_run_loop () {
