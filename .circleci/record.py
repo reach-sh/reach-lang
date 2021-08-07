@@ -7,28 +7,30 @@ from itertools import filterfalse
 def env(k):
     return os.environ[k]
 
-# XXX Change this file so that it knows it is looking for conns x examples so
-# it can "tell" if something is missing, rather than just looking at the
-# records that happen to show up
-
 conns = [ 'ETH', 'ALGO', 'CFX' ]
-
+total = 0
 cfails = {}
 for c in conns:
     cfails[c] = []  # the list of examplename that have failed for CONN c
 time = set() # the set of CONN.examplename that timed out
 fail = set() # the set of CONN.examplename that exited nonzero (and not via timeout)
-
-DIR = "/tmp/workspace/record"
-recs = sorted(Path(DIR).iterdir())
 urls = {}
-for rp in recs:
-    with open(rp) as rf:
-        o = json.load(rf)
-        cme = str(rp).replace(f"{DIR}/", "")
-        cmel = cme.split(".")
-        c = cmel[0]
-        me = cmel[1]
+
+proj_dir = Path("/home/circleci/project")
+ex_dir = proj_dir / 'examples'
+rec_dir = Path("/tmp/workspace/record")
+for ep in sorted(ex_dir.iterdir()):
+    if not ep.is_dir():
+        continue
+    me = str(ep).replace(f"{ex_dir}/", "")
+    for c in conns:
+        total += 1
+        cme = f"{c}.{me}"
+        o = [ "fail", False ]
+        rp = rec_dir / cme
+        if rp.is_file():
+            with open(rp) as rf:
+                o = json.load(rf)
         urls[cme] = o[1]
         stat = o[0]
         if stat == "fail-time":
@@ -38,12 +40,12 @@ for rp in recs:
         if stat.startswith("fail"):
             cfails[c].append(me)
 
-source_dir = Path(__file__).resolve().parent
 def no_blank(x): return not x or x.startswith("#") or x.isspace()
 def read_to_set(fp):
     with open(fp, 'r') as f:
         return set(filterfalse(no_blank, f.read().splitlines()))
 
+source_dir = proj_dir / '.circleci'
 # x = expected
 xfail = read_to_set(source_dir / 'xfail.txt')
 xtime = read_to_set(source_dir / 'xtime.txt')
@@ -56,7 +58,6 @@ nxftc = len(nxft)
 
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
-total = len(recs)
 
 SYM = "OKAY"
 PRE = f"{total} passed!"
@@ -71,7 +72,9 @@ if ftc > 0:
 for c in conns:
     def fmte(e):
         ce = f"{c}.{e}"
-        x = f"<{urls[ce]}|{e}>"
+        x = e
+        u = urls[ce]
+        if u: x = f"<{u}|{x}>"
         if ce in nxft: x = f"*{x}*"
         if ce in time: x = f"{x} (t)"
         return x
