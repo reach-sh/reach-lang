@@ -280,13 +280,15 @@ jobs:
     - restore_bin
     - and_restore_docker
     - run: |
-        mkdir -p /tmp/workspace/record
+        mkdir -p /tmp/workspace/record /tmp/artifacts
     - run: |
         cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
           - record
+    - store_artifacts:
+        path: /tmp/artifacts
   "examples-sink":
     executor: fake
     steps:
