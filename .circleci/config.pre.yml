@@ -6,27 +6,26 @@ orbs:
 
 executors:
   fake:
+    parameters:
+      class:
+        description: "resource class"
+        default: "small"
+        type: string
     docker:
     - image: "cimg/base:stable-18.04"
       auth:
         username: $DOCKER_LOGIN
         password: $DOCKER_PASSWORD
-    resource_class: "small"
+    resource_class: <<parameters.class>>
     environment:
       LC_ALL: "en_US.UTF-8"
   real:
-    parameters:
-      dlc:
-        description: "enable Docker Layer Caching"
-        default: false
-        type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
-      docker_layer_caching: <<parameters.dlc>>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
-      PATH: "/home/circleci/.local/bin:/usr/bin:/bin:/sbin"
+      PATH: "/home/circleci/.local/bin:/usr/local/bin:/usr/bin:/bin:/sbin"
 
 commands:
   workattach:
@@ -61,6 +60,16 @@ commands:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*FAIL* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > ${CIRCLE_JOB} <${CIRCLE_BUILD_URL}|more...>" }}]}
+  srd_yes:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: '20.10.6'
+  srd_no:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: false
+          version: '20.10.6'
   restore_bin:
     description: "Restore the build binaries"
     steps:
@@ -185,8 +194,8 @@ jobs:
     - slack_fail
   "build":
     executor:
-      name: real
-      dlc: true
+      name: fake
+      class: "medium"
     steps:
     - checkout
     - run: |
@@ -208,6 +217,7 @@ jobs:
         (cd hs && make hs-clean)
         (cd hs && make hs-build)
         (cd hs && stack install)
+    - srd_yes
     - run: |
         (cd js && make build)
         (cd js/stdlib && make check)
@@ -220,7 +230,9 @@ jobs:
           - docker
     - slack_fail
   "hs-test":
-    executor: real
+    executor:
+      name: fake
+      class: "medium"
     steps:
     - checkout
     - restore_bin
@@ -243,10 +255,11 @@ jobs:
         path: hs/stan.html
     - slack_fail
   "js-test":
-    executor: real
+    executor: fake
     steps:
     - checkout
     - restore_bin
+    - srd_no
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
     - slack_fail
