@@ -21,7 +21,7 @@ urls = {}
 for rp in recs:
     with open(rp) as rf:
         o = json.load(rf)
-        cme = str(rp).replace(f"{DIR}/examples/", "")
+        cme = str(rp).replace(f"{DIR}/", "")
         cmel = cme.split(".")
         c = cmel[0]
         me = cmel[1]
@@ -52,7 +52,7 @@ nxftc = len(nxft)
 
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
-total = len(recs) * len(conns)
+total = len(recs)
 
 SYM = "OKAY"
 PRE = f"{total} passed!"

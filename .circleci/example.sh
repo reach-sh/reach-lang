@@ -16,13 +16,13 @@ banner Running w/ "${CONN}"
 export REACH_CONNECTOR_MODE="${CONN}"
 export REACH_DEBUG=1
 case "${CONN}" in
-  ALGO) TIMEOUT=$((10 * 60)) ;;
-  CFX) TIMEOUT=$((10 * 60)) ;;
-  ETH) TIMEOUT=$((10 * 60)) ;;
+  ALGO) TIMEOUT=$((5 * 60)) ;;
+  CFX) TIMEOUT=$((5 * 60)) ;;
+  ETH) TIMEOUT=$((5 * 60)) ;;
 esac
 
 cd ../examples || exit 1
-for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | awk "NR % ${HOW_MANY_MACHINES} == ${RANK}") ; do
+for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${HOW_MANY_MACHINES} == ${RANK}") ; do
   banner "${WHICH}" - clean
   ./one.sh clean "${WHICH}"
   STATUS="fail"
