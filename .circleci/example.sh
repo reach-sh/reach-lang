@@ -22,7 +22,8 @@ case "${CONN}" in
 esac
 
 cd ../examples || exit 1
-for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}") ; do
+go() {
+  WHICH="$1"
   banner "${WHICH}" - clean
   ./one.sh clean "${WHICH}"
   STATUS="fail"
@@ -46,4 +47,9 @@ for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | a
   # XXX output results in the JUnit test format so we can go to
   # ${EXAMPLE_URL}/tests/ETH on a failure?
   echo "[ \"${STATUS}\", \"${CIRCLE_BUILD_URL}\" ]" > /tmp/workspace/record/"${CONN}.${WHICH}"
+}
+for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}") ; do
+  go "${WHICH}" &
 done
+
+wait
