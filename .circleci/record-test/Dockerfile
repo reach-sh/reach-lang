@@ -1,6 +1,7 @@
 FROM cimg/base:stable-18.04
 
 RUN mkdir -p /tmp/workspace
+COPY artifacts/ /tmp/workspace/artifacts/
 COPY record/ /tmp/workspace/record/
 ENV CIRCLE_USERNAME="jeapostrophe"
 ENV CIRCLE_BRANCH="master"

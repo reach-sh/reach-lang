@@ -7,13 +7,16 @@ check: output
 output: .built
 	docker run -it --rm $(IMAGE) | tee $@
 
-.built: Dockerfile record.py xfail.txt xtime.txt record examples
+.built: Dockerfile record.py xfail.txt xtime.txt record examples artifacts
 	docker build --tag=$(IMAGE) .
 	echo > $@
 
 record:
-	cp -fr example record
+	cp -fr example/record record
 	rm record/ETH.argz
+
+artifacts:
+	cp -fr example/artifacts artifacts
 
 examples:
 	find ../../examples -maxdepth 1 -type d | sed 'sX../../XX' | sort | tail -n +2 | xargs mkdir -p

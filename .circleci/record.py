@@ -19,6 +19,21 @@ urls = {}
 proj_dir = Path("/home/circleci/project")
 ex_dir = proj_dir / 'examples'
 rec_dir = Path("/tmp/workspace/record")
+art_dir = Path("/tmp/workspace/artifacts")
+
+arts = {}
+for ap in sorted(art_dir.iterdir()):
+    if not ap.is_file():
+        continue
+    o = { "items": [] }
+    with open(ap) as af:
+        o = json.load(af)
+    me = str(ap).replace(f"{art_dir}/", "")
+    m = {}
+    for r in o["items"]:
+        m[r["path"]] = r["url"]
+    arts[me] = m
+
 for ep in sorted(ex_dir.iterdir()):
     if not ep.is_dir():
         continue
@@ -31,7 +46,10 @@ for ep in sorted(ex_dir.iterdir()):
         if rp.is_file():
             with open(rp) as rf:
                 o = json.load(rf)
-        urls[cme] = o[1]
+        u = o[1]
+        if u: u = arts.get(u)
+        if u: u = u.get(f"tmp/artifacts/{cme}")
+        urls[cme] = u
         stat = o[0]
         if stat == "fail-time":
             time.add(cme)
