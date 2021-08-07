@@ -280,15 +280,21 @@ jobs:
     - restore_bin
     - and_restore_docker
     - run: |
-        mkdir -p /tmp/workspace/record /tmp/artifacts
+        mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run: |
         cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
+    - store_artifacts:
+        path: /tmp/artifacts
+    - run: |
+        CIRCLE_ARTIFACTS_URL=$(curl -X GET "https://circleci.com/api/v2/project/github/reach-sh/reach-lang/${CIRCLE_BUILD_NUM}/artifacts" \
+          -H "Accept: application/json" \
+          -u "${CIRCLE_API_TOKEN}:")
+        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>.<<parameters.rank>>
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
+          - artifacts
           - record
-    - store_artifacts:
-        path: /tmp/artifacts
   "examples-sink":
     executor: fake
     steps:
