@@ -445,14 +445,15 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
 };
 
 export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
+  debug('checkTimeout', { timeoutAt, nowTimeN });
   if ( ! timeoutAt ) { return false; }
   const [ mode, val ] = timeoutAt;
   const nowTime = bigNumberify(nowTimeN);
   if ( mode === 'time' ) {
-    return val.lt(nowTime);
+    return val.lte(nowTime);
   } else if ( mode === 'secs' ) {
     const nowSecs = await getTimeSecs(nowTime);
-    return val.lt(nowSecs);
+    return val.lte(nowSecs);
   } else {
     throw new Error(`invalid TimeArg mode`);
   }
