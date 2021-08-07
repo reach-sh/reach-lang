@@ -9,7 +9,7 @@ cat config.pre.yml > "${DEST}"
 for conn in ${CONNS} ; do
   for m in $(seq 0 $((HOW_MANY_MACHINES - 1))) ; do
     cat >>"${DEST}" <<END
-    - "example":
+    - "examples":
         name: "examples.${conn}.${m}"
         connector: "${conn}"
         rank: "${m}"
@@ -20,7 +20,7 @@ END
 done
 
 cat >>"${DEST}" <<END
-    - "example-sink":
+    - "examples-sink":
         requires:
 END
 for conn in ${CONNS} ; do

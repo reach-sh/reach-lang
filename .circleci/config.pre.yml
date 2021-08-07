@@ -263,7 +263,7 @@ jobs:
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
     - slack_fail
-  "example":
+  "examples":
     parameters:
       connector:
         description: "which connector"
@@ -284,7 +284,7 @@ jobs:
         root: /tmp/workspace
         paths:
           - record
-  "example-sink":
+  "examples-sink":
     executor: fake
     steps:
     - checkout
