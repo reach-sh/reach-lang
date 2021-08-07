@@ -394,6 +394,7 @@ instance DepthOf DLExpr where
     DLE_TokenNew _ tns -> add1 $ depthOf tns
     DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
     DLE_TokenDestroy _ t -> add1 $ depthOf t
+    DLE_TimeOrder {} -> impossible "timeorder"
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -621,6 +622,7 @@ solExpr sp = \case
   DLE_TokenDestroy _ ta -> do
     ta' <- solArg ta
     return $ solApply "safeReachTokenDestroy" [ ta' ] <> sp
+  DLE_TimeOrder {} -> impossible "timeorder"
   where
     spa m = (<> sp) <$> m
 

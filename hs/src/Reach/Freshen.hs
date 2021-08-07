@@ -100,6 +100,7 @@ instance Freshen DLExpr where
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok
+    DLE_TimeOrder at tos -> DLE_TimeOrder at <$> fu tos
 
 instance Freshen DLStmt where
   fu = \case

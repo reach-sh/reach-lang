@@ -264,14 +264,14 @@ data DLArg
   deriving (Eq, Ord, Generic, Show)
 
 instance PrettySubst DLArg where
-  prettySubst a = do
-    env <- ask
-    case a of
-      DLA_Var v -> return $ fromMaybe (viaShow v) (M.lookup v env)
-      DLA_Constant c -> return $ pretty c
-      DLA_Literal c -> return $ pretty c
-      DLA_Interact who m _ ->
-        return $ pretty who <> ".interact." <> pretty m
+  prettySubst = \case
+    DLA_Var v -> do
+      env <- ask
+      return $ fromMaybe (viaShow v) (M.lookup v env)
+    DLA_Interact who m _ ->
+      return $ pretty who <> ".interact." <> pretty m
+    DLA_Constant x -> return $ pretty x
+    DLA_Literal x -> return $ pretty x
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -306,7 +306,6 @@ render_dasM as = do
   as' <- mapM prettySubst as
   return $ hsep $ punctuate comma as'
 
-
 render_objM :: Pretty k => PrettySubst v => M.Map k v -> PrettySubstApp Doc
 render_objM env = do
   ps <- mapM render_p $ M.toAscList env
@@ -324,7 +323,6 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (a, b) where
     x' <- prettySubst x
     y' <- prettySubst y
     return $ parens $ hsep $ punctuate comma [x', y']
-
 
 instance PrettySubst DLLargeArg where
   prettySubst = \case
@@ -492,6 +490,7 @@ data DLExpr
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
+  | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -603,6 +602,9 @@ instance PrettySubst DLExpr where
     DLE_TokenDestroy _ tok -> do
       tok' <- prettySubst tok
       return $ "Token(" <> tok' <> ").destroy()"
+    DLE_TimeOrder _ tos -> do
+      tos' <- render_dasM $ map (\(x, y) -> (x, DLA_Var y)) tos
+      return $ "timeOrder" <> parens tos'
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -638,6 +640,7 @@ instance IsPure DLExpr where
     DLE_TokenNew {} -> False
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
+    DLE_TimeOrder {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -665,6 +668,7 @@ instance IsLocal DLExpr where
     DLE_TokenNew {} -> False
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
+    DLE_TimeOrder {} -> True
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -677,6 +681,7 @@ instance CanDupe DLExpr where
           DLE_TokenNew {} -> False
           DLE_TokenBurn {} -> False
           DLE_TokenDestroy {} -> False
+          DLE_TimeOrder {} -> False
           _ -> True
 
 newtype DLAssignment

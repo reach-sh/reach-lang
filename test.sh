@@ -98,8 +98,11 @@ tealcount () {
 #r examples/raffle
 # r examples/duoswap
 # r examples/ttt
-jb
-r examples/tut-6
+# jb
+# r examples/tut-6
+
+c hs/t/y/overflow2.rsh
+c users/04a5de.rsh
 
 # (cd examples/abstract-simul && make build)
 

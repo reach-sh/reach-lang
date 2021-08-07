@@ -185,8 +185,9 @@ readDlo f =
         AIS_Deployed d -> return $ f (ae_dlo d)
 
 whenVerifyArithmetic :: App () -> App ()
-whenVerifyArithmetic m =
-  flip when m =<< readDlo dlo_verifyArithmetic
+whenVerifyArithmetic m = do
+  verifyOn <- readDlo dlo_verifyArithmetic
+  when verifyOn $ m
 
 setSt :: SLState -> App ()
 setSt x = do
@@ -1819,6 +1820,8 @@ evalPrimOp p sargs = do
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
+      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
+      let da = DLA_Var dv
       whenVerifyArithmetic $
         case p of
           ADD -> do
@@ -1837,11 +1840,6 @@ evalPrimOp p sargs = do
                   _ -> impossible "div args"
             ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
             dopClaim ca "div by zero"
-          _ -> return ()
-      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
-      let da = DLA_Var dv
-      whenVerifyArithmetic $
-        case p of
           MUL -> do
             ca <- doCmp PLE [da, lim_maxUInt_a]
             dopClaim ca "mul overflow"

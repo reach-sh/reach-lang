@@ -1047,6 +1047,17 @@ smt_e at_dv mdv de = do
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
+    DLE_TimeOrder at ps -> do
+      let go n se = do
+            n' <- smt_v at n
+            smtAssert $ smtEq n' se
+      forM_ ps $ \case
+        (Nothing, n) -> go n $ smt_lt at $ DLL_Int at 0
+        (Just o, n) -> do
+          o' <- smt_a at o
+          let w = DLA_Literal $ DLL_Int at 1
+          w' <- smt_a at w
+          go n =<< smtPrimOp at ADD [o, w] [o', w']
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1330,7 +1341,8 @@ smt_s = \case
             True -> do
               r <-
                 case when' of
-                  -- It is possible that this is bad, because 
+                  -- It is possible that this is bad, because maybe there's
+                  -- something wrong with the whole context
                   Atom "true" -> return Sat
                   Atom "false" -> return Unsat
                   _ -> smtAssert when' >> checkUsing

@@ -63,6 +63,7 @@ instance Erase DLStmt where
     DL_Nop at -> skip at
     DL_Let at mdv de ->
       case de of
+        DLE_TimeOrder {} -> skip at
         DLE_Claim _ _ CT_Assert _ _ -> skip at
         DLE_Claim _ _ CT_Possible _ _ -> skip at
         DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip at

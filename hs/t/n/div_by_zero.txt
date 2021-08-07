@@ -17,9 +17,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v21 = v15 > 0;
+  const v22 = v15 > 0;
   //    ^ would be false
-  assert(v21);
+  assert(v22);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

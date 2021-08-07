@@ -1157,6 +1157,7 @@ ce = \case
     czaddr >> checkTxn1 "ConfigAssetClawback"
     op "pop"
     -- XXX We could get the minimum balance back
+  DLE_TimeOrder {} -> impossible "timeorder"
   where
     show_stack msg at fs = do
       comment $ texty msg

@@ -115,6 +115,7 @@ instance CollectsTypes DLExpr where
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [ a, b ]
     DLE_TokenDestroy _ a -> cts a
+    DLE_TimeOrder _ tos -> cts tos
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

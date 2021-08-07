@@ -18,9 +18,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v29 = x/20 <= (UInt.max - 1);
+  const v30 = x/20 <= (UInt.max - 1);
   //    ^ would be false
-  assert(v29);
+  assert(v30);
 
   Verifying when NO participants are honest
 Verification failed:

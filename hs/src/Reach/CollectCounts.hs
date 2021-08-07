@@ -141,6 +141,7 @@ instance Countable DLExpr where
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
     DLE_TokenDestroy _ tok -> counts tok
+    DLE_TimeOrder _ tos -> counts tos
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

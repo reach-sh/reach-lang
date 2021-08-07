@@ -242,6 +242,7 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt [t, a]
   DLE_TokenDestroy _ t ->
     kgq_a_all ctxt t
+  DLE_TimeOrder {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

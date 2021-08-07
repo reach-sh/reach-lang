@@ -434,6 +434,7 @@ jsExpr = \case
         return $ jsApply "stdlib.simTokenDestroy" ["sim_r", ta']
       JM_Backend -> return "undefined"
       JM_View -> impossible "token.burn"
+  DLE_TimeOrder {} -> impossible "timeorder"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

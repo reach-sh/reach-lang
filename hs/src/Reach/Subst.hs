@@ -86,6 +86,7 @@ instance Subst DLExpr where
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
+    DLE_TimeOrder at tos -> DLE_TimeOrder at <$> subst tos
 
 instance Subst DLStmt where
   subst = \case
