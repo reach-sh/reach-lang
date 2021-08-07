@@ -7,6 +7,10 @@ from itertools import filterfalse
 def env(k):
     return os.environ[k]
 
+# XXX Change this file so that it knows it is looking for conns x examples so
+# it can "tell" if something is missing, rather than just looking at the
+# records that happen to show up
+
 conns = [ 'ETH', 'ALGO', 'CFX' ]
 
 cfails = {}
