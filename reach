@@ -38,10 +38,12 @@ run_s () {
   sh -ac "$TMP/out.sh" "$0"
 }
 
-if ! (which make curl docker docker-compose >/dev/null 2>&1); then
-  echo "Reach relies on an installation of make, curl, docker, and docker-compose."
-  exit 1
-fi
+for DEP in make curl docker docker-compose; do
+  if ! (which "${DEP}" >/dev/null 2>&1); then
+    echo "Reach relies on an installation of ${DEP}"
+    exit 1
+  fi
+done
 
 if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
   if ! (docker pull "$IMG" && run_d update && run_s); then exit 1; fi
