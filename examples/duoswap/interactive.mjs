@@ -99,7 +99,7 @@ const runDuoSwapLP = async () => {
     withdrawMaybe: async ([ alive, market ]) => {
       const wantsToWithdraw = await ask.ask(`Do you want to withdraw liquidity? (y/n)`, ask.yesno);
       if (wantsToWithdraw) {
-        const amt = await ask.ask(`How much liquidity do you want to withdraw?`, parseInt);
+        const amt = await ask.ask(`How much liquidity do you want to withdraw?`);
         return { when: true, msg: { liquidity: amt } };
       } else {
         return { when: false, msg: { liquidity: 0 }};
@@ -115,8 +115,8 @@ const runDuoSwapLP = async () => {
       const wantsToDeposit = await ask.ask(`Do you want to deposit? (y/n)`, ask.yesno);
       if (wantsToDeposit) {
         const myBals = await getBalances(stdlib, accProvider, tokA, tokB);
-        const amtA = await ask.ask(`How much ${tokA.sym} do you want to deposit? (Bal: ${myBals})`, parseInt);
-        const amtB = await ask.ask(`How much ${tokB.sym} do you want to deposit? (Bal: ${myBals})`, parseInt);
+        const amtA = await ask.ask(`How much ${tokA.sym} do you want to deposit? (Bal: ${myBals})`);
+        const amtB = await ask.ask(`How much ${tokB.sym} do you want to deposit? (Bal: ${myBals})`);
         const deposit = { amtA: stdlib.parseCurrency(amtA), amtB: stdlib.parseCurrency(amtB) }
         return {
           when: true, msg: deposit

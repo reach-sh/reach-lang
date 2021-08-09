@@ -81,8 +81,6 @@ export const main = Reach.App(() => {
 
   deploy();
 
-  const s18 = (x) => x / 1000 / 1000 / 1000 / 1000 / 1000 / 1000;
-
   // Admin sets up initial pool by making first deposit
   Admin.only(() => {
     const tokA = declassify(interact.tokA);
@@ -194,7 +192,7 @@ export const main = Reach.App(() => {
             const { amtA, amtB } = msg;
             const minted =
               (poolMinted == 0)
-                ? s18(sqrt(amtA * amtB, 4))
+                ? sqrt(amtA * amtB, 4)
                 : avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
             assume(minted > 0, "minted > 0");
             assume(minted < balance(pool), "assume minted < balance(pool)");
