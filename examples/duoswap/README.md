@@ -33,20 +33,20 @@ You should follow the order of operations as described:
 1. Run the `DuoSwap Announcer` which will launch the announcer contract.
 It will then wait for you to input pool addresses via the CLI.
 
-3. Run the `DuoSwap Token Funder` which will create the two tokens that
+2. Run the `DuoSwap Token Funder` which will create the two tokens that
 will be used for the pool contract. It will listen for addresses via the CLI
 and fund them with both tokens.
 
-4. Run the `DuoSwap Admin`. First, it will print out
+3. Run the `DuoSwap Admin`. First, it will print out
 the address of the account. You will input this address into the `Token Funder`
 CLI to fund the `Admin`. After, it will launch the pool contract and print
 out the needed information to connect to the pool. This info will be used by
 the `Providers` and `Traders`. It will then continuously ask whether you want
 to close the pool.
 
-5. Run the `DuoSwap Liquidity Provider`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. Finally, you can go about making an initial deposit, withdrawing, etc...
+4. Run the `DuoSwap Liquidity Provider`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. Finally, you can go about making an initial deposit, withdrawing, etc...
 
-6. Run the `DuoSwap Trader`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. After, the `Provider` has made an initial deposit, make a trade.
+5. Run the `DuoSwap Trader`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. After, the `Provider` has made an initial deposit, make a trade.
 
 Now that everyone has done something, you can close the pool via the `DuoSwap Admin`.
 The pool will remain open until all the `Liquidity Providers` withdraw their minted
