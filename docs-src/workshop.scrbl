@@ -28,6 +28,7 @@ Here are the current workshops, in the order we recommend doing them:
 @include-section["workshop-trust-fund.scrbl"]
 @include-section["workshop-fomo.scrbl"]
 @include-section["workshop-fomo-generalized.scrbl"]
+@include-section["workshop-opt-market.scrbl"]
 
 @(define (WIP/XXX . args)
   @margin-note{This page is a placeholder for a future more detailed workshop.
