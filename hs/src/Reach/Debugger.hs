@@ -79,6 +79,12 @@ type Session = M.Map Id State
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
 
+-- interpreter
+type Gas = Integer
+
+interp :: LLProg -> Gas -> App DLVal
+interp = undefined
+
 -- creates the first state and returns its id
 init :: LLProg -> App Id
 init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
