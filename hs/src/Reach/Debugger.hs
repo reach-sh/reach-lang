@@ -8,12 +8,13 @@ import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.Counter
 
 type ConsensusEnv = M.Map DLVar DLVal
 
 type Balance = Integer
 
-type Token = String
+type Token = Integer
 
 type Ledger = M.Map Account (M.Map Token Balance)
 
@@ -23,22 +24,32 @@ type Frontends = [ Frontend ]
 
 type NewPartActions = M.Map SLPart [ DLTail ]
 
-type State = (Ledger, ConsensusEnv, Frontends, NewPartActions, DAppCode)
+data ConsensusNetworkState = ConsensusNetworkState
+  { nw_ledger :: Ledger
+  , nw_next_acc :: Counter
+  , nw_next_token :: Counter
+  }
+  deriving (Eq)
+
+type State = (ConsensusNetworkState, ConsensusEnv, Frontends, NewPartActions, DAppCode)
 
 data DAppCode
   = DAppLLCons LLConsensus
   | DAppLLStep LLStep
 
-data Action
+data UIAction
   = ContinueAction -- run until breakpoint or error
   | NextAction Integer -- proceeds through the next N computation steps
   | BTAction -- print the backtrace
   | ShowAction String -- print the variable described by this string
 
-data Account = Account
-  { acc_address :: Integer
-  }
-  deriving (Eq, Ord, Show)
+data Action
+  = TieBreakAction
+  | NewAccAction
+  | NewPartAction
+  | ImitateFrontendAction
+
+type Account = Integer
 
 data DLVal
   = V_Null
@@ -61,7 +72,7 @@ data Env = Env
   }
 
 -- Identify program states
-type Id = Int
+type Id = Integer
 
 -- All of the states visited
 type Session = M.Map Id State
@@ -71,7 +82,7 @@ type Params = String -- JSON.Value
 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
-init = undefined
+init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
 
 -- returns the set of possible reductions
 actions  :: Id -> App [ Action ]
