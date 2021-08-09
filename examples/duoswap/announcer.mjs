@@ -72,6 +72,8 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       const ctcPool = accListener.attach(poolBackend, poolInfo);
       const tokA = await ctcPool.getViews().Tokens.aTok();
       const tokB = await ctcPool.getViews().Tokens.bTok();
+      let aBal = await ctcPool.getViews().Tokens.aBal();
+      let bBal = await ctcPool.getViews().Tokens.bBal();
       if (tokA[0] == 'None' || tokB[0] == 'None') {
         console.log(`XXX: Pool ${poolInfo} does not have token info`);
         return;
@@ -81,12 +83,14 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       const resA = await getTokenInfo(stdlib, accListener, tokA[1]);
       const tokASym = resA.sym;
       const tokAName = resA.name;
-      console.log(`\x1b[2m`, `  * TokA:`, tokASym, tokAName, '\x1b[0m');
+      const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
+      console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');
 
       const resB = await getTokenInfo(stdlib, accListener, tokB[1]);
       const tokBSym = resB.sym;
       const tokBName = resB.name;
-      console.log(`\x1b[2m`, `  * TokB:`, tokBSym, tokBName, '\x1b[0m');
+      const tokBBal = (bBal[0] == 'None') ? 0 : bBal[1];
+      console.log(`\x1b[2m`, `  *`, tokBBal.toString(), tokBSym, '\x1b[0m');
 
       const info = {
         poolAddr: poolInfo,

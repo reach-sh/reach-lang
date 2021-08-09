@@ -33,9 +33,6 @@ You should follow the order of operations as described:
 1. Run the `DuoSwap Announcer` which will launch the announcer contract.
 It will then wait for you to input pool addresses via the CLI.
 
-2. Run the `DuoSwap Listener` which will listen for all the pool addresses
-the `Manager` publishes.
-
 3. Run the `DuoSwap Token Funder` which will create the two tokens that
 will be used for the pool contract. It will listen for addresses via the CLI
 and fund them with both tokens.
@@ -47,10 +44,9 @@ out the needed information to connect to the pool. This info will be used by
 the `Providers` and `Traders`. It will then continuously ask whether you want
 to close the pool.
 
-5. Run the `DuoSwap Liquidity Provider`. With the printed address, fund the account with the `Token Funder` CLI. Then, provide the connection info that the
-`Admin` printed out. Then, you can go about making an initial deposit, withdrawing, etc...
+5. Run the `DuoSwap Liquidity Provider`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. Finally, you can go about making an initial deposit, withdrawing, etc...
 
-6. Run the `DuoSwap Trader`. With the printed address, fund the account with the `Token Funder` CLI. After, the `Provider` has made an initial deposit, make a trade.
+6. Run the `DuoSwap Trader`. With the printed address, fund the account with the `Token Funder` CLI. Then, it will listen for all the pool addresses that have been announced. When you find the pool you want to connect to, click Enter. Then, copy and paste the provided connection info. After, the `Provider` has made an initial deposit, make a trade.
 
 Now that everyone has done something, you can close the pool via the `DuoSwap Admin`.
 The pool will remain open until all the `Liquidity Providers` withdraw their minted
@@ -76,30 +72,11 @@ Who are you?
 6: DuoSwap Token Funder
 4
 Listening...
-Announcer Contract Info: "0x5AAF7232b4C2D43a69498bDe3f451Eab5c48f56D"
+Announcer Contract Info: "0x5cA3F5079a1d7EcD1e8831f5179C8baF9D9C8426"
 Enter new pool address:
-0x3480eE966A3B16fb9185928D18b8a9C785A25E63
-Manager created pool: 0x3480eE966A3B16fb9185928D18b8a9C785A25E63
+0xb259AE36142d2eb5b9B436821bb48247EE73Aac4
+Manager created pool: 0xb259AE36142d2eb5b9B436821bb48247EE73Aac4
 Enter new pool address:
-```
-
-#
-
-## Announcer Listener
-
-```
-Who are you?
-1: DuoSwap Admin
-2: DuoSwap Liquidity Provider
-3: DuoSwap Trader
-4: DuoSwap Announcer
-5: DuoSwap Listener
-6: DuoSwap Token Funder
-5
-Paste Announcer Contract Info:
-0x5AAF7232b4C2D43a69498bDe3f451Eab5c48f56D
-Listening...
-Manager added pool: 0x3480eE966A3B16fb9185928D18b8a9C785A25E63
 ```
 
 #
@@ -115,33 +92,43 @@ Who are you?
 5: DuoSwap Listener
 6: DuoSwap Token Funder
 6
-Launching token, zorkmid (ZMD)
-ZMD: deploy
-ZMD: wait for deploy: 0x7ee030e33f8c9dc15d4b7b097f02cc11645acbca11044d9426280ec72960a8a4
-ZMD: saw deploy: 14042
-ZMD: deployed: 0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF
-Launching token, gil (GIL)
-GIL: deploy
-GIL: wait for deploy: 0x19fc38a6b8f25d48fcaddc55c994235f671b9f775e1adc7bc1a45127ea47920d
-GIL: saw deploy: 14044
-GIL: deployed: 0xCD33184a0495f6bda6DCED04dCa459a6fC410124
-Token Info: {"zmd":"0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF","gil":"0xCD33184a0495f6bda6DCED04dCa459a6fC410124"}
-Ready To Mint 1000 ZMD & 1000 GIL
+Creating first token...
+Token symbol:
+zmd
+Token name:
+zmd
+Creating second token...
+Token symbol:
+gil
+Token name:
+gil
+Launching token, zmd (zmd)
+zmd: deploy
+zmd: wait for deploy: 0x592788bf1c4b3eebe091b6f985b2643d918d60ad393390aa2e323eb703030c11
+zmd: saw deploy: 2
+zmd: deployed: 0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb
+Launching token, gil (gil)
+gil: deploy
+gil: wait for deploy: 0x4bb2573bfecf71376e146bd81946d41fb9a487f28f2fb84cc548e8b5f785e700
+gil: saw deploy: 4
+gil: deployed: 0x57B38E81d1304709B03c9E3CaA224872867f6Af5
+Token Info: {"tokA":{"id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb","sym":"zmd","name":"zmd"},"tokB":{"id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5","sym":"gil","name":"gil"}}
+Ready To Mint 1000 zmd & 1000 gil
 Address:
-0x03fE2fe0E95321a9D345bEc37cD6AF86EEA48f0d
-ZMD: minting 1000000000000000000000 ZMD for 0x03fE2fe0E95321a9D345bEc37cD6AF86EEA48f0d
-GIL: minting 1000000000000000000000 GIL for 0x03fE2fe0E95321a9D345bEc37cD6AF86EEA48f0d
-Ready To Mint 1000 ZMD & 1000 GIL
+0xACBc25cAfB5078B4dF93A0f596b8C03c368f353b
+zmd: minting 1000000000000000000000 zmd for 0xACBc25cAfB5078B4dF93A0f596b8C03c368f353b
+gil: minting 1000000000000000000000 gil for 0xACBc25cAfB5078B4dF93A0f596b8C03c368f353b
+Ready To Mint 1000 zmd & 1000 gil
 Address:
-0xf62CD572D9b5A171D87FD3aD625166F63E25B95f
-ZMD: minting 1000000000000000000000 ZMD for 0xf62CD572D9b5A171D87FD3aD625166F63E25B95f
-GIL: minting 1000000000000000000000 GIL for 0xf62CD572D9b5A171D87FD3aD625166F63E25B95f
-Ready To Mint 1000 ZMD & 1000 GIL
+0x192b84691C26e21849b041d66Fb9f010f8312363
+zmd: minting 1000000000000000000000 zmd for 0x192b84691C26e21849b041d66Fb9f010f8312363
+gil: minting 1000000000000000000000 gil for 0x192b84691C26e21849b041d66Fb9f010f8312363
+Ready To Mint 1000 zmd & 1000 gil
 Address:
-0x61e415ccA90C0F48c81DEB7E4f5f822804c2b989
-ZMD: minting 1000000000000000000000 ZMD for 0x61e415ccA90C0F48c81DEB7E4f5f822804c2b989
-GIL: minting 1000000000000000000000 GIL for 0x61e415ccA90C0F48c81DEB7E4f5f822804c2b989
-Ready To Mint 1000 ZMD & 1000 GIL
+0x311f1eAE006690112A55d0C59e2eC9e58664a6b6
+zmd: minting 1000000000000000000000 zmd for 0x311f1eAE006690112A55d0C59e2eC9e58664a6b6
+gil: minting 1000000000000000000000 gil for 0x311f1eAE006690112A55d0C59e2eC9e58664a6b6
+Ready To Mint 1000 zmd & 1000 gil
 Address:
 ```
 
@@ -158,13 +145,13 @@ Who are you?
 5: DuoSwap Listener
 6: DuoSwap Token Funder
 1
-Fund: 0x03fE2fe0E95321a9D345bEc37cD6AF86EEA48f0d
+Fund: 0xACBc25cAfB5078B4dF93A0f596b8C03c368f353b
 
 Enter token info:
-{"zmd":"0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF","gil":"0xCD33184a0495f6bda6DCED04dCa459a6fC410124"}
-Enter Pool Address Into Announcer Manager: 0x3480eE966A3B16fb9185928D18b8a9C785A25E63
+{"tokA":{"id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb","sym":"zmd","name":"zmd"},"tokB":{"id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5","sym":"gil","name":"gil"}}
+Enter Pool Address Into Announcer Manager: 0xb259AE36142d2eb5b9B436821bb48247EE73Aac4
 
-Connection Info:  {"poolAddr":"0x3480eE966A3B16fb9185928D18b8a9C785A25E63","zmd":{"id":"0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF","sym":"zmd","name":"zorkmid"},"gil":{"id":"0xCD33184a0495f6bda6DCED04dCa459a6fC410124","sym":"gil","name":"gil"}}
+Connection Info:  {"poolAddr":"0xb259AE36142d2eb5b9B436821bb48247EE73Aac4","tokA":{"id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb","sym":"zmd","name":"zmd"},"tokB":{"id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5","sym":"gil","name":"gil"}}
 Do you want to close the pool? (y/n)
 n
 Do you want to close the pool? (y/n)
@@ -190,17 +177,31 @@ Who are you?
 5: DuoSwap Listener
 6: DuoSwap Token Funder
 2
-Fund: 0xf62CD572D9b5A171D87FD3aD625166F63E25B95f
+Fund: 0x192b84691C26e21849b041d66Fb9f010f8312363
+
+Paste Announcer Contract Info:
+0x5cA3F5079a1d7EcD1e8831f5179C8baF9D9C8426
+Searching for pools...
+Click `Enter` when done searching for pools.
+Listening...
+ Pool ID: 0xb259AE36142d2eb5b9B436821bb48247EE73Aac4
+   * 0 zmd
+   * 0 gil
+   * Info: {"poolAddr":"0xb259AE36142d2eb5b9B436821bb48247EE73Aac4","tokA":{"sym":"zmd","name":"zmd","id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb"},"tokB":{"sym":"gil","name":"gil","id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5"}}
 
 Enter connection info:
-{"poolAddr":"0x3480eE966A3B16fb9185928D18b8a9C785A25E63","zmd":{"id":"0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF","sym":"zmd","name":"zorkmid"},"gil":{"id":"0xCD33184a0495f6bda6DCED04dCa459a6fC410124","sym":"gil","name":"gil"}}
+{"poolAddr":"0xb259AE36142d2eb5b9B436821bb48247EE73Aac4","tokA":{"sym":"zmd","name":"zmd","id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb"},"tokB":{"sym":"gil","name":"gil","id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5"}}
 Do you want to deposit? (y/n)
 y
-How much ZMD do you want to deposit? (Bal: 1000 zmd & 1000 gil)
+How much zmd do you want to deposit? (Bal: 1000 zmd & 1000 gil)
 200
-How much GIL do you want to deposit? (Bal: 1000 zmd & 1000 gil)
-100
- I received 625000000000000000000 pool tokens for my deposit of 200000000000000000000 ZMD & 100000000000000000000 GIL
+How much gil do you want to deposit? (Bal: 1000 zmd & 1000 gil)
+1
+ I received 6250000000000000000 pool tokens for my deposit of 200000000000000000000 zmd & 1000000000000000000 gil
+Do you want to withdraw liquidity? (y/n)
+n
+Do you want to deposit? (y/n)
+n
 Do you want to withdraw liquidity? (y/n)
 n
 Do you want to deposit? (y/n)
@@ -212,8 +213,8 @@ n
 Do you want to withdraw liquidity? (y/n)
 y
 How much liquidity do you want to withdraw?
-625000000000000000000
- I withdrew 300000000000000000000 ZMD & 66733400066733400067 GIL
+6250000000000000000
+ I withdrew 300000000000000000000 zmd & 667334000667334001 gil
 Do you want to deposit? (y/n)
 n
 ```
@@ -231,23 +232,31 @@ Who are you?
 5: DuoSwap Listener
 6: DuoSwap Token Funder
 3
-Fund: 0x61e415ccA90C0F48c81DEB7E4f5f822804c2b989
+Fund: 0x311f1eAE006690112A55d0C59e2eC9e58664a6b6
+
+Paste Announcer Contract Info:
+0x5cA3F5079a1d7EcD1e8831f5179C8baF9D9C8426
+Searching for pools...
+Click `Enter` when done searching for pools.
+Listening...
+ Pool ID: 0xb259AE36142d2eb5b9B436821bb48247EE73Aac4
+   * 200000000000000000000 zmd
+   * 1000000000000000000 gil
+   * Info: {"poolAddr":"0xb259AE36142d2eb5b9B436821bb48247EE73Aac4","tokA":{"sym":"zmd","name":"zmd","id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb"},"tokB":{"sym":"gil","name":"gil","id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5"}}
 
 Enter connection info:
-{"poolAddr":"0x3480eE966A3B16fb9185928D18b8a9C785A25E63","zmd":{"id":"0x7E074f2AcDAb2941f6A3588A19349E21c487F7CF","sym":"zmd","name":"zorkmid"},"gil":{"id":"0xCD33184a0495f6bda6DCED04dCa459a6fC410124","sym":"gil","name":"gil"}}
+{"poolAddr":"0xb259AE36142d2eb5b9B436821bb48247EE73Aac4","tokA":{"sym":"zmd","name":"zmd","id":"0x555d86fac9cc1630322bD2Bd890A994Bf005a6eb"},"tokB":{"sym":"gil","name":"gil","id":"0x57B38E81d1304709B03c9E3CaA224872867f6Af5"}}
 Do you want to trade? (y/n)
 n
 Do you want to trade? (y/n)
 y
 What token do you want to input?
-ZMD
-GIL
+zmd
+gil
 zmd
 How much do you want to trade? (You have 1000 zmd)
 100
- I traded 100000000000000000000 zmd for 33266599933266599933 gil
-Do you want to trade? (y/n)
-n
+ I traded 100000000000000000000 zmd for 332665999332665999 gil
 Do you want to trade? (y/n)
 n
 Do you want to trade? (y/n)
