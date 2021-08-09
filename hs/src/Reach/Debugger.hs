@@ -8,7 +8,6 @@ import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.Counter
 
 type ConsensusEnv = M.Map DLVar DLVal
 
@@ -26,8 +25,8 @@ type NewPartActions = M.Map SLPart [ DLTail ]
 
 data ConsensusNetworkState = ConsensusNetworkState
   { nw_ledger :: Ledger
-  , nw_next_acc :: Counter
-  , nw_next_token :: Counter
+  , nw_next_acc :: Integer
+  , nw_next_token :: Integer
   }
   deriving (Eq)
 
