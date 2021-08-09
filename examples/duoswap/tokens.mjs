@@ -19,8 +19,8 @@ export const runTokens = async () => {
   const tokA = await launchToken(nameA, symA);
   const tokB = await launchToken(nameB, symB);
   console.log(`Token Info:`, JSON.stringify({
-    tokA: { id: tokA.id, sym: symA, name: nameA },
-    tokB: { id: tokB.id , sym: symB, name: nameB }
+    tokA: tokA.id,
+    tokB: tokB.id,
   }));
 
   while (true) {

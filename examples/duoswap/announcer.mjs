@@ -38,16 +38,8 @@ export const runManager = async () => {
 
 };
 
-export const getTokenInfo = async (stdlib, acc, tokId) => {
-  if (stdlib.connector == 'ETH') {
-    const provider = await stdlib.getProvider();
-    const remoteCtc = ETHStdlib["contracts"]["stdlib.sol:ReachToken"];
-    const remoteABI = remoteCtc["abi"];
-    const ctc = await new ethers.Contract(tokId, remoteABI, provider);
-    const name = await ctc.name();
-    const sym = await ctc.symbol();
-    return { sym, name };
-  }
+export const getTokenInfo = async (acc, tokId) => {
+  return await acc.tokenMetadata(tokId);
 }
 
 export const runListener = async () => {
@@ -80,28 +72,24 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       }
 
 
-      const resA = await getTokenInfo(stdlib, accListener, tokA[1]);
-      const tokASym = resA.sym;
-      const tokAName = resA.name;
+      const resA = await getTokenInfo(accListener, tokA[1]);
+      const tokASym = resA.symbol;
       const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
       console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');
 
-      const resB = await getTokenInfo(stdlib, accListener, tokB[1]);
-      const tokBSym = resB.sym;
-      const tokBName = resB.name;
+      const resB = await getTokenInfo(accListener, tokB[1]);
+      const tokBSym = resB.symbol;
       const tokBBal = (bBal[0] == 'None') ? 0 : bBal[1];
       console.log(`\x1b[2m`, `  *`, tokBBal.toString(), tokBSym, '\x1b[0m');
 
       const info = {
         poolAddr: poolInfo,
         tokA: {
-          sym: tokASym,
-          name: tokAName,
+          ...resA,
           id: tokA[1]
         },
         tokB: {
-          sym: tokBSym,
-          name: tokBName,
+          ...resB,
           id: tokB[1]
         }
       };

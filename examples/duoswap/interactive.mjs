@@ -24,7 +24,7 @@ const fmt = (stdlib, x) => stdlib.formatCurrency(x, 4);
 
 const getBalance = async (stdlib, tokenX, who) => {
   const amt = await stdlib.balanceOf(who, tokenX.id);
-  return `${fmt(stdlib, amt)} ${tokenX.sym}`; };
+  return `${fmt(stdlib, amt)} ${tokenX.symbol}`; };
 
 const getBalances = async (stdlib, who, tokA, tokB) =>
   `${await getBalance(stdlib, tokA, who)} & ${await getBalance(stdlib, tokB, who)}`;
@@ -45,13 +45,11 @@ const runDuoSwapAdmin = async () => {
   const ctcInfo = ctcAdmin.getInfo();
   const poolAddr = (await ctcInfo).toString();
   await ask.ask(`Enter Pool Address Into Announcer Manager: ${poolAddr}`);
-  const connectionInfo = { poolAddr, tokA, tokB };
-  console.log(`Connection Info: `, JSON.stringify(connectionInfo));
 
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
-    tokA: tokA.id,
-    tokB: tokB.id,
+    tokA,
+    tokB,
     shouldClosePool: async (_) => {
       const answer = await ask.ask(`Do you want to close the pool? (y/n)`, ask.yesno);
       return { when: answer, msg: null };
@@ -93,7 +91,7 @@ const runDuoSwapLP = async () => {
     withdrawDone: (isMe, amtOuts) => {
       if (isMe) {
         withdrew[accProvider] = true;
-        console.log("\x1b[31m", `I withdrew ${amtOuts[0]} ${tokA.sym} & ${amtOuts[1]} ${tokB.sym}`,'\x1b[0m');
+        console.log("\x1b[31m", `I withdrew ${amtOuts[0]} ${tokA.symbol} & ${amtOuts[1]} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     withdrawMaybe: async ([ alive, market ]) => {
@@ -108,15 +106,15 @@ const runDuoSwapLP = async () => {
     depositDone: (isMe, amtA, amtB, poolTokens) => {
       if (isMe) {
         deposited[accProvider] = poolTokens;
-        console.log("\x1b[34m", `I received ${poolTokens} pool tokens for my deposit of ${amtA} ${tokA.sym} & ${amtB} ${tokB.sym}`,'\x1b[0m');
+        console.log("\x1b[34m", `I received ${poolTokens} pool tokens for my deposit of ${amtA} ${tokA.symbol} & ${amtB} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     depositMaybe: async ([ isAlive, market ]) => {
       const wantsToDeposit = await ask.ask(`Do you want to deposit? (y/n)`, ask.yesno);
       if (wantsToDeposit) {
         const myBals = await getBalances(stdlib, accProvider, tokA, tokB);
-        const amtA = await ask.ask(`How much ${tokA.sym} do you want to deposit? (Bal: ${myBals})`);
-        const amtB = await ask.ask(`How much ${tokB.sym} do you want to deposit? (Bal: ${myBals})`);
+        const amtA = await ask.ask(`How much ${tokA.symbol} do you want to deposit? (Bal: ${myBals})`);
+        const amtB = await ask.ask(`How much ${tokB.symbol} do you want to deposit? (Bal: ${myBals})`);
         const deposit = { amtA: stdlib.parseCurrency(amtA), amtB: stdlib.parseCurrency(amtB) }
         return {
           when: true, msg: deposit
@@ -165,18 +163,18 @@ const runDuoSwapTrader = async () => {
       const tokOut = amtOutTok == tokA.id ? tokA : tokB;
       if (isMe) {
         traded[accTrader] = true;
-        console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.sym} for ${amtOut} ${tokOut.sym}`,'\x1b[0m');
+        console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.symbol} for ${amtOut} ${tokOut.symbol}`,'\x1b[0m');
       }
     },
     tradeMaybe: async ([ alive, market ]) => {
       const wantsToTrade = await ask.ask(`Do you want to trade? (y/n)`, ask.yesno);
       if (wantsToTrade) {
-        const options = [tokA.sym, tokB.sym].join('\n');
-        const tokType = await ask.ask(`What token do you want to input?\n${options}`, isAOrB(tokA.sym, tokB.sym));
-        const myBal = await getBalance(stdlib, tokType === tokA.sym ? tokA : tokB, accTrader);
+        const options = [tokA.symbol, tokB.symbol].join('\n');
+        const tokType = await ask.ask(`What token do you want to input?\n${options}`, isAOrB(tokA.symbol, tokB.symbol));
+        const myBal = await getBalance(stdlib, tokType === tokA.symbol ? tokA : tokB, accTrader);
         const amt = await ask.ask(`How much do you want to trade? (You have ${myBal})`);
         const trade =
-          (tokType == tokA.sym)
+          (tokType == tokA.symbol)
             ? ({ amtA: stdlib.parseCurrency(amt), amtB: 0, amtInTok: tokA.id })
             : ({ amtA: 0, amtB: stdlib.parseCurrency(amt), amtInTok: tokB.id });
         return { when: true, msg: trade };
@@ -189,13 +187,16 @@ const runDuoSwapTrader = async () => {
   await Promise.all([ backendTrader ]);
 }
 
+const bold = (s) => `\x1b[1m${s}\x1b[0m`
+const faint = (s) => `\x1b[2m${s}\x1b[0m`
+
 const options = [
-  '1: DuoSwap Admin',
-  '2: DuoSwap Liquidity Provider',
-  '3: DuoSwap Trader',
-  '4: DuoSwap Announcer',
-  '5: DuoSwap Listener',
-  '6: DuoSwap Token Funder',
+  `1: ` + bold(`DuoSwap Pool Admin`) + `\n` + faint(`  * Create a pool for a pair of tokens`),
+  `2: ` + bold(`DuoSwap Liquidity Provider`) + `\n` + faint(`  * Receive liquidity tokens by depositing tokens into a pool\n  * Withdraw liquidity from a pool`),
+  `3: ` + bold(`DuoSwap Trader`) + `\n` + faint(`  * Trade one token for another in available pools`),
+  `4: ` + bold(`DuoSwap Announcer`) + `\n` + faint(`  * Announces all the available pool addresses`),
+  `5: ` + bold(`DuoSwap Listener`) + `\n` + faint(`  * Listens for all the available pool addresses`),
+  `6: ` + bold(`DuoSwap Token Funder`) + `\n` + faint(`  * Create 2 tokens and fund any addresses you provide`),
 ].join('\n');
 
 export const runInteractive = async () => {
