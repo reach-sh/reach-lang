@@ -1,4 +1,4 @@
-REACH = reach
+REACH = ../../reach
 
 .PHONY: clean
 clean:

@@ -178,8 +178,9 @@ export const runAutomated = async () => {
 };
 
 (async () => {
-  if (process.argv.slice(2).length > 0) {
-    await runInteractive();
+  const args = process.argv.slice(2);
+  if (args.length > 0) {
+    await runInteractive(args.includes(`testnet`));
   } else {
     await runAutomated();
   }

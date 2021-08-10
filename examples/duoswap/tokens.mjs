@@ -8,16 +8,27 @@ const getTokenInfo = async () => {
   return [ tokSym, tokName ];
 }
 
-export const runTokens = async () => {
+export const runTokens = async (useTestnet) => {
   const stdlib = await loadStdlib();
+
+  let accCreator;
+  if (useTestnet) {
+    stdlib.setProviderByName(`TestNet`);
+    const secret = await ask.ask(`What is your secret key?`);
+    accCreator = await stdlib.newAccountFromSecret(secret);
+  } else {
+    const startingBalance = stdlib.parseCurrency(100);
+    accCreator = await stdlib.newTestAccount(startingBalance);
+  }
+
   console.log(`Creating first token...`);
   const [symA, nameA] = await getTokenInfo();
 
   console.log(`Creating second token...`);
   const [symB, nameB] = await getTokenInfo();
 
-  const tokA = await launchToken(nameA, symA);
-  const tokB = await launchToken(nameB, symB);
+  const tokA = await launchToken(nameA, symA, stdlib, accCreator);
+  const tokB = await launchToken(nameB, symB, stdlib, accCreator);
   console.log(`Token Info:`, JSON.stringify({
     tokA: tokA.id,
     tokB: tokB.id,

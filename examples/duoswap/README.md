@@ -6,8 +6,10 @@ To run the program interactively, run:
 
     reach run -- i
 
-NOTE: Providing any command line argument will cause the program to run
-interactively.
+If you want to run on the Ropsten testnet, run:
+
+    reach run -- i testnet
+
 
 ## Contracts
 
@@ -20,7 +22,7 @@ You will be greeted with this when starting the interactive program:
 
 ```
 Who are you?
-1: DuoSwap Admin
+1: DuoSwap Pool Admin
 2: DuoSwap Liquidity Provider
 3: DuoSwap Trader
 4: DuoSwap Announcer
@@ -37,7 +39,7 @@ It will then wait for you to input pool addresses via the CLI.
 will be used for the pool contract. It will listen for addresses via the CLI
 and fund them with both tokens.
 
-3. Run the `DuoSwap Admin`. First, it will print out
+3. Run the `DuoSwap Pool Admin`. First, it will print out
 the address of the account. You will input this address into the `Token Funder`
 CLI to fund the `Admin`. After, it will launch the pool contract and print
 out the needed information to connect to the pool. This info will be used by

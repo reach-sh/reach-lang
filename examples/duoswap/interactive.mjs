@@ -3,7 +3,6 @@ import * as backend from './build/index.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 import { runManager, runListener, runListener_ } from './announcer.mjs';
 import { runTokens } from './tokens.mjs';
-import * as announcerBackend from './build/announcer.main.mjs';
 
 // Track who withdrew/deposited
 const withdrew  = {};
@@ -29,15 +28,22 @@ const getBalance = async (stdlib, tokenX, who) => {
 const getBalances = async (stdlib, who, tokA, tokB) =>
   `${await getBalance(stdlib, tokA, who)} & ${await getBalance(stdlib, tokB, who)}`;
 
-const runDuoSwapAdmin = async () => {
+const runDuoSwapAdmin = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(9999);
+  let accAdmin;
+  if (useTestnet) {
+    stdlib.setProviderByName('TestNet');
+    const secret = await ask.ask(`What is your secret key?`);
+    accAdmin = await stdlib.newAccountFromSecret(secret);
+  } else {
+    // Create & Fund Admin
+    const startingBalance = stdlib.parseCurrency(9999);
+    accAdmin = await stdlib.newTestAccount(startingBalance);
+    await ask.ask(`Fund: ${accAdmin.getAddress()}`);
+  }
 
-  // Create & Fund Admin
-  const accAdmin = await stdlib.newTestAccount(startingBalance)
   await accAdmin.setDebugLabel('Admin');
-  await ask.ask(`Fund: ${accAdmin.getAddress()}`);
   const { tokA, tokB } = await ask.ask(`Enter token info:`, JSON.parse);
 
   // Deploy contract
@@ -59,18 +65,25 @@ const runDuoSwapAdmin = async () => {
   await Promise.all([ adminBackend ]);
 };
 
-const runDuoSwapLP = async () => {
+const runDuoSwapLP = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(9999);
+  let accProvider;
+  if (useTestnet) {
+    stdlib.setProviderByName('TestNet');
+    const secret = await ask.ask(`What is your secret key?`);
+    accProvider = await stdlib.newAccountFromSecret(secret);
+  } else {
+    // Create & Fund Provider
+    const startingBalance = stdlib.parseCurrency(9999);
+    accProvider = await stdlib.newTestAccount(startingBalance);
+    const _ = await ask.ask(`Fund: ${accProvider.getAddress()}`);
+  }
 
-  // Create & Fund Admin
-  const accProvider = await stdlib.newTestAccount(startingBalance)
   await accProvider.setDebugLabel('Provider');
   if (stdlib.connector == 'ETH') {
     accProvider.setGasLimit(5000000);
   }
-  const _ = await ask.ask(`Fund: ${accProvider.getAddress()}`);
 
   // Connect to announcer and list pools:
   const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
@@ -128,19 +141,25 @@ const runDuoSwapLP = async () => {
   await Promise.all([ backendProvider ]);
 }
 
-const runDuoSwapTrader = async () => {
+const runDuoSwapTrader = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(9999);
+  let accTrader;
+  if (useTestnet) {
+    stdlib.setProviderByName('TestNet');
+    const secret = await ask.ask(`What is your secret key?`);
+    accTrader = await stdlib.newAccountFromSecret(secret);
+  } else {
+    // Create & Fund Trader
+    const startingBalance = stdlib.parseCurrency(9999);
+    accTrader = await stdlib.newTestAccount(startingBalance);
+    const _ = await ask.ask(`Fund: ${accTrader.getAddress()}`);
+  }
 
-  // Create & Fund Admin
-  const accTrader = await stdlib.newTestAccount(startingBalance)
   await accTrader.setDebugLabel('Trader');
   if (stdlib.connector == 'ETH') {
     accTrader.setGasLimit(5000000);
   }
-  // Attach to tokens that Admin launched
-  const _ = await ask.ask(`Fund: ${accTrader.getAddress()}`);
 
   // Connect to announcer and list pools:
   const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
@@ -199,33 +218,33 @@ const options = [
   `6: ` + bold(`DuoSwap Token Funder`) + `\n` + faint(`  * Create 2 tokens and fund any addresses you provide`),
 ].join('\n');
 
-export const runInteractive = async () => {
+export const runInteractive = async (useTestnet) => {
   const answer = await ask.ask(`Who are you?\n${options}`, parseInt);
 
   switch (answer) {
     case 1: {
       // Creates a pool and sends info to announcer/cache
-      await runDuoSwapAdmin();
+      await runDuoSwapAdmin(useTestnet);
       return;
     }
     case 2: {
-      await runDuoSwapLP();
+      await runDuoSwapLP(useTestnet);
       return;
     }
     case 3: {
-      await runDuoSwapTrader();
+      await runDuoSwapTrader(useTestnet);
       return;
     }
     case 4: {
-      await runManager();
+      await runManager(useTestnet);
       return;
     }
     case 5: {
-      await runListener();
+      await runListener(useTestnet);
       return;
     }
     case 6: {
-      await runTokens();
+      await runTokens(useTestnet);
       return;
     }
   }
