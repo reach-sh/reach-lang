@@ -80,19 +80,20 @@ type Session = M.Map Id State
 type Params = String -- JSON.Value
 
 -- interpreter
-type Gas = Integer
+interpStmt :: DLStmt -> App LLProg
+interpStmt = undefined
 
--- determine if program is already a value
-get_prog_val :: LLProg -> Maybe DLVal
-get_prog_val = undefined
+interpStep :: LLStep -> App (LLProg)
+interpStep = \case
+  (LLS_Com stmt st') -> do
+    _ <- interpStmt stmt
+    interpStep st'
+  -- QUESTION: what should the interpreter return for a stop?
+  (LLS_Stop _loc) -> undefined
+  (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
 
-interp :: Gas -> LLProg -> App (Maybe DLVal)
-interp 0 prog = return $ get_prog_val prog
-interp _n prog = case prog of
-  (LLProg _at _llo _ps _dli _dex _dvs st) -> case st of
-    (LLS_Com _stmt _st') -> undefined
-    (LLS_Stop _loc) -> undefined
-    (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
+interp :: LLProg -> App (LLProg)
+interp (LLProg _at _llo _ps _dli _dex _dvs st) = interpStep st
 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
