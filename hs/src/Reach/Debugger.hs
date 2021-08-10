@@ -89,7 +89,11 @@ get_prog_val = undefined
 
 interp :: Gas -> LLProg -> App (Maybe DLVal)
 interp 0 prog = return $ get_prog_val prog
-interp _n _prog = undefined
+interp _n prog = case prog of
+  (LLProg _at _llo _ps _dli _dex _dvs st) -> case st of
+    (LLS_Com _stmt _st') -> undefined
+    (LLS_Stop _loc) -> undefined
+    (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
