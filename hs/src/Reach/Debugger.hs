@@ -95,6 +95,14 @@ interpStep = \case
 interp :: LLProg -> App LLProg
 interp (LLProg _at _llo _ps _dli _dex _dvs st) = interpStep st
 
+interpM :: App LLProg -> App LLProg
+interpM mprog = do
+  prog <- mprog
+  interp prog
+
+interpN :: Integer -> LLProg -> App LLProg
+interpN n prog = foldr (.) id (replicate (fromInteger n) interpM) $ return prog
+
 -- creates the first state and returns its id
 init :: LLProg -> App Id
 init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
