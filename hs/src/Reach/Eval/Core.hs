@@ -13,7 +13,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, transpose, unzip5, (\\))
+import Data.List (elemIndex, groupBy, transpose, unzip5, (\\), intersperse, intercalate)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -34,6 +34,7 @@ import Reach.Eval.Error
 import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
+import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Warning
 import Safe (atMay)
@@ -1435,13 +1436,24 @@ evalForm f args = do
       let slf_mode = Nothing
       let slf_cases = []
       let slf_mtime = Nothing
+      let slf_mnntpay = Nothing
       retV $ public $ SLV_Form $ SLForm_fork_partial $ ForkRec {..}
     SLForm_fork_partial p@(ForkRec {..}) ->
       case slf_mode of
         Just FM_Case -> do
           a <- withAt srcloc2annot
           at <- withAt id
-          let default_pay = jsArrowExpr a [JSIdentifier a "_"] $ JSDecimal a "0"
+          let def_pay =
+                case slf_mnntpay of
+                  Just (JSArrayLiteral aa ts ae) -> do
+                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
+                    let tok_pays = JSDecimal a "0" : map (\ i ->
+                          JSArrayLiteral aa [
+                            JSArrayElement (JSDecimal aa "0"), JSArrayComma aa, JSArrayElement (JSIdentifier aa i)
+                          ] ae) tok_ids
+                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  _ -> JSDecimal a "0"
+          let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           case_args <-
             case args of
               [w, x, y, z] -> return $ ForkCase at w x y z
@@ -1461,8 +1473,8 @@ evalForm f args = do
           let throwS = jsArrow ta [] $ JSThrow ta arg (a2sp ta)
           go $ p { slf_mtime = Just (at, [d, throwS]) }
         Just FM_PaySpec -> do
-          liftIO $ emitWarning $ W_Deprecated $ D_PaySpec
-          go $ p
+          x <- one_arg
+          go $ p { slf_mnntpay = Just x }
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
       where
         go p' = retV $ public $ SLV_Form $ SLForm_fork_partial $ p' { slf_mode = Nothing }
@@ -1475,6 +1487,7 @@ evalForm f args = do
       let slpr_cases = []
       let slpr_mtime = Nothing
       let slpr_mdef = Nothing
+      let slpr_mpay = Nothing
       retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ ParallelReduceRec {..}
     SLForm_parallel_reduce_partial (p@ParallelReduceRec {..}) -> do
       aa <- withAt $ \at -> (at, args)
@@ -1488,8 +1501,8 @@ evalForm f args = do
         Just PRM_Case ->
           go $ p { slpr_cases = slpr_cases <> [aa] }
         Just PRM_PaySpec -> do
-          liftIO $ emitWarning $ W_Deprecated $ D_PaySpec
-          go $ p
+          x <- one_arg
+          go $ p { slpr_mpay = Just x }
         Just PRM_Def -> do
           x <- one_arg
           go $ p { slpr_mdef = Just x }
@@ -4022,6 +4035,7 @@ typeToExpr = \case
 data CompiledForkCase = CompiledForkCase
   { cfc_part :: JSExpression
   , cfc_data_def :: JSObjectProperty
+  , cfc_pay_prop :: JSObjectProperty
   , cfc_switch_case :: JSSwitchParts
   , cfc_only :: JSStatement
   , cfc_msg_type_def :: [JSStatement]
@@ -4046,7 +4060,6 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
-  let all_pay_e = jid (fid "pay")
   let tv = jid $ ".t" <> show idx
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
@@ -4157,7 +4170,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne res_msg) a
         let res_when = JSMemberDot res_e a (jid "when")
         let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
-        let only_body = run_ss <> cr_ss <> [defcon msg_e msg_vde, defcon when_e res_when, defcon all_pay_e res_pay]
+        let only_body = run_ss <> cr_ss <> [defcon msg_e msg_vde, defcon when_e res_when]
         isClass <- is_class who_s
         let who_is_this_ss =
               case (isBound, isClass) of
@@ -4190,18 +4203,63 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let cases_msg_type_def = concatMap cfc_msg_type_def casel
         let cases_data_def = map cfc_data_def casel
         let cases_parts = map cfc_part casel
+        let cases_pay_props = map cfc_pay_prop casel
         let cases_switch_cases = map cfc_switch_case casel
         let cases_onlys = map cfc_only casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
         let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
         let data_ss = [JSConstant a data_decls sp]
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
+        let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
-        return $ (True, before_tc_ss, all_pay_e, tc_head_e, switch_ss)
+        return $ (True, before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
-  let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_e) a
+  -- START: Non-network token pay
+  pay_expr <-
+    case slf_mnntpay of
+      Just (JSArrayLiteral aa ts _) -> do
+        let network_pay_var = jid "networkTokenPay"
+        let nnts = map (jse_expect_id at) $ jsa_flatten ts
+        let nnts_js =
+              map
+                (\i ->
+                   JSArrayLiteral aa [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] aa)
+                [0 .. length nnts - 1]
+        let nnts_ret =
+              toList $
+                mapWithIndex
+                  (\i nnt ->
+                     JSArrayLiteral
+                       aa
+                       [ JSArrayElement (jid $ "amt" <> show i)
+                       , JSArrayElement (jid $ show $ pretty nnt)
+                       ]
+                       aa)
+                  (Seq.fromList nnts)
+        let verifyPaySpec =
+              toList $
+                mapWithIndex
+                  (\i nnt ->
+                     JSExpressionStatement
+                       (JSCallExpression
+                          (jid "assert")
+                          aa
+                          (toJSCL
+                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq aa) (jid nnt)
+                             , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
+                             ])
+                          aa)
+                       sp)
+                  (Seq.fromList nnts)
+        let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
+        let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
+        let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
+        return pay_call
+      _ -> return pay_e
+  let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_expr) a
+  -- END: Non-network token pay
   let tc_time_e =
         case mtime of
           Nothing -> tc_pay_e
@@ -4292,6 +4350,11 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
           timeOutId = jid "timeout"
           callTimeout = return . jsCall ta (JSMemberDot fork_e0 ta timeOutId)
           ta = ao t_at
+  fork_e2 <-
+    case slpr_mpay of
+      Nothing -> return fork_e1
+      Just toks ->
+        return $ jsCall a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
   let forkcase fork_eN (case_at, case_es) = do
         let aux ccomps cbody = locAt case_at $ do
               cbody' <- injectContinueIntoBody cbody
@@ -4303,7 +4366,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
         return $ JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL cases') ca
         where
           ca = ao case_at
-  fork_e <- foldM forkcase fork_e1 pr_cases
+  fork_e <- foldM forkcase fork_e2 pr_cases
   let fork_s = JSExpressionStatement fork_e sp
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let while_body = [commit_s, fork_s]

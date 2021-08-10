@@ -301,6 +301,7 @@ data ForkRec = ForkRec
   , slf_mode :: Maybe ForkMode
   , slf_cases :: [ForkCase]
   , slf_mtime :: Maybe (SrcLoc, [JSExpression])
+  , slf_mnntpay :: Maybe JSExpression
   }
   deriving (Eq, Generic)
 
@@ -312,6 +313,7 @@ data ParallelReduceRec = ParallelReduceRec
   , slpr_mwhile :: Maybe JSExpression
   , slpr_cases :: [(SrcLoc, [JSExpression])]
   , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
+  , slpr_mpay :: Maybe JSExpression
   , slpr_mdef :: Maybe JSExpression
   }
   deriving (Eq, Generic)

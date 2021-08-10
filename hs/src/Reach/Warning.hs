@@ -27,7 +27,6 @@ data Deprecation
   | D_SnakeToCamelCase String
   | D_ReachAppArgs
   | D_UntypedTimeArg
-  | D_PaySpec
   deriving (Eq)
 
 data Warning
@@ -52,8 +51,6 @@ instance Show Deprecation where
       "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk."
     D_UntypedTimeArg ->
       "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs."
-    D_PaySpec ->
-      "The paySpec component of `fork` and `parallelReduce` is no longer necessary. Each case can have different styles of pay amounts."
 
 instance Show Warning where
   show = \case
