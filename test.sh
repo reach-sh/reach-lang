@@ -98,7 +98,7 @@ tealcount () {
 #r examples/raffle
 
 c examples/chicken-fork/index.rsh
-c examples/duoswap/index.rsh
+# c examples/duoswap/index.rsh
 
 # (cd examples/abstract-simul && make build)
 

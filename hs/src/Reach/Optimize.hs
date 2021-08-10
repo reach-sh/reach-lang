@@ -293,6 +293,7 @@ opt_if mkDo mkIf at c t f =
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
+      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
       t' <- newScope $ opt t
       f' <- newScope $ opt f
       case sani t' == sani f' of
@@ -303,6 +304,18 @@ opt_if mkDo mkIf at c t f =
               return $ mkIf at c'' f' t'
             Nothing ->
               return $ mkIf at c' t' f'
+
+optSwitch :: Optimize k => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
+optSwitch mkDo mkCom mkSwitch at ov csm = do
+  ov' <- opt ov
+  optKnownVariant ov' >>= \case
+    Just (var, var_val) -> do
+      let (var_var, var_k) = csm (M.!) var
+      let var_k' = mkCom (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
+      newScope $ mkDo <$> opt var_k'
+    Nothing -> do
+      let cm1 k (v_v, n) = (,) v_v <$> (newScope $ recordKnownVariant ov' k $ opt n)
+      mkSwitch at ov' <*> mapWithKeyM cm1 csm
 
 instance Optimize DLStmt where
   opt = \case
@@ -340,9 +353,7 @@ instance Optimize DLStmt where
     DL_LocalIf at c t f ->
       opt_if (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
-      DL_LocalSwitch at <$> opt ov <*> mapM cm1 csm
-      where
-        cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt l)
+      optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
     s@(DL_ArrayMap at ans x a f) -> maybeUnroll s x $
       DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
     s@(DL_ArrayReduce at ans x z b a f) -> maybeUnroll s x $ do
@@ -395,9 +406,7 @@ instance Optimize LLConsensus where
     LLC_If at c t f ->
       opt_if id LLC_If at c t f
     LLC_Switch at ov csm ->
-      LLC_Switch at <$> opt ov <*> mapM cm1 csm
-      where
-        cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt n)
+      optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k ->
       LLC_While at <$> opt asn <*> opt inv <*> opt cond <*> (newScope $ opt body) <*> opt k
     LLC_Continue at asn ->
@@ -475,9 +484,7 @@ instance Optimize CTail where
     CT_If at c t f ->
       opt_if id CT_If at c t f
     CT_Switch at ov csm ->
-      CT_Switch at ov <$> mapM cm1 csm
-      where
-        cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ opt t)
+      optSwitch id CT_Com CT_Switch at ov csm
     CT_From at w fi ->
       CT_From at w <$> opt fi
     CT_Jump at which vs asn ->

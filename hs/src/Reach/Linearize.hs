@@ -76,6 +76,9 @@ dk_block :: SrcLoc -> DLSBlock -> DKApp DKBlock
 dk_block _ (DLSBlock at fs l a) =
   DKBlock at fs <$> dk_top at l <*> pure a
 
+turnVarIntoLet :: Bool
+turnVarIntoLet = False
+
 dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
   case s of
@@ -104,12 +107,16 @@ dk1 k s =
     DLS_Return at ret da ->
       asks eRet >>= \case
         Nothing -> impossible $ "return not in prompt"
-        Just (ret', (dv, _, rk)) ->
+        Just (ret', (dv, isCon, rk)) ->
           case ret == ret' of
             False ->
               impossible $ "return not nested: " <> show (ret, ret')
             True ->
-              return $ DK_Com (DKC_Set at dv da) rk
+              case turnVarIntoLet && isCon of
+                True ->
+                  return $ DK_Com (DKC_Let at (DLV_Let DVC_Many dv) $ DLE_Arg at da) rk
+                False ->
+                  return $ DK_Com (DKC_Set at dv da) rk
     DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss ->
       case isLocal s of
         True -> do
@@ -117,11 +124,22 @@ dk1 k s =
           return $ DK_Com (DKC_Var at dv) $ DK_Com (DKC_LocalDo at ss') k
         False ->
           withReturn ret (dv, True, k) $
-            DK_Com (DKC_Var at dv) <$> dk_ k ss
+            case turnVarIntoLet of
+              True -> dk_ k ss
+              False -> DK_Com (DKC_Var at dv) <$> dk_ k ss
     DLS_Stop at -> return $ DK_Stop at
     DLS_Unreachable at fs m -> return $ DK_Unreachable at fs m
     DLS_ToConsensus at send recv mtime -> do
-      let cs = dr_k recv
+      let cs0 = dr_k recv
+      let cs =
+            case cs0 of
+              -- We are forcing an initial switch to be in CPS, assuming that
+              -- this is a fork and that this is a good idea
+              ((Seq.:<|) (DLS_Prompt pa pb pc ((Seq.:<|) (DLS_Switch sa sb sc sd) Seq.Empty)) r) ->
+                ((Seq.<|) (DLS_Prompt pa pb (go pc) ((Seq.<|) (DLS_Switch sa sb (go sc) sd) Seq.empty)) r)
+                where
+                  go x = x { sa_local = False }
+              _ -> cs0
       cs' <- dk_ k cs
       let recv' = recv {dr_k = cs'}
       let go (ta, time_ss) = (,) ta <$> dk_ k time_ss

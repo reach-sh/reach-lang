@@ -1441,8 +1441,8 @@ evalForm f args = do
     SLForm_fork_partial p@(ForkRec {..}) ->
       case slf_mode of
         Just FM_Case -> do
-          a <- withAt srcloc2annot
           at <- withAt id
+          let a = srcloc2annot at
           let def_pay =
                 case slf_mnntpay of
                   Just (JSArrayLiteral aa ts ae) -> do
@@ -1454,12 +1454,13 @@ evalForm f args = do
                     JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
                   _ -> JSDecimal a "0"
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
-          case_args <-
+          (w', x', y', z') <-
             case args of
-              [w, x, y, z] -> return $ ForkCase at w x y z
-              [w, x, z] -> return $ ForkCase at w x default_pay z
+              [w, x, y, z] -> return $ (w, x, y, z)
+              [w, x, z] -> return $ (w, x, default_pay, z)
               _ -> illegal_args 4
-          go $ p { slf_cases = slf_cases <> [case_args] }
+          let fc = ForkCase at w' x' y' z'
+          go $ p { slf_cases = slf_cases <> [fc] }
         Just FM_Timeout -> do
           at <- withAt id
           go $ p { slf_mtime = Just (at, args) }
