@@ -83,7 +83,7 @@ type Params = String -- JSON.Value
 interpStmt :: DLStmt -> App LLProg
 interpStmt = undefined
 
-interpStep :: LLStep -> App (LLProg)
+interpStep :: LLStep -> App LLProg
 interpStep = \case
   (LLS_Com stmt st') -> do
     _ <- interpStmt stmt
@@ -92,7 +92,7 @@ interpStep = \case
   (LLS_Stop _loc) -> undefined
   (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
 
-interp :: LLProg -> App (LLProg)
+interp :: LLProg -> App LLProg
 interp (LLProg _at _llo _ps _dli _dex _dvs st) = interpStep st
 
 -- creates the first state and returns its id
