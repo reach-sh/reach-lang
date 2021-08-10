@@ -253,6 +253,7 @@ data ToConsensusMode
   | TCM_When
   | TCM_Timeout
   | TCM_ThrowTimeout
+  | TCM_Fork
   deriving (Eq, Generic, Show)
 
 data ForkMode
@@ -273,22 +274,26 @@ data ParallelReduceMode
   | PRM_Def
   deriving (Eq, Generic, Show)
 
+data ToConsensusRec = ToConsensusRec
+  { slptc_at :: SrcLoc
+  , slptc_whos :: S.Set SLPart
+  , slptc_mv :: Maybe SLVar
+  , slptc_mode :: Maybe ToConsensusMode
+  , slptc_msg :: Maybe [SLVar]
+  , slptc_amte :: Maybe JSExpression
+  , slptc_whene :: Maybe JSExpression
+  , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
+  , slptc_fork :: Bool
+  }
+  deriving (Eq, Generic)
+
 data SLForm
   = SLForm_App
   | SLForm_each
   | SLForm_EachAns [(SLPart, Maybe SLVar)] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart (Maybe SLVar)
   | SLForm_liftInteract SLPart (Maybe SLVar) String
-  | SLForm_Part_ToConsensus
-      { slptc_at :: SrcLoc
-      , slptc_whos :: S.Set SLPart
-      , slptc_mv :: Maybe SLVar
-      , slptc_mode :: Maybe ToConsensusMode
-      , slptc_msg :: Maybe [SLVar]
-      , slptc_amte :: Maybe JSExpression
-      , slptc_whene :: Maybe JSExpression
-      , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
-      }
+  | SLForm_Part_ToConsensus ToConsensusRec
   | SLForm_unknowable
   | SLForm_fork
   | SLForm_fork_partial

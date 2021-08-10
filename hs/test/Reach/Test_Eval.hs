@@ -28,7 +28,6 @@ spec_examples_cover_EvalError =
       , "Err_Only_NotOneClosure"
       , "Err_Import_IllegalJS"
       , "Err_Obj_IllegalFieldValues" -- not possible with Grammar7?
-      , "Err_ToConsensus_Double" -- prevented by earlier parsing?
       , "Err_TopFun_NoName" -- hiding behind Err_Type_None
       , "Err_While_IllegalInvariant"
       , "Err_Type_Mismatch"

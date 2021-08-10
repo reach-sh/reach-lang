@@ -1043,12 +1043,13 @@ evalAsEnv obj = case obj of
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
-        , ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing Nothing))
-        , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing Nothing))
+        , ("publish", go TCM_Publish)
+        , ("pay", go TCM_Pay)
         , ("set", delayCall SLPrim_part_set)
         , ("interact", makeInteractField)
         ]
     where
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
       whos = S.singleton who
   SLV_Anybody -> do
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
@@ -1056,24 +1057,28 @@ evalAsEnv obj = case obj of
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
-        [ ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing Nothing))
-        , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing Nothing))
-        ]
-  SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen mtime) ->
+        [ ("publish", go TCM_Publish)
+        , ("pay", go TCM_Pay) ]
+    where
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
+  SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
-        gom "publish" TCM_Publish mpub
-          <> gom "pay" TCM_Pay mpay
-          <> gom "when" TCM_When mwhen
-          <> gom "timeout" TCM_Timeout mtime
-          <> gom "throwTimeout" TCM_ThrowTimeout mtime
+        gom "publish" TCM_Publish slptc_msg
+          <> gom "pay" TCM_Pay slptc_amte
+          <> gom "when" TCM_When slptc_whene
+          <> gom "timeout" TCM_Timeout slptc_timeout
+          <> gom "throwTimeout" TCM_ThrowTimeout slptc_timeout
+          <> gob ".fork" TCM_Fork slptc_fork
     where
-      gom key mode me =
-        case me of
-          Nothing -> go key mode
-          Just _ -> []
+      gob key mode = \case
+        False -> go key mode
+        True -> []
+      gom key mode = \case
+        Nothing -> go key mode
+        Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mwhen mtime))]
+        [(key, retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p { slptc_mode = Just mode })]
   SLV_Form (SLForm_fork_partial fat Nothing cases mtime mpay) ->
     return $
       M.fromList $
@@ -1502,22 +1507,21 @@ evalForm f args = do
             public $
               SLV_Form $
                 SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mtime = makeTimeoutArgs prm aa, .. }
-    SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
-      case mmode of
-        Just TCM_Publish ->
-          case mpub of
-            Nothing -> do
-              at <- withAt id
-              let msg = map (jse_expect_id at) args
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing (Just msg) mpay mwhen mtime
-            Just _ ->
-              expect_ $ Err_ToConsensus_Double TCM_Publish
+    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) ->
+      case slptc_mode of
+        Just TCM_Publish -> do
+          at <- withAt id
+          let msg = map (jse_expect_id at) args
+          go $ p { slptc_msg = Just msg }
         Just TCM_Pay -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just x) mwhen mtime
+          go $ p { slptc_amte = Just x }
         Just TCM_When -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just x) mtime
+          go $ p { slptc_whene = Just x }
+        Just TCM_Fork -> do
+          zero_args
+          go $ p { slptc_fork = True }
         Just TCM_Timeout -> do
           at <- withAt id
           x <-
@@ -1527,7 +1531,7 @@ evalForm f args = do
               [de, JSExpressionParen _ (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s) _] ->
                 return $ (at, de, Just (jsStmtToBlock dt_s))
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $ Just x
+          go $ p { slptc_timeout = Just x }
         Just TCM_ThrowTimeout -> do
           at <- withAt id
           let ta = srcloc2annot at
@@ -1537,13 +1541,11 @@ evalForm f args = do
               [de, e] -> return (de, e)
               _ -> illegal_args 2
           let throwS = JSThrow ta x JSSemiAuto
-          retV $
-            public $
-              SLV_Form $
-                SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $
-                  Just (at, de, Just (jsStmtToBlock throwS))
+          go $ p { slptc_timeout = Just (at, de, Just (jsStmtToBlock throwS)) }
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
+      where
+        go p' = retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p' { slptc_mode = Nothing }
     SLForm_each -> do
       (partse, thunke) <- two_args
       (_, parts_v) <- evalExpr partse
@@ -3805,8 +3807,14 @@ compilePayAmt tt v = do
       snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
-doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
-doToConsensus ks whos vas msg amt_e when_e mtime = do
+doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
+doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
+  let whos = slptc_whos
+  let vas = slptc_mv
+  let msg = fromMaybe [] slptc_msg
+  let amt_e = fromMaybe (JSDecimal JSNoAnnot "0") slptc_amte
+  let when_e = fromMaybe (JSLiteral JSNoAnnot "true") slptc_whene
+  let mtime = slptc_timeout
   at <- withAt id
   st <- readSt id
   ensure_mode SLM_Step "to consensus"
@@ -3899,23 +3907,25 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
           doBalanceInit $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok
         forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
-        let check_repeat whoc_v repeat_dv = do
-              repeat_cmp_v <-
-                evalPrimOp ADDRESS_EQ $
-                  map (public . SLV_DLVar) [repeat_dv, dr_from]
-              evalPrimOp IF_THEN_ELSE $
-                [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
-        whoc_v <-
-          locSt st_pure $
-            case mrepeat_dvs of
-              Just repeat_dvs@(_ : _) ->
-                foldM check_repeat (public $ SLV_Bool at False) repeat_dvs
-              _ ->
-                return $ (public $ SLV_Bool at True)
-        void $
-          locSt st_pure $
-            evalApplyVals' req_rator $
-              [whoc_v, public $ SLV_Bytes at $ "sender correct"]
+        unless slptc_fork $ do
+          let check_repeat whoc_v repeat_dv = do
+                repeat_cmp_v <-
+                  evalPrimOp ADDRESS_EQ $
+                    map (public . SLV_DLVar) [repeat_dv, dr_from]
+                evalPrimOp IF_THEN_ELSE $
+                  [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
+          whoc_v <-
+            locSt st_pure $
+              case mrepeat_dvs of
+                Just repeat_dvs@(_ : _) ->
+                  foldM check_repeat (public $ SLV_Bool at False) repeat_dvs
+                _ ->
+                  return $ (public $ SLV_Bool at True)
+          void $
+            locSt st_pure $
+              evalApplyVals' req_rator $
+                [whoc_v, public $ SLV_Bytes at $ "sender correct"]
+          return ()
         let go fv = do
               v <- ctxt_mkvar $ DLVar at Nothing T_UInt
               doFluidSet fv $ public $ SLV_DLVar v
@@ -4243,7 +4253,8 @@ doFork ks cases mtime mnntpay = do
           Nothing -> tc_pay_e
           Just (_, targs) ->
             JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) a (toJSCL targs) a
-  let tc_e = tc_time_e
+  let tc_fork_e = JSCallExpression (JSMemberDot tc_time_e a (jid ".fork")) a (toJSCL []) a
+  let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   -- liftIO $ putStrLn $ "Fork Output"
@@ -4407,11 +4418,7 @@ findStmtTrampoline = \case
       foldM doOnly sco $
         map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
     locSco sco' $ evalStmt ks
-  SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> Just $ \_ ks -> locAt to_at $ do
-    let msg = fromMaybe [] mmsg
-    let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
-    let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
-    doToConsensus ks whos vas msg amt whene mtime
+  SLV_Form (SLForm_Part_ToConsensus tcr) | slptc_mode tcr == Nothing -> Just $ \_ ks -> doToConsensus ks tcr
   SLV_Form (SLForm_fork_partial f_at Nothing cases mtime mnntpay) -> Just $ \_ ks ->
     locAt f_at $ doFork ks cases mtime mnntpay
   SLV_Prim SLPrim_committed -> Just $ \_ ks -> do

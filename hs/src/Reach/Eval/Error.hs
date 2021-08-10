@@ -87,7 +87,6 @@ data EvalError
   | Err_Prim_InvalidArgs SLPrimitive [SLValTy]
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
-  | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure SLValTy
@@ -214,7 +213,7 @@ instance HasErrorCode EvalError where
     Err_Prim_InvalidArgs {} -> 55
     Err_Shadowed {} -> 56
     Err_TailNotEmpty {} -> 57
-    Err_ToConsensus_Double {} -> 58
+    -- Err_ToConsensus_Double {} -> 58
     Err_TopFun_NoName {} -> 59
     Err_While_IllegalInvariant {} -> 60
     Err_Only_NotOneClosure {} -> 61
@@ -571,9 +570,6 @@ instance Show EvalError where
       "Invalid statement block. Expected empty tail, but found " <> found
       where
         found = show (length stmts) <> " more statements"
-    Err_ToConsensus_Double mode -> case mode of
-      TCM_Publish -> "Invalid double publish."
-      _ -> "Invalid double toConsensus."
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
     Err_While_IllegalInvariant exprs ->
