@@ -287,6 +287,35 @@ data ToConsensusRec = ToConsensusRec
   }
   deriving (Eq, Generic)
 
+data ForkCase = ForkCase
+  { fc_at :: SrcLoc
+  , fc_who :: JSExpression
+  , fc_before :: JSExpression
+  , fc_pay :: JSExpression
+  , fc_after :: JSExpression
+  }
+  deriving (Eq, Generic)
+
+data ForkRec = ForkRec
+  { slf_at :: SrcLoc
+  , slf_mode :: Maybe ForkMode
+  , slf_cases :: [ForkCase]
+  , slf_mtime :: Maybe (SrcLoc, [JSExpression])
+  }
+  deriving (Eq, Generic)
+
+data ParallelReduceRec = ParallelReduceRec
+  { slpr_at :: SrcLoc
+  , slpr_mode :: Maybe ParallelReduceMode
+  , slpr_init :: JSExpression
+  , slpr_minv :: Maybe JSExpression
+  , slpr_mwhile :: Maybe JSExpression
+  , slpr_cases :: [(SrcLoc, [JSExpression])]
+  , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
+  , slpr_mdef :: Maybe JSExpression
+  }
+  deriving (Eq, Generic)
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -296,35 +325,10 @@ data SLForm
   | SLForm_Part_ToConsensus ToConsensusRec
   | SLForm_unknowable
   | SLForm_fork
-  | SLForm_fork_partial
-      { slf_at :: SrcLoc
-      , slf_mode :: Maybe ForkMode
-      , slf_cases :: [ForkCase]
-      , slf_mtime :: Maybe (SrcLoc, [JSExpression])
-      , slf_mnntpay :: Maybe JSExpression
-      }
+  | SLForm_fork_partial ForkRec
   | SLForm_parallel_reduce
-  | SLForm_parallel_reduce_partial
-      { slpr_at :: SrcLoc
-      , slpr_mode :: Maybe ParallelReduceMode
-      , slpr_init :: JSExpression
-      , slpr_minv :: Maybe JSExpression
-      , slpr_mwhile :: Maybe JSExpression
-      , slpr_cases :: [(SrcLoc, [JSExpression])]
-      , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
-      , slpr_mpay :: Maybe JSExpression
-      , slpr_mdef :: Maybe JSExpression
-      }
+  | SLForm_parallel_reduce_partial ParallelReduceRec
   | SLForm_wait
-  deriving (Eq, Generic)
-
-data ForkCase = ForkCase
-  { fc_at :: SrcLoc
-  , fc_who :: JSExpression
-  , fc_before :: JSExpression
-  , fc_pay :: JSExpression
-  , fc_after :: JSExpression
-  }
   deriving (Eq, Generic)
 
 data SLKwd
