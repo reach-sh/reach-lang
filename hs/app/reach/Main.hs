@@ -747,24 +747,25 @@ compile = command "compile" $ info f d where
 
         export REACH
 
-        if   [ ! "$$REACH_CI_EXECUTOR" = "adhoc-machine" ] \
-          && [ "$$CIRCLECI" = "true" ] \
-          && [ -x ~/.local/bin/reachc ]; then
+        if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
           ~/.local/bin/reachc --disable-reporting $args
 
-        elif [ -z "$${REACH_DOCKER}" ] \
-          && [ -d "$${HS}/.stack-work" ] \
-          && (which stack > /dev/null 2>&1); then
+        elif [ "$${REACH_DOCKER}" -eq 0 ] \
+          && [ -d "$${HS}/.stack-work"  ] \
+          && which stack >/dev/null 2>&1; then
 
-          export STACK_YAML="$${HS}/stack.yaml"
+          export STACK_YAML="$${REACH_STACK_YAML:-"$${HS}/stack.yaml"}"
           export REACHC_ID=$${ID}
-          export REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+
+          # https://github.com/koalaman/shellcheck/wiki/SC2155
+          REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+          export REACHC_HASH
 
           (cd "$$HS" && make stack)
 
-          if [ "x$${REACHC_RELEASE}" = "xY" ]; then
+          if [ "$${REACHC_RELEASE}" = "Y" ]; then
             $reachc_release
-          elif [ "x$${REACHC_PROFILE}" = "xY" ]; then
+          elif [ "$${REACHC_PROFILE}" = "Y" ]; then
             $reachc_prof
           else
             $reachc_dev
