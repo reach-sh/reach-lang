@@ -4014,7 +4014,6 @@ data CompiledForkCase = CompiledForkCase
   { cfc_part :: JSExpression
   , cfc_data_def :: JSObjectProperty
   , cfc_pay_prop :: JSObjectProperty
-  , cfc_req_prop :: JSObjectProperty
   , cfc_switch_case :: JSSwitchParts
   , cfc_only :: JSStatement
   , cfc_msg_type_def :: [JSStatement]
@@ -4125,19 +4124,17 @@ doFork ks cases mtime mnntpay = do
                 mkCaseRes n = jid $ "case_res" <> show n
 
         let cr_ss = genCaseResStmts beforeNames
-        let this_eq_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
+        let check_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
         who_s <-
           (snd <$> evalExpr who_e) >>= \case
             SLV_Participant _ x _ _ -> return $ x
             v -> expect_t v $ Err_Expected "participant"
         isBound <- readSt $ M.member who_s . st_pdvs
-        let req_e = bool (JSLiteral a "true") this_eq_who isBound
         let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
         let pay_go (i, e) = mkobjp (partCase i) e
         let pay_obj_props = map pay_go $ indexed pay_es
         let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
         let pay_cases = jsArrowExpr a [tv] $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
-        let cfc_req_prop = mkobjp who $ jsArrowExpr a [(jid "_")] req_e
         let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
         let (cfc_msg_type_def, tyExpr) =
               case msg_ty of
@@ -4154,7 +4151,7 @@ doFork ks cases mtime mnntpay = do
         let who_is_this_ss =
               case (isBound, isClass) of
                 (True, _) ->
-                  [JSMethodCall (jid "assert") a (JSLOne this_eq_who) a sp]
+                  [JSMethodCall (jid "require") a (JSLOne check_who) a sp]
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
@@ -4185,7 +4182,6 @@ doFork ks cases mtime mnntpay = do
         let cases_data_def = map cfc_data_def casel
         let cases_parts = map cfc_part casel
         let cases_pay_props = map cfc_pay_prop casel
-        let cases_req_props = map cfc_req_prop casel
         let cases_switch_cases = map cfc_switch_case casel
         let cases_onlys = map cfc_only casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
@@ -4193,13 +4189,9 @@ doFork ks cases mtime mnntpay = do
         let data_ss = [JSConstant a data_decls sp]
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
         let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
-        let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
-        let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
-        let req_ss = [JSExpressionStatement req_e sp]
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
-        let after_tc_ss = req_ss <> switch_ss
-        return $ (before_tc_ss, pay_e, tc_head_e, after_tc_ss)
+        return $ (before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
