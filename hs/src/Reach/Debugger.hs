@@ -82,8 +82,13 @@ type Params = String -- JSON.Value
 -- interpreter
 type Gas = Integer
 
-interp :: LLProg -> Gas -> App DLVal
-interp = undefined
+-- determine if program is already a value
+get_prog_val :: LLProg -> Maybe DLVal
+get_prog_val = undefined
+
+interp :: Gas -> LLProg -> App (Maybe DLVal)
+interp 0 prog = return $ get_prog_val prog
+interp _n _prog = undefined
 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
