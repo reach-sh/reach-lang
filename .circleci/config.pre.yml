@@ -68,11 +68,28 @@ commands:
     description: "Restore the build Docker images"
     steps:
       - run: |
-          zcat /tmp/workspace/docker/runner.tar.gz | docker load
           source ./VERSION
-          docker tag reachsh/runner:latest reachsh/runner:${VERSION}
-          docker tag reachsh/runner:latest reachsh/runner:${MAJOR}.${MINOR}
-          docker tag reachsh/runner:latest reachsh/runner:${MAJOR}
+
+          zcat /tmp/workspace/docker/runner.tar.gz     | docker load
+          zcat /tmp/workspace/docker/rpc-server.tar.gz | docker load
+          zcat /tmp/workspace/docker/reach.tar.gz      | docker load
+          zcat /tmp/workspace/docker/reach-cli.tar.gz  | docker load
+
+          docker tag reachsh/runner:latest     reachsh/runner:${VERSION}
+          docker tag reachsh/runner:latest     reachsh/runner:${MAJOR}.${MINOR}
+          docker tag reachsh/runner:latest     reachsh/runner:${MAJOR}
+
+          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${VERSION}
+          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${MAJOR}.${MINOR}
+          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${MAJOR}
+
+          docker tag reachsh/reach:latest      reachsh/reach:${VERSION}
+          docker tag reachsh/reach:latest      reachsh/reach:${MAJOR}.${MINOR}
+          docker tag reachsh/reach:latest      reachsh/reach:${MAJOR}
+
+          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${VERSION}
+          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${MAJOR}.${MINOR}
+          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${MAJOR}
   stack_deps:
     description: "Install stack dependencies"
     steps:
