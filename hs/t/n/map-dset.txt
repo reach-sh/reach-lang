@@ -10,7 +10,7 @@ Verification failed:
   // Violation Witness
 
   const a/25 = "Alice".interact.get();
-  //    ^ could = 1
+  //    ^ could = 38
   //      from: ./map-dset.rsh:16:51:application
   const b/35 = "Bob".interact.get();
   //    ^ could = 0

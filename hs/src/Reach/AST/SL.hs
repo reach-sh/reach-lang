@@ -166,16 +166,13 @@ class NewerVar a where
 instance (NewerVar a) => NewerVar [a] where
   containsVarNewerThan ret = all (containsVarNewerThan ret)
 
-instance (NewerVar b) => NewerVar (a,b) where
-  containsVarNewerThan ret (_,n) = containsVarNewerThan ret n
-
 instance NewerVar SLVal where
   containsVarNewerThan ret c = case c of
     (SLV_DLVar (DLVar _ _ _ i)) -> ret < i
     (SLV_Participant _ _ _ (Just (DLVar _ _ _ i))) -> ret < i
     (SLV_Array _ _ vs) -> containsVarNewerThan ret vs
     (SLV_Tuple _ vs) -> containsVarNewerThan ret vs
-    (SLV_Struct _ vs) -> containsVarNewerThan ret vs
+    (SLV_Struct _ vs) -> containsVarNewerThan ret $ map snd vs
     (SLV_Data _ _ _ v) -> containsVarNewerThan ret v
     (SLV_Deprecated _ v ) -> containsVarNewerThan ret v
     _ -> False
