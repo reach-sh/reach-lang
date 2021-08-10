@@ -750,7 +750,7 @@ compile = command "compile" $ info f d where
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
           ~/.local/bin/reachc --disable-reporting $args
 
-        elif [ "$${REACH_DOCKER}" -eq 0 ] \
+        elif [ "$${REACH_DOCKER}" = "0" ] \
           && [ -d "$${HS}/.stack-work"  ] \
           && which stack >/dev/null 2>&1; then
 

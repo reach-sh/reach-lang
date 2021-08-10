@@ -8,7 +8,7 @@ run_d () {
   export REACH_DIR_EMBED="${REACH_DIR_EMBED:-"$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed"}"
   export REACH_STACK_YAML="${REACH_STACK_YAML:-"$(cd "$(dirname "$0")" && pwd)/hs/stack.yaml"}"
 
-  if  [ "$REACH_DOCKER" -eq 0  ] \
+  if  [ "$REACH_DOCKER" = "0"  ] \
    && [ -d "$REACH_DIR_EMBED"  ] \
    && [ -f "$REACH_STACK_YAML" ] \
    && which stack >/dev/null 2>&1; then
