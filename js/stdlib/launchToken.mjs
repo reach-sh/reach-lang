@@ -5,17 +5,9 @@ import algosdk from 'algosdk';
 import real_ethers from 'ethers';
 import * as cfxers from './cfxers.mjs';
 
-export default async function (name, sym, stdlib_, accCreator_) {
+export default async function (stdlib, accCreator, name, sym) {
   // NOTE This does not work in the browser, because process.env not directly available to libs; but we don't care because this is just for testing
   console.log(`Launching token, ${name} (${sym})`);
-
-  let stdlib = stdlib_;
-  let accCreator = accCreator_;
-  if (stdlib == undefined) {
-    stdlib = await stdlib_loader.loadStdlib();
-    const startingBalance = stdlib.parseCurrency(10);
-    accCreator = await stdlib.newTestAccount(startingBalance);
-  }
 
   const ETH_like_launchToken = async (ethers /*: EthersLike */) => {
     const addr = (acc) => acc.networkAccount.address;
