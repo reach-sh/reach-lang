@@ -102,7 +102,7 @@ dk1 k s =
       (mk, k') <- getDKBM s >>= \case
         DKBM_Con -> return $ (con, k)
         DKBM_Do -> return $ (loc, mt)
-      let cm1 (dv', l) = (,) dv' <$> dk_ k' l
+      let cm1 (dv', b, l) = (,,) dv' b <$> dk_ k' l
       mk <$> mapM cm1 csm
     DLS_Return at ret da ->
       asks eRet >>= \case
@@ -217,7 +217,8 @@ instance CanLift DLExpr where
   canLift = isLocal
 
 instance CanLift a => CanLift (SwitchCases a) where
-  canLift = getAll . mconcatMap (All . canLift . snd . snd) . M.toList
+  canLift = getAll . mconcatMap (All . go) . M.toList
+    where go (_,(_, _, k)) = canLift k
 
 instance CanLift DKTail where
   canLift = \case
@@ -278,7 +279,7 @@ instance LiftCon z => LiftCon (DLRecv z) where
   lc r = (\z' -> r {dr_k = z'}) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
-  lc = traverse lc
+  lc = mapM (\(a,b,c) -> (,,) a b <$> lc c)
 
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
@@ -406,7 +407,7 @@ df_com mkk back = \case
         DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
           where
-            go (c, y) = (,) c <$> df_t y
+            go (c, vu, y) = (,,) c vu <$> df_t y
         DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
@@ -433,7 +434,7 @@ df_con = \case
   DK_Switch a v csm ->
     LLC_Switch a v <$> mapM cm1 csm
     where
-      cm1 (dv', c) = (\x -> (dv', x)) <$> df_con c
+      cm1 (dv', b, c) = (\x -> (dv', b, x)) <$> df_con c
   DK_While at asn inv cond body k -> do
     fvs <- eFVs <$> ask
     let go fv = do

@@ -678,14 +678,14 @@ solSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 solSwitch iter _at ov csm = do
   ovp <- solVar ov
   t <- solType $ argTypeOf (DLA_Var ov)
-  let cm1 (vn, (mov', body)) = do
+  let cm1 (vn, (ov', vu, body)) = do
         c <- solEq (ovp <> ".which") (solVariant t vn)
         set' <-
-          case mov' of
-            Just ov' -> do
+          case vu of
+            True -> do
               addMemVar ov'
               return $ solSet (solMemVar ov') (ovp <> "._" <> pretty vn)
-            Nothing -> return $ emptyDoc
+            False -> return $ emptyDoc
         body' <- iter body
         let set_and_body' = vsep [set', body']
         return (c, set_and_body')

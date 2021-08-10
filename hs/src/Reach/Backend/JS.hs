@@ -439,13 +439,10 @@ jsExpr = \case
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
-  let cm1 (vn, (mov', body)) = do
+  let cm1 (vn, (ov2, _, body)) = do
         body' <- iter body
-        set' <- case mov' of
-          Just ov2 -> do
-            ov2' <- jsVar ov2
-            return $ "const" <+> ov2' <+> "=" <+> ov' <> "[1]" <> semi
-          Nothing -> mempty
+        ov2' <- jsVar ov2
+        let set' = "const" <+> ov2' <+> "=" <+> ov' <> "[1]" <> semi
         let set_and_body' = vsep [set', body', "break;"]
         return $ "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
   csm' <- mapM cm1 $ M.toAscList csm

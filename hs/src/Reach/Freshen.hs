@@ -36,9 +36,6 @@ fu_lv = \case
   DLV_Eff -> return $ DLV_Eff
   DLV_Let vc v -> DLV_Let vc <$> fu_v v
 
-fu_mv :: AppT (Maybe DLVar)
-fu_mv = mapM fu_v
-
 instance {-# OVERLAPPABLE #-} (Traversable f, Freshen a) => Freshen (f a) where
   fu = traverse fu
 
@@ -114,7 +111,7 @@ instance Freshen DLStmt where
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> fu ov <*> mapM go csm
       where
-        go (vn, k) = (,) <$> fu_mv vn <*> fu k
+        go (vn, vnu, k) = (,,) <$> fu_v vn <*> pure vnu <*> fu k
     DL_Only at who b -> DL_Only at who <$> fu b
     DL_ArrayMap at ans x a fb -> do
       x' <- fu x

@@ -173,7 +173,6 @@ data SMTCtxt = SMTCtxt
   , ctxt_path_constraint :: [SExpr]
   , ctxt_while_invariant :: Maybe DLBlock
   , ctxt_displayed :: IORef (S.Set SExpr)
-  , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
@@ -200,7 +199,6 @@ ctxtNewScope :: App a -> App a
 ctxtNewScope m = do
   SMTCtxt {..} <- ask
   ctxt_smt_trace' <- liftIO $ dupeIORef ctxt_smt_trace
-  ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
   let dupeMapInfo (SMTMapInfo {..}) = do
         sm_c' <- liftIO $ dupeCounter sm_c
         sm_rs' <- lift $ dupeIORef sm_rs
@@ -217,8 +215,7 @@ ctxtNewScope m = do
     local
       (\e ->
          e
-           { ctxt_vars_defdr = ctxt_vars_defdr'
-           , ctxt_maps = ctxt_maps'
+           { ctxt_maps = ctxt_maps'
            , ctxt_smt_trace = ctxt_smt_trace'
            })
       $ m
@@ -278,16 +275,6 @@ smtDeclare_v v t l = do
   s <- smtTypeSort t
   smtDeclare smt v (Atom s) l
   smtTypeInv t $ Atom v
-
-smtDeclare_v_memo :: String -> DLType -> Maybe SMTLet -> App ()
-smtDeclare_v_memo v t ml = do
-  vds <- ctxt_vars_defdr <$> ask
-  vars_defd <- liftIO $ readIORef vds
-  case S.member v vars_defd of
-    True -> return ()
-    False -> do
-      liftIO $ modifyIORef vds $ S.insert v
-      smtDeclare_v v t ml
 
 smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
 smtPrimOp at p dargs =
@@ -1086,27 +1073,11 @@ smtSwitch sm at ov csm iter = do
         T_Data m -> m
         _ -> impossible "switch"
   ovp <- smt_a at ova
-  let cm1 (vn, (mov', l)) = do
-        ov_s <- smtVar ov
+  let cm1 (vn, (ov', _, l)) = do
         let smte = SMTModel $ O_SwitchCase $ DLA_Var ov
-        let vnv = ov_s <> "_vn_" <> vn
-        let vt = ovtm M.! vn
-        let (ov'p_m, get_ov'p) =
-              case mov' of
-                Just ov' ->
-                  ( mempty
-                  , smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
-                  )
-                -- Note It would be nice to ensure that this is always a Just
-                -- and then make it so that EPP can remove them if they aren't
-                -- actually used
-                Nothing ->
-                  ( smtDeclare_v_memo vnv vt Nothing
-                  , smtTypeSort ovt >>= \s -> (return $ smtApply (s <> "_" <> vn) [Atom vnv])
-                  )
-        ov'p <- get_ov'p
+        ov'p <- smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
         let eqc = smtEq ovp ov'p
-        let udef_m = ov'p_m <> pathAddUnbound at mov' (Just smte)
+        let udef_m = pathAddUnbound at (Just ov') (Just smte)
         let with_pc = smtNewPathConstraint eqc
         let branch_m =
               case sm of
@@ -1509,7 +1480,6 @@ _verify_smt mc ctxt_vst smt lp = do
         Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> T.unpack mcs
   ctxt_displayed <- newIORef mempty
-  ctxt_vars_defdr <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)
   let ctxt_smt_typem = M.fromList $ map (\ (k, (v, _)) -> (v, k)) $ M.toList ctxt_typem

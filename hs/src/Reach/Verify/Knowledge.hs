@@ -266,8 +266,8 @@ kgq_m ctxt = \case
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
-      cm1 (mov', l) =
-        kgq_a_onlym ctxt mov' oa
+      cm1 (ov', _, l) =
+        kgq_a_only ctxt ov' oa
           >> kgq_l ctxt' l
   DL_Only _at (Left who) loc ->
     kgq_l (ctxt_restrict ctxt who) loc
@@ -303,9 +303,9 @@ kgq_n ctxt = \case
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
-      cm1 (mov', n) =
+      cm1 (ov', _, n) =
         ctxtNewScope ctxt' $
-          kgq_a_onlym ctxt' mov' oa
+          kgq_a_only ctxt' ov' oa
             >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k ->
     kgq_s ctxt k

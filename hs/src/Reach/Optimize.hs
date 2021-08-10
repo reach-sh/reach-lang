@@ -30,6 +30,7 @@ data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
   , cePrev :: M.Map DLExpr DLVar
   , ceNots :: M.Map DLVar DLArg
+  , ceKnownVariants :: M.Map DLVar (SLVar, DLArg)
   }
 
 instance Semigroup CommonEnv where
@@ -38,12 +39,13 @@ instance Semigroup CommonEnv where
       { ceReplaced = g ceReplaced
       , cePrev = g cePrev
       , ceNots = g ceNots
+      , ceKnownVariants = g ceKnownVariants
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty mempty
+  mempty = CommonEnv mempty mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -103,6 +105,13 @@ recordNotHuh = \case
          cenv
            { ceNots = M.insert v a $ ceNots cenv
            })
+
+optKnownVariant :: DLVar -> App (Maybe (SLVar, DLArg))
+optKnownVariant v = lookupCommon ceKnownVariants v
+
+recordKnownVariant :: DLVar -> SLVar -> DLArg -> App ()
+recordKnownVariant dv k va =
+  updateLookup (\e -> e { ceKnownVariants = M.insert dv (k, va) $ ceKnownVariants e })
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -306,16 +315,16 @@ opt_if mkDo mkIf at c t f =
               return $ mkIf at c' t' f'
 
 optSwitch :: Optimize k => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
-optSwitch mkDo mkCom mkSwitch at ov csm = do
+optSwitch mkDo mkLet mkSwitch at ov csm = do
   ov' <- opt ov
   optKnownVariant ov' >>= \case
     Just (var, var_val) -> do
-      let (var_var, var_k) = csm (M.!) var
-      let var_k' = mkCom (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
+      let (var_var, _, var_k) = (M.!) csm var
+      let var_k' = mkLet (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
       newScope $ mkDo <$> opt var_k'
     Nothing -> do
-      let cm1 k (v_v, n) = (,) v_v <$> (newScope $ recordKnownVariant ov' k $ opt n)
-      mkSwitch at ov' <*> mapWithKeyM cm1 csm
+      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ recordKnownVariant ov' k (DLA_Var v_v) >> opt n)
+      mkSwitch at ov' <$> mapWithKeyM cm1 csm
 
 instance Optimize DLStmt where
   opt = \case

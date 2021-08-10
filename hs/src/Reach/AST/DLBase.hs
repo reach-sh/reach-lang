@@ -723,9 +723,7 @@ lv2mdv = \case
   DLV_Eff -> Nothing
   DLV_Let _ v -> Just v
 
-type SwitchCases a =
-  --- FIXME at the SrcLoc of the case
-  M.Map SLVar (Maybe DLVar, a)
+type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 data DLStmt
   = DL_Nop SrcLoc

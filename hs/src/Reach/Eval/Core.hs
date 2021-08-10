@@ -4791,34 +4791,28 @@ evalStmt = \case
       let extra_cases = given_cases S.\\ all_cases
       unless (S.null extra_cases) $ do
         expect_ $ Err_Switch_ExtraCases $ S.toList extra_cases
-      let select at_c body mvv = locAt at_c $ do
-            let addl_env = case mvv of
-                  Just vv -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
-                  Nothing -> mempty
+      let select at_c shouldBind body vv = locAt at_c $ do
+            let addl_env =
+                  case shouldBind of
+                    True -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
+                    False -> mempty
             sco'' <- locSco sco' $ sco_update_ AllowShadowing addl_env
             locSco sco'' $ evalStmt body
       let select_one vn (at_c, shouldBind, body) = do
-            (mdv', mvv) <-
-              case shouldBind of
-                True -> do
-                  let vt = varm M.! vn
-                  case vt of
-                    T_Null ->
-                      return (Nothing, Just $ SLV_Null at_c "case")
-                    _ -> do
-                      dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
-                      return (Just dv', Just $ SLV_DLVar dv')
-                False ->
-                  return (Nothing, Nothing)
-            return $ (mdv', at_c, select at_c body mvv)
+            let vt = varm M.! vn
+            dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
+            let vv = case vt of
+                       T_Null -> SLV_Null at_c "case"
+                       _ -> SLV_DLVar dv'
+            return $ (dv', at_c, select at_c shouldBind body vv)
       let select_all sv = do
             dv <- case sv of
               SLV_DLVar dv -> return dv
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
-            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts)) -> (SLVar, App (Maybe DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts))
+            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts) -> (SLVar, App (DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts)
                 cmb (mst', sa', mrets', casemm') (vn, casem) = do
-                  (mdv', at_c, casem') <- casem
+                  (dv', at_c, casem') <- casem
                   locAt at_c $ do
                     SLRes case_lifts case_st (SLStmtRes _ case_rets) <-
                       captureRes casem'
@@ -4833,7 +4827,7 @@ evalStmt = \case
                           rets'' <- brCombineRets rets' case_rets'
                           return $ (Just st'', rets'')
                         _ -> impossible $ "switch"
-                    let casemm'' = M.insert vn (mdv', case_lifts) casemm'
+                    let casemm'' = M.insert vn (dv', True, case_lifts) casemm'
                     return $ (mst'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <-
               foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
@@ -4846,9 +4840,8 @@ evalStmt = \case
         case de_val of
           SLV_Data _ t vn vv -> do
             let (at_c, shouldBind, body) = (casesm M.! vn)
-            let mvv = if shouldBind then Just vv else Nothing
             whenUsingStrict $ ignoreAll $ select_all (SLV_DLVar $ DLVar srcloc_builtin Nothing (T_Data t) 0)
-            select at_c body mvv
+            select at_c shouldBind body vv
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"
       locAtf (srcloc_after_semi "switch" a sp) $ brSeqn fr ks_ne

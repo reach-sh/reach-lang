@@ -54,6 +54,9 @@ class DeJump a where
 instance (Subst b, DeJump a) => DeJump (M.Map k (b, a)) where
   dj = mapM (\(x, y) -> (,) <$> djs x <*> dj y)
 
+instance (DeJump a) => DeJump (SwitchCases a) where
+  dj = mapM (\(v, vnu, k) -> (,,) v vnu <$> dj k)
+
 instance DeJump CTail where
   dj = \case
     CT_Com m k -> CT_Com <$> djs m <*> dj k
