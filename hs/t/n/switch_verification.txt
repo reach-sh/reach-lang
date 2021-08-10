@@ -11,16 +11,16 @@ Verification failed:
   const x/16 = "A".interact.amt;
   //    ^ could = Some(0 )
   //      from: ./switch_verification.rsh:4:24:application
-  const x/28 = <switch case binding for Some(0 )>;
+  const x/29 = <switch case binding for Some(0 )>;
   //    ^ could = 0
   //      from: ./switch_verification.rsh:11:3:switch
 
 
   // Theorem Formalization
 
-  const v29 = x/28 == 5;
+  const v30 = x/29 == 5;
   //    ^ would be false
-  assert(v29);
+  assert(v30);
 
   Verifying when NO participants are honest
 Verification failed:

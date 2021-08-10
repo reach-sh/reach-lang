@@ -22,7 +22,7 @@ import Reach.Texty
 import Reach.Util
 
 shouldTrace :: Bool
-shouldTrace = False
+shouldTrace = True
 
 -- Helpers
 default_interval :: CInterval a

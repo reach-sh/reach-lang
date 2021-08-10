@@ -5,6 +5,6 @@ Verifying for generic connector
   Verifying when ONLY "Admin" is honest
   Verifying when ONLY "Provider" is honest
   Verifying when ONLY "Trader" is honest
-Checked 397 theorems; No failures!
+Checked 495 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could take 1199 units of cost, but the limit is 700: [("l0:",31),("l6:",0),("l7:",0),("l10:",165),("l13:",39),("l14:",30),("l12:",0),("l11:",2),("l15:",30),("l9:",0),("l16:",52),("l17:",48),("l18:",48),("l19:",48),("l21:",11),("l22:",11),("l23:",11),("l20:",0),("l25:",8),("l28:",15),("l31:",6),("l27:",0),("l26:",0),("l33:",6),("l24:",0),("l8:",0),("loop2:",171),("l38:",54),("loop3:",24),("l39:",35),("l45:",139),("l46:",49),("l47:",47),("l48:",47),("l49:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]
+ * This program could take 1294 units of cost, but the limit is 700: [("l0:",31),("l6:",0),("l7:",0),("l10:",144),("l17:",39),("l18:",30),("l16:",0),("l19:",63),("l20:",48),("l21:",48),("l22:",48),("l24:",7),("l27:",6),("l23:",0),("l15:",0),("l30:",93),("l31:",48),("l32:",48),("l33:",48),("l35:",83),("loop2:",43),("l38:",54),("loop3:",24),("l39:",35),("l45:",139),("l46:",49),("l47:",47),("l48:",47),("l49:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]

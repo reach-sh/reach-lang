@@ -11,19 +11,19 @@ Verification failed:
   const sum/31 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/147 = <loop variable>;
+  const balance(0)/151 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const v104 = <map reduction>;
+  const v106 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:146:18:application
 
 
   // Theorem Formalization
 
-  const v107 = (balance(0)/147 == bal/31) ? (bal/31 == v104) : false;
+  const v109 = (balance(0)/151 == bal/31) ? (bal/31 == v106) : false;
   //    ^ would be false
-  while invariant before loop(v107);
+  while invariant before loop(v109);
 
   Verifying when NO participants are honest
 Verification failed:

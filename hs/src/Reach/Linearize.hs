@@ -77,7 +77,7 @@ dk_block _ (DLSBlock at fs l a) =
   DKBlock at fs <$> dk_top at l <*> pure a
 
 turnVarIntoLet :: Bool
-turnVarIntoLet = False
+turnVarIntoLet = True
 
 dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
