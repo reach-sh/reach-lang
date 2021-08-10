@@ -42,6 +42,7 @@ dependencies:
 - main-tester
 - memory
 - mtl
+- natural-numbers
 - optparse-applicative
 - parsec
 - parsec-numbers
