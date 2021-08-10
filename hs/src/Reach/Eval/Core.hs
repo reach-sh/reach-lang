@@ -4046,6 +4046,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
+  let all_pay_e = jid (fid "pay")
   let tv = jid $ ".t" <> show idx
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
@@ -4156,7 +4157,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne res_msg) a
         let res_when = JSMemberDot res_e a (jid "when")
         let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
-        let only_body = run_ss <> cr_ss <> [defcon msg_e msg_vde, defcon when_e res_when]
+        let only_body = run_ss <> cr_ss <> [defcon msg_e msg_vde, defcon when_e res_when, defcon all_pay_e res_pay]
         isClass <- is_class who_s
         let who_is_this_ss =
               case (isBound, isClass) of
@@ -4175,7 +4176,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
         let cfc_only = makeOnly who_e only_body
         locAt c_at $ return CompiledForkCase {..}
-  (before_tc_ss, mpay_e, tc_head_e, after_tc_ss) <-
+  (isFork, before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
     case cases of
       [ForkCase {..}] -> do
         (_, only_body) <- forkOnlyHelp fc_who fc_at fc_before msg_e when_e
@@ -4183,7 +4184,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let before_tc_ss = [makeOnly fc_who only_body]
         let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
         after_tc_ss <- getAfter (fc_at, fc_after)
-        return $ (before_tc_ss, Just pay_e, tc_head_e, after_tc_ss)
+        return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
         let cases_msg_type_def = concatMap cfc_msg_type_def casel
@@ -4197,20 +4198,19 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
-        return $ (before_tc_ss, Nothing, tc_head_e, switch_ss)
+        return $ (True, before_tc_ss, all_pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
-  let tc_pay_e =
-        case mpay_e of
-          Just pay_expr ->
-            JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_expr) a
-          Nothing -> tc_when_e
+  let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (JSLOne pay_e) a
   let tc_time_e =
         case mtime of
           Nothing -> tc_pay_e
           Just (_, targs) ->
             JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) a (toJSCL targs) a
-  let tc_fork_e = JSCallExpression (JSMemberDot tc_time_e a (jid ".fork")) a (toJSCL []) a
+  let tc_fork_e =
+        case isFork of
+          True -> JSCallExpression (JSMemberDot tc_time_e a (jid ".fork")) a (toJSCL []) a
+          False -> tc_time_e
   let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
