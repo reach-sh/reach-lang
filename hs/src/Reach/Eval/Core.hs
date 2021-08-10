@@ -3894,10 +3894,7 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               sv <- argToSV pa
               doBalanceUpdate mtok ADD sv
               ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
-        -- We ensure that the network payment is first
         checkPayAmt1 Nothing pa_net
-        -- because it may need to pay the fee to initialize these tokens
-        -- (on Algorand)
         forM_ (map DLA_Var toks) $ \tok -> do
           doBalanceInit $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok
