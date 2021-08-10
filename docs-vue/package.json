@@ -10,5 +10,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "vuepress": "^1.8.2"
+  },
+  "dependencies": {
+    "vuepress-theme-cosmos": "^1.0.182"
   }
 }
