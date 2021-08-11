@@ -719,17 +719,19 @@ doConcat dv x y = do
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nnTokRecvVar nonNetTokRecv nnTokRecvZero)) -> do
+  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
-    let rng_ty = case pv of
-          DLV_Eff -> T_Null
-          DLV_Let _ dv ->
-            case varType dv of
-              T_Tuple [_, _, x] -> x
-              T_Tuple [_, x] -> x
-              _ -> impossible $ "remote not tuple"
+    let dv =
+          case pv of
+            DLV_Eff -> impossible "remote result unbound"
+            DLV_Let _ x -> x
+    let rng_ty =
+          case varType dv of
+            T_Tuple [_, _, x] -> x
+            T_Tuple [_, x] -> x
+            _ -> impossible $ "remote not tuple"
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
     f' <- addInterface (pretty f) dom'mem rng_ty'mem
@@ -759,8 +761,6 @@ solCom = \case
         ks'
     -- This is for when we don't know how much non-net tokens we will receive. i.e. `withBill`
     -- The amount of non-network tokens received will be stored in this tuple: nnTokRecvVar
-    addMemVar nnTokRecvVar
-    let nnTokRecv = solMemVar nnTokRecvVar
     (getDynamicNonNetTokBals, setDynamicNonNetTokBals) <-
       unzip
         <$> mapM
@@ -771,7 +771,7 @@ solCom = \case
              let s1 = solSet ("uint256" <+> tv_before) $ getBalance tokArg
              -- Get balances of non-network tokens after call
              tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
-             let s2 = solSet (nnTokRecv <> ".elem" <> pretty i) tokRecv
+             let s2 = solSet ((solMemVar dv <> ".elem1") <> ".elem" <> pretty i) tokRecv
              return (s1, s2))
           (zip nonNetTokRecv [0 ..])
     let nonNetToksPayAmt = foldr' (\(a, t) acc -> M.insert t a acc) M.empty ks
@@ -794,22 +794,18 @@ solCom = \case
     let meBalance = "address(this).balance"
     let billOffset :: Int -> Doc
         billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
-    pv' <- case pv of
-      DLV_Eff -> return []
-      DLV_Let _ dv -> do
-        addMemVar dv
-        sub' <- solPrimApply SUB [meBalance, v_before]
-        let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
-        -- Non-network tokens received from remote call
-        let nnsub'l = [solSet (solMemVar dv <> ".elem1") nnTokRecv | not (null nonNetTokRecv)]
-        logl <- doOutputEvent dv
-        case rng_ty of
-          T_Null ->
-            return $ sub'l <> nnsub'l <> logl
-          _ -> do
-            let de' = solApply "abi.decode" [v_return, parens rng_ty']
-            let de'l = [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
-            return $ sub'l <> nnsub'l <> de'l <> logl
+    addMemVar dv
+    sub' <- solPrimApply SUB [meBalance, v_before]
+    let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
+    -- Non-network tokens received from remote call
+    logl <- doOutputEvent dv
+    let pv' =
+          case rng_ty of
+            T_Null -> []
+            _ -> do
+              [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
+              where
+                de' = solApply "abi.decode" [v_return, parens rng_ty']
     let e_data = solApply "abi.encodeWithSelector" eargs
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
@@ -827,7 +823,9 @@ solCom = \case
           <> checkUnexpectedNonNetTokBals
           <> setDynamicNonNetTokBals
           <> checkNonNetTokAllowances
+          <> sub'l
           <> pv'
+          <> logl
   DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
   DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ (DLTokenNew {..})) -> do
     let go a = do

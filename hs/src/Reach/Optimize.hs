@@ -226,6 +226,10 @@ instance Optimize DLTokenNew where
     <*> opt dtn_metadata
     <*> opt dtn_supply
 
+instance Optimize DLWithBill where
+  opt (DLWithBill y z) =
+    DLWithBill <$> opt y <*> opt z
+
 unsafeAt :: [a] -> Int -> a
 unsafeAt l i =
   case atMay l i of
@@ -304,7 +308,7 @@ instance Optimize DLExpr where
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
-    DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> pure wbill
+    DLE_Remote at fs av m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure m <*> opt amta <*> opt as <*> opt wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok

@@ -434,11 +434,20 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
 data DLWithBill = DLWithBill
-  { dwb_amts_recv :: DLVar
-  , dwb_tok_billed :: [DLArg]
+  { dwb_tok_billed :: [DLArg]
   , dwb_tok_not_billed :: [DLArg]
   }
   deriving (Eq, Ord, Show)
+
+instance PrettySubst DLWithBill where
+  prettySubst (DLWithBill y z) = do
+    y' <- render_dasM y
+    z' <- render_dasM z
+    return $ render_obj $
+      M.fromList $
+        [ ("billed"::String, parens y')
+        , ("notBilled", parens z')
+        ]
 
 tokenNameLen :: Integer
 tokenNameLen = 32
@@ -596,15 +605,15 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) -> do
+    DLE_Remote _ _ av m amta as wb -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as
-      nn' <- render_dasM nonNetTokRecv
+      wb' <- prettySubst wb
       return $ "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
         <> parens as'
         <> ".withBill"
-        <> parens nn'
+        <> parens wb'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'

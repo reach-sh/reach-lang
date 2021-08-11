@@ -99,6 +99,9 @@ instance Freshen ClaimType where
     CT_Unknowable x y -> CT_Unknowable x <$> fu y
     x -> return x
 
+instance Freshen DLWithBill where
+  fu (DLWithBill y z) = DLWithBill <$> fu y <*> fu z
+
 instance Freshen DLExpr where
   fu = \case
     DLE_Arg at a -> DLE_Arg at <$> fu a
@@ -121,7 +124,7 @@ instance Freshen DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
-    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> pure wbill
+    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> fu av <*> pure m <*> fu pamt <*> fu as <*> fu wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok

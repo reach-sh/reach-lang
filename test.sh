@@ -97,7 +97,9 @@ tealcount () {
 #c examples/timeoutception/index.rsh
 #r examples/raffle
 
-c examples/duoswap/index.rsh
+r examples/remote
+# c examples/remote/index.rsh
+# c examples/duoswap/index.rsh
 
 # (cd examples/abstract-simul && make build)
 

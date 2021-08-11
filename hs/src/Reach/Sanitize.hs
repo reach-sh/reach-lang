@@ -50,6 +50,9 @@ instance Sanitize DLLargeArg where
 instance Sanitize DLTokenNew where
   sani (DLTokenNew {..}) = DLTokenNew (sani dtn_name) (sani dtn_sym) (sani dtn_url) (sani dtn_metadata) (sani dtn_supply)
 
+instance Sanitize DLWithBill where
+  sani (DLWithBill y z) = DLWithBill (sani y) (sani z)
+
 instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
@@ -72,7 +75,7 @@ instance Sanitize DLExpr where
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
-    DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) wbill
+    DLE_Remote _ fs av m amta as wbill -> DLE_Remote sb fs (sani av) m (sani amta) (sani as) (sani wbill)
     DLE_TokenNew _ tns -> DLE_TokenNew sb (sani tns)
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)

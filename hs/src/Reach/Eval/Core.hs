@@ -2811,15 +2811,9 @@ evalPrim p sargs =
             jsClo at "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      nnTokReceived <- ctxt_mkvar $
-        DLVar at Nothing $
-          case nnToksBilledType of
-            ST_Null -> T_Null
-            ST_Tuple ts -> T_Tuple $ map (const T_UInt) ts
-            _ -> impossible "Type of non-network tokens recieved is not [UInt]"
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nnToksBilledRecv
-      let withBill = DLWithBill nnTokReceived (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
+      let withBill = DLWithBill (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
       res' <-
         doInteractiveCall
           sargs

@@ -119,6 +119,10 @@ instance Countable DLTokenNew where
     <> counts dtn_metadata
     <> counts dtn_supply
 
+instance Countable DLWithBill where
+  counts (DLWithBill y z) =
+    counts y <> counts z
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -141,7 +145,7 @@ instance Countable DLExpr where
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
-    DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
+    DLE_Remote _ _ av _ pamt as y -> counts (av : as) <> counts pamt <> counts y
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
     DLE_TokenDestroy _ tok -> counts tok
