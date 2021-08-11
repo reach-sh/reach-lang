@@ -288,15 +288,11 @@ instance Equiv SLForm where
     ((SLForm_EachAns parts _ _ _), (SLForm_EachAns parts2 _ _ _)) -> equiv parts parts2
     ((SLForm_Part_Only p _), (SLForm_Part_Only p2 _)) -> equiv p p2
     ((SLForm_liftInteract p _ _), (SLForm_liftInteract p2 _ _)) -> equiv p p2
-    ((SLForm_Part_ToConsensus {slptc_whos = who, slptc_mv = mv}), (SLForm_Part_ToConsensus {slptc_whos = who2, slptc_mv = mv2})) ->
-      equiv who who2 && equiv mv mv2
     (SLForm_unknowable, SLForm_unknowable) -> True
     (SLForm_fork, SLForm_fork) -> True
     (SLForm_parallel_reduce, SLForm_parallel_reduce) -> True
     (SLForm_wait, SLForm_wait) -> True
     -- these partials are left unchecked
-    (SLForm_parallel_reduce_partial{}, _) -> False
-    (SLForm_fork_partial{}, _) -> False
     _ -> False
 
 instance Equiv SLType where
