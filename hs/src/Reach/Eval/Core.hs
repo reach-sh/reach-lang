@@ -39,6 +39,7 @@ import Reach.Warning
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
+import qualified Data.List as L
 
 --- New Types
 
@@ -2608,7 +2609,7 @@ evalPrim p sargs =
       args_x_case <-
         mapM
           (\v ->
-             case sss_val v of
+             (sss_at v,) <$> case sss_val v of
                SLV_Clo at _ (SLClo _ case_args _ _) ->
                  case case_args of
                    [] -> return $ False
@@ -2624,10 +2625,11 @@ evalPrim p sargs =
       fnv <- evalExpr $ do
         let data_param = JSIdentifier ann "data_id"
         let case_param = JSIdentifier ann "cases_id"
-        let go (tycon, case_args) =
+        let go (tycon, (case_at, case_args)) = do
+              let case_ann = at2a case_at
               case tycon == "default" of
-                True -> JSDefault ann ann case_body
-                False -> JSCase ann case_id ann case_body
+                True -> JSDefault case_ann case_ann case_body
+                False -> JSCase case_ann case_id case_ann case_body
               where
                 tycon_ty = M.lookup tycon obj_tys
                 case_id = JSIdentifier ann tycon
@@ -2641,7 +2643,7 @@ evalPrim p sargs =
                   _ -> one
                 ret = jsCall ann fn js_args
                 case_body = [JSReturn ann (Just ret) semi]
-        let switch_parts = map go $ M.toAscList args_x_case
+        let switch_parts = map go $ L.sortBy (\ (_, l) (_, r) -> fst l `compare` fst r) $ M.toAscList args_x_case
         let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
         jsArrow ann [data_param, case_param] body
       -- Apply the object and cases to the newly created function
@@ -4741,15 +4743,19 @@ evalStmt = \case
             case ks_ne of
               [] -> sco
               _ -> sco {sco_must_ret = RS_MayBeEmpty}
-      let case_insert k v@(at1, _, _) m =
+      let case_insert k v@(at1, _, _) seenDefault m =
             case M.lookup k m of
               Nothing -> return $ M.insert k v m
               Just (at0, _, _) ->
-                locAt at1 $ expect_ $ Err_Switch_DoubleCase at0 at1 (Just k)
+                case seenDefault of
+                  Just def_at ->
+                    locAt at1 $ expect_ $ Err_Switch_UnreachableCase at1 k def_at
+                  Nothing ->
+                    locAt at1 $ expect_ $ Err_Switch_DoubleCase at0 at1 (Just k)
       let case_minserts cs v m = M.unions $ m : map (flip M.singleton v) cs
       let add_case (seenDefault, casem0) = \case
             JSCase ca ve _ body ->
-              (,) seenDefault <$> case_insert vn (at_c, True, body) casem0
+              (,) seenDefault <$> case_insert vn (at_c, True, body) seenDefault casem0
               where
                 at_c = srcloc_jsa "case" ca at'
                 vn = jse_expect_id at_c ve

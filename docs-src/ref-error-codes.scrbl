@@ -2043,6 +2043,29 @@ It should be corrected by moving the tail of the @reachin{if} into the @reachin{
     };
 }
 
+@error{RE0118}
+
+This error indicates that a switch case is unreachable. This issue will occur when a @reachin{case} is listed
+after @reachin{default}.
+
+For example, the code below erroneously puts a @reachin{case} after @reachin{default}:
+
+@reach{
+  Maybe(UInt).Some(5).match({
+    default: (() => 0),
+    Some: ((i) => i),
+  });
+}
+
+This error can be corrected by either removing the @reachin{Some} case or placing it before the @reachin{default} case:
+
+@reach{
+  Maybe(UInt).Some(5).match({
+    Some: ((i) => i),
+    default: (() => 0),
+  });
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
