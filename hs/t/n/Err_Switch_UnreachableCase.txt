@@ -1,0 +1,11 @@
+reachc: error[RE0118]: The switch case `Deposit` defined at ./Err_Switch_UnreachableCase.rsh:12:12:case is unreachable because `default` was used at ./Err_Switch_UnreachableCase.rsh:11:12:case
+
+ ./Err_Switch_UnreachableCase.rsh:12:12:case
+
+ 12|     Deposit: ((a) => a),
+
+Trace:
+  in [unknown function] from (./Err_Switch_UnreachableCase.rsh:10:20:function exp) at (./Err_Switch_UnreachableCase.rsh:10:20:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0118.html
+
