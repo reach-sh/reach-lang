@@ -286,6 +286,9 @@ export const main = Reach.App(() => {
         Anybody.publish();
         return [ true, market, poolMinted ]; });
 
+  commit();
+
+  Admin.publish();
   pool.burn(balance(pool));
   if (!pool.destroyed()) {
     pool.destroy();
@@ -293,4 +296,6 @@ export const main = Reach.App(() => {
   transfer(balance(tokA), tokA).to(Admin);
   transfer(balance(tokB), tokB).to(Admin);
   commit();
+
+  exit();
 });
