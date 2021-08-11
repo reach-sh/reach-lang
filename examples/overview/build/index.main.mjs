@@ -31,7 +31,7 @@ export function _getMaps(s) {
   };
 
 export async function Alice(ctc, interact) {
-  if (ctc.sendrecv === undefined) {
+  if (typeof(ctc) !== 'object' || ctc.sendrecv === undefined) {
     return Promise.reject(new Error(`The backend for Alice expects to receive a contract as its first argument.`));}
   if (typeof(interact) !== 'object') {
     return Promise.reject(new Error(`The backend for Alice expects to receive an interact object as its second argument.`));}
@@ -44,11 +44,11 @@ export async function Alice(ctc, interact) {
   const v17 = await ctc.creationTime();
   const v18 = await ctc.creationSecs();
   
-  const v15 = stdlib.protect(ctc0, interact.info, 'for Alice\'s interact field info');
-  const v16 = stdlib.protect(ctc1, interact.request, 'for Alice\'s interact field request');
+  const v55 = stdlib.protect(ctc0, interact.info, 'for Alice\'s interact field info');
+  const v56 = stdlib.protect(ctc1, interact.request, 'for Alice\'s interact field request');
   
   const txn1 = await (ctc.sendrecv({
-    args: [v16],
+    args: [v56],
     evt_cnt: 1,
     funcNum: 1,
     onlyIf: true,
@@ -57,10 +57,10 @@ export async function Alice(ctc, interact) {
     sim_p: (async (txn1) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [v23] = txn1.data;
-      const v25 = txn1.time;
-      const v26 = txn1.secs;
-      const v22 = txn1.from;
+      const [v60] = txn1.data;
+      const v61 = txn1.time;
+      const v62 = txn1.secs;
+      const v59 = txn1.from;
       
       sim_r.txns.push({
         amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
@@ -76,10 +76,10 @@ export async function Alice(ctc, interact) {
     tys: [ctc1],
     waitIfNotPresent: false
     }));
-  const [v23] = txn1.data;
-  const v25 = txn1.time;
-  const v26 = txn1.secs;
-  const v22 = txn1.from;
+  const [v60] = txn1.data;
+  const v61 = txn1.time;
+  const v62 = txn1.secs;
+  const v59 = txn1.from;
   ;
   const txn2 = await (ctc.recv({
     evt_cnt: 0,
@@ -89,12 +89,12 @@ export async function Alice(ctc, interact) {
     waitIfNotPresent: false
     }));
   const [] = txn2.data;
-  const v33 = txn2.time;
-  const v34 = txn2.secs;
-  const v30 = txn2.from;
+  const v67 = txn2.time;
+  const v68 = txn2.secs;
+  const v66 = txn2.from;
   ;
   const txn3 = await (ctc.sendrecv({
-    args: [v22, v23, v15],
+    args: [v59, v60, v55],
     evt_cnt: 1,
     funcNum: 3,
     onlyIf: true,
@@ -103,27 +103,27 @@ export async function Alice(ctc, interact) {
     sim_p: (async (txn3) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [v39] = txn3.data;
-      const v42 = txn3.time;
-      const v43 = txn3.secs;
-      const v38 = txn3.from;
+      const [v74] = txn3.data;
+      const v75 = txn3.time;
+      const v76 = txn3.secs;
+      const v73 = txn3.from;
       
       sim_r.txns.push({
         amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
         kind: 'to',
         tok: undefined
         });
-      const v41 = stdlib.addressEq(v22, v38);
-      stdlib.assert(v41, {
+      const v78 = stdlib.addressEq(v59, v73);
+      stdlib.assert(v78, {
         at: './index.rsh:27:5:dot',
         fs: [],
         msg: 'sender correct',
         who: 'Alice'
         });
       sim_r.txns.push({
-        amt: v23,
+        amt: v60,
         kind: 'from',
-        to: v22,
+        to: v59,
         tok: undefined
         });
       sim_r.txns.push({
@@ -139,13 +139,13 @@ export async function Alice(ctc, interact) {
     tys: [ctc2, ctc1, ctc0],
     waitIfNotPresent: false
     }));
-  const [v39] = txn3.data;
-  const v42 = txn3.time;
-  const v43 = txn3.secs;
-  const v38 = txn3.from;
+  const [v74] = txn3.data;
+  const v75 = txn3.time;
+  const v76 = txn3.secs;
+  const v73 = txn3.from;
   ;
-  const v41 = stdlib.addressEq(v22, v38);
-  stdlib.assert(v41, {
+  const v78 = stdlib.addressEq(v59, v73);
+  stdlib.assert(v78, {
     at: './index.rsh:27:5:dot',
     fs: [],
     msg: 'sender correct',
@@ -158,7 +158,7 @@ export async function Alice(ctc, interact) {
   
   };
 export async function Bob(ctc, interact) {
-  if (ctc.sendrecv === undefined) {
+  if (typeof(ctc) !== 'object' || ctc.sendrecv === undefined) {
     return Promise.reject(new Error(`The backend for Bob expects to receive a contract as its first argument.`));}
   if (typeof(interact) !== 'object') {
     return Promise.reject(new Error(`The backend for Bob expects to receive an interact object as its second argument.`));}
@@ -179,12 +179,12 @@ export async function Bob(ctc, interact) {
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [v23] = txn1.data;
-  const v25 = txn1.time;
-  const v26 = txn1.secs;
-  const v22 = txn1.from;
+  const [v60] = txn1.data;
+  const v61 = txn1.time;
+  const v62 = txn1.secs;
+  const v59 = txn1.from;
   ;
-  stdlib.protect(ctc1, await interact.want(v23), {
+  stdlib.protect(ctc1, await interact.want(v60), {
     at: './index.rsh:21:18:application',
     fs: ['at ./index.rsh:20:9:application call to [unknown function] (defined at: ./index.rsh:20:13:function exp)'],
     msg: 'want',
@@ -192,22 +192,22 @@ export async function Bob(ctc, interact) {
     });
   
   const txn2 = await (ctc.sendrecv({
-    args: [v22, v23],
+    args: [v59, v60],
     evt_cnt: 0,
     funcNum: 2,
     onlyIf: true,
     out_tys: [],
-    pay: [v23, []],
+    pay: [v60, []],
     sim_p: (async (txn2) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
       const [] = txn2.data;
-      const v33 = txn2.time;
-      const v34 = txn2.secs;
-      const v30 = txn2.from;
+      const v67 = txn2.time;
+      const v68 = txn2.secs;
+      const v66 = txn2.from;
       
       sim_r.txns.push({
-        amt: v23,
+        amt: v60,
         kind: 'to',
         tok: undefined
         });
@@ -221,9 +221,9 @@ export async function Bob(ctc, interact) {
     waitIfNotPresent: false
     }));
   const [] = txn2.data;
-  const v33 = txn2.time;
-  const v34 = txn2.secs;
-  const v30 = txn2.from;
+  const v67 = txn2.time;
+  const v68 = txn2.secs;
+  const v66 = txn2.from;
   ;
   const txn3 = await (ctc.recv({
     evt_cnt: 1,
@@ -232,20 +232,20 @@ export async function Bob(ctc, interact) {
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [v39] = txn3.data;
-  const v42 = txn3.time;
-  const v43 = txn3.secs;
-  const v38 = txn3.from;
+  const [v74] = txn3.data;
+  const v75 = txn3.time;
+  const v76 = txn3.secs;
+  const v73 = txn3.from;
   ;
-  const v41 = stdlib.addressEq(v22, v38);
-  stdlib.assert(v41, {
+  const v78 = stdlib.addressEq(v59, v73);
+  stdlib.assert(v78, {
     at: './index.rsh:27:5:dot',
     fs: [],
     msg: 'sender correct',
     who: 'Bob'
     });
   ;
-  stdlib.protect(ctc1, await interact.got(v39), {
+  stdlib.protect(ctc1, await interact.got(v74), {
     at: './index.rsh:32:17:application',
     fs: ['at ./index.rsh:31:9:application call to [unknown function] (defined at: ./index.rsh:31:13:function exp)'],
     msg: 'got',
@@ -697,7 +697,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -724,12 +724,12 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v22",
+                "name": "v59",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -761,12 +761,12 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v22",
+                "name": "v59",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -778,7 +778,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v39",
+                "name": "v74",
                 "type": "uint8[128]"
               }
             ],
@@ -809,7 +809,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -836,12 +836,12 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v22",
+                "name": "v59",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -873,12 +873,12 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v22",
+                "name": "v59",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v23",
+                "name": "v60",
                 "type": "uint256"
               }
             ],
@@ -890,7 +890,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v39",
+                "name": "v74",
                 "type": "uint8[128]"
               }
             ],
@@ -914,7 +914,7 @@ const _ETH = {
     "type": "receive"
   }
 ]`,
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a16040805180820182524381524260209182015281516000818301819052818401819052835180830385018152606090920190935280519101209055610534806100766000396000f3fe6080604052600436106100385760003560e01c80631dc091ad1461004457806329c0fdf314610059578063cc5fe27f1461006c57600080fd5b3661003f57005b600080fd5b6100576100523660046103f1565b61007f565b005b610057610067366004610409565b610179565b61005761007a36600461041b565b610269565b6100d1600061009160208401846103d6565b6040516020016100ad9291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600861035f565b600080556040517f120854c39fdbc847613c8c1a66d23aa6d099c4db8f64d852475191e60a6298d99061010590839061044d565b60405180910390a16101193415600761035f565b604080518082018252338152602083810135818301908152835160019281019290925282516001600160a01b03169382019390935291516060830152906080015b60408051601f1981840301815291905280516020909101206000555050565b6040516101b5906101919060019084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600a61035f565b600080556040517fba9848ba573d919b437f603568b07882c6af6fc804c046ac1cd11132ef3ba165906101e990839061046e565b60405180910390a161020234602083013514600961035f565b604080518082019091526000808252602082015261022360208301836103b4565b6001600160a01b031681526020808301358183015260405161015a9160029184910191825280516001600160a01b03166020808401919091520151604082015260600190565b6040516102a5906102819060029084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600d61035f565b600080556040517f1744c2be3b3814193b70ec591ef6860fe14b411a9b67c63641dc62b583c4193b906102d9908390610495565b60405180910390a16102ed3415600b61035f565b61030f336102fe60208401846103b4565b6001600160a01b031614600c61035f565b61031c60208201826103b4565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610357573d6000803e3d6000fd5b506000805533ff5b816103845760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b80356001600160a01b038116811461039f57600080fd5b919050565b8035801515811461039f57600080fd5b6000602082840312156103c657600080fd5b6103cf82610388565b9392505050565b6000602082840312156103e857600080fd5b6103cf826103a4565b60006040828403121561040357600080fd5b50919050565b60006060828403121561040357600080fd5b6000611040828403121561040357600080fd5b6001600160a01b0361043f82610388565b168252602090810135910152565b6040810161045a836103a4565b151582526020830135602083015292915050565b6060810161047c828461042e565b610488604084016103a4565b1515604083015292915050565b61104081016104a4828461042e565b60408201604084016000805b60808110156104e057823560ff81168082146104ca578384fd5b85525060209384019392909201916001016104b0565b5050505092915050565b828152606081016103cf602083018461042e56fea26469706673582212209b407deed8d08b3bed53608e3c433654df682034eac8fbdd2759d97f8a30abdf64736f6c63430008060033`,
+  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a16040805180820182524381524260209182015281516000818301819052818401819052835180830385018152606090920190935280519101209055610534806100766000396000f3fe6080604052600436106100385760003560e01c80631dc091ad1461004457806329c0fdf314610059578063cc5fe27f1461006c57600080fd5b3661003f57005b600080fd5b6100576100523660046103f1565b61007f565b005b610057610067366004610409565b610179565b61005761007a36600461041b565b610269565b6100d1600061009160208401846103d6565b6040516020016100ad9291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600861035f565b600080556040517f120854c39fdbc847613c8c1a66d23aa6d099c4db8f64d852475191e60a6298d99061010590839061044d565b60405180910390a16101193415600761035f565b604080518082018252338152602083810135818301908152835160019281019290925282516001600160a01b03169382019390935291516060830152906080015b60408051601f1981840301815291905280516020909101206000555050565b6040516101b5906101919060019084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600a61035f565b600080556040517fba9848ba573d919b437f603568b07882c6af6fc804c046ac1cd11132ef3ba165906101e990839061046e565b60405180910390a161020234602083013514600961035f565b604080518082019091526000808252602082015261022360208301836103b4565b6001600160a01b031681526020808301358183015260405161015a9160029184910191825280516001600160a01b03166020808401919091520151604082015260600190565b6040516102a5906102819060029084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600d61035f565b600080556040517f1744c2be3b3814193b70ec591ef6860fe14b411a9b67c63641dc62b583c4193b906102d9908390610495565b60405180910390a16102ed3415600b61035f565b61030f336102fe60208401846103b4565b6001600160a01b031614600c61035f565b61031c60208201826103b4565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610357573d6000803e3d6000fd5b506000805533ff5b816103845760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b80356001600160a01b038116811461039f57600080fd5b919050565b8035801515811461039f57600080fd5b6000602082840312156103c657600080fd5b6103cf82610388565b9392505050565b6000602082840312156103e857600080fd5b6103cf826103a4565b60006040828403121561040357600080fd5b50919050565b60006060828403121561040357600080fd5b6000611040828403121561040357600080fd5b6001600160a01b0361043f82610388565b168252602090810135910152565b6040810161045a836103a4565b151582526020830135602083015292915050565b6060810161047c828461042e565b610488604084016103a4565b1515604083015292915050565b61104081016104a4828461042e565b60408201604084016000805b60808110156104e057823560ff81168082146104ca578384fd5b85525060209384019392909201916001016104b0565b5050505092915050565b828152606081016103cf602083018461042e56fea26469706673582212205a71ab9cbf86eb884a5c764fc4595eba8595c9dd74b948e8b89ea8d9ac04cd8364736f6c63430008060033`,
   BytecodeLen: 1450,
   Which: `oD`,
   deployMode: `DM_constructor`,

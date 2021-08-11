@@ -15,6 +15,7 @@ import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Counter
+import Reach.Freshen
 import Reach.Texty
 import Reach.Util
 
@@ -514,7 +515,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
 -- Stich it all together
 linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
 linearize outm p =
-  return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid
+  return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid >>= out "fu" freshen_top
   where
     out lab f p' = do
       p'' <- f p'
