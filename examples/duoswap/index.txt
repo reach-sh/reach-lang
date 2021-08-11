@@ -7,4 +7,4 @@ Verifying for generic connector
   Verifying when ONLY "Trader" is honest
 Checked 495 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could take 1268 units of cost, but the limit is 700: [("l0:",31),("l6:",0),("l7:",0),("l10:",144),("l17:",39),("l18:",30),("l16:",0),("l19:",52),("l20:",48),("l21:",48),("l22:",48),("l24:",7),("l27:",6),("l23:",0),("l15:",0),("l30:",82),("l31:",48),("l32:",48),("l33:",48),("l35:",83),("loop2:",39),("l38:",54),("loop3:",24),("l39:",35),("l45:",139),("l46:",49),("l47:",47),("l48:",47),("l49:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]
+ * This program could take 1154 units of cost, but the limit is 700: [("l0:",31),("l6:",0),("l7:",0),("l10:",144),("l13:",39),("l14:",30),("l12:",0),("l15:",52),("l16:",48),("l17:",48),("l18:",48),("l20:",7),("l23:",6),("l19:",0),("l11:",0),("l26:",64),("l27:",48),("l29:",83),("loop2:",39),("l32:",54),("loop3:",24),("l33:",35),("l39:",139),("l40:",49),("l41:",47),("l42:",47),("l43:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]

@@ -97,9 +97,6 @@ tealcount () {
 #c examples/timeoutception/index.rsh
 #r examples/raffle
 
-fc hs/t/n/unknowable2.rsh
-exit 0
-c examples/chicken-fork/index.rsh
 c examples/duoswap/index.rsh
 
 # (cd examples/abstract-simul && make build)

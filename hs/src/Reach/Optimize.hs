@@ -11,6 +11,7 @@ import Reach.Counter
 import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
+import Safe (atMay)
 
 type App = ReaderT Env IO
 
@@ -31,6 +32,7 @@ data CommonEnv = CommonEnv
   , cePrev :: M.Map DLExpr DLVar
   , ceNots :: M.Map DLVar DLArg
   , ceKnownVariants :: M.Map DLVar (SLVar, DLArg)
+  , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
   }
 
 instance Semigroup CommonEnv where
@@ -40,12 +42,13 @@ instance Semigroup CommonEnv where
       , cePrev = g cePrev
       , ceNots = g ceNots
       , ceKnownVariants = g ceKnownVariants
+      , ceKnownLargeArgs = g ceKnownLargeArgs
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty mempty mempty
+  mempty = CommonEnv mempty mempty mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -107,11 +110,18 @@ recordNotHuh = \case
            })
 
 optKnownVariant :: DLVar -> App (Maybe (SLVar, DLArg))
-optKnownVariant v = lookupCommon ceKnownVariants v
+optKnownVariant = lookupCommon ceKnownVariants
 
 recordKnownVariant :: DLVar -> SLVar -> DLArg -> App ()
 recordKnownVariant dv k va =
   updateLookup (\e -> e { ceKnownVariants = M.insert dv (k, va) $ ceKnownVariants e })
+
+optKnownLargeArg :: DLVar -> App (Maybe DLLargeArg)
+optKnownLargeArg = lookupCommon ceKnownLargeArgs
+
+recordKnownLargeArg :: DLVar -> DLLargeArg -> App ()
+recordKnownLargeArg dv v =
+  updateLookup (\e -> e { ceKnownLargeArgs = M.insert dv v $ ceKnownLargeArgs e })
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -216,6 +226,12 @@ instance Optimize DLTokenNew where
     <*> opt dtn_metadata
     <*> opt dtn_supply
 
+unsafeAt :: [a] -> Int -> a
+unsafeAt l i =
+  case atMay l i of
+    Nothing -> impossible "unsafeMay"
+    Just x -> x
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -249,15 +265,24 @@ instance Optimize DLExpr where
           return $ DLE_Arg at $ if c then t else f
         (IF_THEN_ELSE, [c, t, f]) ->
           optNotHuh c >>= \case
+            Nothing -> meh
             Just c' ->
               return $ DLE_PrimOp at IF_THEN_ELSE [c', f, t]
-            Nothing -> meh
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
     DLE_ArrayZip at x0 y0 -> DLE_ArrayZip at <$> opt x0 <*> opt y0
-    DLE_TupleRef at t i -> DLE_TupleRef at <$> opt t <*> pure i
+    DLE_TupleRef at t i -> do
+      t' <- opt t
+      let meh = return $ DLE_TupleRef at t' i
+      case t' of
+        DLA_Var tv ->
+          optKnownLargeArg tv >>= \case
+            Just (DLLA_Tuple as) ->
+              return $ DLE_Arg at $ unsafeAt as $ fromIntegral i
+            _ -> meh
+        _ -> meh
     DLE_ObjectRef at o k -> DLE_ObjectRef at <$> opt o <*> pure k
     DLE_Interact at fs p m t as -> DLE_Interact at fs p m t <$> opt as
     DLE_Digest at as -> DLE_Digest at <$> opt as
@@ -330,31 +355,34 @@ instance Optimize DLStmt where
   opt = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at x e -> do
-      let no = DL_Let at x <$> opt e
-      let yes dv = do
-            opt e >>= \case
-              e'@(DLE_Arg _ a') | canDupe a' -> do
-                rewrite dv (dv, Just a')
-                mremember dv (sani e')
-                return $ DL_Let at x e'
-              e' -> do
-                let e'' = sani e'
-                common <- repeated e''
-                case common of
-                  Just rt -> do
-                    rewrite dv (rt, Nothing)
-                    return $ DL_Nop at
-                  Nothing -> do
-                    remember dv e''
-                    case e' of
-                      DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] ->
-                        recordNotHuh x c
-                      _ ->
-                        return ()
-                    return $ DL_Let at x e'
+      e' <- opt e
+      let meh = return $ DL_Let at x e'
       case (extract x, isPure e && canDupe e) of
-        (Just dv, True) -> yes dv
-        _ -> no
+        (Just dv, True) ->
+          case e' of
+            DLE_LArg _ a' | canDupe a' -> do
+              recordKnownLargeArg dv a'
+              meh
+            DLE_Arg _ a' | canDupe a' -> do
+              rewrite dv (dv, Just a')
+              mremember dv (sani e')
+              meh
+            _ -> do
+              let e'' = sani e'
+              common <- repeated e''
+              case common of
+                Just rt -> do
+                  rewrite dv (rt, Nothing)
+                  return $ DL_Nop at
+                Nothing -> do
+                  remember dv e''
+                  case e' of
+                    DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] ->
+                      recordNotHuh x c
+                    _ ->
+                      return ()
+                  meh
+        _ -> meh
     DL_Var at v ->
       return $ DL_Var at v
     DL_Set at v a ->
