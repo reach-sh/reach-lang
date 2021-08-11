@@ -6,6 +6,7 @@ ALGO.rent-seeking
 
 # ALGO known timeouts
 ALGO.atomic-swap-auction
+ALGO.duoswap
 
 # CFX known timeouts
 CFX.map-rwrw

@@ -75,13 +75,11 @@ export const main = Reach.App(() => {
   const Tokens = View('Tokens', {
     aTok : Token,
     bTok : Token,
-    // aBal : UInt,
-    // bBal : UInt,
+    aBal : UInt,
+    bBal : UInt,
   });
 
   deploy();
-
-  const s18 = (x) => x / 1000 / 1000 / 1000 / 1000 / 1000 / 1000;
 
   // Admin sets up initial pool by making first deposit
   Admin.only(() => {
@@ -123,8 +121,8 @@ export const main = Reach.App(() => {
     parallelReduce([ true, initialMarket, 0 ])
       .define(() => {
         const st = [ alive, market ];
-        // Tokens.aBal.set(balance(tokA));
-        // Tokens.bBal.set(balance(tokB));
+        Tokens.aBal.set(balance(tokA));
+        Tokens.bBal.set(balance(tokB));
         const wrap = (f, onlyIfAlive) => {
           const { when, msg } = declassify(f(st));
           return { when: (declassify(onlyIfAlive) ? alive : true) && when, msg };
@@ -194,7 +192,7 @@ export const main = Reach.App(() => {
             const { amtA, amtB } = msg;
             const minted =
               (poolMinted == 0)
-                ? s18(sqrt(amtA * amtB, 4))
+                ? sqrt(amtA * amtB, 4)
                 : avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
             assume(minted > 0, "minted > 0");
             assume(minted < balance(pool), "assume minted < balance(pool)");

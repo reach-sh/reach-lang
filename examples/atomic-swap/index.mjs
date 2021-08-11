@@ -20,8 +20,9 @@ const shouldFail = async (fp) => {
   const stdlib = await loadStdlib();
 
   const startingBalance = stdlib.parseCurrency(10);
-  const zorkmid = await launchToken("zorkmid", "ZMD");
-  const gil = await launchToken("gil", "GIL");
+  const accCreator = await stdlib.newTestAccount(startingBalance);
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);

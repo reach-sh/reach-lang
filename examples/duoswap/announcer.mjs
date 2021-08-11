@@ -1,12 +1,20 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/announcer.main.mjs';
+import * as poolBackend from './build/index.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 
-export const runManager = async () => {
+export const runManager = async (useTestnet) => {
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(99999999999);
+  let manager;
+  if (useTestnet) {
+    stdlib.setProviderByName('TestNet');
+    const secret = await ask.ask(`What is your secret key?`);
+    manager = await stdlib.newAccountFromSecret(secret);
+  } else {
+    const startingBalance = stdlib.parseCurrency(100);
+    manager = await stdlib.newTestAccount(startingBalance);
+  }
 
-  const manager = await stdlib.newTestAccount(startingBalance);
   if (stdlib.connector == 'ETH') {
     manager.setGasLimit(5000000);
   }
@@ -35,20 +43,65 @@ export const runManager = async () => {
 
 };
 
-export const runListener = async () => {
+export const runListener = async (useTestnet) => {
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(99999999999);
+  let accListener;
+  if (useTestnet) {
+    stdlib.setProviderByName('TestNet');
+    const secret = await ask.ask(`What is your secret key?`);
+    accListener = await stdlib.newAccountFromSecret(secret);
+  } else {
+    const startingBalance = stdlib.parseCurrency(100);
+    accListener = await stdlib.newTestAccount(startingBalance);
+  }
 
-  const accListener = await stdlib.newTestAccount(startingBalance);
   if (stdlib.connector == 'ETH') {
     accListener.setGasLimit(5000000);
   }
   const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
+
+  await runListener_(stdlib, accListener, listenerInfo)();
+}
+
+export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
   const ctcListener = accListener.attach(backend, listenerInfo)
 
   const backendListener = backend.Listener(ctcListener, {
-    hear: (poolInfo) => {
-      console.log(`Manager added pool:`, poolInfo);
+    hear: async (poolInfo) => {
+      console.log(`\x1b[2m`, `Pool ID:`, poolInfo, '\x1b[0m');
+      const ctcPool = accListener.attach(poolBackend, poolInfo);
+      const tokA = await ctcPool.getViews().Tokens.aTok();
+      const tokB = await ctcPool.getViews().Tokens.bTok();
+      let aBal = await ctcPool.getViews().Tokens.aBal();
+      let bBal = await ctcPool.getViews().Tokens.bBal();
+      if (tokA[0] == 'None' || tokB[0] == 'None') {
+        console.log(`XXX: Pool ${poolInfo} does not have token info`);
+        return;
+      }
+
+
+      const resA = await accListener.tokenMetadata(tokA[1]);
+      const tokASym = resA.symbol;
+      const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
+      console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');
+
+      const resB = await accListener.tokenMetadata(tokB[1]);
+      const tokBSym = resB.symbol;
+      const tokBBal = (bBal[0] == 'None') ? 0 : bBal[1];
+      console.log(`\x1b[2m`, `  *`, tokBBal.toString(), tokBSym, '\x1b[0m');
+
+      const info = {
+        poolAddr: poolInfo,
+        tokA: {
+          ...resA,
+          id: tokA[1]
+        },
+        tokB: {
+          ...resB,
+          id: tokB[1]
+        }
+      };
+      console.log(`\x1b[2m`, `  * Info: ${JSON.stringify(info)}`, '\x1b[0m')
     },
   });
 

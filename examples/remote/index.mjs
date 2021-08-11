@@ -12,6 +12,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
+  const accCreator = await stdlib.newTestAccount(startingBalance);
 
   const myGasLimit = 5000000;
   accAlice.setGasLimit(myGasLimit);
@@ -37,11 +38,11 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   console.log(`Bob attaches to the Reach DApp.`);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
-  const gil = await launchToken("gil", "GIL");
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
   await gil.mint(accAlice, startingBalance);
   await gil.mint(accAlice, startingBalance);
 
-  const zorkmid = await launchToken("zorkmid", "ZMD");
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
   await zorkmid.mint(accAlice, startingBalance);
   await zorkmid.mint(accAlice, startingBalance);
 

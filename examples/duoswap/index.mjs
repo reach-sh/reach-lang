@@ -11,8 +11,9 @@ export const runAutomated = async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   // Create tokens to swap
-  const zmd = await launchToken("zorkmid", "ZMD");
-  const gil = await launchToken("gil", "GIL");
+  const accCreator = await stdlib.newTestAccount(startingBalance);
+  const zmd = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
 
 
   // Supply ZMD and GIL to account
@@ -178,8 +179,9 @@ export const runAutomated = async () => {
 };
 
 (async () => {
-  if (process.argv.slice(2).length > 0) {
-    await runInteractive();
+  const args = process.argv.slice(2);
+  if (args.length > 0) {
+    await runInteractive(args.includes(`testnet`));
   } else {
     await runAutomated();
   }

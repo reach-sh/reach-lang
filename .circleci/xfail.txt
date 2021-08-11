@@ -12,7 +12,6 @@ CFX.tut-7-rpc
 # Too big
 ALGO.ttt
 ALGO.raffle
-ALGO.duoswap
 
 # nondeterministic failure
 # https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
