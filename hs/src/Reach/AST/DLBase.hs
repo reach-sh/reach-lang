@@ -6,8 +6,10 @@ module Reach.AST.DLBase where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
+import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
@@ -301,6 +303,17 @@ data DLLargeArg
   | DLLA_Struct [(SLVar, DLArg)]
   deriving (Eq, Ord, Generic, Show)
 
+instance CanDupe a => CanDupe [a] where
+  canDupe = getAll . mconcatMap (All . canDupe)
+
+instance CanDupe DLLargeArg where
+  canDupe = \case
+    DLLA_Array _ as -> canDupe as
+    DLLA_Tuple as -> canDupe as
+    DLLA_Obj am -> canDupe $ M.elems am
+    DLLA_Data _ _ x -> canDupe x
+    DLLA_Struct m -> canDupe $ map snd m
+
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
 render_dasM as = do
   as' <- mapM prettySubst as
@@ -421,11 +434,20 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
 data DLWithBill = DLWithBill
-  { dwb_amts_recv :: DLVar
-  , dwb_tok_billed :: [DLArg]
+  { dwb_tok_billed :: [DLArg]
   , dwb_tok_not_billed :: [DLArg]
   }
   deriving (Eq, Ord, Show)
+
+instance PrettySubst DLWithBill where
+  prettySubst (DLWithBill y z) = do
+    y' <- render_dasM y
+    z' <- render_dasM z
+    return $ render_obj $
+      M.fromList $
+        [ ("billed"::String, parens y')
+        , ("notBilled", parens z')
+        ]
 
 tokenNameLen :: Integer
 tokenNameLen = 32
@@ -583,15 +605,15 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) -> do
+    DLE_Remote _ _ av m amta as wb -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as
-      nn' <- render_dasM nonNetTokRecv
+      wb' <- prettySubst wb
       return $ "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
         <> parens as'
         <> ".withBill"
-        <> parens nn'
+        <> parens wb'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'
@@ -723,9 +745,7 @@ lv2mdv = \case
   DLV_Eff -> Nothing
   DLV_Let _ v -> Just v
 
-type SwitchCases a =
-  --- FIXME at the SrcLoc of the case
-  M.Map SLVar (Maybe DLVar, a)
+type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 data DLStmt
   = DL_Nop SrcLoc

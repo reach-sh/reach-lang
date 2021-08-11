@@ -57,7 +57,7 @@ getWrittenVars = \case
   CT_Jump {} -> []
   where
     getSwitchWrittenVars sc =
-      concatMap (getWrittenVars . snd . snd) $ M.toList sc
+      concatMap (\(_,(_,_,k)) -> getWrittenVars k) $ M.toList sc
 
 buildInterference :: S.Set DLVar -> [CHandler] -> App ()
 buildInterference liveAfter = \case

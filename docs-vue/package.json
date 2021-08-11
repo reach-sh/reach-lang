@@ -1,0 +1,17 @@
+{
+  "name": "@reach-sh/docs",
+  "version": "0.1.3",
+  "description": "Documentation for Reach Platform",
+  "scripts": {
+    "dev": "vuepress dev",
+    "build": "vuepress build"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "vuepress": "^1.8.2"
+  },
+  "dependencies": {
+    "vuepress-theme-cosmos": "^1.0.182"
+  }
+}

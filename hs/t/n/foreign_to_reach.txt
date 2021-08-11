@@ -1,4 +1,4 @@
-reachc: error[RE0025]: exposeAs is not a field of <SLV_Form>. Did you mean: ["when","timeout","throwTimeout"]
+reachc: error[RE0025]: exposeAs is not a field of <SLV_Form>. Did you mean: [".fork","when","timeout","throwTimeout"]
 
  ./foreign_to_reach.rsh:12:26:dot
 

@@ -75,14 +75,18 @@ instance (Countable x, Countable y, Countable z, Countable a, Countable b) => Co
   counts (a, b, c, d, e) = counts a <> counts b <> counts c <> counts d <> counts e
 
 instance Countable v => Countable (Maybe v) where
-  counts Nothing = mempty
-  counts (Just x) = counts x
+  counts = \case
+    Nothing -> mempty
+    Just x -> counts x
 
 instance Countable v => Countable [v] where
   counts l = mconcat $ map counts l
 
 instance Countable v => Countable (M.Map k v) where
   counts m = counts $ M.elems m
+
+instance {-# OVERLAPS #-} Countable k => Countable (SwitchCases k) where
+  counts = counts . map (\(_, _, k) -> k) . M.elems
 
 instance Countable DLVar where
   counts dv = Counts $ M.singleton dv DVC_Once
@@ -115,6 +119,10 @@ instance Countable DLTokenNew where
     <> counts dtn_metadata
     <> counts dtn_supply
 
+instance Countable DLWithBill where
+  counts (DLWithBill y z) =
+    counts y <> counts z
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -137,7 +145,7 @@ instance Countable DLExpr where
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
-    DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
+    DLE_Remote _ _ av _ pamt as y -> counts (av : as) <> counts pamt <> counts y
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
     DLE_TokenDestroy _ tok -> counts tok

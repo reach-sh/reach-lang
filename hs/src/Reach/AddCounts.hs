@@ -135,7 +135,12 @@ instance AC DLBlock where
     return $ DLBlock at fs t' a
 
 instance {-# OVERLAPS #-} AC a => AC (SwitchCases a) where
-  ac = mapM $ \(mv, k) -> (,) mv <$> ac k
+  ac = mapM $ \(v, _, k) -> do
+    k' <- ac k
+    vu' <- ac_vdef True (DLV_Let DVC_Many v) >>= \case
+      DLV_Eff -> return False
+      _ -> return True
+    return $ (v, vu', k')
 
 instance AC ETail where
   ac = \case

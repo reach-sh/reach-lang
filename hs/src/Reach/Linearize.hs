@@ -15,6 +15,7 @@ import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Counter
+import Reach.Freshen
 import Reach.Texty
 import Reach.Util
 
@@ -76,6 +77,9 @@ dk_block :: SrcLoc -> DLSBlock -> DKApp DKBlock
 dk_block _ (DLSBlock at fs l a) =
   DKBlock at fs <$> dk_top at l <*> pure a
 
+turnVarIntoLet :: Bool
+turnVarIntoLet = True
+
 dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
   case s of
@@ -99,17 +103,21 @@ dk1 k s =
       (mk, k') <- getDKBM s >>= \case
         DKBM_Con -> return $ (con, k)
         DKBM_Do -> return $ (loc, mt)
-      let cm1 (dv', l) = (,) dv' <$> dk_ k' l
+      let cm1 (dv', b, l) = (,,) dv' b <$> dk_ k' l
       mk <$> mapM cm1 csm
     DLS_Return at ret da ->
       asks eRet >>= \case
         Nothing -> impossible $ "return not in prompt"
-        Just (ret', (dv, _, rk)) ->
+        Just (ret', (dv, isCon, rk)) ->
           case ret == ret' of
             False ->
               impossible $ "return not nested: " <> show (ret, ret')
             True ->
-              return $ DK_Com (DKC_Set at dv da) rk
+              case turnVarIntoLet && isCon of
+                True ->
+                  return $ DK_Com (DKC_Let at (DLV_Let DVC_Many dv) $ DLE_Arg at da) rk
+                False ->
+                  return $ DK_Com (DKC_Set at dv da) rk
     DLS_Prompt at dv@(DLVar _ _ _ ret) _ ss ->
       case isLocal s of
         True -> do
@@ -117,11 +125,22 @@ dk1 k s =
           return $ DK_Com (DKC_Var at dv) $ DK_Com (DKC_LocalDo at ss') k
         False ->
           withReturn ret (dv, True, k) $
-            DK_Com (DKC_Var at dv) <$> dk_ k ss
+            case turnVarIntoLet of
+              True -> dk_ k ss
+              False -> DK_Com (DKC_Var at dv) <$> dk_ k ss
     DLS_Stop at -> return $ DK_Stop at
     DLS_Unreachable at fs m -> return $ DK_Unreachable at fs m
     DLS_ToConsensus at send recv mtime -> do
-      let cs = dr_k recv
+      let cs0 = dr_k recv
+      let cs =
+            case cs0 of
+              -- We are forcing an initial switch to be in CPS, assuming that
+              -- this is a fork and that this is a good idea
+              ((Seq.:<|) (DLS_Prompt pa pb pc ((Seq.:<|) (DLS_Switch sa sb sc sd) Seq.Empty)) r) ->
+                ((Seq.<|) (DLS_Prompt pa pb (go pc) ((Seq.<|) (DLS_Switch sa sb (go sc) sd) Seq.empty)) r)
+                where
+                  go x = x { sa_local = False }
+              _ -> cs0
       cs' <- dk_ k cs
       let recv' = recv {dr_k = cs'}
       let go (ta, time_ss) = (,) ta <$> dk_ k time_ss
@@ -199,7 +218,8 @@ instance CanLift DLExpr where
   canLift = isLocal
 
 instance CanLift a => CanLift (SwitchCases a) where
-  canLift = getAll . mconcatMap (All . canLift . snd . snd) . M.toList
+  canLift = getAll . mconcatMap (All . go) . M.toList
+    where go (_,(_, _, k)) = canLift k
 
 instance CanLift DKTail where
   canLift = \case
@@ -260,7 +280,7 @@ instance LiftCon z => LiftCon (DLRecv z) where
   lc r = (\z' -> r {dr_k = z'}) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
-  lc = traverse lc
+  lc = mapM (\(a,b,c) -> (,,) a b <$> lc c)
 
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
@@ -388,7 +408,7 @@ df_com mkk back = \case
         DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
           where
-            go (c, y) = (,) c <$> df_t y
+            go (c, vu, y) = (,,) c vu <$> df_t y
         DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
@@ -415,7 +435,7 @@ df_con = \case
   DK_Switch a v csm ->
     LLC_Switch a v <$> mapM cm1 csm
     where
-      cm1 (dv', c) = (\x -> (dv', x)) <$> df_con c
+      cm1 (dv', b, c) = (\x -> (dv', b, x)) <$> df_con c
   DK_While at asn inv cond body k -> do
     fvs <- eFVs <$> ask
     let go fv = do
@@ -495,7 +515,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
 -- Stich it all together
 linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
 linearize outm p =
-  return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid
+  return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid >>= out "fu" freshen_top
   where
     out lab f p' = do
       p'' <- f p'

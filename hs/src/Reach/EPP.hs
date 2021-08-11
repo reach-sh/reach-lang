@@ -391,14 +391,14 @@ be_m = \case
          return $ DL_LocalIf at c t' f')
   DL_LocalSwitch at ov csm -> do
     fg_use $ ov
-    let go (mv, k) = do
-          fg_defn $ mv
+    let go (v, vu, k) = do
+          when vu $ fg_defn $ v
           k'p <- be_t k
-          return $ (,) mv k'p
+          return $ (,,) v vu k'p
     csm' <- mapM go csm
     let mkt f = (DL_LocalSwitch at ov <$> mapM f' csm')
           where
-            f' (mv, k'p) = (,) mv <$> (f k'p)
+            f' (v, vu, k'p) = (,,) v vu <$> (f k'p)
     return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ [ans, b, a]
@@ -507,10 +507,10 @@ be_c = \case
     return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
   LLC_Switch at ov csm -> do
     fg_use $ ov
-    let go (mv, k) = do
-          fg_defn $ mv
+    let go (v, vu, k) = do
+          when vu $ fg_defn v
           (k'c, k'l) <- be_c k
-          let wrap k' = (,) mv <$> k'
+          let wrap k' = (,,) v vu <$> k'
           return (wrap k'c, wrap k'l)
     csm' <- mapM go csm
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')

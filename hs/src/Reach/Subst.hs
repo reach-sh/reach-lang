@@ -26,6 +26,11 @@ instance (Traversable f, Subst a) => Subst (f a) where
 instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
   subst (x, y) = (,) <$> subst x <*> subst y
 
+instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
+  subst csm = mapM go csm
+    where
+      go (a, b, c) = (,,) a b <$> subst c
+
 instance Subst DLVar where
   subst v = do
     m <- ask
@@ -60,6 +65,10 @@ instance Subst DLTokenNew where
     <*> subst dtn_metadata
     <*> subst dtn_supply
 
+instance Subst DLWithBill where
+  subst (DLWithBill y z) =
+    DLWithBill <$> subst y <*> subst z
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -82,7 +91,7 @@ instance Subst DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
-    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
+    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> subst wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok

@@ -173,6 +173,9 @@ instance Unroll k => Unroll (a, k) where
 instance Unroll a => Unroll (M.Map k a) where
   ul = mapM ul
 
+instance {-# OVERLAPS #-} Unroll a => Unroll (SwitchCases a) where
+  ul = mapM (\(v, vnu, k) -> (,,) v vnu <$> ul k)
+
 instance Unroll a => Unroll (Maybe a) where
   ul = mapM ul
 

@@ -56,7 +56,7 @@ instance Erase DLAssignment where
   el = viaCount
 
 instance {-# OVERLAPS #-} Erase a => Erase (SwitchCases a) where
-  el = mapM (\(x, y) -> (,) x <$> el y)
+  el = mapM (\(x, y, z) -> (,,) x y <$> el z)
 
 instance Erase DLStmt where
   el = \case
