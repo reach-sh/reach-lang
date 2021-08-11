@@ -5,7 +5,6 @@ module Reach.Eval.Core where
 import Control.Applicative
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Bifunctor (Bifunctor (bimap))
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString as B
@@ -4035,11 +4034,10 @@ typeToExpr = \case
 
 data CompiledForkCase = CompiledForkCase
   { cfc_part :: JSExpression
-  , cfc_data_def :: JSObjectProperty
-  , cfc_pay_prop :: JSObjectProperty
-  , cfc_switch_case :: JSSwitchParts
+  , cfc_data_def :: [JSObjectProperty]
+  , cfc_pay_prop :: [JSObjectProperty]
+  , cfc_switch_case :: [JSSwitchParts]
   , cfc_only :: JSStatement
-  , cfc_msg_type_def :: [JSStatement]
   }
 
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
@@ -4102,8 +4100,6 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
         let partCase n = who <> show n
-        let partMsgType = fid $ who <> "MsgType"
-        let ifOneCase t e = if length before_es == 1 then t else e
         -- Generate:
         -- const runAlice<N> = () => {
         --   const res = before<N>();
@@ -4114,9 +4110,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let makeRuns (n, (e_at, before_e)) = do
               (res_ty_m, only_body) <-
                 forkOnlyHelp who_e e_at before_e (jid "msg") (jid "when")
-              -- If there's one case, simply return message.
-              --  Otherwise, inject msg into variant representing which case executed
-              let msgExpr = ifOneCase (jid "msg") $ JSCallExpression (JSMemberDot (jid partMsgType) a (jid $ partCase n)) a (JSLOne (jid "msg")) a
+              let msgExpr = JSCallExpression (JSMemberDot fd_e a (jid $ partCase n)) a (JSLOne (jid "msg")) a
               let returnExpr = JSObjectLiteral a (mkCommaTrailingList $ [JSObjectSpread a tv, JSPropertyIdentRef a "when", JSPropertyNameandValue (JSPropertyIdent a "msg") a [msgExpr]]) a
               let stmts =
                     only_body
@@ -4125,11 +4119,6 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
               return (res_ty_m, cloName, jsThunkStmts a stmts)
 
         (res_ty_ms, beforeNames, beforeClosures) <- unzip3 <$> mapM makeRuns (indexed $ zip ats before_es)
-        -- Msg is either the type for a single case or variant of all possible case msgs
-        let msg_ty =
-              case res_ty_ms of
-                [t] -> lookupMsgTy t
-                _ -> T_Data $ M.fromList $ map (bimap partCase lookupMsgTy) $ indexed res_ty_ms
         -- Generate:
         --    const case_res0 = runAlice0(); ...
         --    const res = case_res<N - 1>.when ? case_res<N - 1> : runAliceN();
@@ -4157,21 +4146,13 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         isBound <- readSt $ M.member who_s . st_pdvs
         let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
         let pay_go (i, e) = mkobjp (partCase i) e
-        let pay_obj_props = map pay_go $ indexed pay_es
-        let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
-        let pay_cases = jsArrowExpr a [tv] $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
-        let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
-        let (cfc_msg_type_def, tyExpr) =
-              case msg_ty of
-                T_Data {} -> let i = jid partMsgType in ([defcon i $ typeToExpr msg_ty], i)
-                ow -> ([], typeToExpr ow)
-        let cfc_data_def = mkobjp who tyExpr
-        let var_e = jid who
+        let cfc_pay_prop = map pay_go $ indexed pay_es
+        let data_go (i, m) = mkobjp (partCase i) (typeToExpr $ lookupMsgTy m)
+        let cfc_data_def = map data_go $ indexed res_ty_ms
         let res_msg = JSMemberDot res_e a (jid "msg")
-        let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne res_msg) a
         let res_when = JSMemberDot res_e a (jid "when")
         let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
-        let only_body = run_ss <> cr_ss <> [defcon msg_e msg_vde, defcon when_e res_when]
+        let only_body = run_ss <> cr_ss <> [defcon msg_e res_msg, defcon when_e res_when]
         isClass <- is_class who_s
         let who_is_this_ss =
               case (isBound, isClass) of
@@ -4181,13 +4162,11 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
         all_afters <- mapM getAfter $ zip ats after_es
-        let cases_switch_cases =
+        let cfc_switch_case =
               map
                 (\(i, as) ->
-                   JSCase a (jid $ partCase i) a as)
+                   JSCase a (jid $ partCase i) a $ who_is_this_ss <> as)
                 $ indexed all_afters
-        let after_ss = ifOneCase (concat all_afters) [JSSwitch a a msg_e a a cases_switch_cases a sp]
-        let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
         let cfc_only = makeOnly who_e only_body
         locAt c_at $ return CompiledForkCase {..}
   (isFork, before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
@@ -4201,11 +4180,10 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
-        let cases_msg_type_def = concatMap cfc_msg_type_def casel
-        let cases_data_def = map cfc_data_def casel
+        let cases_data_def = concatMap cfc_data_def casel
         let cases_parts = map cfc_part casel
-        let cases_pay_props = map cfc_pay_prop casel
-        let cases_switch_cases = map cfc_switch_case casel
+        let cases_pay_props = concatMap cfc_pay_prop casel
+        let cases_switch_cases = concatMap cfc_switch_case casel
         let cases_onlys = map cfc_only casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
         let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
@@ -4213,7 +4191,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
         let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
-        let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
+        let before_tc_ss = data_ss <> cases_onlys
         return $ (True, before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
