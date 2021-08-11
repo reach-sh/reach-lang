@@ -6,4 +6,4 @@ Verifying for generic connector
   Verifying when ONLY "B" is honest
 Checked 198 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could take 790 units of cost, but the limit is 700: [("l0:",31),("l2:",4),("loop4:",161),("l21:",225),("loop5:",9),("l23:",240),("l24:",48),("l25:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]
+ * This program could take 786 units of cost, but the limit is 700: [("l0:",31),("l2:",4),("loop4:",157),("l21:",225),("loop5:",9),("l23:",240),("l24:",48),("l25:",42),("updateState:",7),("checkSize:",5),("done:",16),("BOT:",2)]

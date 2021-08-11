@@ -9,23 +9,23 @@ Verification failed:
 
   // Violation Witness
 
-  const a/25 = "Alice".interact.get();
+  const v66 = "Alice".interact.get();
   //    ^ could = 1
   //      from: ./map-dset.rsh:16:51:application
-  const b/35 = "Bob".interact.get();
+  const v75 = "Bob".interact.get();
   //    ^ could = 0
   //      from: ./map-dset.rsh:21:51:application
 
 
   // Theorem Formalization
 
-  const map0_1/71 = new Map()[<abstract address 0> <- Just a/25];
+  const map0_1/110 = new Map()[<abstract address 0> <- Just v66];
   //    ^ would be <map>
-  const map0_2/77 = map0_1/71[<abstract address 0> <- Just b/35];
+  const map0_2/116 = map0_1/110[<abstract address 0> <- Just v75];
   //    ^ would be <map>
-  const v55 = digest(map0_2/77[<abstract address 0>] ) == digest(<Some a/25> );
+  const v94 = digest(map0_2/116[<abstract address 0>] ) == digest(<Some v66> );
   //    ^ would be false
-  require(v55);
+  require(v94);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

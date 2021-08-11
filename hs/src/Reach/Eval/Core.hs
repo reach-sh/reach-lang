@@ -13,7 +13,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, intercalate, transpose, unzip5, (\\), intersperse)
+import Data.List (elemIndex, groupBy, transpose, unzip5, (\\), intersperse, intercalate)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -1043,12 +1043,13 @@ evalAsEnv obj = case obj of
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
-        , ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing Nothing))
-        , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing Nothing))
+        , ("publish", go TCM_Publish)
+        , ("pay", go TCM_Pay)
         , ("set", delayCall SLPrim_part_set)
         , ("interact", makeInteractField)
         ]
     where
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
       whos = S.singleton who
   SLV_Anybody -> do
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
@@ -1056,56 +1057,60 @@ evalAsEnv obj = case obj of
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
-        [ ("publish", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing Nothing))
-        , ("pay", withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing Nothing))
-        ]
-  SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen mtime) ->
+        [ ("publish", go TCM_Publish)
+        , ("pay", go TCM_Pay) ]
+    where
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
+  SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
-        gom "publish" TCM_Publish mpub
-          <> gom "pay" TCM_Pay mpay
-          <> gom "when" TCM_When mwhen
-          <> gom "timeout" TCM_Timeout mtime
-          <> gom "throwTimeout" TCM_ThrowTimeout mtime
+        gom "publish" TCM_Publish slptc_msg
+          <> gom "pay" TCM_Pay slptc_amte
+          <> gom "when" TCM_When slptc_whene
+          <> gom "timeout" TCM_Timeout slptc_timeout
+          <> gom "throwTimeout" TCM_ThrowTimeout slptc_timeout
+          <> gob ".fork" TCM_Fork slptc_fork
     where
-      gom key mode me =
-        case me of
-          Nothing -> go key mode
-          Just _ -> []
+      gob key mode = \case
+        False -> go key mode
+        True -> []
+      gom key mode = \case
+        Nothing -> go key mode
+        Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mwhen mtime))]
-  SLV_Form (SLForm_fork_partial fat Nothing cases mtime mpay) ->
+        [(key, retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p { slptc_mode = Just mode })]
+  SLV_Form (SLForm_fork_partial p@(ForkRec {..})) | slf_mode == Nothing ->
     return $
       M.fromList $
         go "case" FM_Case
-          <> gom "timeout" FM_Timeout mtime
-          <> gom "throwTimeout" FM_ThrowTimeout mtime
-          <> gom "paySpec" FM_PaySpec mpay
+          <> gom "timeout" FM_Timeout slf_mtime
+          <> gom "throwTimeout" FM_ThrowTimeout slf_mtime
+          <> gom "paySpec" FM_PaySpec Nothing
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime mpay))]
-  SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef) ->
+        [(key, retV $ public $ SLV_Form $ SLForm_fork_partial $ p { slf_mode = Just mode })]
+  SLV_Form (SLForm_parallel_reduce_partial p@(ParallelReduceRec {..})) | slpr_mode == Nothing ->
     return $
       M.fromList $
-        gom "invariant" PRM_Invariant pr_minv
-          <> gom "while" PRM_While pr_mwhile
+        gom "invariant" PRM_Invariant slpr_minv
+          <> gom "while" PRM_While slpr_mwhile
           <> go "case" PRM_Case
-          <> gom "timeout" PRM_Timeout pr_mtime
-          <> gom "timeRemaining" PRM_TimeRemaining pr_mtime
-          <> gom "throwTimeout" PRM_ThrowTimeout pr_mtime
-          <> gom "paySpec" PRM_PaySpec pr_mpay
-          <> gom "define" PRM_Def pr_mdef
+          <> gom "timeout" PRM_Timeout slpr_mtime
+          <> gom "timeRemaining" PRM_TimeRemaining slpr_mtime
+          <> gom "throwTimeout" PRM_ThrowTimeout slpr_mtime
+          <> gom "paySpec" PRM_PaySpec Nothing
+          <> gom "define" PRM_Def slpr_mdef
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef))]
+        [(key, retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ p { slpr_mode = Just mode })]
   --- FIXME rewrite the rest to look at the type and go from there
   SLV_Tuple _ _ -> return tupleValueEnv
   SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return tupleValueEnv
@@ -1427,15 +1432,19 @@ evalForm f args = do
       evalExpr $ JSCallExpression fun annot (toJSCL args) annot
     SLForm_fork -> do
       zero_args
-      at <- withAt id
-      retV $ public $ SLV_Form $ SLForm_fork_partial at Nothing [] Nothing Nothing
-    SLForm_fork_partial fat mmode cases mtime mpay ->
-      case mmode of
+      slf_at <- withAt id
+      let slf_mode = Nothing
+      let slf_cases = []
+      let slf_mtime = Nothing
+      let slf_mnntpay = Nothing
+      retV $ public $ SLV_Form $ SLForm_fork_partial $ ForkRec {..}
+    SLForm_fork_partial p@(ForkRec {..}) ->
+      case slf_mode of
         Just FM_Case -> do
-          a <- withAt srcloc2annot
           at <- withAt id
+          let a = srcloc2annot at
           let def_pay =
-                case mpay of
+                case slf_mnntpay of
                   Just (JSArrayLiteral aa ts ae) -> do
                     let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
                     let tok_pays = JSDecimal a "0" : map (\ i ->
@@ -1445,15 +1454,16 @@ evalForm f args = do
                     JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
                   _ -> JSDecimal a "0"
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
-          case_args <-
+          (w', x', y', z') <-
             case args of
-              [w, x, y, z] -> return $ ForkCase at w x y z
-              [w, x, z] -> return $ ForkCase at w x default_pay z
+              [w, x, y, z] -> return $ (w, x, y, z)
+              [w, x, z] -> return $ (w, x, default_pay, z)
               _ -> illegal_args 4
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [case_args]) mtime mpay
+          let fc = ForkCase at w' x' y' z'
+          go $ p { slf_cases = slf_cases <> [fc] }
         Just FM_Timeout -> do
           at <- withAt id
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, args)) mpay
+          go $ p { slf_mtime = Just (at, args) }
         Just FM_ThrowTimeout -> do
           at <- withAt id
           (d, arg) <- case args of
@@ -1462,62 +1472,65 @@ evalForm f args = do
             _ -> illegal_args 2
           let ta = srcloc2annot at
           let throwS = jsArrow ta [] $ JSThrow ta arg (a2sp ta)
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases (Just (at, [d, throwS])) mpay
+          go $ p { slf_mtime = Just (at, [d, throwS]) }
         Just FM_PaySpec -> do
-          nnts <- case args of
-            [toks] -> return toks
-            _ -> illegal_args 1
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases mtime (Just nnts)
+          x <- one_arg
+          go $ p { slf_mnntpay = Just x }
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
+      where
+        go p' = retV $ public $ SLV_Form $ SLForm_fork_partial $ p' { slf_mode = Nothing }
     SLForm_parallel_reduce -> do
-      at <- withAt id
-      x <- one_arg
-      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing x Nothing Nothing [] Nothing Nothing Nothing
-    SLForm_parallel_reduce_partial {..} -> do
+      slpr_at <- withAt id
+      let slpr_mode = Nothing
+      slpr_init <- one_arg
+      let slpr_minv = Nothing
+      let slpr_mwhile = Nothing
+      let slpr_cases = []
+      let slpr_mtime = Nothing
+      let slpr_mdef = Nothing
+      let slpr_mpay = Nothing
+      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ ParallelReduceRec {..}
+    SLForm_parallel_reduce_partial (p@ParallelReduceRec {..}) -> do
       aa <- withAt $ \at -> (at, args)
       case slpr_mode of
         Just PRM_Invariant -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_minv = Just x, .. }
+          go $ p { slpr_minv = Just x }
         Just PRM_While -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mwhile = Just x, .. }
+          go $ p { slpr_mwhile = Just x }
         Just PRM_Case ->
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_cases = slpr_cases <> [aa], .. }
+          go $ p { slpr_cases = slpr_cases <> [aa] }
         Just PRM_PaySpec -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mpay = Just x, .. }
+          go $ p { slpr_mpay = Just x }
         Just PRM_Def -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mdef = Just x, .. }
+          go $ p { slpr_mdef = Just x }
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
       where
+        go p' = retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ p' { slpr_mode = Nothing }
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
-        retTimeout prm aa =
-          retV $
-            public $
-              SLV_Form $
-                SLForm_parallel_reduce_partial { slpr_mode = Nothing, slpr_mtime = makeTimeoutArgs prm aa, .. }
-    SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
-      case mmode of
-        Just TCM_Publish ->
-          case mpub of
-            Nothing -> do
-              at <- withAt id
-              let msg = map (jse_expect_id at) args
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing (Just msg) mpay mwhen mtime
-            Just _ ->
-              expect_ $ Err_ToConsensus_Double TCM_Publish
+        retTimeout prm aa = go $ p { slpr_mtime = makeTimeoutArgs prm aa }
+    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) ->
+      case slptc_mode of
+        Just TCM_Publish -> do
+          at <- withAt id
+          let msg = map (jse_expect_id at) args
+          go $ p { slptc_msg = Just msg }
         Just TCM_Pay -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just x) mwhen mtime
+          go $ p { slptc_amte = Just x }
         Just TCM_When -> do
           x <- one_arg
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just x) mtime
+          go $ p { slptc_whene = Just x }
+        Just TCM_Fork -> do
+          zero_args
+          go $ p { slptc_fork = True }
         Just TCM_Timeout -> do
           at <- withAt id
           x <-
@@ -1527,7 +1540,7 @@ evalForm f args = do
               [de, JSExpressionParen _ (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s) _] ->
                 return $ (at, de, Just (jsStmtToBlock dt_s))
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $ Just x
+          go $ p { slptc_timeout = Just x }
         Just TCM_ThrowTimeout -> do
           at <- withAt id
           let ta = srcloc2annot at
@@ -1537,13 +1550,11 @@ evalForm f args = do
               [de, e] -> return (de, e)
               _ -> illegal_args 2
           let throwS = JSThrow ta x JSSemiAuto
-          retV $
-            public $
-              SLV_Form $
-                SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen $
-                  Just (at, de, Just (jsStmtToBlock throwS))
+          go $ p { slptc_timeout = Just (at, de, Just (jsStmtToBlock throwS)) }
         Nothing ->
           expect_t rator $ Err_Eval_NotApplicable
+      where
+        go p' = retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p' { slptc_mode = Nothing }
     SLForm_each -> do
       (partse, thunke) <- two_args
       (_, parts_v) <- evalExpr partse
@@ -3811,8 +3822,14 @@ compilePayAmt tt v = do
       snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
-doToConsensus :: [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, Maybe JSBlock) -> App SLStmtRes
-doToConsensus ks whos vas msg amt_e when_e mtime = do
+doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
+doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
+  let whos = slptc_whos
+  let vas = slptc_mv
+  let msg = fromMaybe [] slptc_msg
+  let amt_e = fromMaybe (JSDecimal JSNoAnnot "0") slptc_amte
+  let when_e = fromMaybe (JSLiteral JSNoAnnot "true") slptc_whene
+  let mtime = slptc_timeout
   at <- withAt id
   st <- readSt id
   ensure_mode SLM_Step "to consensus"
@@ -3889,8 +3906,13 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
+        -- Initialize and distinctize tokens
         bv <- evalAllDistinct $ map SLV_DLVar toks
-        _ <- locSt st_pure $ evalApplyVals' req_rator [public bv]
+        void $ locSt st_pure $ evalApplyVals' req_rator [public bv]
+        forM_ (map DLA_Var toks) $ \tok -> do
+          doBalanceInit $ Just tok
+          ctxt_lift_eff $ DLE_TokenInit at tok
+        -- Check payments
         DLPayAmt {..} <- compilePayAmt_ amt_e
         unless (null pa_ks) $
           unless (st_after_ctor st) $
@@ -3900,31 +3922,29 @@ doToConsensus ks whos vas msg amt_e when_e mtime = do
               sv <- argToSV pa
               doBalanceUpdate mtok ADD sv
               ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
-        -- We ensure that the network payment is first
         checkPayAmt1 Nothing pa_net
-        -- because it may need to pay the fee to initialize these tokens
-        -- (on Algorand)
-        forM_ (map DLA_Var toks) $ \tok -> do
-          doBalanceInit $ Just tok
-          ctxt_lift_eff $ DLE_TokenInit at tok
         forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
-        let check_repeat whoc_v repeat_dv = do
-              repeat_cmp_v <-
-                evalPrimOp ADDRESS_EQ $
-                  map (public . SLV_DLVar) [repeat_dv, dr_from]
-              evalPrimOp IF_THEN_ELSE $
-                [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
-        whoc_v <-
-          locSt st_pure $
-            case mrepeat_dvs of
-              Just repeat_dvs@(_ : _) ->
-                foldM check_repeat (public $ SLV_Bool at False) repeat_dvs
-              _ ->
-                return $ (public $ SLV_Bool at True)
-        void $
-          locSt st_pure $
-            evalApplyVals' req_rator $
-              [whoc_v, public $ SLV_Bytes at $ "sender correct"]
+        -- Fork is trusted and doesn't check sender, because the macro does
+        unless slptc_fork $ do
+          -- Check sender
+          let check_repeat whoc_v repeat_dv = do
+                repeat_cmp_v <-
+                  evalPrimOp ADDRESS_EQ $
+                    map (public . SLV_DLVar) [repeat_dv, dr_from]
+                evalPrimOp IF_THEN_ELSE $
+                  [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
+          whoc_v <-
+            locSt st_pure $
+              case mrepeat_dvs of
+                Just repeat_dvs@(_ : _) ->
+                  foldM check_repeat (public $ SLV_Bool at False) repeat_dvs
+                _ ->
+                  return $ (public $ SLV_Bool at True)
+          void $
+            locSt st_pure $
+              evalApplyVals' req_rator $
+                [whoc_v, public $ SLV_Bytes at $ "sender correct"]
+          return ()
         let go fv = do
               v <- ctxt_mkvar $ DLVar at Nothing T_UInt
               doFluidSet fv $ public $ SLV_DLVar v
@@ -4023,7 +4043,6 @@ data CompiledForkCase = CompiledForkCase
   { cfc_part :: JSExpression
   , cfc_data_def :: JSObjectProperty
   , cfc_pay_prop :: JSObjectProperty
-  , cfc_req_prop :: JSObjectProperty
   , cfc_switch_case :: JSSwitchParts
   , cfc_only :: JSStatement
   , cfc_msg_type_def :: [JSStatement]
@@ -4034,8 +4053,10 @@ forkCaseSameParticipant l r = getWho l == getWho r
   where
     getWho e = jse_expect_id (fc_at e) (fc_who e)
 
-doFork :: [JSStatement] -> [ForkCase] -> Maybe (SrcLoc, [JSExpression]) -> Maybe JSExpression -> App SLStmtRes
-doFork ks cases mtime mnntpay = do
+doFork :: [JSStatement] -> ForkRec -> App SLStmtRes
+doFork ks (ForkRec {..}) = locAt slf_at $ do
+  let cases = slf_cases
+  let mtime = slf_mtime
   idx <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
   at <- withAt id
@@ -4134,19 +4155,17 @@ doFork ks cases mtime mnntpay = do
                 mkCaseRes n = jid $ "case_res" <> show n
 
         let cr_ss = genCaseResStmts beforeNames
-        let this_eq_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
+        let check_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
         who_s <-
           (snd <$> evalExpr who_e) >>= \case
             SLV_Participant _ x _ _ -> return $ x
             v -> expect_t v $ Err_Expected "participant"
         isBound <- readSt $ M.member who_s . st_pdvs
-        let req_e = bool (JSLiteral a "true") this_eq_who isBound
         let mkobjp i x = JSPropertyNameandValue (JSPropertyIdent a i) a [x]
         let pay_go (i, e) = mkobjp (partCase i) e
         let pay_obj_props = map pay_go $ indexed pay_es
         let pay_obj = JSObjectLiteral a (mkCommaTrailingList pay_obj_props) a
         let pay_cases = jsArrowExpr a [tv] $ JSCallExpression (JSMemberDot tv a (jid "match")) a (JSLOne pay_obj) a
-        let cfc_req_prop = mkobjp who $ jsArrowExpr a [(jid "_")] req_e
         let cfc_pay_prop = mkobjp who $ ifOneCase (hdDie pay_es) pay_cases
         let (cfc_msg_type_def, tyExpr) =
               case msg_ty of
@@ -4163,7 +4182,7 @@ doFork ks cases mtime mnntpay = do
         let who_is_this_ss =
               case (isBound, isClass) of
                 (True, _) ->
-                  [JSMethodCall (jid "assert") a (JSLOne this_eq_who) a sp]
+                  [JSMethodCall (jid "require") a (JSLOne check_who) a sp]
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
@@ -4173,28 +4192,25 @@ doFork ks cases mtime mnntpay = do
                 (\(i, as) ->
                    JSCase a (jid $ partCase i) a as)
                 $ indexed all_afters
-        let after_ss =
-              ifOneCase (concat all_afters) [JSSwitch a a msg_e a a cases_switch_cases a sp]
+        let after_ss = ifOneCase (concat all_afters) [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
         let cfc_only = makeOnly who_e only_body
         locAt c_at $ return CompiledForkCase {..}
-  (before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
+  (isFork, before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
     case cases of
       [ForkCase {..}] -> do
-        (_, only_body) <-
-          forkOnlyHelp fc_who fc_at fc_before msg_e when_e
+        (_, only_body) <- forkOnlyHelp fc_who fc_at fc_before msg_e when_e
         let tc_head_e = fc_who
         let before_tc_ss = [makeOnly fc_who only_body]
         let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
         after_tc_ss <- getAfter (fc_at, fc_after)
-        return $ (before_tc_ss, pay_e, tc_head_e, after_tc_ss)
+        return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
         let cases_msg_type_def = concatMap cfc_msg_type_def casel
         let cases_data_def = map cfc_data_def casel
         let cases_parts = map cfc_part casel
         let cases_pay_props = map cfc_pay_prop casel
-        let cases_req_props = map cfc_req_prop casel
         let cases_switch_cases = map cfc_switch_case casel
         let cases_onlys = map cfc_only casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
@@ -4202,18 +4218,14 @@ doFork ks cases mtime mnntpay = do
         let data_ss = [JSConstant a data_decls sp]
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
         let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
-        let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
-        let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
-        let req_ss = [JSExpressionStatement req_e sp]
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = cases_msg_type_def <> data_ss <> cases_onlys
-        let after_tc_ss = req_ss <> switch_ss
-        return $ (before_tc_ss, pay_e, tc_head_e, after_tc_ss)
+        return $ (True, before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
   pay_expr <-
-    case mnntpay of
+    case slf_mnntpay of
       Just (JSArrayLiteral aa ts _) -> do
         let network_pay_var = jid "networkTokenPay"
         let nnts = map (jse_expect_id at) $ jsa_flatten ts
@@ -4260,15 +4272,27 @@ doFork ks cases mtime mnntpay = do
           Nothing -> tc_pay_e
           Just (_, targs) ->
             JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) a (toJSCL targs) a
-  let tc_e = tc_time_e
+  let tc_fork_e =
+        case isFork of
+          True -> JSCallExpression (JSMemberDot tc_time_e a (jid ".fork")) a (toJSCL []) a
+          False -> tc_time_e
+  let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
   -- liftIO $ putStrLn $ "Fork Output"
   -- liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
-doParallelReduce :: JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (ParallelReduceMode, SrcLoc, [JSExpression]) -> Maybe JSExpression -> Maybe JSExpression -> App [JSStatement]
-doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr_mpay pr_mdef = locAt pr_at $ do
+doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
+doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
+  let pr_at = slpr_at
+  let pr_mode = slpr_mode
+  let init_e = slpr_init
+  let pr_minv = slpr_minv
+  let pr_mwhile = slpr_mwhile
+  let pr_cases = slpr_cases
+  let pr_mtime = slpr_mtime
+  let pr_mdef = slpr_mdef
   idx <- ctxt_alloc
   let prid x = ".pr" <> (show idx) <> "." <> x
   case pr_mode of
@@ -4334,7 +4358,7 @@ doParallelReduce lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime pr
           callTimeout = return . jsCall ta (JSMemberDot fork_e0 ta timeOutId)
           ta = ao t_at
   fork_e2 <-
-    case pr_mpay of
+    case slpr_mpay of
       Nothing -> return fork_e1
       Just toks ->
         return $ jsCall a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
@@ -4424,13 +4448,8 @@ findStmtTrampoline = \case
       foldM doOnly sco $
         map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
     locSco sco' $ evalStmt ks
-  SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> Just $ \_ ks -> locAt to_at $ do
-    let msg = fromMaybe [] mmsg
-    let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
-    let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
-    doToConsensus ks whos vas msg amt whene mtime
-  SLV_Form (SLForm_fork_partial f_at Nothing cases mtime mnntpay) -> Just $ \_ ks ->
-    locAt f_at $ doFork ks cases mtime mnntpay
+  SLV_Form (SLForm_Part_ToConsensus tcr) | slptc_mode tcr == Nothing -> Just $ \_ ks -> doToConsensus ks tcr
+  SLV_Form (SLForm_fork_partial fr) | slf_mode fr == Nothing -> Just $ \_ ks -> doFork ks fr
   SLV_Prim SLPrim_committed -> Just $ \_ ks -> do
     ensure_mode SLM_ConsensusStep "commit"
     sco <- e_sco <$> ask
@@ -4582,8 +4601,8 @@ evalStmt = \case
       (lhs, rhs) <- destructDecls decls
       (rhs_lvl, rhs_v) <- evalExpr rhs
       case rhs_v of
-        SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
-          pr_ss <- doParallelReduce lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime slpr_mpay slpr_mdef
+        SLV_Form (SLForm_parallel_reduce_partial prr) -> do
+          pr_ss <- doParallelReduce lhs prr
           evalStmt (pr_ss <> ks)
         _ -> do
           addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs
@@ -4778,34 +4797,28 @@ evalStmt = \case
       let extra_cases = given_cases S.\\ all_cases
       unless (S.null extra_cases) $ do
         expect_ $ Err_Switch_ExtraCases $ S.toList extra_cases
-      let select at_c body mvv = locAt at_c $ do
-            let addl_env = case mvv of
-                  Just vv -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
-                  Nothing -> mempty
+      let select at_c shouldBind body vv = locAt at_c $ do
+            let addl_env =
+                  case shouldBind of
+                    True -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
+                    False -> mempty
             sco'' <- locSco sco' $ sco_update_ AllowShadowing addl_env
             locSco sco'' $ evalStmt body
       let select_one vn (at_c, shouldBind, body) = do
-            (mdv', mvv) <-
-              case shouldBind of
-                True -> do
-                  let vt = varm M.! vn
-                  case vt of
-                    T_Null ->
-                      return (Nothing, Just $ SLV_Null at_c "case")
-                    _ -> do
-                      dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
-                      return (Just dv', Just $ SLV_DLVar dv')
-                False ->
-                  return (Nothing, Nothing)
-            return $ (mdv', at_c, select at_c body mvv)
+            let vt = varm M.! vn
+            dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
+            let vv = case vt of
+                       T_Null -> SLV_Null at_c "case"
+                       _ -> SLV_DLVar dv'
+            return $ (dv', at_c, select at_c shouldBind body vv)
       let select_all sv = do
             dv <- case sv of
               SLV_DLVar dv -> return dv
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
-            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts)) -> (SLVar, App (Maybe DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, M.Map SLVar (Maybe DLVar, DLStmts))
+            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts) -> (SLVar, App (DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts)
                 cmb (mst', sa', mrets', casemm') (vn, casem) = do
-                  (mdv', at_c, casem') <- casem
+                  (dv', at_c, casem') <- casem
                   locAt at_c $ do
                     SLRes case_lifts case_st (SLStmtRes _ case_rets) <-
                       captureRes casem'
@@ -4820,7 +4833,7 @@ evalStmt = \case
                           rets'' <- brCombineRets rets' case_rets'
                           return $ (Just st'', rets'')
                         _ -> impossible $ "switch"
-                    let casemm'' = M.insert vn (mdv', case_lifts) casemm'
+                    let casemm'' = M.insert vn (dv', True, case_lifts) casemm'
                     return $ (mst'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <-
               foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
@@ -4833,9 +4846,8 @@ evalStmt = \case
         case de_val of
           SLV_Data _ t vn vv -> do
             let (at_c, shouldBind, body) = (casesm M.! vn)
-            let mvv = if shouldBind then Just vv else Nothing
             whenUsingStrict $ ignoreAll $ select_all (SLV_DLVar $ DLVar srcloc_builtin Nothing (T_Data t) 0)
-            select at_c body mvv
+            select at_c shouldBind body vv
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"
       locAtf (srcloc_after_semi "switch" a sp) $ brSeqn fr ks_ne

@@ -1250,7 +1250,7 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
   end_lab <- freshLabel
-  let cm1 ((_vn, (mov, k)), vi) = do
+  let cm1 ((_vn, (vv, vu, k)), vi) = do
         next_lab <- freshLabel
         ca $ DLA_Var dv
         cl $ DLL_Int sb 0
@@ -1258,9 +1258,9 @@ doSwitch ck at dv csm = do
         cl $ DLL_Int sb vi
         op "=="
         code "bz" [next_lab]
-        case mov of
-          Nothing -> ck k
-          Just vv -> do
+        case vu of
+          False -> ck k
+          True -> do
             flip (sallocLet vv) (ck k) $ do
               ca $ DLA_Var dv
               let vt = argTypeOf $ DLA_Var vv

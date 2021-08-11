@@ -7,3 +7,11 @@ Verifying for generic connector
 Checked 117 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * This program uses remote objects
+reachc: The compiler has encountered an internal error:
+
+  unbound var gil/135
+
+This error indicates a problem with the Reach compiler, not your program. Please report this error, along with the pertinent program, to the Reach team as soon as possible so we can fix it.
+
+Open an issue at: https://github.com/reach-sh/reach-lang/issues
+

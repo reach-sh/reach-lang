@@ -6,8 +6,10 @@ module Reach.AST.DLBase where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
+import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
@@ -300,6 +302,17 @@ data DLLargeArg
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
   deriving (Eq, Ord, Generic, Show)
+
+instance CanDupe a => CanDupe [a] where
+  canDupe = getAll . mconcatMap (All . canDupe)
+
+instance CanDupe DLLargeArg where
+  canDupe = \case
+    DLLA_Array _ as -> canDupe as
+    DLLA_Tuple as -> canDupe as
+    DLLA_Obj am -> canDupe $ M.elems am
+    DLLA_Data _ _ x -> canDupe x
+    DLLA_Struct m -> canDupe $ map snd m
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
 render_dasM as = do
@@ -723,9 +736,7 @@ lv2mdv = \case
   DLV_Eff -> Nothing
   DLV_Let _ v -> Just v
 
-type SwitchCases a =
-  --- FIXME at the SrcLoc of the case
-  M.Map SLVar (Maybe DLVar, a)
+type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 data DLStmt
   = DL_Nop SrcLoc

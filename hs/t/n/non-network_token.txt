@@ -1,4 +1,4 @@
-reachc: error[RE0025]: currency is not a field of <SLV_Form>. Did you mean: ["when","publish","timeout","throwTimeout"]
+reachc: error[RE0025]: currency is not a field of <SLV_Form>. Did you mean: ["when",".fork","publish","timeout","throwTimeout"]
 
  ./non-network_token.rsh:12:16:dot
 

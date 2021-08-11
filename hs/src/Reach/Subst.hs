@@ -26,6 +26,11 @@ instance (Traversable f, Subst a) => Subst (f a) where
 instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
   subst (x, y) = (,) <$> subst x <*> subst y
 
+instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
+  subst csm = mapM go csm
+    where
+      go (a, b, c) = (,,) a b <$> subst c
+
 instance Subst DLVar where
   subst v = do
     m <- ask

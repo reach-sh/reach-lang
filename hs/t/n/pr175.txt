@@ -8,16 +8,16 @@ Verification failed:
 
   // Violation Witness
 
-  const v17 = <function return>;
+  const v23 = <function return>;
   //    ^ could = 1
   //      from: ./pr175.rsh:5:22:block
 
 
   // Theorem Formalization
 
-  const v18 = v17 == 0;
+  const v24 = v23 == 0;
   //    ^ would be false
-  assert(v18);
+  assert(v24);
 
   Verifying when NO participants are honest
 Verification failed:

@@ -10,16 +10,16 @@ Verification failed:
 
   // Violation Witness
 
-  const v15 = "A".interact.x;
+  const v27 = "A".interact.x;
   //    ^ could = 0
   //      from: ./div_by_zero.rsh:6:17:application
 
 
   // Theorem Formalization
 
-  const v22 = v15 > 0;
+  const v31 = v27 > 0;
   //    ^ would be false
-  assert(v22);
+  assert(v31);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
