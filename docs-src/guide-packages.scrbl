@@ -20,5 +20,5 @@ to enjoy greater discoverability.
 
 The @seclink["ref-programs-import-package"]{package imports} reference section
 details Reach's remote module import syntax, and
-@seclink["ref-usage-compile"] describes the @tt{--install-pkgs} command-line
+@secref["ref-usage-compile"] describes the @tt{--install-pkgs} command-line
 argument which allows remote packages to be fetched during compilation.

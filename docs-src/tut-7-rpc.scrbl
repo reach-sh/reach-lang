@@ -47,7 +47,7 @@ On line 9 the Python program binds @pyin{rpc} and @pyin{rpc_callbacks} out of
 @pyin{mk_rpc}.
 These two functions are the only tools we will need to communicate with the
 RPC server.
-See @seclink{ref-frontends-rpc-py} for more details on how they work.
+See @secref{ref-frontends-rpc-py} for more details on how they work.
 
 
 @(hrule)
@@ -241,5 +241,5 @@ Well done! You have just reimplemented @seclink{tut-7} in Python.
 
 This tutorial uses Python to demonstrate how RPC @tech{frontends} are
 built in Reach, but it is similarly easy to write RPC @tech{frontends} in other
-languages, such as with the @seclink{ref-frontends-rpc-js} and
-@seclink{ref-frontends-rpc-go} libraries.
+languages, such as with the @secref{ref-frontends-rpc-js} and
+@secref{ref-frontends-rpc-go} libraries.

@@ -53,7 +53,7 @@ You'll know that everything is in order if you can run
 
 @(hrule)
 
-@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
+@margin-note{Get language support for Reach in your editor by visiting @secref["guide-editor-support"].}
 
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-2"]{write your first Reach application}!
 
@@ -78,13 +78,13 @@ For example, start off by typing the following into @exec{index.rsh}:
 In Reach code samples, you can click on the names of keywords and standard library functions to be brought to their documentation.}
 
 @margin-note{Did you notice that @reachexlink["tut-2/index.rsh"] was a link in the box above the code sample?
-You can always click on these links to see the entire file in our @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} repository.}
+You can always click on these links to see the entire file in our @link["https://github.com/reach-sh/reach-lang"]{GitHub} repository.}
 
 @margin-note{Did you notice the attractive clipboard icon on the top the right of that box?
 You can click on it and the content of the code box will be copied onto your clipboard.}
 
 @margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax hightlighting?
-If not, check if there's a plugin available for your editor by visiting @seclink["guide-editor-support"] or manually
+If not, check if there's a plugin available for your editor by visiting @secref["guide-editor-support"] or manually
 configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
 
 This is just a shell of a program that doesn't do much, but it has a few important components.
