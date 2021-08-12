@@ -49,6 +49,7 @@ export const main = Reach.App(() => {
       msg: Deposit,
     })),
     depositDone: Fun([Bool, UInt, UInt, UInt], Null),
+    acceptToken: Fun([Token], Null),
   };
 
   const Provider = ParticipantClass('Provider', ProviderInterface);
@@ -56,6 +57,7 @@ export const main = Reach.App(() => {
   const Admin = Participant('Admin', {
     tokA: Token,
     tokB: Token,
+    conUnit: UInt,
     shouldClosePool: Fun([State], Object({
       when: Bool,
       msg : Null,
@@ -70,6 +72,7 @@ export const main = Reach.App(() => {
       msg : Trade,
     })),
     tradeDone: Fun([Bool, Tuple(UInt, Token, UInt, Token)], Null),
+    acceptToken: Fun([Token], Null),
   });
 
   const Tokens = View('Tokens', {
@@ -85,11 +88,14 @@ export const main = Reach.App(() => {
   Admin.only(() => {
     const tokA = declassify(interact.tokA);
     const tokB = declassify(interact.tokB);
+    const conUnit = declassify(interact.conUnit); // 1000000;
     assume(UInt.max > 0);
     assume(tokA != tokB);
+    assume(conUnit > 0);
+
   });
 
-  Admin.publish(tokA, tokB);
+  Admin.publish(tokA, tokB, conUnit);
 
   require(UInt.max > 0);
   require(tokA != tokB);
@@ -107,9 +113,18 @@ export const main = Reach.App(() => {
   const totalSupply = UInt.max;
   const pool = new Token({ supply: totalSupply });
 
+  commit();
+
+  Provider.interact.acceptToken(pool);
+  Trader.interact.acceptToken(pool);
+
+  Admin.publish();
+
   // Calculates how many LP tokens to mint
   const mint = (amtIn, bal, poolMinted) => {
-    return (poolMinted * amtIn) / ((bal == 0) ? 1 : bal);
+    const t = amtIn * poolMinted;
+    assume(t >= bal, "t >= bal");
+    return t / ((bal == 0) ? 1 : bal);
   };
 
   const newK = (amtIn, ainTok, amtOut, amtOutTok) =>
@@ -192,8 +207,9 @@ export const main = Reach.App(() => {
             const { amtA, amtB } = msg;
             const minted =
               (poolMinted == 0)
-                ? sqrt(amtA * amtB, 4)
+                ? sqrt((amtA / conUnit) * (amtB / conUnit), 4) * conUnit
                 : avg( mint(amtA, balance(tokA), poolMinted), mint(amtB, balance(tokB), poolMinted) );
+            assume(minted < UInt.max, "minted < UInt.max");
             assume(minted > 0, "minted > 0");
             assume(minted < balance(pool), "assume minted < balance(pool)");
             return { when, msg: { amtA, amtB, minted } };

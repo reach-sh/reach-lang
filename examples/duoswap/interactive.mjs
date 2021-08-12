@@ -31,20 +31,26 @@ const getBalances = async (stdlib, who, tokA, tokB) =>
 const runDuoSwapAdmin = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
+
+  const { tokA, tokB } = await ask.ask(`Enter token info:`, JSON.parse);
+
   let accAdmin;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
     const secret = await ask.ask(`What is your secret key?`);
     accAdmin = await stdlib.newAccountFromSecret(secret);
+    await accAdmin.tokenAccept(tokA);
+    await accAdmin.tokenAccept(tokB);
   } else {
     // Create & Fund Admin
     const startingBalance = stdlib.parseCurrency(9999);
     accAdmin = await stdlib.newTestAccount(startingBalance);
-    await ask.ask(`Fund: ${accAdmin.getAddress()}`);
+    await accAdmin.tokenAccept(tokA);
+    await accAdmin.tokenAccept(tokB);
+    await ask.ask(`Fund: ${stdlib.formatAddress(accAdmin)}`);
   }
 
   await accAdmin.setDebugLabel('Admin');
-  const { tokA, tokB } = await ask.ask(`Enter token info:`, JSON.parse);
 
   // Deploy contract
   const ctcAdmin = accAdmin.deploy(backend);
@@ -56,6 +62,7 @@ const runDuoSwapAdmin = async (useTestnet) => {
   const adminBackend = backend.Admin(ctcAdmin, {
     tokA,
     tokB,
+    conUnit: (stdlib.connector == 'ALGO') ? 1000000 : 1000000000000000000,
     shouldClosePool: async (_) => {
       const answer = await ask.ask(`Do you want to close the pool? (y/n)`, ask.yesno);
       return { when: answer, msg: null };
@@ -101,6 +108,9 @@ const runDuoSwapLP = async (useTestnet) => {
 
   const backendProvider = backend.Provider(ctcProvider, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
+    acceptToken: async (tokId) => {
+      await accProvider.tokenAccept(tokId);
+    },
     withdrawDone: (isMe, amtOuts) => {
       if (isMe) {
         withdrew[accProvider] = true;
@@ -177,6 +187,9 @@ const runDuoSwapTrader = async (useTestnet) => {
 
   const backendTrader = backend.Trader(ctcTrader, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
+    acceptToken: async (tokId) => {
+      await accProvider.tokenAccept(tokId);
+    },
     tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
       const tokIn  = amtInTok == tokA.id ? tokA : tokB;
       const tokOut = amtOutTok == tokA.id ? tokA : tokB;
