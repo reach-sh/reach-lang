@@ -43,41 +43,31 @@ all_connectors =
       ]
 
 compile :: CompilerOpts -> IO ()
-compile copts = do
-  let outn = output copts
-  let outnMay outn_ = case intermediateFiles copts of
-        True -> Just outn_
-        False -> Nothing
+compile CompilerOpts {output, dirDotReach, intermediateFiles, installPkgs, source, tops} = do
+  let outnMay = flip doIf intermediateFiles
   let interOut outn_ = case outnMay outn_ of
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
-  dirDotReach' <- makeAbsolute $ dirDotReach copts
-  let doPkgs = installPkgs copts
-  djp <- gatherDeps_top (source copts) doPkgs dirDotReach'
+  dirDotReach' <- makeAbsolute dirDotReach
+
+  djp <- gatherDeps_top source installPkgs dirDotReach'
   -- interOut outn "bundle.js" $ render $ pretty djp
-  unless doPkgs $ do
+  unless installPkgs $ do
     (avail, compileDApp) <- evalBundle all_connectors djp
-    let chosen = fromMaybe avail $ tops copts
-    forM_ (S.toAscList chosen) $ \which -> do
-      let addWhich = ((T.pack which <> ".") <>)
-      let woutn = outn . addWhich
+    let chosen = S.toAscList $ fromMaybe avail tops
+    forM_ chosen $ \which -> void $ do
+      let woutn = output . ((T.pack which <> ".") <>)
       let woutnMay = outnMay woutn
-      let winterOut = interOut woutn
-      let showp :: (forall a. Pretty a => T.Text -> a -> IO ())
-          showp l = winterOut l . render . pretty
-      let showp' :: (forall a. Pretty a => String -> a -> IO ())
-          showp' = showp . T.pack
+      let showp :: Pretty a => T.Text -> a -> IO ()
+          showp l = interOut woutn l . render . pretty
       dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ = dl
+      let DLProg _ (DLOpts {dlo_verifyPerConnector, dlo_connectors}) _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
-      ll <- linearize showp' dl
+      ll <- linearize showp dl
       ol <- optimize ll
       showp "ol" ol
-      let vconnectors =
-            case dlo_verifyPerConnector of
-              False -> Nothing
-              True -> Just connectors
+      let vconnectors = doIf connectors dlo_verifyPerConnector
       verify woutnMay vconnectors ol >>= maybeDie
       el <- erase_logic ol
       showp "el" el
@@ -88,4 +78,8 @@ compile copts = do
       let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
       crs <- HM.fromList <$> mapM runConnector connectors
       backend_js woutn crs pl
-      return ()
+
+doIf :: a -> Bool -> Maybe a
+doIf b = \case
+  True -> Just b
+  False -> Nothing

@@ -2,6 +2,7 @@ module Reach.Linearize (linearize, Error(..)) where
 
 import Control.Monad.Reader
 import Data.IORef
+import qualified Data.Text as T
 import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -513,7 +514,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
     return $ LLProg at opts' sps dli dex' dvs k'
 
 -- Stich it all together
-linearize :: (forall a. Pretty a => String -> a -> IO ()) -> DLProg -> IO LLProg
+linearize :: (forall a. Pretty a => T.Text -> a -> IO ()) -> DLProg -> IO LLProg
 linearize outm p =
   return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid >>= out "fu" freshen_top
   where
