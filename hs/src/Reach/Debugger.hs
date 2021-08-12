@@ -83,17 +83,16 @@ type Params = String -- JSON.Value
 interpStmt :: DLStmt -> App LLProg
 interpStmt = undefined
 
-interpStep :: LLStep -> App LLProg
-interpStep = \case
+interpStep ::  (LLStep -> LLProg) -> LLStep -> App LLProg
+interpStep pmeta = \case
   (LLS_Com stmt st') -> do
     _ <- interpStmt stmt
-    interpStep st'
-  -- QUESTION: what should the interpreter return for a stop?
-  (LLS_Stop _loc) -> undefined
+    interpStep pmeta st'
+  (LLS_Stop loc) -> return $ pmeta (LLS_Stop loc)
   (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
 
 interp :: LLProg -> App LLProg
-interp (LLProg _at _llo _ps _dli _dex _dvs st) = interpStep st
+interp (LLProg at llo ps dli dex dvs st) = interpStep (LLProg at llo ps dli dex dvs) st
 
 interpM :: App LLProg -> App LLProg
 interpM mprog = do
