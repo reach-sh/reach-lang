@@ -8,6 +8,7 @@ import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+-- import Data.Either
 
 type ConsensusEnv = M.Map DLVar DLVal
 
@@ -80,10 +81,21 @@ type Session = M.Map Id State
 type Params = String -- JSON.Value
 
 -- interpreter
-interpStmt :: DLStmt -> App LLProg
-interpStmt = undefined
+interpStmt :: DLStmt -> App ()
+interpStmt = \case
+  (DL_Nop _loc) -> undefined
+  (DL_Let _loc _let_var _expr) -> undefined
+  (DL_ArrayMap _loc _var1 _arg _var2 _block) -> undefined
+  (DL_ArrayReduce _loc _var1 _arg1 _arg2 _var2 _var3 _block) -> undefined
+  (DL_Var _loc _var) -> undefined
+  (DL_Set _loc _var _arg) -> undefined
+  (DL_LocalDo _loc _tail) -> undefined
+  (DL_LocalIf _loc _arg _tail1 _tail2) -> undefined
+  (DL_LocalSwitch _loc _var _switch_cases) -> undefined
+  (DL_Only _loc _either_part _tail) -> undefined
+  (DL_MapReduce _loc _int _var1 _dlm_var _arg _var2 _var3 _block) -> undefined
 
-interpStep ::  (LLStep -> LLProg) -> LLStep -> App LLProg
+interpStep :: (LLStep -> LLProg) -> LLStep -> App LLProg
 interpStep pmeta = \case
   (LLS_Com stmt st') -> do
     _ <- interpStmt stmt
