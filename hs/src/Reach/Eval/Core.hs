@@ -4676,15 +4676,15 @@ evalStmt = \case
     case (op, ks) of
       ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) -> do
         let lab = "continue"
-        ensure_mode SLM_ConsensusStep lab
         let var_at = srcloc_jsa lab var_a
         rhs_sv <- locAtf var_at $ evalExpr rhs
+        ensure_mode SLM_ConsensusStep lab
         sco <- e_sco <$> ask
         locAtf var_at $ do
           whilem <-
             case sco_while_vars sco of
               Nothing -> locAtf (srcloc_jsa lab cont_a) $ expect_ $ Err_Eval_ContinueNotInWhile
-              Just x -> return $ x
+              Just x -> return x
           doWhileLikeContinueEval lhs whilem rhs_sv
         -- NOTE We could/should look at sco_must_ret and see if it is
         -- RS_MayBeEmpty which means that the outside scope has an empty

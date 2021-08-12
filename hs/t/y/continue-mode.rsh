@@ -20,4 +20,5 @@ export const main = Reach.App(() => {
     f(Alice)
     continue;
   };
+  commit();
 });
