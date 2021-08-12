@@ -2,6 +2,7 @@
 CONN="$1"
 SIZE="$2"
 RANK="$3"
+KIDS=0
 
 echo Running w/ "${CONN}"
 
@@ -12,6 +13,8 @@ case "${CONN}" in
   CFX) TIMEOUT=$((10 * 60)) ;;
   ETH) TIMEOUT=$((10 * 60)) ;;
 esac
+
+../reach devnet >/dev/null 2>&1 &
 
 cd ../examples || exit 1
 go() {
@@ -41,7 +44,15 @@ go() {
   echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
 }
 for WHICH in $(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}") ; do
+  KIDS=$((KIDS + 1))
   go "${WHICH}" &
 done
 
+while true; do
+  wait -n || true
+  KIDS=$((KIDS - 1))
+  if [ $KIDS -eq 0 ]; then break; fi
+done
+
+../reach down
 wait
