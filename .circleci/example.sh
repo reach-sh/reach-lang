@@ -4,7 +4,7 @@ SIZE="$2"
 RANK="$3"
 KIDS=0
 
-echo Running w/ "${CONN}"
+echo Running w/ "${CONN}:"
 
 export REACH_CONNECTOR_MODE="${CONN}"
 export REACH_DEBUG=1
@@ -14,12 +14,20 @@ case "${CONN}" in
   ETH) TIMEOUT=$((10 * 60)) ;;
 esac
 
+D="devnet-$(echo "$CONN" | tr '[:upper:]' '[:lower:]')"
+printf 'Bringing up %s...' "$D"
 ../reach devnet >/dev/null 2>&1 &
+while true; do
+  if [ "$(docker ps -qf "label=sh.reach.devnet-for=$D" | wc -l)" -gt 0 ]; then break; fi
+  printf '.'
+  sleep 1
+done
+printf ' Done.\n'
 
 cd ../examples || exit 1
 go() {
   WHICH="$1"
-  echo "${WHICH}"
+  echo "Forking ${WHICH}..."
   THIS="${CONN}.${WHICH}"
   THIS_ART="/tmp/artifacts/${THIS}"
   touch "${THIS_ART}"
@@ -33,10 +41,13 @@ go() {
     timeout --foreground "${TIMEOUT}" ./one.sh run "${WHICH}" >>"${THIS_ART}" 2>&1
     EXIT=$?
     if [ $EXIT -eq 124 ] ; then
-      echo Timeout
+      echo "$WHICH timed out!"
       STATUS="fail-time"
     elif [ $EXIT -eq 0 ] ; then
+      echo "$WHICH passed."
       STATUS="pass"
+    else
+      echo "$WHICH failed."
     fi
     gzip "${THIS_ART}"
     rm -f "${THIS_ART}"
