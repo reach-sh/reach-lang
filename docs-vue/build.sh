@@ -1,3 +1,3 @@
 #!/bin/sh
 npm run build
-cp -f ../reach .vuepress/dist/
+cp -f ../reach src/.vuepress/dist/
