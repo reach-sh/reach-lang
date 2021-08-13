@@ -4684,7 +4684,7 @@ evalStmt = \case
           whilem <-
             case sco_while_vars sco of
               Nothing -> locAtf (srcloc_jsa lab cont_a) $ expect_ $ Err_Eval_ContinueNotInWhile
-              Just x -> return x
+              Just x -> return $ x
           doWhileLikeContinueEval lhs whilem rhs_sv
         -- NOTE We could/should look at sco_must_ret and see if it is
         -- RS_MayBeEmpty which means that the outside scope has an empty
