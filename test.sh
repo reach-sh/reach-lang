@@ -48,7 +48,7 @@ r () {
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   REACH_CONNECTOR_MODE=CFX ${REACH} run
   #REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
@@ -98,7 +98,7 @@ jb
 #c examples/timeoutception/index.rsh
 #r examples/raffle
 
-r examples/log-attack1j
+# r examples/log-attack1j
 r examples/remote
 
 # c examples/remote/index.rsh

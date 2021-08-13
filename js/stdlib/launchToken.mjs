@@ -6,7 +6,6 @@ import real_ethers from 'ethers';
 import * as cfxers from './cfxers.mjs';
 
 export default async function (stdlib, accCreator, name, sym) {
-  // NOTE This does not work in the browser, because process.env not directly available to libs; but we don't care because this is just for testing
   console.log(`Launching token, ${name} (${sym})`);
 
   const ETH_like_launchToken = async (ethers /*: EthersLike */) => {
@@ -17,7 +16,7 @@ export default async function (stdlib, accCreator, name, sym) {
     const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
     console.log(`${sym}: deploy`);
     const supply = ethers.BigNumber.from(2).pow(256).sub(1);
-    const contract = await factory.deploy(name, sym, [], [], supply);
+    const contract = await factory.deploy(name, sym, '', '', supply);
     console.log(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
     const deploy_r = await contract.deployTransaction.wait();
     console.log(`${sym}: saw deploy: ${deploy_r.blockNumber}`);

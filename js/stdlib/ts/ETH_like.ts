@@ -344,7 +344,7 @@ const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
 const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
   // @ts-ignore
   const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-  return await tokCtc["balanceOf"](address);
+  return bigNumberify(await tokCtc["balanceOf"](address));
 };
 
 const doTxn = async (
@@ -386,7 +386,7 @@ const transfer = async (
   token: Token|false = false,
 ): Promise<any> => {
   const sender = from.networkAccount;
-  const receiver = getAddr(to);
+  const receiver = await getAddr(to);
   const valueb = bigNumberify(value);
 
   const dhead = {kind:'transfer'};

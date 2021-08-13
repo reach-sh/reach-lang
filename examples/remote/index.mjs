@@ -10,13 +10,20 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
   const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
-  const accCreator = await stdlib.newTestAccount(startingBalance);
+  const [ accAlice, accBob, accCreator ] = await stdlib.newTestAccounts(3, startingBalance);
 
   const myGasLimit = 5000000;
   accAlice.setGasLimit(myGasLimit);
   accBob.setGasLimit(myGasLimit);
+  accCreator.setGasLimit(myGasLimit);
+
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
+  await gil.mint(accAlice, startingBalance);
+  await gil.mint(accAlice, startingBalance);
+
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  await zorkmid.mint(accAlice, startingBalance);
+  await zorkmid.mint(accAlice, startingBalance);
 
   console.log(`Alice remote: make factory`);
   const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
@@ -37,14 +44,6 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const ctcAlice = accAlice.deploy(backend);
   console.log(`Bob attaches to the Reach DApp.`);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
-
-  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
-  await gil.mint(accAlice, startingBalance);
-  await gil.mint(accAlice, startingBalance);
-
-  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
-  await zorkmid.mint(accAlice, startingBalance);
-  await zorkmid.mint(accAlice, startingBalance);
 
   const amt = stdlib.parseCurrency(0.1);
 
