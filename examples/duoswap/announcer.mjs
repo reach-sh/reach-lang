@@ -36,7 +36,7 @@ export const runManager = async (useTestnet) => {
     getPoolInfo: async () => {
       const poolAddr = await ask.ask(`Enter new pool address:`);
       cache[poolAddr] = true;
-      return poolAddr;
+      return poolAddr.startsWith('0x') ? poolAddr.slice(2) : poolAddr;
     },
   });
 
@@ -72,8 +72,14 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
 
   const backendListener = backend.Listener(ctcListener, {
     hear: async (poolInfo) => {
-      console.log(`\x1b[2m`, `Pool ID:`, poolInfo, '\x1b[0m');
-      const ctcInfo = stdlib.connector == 'ALGO' ? parseInt(poolInfo) : poolInfo;
+      let ctcInfo;
+      if (stdlib.connector == 'ALGO') {
+        ctcInfo = parseInt(poolInfo);
+      } else {
+        let pit = poolInfo.toString().trim().replace(/\0.*$/g,'');
+        ctcInfo = pit.startsWith('0x') ? pit : ('0x' + pit);
+      }
+      console.log(`\x1b[2m`, `Pool ID:`, ctcInfo, '\x1b[0m');
       const ctcPool = await accListener.attach(poolBackend, ctcInfo);
       const views = await ctcPool.getViews();
       const tokA = await views.Tokens.aTok();
@@ -81,7 +87,7 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       let aBal = await views.Tokens.aBal();
       let bBal = await views.Tokens.bBal();
       if (tokA[0] == 'None' || tokB[0] == 'None') {
-        console.log(`XXX: Pool ${poolInfo} does not have token info`);
+        console.log(`XXX: Pool ${ctcInfo} does not have token info`);
         return;
       }
 
@@ -96,7 +102,7 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       console.log(`\x1b[2m`, `  *`, tokBBal.toString(), tokBSym, '\x1b[0m');
 
       const info = {
-        poolAddr: poolInfo,
+        poolAddr: ctcInfo,
         tokA: {
           ...resA,
           id: tokA[1]

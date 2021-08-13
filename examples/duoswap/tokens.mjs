@@ -23,6 +23,10 @@ export const runTokens = async (useTestnet) => {
     accCreator = await stdlib.newTestAccount(startingBalance);
   }
 
+  if (stdlib.connector == 'ETH') {
+    accCreator.setGasLimit(5000000);
+  }
+
   console.log(`Creating first token...`);
   const [symA, nameA] = await getTokenInfo();
 
@@ -42,7 +46,7 @@ export const runTokens = async (useTestnet) => {
     const acc = (stdlib.connector == 'ALGO')
       ? { networkAccount: { addr } }
       : { networkAccount: { address: addr } };
-    tokA.mint(acc, stdlib.parseCurrency(1000));
-    tokB.mint(acc, stdlib.parseCurrency(1000));
+    await tokA.mint(acc, stdlib.parseCurrency(1000));
+    await tokB.mint(acc, stdlib.parseCurrency(1000));
   }
 }
