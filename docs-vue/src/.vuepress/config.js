@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   bundler: '@vuepress/vite',
   lang: 'en-US',
@@ -26,6 +28,12 @@ module.exports = {
   markdown: {
     code: {
       lineNumbers: true,
+    },
+    importCode: {
+      handleImportPath: (str) => {
+        const ep = path.resolve(__dirname, '../../../examples/');
+        return str.replace(/^@examples/, ep);
+      },
     },
   },
   plugins: [

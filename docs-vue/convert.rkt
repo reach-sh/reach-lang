@@ -49,6 +49,8 @@
     [`(tech ,t) (ego t)]
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
+    [`(reachexlink ,f)
+      (d (format "<GitLink href=\"/examples/~a\">`~a`</GitLink>" f f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
@@ -109,6 +111,10 @@
       (d "::: note\n")
       (egol l)
       (d "\n:::")]
+    [(or
+       `(reachex ,f 'only ,from ,to ,_)
+       `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
+      (d (format "@[code{~a-~a}](@examples/~a)" from to f))]
     [x
       (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))
@@ -134,7 +140,8 @@
 
 (define BAD (box #f))
 (module+ main
-  (for ([bn (directory-list scrbl)])
+  (for ([bn (sort (directory-list scrbl)
+                  #:key path->string string-ci<=?)])
     (define p (build-path scrbl bn))
     (when (equal? #".scrbl" (path-get-extension bn))
       (set-box! BAD #f)
