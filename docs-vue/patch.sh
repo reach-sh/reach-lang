@@ -11,12 +11,12 @@ go () {
   if ! [ -f "$PATCH" ] ; then
     diff -u "${ORIG}" "${FORK}" > "${PATCH}"
     echo "${ORIG}" - patch created
+  fi
+  if cmp "${ORIG}" "${FORK}" > /dev/null ; then
+    echo "${ORIG}" - matches
   else
-    if cmp "${ORIG}" "${FORK}" > /dev/null ; then
-      echo "${ORIG}" - matches
-    else
-      patch -u "${ORIG}" "${PATCH}"
-    fi
+    patch -u "${ORIG}" "${PATCH}"
+    echo "${ORIG}" - patched
   fi
 }
 

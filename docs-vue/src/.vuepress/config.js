@@ -1,41 +1,28 @@
 module.exports = {
+  lang: 'en-US',
   title: 'Reach',
-  locales: {
-    '/': {
-      lang: 'en-US', // this will be set as the lang attribute on <html>
-    },
-  },
   base: '/',
   themeConfig: {
     repo: 'reach-sh/reach-lang',
     repoLabel: 'GitHub',
     docsDir: 'docs-vue/src',
-    editLinks: true,
+    editLink: true,
     editLinkText: 'Help us improve this page!',
     searchPlaceholder: 'Search...',
     lastUpdated: 'Last Updated',
+    themePlugins: {
+    },
   },
   markdown: {
-    lineNumbers: true,
-    extendMarkdown: md => {
-    }
+    code: {
+      lineNumbers: true,
+    },
   },
   plugins: [
-    [ "@vuepress/google-analytics", {
-      ga: "UA-149147406-2"
+    [ '@vuepress/google-analytics', {
+      id: "UA-149147406-2"
     } ],
-    [ '@vuepress/active-header-links', {
-      sidebarLinkSelector: '.sidebar-link',
-      headerAnchorSelector: '.header-anchor'
+    [ '@vuepress/plugin-search', {
     } ],
-    [ '@vuepress/back-to-top', {} ],
-    [ '@vuepress/blog', {} ],
   ],
-  configureWebpack: {
-    resolve: {
-      alias: {
-        '@examples': '../examples/'
-      }
-    }
-  }
 };

@@ -38,7 +38,7 @@ This section describes the @deftech{statements} which are allowed in any Reach c
 
 Each @tech{statement} affects the meaning of the subsequent @tech{statements}, which is called its @deftech{tail}. For example, if @reachin{{X; Y; Z;}} is a @tech{block}, then @reachin{X}'s @tech{tail} is @reachin{{Y; Z;}} and @reachin{Y}'s @tech{tail} is @reachin{{Z;}}.
 
-Distinct from @tech{tails} are @deftech{continuations} which include everything after the @tech{statement}. For example, in @reachin{{{X; Y;}; Z;}}, @reachin{X}'s @tech{tail} is just @reachin{Y}, but its @tech{continuation} is @reachin{{Y;}; Z;}.
+Distinct from @tech{tails} are @deftech{continuations} which include everything after the @tech{statement}. For example, in @reachin{{ {X; Y;}; Z;}}, @reachin{X}'s @tech{tail} is just @reachin{Y}, but its @tech{continuation} is @reachin{{Y;}; Z;}.
 
 @tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
@@ -1432,6 +1432,8 @@ These functions return @deftech{time arguments}, which are instances of the type
 The @reachin{absoluteTime} and @reachin{absoluteSecs} are equivalent to @reachin{Left} and @reachin{Right} variant tags.
 
 The @reachin{relativeTime} and @reachin{relativeSecs} functions add @reachin{baseWaitTime} and @reachin{baseWaitSecs} to their arguments before tagging with the appropriate variant.
+
+If a time argument is required, an integer value is allowed and is interpreted as a @reachin{relativeTime}.
 
 @subsection{@tt{makeDeadline}}
 

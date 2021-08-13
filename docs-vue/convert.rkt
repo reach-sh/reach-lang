@@ -76,7 +76,7 @@
     [`(envvar ,@c) (code c)]
     [`(nonterm ,@c) (code c)]
     [`(cmd ,@c)
-      (d "```\n$ ") (egol c) (d "\n```")]
+      (d "```\n$ ") (egol c) (d "\n```\n")]
     [`(Flag ,@c) (code (cons "-" c))]
     [`(DFlag ,@c) (code (cons "--" c))]
     [`(filepath ,@c) (code c)]
