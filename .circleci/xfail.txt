@@ -2,7 +2,6 @@
 
 # Unsupported
 ALGO.remote
-ALGO.mint-basic
 
 # Unreliable
 ETH.tut-7-rpc
@@ -11,7 +10,6 @@ CFX.tut-7-rpc
 
 # Too big
 ALGO.ttt
-ALGO.raffle
 
 # nondeterministic failure
 # https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
@@ -25,7 +23,6 @@ ALGO.nft-dumb
 # CFX known failures w/ launchToken::mint
 CFX.atomic-swap
 CFX.atomic-swap-auction
-CFX.remote
 CFX.weird-swap
 CFX.mint-basic
 
