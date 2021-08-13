@@ -43,25 +43,24 @@ all_connectors =
       ]
 
 compile :: CompilerOpts -> IO ()
-compile CompilerOpts {output, dirDotReach, intermediateFiles, installPkgs, source, tops} = do
+compile (CompilerOpts {..}) = do
   let outnMay = flip doIf intermediateFiles
   let interOut outn_ = case outnMay outn_ of
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute dirDotReach
-
   djp <- gatherDeps_top source installPkgs dirDotReach'
   -- interOut outn "bundle.js" $ render $ pretty djp
   unless installPkgs $ do
     (avail, compileDApp) <- evalBundle all_connectors djp
     let chosen = S.toAscList $ fromMaybe avail tops
-    forM_ chosen $ \which -> void $ do
+    forM_ chosen $ \which -> do
       let woutn = output . ((T.pack which <> ".") <>)
       let woutnMay = outnMay woutn
       let showp :: Pretty a => T.Text -> a -> IO ()
           showp l = interOut woutn l . render . pretty
       dl <- compileDApp which
-      let DLProg _ (DLOpts {dlo_verifyPerConnector, dlo_connectors}) _ _ _ _ _ = dl
+      let DLProg _ (DLOpts {..}) _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       ll <- linearize showp dl
@@ -78,6 +77,7 @@ compile CompilerOpts {output, dirDotReach, intermediateFiles, installPkgs, sourc
       let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
       crs <- HM.fromList <$> mapM runConnector connectors
       backend_js woutn crs pl
+      return ()
 
 doIf :: a -> Bool -> Maybe a
 doIf b = \case
