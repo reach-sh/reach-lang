@@ -32,20 +32,6 @@ commands:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-  docs_deps:
-    description: "Download dependencies for rendering docs"
-    steps:
-      - run: |
-          sudo add-apt-repository -y ppa:plt/racket \
-              && sudo apt update \
-              && sudo apt install -y --no-install-recommends \
-                libcairo2 \
-                libfontconfig1 \
-                libjpeg62 \
-                libpangocairo-1.0 \
-                racket \
-                python3-setuptools
-          (cd pygments && sudo make install)
   slack_fail:
     steps:
       - slack/notify:
@@ -133,8 +119,17 @@ jobs:
     executor: fake
     steps:
     - checkout
-    - docs_deps
     - run: |
+        sudo add-apt-repository -y ppa:plt/racket \
+            && sudo apt update \
+            && sudo apt install -y --no-install-recommends \
+              libcairo2 \
+              libfontconfig1 \
+              libjpeg62 \
+              libpangocairo-1.0 \
+              racket \
+              python3-setuptools
+        (cd pygments && sudo make install)
         (cd docs-src && make render)
         mkdir -p /tmp/workspace/
         cp -fr docs /tmp/workspace/
