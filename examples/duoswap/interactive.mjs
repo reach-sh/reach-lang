@@ -167,6 +167,10 @@ const runDuoSwapLP = async (useTestnet) => {
   await Promise.all([ backendProvider ]);
 }
 
+const compareTokens = (stdlib, token, tokenId) => {
+  return (stdlib.connector == 'ALGO') ? token.eq(tokenId) : (token == tokenId)
+}
+
 const runDuoSwapTrader = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
@@ -216,11 +220,11 @@ const runDuoSwapTrader = async (useTestnet) => {
       await accTrader.tokenAccept(tokId);
     },
     tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
-      const tokIn  = amtInTok == tokA.id ? tokA : tokB;
-      const tokOut = amtOutTok == tokA.id ? tokA : tokB;
+      const tokIn  = compareTokens(stdlib, amtInTok, tokA.id) ? tokA : tokB;
+      const tokOut = compareTokens(stdlib, amtOutTok, tokA.id) ? tokA : tokB;
       if (isMe) {
         traded[accTrader] = true;
-        console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.symbol} for ${amtOut} ${tokOut.symbol}`,'\x1b[0m');
+        console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.symbol} for ${amtOut} ${tokOut.symbol}`, '\x1b[0m');
       }
     },
     tradeMaybe: async ([ alive, market ]) => {
