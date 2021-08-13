@@ -1,14 +1,16 @@
 'reach 0.1';
 
+const Addr = Bytes(64);
+
 export const Common = {
-  hear: Fun([Address], Null),
+  hear: Fun([Addr], Null),
 };
 
 export const main = Reach.App(() => {
   const Manager = Participant('Manager', {
     ...Common,
     printInfo: Fun([], Null),
-    getPoolInfo: Fun([], Address),
+    getPoolInfo: Fun([], Addr),
   });
   const Listener = ParticipantClass('Listener', {
     ...Common,

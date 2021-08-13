@@ -14,8 +14,10 @@ export const runTokens = async (useTestnet) => {
   let accCreator;
   if (useTestnet) {
     stdlib.setProviderByName(`TestNet`);
-    const secret = await ask.ask(`What is your secret key?`);
-    accCreator = await stdlib.newAccountFromSecret(secret);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    accCreator = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     const startingBalance = stdlib.parseCurrency(100);
     accCreator = await stdlib.newTestAccount(startingBalance);

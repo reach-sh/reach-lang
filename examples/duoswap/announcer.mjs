@@ -8,8 +8,10 @@ export const runManager = async (useTestnet) => {
   let manager;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key?`);
-    manager = await stdlib.newAccountFromSecret(secret);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    manager = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     const startingBalance = stdlib.parseCurrency(100);
     manager = await stdlib.newTestAccount(startingBalance);
@@ -48,8 +50,10 @@ export const runListener = async (useTestnet) => {
   let accListener;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key?`);
-    accListener = await stdlib.newAccountFromSecret(secret);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    accListener = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     const startingBalance = stdlib.parseCurrency(100);
     accListener = await stdlib.newTestAccount(startingBalance);
@@ -64,21 +68,22 @@ export const runListener = async (useTestnet) => {
 }
 
 export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
-  const ctcListener = accListener.attach(backend, listenerInfo)
+  const ctcListener = accListener.attach(backend, stdlib.connector == 'ALGO' ? parseInt(listenerInfo) : listenerInfo)
 
   const backendListener = backend.Listener(ctcListener, {
     hear: async (poolInfo) => {
       console.log(`\x1b[2m`, `Pool ID:`, poolInfo, '\x1b[0m');
-      const ctcPool = accListener.attach(poolBackend, poolInfo);
-      const tokA = await ctcPool.getViews().Tokens.aTok();
-      const tokB = await ctcPool.getViews().Tokens.bTok();
-      let aBal = await ctcPool.getViews().Tokens.aBal();
-      let bBal = await ctcPool.getViews().Tokens.bBal();
+      const ctcInfo = stdlib.connector == 'ALGO' ? parseInt(poolInfo) : poolInfo;
+      const ctcPool = await accListener.attach(poolBackend, ctcInfo);
+      const views = await ctcPool.getViews();
+      const tokA = await views.Tokens.aTok();
+      const tokB = await views.Tokens.bTok();
+      let aBal = await views.Tokens.aBal();
+      let bBal = await views.Tokens.bBal();
       if (tokA[0] == 'None' || tokB[0] == 'None') {
         console.log(`XXX: Pool ${poolInfo} does not have token info`);
         return;
       }
-
 
       const resA = await accListener.tokenMetadata(tokA[1]);
       const tokASym = resA.symbol;

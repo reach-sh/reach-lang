@@ -22,7 +22,11 @@ const isAOrB = (a, b) => (ans) => {
 const fmt = (stdlib, x) => stdlib.formatCurrency(x, 4);
 
 const getBalance = async (stdlib, tokenX, who) => {
-  const amt = await stdlib.balanceOf(who, tokenX.id);
+  let tokId = tokenX.id;
+  if (stdlib.connector == 'ALGO') {
+    tokId = stdlib.bigNumberify(tokId.hex).toNumber();
+  }
+  const amt = await stdlib.balanceOf(who, tokId);
   return `${fmt(stdlib, amt)} ${tokenX.symbol}`; };
 
 const getBalances = async (stdlib, who, tokA, tokB) =>
@@ -37,16 +41,19 @@ const runDuoSwapAdmin = async (useTestnet) => {
   let accAdmin;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key?`);
-    accAdmin = await stdlib.newAccountFromSecret(secret);
-    await accAdmin.tokenAccept(tokA);
-    await accAdmin.tokenAccept(tokB);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    accAdmin = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     // Create & Fund Admin
     const startingBalance = stdlib.parseCurrency(9999);
     accAdmin = await stdlib.newTestAccount(startingBalance);
-    await accAdmin.tokenAccept(tokA);
-    await accAdmin.tokenAccept(tokB);
+  }
+  await accAdmin.tokenAccept(tokA);
+  await accAdmin.tokenAccept(tokB);
+
+  if(!useTestnet) {
     await ask.ask(`Fund: ${stdlib.formatAddress(accAdmin)}`);
   }
 
@@ -78,13 +85,14 @@ const runDuoSwapLP = async (useTestnet) => {
   let accProvider;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key?`);
-    accProvider = await stdlib.newAccountFromSecret(secret);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    accProvider = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     // Create & Fund Provider
     const startingBalance = stdlib.parseCurrency(9999);
     accProvider = await stdlib.newTestAccount(startingBalance);
-    const _ = await ask.ask(`Fund: ${accProvider.getAddress()}`);
   }
 
   await accProvider.setDebugLabel('Provider');
@@ -96,15 +104,23 @@ const runDuoSwapLP = async (useTestnet) => {
   const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
   console.log(`Searching for pools...`)
   try {
-    const listener = await runListener_(stdlib, accProvider, listenerInfo);
+    const listener = runListener_(stdlib, accProvider, listenerInfo);
     await Promise.all([ (new Promise(async (resolve, reject) => {
       const _ = await ask.ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
       reject();
     })), listener() ]);
-  } catch (e) { }
+  } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
   const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
-  const ctcProvider = accProvider.attach(backend, poolAddr);
+
+  await accProvider.tokenAccept(tokA.id);
+  await accProvider.tokenAccept(tokB.id);
+
+  if (!useTestnet) {
+    const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accProvider)}`);
+  }
+
+  const ctcProvider = accProvider.attach(backend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
 
   const backendProvider = backend.Provider(ctcProvider, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
@@ -157,13 +173,14 @@ const runDuoSwapTrader = async (useTestnet) => {
   let accTrader;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key?`);
-    accTrader = await stdlib.newAccountFromSecret(secret);
+    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
+    accTrader = await (stdlib.connector == 'ALGO'
+      ? stdlib.newAccountFromMnemonic(secret)
+      : stdlib.newAccountFromSecret(secret));
   } else {
     // Create & Fund Trader
     const startingBalance = stdlib.parseCurrency(9999);
     accTrader = await stdlib.newTestAccount(startingBalance);
-    const _ = await ask.ask(`Fund: ${accTrader.getAddress()}`);
   }
 
   await accTrader.setDebugLabel('Trader');
@@ -180,15 +197,23 @@ const runDuoSwapTrader = async (useTestnet) => {
       const _ = await ask.ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
       reject();
     })), listener() ]);
-  } catch (e) { }
+  } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
   const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
-  const ctcTrader = accTrader.attach(backend, poolAddr);
+
+  await accTrader.tokenAccept(tokA.id);
+  await accTrader.tokenAccept(tokB.id);
+
+  if (!useTestnet) {
+    const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accTrader)}`);
+  }
+
+  const ctcTrader = accTrader.attach(backend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
 
   const backendTrader = backend.Trader(ctcTrader, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
     acceptToken: async (tokId) => {
-      await accProvider.tokenAccept(tokId);
+      await accTrader.tokenAccept(tokId);
     },
     tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
       const tokIn  = amtInTok == tokA.id ? tokA : tokB;
