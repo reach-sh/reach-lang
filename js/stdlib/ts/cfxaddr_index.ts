@@ -6,6 +6,7 @@ import {
   polyMod,
   convertBit
 } from './cfxaddr_base32'
+import { debug } from './shared_impl';
 
 const VERSION_BYTE = 0
 const NET_ID_LIMIT = 0xFFFFFFFF
@@ -74,7 +75,7 @@ function getAddressType (hexAddress) {
   }
 }
 
-function encode (hexAddress, netId, verbose = false) {
+function encode (hexAddress, netId) {
   if (!(hexAddress instanceof Buffer)) {
     if (hexAddress instanceof Uint8Array) {
       hexAddress = Buffer.from(hexAddress)
@@ -100,12 +101,11 @@ function encode (hexAddress, netId, verbose = false) {
   const payload = payload5Bits.map(byte => ALPHABET[byte]).join('')
   const checksum = checksum5Bits.map(byte => ALPHABET[byte]).join('')
 
-  return verbose
-    ? `${netName}:TYPE.${addressType}:${payload}${checksum}`
-    : `${netName}:${payload}${checksum}`.toLowerCase()
+  return `${netName}:TYPE.${addressType}:${payload}${checksum}`;
 }
 
 function decode (address) {
+  debug(`decode`, {address});
   // don't allow mixed case
   const lowered = address.toLowerCase()
   const uppered = address.toUpperCase()
@@ -134,8 +134,12 @@ function decode (address) {
   const netId = decodeNetId(netName.toLowerCase())
   const type = getAddressType(hexAddress)
 
-  if (shouldHaveType && `type.${type}:` !== shouldHaveType.toLowerCase()) {
-    throw new Error('Type of address doesn\'t match')
+  if (shouldHaveType) {
+    const actual = `type.${type}:`;
+    const expected = shouldHaveType.toLowerCase();
+    if ( actual !== expected ) {
+      throw new Error(`Type of address doesn't match, got '${actual}', expected '${expected}'`);
+    }
   }
 
   const bigInt = polyMod([...prefix5Bits, 0, ...payload5Bits, ...checksum5Bits])

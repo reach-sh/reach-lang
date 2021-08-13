@@ -1,8 +1,10 @@
 import { encode, decode } from './cfxaddr_index';
 import type { EpochNumber } from 'js-conflux-sdk';
+import { debug } from './shared_impl';
 
 // XXX check if networkId is "correct"?
 export function address_cfxStandardize(addrC: string): string {
+  debug(`address_cfxStandardize`, {addrC});
   const pieces = addrC.split(':');
   // XXX Missing type chunk means assume it's a user (?)
   // XXX would it be better for our purposes to strip the type out instead?

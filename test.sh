@@ -49,8 +49,8 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
-  # REACH_CONNECTOR_MODE=CFX ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=CFX ${REACH} run
+  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -91,16 +91,23 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-#r examples/overview # XXX test debigger
+jb
+# r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger
 #c examples/rent-seeking/index.rsh
 #c examples/timeoutception/index.rsh
 #r examples/raffle
 
-# r examples/remote
+r examples/log-attack1j
+r examples/remote
+
 # c examples/remote/index.rsh
-r examples/chicken-fork
+# r examples/chicken-fork
 # c examples/duoswap/index.rsh
+# c hs/t/y/def_pay_spec2.rsh
+
+# c users/jupiteryu2.rsh
+# c users/jupiteryu.rsh
 
 # (cd examples/abstract-simul && make build)
 

@@ -30,6 +30,7 @@ function address_cfxToEth(addrC: string): string {
 export const T_Address: ETH_Ty<string, string> = {
   ...eci.T_Address,
   canonicalize: (uv: unknown): string => {
+    debug(`address canonicalize`, {uv});
     if (typeof uv === 'string') {
       if (uv.slice(0,2) === '0x') {
         const addrC = address_ethToCfx(uv);
