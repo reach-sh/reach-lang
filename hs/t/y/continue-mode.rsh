@@ -3,7 +3,6 @@
 
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {
-    choice: UInt,
   });
   deploy();
 
@@ -14,7 +13,7 @@ export const main = Reach.App(() => {
 
   Alice.publish();
   var keepGoing = true;
-  invariant(keepGoing);
+  invariant(balance() == 0);
   while (keepGoing) {
     commit();
     keepGoing = f();
