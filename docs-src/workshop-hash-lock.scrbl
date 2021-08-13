@@ -241,8 +241,8 @@ Do that now.
 
 Here's what we did:
 
-@reachex[#:show-lines? #t "workshop-hash-lock/index.rsh"
-         #:link #t]
+@reachex["workshop-hash-lock/index.rsh"
+         ]
 
 @itemlist[
  @item{Lines 11-14 have Alice declassify some of her values.}
@@ -285,8 +285,8 @@ If you want to do exactly this, then stay tuned for a more complex zero-knowledg
 Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript @tech{frontend} we wrote:
 
-@reachex[#:show-lines? #t "workshop-hash-lock/index.mjs"
-         #:link #t]
+@reachex["workshop-hash-lock/index.mjs"
+         ]
 
 In this case, Bob learns the password outside of the Reach program by directly sharing memory with Alice.
 In a real deployment, she might give Bob the password through some other channel, like an encrypted email message, or a calligraphic scroll delivered by raven or intoned from Himalayan cliffs.

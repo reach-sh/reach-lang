@@ -93,8 +93,8 @@ Let's compare your answers with ours:
 
 Our @tech{participant interact interface}, with the addition of some handy logging functions, looks like this so far:
 
-@reachex[#:show-lines? #t "workshop-fomo/index.rsh"
-         #:link #t
+@reachex["workshop-fomo/index.rsh"
+         
          'only 4 22 "  // ..."]
 
 
@@ -192,8 +192,8 @@ In this case, our program is very simple and we expect you'll do a great job wit
 
 Let's look at our whole program now:
 
-@reachex[#:show-lines? #t "workshop-fomo/index.rsh"
-         #:link #t]
+@reachex["workshop-fomo/index.rsh"
+         ]
 
 @(drstep-de TAG)
 
@@ -208,8 +208,8 @@ a Buyer will rely simply on generating a random boolean.
 
 Here's the JavaScript @tech{frontend} we wrote:
 
-@reachex[#:show-lines? #t "workshop-fomo/index.mjs"
-         #:link #t]
+@reachex["workshop-fomo/index.mjs"
+         ]
 
 Let's see what it looks like when we run the program:
 

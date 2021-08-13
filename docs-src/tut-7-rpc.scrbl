@@ -29,14 +29,14 @@ Follow along by typing the Python code into a file called @tt{index.py}.
 
 We begin by comparing the necessary imports and program body:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 1 5  "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 1 10  "# ..."]
+@reachex[js-impl 'only 1 5  "// ..."]
+@reachex[py-impl 'only 1 10  "# ..."]
 
 Rather than importing @jsin{loadStdlib} and @jsin{backend} as with the
 JavaScript version, the Python frontend instead plucks @pyin{mk_rpc} from its
 supporting @pyin{reach_rpc} library.
 It is unnecessary for an RPC @italic{frontend} to import a @tech{backend}
-because the @seclink{ref-backends-rpc} handles doing so instead.
+because the @seclink["ref-backends-rpc"]{RPC Server} handles doing so instead.
 
 The Python version also borrows functionality from the @pyin{random} and
 @pyin{threading} libraries.
@@ -55,8 +55,8 @@ See @secref{ref-frontends-rpc-py} for more details on how they work.
 Next, we define our Alice and Bob accounts and pre-fund them each with a
 starting balance of @tt{10}.
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 6  9  "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 11 14  "# ..."]
+@reachex[js-impl 'only 6  9  "// ..."]
+@reachex[py-impl 'only 11 14  "# ..."]
 
 Translating code which uses the
 @seclink["ref-frontends-js"]{JavaScript frontend support library} to its
@@ -68,18 +68,18 @@ specifying the corresponding RPC method (e.g.
 Now we define two helper functions and use them to query Alice and Bob's
 beginning balances:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 10 14 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 15 23  "# ..."]
+@reachex[js-impl 'only 10 14 "// ..."]
+@reachex[py-impl 'only 15 23  "# ..."]
 
 @(hrule)
 
 Deploying and attaching to contracts works slightly differently over RPC:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 15 17 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 24 26  "# ..."]
+@reachex[js-impl 'only 15 17 "// ..."]
+@reachex[py-impl 'only 24 26  "# ..."]
 
 As previously mentioned, it is the responsibility of the
-@seclink{ref-backends-rpc} (rather than that of the @tech{frontend}
+@seclink["ref-backends-rpc"]{RPC Server} (rather than that of the @tech{frontend}
 communicating over RPC) to interface with the @|DApp|'s @tech{backend}, so that
 argument is absent in the Python version shown above.
 Instead, Alice's @tech{account} @tech{RPC handle} alone is sufficient for her to
@@ -91,15 +91,15 @@ deploy, and only Bob's @tech{account} @tech{RPC handle} and Alice's
 @pyin{HAND} and @pyin{OUTCOME} only differ syntactically from their JavaScript
 equivalents:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 18 19 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 27 29  "# ..."]
+@reachex[js-impl  'only 18 19 "// ..."]
+@reachex[py-impl  'only 27 29  "# ..."]
 
 @(hrule)
 
 Even @tech{participant interact interface} definitions remain largely the same:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 20 32 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 30 35  "# ..."]
+@reachex[js-impl  'only 20 32 "// ..."]
+@reachex[py-impl  'only 30 35  "# ..."]
 
 Here, both the JavaScript and Python @tech{frontends} begin declaring a
 reusable "player constructor".
@@ -124,16 +124,16 @@ although it easily could with a few extra lines of code.
 @pyin{informTimeout} requires no subsequent @tech{backend} interaction and is
 accordingly easily to implement in either language:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 36 38 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 36 38  "# ..."]
+@reachex[js-impl  'only 36 38 "// ..."]
+@reachex[py-impl  'only 36 38  "# ..."]
 
 @(hrule)
 
 @(element (make-style #f (list (url-anchor "py-return"))) '())
 The same is true of @pyin{seeOutcome}:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 33 35 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 39 48  "# ..."]
+@reachex[js-impl  'only 33 35 "// ..."]
+@reachex[py-impl  'only 39 48  "# ..."]
 
 At the end of the Python code we return a @pyin{dict} that represents those
 fields which are common to both Alice and Bob's
@@ -148,8 +148,8 @@ receiving end.
 Finally, we proceed to the most interesting part of the program and use the
 code we have built up thus far to actually play a game of @|RPS|:
 
-@reachex[#:show-lines? #t js-impl #:link #t 'only 41 60 "// ..."]
-@reachex[#:show-lines? #t py-impl #:link #t 'only 49 84  "# ..."]
+@reachex[js-impl  'only 41 60 "// ..."]
+@reachex[py-impl  'only 49 84  "# ..."]
 
 In the Python version we create a function called @pyin{play_alice} and spawn
 it as a concurrent thread, which begins running in the background on line 56.
@@ -185,7 +185,7 @@ invoke our @pyin{main} function.
 Now that we have written an entire @|RPS| game in Python it is time to try
 running it.
 
-First you will need to copy the @tt{index.rsh} file you used for @seclink{tut-7}
+First you will need to copy the @tt{index.rsh} file you used for @seclink["tut-7"]{the tutorial}
 into the directory where you saved @tt{index.py}.
 
 Next, open a terminal in that directory and install the Reach Python RPC
@@ -205,11 +205,11 @@ Then use @exec{./reach rpc-run} to play a game of @|RPS|:
 @cmd{./reach rpc-run python3 -u ./index.py}
 
 @margin-note{
-Consult the @seclink{ref-usage-rpc-run} reference section for more details on
+Consult the @seclink["ref-usage-rpc-run"]{command-line} reference section for more details on
 how this sub-command works.
 }
 
-Its output will be the same as the @seclink{tut-7} version of the frontend:
+Its output will be the same as the @seclink["tut-7"]{final tutorial} version of the frontend:
 
 @verbatim{
 Bob accepts the wager of 5
@@ -229,13 +229,13 @@ certificate which is specific to your DNS domain and which has been signed by a
 certificate authority such as
 @link["https://letsencrypt.org/getting-started/"]{Let's Encrypt}.
 
-Users who are ready to go live should consult the @seclink{ref-usage-rpc-server}
+Users who are ready to go live should consult the @seclink["ref-usage-rpc-server"]{RPC Server command-line}
 reference section for configuration details.
 }
 
 When you are done, type @exec{deactivate} to exit your @tt{venv}.
 
-Well done! You have just reimplemented @seclink{tut-7} in Python.
+Well done! You have just reimplemented @seclink["tut-7"]{the tutorial} in Python.
 
 @(hrule)
 

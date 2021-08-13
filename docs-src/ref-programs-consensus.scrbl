@@ -37,8 +37,8 @@ If this function is not provided with an argument, then the corresponding @tech{
 
 For example, consider the following program:
 
-@reachex[#:show-lines? #t "view-steps/index.rsh"
-         #:link #t]
+@reachex["view-steps/index.rsh"
+         ]
 
 In this program, the Reach backend calls the frontend @reachin{interact} function, @reachin{checkView} with the expected value of the @tech{views} at each point in the program.
 The frontend compares that value with what is returned by

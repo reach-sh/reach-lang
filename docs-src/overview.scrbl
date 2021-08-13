@@ -44,7 +44,7 @@ Let's look at a simple Reach program where two principals, Alice and Bob, intera
 
 The main part of the program looks like this:
 
-@reachex[#:show-lines? #t "overview/index.rsh"
+@reachex["overview/index.rsh"
          'skip 15 34 " // ...body..."]
 
 @itemlist[
@@ -71,7 +71,7 @@ The main part of the program looks like this:
 
 The elided lines, 14 through 34, contain the body of the application, which we can divide into four parts.
 
-@reachex[#:show-lines? #t "overview/index.rsh"
+@reachex["overview/index.rsh"
          'only 15 18 "  // ..."]
 
 @itemlist[
@@ -87,7 +87,7 @@ In Reach, all values from the @tech{frontend} are @tech{secret} until explicitly
 
 At this point, Bob's @tech{backend} has learned the value of @reachin{request} and can deliver it to Bob's @tech{frontend} for his approval. This happens next.
 
-@reachex[#:show-lines? #t "overview/index.rsh"
+@reachex["overview/index.rsh"
          'only 20 23 "  // ..."]
 
 @itemlist[
@@ -102,7 +102,7 @@ A better version of this program might return @reachin{false} and have that comm
 
 It's now Alice's turn again,
 
-@reachex[#:show-lines? #t "overview/index.rsh"
+@reachex["overview/index.rsh"
          'only 25 29 "  // ..."]
 
 @itemlist[
@@ -119,7 +119,7 @@ It's now Alice's turn again,
 
 The only thing left is for Bob's @tech{backend} to deliver the information to his @tech{frontend}.
 
-@reachex[#:show-lines? #t "overview/index.rsh"
+@reachex["overview/index.rsh"
          'only 31 33 "      // ..."]
 
 @itemlist[
@@ -164,7 +164,7 @@ We could make a small tweak, however, to demonstrate things going wrong.
 
 Let's change the third step to leave a single unit in the balance:
 
-@reachex[#:show-lines? #t "overview/index-error.rsh"
+@reachex["overview/index-error.rsh"
          'only 25 29 "  // ..."]
 
 And then run the compiler:
@@ -174,7 +174,7 @@ And then run the compiler:
 It will print out a detailed error message showing the violation.
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "overview/index-error.txt"
+         "overview/index-error.txt"
          'only 2 28 "// ..."]
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
@@ -197,7 +197,7 @@ Let's look at a simple command-line version that demonstrates how it would work 
 The program is just @exloc["overview/index.mjs"] lines long and the shell of it is quite simple:
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.mjs"
+         "overview/index.mjs"
          'skip 14 21 "    // ..."]
 
 @itemlist[
@@ -225,7 +225,7 @@ This code, similar for all test programs, demonstrates how straightforward it is
 Let's look at initializing and interfacing each participant, starting with Alice.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.mjs"
+         "overview/index.mjs"
          'only 14 17 "    // ..."]
 
 @itemlist[
@@ -241,7 +241,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 Let's look at Bob next.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.mjs"
+         "overview/index.mjs"
          'only 18 21 "    // ..."]
 
 @itemlist[
@@ -313,13 +313,13 @@ A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "examples/ov
 Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "examples/overview-react"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples/overview"] from before:
 
 @reachex[#:mode js
-         #:show-lines? #t "overview-react/index.js"
+         "overview-react/index.js"
          'only 7 9 "// ..."]
 
 At the top of the file, we import the Reach-generated backend as @jsin{backend} and we load the standard library as @jsin{reach}.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview-react/index.js"
+         "overview-react/index.js"
          'only 27 28 "  // ..."]
 
 We hook into the App @link["https://reactjs.org/docs/react-component.html"]{component}'s @link["https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/"]{lifecycle event} @jsin{componentDidMount}
@@ -330,7 +330,7 @@ Reach is able to deploy contracts and send transactions to the consensus network
 This is just like how in the Node.js deployment, the Reach programmer does not need to decode the details of the underlying consensus network's interaction API.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview-react/index.js"
+         "overview-react/index.js"
          'only 71 76 "  // ..."]
 
 Our React component has a method called @jsin{deploy} that actually deploys the contract on the network, using the same calls as in the test deployment:
@@ -339,13 +339,13 @@ and on line 74, we call the @jsin{ctc.getInfo} function;
 exactly as we did for the Node.js program.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview-react/index.js"
+         "overview-react/index.js"
          'only 79 85 "  // ..."]
 
 Similarly, we implement a @jsin{runBackend} method that executes the Reach program as Alice using information gathered from the React UI.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview-react/index.js"
+         "overview-react/index.js"
          'only 112 121 "  // ..."]
 
 We implement a similar method in the @jsin{Bob} component that runs the backend as Bob.

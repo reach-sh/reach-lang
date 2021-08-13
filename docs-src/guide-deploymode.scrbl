@@ -14,20 +14,18 @@ It has the downside of being slightly more expensive, because the construction o
 Furthermore, the creation of the contract is public, so it is possible for an agent @litchar{X} to create a contract @litchar{F} and intend to play the role of participant @litchar{A} in it, but the creation of the contract is observed by a third-party, @litchar{Z}, who interacts with @litchar{F} before @litchar{X} and acts as @litchar{A}.
 This is particularly nefarious if @litchar{X} has already shared the information about the contract with their intended counter-party, @litchar{Y}.
 
-@(define deadlock @link["https://en.wikipedia.org/wiki/Deadlock"]{deadlock})
-
 @bold{Delayed (@reachin{'firstMsg'}).}
 In this mode, the contract is deployed at the time of the first publication in the application.
 This is slightly more efficient, because the contract creation is bundled with the first application.
 This means that the contract does not exist until after the application starts running, which means that some features, like @reachin{wait} and @reachin{.timeout}, as well as collective operations, are not available until after the first action.
 Furthermore, it complicates the sharing of information about a contract by the deployer with a third-party, because the deployer must introduce an @reachin{interact} method to transfer control to the @reachin{frontend} which will call (e.g.) @jsin{await ctc.getInfo()} and extract the information about the program.
-If the @tech{frontend} attempts to call @jsin{await ctc.getInfo()} too early, it will @|deadlock|.
+If the @tech{frontend} attempts to call @jsin{await ctc.getInfo()} too early, it will @link["https://en.wikipedia.org/wiki/Deadlock"]{deadlock}.
 
 For example, consider the @tech{frontend} in the seventh version of the @emph{Rock, Paper, Scissors!} tutorial:
 
 @reachex[#:mode js
-         #:show-lines? #t "tut-8/index.mjs"
-         #:link #t
+         "tut-8/index.mjs"
+         
          'only 23 33 "  // ..."]
 
 @itemlist[
@@ -38,13 +36,13 @@ For example, consider the @tech{frontend} in the seventh version of the @emph{Ro
 
 ]
 
-If @reachexlink["tut-8/index.rsh"] were defined to use @reachin{deployMode} @reachin{'firstMsg'}, then this call would @|deadlock|, because the contract information would not yet be available.
+If @reachexlink["tut-8/index.rsh"] were defined to use @reachin{deployMode} @reachin{'firstMsg'}, then this call would @link["https://en.wikipedia.org/wiki/Deadlock"]{deadlock}, because the contract information would not yet be available.
 (Furthermore, the whole premise of this code, where on line 24, the user is asked if they will deploy, is unnecessary, because Alice would @emph{always} deploy.
 The code for the non-deploy case, line 33, would move to exclusively occur on Bob's branch.)
 Instead, the Reach application would need to introduce a new @reachin{interact} method called by Alice @emph{after} the first message to observe the contract information. 
 
-@reachex[#:show-lines? #t "tut-8/index.rsh"
-         #:link #t
+@reachex["tut-8/index.rsh"
+         
          'only 42 48 "    // ..."]
 
 This method would be called on line 47 in a new @reachin{only} block.

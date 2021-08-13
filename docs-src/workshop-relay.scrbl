@@ -71,8 +71,8 @@ Finally, how should the Relay account information and Bob's identity be represen
 Let's compare notes again.
 Here's what we wrote in our program:
 
-@reachex[#:show-lines? #t "workshop-relay/index.rsh"
-         #:link #t
+@reachex["workshop-relay/index.rsh"
+         
          'only 6 8 "  // ..."]
 
 We chose to represent the amount as a @reachin{UInt} field, which should be unsurprising.
@@ -155,8 +155,8 @@ In this case, our program is very simple and we expect you'll do a great job wit
 
 Let's look at our whole program now:
 
-@reachex[#:show-lines? #t "workshop-relay/index.rsh"
-         #:link #t]
+@reachex["workshop-relay/index.rsh"
+         ]
 
 @(drstep-de TAG)
 
@@ -170,8 +170,8 @@ If you're brave, then try it yourself; otherwise, scroll down to see our solutio
 
 Here's the JavaScript @tech{frontend} we wrote:
 
-@reachex[#:show-lines? #t "workshop-relay/index.mjs"
-         #:link #t]
+@reachex["workshop-relay/index.mjs"
+         ]
 
 We do a few sneaky things in this program:
 @itemlist[

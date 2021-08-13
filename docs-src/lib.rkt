@@ -221,10 +221,10 @@ You should start off by initializing your Reach program:
 
 (define (reachex
          #:mode [mode reach]
-         #:link [link? #f]
          #:dir [dir "examples"]
-         #:show-lines? [show-lines? #f]
          path . which)
+  (define link? #t)
+  (define show-lines? #t)
 
   (define x-dir
     (match dir

@@ -9,7 +9,8 @@
   "author": "reach.sh",
   "license": "Apache-2.0",
   "devDependencies": {
-    "vuepress": "^2.0.0-beta.23"
+    "vuepress": "^2.0.0-beta.23",
+    "vuepress-vite": "^2.0.0-beta.23"
   },
   "dependencies": {
     "@vuepress/plugin-google-analytics": "^2.0.0-beta.23",

@@ -58,8 +58,8 @@ With that knowledge in hand,
 Let's compare notes again.
 Here's what we wrote in our program:
 
-@reachex[#:show-lines? #t "workshop-trust-fund/index.rsh"
-         #:link #t
+@reachex["workshop-trust-fund/index.rsh"
+         
          'only 1 21 "      // ..."]
 
 We've represented most values as @reachin{UInt} fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is @reachin{funded}, one for when the particular participant is @reachin{ready} to extract the funds, and finally one for when they have successfuly @reachin{recvd} (received) them.
@@ -150,8 +150,8 @@ However, if you want to simplify things, you might like to use @reachin{each} to
 
 Let's look at our whole program now:
 
-@reachex[#:show-lines? #t "workshop-trust-fund/index.rsh"
-         #:link #t]
+@reachex["workshop-trust-fund/index.rsh"
+         ]
 
 @itemlist[
  @item{Lines 33 and 34 use @reachin{each} to run the same code block @reachin{only} in each of the given participants.}
@@ -178,8 +178,8 @@ We highly recommend that you try to implement a test setup like this yourself; w
 
 Here's the JavaScript @tech{frontend} we wrote:
 
-@reachex[#:show-lines? #t "workshop-trust-fund/index.mjs"
-         #:link #t]
+@reachex["workshop-trust-fund/index.mjs"
+         ]
 
 The most interesting part of this program is on lines 20 through 23 when we optionally cause a delay in the participant after they receive the signal that the account is funded.
 

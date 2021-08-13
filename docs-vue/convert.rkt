@@ -55,12 +55,11 @@
     [`(subsubsection ,@o) (header 4 o)]
     [`(seclink ,t ,l)
       (d (format "[~a](##~a)" l t))]
-    [`(,(or 'secref 'Secref) ,t)
-      (d (format "[XXX ~a](##~a)" t t))]
     [`(reachin ,@c) (code c 'reach)]
     [`(jsin ,@c) (code c 'js)]
     [`(pyin ,@c) (code c 'py)]
     [`(goin ,@c) (code c 'go)]
+    [`(author (author+email ,a ,e)) (void)]
     [`DApp (d "DApp")]
     [`DApps (d "DApps")]
     [`(hrule) (d "---")]
@@ -107,15 +106,18 @@
     [`(item ,@l)
       (egol l) (d "\n")]
     [`(margin-note . ,l)
-      (d "::: tip\n")
+      (d "::: note\n")
       (egol l)
       (d "\n:::")]
     [x
       (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))
-      (eprintf "XXX ~e\n" xs)
+      (eprintf "XXX ~a\n" (string-limit xs 70))
       (d "XXX ")
       (d xs)]))
+
+(define (string-limit s n)
+  (substring s 0 (min n (string-length s))))
 
 (define (egol l)
   (for-each ego l))

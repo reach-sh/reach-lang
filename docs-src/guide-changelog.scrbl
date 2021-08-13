@@ -39,7 +39,7 @@ It is the last version that supports Algorand using TEAL3; if you deployed a con
 
 @itemlist[
 @item{2021/07/09: @reachin{.define} component added to @reachin{parallelReduce}}
-@item{2021/07/08: @secref["ref-error-codes"] created}
+@item{2021/07/08: @seclink["ref-error-codes"]{Error code referenec} created}
 @item{2021/06/20: @tech{Token minting} introduced, with implementation on ETH.}
 @item{... many interesting things ...}
 @item{2020/09/01: version tagged}

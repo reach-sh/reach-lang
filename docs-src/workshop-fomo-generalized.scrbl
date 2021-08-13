@@ -52,8 +52,8 @@ However, we can still write a program that is generic in the size of the array, 
 specialize it when we compile.
 }
 
-@reachex[#:show-lines? #t "workshop-fomo-generalized/index.rsh"
-         #:link #t
+@reachex["workshop-fomo-generalized/index.rsh"
+         
          'only 5 23 "  // ..."]
 
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholders for the actual value.
@@ -164,8 +164,8 @@ In this case, our program is very simple and we expect you'll do a great job wit
 
 Let's look at our whole program now:
 
-@reachex[#:show-lines? #t "workshop-fomo-generalized/index.rsh"
-         #:link #t]
+@reachex["workshop-fomo-generalized/index.rsh"
+         ]
 
 @(drstep-de TAG)
 
@@ -180,8 +180,8 @@ a Buyer will rely simply on generating a random boolean.
 
 Here's the JavaScript @tech{frontend} we wrote:
 
-@reachex[#:show-lines? #t "workshop-fomo-generalized/index.mjs"
-         #:link #t]
+@reachex["workshop-fomo-generalized/index.mjs"
+         ]
 
 Let's see what it looks like when we run the program:
 
