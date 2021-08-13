@@ -230,7 +230,7 @@ You should start off by initializing your Reach program:
     (match dir
       ["examples" x]
       ["rpc-client" rpc-client]
-      (error 'runtime-path "~a is not a declared runtime path" dir)))
+      [_ (error 'runtime-path "~a is not a declared runtime path" dir)]))
   (define ((do-link lab) link-loc content)
     (define copy
       (cond
