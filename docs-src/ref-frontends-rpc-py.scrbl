@@ -1,5 +1,6 @@
 #lang scribble/manual
 @(require "lib.rkt")
+@(mint-scope 'py)
 
 @title[#:version reach-vers #:tag "ref-frontends-rpc-py"]{Python (RPC)}
 

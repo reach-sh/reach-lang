@@ -108,6 +108,19 @@
     [`(deftech ,c)
       ;; XXX
       (d (format "<Defn :name=\"~a\">~a</Defn>" c c))]
+    [`(error ,x) (ego `(section #:tag ,x ,x))]
+    [`(mint-define! ,@ts)
+      (define s (unbox mint-scope))
+      (cond
+        [(not s)
+         (set-box! BAD #t)
+         (eprintf "XXX no mint-scope at ~v\n" ts)]
+        [else
+          (for ([ts (in-list ts)])
+            (match-define `'(,@tsl) ts)
+            (define t (apply string-append tsl))
+            ;; XXX
+            (d (format "<Ref :name=\"~a:~a\" />" s t)))])]
     [`(include-section . ,_) (void)]
     [`(index-section . ,_) (void)]
     [`(index . ,_) (void)]

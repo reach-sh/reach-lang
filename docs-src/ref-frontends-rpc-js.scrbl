@@ -1,5 +1,6 @@
 #lang scribble/manual
 @(require "lib.rkt")
+@(mint-scope 'js)
 
 @title[#:version reach-vers #:tag "ref-frontends-rpc-js"]{JavaScript (RPC)}
 

@@ -1,5 +1,6 @@
 #lang scribble/manual
 @(require "lib.rkt")
+@(mint-scope 'go)
 
 @title[#:version reach-vers #:tag "ref-frontends-rpc-go"]{Go (RPC)}
 

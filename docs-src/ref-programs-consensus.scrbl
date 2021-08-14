@@ -1,6 +1,7 @@
 #lang scribble/manual
 @(require scribble/bnf
           "lib.rkt")
+@(mint-scope 'rsh)
 
 @title[#:version reach-vers #:tag "ref-programs-consensus"]{Consensus Steps}
 
