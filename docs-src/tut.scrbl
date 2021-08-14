@@ -1914,12 +1914,12 @@ And finally, the Web frontend:
 
 @reachex[#:mode js "tut-9/index.js"]
 
-We wrote @exloc["tut-8/index.rsh"] lines of Reach and two different frontends.
-Our command-line version is @exloc["tut-8/index.mjs"] lines of JavaScript, or @exloc["tut-8/index.rsh" "tut-8/index.mjs"] lines together.
-While our Web version is @exloc["tut-9/index.js"] lines of JavaScript, or @exloc["tut-9/index.rsh" "tut-9/index.js"] lines together.
+We wrote about a hundred lines of Reach and two different frontends.
+Our command-line version about a hundred lines of JavaScript.
+While our Web version is about the same length, but has a lot of presentation code as well.
 
-Behind the scenes, Reach generated @exloc["tut-8/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-8/build/index.main.sol"]), 1621 lines of TEAL (which you can look at here: @reachexlink["tut-8/build/index.main.mjs#L584"]), as well as @exloc["tut-8/build/index.main.mjs" -2108] lines of JavaScript (which you can look at here: @reachexlink["tut-8/build/index.main.mjs"]).
-If we weren't using Reach, then we'd have to write these @exloc["tut-8/build/index.main.sol" "tut-8/build/index.main.mjs" -482] lines ourselves and ensure that they are consistent and updated at every change to the application.
+Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: @reachexlink["tut-8/build/index.main.sol"]), almost two thousand lines of TEAL (which you can look at here: @reachexlink["tut-8/build/index.main.appApproval.teal"]), as well as over a thousand lines of JavaScript (which you can look at here: @reachexlink["tut-8/build/index.main.mjs"]).
+If we weren't using Reach, then we'd have to write all this code ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!
 

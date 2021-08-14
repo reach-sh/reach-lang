@@ -15,7 +15,7 @@ Presently, we have a robust @seclink["ref-network-eth"]{Ethereum backend} and @s
 @(hrule)
 @bold{Backends.} Presently, Reach has a robust @tech{backend} for JavaScript that is well-suited for client-facing applications and JavaScript servers.
 However, we believe that many decentralized application developers would like to make use of languages like Go and Rust for their participants.
-Presently, this can be accomplished via the @secref["ref-backends-rpc"], but we'd like to build a dedicated backend for languages like these.
+Presently, this can be accomplished via the @seclink["ref-backends-rpc"]{RPC server}, but we'd like to build a dedicated backend for languages like these.
 
 @(hrule)
 @bold{Computation.} Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like @tech{arrow expressions}, free-form objects, destructuring bindings, robust @reachin{import} and @reachin{export} specificiers, and so on.
@@ -30,5 +30,5 @@ Reach programs can instead interact with these low-level details of their chosen
 
 @(hrule)
 @bold{Communication.}
-Reach's communication language has some limitations that we have plans to remove, which are discussed in @secref["guide-roadmap"], but there are some for which we do not have plans for removing.
+Reach's communication language has some limitations that we have plans to remove, which are discussed in @seclink["guide-roadmap"]{roadmap}, but there are some for which we do not have plans for removing.
 For example, we do not intend to support co-inductive or cyclic state, nor expose an arbitrary consensus heap to programmers.

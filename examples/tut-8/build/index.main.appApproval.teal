@@ -1,0 +1,1567 @@
+#pragma version 4
+txn RekeyTo
+global ZeroAddress
+==
+assert
+txn Lease
+global ZeroAddress
+==
+assert
+int 0
+store 0
+txn ApplicationID
+bz alloc
+byte base64()
+app_global_get
+dup
+substring 0 32
+store 1
+substring 32 64
+store 2
+txn NumAppArgs
+int 3
+==
+assert
+txna ApplicationArgs 0
+btoi
+dup
+bz ctor
+// Handler 1
+dup
+int 1
+==
+bz l0
+pop
+txna ApplicationArgs 1
+dup
+len
+int 0
+==
+assert
+pop
+txna ApplicationArgs 2
+dup
+len
+int 16
+==
+assert
+dup
+substring 0 8
+btoi
+store 255
+dup
+substring 8 16
+btoi
+store 254
+pop
+// compute state in HM_Check 0
+int 8
+bzero
+sha256
+load 1
+==
+assert
+// "CheckPay"
+// "./index.rsh:49:9:dot"
+// "[]"
+load 255
+dup
+bz l1
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Receiver
+==
+assert
+l1:
+pop
+global Round
+load 254
++
+store 253
+// compute state in HM_Set 1
+byte base64(AAAAAAAAAAE=)
+txn Sender
+concat
+load 255
+itob
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l0:
+// Handler 2
+dup
+int 2
+==
+bz l2
+pop
+txna ApplicationArgs 1
+dup
+len
+int 56
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 56
+btoi
+store 252
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 1
+byte base64(AAAAAAAAAAE=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 252
+<
+assert
+// "CheckPay"
+// "./index.rsh:56:7:dot"
+// "[]"
+load 254
+dup
+bz l3
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Receiver
+==
+assert
+l3:
+pop
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+txn Sender
+concat
+byte base64(AAAAAAAAAAE=)
+global Round
+itob
+concat
+load 254
+dup
++
+itob
+concat
+b loop4
+l2:
+// Handler 3
+dup
+int 3
+==
+bz l4
+pop
+txna ApplicationArgs 1
+dup
+len
+int 56
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 56
+btoi
+store 252
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 1
+byte base64(AAAAAAAAAAE=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 252
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 255
+txn Sender
+==
+assert
+load 254
+dup
+bz l5
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+load 255
+dig 1
+gtxns Receiver
+==
+assert
+l5:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l6:
+pop
+global ZeroAddress
+store 1
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l4:
+l7:
+l8:
+// Handler 6
+dup
+int 6
+==
+bz l9
+pop
+txna ApplicationArgs 1
+dup
+len
+int 96
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 96
+btoi
+store 250
+pop
+txna ApplicationArgs 2
+dup
+len
+int 32
+==
+assert
+dup
+store 249
+pop
+// compute state in HM_Check 6
+byte base64(AAAAAAAAAAY=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 251
+<
+assert
+// "CheckPay"
+// "./index.rsh:69:11:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:69:11:dot"
+// "[]"
+load 255
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 248
+// compute state in HM_Set 8
+byte base64(AAAAAAAAAAg=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 249
+concat
+load 248
+itob
+concat
+load 250
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l9:
+// Handler 7
+dup
+int 7
+==
+bz l10
+pop
+txna ApplicationArgs 1
+dup
+len
+int 96
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 96
+btoi
+store 250
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 6
+byte base64(AAAAAAAAAAY=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 251
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 252
+txn Sender
+==
+assert
+load 250
+dup
+bz l11
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+load 252
+dig 1
+gtxns Receiver
+==
+assert
+l11:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l12:
+pop
+global ZeroAddress
+store 1
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l10:
+// Handler 8
+dup
+int 8
+==
+bz l13
+pop
+txna ApplicationArgs 1
+dup
+len
+int 128
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 112
+store 251
+dup
+substring 112 120
+btoi
+store 250
+dup
+substring 120 128
+btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
+int 8
+==
+assert
+dup
+btoi
+store 248
+pop
+// compute state in HM_Check 8
+byte base64(AAAAAAAAAAg=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+concat
+load 250
+itob
+concat
+load 249
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 250
+<
+assert
+// "CheckPay"
+// "./index.rsh:77:9:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:77:9:dot"
+// "[]"
+load 252
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 247
+// compute state in HM_Set 10
+byte base64(AAAAAAAAAAo=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+concat
+load 248
+itob
+concat
+load 247
+itob
+concat
+load 249
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l13:
+// Handler 9
+dup
+int 9
+==
+bz l14
+pop
+txna ApplicationArgs 1
+dup
+len
+int 128
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 112
+store 251
+dup
+substring 112 120
+btoi
+store 250
+dup
+substring 120 128
+btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 8
+byte base64(AAAAAAAAAAg=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+concat
+load 250
+itob
+concat
+load 249
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 250
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 255
+txn Sender
+==
+assert
+load 249
+dup
+bz l15
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+load 255
+dig 1
+gtxns Receiver
+==
+assert
+l15:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l16:
+pop
+global ZeroAddress
+store 1
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l14:
+// Handler 10
+dup
+int 10
+==
+bz l17
+pop
+txna ApplicationArgs 1
+dup
+len
+int 136
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 112
+store 251
+dup
+substring 112 120
+btoi
+store 250
+dup
+substring 120 128
+btoi
+store 249
+dup
+substring 128 136
+btoi
+store 248
+pop
+txna ApplicationArgs 2
+dup
+len
+int 16
+==
+assert
+dup
+substring 0 8
+btoi
+store 247
+dup
+substring 8 16
+btoi
+store 246
+pop
+// compute state in HM_Check 10
+byte base64(AAAAAAAAAAo=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+concat
+load 250
+itob
+concat
+load 249
+itob
+concat
+load 248
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 249
+<
+assert
+// "CheckPay"
+// "./index.rsh:85:11:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:85:11:dot"
+// "[]"
+load 255
+txn Sender
+==
+assert
+// Nothing
+// "reach standard library:65:17:application"
+// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+load 251
+load 247
+itob
+load 246
+itob
+concat
+sha256
+==
+assert
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 246
+int 4
+load 250
+-
++
+int 3
+%
+itob
+global Round
+itob
+concat
+load 248
+itob
+concat
+b loop4
+l17:
+// Handler 11
+dup
+int 11
+==
+bz l18
+pop
+txna ApplicationArgs 1
+dup
+len
+int 136
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 112
+store 251
+dup
+substring 112 120
+btoi
+store 250
+dup
+substring 120 128
+btoi
+store 249
+dup
+substring 128 136
+btoi
+store 248
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// compute state in HM_Check 10
+byte base64(AAAAAAAAAAo=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+concat
+load 250
+itob
+concat
+load 249
+itob
+concat
+load 248
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 249
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 252
+txn Sender
+==
+assert
+load 248
+dup
+bz l19
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+load 252
+dig 1
+gtxns Receiver
+==
+assert
+l19:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l20:
+pop
+global ZeroAddress
+store 1
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l18:
+int 0
+assert
+loop4:
+dup
+substring 0 8
+btoi
+store 255
+dup
+substring 8 16
+btoi
+store 254
+dup
+substring 16 24
+btoi
+store 253
+pop
+dup
+substring 0 32
+store 252
+dup
+substring 32 40
+btoi
+store 251
+dup
+substring 40 48
+btoi
+store 250
+dup
+substring 48 80
+store 249
+pop
+load 255
+int 1
+==
+bz l21
+load 254
+load 250
++
+store 248
+// compute state in HM_Set 6
+byte base64(AAAAAAAAAAY=)
+load 252
+concat
+load 251
+itob
+concat
+load 250
+itob
+concat
+load 249
+concat
+load 248
+itob
+concat
+load 253
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l21:
+load 252
+load 251
+itob
+concat
+load 249
+concat
+load 255
+itob
+concat
+byte base64()
+loop5:
+pop
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 72
+store 253
+dup
+substring 72 80
+btoi
+store 252
+pop
+int 2
+load 254
+*
+dup
+bz l22
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+load 253
+load 255
+load 252
+int 2
+==
+select
+dig 1
+gtxns Receiver
+==
+assert
+l22:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l23:
+pop
+global ZeroAddress
+store 1
+txn OnCompletion
+int DeleteApplication
+==
+assert
+updateState:
+byte base64()
+load 1
+load 2
+concat
+app_global_put
+checkSize:
+load 0
+dup
+dup
+int 1
++
+global GroupSize
+==
+assert
+txn GroupIndex
+==
+assert
+int 1000
+*
+txn Fee
+<=
+assert
+done:
+int 1
+return
+alloc:
+txn OnCompletion
+int NoOp
+==
+assert
+byte base64()
+int 64
+bzero
+app_global_put
+b checkSize
+ctor:
+txn Sender
+global CreatorAddress
+==
+assert
+txna ApplicationArgs 1
+store 2
+// compute state in HM_Set 0
+int 8
+bzero
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState

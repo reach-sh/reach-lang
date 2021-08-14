@@ -49,8 +49,18 @@
     [`(tech ,t) (ego t)]
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
+    [`(reachexlink ,f #:dir ,e)
+      (d (format "[~a](@github/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "<GitLink href=\"/examples/~a\">`~a`</GitLink>" f f))]
+      (d (format "[~a](@github/examples/~a)" f f))]
+    [`(reachexlink ,f ,c #:dir ,e)
+      (d "[")
+      (ego c)
+      (d (format "](@github/~a/~a)" e f))]
+    [`(reachexlink ,f ,c)
+      (d "[")
+      (ego c)
+      (d (format "](@github/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
@@ -73,6 +83,7 @@
     [`(exec ,@c) (code c)]
     [`(envref ,@c) (code c)]
     [`(defconmode ,@c) (code c)]
+    [`(conmode ,@c) (code c)]
     [`(defenv ,@c) (code c)]
     [`(envvar ,@c) (code c)]
     [`(nonterm ,@c) (code c)]
@@ -82,6 +93,9 @@
     [`(DFlag ,@c) (code (cons "--" c))]
     [`(filepath ,@c) (code c)]
     [`(litchar ,@c) (code c)]
+    [`(the-community-link)
+      ;; XXX
+      (d "<CommunityLink />")]
     [`(local-table-of-contents . ,_) (d "[[toc]]")]
     [`(table-of-contents . ,_) (d "[[toc]]")]
     [`(element (make-style #f (list (url-anchor ,a))) '())
@@ -114,6 +128,7 @@
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
+     ;; XXX link
       (d (format "@[code{~a-~a}](@examples/~a)" from to f))]
     [x
       (set-box! BAD #t)

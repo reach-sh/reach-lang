@@ -40,7 +40,7 @@ The Reach compiler automatically derives a @tech{contract} for the @tech{consens
 Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
 @margin-note{You can look at the entire example program by visiting @reachexlink["overview/index.rsh"].}
-@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
+@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"]{the guide on editor support}.}
 
 The main part of the program looks like this:
 
@@ -146,9 +146,9 @@ and the @exec{build} directory will contain a new file named @reachexlink["overv
 The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["overview/build/index.main.sol"] to see the original Solidity source that it is compiled from.
 Reach can leave files like these in place when run with @DFlag{intermediate-files}.}
 
-For this @exloc["overview/index.rsh"] line application, the Reach compiler generated @exloc["overview/build/index.main.mjs" -152] lines of JavaScript code in two functions, one for Alice and one for Bob.
-Separately, it generated @exloc["overview/build/index.main.sol"] lines of Solidity code to implement the contract.
-If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol" -152] lines in these three modules separately and keep them synchronized at every step of the development process.
+For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
+Separately, it generated over hundreds of lines of Solidity code to implement the contract.
+If a programmer wasn't using Reach, they would have to write all this code in these three modules separately and keep them synchronized at every step of the development process.
 
 Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target a different @tech{consensus network}, like Algorand.
 Nor is Reach tied to JavaScript: it can be configured to target other @tech{backend} languages, like Go.
@@ -194,7 +194,7 @@ Let's look at a simple command-line version that demonstrates how it would work 
 
 @margin-note{You can look at the entire example interface program by visiting @reachexlink["overview/index.mjs"].}
 
-The program is just @exloc["overview/index.mjs"] lines long and the shell of it is quite simple:
+The program is just a few dozen lines long and the shell of it is quite simple:
 
 @reachex[#:mode js
          "overview/index.mjs"
