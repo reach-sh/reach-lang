@@ -1,6 +1,14 @@
+const shiki = require('shiki');
 const fs = require('fs');
 const path = require('path');
 const linkReplace = require('markdown-it-attr-link-replacer').default;
+
+// Add Reach to Shiki
+shiki.BUNDLED_LANGUAGES.forEach((o) => {
+  if ( o.id === 'javascript' ) {
+    o.aliases.push('reach', 'rsh', 'mjs');
+  }
+});
 
 const safeJSONRead = (p) => {
   try {
@@ -68,8 +76,8 @@ module.exports = {
     },
     importCode: {
       handleImportPath: (str) => {
-        const ep = path.resolve(__dirname, '../../../examples/');
-        return str.replace(/^@examples/, ep);
+        const ep = path.resolve(__dirname, '../../../');
+        return str.replace(/^@reach-lang/, ep);
       },
     },
   },
@@ -107,6 +115,10 @@ module.exports = {
   plugins: [
     [ '@vuepress/google-analytics', {
       id: "UA-149147406-2"
+    } ],
+    [ '@vuepress/plugin-shiki', {
+      theme: 'nord', // XXX react to dark mode?
+      langs: [],
     } ],
     [ '@vuepress/plugin-search', {
     } ],

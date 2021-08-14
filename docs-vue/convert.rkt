@@ -147,12 +147,17 @@
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
      ;; XXX link
-      (d (format "@[code{~a-~a}](@examples/~a)" from to f))]
+      (d (format "@[code{~a-~a}](@reach-lang/examples/~a)" from to f))]
+    [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
+      ;; XXX link
+      (d (format "@[code{~a-~a}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)" from to))]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
      ;; XXX link
-      (d (format "@[code](@examples/~a)" f))]
+      (d (format "@[code](@reach-lang/examples/~a)" f))]
+    ['reach-vers
+     (d "{{ VERSION }}")]
     [x
       (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))

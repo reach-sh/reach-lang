@@ -15,6 +15,7 @@
   "dependencies": {
     "@vuepress/plugin-google-analytics": "^2.0.0-beta.23",
     "@vuepress/plugin-search": "^2.0.0-beta.23",
+    "@vuepress/plugin-shiki": "^2.0.0-beta.24",
     "markdown-it-attr-link-replacer": "^1.2.0"
   }
 }
