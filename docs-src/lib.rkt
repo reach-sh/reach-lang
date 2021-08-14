@@ -16,14 +16,6 @@
          (all-from-out scriblib/figure)
          mint-scope mint-define!)
 
-;; (define-runtime-path analytics-p "analytics.html")
-;; (define analytics (file->string analytics-p))
-;; (define analytics-head (cdata #f #f analytics))
-;; (define (insert x l)
-;;   (if (member x l) l (cons x l)))
-;; (current-html-render-head-prefix
-;;  (insert analytics-head (current-html-render-head-prefix)))
-
 (define-runtime-path VERSION "../VERSION")
 (define version-ht
   (for/fold ([ht (hasheq)]) ([l (in-list (file->lines VERSION))])
@@ -71,9 +63,6 @@
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})
 (define RPS @emph{Rock, Paper, Scissors!})
-
-(define (experimental)
-  @margin-note{This section describes an experimental feature of Reach.})
 
 (define (hrule)
   @para{@bold{---}})
@@ -198,14 +187,6 @@ You should start off by initializing your Reach program:
 (define (Exviewref dir view)
   (exviewref dir view "The"))
 
-(define (exloc . ps)
-  (number->string
-   (for/sum ([p (in-list ps)])
-     (match p
-       [(? number?) p]
-       [_
-        (length (file->lines (build-path x p)))]))))
-
 (define (reachexlink p [label #f] #:loc [loc #f] #:dir [dir "examples"])
   (define url
     (format "https://github.com/reach-sh/reach-lang/blob/master/~a/~a~a"
@@ -280,21 +261,6 @@ You should start off by initializing your Reach program:
        (values
         #f input
         (add-nums input))]
-      [(list 'skip from to skip-s)
-       (define once? #f)
-       (define uz
-         (unzip
-          (filter
-           (λ (x) x)
-           (for/list ([e (in-list input)]
-                      [i (in-naturals 1)])
-             (if (and (<= from i) (<= i to))
-               (if once? #f
-                   (begin (set! once? #t)
-                          (cons skip-s
-                                (string-append num-pad skip-s))))
-               (cons e (add-num i e)))))))
-       (values #f (car uz) (cdr uz))]
       [(list 'only from to skip-s)
        (define trim-amt
          (let loop ([l (string->list skip-s)])
@@ -329,24 +295,7 @@ You should start off by initializing your Reach program:
              (begin (set! once? #f) (add-num i (do-trim e)))
              (if once? #f
                  (begin (set! once? #t)
-                        (string-append num-pad (do-trim skip-s))))))))]
-      [(list from)
-       (values
-        from
-        (drop input from)
-        (drop (add-nums input) from))]
-      [(list #f to)
-       (values
-        #f
-        (take input to)
-        (take (add-nums input) to))]
-      [(list from to)
-       (define (f x)
-         (drop (reverse (drop (reverse x) to)) from))
-       (values
-        (cons from to)
-        (f input)
-        (f (add-nums input)))]))
+                        (string-append num-pad (do-trim skip-s))))))))]))
   (maybe-link link-loc (apply mode (add-between sel "\n"))))
 
 (define (pkg-fmts)
@@ -362,30 +311,6 @@ You should start off by initializing your Reach program:
                     (string-join g "\n"))])
 
     @verbatim{@(string-join groups "\n\n")}))
-
-(define (number->nice-string n)
-  (define fullr
-    (append*
-     (for/list ([c (in-list (reverse (string->list (number->string n))))]
-                [i (in-naturals)])
-       (if (and (zero? (modulo i 3)) (not (zero? i)))
-         (list #\, c)
-         (list c)))))
-  (define len (length fullr))
-  (define before 30)
-  (define after 32)
-  (if (< len (+ before after))
-    (list->string
-     (reverse fullr))
-    (list->string
-     (append (take (reverse fullr) before)
-             (string->list
-              (format "...~a digits..."
-                      (- len before after)))
-             (reverse (take fullr after))))))
-(module+ test
-  (number->nice-string 123456)
-  (number->nice-string (expt 2 (* 256 3))))
 
 (define (note-ctransfer)
   @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.})

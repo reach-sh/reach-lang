@@ -13,7 +13,6 @@ If you're ready, click through to the @seclink["tut-1"]{first step}!
 @local-table-of-contents[#:style 'immediate-only]
 
 @section[#:tag "tut-1"]{Install and Initialize}
-@(mint-scope "tut-1")
 
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
@@ -58,7 +57,6 @@ You'll know that everything is in order if you can run
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-2"]{write your first Reach application}!
 
 @section[#:tag "tut-2"]{Scaffolding and Setup}
-@(mint-scope "tut-2")
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully-featured.
@@ -161,7 +159,6 @@ In @seclink["tut-3"]{the next step}, we'll implement the logic of @|RPS| and our
   "write a program in Reach that generates a smart contract & a backend and a front-end in JavaScript, then use Reach to test and deploy it?")
 
 @section[#:tag "tut-3"]{Rock, Paper, and Scissors}
-@(mint-scope "tut-3")
 
 In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
@@ -174,7 +171,7 @@ We'll use a similar strategy for representing the three outcomes of the game: @l
 The first step is to change the Reach program to specify that Alice and Bob's frontends can be interacted with to get the move that they will play, and later informed of the outcome of the game.
 
 @reachex["tut-3/index.rsh"
-         'skip 17 33  "  // ..."]
+         'only 1 17  "  // ..."]
 
 @itemlist[
 
@@ -330,7 +327,6 @@ In @seclink["tut-4"]{the next step}, we'll add some stakes to the game, because 
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.})
 
 @section[#:tag "tut-4"]{Bets and Wagers}
-@(mint-scope "tut-4")
 
 Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -403,7 +399,7 @@ Let's look at that now.
 First, we need to update the @tech{participant interact interface}.
 
 @reachex["tut-4/index.rsh"
-         'skip 19 44 "  // ..."]
+         'only 1 19 "  // ..."]
 
 @itemlist[
 
@@ -539,7 +535,6 @@ We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch w
   @item{The @reachin{pay} primitive can be added to a @reachin{publish} primitive to send funds to the Reach program, which can then use the @reachin{transfer} primitive to send funds back to participants, and other addresses.})
 
 @section[#:tag "tut-5"]{Trust and Commitments}
-@(mint-scope "tut-5")
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -741,7 +736,7 @@ And we can specify that whenever the same value is provided for both hands, no m
          'only 17 18 "// ..."]
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all @(number->nice-string (expt 2 (* 256 3))) possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
+You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
 In fact, on the author's MacBook Pro from early 2015, it takes less than half a second.
 That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 
@@ -877,7 +872,6 @@ We'll fix this in @seclink["tut-6"]{the next step}; make sure you don't launch w
 @check:tf["True"]{Reach provides tools for you to add custom verifications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.}
 
 @section[#:tag "tut-6"]{Timeouts and Participation}
-@(mint-scope "tut-6")
 
 In the last section, we removed a security vulnerability from @|RPS| that was a clear attack on the viability of the application.
 In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: @seclink["guide-timeout"]{non-participation}.
@@ -1083,7 +1077,6 @@ In @seclink["tut-7"]{the next step}, we'll extend the application to disallow dr
   @item{It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a @reachin{timeout} block to implement the (3) behavior.})
 
 @section[#:tag "tut-7"]{Play and Play Again}
-@(mint-scope "tut-7")
 
 In this section, we extend our application so that Alice and Bob will continue to play against each other until there is a clear winner, so if it is a draw they will continue playing.
 
@@ -1316,7 +1309,6 @@ In @seclink["tut-8"]{the next step}, we'll show how to exit "testing" mode with 
   "The negation of the condition and the invariant must establish any properties of the rest of the program.")
 
 @section[#:tag "tut-8"]{Interaction and Independence}
-@(mint-scope "tut-8")
 
 In the last section, we made our @|RPS| run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
@@ -1559,7 +1551,6 @@ In @seclink["tut-9"]{the next step}, we'll replace this with a Web interface for
 
 @section[#:tag "tut-9"]{Web Interaction}
 @author[(author+email "Dan Burton" "dan@reach.sh")]
-@(mint-scope "tut-9")
 
 In the last section, we made @|RPS| run as a command-line application, without any changes to the Reach program.
 In this section, we again won't be making any changes to the Reach program.
@@ -1871,7 +1862,6 @@ In @seclink["tut-10"]{the next section}, we'll summarize where we've gone and di
 @check:tf["True"]{Reach accelerates your development with React by baking-in a React development server and the deployment process to test React programs locally.}
 
 @section[#:tag "tut-10"]{Onward and Further}
-@(mint-scope "tut-10")
 
 Let's review what we've done through this tutorial:
 

@@ -23,6 +23,20 @@ const addGlobalRef = (ref, tgt) => {
   }
 };
 
+const reachLink = (link) => {
+  if ( link.startsWith('##') ) {
+    const ref = link.substring(2);
+    const tgt = globalRefs[ref];
+    if ( tgt ) { return tgt; }
+    console.log(`XXX Unknown globalRef: ${ref}`);
+    return `XXX ${ref}`;
+  } else if ( link.startsWith('@') ) {
+    return link.replace(/^@github/, 'https://github.com/reach-sh/reach-lang/blob/master');
+  } else {
+    return link;
+  }
+};
+
 module.exports = {
   bundler: '@vuepress/vite',
   lang: 'en-US',
@@ -43,7 +57,7 @@ module.exports = {
       { text: 'Discord',
         link: 'https://discord.gg/AZsgcXu' },
       { text: 'Community',
-        link: '##community' },
+        link: reachLink('##community') },
     ],
     themePlugins: {
     },
@@ -86,17 +100,7 @@ module.exports = {
     linkReplace(md, {
       attributes: ['src', 'href'],
       callback: function (link, env) {
-        if ( link.startsWith('##') ) {
-          const ref = link.substring(2);
-          const tgt = globalRefs[ref];
-          if ( tgt ) { return tgt; }
-          console.log(`XXX Unknown globalRef: ${ref}`);
-          return `XXX ${ref}`;
-        } else if ( link.startsWith('@') ) {
-          return link.replace(/^@github/, 'https://github.com/reach-sh/reach-lang/blob/master');
-        } else {
-          return link;
-        }
+        return reachLink(link);
       },
     });
   },

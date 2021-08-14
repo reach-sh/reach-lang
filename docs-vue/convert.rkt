@@ -101,8 +101,13 @@
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
-    [`(mint-scope . ,_) (void)]
+    [`(mint-scope ,ms)
+      (set-box! mint-scope ms)
+      (void)]
     [`(define . ,_) (void)]
+    [`(deftech ,c)
+      ;; XXX
+      (d (format "<Defn :name=\"~a\">~a</Defn>" c c))]
     [`(include-section . ,_) (void)]
     [`(index-section . ,_) (void)]
     [`(index . ,_) (void)]
@@ -130,6 +135,11 @@
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
      ;; XXX link
       (d (format "@[code{~a-~a}](@examples/~a)" from to f))]
+    [(or
+       `(reachex ,f)
+       `(reachex #:mode ,_ ,f))
+     ;; XXX link
+      (d (format "@[code](@examples/~a)" f))]
     [x
       (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))
@@ -143,23 +153,27 @@
 (define (egol l)
   (for-each ego l))
 
-(define (go! sp)
+(define (go! sp dest)
   (match-define
-    `(module ,name ,_ (#%module-begin doc ,@cs))
+    `(module ,_ ,_ (#%module-begin doc ,@cs))
     (syntax->datum (read-lang-file sp)))
-  (define mp (format "src/~a.md" name))
-  (with-output-to-file mp
+  (with-output-to-file dest
     #:exists 'replace
     (lambda ()
       (egol cs))))
 
 (define BAD (box #f))
+(define mint-scope (box #f))
 (module+ main
-  (for ([bn (sort (directory-list scrbl)
-                  #:key path->string string-ci<=?)])
-    (define p (build-path scrbl bn))
+  (define ns (normalize-path scrbl))
+  (for ([p (in-directory scrbl)])
+    (define bn (file-name-from-path p))
     (when (equal? #".scrbl" (path-get-extension bn))
       (set-box! BAD #f)
-      (go! p)
+      (set-box! mint-scope #f)
+      (define rp (find-relative-path ns (normalize-path p)))
+      (define n (build-path "src" (path-replace-extension rp #".md")))
+      (make-parent-directory* n)
+      (go! p n)
       (when (unbox BAD)
-        (eprintf "^ >>> ~a\n" bn)))))
+        (eprintf "^ >>> ~a\n" n)))))

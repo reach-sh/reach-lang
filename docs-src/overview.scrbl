@@ -45,7 +45,7 @@ Let's look at a simple Reach program where two principals, Alice and Bob, intera
 The main part of the program looks like this:
 
 @reachex["overview/index.rsh"
-         'skip 15 34 " // ...body..."]
+         'only 1 15 " // ...body..."]
 
 @itemlist[
 
@@ -197,8 +197,7 @@ Let's look at a simple command-line version that demonstrates how it would work 
 The program is just a few dozen lines long and the shell of it is quite simple:
 
 @reachex[#:mode js
-         "overview/index.mjs"
-         'skip 14 21 "    // ..."]
+         "overview/index.mjs"]
 
 @itemlist[
 
