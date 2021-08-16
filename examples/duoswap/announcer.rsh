@@ -3,14 +3,14 @@
 const Addr = Bytes(64);
 
 export const Common = {
-  hear: Fun([Addr], Null),
+  hear: Fun([Addr, Bool], Null),
 };
 
 export const main = Reach.App(() => {
   const Manager = Participant('Manager', {
     ...Common,
     printInfo: Fun([], Null),
-    getPoolInfo: Fun([], Addr),
+    getPoolInfo: Fun([], Tuple(Addr, Bool)),
   });
   const Listener = ParticipantClass('Listener', {
     ...Common,
@@ -27,15 +27,15 @@ export const main = Reach.App(() => {
     commit();
 
     Manager.only(() => {
-      const poolInfo = declassify(interact.getPoolInfo());
+      const [poolInfo, usesNetwork] = declassify(interact.getPoolInfo());
     });
 
     Manager
-      .publish(poolInfo)
+      .publish(poolInfo, usesNetwork)
       .timeout(false);
 
-    Manager.interact.hear(poolInfo);
-    Listener.interact.hear(poolInfo);
+    Manager.interact.hear(poolInfo, usesNetwork);
+    Listener.interact.hear(poolInfo, usesNetwork);
 
     commit();
 

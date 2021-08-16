@@ -1,6 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/announcer.main.mjs';
 import * as poolBackend from './build/index.main.mjs';
+import * as n2nnPoolBackend from './build/n2nn.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 import { getTestNetAccount } from './util.mjs';
 
@@ -24,7 +25,7 @@ export const runManager = async (useTestnet) => {
   const cache = {};
 
   const backendManager = backend.Manager(ctcManager, {
-    hear: (poolAddr) => {
+    hear: (poolAddr, usesNetwork) => {
       console.log(`Manager created pool:`, poolAddr);
     },
     printInfo: async () => {
@@ -33,8 +34,9 @@ export const runManager = async (useTestnet) => {
     },
     getPoolInfo: async () => {
       const poolAddr = await ask.ask(`Enter new pool address:`);
+      const usesNetwork = await ask.ask(`Does ${poolAddr} use the network token? (y/n)`, ask.yesno);
       cache[poolAddr] = true;
-      return poolAddr.startsWith('0x') ? poolAddr.slice(2) : poolAddr;
+      return [poolAddr.startsWith('0x') ? poolAddr.slice(2) : poolAddr, usesNetwork];
     },
   });
 
@@ -66,7 +68,7 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
   const ctcListener = accListener.attach(backend, stdlib.connector == 'ALGO' ? parseInt(listenerInfo) : listenerInfo)
 
   const backendListener = backend.Listener(ctcListener, {
-    hear: async (poolInfo) => {
+    hear: async (poolInfo, usesNetwork) => {
       let ctcInfo;
       if (stdlib.connector == 'ALGO') {
         ctcInfo = parseInt(poolInfo);
@@ -74,8 +76,9 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
         let pit = poolInfo.toString().trim().replace(/\0.*$/g,'');
         ctcInfo = pit.startsWith('0x') ? pit : ('0x' + pit);
       }
-      console.log(`\x1b[2m`, `Pool ID:`, ctcInfo, '\x1b[0m');
-      const ctcPool = await accListener.attach(poolBackend, ctcInfo);
+      console.log(`\x1b[2m`, `Pool ID:`, ctcInfo, `Uses Network:`, usesNetwork, '\x1b[0m');
+      const theBackend = usesNetwork ? n2nnPoolBackend : poolBackend;
+      const ctcPool = await accListener.attach(theBackend, ctcInfo);
       const views = await ctcPool.getViews();
       const tokA = await views.Tokens.aTok();
       const tokB = await views.Tokens.bTok();
@@ -86,9 +89,9 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
         return;
       }
 
-      const resA = await (tokA[1] == 0)
-        ? { id: 0, name: stdlib.connector, symbol: stdlib.connector }
-        : accListener.tokenMetadata(tokA[1]);
+      const resA = await (tokA[1] == null)
+        ? { id: null, name: stdlib.connector, symbol: stdlib.connector }
+        : (await accListener.tokenMetadata(tokA[1]));
       const tokASym = resA.symbol;
       const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
       console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');

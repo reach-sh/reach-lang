@@ -9,6 +9,17 @@ const getTokenInfo = async () => {
   return [ tokSym, tokName ];
 }
 
+const tryMint = async (stdlib, tok, addr) => {
+  const acc = (stdlib.connector == 'ALGO')
+    ? { networkAccount: { addr } }
+    : { networkAccount: { address: addr } };
+  try {
+    await tok.mint(acc, stdlib.parseCurrency(1000))
+  } catch (e) {
+    console.log(`Could not mint for ${addr}. This is expected if you're funding an Admin who created a network to non-network pool.`);
+  };
+}
+
 export const runTokens = async (useTestnet) => {
   const stdlib = await loadStdlib();
 
@@ -41,10 +52,7 @@ export const runTokens = async (useTestnet) => {
   while (true) {
     console.log(`Ready To Mint 1000 ${symA} & 1000 ${symB}`);
     const addr = await ask.ask(`Address: `);
-    const acc = (stdlib.connector == 'ALGO')
-      ? { networkAccount: { addr } }
-      : { networkAccount: { address: addr } };
-    await tokA.mint(acc, stdlib.parseCurrency(1000));
-    await tokB.mint(acc, stdlib.parseCurrency(1000));
+    await tryMint(stdlib, tokA, addr);
+    await tryMint(stdlib, tokB, addr);
   }
 }

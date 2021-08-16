@@ -1,5 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+import * as n2nnBackend from './build/n2nn.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 import { runManager, runListener, runListener_ } from './announcer.mjs';
 import { runTokens } from './tokens.mjs';
@@ -9,6 +10,9 @@ import { getTestNetAccount } from './util.mjs';
 const withdrew  = {};
 const deposited = {};
 const traded = {};
+
+const bold = (s) => `\x1b[1m${s}\x1b[0m`
+const faint = (s) => `\x1b[2m${s}\x1b[0m`
 
 const isAOrB = (a, b) => (ans) => {
   if (ans.toLowerCase() == a.toLowerCase()) {
@@ -25,7 +29,7 @@ const fmt = (stdlib, x) => stdlib.formatCurrency(x, 4);
 const getBalance = async (stdlib, tokenX, who) => {
   let tokId = tokenX.id;
   if (stdlib.connector == 'ALGO') {
-    tokId = stdlib.bigNumberify(tokId.hex).toNumber();
+    tokId = tokId ? stdlib.bigNumberify(tokId.hex).toNumber() : false;
   }
   const amt = await stdlib.balanceOf(who, tokId);
   return `${fmt(stdlib, amt)} ${tokenX.symbol}`;
@@ -38,7 +42,11 @@ const runDuoSwapAdmin = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
 
-  const { tokA, tokB } = await ask.ask(`Enter token info:`, JSON.parse);
+  const res = await ask.ask(`Enter token info:`, JSON.parse);
+  const tokA = res.tokA;
+  const tokB = res.tokB;
+
+  const usesNetwork = !tokA;
 
   let accAdmin;
   if (useTestnet) {
@@ -49,7 +57,9 @@ const runDuoSwapAdmin = async (useTestnet) => {
     const startingBalance = stdlib.parseCurrency(9999);
     accAdmin = await stdlib.newTestAccount(startingBalance);
   }
-  await accAdmin.tokenAccept(tokA);
+  if (!usesNetwork) {
+    await accAdmin.tokenAccept(tokA);
+  }
   await accAdmin.tokenAccept(tokB);
 
   if(!useTestnet) {
@@ -59,13 +69,14 @@ const runDuoSwapAdmin = async (useTestnet) => {
   await accAdmin.setDebugLabel('Admin');
 
   // Deploy contract
-  const ctcAdmin = accAdmin.deploy(backend);
+  const poolBackend = usesNetwork ? n2nnBackend : backend;
+  const ctcAdmin = accAdmin.deploy(poolBackend);
   const ctcInfo = ctcAdmin.getInfo();
   const poolAddr = (await ctcInfo).toString();
   await ask.ask(`Enter Pool Address Into Announcer Manager: ${poolAddr}`);
 
   // Admin backend
-  const adminBackend = backend.Admin(ctcAdmin, {
+  const adminBackend = poolBackend.Admin(ctcAdmin, {
     tokA,
     tokB,
     conUnit: (stdlib.connector == 'ALGO') ? 1000000 : 1000000000000000000,
@@ -109,16 +120,22 @@ const runDuoSwapLP = async (useTestnet) => {
 
   const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
 
-  await accProvider.tokenAccept(tokA.id);
+  const usesNetwork = !tokA.id;
+
+  if (!usesNetwork) {
+    await accProvider.tokenAccept(tokA.id);
+  }
   await accProvider.tokenAccept(tokB.id);
 
   if (!useTestnet) {
     const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accProvider)}`);
   }
 
-  const ctcProvider = accProvider.attach(backend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+  const poolBackend = usesNetwork ? n2nnBackend : backend;
 
-  const backendProvider = backend.Provider(ctcProvider, {
+  const ctcProvider = accProvider.attach(poolBackend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+
+  const backendProvider = poolBackend.Provider(ctcProvider, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
     acceptToken: async (tokId) => {
       await accProvider.tokenAccept(tokId);
@@ -168,12 +185,12 @@ const compareTokens = (stdlib, token, tokenId) => {
   if (token[0] == 'None') {
     return true;
   }
-  return (stdlib.connector == 'ALGO') ? token.eq(tokenId) : (token == tokenId)
+  return (stdlib.connector == 'ALGO') ? token[1].eq(tokenId) : (token[1] == tokenId)
 }
 
 const maybeTok = (tokA) =>
-  (tokA.id == 0)
-    ? ['None', 0]
+  (!tokA.id)
+    ? ['None', null]
     : ['Some', tokA.id];
 
 const runDuoSwapTrader = async (useTestnet) => {
@@ -205,10 +222,12 @@ const runDuoSwapTrader = async (useTestnet) => {
     })), listener() ]);
   } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
-  // tokA will equal { id: 0, ... } if network token
+  // tokA will equal { id: null, ... } if network token
   const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
 
-  if (tokA.id != 0) {
+  const usesNetwork = !tokA.id;
+
+  if (!usesNetwork) {
     await accTrader.tokenAccept(tokA.id); }
   await accTrader.tokenAccept(tokB.id);
 
@@ -216,9 +235,11 @@ const runDuoSwapTrader = async (useTestnet) => {
     const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accTrader)}`);
   }
 
-  const ctcTrader = accTrader.attach(backend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+  const poolBackend = usesNetwork ? n2nnBackend : backend;
 
-  const backendTrader = backend.Trader(ctcTrader, {
+  const ctcTrader = accTrader.attach(poolBackend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+
+  const backendTrader = poolBackend.Trader(ctcTrader, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
     acceptToken: async (tokId) => {
       await accTrader.tokenAccept(tokId);
@@ -241,19 +262,16 @@ const runDuoSwapTrader = async (useTestnet) => {
         const trade =
           (tokType == tokA.symbol)
             ? ({ amtA: stdlib.parseCurrency(amt), amtB: 0, amtInTok: maybeTok(tokA) })
-            : ({ amtA: 0, amtB: stdlib.parseCurrency(amt), amtInTok: tokB.id });
+            : ({ amtA: 0, amtB: stdlib.parseCurrency(amt), amtInTok: ['Some', tokB.id] });
         return { when: true, msg: trade };
       } else {
-        return { when: false, msg: { amtA: 0, amtB: 0, amtInTok: ['None', 0] }};
+        return { when: false, msg: { amtA: 0, amtB: 0, amtInTok: ['None', null] }};
       }
     },
   });
 
   await Promise.all([ backendTrader ]);
 }
-
-const bold = (s) => `\x1b[1m${s}\x1b[0m`
-const faint = (s) => `\x1b[2m${s}\x1b[0m`
 
 const options = [
   `1: ` + bold(`DuoSwap Pool Admin`) + `\n` + faint(`  * Create a pool for a pair of tokens`),
