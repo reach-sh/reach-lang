@@ -6,7 +6,7 @@ go () {
     echo "$ORIG" does not exist
     exit 1
   fi
-  FORK="forks/$(basename "$1")"
+  FORK="patches/$(basename "$1")"
   PATCH="${FORK}.patch"
   if ! [ -f "$PATCH" ] ; then
     diff -u "${ORIG}" "${FORK}" > "${PATCH}"

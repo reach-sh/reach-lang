@@ -39,6 +39,7 @@ Let's look at a simple Reach program where two principals, Alice and Bob, intera
 ::: note
 You can look at the entire example program by visiting [overview/index.rsh](@github/examples/overview/index.rsh).
 :::
+
 ::: note
 Get language support for Reach in your editor by visiting [the guide on editor support](##guide-editor-support).
 :::

@@ -4,13 +4,18 @@ const path = require('path');
 const linkReplace = require('markdown-it-attr-link-replacer').default;
 
 // Add Reach to Shiki
+let addedJS = false;
 shiki.BUNDLED_LANGUAGES.forEach((o) => {
   if ( o.id === 'javascript' ) {
+    addedJS = true;
     o.aliases.push('mjs');
     // XXX remove
     o.aliases.push('reach', 'rsh');
   }
 });
+if ( ! addedJS ) {
+  console.log(`Shiki hack failed`);
+}
 // XXX enable
 if ( false ) {
 shiki.BUNDLED_LANGUAGES.push({

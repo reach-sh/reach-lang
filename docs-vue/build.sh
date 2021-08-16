@@ -1,4 +1,4 @@
 #!/bin/sh
 ./patch.sh
-npm run build
+yarn build
 cp -f ../reach src/.vuepress/dist/
