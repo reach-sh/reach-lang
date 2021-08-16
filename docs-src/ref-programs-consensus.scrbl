@@ -116,7 +116,7 @@ A @tech{continue statement} may be written without the preceding identifier upda
  [] = [];
  continue; }
 
-A @tech{continue statement} must be @tech{dominated} by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
+A @tech{continue statement} must be @tech{dominated} by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}. A continue statement may occur in a step, provided the @reachin{RHS} modifies the state into a consensus step.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
 @subsection{@tt{parallelReduce}}
@@ -439,4 +439,3 @@ set, @reachin{s}, or @reachin{s.remove(ADDRESS)} to remove the @reachin{ADDRESS}
 Such modifications may only occur in a @tech{consensus step}.
 
 @reachin{s.member(ADDRESS)} will return a @reachin{Bool} representing whether the address is in the set.
-
