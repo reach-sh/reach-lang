@@ -2,16 +2,14 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/announcer.main.mjs';
 import * as poolBackend from './build/index.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
+import { getTestNetAccount } from './util.mjs';
 
 export const runManager = async (useTestnet) => {
   const stdlib = await loadStdlib();
   let manager;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
-    manager = await (stdlib.connector == 'ALGO'
-      ? stdlib.newAccountFromMnemonic(secret)
-      : stdlib.newAccountFromSecret(secret));
+    manager = await getTestNetAccount(stdlib);
   } else {
     const startingBalance = stdlib.parseCurrency(100);
     manager = await stdlib.newTestAccount(startingBalance);
@@ -50,10 +48,7 @@ export const runListener = async (useTestnet) => {
   let accListener;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
-    accListener = await (stdlib.connector == 'ALGO'
-      ? stdlib.newAccountFromMnemonic(secret)
-      : stdlib.newAccountFromSecret(secret));
+    accListener = await getTestNetAccount(stdlib);
   } else {
     const startingBalance = stdlib.parseCurrency(100);
     accListener = await stdlib.newTestAccount(startingBalance);

@@ -3,6 +3,7 @@ import * as backend from './build/index.main.mjs';
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 import { runManager, runListener, runListener_ } from './announcer.mjs';
 import { runTokens } from './tokens.mjs';
+import { getTestNetAccount } from './util.mjs';
 
 // Track who withdrew/deposited
 const withdrew  = {};
@@ -27,7 +28,8 @@ const getBalance = async (stdlib, tokenX, who) => {
     tokId = stdlib.bigNumberify(tokId.hex).toNumber();
   }
   const amt = await stdlib.balanceOf(who, tokId);
-  return `${fmt(stdlib, amt)} ${tokenX.symbol}`; };
+  return `${fmt(stdlib, amt)} ${tokenX.symbol}`;
+};
 
 const getBalances = async (stdlib, who, tokA, tokB) =>
   `${await getBalance(stdlib, tokA, who)} & ${await getBalance(stdlib, tokB, who)}`;
@@ -41,10 +43,7 @@ const runDuoSwapAdmin = async (useTestnet) => {
   let accAdmin;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
-    accAdmin = await (stdlib.connector == 'ALGO'
-      ? stdlib.newAccountFromMnemonic(secret)
-      : stdlib.newAccountFromSecret(secret));
+    accAdmin = await getTestNetAccount(stdlib);
   } else {
     // Create & Fund Admin
     const startingBalance = stdlib.parseCurrency(9999);
@@ -85,10 +84,7 @@ const runDuoSwapLP = async (useTestnet) => {
   let accProvider;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
-    accProvider = await (stdlib.connector == 'ALGO'
-      ? stdlib.newAccountFromMnemonic(secret)
-      : stdlib.newAccountFromSecret(secret));
+    accProvider = await getTestNetAccount(stdlib);
   } else {
     // Create & Fund Provider
     const startingBalance = stdlib.parseCurrency(9999);
@@ -177,10 +173,7 @@ const runDuoSwapTrader = async (useTestnet) => {
   let accTrader;
   if (useTestnet) {
     stdlib.setProviderByName('TestNet');
-    const secret = await ask.ask(`What is your secret key (ETH) / mnemonic (ALGO) ?`);
-    accTrader = await (stdlib.connector == 'ALGO'
-      ? stdlib.newAccountFromMnemonic(secret)
-      : stdlib.newAccountFromSecret(secret));
+    accTrader = await getTestNetAccount(stdlib);
   } else {
     // Create & Fund Trader
     const startingBalance = stdlib.parseCurrency(9999);
