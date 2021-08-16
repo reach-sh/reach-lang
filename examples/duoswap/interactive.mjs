@@ -185,7 +185,7 @@ const compareTokens = (stdlib, token, tokenId) => {
   if (token[0] == 'None') {
     return true;
   }
-  return (stdlib.connector == 'ALGO') ? token[1].eq(tokenId) : (token[1] == tokenId)
+  return (stdlib.connector == 'ALGO') ? token[1].eq(tokenId || 0) : (token[1] == tokenId)
 }
 
 const maybeTok = (tokA) =>
