@@ -157,6 +157,7 @@
      ;; XXX link
       (d (format "@[code](@reach-lang/examples/~a)" f))]
     ['reach-vers
+     ;; XXX
      (d "{{ VERSION }}")]
     [x
       (set-box! BAD #t)

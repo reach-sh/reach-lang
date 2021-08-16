@@ -6,9 +6,20 @@ const linkReplace = require('markdown-it-attr-link-replacer').default;
 // Add Reach to Shiki
 shiki.BUNDLED_LANGUAGES.forEach((o) => {
   if ( o.id === 'javascript' ) {
-    o.aliases.push('reach', 'rsh', 'mjs');
+    o.aliases.push('mjs');
+    // XXX remove
+    o.aliases.push('reach', 'rsh');
   }
 });
+// XXX enable
+if ( false ) {
+shiki.BUNDLED_LANGUAGES.push({
+  id: 'reach',
+  scopeName: 'source.reach',
+  path: 'reach.tmLanguage.json',
+  aliases: [ 'rsh' ],
+});
+}
 
 const safeJSONRead = (p) => {
   try {
@@ -117,7 +128,10 @@ module.exports = {
       id: "UA-149147406-2"
     } ],
     [ '@vuepress/plugin-shiki', {
-      theme: 'nord', // XXX react to dark mode?
+      // XXX If you change this theme, then the background won't take effect,
+      // because the default Vue theme's SCSS use var(--code-bg-color) to
+      // override it AND to style the line numbers, etc.
+      theme: 'nord',
       langs: [],
     } ],
     [ '@vuepress/plugin-search', {

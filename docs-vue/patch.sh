@@ -20,4 +20,4 @@ go () {
   fi
 }
 
-go "node_modules/@vuepress/markdown/lib/highlight.js"
+# cp forks/reach.tmLanguage.json node_modules/shiki/languages/
