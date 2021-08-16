@@ -116,8 +116,27 @@ A @tech{continue statement} may be written without the preceding identifier upda
  [] = [];
  continue; }
 
-A @tech{continue statement} must be @tech{dominated} by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}. A continue statement may occur in a step, provided the @reachin{RHS} modifies the state into a consensus step.
+A @tech{continue statement} must be @tech{dominated} by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
+
+@(hrule)
+
+As a special case, a @tech{continue statement} may occur in a @tech{step}, if the @reachin{UPDATE_EXPR} transitions to a @tech{consensus step}.
+In other words, this is a valid program:
+@reach{
+ const f = () => {
+  commit();
+  A.publish();
+  return 1;
+ };
+
+ var x = 0;
+ invariant(balance() == 0);
+ while ( x == 0 ) {
+  x = f();
+  continue;
+ }
+}
 
 @subsection{@tt{parallelReduce}}
 

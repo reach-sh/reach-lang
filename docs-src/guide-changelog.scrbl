@@ -10,6 +10,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/08/16: Allow @reachin{continue} in @tech{step} in some cases.}
 @item{2021/07/31: Added @jsin{newTestAccounts}, @jsin{waitUntilSecs}, and @jsin{getNetworkSecs} to JavaScript standard library.}
 @item{2021/07/31: Updated @jsin{onProgress} type in JavaScript standard library.}
 @item{2021/07/31: Added @reachin{relativeTime}, @reachin{absoluteTime}, @reachin{relativeSecs}, @reachin{absoluteSecs}, @reachin{baseWaitTime}, @reachin{baseWaitSecs}, and @reachin{lastConsensusSecs} to Reach, with support in @reachin{wait} and @reachin{.timeout}.}
