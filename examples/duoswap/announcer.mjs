@@ -81,12 +81,14 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
       const tokB = await views.Tokens.bTok();
       let aBal = await views.Tokens.aBal();
       let bBal = await views.Tokens.bBal();
-      if (tokA[0] == 'None' || tokB[0] == 'None') {
+      if (tokB[0] == 'None') {
         console.log(`XXX: Pool ${ctcInfo} does not have token info`);
         return;
       }
 
-      const resA = await accListener.tokenMetadata(tokA[1]);
+      const resA = await (tokA[1] == 0)
+        ? { id: 0, name: stdlib.connector, symbol: stdlib.connector }
+        : accListener.tokenMetadata(tokA[1]);
       const tokASym = resA.symbol;
       const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
       console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');

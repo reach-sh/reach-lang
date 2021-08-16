@@ -163,9 +163,18 @@ const runDuoSwapLP = async (useTestnet) => {
   await Promise.all([ backendProvider ]);
 }
 
+// True: token is tokA, False: token is tokB
 const compareTokens = (stdlib, token, tokenId) => {
+  if (token[0] == 'None') {
+    return true;
+  }
   return (stdlib.connector == 'ALGO') ? token.eq(tokenId) : (token == tokenId)
 }
+
+const maybeTok = (tokA) =>
+  (tokA.id == 0)
+    ? ['None', 0]
+    : ['Some', tokA.id];
 
 const runDuoSwapTrader = async (useTestnet) => {
 
@@ -196,9 +205,11 @@ const runDuoSwapTrader = async (useTestnet) => {
     })), listener() ]);
   } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
+  // tokA will equal { id: 0, ... } if network token
   const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
 
-  await accTrader.tokenAccept(tokA.id);
+  if (tokA.id != 0) {
+    await accTrader.tokenAccept(tokA.id); }
   await accTrader.tokenAccept(tokB.id);
 
   if (!useTestnet) {
@@ -229,11 +240,11 @@ const runDuoSwapTrader = async (useTestnet) => {
         const amt = await ask.ask(`How much do you want to trade? (You have ${myBal})`);
         const trade =
           (tokType == tokA.symbol)
-            ? ({ amtA: stdlib.parseCurrency(amt), amtB: 0, amtInTok: tokA.id })
+            ? ({ amtA: stdlib.parseCurrency(amt), amtB: 0, amtInTok: maybeTok(tokA) })
             : ({ amtA: 0, amtB: stdlib.parseCurrency(amt), amtInTok: tokB.id });
         return { when: true, msg: trade };
       } else {
-        return { when: false, msg: { amtA: 0, amtB: 0, amtInTok: tokA.id }};
+        return { when: false, msg: { amtA: 0, amtB: 0, amtInTok: ['None', 0] }};
       }
     },
   });

@@ -162,24 +162,24 @@ export const runAutomated = async () => {
             ? ({
               amtA: amt,
               amtB: 0,
-              amtInTok: zmd.id,
+              amtInTok: ['Some', zmd.id],
             })
           : ({
               amtA: 0,
               amtB: amt,
-              amtInTok: gil.id,
+              amtInTok: ['Some', gil.id],
             });
 
         const didNotTrade = traded[who] == false;
         if (didNotTrade) {
-          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok]}`,'\x1b[0m')
+          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok[1]]}`,'\x1b[0m')
         }
         return { when: didNotTrade, msg: trade };
       },
       tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
         if (isMe) {
           traded[who] = true;
-          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok]} for ${amtOut} ${toks[amtOutTok]}`,'\x1b[0m');
+          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok[1]]} for ${amtOut} ${toks[amtOutTok[1]]}`,'\x1b[0m');
         }
       }
     });

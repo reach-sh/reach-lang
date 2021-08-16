@@ -8,7 +8,7 @@ build/%.main.mjs: %.rsh
 	$(REACH) compile $^
 
 .PHONY: build
-build: build/announcer.main.mjs build/index.main.mjs
+build: build/announcer.main.mjs build/index.main.mjs build/n2nn.main.mjs
 	docker build -f Dockerfile --tag=reachsh/reach-app-duoswap:latest .
 
 .PHONY: run
