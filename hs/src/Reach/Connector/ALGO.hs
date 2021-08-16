@@ -210,7 +210,7 @@ opt_b1 = \case
   a@["substring", s0, _] : b@["int", x] : c@["getbyte"] : l ->
     case mse of
       Just (s0x, s0xp1) ->
-        opt_b1 $ ["substring", s0x, s0xp1] : l
+        opt_b1 $ ["substring", s0x, s0xp1] : ["btoi"] : l
       Nothing ->
         a : b : c : l
     where
