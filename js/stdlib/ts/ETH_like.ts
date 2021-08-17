@@ -167,6 +167,20 @@ const {
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
 
+const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk(() => 0);
+
+function getQueryLowerBound() {
+  return bigNumberify(_getQueryLowerBound());
+}
+
+function setQueryLowerBound(networkTime: BigNumber|number) {
+  networkTime = typeof networkTime === 'number' ? networkTime
+    : networkTime._isBigNumber ? networkTime.toNumber()
+    : networkTime;
+  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
+  _setQueryLowerBound(networkTime);
+}
+
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
   if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
@@ -236,9 +250,10 @@ class EventCache {
 
   cache: any[] = [];
 
-  public currentBlock = 0;
+  public currentBlock: number;
 
   constructor() {
+    this.currentBlock = _getQueryLowerBound();
     this.cache = [];
   }
 
@@ -1109,6 +1124,8 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
 const ethLike = {
   ...ethLikeCompiled,
   ...providerLib,
+  getQueryLowerBound,
+  setQueryLowerBound,
   getFaucet,
   setFaucet,
   randomUInt,

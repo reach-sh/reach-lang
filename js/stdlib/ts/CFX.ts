@@ -7,6 +7,8 @@ export const connector = 'CFX';
 const ethLike = makeEthLike(cfxImpl);
 // The following should be identical to ETH.ts
 export const {
+  getQueryLowerBound,
+  setQueryLowerBound,
   getProvider,
   setProvider,
   randomUInt,

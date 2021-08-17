@@ -606,13 +606,28 @@ type RoundInfo = {
   specRound?: number,
 }
 
+const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
+
+export function getQueryLowerBound(): BigNumber {
+  return bigNumberify(_getQueryLowerBound());
+}
+
+export function setQueryLowerBound(networkTime: BigNumber|number): void {
+  networkTime = typeof networkTime === 'number' ? networkTime
+    : networkTime._isBigNumber ? networkTime.toNumber()
+    : networkTime;
+  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
+  _setQueryLowerBound(networkTime);
+}
+
 class EventCache {
 
   cache: any[] = [];
 
-  currentRound = 0;
+  currentRound: number;
 
   constructor() {
+    this.currentRound = _getQueryLowerBound();
     this.cache = [];
   }
 
