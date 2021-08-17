@@ -1,17 +1,9 @@
-FROM confluxchain/conflux-rust:1.1.4 as builder
-
-WORKDIR /root/run/scripts
-RUN node initConfig.js
+FROM confluxchain/conflux-rust:1.1.5-testnet as builder
 
 FROM debian:buster-slim
 
-COPY --from=builder /usr/local/bin/conflux /
-COPY --from=builder /root/run/log.yaml /
-COPY --from=builder /root/run/default.toml /
-RUN sed -i -e 's/^chain_id = .*$/chain_id = 999/' default.toml
-COPY --from=builder /root/run/genesis_secret.txt /
-
-COPY run.sh /
+COPY --from=builder /root/run/conflux /
+COPY log.yaml default.toml genesis_secret.txt run.sh /
 
 ENTRYPOINT ["/run.sh"]
 

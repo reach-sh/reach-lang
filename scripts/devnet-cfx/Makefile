@@ -5,11 +5,6 @@ build:
 	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../docker-push.sh $(IMAGE)
 
-default.toml: build
-	docker run --name libsy --entrypoint /bin/true ${IMAGE}
-	docker cp libsy:/default.toml .
-	docker rm libsy
-
 .PHONY: push
 push: build
 	../docker-push.sh $(IMAGE)
