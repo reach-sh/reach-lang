@@ -246,19 +246,14 @@ function envDefaultsCFX(env: {[key: string]: string}): ProviderEnv {
   if (truthyEnv(CFX_NET) && CFX_NET === 'window') {
     return { CFX_NET, CFX_LOG, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(CFX_NODE_URI)) {
-    const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'no');
+    const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'yes');
     return { CFX_NODE_URI, CFX_NETWORK_ID, CFX_LOG, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.conflux) {
       return notYetSupported(`window.conflux`);
       // return windowProviderEnv(REACH_ISOLATED_NETWORK);
     } else {
-      const { REACH_DO_WAIT_PORT } = env;
-      if (truthyEnv(REACH_DO_WAIT_PORT)) {
-        return {...localhostProviderEnv, REACH_DO_WAIT_PORT};
-      } else {
-        return localhostProviderEnv;
-      }
+      return localhostProviderEnv;
     }
   }
 }
@@ -377,7 +372,7 @@ function cfxProviderEnv(network: WhichNetExternal): ProviderByURI {
     CFX_NODE_URI,
     CFX_NETWORK_ID,
     CFX_LOG: 'no',
-    REACH_DO_WAIT_PORT: 'no',
+    REACH_DO_WAIT_PORT: 'yes',
     REACH_CONNECTOR_MODE: 'CFX-live',
     REACH_ISOLATED_NETWORK: 'no',
   }
