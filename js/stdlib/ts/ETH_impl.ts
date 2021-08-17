@@ -330,3 +330,4 @@ export const providerLib = {
 }
 export const standardUnit = 'ETH';
 export const atomicUnit = 'WEI';
+export const validQueryWindow = true;

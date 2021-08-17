@@ -151,6 +151,7 @@ const {
   _warnTxNoBlockNumber = true,
   standardUnit,
   atomicUnit,
+  validQueryWindow,
 } = ethLikeArgs;
 
 const {
@@ -234,13 +235,13 @@ class EventCache {
 
   cache: any[] = [];
 
-  currentBlock = 0;
+  public currentBlock = 0;
 
   constructor() {
     this.cache = [];
   }
 
-  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: (currentBlock: number) => Promise<any[]>) {
+  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: (currentBlock: number) => Promise<[any[], number]>) {
     debug(`EventCache.query`, fromBlock, toBlock, topic);
     if (fromBlock > toBlock) {
       return undefined;
@@ -265,11 +266,12 @@ class EventCache {
 
     // If no results, then contact network
     const currentTime = await getNetworkTimeNumber();
-    this.cache = await getLogs(this.currentBlock + 1);
+    const [ res, toBlock_eff ] = await getLogs(this.currentBlock + 1);
+    this.cache = res;
 
     this.currentBlock =
       (this.cache.length == 0)
-        ? Math.min(currentTime, toBlock)
+        ? Math.min(currentTime, toBlock_eff)
         : getMaxBlock(this.cache).blockNumber;
 
     // Check for pred again
@@ -282,15 +284,29 @@ class EventCache {
     return getMinBlock(foundLogs);
   }
 
+  async doGetLogs(fromBlock: number, toBlock_given: number, address: string): Promise<[any[], number]> {
+    const provider = await getProvider();
+    const toBlock =
+      validQueryWindow === true
+      ? toBlock_given
+      : Math.min(toBlock_given, fromBlock + validQueryWindow);
+    debug(`doGetLogs`, { fromBlock, toBlock });
+    const res = await provider.getLogs({
+      fromBlock,
+      toBlock,
+      address,
+    });
+    return [ res, toBlock ];
+  };
+
   async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
     const topic = iface.getEventTopic(event);
     const getLogs = async (currentBlock: number) => {
-      const provider = await getProvider();
-      return await provider.getLogs({
-        fromBlock: Math.max(currentBlock, fromBlock),
+      return await this.doGetLogs(
+        Math.max(currentBlock, fromBlock),
         toBlock,
-        address: address
-      });
+        address,
+      );
     };
     return await this.query_(fromBlock, toBlock, topic, getLogs);
   }
@@ -299,12 +315,11 @@ class EventCache {
     const ethersC = await getC();
     const topic = ethersC.interface.getEventTopic(ok_evt);
     const getLogs = async (currentBlock: number) => {
-      const provider = await getProvider();
-      return await provider.getLogs({
-        fromBlock: (currentBlock > fromBlock && currentBlock < toBlock) ? currentBlock : fromBlock,
+      return await this.doGetLogs(
+        (currentBlock > fromBlock && currentBlock < toBlock) ? currentBlock : fromBlock,
         toBlock,
-        address: ethersC.address
-      });
+        ethersC.address,
+      );
     };
     return await this.query_(fromBlock, toBlock, topic, getLogs);
   }
@@ -992,9 +1007,12 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const now = await getNetworkTimeNumber();
   const getLogs = async (event:string): Promise<any> => {
     debug('verifyContract: getLogs', {event, now});
-    const log = await eventCache.queryContract(0, now, address, event, iface);
-    chk(log != undefined, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
-    return log;
+    while ( eventCache.currentBlock < now ) {
+      const log = await eventCache.queryContract(0, now, address, event, iface);
+      if ( log === undefined ) { continue; }
+      return log;
+    }
+    chk(false, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
   };
   const e0log = await getLogs('e0');
   const creation_block = e0log.blockNumber;

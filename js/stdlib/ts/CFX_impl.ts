@@ -211,3 +211,4 @@ export const providerLib = {
 export const _warnTxNoBlockNumber = false; // XXX ?
 export const standardUnit = 'CFX';
 export const atomicUnit = 'Drip';
+export const validQueryWindow = 1000;

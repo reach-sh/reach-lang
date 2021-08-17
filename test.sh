@@ -93,13 +93,13 @@ tealcount () {
 
 jb
 # r examples/overview # XXX test debigger
-#r examples/tut-7 # XXX test debigger
+r examples/tut-7 # XXX test debigger
 #c examples/rent-seeking/index.rsh
 #c examples/timeoutception/index.rsh
 #r examples/raffle
 
 # r examples/log-attack1j
-r examples/remote
+# r examples/remote
 
 # c examples/remote/index.rsh
 # r examples/chicken-fork
