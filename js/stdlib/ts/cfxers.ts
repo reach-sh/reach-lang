@@ -152,12 +152,17 @@ export class Contract implements IContract {
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
     return async (...args: any) => {
       debug(`cfxers:handler`, fname, 'call', {args});
-      let txn: {from?: string, value?: string} = {from, value: '0'};
+      let txn: any = {from, value: '0'};
       if (args.length === inputs.length + 1) {
         txn = unbn(args.pop());
         txn = {from, ...txn, value: (txn.value || '0').toString()};
       }
       args = unbn(args);
+      if ( txn.gasLimit !== undefined ) {
+        txn.gas = txn.gasLimit;
+      }
+      delete txn.gasLimit;
+      debug(`cfxers:handler`, fname, 'txn', { txn, args});
       const argsConformed = conform(args, inputs);
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
 
@@ -168,6 +173,25 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
+        let est = undefined;
+        let est_err = undefined;
+        try {
+          est = await cfc.estimateGasAndCollateral();
+        } catch (e) {
+          est_err = e;
+        }
+        debug(`cfxers:handler`, fname, {est, est_err});
+        if ( est ) {
+        if ( txn.gas === undefined ) {
+          txn.gas = est.gasLimit;
+        }
+        if ( txn.storageLimit === undefined ) {
+          txn.storageLimit = est.storageCollateralized;
+          if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
+            txn.storageLimit = 2048;
+          }
+        }
+        }
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
@@ -479,15 +503,22 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       debug(`_retryingSendTxn attempt`, txnOrig);
       const transactionHashP = provider.conflux.sendTransaction(txnMut);
       const transactionHash = await transactionHashP;
-      debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      debug(`_retryingSendTxn sent`, {txnOrig, txnMut, transactionHash});
       updateSentAt(addr, txnMut.epochHeight);
       return {
         transactionHash,
         wait: async () => {
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
-          // @ts-ignore
-          await transactionHashP.executed();
-          return {transactionHash};
+          try {
+            // @ts-ignore
+            const r = await transactionHashP.executed();
+            debug(`_retryingSendTxn receipt good`, r);
+            return { transactionHash };
+          } catch (e) {
+            const r: any = await provider.conflux.getTransactionReceipt(transactionHash);
+            debug(`_retryingSendTxn receipt bad`, r);
+            throw e;
+          }
         },
       }
     } catch (e) {

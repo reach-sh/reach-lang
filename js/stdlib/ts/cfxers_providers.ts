@@ -4,6 +4,8 @@ import Timeout from 'await-timeout';
 import { defaultEpochTag } from './CFX_util';
 import { debug } from './shared_impl';
 
+const waitMs = 1;
+
 type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
 type Conflux = cfxsdk.Conflux;
@@ -76,11 +78,11 @@ export class Provider {
 
   async getBlockNumber(): Promise<number> {
     // Arbitrarily make the user wait.
-    // This is just because we tend to spam this a lot.
-    // It can help to increase this to 1000 or more if you need to debug.
-    await Timeout.set(50);
+    await Timeout.set(waitMs);
     const epochNumber = await this.conflux.getEpochNumber(defaultEpochTag);
     const block = await this.conflux.getBlockByEpochNumber(epochNumber, true);
+    // @ts-ignore
+    debug('getBlockNumber', epochNumber, block.epochNumber, block.blockNumber);
     // @ts-ignore
     return parseInt(block.blockNumber);
   }
@@ -93,9 +95,7 @@ export class Provider {
 
   async getTransactionReceipt(transactionHash: string): Promise<any> {
     // Arbitrarily make the user wait.
-    // This is just because we tend to spam this a lot.
-    // It can help to increase this to 1000 or more if you need to debug.
-    await Timeout.set(50);
+    await Timeout.set(waitMs);
 
     const r = await this.conflux.getTransactionReceipt(transactionHash);
     if (!r) return r;
@@ -121,23 +121,14 @@ export class Provider {
 
   async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
     debug(`getLogs`, `opts`, opts);
-
-    const max_tries = 10;
-    let e: Error|null = null;
-    for (let tries = 1; tries <= max_tries; tries++) {
-      try {
-        const logs = await this.conflux.getLogs(opts);
-        debug(`getLogs`, `result`, logs);
-        return await attachBlockNumbers(this.conflux, logs);
-      } catch (err) {
-        e = err;
-        // XXX be pickier about which errs we are willing to catch
-        // XXX find some way to be sure more that `toEpoch` has been executed before trying again
-        await Timeout.set(250);
-      }
+    try {
+      const logs = await this.conflux.getLogs(opts);
+      debug(`getLogs`, `result`, logs);
+      return await attachBlockNumbers(this.conflux, logs);
+    } catch (err) {
+      debug(`getLogs`, `error`, err);
+      return [];
     }
-    debug(`getLogs`, `error`, e);
-    throw e;
   }
 
   async getTransaction(txnHash: string): Promise<any> {

@@ -13,6 +13,8 @@ import * as backend from './build/index.main.mjs';
     stdlib.newTestAccount(startingBalance),
     stdlib.newTestAccount(startingBalance),
   ]);
+  accAlice.setDebugLabel('Alice');
+  accBob.setDebugLabel('Bob');
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
@@ -20,6 +22,7 @@ import * as backend from './build/index.main.mjs';
     get: (() => Who.length),
     check: assertEq,
   });
+  console.log(`BEGIN map-rwrw`);
   await Promise.all([
     backend.Alice(ctcAlice, common('Alice')),
     backend.Bob(ctcBob, common('Bob')),

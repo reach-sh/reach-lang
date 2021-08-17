@@ -5,7 +5,6 @@ ETH.rent-seeking
 ALGO.rent-seeking
 
 # CFX known timeouts
-CFX.map-rwrw
 CFX.map-vary
 CFX.duoswap
 

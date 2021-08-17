@@ -251,6 +251,7 @@ class EventCache {
   cache: any[] = [];
 
   public currentBlock: number;
+  lastQueryTime: number = 0;
 
   constructor() {
     this.currentBlock = _getQueryLowerBound();
@@ -281,13 +282,19 @@ class EventCache {
     debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
-    const currentTime = await getNetworkTimeNumber();
-    const [ res, toBlock_eff ] = await getLogs(this.currentBlock + 1);
+    const [ res, toBlock_eff ] = await getLogs(this.currentBlock);
     this.cache = res;
+
+    if ( this.currentBlock === toBlock_eff ) {
+      debug(`Current block is same as effective block... waiting`);
+      await Timeout.set(Math.max(0, (this.lastQueryTime + 1000) - Date.now()));
+    } else {
+      this.lastQueryTime = Date.now();
+    }
 
     this.currentBlock =
       (this.cache.length == 0)
-        ? Math.min(currentTime, toBlock_eff)
+        ? toBlock_eff
         : getMaxBlock(this.cache).blockNumber;
 
     // Check for pred again
@@ -300,13 +307,19 @@ class EventCache {
     return getMinBlock(foundLogs);
   }
 
-  async doGetLogs(fromBlock: number, toBlock_given: number, address: string): Promise<[any[], number]> {
+  async doGetLogs(fromBlock_given: number, currentBlock:number, address: string): Promise<[any[], number]> {
+    debug(`doGetLogs`, { fromBlock_given, currentBlock });
     const provider = await getProvider();
+    const fromBlock = Math.max(fromBlock_given, currentBlock);
+    const currentTime = await getNetworkTimeNumber();
+    if ( fromBlock > currentTime ) {
+      return [ [], currentTime ]; }
     const toBlock =
       validQueryWindow === true
-      ? toBlock_given
-      : Math.min(toBlock_given, fromBlock + validQueryWindow);
-    debug(`doGetLogs`, { fromBlock, toBlock });
+      ? currentTime
+      : Math.min(currentTime, fromBlock + validQueryWindow);
+    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
+    assert(fromBlock <= toBlock, "from <= to");
     const res = await provider.getLogs({
       fromBlock,
       toBlock,
@@ -316,11 +329,11 @@ class EventCache {
   };
 
   async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
+    debug(`queryContract`, { fromBlock, toBlock });
     const topic = iface.getEventTopic(event);
     const getLogs = async (currentBlock: number) => {
       return await this.doGetLogs(
-        Math.max(currentBlock, fromBlock),
-        toBlock,
+        fromBlock, currentBlock,
         address,
       );
     };
@@ -328,12 +341,12 @@ class EventCache {
   }
 
   async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
+    debug(`query`, { fromBlock, toBlock });
     const ethersC = await getC();
     const topic = ethersC.interface.getEventTopic(ok_evt);
     const getLogs = async (currentBlock: number) => {
       return await this.doGetLogs(
-        (currentBlock > fromBlock && currentBlock < toBlock) ? currentBlock : fromBlock,
-        toBlock,
+        fromBlock, currentBlock,
         ethersC.address,
       );
     };
@@ -691,7 +704,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           if ( ! soloSend ) {
             debug(...dhead, `SKIPPING`, e);
           } else {
-            debug(...dhead, `ERROR`, e.stack);
+            debug(...dhead, `ERROR`, { stack: e.stack });
 
             // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
             await Timeout.set(1);
@@ -716,6 +729,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           }
         }
 
+        debug(...dhead, 'SUCC');
         return await doRecv(false);
       }
 
@@ -737,6 +751,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       debug(dhead, `START`);
 
       // look after the last block
+      void(isFirstMsgDeploy);
       const block_poll_start_init: number =
         lastBlock + (isFirstMsgDeploy ? 0 : 1);
       let block_poll_start: number = block_poll_start_init;
@@ -749,7 +764,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           block_poll_start = block_poll_end;
 
           await Timeout.set(1);
-          block_poll_end = await getNetworkTimeNumber();
+          block_poll_end = Math.max(eventCache.currentBlock + 1, await getNetworkTimeNumber());
+          debug(dhead, `up poll int`, {block_poll_start, block_poll_end});
           if ( waitIfNotPresent && block_poll_start == block_poll_end ) {
             await waitUntilTime(bigNumberify(block_poll_end + 1));
           }
