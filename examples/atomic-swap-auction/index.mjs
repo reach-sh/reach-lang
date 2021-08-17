@@ -22,6 +22,8 @@ const bidderNames = ["Alice", "Bob", "Camus"];
 (async () => {
   const stdlib = await loadStdlib();
 
+  const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
+
   const startingBalance = stdlib.parseCurrency(10);
   const accCreator = await stdlib.newTestAccount(startingBalance);
   const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
@@ -111,7 +113,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
       ...common('Auctioneer'),
       getSwap: () => {
         console.log(`Auctioneer proposes swap`);
-        return [ zorkmid.id, amtA, gil.id, reservePrice, 3 * 3 ]; },
+        return [ zorkmid.id, amtA, gil.id, reservePrice, timeout ]; },
       showAuctionStart: () => console.log(`Auction starts`)
     });
 

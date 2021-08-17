@@ -4,13 +4,10 @@
 ETH.rent-seeking
 ALGO.rent-seeking
 
-# ALGO known timeouts
-ALGO.atomic-swap-auction
-
 # CFX known timeouts
 CFX.map-rwrw
 CFX.map-vary
-CFX.atomic-swap-auction
 CFX.duoswap
+
 # https://trello.com/c/FHKWnoAV/1467-cfx-cache-events-nondeterministic-timeout
 CFX.cache-events

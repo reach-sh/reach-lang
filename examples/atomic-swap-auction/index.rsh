@@ -28,9 +28,9 @@ export const main = Reach.App(() => {
     .publish(tokA, amtA, tokB, reservePrice, timeout)
     .pay([ [amtA, tokA ]]);
 
-  var [ dealMade ] = [ false ];
+  var [ dealMade, tries ] = [ false, 0 ];
   invariant(balance(tokA) == (dealMade ? 0 : amtA) && balance(tokB) == 0);
-  while (!dealMade) {
+  while (!dealMade && tries < 3) {
 
     commit();
     Anybody.publish();
@@ -59,17 +59,23 @@ export const main = Reach.App(() => {
             return [ this, false, bid ];
           }))
         .timeRemaining(timeRemaining());
+    commit();
 
+    Auctioneer.publish();
     transfer(isFirstBid ? 0 : amtA, tokA).to(highestBidder);
     transfer(isFirstBid ? 0 : currentPrice, tokB).to(Auctioneer);
 
     each([Auctioneer, Bidder], () => interact.showOutcome(highestBidder));
 
-    [ dealMade ] = [ !isFirstBid ];
+    [ dealMade, tries ] = [ !isFirstBid, tries + 1 ];
     continue;
   }
-
-  transfer(balance()).to(Auctioneer);
   commit();
 
+  Auctioneer.publish();
+  transfer(balance()).to(Auctioneer);
+  transfer(balance(tokA), tokA).to(Auctioneer);
+  commit();
+
+  exit();
 });

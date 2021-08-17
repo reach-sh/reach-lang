@@ -16,9 +16,6 @@ CFX.view-map
 # https://trello.com/c/Fo70yr87/1430-nondet-algonft-dumb-failure-ctc-not-deployed-yet
 ALGO.nft-dumb
 
-# CFX known failures w/ launchToken::mint
-CFX.atomic-swap-auction
-
 # CFX Dan pls fixme this is probably easy to fix
 # https://trello.com/c/1PvJSvDY/1442-fix-cfxduoswap
 CFX.duoswap
