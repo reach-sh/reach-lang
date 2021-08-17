@@ -53,6 +53,7 @@ export const runAutomated = async () => {
 
   for (let i = 0; i < accTraders.length; ++i) {
     const accTrader = accTraders[i];
+    await accTrader.setDebugLabel(`Trader ${i}`);
     await gimmeTokens(accTrader);
   }
 
@@ -74,6 +75,10 @@ export const runAutomated = async () => {
   const adminBackend = backend.Admin(ctcAdmin, {
     tokA: zmd.id,
     tokB: gil.id,
+    // We use these numbers to divide the initial payments when performing
+    // the initial mint (to avoid overflow on ALGO).
+    // This adds the constraint that initial deposit of pool must not contain fractional numbers.
+    conUnit: (stdlib.connector == 'ALGO') ? 1000000 : 1000000000000000000,
     shouldClosePool: ([ isAlive, market ]) => {
       const everyoneWent =
         Object.keys(withdrew).every(k => withdrew[k] == true) &&
@@ -92,6 +97,10 @@ export const runAutomated = async () => {
     return backend.Provider(ctcProvider, {
       log: (s, x) => {
         console.log(s.padStart(30), x.toString());
+      },
+      acceptToken: async (tokId) => {
+        console.log(`${who} accepts token ${tokId}`);
+        await accProvider.tokenAccept(tokId);
       },
       withdrawDone: (isMe, amtOuts) => {
         if (isMe) {
@@ -125,7 +134,7 @@ export const runAutomated = async () => {
           deposited[who] = poolTokens;
           console.log("\x1b[34m", `${who} received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`,'\x1b[0m');
         }
-      }
+      },
     });
   });
 
@@ -140,6 +149,10 @@ export const runAutomated = async () => {
       logMarket: (s, x) => {
         console.log(s.padStart(30), x.k.toString());
       },
+      acceptToken: async (tokId) => {
+        console.log(`${who} accepts token ${tokId}`);
+        await accTrader.tokenAccept(tokId);
+      },
       tradeMaybe: ([ alive, market ]) => {
         const idx = Math.floor(Math.random() * 2);
         const amt = stdlib.parseCurrency(Math.floor(Math.random() * 10) + 1);
@@ -149,24 +162,24 @@ export const runAutomated = async () => {
             ? ({
               amtA: amt,
               amtB: 0,
-              amtInTok: zmd.id,
+              amtInTok: ['Some', zmd.id],
             })
           : ({
               amtA: 0,
               amtB: amt,
-              amtInTok: gil.id,
+              amtInTok: ['Some', gil.id],
             });
 
         const didNotTrade = traded[who] == false;
         if (didNotTrade) {
-          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok]}`,'\x1b[0m')
+          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok[1]]}`,'\x1b[0m')
         }
         return { when: didNotTrade, msg: trade };
       },
       tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
         if (isMe) {
           traded[who] = true;
-          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok]} for ${amtOut} ${toks[amtOutTok]}`,'\x1b[0m');
+          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok[1]]} for ${amtOut} ${toks[amtOutTok[1]]}`,'\x1b[0m');
         }
       }
     });
