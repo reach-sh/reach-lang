@@ -13,6 +13,7 @@ import { window } from './shim';
 export { cfxsdk };
 
 // This file immitates the ethers.js API
+const waitMs = 25;
 
 // Recursively stringify BigNumbers
 function unbn(arg: any): any {
@@ -447,12 +448,12 @@ function updateSentAt(addr: string, epoch: number) {
 const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string): Promise<void> => {
   while (!tryGetLock(epochWaitLock, addr)) {
     // XXX fail after waiting too long?
-    await Timeout.set(50);
+    await Timeout.set(waitMs);
   }
   let current: number;
   // XXX fail after waiting too long?
   while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
-    await Timeout.set(50); // XXX revisit how long to wait?
+    await Timeout.set(waitMs);
   }
   updateSentAt(addr, current);
   releaseLock(epochWaitLock, addr);
@@ -470,7 +471,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
     await waitUntilSendableEpoch(provider, addr);
     if (err) {
       // XXX is this still needed?
-      await Timeout.set(1000); // XXX shorten this?
+      await Timeout.set(waitMs);
     }
     try {
       // Note: {...txn} because conflux is going to mutate it >=[
@@ -506,7 +507,6 @@ async function waitReceipt(provider: providers.Provider, txnHash: string): Promi
   // XXX is 20s enough time on testnet/mainnet?
   // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
   const maxTries = 400;
-  const waitMs = 50;
   for (let tries = 1; tries <= maxTries; tries++) {
     const r: any = await provider.getTransactionReceipt(txnHash);
     if (r) {
