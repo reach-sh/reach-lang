@@ -77,8 +77,6 @@ export class Provider {
   }
 
   async getBlockNumber(): Promise<number> {
-    // Arbitrarily make the user wait.
-    await Timeout.set(waitMs);
     const epochNumber = await this.conflux.getEpochNumber(defaultEpochTag);
     const block = await this.conflux.getBlockByEpochNumber(epochNumber, true);
     // @ts-ignore
