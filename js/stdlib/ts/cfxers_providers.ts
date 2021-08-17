@@ -95,7 +95,7 @@ export class Provider {
     // Arbitrarily make the user wait.
     // This is just because we tend to spam this a lot.
     // It can help to increase this to 1000 or more if you need to debug.
-    await Timeout.set(1000); // XXX
+    await Timeout.set(50);
 
     const r = await this.conflux.getTransactionReceipt(transactionHash);
     if (!r) return r;
