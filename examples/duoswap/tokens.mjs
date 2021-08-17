@@ -1,11 +1,10 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
-import * as ask from '@reach-sh/stdlib/ask.mjs';
-import { getTestNetAccount } from './util.mjs';
+import { getTestNetAccount, ask } from './util.mjs';
 
 const getTokenInfo = async () => {
-  const tokSym = await ask.ask(`Token symbol:`);
-  const tokName = await ask.ask(`Token name:`);
+  const tokSym = await ask(`Token symbol:`);
+  const tokName = await ask(`Token name:`);
   return [ tokSym, tokName ];
 }
 
@@ -51,7 +50,7 @@ export const runTokens = async (useTestnet) => {
 
   while (true) {
     console.log(`Ready To Mint 1000 ${symA} & 1000 ${symB}`);
-    const addr = await ask.ask(`Address: `);
+    const addr = await ask(`Address: `);
     await tryMint(stdlib, tokA, addr);
     await tryMint(stdlib, tokB, addr);
   }

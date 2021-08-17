@@ -2,6 +2,7 @@
   "name": "@reach-sh/duoswap",
   "type": "module",
   "dependencies": {
+    "enquirer": "^2.3.6",
     "ethers": "^5.4.3"
   },
   "author": "reach.sh",

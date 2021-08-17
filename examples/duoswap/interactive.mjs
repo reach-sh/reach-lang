@@ -1,10 +1,10 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import * as n2nnBackend from './build/n2nn.main.mjs';
-import * as ask from '@reach-sh/stdlib/ask.mjs';
+import { yesno } from '@reach-sh/stdlib/ask.mjs';
 import { runManager, runListener, runListener_ } from './announcer.mjs';
 import { runTokens } from './tokens.mjs';
-import { getTestNetAccount } from './util.mjs';
+import { getTestNetAccount, ask } from './util.mjs';
 
 // Track who withdrew/deposited
 const withdrew  = {};
@@ -42,7 +42,7 @@ const runDuoSwapAdmin = async (useTestnet) => {
 
   const stdlib = await loadStdlib();
 
-  const res = await ask.ask(`Enter token info:`, JSON.parse);
+  const res = await ask(`Enter token info:`, JSON.parse);
   const tokA = res.tokA;
   const tokB = res.tokB;
 
@@ -63,7 +63,7 @@ const runDuoSwapAdmin = async (useTestnet) => {
   await accAdmin.tokenAccept(tokB);
 
   if(!useTestnet) {
-    await ask.ask(`Fund: ${stdlib.formatAddress(accAdmin)}`);
+    await ask(`Fund: ${stdlib.formatAddress(accAdmin)}`);
   }
 
   await accAdmin.setDebugLabel('Admin');
@@ -73,15 +73,22 @@ const runDuoSwapAdmin = async (useTestnet) => {
   const ctcAdmin = accAdmin.deploy(poolBackend);
   const ctcInfo = ctcAdmin.getInfo();
   const poolAddr = (await ctcInfo).toString();
-  await ask.ask(`Enter Pool Address Into Announcer Manager: ${poolAddr}`);
+  await ask(`Enter Pool Address Into Announcer Manager: ${poolAddr}`);
 
   // Admin backend
+  let closeToTry = null;
   const adminBackend = poolBackend.Admin(ctcAdmin, {
     tokA,
     tokB,
     conUnit: (stdlib.connector == 'ALGO') ? 1000000 : 1000000000000000000,
     shouldClosePool: async (_) => {
-      const answer = await ask.ask(`Do you want to close the pool? (y/n)`, ask.yesno);
+      if (closeToTry != null) {
+        return closeToTry;
+      }
+      const answer = await ask(`Do you want to close the pool? (y/n)`, yesno);
+      if (answer) {
+        closeToTry = { when: answer, msg: null };;
+      }
       return { when: answer, msg: null };
     },
   });
@@ -108,17 +115,17 @@ const runDuoSwapLP = async (useTestnet) => {
   }
 
   // Connect to announcer and list pools:
-  const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
+  const listenerInfo = await ask(`Paste Announcer Contract Info:`);
   console.log(`Searching for pools...`)
   try {
     const listener = runListener_(stdlib, accProvider, listenerInfo);
     await Promise.all([ (new Promise(async (resolve, reject) => {
-      const _ = await ask.ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
+      const _ = await ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
       reject();
     })), listener() ]);
   } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
-  const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
+  const { tokA, tokB, poolAddr } = await ask(`Enter connection info:`, JSON.parse);
 
   const usesNetwork = !tokA.id;
 
@@ -128,12 +135,15 @@ const runDuoSwapLP = async (useTestnet) => {
   await accProvider.tokenAccept(tokB.id);
 
   if (!useTestnet) {
-    const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accProvider)}`);
+    const _ = await ask(`Fund: ${stdlib.formatAddress(accProvider)}`);
   }
 
   const poolBackend = usesNetwork ? n2nnBackend : backend;
 
   const ctcProvider = accProvider.attach(poolBackend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+
+  let withdrawToTry = null;
+  let depositToTry  = null;
 
   const backendProvider = poolBackend.Provider(ctcProvider, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
@@ -142,35 +152,45 @@ const runDuoSwapLP = async (useTestnet) => {
     },
     withdrawDone: (isMe, amtOuts) => {
       if (isMe) {
+        withdrawToTry = null;
         withdrew[accProvider] = true;
         console.log("\x1b[31m", `I withdrew ${amtOuts[0]} ${tokA.symbol} & ${amtOuts[1]} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     withdrawMaybe: async ([ alive, market ]) => {
-      const wantsToWithdraw = await ask.ask(`Do you want to withdraw liquidity? (y/n)`, ask.yesno);
+      if (withdrawToTry != null) {
+        return withdrawToTry;
+      }
+      const wantsToWithdraw = await ask(`Do you want to withdraw liquidity? (y/n)`, yesno);
       if (wantsToWithdraw) {
-        const amt = await ask.ask(`How much liquidity do you want to withdraw?`);
-        return { when: true, msg: { liquidity: amt } };
+        const amt = await ask(`How much liquidity do you want to withdraw?`);
+        withdrawToTry = { when: true, msg: { liquidity: amt } };
+        return withdrawToTry;
       } else {
         return { when: false, msg: { liquidity: 0 }};
       }
     },
     depositDone: (isMe, amtA, amtB, poolTokens) => {
       if (isMe) {
+        depositToTry = null;
         deposited[accProvider] = poolTokens;
         console.log("\x1b[34m", `I received ${poolTokens} pool tokens for my deposit of ${amtA} ${tokA.symbol} & ${amtB} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     depositMaybe: async ([ isAlive, market ]) => {
-      const wantsToDeposit = await ask.ask(`Do you want to deposit? (y/n)`, ask.yesno);
+      if (depositToTry != null) {
+        return depositToTry;
+      }
+      const wantsToDeposit = await ask(`Do you want to deposit? (y/n)`, yesno);
       if (wantsToDeposit) {
         const myBals = await getBalances(stdlib, accProvider, tokA, tokB);
-        const amtA = await ask.ask(`How much ${tokA.symbol} do you want to deposit? (Bal: ${myBals})`);
-        const amtB = await ask.ask(`How much ${tokB.symbol} do you want to deposit? (Bal: ${myBals})`);
+        const amtA = await ask(`How much ${tokA.symbol} do you want to deposit? (Bal: ${myBals})`);
+        const amtB = await ask(`How much ${tokB.symbol} do you want to deposit? (Bal: ${myBals})`);
         const deposit = { amtA: stdlib.parseCurrency(amtA), amtB: stdlib.parseCurrency(amtB) }
-        return {
+        depositToTry = {
           when: true, msg: deposit
         };
+        return depositToTry;
       } else {
         return { when: false, msg: { amtA: 0, amtB: 0 }};
       }
@@ -212,18 +232,18 @@ const runDuoSwapTrader = async (useTestnet) => {
   }
 
   // Connect to announcer and list pools:
-  const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
+  const listenerInfo = await ask(`Paste Announcer Contract Info:`);
   console.log(`Searching for pools...`)
   try {
     const listener = await runListener_(stdlib, accTrader, listenerInfo);
     await Promise.all([ (new Promise(async (resolve, reject) => {
-      const _ = await ask.ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
+      const _ = await ask(`Click \x1b[1m\`Enter\`\x1b[0m when done searching for pools.`);
       reject();
     })), listener() ]);
   } catch (e) { if (e != undefined) console.log(`error received:`, e) }
 
   // tokA will equal { id: null, ... } if network token
-  const { tokA, tokB, poolAddr } = await ask.ask(`Enter connection info:`, JSON.parse);
+  const { tokA, tokB, poolAddr } = await ask(`Enter connection info:`, JSON.parse);
 
   const usesNetwork = !tokA.id;
 
@@ -232,12 +252,14 @@ const runDuoSwapTrader = async (useTestnet) => {
   await accTrader.tokenAccept(tokB.id);
 
   if (!useTestnet) {
-    const _ = await ask.ask(`Fund: ${stdlib.formatAddress(accTrader)}`);
+    const _ = await ask(`Fund: ${stdlib.formatAddress(accTrader)}`);
   }
 
   const poolBackend = usesNetwork ? n2nnBackend : backend;
 
   const ctcTrader = accTrader.attach(poolBackend, stdlib.connector == 'ALGO' ? parseInt(poolAddr) : poolAddr);
+
+  let tradeToTry = null;
 
   const backendTrader = poolBackend.Trader(ctcTrader, {
     log: (s, x) => { console.log(s.padStart(30), x.toString()); },
@@ -248,22 +270,27 @@ const runDuoSwapTrader = async (useTestnet) => {
       const tokIn  = compareTokens(stdlib, amtInTok, tokA.id) ? tokA : tokB;
       const tokOut = compareTokens(stdlib, amtOutTok, tokA.id) ? tokA : tokB;
       if (isMe) {
+        tradeToTry = null;
         traded[accTrader] = true;
         console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.symbol} for ${amtOut} ${tokOut.symbol}`, '\x1b[0m');
       }
     },
     tradeMaybe: async ([ alive, market ]) => {
-      const wantsToTrade = await ask.ask(`Do you want to trade? (y/n)`, ask.yesno);
+      if (tradeToTry != null) {
+        return tradeToTry;
+      }
+      const wantsToTrade = await ask(`Do you want to trade? (y/n)`, yesno);
       if (wantsToTrade) {
         const options = [tokA.symbol, tokB.symbol].join('\n');
-        const tokType = await ask.ask(`What token do you want to input?\n${options}`, isAOrB(tokA.symbol, tokB.symbol));
+        const tokType = await ask(`What token do you want to input?\n${options}`, isAOrB(tokA.symbol, tokB.symbol));
         const myBal = await getBalance(stdlib, tokType === tokA.symbol ? tokA : tokB, accTrader);
-        const amt = await ask.ask(`How much do you want to trade? (You have ${myBal})`);
+        const amt = await ask(`How much do you want to trade? (You have ${myBal})`);
         const trade =
           (tokType == tokA.symbol)
             ? ({ amtA: stdlib.parseCurrency(amt), amtB: 0, amtInTok: maybeTok(tokA) })
             : ({ amtA: 0, amtB: stdlib.parseCurrency(amt), amtInTok: ['Some', tokB.id] });
-        return { when: true, msg: trade };
+        tradeToTry = { when: true, msg: trade };
+        return tradeToTry;
       } else {
         return { when: false, msg: { amtA: 0, amtB: 0, amtInTok: ['None', null] }};
       }
@@ -283,7 +310,7 @@ const options = [
 ].join('\n');
 
 export const runInteractive = async (useTestnet) => {
-  const answer = await ask.ask(`Who are you?\n${options}`, parseInt);
+  const answer = await ask(`Who are you?\n${options}`, parseInt);
 
   switch (answer) {
     case 1: {

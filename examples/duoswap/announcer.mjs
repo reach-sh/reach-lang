@@ -2,8 +2,8 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/announcer.main.mjs';
 import * as poolBackend from './build/index.main.mjs';
 import * as n2nnPoolBackend from './build/n2nn.main.mjs';
-import * as ask from '@reach-sh/stdlib/ask.mjs';
-import { getTestNetAccount } from './util.mjs';
+import { yesno } from '@reach-sh/stdlib/ask.mjs';
+import { getTestNetAccount, ask } from './util.mjs';
 
 export const runManager = async (useTestnet) => {
   const stdlib = await loadStdlib();
@@ -33,8 +33,13 @@ export const runManager = async (useTestnet) => {
       console.log(`Announcer Contract Info: ${JSON.stringify(info)}`)
     },
     getPoolInfo: async () => {
-      const poolAddr = await ask.ask(`Enter new pool address:`);
-      const usesNetwork = await ask.ask(`Does ${poolAddr} use the network token? (y/n)`, ask.yesno);
+      let isCorrect = false;
+      let poolAddr = undefined;
+      while (!isCorrect) {
+        poolAddr = await ask(`Enter new pool address:`);
+        isCorrect = await ask(`Is ${poolAddr} correct? (y/n)`, yesno);
+      }
+      const usesNetwork = await ask(`Does ${poolAddr} use the network token? (y/n)`, yesno);
       cache[poolAddr] = true;
       return [poolAddr.startsWith('0x') ? poolAddr.slice(2) : poolAddr, usesNetwork];
     },
@@ -59,7 +64,7 @@ export const runListener = async (useTestnet) => {
   if (stdlib.connector == 'ETH') {
     accListener.setGasLimit(5000000);
   }
-  const listenerInfo = await ask.ask(`Paste Announcer Contract Info:`);
+  const listenerInfo = await ask(`Paste Announcer Contract Info:`);
 
   await runListener_(stdlib, accListener, listenerInfo)();
 }
