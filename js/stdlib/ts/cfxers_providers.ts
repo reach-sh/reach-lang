@@ -119,6 +119,10 @@ export class Provider {
 
   async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
     debug(`getLogs`, `opts`, opts);
+    if ( opts.fromBlock == 0 ) {
+      opts.fromBlock = 1;
+      debug(`getLogs`, `opts`, opts);
+    }
     try {
       const logs = await this.conflux.getLogs(opts);
       debug(`getLogs`, `result`, logs);
