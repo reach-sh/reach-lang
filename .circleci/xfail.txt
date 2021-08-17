@@ -3,11 +3,6 @@
 # Unsupported
 ALGO.remote
 
-# Unreliable
-ETH.tut-7-rpc
-ALGO.tut-7-rpc
-CFX.tut-7-rpc
-
 # Too big
 ALGO.ttt
 
@@ -15,19 +10,14 @@ ALGO.ttt
 # https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
 ETH.view-map
 ALGO.view-map
+CFX.view-map
 
 # nondeterministic failure
 # https://trello.com/c/Fo70yr87/1430-nondet-algonft-dumb-failure-ctc-not-deployed-yet
 ALGO.nft-dumb
 
 # CFX known failures w/ launchToken::mint
-CFX.atomic-swap
 CFX.atomic-swap-auction
-CFX.weird-swap
-CFX.mint-basic
-
-# CFX known failures: misc
-CFX.view-map
 
 # CFX Dan pls fixme this is probably easy to fix
 # https://trello.com/c/1PvJSvDY/1442-fix-cfxduoswap
@@ -47,6 +37,3 @@ CFX.workshop-trust-fund
 
 # https://trello.com/c/iwWvDLq2/1431-nondet-cfxobject-digest-failure
 CFX.object-digest
-
-# cause unclear. see: https://app.circleci.com/pipelines/github/reach-sh/reach-lang/2822/workflows/853c6e2d-5115-4508-8b79-96a16cddf2ab/jobs/30702
-CFX.raffle

@@ -27,7 +27,7 @@ jb () {
   # (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  # (cd "$ROOT"/js && make run)
+  # (cd "$ROOT"/js && make build)
 }
 
 r () {
@@ -46,7 +46,7 @@ r () {
 
   # jb
 
-  export REACH_DEBUG=1
+  # export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   REACH_CONNECTOR_MODE=CFX ${REACH} run
@@ -92,25 +92,20 @@ tealcount () {
 # tealcount1 hs/t/y big-d8cff
 
 jb
-# r examples/overview # XXX test debigger
-# r examples/tut-7 # XXX test debigger
-#c examples/rent-seeking/index.rsh
-#c examples/timeoutception/index.rsh
-# r examples/view-map
-r examples/mint-basic
-r examples/raffle
-#r examples/workshop-hash-lock
+#r examples/overview # XXX test debigger
+#r examples/tut-7 # XXX test debigger
 
 # r examples/log-attack1j
 # r examples/remote
+r examples/atomic-swap
+exit 0
+r examples/cache-events
+r examples/map-rwrw
+r examples/map-vary
+r examples/workshop-fomo-generalized
+r examples/workshop-trust-fund
 
-# c examples/remote/index.rsh
-# r examples/chicken-fork
 # c examples/duoswap/index.rsh
-# c hs/t/y/def_pay_spec2.rsh
-
-# c users/jupiteryu2.rsh
-# c users/jupiteryu.rsh
 
 # (cd examples/abstract-simul && make build)
 

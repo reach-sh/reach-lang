@@ -33,7 +33,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   );
   accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(bidderNames[i]));
 
-  if ( stdlib.connector === 'ETH' ) {
+  if ( stdlib.connector === 'ETH' || stdlib.connector === 'CFX' ) {
     const myGasLimit = 5000000;
     accAuctioneer.setGasLimit(myGasLimit);
     accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
