@@ -182,15 +182,15 @@ export class Contract implements IContract {
         }
         debug(`cfxers:handler`, fname, {est, est_err});
         if ( est ) {
-        if ( txn.gas === undefined ) {
-          txn.gas = est.gasLimit;
-        }
-        if ( txn.storageLimit === undefined ) {
-          txn.storageLimit = est.storageCollateralized;
-          if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
-            txn.storageLimit = 2048;
+          if ( txn.gas === undefined ) {
+            txn.gas = est.gasLimit;
+          }
+          if ( txn.storageLimit === undefined ) {
+            txn.storageLimit = est.storageCollateralized;
           }
         }
+        if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
+          txn.storageLimit = 2048;
         }
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};

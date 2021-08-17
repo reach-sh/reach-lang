@@ -1,5 +1,4 @@
 # These are allowed to timeout and we still release
 
 # CFX known timeouts
-CFX.map-vary
 CFX.duoswap
