@@ -1,7 +1,7 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const numOfBidders = 5;
+const numOfBidders = 2;
 
 (async () => {
   const stdlib = await loadStdlib();
