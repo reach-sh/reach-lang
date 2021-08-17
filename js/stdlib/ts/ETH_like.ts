@@ -162,6 +162,7 @@ const {
 } = ethLikeCompiled;
 const {
   T_Address, T_Tuple,
+  T_UInt,
   addressEq,
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
@@ -861,21 +862,23 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`tokenMetadata`, token);
     const tokCtc = new ethers.Contract(token, ReachToken_ABI, networkAccount);
     const md: any = {};
-    const go = async (f:string, m:string = f): Promise<void> => {
+    const go = async (t:any, f:string, m:string = f): Promise<void> => {
       debug('tokenMetadata', {f, m});
       try {
-        const v = await tokCtc[m]();
+        const rv = await tokCtc[m]();
+        debug('tokenMetadata', {f, m, rv});
+        const v = t ? t.unmunge(rv) : rv;
         debug('tokenMetadata', {f, m, v});
         md[f] = v;
       } catch (e) {
         debug('tokenMetadata', {f, m, e});
       }
     };
-    await go('name');
-    await go('symbol');
-    await go('url');
-    await go('metadata');
-    await go('supply', 'totalSupply');
+    await go(false, 'name');
+    await go(false, 'symbol');
+    await go(false, 'url');
+    await go(false, 'metadata');
+    await go(T_UInt, 'supply', 'totalSupply');
     debug(`tokenMetadata`, token, md);
     return md;
   };
