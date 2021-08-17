@@ -1312,65 +1312,7 @@ In @seclink["tut-8"]{the next step}, we'll show how to exit "testing" mode with 
 
 In the last section, we made our @|RPS| run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
-Instead, we'll go under the covers of @exec{reach run}, as well as build a version of our game that is interactive and can be played away from a private developer test network.
-
-@(hrule)
-
-In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a containerized private developer test network.
-In this section we'll introduce customizations in support of a non-automated version of @|RPS| and provide the option to connect to a real Ethereum network.
-
-Although it's possible to run everything you're about to see directly from the command line, we recommend writing a @exec{Makefile} for convenience.
-For the purposes of this exercise it will look like @reachexlink["tut-8/Makefile"]:
-
-@reachex[#:mode makefile
-         "tut-8/Makefile"
-         'only 1 1 ""]
-
-@itemlist[
-@item{
-Line 1 defines a variable which points to the @exec{reach} script's location.
-If you've been following the tutorials exactly, your line should instead be
-@verbatim{REACH = ./reach}
-since the script was downloaded to the @exec{~/reach/tut} directory where you're building this project.
-}
-]
-
-@reachex[#:mode makefile
-         "tut-8/Makefile"
-         'only 7 16 ""]
-
-@itemlist[
-
-@item{
-Lines 7 through 9 define a target with which Alice and Bob may play on our private developer test network.
-This is exactly equivalent to running
-@cmd{./reach run}
-from the command line.
-}
-
-@item{
-Lines 11 through 16 define a target with which Alice and Bob may play on a live Ethereum network.
-You should replace the address in @exec{ETH_NODE_URI} with your intended target and remove @exec{REACH_ISOLATED_NETWORK} when connecting to a public test/main-net.
-
-Alternatively, you can override @exec{ETH_NODE_URI} from the command line like so:
-@cmd{ETH_NODE_URI=http://live-net-host:2345 make run-live}
-Our @exec{Makefile} uses the special @exec{:-} assignment operator to check for an existing value and supply the given default when missing.
-}
-
-]
-
-@margin-note{
-Don't overlook the @exec{\} characters at the ends of lines 13 through 15!
-These are used to improve readability and indicate that lines 13 through 16 should be interpreted as a single command rather than separately.
-}
-
-The @exec{run-devnet} and @exec{run-live} targets may be executed from the command line with:
-@cmd{make run-devnet}
-and
-@cmd{make run-live}
-
-However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
-Let's modify the JavaScript @tech{frontend} and make them interactive.
+Instead, we'll introduce customizations to the JavaScript @tech{frontend} which facilitate interactivity and provide the option to connect to a real @tech{consensus network}.
 
 @(hrule)
 
@@ -1470,18 +1412,18 @@ Lastly, we choose the appropriate backend function and await its completion.
 
 We can now run
 
-@cmd{make run-devnet}
+@cmd{./reach run}
 
 in one terminal in this directory to play as Alice and
 
-@cmd{make run-devnet}
+@cmd{./reach run}
 
 in another terminal in this directory to play as Bob.
 
 Here's an example run:
 
 @verbatim{
-$ make run-devnet
+$ ./reach run
 Are you Alice?
 y
 Starting Rock, Paper, Scissors as Alice
@@ -1502,7 +1444,7 @@ Your balance is now 989.9999}
 and
 
 @verbatim{
-$ make run-devnet
+$ ./reach run
 Are you Alice?
 n
 Starting Rock, Paper, Scissors as Bob
@@ -1523,13 +1465,14 @@ Your balance is now 1009.9999}
 
 Of course, when you run the exact amounts and addresses may be different.
 
-@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-8/index.rsh"], @reachexlink["tut-8/index.mjs"], @reachexlink["tut-8/package.json"], @reachexlink["tut-8/Dockerfile"], and @reachexlink["tut-8/Makefile"] to make sure you copied everything down correctly!}
-
-@(hrule)
+@margin-note{If your version isn't working, compare with @reachexlink["tut-8/index.rsh"] and @reachexlink["tut-8/index.mjs"] to ensure you've copied everything down correctly!}
 
 If we were to instead run
-@cmd{REACH_CONNECTOR_MODE=ALGO make run-devnet}
-we'd see equivalent output from running our application on a private Algorand devnet.
+@cmd{REACH_CONNECTOR_MODE=ALGO-devnet ./reach run}
+in two terminals we'd see equivalent output from running our application on a private Algorand devnet.
+
+Connecting to live @tech{consensus networks} is similarly easy:
+@cmd{REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI="http://some.node.fqdn:8545" ./reach run}
 
 @(hrule)
 
