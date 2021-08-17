@@ -8,13 +8,6 @@ type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
 type Conflux = cfxsdk.Conflux;
 
-// function epochToBlockNumber(x: Record<string, any>): Record<string, any> {
-//   return {
-//     blockNumber: x.epochNumber,
-//     ...x,
-//   };
-// }
-
 async function attachBlockNumbers(conflux: Conflux, xs: any[]): Promise<any[]> {
   async function actuallyLookup(blockHash: string): Promise<string> {
     debug(`actuallyLookup`, `block by hash query`, blockHash);
@@ -53,10 +46,6 @@ export function ethifyOkReceipt(receipt: any): any {
     status: 'ok',
     ...receipt,
   }
-  // return epochToBlockNumber({
-  //   status: 'ok',
-  //   ...receipt,
-  // });
 }
 
 export function ethifyTxn(txn: any): any {
@@ -74,7 +63,6 @@ export function ethifyTxn(txn: any): any {
 function bi2bn(bi: any): BigNumber {
   return ethers.BigNumber.from(bi.toString());
 }
-
 
 export class Provider {
   conflux: Conflux;
@@ -134,49 +122,18 @@ export class Provider {
   async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
     debug(`getLogs`, `opts`, opts);
 
-    // XXX reduce this
-    // arbitrary throttle
-    await Timeout.set(1000);
-
-    // TODO: search from newest to oldest instead of oldest to newest
-    let {fromBlock, toBlock} = opts;
-    // XXX start from now and go backwards
-    const maxGap = 1000; // max gap is 1000 epochs so 1000 blocks is conservative
-    // const startingPoint = 30000000; // an arbitrary point in the past
-    const startingPoint = Math.max(toBlock - maxGap, 0); // XXX allow older XXXXXXXXXXXXXX
-    fromBlock = Math.max(fromBlock, startingPoint);
-    opts = {...opts, fromBlock};
-    // debug(`getLogs`, `modified opts`, opts);
-    if (toBlock >= fromBlock && toBlock - fromBlock > maxGap) {
-      let logs: object[] = [];
-      let start = fromBlock;
-      let next = Math.min(start + maxGap, toBlock);
-      while (start < toBlock) {
-        // debug(`getLogs`, `smaller chunks`, {fromBlock, toBlock, start, next});
-        const newOpts = {...opts, fromBlock: start, toBlock: next}
-        const more = await this.getLogs(newOpts);
-        logs = logs.concat(more);
-        start = next;
-        next = Math.min(start + maxGap, toBlock);
-      };
-      debug(`getLogs`, `loop result`, logs);
-      return logs;
-    }
-
-    debug(`getLogs`, `base case`, opts);
-    const max_tries = 20;
+    const max_tries = 10;
     let e: Error|null = null;
     for (let tries = 1; tries <= max_tries; tries++) {
       try {
         const logs = await this.conflux.getLogs(opts);
-        debug(`getLogs`, `base case result`, logs);
+        debug(`getLogs`, `result`, logs);
         return await attachBlockNumbers(this.conflux, logs);
-        // return (await this.conflux.getLogs(cfxOpts)).map(epochToBlockNumber);
       } catch (err) {
         e = err;
         // XXX be pickier about which errs we are willing to catch
         // XXX find some way to be sure more that `toEpoch` has been executed before trying again
-        await Timeout.set(50);
+        await Timeout.set(250);
       }
     }
     debug(`getLogs`, `error`, e);
@@ -187,7 +144,6 @@ export class Provider {
     // @ts-ignore
     return ethifyTxn(await this.conflux.getTransactionByHash(txnHash));
   }
-
 }
 
 export type TransactionReceipt = any; // TODO
