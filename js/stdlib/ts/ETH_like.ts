@@ -213,15 +213,9 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-let lastNetworkTimeNumber: number = 0;
-let lastNetworkTimeSecs: number = 0;
 const getNetworkTimeNumber = async (): Promise<number> => {
-  const now = Math.floor(Date.now() / 1000);
-  if ( now == lastNetworkTimeSecs ) { return lastNetworkTimeNumber; }
   const provider = await getProvider();
   const ans = await provider.getBlockNumber();
-  lastNetworkTimeNumber = ans;
-  lastNetworkTimeSecs = now;
   return ans;
 };
 
