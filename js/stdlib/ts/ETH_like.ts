@@ -832,7 +832,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const { ty } = vim;
         const ethersC = await getC();
         const vkn = views_namesm[v][k];
-        debug('getView1', v, k, args, vkn);
+        debug('getView1', v, k, 'args', args, vkn, ty);
         try {
           const val = await ethersC[vkn](...args);
           debug('getView1', v, k, 'val', val);

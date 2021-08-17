@@ -5,6 +5,7 @@
 import { ethers } from 'ethers';
 import * as shared_backend from './shared_backend';
 import * as CBR from './CBR';
+const { bigNumberify, bigNumberToNumber } = CBR;
 
 import type { // =>
   BigNumber
@@ -99,7 +100,7 @@ const V_Bool = (b: boolean): CBR_Bool => {
 const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt(UInt_max),
   defaultValue: ethers.BigNumber.from(0),
-  munge: (bv: CBR_UInt): BigNumber => bv,
+  munge: (bv: CBR_UInt): BigNumber => bigNumberify(bv),
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
 };
@@ -321,7 +322,9 @@ const T_Data = <T>(
     // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
     // We don't currently use these, but we could.
     unmunge: (vs: Array<T>): CBR_Data => {
-      const i = vs[0] as unknown as number;
+      // @ts-ignore
+      const ibn = T_UInt.unmunge(vs[0]);
+      const i = bigNumberToNumber(ibn);
       const label = ascLabels[i];
       const val = vs[i + 1];
       return V_Data(co)([label, co[label].unmunge(val)]);

@@ -96,7 +96,7 @@ jb
 # r examples/tut-7 # XXX test debigger
 #c examples/rent-seeking/index.rsh
 #c examples/timeoutception/index.rsh
-r examples/view-map
+# r examples/view-map
 r examples/mint-basic
 r examples/raffle
 #r examples/workshop-hash-lock
