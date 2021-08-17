@@ -35,6 +35,8 @@ go() {
     elif [ $EXIT -eq 0 ] ; then
       STATUS="pass"
     fi
+    gzip "${THIS_ART}"
+    rm -f "${THIS_ART}"
   fi
   echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
 }

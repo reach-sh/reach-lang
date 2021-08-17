@@ -48,7 +48,7 @@ for ep in sorted(ex_dir.iterdir()):
                 o = json.load(rf)
         u = o[1]
         if u: u = arts.get(u)
-        if u: u = u.get(f"tmp/artifacts/{cme}")
+        if u: u = u.get(f"tmp/artifacts/{cme}.gz")
         urls[cme] = u
         stat = o[0]
         if stat == "fail-time":

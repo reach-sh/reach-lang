@@ -98,7 +98,8 @@ jb
 # r examples/log-attack1j
 # r examples/remote
 # r examples/map-rwrw
-r examples/map-vary
+# r examples/map-vary
+r examples/raffle
 exit 0
 r examples/cache-events
 r examples/workshop-fomo-generalized
