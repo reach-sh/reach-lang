@@ -53,7 +53,7 @@ The main part of the program looks like this:
 
 @item{Line 2 specifies that this program will be compiled with @tech{strict mode}, which enables unused variable checks.}
 
-@item{Line 4 defines the main @tech{export} from program. @litchar{main} is the default used by Reach.}
+@item{Line 4 defines the main @tech{export} from this program. @litchar{main} is the default used by Reach.}
 
 @item{Line 4 also specifies that it is an application.}
 
@@ -100,7 +100,7 @@ A better version of this program might return @reachin{false} and have that comm
 
 ]
 
-It's now Alice's turn again,
+It's now Alice's turn again:
 
 @reachex["overview/index.rsh"
          'only 25 29 "  // ..."]
@@ -147,8 +147,8 @@ The Ethereum bytecode is not readable, but if you understand Solidity, you may w
 Reach can leave files like these in place when run with @DFlag{intermediate-files}.}
 
 For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
-Separately, it generated over hundreds of lines of Solidity code to implement the contract.
-If a programmer wasn't using Reach, they would have to write all this code in these three modules separately and keep them synchronized at every step of the development process.
+Separately, it generated hundreds more lines of Solidity code to implement the contract.
+If a programmer wasn't using Reach, they would have to write all this code in these three modules individually and keep them synchronized at every step of the development process.
 
 Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target a different @tech{consensus network}, like Algorand.
 Nor is Reach tied to JavaScript: it can be configured to target other @tech{backend} languages, like Go.
@@ -290,7 +290,7 @@ In fact, Reach works for multiple networks, so if we instead run
 
 @cmd{REACH_CONNECTOR_MODE=ALGO reach run}
 
-Then Reach will instead start up a private Algorand devnet image and use the Algorand @tech{connector}.
+then Reach will start up a private Algorand devnet and use the Algorand @tech{connector}.
 The developer does not need to change anything about their program because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
 
 The same goes for Conflux:
@@ -303,7 +303,7 @@ The same goes for Conflux:
 which demonstrates this section's code in action
 and provides a brief explanation of how it works.}
 
-The previous execution uses Node.js to perform a test run at the command line.
+The previous section uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
 
 A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "examples/overview-react"] file connected, this time, to a React-based @reachexlink["index.js" #:dir "examples/overview-react"] file.
