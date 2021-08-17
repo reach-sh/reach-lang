@@ -1,12 +1,5 @@
 # These are allowed to timeout and we still release
 
-# nondeterministic timeout; fixable?
-ETH.rent-seeking
-ALGO.rent-seeking
-
 # CFX known timeouts
 CFX.map-vary
 CFX.duoswap
-
-# https://trello.com/c/FHKWnoAV/1467-cfx-cache-events-nondeterministic-timeout
-CFX.cache-events

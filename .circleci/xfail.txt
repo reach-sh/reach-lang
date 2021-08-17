@@ -6,31 +6,6 @@ ALGO.remote
 # Too big
 ALGO.ttt
 
-# nondeterministic failure
-# https://trello.com/c/6aTTAZVM/1397-nondet-failure-w-ethview-map
-ETH.view-map
-ALGO.view-map
-CFX.view-map
-
-# nondeterministic failure
-# https://trello.com/c/Fo70yr87/1430-nondet-algonft-dumb-failure-ctc-not-deployed-yet
-ALGO.nft-dumb
-
 # CFX Dan pls fixme this is probably easy to fix
 # https://trello.com/c/1PvJSvDY/1442-fix-cfxduoswap
 CFX.duoswap
-
-# CFX known non-deterministic failures
-
-# "Transaction ${t} is is discarded due to a too stale nonce"
-CFX.nft-dumb
-CFX.popularity-contest
-
-# "TX with same nonce already inserted"
-CFX.nft-auction
-CFX.rent-seeking
-CFX.workshop-fomo-generalized
-CFX.workshop-trust-fund
-
-# https://trello.com/c/iwWvDLq2/1431-nondet-cfxobject-digest-failure
-CFX.object-digest

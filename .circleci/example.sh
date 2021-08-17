@@ -8,9 +8,9 @@ echo Running w/ "${CONN}"
 export REACH_CONNECTOR_MODE="${CONN}"
 export REACH_DEBUG=1
 case "${CONN}" in
-  ALGO) TIMEOUT=$((5 * 60)) ;;
-  CFX) TIMEOUT=$((5 * 60)) ;;
-  ETH) TIMEOUT=$((5 * 60)) ;;
+  ALGO) TIMEOUT=$((10 * 60)) ;;
+  CFX) TIMEOUT=$((10 * 60)) ;;
+  ETH) TIMEOUT=$((10 * 60)) ;;
 esac
 
 cd ../examples || exit 1
