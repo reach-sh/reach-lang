@@ -1007,12 +1007,12 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const now = await getNetworkTimeNumber();
   const getLogs = async (event:string): Promise<any> => {
     debug('verifyContract: getLogs', {event, now});
-    while ( eventCache.currentBlock < now ) {
+    while ( eventCache.currentBlock <= now ) {
       const log = await eventCache.queryContract(0, now, address, event, iface);
       if ( log === undefined ) { continue; }
       return log;
     }
-    chk(false, `Contract was claimed to be deployed, but the current block is ${now} and it hasn't been deployed yet.`);
+    chk(false, `Contract was claimed to be deployed, but the current block is ${now} (cached @ ${eventCache.currentBlock}) and it hasn't been deployed yet.`);
   };
   const e0log = await getLogs('e0');
   const creation_block = e0log.blockNumber;
