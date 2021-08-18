@@ -49,8 +49,8 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -99,11 +99,14 @@ jb
 # r examples/remote
 # r examples/map-rwrw
 # r examples/map-vary
-r examples/raffle
+# r examples/atomic-swap-auction
+# r examples/rent-seeking # XXX dies on ALGO
+# r examples/raffle
+r examples/overview
+exit 0
+r examples/workshop-relay
 exit 0
 r examples/cache-events
-r examples/workshop-fomo-generalized
-r examples/workshop-trust-fund
 
 # c examples/duoswap/index.rsh
 

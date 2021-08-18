@@ -253,6 +253,46 @@ class EventCache {
     this.cache = [];
   }
 
+  async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
+    debug(`query`, { fromBlock, toBlock });
+    const ethersC = await getC();
+    return await this.queryContract(fromBlock, toBlock, ethersC.address, ok_evt, ethersC.interface);
+  }
+
+  async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
+    debug(`queryContract`, { fromBlock, toBlock });
+    const topic = iface.getEventTopic(event);
+    const getLogs = async (currentBlock: number) => {
+      return await this.doGetLogs(
+        fromBlock, currentBlock,
+        address,
+      );
+    };
+    return await this.query_(fromBlock, toBlock, topic, getLogs);
+  }
+
+  async doGetLogs(fromBlock_given: number, currentBlock:number, address: string): Promise<[any[], number]> {
+    debug(`doGetLogs`, { fromBlock_given, currentBlock });
+    const provider = await getProvider();
+    const fromBlock = Math.max(fromBlock_given, currentBlock);
+    const currentTime = await getNetworkTimeNumber();
+    if ( fromBlock > currentTime ) {
+      return [ [], currentTime ]; }
+    const toBlock =
+      validQueryWindow === true
+      ? currentTime
+      : Math.min(currentTime, fromBlock + validQueryWindow);
+    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
+    assert(fromBlock <= toBlock, "from <= to");
+    const res = await provider.getLogs({
+      fromBlock,
+      toBlock,
+      address,
+    });
+    return [ res, toBlock ];
+  };
+
+
   async query_(fromBlock: number, toBlock: number, topic: string, getLogs: (currentBlock: number) => Promise<[any[], number]>) {
     debug(`EventCache.query`, fromBlock, toBlock, topic);
     if (fromBlock > toBlock) {
@@ -282,7 +322,7 @@ class EventCache {
 
     if ( this.currentBlock === toBlock_eff ) {
       debug(`Current block is same as effective block... waiting`);
-      await Timeout.set(Math.max(0, (this.lastQueryTime + 100) - Date.now()));
+      await Timeout.set(Math.max(0, (this.lastQueryTime + 1000) - Date.now()));
     } else {
       this.lastQueryTime = Date.now();
     }
@@ -302,51 +342,6 @@ class EventCache {
     return getMinBlock(foundLogs);
   }
 
-  async doGetLogs(fromBlock_given: number, currentBlock:number, address: string): Promise<[any[], number]> {
-    debug(`doGetLogs`, { fromBlock_given, currentBlock });
-    const provider = await getProvider();
-    const fromBlock = Math.max(fromBlock_given, currentBlock);
-    const currentTime = await getNetworkTimeNumber();
-    if ( fromBlock > currentTime ) {
-      return [ [], currentTime ]; }
-    const toBlock =
-      validQueryWindow === true
-      ? currentTime
-      : Math.min(currentTime, fromBlock + validQueryWindow);
-    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
-    assert(fromBlock <= toBlock, "from <= to");
-    const res = await provider.getLogs({
-      fromBlock,
-      toBlock,
-      address,
-    });
-    return [ res, toBlock ];
-  };
-
-  async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
-    debug(`queryContract`, { fromBlock, toBlock });
-    const topic = iface.getEventTopic(event);
-    const getLogs = async (currentBlock: number) => {
-      return await this.doGetLogs(
-        fromBlock, currentBlock,
-        address,
-      );
-    };
-    return await this.query_(fromBlock, toBlock, topic, getLogs);
-  }
-
-  async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
-    debug(`query`, { fromBlock, toBlock });
-    const ethersC = await getC();
-    const topic = ethersC.interface.getEventTopic(ok_evt);
-    const getLogs = async (currentBlock: number) => {
-      return await this.doGetLogs(
-        fromBlock, currentBlock,
-        ethersC.address,
-      );
-    };
-    return await this.query_(fromBlock, toBlock, topic, getLogs);
-  }
 }
 
 

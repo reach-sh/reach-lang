@@ -1,7 +1,7 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const numOfPlayers = 5;
+const numOfPlayers = 2;
 
 (async () => {
   const stdlib = await loadStdlib();
@@ -23,7 +23,7 @@ const numOfPlayers = 5;
       ...stdlib.hasRandom,
       getParams: (() => ({
         ticketPrice: stdlib.parseCurrency(5),
-        deadline: 50 })),
+        deadline: numOfPlayers * 5 })),
       showOpen: (() =>
         console.log(`Sponsor saw ticket sales open`)),
       showReturning: ((howMany) =>
