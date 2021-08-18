@@ -30,6 +30,20 @@ jb () {
   # (cd "$ROOT"/js && make build)
 }
 
+ci () {
+  MODE="$1"
+  WHICH="$2"
+  printf "\nCI %s %s\n" "$MODE" "$WHICH"
+  (cd "examples/$WHICH"
+
+  ${REACH} clean
+  ${REACH} compile
+  make build
+  export REACH_DEBUG=1
+  REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+)
+}
+
 r () {
   printf "\nRun %s\n" "$1"
   (cd "$1"
@@ -91,7 +105,7 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-jb
+#jb
 #r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger
 
@@ -102,11 +116,19 @@ jb
 # r examples/atomic-swap-auction
 # r examples/rent-seeking # XXX dies on ALGO
 # r examples/raffle
-r examples/tut-6
+
+# GAVE UP
+# ci ETH atomic-swap-auction
+# ci ALGO duoswap
+# BAD
+# ci ALGO rent-seeking
+# ci CFX atomic-swap-auction
+# ci CFX cache-events
+ci CFX mint-basic
 exit 0
-r examples/workshop-relay
-exit 0
-r examples/cache-events
+ci CFX raffle
+ci CFX tut-7-array
+ci CFX workshop-relay
 
 # c examples/duoswap/index.rsh
 
