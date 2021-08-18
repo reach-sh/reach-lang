@@ -71,6 +71,8 @@ export const runAutomated = async () => {
     [gil.id]: "GIL"
   };
 
+  const didEveryoneTrade = () => Object.keys(traded).every(k => traded[k] == true);
+
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
     tokA: zmd.id,
@@ -82,7 +84,7 @@ export const runAutomated = async () => {
     shouldClosePool: ([ isAlive, market ]) => {
       const everyoneWent =
         Object.keys(withdrew).every(k => withdrew[k] == true) &&
-        Object.keys(traded).every(k => traded[k] == true);
+        didEveryoneTrade();
       return { when: everyoneWent, msg: null };
     },
   });
@@ -109,7 +111,7 @@ export const runAutomated = async () => {
         }
       },
       withdrawMaybe: ([ alive, market ]) => {
-        if (withdrew[who] == false && deposited[who]) {
+        if (withdrew[who] == false && deposited[who] && didEveryoneTrade()) {
           console.log("\x1b[31m", `${who} tries to withdraw ${deposited[who]} liquidity`,'\x1b[0m');
           return { when: true, msg: { liquidity: deposited[who] } };
         } else {
