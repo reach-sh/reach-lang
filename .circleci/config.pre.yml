@@ -276,8 +276,10 @@ jobs:
     - and_restore_docker
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
-    - run: |
-        cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
+    - run:
+        command: |
+          cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
+        no_output_timeout: 20m
     - store_artifacts:
         path: /tmp/artifacts
     - run: |
