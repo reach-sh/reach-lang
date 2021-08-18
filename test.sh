@@ -39,8 +39,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile
   make build
-  export REACH_DEBUG=1
-  REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 

@@ -58,7 +58,7 @@ docs:
 
 .PHONY: sh-lint
 sh-lint:
-	@(set -e; for f in $$(find . -not \( \( -path '*openzeppelin*' -o -path '*/node_modules/*' \) -prune \) -name '*.sh') ./reach; do \
+	@(set -e; for f in $$(find . -not \( \( -path '*openzeppelin*' -o -path '*/node_modules/*' -o -path '*forks*' \) -prune \) -name '*.sh') ./reach; do \
 		echo linting $$f; \
 		shellcheck --external-sources --source-path SCRIPTDIR $$f ; \
 	done)
