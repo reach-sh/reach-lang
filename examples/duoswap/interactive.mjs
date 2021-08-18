@@ -24,7 +24,7 @@ const isAOrB = (a, b) => (ans) => {
   throw Error('Only `${a}` or `${b}` are valid answers.');
 }
 
-const fmt = (stdlib, x) => stdlib.formatCurrency(x, 4);
+const fmt = (stdlib, x) => stdlib.formatCurrency(x, stdlib.connector == 'ALGO' ? 6 : 18);
 
 const getBalance = async (stdlib, tokenX, who) => {
   let tokId = tokenX.id;
@@ -154,7 +154,7 @@ const runDuoSwapLP = async (useTestnet) => {
       if (isMe) {
         withdrawToTry = null;
         withdrew[accProvider] = true;
-        console.log("\x1b[31m", `I withdrew ${amtOuts[0]} ${tokA.symbol} & ${amtOuts[1]} ${tokB.symbol}`,'\x1b[0m');
+        console.log("\x1b[31m", `I withdrew ${fmt(stdlib, amtOuts[0])} ${tokA.symbol} & ${fmt(stdlib, amtOuts[1])} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     withdrawMaybe: async ([ alive, market ]) => {
@@ -174,7 +174,7 @@ const runDuoSwapLP = async (useTestnet) => {
       if (isMe) {
         depositToTry = null;
         deposited[accProvider] = poolTokens;
-        console.log("\x1b[34m", `I received ${poolTokens} pool tokens for my deposit of ${amtA} ${tokA.symbol} & ${amtB} ${tokB.symbol}`,'\x1b[0m');
+        console.log("\x1b[34m", `I received ${fmt(stdlib, poolTokens)} pool tokens for my deposit of ${fmt(stdlib, amtA)} ${tokA.symbol} & ${fmt(stdlib, amtB)} ${tokB.symbol}`,'\x1b[0m');
       }
     },
     depositMaybe: async ([ isAlive, market ]) => {
@@ -272,7 +272,7 @@ const runDuoSwapTrader = async (useTestnet) => {
       if (isMe) {
         tradeToTry = null;
         traded[accTrader] = true;
-        console.log("\x1b[32m", `I traded ${amtIn} ${tokIn.symbol} for ${amtOut} ${tokOut.symbol}`, '\x1b[0m');
+        console.log("\x1b[32m", `I traded ${fmt(stdlib, amtIn)} ${tokIn.symbol} for ${fmt(stdlib, amtOut)} ${tokOut.symbol}`, '\x1b[0m');
       }
     },
     tradeMaybe: async ([ alive, market ]) => {

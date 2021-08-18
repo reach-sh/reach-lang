@@ -9,6 +9,7 @@ const NUM_TRADERS = 2;
 export const runAutomated = async () => {
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
 
   // Create tokens to swap
   const accCreator = await stdlib.newTestAccount(startingBalance);
@@ -107,12 +108,12 @@ export const runAutomated = async () => {
       withdrawDone: (isMe, amtOuts) => {
         if (isMe) {
           withdrew[who] = true;
-          console.log("\x1b[31m", `${who} withdrew ${amtOuts[0]} ZMD & ${amtOuts[1]} GIL`,'\x1b[0m');
+          console.log("\x1b[31m", `${who} withdrew ${fmt(amtOuts[0])} ZMD & ${fmt(amtOuts[1])} GIL`,'\x1b[0m');
         }
       },
       withdrawMaybe: ([ alive, market ]) => {
         if (withdrew[who] == false && deposited[who] && didEveryoneTrade()) {
-          console.log("\x1b[31m", `${who} tries to withdraw ${deposited[who]} liquidity`,'\x1b[0m');
+          console.log("\x1b[31m", `${who} tries to withdraw ${fmt(deposited[who])} liquidity`,'\x1b[0m');
           return { when: true, msg: { liquidity: deposited[who] } };
         } else {
           return { when: false, msg: { liquidity: 0 }};
@@ -125,7 +126,7 @@ export const runAutomated = async () => {
             amtA: stdlib.parseCurrency(amt * 2), // * k
             amtB: stdlib.parseCurrency(amt),
           };
-          console.log("\x1b[34m", `${who} tries to deposit: ${deposit.amtA} ZMD & ${deposit.amtB} GIL`,'\x1b[0m');
+          console.log("\x1b[34m", `${who} tries to deposit: ${fmt(deposit.amtA)} ZMD & ${fmt(deposit.amtB)} GIL`,'\x1b[0m');
           return { when: true, msg: deposit };
         } else {
           return { when: false, msg: { amtA: 0, amtB: 0 }};
@@ -134,7 +135,7 @@ export const runAutomated = async () => {
       depositDone: (isMe, amtA, amtB, poolTokens) => {
         if (isMe) {
           deposited[who] = poolTokens;
-          console.log("\x1b[34m", `${who} received ${poolTokens} pool tokens for their deposit of ${amtA} ZMD & ${amtB} GIL`,'\x1b[0m');
+          console.log("\x1b[34m", `${who} received ${fmt(poolTokens)} pool tokens for their deposit of ${fmt(amtA)} ZMD & ${fmt(amtB)} GIL`,'\x1b[0m');
         }
       },
     });
@@ -174,14 +175,14 @@ export const runAutomated = async () => {
 
         const didNotTrade = traded[who] == false;
         if (didNotTrade) {
-          console.log("\x1b[32m", `${who} tries to trade ${amt} ${toks[trade.amtInTok[1]]}`,'\x1b[0m')
+          console.log("\x1b[32m", `${who} tries to trade ${fmt(amt)} ${toks[trade.amtInTok[1]]}`,'\x1b[0m')
         }
         return { when: didNotTrade, msg: trade };
       },
       tradeDone: (isMe, [amtIn, amtInTok, amtOut, amtOutTok]) => {
         if (isMe) {
           traded[who] = true;
-          console.log("\x1b[32m", `${who} traded ${amtIn} ${toks[amtInTok[1]]} for ${amtOut} ${toks[amtOutTok[1]]}`,'\x1b[0m');
+          console.log("\x1b[32m", `${who} traded ${fmt(amtIn)} ${toks[amtInTok[1]]} for ${fmt(amtOut)} ${toks[amtOutTok[1]]}`,'\x1b[0m');
         }
       }
     });

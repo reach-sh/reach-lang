@@ -71,6 +71,7 @@ export const runListener = async (useTestnet) => {
 
 export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
   const ctcListener = accListener.attach(backend, stdlib.connector == 'ALGO' ? parseInt(listenerInfo) : listenerInfo)
+  const fmt = (x) => stdlib.formatCurrency(x, stdlib.connector == 'ALGO' ? 6 : 18);
 
   const backendListener = backend.Listener(ctcListener, {
     hear: async (poolInfo, usesNetwork) => {
@@ -99,12 +100,12 @@ export const runListener_ = (stdlib, accListener, listenerInfo) => async () => {
         : (await accListener.tokenMetadata(tokA[1]));
       const tokASym = resA.symbol;
       const tokABal = (aBal[0] == 'None') ? 0 : aBal[1];
-      console.log(`\x1b[2m`, `  *`, tokABal.toString(), tokASym, '\x1b[0m');
+      console.log(`\x1b[2m`, `  *`, fmt(tokABal), tokASym, '\x1b[0m');
 
       const resB = await accListener.tokenMetadata(tokB[1]);
       const tokBSym = resB.symbol;
       const tokBBal = (bBal[0] == 'None') ? 0 : bBal[1];
-      console.log(`\x1b[2m`, `  *`, tokBBal.toString(), tokBSym, '\x1b[0m');
+      console.log(`\x1b[2m`, `  *`, fmt(tokBBal), tokBSym, '\x1b[0m');
 
       const info = {
         poolAddr: ctcInfo,

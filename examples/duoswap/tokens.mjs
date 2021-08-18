@@ -49,7 +49,7 @@ export const runTokens = async (useTestnet) => {
   }));
 
   while (true) {
-    console.log(`Ready To Mint 1000 ${symA} & 1000 ${symB}`);
+    console.log(`Ready To Transfer 1000 ${symA} & 1000 ${symB}`);
     const addr = await ask(`Address: `);
     await tryMint(stdlib, tokA, addr);
     await tryMint(stdlib, tokB, addr);

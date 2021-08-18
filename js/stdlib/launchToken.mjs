@@ -23,7 +23,7 @@ export default async function (stdlib, accCreator, name, sym) {
     const id = contract.address;
     console.log(`${sym}: deployed: ${id}`);
     const mint = async (accTo, amt) => {
-      console.log(`${sym}: minting ${amt} ${sym} for ${addr(accTo)}`);
+      console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
       await stdlib.transfer(accCreator, accTo, amt, id);
     };
     return { name, sym, id, mint };
@@ -63,7 +63,7 @@ export default async function (stdlib, accCreator, name, sym) {
       console.log(`${sym}: asset is ${id}`);
 
       const mint = async (accTo, amt) => {
-        console.log(`${sym}: minting ${amt} ${sym} for ${addr(accTo)}`);
+        console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
         await stdlib.transfer(accCreator, accTo, amt, id);
       };
       const optOut = async (accFrom, accTo = accCreator) => {
