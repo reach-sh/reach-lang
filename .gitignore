@@ -12,3 +12,4 @@
 build
 /users
 /non-examples/dev
+*.index
