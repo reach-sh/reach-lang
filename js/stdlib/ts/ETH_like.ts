@@ -253,7 +253,6 @@ class EventCache {
     this.cache = [];
     this.theAddress = undefined;
   }
-  
 
   checkAddress(address: string) {
     if ( this.theAddress !== undefined ) {
@@ -330,7 +329,7 @@ class EventCache {
     const provider = await getProvider();
     const fromBlock = Math.max(fromBlock_given, this.currentBlock);
     const currentTime = await getNetworkTimeNumber();
-    if ( fromBlock > currentTime ) {
+    if ( fromBlock > currentTime || this.currentBlock === currentTime ) {
       return [ [], currentTime ]; }
     const toBlock =
       validQueryWindow === true

@@ -102,7 +102,7 @@ jb
 # r examples/atomic-swap-auction
 # r examples/rent-seeking # XXX dies on ALGO
 # r examples/raffle
-r examples/overview
+r examples/tut-6
 exit 0
 r examples/workshop-relay
 exit 0
