@@ -123,14 +123,9 @@ export class Provider {
       opts.fromBlock = 1;
       debug(`getLogs`, `opts`, opts);
     }
-    try {
-      const logs = await this.conflux.getLogs(opts);
-      debug(`getLogs`, `result`, logs);
-      return await attachBlockNumbers(this.conflux, logs);
-    } catch (err) {
-      debug(`getLogs`, `error`, err);
-      return [];
-    }
+    const logs = await this.conflux.getLogs(opts);
+    debug(`getLogs`, `result`, logs);
+    return await attachBlockNumbers(this.conflux, logs);
   }
 
   async getTransaction(txnHash: string): Promise<any> {

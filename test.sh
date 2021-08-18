@@ -115,6 +115,8 @@ jb
 # ci ALGO rent-seeking
 # ci CFX atomic-swap-auction
 # ci CFX cache-events
+# ci ETH tut-6
+# ci CFX tut-6
 ci CFX mint-basic
 exit 0
 ci CFX raffle

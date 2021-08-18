@@ -317,11 +317,50 @@ class EventCache {
     debug(dhead, lab, `not in cache`);
 
     // If no results, then contact network
-    const [ res, toBlock_eff ] = await this.doGetLogs(dhead, fromBlock);
+    const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
+
+    debug(dhead, lab, `querying`);
+
+    const leftOver = this.lastQueryTime + 1000 - Date.now();
+    if ( leftOver > 0 ) {
+      debug(dhead, lab, `waiting...`, leftOver);
+      await Timeout.set(leftOver);
+    }
+    this.lastQueryTime = Date.now();
+
+    const provider = await getProvider();
+    const fromBlock_act = Math.max(fromBlock, this.currentBlock);
+    const currentTime = await getNetworkTimeNumber();
+    debug(dhead, lab, { fromBlock_act, currentTime });
+    if ( fromBlock_act > currentTime ) {
+      debug(dhead, lab, `no contact, from block in future`);
+      return failed();
+    }
+
+    const toBlock =
+      validQueryWindow === true
+      ? currentTime
+      : Math.min(currentTime, fromBlock_act + validQueryWindow);
+    debug(dhead, lab, { fromBlock_act, currentTime, toBlock });
+    assert(fromBlock <= toBlock, "from <= to");
+
+    let res = [];
+    try {
+      res = await provider.getLogs({
+        fromBlock: fromBlock_act,
+        toBlock,
+        address: this.theAddress
+      });
+    } catch (e) {
+      debug(dhead, lab, 'getLogs err', e);
+      return failed();
+    }
+
+    debug(dhead, lab, 'getLogs succ', res);
     this.cache = res;
     this.currentBlock =
       (this.cache.length == 0)
-        ? toBlock_eff
+        ? toBlock
         : getMaxBlock(this.cache).blockNumber;
     debug(dhead, lab, 'got network', this.currentBlock);
 
@@ -333,40 +372,8 @@ class EventCache {
     }
 
     debug(dhead, lab, `not in network`);
-    return { succ: false, block: this.currentBlock };
+    return failed();
   }
-
-  async doGetLogs(dhead: any, fromBlock_given: number): Promise<[any[], number]> {
-    const lab = `doGetLogs`;
-    debug(dhead, lab, { fromBlock_given, currentBlock: this.currentBlock });
-    const leftOver = this.lastQueryTime + 1000 - Date.now();
-    if ( leftOver > 0 ) {
-      debug(dhead, lab, `waiting...`, leftOver);
-      await Timeout.set(leftOver);
-    }
-    this.lastQueryTime = Date.now();
-
-    const provider = await getProvider();
-    const fromBlock = Math.max(fromBlock_given, this.currentBlock);
-    const currentTime = await getNetworkTimeNumber();
-    debug(dhead, lab, { fromBlock, currentTime });
-    if ( fromBlock > currentTime ) {
-      debug(dhead, lab, `no contact`);
-      return [ [], currentTime ]; }
-    const toBlock =
-      validQueryWindow === true
-      ? currentTime
-      : Math.min(currentTime, fromBlock + validQueryWindow);
-    debug(dhead, lab, { fromBlock, currentTime, toBlock });
-    assert(fromBlock <= toBlock, "from <= to");
-    const res = await provider.getLogs({
-      fromBlock,
-      toBlock,
-      address: this.theAddress
-    });
-    debug(dhead, lab, 'res', res);
-    return [ res, toBlock ];
-  };
 }
 
 // ****************************************************************************
