@@ -105,17 +105,9 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-#jb
+jb
 #r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger
-
-# r examples/log-attack1j
-# r examples/remote
-# r examples/map-rwrw
-# r examples/map-vary
-# r examples/atomic-swap-auction
-# r examples/rent-seeking # XXX dies on ALGO
-# r examples/raffle
 
 # GAVE UP
 # ci ETH atomic-swap-auction

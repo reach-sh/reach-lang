@@ -35,6 +35,7 @@ import type { // =>
   IContract,
   IRecvArgs, ISendRecvArgs,
   IRecv,
+  TimeArg,
   OnProgress,
 } from './shared_impl';
 import type { // =>
@@ -240,6 +241,9 @@ const getMaxBlock = (logs: any[]) =>
       ? (x.logIndex > acc.logIndex ? x : acc)
       : (x.blockNumber.toString() > acc.blockNumber.toString() ? x : acc), logs[0]);
 
+type QueryResult =
+  | { succ: true, evt: any }
+  | { succ: false, block: number }
 
 class EventCache {
   cache: any[] = [];
@@ -262,90 +266,108 @@ class EventCache {
     }
   }
 
-  async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
-    debug(`query`, { fromBlock, toBlock });
+  async query(dhead:any, getC: () => Promise<EthersLikeContract>, fromBlock: number, timeoutAt: TimeArg | undefined, evt: string ) {
     const ethersC = await getC();
-    return await this.queryContract(fromBlock, toBlock, ethersC.address, ok_evt, ethersC.interface);
+    return await this.queryContract(dhead, ethersC.address, ethersC.interface, fromBlock, timeoutAt, evt);
   }
 
-  async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
-    debug(`queryContract`, { fromBlock, toBlock });
-    const topic = iface.getEventTopic(event);
+  async queryContract(dhead:any, address:string, iface:any, fromBlock: number, timeoutAt: TimeArg|undefined, evt: string) {
+    const topic = iface.getEventTopic(evt);
     this.checkAddress(address);
-    return await this.query_(fromBlock, toBlock, topic);
+    return await this.query_(dhead, fromBlock, timeoutAt, topic);
   }
 
-  async query_(fromBlock: number, toBlock: number, topic: string) {
-    debug(`EventCache.query`, fromBlock, toBlock, topic);
-    if (fromBlock > toBlock) {
-      return undefined;
-    }
+  async query_(dhead:any, fromBlock: number, timeoutAt: TimeArg|undefined, topic: string): Promise<QueryResult> {
+    const lab = `EventCache.query`;
+    debug(dhead, lab, { fromBlock, timeoutAt, topic });
+
+    const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
+    const maxTime = h('time');
+    const maxSecs = h('secs');
+    debug(dhead, lab, { maxTime, maxSecs });
+
     // Clear cache of stale transactions
     // Cache's min bound will be `fromBlock`
+    const showCache = (when:string) => {
+      debug(dhead, lab, { when, current: this.currentBlock, len: this.cache.length});
+    };
+    showCache(`pre from`);
     this.cache = this.cache.filter((x) => x.blockNumber >= fromBlock);
+    showCache(`post from`);
 
-    // When checking for topic, only choose blocks that are lte `toBlock`
-    const filterFn = (x: any) =>
-      x.topics.includes(topic.toString())
-      && x.blockNumber <= toBlock;
+    // Search for target
+    const searchLogs = async (source: any): Promise<any[]> => {
+      const res = [];
+      for ( const x of source ) {
+        const block = x.blockNumber;
+        if ( x.topics.includes(topic.toString())
+            && (maxTime ? block <= maxTime : true)
+            && (maxSecs ? (await getTimeSecs(block)).lte(maxSecs) : true) ) {
+            res.push(x);
+        }
+      }
+      return res;
+    };
 
-    // Check to see if the transaction we want is in the cache
-    const initLogs = this.cache.filter(filterFn);
+    const initLogs = await searchLogs(this.cache);
     if(initLogs.length > 0) {
-      debug(`Found transaction in Event Cache`);
-      return getMinBlock(initLogs);
+      debug(dhead, lab, `in cache`);
+      return { succ: true, evt: getMinBlock(initLogs) };
     }
-
-    debug(`Transaction not in Event Cache. Querying network...`);
+    debug(dhead, lab, `not in cache`);
 
     // If no results, then contact network
-    const [ res, toBlock_eff ] = await this.doGetLogs(fromBlock);
+    const [ res, toBlock_eff ] = await this.doGetLogs(dhead, fromBlock);
     this.cache = res;
-
-    if ( this.currentBlock === toBlock_eff ) {
-      debug(`Current block is same as effective block... waiting`);
-      await Timeout.set(Math.max(0, (this.lastQueryTime + 1000) - Date.now()));
-    } else {
-      this.lastQueryTime = Date.now();
-    }
-
     this.currentBlock =
       (this.cache.length == 0)
         ? toBlock_eff
         : getMaxBlock(this.cache).blockNumber;
+    debug(dhead, lab, 'got network', this.currentBlock);
 
     // Check for pred again
-    const foundLogs = this.cache.filter(filterFn);
-
-    if (foundLogs.length < 1) {
-      return undefined;
+    const foundLogs = await searchLogs(this.cache);
+    if ( foundLogs.length > 0 ) {
+      debug(dhead, lab, `in network`);
+      return { succ: true, evt: getMinBlock(foundLogs) };
     }
 
-    return getMinBlock(foundLogs);
+    debug(dhead, lab, `not in network`);
+    return { succ: false, block: this.currentBlock };
   }
 
-  async doGetLogs(fromBlock_given: number): Promise<[any[], number]> {
-    debug(`doGetLogs`, { fromBlock_given, cb: this.currentBlock });
+  async doGetLogs(dhead: any, fromBlock_given: number): Promise<[any[], number]> {
+    const lab = `doGetLogs`;
+    debug(dhead, lab, { fromBlock_given, currentBlock: this.currentBlock });
+    const leftOver = this.lastQueryTime + 1000 - Date.now();
+    if ( leftOver > 0 ) {
+      debug(dhead, lab, `waiting...`, leftOver);
+      await Timeout.set(leftOver);
+    }
+    this.lastQueryTime = Date.now();
+
     const provider = await getProvider();
     const fromBlock = Math.max(fromBlock_given, this.currentBlock);
     const currentTime = await getNetworkTimeNumber();
-    if ( fromBlock > currentTime || this.currentBlock === currentTime ) {
+    debug(dhead, lab, { fromBlock, currentTime });
+    if ( fromBlock > currentTime ) {
+      debug(dhead, lab, `no contact`);
       return [ [], currentTime ]; }
     const toBlock =
       validQueryWindow === true
       ? currentTime
       : Math.min(currentTime, fromBlock + validQueryWindow);
-    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
+    debug(dhead, lab, { fromBlock, currentTime, toBlock });
     assert(fromBlock <= toBlock, "from <= to");
     const res = await provider.getLogs({
       fromBlock,
       toBlock,
       address: this.theAddress
     });
+    debug(dhead, lab, 'res', res);
     return [ res, toBlock ];
   };
 }
-
 
 // ****************************************************************************
 // Common Interface Exports
@@ -595,7 +617,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
-        const { creation_block } = await verifyContract_(info, bin, eventCache);
+        const { creation_block } = await verifyContract_(info, bin, eventCache, label);
         theCreationTime = creation_block;
         setLastBlock(creation_block);
         const address = info;
@@ -653,7 +675,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const getLog = async (
       fromBlock: number, toBlock: number, ok_evt: string,
     ): Promise<Log|undefined> => {
-      return await eventCache.query(fromBlock, toBlock, ok_evt, getC);
+      const res = await eventCache.query('getLog', getC, fromBlock, ['time', bigNumberify(toBlock)], ok_evt);
+      if ( ! res.succ ) { return undefined; }
+      return res.evt;
     }
 
     const getInfo = async () => await infoP;
@@ -743,29 +767,25 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       debug(dhead, `START`);
 
       // look after the last block
-      void(isFirstMsgDeploy);
-      const block_poll_start_init: number =
+      const fromBlock: number =
         lastBlock + (isFirstMsgDeploy ? 0 : 1);
-      let block_poll_start: number = block_poll_start_init;
-      let block_poll_end = block_poll_start;
-      while ( ! await checkTimeout(getTimeSecs, timeoutAt, block_poll_start) ) {
-        debug(dhead, `GET`, { block_poll_start, block_poll_end });
-        const ok_e = await eventCache.query(block_poll_start, block_poll_end, ok_evt, getC);
-        if (ok_e == undefined) {
-          debug(dhead, `RETRY`);
-          block_poll_start = block_poll_end;
-
-          await Timeout.set(1);
-          block_poll_end = Math.max(eventCache.currentBlock + 1, await getNetworkTimeNumber());
-          debug(dhead, `up poll int`, {block_poll_start, block_poll_end});
-          if ( waitIfNotPresent && block_poll_start == block_poll_end ) {
-            await waitUntilTime(bigNumberify(block_poll_end + 1));
+      while ( true ) {
+        const res = await eventCache.query(dhead, getC, fromBlock, timeoutAt, ok_evt);
+        if ( ! res.succ ) {
+          const currentTime = res.block;
+          if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime) ) {
+            debug(dhead, '--- RECVD timeout', {timeoutAt, currentTime});
+            return { didTimeout: true };
           }
-          if ( block_poll_start <= lastBlock ) {
-            block_poll_start = block_poll_start_init; }
-
+          if ( waitIfNotPresent ) {
+            await waitUntilTime(bigNumberify(currentTime + 1));
+          } else {
+            // Ideally we'd wait until after time has advanced
+            await Timeout.set(500);
+          }
           continue;
         } else {
+          const ok_e = res.evt;
           debug(dhead, `OKAY`);
 
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
@@ -831,9 +851,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           };
         }
       }
-
-      debug(shad, ':', label, 'recv', ok_evt, timeoutAt, '--- TIMEOUT');
-      return {didTimeout: true} ;
     };
 
     const creationTime = async () => {
@@ -1011,13 +1028,14 @@ type VerifyResult = {
   creation_block: number,
 };
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
-  return await verifyContract_(ctcInfo, backend, new EventCache());
+  return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
-const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache): Promise<VerifyResult> => {
+const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache, label: string): Promise<VerifyResult> => {
   const { ABI, Bytecode, deployMode } = backend._Connectors.ETH;
   const address = ctcInfo;
   const iface = new real_ethers.utils.Interface(ABI);
-  debug('verifyContract', {address});
+  const dhead = [ 'verifyContract', label ];
+  debug(dhead, {address});
 
   const chk = (p: boolean, msg: string) => {
     if ( !p ) {
@@ -1032,26 +1050,26 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
 
   const provider = await getProvider();
   const now = await getNetworkTimeNumber();
-  const getLogs = async (event:string): Promise<any> => {
-    debug('verifyContract: getLogs', {event, now});
+  const lookupLog = async (event:string): Promise<any> => {
+    debug(dhead, 'lookupLog', {event, now});
     while ( eventCache.currentBlock <= now ) {
-      const log = await eventCache.queryContract(0, now, address, event, iface);
-      if ( log === undefined ) { continue; }
-      return log;
+      const res = await eventCache.queryContract(dhead, address, iface, 0, [ 'time', bigNumberify(now) ], event);
+      if ( ! res.succ ) { continue; }
+      return res.evt;
     }
     chk(false, `Contract was claimed to be deployed, but the current block is ${now} (cached @ ${eventCache.currentBlock}) and it hasn't been deployed yet.`);
   };
-  const e0log = await getLogs('e0');
+  const e0log = await lookupLog('e0');
   const creation_block = e0log.blockNumber;
 
-  debug(`verifyContract: checking code...`);
+  debug(dhead, `checking code...`);
   const dt = await provider.getTransaction( e0log.transactionHash );
-  debug('dt', dt);
+  debug(dhead, 'dt', dt);
 
   const ctorArgs = await (async (): Promise<any> => {
     switch ( deployMode ) {
       case 'DM_firstMsg': {
-        const e1log = await getLogs('e1');
+        const e1log = await lookupLog('e1');
         const e1p = iface.parseLog(e1log);
         debug(`e1p`, e1p);
         return e1p.args;

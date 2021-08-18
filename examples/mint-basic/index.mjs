@@ -13,6 +13,8 @@ import * as backend from './build/index.main.mjs';
     stdlib.newTestAccount(startingBalance),
     stdlib.newTestAccount(startingBalance),
   ]);
+  accAlice.setDebugLabel('Alice');
+  accBob.setDebugLabel('Bob');
   if ( stdlib.connector == 'ETH' ) {
     const myGasLimit = 5000000;
     accAlice.setGasLimit(myGasLimit);
