@@ -242,15 +242,25 @@ const getMaxBlock = (logs: any[]) =>
 
 
 class EventCache {
-
   cache: any[] = [];
 
+  theAddress: string|undefined;
   public currentBlock: number;
   lastQueryTime: number = 0;
 
   constructor() {
     this.currentBlock = _getQueryLowerBound();
     this.cache = [];
+    this.theAddress = undefined;
+  }
+  
+
+  checkAddress(address: string) {
+    if ( this.theAddress !== undefined ) {
+      assert(address == this.theAddress, `address must match: ${address} != ${this.theAddress}`);
+    } else {
+      this.theAddress = address;
+    }
   }
 
   async query(fromBlock: number, toBlock: number, ok_evt: string, getC: () => Promise<EthersLikeContract>) {
@@ -262,38 +272,11 @@ class EventCache {
   async queryContract(fromBlock: number, toBlock: number, address: string, event: string, iface: any) {
     debug(`queryContract`, { fromBlock, toBlock });
     const topic = iface.getEventTopic(event);
-    const getLogs = async (currentBlock: number) => {
-      return await this.doGetLogs(
-        fromBlock, currentBlock,
-        address,
-      );
-    };
-    return await this.query_(fromBlock, toBlock, topic, getLogs);
+    this.checkAddress(address);
+    return await this.query_(fromBlock, toBlock, topic);
   }
 
-  async doGetLogs(fromBlock_given: number, currentBlock:number, address: string): Promise<[any[], number]> {
-    debug(`doGetLogs`, { fromBlock_given, currentBlock });
-    const provider = await getProvider();
-    const fromBlock = Math.max(fromBlock_given, currentBlock);
-    const currentTime = await getNetworkTimeNumber();
-    if ( fromBlock > currentTime ) {
-      return [ [], currentTime ]; }
-    const toBlock =
-      validQueryWindow === true
-      ? currentTime
-      : Math.min(currentTime, fromBlock + validQueryWindow);
-    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
-    assert(fromBlock <= toBlock, "from <= to");
-    const res = await provider.getLogs({
-      fromBlock,
-      toBlock,
-      address,
-    });
-    return [ res, toBlock ];
-  };
-
-
-  async query_(fromBlock: number, toBlock: number, topic: string, getLogs: (currentBlock: number) => Promise<[any[], number]>) {
+  async query_(fromBlock: number, toBlock: number, topic: string) {
     debug(`EventCache.query`, fromBlock, toBlock, topic);
     if (fromBlock > toBlock) {
       return undefined;
@@ -317,7 +300,7 @@ class EventCache {
     debug(`Transaction not in Event Cache. Querying network...`);
 
     // If no results, then contact network
-    const [ res, toBlock_eff ] = await getLogs(this.currentBlock);
+    const [ res, toBlock_eff ] = await this.doGetLogs(fromBlock);
     this.cache = res;
 
     if ( this.currentBlock === toBlock_eff ) {
@@ -342,6 +325,26 @@ class EventCache {
     return getMinBlock(foundLogs);
   }
 
+  async doGetLogs(fromBlock_given: number): Promise<[any[], number]> {
+    debug(`doGetLogs`, { fromBlock_given, cb: this.currentBlock });
+    const provider = await getProvider();
+    const fromBlock = Math.max(fromBlock_given, this.currentBlock);
+    const currentTime = await getNetworkTimeNumber();
+    if ( fromBlock > currentTime ) {
+      return [ [], currentTime ]; }
+    const toBlock =
+      validQueryWindow === true
+      ? currentTime
+      : Math.min(currentTime, fromBlock + validQueryWindow);
+    debug(`doGetLogs`, { fromBlock, currentTime, toBlock });
+    assert(fromBlock <= toBlock, "from <= to");
+    const res = await provider.getLogs({
+      fromBlock,
+      toBlock,
+      address: this.theAddress
+    });
+    return [ res, toBlock ];
+  };
 }
 
 
