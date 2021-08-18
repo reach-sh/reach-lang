@@ -250,7 +250,9 @@ function envDefaultsCFX(env: {[key: string]: string}): ProviderEnv {
     return { CFX_NODE_URI, CFX_NETWORK_ID, CFX_LOG, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.conflux) {
-      return notYetSupported(`window.conflux`);
+      return localhostProviderEnv;
+      // XXX instead of this ^ support using window.conflux as provider
+      // return notYetSupported(`window.conflux`);
       // return windowProviderEnv(REACH_ISOLATED_NETWORK);
     } else {
       return localhostProviderEnv;

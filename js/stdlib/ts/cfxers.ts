@@ -79,7 +79,7 @@ interface IContract {
 export class Contract implements IContract {
   [k: string]: any
   _abi: any[]
-  _wallet: Wallet
+  _wallet: IWallet
   _receiptP?: Promise<any>
   _contract: cfxsdk.Contract
   address?: string
@@ -101,7 +101,7 @@ export class Contract implements IContract {
   //   parseLog: (log: Log) => {args: {[k: string]: any}},
   // }
 
-  constructor(address: string|null|undefined, abi: string|any[], wallet: Wallet, receiptP?: Promise<any>, hash?: string) {
+  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
@@ -344,9 +344,12 @@ export class BrowserWallet implements IWallet {
     this._requireConnected();
     const {provider, address: from} = this;
     if (!provider) throw Error(`Impossible: provider is undefined`);
+    const txn = {...txnOrig, from};
     // @ts-ignore // leaning on window.BigInt for the num -> hexnum conversion
-    const value: string = '0x' + window.BigInt(txnOrig.value || '0').toString(16);
-    const txn = {...txnOrig, value, from};
+    const hexStringify = (n) => '0x' + window.BigInt(n || '0').toString(16);
+    const value = hexStringify(txnOrig.value);
+    txn.value = value;
+    if (txn.storageLimit !== undefined) txn.storageLimit = hexStringify(txn.storageLimit);
     return await new Promise((resolve, reject) => {
       this.cp.sendAsync({
         method: 'cfx_sendTransaction',
