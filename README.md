@@ -12,7 +12,7 @@ Read the [documentation](https://docs.reach.sh).
 If you want to work on the Reach compiler, you'll need:
 - stack v2.7.1
 - z3 v4.8.10
-- solidity v0.8.5
+- solidity v0.8.7
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 
 Installation on macOS:
@@ -26,7 +26,9 @@ Installation on Ubuntu:
 ```
 $ sudo apt update
 $ sudo apt install z3  # see hs/Dockerfile for getting z3 v4.8.8 specifically
-$ sudo snap install solc
+$ sudo add-apt-repository ppa:ethereum/ethereum
+$ sudo apt-get update
+$ sudo apt-get install solc
 $ curl -sSL https://get.haskellstack.org/ | sh
 $ curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin/
 ```
