@@ -787,7 +787,7 @@ This issue is most likely caused by a typo. Please ensure you are dereferencing 
 
 @error{RE0041}
 
-This error indicates that there is an attempt to statically dereference an @reachin{Array} beyond it's bounds.
+This error indicates that there is an attempt to statically dereference an @reachin{Array} beyond its bounds.
 Ensure you are using an index that is between @tt{0} and @tt{1} less than the length of the @reachin{Array}.
 
 @error{RE0042}
@@ -1215,7 +1215,7 @@ the function.
 This error indicates that a @reachin{switch} statement was supplied with a value that is not a
 @reachin{Data} instance.
 
-For example, the code below expects a @reachin{Maybe} type, but is erroneously provided with an @reachin{UInt}:
+For example, the code below expects a @reachin{Maybe} type, but is erroneously provided with a @reachin{UInt}:
 
 @reach{
   const f = (mx) => {
@@ -1246,8 +1246,7 @@ You can fix this code by providing a value with the correct @reachin{Type} to th
 This error indicates that there are multiple cases for the same variant in a @reachin{switch} statement or
 @reachin{match} expression.
 
-You can fix this error by deleting one of the branches, ensuring there are only
-one branch per variant.
+You can fix this error by deleting one of the branches, ensuring there is only one branch per variant.
 
 @error{RE0074}
 
@@ -1275,8 +1274,8 @@ For example, the code below erroneously provides a number as the second argument
   assert(2 == 2, 5);
 }
 
-However, the second argument of @reachin{assert} is expected to be of type @reach{Bytes}. You can fix this
-issue by providing a value of the correct type:
+However, the second argument of @reachin{assert} is expected to be of type @reachin{Bytes}.
+You can fix this issue by providing a value of the correct type:
 
 @reach{
   assert(2 == 2, "5th assertion")
@@ -1511,7 +1510,7 @@ This error indicates that there is a mismatch between the actual @reachin{Type} 
 @reachin{Type} of a value.
 
 For example, the code below erroneously returns a @reachin{Bool} when the type annotation states that
-the function should return an @reachin{UInt}.
+the function should return a @reachin{UInt}.
 
 @reach{
 export const f =
@@ -1519,10 +1518,10 @@ export const f =
      Fun([UInt], UInt));
 }
 
-You can fix this code by returning an @reachin{UInt} from the function or changing the return type of the function.
+You can fix this code by returning a @reachin{UInt} from the function or changing the return type of the function.
 
 This error may be caused by using a value of the incorrect type in an operation. The code below erroneously uses
-a @reachin{Maybe} value in an @reachin{+} expression:
+a @reachin{Maybe} value in a @reachin{+} expression:
 
 @reach{
   A.only(() => {
@@ -1868,7 +1867,7 @@ You can work around this issue by writing out the @reachin{Token} values explici
 @error{RE0105}
 
 This error indicates that the incorrect arguments were supplied to @reachin{withBill}.
-@reachin{withBill} either expects zero arguments, when only receiving @tech{network tokens}
+@reachin{withBill} either expects zero arguments, when only receiving @tech{network tokens},
 or a @reachin{Tuple} of @reachin{Token}s when receiving @tech{non-network tokens}.
 
 For example, the code below erroneously provides multiple @tech{non-network tokens} to
@@ -1974,7 +1973,7 @@ For example, the code below erroneously creates an @reachin{Object} type with a 
   });
 }
 
-This code is incorrect because @reachin{Bytes} is not a type; it is a function that accepts an @reachin{UInt} and returns
+This code is incorrect because @reachin{Bytes} is not a type; it is a function that accepts a @reachin{UInt} and returns
 a @reachin{Type}. This code can be fixed by providing an argument to @reachin{Bytes} that represents the length:
 
 @reach{
@@ -2018,7 +2017,7 @@ The third @reachin{return} can never be reached, so the way to correct the progr
 
 @error{RE0117}
 
-This error means that only one branch of a conditional (@reachin{if} or @reachin{switch}) contains @reachin{return} statement.
+This error means that only one branch of a conditional (@reachin{if} or @reachin{switch}) contains a @reachin{return} statement.
 
 For example, this function would have this error:
 
@@ -2095,8 +2094,7 @@ You can fix this code by making a publication within the @reachin{loop}:
   }
 }
 
-Note that the body a @reachin{while} starts in a @tech{consensus step} so you must first
-@reachin{commit} before making a publication.
+Note that the body of a @reachin{while} starts in a @tech{consensus step} so you must first @reachin{commit} before making a publication.
 
 @error{RI0000}
 
@@ -2165,7 +2163,7 @@ was received.
 This error indicates that a key or a key/value pair was expected in a
 destructuring assignment, but an object method was received.
 
-For example, the code below creates a method within an destructuring assignment:
+For example, the code below creates a method within a destructuring assignment:
 
 @reach{
   const {x() { return 1 }} = {x: 2};
