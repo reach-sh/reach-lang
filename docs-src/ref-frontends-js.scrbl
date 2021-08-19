@@ -102,7 +102,7 @@ Returns the first piece of @jsin{getConnectorMode()}.
   loadStdlib(env) => Promise<stdlib>
 }
 
-@index{loadStdlib} Returns a Promise for a stlib based on the provided @jsin{env} string or map.
+@index{loadStdlib} Returns a Promise for a stdlib based on the provided @jsin{env} string or map.
 In environments where the reach stdlib has implicit access to @jsin{process.env},
 you may omit the @jsin{env} argument, in which case @jsin{process.env} will be used.
 
@@ -245,7 +245,7 @@ This does nothing on some @tech{consensus networks}, but should always be used t
 @js{
   acc.tokenMetadata(token) => Promise<object>}
 
-@index{acc.tokenMetadata} Returns a Promise of the metadata for a @tech{non-network tokens} specified by the @jsin{token}.
+@index{acc.tokenMetadata} Returns a Promise of the metadata for a @tech{non-network token} specified by the @jsin{token}.
 
 @(hrule)
 @(mint-define! '("balanceOf"))
