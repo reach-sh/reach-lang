@@ -23,7 +23,7 @@ You can install Reach by running:
 
 in your project repository.
 You can copy this file to other repositories or move it to a directory in your @envref{PATH}, like @exec{~/bin}.
-(@defenv{PATH} is UNIX environment variable listing each of the directories that contain programs you can run in a shell session.)
+(@defenv{PATH} is a UNIX environment variable listing each of the directories that contain programs you can run in a shell session.)
 
 @margin-note{If you're using Windows, consult @seclink["guide-windows"]{the guide to using Reach on Windows}.}
 
