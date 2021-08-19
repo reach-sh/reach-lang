@@ -45,7 +45,7 @@ Verification typically involves only the smart contract and the best versions of
 ]
 
 Obviously, we've left out a lot of details, but this is a sketch of the typical components of Solidity-style development.
-There are a huge number of options and techniques for almost each of these components, with some being dropped or minimized depending on the needs of the particular application.
+There are a huge number of options and techniques for almost all of these components, with some being dropped or minimized depending on the needs of the particular application.
 For example, an extremely simple @|DApp| might combine the middleware and frontend or embed a description of the protocol design as comments or some ASCII art in the smart contract source code.
 
 @section{Reach Development}
@@ -59,7 +59,7 @@ Reach development includes each one of these seven components. But rather than r
 Reach programs encode the same information that would be in the informal protocol design diagrams that often accompany smart contracts.
 A Reach program specifically names the various participants in a @|DApp| and their individual workflows as a single chronological workflow that shows how and when the various individual workflows intertwine.}
 
-@item{@bold{Smart Contract} --- By operating this higher-level of abstraction, Reach developers are not responsible for determining the state space of the smart contract.
+@item{@bold{Smart Contract} --- By operating at this higher-level of abstraction, Reach developers are not responsible for determining the state space of the smart contract.
 Instead, the Reach compiler analyzes the structure of communication in the protocol design and derives the necessary state and transition functions.
 This doesn't mean that Reach developers don't think about "consensus"; indeed, the @tech{consensus step} is a fundamental part of a Reach program.
 However, Reach developers can focus on the constraints on individual @tech{publications} and the consensual actions of the computation, rather than the mechanics of ensuring the smart contract is in the appropriate state and transitions to the correct next state.}
@@ -74,15 +74,15 @@ Reach developers can easily build their interface with JavaScript using the Reac
 
 @item{@bold{Testing} --- Reach facilitates testing in two ways.
 First, the Reach language embeds a high-quality property-based testing system via the @reachin{assert} and @reachin{forall} primitives, which can be used in a basic way to write simple test cases.
-Second, the Reach deployment tool, @exec{reach run}, allows for the easy construction and running of automate test suites for the workflows of a @|DApp|.
+Second, the Reach deployment tool, @exec{reach run}, allows for the easy construction and running of automated test suites for the workflows of a @|DApp|.
 In both cases, it is not necessary for Reach developers to directly manage their own development networks or otherwise interact with the consensus networks they're testing with in any way.}
 
-@item{@bold{Verification} --- Every Reach compilation includes a thorough formal verification of the @|DApp| using a SMT-based theorem prover.
+@item{@bold{Verification} --- Every Reach compilation includes a thorough formal verification of the @|DApp| using an SMT-based theorem prover.
 This theorem prover verifies general properties that all programs should exhibit, such as never overflowing finite memory bounds or accessing uninitialized memory.
 It verifies properties that all @|DApps| should exhibit, such as @tech{token linearity property} which guarantees that funds are not double-spent or forgotten about.
 Furthermore, it verifies bespoke properties that are unique to the particular @|DApp|, as specified with the @reachin{assert} primitive.}
 
-@item{@bold{Deployment} --- Some aspects of deployment decisions are embedded inside of Reach program, such as whether to use a contract factory or whether to have each instance of the @|DApp| use an independent smart contract deployed by one of the participants.
+@item{@bold{Deployment} --- Some aspects of deployment decisions are embedded inside of Reach programs, such as whether to use a contract factory or whether to have each instance of the @|DApp| use an independent smart contract deployed by one of the participants.
 Other aspects are part of the configuration of the Reach compiler, such as which consensus network will be targeted.
 Still others are part of the configuration of the Reach standard library and testing infrastructure, like which wallet the middleware should connect to or which kind of development node should be launched and managed by Reach.}
 
