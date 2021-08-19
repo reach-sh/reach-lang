@@ -5,12 +5,12 @@
 
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.
 
-In traditional client-server programs, like an Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
-In these sorts of traditional programs, non-participation is an exceptional circumstances that normally leads to an error message for clients and, at most, a log entry for servers.
+In traditional client-server programs, like a Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
+In these sorts of traditional programs, non-participation is an exceptional circumstance that normally leads to an error message for clients and, at most, a log entry for servers.
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
 
-In contrast, decentralized applications must be careful designed with an eye towards their behavior in the face of non-participation.
+In contrast, decentralized applications must be carefully designed with an eye towards their behavior in the face of non-participation.
 
 There are two general strategies for dealing with non-participation: punishment and disincentivizing.
 
