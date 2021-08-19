@@ -8,7 +8,7 @@
 In this workshop, we'll design an application that allows a Funder
 to create an auction where participants may purchase tickets.
 The Funder sets a ticket price and a relative deadline. When
-a Buyer purchases a ticket, the deadline is reset. Whomever is the
+a Buyer purchases a ticket, the deadline is reset. Whoever is the
 last person to buy a ticket—when the deadline finally hits—wins
 the entire balance. This program is based off of the crypto game,
 @link["https://fomo3d.hostedwiki.co/"]{FOMO3DGame}.
@@ -85,20 +85,19 @@ You should write your answers in your Reach file (@tt{index.rsh}) as the @tech{p
 Let's compare your answers with ours:
 
 @itemlist[
-  @item{The deadline will be represented with an @reachin{UInt}, as it is
+  @item{The deadline will be represented with a @reachin{UInt}, as it is
   a relative time delta signifying a change in block numbers.}
-  @item{The @tt{ticketPrice} will be represented with an @reachin{UInt}}
+  @item{The @tt{ticketPrice} will be represented with a @reachin{UInt}}
   @item{The decision to buy a ticket will be represented by a function @reachin{Fun([UInt], Bool)}}
 ]
 
 Our @tech{participant interact interface}, with the addition of some handy logging functions, looks like this so far:
 
 @reachex["workshop-fomo/index.rsh"
-         
          'only 4 22 "  // ..."]
 
 
-At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholders for the actual value.
+At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
 @(drstep-cc TAG)
