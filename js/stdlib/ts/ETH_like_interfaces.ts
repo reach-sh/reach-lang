@@ -102,6 +102,7 @@ export interface EthLikeArgs {
   providerLib: ProviderLib
   isIsolatedNetwork(): boolean
   isWindowProvider(): boolean
+  canGetDefaultAccount(): boolean
   _getDefaultNetworkAccount(): any
   _getDefaultFaucetNetworkAccount(): any
   _warnTxNoBlockNumber?: boolean
