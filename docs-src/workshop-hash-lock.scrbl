@@ -62,7 +62,7 @@ So, for this program, we should decide:
 ]
 @(drstep-dd-datatype-mn)
 
-After deciding those things, you should think about how the program will be provided this values.
+After deciding those things, you should think about how the program will be provided these values.
 In other words:
 
 @itemlist[
@@ -180,7 +180,7 @@ As programs become more complex, this theory becomes more and more difficult to 
 Furthermore, when another programmer reads our code (such as a version of ourselves from the future trying to modify the program), it can be very difficult to understand this theory for ourselves.
 @tech{Assert}ions are ways of encoding this theory directly into the text of the program in a way that will be checked by Reach and available to all future readers and editors of the code.
 
-Look at your application, what are assumptions that you have about the values in the program?
+Look at your application. What are the assumptions you have about the values in the program?
 
 @(drstep-ai-stop1)
 
@@ -192,7 +192,7 @@ There are three main assumptions we came up with for this program:
 ]
 
 We expect that the third of these is the least controversial and the most obvious property, but the others are important too.
-The first property essentially guarantees that the errorneous version of the application we contemplated, where Alice directly sent her password over the network is disallowed.
+The first property essentially guarantees that the erroneous version of the application we contemplated, where Alice directly sent her password over the network, is disallowed.
 The second property encodes Bob's assumption of good will and integrity when he submits his value: an honest version of the Bob participant would not willingly send a password that wasn't the correct one.
 Furthermore, it is possible for any participant to check, without going through consensus, if they know what the password is.
 
@@ -230,9 +230,9 @@ We'll handle that next.
 
 @(drstep-ii TAG)
 
-A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized applications.
+A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized application.
 @tech{Frontends} are responsible for all other aspects of the program.
-Thus, eventually a Reach programs needs to insert calls into their code to send data to and from the @tech{frontend} via the @tech{participant interact interface}s that they defined during the @emph{Data Definition} step.
+Thus, eventually a Reach programmer needs to insert calls into their code to send data to and from the @tech{frontend} via the @tech{participant interact interface}s that they defined during the @emph{Data Definition} step.
 
 In our program, that means defining @reachin{amt} and @reachin{passDigest} by Alice and @reachin{pass} by Bob.
 Do that now.
@@ -270,7 +270,7 @@ We need to decide how to deploy the contract, as well as what kind of user inter
 In this case, it is a very simple program, so we'll use a simple and efficient contract @seclink["guide-deploymode"]{deployment mode}: @reachin{'firstMsg'}.
 This means that the @tech{contract} won't exist on the @tech{consensus network} until Alice sends her first message.
 This is a good choice for most contracts, if it is allowed.
-(As @seclink["guide-deploymode"]{the guide discusses}, some applications cannot be deployed like this.}
+(As @seclink["guide-deploymode"]{the guide discusses}, some applications cannot be deployed like this.)
 
 @margin-note{Unfortunately, on many @tech{consensus networks}, like Ethereum and Algorand, this application is dangerous to run.
 The problem is that a malicious miner, like Eve, can intercept Bob's message that provides him the funds, refuse to forward it through to the consensus network, take the password from it, and submit it for her own account.
@@ -282,7 +282,7 @@ In short: Don't run this program.
 If you want to do something @emph{like this}, then continue to the @seclink["workshop-relay"]{next workshop } on relays.
 If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.}
 
-Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
+Next, we'll settle for a simple testing program for now to show the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript @tech{frontend} we wrote:
 
 @reachex["workshop-hash-lock/index.mjs"
