@@ -24,7 +24,7 @@ The Reach RPC Server supports the following @deftech{RPC methods}:
 
 @item{@tt{/stdlib/$METHOD} where @tt{$METHOD} is a function of the @seclink["ref-frontends-js"]{JavaScript standard library}.
 
-All @tt{/stdlib} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that that produce or consume @tech{account} representations.
+All @tt{/stdlib} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that produce or consume @tech{account} representations.
 
 Those methods instead accept and produce @tech{account} @tech{RPC handles}, which are random strings that represent the corresponding @tech{account} representations.
 For example, @tt{/stdlib/newTestAccount} does not return an @tech{account} like @jsin{newTestAccount}, but instead returns an @tech{account} @tech{RPC handle}.
