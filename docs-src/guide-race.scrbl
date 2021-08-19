@@ -33,7 +33,7 @@ where a @reachin{race} determines the first player.
 
 This use-case demonstrates a major problem with @reachin{race}s though.
 In the case of Nim, there is an advantage to whoever goes first: they can win if they choose the correct moves!
-Since Bob sent the previous publication, he will know about the opportunity to determine who goes first before Alice, so he can send both publication in back-to-back and be guaranteed to win.
+Since Bob sent the previous publication, he will know about the opportunity to determine who goes first before Alice, so he can send both publications in back-to-back and be guaranteed to win.
 
 One strategy to avoid this would be to ensure that Alice and Bob both @reachin{wait} a pre-determined amount of time, after which they would each have a fair chance to race:
 
@@ -57,7 +57,7 @@ One strategy to avoid this would be to ensure that Alice and Bob both @reachin{w
 However, even this strategy is dangerous, because it just creates an arms race between Alice and Bob to acquire more computational and network resources to guarantee that they are the first one, because whoever is first is the actual winner of the game, whatever happens next.
 A classic example of a situation like this was the @link["https://medium.com/coinmonks/how-the-winner-got-fomo3d-prize-a-detailed-explanation-b30a69b7813f"]{Fomo3D winner}, who used their capital to acquire millions in ETH in 2018.
 
-A better strategy in this application would be to have each particular provide randomness using a commitment pattern (see @reachin{makeCommitment} and @reachin{checkCommitment}) then reveal that randomness to determine the winner.
+A better strategy in this application would be to have each participant provide randomness using a commitment pattern (see @reachin{makeCommitment} and @reachin{checkCommitment}) then reveal that randomness to determine the winner.
 Or, to play a different game that is actually skill-based.
 
 This example demonstrates the crucial problem with the @tech{participant} non-determinism enabled by @reachin{race}: it will always produce an arms race for resources if winning the race results in winning funds.
