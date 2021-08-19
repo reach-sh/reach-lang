@@ -9,7 +9,7 @@ Reach uses @link["https://semver.org/"]{semantic versioning}, which means that g
 
 @item{@litchar{MAJOR} versions are incompatible.}
 
-@item{@litchar{MINOR} versions are compatible, but have additional features relative to earlier version.}
+@item{@litchar{MINOR} versions are compatible, but have additional features relative to earlier versions.}
 
 @item{@litchar{PATCH} versions are entirely compatible.}
 
