@@ -34,7 +34,7 @@ echo "$UsageReport" | jq -r '
   | flatten
   | map(join(",")) | join("\n")' >> $LOCATION_FILE
 
-if [ "x${GEOLOCATIONS}" = "x--convert-ip" ] ; then
+if [ "${GEOLOCATIONS}" = "--convert-ip" ] ; then
     echo "Converting location information..."
     python3 convert_location.py "$LOCATION_FILE"
     echo "Wrote location report to $LOCATION_FILE"

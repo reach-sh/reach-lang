@@ -10,7 +10,7 @@ while ! <"/dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT"; do
   sleep 1
 done
 
-if [ "x$REACH_ALGO_DEBUG" = "x" ] ; then
+if [ "$REACH_ALGO_DEBUG" = "" ] ; then
   echo Not starting debugger. To start, use REACH_ALGO_DEBUG=1.
 else
   echo Starting debugger

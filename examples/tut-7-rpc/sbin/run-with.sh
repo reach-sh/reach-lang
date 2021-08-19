@@ -7,7 +7,7 @@ CLIENT="$1"
 REACH_RPC_KEY=$(cat REACH_RPC_KEY.txt)
 export REACH_RPC_KEY
 
-if [ "x$CLIENT" = "x" ]; then
+if [ "$CLIENT" = "" ]; then
   echo 'Error: An argument to this script is required'
   exit 1
 fi

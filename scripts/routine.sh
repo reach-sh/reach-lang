@@ -1,9 +1,9 @@
 #! /bin/sh
 set -ex
 
-if [ "x$1" = "xbuild" ]; then
+if [ "$1" = "build" ]; then
   alias go='make build'
-elif [ "x$1" = "xbuild-push" ]; then
+elif [ "$1" = "build-push" ]; then
   alias go='make build push'
 else
   echo "I don't know how to '$1'"
@@ -23,7 +23,7 @@ CFX=$!
 
 wait $HS $JS $ALGO $ETH $CFX
 
-if [ "x$1" = "xbuild-push" ]; then
+if [ "$1" = "build-push" ]; then
   set +x
   echo "============================"
   echo "Don't forget js-reach-stdlib"

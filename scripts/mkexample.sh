@@ -1,6 +1,6 @@
 #!/bin/sh -e
 NAME="$1"
-[ "x${NAME}" = "x" ] && exit 1
+[ "${NAME}" = "" ] && exit 1
 
 DIR="examples/${NAME}"
 [ -d "${DIR}" ] && exit 1
