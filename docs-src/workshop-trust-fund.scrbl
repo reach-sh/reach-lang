@@ -35,7 +35,7 @@ Let's see how your answers compare to our answers:
 
 @itemlist[
  @item{This application involves three participants: the Funder, the Receiver, and a Bystander.}
- @item{The Funder knows the identity of the Receiver, the amount, as well as the maturity of the fund, and the delays beforewhich it will be declared dormant or forsook.}
+ @item{The Funder knows the identity of the Receiver, the amount, as well as the maturity of the fund, and the delays before which it will be declared dormant or forsook.}
  @item{The Receiver and the Bystander don't learn or provide anything, aside from the existence of the fund and its maturity.}
  @item{The funds start with the Funder and then move to either the Receiver, the Funder, or the Bystander, depending on when they are claimed.}
 ]
@@ -227,7 +227,7 @@ Bystander has a balance of 109.999956956
 @section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
 Great job!
-You could use this application today and start put your child's college funds away for safe keeping!
+You could use this application today and start putting your child's college funds away for safe keeping!
 Although, perhaps you should wait until you read the workshop about interest-bearing accounts like this.
 
 If you found this workshop rewarding, please let us know on @(the-community-link)!
