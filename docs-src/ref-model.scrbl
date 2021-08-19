@@ -56,7 +56,7 @@ It is associated with an @tech{account} on the @tech{consensus network}.
 A @tech{participant} has persistently stored @tech{values}, called its @deftech{local state}. It has a @tech{frontend} which it @tech{interacts} with. A @deftech{frontend} is an abstract actor which supports a set of functions which consume and produce @tech{values}; when a @tech{participant} invokes one of these functions it is referred to as @deftech{interact}ion.
 
 A @deftech{participant class} is a category of @tech{participant} that may occur many times in a single application.
-Members of a @tech{participant class} are referred to as @deftech{participant instances} when their status as a member of a class are important, but just "@tech{participants}" otherwise.
+Members of a @tech{participant class} are referred to as @deftech{participant instances} when their status as a member of a class is important, but just "@tech{participants}" otherwise.
 @tech{Participant instances} are independent @tech{participants} like any other; for example, with their own @tech{local state}, @tech{frontend}, and so on.
 The main distinction is that when a member of a @tech{participant class} @tech{join}s an application, it is not @tech{fixed} like other @tech{participants}, because a @tech{participant instance} does not exclusively represent the @tech{participant class}.
 
