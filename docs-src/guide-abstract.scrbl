@@ -11,5 +11,4 @@ Reach supports typical programming language abstractions, like first-class funct
 When building such abstractions, the most difficult part is correctly capturing @seclink["guide-loop-invs"]{loop invariants} of the user of the abstraction on the inside of the abstraction.
 Often, this means the abstraction must set up a protocol to communicate with its user, such as by receiving an invariant captured by an @tech{arrow expression}.
 
-@margin-note{See @seclink["workshop-abstract-simul"]{the abstraction workshop} for a walthrough of building such an abstraction.}
-
+@margin-note{See @seclink["workshop-abstract-simul"]{the abstraction workshop} for a walkthrough of building such an abstraction.}
