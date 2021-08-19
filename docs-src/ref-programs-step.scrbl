@@ -248,7 +248,7 @@ fork()
 }
 
 where:
-@reachin{TOKENS_EXPR} is an expression that evalues to a tuple of @reachin{Token}s.
+@reachin{TOKENS_EXPR} is an expression that evaluates to a tuple of @reachin{Token}s.
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
 @reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns a @tech{pay amount};
@@ -392,6 +392,4 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 @index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} and the non-network @tech{pay amount} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
 The @reachin{nonNetPayAmt} parameter should be a @tech{pay amount}. For example, when closing a program that uses a @reachin{Token} @reachin{token}, the argument would be @reachin{[ [balance(tok), tok] ]}.
-The @reachin{after} and @reachin{nonNetPayAmt} argument are optional.
-
-
+The @reachin{after} and @reachin{nonNetPayAmt} arguments are optional.
