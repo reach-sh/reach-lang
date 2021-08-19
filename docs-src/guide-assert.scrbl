@@ -9,8 +9,8 @@ At a high-level, the goal of a programmer getting started with verification is t
 For example, if a value, @reachin{x} is assumed to be smaller than 20, then the programmer should always include @reachin{assert(x < 20);} in the program.
 This is not to help the verification engine prove later properties, but is to give the verification engine assumptions that it can attempt to falsify so the programmer can learn if their assumptions are correct.
 
-At a low-level, the programmer should see the verification engine as tool to prevent test regressions by encoding tests directly into the program in the form of assertions.
-For example, suppose that during development and testing, a programmer observes an erroneous state where the variable @reachin{y} is assigned to the value @reachin{41}, then the programmer should insert @reachin{assert(y != 41);} in to the program.
+At a low-level, the programmer should see the verification engine as a tool to prevent test regressions by encoding tests directly into the program in the form of assertions.
+For example, suppose that during development and testing, a programmer observes an erroneous state where the variable @reachin{y} is assigned to the value @reachin{41}, then the programmer should insert @reachin{assert(y != 41);} into the program.
 The programmer should insert this check @emph{before} they fix the problem in the code.
 This will ensure that all future versions of the program will also be protected from these problems.
 
