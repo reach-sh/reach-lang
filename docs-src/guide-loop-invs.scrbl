@@ -40,11 +40,11 @@ Loop variables are mentioned if they occur in subsequent assertions, or if they 
 But, since every Reach program terminates with the @tech{token linearity property}, loop invariants always reference the contract balance.
 
 When designing a loop invariant, first write down an equation for the contract balance before the loop.
-If the loop contains transfer to the contract, then you must be able to track the amount and number of these.
+If the loop contains any transfers to the contract, then you must be able to track the amount and number of these.
 In the best case, you should be able to express the balance as an equation over the existing loop variables.
 In the worst case, you will have to add more loop variables to track some quantity, like the number of rounds of a game, that the balance is derived from.
 
 After you've tracked the balance, you will need to add additional clauses that track whatever properties you rely on in the tail of the loop.
 
-The most complex circumstances is when you have nested loops.
+The most complex circumstance is when you have nested loops.
 In this situation, the inner loop's invariant will have to include clauses related to the outer loop's invariant.
