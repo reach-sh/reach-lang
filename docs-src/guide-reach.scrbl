@@ -15,7 +15,7 @@ The Reach compiler uses the following strategy for analysis and compiling progra
 
 @item{A conservative (sound) analysis of the knowledge of each participant.}
 
-@item{A reduction of the program to an instance of a SMT (@link["http://en.wikipedia.org/wiki/Satisfiability_Modulo_Theories"]{satisfiability modulo theories}) theory of decentralized applications.}
+@item{A reduction of the program to an instance of an SMT (@link["http://en.wikipedia.org/wiki/Satisfiability_Modulo_Theories"]{satisfiability modulo theories}) theory of decentralized applications.}
 
 @item{An end-point projection of the linearization to produce a perspective for each participant, as well as the consensus.}
 
