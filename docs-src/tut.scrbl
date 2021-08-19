@@ -521,7 +521,7 @@ Why does Alice win slightly less than Bob when she wins?
 She has to pay to @tech{deploy} the contract, because she calls @jsin{acc.deploy} in her @tech{frontend}.
 The @seclink["guide-deploymode"]{guide section on deployment} discusses how to avoid this difference.}
 
-Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
+Alice is doing okay - if she keeps this up, she'll make a fortune on @|RPS|!
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-4/index.rsh"] and @reachexlink["tut-4/index.mjs"] to make sure you copied everything down correctly!}
 
@@ -1875,7 +1875,7 @@ Let's review what we've done through this tutorial:
 
 @item{In @seclink["tut-4"]{part four}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
 
-@item{In @seclink["tut-5"]{part five}, we introduce you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
+@item{In @seclink["tut-5"]{part five}, we introduced you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
 
 @item{In @seclink["tut-6"]{part six}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
 
@@ -1905,8 +1905,7 @@ And finally, the Web frontend:
 @reachex[#:mode js "tut-9/index.js"]
 
 We wrote about a hundred lines of Reach and two different frontends.
-Our command-line version about a hundred lines of JavaScript.
-While our Web version is about the same length, but has a lot of presentation code as well.
+Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but has a lot of presentation code as well.
 
 Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: @reachexlink["tut-8/build/index.main.sol"]), almost two thousand lines of TEAL (which you can look at here: @reachexlink["tut-8/build/index.main.appApproval.teal"]), as well as over a thousand lines of JavaScript (which you can look at here: @reachexlink["tut-8/build/index.main.mjs"]).
 If we weren't using Reach, then we'd have to write all this code ourselves and ensure that they are consistent and updated at every change to the application.
