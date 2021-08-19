@@ -30,5 +30,5 @@ Reach programs can instead interact with these low-level details of their chosen
 
 @(hrule)
 @bold{Communication.}
-Reach's communication language has some limitations that we have plans to remove, which are discussed in @seclink["guide-roadmap"]{roadmap}, but there are some for which we do not have plans for removing.
+Reach's communication language has some limitations that we have plans to remove, which are discussed in @seclink["guide-roadmap"]{roadmap}, but there are some for which we do not have plans to remove.
 For example, we do not intend to support co-inductive or cyclic state, nor expose an arbitrary consensus heap to programmers.
