@@ -143,8 +143,7 @@ Sometimes it can be difficult to decide which things are @emph{part of} the appl
 This is a general problem in verification where the logical properties of the @emph{desired} program are often mixed up with the logical properties of the @emph{actual} program.
 If you're interested in this topic, you might like to spend time reading about @link["https://en.wikipedia.org/wiki/Formal_specification"]{formal specification on Wikipedia}.
 
-Now, if we were devious, we might send you on SNARK hunt after some more assertions to add to our program.
-But, we're not mean any more, so we'll just tell you that there's nothing else to assert about this program.
+Now, if we were devious, we might send you on a SNARK hunt after some more assertions to add to our program, but we're not mean, so we'll just tell you that there's nothing else to assert about this program.
 
 @(drstep-ii TAG)
 
