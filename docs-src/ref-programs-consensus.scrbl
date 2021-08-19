@@ -33,7 +33,7 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 }
 
 If @reachin{VIEW} is a @deftech{view object}, then its fields are the elements of the associated @tech{view}.
-Each of these fields are bound to an object with an @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps @tech{dominated} by the current step (unless otherwise overridden.)
+Each of these fields are bound to an object with a @litchar{set} method that accepts the function or value to be bound to that @tech{view} at the current step, and all steps @tech{dominated} by the current step (unless otherwise overridden).
 If this function is not provided with an argument, then the corresponding @tech{view} is unset.
 
 For example, consider the following program:
@@ -373,7 +373,7 @@ has been called on @reachin{tok} yet.
   @secref["ref-networks"] discusses how Reach supports @tech{remote objects} on specific consensus networks.
 }
 
-A @deftech{remote object} is representation of a foreign @tech{contract} in a Reach application.
+A @deftech{remote object} represents a foreign @tech{contract} in a Reach application.
 During a @tech{consensus step}, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
 A @tech{remote object} is constructed by calling the @reachin{remote} function with an @tech{address} and an interface---an object where each key is bound to a @tech{function type}. For example:
