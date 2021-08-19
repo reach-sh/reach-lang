@@ -18,7 +18,7 @@ The rest of this section is structured according to the contexts of the differen
 
 @item{@Secref["ref-programs-valid"] describes what is meant by the term @tech{valid} in Reach.}
 
-@item{@Secref["ref-programs-module"] describes the top-level structure of Reach @tech{module}.}
+@item{@Secref["ref-programs-module"] describes the top-level structure of a Reach @tech{module}.}
 
 @item{@Secref["ref-programs-appinit"] describes the structure of Reach @tech{application initialization}.}
 
@@ -49,7 +49,7 @@ In other words, Reach enforces a static type discipline.
 
 @subsection{Security levels and scope}
 
-The text of Reach program is @tech{public} knowledge to all @tech{participants}.
+The text of a Reach program is @tech{public} knowledge to all @tech{participants}.
 However, any value that comes from an @tech{interaction expression} is a @deftech{secret} which only that participant knows.
 Furthermore, any values derived from @tech{secret} values are also @tech{secret}.
 A value, X, is considered derived from another, Y, if the value of Y is provided to a primitive operation to arrive at X, or if Y is used as part of a conditional that influences the definition of X.
