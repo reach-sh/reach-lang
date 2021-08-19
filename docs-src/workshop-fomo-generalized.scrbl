@@ -53,10 +53,9 @@ specialize it when we compile.
 }
 
 @reachex["workshop-fomo-generalized/index.rsh"
-         
          'only 5 23 "  // ..."]
 
-At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholders for the actual value.
+At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
 
