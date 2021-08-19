@@ -192,6 +192,10 @@ export function isWindowProvider(): boolean {
   return 'ETH_NET' in env && env.ETH_NET === 'window' && !!window.ethereum;
 }
 
+export function canGetDefaultAccount(): boolean {
+  return isWindowProvider() || isIsolatedNetwork();
+}
+
 function windowLooksIsolated() {
   if (!window.ethereum) return false;
   // XXX this is a hacky way of checking if we're on a devnet

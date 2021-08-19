@@ -146,7 +146,8 @@ const {
   standardDigits = 18,
   providerLib,
   isIsolatedNetwork,
-  isWindowProvider,
+  canGetDefaultAccount,
+  // isWindowProvider,
   _getDefaultNetworkAccount,
   _getDefaultFaucetNetworkAccount,
   _warnTxNoBlockNumber = true,
@@ -951,7 +952,7 @@ const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
 
 const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);
-  if (!(isWindowProvider() || isIsolatedNetwork())) throw Error(`Default account not available`);
+  if (!canGetDefaultAccount()) throw Error(`Default account not available`);
   return connectAccount(await _getDefaultNetworkAccount());
 };
 

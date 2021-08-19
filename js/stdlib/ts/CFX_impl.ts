@@ -37,6 +37,11 @@ export function isWindowProvider(): boolean {
   return 'CFX_NET' in env && env.CFX_NET === 'window' && !!window.conflux;
 }
 
+export function canGetDefaultAccount(): boolean {
+  // XXX be pickier
+  return true;
+}
+
 // /**
 //  * Strategies for deciding what getDefaultAccount returns.
 //  */
