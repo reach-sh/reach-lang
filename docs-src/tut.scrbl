@@ -1508,23 +1508,9 @@ On Ethereum, the standard wallet is @link["https://metamask.io"]{MetaMask}.
 If you want to test this code, you'll need to install it and set it up.
 Furthermore, MetaMask does not support multiple active accounts, so if you want to test @|RPS| locally, you'll need to have two separate browser instances: one to act as Alice and another to act as Bob.
 
-@(hrule)
+To complete this section we'll use the @tt{index.rsh} you've already written and create an @tt{index.js} file from scratch which replaces @tt{index.mjs}.
 
-The code in this section does not use the scaffolding from the previous section.
-Reach comes with a convenience command for deleting scaffolded files:
-
-@cmd{./reach unscaffold}
-
-Similarly, you do not need the previous @tt{index.mjs} file, because we'll be writing it completely from scratch to use React.
-You can run the following command to delete it:
-
-@cmd{rm index.mjs}
-
-Or, you can copy the @tt{index.rsh} file into a new directory and work from there.
-
-@(hrule)
-
-This code is supplemented with @reachexlink["tut-9/index.css" "index.css"]
+This code is also supplemented with @reachexlink["tut-9/index.css" "index.css"]
 and some @reachexlink["tut-9/views" "views"].
 These details are not specific to Reach, and are fairly trivial,
 so we will not explain the specifics of those files.
