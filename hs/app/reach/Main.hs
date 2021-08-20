@@ -625,6 +625,12 @@ argAppOrDir = strArgument
  <> value ""
 
 
+manyArgs :: String -> Parser [T.Text]
+manyArgs n = many . strArgument
+  $ metavar "ARGS"
+ <> help ("Zero or more arguments to be passed into " <> n)
+
+
 switchUseExistingDevnet :: Parser Bool
 switchUseExistingDevnet = switch
   $ long "use-existing-devnet"
@@ -868,7 +874,7 @@ run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
   f = go <$> switchIsolate
          <*> argAppOrDir
-         <*> many (strArgument (metavar "ARG"))
+         <*> manyArgs "APP"
 
   go i appOrDir args = do
     warnDeprecatedFlagIsolate i
@@ -1064,7 +1070,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
    <$$> text " $ reach rpc-run python3 -u ./index.py"
 
   f = go <$> strArgument (metavar "EXECUTABLE")
-         <*> many (strArgument (metavar "ARG"))
+         <*> manyArgs "EXECUTABLE"
 
   go exe args = do
     env@Env {..} <- ask
