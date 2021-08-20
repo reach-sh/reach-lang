@@ -497,8 +497,8 @@ Alice went from 10 to 14.9999.
 Bob went from 10 to 4.9999.
 }
 
-@margin-note{How come Alice and Bob's balance goes back to @litchar{10} each time?
-It's because every time we run @exec{./reach run}, it starts a completely fresh instance of the testing network and creates new accounts for each player.}
+@margin-note{How come Alice and Bob's balances go back to @litchar{10} every time?
+It's because each time we run @exec{./reach run}, it creates fresh accounts for both players.}
 
 @margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
 It's because Ethereum transactions cost "gas" to run.
