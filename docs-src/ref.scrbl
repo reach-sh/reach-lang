@@ -148,7 +148,7 @@ The @litchar{Dockerfile} can be modified to introduce new dependencies, services
 
 @subsection[#:tag "ref-usage-down"]{@tt{reach down}}
 
-You can halt the docker containers started by @exec{reach run} by running
+You can halt all Dockerized Reach apps and devnets by running
 
 @cmd{reach down}
 
