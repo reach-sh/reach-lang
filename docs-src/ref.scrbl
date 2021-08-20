@@ -205,8 +205,6 @@ It then
 @exec{reach react} supports the following options:
 
 @itemlist[
-  @item{@DFlag{use-existing-devnet} --- Does not start a new devnet, but assumes that @exec{reach devnet} is already running and connects to it.}
-
   @item{
     The environment variable @envref{REACH_CONNECTOR_MODE} specifies which context to run in. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
 
@@ -269,9 +267,6 @@ starts an instance of the @seclink["ref-backends-rpc"]{Reach RPC Server} using a
 @exec{reach rpc-server} supports the following options:
 
 @itemlist[
-
-  @item{@DFlag{use-existing-devnet} --- Does not start a new devnet, but assumes that @exec{reach devnet} is already running and connects to it.
-  Ignored if @envvar{REACH_CONNECTOR_MODE} includes @litchar{live}.}
 
   @item{The environment variable @envvar{REACH_RPC_KEY} is used to determine the RPC server key.
   If not defined, it defaults to @litchar{opensesame}, and a warning will
