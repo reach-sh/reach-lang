@@ -154,7 +154,7 @@ You can halt all Dockerized Reach apps and devnets by running
 
 @subsection[#:tag "ref-usage-scaffold"]{@tt{reach scaffold}}
 
-You can create template @exec{package.json}, @exec{Dockerfile}, @exec{docker-compose.yml}, and @exec{Makefile} files for a simple Reach app by running
+You can create templated @exec{Dockerfile} and @exec{package.json} files for a simple Reach app by running
 
 @cmd{reach scaffold}
 
