@@ -76,6 +76,7 @@ named @tt{default}.
 ]
 
 @subsection[#:tag "ref-usage-init"]{@tt{reach init}}
+@;TODO document [TEMPLATE] once more templates have been added
 
 You can create template @exec{index.rsh} and @exec{index.mjs} files for a simple Reach app by running
 
