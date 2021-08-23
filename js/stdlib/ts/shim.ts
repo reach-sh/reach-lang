@@ -53,6 +53,7 @@ type Window = {
   ethereum?: ethers.providers.ExternalProvider,
   prompt?: (s: string) => string | null,
   reach?: any, // TODO
+  fetch?: (...args: any) => any,
 };
 
 const windowShim: Window = (() => {

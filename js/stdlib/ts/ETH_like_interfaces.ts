@@ -105,6 +105,7 @@ export interface EthLikeArgs {
   canGetDefaultAccount(): boolean
   _getDefaultNetworkAccount(): any
   _getDefaultFaucetNetworkAccount(): any
+  _specialFundFromFaucet?: () => Promise<null | ((acc: any, val: any) => Promise<any>)>
   _warnTxNoBlockNumber?: boolean
   standardUnit: string
   atomicUnit: string
