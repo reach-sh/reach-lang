@@ -14,6 +14,10 @@ export function setNetworkId(networkId: number) {
   T_Address.defaultValue = recomputeDefaultAddr();
 }
 
+export function getNetworkId() {
+  return netId;
+}
+
 // XXX this should not be computed at compile time, because it can change based on the netId
 // Note: 0x1 = user, 0x8 = contract
 // https://github.com/resodo/conflux-address-js/blob/0cbbe3d17fbd6cbc2c2fbafc3470ff6087f38087/lib/index.js#L86

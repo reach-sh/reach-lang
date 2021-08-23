@@ -151,6 +151,7 @@ const {
   _getDefaultNetworkAccount,
   _getDefaultFaucetNetworkAccount,
   _warnTxNoBlockNumber = true,
+  _specialFundFromFaucet = async () => null,
   standardUnit,
   atomicUnit,
   validQueryWindow,
@@ -970,8 +971,13 @@ const createAccount = async () => {
 }
 
 const fundFromFaucet = async (account: AccountTransferable, value: any) => {
-  const faucet = await getFaucet();
-  await transfer(faucet, account, value);
+  const f = await _specialFundFromFaucet();
+  if (f) {
+    return await f(account, value);
+  } else {
+    const faucet = await getFaucet();
+    await transfer(faucet, account, value);
+  }
 };
 
 const newTestAccount = async (startingBalance: any): Promise<Account> => {

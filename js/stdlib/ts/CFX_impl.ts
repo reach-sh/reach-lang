@@ -12,6 +12,8 @@ import waitPort from './waitPort';
 import cfxsdk from 'js-conflux-sdk';
 import Timeout from 'await-timeout';
 import { canonicalizeConnectorMode, ConnectorMode } from './ConnectorMode';
+import buffer from 'buffer';
+const { Buffer } = buffer;
 const { Conflux } = cfxsdk;
 
 type NetworkAccount = cfxers.IWallet; // XXX or other things
@@ -120,6 +122,43 @@ export const _getDefaultFaucetNetworkAccount = memoizeThunk(async (): Promise<Ne
   }
   return defaultFaucetWallet;
 });
+
+function toHexAddr(cfxAddr: string) {
+  return '0x' + Buffer.from(
+    // @ts-ignore
+    cfxsdk.address.decodeCfxAddress(cfxAddr).hexAddress
+  ).toString('hex').toLowerCase();
+}
+
+async function _fundOnCfxTestNet(to: any, amt: any) {
+  // XXX TestNet faucet only gives out 100 CFX at a time
+  // Should we throw an error if amt !== 100 CFX?
+  void(amt)
+  const method = '_fundOnCfxTestNet';
+  to = to.getAddress ? await to.getAddress() : to;
+  debug({method, to});
+  const toHex = toHexAddr(to);
+  debug({method, message: 'requesting from testnet faucet', toHex});
+  // XXX use node-fetch or similar so that this is available on cli as well
+  if (!window.fetch) throw Error(`impossible: need window.fetch`);
+  const res = await window.fetch(`http://test-faucet.confluxnetwork.org:18088/dev/ask?address=${toHex}`);
+  const resJson = await res.json();
+  debug({method, message: 'got response from testnet faucet', resJson});
+}
+
+export async function canFundFromFaucet() {
+  const netId = ethLikeCompiled.getNetworkId();
+  return netId == 0x1 || netId == 999;
+}
+
+export async function _specialFundFromFaucet() {
+  debug(`_specialFundFromFaucet`);
+  if (ethLikeCompiled.getNetworkId() == 0x1 && window.fetch) {
+    return _fundOnCfxTestNet;
+  } else {
+    return null;
+  }
+}
 
 async function waitCaughtUp(provider: Provider, env: ProviderEnv): Promise<void> {
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI && truthyEnv(env.REACH_DO_WAIT_PORT)) {
@@ -361,9 +400,12 @@ function providerEnvByName(providerName: ProviderName): ProviderEnv {
   switch (providerName) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return notYetSupported(`providerEnvByName('window')`);
-  case 'MainNet': return providerEnvByName('tethys');
-  case 'TestNet': return cfxProviderEnv('TestNet');
-  case 'tethys': return cfxProviderEnv('tethys');
+  case 'MainNet': return notYetSupported(`providerEnvByName('MainNet')`);
+  // case 'MainNet': return providerEnvByName('tethys');
+  case 'TestNet': return notYetSupported(`providerEnvByName('TestNet')`);
+  // case 'TestNet': return cfxProviderEnv('TestNet');
+  case 'tethys': return notYetSupported(`providerEnvByName('tethys')`);
+  // case 'tethys': return cfxProviderEnv('tethys');
   case 'BlockNumber': return cfxProviderEnv('BlockNumber'); // XXX temporary
   default: throw Error(`Unrecognized provider name: ${providerName}`);
   }
@@ -371,7 +413,7 @@ function providerEnvByName(providerName: ProviderName): ProviderEnv {
 
 function cfxProviderEnv(network: WhichNetExternal): ProviderByURI {
   const [CFX_NODE_URI, CFX_NETWORK_ID] =
-      network == 'BlockNumber' ? ['http://52.53.235.44:12537', '1'] // 0x1 // XXX This isn't actually part of TestNet
+      network == 'BlockNumber' ? ['http://52.53.235.44:12537', '1'] // 0x1
     : network == 'TestNet' ? ['https://test.confluxrpc.com', '1'] // 0x1
     : network == 'tethys'  ? ['https://main.confluxrpc.com', '1029'] // 0x405
     : throwError(`network name not recognized: '${network}'`);
