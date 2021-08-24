@@ -133,6 +133,7 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   getDefaultAccount: () => Promise<Acc>
   createAccount: () => Promise<Acc>
   getFaucet: () => Promise<Acc> // XXX
+  canFundFromFaucet: () => Promise<boolean>
   fundFromFaucet: (acc: Acc, balance: BigNumber) => Promise<void>
   newTestAccount: (balance: BigNumber) => Promise<Acc>
   newTestAccounts: (num: number, balance: BigNumber) => Promise<Array<Acc>>

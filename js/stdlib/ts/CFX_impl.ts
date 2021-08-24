@@ -147,6 +147,7 @@ async function _fundOnCfxTestNet(to: any, amt: any) {
 }
 
 export async function canFundFromFaucet() {
+  debug('canFundFromFaucet');
   const netId = ethLikeCompiled.getNetworkId();
   return netId == 0x1 || netId == 999;
 }

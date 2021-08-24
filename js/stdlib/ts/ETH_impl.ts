@@ -79,6 +79,11 @@ export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount>
   throw Error(`getFaucet not supported in this context.`)
 }
 
+export async function canFundFromFaucet(): Promise<boolean> {
+  debug('canFundFromFaucet');
+  return isIsolatedNetwork();
+}
+
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
 function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
   if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {

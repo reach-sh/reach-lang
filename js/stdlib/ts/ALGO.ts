@@ -1663,6 +1663,13 @@ export const createAccount = async (): Promise<Account> => {
   return await connectAccount(networkAccount);
 };
 
+export const canFundFromFaucet = async (): Promise<boolean> => {
+  const faucet = await getFaucet();
+  debug('canFundFromFaucet');
+  const fbal = await balanceOf(faucet);
+  return gt(fbal, 0);
+};
+
 export const fundFromFaucet = async (account: Account, value: any) => {
   const faucet = await getFaucet();
   debug('fundFromFaucet');

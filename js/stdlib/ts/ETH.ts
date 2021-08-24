@@ -27,6 +27,7 @@ export const {
   getFaucet,
   setFaucet,
   createAccount,
+  canFundFromFaucet,
   fundFromFaucet,
   newTestAccount,
   newTestAccounts,
