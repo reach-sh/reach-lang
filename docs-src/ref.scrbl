@@ -222,6 +222,8 @@ You can run a private Reach devnet by executing
 @exec{reach devnet} supports the following options:
 
 @itemlist[
+  @item{@DFlag{await-background} --- Run in background and await availability.}
+
   @item{
     The environment variable @envref{REACH_CONNECTOR_MODE} specifies which devnet to run. The default, if this variable is unset or empty, is @litchar{ETH}. The options are:
 

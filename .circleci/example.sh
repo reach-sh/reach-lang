@@ -14,15 +14,7 @@ case "${CONN}" in
   ETH) TIMEOUT=$((10 * 60)) ;;
 esac
 
-D="devnet-$(echo "$CONN" | tr '[:upper:]' '[:lower:]')"
-printf 'Bringing up %s...' "$D"
-../reach devnet >/dev/null 2>&1 &
-while true; do
-  if [ "$(docker ps -qf "label=sh.reach.devnet-for=$D" | wc -l)" -gt 0 ]; then break; fi
-  printf '.'
-  sleep 1
-done
-printf ' Done.\n'
+../reach devnet --await-background
 
 cd ../examples || exit 1
 go() {

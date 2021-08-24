@@ -4,25 +4,15 @@ make build || exit 1
 
 R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
 R="${R:-ETH}"
-D="devnet-$(echo "$R" | tr '[:upper:]' '[:lower:]')"
 
-alias reach_bg='REACH_CONNECTOR_MODE=$R ../../reach'
+alias reach_do='REACH_CONNECTOR_MODE=$R ../../reach'
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-reach_bg devnet >/dev/null 2>&1 &
-
-printf 'Bringing up %s...' "$D"
-while true; do
-  if [ "$(docker ps -qf "label=sh.reach.devnet-for=$D" | wc -l)" -gt 0 ]; then break; fi
-  printf '.'
-  sleep 1
-done
-printf ' Done.\n'
-
-reach_bg run index alice < Alice.in > Alice.out &
-reach_bg run index bob   < Bob.in   > Bob.out   &
+reach_do devnet --await-background
+reach_do run index alice < Alice.in > Alice.out &
+reach_do run index bob   < Bob.in   > Bob.out   &
 
 exec 3> Alice.in
 exec 4< Alice.out
