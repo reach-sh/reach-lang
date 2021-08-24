@@ -309,7 +309,7 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
         ps -> T.intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
-  let d = devnetFor c
+  let d = T.pack $ show c
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
@@ -487,7 +487,6 @@ withCompose DockerMeta {..} wrapped = do
   let Var {..} = e_var
   let cm@(ConnectorMode c m) = connectorMode
 
-  -- TODO push ports into templates instead (?)
   let connPorts = case (compose, c, m) of
         (_, _, Live) -> []
         (WithProject Console _, Algo, Devnet) -> [ "9392" ]
@@ -865,7 +864,7 @@ init' = command "init" . info f $ d <> foot where
 devnetDeps :: AppT T.Text
 devnetDeps = do
   ConnectorMode c' _ <- asks $ connectorMode . e_var
-  let c = devnetFor c'
+  let c = T.pack $ show c'
   pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
 
 
@@ -957,7 +956,7 @@ down' = script $ do
     done
   |]
 
-  forM_ (devnetFor <$> [ Algo, Cfx, Eth ]) $ \c -> write [N.text|
+  forM_ (T.pack . show <$> [ Algo, Cfx, Eth ]) $ \c -> write [N.text|
     # Stop devnet containers w/ status == running
     docker ps -qf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
       printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
@@ -1131,22 +1130,36 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
 devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
-  f = pure $ do
+  f = go <$> switch (long "await-background" <> help "Run in background and await availability")
+
+  go abg = do
     Env {..} <- ask
     dd <- devnetDeps
     let Var {..} = e_var
     let ConnectorMode c m = connectorMode
+    let c' = T.pack $ show c
     let s = devnetFor c
     let n = "reach-" <> s
+    let a = if abg then " >/dev/null 2>&1 &" else ""
 
     dieConnectorModeBrowser
 
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
 
-    withCompose mkDockerMetaStandaloneDevnet . script $ write [N.text|
-      docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s
-    |]
+    withCompose mkDockerMetaStandaloneDevnet . script $ do
+      write [N.text|
+        docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
+      |]
+      when abg $ write [N.text|
+        printf 'Bringing up devnet...'
+        while true; do
+          if [ "$(docker ps -qf "label=sh.reach.devnet-for=$c'" | wc -l)" -gt 0 ]; then break; fi
+          printf '.'
+          sleep 1
+        done
+        printf ' Done.\n'
+      |]
 
 
 --------------------------------------------------------------------------------
