@@ -24,9 +24,6 @@ ARG ALGO_VERSION=2.9.1-stable
 RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
-#ENV DEVMODE_SHA1 b0935e29dfb97ec0f44133b460983be68fd0b80e
-#RUN wget --quiet https://github.com/algorand/go-algorand/commit/${DEVMODE_SHA1}.patch
-#RUN patch -p1 < ${DEVMODE_SHA1}.patch
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install
