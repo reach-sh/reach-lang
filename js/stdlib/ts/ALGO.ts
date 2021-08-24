@@ -1626,11 +1626,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug({tokenRes});
     const tokenInfo = tokenRes['params'];
     debug({tokenInfo});
-    const name = tokenInfo['name'];
-    const symbol = tokenInfo['unit-name'];
-    const url = tokenInfo['url'];
-    const mhr = tokenInfo['metadata-hash'];
-    const metadata = mhr ? T_Bytes(32).fromNet(reNetify(mhr)) : undefined;
+    const p = (n:number, x:string): any =>
+      x ? T_Bytes(n).fromNet(reNetify(x)) : undefined;
+    // XXX share these numbers with hs and ethlike(?)
+    const name = p(32, tokenInfo['name-b64']);
+    const symbol = p(8, tokenInfo['unit-name-b64']);
+    const url = p(96, tokenInfo['url-b64']);
+    const metadata = p(32, tokenInfo['metadata-hash']);
     const supply = bigNumberify(tokenInfo['total']);
     return { name, symbol, url, metadata, supply };
   };

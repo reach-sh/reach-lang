@@ -108,6 +108,10 @@ ci ETH ganache
 exit 0
 
 jb
+#exit 0
+ci ALGO mint-basic
+exit 0
+
 #r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger
 
