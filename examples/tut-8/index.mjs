@@ -63,7 +63,7 @@ const stdlib = loadStdlib(process.env);
       stdlib.parseCurrency
     );
     interact.wager = amt;
-    interact.deadline = 10;
+    interact.deadline = { ETH: 10, ALGO: 100, CFX: 1000 }[stdlib.connector];
   } else {
     interact.acceptWager = async (amt) => {
       const accepted = await ask(
