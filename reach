@@ -41,7 +41,7 @@ run_d () {
 
 run_s () {
   chmod 700 "$TMP/out.sh"
-  sh -ac "$TMP/out.sh" "$0"
+  sh -ac "$TMP/out.sh" "$0" && rm -r "$TMP"
 }
 
 for DEP in make curl docker docker-compose; do
@@ -58,6 +58,7 @@ fi
 run_d "$@"
 case "$?" in
   42) run_s ;;
-  50) curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && exit 0 ;;
-   1) exit 1 ;;
+  50) curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
+   1) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
+   0) rm -r "$TMP" ;;
 esac
