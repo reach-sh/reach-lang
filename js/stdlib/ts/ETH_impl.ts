@@ -48,7 +48,6 @@ export interface ProviderByURI {
 
 export type ProviderEnv = ProviderByURI | ProviderByName
 
-
 export {ethLikeCompiled};
 
 // TODO: types on these

@@ -1,17 +1,10 @@
 export const connector = 'ALGO';
 
-// XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import * as msgpack from '@msgpack/msgpack';
-
 import type { Transaction } from 'algosdk';
-
-// DEBUG: uncomment this for debugging in browser
-// @ts-ignore
-// import algosdk__src__transaction from 'algosdk/src/transaction';
 
 const {Buffer} = buffer;
 
@@ -38,6 +31,7 @@ import {
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
+  truthyEnv,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -56,7 +50,7 @@ import {
   stdlib as compiledStdlib,
   typeDefs,
 } from './ALGO_compiled';
-import { process, window } from './shim';
+import { process } from './shim';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
 export * from './shared_user';
 
@@ -74,26 +68,8 @@ type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 // The unused ones are commented out
 type Address = string
 // type RawAddress = Uint8Array;
-type SecretKey = Uint8Array // length 64
-type AlgoSigner = {
-  sign: (txn: Transaction) => Promise<{blob: string /* base64 */, txID: string}>,
-  accounts: (args: {ledger: string}) => Promise<Array<{address: string}>>,
-}
+type SecretKey = Uint8Array; // length 64
 
-// algosdk.Account = {addr, sk}
-// This is slightly different:
-// Must have sk w/ optional AlgoSigner
-// or AlgoSigner w/ optional sk
-type Wallet = {
-  addr: Address,
-  sk: SecretKey,
-  AlgoSigner?: AlgoSigner,
-} | {
-  addr: Address,
-  sk?: SecretKey,
-  AlgoSigner: AlgoSigner,
-};
-type SignedTxn = Uint8Array;
 type TxnParams = {
   flatFee?: boolean,
   fee: number,
@@ -116,7 +92,10 @@ type CompileResultBytes = {
   hash: Address
 };
 
-type NetworkAccount = Wallet;
+type NetworkAccount = {
+  addr: Address,
+  sk?: SecretKey
+};
 
 const reachBackendVersion = 1;
 const reachAlgoBackendVersion = 2;
@@ -163,36 +142,13 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   return Buffer.from(a).toString(enc);
 }
 
-const [getWaitPort, setWaitPort] = replaceableThunk(() => true);
-export { setWaitPort };
-async function wait1port(server: string, port: string | number) {
-  if (!getWaitPort()) return;
-  return await waitPort(server, port);
-};
+export const getSignStrategy = () => {
+  throw new Error(`getSignStrategy is deprecated`); };
+export const setSignStrategy = (x:any) => {
+  void(x);
+  console.log(`WARNING: setSignStrategy is deprecated`); };
 
-// type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
-
-const [getSignStrategy, setSignStrategy] = replaceableThunk<string>(() => 'mnemonic');
-export { getSignStrategy, setSignStrategy };
-
-const [getAlgoSigner, setAlgoSigner] = replaceableThunk<Promise<AlgoSigner>>(async () => {
-  if (window.AlgoSigner) {
-    const AlgoSigner = window.AlgoSigner;
-    await AlgoSigner.connect();
-    return AlgoSigner;
-  } else {
-    // TODO: wait for a few seconds and try again before giving up
-    throw Error(`Can't find AlgoSigner. Please refresh the page and try again.`);
-  }
-});
-export { setAlgoSigner };
-
-if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
-  // Yes, this is dumb. TODO something better
-  || process.env.REACH_CONNECTOR_MODE === 'ETH-browser') {
-  setWaitPort(false);
-}
-
+// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
@@ -255,33 +211,55 @@ export const waitForConfirmation = async (txId: TxId, untilRound: number|undefin
   return await checkAlgod(0);
 };
 
-type STX = {
-  lastRound: number,
-  txID: string,
-  tx: SignedTxn, // Uint8Array
+const decodeB64Txn = (ts:string): Transaction => {
+  const tb = Buffer.from(ts, 'base64');
+  return algosdk.decodeUnsignedTransaction(tb);
 };
 
-const sendAndConfirm = async (
-  stxs: Array<STX>,
+const doSignTxn = (ts:string, sk:SecretKey): string => {
+  const t = decodeB64Txn(ts);
+  const sb = Buffer.from(t.signTxn(sk));
+  return sb.toString('base64');
+};
+
+const signSendAndConfirm = async (
+  acc: NetworkAccount,
+  txns: Array<WalletTransaction>,
 ): Promise<TxnInfo> => {
-  const { lastRound, txID } = stxs[0];
-  const sendme = stxs.map((stx) => stx.tx);
-  try {
-    const client = await getAlgodClient();
-    const req = client.sendRawTransaction(sendme);
-    // @ts-ignore
-    debug('sendAndConfirm:', base64ify(req.txnBytesToPost));
-    await req.do();
-  } catch (e) {
-    throw { type: 'sendRawTransaction', e };
+  if ( acc.sk !== undefined ) {
+    txns.forEach((t:WalletTransaction): void => {
+      // XXX this comparison is probably wrong, because the addresses are the
+      // wrong type
+      if ( acc.sk !== undefined && ! t.stxn && t.signers !== undefined && t.signers.length === 1 && t.signers[0] === acc.addr ) {
+        debug('signSendAndConfirm', 'signing one');
+        t.stxn = doSignTxn(t.txn, acc.sk);
+      }
+    });
   }
+  const p = await getProvider();
   try {
-    return await waitForConfirmation(txID, lastRound);
+    await p.signAndPostTxns(txns);
+  } catch (e) {
+    throw { type: 'signAndPost', e };
+  }
+  const t0 = decodeB64Txn(txns[0].txn);
+  try {
+    return await waitForConfirmation(t0.txID(), t0.lastRound);
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
 };
 
+const encodeUnsignedTransaction = (t:Transaction): string => {
+  return Buffer.from(algosdk.encodeUnsignedTransaction(t)).toString('base64');
+};
+
+const toWTxn = (t:Transaction): WalletTransaction => {
+  return {
+    txn: encodeUnsignedTransaction(t),
+    signers: [algosdk.encodeAddress(t.from.publicKey)],
+  };
+};
 
 // Backend
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
@@ -320,157 +298,13 @@ export const getTxnParams = async (): Promise<TxnParams> => {
   }
 };
 
-function regroup(thisAcc: NetworkAccount, txns: Array<Transaction>): Array<Transaction> {
-  // Sorry this is so dumb.
-  // Basically, if these go thru AlgoSigner,
-  // it will mangle them,
-  //  so we need to recalculate the group hash.
-  if (thisAcc.AlgoSigner) {
-    const roundtrip_txns = txns
-      .map(x => clean_for_AlgoSigner(x))
-      .map(x => unclean_for_AlgoSigner(x));
-
-    // console.log(`deployP: group`);
-    // console.log(txns[0].group);
-    // console.log(Buffer.from(txns[0].group, 'base64').toString('base64'));
-    // console.log({...txns[0]});
-
-    algosdk.assignGroupID(roundtrip_txns);
-
-    // console.log(`deploy: roundtrip group`);
-    // console.log(Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64'));
-
-    const group = roundtrip_txns[0].group;
-    // The same thing, but more paranoid:
-    // const group = Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64');
-    for (const txn of txns) {
-      txn.group = group;
-    }
-    // console.log({...txns[0]});
-
-    return roundtrip_txns;
-  } else {
-    return txns;
-  }
-}
-
-// A copy/paste of some logic from AlgoSigner
-// packages/extension/src/background/messaging/task.ts
-function unclean_for_AlgoSigner(txnOrig: any) {
-  const txn = {...txnOrig};
-  Object.keys({...txnOrig}).forEach(key => {
-    if (txn[key] === undefined || txn[key] === null){
-        delete txn[key];
-    }
-  });
-
-  // Modify base64 encoded fields
-  if ('note' in txn && txn.note !== undefined) {
-      txn.note = new Uint8Array(Buffer.from(txn.note));
-  }
-  // Application transactions only
-  if (txn && txn.type === 'appl'){
-    if ('appApprovalProgram' in txn){
-      txn.appApprovalProgram = base64ToUI8A(txn.appApprovalProgram);
-    }
-    if ('appClearProgram' in txn){
-      txn.appClearProgram = base64ToUI8A(txn.appClearProgram);
-    }
-    if ('appArgs' in txn){
-      var tempArgs: Array<Uint8Array> = [];
-      txn.appArgs.forEach((element: string) => {
-          tempArgs.push(base64ToUI8A(element));
-      });
-      txn.appArgs = tempArgs;
-    }
-  }
-
-  // Note: this part is not copy/pasted from AlgoSigner,
-  // and isn't even strictly necessary,
-  // but it is nice for getting the same signatures from algosdk & AlgoSigner
-  if ('group' in txn) {
-    txn.group = base64ToUI8A(txn.group);
-  }
-  return txn;
-}
-
-const clean_for_AlgoSigner = (txnOrig: any) => {
-  // Make a copy with just the properties, because reasons
-  const txn = {...txnOrig};
-
-  // AlgoSigner does weird things with fees if you don't specify flatFee
-  txn.flatFee = true;
-
-  // "Creation of PaymentTx has extra or invalid fields: name,tag,appArgs."
-  delete txn.name;
-  delete txn.tag;
-
-  // uncaught (in promise) lease must be a Uint8Array.
-  // it is... but how about we just delete it instead
-  // This is presumed safe when lease is empty
-  if (txn.lease instanceof Uint8Array && txn.lease.length === 0) {
-    delete txn.lease;
-  } else {
-    console.log(txn.lease);
-    throw Error(`Impossible: non-empty lease`);
-  }
-
-  // Creation of ApplTx has extra or invalid fields: nonParticipation
-  if (!txn.nonParticipation) {
-    delete txn.nonParticipation;
-  } else {
-    throw Error(`Impossible: expected falsy nonParticipation, got: ${txn.nonParticipation}`);
-  }
-
-  // "Creation of ApplTx has extra or invalid fields: name,tag."
-  if (txn.type !== 'appl') {
-    delete txn.appArgs;
-  } else {
-    if (txn.appArgs) {
-      if (txn.appArgs.length === 0) {
-        txn.appArgs = [];
-      } else {
-        txn.appArgs = txn.appArgs.map((arg: Uint8Array) => uint8ArrayToStr(arg, 'base64'));
-      }
-    }
-  }
-
-  // Validation failed for transaction because of invalid properties [from,to]
-  // closeRemainderTo can cause an error w/ js-algorand-sdk addr parsing
-  for (const field of ['from', 'to', 'closeRemainderTo']) {
-    if (txn[field] && txn[field].publicKey) {
-      txn[field] = algosdk.encodeAddress(txn[field].publicKey);
-    }
-  }
-
-  // Weirdly, AlgoSigner *requires* the note to be a string
-  // note is the only field that needs to be utf8-encoded, so far...
-  for (const field of ['note']) {
-    if (txn[field] && typeof txn[field] !== 'string') {
-      txn[field] = uint8ArrayToStr(txn[field], 'utf8');
-    }
-  }
-
-  // Uncaught (in promise) First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
-  // No idea what it's talking about, but probably GenesisHash?
-  // And some more uint8Array BS
-  for (const field of ['genesisHash', 'appApprovalProgram', 'appClearProgram', 'group']) {
-    if (txn[field] && typeof txn[field] !== 'string') {
-      txn[field] = uint8ArrayToStr(txn[field], 'base64');
-    }
-  }
-
-  return txn;
-};
-
 const sign_and_send_sync = async (
   label: string,
-  networkAccount: NetworkAccount,
-  txn: Transaction,
+  acc: NetworkAccount,
+  txn: WalletTransaction,
 ): Promise<TxnInfo> => {
-  const txn_s = await signTxn(networkAccount, txn);
   try {
-    return await sendAndConfirm([txn_s]);
+    return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
     console.log(e);
     throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
@@ -707,36 +541,17 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Byt
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
-export const [getLedger, setLedger] = replaceableThunk<string|undefined>(() => DEFAULT_ALGO_LEDGER);
-function getLedgerFromAlgoSigner(AlgoSigner: AlgoSigner) {
-  // XXX: get AlgoSigner to tell us what Ledger is "currently selected"
-  // since that ability doesn't actually exist, we operate based off of setLedger()
-  void(AlgoSigner);
-  return getLedger();
-}
-
 async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
-  await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
 }
 
 async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
-  await wait1port(ALGO_SERVER, ALGO_PORT);
+  await waitPort(ALGO_SERVER, ALGO_PORT);
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
-
-// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
-export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
-  debug(`Setting algod client to default`);
-  return await waitAlgodClientFromEnv(envDefaultsALGO(process.env));
-});
-
-export const [getIndexer, setIndexer] = replaceableThunk(async () => {
-  debug(`setting indexer to default`);
-  return await waitIndexerFromEnv(envDefaultsALGO(process.env));
-});
 
 // This function should be provided by the indexer, but it isn't so we simulate
 // something decent. This function is allowed to "fail" by not really waiting
@@ -752,130 +567,82 @@ const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
   return now;
 };
 
+export interface WalletTransaction {
+   txn: string;
+   signers?: Address[];
+   message?: string;
+   stxn?: string;
+};
+
 interface ALGO_Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  ledger?: string
-}
+  getDefaultAddress: () => Address,
+  isIsolatedNetwork: boolean,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+};
 
-export async function getProvider(): Promise<ALGO_Provider> {
-  return {
-    algodClient: await getAlgodClient(),
-    indexer: await getIndexer(),
-    ledger: getLedger(),
-  }
-}
-export async function setProvider(provider: ALGO_Provider|Promise<ALGO_Provider>): Promise<void> {
-  provider = await provider;
-  // XXX doesn't waitPort these, because these are opaque to us.
-  // should we do something similar where we wait for /health to give us a 200 response?
-  setAlgodClient((async () => provider.algodClient)());
-  setIndexer((async () => provider.indexer)());
-  setLedger(provider.ledger);
-}
+export const [getProvider, setProvider] = replaceableThunk(async () => {
+  return await makeProviderByEnv(process.env);
+});
+const getAlgodClient = async () => (await getProvider()).algodClient;
+const getIndexer = async () => (await getProvider()).indexer;
 
 export interface ProviderEnv {
-  // ALGO_LEDGER may be undefined under some circumstances,
-  // but AlgoSigner codepaths will error if it is undefined.
-  ALGO_LEDGER: string|undefined
   ALGO_SERVER: string
   ALGO_PORT: string
   ALGO_TOKEN: string
   ALGO_INDEXER_SERVER: string
   ALGO_INDEXER_PORT: string
   ALGO_INDEXER_TOKEN: string
+  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
 
 const localhostProviderEnv: ProviderEnv = {
-  ALGO_LEDGER: 'Reach Devnet',
   ALGO_SERVER: 'http://localhost',
   ALGO_PORT: '4180',
   ALGO_TOKEN: rawDefaultToken,
   ALGO_INDEXER_SERVER: 'http://localhost',
   ALGO_INDEXER_PORT: '8980',
   ALGO_INDEXER_TOKEN: rawDefaultItoken,
-}
-
-const DEFAULT_ALGO_LEDGER = localhostProviderEnv.ALGO_LEDGER;
-const DEFAULT_ALGO_SERVER = localhostProviderEnv.ALGO_SERVER;
-const DEFAULT_ALGO_PORT = localhostProviderEnv.ALGO_PORT;
-const DEFAULT_ALGO_TOKEN = localhostProviderEnv.ALGO_TOKEN;
-const DEFAULT_ALGO_INDEXER_SERVER = localhostProviderEnv.ALGO_INDEXER_SERVER;
-const DEFAULT_ALGO_INDEXER_PORT = localhostProviderEnv.ALGO_INDEXER_PORT;
-const DEFAULT_ALGO_INDEXER_TOKEN = localhostProviderEnv.ALGO_INDEXER_TOKEN;
-
-function serverLooksLikeRandlabs(server: string): boolean {
-  return server.toLowerCase().includes('algoexplorerapi.io');
-}
-
-function envDefaultALGOPort(port: string|undefined, defaultPort: string, server: string): string {
-  // Some simple guessing
-  return port !== undefined ? port
-    : serverLooksLikeRandlabs(server) ? ''
-    : defaultPort;
-}
-
-function envDefaultALGOToken(token: string|undefined, defaultToken: string, server: string, port: string): string {
-  // Some simple guessing
-  // port is not currently used for this guessing, but could be in the future
-  void(port);
-  return token !== undefined ? token
-    : serverLooksLikeRandlabs(server) ? ''
-    : defaultToken;
-}
-
-function guessRandlabsLedger(server?: string): string|undefined {
-  if (server === undefined) return undefined;
-  server = server.toLowerCase();
-  if (server.startsWith('https://algoexplorerapi.io')) {
-    return 'MainNet';
-  } else if (server.startsWith('https://testnet.algoexplorerapi.io')) {
-    return 'TestNet';
-  } else if (server.startsWith('https://betanet.algoexplorerapi.io')) {
-    return 'BetaNet';
-  }
-  return undefined;
-}
-
-function envDefaultALGOLedger(ledger: string|undefined, defaultLedger: string|undefined, server: string, port: string): string|undefined {
-  // Some simple guessing
-  // port is not currently used for this guessing, but could be in the future
-  void(port);
-  return ledger !== undefined ? ledger
-    : serverLooksLikeRandlabs(server) ? guessRandlabsLedger(ledger)
-    : defaultLedger;
+  REACH_ISOLATED_NETWORK: 'yes',
 }
 
 function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
-  const ALGO_SERVER = envDefault(env.ALGO_SERVER, DEFAULT_ALGO_SERVER);
-  const ALGO_PORT = envDefaultALGOPort(env.ALGO_PORT, DEFAULT_ALGO_PORT, ALGO_SERVER);
-  const ALGO_TOKEN = envDefaultALGOToken(env.ALGO_TOKEN, DEFAULT_ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
-  const ALGO_LEDGER = envDefaultALGOLedger(env.ALGO_LEDGER, DEFAULT_ALGO_LEDGER, ALGO_SERVER, ALGO_PORT);
-
-  const ALGO_INDEXER_SERVER = envDefault(env.ALGO_INDEXER_SERVER, DEFAULT_ALGO_INDEXER_SERVER);
-  const ALGO_INDEXER_PORT = envDefaultALGOPort(env.ALGO_INDEXER_PORT, DEFAULT_ALGO_INDEXER_PORT, ALGO_INDEXER_SERVER);
-  const ALGO_INDEXER_TOKEN = envDefaultALGOToken(env.ALGO_INDEXER_TOKEN, DEFAULT_ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-
-  return {
-    ALGO_LEDGER,
-    ALGO_SERVER,
-    ALGO_PORT,
-    ALGO_TOKEN,
-    ALGO_INDEXER_SERVER,
-    ALGO_INDEXER_PORT,
-    ALGO_INDEXER_TOKEN,
+  const denv = localhostProviderEnv;
+  // @ts-ignore
+  const ret: ProviderEnv = {};
+  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK'] ) {
+    // @ts-ignore
+    ret[f] = envDefault(env[f], denv[f]);
   }
-}
+  return ret;
+};
 
-export function setProviderByEnv(env: Partial<ProviderEnv>): void {
-  // Note: This doesn't just immediately call setProviderByEnv,
-  // because here we can actually take the opportunity to wait1port.
+async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<ALGO_Provider> {
   const fullEnv = envDefaultsALGO(env);
-
-  setAlgodClient(waitAlgodClientFromEnv(fullEnv));
-  setIndexer(waitIndexerFromEnv(fullEnv));
-  setLedger(fullEnv.ALGO_LEDGER);
-}
+  const algodClient = await waitAlgodClientFromEnv(fullEnv);
+  const indexer = await waitIndexerFromEnv(fullEnv);
+  const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
+  const lab = `Providers created by environment`;
+  const getDefaultAddress = () => {
+    throw new Error(`${lab} do not have default addresses`);
+  };
+  const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
+    void(opts);
+    const stxns = txns.map((txn) => {
+      if ( txn.stxn ) { return txn.stxn; }
+      throw new Error(`${lab} cannot interactively sign`);
+    });
+    const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
+    debug(`signAndPostTxns`, bs);
+    await algodClient.sendRawTransaction(bs).do();
+  };
+  return { algodClient, indexer, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
+};
+export function setProviderByEnv(env: Partial<ProviderEnv>): void {
+  setProvider(makeProviderByEnv(env));
+};
 
 type WhichNetExternal
   = 'MainNet'
@@ -889,17 +656,17 @@ export type ProviderName
   | 'randlabs/TestNet'
   | 'randlabs/BetaNet'
 
-function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ProviderEnv {
-  const prefix = ALGO_LEDGER === 'MainNet' ? '' : `${ALGO_LEDGER.toLowerCase()}.`;
+function randlabsProviderEnv(net: WhichNetExternal): ProviderEnv {
+  const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
   return {
-    ALGO_LEDGER,
     ALGO_SERVER: RANDLABS_BASE,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
     ALGO_INDEXER_SERVER: `${RANDLABS_BASE}/idx2`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
+    REACH_ISOLATED_NETWORK: 'no',
   }
 }
 
@@ -922,23 +689,12 @@ export function setProviderByName(providerName: ProviderName): void {
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
-const [getFaucet, setFaucet_] = replaceableThunk(async (): Promise<Account> => {
-  if ( ! isIsolatedNetwork() ) {
-    throw Error(`Cannot automatically use faucet for non-isolated network; if you want to use a custom faucet, use setFaucet`);
-  }
+export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
   return await connectAccount(FAUCET);
 });
-let settedFaucet = false;
-const setFaucet = (x:Promise<Account>) => {
-  settedFaucet = true;
-  setFaucet_(x);
-};
-const isIsolatedNetwork = (): boolean =>
-  (settedFaucet || getLedger() === localhostProviderEnv.ALGO_LEDGER);
-export {getFaucet, setFaucet};
 
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
@@ -978,67 +734,13 @@ export const transfer = async (
   const receiver = to.networkAccount.addr;
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
-  const txn = makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag);
+  const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
     `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuebn}`,
     sender,
     txn);
 };
-
-async function signTxn(networkAccount: NetworkAccount, txnOrig: Transaction): Promise<STX> {
-  const {sk, AlgoSigner} = networkAccount;
-  if (sk && !AlgoSigner) {
-    const tx = txnOrig.signTxn(sk);
-    const ret = {
-      tx,
-      txID: txnOrig.txID().toString(),
-      lastRound: txnOrig.lastRound,
-    };
-    debug('signed sk_ret');
-    debug({txID: ret.txID});
-    debug(msgpack.decode(ret.tx));
-    return ret;
-  } else if (AlgoSigner) {
-    // TODO: clean up txn before signing
-    const txn = clean_for_AlgoSigner(txnOrig);
-
-    // Note: don't delete the following,
-    // it is extremely useful for debugging when stuff changes wrt AlgoSigner/algosdk clashes
-
-    // if (sk) {
-    //   const re_tx = txnOrig.signTxn ? txnOrig : new algosdk__src__transaction.Transaction(txnOrig);
-    //   re_tx.group = txnOrig.group;
-
-    //   const sk_tx = re_tx.signTxn(sk);
-    //   const sk_ret = {
-    //     tx: sk_tx,
-    //     txID: re_tx.txID().toString(),
-    //     lastRound: txnOrig.lastRound,
-    //   };
-    //   console.log('signed sk_ret');
-    //   console.log({txID: sk_ret.txID});
-    //   console.log(msgpack.decode(sk_ret.tx));
-    // }
-
-    debug('AlgoSigner.sign ...');
-    const stx_obj = await AlgoSigner.sign(txn);
-    debug('...signed');
-    debug({stx_obj});
-    const ret = {
-      tx: Buffer.from(stx_obj.blob, 'base64'),
-      txID: stx_obj.txID,
-      lastRound: txnOrig.lastRound,
-    };
-
-    debug('signed AlgoSigner');
-    debug({txID: ret.txID});
-    debug(msgpack.decode(ret.tx));
-    return ret;
-  } else {
-    throw Error(`networkAccount has neither sk nor AlgoSigner: ${JSON.stringify(networkAccount)}`);
-  }
-}
 
 const makeIsMethod = (i:number) => (txn:any): boolean =>
   txn['application-transaction']['application-args'][0] === base64ify([i]);
@@ -1106,11 +808,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await sign_and_send_sync(
         'ApplicationOptIn',
         thisAcc,
-        algosdk.makeApplicationOptInTxn(
+        toWTxn(algosdk.makeApplicationOptInTxn(
           thisAcc.addr, await getTxnParams(),
           ApplicationID,
           undefined, undefined, undefined, undefined,
-          NOTE_Reach));
+          NOTE_Reach)));
       assert(await didOptIn(), `didOptIn after doOptIn`);
     };
     let ensuredOptIn: boolean = false;
@@ -1177,17 +879,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if ( hasMaps ) { await ensureOptIn(); }
       const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
 
-      const sign_escrow = async (txn: Transaction): Promise<STX> => {
-        const tx_obj = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
-        return {
-          tx: tx_obj.blob,
-          txID: tx_obj.txID,
-          lastRound: txn.lastRound,
-        };
-      };
-      const sign_me =
-        async (x: Transaction): Promise<STX> => await signTxn(thisAcc, x);
-
       while ( true ) {
         const params = await getTxnParams();
         // We add one, because the firstRound field is actually the current
@@ -1202,12 +893,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, '--- ASSEMBLE w/', params);
 
         let extraFees: number = 0;
-        type Signer = (x: Transaction) => Promise<STX>;
-        const txnExtraTxns: Array<Transaction> = [];
-        const txnExtraTxns_signers: Array<Signer> = [];
+        type PreWalletTransaction = {
+          txn: Transaction,
+          escrow: boolean,
+        };
+        const txnExtraTxns: Array<PreWalletTransaction> = [];
         let sim_i = 0;
         const processSimTxn = (t: SimTxn) => {
-          let signer: Signer = sign_escrow;
+          let escrow = true;
           let txn;
           if ( t.kind === 'tokenNew' ) {
             processSimTxn({
@@ -1263,7 +956,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               from = thisAcc.addr;
               to = escrowAddr;
               amt = t.amt;
-              signer = sign_me;
+              escrow = false;
             } else {
               assert(false, 'sim txn kind');
             }
@@ -1272,29 +965,28 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           extraFees += txn.fee;
           txn.fee = 0;
-          txnExtraTxns.push(txn);
-          txnExtraTxns_signers.push(signer);
+          txnExtraTxns.push({txn, escrow});
         };
         sim_r.txns.forEach(processSimTxn);
         debug(dhead, 'txnExtraTxns', txnExtraTxns);
         debug(dhead, '--- extraFee =', extraFees);
 
-      const actual_args = [ svs, msg ];
-      const actual_tys = [ T_Tuple(svs_tys), T_Tuple(msg_tys) ];
-      debug(dhead, '--- ARGS =', actual_args);
+        const actual_args = [ svs, msg ];
+        const actual_tys = [ T_Tuple(svs_tys), T_Tuple(msg_tys) ];
+        debug(dhead, '--- ARGS =', actual_args);
 
-      const safe_args: Array<NV> = actual_args.map(
-        // @ts-ignore
-        (m, i) => actual_tys[i].toNet(m));
-      safe_args.unshift(new Uint8Array([funcNum]));
-      safe_args.forEach((x) => {
-        if (! ( x instanceof Uint8Array ) ) {
-          // The types say this is impossible now,
-          // but we'll leave it in for a while just in case...
-          throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
-        }
-      });
-      debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
+        const safe_args: Array<NV> = actual_args.map(
+          // @ts-ignore
+          (m, i) => actual_tys[i].toNet(m));
+        safe_args.unshift(new Uint8Array([funcNum]));
+        safe_args.forEach((x) => {
+          if (! ( x instanceof Uint8Array ) ) {
+            // The types say this is impossible now,
+            // but we'll leave it in for a while just in case...
+            throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+          }
+        });
+        debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
 
         const whichAppl =
           isHalt ?
@@ -1306,23 +998,28 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             thisAcc.addr, params, ApplicationID, safe_args,
             mapAcctsReal, undefined, undefined, NOTE_Reach);
         txnAppl.fee += extraFees;
-        const txns = [ ...txnExtraTxns, txnAppl ];
-        algosdk.assignGroupID(txns);
-        regroup(thisAcc, txns);
+        const rtxns = [ ...txnExtraTxns, { txn: txnAppl, escrow: false } ];
+        debug(dhead, `assigning`, { rtxns });
+        algosdk.assignGroupID(rtxns.map((x:any) => x.txn));
 
-        const txnAppl_s = await sign_me(txnAppl);
-        const txnExtraTxns_s =
-          await Promise.all(
-            txnExtraTxns.map(
-              async (t: Transaction, i:number): Promise<STX> =>
-                await txnExtraTxns_signers[i](t)
-        ));
+        const wtxns = rtxns.map((pwt:PreWalletTransaction): WalletTransaction => {
+          const { txn, escrow } = pwt;
+          if ( escrow ) {
+            const stxn = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
+            return {
+              txn: encodeUnsignedTransaction(txn),
+              signers: [],
+              stxn: Buffer.from(stxn.blob).toString('base64'),
+            };
+          } else {
+            return toWTxn(txn);
+          }
+        });
 
-        const txns_s = [ ...txnExtraTxns_s, txnAppl_s ];
-        debug(dhead, '--- SEND:', txns_s.length);
+        debug(dhead, 'signing', { wtxns });
         let res;
         try {
-          res = await sendAndConfirm( txns_s );
+          res = await signSendAndConfirm( thisAcc, wtxns );
 
           // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
           debug(dhead, '--- SUCCESS:', res);
@@ -1549,7 +1246,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await sign_and_send_sync(
         'ApplicationCreate',
         thisAcc,
-        algosdk.makeApplicationCreateTxn(
+        toWTxn(algosdk.makeApplicationCreateTxn(
           thisAcc.addr, await getTxnParams(),
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval.result,
@@ -1557,7 +1254,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
           appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
           undefined, undefined, undefined, undefined,
-          NOTE_Reach, undefined, undefined, extraPages));
+          NOTE_Reach, undefined, undefined, extraPages)));
 
     const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
@@ -1579,13 +1276,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         T_Tuple([]).toNet([]) ];
     debug({ctor_args});
     const txnCtor =
-      algosdk.makeApplicationNoOpTxn(
+      toWTxn(algosdk.makeApplicationNoOpTxn(
         thisAcc.addr, params, ApplicationID, ctor_args,
-        undefined, undefined, undefined, NOTE_Reach);
+        undefined, undefined, undefined, NOTE_Reach));
     debug({txnCtor});
-    const txnCtor_s = await signTxn(thisAcc, txnCtor);
     try {
-      await sendAndConfirm( [ txnCtor_s ] );
+      await signSendAndConfirm( thisAcc, [txnCtor] );
     } catch (e) {
       throw Error(`deploy: ${JSON.stringify(e)}`);
     }
@@ -1764,34 +1460,9 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
   return r ? `${l}.${r}` : l;
 }
 
-// XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
-// AlgoSigner does not expose a "currently-selected account"
 export async function getDefaultAccount(): Promise<Account> {
-  if (!window.prompt) {
-    throw Error(`Cannot prompt the user for default account with window.prompt`);
-  }
-  const signStrategy = getSignStrategy();
-  if (signStrategy === 'mnemonic') {
-    const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
-    if (mnemonic) {
-      debug(`Creating account from user-provided mnemonic`);
-      return await newAccountFromMnemonic(mnemonic);
-    } else {
-      debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
-      return await createAccount();
-    }
-  } else if (signStrategy === 'AlgoSigner') {
-    const AlgoSigner = await getAlgoSigner();
-    const ledger = getLedgerFromAlgoSigner(AlgoSigner);
-    if (ledger === undefined) throw Error(`Ledger is undefined; this is required by AlgoSigner`);
-    const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
-    if (!addr) { throw Error(`No address provided`); }
-    return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
-  } else if (signStrategy === 'MyAlgo') {
-    throw Error(`MyAlgo wallet support is not yet implemented`);
-  } else {
-    throw Error(`signStrategy '${signStrategy}' not recognized. Valid options are 'mnemonic', 'AlgoSigner', and 'MyAlgo'.`);
-  }
+  const addr = (await getProvider()).getDefaultAddress();
+  return await connectAccount({ addr });
 }
 
 /**
@@ -1804,25 +1475,10 @@ export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account>
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-export const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
+export const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
   const sk = ethers.utils.arrayify(secret);
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
   return await newAccountFromMnemonic(mnemonic);
-};
-
-export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSigner, ledger: string) => {
-  if (!AlgoSigner) {
-    throw Error(`AlgoSigner is falsy`);
-  }
-  const accts = await AlgoSigner.accounts({ledger});
-  if (!Array.isArray(accts)) {
-    throw Error(`AlgoSigner.accounts('${ledger}') is not an array: ${accts}`);
-  }
-  if (!accts.map(x => x.address).includes(addr)) {
-    throw Error(`Address ${addr} not found in AlgoSigner accounts`);
-  }
-  let networkAccount = {addr, AlgoSigner};
-  return await connectAccount(networkAccount);
 };
 
 export const getNetworkTime = async (): Promise<BigNumber> => {
@@ -1840,7 +1496,7 @@ export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
 
 const stepTime = async (target: BigNumber): Promise<BigNumber> => {
-  if ( isIsolatedNetwork() ) {
+  if ( (await getProvider()).isIsolatedNetwork ) {
     await fundFromFaucet(await getFaucet(), 0);
   }
   return await indexer_statusAfterBlock(bigNumberToNumber(target));
