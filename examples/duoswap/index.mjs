@@ -8,8 +8,8 @@ const NUM_TRADERS = 2;
 
 export const runAutomated = async () => {
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(100);
-  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const startingBalance = stdlib.parseCurrency(3_000_000);
+  const fmt = (x) => stdlib.formatCurrency(x, (stdlib.connector == 'ALGO') ? 6 : 18);
 
   // Create tokens to swap
   const accCreator = await stdlib.newTestAccount(startingBalance);
@@ -121,7 +121,7 @@ export const runAutomated = async () => {
       },
       depositMaybe: ([ isAlive, market ]) => {
         if (deposited[who] == false) {
-          const amt = Math.floor(Math.random() * 10) + 10;
+          const amt = Math.floor(Math.random() * 100000) + 10;
           const deposit = {
             amtA: stdlib.parseCurrency(amt * 2), // * k
             amtB: stdlib.parseCurrency(amt),
@@ -158,7 +158,7 @@ export const runAutomated = async () => {
       },
       tradeMaybe: ([ alive, market ]) => {
         const idx = Math.floor(Math.random() * 2);
-        const amt = stdlib.parseCurrency(Math.floor(Math.random() * 10) + 1);
+        const amt = stdlib.parseCurrency(Math.floor(Math.random() * 50000) + 1);
 
         const trade =
           (idx == 0)

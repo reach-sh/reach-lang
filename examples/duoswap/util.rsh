@@ -1,21 +1,31 @@
 'reach 0.1';
 
+export const min = (a, b) => (a < b) ? a : b;
+
 export const NUM_OF_TOKENS = 2;
 
 export const avg = (a, b) => (a + b) / 2;
 
-export const getAmtOut = (amtIn, reserveIn, reserveOut) => {
+export const muldiv = (x, y, z, conUnit) => {
+  if (y >= UInt.max / x) {
+    return (y / conUnit) * ((x * conUnit) / z);
+  } else {
+    return x * y / z;
+  }
+}
+
+export const getAmtOut = (amtIn, reserveIn, reserveOut, conUnit) => {
   const amtInWithFee = amtIn * 997;
-  const num = amtInWithFee * reserveOut;
   const den = (reserveIn * 1000) + amtInWithFee;
-  return num / den;
+  assume(amtInWithFee * conUnit > den);
+  return muldiv(amtInWithFee, reserveOut, den, conUnit);
 }
 
 // Calculates how many LP tokens to mint
-export const mint = (amtIn, bal, poolMinted) => {
-  const t = amtIn * poolMinted;
-  assume(t >= bal, "t >= bal");
-  return t / ((bal == 0) ? 1 : bal);
+export const mint = (amtIn, bal, poolMinted, conUnit) => {
+  assume(bal > 0);
+  assume(amtIn * conUnit > bal);
+  return muldiv(amtIn, poolMinted, bal, conUnit);
 };
 
 // Types
