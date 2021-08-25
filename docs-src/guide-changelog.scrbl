@@ -42,7 +42,7 @@ Version 0.1.3 is the current Reach release candidate version.
 
   @item{
   The @tt{reach} script has been simplified such that @tt{Makefile} and @tt{docker-compose.yml} files are no longer integral to its function.
-  Accordingly, these files have been removed from @exec{reach scaffold}'s output.
+  Accordingly, these files have been removed from @secref["ref-usage-scaffold"]'s output.
   Authors of existing projects which contain unmodified @tt{Makefile} or @tt{docker-compose.yml} files are encouraged to remove them.
   }
 ]
