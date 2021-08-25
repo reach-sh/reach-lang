@@ -13,7 +13,6 @@ import cfxsdk from 'js-conflux-sdk';
 import Timeout from 'await-timeout';
 import { canonicalizeConnectorMode, ConnectorMode } from './ConnectorMode';
 import buffer from 'buffer';
-import fetch from 'node-fetch';
 const { Buffer } = buffer;
 const { Conflux } = cfxsdk;
 
@@ -140,7 +139,7 @@ async function _fundOnCfxTestNet(to: any, amt: any) {
   debug({method, to});
   const toHex = toHexAddr(to);
   debug({method, message: 'requesting from testnet faucet', toHex});
-  const res = await fetch(`http://test-faucet.confluxnetwork.org:18088/dev/ask?address=${toHex}`);
+  const res = await window.fetch(`http://test-faucet.confluxnetwork.org:18088/dev/ask?address=${toHex}`);
   const resJson = await res.json();
   debug({method, message: 'got response from testnet faucet', resJson});
 }

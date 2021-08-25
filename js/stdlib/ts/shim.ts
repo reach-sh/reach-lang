@@ -1,4 +1,5 @@
 import type { ethers } from 'ethers';
+import node_fetch from 'node-fetch';
 // Some simple shims for defining stuff across node & browser
 
 type Process = {
@@ -53,6 +54,7 @@ type Window = {
   ethereum?: ethers.providers.ExternalProvider,
   prompt?: (s: string) => string | null,
   reach?: any, // TODO
+  fetch: (...args: any) => any,
 };
 
 const windowShim: Window = (() => {
@@ -61,7 +63,9 @@ const windowShim: Window = (() => {
     return window;
   } catch (e) {
     // ReferenceError
-    return {};
+    return {
+      fetch: node_fetch,
+    };
   }
 })();
 
