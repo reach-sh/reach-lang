@@ -1,23 +1,34 @@
-// SPDX-License-Identifier: MIT
 pragma abicoder v2;
-
 
 pragma solidity ^0.8.0;
 
-contract LogAttack2  {
-    
-     event e0();
-     event e2(address , uint256 );
-     event e3(address , uint256 date, uint256 );
-
-    constructor () payable {
-        emit e0();
-    }
-  function m2(address payable , uint256 ) external payable returns (bool) {
-     emit e2(msg.sender, msg.value);
-     return true;
+struct T2 {
+  address payable v74;
+  address payable v75;
   }
-  function m3(uint256 date) external payable {
-      emit e3(msg.sender, date, msg.value);
+struct T5 {
+  uint256 v90;
+  }
+struct T6 {
+  T2 svs;
+  T5 msg;
+  }
+
+contract LogAttack2  {
+
+  uint256 date;
+  constructor () payable {
+  }
+
+  event e2(T6 _a);
+  function m1(address payable, uint256 amt) external payable {
+    T6 memory a;   
+    a.svs.v74 = payable(msg.sender);
+    a.svs.v75 = payable(address(this));
+    a.msg.v90 = date;
+    emit e2(a);
+  }
+  
+  function m2(uint256 date) external payable {
   }
 }

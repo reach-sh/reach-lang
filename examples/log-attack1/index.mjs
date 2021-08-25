@@ -10,12 +10,14 @@ import * as fs from 'fs';
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
   const startingBalance = stdlib.parseCurrency(10);
   const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
   const myGasLimit = 8000000;
   accAlice.setGasLimit(myGasLimit);
+  accBob.setGasLimit(myGasLimit);
   
   const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
   console.log(`Alice read compiled file: ${JSON.stringify(compiled)}`);
-  const remoteCtc = compiled["contracts"]["index.sol:RC20"];
+  const remoteCtc = compiled["contracts"]["index.sol:LogAttack1"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accAlice.networkAccount);
@@ -24,20 +26,18 @@ import * as fs from 'fs';
   console.log(`SOLIDITY CONTRACT ADDR : ${contract.address}`);
   console.log(`Tx Hash: ${contract.deployTransaction.hash}`);
   const remoteAddr = contract.address;
-  const solContract = new ethers.Contract(remoteAddr, remoteABI, accAlice.networkAccount);
   
   const ctcAlice = accAlice.deploy(backend);
-  const localAddr = await ctcAlice.getInfo();
-  const addrs = await accAlice.getAddress();
-  const amt = '6969696969696969690909';
-  const E2 = solContract.filters.e2();
-  solContract.on(E2, console.log);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const amt = stdlib.parseCurrency(1);
+
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasConsoleLogger,
-      m2: (() => [ solContract, amt ]),
+      m2: (() => [ remoteAddr, amt ]),
     }),
+    backend.Bob(ctcBob, {
+      ...stdlib.hasConsoleLogger,
+    })
   ]);
-  console.log(`REACH CONTRACT ADDR : ${localAddr}`)  
-  console.log(`Alice address: ${addrs}`);
 })();
