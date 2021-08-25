@@ -10,6 +10,44 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{
+2021/08/__TODO__: The @tt{reach} script has undergone significant changes which will require existing users to run @bold{@exec{reach upgrade && reach update}}.
+
+@itemlist[
+  @item{All subcommands now support @Flag{h}/@DFlag{help} switches, e.g. @exec{reach compile --help}.}
+  @item{The @tt{APP} argument to @secref["ref-usage-init"] has been removed.}
+  @item{The @exec{reach} script now permits the use of subdirectories as arguments to certain subcommands, e.g. @exec{reach compile dir/index.rsh}, but disallows parent directories (@tt{..}) for reasons pertaining to Docker.}
+
+  @item{Devnets have been consolidated into a single Dockerized network and container topology.}
+  @item{The @DFlag{use-existing-devnet} flag has been deprecated and no longer has any effect.}
+
+  @item{
+  @secref["ref-usage-run"] will now automatically connect to a given connector's devnet when already present.
+  Devnets which aren't already running will be launched as needed.
+  }
+
+  @item{
+  @secref["ref-usage-down"] now halts @italic{ALL} Dockerized Reach containers and devnets (i.e. it's no longer specific to a single project).
+
+  Non-Reach Docker services are unaffected (see @secref["ref-usage-docker-reset"]).
+  }
+
+  @item{
+  @secref["ref-usage-docker-reset"] now prompts the user for confirmation before continuing since it kills and removes @italic{ALL} containers (not just those related to Reach).
+
+  The @Flag{y} or @DFlag{even-non-reach} flags may be appended for non-interactive execution.
+  }
+
+  @item{An @DFlag{await-background} flag has been introduced to the @secref["ref-usage-devnet"] subcommand.}
+
+  @item{
+  The @tt{reach} script has been simplified such that @tt{Makefile} and @tt{docker-compose.yml} files are no longer integral to its function.
+  Accordingly, these files have been removed from @exec{reach scaffold}'s output.
+  Authors of existing projects which contain unmodified @tt{Makefile} or @tt{docker-compose.yml} files are encouraged to remove them.
+  }
+]
+}
+
 @item{2021/08/16: Allow @reachin{continue} in @tech{step} in some cases.}
 @item{2021/07/31: Added @jsin{newTestAccounts}, @jsin{waitUntilSecs}, and @jsin{getNetworkSecs} to JavaScript standard library.}
 @item{2021/07/31: Updated @jsin{onProgress} type in JavaScript standard library.}
