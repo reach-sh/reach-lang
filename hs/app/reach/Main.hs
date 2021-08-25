@@ -835,10 +835,7 @@ init' = command "init" . info f $ d <> foot where
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
 
   -- TODO list available templates?
-  foot = footerDoc . Just
-     $  text "APP is \"index\" by default"
-   <$$> text ""
-   <$$> text "Aborts if $APP.rsh or $APP.mjs already exist"
+  foot = footerDoc . Just $ text "Aborts if index.rsh or index.mjs already exist"
 
   go template = do
     Env {..} <- ask
