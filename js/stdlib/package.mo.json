@@ -15,6 +15,7 @@
     "@types/await-timeout": "^0.3.1",
     "@types/express": "^4.17.1",
     "@types/node": "^14.14.34",
+    "@types/node-fetch": "^2.5.12",
     "babel-eslint": "^10.0.3",
     "buffer": "^6.0.3",
     "concurrently": "^6.0.0",
@@ -39,6 +40,7 @@
     "hi-base32": "^0.5.0",
     "js-conflux-sdk": "git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0-blockNumber",
     "jsbi": "^3.1.6",
+    "node-fetch": "^2.6.1",
     "wait-port": "^0.2.9"
   },
   "repository": {
