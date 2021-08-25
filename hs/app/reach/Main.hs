@@ -366,8 +366,12 @@ data Project = Project
   }
 
 data Scaffold = Scaffold
-  { containerDockerfile :: FilePath
+  { containerDockerIgnore :: FilePath
+  , containerGitIgnore :: FilePath
+  , containerDockerfile :: FilePath
   , containerPackageJson :: FilePath
+  , hostDockerIgnore :: FilePath
+  , hostGitIgnore :: FilePath
   , hostDockerfile :: FilePath
   , hostPackageJson :: FilePath
   }
@@ -392,11 +396,18 @@ data DockerMeta = DockerMeta
 
 mkScaffold :: Project -> Scaffold
 mkScaffold Project {..} = Scaffold
-  { containerDockerfile = projDirContainer </> "Dockerfile"
-  , containerPackageJson = projDirContainer </> "package.json"
-  , hostDockerfile = projDirHost </> "Dockerfile"
-  , hostPackageJson = projDirHost </> "package.json"
+  { containerDockerIgnore = c ".dockerignore"
+  , containerGitIgnore = c ".gitignore"
+  , containerDockerfile = c "Dockerfile"
+  , containerPackageJson = c "package.json"
+  , hostDockerIgnore = h ".dockerignore"
+  , hostGitIgnore = h ".gitignore"
+  , hostDockerfile = h "Dockerfile"
+  , hostPackageJson = h "package.json"
   }
+ where
+  c = (projDirContainer </>)
+  h = (projDirHost </>)
 
 
 appProj' :: FilePath -> T.Text
@@ -671,9 +682,8 @@ scaffold' i quiet proj@Project {..} = do
   -- generated code trips the linter
   tmpl "package.json" >>= scaffIfAbsent' containerPackageJson
   tmpl "Dockerfile" >>= scaffIfAbsent' containerDockerfile
-
-  tmpl ".gitignore" >>= scaffIfAbsent' (projDirContainer </> ".gitignore")
-  tmpl ".dockerignore" >>= scaffIfAbsent' (projDirContainer </> ".dockerignore")
+  tmpl ".gitignore" >>= scaffIfAbsent' containerGitIgnore
+  tmpl ".dockerignore" >>= scaffIfAbsent' containerDockerIgnore
 
   when (not quiet) . liftIO $ putStrLn "Done."
 
@@ -889,6 +899,8 @@ run' = command "run" . info f $ d <> noIntersperse where
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
       [ (containerPackageJson, hostPackageJson)
       , (containerDockerfile, hostDockerfile)
+      , (containerGitIgnore, hostGitIgnore)
+      , (containerDockerIgnore, hostDockerIgnore)
       ]
 
     cleanup <- T.intercalate "\n" <$> forM toClean (pure . T.pack . ("rm " <>) . snd)
