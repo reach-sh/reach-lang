@@ -5,3 +5,6 @@ ALGO.remote
 
 # Too big
 ALGO.ttt
+
+# https://reachsh.atlassian.net/browse/CORE-462
+ETH.raffle

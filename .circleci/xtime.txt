@@ -1,2 +1,25 @@
 # These are allowed to timeout and we still release
 
+# https://reachsh.atlassian.net/browse/CORE-447
+CFX.cache-events
+
+# https://reachsh.atlassian.net/browse/CORE-449
+CFX.mint-basic
+
+# https://reachsh.atlassian.net/browse/CORE-450
+CFX.raffle
+
+# https://reachsh.atlassian.net/browse/CORE-451
+CFX.tut-7-array
+
+# https://reachsh.atlassian.net/browse/CORE-452
+CFX.workshop-relay
+
+# https://reachsh.atlassian.net/browse/CORE-463
+ETH.cache-events
+
+# https://reachsh.atlassian.net/browse/CORE-464
+ALGO.rent-seeking
+
+# https://reachsh.atlassian.net/browse/CORE-465
+ALGO.raffle
