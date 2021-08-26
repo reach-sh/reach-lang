@@ -8,6 +8,7 @@ import {
   mkAdminInterface,
   MToken,
   muldiv,
+  noop,
   ProviderInterface,
   TraderInterface,
   TokensView
@@ -96,6 +97,7 @@ export const main = Reach.App(() => {
             assume(poolMinted > 0);
             assume(msg.liquidity <= poolMinted, "liquidity <= poolMinted");
             assume((poolMinted > 0) ? (balance(tokA) > 0 && balance(tokB) > 0) : true, "bal(tokA) > 0 && bal(tokB) > 0");
+            assume(poolMinted > conUnit);
             return { when: true, msg };
           }
         }),
@@ -109,8 +111,9 @@ export const main = Reach.App(() => {
           const balances = array(UInt, [ balance(tokA), balance(tokB) ]);
 
           // Amount of each token in reserve to return to Provider
+          require(poolMinted > conUnit);
           const amtOuts = balances.map(bal =>
-            min(bal, muldiv(liquidity, bal, poolMinted, conUnit)));
+            min(bal, muldiv(liquidity, bal, poolMinted, conUnit, noop)));
 
           // Payout provider
           const currentProvider = this;
@@ -189,7 +192,7 @@ export const main = Reach.App(() => {
               assume(amtB == 0, "amtB == 0");
               const out = getAmtOut(amtA, balance(tokA), balance(tokB), conUnit);
               assume(out <= balance(tokB), "out <= bal(tokB)");
-              const kp = newK(amtA, tokA, out, tokB); // + 10000 ;
+              const kp = newK(amtA, tokA, out, tokB);
               assume(kp >= market.k, "kp >= market.k");
               return { when: balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok: tokA }};
             } else {
@@ -198,7 +201,7 @@ export const main = Reach.App(() => {
               assume(amtB > 0, "amtB > 0");
               const out = getAmtOut(amtB, balance(tokB), balance(tokA), conUnit);
               assume(out <= balance(tokA), "out <= bal(tokA)");
-              const kp = newK(amtB, tokB, out, tokA); // + 10000 ;
+              const kp = newK(amtB, tokB, out, tokA);
               assume(kp >= market.k, "kp >= market.k");
               return { when: balCheck, msg: { amtA, amtB, calcK: kp, amtOut: out, amtInTok: tokB }};
             }
