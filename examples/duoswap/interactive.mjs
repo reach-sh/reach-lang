@@ -164,7 +164,7 @@ const runDuoSwapLP = async (useTestnet) => {
       const wantsToWithdraw = await ask(`Do you want to withdraw liquidity? (y/n)`, yesno);
       if (wantsToWithdraw) {
         const amt = await ask(`How much liquidity do you want to withdraw?`);
-        withdrawToTry = { when: true, msg: { liquidity: amt } };
+        withdrawToTry = { when: true, msg: { liquidity: stdlib.parseCurrency(amt) } };
         return withdrawToTry;
       } else {
         return { when: false, msg: { liquidity: 0 }};
