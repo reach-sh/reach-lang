@@ -1,15 +1,14 @@
-FROM reachsh/haskell-builder:lts-17.4
-WORKDIR /build
+FROM alpine AS build
+RUN apk update
+RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
+RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+RUN ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
+RUN wget -qO- https://get.haskellstack.org/ | sh
 
+WORKDIR /build
 COPY stack.yaml package.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only
-
-# Dan is going insane.
-# Ensure reach.cabal is what we think it is.
-RUN mv reach.cabal reach.cabal.bak
 COPY . /build/
-RUN if [ -f reach.cabal ]; then exit 1; fi
-RUN cp reach.cabal.bak reach.cabal
 
 RUN stack build 2>&1 | tee build-log.txt
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/

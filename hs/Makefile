@@ -104,7 +104,7 @@ hs-test-accept: hs-build
 hs-deps: stack
 	stack setup
 	@# Broken-out dependencies help prevent CI resource exhaustion
-	RESOLVER=$$(echo "$$(cat stack.yaml | grep 'resolver:')" | sed 's/resolver:\s*//') \
+	RESOLVER=$$(echo "$$(cat stack.yaml | grep 'resolver:')" | sed 's/resolver:\ \s*//') \
 	  && stack --resolver "$$RESOLVER" build aeson \
 	  && stack --resolver "$$RESOLVER" build yaml \
 	  && stack --resolver "$$RESOLVER" build clay \

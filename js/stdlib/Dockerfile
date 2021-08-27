@@ -8,7 +8,7 @@ ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
 FROM $JS_DEPS_IMAGE as js-deps
 
 # hadolint ignore=DL3006
-FROM $NODE_IMAGE
+FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
 COPY --from=js-deps /js-deps/node_modules /stdlib/node_modules
@@ -36,6 +36,10 @@ RUN ./sbin/fix.sh
 RUN mv ./dist/mjs/* ./
 RUN rm ./sbin/fix.sh
 
+FROM $NODE_IMAGE 
+
+COPY --from=prepare /stdlib /stdlib
+RUN apk add git
 # XXX does this need to be uncommented?
 # RUN npm link
 

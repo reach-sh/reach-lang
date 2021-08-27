@@ -1,8 +1,15 @@
 ARG REACH_VERSION
+ARG NODE_VERSION
 ARG STDLIB_IMAGE=reachsh/stdlib:$REACH_VERSION
 
 # hadolint ignore=DL3006
-FROM $STDLIB_IMAGE
+FROM $STDLIB_IMAGE AS stdlib
+
+FROM node:$NODE_VERSION as stage
+COPY --from=stdlib /stdlib /stdlib
+
+WORKDIR /stdlib
+RUN npm link
 
 WORKDIR /app
 COPY package.json /app/
