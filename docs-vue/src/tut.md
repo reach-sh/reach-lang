@@ -159,7 +159,7 @@ The program defined in [tut-2/index.rsh](@github/examples/tut-2/index.rsh) will 
 + Lines 14 through 16 initialize a backend for Alice.
 + Lines 17 through 19 initialize a backend for Bob.
 + Line 13 waits for the backends to complete.
-+ Line 20 calls this asynchronous function that we've defined.
++ Line 21 calls this asynchronous function that we've defined.
 
 
 This is now enough for Reach to compile and run our program. Let's try by running

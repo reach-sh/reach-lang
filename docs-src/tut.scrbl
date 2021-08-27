@@ -137,7 +137,7 @@ This will only work on the Reach-provided developer testing network.}
 
 @item{Line 13 waits for the backends to complete.}
 
-@item{Line 20 calls this asynchronous function that we've defined.}
+@item{Line 21 calls this asynchronous function that we've defined.}
 
 ]
 
