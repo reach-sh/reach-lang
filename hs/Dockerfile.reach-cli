@@ -1,5 +1,5 @@
 FROM reachsh/haskell-build-artifacts:latest as build
-FROM ubuntu:18.04
+FROM alpine
 
 COPY --from=build /build/bin/reach /usr/bin/reach
 COPY app/reach/embed/ /app/embed/
