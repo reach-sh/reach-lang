@@ -8,8 +8,14 @@ const NUM_TRADERS = 2;
 
 export const runAutomated = async () => {
   const stdlib = await loadStdlib();
-  const startingBalance = stdlib.parseCurrency(100);
-  const fmt = (x) => stdlib.formatCurrency(x, 4);
+
+  const maxTrade = { ALGO: 50_000, ETH: 50_000, CFX: 500 }[stdlib.connector];
+  const maxDeposit = { ALGO: 10_000_000, ETH: 10_000_000, CFX: 10_000 }[stdlib.connector];
+  const startBal = { ALGO: 30_000_000, ETH: 30_000_000, CFX: 100_000 }[stdlib.connector];
+
+  const startingBalance = stdlib.parseCurrency(startBal);
+  const fmt = (x) => stdlib.formatCurrency(x, (stdlib.connector == 'ALGO') ? 6 : 18);
+
 
   // Create tokens to swap
   const accCreator = await stdlib.newTestAccount(startingBalance);
@@ -73,6 +79,7 @@ export const runAutomated = async () => {
   };
 
   const didEveryoneTrade = () => Object.keys(traded).every(k => traded[k] == true);
+  const didEveryoneDeposit = () => Object.keys(deposited).every(k => deposited[k] != false);
 
   // Admin backend
   const adminBackend = backend.Admin(ctcAdmin, {
@@ -121,9 +128,9 @@ export const runAutomated = async () => {
       },
       depositMaybe: ([ isAlive, market ]) => {
         if (deposited[who] == false) {
-          const amt = Math.floor(Math.random() * 10) + 10;
+          const amt = Math.floor(Math.random() * maxDeposit) + 10;
           const deposit = {
-            amtA: stdlib.parseCurrency(amt * 2), // * k
+            amtA: stdlib.parseCurrency(amt * 2),
             amtB: stdlib.parseCurrency(amt),
           };
           console.log("\x1b[34m", `${who} tries to deposit: ${fmt(deposit.amtA)} ZMD & ${fmt(deposit.amtB)} GIL`,'\x1b[0m');
@@ -158,7 +165,7 @@ export const runAutomated = async () => {
       },
       tradeMaybe: ([ alive, market ]) => {
         const idx = Math.floor(Math.random() * 2);
-        const amt = stdlib.parseCurrency(Math.floor(Math.random() * 10) + 1);
+        const amt = stdlib.parseCurrency(Math.floor(Math.random() * maxTrade) + 1);
 
         const trade =
           (idx == 0)

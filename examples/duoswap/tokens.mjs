@@ -13,7 +13,7 @@ const tryMint = async (stdlib, tok, addr) => {
     ? { networkAccount: { addr } }
     : { networkAccount: { address: addr } };
   try {
-    await tok.mint(acc, stdlib.parseCurrency(1000))
+    await tok.mint(acc, stdlib.parseCurrency(1000000))
   } catch (e) {
     console.log(`Could not mint for ${addr}. This is expected if you're funding an Admin who created a network to non-network pool.`);
   };
