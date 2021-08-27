@@ -35,7 +35,7 @@ import * as backend from './build/index.main.mjs';
       console.log(`Bob waits for Alice to give him the information about the Relay account.`);
       const accRelay = await accRelayP;
       console.log(`Bob deposits some funds into the Relay to use it.`);
-      await stdlib.transfer(accBob, accRelay, stdlib.parseCurrency(1));
+      await stdlib.transfer(accBob, accRelay, stdlib.parseCurrency(10));
       console.log(`Bob attaches to the contract as the Relay.`);
       const ctcRelay = accRelay.attach(backend, ctcAlice.getInfo());
       console.log(`Bob joins the application as the Relay.`);
