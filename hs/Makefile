@@ -42,7 +42,7 @@ clean: hs-clean
 .PHONY: build
 build: stack
 	docker build --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" --tag=$(IMAGE):latest .
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
+	#TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
 push:
@@ -90,7 +90,7 @@ hs-test-accept: hs-build
 hs-deps: stack
 	stack setup
 	@# Broken-out dependencies help prevent CI resource exhaustion
-	RESOLVER=$$(echo "$$(cat stack.yaml | grep 'resolver:')" | sed 's/resolver:\s*//') \
+	RESOLVER=$$(echo "$$(cat stack.yaml | grep 'resolver:')" | sed 's/resolver:\ \s*//') \
 	  && stack --resolver "$$RESOLVER" build aeson \
 	  && stack --resolver "$$RESOLVER" build yaml \
 	  && stack --resolver "$$RESOLVER" build clay \

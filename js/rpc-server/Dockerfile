@@ -1,7 +1,8 @@
 ARG        RUNNER_VERSION
 
 # hadolint ignore=DL3006
-FROM       $RUNNER_VERSION
+FROM       reachsh/runner:vmazzi
+#$RUNNER_VERSION
 
 COPY       package.json index.mjs /app/
 ENTRYPOINT ["npm", "run", "--"]

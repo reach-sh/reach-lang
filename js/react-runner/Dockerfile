@@ -1,6 +1,6 @@
 ARG REACH_VERSION
-ARG STDLIB_IMAGE=reachsh/stdlib:$REACH_VERSION
-ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
+ARG STDLIB_IMAGE=reachsh/stdlib:vmazzi
+ARG JS_DEPS_IMAGE=reachsh/js-deps
 
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps

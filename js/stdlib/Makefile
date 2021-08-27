@@ -28,12 +28,13 @@ ts/stdlib_sol.ts: $(ROOT)/hs/sol/stdlib.sol
 
 .PHONY: build
 build: package.json ts/version.ts ts/stdlib_sol.ts
-	docker build --tag=$(IMAGE) \
+#        docker build . -t reachsh/stdlib:vmazzi
+	docker build --tag=reachsh/stdlib:vmazzi \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 	  .
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: format
 format: package.json

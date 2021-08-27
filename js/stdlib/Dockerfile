@@ -1,8 +1,9 @@
 ARG NODE_VERSION
-ARG NODE_IMAGE=node:$NODE_VERSION
+#ARG NODE_IMAGE=node:14.17.0
+ARG NODE_IMAGE=node:14.17.0-alpine3.13
 
 ARG REACH_VERSION
-ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
+ARG JS_DEPS_IMAGE=reachsh/js-deps:latest
 
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps

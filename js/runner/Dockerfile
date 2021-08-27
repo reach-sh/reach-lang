@@ -1,5 +1,5 @@
 ARG REACH_VERSION
-ARG STDLIB_IMAGE=reachsh/stdlib:$REACH_VERSION
+ARG STDLIB_IMAGE=reachsh/stdlib:vmazzi
 
 # hadolint ignore=DL3006
 FROM $STDLIB_IMAGE

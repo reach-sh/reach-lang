@@ -20,10 +20,10 @@ package.json: package.mo.json $(ROOT)/VERSION mo
 
 .PHONY: build
 build: package.json
-	docker build --tag=$(IMAGE):latest \
+	docker build --tag=reachsh/rpc-server:vmazzi \
 	  --build-arg RUNNER_VERSION=$(RUNNER_IMAGE):$(REACH_VERSION) \
 	  .
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: clean
 clean:

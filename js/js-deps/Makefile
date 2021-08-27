@@ -15,4 +15,4 @@ build:
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 	  --build-arg REFRESH_LOCK=${REFRESH_LOCK} \
 	  .
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
