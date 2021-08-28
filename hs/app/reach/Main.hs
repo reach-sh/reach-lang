@@ -590,6 +590,13 @@ withCompose DockerMeta {..} wrapped = do
     (_, WithProject React _) -> mkConnSvs version''
     (_, WithProject Rpc _) -> mkConnSvs "latest"
 
+  let build = case compose of
+        WithProject Console _ -> [N.text|
+           build:
+             context: $projDirHost'
+        |]
+        _ -> ""
+
   let e_dirTmpHost' = T.pack e_dirTmpHost
   let appService' = case compose of
         StandaloneDevnet -> ""
@@ -601,8 +608,7 @@ withCompose DockerMeta {..} wrapped = do
                  labels:
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
                    - "sh.reach.dir-project=$projDirHost'"
-                 build:
-                   context: $projDirHost'
+                 $build
                  $connEnv
              |]
 
@@ -1070,6 +1076,48 @@ rpcServer = command "rpc-server" $ info f d where
     withCompose dm . script $ rpcServer' appService >>= write
 
 
+rpcServerAwait' :: Int -> AppT T.Text
+rpcServerAwait' t = do
+  let t' = T.pack $ show t
+  Var {..} <- asks e_var
+  pure [N.text|
+    # Be patient while rpc-server comes online...
+    i=0
+    s=0
+    while [ "$$i" -lt $t' ]; do
+      sleep 1
+      i=$$((i+1))
+      s=$$(curl \
+        --http1.1 \
+        -sk \
+        -o /dev/null \
+        -w '%{http_code}' \
+        -H "X-API-Key: $$REACH_RPC_KEY" \
+        -X POST \
+        "https://$rpcServer'':$rpcPort/health" || :)
+
+      [ "$$s" -eq 200 ] && break
+    done
+  |]
+
+
+rpcServerAwait :: Subcommand
+rpcServerAwait = command "rpc-server-await" $ info f d where
+  d = progDesc "Await RPC server availability"
+  f = go <$> option auto (long "timeout-seconds" <> value 30)
+
+  go t = do
+    rsa <- rpcServerAwait' t
+    script $ write [N.text|
+      $rsa
+
+      if [ ! "$$s" -eq 200 ]; then
+        echo "RPC server returned HTTP $$s after $$i seconds."
+        exit 1
+      fi
+    |]
+
+
 rpcRun :: Subcommand
 rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse where
   desc = progDesc "Run an RPC server + frontend with development configuration"
@@ -1081,13 +1129,13 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
          <*> manyArgs "EXECUTABLE"
 
   go exe args = do
-    env@Env {..} <- ask
+    env <- ask
     prj <- projectPwdIndex
+    rsa <- rpcServerAwait' 30
 
     let dm@DockerMeta {..} = mkDockerMetaRpc env prj
     runServer <- rpcServer' appService
 
-    let Var {..} = e_var
     let args' = T.intercalate " " args
 
     dieConnectorModeBrowser
@@ -1103,23 +1151,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
       $runServer &
       spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
 
-      # Be patient while rpc-server comes online...
-      i=0
-      s=0
-      while [ "$$i" -lt 30 ]; do
-        sleep 1
-        i=$$((i+1))
-        s=$$(curl \
-          --http1.1 \
-          -sk \
-          -o /dev/null \
-          -w '%{http_code}' \
-          -H "X-API-Key: $$REACH_RPC_KEY" \
-          -X POST \
-          "https://$rpcServer'':$rpcPort/health" || :)
-
-        [ "$$s" -eq 200 ] && break
-      done
+      $rsa
 
       killbg () {
         echo
@@ -1332,6 +1364,7 @@ main = do
     <> commandGroup "hidden subcommands"
     <> numericVersion
     <> reactDown
+    <> rpcServerAwait
     <> rpcServerDown
     <> unscaffold
     <> whoami
