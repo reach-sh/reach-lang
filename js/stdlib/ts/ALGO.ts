@@ -4,7 +4,8 @@ import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import type { Transaction } from 'algosdk';
+import type { Transaction } from 'algosdk'; // =>
+import type { ARC11_Wallet } from './ALGO_ARC11'; // =>
 
 const {Buffer} = buffer;
 
@@ -50,7 +51,7 @@ import {
   stdlib as compiledStdlib,
   typeDefs,
 } from './ALGO_compiled';
-import { process } from './shim';
+import { window, process } from './shim';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
 export * from './shared_user';
 
@@ -574,7 +575,7 @@ export interface WalletTransaction {
    stxn?: string;
 };
 
-interface ALGO_Provider {
+interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
   getDefaultAddress: () => Address,
@@ -582,9 +583,25 @@ interface ALGO_Provider {
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };
 
+const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
+  debug(`making provider with wallet`);
+  const enabled = await wallet.enable({'network': process.env['ALGO_NETWORK']});
+  const algodClient = await wallet.getAlgodv2();
+  const indexer = await wallet.getIndexer();
+  const getDefaultAddress = (): Address => enabled.accounts[0];
+  const signAndPostTxns = wallet.signAndPostTxns;
+  const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
+  return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+};
+
 export const [getProvider, setProvider] = replaceableThunk(async () => {
-  debug(`making default provider based on process.env`);
-  return await makeProviderByEnv(process.env);
+  if ( window.algorand ) {
+    // @ts-ignore
+    return await makeProviderByWallet(window.algorand);
+  } else {
+    debug(`making default provider based on process.env`);
+    return await makeProviderByEnv(process.env);
+  }
 });
 const getAlgodClient = async () => (await getProvider()).algodClient;
 const getIndexer = async () => (await getProvider()).indexer;
@@ -620,7 +637,7 @@ function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
   return ret;
 };
 
-async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<ALGO_Provider> {
+async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   debug(`makeProviderByEnv`, env);
   const fullEnv = envDefaultsALGO(env);
   debug(`makeProviderByEnv defaulted`, fullEnv);
