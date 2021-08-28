@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import type { Transaction } from 'algosdk'; // =>
-import type { ARC11_Wallet } from './ALGO_ARC11'; // =>
+import type { ARC11_Wallet, WalletTransaction } from './ALGO_ARC11'; // =>
 
 const {Buffer} = buffer;
 
@@ -217,10 +217,13 @@ const decodeB64Txn = (ts:string): Transaction => {
   return algosdk.decodeUnsignedTransaction(tb);
 };
 
-const doSignTxn = (ts:string, sk:SecretKey): string => {
-  const t = decodeB64Txn(ts);
+const doSignTxnToB64 = (t:Transaction, sk:SecretKey): string => {
   const sb = Buffer.from(t.signTxn(sk));
   return sb.toString('base64');
+};
+
+const doSignTxn = (ts:string, sk:SecretKey): string => {
+  return doSignTxnToB64(decodeB64Txn(ts), sk);
 };
 
 const signSendAndConfirm = async (
@@ -568,13 +571,6 @@ const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
   return now;
 };
 
-export interface WalletTransaction {
-   txn: string;
-   signers?: Address[];
-   message?: string;
-   stxn?: string;
-};
-
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
@@ -592,6 +588,63 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
   return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+};
+
+export const setWalletFallback = (wf:() => any) => {
+  if ( ! window.algorand ) { window.algorand = wf(); }
+};
+const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+  void(opts)
+  let p: Provider|undefined = undefined;
+  const enable = async (eopts?:any) => {
+    void(eopts);
+    p = await makeProviderByEnv(process.env);
+    const addr = window.prompt(`Please paste the address of your account:`);
+    return { accounts: [ addr ] };
+  };
+  const getAlgodv2 = async () => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    return p.algodClient;
+  };
+  const getIndexer = async () => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    return p.indexer;
+  };
+  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:any) => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    void(sopts);
+    debug(`fallBack: signAndPostTxns`, txns);
+    const stxns = txns.map((txn) => {
+      if ( txn.stxn ) { return txn.stxn; }
+      const t = decodeB64Txn(txn.txn);
+      const addr = algosdk.encodeAddress(t.from.publicKey);
+      const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
+      const acc = algosdk.mnemonicToSecretKey(mn);
+      return doSignTxnToB64(t, acc.sk);
+    });
+    const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
+    debug(`fallBack: signAndPostTxns`, bs);
+    await p.algodClient.sendRawTransaction(bs).do();
+    return {};
+  };
+  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+};
+const walletFallback_AlgoSigner = (opts:any) => (): ARC11_Wallet => {
+  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+};
+const walletFallback_MyAlgoWallet = (opts:any) => (): ARC11_Wallet => {
+  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+};
+export const walletFallback = (opts:any) => {
+  switch ( opts.strategy ) {
+    case 'mnemonic':
+      return walletFallback_mnemonic(opts);
+    case 'AlgoSigner':
+      return walletFallback_AlgoSigner(opts);
+    case 'MyAlgoWallet':
+    default:
+      return walletFallback_MyAlgoWallet(opts);
+  }
 };
 
 export const [getProvider, setProvider] = replaceableThunk(async () => {

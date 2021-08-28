@@ -8,15 +8,15 @@ export interface EnableOpts {
 };
 
 export interface EnableResult {
-  network: string,    // NetworkIdentifier
+  network?: string,   // NetworkIdentifier
   accounts: string[], // AlgorandAddress[]
 };
 
 export interface WalletTransaction {
-   /**
-    * Base64 encoding of the canonical msgpack encoding of a Transaction.
-    */
    txn: string,
+   signers?: string[]; // AlgorandAddress[]
+   message?: string;
+   stxn?: string;
 };
 
 export type SignTxnFunction = (
@@ -29,7 +29,7 @@ export type PostTxnsFunction = (
 ) => Promise<PostTxnsResult>;
 
 export interface PostTxnsResult {
-  txId: string; // TxId
+  txId?: string; // TxId
 };
 
 export type SignAndPostTxnsFunction = (

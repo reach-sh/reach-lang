@@ -45,70 +45,15 @@ export function canGetDefaultAccount(): boolean {
   return true;
 }
 
-// /**
-//  * Strategies for deciding what getDefaultAccount returns.
-//  */
-// type SignStrategy
-//   = 'secret'   // window.prompt for secret
-//   | 'mnemonic' // window.prompt for mnemonic
-//   | 'faucet'   // use the faucet account
-//   | 'window'   // use window.conflux
-//   | 'ConfluxPortal' // same as 'window'
-
-export const [getSignStrategy, setSignStrategy] = replaceableThunk<string>(() => {
-  // XXX make window.conflux the default at some point
-  // if (window.conflux) {
-  //   // XXX this should be more lenient about letting cp load later
-  //   return 'window';
-  // }
-
-  if (window.prompt) {
-    return 'secret';
-  } else {
-    // XXX this should only work on the devnet
-    return 'faucet';
-  }
-});
-
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
-  const provider = await getProvider();
-  const promptFor = (s: string) => {
-    if (!window.prompt) { throw Error(`Can't prompt user with window.prompt`); }
-    return window.prompt(`Please paste your account's ${s}, or click cancel to generate a new one.`);
+  const cp = await getConfluxPortal();
+  const addr = (await cp.enable())[0];
+  const w = new cfxers.BrowserWallet(cp, addr);
+  if (w.provider) {
+    return w;
+  } else {
+    return w.connect(await getProvider());
   }
-  const ss = getSignStrategy();
-  let w: cfxers.IWallet|null = null;
-  switch (ss.toLowerCase()) {
-  case 'secret':
-    const skMay = promptFor('secret key');
-    if (skMay) {
-      const sk = skMay.slice(0, 2) == '0x' ? skMay : '0x' + skMay;
-      w = new cfxers.Wallet(sk);
-    } else {
-      w = cfxers.Wallet.createRandom();
-    }
-    break;
-  case 'mnemonic':
-    const mnemonic = promptFor('mnemonic');
-    w = mnemonic
-      ? cfxers.Wallet.fromMnemonic(mnemonic)
-      : cfxers.Wallet.createRandom();
-    break;
-  case 'window':
-  case 'confluxportal':
-    const cp = await getConfluxPortal();
-    const addr = (await cp.enable())[0];
-    w = new cfxers.BrowserWallet(cp, addr);
-    break;
-  case 'faucet':
-    w = await _getDefaultFaucetNetworkAccount();
-    break;
-  default:
-    throw Error(`Sign strategy not recognized: '${ss}'`);
-  }
-  if (!w) throw Error(`impossible: no account found for sign strategy '${ss}'`);
-  if (!w.provider) w = w.connect(provider);
-  return w;
 }
 
 // from /scripts/devnet-cfx/default.toml
@@ -437,6 +382,13 @@ async function getConfluxPortal(): Promise<cfxers.CP> {
   throw Error(`Couldn't find window.conflux`);
 }
 
+const setWalletFallback = (wf:() => any) => {
+  if ( ! window.conflux ) { window.conflux = wf(); }
+};
+const walletFallback = (opts:any) => () => {
+  void(opts);
+  throw new Error(`There is no wallet fallback for Conflux`);
+};
 
 export { ethLikeCompiled };
 export { cfxers as ethers };
@@ -446,8 +398,8 @@ export const providerLib = {
   setProviderByName,
   setProviderByEnv,
   providerEnvByName,
-  getSignStrategy,
-  setSignStrategy,
+  setWalletFallback,
+  walletFallback,
 }
 export const _warnTxNoBlockNumber = false; // XXX ?
 export const standardUnit = 'CFX';

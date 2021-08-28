@@ -30,7 +30,6 @@ export type WhichNetExternal
   = 'homestead'
   | 'ropsten'
 
-// TODO: more providers 'by name'
 export type ProviderName
   = WhichNetExternal
   | 'MainNet'
@@ -50,7 +49,6 @@ export type ProviderEnv = ProviderByURI | ProviderByName
 
 export {ethLikeCompiled};
 
-// TODO: types on these
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   debug(`_getDefaultAccount`);
   const provider = await getProvider();
@@ -59,11 +57,9 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   return signer;
 }
 
-// TODO: types on these
 export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount> {
   if (isIsolatedNetwork()) {
     if (isWindowProvider()) {
-      // XXX only localhost:8545 is supported
       const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
       return p.getSigner();
     }
@@ -267,6 +263,14 @@ export function setProvider(provider: Provider|Promise<Provider>): void {
   }
 };
 
+const setWalletFallback = (wf:() => any) => {
+  if ( ! window.ethereum ) { window.ethereum = wf(); }
+};
+const walletFallback = (opts:any) => () => {
+  void(opts);
+  throw new Error(`There is no wallet fallback for Ethereum`);
+};
+
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async (theUrl: string): Promise<void> => {
   debug('doHealthcheck');
@@ -313,23 +317,15 @@ const doHealthcheck = async (theUrl: string): Promise<void> => {
   });
 };
 
-function getSignStrategy(): string {
-  throw Error(`getSignStrategy not yet implemented on ETH`);
-}
-function setSignStrategy(ss: string) {
-  void(ss);
-  throw Error(`setSignStrategy not yet implemented on ETH`);
-}
-
 export { ethers };
 export const providerLib = {
   getProvider,
   setProvider,
   setProviderByName,
   setProviderByEnv,
-  setSignStrategy,
-  getSignStrategy,
   providerEnvByName,
+  setWalletFallback,
+  walletFallback,
 }
 export const standardUnit = 'ETH';
 export const atomicUnit = 'WEI';
