@@ -593,13 +593,13 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
 export const setWalletFallback = (wf:() => any) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
-const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   void(opts)
   let p: Provider|undefined = undefined;
   const enable = async (eopts?:any) => {
     void(eopts);
     p = await makeProviderByEnv(process.env);
-    const addr = window.prompt(`Please paste the address of your account:`);
+    const addr = await getAddr();
     return { accounts: [ addr ] };
   };
   const getAlgodv2 = async () => {
@@ -613,14 +613,21 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   const signAndPostTxns = async (txns:WalletTransaction[], sopts?:any) => {
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
-    debug(`fallBack: signAndPostTxns`, txns);
-    const stxns = txns.map((txn) => {
+    debug(`fallBack: signAndPostTxns`, {txns});
+    const to_sign: string[] = [];
+    txns.forEach((txn) => {
+      if ( ! txn.stxn ) {
+        to_sign.push(txn.txn);
+      }
+    });
+    debug(`fallBack: signAndPostTxns`, {to_sign});
+    const signed: string[] = await signTxns(to_sign);
+    debug(`fallBack: signAndPostTxns`, {signed});
+    const stxns: string[] = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
-      const t = decodeB64Txn(txn.txn);
-      const addr = algosdk.encodeAddress(t.from.publicKey);
-      const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
-      const acc = algosdk.mnemonicToSecretKey(mn);
-      return doSignTxnToB64(t, acc.sk);
+      const s = signed.shift();
+      if ( ! s ) { throw new Error(`txn not signed`); }
+      return s;
     });
     const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
     debug(`fallBack: signAndPostTxns`, bs);
@@ -629,22 +636,44 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   };
   return { enable, getAlgodv2, getIndexer, signAndPostTxns };
 };
-const walletFallback_AlgoSigner = (opts:any) => (): ARC11_Wallet => {
-  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+  const getAddr = async (): Promise<string> => {
+    return window.prompt(`Please paste the address of your account:`);
+  };
+  const signTxns = async (txns: string[]): Promise<string[]> => {
+    return txns.map((ts) => {
+      const t = decodeB64Txn(ts);
+      const addr = algosdk.encodeAddress(t.from.publicKey);
+      const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
+      const acc = algosdk.mnemonicToSecretKey(mn);
+      return doSignTxnToB64(t, acc.sk);
+    });
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_MyAlgoWallet = (opts:any) => (): ARC11_Wallet => {
-  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_Wallet => {
+  // @ts-ignore
+  const mac = new MyAlgoConnect();
+  const getAddr = async (): Promise<string> => {
+    const accts =
+      await mac.connect({shouldSelectOneAccount: true});
+    return accts[0].address;
+  };
+  const signTxns = async (txns: string[]): Promise<string[]> => {
+    const stxns: Array<{blob: Uint8Array}> = await mac.signTransaction(txns);
+    return stxns.map((sts) => Buffer.from(sts.blob).toString('base64'));
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
 export const walletFallback = (opts:any) => {
-  switch ( opts.strategy ) {
-    case 'mnemonic':
-      return walletFallback_mnemonic(opts);
-    case 'AlgoSigner':
-      return walletFallback_AlgoSigner(opts);
-    case 'MyAlgoWallet':
-    default:
-      return walletFallback_MyAlgoWallet(opts);
+  const maw = opts.MyAlgoWallet;
+  if ( maw ) {
+    return walletFallback_MyAlgoWallet(maw, opts);
   }
+  // This could be implemented with walletFallback_signOnly and the residue
+  // from the old version.
+  //  return walletFallback_AlgoSigner(opts);
+  return walletFallback_mnemonic(opts);
 };
 
 export const [getProvider, setProvider] = replaceableThunk(async () => {

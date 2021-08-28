@@ -1,16 +1,8 @@
 /*
-
-import { window } from './shim';
 import * as msgpack from '@msgpack/msgpack';
-import MyAlgo from '@randlabs/myalgo-connect';
 // DEBUG: uncomment this for debugging in browser
 // @ts-ignore
 // import algosdk__src__transaction from 'algosdk/src/transaction';
-
-export const go = () => {
-  const myAlgoWallet = new MyAlgo();
-  void myAlgoWallet;
-};
 
 type AlgoSigner = {
   sign: (txn: Transaction) => Promise<{blob: string, txID: string}>,
