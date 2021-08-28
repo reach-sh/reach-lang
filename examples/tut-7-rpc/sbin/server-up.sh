@@ -4,7 +4,7 @@
 set -e
 
 # from examples/tut-7-rpc
-ROOT="$(realpath ../..)"
+ROOT="$(cd ../.. && pwd)"
 
 REACH_RPC_KEY=$(cat REACH_RPC_KEY.txt)
 export REACH_RPC_KEY
