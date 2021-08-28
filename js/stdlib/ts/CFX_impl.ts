@@ -7,6 +7,7 @@ import {
   replaceableThunk,
   truthyEnv,
 } from './shared_impl';
+import type { Env } from './shim'; // =>
 import { process, window } from './shim';
 import waitPort from './waitPort';
 import cfxsdk from 'js-conflux-sdk';
@@ -265,7 +266,7 @@ function connectorModeIsolatedNetwork(cm: string): 'yes' | 'no' {
   }
 }
 
-function guessConnectorMode(env: {[key: string]: string}): ConnectorMode|undefined {
+function guessConnectorMode(env: Env): ConnectorMode|undefined {
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI) {
     // take a guess if CFX_NODE_URI is set
     return env.CFX_NODE_URI.toLowerCase().includes('localhost') ? 'CFX-devnet' : 'CFX-live';
@@ -276,7 +277,7 @@ function guessConnectorMode(env: {[key: string]: string}): ConnectorMode|undefin
 }
 
 // XXX less copy/paste from ETH_impl
-function envDefaultsCFX(env: {[key: string]: string}): ProviderEnv {
+function envDefaultsCFX(env: Env): ProviderEnv {
   const { CFX_NET, CFX_NODE_URI, CFX_NETWORK_ID } = env;
   const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
   const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'CFX'));
@@ -290,7 +291,8 @@ function envDefaultsCFX(env: {[key: string]: string}): ProviderEnv {
     return { CFX_NET, CFX_LOG, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(CFX_NODE_URI)) {
     const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'yes');
-    return { CFX_NODE_URI, CFX_NETWORK_ID, CFX_LOG, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
+    const cni = envDefault(CFX_NETWORK_ID, localhostProviderEnv.CFX_NETWORK_ID);
+    return { CFX_NODE_URI, CFX_NETWORK_ID: cni, CFX_LOG, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.conflux) {
       return localhostProviderEnv;

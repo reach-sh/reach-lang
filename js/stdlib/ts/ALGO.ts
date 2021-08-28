@@ -583,6 +583,7 @@ interface ALGO_Provider {
 };
 
 export const [getProvider, setProvider] = replaceableThunk(async () => {
+  debug(`making default provider based on process.env`);
   return await makeProviderByEnv(process.env);
 });
 const getAlgodClient = async () => (await getProvider()).algodClient;
@@ -620,7 +621,9 @@ function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
 };
 
 async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<ALGO_Provider> {
+  debug(`makeProviderByEnv`, env);
   const fullEnv = envDefaultsALGO(env);
+  debug(`makeProviderByEnv defaulted`, fullEnv);
   const algodClient = await waitAlgodClientFromEnv(fullEnv);
   const indexer = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);

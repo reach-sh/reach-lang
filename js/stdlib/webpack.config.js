@@ -16,7 +16,7 @@ module.exports = {
   resolve: {
     // Add '.ts' as resolvable extensions
     extensions: ['.ts', '.js'],
-    // falling back to browser shims for these
+    // falling back to browser versions for these
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       http: require.resolve('stream-http'),
@@ -31,7 +31,7 @@ module.exports = {
       net: false,
     }
   },
-  // More browser shim stuff
+  // More browser stuff
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
