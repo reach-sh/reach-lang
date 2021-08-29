@@ -5,7 +5,7 @@
 
 # Operating-system-generated files
 .DS_Store
-
+.vscode
 .ethereum
 /todo.html
 /docs
