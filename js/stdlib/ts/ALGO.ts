@@ -51,7 +51,7 @@ import {
   stdlib as compiledStdlib,
   typeDefs,
 } from './ALGO_compiled';
-import { window, process } from './shim';
+import { window, process, Env } from './shim';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
 export * from './shared_user';
 
@@ -594,11 +594,20 @@ export const setWalletFallback = (wf:() => any) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
-  void(opts)
   let p: Provider|undefined = undefined;
   const enable = async (eopts?:any) => {
     void(eopts);
-    p = await makeProviderByEnv(process.env);
+    const base = opts['providerEnv'];
+    let baseEnv: Env = process.env;
+    if ( base ) {
+      if ( typeof base === 'string' ) {
+        // @ts-ignore
+        baseEnv = await providerEnvByName(base);
+      } else {
+        baseEnv = base;
+      }
+    }
+    p = await makeProviderByEnv(baseEnv);
     const addr = await getAddr();
     return { accounts: [ addr ] };
   };
@@ -637,6 +646,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
   return { enable, getAlgodv2, getIndexer, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+  debug(`using mnemonic wallet fallback`);
   const getAddr = async (): Promise<string> => {
     return window.prompt(`Please paste the address of your account:`);
   };
@@ -652,6 +662,7 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
 const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_Wallet => {
+  debug(`using MyAlgoWallet wallet fallback`);
   // @ts-ignore
   const mac = new MyAlgoConnect();
   const getAddr = async (): Promise<string> => {
@@ -660,15 +671,18 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_W
     return accts[0].address;
   };
   const signTxns = async (txns: string[]): Promise<string[]> => {
+    debug(`MAW signTransaction ->`, txns);
     const stxns: Array<{blob: Uint8Array}> = await mac.signTransaction(txns);
+    debug(`MAW signTransaction <-`, stxns);
     return stxns.map((sts) => Buffer.from(sts.blob).toString('base64'));
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
 export const walletFallback = (opts:any) => {
-  const maw = opts.MyAlgoWallet;
-  if ( maw ) {
-    return walletFallback_MyAlgoWallet(maw, opts);
+  debug(`using wallet fallback with`, opts);
+  const mac = opts.MyAlgoConnect;
+  if ( mac ) {
+    return walletFallback_MyAlgoWallet(mac, opts);
   }
   // This could be implemented with walletFallback_signOnly and the residue
   // from the old version.
@@ -746,19 +760,7 @@ export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
 };
 
-type WhichNetExternal
-  = 'MainNet'
-  | 'TestNet'
-  | 'BetaNet'
-
-export type ProviderName
-  = WhichNetExternal
-  | 'LocalHost'
-  | 'randlabs/MainNet'
-  | 'randlabs/TestNet'
-  | 'randlabs/BetaNet'
-
-function randlabsProviderEnv(net: WhichNetExternal): ProviderEnv {
+function randlabsProviderEnv(net: string): ProviderEnv {
   const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
   return {
@@ -772,7 +774,7 @@ function randlabsProviderEnv(net: WhichNetExternal): ProviderEnv {
   }
 }
 
-export function providerEnvByName(providerName: ProviderName): ProviderEnv {
+export function providerEnvByName(providerName: string): ProviderEnv {
   switch (providerName) {
     case 'MainNet': return randlabsProviderEnv('MainNet');
     case 'TestNet': return randlabsProviderEnv('TestNet');
@@ -785,7 +787,7 @@ export function providerEnvByName(providerName: ProviderName): ProviderEnv {
   }
 }
 
-export function setProviderByName(providerName: ProviderName): void {
+export function setProviderByName(providerName: string): void {
   return setProviderByEnv(providerEnvByName(providerName));
 }
 
