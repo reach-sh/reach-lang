@@ -438,12 +438,15 @@ const doCall = async (
   args: Array<any>,
   value: BigNumber,
   gasLimit: BigNumber|undefined,
+  storageLimit: BigNumber|undefined,
 ): Promise<void> => {
   const dpre = { ...dhead, funcName, args, value };
   debug({...dpre, step: `pre call`});
+  let tx: any = { value, gasLimit };
+  if (storageLimit !== undefined) { tx = { ...tx, storageLimit }; }
   return await doTxn(
     dpre,
-    ctc[funcName](...args, { value, gasLimit }));
+    ctc[funcName](...args, tx));
 };
 
 /** @description Arg order follows "src before dst" convention */
@@ -464,9 +467,9 @@ const transfer = async (
     return await doTxn(dhead, sender.sendTransaction(txn));
   } else {
     const tokCtc = new ethers.Contract(token, ERC20_ABI, sender);
-    // @ts-ignore
     const gl = from.getGasLimit ? from.getGasLimit() : undefined;
-    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), gl);
+    const sl = from.getStorageLimit ? from.getStorageLimit() : undefined;
+    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), gl, sl);
   }
 };
 
@@ -495,10 +498,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return address;
   }
 
-  let gasLimit:BigNumber;
+  let gasLimit: BigNumber;
   const setGasLimit = (ngl:any): void => {
     gasLimit = bigNumberify(ngl); };
   const getGasLimit = (): BigNumber => gasLimit;
+
+  let storageLimit: BigNumber;
+  const setStorageLimit = (bn: any): void => {
+    storageLimit = bigNumberify(bn);
+  }
+  const getStorageLimit = (): BigNumber => storageLimit;
 
   const deploy = (bin: Backend): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
@@ -648,14 +657,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const ethersC = await getC();
       const zero = bigNumberify(0);
       const actualCall = async () =>
-        await doCall({...dhead, kind:'reach'}, ethersC, funcName, [arg], value, gasLimit);
+        await doCall({...dhead, kind:'reach'}, ethersC, funcName, [arg], value, gasLimit, storageLimit);
       const callTok = async (tok:Token, amt:BigNumber) => {
         const tokBalance = await balanceOf_token(networkAccount, address, tok);
         debug({...dhead, kind:'token'}, 'balanceOf', tokBalance);
         assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
         // @ts-ignore
         const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-        await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit); }
+        await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit, storageLimit); }
       const maybePayTok = async (i:number) => {
         if ( i < toks.length ) {
           const [amt, tok] = toks[i];
@@ -934,7 +943,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  return { deploy, attach, networkAccount, setGasLimit, getGasLimit, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata };
+  return { deploy, attach, networkAccount, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata };
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {
