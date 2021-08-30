@@ -267,7 +267,7 @@ The returned @jsin{Promise} will only be resolved after the transfer completes.
 
 @jsin{bigNumberify} is transparently applied to the @jsin{amount} argument.
 
-@subsection[#:tag "ref-frontends-js-acc-eth"]{Ethereum-specific}
+@subsection[#:tag "ref-frontends-js-acc-eth"]{EVM-specific (Ethereum and Conflux)}
 
 When connected to an EVM-based consensus network, the standard library provides additional functionality.
 
@@ -284,6 +284,22 @@ However, sometimes this estimation process is inaccurate, especially when Reach 
 In those cases, it is sometimes useful to specify a particular gas limit.
 It is common on Ethereum to use gas limits like @jsin{5000000} in testing.
 If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
+
+@subsection[#:tag "ref-frontends-js-acc-eth"]{Conflux-specific}
+
+When connected to the Conflux consensus network, the standard library provides additional functionality.
+
+@(hrule)
+@(mint-define! '("setStorageLimit"))
+@js{
+ acc.setStorageLimit(n) => void }
+
+@index{acc.setStorageLimit} Modifies the storage limit for each transaction originating from the given account for the rest of the program.
+@jsin{n} must be a value that @jsin{bigNumberify} will accept.
+
+On the Conflux consensus networks, the Reach standard library will automatically use a storage limit of 2024 to execute transactions, i.e. make @tech{publications}.
+Storage fees are refunded once the storage space is no longer used by the contract.
+The @jsin{setStorageLimit} function allows you to choose a different storage limit, as you see fit.
 
 @section[#:tag "ref-frontends-js-ctc"]{Contracts}
 
