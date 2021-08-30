@@ -1,5 +1,5 @@
 {
-  "name": "@reach-sh/remote",
+  "name": "@reach-sh/log-attack1j",
   "type": "module",
   "dependencies": {
     "ethers": "^5.0.19"
