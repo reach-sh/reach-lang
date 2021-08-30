@@ -104,6 +104,9 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
+ci ETH ganache
+exit 0
+
 jb
 #r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger

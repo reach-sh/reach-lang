@@ -1,58 +1,36 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "guide-ganache"]{How to use ganache as a provider in a Reach program}
-Ganache is a very popular Ethereum perosnal blockchain for quick application development,deployment and testing with a replica of ethereum mainnet.
-Compared to using Reach dockerized devnet, ganache can provide you with a predefined number of test account,ETH balance, cusotm gas limit, price and many more options such as an exact hard fork of Ethereums live mainnet.
-Import into your package.json `ganache-core`, currently the latest version is 2.13.2
-Then in your inex.mjs import ganache-core and ethersjs
-@js{
-import ganache from 'ganache-core';
-import ethers from 'ethers';
+@title[#:version reach-vers #:tag "guide-ganache"]{How to use Ganache with Reach}
+
+@link["https://www.trufflesuite.com/ganache"]{Ganache} is a very popular Ethereum personal blockchain for quick application development, deployment, and testing with a replica of the Ethereum mainnet.
+Ganache provides many customization options, such as control over the gas limit and price.
+
+There are two ways to use Ganache with Reach.
+
+First, you can run the Ganache desktop application and start a workspace, then connect to it using the Reach @litchar{ETH-live} connector mode.
+This requires specifying the node URI as well.
+For example, if you're running your Reach frontend from within Docker, and Ganache on your host machine, you might run:
+@cmd{
+  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 reach run
 }
+This sets the Ethereum URI to the host machine's port and instructs Reach that the network is "isolated", which means it is for testing.
 
+Second, you can programmatically create a Ganache network from inside of your JavaScript frontend and set it is as a provider for the Reach standard library.
+This requires some modification to your frontend.
 
-Start by initializing ganacheProvider as a new ethers Web3Provider, this will run ganache node internally.
-Then we setProvider for the Reach program as ganacheProvider using the Reach stdlib.
-@js{
-(async () => {
-  const ganacheProvider = new ethers.providers.Web3Provider(ganache.provider());
-  await stdlib.setProvider(ganacheProvider);
-}
+You need to add the @litchar{ganache-core} package as a dependency in your @litchar{package.json} file.
+If you don't already have one, then you'll want to use @exec{reach scaffold} to set one up.
+You'll also need to add the @litchar{ethers} package, because you'll be directly interacting with the underlying network to set things up.
 
+After that, you need to import the two packages on the JavaScript side in your @exec{index.mjs} file:
+@reachex["ganache/index.mjs" 'only 3 4 "// ..."]
 
-Ganache by default gives us 10 test accounts each with 100 ETH, so to provider Alice newTestAccount with funds from the ganache preset accounts
-we need to set one of the accounts as our faucet for Alice. Here `ganacheProvider.getSigner()` to get the default indexed account from ganache, you can also pass in which number account you want to obtain and set as faucet by indication which indexed account number you want to getSigner of.
+Next, you need to actually create the Ganache-based provider and connect it to Reach:
+@reachex["ganache/index.mjs" 'only 9 13 "  // ..."]
 
-Then we setFaucet for our reach program using stdlib.setFaucet to the account of (faucet).
-@js{
- const faucet = ganacheProvider.getSigner();
-  await stdlib.setFaucet(stdlib.connectAccount(faucet));
+This will work, but Reach will not consider the network to be "isolated", which means that it won't be able to fund test accounts.
+You can enable this by setting the Reach faucet:
+@reachex["ganache/index.mjs" 'only 15 16 "  // ..."]
 
-  const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance)
-}
-
-How can I change options for my ganache test environment?
-Below are some options you can make to customize your local ganache tests. I am setting the default balance for all 15 accounts to 10000ETH each and using the byzantium fork of Ethereum.
-@js{
-(async () => {
-  const options = {
-      default_balance_ether: 10000,
-      total_accounts: 15,
-      hardFork: "byzantium",
-      allowUnlimitedContractSize: true,
-      gasLimit: 21000,
-  }
-  const ganacheProvider = new ethers.providers.Web3Provider(ganache.provider(options));
-  await stdlib.setProvider(ganacheProvider);
-
-  const faucet = ganacheProvider.getSigner();
-  await stdlib.setFaucet(stdlib.connectAccount(faucet));
-
-  const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance)
-}
-
-
-These are just some of the many options ganache give a developer and you can optimize them to fit your applications needs.
+If you want to use some of the interesting customizations that Ganache provides, then refer to @link["https://github.com/trufflesuite/ganache/tree/master#options"]{their documentation} about what @jsin{ganacheOptions} may be set to.
