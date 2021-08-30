@@ -124,7 +124,7 @@ will indicate that @reachin{fork} payments should be of the format:
 
 @(note-ctransfer)
 
-A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
+A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR).when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
 @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
 @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to a @tech{pay amount},
