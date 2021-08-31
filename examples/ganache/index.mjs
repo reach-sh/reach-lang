@@ -5,6 +5,7 @@ import ganache from 'ganache-core';
 
 (async () => {
   const stdlib = loadStdlib(process.env);
+  if ( stdlib.connector !== 'ETH' ) { return; }
 
   const ganacheOptions = {};
   const ganacheProvider =

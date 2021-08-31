@@ -33,6 +33,18 @@ jb () {
   # (cd "$ROOT"/js && make build)
 }
 
+one () {
+  MODE="$1"
+  WHICH="$2"
+  printf "\nONE %s %s\n" "$MODE" "$WHICH"
+  (cd "examples"
+
+  ./one.sh clean "${WHICH}"
+  ./one.sh build "${WHICH}"
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="${MODE}" ./one.sh run "${WHICH}"
+)
+}
+
 ci () {
   MODE="$1"
   WHICH="$2"
@@ -107,7 +119,7 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-ci ETH ganache
+one ETH init-scaffold
 exit 0
 
 jb

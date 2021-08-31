@@ -7,6 +7,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
+  if ( stdlib.connector === 'ALGO' ) { return; }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
   const startingBalance = stdlib.parseCurrency(10);

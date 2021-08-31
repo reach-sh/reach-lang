@@ -1,8 +1,5 @@
 # These are allowed to fail and we still release
 
-# Unsupported
-ALGO.remote
-
 # Too big
 ALGO.ttt
 
