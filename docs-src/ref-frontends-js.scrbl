@@ -142,12 +142,10 @@ These functions create and interact with @tech{account} representations.
 
 Returns a Promise for a Reach @tech{account} abstraction for a "default" @tech{account} on the @tech{consensus network}.
 The meaning of "default account" varies between contexts.
-When running in the browser,
-the default account will be connected to a wallet such as MetaMask or AlgoSigner.
-When running in node.js while connected to one of reach's standard devnets,
+When running in the browser, the default account will be connected to a wallet.
+When running in Node while connected to one of Reach's standard devnets,
 the default account will be connected to a faucet on the devnet.
-This promise will be rejected with an exception
-if no sensible default account can be accessed for the current context.
+This promise will be rejected with an exception if no sensible default account can be accessed for the current context.
 
 @(hrule)
 @(mint-define! '("newAccountFromSecret"))
@@ -285,7 +283,7 @@ In those cases, it is sometimes useful to specify a particular gas limit.
 It is common on Ethereum to use gas limits like @jsin{5000000} in testing.
 If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
 
-@subsection[#:tag "ref-frontends-js-acc-eth"]{Conflux-specific}
+@subsection[#:tag "ref-frontends-js-acc-cfx"]{Conflux-specific}
 
 When connected to the Conflux consensus network, the standard library provides additional functionality.
 
@@ -416,19 +414,6 @@ Represents the @jsin{Connector} the @jsin{stdlib} uses.
 
 These functions allow you to choose which particular @tech{consensus network} API provider to connect to.
 
-@margin-note{
-On Ethereum, if you would like to use the wallet from the user's browser,
-the @jsin{setProvider} functions are not needed.
-The Reach standard library uses @jsin{window.ethereum} by default.
-
-On Algorand, if you would like to use AlgoSigner,
-the @jsin{setProvider} functions are necessary for all but @jsin{'LocalHost'}.
-However, this will eventually become unnecessary.
-Reach is working with Algorand wallets to develop standards
-that will put provider selection in control of the end user,
-instead of the DApp developer.
-}
-
 @(hrule)
 @(mint-define! '("setProviderByName"))
 @js{
@@ -440,7 +425,7 @@ On Ethereum, @jsin{'MainNet'} will connect to homestead, and @jsin{'TestNet'} to
 Multiple free API providers are used behind the scenes, @link["https://docs.ethers.io/v5/api/providers/#providers-getDefaultProvider"]{as implemented by ethers.js}.
 
 On Algorand, @jsin{'MainNet'} will connect to MainNet, and @jsin{'TestNet'} to TestNet.
-The free RandLabs API provider is used ( @link["https://algoexplorerapi.io"]{https://algoexplorerapi.io} ).
+The free RandLabs API provider is used (@link["https://algoexplorerapi.io"]{https://algoexplorerapi.io}).
 
 @(hrule)
 @(mint-define! '("providerEnvByName"))
@@ -460,13 +445,11 @@ This function's API is considered unstable.
 
 @jsin{env} is a record with string keys and string values.
 
-On Ethereum, env may include keys:
+On Ethereum, @jsin{env} may include keys:
 @jsin{'ETH_NODE_URI'}
 
-On Algorand, env may include keys:
-@jsin{'ALGO_LEDGER'}, @jsin{'ALGO_SERVER'}, @jsin{'ALGO_PORT'}, @jsin{'ALGO_TOKEN'}, @jsin{'ALGO_INDEXER_SERVER'}, @jsin{'ALGO_INDEXER_PORT'}, @jsin{'ALGO_INDEXER_TOKEN'}.
-
-@jsin{'ALGO_LEDGER'} is used by AlgoSigner. Configuration for the indicated ledger should match the configuration present in AlgoSigner.
+On Algorand, @jsin{env} may include keys:
+@jsin{'ALGO_SERVER'}, @jsin{'ALGO_PORT'}, @jsin{'ALGO_TOKEN'}, @jsin{'ALGO_INDEXER_SERVER'}, @jsin{'ALGO_INDEXER_PORT'}, @jsin{'ALGO_INDEXER_TOKEN'}.
 
 @(hrule)
 @(mint-define! '("setProvider"))
@@ -477,19 +460,57 @@ Select an API provider by providing an object satisfying its interface.
 
 This function's API is considered unstable.
 
-On Ethereum, provider is an instance of ethers.provider.
+On Ethereum, @jsin{provider} is an instance of @jsin{ethers.provider}.
 See: @link["https://docs.ethers.io/v5/api/providers/provider/"]{https://docs.ethers.io/v5/api/providers/provider/}
 
-On Algorand, provider is an object:
+On Algorand, @jsin{provider} is an object:
 @js{
-{
-  ledger: string,
+interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-}
+  getDefaultAddress: () => Address,
+  isIsolatedNetwork: boolean,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+};
 }
 
-See: @link["https://algorand.github.io/js-algorand-sdk/"]{https://algorand.github.io/js-algorand-sdk/}
+The @jsin{algodClient} and @jsin{indexer} values are as specified by the @link["https://algorand.github.io/js-algorand-sdk/"]{Algorand JS SDK}.
+The @jsin{signAndPostTxns} function obeys @link["https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md"]{ARC-0008}.
+
+@(hrule)
+@(mint-define! '("setWalletFallback"))
+@js{
+  setWalletFallback(make: () => wallet): void
+}
+
+When you call this function, if no browser wallet is available, then @jsin{make} will be called to construct one.
+The value that @jsin{make} should return differs between connectors.
+
+On Ethereum, it must match the interface of MetaMask.
+On Conflux, it must match the interface of ConfluxPortal.
+On Algorand, it must match the @link["https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0011.md"]{ARC-0011} standard.
+
+@(hrule)
+@(mint-define! '("walletFallback"))
+@js{
+  walletFallback(opts: object): () => wallet
+}
+
+This function returns a value that may be passed to @jsin{setWalletFallback} to synthesize a wallet for use in browsers that do not supply a compliant wallet.
+Its customization options, @jsin{opts}, depend on the connector.
+
+On Ethereum and Conflux, it always errors and cannot provide a wallet.
+
+On Algorand, it can provide a wallet that directly connects to the Algorand network, like @jsin{setProviderByName} (& @jsin{setProviderByEnv}), but provide interactive signing.
+The network connection is specified via the @litchar{providerEnv} key, which may be a string (which is used as an argument to @jsin{providerEnvByName}) or an environment (which is used as an argument to @jsin{setProviderByEnv}).
+By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+If the key @litchar{MyAlgoConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_MyAlgoConnect}, then @link["https://wallet.myalgo.com/home"]{My Algo} will be used for signing.
+For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
+@js{
+import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', MyAlgoConnect }));
+}
 
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 

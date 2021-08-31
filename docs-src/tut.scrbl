@@ -1828,6 +1828,23 @@ you can call:
 
 @cmd{REACH_CONNECTOR_MODE=ALGO ./reach react}
 
+@margin-note{
+  If you expect that your Algorand users do not have access to an @link["https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0011.md"]{ARC-0011} browser wallet, you want to provide a fallback.
+
+  If you add the following to your program, then you can provide a simple wallet where the user copies and pastes their mnemonic for each interaction.
+  @js{
+    reach.setWalletFallback(reach.walletFallback({}));
+  }
+
+  Instead, if you would like to allow your users to use @link["https://wallet.myalgo.com/home"]{My Algo}, then you can add the following:
+  @js{
+    import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
+    stdlib.setWalletFallback(stdlib.walletFallback({
+      providerEnv: 'TestNet', MyAlgoConnect }));
+  }
+  Of course, you may want to replace @js{'TestNet'} with a different network name.
+}
+
 Similarly, to run with Conflux:
 
 @cmd{REACH_CONNECTOR_MODE=CFX ./reach react}

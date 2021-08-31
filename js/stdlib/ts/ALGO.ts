@@ -143,12 +143,6 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   return Buffer.from(a).toString(enc);
 }
 
-export const getSignStrategy = () => {
-  throw new Error(`getSignStrategy is deprecated`); };
-export const setSignStrategy = (x:any) => {
-  void(x);
-  console.log(`WARNING: setSignStrategy is deprecated`); };
-
 // TODO: read token from scripts/devnet-algo/algorand_data/algod.token
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';

@@ -423,8 +423,6 @@ export const mkT_AddressCanonicalize = (lib, a, accessor, fields, expected) =>
       .toBe(expected));
 
 
-// TODO ALGO currently fails with:
-//   `Error: Please use newAccountFromAlgoSigner instead`
 export const mkGetDefaultAccount = async lib =>
   describe('exposes a `getDefaultAccount` function which', async () => {
     const { getDefaultAccount, newTestAccount, bigNumberify, balanceOf, transfer } = lib;

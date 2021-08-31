@@ -24,7 +24,6 @@ The following guides are available:
 @include-section["guide-determ.scrbl"]
 @include-section["guide-race.scrbl"]
 @include-section["guide-abstract.scrbl"]
-@include-section["guide-browser-testing.scrbl"]
 @include-section["guide-ganache.scrbl"]
 @include-section["guide-editor-support.scrbl"]
 @include-section["guide-packages.scrbl"]

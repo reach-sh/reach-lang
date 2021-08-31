@@ -127,7 +127,7 @@ It then
       @item{@defconmode{ETH-browser}, which uses Ethereum via a browser extension, like MetaMask.}
       @item{@defconmode{ETH-devnet}, which uses a Dockerized private Ethereum network.}
       @item{@defconmode{ALGO-live}, which uses a live Algorand network node, specified by the environment variables documented in @seclink["ref-network-algo"]{the Algorand connector section}.}
-      @item{@defconmode{ALGO-browser}, which uses Algorand via a browser extension, like AlgoSigner.}
+      @item{@defconmode{ALGO-browser}, which uses Algorand via an ARC-0011 browser wallet.}
       @item{@defconmode{ALGO-devnet}, which uses a Dockerized private Algorand network.}
     ]
   }

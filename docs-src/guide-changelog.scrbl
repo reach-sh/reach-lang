@@ -10,6 +10,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.3 is the current Reach release candidate version.
 @itemlist[
+@item{2021/08/31: Removed @jsin{getSignStrategy} and @jsin{setSignStrategy} in favor of @jsin{setWalletFallBack} and @jsin{walletFallback}.}
+@item{2021/08/31: Algorand devnet updated to versions 2.9.1 and 2.6.1}
 @item{2021/08/16: Allow @reachin{continue} in @tech{step} in some cases.}
 @item{2021/07/31: Added @jsin{newTestAccounts}, @jsin{waitUntilSecs}, and @jsin{getNetworkSecs} to JavaScript standard library.}
 @item{2021/07/31: Updated @jsin{onProgress} type in JavaScript standard library.}
