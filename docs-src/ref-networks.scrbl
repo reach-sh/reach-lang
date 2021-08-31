@@ -68,14 +68,24 @@ Its @tech{bit width} is 64-bits.
 
 @tech{Non-network tokens} are compiled to @link["https://developer.algorand.org/docs/features/asa/"]{Algorand Standard Assets} (ASAs).
 Specifically, the @reachin{Token} type refers to the id of the ASA.
-Reach programs that use @tech{non-network tokens} deployed on Algorand are inherently vulnerable to a denial-of-service attack due to the ability of Algorand accounts to "opt-out" of a token.
-For example, if a program has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
-(An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
-You can alleviate this problem by ensuring that any @tech{non-network token} transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
-We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
 
 @tech{Token minting} creates an ASA owned and managed by the contract account.
 Freezing, clawback, reserves, and separate managers are not supported.
+
+Algorand's ASAs have some inherent design flaws that inhibit reasoning about them.
+First, the "freezing" "feature" disables the ability of contracts (and users) from transfering their assets, without prior notification that the asset is frozen (i.e., in one moment, a contract may transfer an asset, but then in the next moment, without any change to the contract state, it ceases to be able to transfer it, because elsewhere in the network, an asset was frozen.)
+Second, the "clawback" "feature" extracts assets from an account without approval by or notification of the account holder.
+Third, the "opt-in" "feature" prevents accounts from transfering assets without prior approval by the receiver.
+Fourth, the "opt-out" "feature" allows accounts to take-back the permission to transfer assets to them after having previously given it.
+Each of these issues mean that rely-guarantee reasoning is not appropriate for analyzing consensus steps on Algorand: in other words, it is not possible to guarantee from the structure of a program that consensus steps which are dominated by honest interactions will succeed, because external agents can arbitrarily change the semantics of consensus operations.
+This essentially amounts to all Algorand DApps that use @tech{non-network tokens} being inherently vulnerable to denial-of-service attacks when these "features" are used.
+For example, if a DApp has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
+(An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
+You can alleviate this problem by ensuring that any @tech{non-network token} transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
+Similarly, if a DApp accepts a @tech{non-network token} that has enabled clawback, then it can be prevented from progressing if the manager takes the contract's tokens behind its back.
+Unfortunately, there is no way to alleviate this, other than refusing to accept tokens that have the possibility of clawback, but on Algorand, tokens default to allowing clawback, so that is not feasible.
+Rather than simplying rejecting all programs that use @tech{non-network tokens} on Algorand, Reach allows them, with these caveats about the reliability of the generated contracts.
+We hope that future versions of Algorand will provide a facility for preventing these attacks, such as by removing these "features".
 
 @tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
 This means they are sensitive to the particular compilation details of the particular Reach program.
