@@ -37,6 +37,7 @@ Version 0.1.4 is the current Reach release candidate version.
 Version 0.1.3 is the current Reach release version.
 
 @itemlist[
+@item{2021/08/31: Added @jsin{acc.setStorageLimit} to JavaScript standard library for Conflux.}
 @item{2021/08/16: Allow @reachin{continue} in @tech{step} in some cases.}
 @item{2021/07/31: Added @jsin{newTestAccounts}, @jsin{waitUntilSecs}, and @jsin{getNetworkSecs} to JavaScript standard library.}
 @item{2021/07/31: Updated @jsin{onProgress} type in JavaScript standard library.}
