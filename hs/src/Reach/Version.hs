@@ -9,7 +9,7 @@ where
 import Data.Version (Version (..), makeVersion, showVersion)
 
 version :: Version
-version = makeVersion [0, 1, 3]
+version = makeVersion [0, 1, 4]
 
 versionStr :: String
 versionStr = showVersion version
