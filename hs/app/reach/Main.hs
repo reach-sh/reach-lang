@@ -225,7 +225,7 @@ script wrapped = do
 
   let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
 
-  let connectorMode' = T.pack $ show connectorMode
+  let connectorMode' = packs connectorMode
 
   asks e_effect >>= liftIO . flip writeIORef (Script
      $ [N.text|
@@ -288,6 +288,10 @@ swap :: T.Text -> T.Text -> T.Text -> T.Text
 swap a b src = T.replace ("${" <> a <> "}") b src
 
 
+packs :: Show a => a -> T.Text
+packs = T.pack . show
+
+
 reachImages :: [T.Text]
 reachImages =
   [ "reach"
@@ -309,7 +313,7 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
         ps -> T.intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
-  let d = T.pack $ show c
+  let d = packs c
 
   fmt <- T.readFile $ e_dirEmbed
     </> "sh" </> "_common" </> "_docker-compose" </> "service-" <> n <> ".yml"
@@ -505,7 +509,7 @@ withCompose DockerMeta {..} wrapped = do
         (_, Cfx, _) -> [ "12537:12537" ]
         (_, Eth, _) -> [ "8545:8545" ]
 
-  let reachConnectorMode = T.pack $ show cm
+  let reachConnectorMode = packs cm
   let debug' = if debug then "1" else ""
 
   let projDirHost' = case compose of
@@ -876,7 +880,7 @@ init' = command "init" . info f $ d <> foot where
 devnetDeps :: AppT T.Text
 devnetDeps = do
   ConnectorMode c' _ <- asks $ connectorMode . e_var
-  let c = T.pack $ show c'
+  let c = packs c'
   pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
 
 
@@ -970,7 +974,7 @@ down' = script $ do
     done
   |]
 
-  forM_ (T.pack . show <$> [ Algo, Cfx, Eth ]) $ \c -> write [N.text|
+  forM_ (packs <$> [ Algo, Cfx, Eth ]) $ \c -> write [N.text|
     # Stop devnet containers w/ status == running
     docker ps -qf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
       printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
@@ -1077,7 +1081,7 @@ rpcServer = command "rpc-server" $ info f d where
 
 rpcServerAwait' :: Int -> AppT T.Text
 rpcServerAwait' t = do
-  let t' = T.pack $ show t
+  let t' = packs t
   Var {..} <- asks e_var
   pure [N.text|
     # Be patient while rpc-server comes online...
@@ -1177,7 +1181,7 @@ devnet = command "devnet" $ info f d where
     dd <- devnetDeps
     let Var {..} = e_var
     let ConnectorMode c m = connectorMode
-    let c' = T.pack $ show c
+    let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
     let a = if abg then " >/dev/null 2>&1 &" else ""
