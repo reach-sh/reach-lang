@@ -70,26 +70,12 @@ commands:
       - run: |
           source ./VERSION
 
-          zcat /tmp/workspace/docker/runner.tar.gz     | docker load
-          zcat /tmp/workspace/docker/rpc-server.tar.gz | docker load
-          zcat /tmp/workspace/docker/reach.tar.gz      | docker load
-          zcat /tmp/workspace/docker/reach-cli.tar.gz  | docker load
-
-          docker tag reachsh/runner:latest     reachsh/runner:${VERSION}
-          docker tag reachsh/runner:latest     reachsh/runner:${MAJOR}.${MINOR}
-          docker tag reachsh/runner:latest     reachsh/runner:${MAJOR}
-
-          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${VERSION}
-          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${MAJOR}.${MINOR}
-          docker tag reachsh/rpc-server:latest reachsh/rpc-server:${MAJOR}
-
-          docker tag reachsh/reach:latest      reachsh/reach:${VERSION}
-          docker tag reachsh/reach:latest      reachsh/reach:${MAJOR}.${MINOR}
-          docker tag reachsh/reach:latest      reachsh/reach:${MAJOR}
-
-          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${VERSION}
-          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${MAJOR}.${MINOR}
-          docker tag reachsh/reach-cli:latest  reachsh/reach-cli:${MAJOR}
+          for IMG in runner rpc-server reach reach-cli ; do
+            zcat /tmp/workspace/docker/${IMG}.tar.gz | docker load
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
+          done
   stack_deps:
     description: "Install stack dependencies"
     steps:
@@ -235,17 +221,10 @@ jobs:
         (cd js/stdlib && make check)
         mkdir -p /tmp/workspace/docker
 
-        echo 'docker save reachsh/runner:latest...'
-        docker save reachsh/runner:latest | gzip > /tmp/workspace/docker/runner.tar.gz
-
-        echo 'docker save reachsh/rpc-server:latest...'
-        docker save reachsh/rpc-server:latest | gzip > /tmp/workspace/docker/rpc-server.tar.gz
-
-        echo 'docker save reachsh/reach:latest...'
-        docker save reachsh/reach:latest | gzip > /tmp/workspace/docker/reach.tar.gz
-
-        echo 'docker save reachsh/reach-cli:latest...'
-        docker save reachsh/reach-cli:latest | gzip > /tmp/workspace/docker/reach-cli.tar.gz
+        for IMG in runner rpc-server reach reach-cli ; do
+          echo "docker save reachsh/${IMG}:latest..."
+          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
+        done
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
@@ -347,12 +326,17 @@ workflows:
   docs:
     jobs:
     - "docs-render"
-    - "docs-deploy":
-        filters:
-          branches:
-            only: master
-        requires:
-        - "docs-render"
+    # XXX docs-deploy is disabled. This is because we are about to BREAK
+    # EVERYTHING and users download Reach via the documentation site, so if we
+    # don't deploy docs, then they won't get the new Docker-based reach script
+    # until we're really really ready.
+    #
+    #- "docs-deploy":
+    #    filters:
+    #      branches:
+    #        only: master
+    #    requires:
+    #    - "docs-render"
   buildless:
     jobs:
     - "sh-check"

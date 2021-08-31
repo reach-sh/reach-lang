@@ -5,12 +5,15 @@ const stdlib = loadStdlib(process.env);
 (async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
-  const alice = await stdlib.newTestAccount(startingBalance);
-  const bob = await stdlib.newTestAccount(startingBalance);
+  const [ accAlice, accBob ] =
+    await stdlib.newTestAccounts(2, startingBalance);
+  console.log('Hello, Alice and Bob!');
 
-  const ctcAlice = alice.deploy(backend);
-  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
+  console.log('Launching...');
+  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
+  console.log('Starting backends...');
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,
@@ -22,5 +25,5 @@ const stdlib = loadStdlib(process.env);
     }),
   ]);
 
-  console.log('Hello, Alice and Bob!');
+  console.log('Goodbye, Alice and Bob!');
 })();

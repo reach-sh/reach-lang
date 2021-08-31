@@ -49,26 +49,16 @@ go() {
 
 EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}")"
 
-case "${CONN}" in
-  # XXX Conflux' transparent nonce selection currently isn't robust enough to
-  # survive parallelized invocation; too many calls to `cfx_getNextNonce` at
-  # once invariably clobber each other. See:
-  # http://developer.confluxnetwork.org/conflux-doc/docs/send_transaction#send-transaction-by-javascript-program
-  CFX) for WHICH in $EXS; do go "${WHICH}" 'Running'; done ;;
+for WHICH in $EXS; do
+  KIDS=$((KIDS + 1))
+  go "${WHICH}" 'Forking' &
+done
 
-  *)
-    for WHICH in $EXS; do
-      KIDS=$((KIDS + 1))
-      go "${WHICH}" 'Forking' &
-    done
+while true; do
+  wait -n || true
+  KIDS=$((KIDS - 1))
+  if [ $KIDS -eq 0 ]; then break; fi
+done
 
-    while true; do
-      wait -n || true
-      KIDS=$((KIDS - 1))
-      if [ $KIDS -eq 0 ]; then break; fi
-    done
-    ;;
-esac
-
-../reach down
+# ../reach down
 wait

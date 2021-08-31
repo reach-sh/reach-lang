@@ -2,6 +2,8 @@
 ROOT=$(pwd)
 REACH=${ROOT}/reach
 
+export REACH_DOCKER=0
+
 c () {
   echo "c $1"
   ${REACH} compile "$1"

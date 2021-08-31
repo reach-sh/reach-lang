@@ -12,7 +12,8 @@ run_d () {
    && [ -d "$REACH_DIR_EMBED"  ] \
    && [ -f "$REACH_STACK_YAML" ] \
    && which stack >/dev/null 2>&1; then
-    REACH_EX="$0" $(STACK_YAML="$REACH_STACK_YAML" stack exec -- which reach 2>/dev/null) \
+    export STACK_YAML="$REACH_STACK_YAML"
+    REACH_EX="$0" $(stack build --fast 1>&2 && stack exec -- which reach 2>/dev/null) \
       --dir-embed="$REACH_DIR_EMBED" \
       --dir-project-container="$(pwd)" \
       --dir-project-host="$(pwd)" \
