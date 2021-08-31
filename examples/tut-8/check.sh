@@ -1,18 +1,20 @@
 #!/bin/sh -e
 
+export REACH_DEBUG=0
+export REACH_CONNECTOR_MODE="$R"
+
 make build || exit 1
 
 R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
 R="${R:-ETH}"
-
-alias reach_do='REACH_CONNECTOR_MODE=$R ../../reach'
+REACH="../../reach"
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-reach_do devnet --await-background
-reach_do run index alice < Alice.in > Alice.out &
-reach_do run index bob   < Bob.in   > Bob.out   &
+"${REACH}" devnet --await-background
+"${REACH}" run index alice < Alice.in > Alice.out &
+"${REACH}" run index bob   < Bob.in   > Bob.out   &
 
 exec 3> Alice.in
 exec 4< Alice.out

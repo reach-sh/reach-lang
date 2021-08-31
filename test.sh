@@ -3,6 +3,7 @@ ROOT=$(pwd)
 REACH=${ROOT}/reach
 
 export REACH_DOCKER=0
+${REACH} -h
 
 c () {
   echo "c $1"
@@ -119,7 +120,7 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-one ETH init-scaffold
+(cd examples/tut-8 ; sh -x ./check.sh)
 exit 0
 
 jb

@@ -146,6 +146,11 @@ warnScaffoldDefRPCTLSPair (Project {..}) = do
       defC <- readFile (embd "tls-default.key")
       when (keyC == defC) warnDev
 
+truthyEnv :: Maybe String -> Bool
+truthyEnv = \case
+  Nothing -> False
+  Just s -> not $ elem (map toLower s) [ "", "0", "false", "f", "#f", "no", "off", "n" ]
+
 mkVar :: IO Var
 mkVar = do
   let packed = pure . pack
@@ -158,7 +163,7 @@ mkVar = do
   rpcTLSKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
   rpcTLSCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
   version'' <- q "REACH_VERSION" (packed versionStr)
-  debug <- lookupEnv "REACH_DEBUG" >>= maybe (pure False) (const $ pure True)
+  debug <- truthyEnv <$> lookupEnv "REACH_DEBUG"
   rpcTLSRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
     >>= maybe (pure True) (pure . (/= "0"))
   reachEx <- lookupEnv "REACH_EX"

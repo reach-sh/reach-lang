@@ -321,7 +321,7 @@ export const labelMaps = (co: {
 export function truthyEnv(v: string|undefined|null): v is string {
   if (!v) return false;
   return ![
-    '0', 'false', 'f', '#f', 'no', 'off',
+    '0', 'false', 'f', '#f', 'no', 'off', 'n', '',
   ].includes(v && v.toLowerCase && v.toLowerCase());
 }
 
