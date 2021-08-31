@@ -41,7 +41,7 @@ run_d () {
 
 run_s () {
   chmod 700 "$TMP/out.sh"
-  sh -ac "$TMP/out.sh" "$0" && rm -r "$TMP"
+  sh -ac "$TMP/out.sh" "$0"
 }
 
 for DEP in make curl docker docker-compose; do
@@ -52,12 +52,12 @@ for DEP in make curl docker docker-compose; do
 done
 
 if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
-  if ! (docker pull "$IMG" && run_d update && run_s); then exit 1; fi
+  if ! (docker pull "$IMG" && run_d update; run_s); then exit 1; fi
 fi
 
 run_d "$@"
 case "$?" in
-  42) run_s ;;
+  42) run_s && rm -r "$TMP" ;;
   50) curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
    1) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
    0) rm -r "$TMP" ;;
