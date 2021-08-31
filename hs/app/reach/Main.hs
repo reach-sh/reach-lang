@@ -8,6 +8,7 @@ import Control.Monad.Reader
 import Data.Bits
 import Data.Char
 import Data.IORef
+import Data.Text hiding (any, filter, length, map, toLower)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import Safe
@@ -28,7 +29,7 @@ import qualified NeatInterpolation as N
 
 
 data Effect
-  = Script T.Text
+  = Script Text
   | InProcess
 
 
@@ -65,18 +66,18 @@ instance Show ConnectorMode where
 
 
 data Var = Var
-  { reachEx :: T.Text
+  { reachEx :: Text
   , connectorMode :: ConnectorMode
   , debug :: Bool
-  , rpcKey :: T.Text
-  , rpcPort :: T.Text
-  , rpcServer'' :: T.Text
-  , rpcTlsCrt :: T.Text
-  , rpcTlsKey :: T.Text
-  , rpcTlsPassphrase :: T.Text
+  , rpcKey :: Text
+  , rpcPort :: Text
+  , rpcServer'' :: Text
+  , rpcTlsCrt :: Text
+  , rpcTlsKey :: Text
+  , rpcTlsPassphrase :: Text
   , rpcTlsRejectUnverified :: Bool
-  , version'' :: T.Text
-  , versionShort :: T.Text
+  , version'' :: Text
+  , versionShort :: Text
   }
 
 
@@ -104,11 +105,11 @@ data Cli = Cli
 
 
 --------------------------------------------------------------------------------
-defRpcKey :: T.Text
+defRpcKey :: Text
 defRpcKey = "opensesame"
 
 
-defRpcTlsPassphrase :: T.Text
+defRpcTlsPassphrase :: Text
 defRpcTlsPassphrase = "rpc-demo"
 
 
@@ -153,8 +154,8 @@ warnScaffoldDefRpcTlsPair Project {..} = do
   let host r = projDirHost </> "tls" </> r
 
   let orw = ownerReadMode .|. ownerWriteMode
-  let key = T.unpack $ rpcTlsKey e_var
-  let crt = T.unpack $ rpcTlsCrt e_var
+  let key = unpack $ rpcTlsKey e_var
+  let crt = unpack $ rpcTlsCrt e_var
 
   liftIO $ (,) <$> doesFileExist (dock key) <*> doesFileExist (dock crt) >>= \case
     (False, False) -> do
@@ -176,7 +177,7 @@ warnScaffoldDefRpcTlsPair Project {..} = do
 
 mkVar :: IO Var
 mkVar = do
-  let packed = pure . T.pack
+  let packed = pure . pack
   let q e n = lookupEnv e >>= maybe n packed
   let m e n f = lookupEnv e >>= maybe n (\case "" -> n; j -> f j)
 
@@ -202,11 +203,11 @@ mkVar = do
       >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
 
   let versionShort = case version'' of
-        "stable" -> T.pack compatibleVersionStr
+        "stable" -> pack compatibleVersionStr
         v -> a <> "." <> b where
           f ('v':s) = s
           f s = s
-          v' = T.splitOn "." . T.pack . f $ T.unpack v
+          v' = splitOn "." . pack . f $ unpack v
           a = maybe "0" id $ atMay v' 0
           b = maybe "0" id $ atMay v' 1
 
@@ -265,7 +266,7 @@ script wrapped = do
   wrapped
 
 
-write :: T.Text -> App
+write :: Text -> App
 write t = asks e_effect >>= liftIO . flip modifyIORef w where
   w = \case
     Script t' -> Script $ t' <> t <> "\n\n"
@@ -277,22 +278,22 @@ writeFrom p = asks e_dirEmbed >>= liftIO . T.readFile . (</> p) >>= write
 
 
 putStrLnPacked :: String -> App
-putStrLnPacked = liftIO . T.putStrLn . T.pack
+putStrLnPacked = liftIO . T.putStrLn . pack
 
 
 realpath :: App
 realpath = writeFrom "sh/_common/realpath.sh"
 
 
-swap :: T.Text -> T.Text -> T.Text -> T.Text
+swap :: Text -> Text -> Text -> Text
 swap a b src = T.replace ("${" <> a <> "}") b src
 
 
-packs :: Show a => a -> T.Text
-packs = T.pack . show
+packs :: Show a => a -> Text
+packs = pack . show
 
 
-reachImages :: [T.Text]
+reachImages :: [Text]
 reachImages =
   [ "reach"
   , "reach-cli"
@@ -306,11 +307,11 @@ reachImages =
 
 
 --------------------------------------------------------------------------------
-serviceConnector :: Env -> ConnectorMode -> [T.Text] -> T.Text -> T.Text -> IO T.Text
+serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO Text
 serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
   let ports' = case ports of
         [] -> "[]"
-        ps -> T.intercalate "\n    " $ map ("- " <>) ps
+        ps -> intercalate "\n    " $ map ("- " <>) ps
 
   let n = show m <> "-" <> (toLower <$> show c)
   let d = packs c
@@ -329,7 +330,7 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
     $ fmt
 
 
-connectorEnv :: Env -> ConnectorMode -> IO T.Text
+connectorEnv :: Env -> ConnectorMode -> IO Text
 connectorEnv Env {..} (ConnectorMode c m) = do
   let c' = toLower <$> show c
   T.readFile $ e_dirEmbed </> "sh" </> "_common" </> "_docker-compose"
@@ -337,7 +338,7 @@ connectorEnv Env {..} (ConnectorMode c m) = do
 
 
 --------------------------------------------------------------------------------
-devnetFor :: Connector -> T.Text
+devnetFor :: Connector -> Text
 devnetFor = \case
   Algo -> "devnet-algo"
   Cfx -> "devnet-cfx"
@@ -363,7 +364,7 @@ pMode =
 
 --------------------------------------------------------------------------------
 data Project = Project
-  { projName :: T.Text
+  { projName :: Text
   , projDirContainer :: FilePath
   , projDirHost :: FilePath
   , projDirRel :: FilePath
@@ -390,10 +391,10 @@ data Compose
   | StandaloneDevnet
 
 data DockerMeta = DockerMeta
-  { appProj :: T.Text
-  , appService :: T.Text
-  , appImage :: T.Text
-  , appImageTag :: T.Text
+  { appProj :: Text
+  , appService :: Text
+  , appImage :: Text
+  , appImageTag :: Text
   , compose :: Compose
   }
 
@@ -414,8 +415,8 @@ mkScaffold Project {..} = Scaffold
   h = (projDirHost </>)
 
 
-appProj' :: FilePath -> T.Text
-appProj' = T.toLower . T.pack . takeBaseName . dropTrailingPathSeparator
+appProj' :: FilePath -> Text
+appProj' = T.toLower . pack . takeBaseName . dropTrailingPathSeparator
 
 
 mkDockerMetaConsole :: Project -> DockerMeta
@@ -465,7 +466,7 @@ projectFrom a = do
       "." -> pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
 
       _ -> ifM (andM [ pure . (< 2) . length $ splitDirectories a, not <$> doesDirectoryExist a ])
-        (pure $ Project (T.pack a) e_dirPwdContainer e_dirPwdHost ".")
+        (pure $ Project (pack a) e_dirPwdContainer e_dirPwdHost ".")
         $ do
           let dph = e_dirPwdHost </> a
           let dpc = e_dirPwdContainer </> a
@@ -480,17 +481,17 @@ projectPwdIndex = do
   pure $ Project "index" e_dirPwdContainer e_dirPwdHost "."
 
 
-scaff :: Bool -> FilePath -> T.Text -> IO ()
+scaff :: Bool -> FilePath -> Text -> IO ()
 scaff quiet n f = do
   when (not quiet) . putStrLn $ "Writing " <> takeFileName n <> "..."
   T.writeFile n f
 
 
-scaffIfAbsent :: Bool -> FilePath -> T.Text -> IO ()
+scaffIfAbsent :: Bool -> FilePath -> Text -> IO ()
 scaffIfAbsent quiet n f = whenM (not <$> doesFileExist n) $ scaff quiet n f
 
 
-readScaff :: FilePath -> AppT T.Text
+readScaff :: FilePath -> AppT Text
 readScaff p = do
   Env {..} <- ask
   liftIO . T.readFile $ e_dirEmbed </> "sh" </> "subcommand" </> "scaffold" </> p
@@ -514,7 +515,7 @@ withCompose DockerMeta {..} wrapped = do
 
   let projDirHost' = case compose of
         StandaloneDevnet -> ""
-        WithProject _ Project {..} -> T.pack projDirHost
+        WithProject _ Project {..} -> pack projDirHost
 
   let devnetAlgo = [N.text|
         - ALGO_SERVER=http://reach-devnet-algo
@@ -600,7 +601,7 @@ withCompose DockerMeta {..} wrapped = do
         |]
         _ -> ""
 
-  let e_dirTmpHost' = T.pack e_dirTmpHost
+  let e_dirTmpHost' = pack e_dirTmpHost
   let appService' = case compose of
         StandaloneDevnet -> ""
         _ -> [N.text|
@@ -632,7 +633,7 @@ withCompose DockerMeta {..} wrapped = do
   wrapped
 
  where
-  notw = T.intercalate "\n" . fmap T.stripEnd . T.lines
+  notw = intercalate "\n" . fmap stripEnd . T.lines
 
 
 --------------------------------------------------------------------------------
@@ -644,7 +645,7 @@ argAppOrDir = strArgument
  <> value ""
 
 
-manyArgs :: String -> Parser [T.Text]
+manyArgs :: String -> Parser [Text]
 manyArgs n = many . strArgument
   $ metavar "ARGS"
  <> help ("Zero or more arguments to be passed into " <> n)
@@ -807,21 +808,21 @@ compile = command "compile" $ info f d where
       |]
 
      where
-      if' b t = if b then T.pack t else ""
+      if' b t = if b then pack t else ""
 
       opt x a = case x of
         Nothing -> ""
-        Just t -> T.pack $ a <> "=" <> t
+        Just t -> pack $ a <> "=" <> t
 
-      args = T.intercalate " " $
+      args = intercalate " " $
         [ if' cta_disableReporting "--disable-reporting"
         , if' cta_errorFormatJson "--error-format-json"
         , if' cta_intermediateFiles "--intermediate-files"
         , if' cta_installPkgs "--install-pkgs"
         , opt cta_dirDotReach "--dir-dot-reach"
         , opt cta_outputDir "--output"
-        , T.pack cta_source
-        ] <> (T.pack <$> cta_tops)
+        , pack cta_source
+        ] <> (pack <$> cta_tops)
 
       drp' = if' (not cta_disableReporting) "--disable-reporting"
       ifs' = if' (not cta_intermediateFiles) "--intermediate-files"
@@ -860,8 +861,8 @@ init' = command "init" . info f $ d <> foot where
       fmtInitRsh <- T.readFile $ tmpl' </> "index.rsh"
       fmtInitMjs <- T.readFile $ tmpl' </> "index.mjs"
 
-      let rsh = projDirContainer </> T.unpack app <> ".rsh"
-      let mjs = projDirContainer </> T.unpack app <> ".mjs"
+      let rsh = projDirContainer </> unpack app <> ".rsh"
+      let mjs = projDirContainer </> unpack app <> ".mjs"
       let abortIf x = whenM (doesFileExist x) . die $ x <> " already exists."
 
       abortIf rsh
@@ -877,7 +878,7 @@ init' = command "init" . info f $ d <> foot where
 
 --------------------------------------------------------------------------------
 -- Tell `docker-compose` to skip connector containers if they're already running
-devnetDeps :: AppT T.Text
+devnetDeps :: AppT Text
 devnetDeps = do
   ConnectorMode c' _ <- asks $ connectorMode . e_var
   let c = packs c'
@@ -909,13 +910,13 @@ run' = command "run" . info f $ d <> noIntersperse where
       , (containerDockerIgnore, hostDockerIgnore)
       ]
 
-    cleanup <- T.intercalate "\n" <$> forM toClean (pure . T.pack . ("rm " <>) . snd)
+    cleanup <- intercalate "\n" <$> forM toClean (pure . pack . ("rm " <>) . snd)
 
     scaffold' False True proj
 
-    let rsh = projDirContainer </> T.unpack projName <> ".rsh"
-    let mjs = projDirContainer </> T.unpack projName <> ".mjs"
-    let bjs = projDirContainer </> "build" </> T.unpack projName <> ".main.mjs"
+    let rsh = projDirContainer </> unpack projName <> ".rsh"
+    let mjs = projDirContainer </> unpack projName <> ".mjs"
+    let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
 
     let abortIfAbsent p = liftIO . whenM (not <$> doesFileExist p)
           . die $ takeFileName p <> " doesn't exist."
@@ -923,7 +924,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     abortIfAbsent rsh
     abortIfAbsent mjs
 
-    let recompile' = reachEx <> " compile " <> T.pack (projDirRel </> T.unpack projName <> ".rsh\n")
+    let recompile' = reachEx <> " compile " <> pack (projDirRel </> unpack projName <> ".rsh\n")
 
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
@@ -933,9 +934,9 @@ run' = command "run" . info f $ d <> noIntersperse where
         pure $ if r > b then Just recompile' else Nothing
 
     let dm@DockerMeta {..} = mkDockerMetaConsole proj
-    let dockerfile' = T.pack hostDockerfile
-    let projDirHost' = T.pack projDirHost
-    let args' = T.intercalate " " . map (<> "'") . map ("'" <>) $ projName : args
+    let dockerfile' = pack hostDockerfile
+    let projDirHost' = pack projDirHost
+    let args' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args
 
     withCompose dm . script $ do
       maybe (pure ()) write recompile
@@ -1038,10 +1039,10 @@ react = command "react" $ info f d where
       cargs <- liftIO $ do
         let x "react" = False
             x "--use-existing-devnet" = False
-            x a | "--dir-project-host" `T.isPrefixOf` a = False
-            x a | "--dir-tmp-host" `T.isPrefixOf` a = False
+            x a | "--dir-project-host" `isPrefixOf` a = False
+            x a | "--dir-tmp-host" `isPrefixOf` a = False
                 | otherwise = True
-        T.intercalate " " . filter x . fmap T.pack <$> getArgs
+        intercalate " " . filter x . fmap pack <$> getArgs
 
       withCompose dm . script $ write [N.text|
         $reachEx compile $cargs
@@ -1051,7 +1052,7 @@ react = command "react" $ info f d where
 
 
 --------------------------------------------------------------------------------
-rpcServer' :: T.Text -> AppT T.Text
+rpcServer' :: Text -> AppT Text
 rpcServer' appService = do
   Var {..} <- asks e_var
   dd <- devnetDeps
@@ -1079,7 +1080,7 @@ rpcServer = command "rpc-server" $ info f d where
     withCompose dm . script $ rpcServer' appService >>= write
 
 
-rpcServerAwait' :: Int -> AppT T.Text
+rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
   let t' = packs t
   Var {..} <- asks e_var
@@ -1139,7 +1140,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     let dm@DockerMeta {..} = mkDockerMetaRpc env prj
     runServer <- rpcServer' appService
 
-    let args' = T.intercalate " " args
+    let args' = intercalate " " args
 
     dieConnectorModeBrowser
     warnDefRpcKey
@@ -1217,7 +1218,7 @@ update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = script . forM_ reachImages $ \i -> write
-    $ "docker pull reachsh/" <> i <> ":" <> T.pack compatibleVersionStr
+    $ "docker pull reachsh/" <> i <> ":" <> pack compatibleVersionStr
 
 
 --------------------------------------------------------------------------------
@@ -1287,7 +1288,7 @@ hashes = command "hashes" $ info f d where
 
 
 --------------------------------------------------------------------------------
-whoami' :: T.Text
+whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
 
 
