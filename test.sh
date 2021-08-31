@@ -120,9 +120,7 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-(cd examples/tut-8 ; sh -x ./check.sh)
 exit 0
-
 jb
 ci ALGO tut-6
 exit 0

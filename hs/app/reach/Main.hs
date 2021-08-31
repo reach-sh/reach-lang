@@ -1092,9 +1092,6 @@ whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
   f = pure . script $ write whoami'
 
-header' :: String
-header' = "Reach - https://docs.reach.sh"
-
 failNonAbsPaths :: Env -> IO ()
 failNonAbsPaths Env {..} =
   mapM_ (\p -> unless (isAbsolute p) . die $ p <> " is not an absolute path.")
@@ -1118,6 +1115,10 @@ main = do
         <*> switch (long "emit-raw" <> internal)
         <*> pure eff
         <*> pure var
+  hashStr <- lookupEnv "REACH_GIT_HASH" >>= \case
+    Just hash -> return $ " (" <> hash <> ")"
+    Nothing -> return $ ""
+  let header' = "reach " <> versionStr <> hashStr <> " - Reach command-line tool"
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
