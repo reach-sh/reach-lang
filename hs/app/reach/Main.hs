@@ -527,7 +527,6 @@ withCompose DockerMeta {..} wrapped = do
 
   let (deps, extraEnv) = case (c, m) of
         (_, Live) -> ("", "")
-        -- TODO verify there are no mismatches between `Devnet`/`Browser` defs
         (Algo, Devnet) -> (devnetFor c, devnetAlgo)
         (Algo, Browser) -> (devnetFor c, devnetAlgo)
         (Eth, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
