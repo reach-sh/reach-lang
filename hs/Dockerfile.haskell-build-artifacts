@@ -4,6 +4,12 @@ WORKDIR /build
 COPY stack.yaml package.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only
 
+# Dan is going insane.
+# Ensure reach.cabal is what we think it is.
+RUN mv reach.cabal reach.cabal.bak
 COPY . /build/
-RUN stack build
+RUN if [ -f reach.cabal ]; then exit 1; fi
+RUN cp reach.cabal.bak reach.cabal
+
+RUN stack build 2>&1 | tee build-log.txt
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/
