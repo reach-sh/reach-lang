@@ -10,9 +10,9 @@ export const spec = async () => {
 
   await common.describe('The `ETH` RPC server', async () => {
     await common.mkStdlibNetworkCommon(rpc_stdlib);
-    await common.mkGetDefaultAccount(rpc_stdlib);
-    await common.mkNewAccountFromSecret(rpc_stdlib, 14, sec);
-    // TODO await common.mkNewAccountFromMnemonic(rpc_stdlib, 14, mon);
+    // await common.mkGetDefaultAccount(rpc_stdlib);
+    // await common.mkNewAccountFromSecret(rpc_stdlib, 14, sec);
+    // await common.mkNewAccountFromMnemonic(rpc_stdlib, 14, mon);
     await common.mkConnectAccount(rpc_stdlib, a => a);
   });
 

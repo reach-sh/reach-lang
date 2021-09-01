@@ -8,9 +8,9 @@ export const spec = async () => describe('The `ALGO` stdlib', async () => {
   const { bigNumberify, formatCurrency, parseCurrency } = ALGO;
 
   await common.mkStdlibNetworkCommon(ALGO);
-  // TODO await common.mkGetDefaultAccount(ALGO);
-  // TODO await common.mkNewAccountFromSecret(ALGO,   8, sec);
-  // TODO await common.mkNewAccountFromMnemonic(ALGO, 8, mon);
+  // await common.mkGetDefaultAccount(ALGO);
+  // await common.mkNewAccountFromSecret(ALGO,   8, sec);
+  // await common.mkNewAccountFromMnemonic(ALGO, 8, mon);
   await common.mkConnectAccount(ALGO, a => a.networkAccount);
 
 

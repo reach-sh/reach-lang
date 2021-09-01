@@ -11,11 +11,15 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
   const sec = '9573fa33a57fee662a23bf60f1b1674364d99fb8dd2166b4ae470ce7ab20ed9f';
 
   await common.mkStdlibNetworkCommon(ETH);
-  await common.mkGetDefaultAccount(ETH);
-  await common.mkNewAccountFromSecret(ETH, 14, sec);
-  // TODO await common.mkNewAccountFromMnemonic(ETH, 14, mon);
+  // await common.mkGetDefaultAccount(ETH);
+  // await common.mkNewAccountFromSecret(ETH, 14, sec);
+  // await common.mkNewAccountFromMnemonic(ETH, 14, mon);
   await common.mkConnectAccount(ETH, a => a.networkAccount);
 
+  const addr       = '0xdeadbeef';
+  it('handles Address', () => {
+    expect(ETH.protect(ETH.T_Address, addr)).toBe(addr);
+  });
 
   await describe('T_Address.canonicalize can handle multiple inputs', async () => {
     const a = await ETH.createAccount();

@@ -8,6 +8,7 @@
 
 set -x
 
+rm -fr stdlib-test
 mkdir stdlib-test
 cp    index.* stdlib-test
 cp -r lib     stdlib-test/lib
@@ -15,11 +16,10 @@ cd stdlib-test || exit 1
 
 # js/dockerized-tests/stdlib-test/
 REACH=../../../reach
-$REACH compile
-REACH_CONNECTOR_MODE=ETH $REACH run
-
-# TODO re-enable these once `reach` script is ready
-# REACH_CONNECTOR_MODE=ALGO $REACH run
+sh -x $REACH compile
+for m in ETH ALGO ; do
+  REACH_CONNECTOR_MODE=$m sh -x $REACH run || exit $?
+done
 
 RESULT=$?
 $REACH down
