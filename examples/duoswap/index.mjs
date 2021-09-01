@@ -2,16 +2,15 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 import { runInteractive } from './interactive.mjs';
+const stdlib = loadStdlib(process.env);
 
 const NUM_PROVIDERS = 3;
 const NUM_TRADERS = 2;
 
 export const runAutomated = async () => {
-  const stdlib = await loadStdlib();
-
-  const maxTrade = { ALGO: 50_000, ETH: 50_000, CFX: 500 }[stdlib.connector];
-  const maxDeposit = { ALGO: 10_000_000, ETH: 10_000_000, CFX: 10_000 }[stdlib.connector];
-  const startBal = { ALGO: 30_000_000, ETH: 30_000_000, CFX: 100_000 }[stdlib.connector];
+  const maxTrade = { ALGO: 50_000, ETH: 50_000, CFX: 5 }[stdlib.connector];
+  const maxDeposit = { ALGO: 10_000_000, ETH: 10_000_000, CFX: 100 }[stdlib.connector];
+  const startBal = { ALGO: 30_000_000, ETH: 30_000_000, CFX: 300 }[stdlib.connector];
 
   const startingBalance = stdlib.parseCurrency(startBal);
   const fmt = (x) => stdlib.formatCurrency(x, (stdlib.connector == 'ALGO') ? 6 : 18);
