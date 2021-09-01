@@ -23,6 +23,9 @@ package.json: package.mo.json $(ROOT)/VERSION
 ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION
 	REACH_VERSION=$(REACH_VERSION) mo $< > $@
 
+$(ROOT)/hs/sol/stdlib.sol:
+	cd $(ROOT)/hs && $(MAKE) sol/stdlib.sol
+
 ts/stdlib_sol.ts: $(ROOT)/hs/sol/stdlib.sol
 	(echo "export default" ; cd $(ROOT)/hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
 

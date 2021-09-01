@@ -120,13 +120,6 @@ tealcount () {
 # c hs/t/y/big-d8cff.rsh
 # tealcount1 hs/t/y big-d8cff
 
-jb
-(cd js/dockerized-tests && ./sbin/test.sh)
-exit 0
-
-(cd examples/tut-7-rpc && REACH_CONNECTOR_MODE=ALGO make run261)
-exit 0
-
 #r examples/overview # XXX test debigger
 #r examples/tut-7 # XXX test debigger
 
