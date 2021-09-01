@@ -1,20 +1,25 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
-import real_ethers from 'ethers';
-import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
+import ethers from 'ethers';
 import * as fs from 'fs';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
-  if ( stdlib.connector === 'ALGO' ) { return; }
-  const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
-
-  const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-
-  const myGasLimit = 5000000;
-  accAlice.setGasLimit(myGasLimit);
+  if ( stdlib.connector !== 'ETH' ) { return; }
+  const assertEq = (expected, actual) => {
+    const exps = JSON.stringify(expected);
+    const acts = JSON.stringify(actual);
+    console.log('assertEq', {expected, actual}, {exps, acts});
+    stdlib.assert(exps === acts) };
+  const getEvt = (id, obj) => {
+    for ( const v of obj ) {
+      if ( v.name === id && v.type === 'event' ) {
+        return v.inputs;
+      }
+    }
+    return [];
+  };
 
   console.log(`Alice remote: make factory`);
   const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
@@ -22,6 +27,15 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const remoteCtc = compiled["contracts"]["index.sol:WeirdContract"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
+  const which = 'e1';
+  assertEq(getEvt(which, JSON.parse(backend._Connectors.ETH.ABI)), getEvt(which, remoteABI));
+
+  const startingBalance = stdlib.parseCurrency(10);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+
+  const myGasLimit = 5000000;
+  accAlice.setGasLimit(myGasLimit);
+
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accAlice.networkAccount);
   console.log(`Alice remote: deploy`);
   const contract = await factory.deploy({ gasLimit: myGasLimit });

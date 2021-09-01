@@ -2,8 +2,8 @@ pragma abicoder v2;
 pragma solidity ^0.8.0;
 
 struct T2 {
-  address payable v58;
-  uint256 v59;
+  address payable v52;
+  uint256 v53;
   }
 struct T3 {
   bool svs;
@@ -16,11 +16,11 @@ contract LogAttack1 {
   constructor () payable {
     }
 
-  function m2(address payable acct, uint256 amt) external payable {
+  function m1(address payable acct, uint256 amt) external payable {
     T3 memory a;
     a.svs = false;
-    a.msg.v58 = acct;
-    a.msg.v59 = amt + 1;
+    a.msg.v52 = acct;
+    a.msg.v53 = amt + 1;
      emit e1(a);
   }
 }
