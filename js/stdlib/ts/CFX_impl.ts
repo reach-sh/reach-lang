@@ -346,12 +346,9 @@ function providerEnvByName(providerName: ProviderName): ProviderEnv {
   switch (providerName) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return notYetSupported(`providerEnvByName('window')`);
-  case 'MainNet': return notYetSupported(`providerEnvByName('MainNet')`);
-  // case 'MainNet': return providerEnvByName('tethys');
-  case 'TestNet': return notYetSupported(`providerEnvByName('TestNet')`);
-  // case 'TestNet': return cfxProviderEnv('TestNet');
-  case 'tethys': return notYetSupported(`providerEnvByName('tethys')`);
-  // case 'tethys': return cfxProviderEnv('tethys');
+  case 'MainNet': return providerEnvByName('tethys');
+  case 'TestNet': return cfxProviderEnv('TestNet');
+  case 'tethys': return cfxProviderEnv('tethys');
   case 'BlockNumber': return cfxProviderEnv('BlockNumber'); // XXX temporary
   default: throw Error(`Unrecognized provider name: ${providerName}`);
   }
@@ -360,8 +357,8 @@ function providerEnvByName(providerName: ProviderName): ProviderEnv {
 function cfxProviderEnv(network: WhichNetExternal): ProviderByURI {
   const [CFX_NODE_URI, CFX_NETWORK_ID] =
       network == 'BlockNumber' ? ['http://52.53.235.44:12537', '1'] // 0x1
-    : network == 'TestNet' ? ['https://test.confluxrpc.com', '1'] // 0x1
-    : network == 'tethys'  ? ['https://main.confluxrpc.com', '1029'] // 0x405
+    : network == 'TestNet' ? ['https://portal-test.confluxrpc.com', '1'] // 0x1
+    : network == 'tethys'  ? ['https://portal-main.confluxrpc.com', '1029'] // 0x405
     : throwError(`network name not recognized: '${network}'`);
   return {
     CFX_NODE_URI,
