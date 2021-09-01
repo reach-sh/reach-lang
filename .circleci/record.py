@@ -99,7 +99,7 @@ for c in conns:
     tfails = cfails[c]
     tfailc = len(tfails)
     if tfailc > 0:
-        upto = 20
+        upto = 10
         msg = ' '.join(map(fmte, tfails[:upto]))
         if tfailc > upto:
             msg += ' (+ ' + str(tfailc - upto) + ' more not shown)'

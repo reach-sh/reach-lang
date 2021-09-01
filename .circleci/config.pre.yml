@@ -262,6 +262,7 @@ jobs:
     - checkout
     - restore_bin
     - srd_no
+    - and_restore_docker
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
     - slack_fail

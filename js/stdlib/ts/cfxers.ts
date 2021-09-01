@@ -526,7 +526,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       }
     } catch (e) {
       err = e;
-      const es = e.toString();
+      const es = JSON.stringify(e);
       if ( es.includes("stale nonce") || es.includes("same nonce") ) {
         debug(`_retryingSendTxn: nonce error, giving more tries`);
         tries--;
