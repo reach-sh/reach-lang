@@ -2,6 +2,12 @@ FROM confluxchain/conflux-rust:1.1.5-testnet as builder
 
 FROM debian:buster-slim
 
+RUN  apt-get update \
+  && apt-get install -y --no-install-recommends \
+    curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /root/run/conflux /
 COPY log.yaml default.toml genesis_secret.txt run.sh /
 
