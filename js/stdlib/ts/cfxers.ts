@@ -545,7 +545,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
 async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
   // XXX is 20s enough time on testnet/mainnet?
   // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
-  const maxTries = 400;
+  const maxTries = 800; // * 25ms = 20s
   for (let tries = 1; tries <= maxTries; tries++) {
     const r: any = await provider.getTransactionReceipt(txnHash);
     if (r) {
