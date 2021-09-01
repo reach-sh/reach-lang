@@ -1,7 +1,6 @@
 REACH = ../../reach
 include ../../VERSION
 
-
 .PHONY: clean-client-lib-js
 clean-client-lib-js:
 	[ -d ./client-js/lib ] && rm -r ./client-js/lib || true
@@ -20,10 +19,8 @@ clean: clean-client-lib-js \
        clean-client-lib-go
 	rm -rf server/build/*.main.mjs
 
-
 server/build/%.main.mjs: server/%.rsh
 	$(REACH) compile $^ main
-
 
 .PHONY: client-lib-js
 client-lib-js: clean-client-lib-js
@@ -38,18 +35,30 @@ client-lib-py: clean-client-lib-py
 client-lib-go: clean-client-lib-go
 	cp -r ../../rpc-client/go ./client-go/lib
 
-
-.PHONY: build
-build: server/build/index.main.mjs \
-       client-lib-js \
-       client-lib-py \
-       client-lib-go
+.PHONY: build-js
+build-js: server/build/index.main.mjs client-lib-js
 	cd client-js && docker build --tag=reachsh/reach-app-tut-7-rpc-client-js:latest .
-	cd client-go && docker build --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
+
+.PHONY: build-py
+build-py: server/build/index.main.mjs client-lib-py
 	cd client-py && docker build \
 	  --build-arg VERSION=$(shell cat ../../rpc-client/py/VERSION) \
 	  --tag=reachsh/reach-app-tut-7-rpc-client-py:latest .
 
+.PHONY: build-go
+build-go: server/build/index.main.mjs client-lib-go
+	cd client-go && docker build --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
+
+.PHONY: build
+build: server/build/index.main.mjs \
+       build-js \
+       build-py \
+       build-go
+
 .PHONY: run
 run:
 	REACH_DEBUG=1 sbin/test-on.sh "${REACH_CONNECTOR_MODE}" js py go
+
+.PHONY: run261
+run261: build-js
+	REACH_DEBUG=0 sbin/test-on.sh "${REACH_CONNECTOR_MODE}" js

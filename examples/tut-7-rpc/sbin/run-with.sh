@@ -21,6 +21,7 @@ REACH_RPC_SERVER="127.0.0.1" ../../reach rpc-server-await
 
 cd "client-$CLIENT"
 docker run --rm \
+  -e         "REACH_DEBUG" \
   -e         "REACH_RPC_SERVER=host.docker.internal" \
   -e         "REACH_RPC_PORT" \
   -e         "REACH_RPC_TLS_REJECT_UNVERIFIED" \

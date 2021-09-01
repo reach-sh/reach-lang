@@ -1,6 +1,13 @@
 import waitPort from 'wait-port';
 import bent     from 'bent';
 
+function truthyEnv(v) {
+  if (!v) return false;
+  return ![
+    '0', 'false', 'f', '#f', 'no', 'off', 'n', '',
+  ].includes(v && v.toLowerCase && v.toLowerCase());
+};
+
 export const mkRPC = async (opts = {}) => {
 
   const optOf = (field, envvar, modifiers) => {
@@ -29,8 +36,7 @@ export const mkRPC = async (opts = {}) => {
   });
 
   const debug = s =>
-    process.env.REACH_DEBUG && console.log(s);
-
+    truthyEnv(process.env['REACH_DEBUG']) && console.log(s);
 
   const rpc = async (m, ...args) => {
     const lab = `RPC ${m} ${JSON.stringify(args)}`
@@ -39,7 +45,6 @@ export const mkRPC = async (opts = {}) => {
     debug(`${lab} ==> ${JSON.stringify(ans)}`);
     return ans;
   };
-
 
   const rpcCallbacks = async (m, arg, cbacks) => {
     const vals = {};
@@ -76,7 +81,6 @@ export const mkRPC = async (opts = {}) => {
       }
     })());
   };
-
 
   await waitPort({ host, port: parseInt(port, 10), timeout: timeout * 1000 });
 
