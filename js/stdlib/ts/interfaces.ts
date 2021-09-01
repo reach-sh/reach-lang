@@ -151,5 +151,6 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   minimumBalance: BigNumber
   formatCurrency: (amt: BigNumber, decimals: number) => string
   formatAddress: (addr: string) => string
+  launchToken: (acc: Acc, name: string, sym: string) => any
   reachStdlib: Stdlib_Backend<Ty>
 }

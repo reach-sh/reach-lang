@@ -40,8 +40,6 @@ export const spec = async () => describe('The `ETH` stdlib', async () => {
     ];
 
     const ALGO_extra_exports = [
-      'getTxnParams',
-      'waitForConfirmation',
     ];
 
     for (const [otherName, otherStdlib, otherExtraExports] of [

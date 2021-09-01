@@ -1169,6 +1169,28 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
   return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
+async function launchToken (accCreator:Account, name:string, sym:string) {
+  console.log(`Launching token, ${name} (${sym})`);
+  const addr = (acc:Account) => acc.networkAccount.address;
+  const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
+  const remoteABI = remoteCtc["abi"];
+  const remoteBytecode = remoteCtc["bin"];
+  const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
+  console.log(`${sym}: deploy`);
+  const supply = bigNumberify(2).pow(256).sub(1);
+  const contract = await factory.deploy(name, sym, '', '', supply);
+  console.log(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
+  const deploy_r = await contract.deployTransaction.wait();
+  console.log(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
+  const id = contract.address;
+  console.log(`${sym}: deployed: ${id}`);
+  const mint = async (accTo:Account, amt:any) => {
+    console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    await transfer(accCreator, accTo, amt, id);
+  };
+  return { name, sym, id, mint };
+};
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1203,6 +1225,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  launchToken,
   reachStdlib,
 };
 return ethLike;

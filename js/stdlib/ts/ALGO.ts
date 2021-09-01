@@ -147,7 +147,7 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-export const waitForConfirmation = async (txId: TxId, untilRound: number|undefined): Promise<TxnInfo> => {
+const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<TxnInfo> => {
   const doOrDie = async (p: Promise<any>): Promise<any> => {
     try { return await p; }
     catch (e) { return { 'exn': e }; }
@@ -282,7 +282,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   }
 };
 
-export const getTxnParams = async (): Promise<TxnParams> => {
+const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   const client = await getAlgodClient();
   while (true) {
@@ -1762,5 +1762,49 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
 export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
+
+export async function launchToken (accCreator:Account, name:string, sym:string) {
+  console.log(`Launching token, ${name} (${sym})`);
+  const addr = (acc:Account) => acc.networkAccount.addr;
+  const caddr = addr(accCreator);
+  const zaddr = caddr;
+  // ^ XXX should be nothing; docs say can be "", but doesn't actually work
+  const algod = await getAlgodClient();
+  const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
+    const sk = acc.networkAccount.sk;
+    if ( ! sk ) {
+      throw new Error(`can only launchToken with account with secret key`);
+    }
+    const params = await getTxnParams();
+    const t = mktxn(params);
+    const s = t.signTxn(sk);
+    const r = (await algod.sendRawTransaction(s).do());
+    await waitForConfirmation(r.txId);
+    return await algod.pendingTransactionInformation(r.txId).do();
+  };
+  const ctxn_p = await dotxn(
+    (params:TxnParams) =>
+    algosdk.makeAssetCreateTxnWithSuggestedParams(
+      caddr, undefined, Math.pow(2,48), 6,
+      false, zaddr, zaddr, zaddr, zaddr,
+      sym, name, '', '', params,
+    ));
+  const id = ctxn_p["asset-index"];
+  console.log(`${sym}: asset is ${id}`);
+
+  const mint = async (accTo:Account, amt:any) => {
+    console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    await transfer(accCreator, accTo, amt, id);
+  };
+  const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
+    await dotxn(
+      (params) =>
+      algosdk.makeAssetTransferTxnWithSuggestedParams(
+        addr(accFrom), addr(accTo), addr(accTo), undefined,
+        0, undefined, id, params
+      ), accFrom);
+  };
+  return { name, sym, id, mint, optOut };
+};
 
 export const reachStdlib = compiledStdlib;
