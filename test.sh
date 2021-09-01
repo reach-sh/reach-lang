@@ -132,7 +132,7 @@ tealcount () {
 # ci CFX cache-events
 # ci ETH tut-6
 # ci CFX tut-6
-ci CFX mint-basic
+ci ETH duoswap
 exit 0
 ci CFX raffle
 ci CFX tut-7-array
