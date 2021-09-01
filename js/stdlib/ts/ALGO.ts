@@ -1535,7 +1535,7 @@ function ldrop(str: string, char: string) {
  * @description  Format currency by network
  * @param amt  the amount in the {@link atomicUnit} of the network.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
- *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
+ *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
@@ -1545,7 +1545,7 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-  const amtStr = amt.toString();
+  const amtStr = bigNumberify(amt).toString();
   const splitAt = Math.max(amtStr.length - 6, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
