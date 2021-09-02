@@ -5,3 +5,8 @@ ALGO.ttt
 
 # https://reachsh.atlassian.net/browse/CORE-462
 ETH.raffle
+
+# duoswap is out of date & is allowed to fail
+# until we figure out how to test the private repo
+# https://reachsh.atlassian.net/browse/CORE-535
+CFX.duoswap
