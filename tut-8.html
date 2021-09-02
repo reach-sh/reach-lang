@@ -1,209 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html><head><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-149147406-2"></script><script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-149147406-2');</script><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script><script src="tooltips.js"></script><script src="reach-pre.js"></script><link rel="stylesheet" href="tooltips.css"><link rel="stylesheet" href="reach.css"><link rel="stylesheet" href="minted.css"><link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png"><link rel="manifest" href="/favicon/site.webmanifest"><meta http-equiv="content-type" content="text/html; charset=utf-8"/><meta name="viewport" content="width=device-width, initial-scale=0.8"/><title>2.8&nbsp;Interaction and Independence</title><link rel="stylesheet" type="text/css" href="scribble.css" title="default"/><link rel="stylesheet" type="text/css" href="racket.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-style.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-racket.css" title="default"/><script type="text/javascript" src="scribble-common.js"></script><script type="text/javascript" src="manual-racket.js"></script><!--[if IE 6]><style type="text/css">.SIEHidden { overflow: hidden; }</style><![endif]--></head><body id="scribble-racket-lang-org"><div class="tocset"><div class="tocview"><div class="tocviewlist tocviewlisttopspace"><div class="tocviewtitle"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_0&quot;);">&#9658;</a></td><td></td><td><a href="index.html" class="tocviewlink" data-pltdoc="x">Reach:<span class="mywbr"> &nbsp;</span> The Safest and Easiest DApp Programming Language</a></td></tr></table></div><div class="tocviewsublisttop" style="display: none;" id="tocview_0"><table cellspacing="0" cellpadding="0"><tr><td align="right">1&nbsp;</td><td><a href="overview.html" class="tocviewlink" data-pltdoc="x">Overview</a></td></tr><tr><td align="right">2&nbsp;</td><td><a href="tut.html" class="tocviewselflink" data-pltdoc="x">Tutorial</a></td></tr><tr><td align="right">3&nbsp;</td><td><a href="guide.html" class="tocviewlink" data-pltdoc="x">Guide</a></td></tr><tr><td align="right">4&nbsp;</td><td><a href="workshop.html" class="tocviewlink" data-pltdoc="x">Workshop</a></td></tr><tr><td align="right">5&nbsp;</td><td><a href="ref.html" class="tocviewlink" data-pltdoc="x">Reference</a></td></tr><tr><td align="right"></td><td><a href="doc-index.html" class="tocviewlink" data-pltdoc="x">Index</a></td></tr></table></div></div><div class="tocviewlist"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_1&quot;);">&#9660;</a></td><td>2&nbsp;</td><td><a href="tut.html" class="tocviewlink" data-pltdoc="x">Tutorial</a></td></tr></table><div class="tocviewsublistbottom" style="display: block;" id="tocview_1"><table cellspacing="0" cellpadding="0"><tr><td align="right">2.1&nbsp;</td><td><a href="tut-1.html" class="tocviewlink" data-pltdoc="x">Install and Initialize</a></td></tr><tr><td align="right">2.2&nbsp;</td><td><a href="tut-2.html" class="tocviewlink" data-pltdoc="x">Scaffolding and Setup</a></td></tr><tr><td align="right">2.3&nbsp;</td><td><a href="tut-3.html" class="tocviewlink" data-pltdoc="x">Rock, Paper, and Scissors</a></td></tr><tr><td align="right">2.4&nbsp;</td><td><a href="tut-4.html" class="tocviewlink" data-pltdoc="x">Bets and Wagers</a></td></tr><tr><td align="right">2.5&nbsp;</td><td><a href="tut-5.html" class="tocviewlink" data-pltdoc="x">Trust and Commitments</a></td></tr><tr><td align="right">2.6&nbsp;</td><td><a href="tut-6.html" class="tocviewlink" data-pltdoc="x">Timeouts and Participation</a></td></tr><tr><td align="right">2.7&nbsp;</td><td><a href="tut-7.html" class="tocviewlink" data-pltdoc="x">Play and Play Again</a></td></tr><tr><td align="right">2.8&nbsp;</td><td><a href="" class="tocviewselflink" data-pltdoc="x">Interaction and Independence</a></td></tr><tr><td align="right">2.9&nbsp;</td><td><a href="tut-9.html" class="tocviewlink" data-pltdoc="x">Web Interaction</a></td></tr><tr><td align="right">2.10&nbsp;</td><td><a href="tut-10.html" class="tocviewlink" data-pltdoc="x">Onward and Further</a></td></tr><tr><td align="right">2.11&nbsp;</td><td><a href="tut-7-rpc.html" class="tocviewlink" data-pltdoc="x">Rock, Paper, Scissors in Python</a></td></tr></table></div></div></div></div><div class="maincolumn"><div class="main"><div class="navsettop"><span class="navleft"><form class="searchform"><input class="searchbox" id="searchbox" type="text" tabindex="1" placeholder="...search docs..." title="Enter a search string to search the Reach documentation" onkeypress="return reach_DoSearch(event, this);"></form>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tut-7.html" title="backward to &quot;2.7 Play and Play Again&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="tut.html" title="up to &quot;2 Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tut-9.html" title="forward to &quot;2.9 Web Interaction&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div><h4>2.8<tt>&nbsp;</tt><a name="(part._tut-8)"></a>Interaction and Independence</h4><p>In the last section, we made our <span class="emph">Rock, Paper, Scissors!</span> run until there was a definitive winner.
+<html><head><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-149147406-2"></script><script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'UA-149147406-2');</script><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script><script src="tooltips.js"></script><script src="reach-pre.js"></script><link rel="stylesheet" href="tooltips.css"><link rel="stylesheet" href="reach.css"><link rel="stylesheet" href="minted.css"><link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png"><link rel="manifest" href="/favicon/site.webmanifest"><meta http-equiv="content-type" content="text/html; charset=utf-8"/><meta name="viewport" content="width=device-width, initial-scale=0.8"/><title>2.8&nbsp;Interaction and Independence</title><link rel="stylesheet" type="text/css" href="scribble.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-style.css" title="default"/><link rel="stylesheet" type="text/css" href="manual-racket.css" title="default"/><script type="text/javascript" src="scribble-common.js"></script><script type="text/javascript" src="manual-racket.js"></script><!--[if IE 6]><style type="text/css">.SIEHidden { overflow: hidden; }</style><![endif]--></head><body id="scribble-racket-lang-org"><div class="tocset"><div class="tocview"><div class="tocviewlist tocviewlisttopspace"><div class="tocviewtitle"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_0&quot;);">&#9658;</a></td><td></td><td><a href="index.html" class="tocviewlink" data-pltdoc="x">Reach:<span class="mywbr"> &nbsp;</span> The Safest and Easiest DApp Programming Language</a></td></tr></table></div><div class="tocviewsublisttop" style="display: none;" id="tocview_0"><table cellspacing="0" cellpadding="0"><tr><td align="right">1&nbsp;</td><td><a href="overview.html" class="tocviewlink" data-pltdoc="x">Overview</a></td></tr><tr><td align="right">2&nbsp;</td><td><a href="tut.html" class="tocviewselflink" data-pltdoc="x">Tutorial</a></td></tr><tr><td align="right">3&nbsp;</td><td><a href="guide.html" class="tocviewlink" data-pltdoc="x">Guide</a></td></tr><tr><td align="right">4&nbsp;</td><td><a href="workshop.html" class="tocviewlink" data-pltdoc="x">Workshop</a></td></tr><tr><td align="right">5&nbsp;</td><td><a href="ref.html" class="tocviewlink" data-pltdoc="x">Reference</a></td></tr><tr><td align="right"></td><td><a href="doc-index.html" class="tocviewlink" data-pltdoc="x">Index</a></td></tr></table></div></div><div class="tocviewlist"><table cellspacing="0" cellpadding="0"><tr><td style="width: 1em;"><a href="javascript:void(0);" title="Expand/Collapse" class="tocviewtoggle" onclick="TocviewToggle(this,&quot;tocview_1&quot;);">&#9660;</a></td><td>2&nbsp;</td><td><a href="tut.html" class="tocviewlink" data-pltdoc="x">Tutorial</a></td></tr></table><div class="tocviewsublistbottom" style="display: block;" id="tocview_1"><table cellspacing="0" cellpadding="0"><tr><td align="right">2.1&nbsp;</td><td><a href="tut-1.html" class="tocviewlink" data-pltdoc="x">Install and Initialize</a></td></tr><tr><td align="right">2.2&nbsp;</td><td><a href="tut-2.html" class="tocviewlink" data-pltdoc="x">Scaffolding and Setup</a></td></tr><tr><td align="right">2.3&nbsp;</td><td><a href="tut-3.html" class="tocviewlink" data-pltdoc="x">Rock, Paper, and Scissors</a></td></tr><tr><td align="right">2.4&nbsp;</td><td><a href="tut-4.html" class="tocviewlink" data-pltdoc="x">Bets and Wagers</a></td></tr><tr><td align="right">2.5&nbsp;</td><td><a href="tut-5.html" class="tocviewlink" data-pltdoc="x">Trust and Commitments</a></td></tr><tr><td align="right">2.6&nbsp;</td><td><a href="tut-6.html" class="tocviewlink" data-pltdoc="x">Timeouts and Participation</a></td></tr><tr><td align="right">2.7&nbsp;</td><td><a href="tut-7.html" class="tocviewlink" data-pltdoc="x">Play and Play Again</a></td></tr><tr><td align="right">2.8&nbsp;</td><td><a href="" class="tocviewselflink" data-pltdoc="x">Interaction and Independence</a></td></tr><tr><td align="right">2.9&nbsp;</td><td><a href="tut-9.html" class="tocviewlink" data-pltdoc="x">Web Interaction</a></td></tr><tr><td align="right">2.10&nbsp;</td><td><a href="tut-10.html" class="tocviewlink" data-pltdoc="x">Onward and Further</a></td></tr><tr><td align="right">2.11&nbsp;</td><td><a href="tut-7-rpc.html" class="tocviewlink" data-pltdoc="x">Rock, Paper, Scissors in Python</a></td></tr></table></div></div></div></div><div class="maincolumn"><div class="main"><div class="navsettop"><span class="navleft"><form class="searchform"><input class="searchbox" id="searchbox" type="text" tabindex="1" placeholder="...search docs..." title="Enter a search string to search the Reach documentation" onkeypress="return reach_DoSearch(event, this);"></form>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tut-7.html" title="backward to &quot;2.7 Play and Play Again&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="tut.html" title="up to &quot;2 Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tut-9.html" title="forward to &quot;2.9 Web Interaction&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div><h4>2.8<tt>&nbsp;</tt><a name="(part._tut-8)"></a>Interaction and Independence</h4><p>In the last section, we made our <span class="emph">Rock, Paper, Scissors!</span> run until there was a definitive winner.
 In this section, we won&rsquo;t be making any changes to the Reach program itself.
-Instead, we&rsquo;ll go under the covers of <span class="stt">reach run</span>, as well as build a version of our game that is interactive and can be played away from a private developer test network.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>In the past, when we&rsquo;ve run <span class="stt">./reach run</span>, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> to the Reach standard library and a fresh instance of a private developer test network.
-In this section we&rsquo;ll introduce customizations in support of a non-automated version of <span class="emph">Rock, Paper, Scissors!</span> and provide the option to connect to a real Ethereum network.</p><p>We&rsquo;ll start by running</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">./reach scaffold</span></p><p>which will automatically generate the following files for us:</p><ul><li><p><span class="stt">package.json</span> &#8212;<wbr></wbr> A Node.js package file that connects our <span class="stt">index.mjs</span> to the Reach standard library.</p></li><li><p><span class="stt">Dockerfile</span> &#8212;<wbr></wbr> A Docker image script that builds our package efficiently and runs it.</p></li><li><p><span class="stt">docker-compose.yml</span> &#8212;<wbr></wbr> A Docker Compose script that connects our Docker image to a fresh instance of the Reach private developer test network.</p></li><li><p><span class="stt">Makefile</span> &#8212;<wbr></wbr> A <span class="stt">Makefile</span> that easily rebuilds and runs the Docker image.</p></li></ul><p>We&rsquo;re going to leave the first two files unchanged.
-You can look at them at <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/package.json"><span class="stt">tut-8/package.json</span></a> and <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Dockerfile"><span class="stt">tut-8/Dockerfile</span></a>, but the details aren&rsquo;t especially important.
-However, we&rsquo;ll customize the other two files.</p><p>First, let&rsquo;s look at the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/docker-compose.yml"><span class="stt">tut-8/docker-compose.yml</span></a> file:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/docker-compose.yml"><span class="stt">tut-8/docker-compose.yml</span></a><button class="btn" data-clipboard-text="version: '3.4'
-x-app-base: &amp;app-base
-  image: reachsh/reach-app-tut-8:latest
-services:
-  devnet-cfx:
-    image: reachsh/devnet-cfx:0.1
-  devnet-eth:
-    image: reachsh/devnet-eth:0.1
-  devnet-algo:
-    image: reachsh/devnet-algo:0.1
-    depends_on:
-      - devnet-algo-pg
-    environment:
-      - REACH_DEBUG
-      - POSTGRES_HOST=devnet-algo-pg
-      - POSTGRES_USER=algogrand
-      - POSTGRES_PASSWORD=indexer
-      - POSTGRES_DB=pgdb
-    ports:
-      - 9392
-  devnet-algo-pg:
-    image: postgres:11-alpine
-    environment:
-      - POSTGRES_USER=algogrand
-      - POSTGRES_PASSWORD=indexer
-      - POSTGRES_DB=pgdb
-  reach-app-tut-8-ETH-live:
-    &lt;&lt;: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-live
-      - ETH_NODE_URI
-      - ETH_NODE_NETWORK
-  reach-app-tut-8-ETH-devnet: &amp;default-app
-    &lt;&lt;: *app-base
-    depends_on:
-      - devnet-eth
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ETH-devnet
-      - ETH_NODE_URI=http://devnet-eth:8545
-  reach-app-tut-8-ALGO-live:
-    &lt;&lt;: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ALGO-live
-      - ALGO_TOKEN
-      - ALGO_SERVER
-      - ALGO_PORT
-      - ALGO_INDEXER_TOKEN
-      - ALGO_INDEXER_SERVER
-      - ALGO_INDEXER_PORT
-      - ALGO_FAUCET_PASSPHRASE
-  reach-app-tut-8-ALGO-devnet:
-    &lt;&lt;: *app-base
-    depends_on:
-      - devnet-algo
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=ALGO-devnet
-      - ALGO_SERVER=http://devnet-algo
-      - ALGO_PORT=4180
-      - ALGO_INDEXER_SERVER=http://devnet-algo
-      - ALGO_INDEXER_PORT=8980
-  reach-app-tut-8-CFX-devnet:
-    &lt;&lt;: *app-base
-    depends_on:
-      - devnet-cfx
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=CFX-devnet
-      - CFX_DEBUG
-      - CFX_NODE_URI=http://devnet-cfx:12537
-      - CFX_NETWORK_ID=999
-  reach-app-tut-8-CFX-live:
-    &lt;&lt;: *app-base
-    environment:
-      - REACH_DEBUG
-      - REACH_CONNECTOR_MODE=CFX-live
-      - CFX_DEBUG
-      - CFX_NODE_URI
-      - CFX_NETWORK_ID
-  reach-app-tut-8-: *default-app
-  reach-app-tut-8: *default-app
-  # After this is new!
-  player: &amp;player
-    &lt;&lt;: *default-app
-    stdin_open: true
-  alice: *player
-  bob: *player"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="nt">1    version</span><span class="p">:</span> <span class="s">&#39;3.4&#39;</span>
- <span class="nt">2    x-app-base</span><span class="p">:</span> <span class="nl">&amp;app-base</span>
- <span class="nt">3      image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/reach-app-tut-8:latest</span>
- <span class="nt">4    services</span><span class="p">:</span>
- <span class="nt">5      devnet-cfx</span><span class="p">:</span>
- <span class="nt">6        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/devnet-cfx:0.1</span>
- <span class="nt">7      devnet-eth</span><span class="p">:</span>
- <span class="nt">8        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/devnet-eth:0.1</span>
- <span class="nt">9      devnet-algo</span><span class="p">:</span>
-<span class="nt">10        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/devnet-algo:0.1</span>
-<span class="nt">11        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">12          - devnet-algo-pg</span>
-<span class="nt">13        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">14          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">15          - POSTGRES_HOST=devnet-algo-pg</span>
-<span class="l l-Scalar l-Scalar-Plain">16          - POSTGRES_USER=algogrand</span>
-<span class="l l-Scalar l-Scalar-Plain">17          - POSTGRES_PASSWORD=indexer</span>
-<span class="l l-Scalar l-Scalar-Plain">18          - POSTGRES_DB=pgdb</span>
-<span class="nt">19        ports</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">20          - 9392</span>
-<span class="nt">21      devnet-algo-pg</span><span class="p">:</span>
-<span class="nt">22        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">postgres:11-alpine</span>
-<span class="nt">23        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">24          - POSTGRES_USER=algogrand</span>
-<span class="l l-Scalar l-Scalar-Plain">25          - POSTGRES_PASSWORD=indexer</span>
-<span class="l l-Scalar l-Scalar-Plain">26          - POSTGRES_DB=pgdb</span>
-<span class="nt">27      reach-app-tut-8-ETH-live</span><span class="p">:</span>
-<span class="nt">28        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">29        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">30          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">31          - REACH_CONNECTOR_MODE=ETH-live</span>
-<span class="l l-Scalar l-Scalar-Plain">32          - ETH_NODE_URI</span>
-<span class="l l-Scalar l-Scalar-Plain">33          - ETH_NODE_NETWORK</span>
-<span class="nt">34      reach-app-tut-8-ETH-devnet</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
-<span class="nt">35        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">36        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">37          - devnet-eth</span>
-<span class="nt">38        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">39          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">40          - REACH_CONNECTOR_MODE=ETH-devnet</span>
-<span class="l l-Scalar l-Scalar-Plain">41          - ETH_NODE_URI=http://devnet-eth:8545</span>
-<span class="nt">42      reach-app-tut-8-ALGO-live</span><span class="p">:</span>
-<span class="nt">43        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">44        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">45          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">46          - REACH_CONNECTOR_MODE=ALGO-live</span>
-<span class="l l-Scalar l-Scalar-Plain">47          - ALGO_TOKEN</span>
-<span class="l l-Scalar l-Scalar-Plain">48          - ALGO_SERVER</span>
-<span class="l l-Scalar l-Scalar-Plain">49          - ALGO_PORT</span>
-<span class="l l-Scalar l-Scalar-Plain">50          - ALGO_INDEXER_TOKEN</span>
-<span class="l l-Scalar l-Scalar-Plain">51          - ALGO_INDEXER_SERVER</span>
-<span class="l l-Scalar l-Scalar-Plain">52          - ALGO_INDEXER_PORT</span>
-<span class="l l-Scalar l-Scalar-Plain">53          - ALGO_FAUCET_PASSPHRASE</span>
-<span class="nt">54      reach-app-tut-8-ALGO-devnet</span><span class="p">:</span>
-<span class="nt">55        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">56        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">57          - devnet-algo</span>
-<span class="nt">58        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">59          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">60          - REACH_CONNECTOR_MODE=ALGO-devnet</span>
-<span class="l l-Scalar l-Scalar-Plain">61          - ALGO_SERVER=http://devnet-algo</span>
-<span class="l l-Scalar l-Scalar-Plain">62          - ALGO_PORT=4180</span>
-<span class="l l-Scalar l-Scalar-Plain">63          - ALGO_INDEXER_SERVER=http://devnet-algo</span>
-<span class="l l-Scalar l-Scalar-Plain">64          - ALGO_INDEXER_PORT=8980</span>
-<span class="nt">65      reach-app-tut-8-CFX-devnet</span><span class="p">:</span>
-<span class="nt">66        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">67        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">68          - devnet-cfx</span>
-<span class="nt">69        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">70          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">71          - REACH_CONNECTOR_MODE=CFX-devnet</span>
-<span class="l l-Scalar l-Scalar-Plain">72          - CFX_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">73          - CFX_NODE_URI=http://devnet-cfx:12537</span>
-<span class="l l-Scalar l-Scalar-Plain">74          - CFX_NETWORK_ID=999</span>
-<span class="nt">75      reach-app-tut-8-CFX-live</span><span class="p">:</span>
-<span class="nt">76        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">77        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">78          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">79          - REACH_CONNECTOR_MODE=CFX-live</span>
-<span class="l l-Scalar l-Scalar-Plain">80          - CFX_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">81          - CFX_NODE_URI</span>
-<span class="l l-Scalar l-Scalar-Plain">82          - CFX_NETWORK_ID</span>
-<span class="nt">83      reach-app-tut-8-</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">84      reach-app-tut-8</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="l l-Scalar l-Scalar-Plain">85</span>      <span class="c1"># After this is new!</span>
-<span class="nt">86      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
-<span class="nt">87        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">88        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">89      alice</span><span class="p">:</span> <span class="nv">*player</span>
-<span class="nt">90      bob</span><span class="p">:</span> <span class="nv">*player</span>
-</pre></div></div></p><ul><li><p>Lines 2 and 3 define a service for starting our application.
-Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-8</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory throughout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Conflux.</p></li><li><p>Lines 7 and 8 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 9 through 26 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 27 through 82 define services that allow the application to be run with different networks; including line 27, which defines <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-8-ETH-live</span><span class="hspace"></span></span> for connecting to a live network.</p></li><li><p>We&rsquo;ll also add lines 85 through 90 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-8-ETH-live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
-If we use the live version, then we have to define the environment variable <a href="ref-network-eth.html#%28env._.E.T.H_.N.O.D.E_.U.R.I%29" class="stt" data-pltdoc="x">ETH_NODE_URI</a> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile"><span class="stt">tut-8/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile#L37-L44"><span class="stt">tut-8/Makefile</span></a><button class="btn" data-clipboard-text=".PHONY: run-live
-run-live:
-	docker-compose run --rm reach-app-tut-8-ETH-live
-
-.PHONY: run-alice
-run-alice:
-	docker-compose run --rm alice
-"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">..</span>    
-<span class="nf">37    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">live</span>
-<span class="nf">38    run-live</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">39</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">reach-app-tut-8-ETH-live</span>
-<span class="err">40</span>    
-<span class="nf">41    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">alice</span>
-<span class="nf">42    run-alice</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">43</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">alice</span>
-<span class="err">44</span>    
-<span class="err">..</span>    
-</pre></div></div></p><p>However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
-Let&rsquo;s modify the JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> and make them interactive.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We&rsquo;ll start from scratch and show every line of the program again.
+Instead, we&rsquo;ll introduce customizations to the JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> which facilitate interactivity and provide the option to connect to a real <a href="ref-model.html#%28tech._consensus._network%29" class="techoutside" data-pltdoc="x"><span class="techinside">consensus network</span></a>.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We&rsquo;ll start from scratch and show every line of the program again.
 You&rsquo;ll see a lot of similarity between this and the last version, but for completeness, we&rsquo;ll show every line.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L1-L6"><span class="stt">tut-8/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
@@ -330,13 +128,13 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">58</span>    <span class="p">};</span>
 <span class="mf">59</span>    
 <span class="p">..</span>    <span class="c1">// ...</span>
-</pre></div></div></p><p>First we define a timeout handler.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L60-L78"><span class="stt">tut-8/index.mjs</span></a><button class="btn" data-clipboard-text="  if (isAlice) {
+</pre></div></div></p><p>Then we define a timeout handler.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L60-L78"><span class="stt">tut-8/index.mjs</span></a><button class="btn" data-clipboard-text="  if (isAlice) {
     const amt = await ask(
       `How much do you want to wager?`,
       stdlib.parseCurrency
     );
     interact.wager = amt;
-    interact.deadline = 10;
+    interact.deadline = { ETH: 10, ALGO: 100, CFX: 1000 }[stdlib.connector];
   } else {
     interact.acceptWager = async (amt) =&gt; {
       const accepted = await ask(
@@ -355,7 +153,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">63</span>        <a href="ref-frontends-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-frontends-js-utils.html#%28javascript._%28%28parse.Currency%29%29%29" class="nx" data-pltdoc="x">parseCurrency</a>
 <span class="mf">64</span>      <span class="p">);</span>
 <span class="mf">65</span>      <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">amt</span></font><span class="p">;</span>
-<span class="mf">66</span>      <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">deadline</span></font> <font class="badlink"><span class="o">=</span></font> <span class="mf">10</span><span class="p">;</span>
+<span class="mf">66</span>      <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">deadline</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">{</span> <font class="badlink"><span class="nx">ETH</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">10</span><span class="p">,</span> <font class="badlink"><span class="nx">ALGO</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">100</span><span class="p">,</span> <font class="badlink"><span class="nx">CFX</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">1000</span> <span class="p">}[</span><a href="ref-frontends-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-frontends-js-network.html#%28javascript._%28%28connector%29%29%29" class="nx" data-pltdoc="x">connector</a><span class="p">];</span>
 <span class="mf">67</span>    <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
 <span class="mf">68</span>      <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">acceptWager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="k">async</span></font> <span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mf">69</span>        <font class="badlink"><span class="kd">const</span></font> <font class="badlink"><span class="nx">accepted</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="k">await</span></font> <a href="ref-frontends-js-ask_mjs.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
@@ -435,6 +233,8 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">108</span>    
 <span class="mf">109</span>    <a href="ref-frontends-js-ask_mjs.html#%28javascript._%28%28done%29%29%29" class="nx" data-pltdoc="x">done</a><span class="p">();</span>
 <span class="mf">110</span>    <span class="p">})();</span>
-</pre></div></div></p><p>Lastly, we choose the appropriate backend function and await its completion.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We can now run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make build</span></p><p>to rebuild the images, then</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make run-alice</span></p><p>in one terminal in this directory and</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">make run-bob</span></p><p>in another terminal in this directory.</p><p>Here&rsquo;s an example run:</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ make run-alice</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Starting Rock, Paper, Scissors as Alice</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Do you want to deploy the contract? (y/n)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">The contract is deployed as = "0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"</span></p></td></tr><tr><td><p><span class="stt">Your balance is 999.9999</span></p></td></tr><tr><td><p><span class="stt">How much do you want to wager?</span></p></td></tr><tr><td><p><span class="stt">10</span></p></td></tr><tr><td><p><span class="stt">What hand will you play?</span></p></td></tr><tr><td><p><span class="stt">r</span></p></td></tr><tr><td><p><span class="stt">You played Rock</span></p></td></tr><tr><td><p><span class="stt">The outcome is: Bob wins</span></p></td></tr><tr><td><p><span class="stt">Your balance is now 989.9999</span></p></td></tr></table></p><p>and</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ make run-bob</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">n</span></p></td></tr><tr><td><p><span class="stt">Starting Rock, Paper, Scissors as Bob</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Do you want to deploy the contract? (y/n)</span></p></td></tr><tr><td><p><span class="stt">n</span></p></td></tr><tr><td><p><span class="stt">Please paste the contract information:</span></p></td></tr><tr><td><p><span class="stt">"0xc2a875afbdFb39b1341029A7deceC03750519Db6"</span></p></td></tr><tr><td><p><span class="stt">Your balance is 1000</span></p></td></tr><tr><td><p><span class="stt">Do you accept the wager of 10?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">What hand will you play?</span></p></td></tr><tr><td><p><span class="stt">p</span></p></td></tr><tr><td><p><span class="stt">You played Paper</span></p></td></tr><tr><td><p><span class="stt">The outcome is: Bob wins</span></p></td></tr><tr><td><p><span class="stt">Your balance is now 1009.9999</span></p></td></tr></table></p><p>Of course, when you run the exact amounts and addresses may be different.</p><blockquote class="refpara"><blockquote class="refcolumn"><blockquote class="refcontent"><p>If your version isn&rsquo;t working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.rsh"><span class="stt">tut-8/index.rsh</span></a>, <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs"><span class="stt">tut-8/index.mjs</span></a>, <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/package.json"><span class="stt">tut-8/package.json</span></a>, <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Dockerfile"><span class="stt">tut-8/Dockerfile</span></a>, <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/docker-compose.yml"><span class="stt">tut-8/docker-compose.yml</span></a>, and <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/Makefile"><span class="stt">tut-8/Makefile</span></a> to make sure you copied everything down correctly!</p></blockquote></blockquote></blockquote><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>If we were to edit <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/docker-compose.yml"><span class="stt">tut-8/docker-compose.yml</span></a>, and move the <span class="RktInBG"><span class="hspace"></span><span class="RktIn">&amp;default-app</span><span class="hspace"></span></span> on line 34 to line 54, then instead of running on Ethereum, we&rsquo;d be able to test and run our application on Algorand.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Now our implementation of <span class="emph">Rock, Paper, Scissors!</span> is finished!
+</pre></div></div></p><p>Lastly, we choose the appropriate backend function and await its completion.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We can now run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">./reach run</span></p><p>in one terminal in this directory to play as Alice and</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">./reach run</span></p><p>in another terminal in this directory to play as Bob.</p><p>Here&rsquo;s an example run:</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ ./reach run</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Starting Rock, Paper, Scissors as Alice</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Do you want to deploy the contract? (y/n)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">The contract is deployed as = "0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"</span></p></td></tr><tr><td><p><span class="stt">Your balance is 999.9999</span></p></td></tr><tr><td><p><span class="stt">How much do you want to wager?</span></p></td></tr><tr><td><p><span class="stt">10</span></p></td></tr><tr><td><p><span class="stt">What hand will you play?</span></p></td></tr><tr><td><p><span class="stt">r</span></p></td></tr><tr><td><p><span class="stt">You played Rock</span></p></td></tr><tr><td><p><span class="stt">The outcome is: Bob wins</span></p></td></tr><tr><td><p><span class="stt">Your balance is now 989.9999</span></p></td></tr></table></p><p>and</p><p><table cellspacing="0" cellpadding="0" class="SVerbatim"><tr><td><p><span class="stt">$ ./reach run</span></p></td></tr><tr><td><p><span class="stt">Are you Alice?</span></p></td></tr><tr><td><p><span class="stt">n</span></p></td></tr><tr><td><p><span class="stt">Starting Rock, Paper, Scissors as Bob</span></p></td></tr><tr><td><p><span class="stt">Would you like to create an account? (only possible on devnet)</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">Do you want to deploy the contract? (y/n)</span></p></td></tr><tr><td><p><span class="stt">n</span></p></td></tr><tr><td><p><span class="stt">Please paste the contract information:</span></p></td></tr><tr><td><p><span class="stt">"0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"</span></p></td></tr><tr><td><p><span class="stt">Your balance is 1000</span></p></td></tr><tr><td><p><span class="stt">Do you accept the wager of 10?</span></p></td></tr><tr><td><p><span class="stt">y</span></p></td></tr><tr><td><p><span class="stt">What hand will you play?</span></p></td></tr><tr><td><p><span class="stt">p</span></p></td></tr><tr><td><p><span class="stt">You played Paper</span></p></td></tr><tr><td><p><span class="stt">The outcome is: Bob wins</span></p></td></tr><tr><td><p><span class="stt">Your balance is now 1009.9999</span></p></td></tr></table></p><p>Of course, when you run the exact amounts and addresses may be different.</p><blockquote class="refpara"><blockquote class="refcolumn"><blockquote class="refcontent"><p>If your version isn&rsquo;t working, compare with <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.rsh"><span class="stt">tut-8/index.rsh</span></a> and <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs"><span class="stt">tut-8/index.mjs</span></a> to ensure you&rsquo;ve copied everything down correctly!</p></blockquote></blockquote></blockquote><p><div class="SIntrapara">If we were to instead run
+</div><div class="SIntrapara"><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">REACH_CONNECTOR_MODE=ALGO-devnet ./reach run</span></div><div class="SIntrapara">in two terminals we&rsquo;d see equivalent output from running our application on a private Algorand devnet.</div></p><p><div class="SIntrapara">Connecting to live <a href="ref-model.html#%28tech._consensus._network%29" class="techoutside" data-pltdoc="x"><span class="techinside">consensus networks</span></a> is similarly easy:
+</div><div class="SIntrapara"><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI="http://some.node.fqdn:8545" ./reach run</span></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Now our implementation of <span class="emph">Rock, Paper, Scissors!</span> is finished!
 We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.</p><p>In this step, we made a command-line interface for our Reach program.
 In <a href="tut-9.html" data-pltdoc="x">the next step</a>, we&rsquo;ll replace this with a Web interface for the same Reach program.</p><blockquote class="refpara"><blockquote class="refcolumn"><blockquote class="refcontent"><p><div class="SIntrapara">Check your understanding: True or false: Reach helps you build automated tests for your decentralized application, but it doesn&#8217;t support building interactive user-interfaces. </div><div class="SIntrapara"><blockquote class="check-answer"><p><div class="SIntrapara">Answer: </div><div class="SIntrapara"><p class="check-answer-body">False; Reach does not impose any constraints on what kind of frontend is attached to your Reach application.</p></div></p></blockquote></div></p></blockquote></blockquote></blockquote><div class="navsetbottom"><span class="navleft"><form class="searchform"><input class="searchbox" id="searchbox" type="text" tabindex="1" placeholder="...search docs..." title="Enter a search string to search the Reach documentation" onkeypress="return reach_DoSearch(event, this);"></form>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="tut-7.html" title="backward to &quot;2.7 Play and Play Again&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="tut.html" title="up to &quot;2 Tutorial&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tut-9.html" title="forward to &quot;2.9 Web Interaction&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div></div></div><div id="contextindicator">&nbsp;</div><script src="reach-post.js"></script></body></html>

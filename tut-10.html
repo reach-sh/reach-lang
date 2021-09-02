@@ -264,7 +264,7 @@ const stdlib = loadStdlib(process.env);
       stdlib.parseCurrency
     );
     interact.wager = amt;
-    interact.deadline = 10;
+    interact.deadline = { ETH: 10, ALGO: 100, CFX: 1000 }[stdlib.connector];
   } else {
     interact.acceptWager = async (amt) =&gt; {
       const accepted = await ask(
@@ -373,7 +373,7 @@ const stdlib = loadStdlib(process.env);
 <span class="mf">63</span>          <a href="ref-frontends-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-frontends-js-utils.html#%28javascript._%28%28parse.Currency%29%29%29" class="nx" data-pltdoc="x">parseCurrency</a>
 <span class="mf">64</span>        <span class="p">);</span>
 <span class="mf">65</span>        <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">amt</span></font><span class="p">;</span>
-<span class="mf">66</span>        <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">deadline</span></font> <font class="badlink"><span class="o">=</span></font> <span class="mf">10</span><span class="p">;</span>
+<span class="mf">66</span>        <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">deadline</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">{</span> <font class="badlink"><span class="nx">ETH</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">10</span><span class="p">,</span> <font class="badlink"><span class="nx">ALGO</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">100</span><span class="p">,</span> <font class="badlink"><span class="nx">CFX</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">1000</span> <span class="p">}[</span><a href="ref-frontends-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-frontends-js-network.html#%28javascript._%28%28connector%29%29%29" class="nx" data-pltdoc="x">connector</a><span class="p">];</span>
 <span class="mf">67</span>      <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
 <span class="mf">68</span>        <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">acceptWager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="k">async</span></font> <span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mf">69</span>          <font class="badlink"><span class="kd">const</span></font> <font class="badlink"><span class="nx">accepted</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="k">await</span></font> <a href="ref-frontends-js-ask_mjs.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
