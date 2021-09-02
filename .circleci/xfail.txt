@@ -10,3 +10,9 @@ ETH.raffle
 # until we figure out how to test the private repo
 # https://reachsh.atlassian.net/browse/CORE-535
 CFX.duoswap
+
+# https://reachsh.atlassian.net/browse/CORE-547
+ALGO.mint-basic
+
+# https://reachsh.atlassian.net/browse/CORE-548
+ETH.tut-8

@@ -14,3 +14,6 @@ ALGO.rent-seeking
 
 # https://reachsh.atlassian.net/browse/CORE-465
 ALGO.raffle
+
+# https://reachsh.atlassian.net/browse/CORE-546
+ALGO.atomic-swap-auction
