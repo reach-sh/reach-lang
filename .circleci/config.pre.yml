@@ -257,11 +257,10 @@ jobs:
         path: hs/stan.html
     - slack_fail
   "js-test":
-    executor: fake
+    executor: real
     steps:
     - checkout
     - restore_bin
-    - srd_no
     - and_restore_docker
     - run: |
         (cd js/dockerized-tests && make clean-test && sbin/test.sh)
