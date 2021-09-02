@@ -58,20 +58,17 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
 }
 
 export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount> {
-  if (isIsolatedNetwork()) {
-    if (isWindowProvider()) {
-      const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-      return p.getSigner();
-    }
-    // XXX this may break if users call setProvider?
-    // On isolated networks, the default account is assumed to be the faucet.
-    // Furthermore, it is assumed that the faucet Signer is "unlocked",
-    // so no further secrets need be provided in order to access its funds.
-    // This is true of reach-provided devnets.
-    // TODO: allow the user to set the faucet via mnemnonic.
-    return await _getDefaultNetworkAccount();
+  if (isWindowProvider()) {
+    const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+    return p.getSigner();
   }
-  throw Error(`getFaucet not supported in this context.`)
+  // XXX this may break if users call setProvider?
+  // On isolated networks, the default account is assumed to be the faucet.
+  // Furthermore, it is assumed that the faucet Signer is "unlocked",
+  // so no further secrets need be provided in order to access its funds.
+  // This is true of reach-provided devnets.
+  // TODO: allow the user to set the faucet via mnemnonic.
+  return await _getDefaultNetworkAccount();
 }
 
 export async function canFundFromFaucet(): Promise<boolean> {
