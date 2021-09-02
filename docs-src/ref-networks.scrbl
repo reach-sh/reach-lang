@@ -9,48 +9,6 @@ supported by Reach version @|reach-vers|.
 
 @local-table-of-contents[#:style 'immediate-only]
 
-@section[#:tag "ref-network-eth"]{Ethereum}
-
-The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
-manages one instance of the @|DApp|'s execution.
-It is guaranteed to
-use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
-
-Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
-Its @tech{bit width} is 256-bits.
-
-@tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
-Specifically, the @reachin{Token} type refers to the address of the ERC-20 contract.
-@tech{Token minting} launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned).
-
-@tech{Views} are compiled to @litchar{view} functions.
-A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
-@tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
-
-In Ethereum, @tech{network time} corresponds to block numbers and @tech{network seconds} correspond to the Unix timestamp of the block.
-
-The connector provides a binding named @reachin{ETH} to
-@tech{backends}.
-
-During compilation, the connector produces one intermediate output: @filepath{input.export.sol}, containing
-the Solidity code implementing the @tech{contract}.
-
-A few details of Ethereum leak through to Reach.
-The node that a given @tech{participant} is connected to does not instantly know that its blocks are correct and may revert past transactions after it reaches consensus with the rest of the network.
-This means that Reach applications must not make externally observable effects until after such consensus is reached.
-
-@tech{Backends} must respect the following environment variables:
-
-@itemlist[
-
-@item{@defenv{ETH_NODE_URI} is used to contact the Ethereum node.
-It defaults to @litchar{http://localhost:8545}.}
-
-@item{@defenv{ETH_NODE_NETWORK} is used to name the Ethereum network.
-It defaults to @litchar{unspecified}.}
-
-]
-
 @section[#:tag "ref-network-algo"]{Algorand}
 
 The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
@@ -124,5 +82,63 @@ The connector provides a binding named @reachin{ALGO} to
 
 @item{@defenv{ALGO_FAUCET_PASSPHRASE} is used as the mnemonic for the faucet of your network.
 This is useful if you are running your own testing network.}
+
+]
+
+@section[#:tag "ref-network-cfx"]{Conflux}
+
+The @link["https://confluxnetwork.org/"]{Conflux} Reach @tech{connector} works almost identically to the @seclink["ref-network-eth"]{Ethereum connector}, except that it behaves differently at runtime: using, for example, @link["https://portal.confluxnetwork.org/"]{Conflux Portal} rather than @link["https://metamask.io/"]{MetaMask}, and connecting to Conflux nodes.
+
+@tech{Backends} must respect the following environment variables:
+
+@itemlist[
+
+@item{@defenv{CFX_NODE_URI} is used to contact the Conflux node.
+It defaults to @litchar{http://localhost:12537}.}
+
+@item{@defenv{CFX_NETWORK_ID} is used to determine the Conflux network id.
+It defaults to @litchar{999}.}
+
+]
+
+@section[#:tag "ref-network-eth"]{Ethereum}
+
+The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
+manages one instance of the @|DApp|'s execution.
+It is guaranteed to
+use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
+
+Ethereum uses the Keccak256 algorithm to perform @tech{digest}s.
+Its @tech{bit width} is 256-bits.
+
+@tech{Non-network tokens} are compiled to @link["https://ethereum.org/en/developers/docs/standards/tokens/erc-20/"]{ERC-20} fungible tokens.
+Specifically, the @reachin{Token} type refers to the address of the ERC-20 contract.
+@tech{Token minting} launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned).
+
+@tech{Views} are compiled to @litchar{view} functions.
+A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
+@tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
+
+In Ethereum, @tech{network time} corresponds to block numbers and @tech{network seconds} correspond to the Unix timestamp of the block.
+
+The connector provides a binding named @reachin{ETH} to
+@tech{backends}.
+
+During compilation, the connector produces one intermediate output: @filepath{input.export.sol}, containing
+the Solidity code implementing the @tech{contract}.
+
+A few details of Ethereum leak through to Reach.
+The node that a given @tech{participant} is connected to does not instantly know that its blocks are correct and may revert past transactions after it reaches consensus with the rest of the network.
+This means that Reach applications must not make externally observable effects until after such consensus is reached.
+
+@tech{Backends} must respect the following environment variables:
+
+@itemlist[
+
+@item{@defenv{ETH_NODE_URI} is used to contact the Ethereum node.
+It defaults to @litchar{http://localhost:8545}.}
+
+@item{@defenv{ETH_NODE_NETWORK} is used to name the Ethereum network.
+It defaults to @litchar{unspecified}.}
 
 ]
