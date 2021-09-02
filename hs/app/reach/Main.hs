@@ -1027,8 +1027,9 @@ upgrade = command "upgrade" $ info f d where
 update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
-  f = script . forM_ reachImages $ \i -> write
-    $ "docker pull reachsh/" <> i <> ":" <> pack compatibleVersionStr
+  f = script . forM_ reachImages $ \i -> do
+    write $ "docker pull reachsh/" <> i <> ":" <> pack compatibleVersionStr
+    write $ "docker pull reachsh/" <> i <> ":" <> pack versionStr
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
