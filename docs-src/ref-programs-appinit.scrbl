@@ -22,7 +22,7 @@ However, some additional statements are allowed.
 
 A @deftech{deploy statement}, written @reachin{deploy();}, @tech{deploys} the @|DApp| and finalizes all of the available @tech{participants}, @tech{views}, and @tech{compilation options}.
 
-Its continuation is a @tech{step}, which means its content is specified by @Secref["ref-programs-step"].
+Its continuation is a @tech{step}, which means its content is specified by @secref["ref-programs-step"].
 It represents the body of the @|DApp| to be @tech{compile}d.
 
 @subsection{@tt{setOptions}}
@@ -34,56 +34,49 @@ It represents the body of the @|DApp| to be @tech{compile}d.
 
 The @deftech{compilation options} for the @|DApp| may be set by calling @reachin{setOptions(OBJ_EXPR);} where @reachin{OBJ_EXPR} is an object with the following keys and values:
 
-@tabular[
-#:style 'boxed
-(list
+@itemlist[
 
-(list
- @(begin @(mint-define! '("deployMode")) @reachin{deployMode})
- @~
- @para{@reachin{'constructor'} (default) or @reachin{'firstMsg'}}
- @~
- @para{Determines whether @tech{contract} should be @tech{deploy}ed independently (@reachin{'constructor'}) or as part of the first @tech{publication} (@reachin{'firstMsg'}).
- If deployed as part of the first publication, then the first publication must precede all uses of @reachin{wait} and @reachin{.timeout}.
- See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.}
- )
+@item{
+  @(mint-define! '("deployMode")) @reachin{deployMode}
 
-(list @~ @~ @~ @~ @~)
+  @reachin{'constructor'} (default) or @reachin{'firstMsg'}
 
-(list
- @(begin @(mint-define! '("verifyArithmetic")) @reachin{verifyArithmetic})
- @~
- @para{@reachin{true} or @reachin{false} (default)}
- @~
- @para{Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond @reachin{UInt.max}.
- This defaults to @reachin{false}, because it is onerous to verify.
- We recommend turning it on before final deployment, but leaving it off during development.
- When it is @reachin{false}, @tech{connectors} will ensure that overflows do not actually occur on the network.}
- )
+  Determines whether @tech{contract} should be @tech{deploy}ed independently (@reachin{'constructor'}) or as part of the first @tech{publication} (@reachin{'firstMsg'}).
+  If deployed as part of the first publication, then the first publication must precede all uses of @reachin{wait} and @reachin{.timeout}.
+  See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.
+}
 
-(list @~ @~ @~ @~ @~)
+@item{
+  @(mint-define! '("verifyArithmetic")) @reachin{verifyArithmetic}
 
-(list
- @(begin @(mint-define! '("verifyPerConnector")) @reachin{verifyPerConnector})
- @~
- @para{@reachin{true} or @reachin{false} (default)}
- @~
- @para{Determines whether verification is done per connector, or once for a generic connector.
- When this is @reachin{true}, then connector-specific constants, like @reachin{UInt.max}, will be instantiated to literal numbers.
- This concretization of these constants can induce performance degradation in the verifier.}
- )
+  @reachin{true} or @reachin{false} (default)
 
-(list @~ @~ @~ @~ @~)
+  Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond @reachin{UInt.max}.
+  This defaults to @reachin{false}, because it is onerous to verify.
+  We recommend turning it on before final deployment, but leaving it off during development.
+  When it is @reachin{false}, @tech{connectors} will ensure that overflows do not actually occur on the network.
+}
 
-(list
- @(begin @(mint-define! '("connectors")) @reachin{connectors})
- @~
- @para{@(mint-define! '("ETH") '("ALGO")) @reachin{[ETH, ALGO]} (default)}
- @~
- @para{A tuple of the @tech{connectors} that the application should be compiled for.
- By default, all available @tech{connectors} are chosen.}
- )
-)]
+@item{
+  @(mint-define! '("verifyPerConnector")) @reachin{verifyPerConnector}
+
+  @reachin{true} or @reachin{false} (default)
+
+  Determines whether verification is done per connector, or once for a generic connector.
+  When this is @reachin{true}, then connector-specific constants, like @reachin{UInt.max}, will be instantiated to literal numbers.
+  This concretization of these constants can induce performance degradation in the verifier.
+}
+
+@item{
+  @(mint-define! '("connectors")) @reachin{connectors}
+
+  @(mint-define! '("ETH") '("ALGO")) @reachin{[ETH, ALGO]} (default)
+
+  A tuple of the @tech{connectors} that the application should be compiled for.
+  By default, all available @tech{connectors} are chosen.
+}
+
+]
 
 @section[#:tag "ref-programs-appinit-exprs"]{Expressions}
 
@@ -112,7 +105,8 @@ Each @reachin{participantName} must be unique.
 @reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
 
 @subsection[#:tag "ref-programs-appinit-view"]{View Definition}
-@(note-view-xref)
+
+@margin-note{This section is about defining @tech{views} during in application initialization. Views are @seclink["ref-programs-consensus-view"]{set in consensus steps}, in your Reach program. But, they are @seclink["ref-frontends-js-view"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.}
 
 @(mint-define! '("View"))
 @reach{

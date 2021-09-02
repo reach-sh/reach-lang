@@ -9,7 +9,7 @@ The Reach compiler uses the following strategy for analysis and compiling progra
 1. A partial evaluation of the source program that removes all function calls & compile-time values.
 2. A linearization of the residual program that removes the need for a runtime stack to track any consensus state.
 3. A conservative (sound) analysis of the knowledge of each participant.
-4. A reduction of the program to an instance of a SMT ([satisfiability modulo theories](http://en.wikipedia.org/wiki/Satisfiability_Modulo_Theories)) theory of decentralized applications.
+4. A reduction of the program to an instance of an SMT ([satisfiability modulo theories](http://en.wikipedia.org/wiki/Satisfiability_Modulo_Theories)) theory of decentralized applications.
 5. An end-point projection of the linearization to produce a perspective for each participant, as well as the consensus.
 6. A single-pass top-down construction of backend and consensus programs.
 

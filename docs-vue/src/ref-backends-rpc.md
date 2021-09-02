@@ -19,12 +19,12 @@ $ reach rpc-server
 
 ---
 
-The Reach RPC Server supports the following <Defn :name="RPC methods">RPC methods</Defn>:
+The Reach RPC Server supports the following ${defn("RPC methods")}:
 
 + `/health` returns `true` to indicate the server is running properly.
 + `/stdlib/$METHOD` where `$METHOD` is a function of the [JavaScript standard library](##ref-frontends-js).
 
-All `/stdlib` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that that produce or consume account representations.
+All `/stdlib` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that produce or consume account representations.
 
 Those methods instead accept and produce account RPC handles, which are random strings that represent the corresponding account representations.
 For example, `/stdlib/newTestAccount` does not return an account like `newTestAccount`, but instead returns an account RPC handle.

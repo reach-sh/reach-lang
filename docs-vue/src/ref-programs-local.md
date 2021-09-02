@@ -23,7 +23,7 @@ This is useful when the local step was initiated by an `each` expression.
 
 ### `interact`
 
-<Ref :name="(quote rsh):interact" />
+${ref((quote rsh), "interact")}
 ```reach
 interact.amount
 interact.notify(handA, handB)
@@ -31,7 +31,7 @@ interact.chooseAmount(heap1, heap2)
 ```
 
 
-An <Defn :name="interaction expression">interaction expression</Defn>, written `interact.METHOD(EXPR_0, ..., EXPR_n)`, where `METHOD` is an identifier bound in the participant interact interface to a function type, and `EXPR_0` through `EXPR_n` are expressions that evaluates to the result of an interaction with a frontend that receives the evaluation of the `n` expressions and sends a value.
+An ${defn("interaction expression")}, written `interact.METHOD(EXPR_0, ..., EXPR_n)`, where `METHOD` is an identifier bound in the participant interact interface to a function type, and `EXPR_0` through `EXPR_n` are expressions that evaluate to the result of an interaction with a frontend that receives the evaluation of the `n` expressions and sends a value.
 
 An interaction expression may also be written `interact.KEY`, where `KEY` is bound in the participant interact interface to a non-function type.
 
@@ -39,7 +39,7 @@ An interaction expression may only occur in a local step.
 
 ### `assume`
 
-<Ref :name="(quote rsh):assume" />
+${ref((quote rsh), "assume")}
 ```reach
 assume( claim, [msg] ) 
 ```
@@ -51,7 +51,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ### `fail`
 
-<Ref :name="(quote rsh):fail" />
+${ref((quote rsh), "fail")}
 ```reach
 fail() 
 ```
@@ -61,17 +61,17 @@ fail()
 
 ### `declassify`
 
-<Ref :name="(quote rsh):declassify" />
+${ref((quote rsh), "declassify")}
 ```reach
 declassify( arg ) 
 ```
 
 
-The <Defn :name="declassify">declassify</Defn> primitive performs a declassification of the given argument.
+The ${defn("declassify")} primitive performs a declassification of the given argument.
 
 ### `makeCommitment`
 
-<Ref :name="(quote rsh):makeCommitment" />
+${ref((quote rsh), "makeCommitment")}
 ```reach
 makeCommitment( interact, x ) 
 ```

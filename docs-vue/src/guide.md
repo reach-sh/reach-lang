@@ -9,7 +9,7 @@ Indeed, many of these points are relevant to all DApp developers, because the pr
 
 The following guides are available:
 
-[[toc]]
+${toc}
 
 
 

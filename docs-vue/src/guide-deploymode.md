@@ -23,18 +23,18 @@ If the frontend attempts to call `await ctc.getInfo()` too early, it will [deadl
 
 For example, consider the frontend in the seventh version of the _Rock, Paper, Scissors!_ tutorial:
 
-@[code{23-33}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 23, 33)}
 
 + Line 26 instructs the backend that it is the deployer.
 + Line 27 immediately reads the contract information.
 
 
-If [tut-8/index.rsh](@github/examples/tut-8/index.rsh) were defined to use `deployMode` `'firstMsg'`, then this call would [deadlock](https://en.wikipedia.org/wiki/Deadlock), because the contract information would not yet be available.
+If [tut-8/index.rsh](${repo}}/examples/tut-8/index.rsh) were defined to use `deployMode` `'firstMsg'`, then this call would [deadlock](https://en.wikipedia.org/wiki/Deadlock), because the contract information would not yet be available.
 (Furthermore, the whole premise of this code, where on line 24, the user is asked if they will deploy, is unnecessary, because Alice would _always_ deploy.
 The code for the non-deploy case, line 33, would move to exclusively occur on Bob's branch.)
 Instead, the Reach application would need to introduce a new `interact` method called by Alice _after_ the first message to observe the contract information.
 
-@[code{42-48}](@reach-lang/examples/tut-8/index.rsh)
+${code("/examples/tut-8/index.rsh", 42, 48)}
 
 This method would be called on line 47 in a new `only` block.
 

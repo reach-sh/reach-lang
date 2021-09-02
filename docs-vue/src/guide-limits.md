@@ -6,7 +6,7 @@
 Today, Reach is a powerful language for building decentralized applications, as demonstrated in [the overview](##overview), [the tutorial](##tut), and the [workshop series](##workshop).
 However, it has a lot of potential for growth.
 This section describes a few of these areas and gives brief sketches of our roadmap for directing this growth.
-We welcome your contributions on [GitHub](https://github.com/reach-sh/reach-lang) and in <CommunityLink /> to help bring these plans to fruition.
+We welcome your contributions on [GitHub](https://github.com/reach-sh/reach-lang) and in [the Discord community](${discord}) to help bring these plans to fruition.
 
 ---
 **Connectors.** Foremost, Reach is a consensus network-agnostic language, so one of our highest priorities is supporting a wide variety of platforms, including layer-2 abstractions over other layer-1 networks.
@@ -30,5 +30,5 @@ Reach programs can instead interact with these low-level details of their chosen
 
 ---
 **Communication.**
-Reach's communication language has some limitations that we have plans to remove, which are discussed in [roadmap](##guide-roadmap), but there are some for which we do not have plans for removing.
+Reach's communication language has some limitations that we have plans to remove, which are discussed in [roadmap](##guide-roadmap), but there are some for which we do not have plans to remove.
 For example, we do not intend to support co-inductive or cyclic state, nor expose an arbitrary consensus heap to programmers.

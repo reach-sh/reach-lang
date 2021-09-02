@@ -5,10 +5,10 @@
 # {#TAG} Workshop: Relay Account
 
 In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
-However, unlike in XXX (secref "workshop-hash-lock"), we will use a technique that is safe against malicious miners.
+However, unlike in ${seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
 One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
 
-XXX (workshop-deps "workshop-hash-lock")
+${workshopDeps("workshop-hash-lock")}
 XXX (workshop-init TAG)
 
 XXX (drstep-pr TAG)
@@ -22,7 +22,7 @@ We call this person, Bob.
 + Bob can transfer the funds to wherever he'd like.
 
 
-In XXX (secref "workshop-hash-lock"), we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
+In ${seclink("workshop-hash-lock")}, we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
 This approach was flawed, because when Bob used the secret to gain access, it was possible for anyone else to see the transaction and attempt to play it themselves.
 
 In today's workshop, we'll use a crucial insight about decentralized applications: account ownership is fluid and account credentials are a form of secret knowledge that every consensus network builds in to their foundation.
@@ -31,7 +31,7 @@ With that in mind, let's use the following design:
 XXX (centered
  "Alice will represent her secret as an account that is authorized to withdraw the funds.")
 
-This is called a <Defn :name="relay account">relay account</Defn>, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.
+This is called a ${defn("relay account")}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.
 
 With this in mind, let's answer the questions:
 + Who are the principals of the application?
@@ -69,7 +69,7 @@ XXX (drstep-dd-stop)
 Let's compare notes again.
 Here's what we wrote in our program:
 
-@[code{6-8}](@reach-lang/examples/workshop-relay/index.rsh)
+${code("/examples/workshop-relay/index.rsh", 6, 8)}
 
 We chose to represent the amount as a `UInt` field, which should be unsurprising.
 We then have two functions that take no arguments and return an `Address` which respectively return the Relay identity and the Bob identity.
@@ -78,7 +78,7 @@ The idea here is that Alice will create the Relay account in the midst of the pr
 XXX (drstep-cc TAG)
 
 Now, we can write down the structure of communication and action in our application.
-Try this on your own based on your experience with XXX (secref "workshop-hash-lock").
+Try this on your own based on your experience with ${seclink("workshop-hash-lock")}.
 
 XXX (drstep-cc-stop1)
 
@@ -143,8 +143,7 @@ Sometimes it can be difficult to decide which things are _part of_ the applicati
 This is a general problem in verification where the logical properties of the _desired_ program are often mixed up with the logical properties of the _actual_ program.
 If you're interested in this topic, you might like to spend time reading about [formal specification on Wikipedia](https://en.wikipedia.org/wiki/Formal_specification).
 
-Now, if we were devious, we might send you on SNARK hunt after some more assertions to add to our program.
-But, we're not mean any more, so we'll just tell you that there's nothing else to assert about this program.
+Now, if we were devious, we might send you on a SNARK hunt after some more assertions to add to our program, but we're not mean, so we'll just tell you that there's nothing else to assert about this program.
 
 XXX (drstep-ii TAG)
 
@@ -155,7 +154,7 @@ XXX (drstep-ii-stop)
 
 Let's look at our whole program now:
 
-@[code](@reach-lang/examples/workshop-relay/index.rsh)
+${code("/examples/workshop-relay/index.rsh")}
 
 XXX (drstep-de TAG)
 
@@ -165,11 +164,11 @@ If you'd like a hint, remember that you can call `stdlib.newTestAccount` any num
 
 If you're brave, then try it yourself; otherwise, scroll down to see our solution.
 
-XXX (drstep-de-stop)
+**Decide how you will deploy and use this application.**
 
 Here's the JavaScript frontend we wrote:
 
-@[code](@reach-lang/examples/workshop-relay/index.mjs)
+${code("/examples/workshop-relay/index.mjs")}
 
 We do a few sneaky things in this program:
 + Lines 18 through 21 create a JavaScript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will be filled in later by Alice.
@@ -204,7 +203,7 @@ Great job!
 You could use this application today and start minting gift cards of tokens for your friends on their birthdays!
 Wouldn't that be fun?
 
-If you found this workshop rewarding, please let us know on <CommunityLink />!
+If you found this workshop rewarding, please let us know on [the Discord community](${discord})!
 
 If you'd like to make this application a little more interesting, maybe you'd like to have a secret password just like [the hash lock](##workshop-hash-lock) as well, so Alice can separate the revealing of information to Bob.
 

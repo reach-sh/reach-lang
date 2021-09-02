@@ -122,7 +122,7 @@ will indicate that @reachin{fork} payments should be of the format:
       .pay(wagerAmount)
       .timeout(false); }
 
-@(note-ctransfer)
+@margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.}
 
 A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR).when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
@@ -232,7 +232,7 @@ fork()
   exit(); });
 }
 
-@(note-ctransfer)
+@margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.}
 
 A @deftech{fork statement} is written:
 
@@ -367,7 +367,7 @@ However, some additional expressions are allowed.
 @reach{
  race(Alice, Bob).publish(bet); }
 
-@(note-ctransfer)
+@margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.}
 
 A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPANT_n);}, constructs a @tech{participant} that may be used in a @tech{consensus transfer} statement, such as @reachin{publish} or @reachin{pay}, where the various @tech{participants} race to be the first one to perform the @tech{consensus transfer}.
 

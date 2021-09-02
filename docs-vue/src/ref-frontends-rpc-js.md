@@ -16,7 +16,7 @@ $ npm install --save @reach-sh/rpc-client
 
 
 Once installed, add the following import line to your JavaScript file which will
-connect to the XXX (seclink "ref-backends-rpc"):
+connect to the [RPC server](##ref-backends-rpc):
 ```js
 import { mkRPC } from '@reach-sh/rpc-client';
 ```
@@ -25,15 +25,15 @@ import { mkRPC } from '@reach-sh/rpc-client';
 The library provides the following bindings:
 
 ---
-<Ref :name="(quote js):mkRPC" />
+${ref((quote js), "mkRPC")}
 ```js
 const { rpc, rpcCallbacks } = await mkRPC(opts);
 ```
 
 
-`mkRPC` accepts the XXX (secref "ref-backends-rpc-opts") as an object and returns a Promise of an object with two fields, `rpc` and `rpcCallbacks`.
+`mkRPC` accepts the ${seclink("ref-backends-rpc-opts")} as an object and returns a Promise of an object with two fields, `rpc` and `rpcCallbacks`.
 
-<Ref :name="(quote js):rpc" />
+${ref((quote js), "rpc")}
 `rpc` is a function that invokes a synchronous value RPC method.
 It takes a string, naming the RPC method, and some JSON values to provide as arguments.
 It returns a Promise of a single JSON value as the result.
@@ -47,7 +47,7 @@ await rpc(`/stdlib/formatCurrency`, i, 4);
 
 calls `formatCurrency` with some value `i` and `4`.
 
-<Ref :name="(quote js):rpcCallbacks" />
+${ref((quote js), "rpcCallbacks")}
 `rpcCallbacks` is a function that invokes an interactive RPC method, such as for a backend.
 It takes a string, naming the RPC method, a JSON value as an argument, and dictionary from strings to JSON values or `async` functions.
 The functions will be provided as interactive RPC callbacks to the RPC method and should expect JSON values as arguments and return a Promise of a JSON value as a result.

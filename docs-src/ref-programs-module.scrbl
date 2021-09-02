@@ -55,11 +55,10 @@ if they are typed, that is, if they are constructed with @reachin{is}.
 @subsection[#:tag "ref-programs-import"]{@tt{import}}
 
 @(mint-define! '("import"))
-@(define link-github @link["https://github.com"]{GitHub})
 Reach supports two types of module @deftech{imports}: @tech{local imports},
 which refer to modules that exist within your project, and
 @tech{package imports}, which refer to remote libraries that may be fetched
-from external sources such as @|link-github|.
+from external sources such as @link["https://github.com"]{GitHub}.
 @margin-note{
 Read @seclink["guide-packages"]{the guide section on packages} for more details.
 }
@@ -114,7 +113,7 @@ Package import paths are comprised of the following components:
 
 This component must be followed by a @litchar{:} character.
 
-This component defaults to @|link-github| (i.e. @tt{github.com}) if no site is specified.
+This component defaults to @link["https://github.com"]{GitHub} (i.e. @tt{github.com}) if no site is specified.
 
 Examples: @tt{github.com:}, @tt{bitbucket.org:}.
 }

@@ -8,7 +8,7 @@
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
 
-[[toc]]
+${toc}
 
 
 
@@ -180,7 +180,7 @@ while (true) {
 
 ## {#RE0006} RE0006
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that `return` may not be used within the current statement block.
 
@@ -557,7 +557,7 @@ const y = 2;
 
 ## {#RE0023} RE0023
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that there was an invalid declaration.
 
@@ -701,7 +701,7 @@ You can fix this by deleting one of the statements (depending on the logic of yo
 
 This error indicates that you are attempting to use a specific statement or expression in the wrong
 mode. Consult the documentation for the specific keyword to learn more about what mode is
-expected. Additionally, see the figure on XXX (secref "ref-programs") for a diagram regarding the modes
+expected. Additionally, see the figure on ${seclink("ref-programs")} for a diagram regarding the modes
 of a Reach application.
 
 ## {#RE0032} RE0032
@@ -841,7 +841,7 @@ This issue is most likely caused by a typo. Please ensure you are dereferencing 
 
 ## {#RE0041} RE0041
 
-This error indicates that there is an attempt to statically dereference an `Array` beyond it's bounds.
+This error indicates that there is an attempt to statically dereference an `Array` beyond its bounds.
 Ensure you are using an index that is between `0` and `1` less than the length of the `Array`.
 
 ## {#RE0042} RE0042
@@ -945,7 +945,7 @@ import * as lib from 'sample_lib.rsh';
 
 ## {#RE0047} RE0047
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that there was a `return` statement
 at the top level.
@@ -995,7 +995,7 @@ You can fix this by using a static string as the key.
 
 ## {#RE0050} RE0050
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates an `Object` has an incorrect number of values
 associated with a field.
@@ -1071,28 +1071,28 @@ and you can fix this issue by deleting them.
 
 ## {#RE0058} RE0058
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that you tried to use the `publish` keyword twice
 in a publication.
 
 ## {#RE0059} RE0059
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that there is a function at the top level without a name.
 You can fix this by naming your function.
 
 ## {#RE0060} RE0060
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that there is an illegal `while` loop `invariant`.
 You can fix this issue by providing only one expression to `invariant`.
 
 ## {#RE0061} RE0061
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that `Participant.only` was not supplied a single thunk
 as its argument.
@@ -1101,7 +1101,7 @@ You can fix this by providing the expected value to the function.
 
 ## {#RE0062} RE0062
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that `each` was not given a `Tuple` of `Participant`s
 as its first argument.
@@ -1294,7 +1294,7 @@ the function.
 This error indicates that a `switch` statement was supplied with a value that is not a
 `Data` instance.
 
-For example, the code below expects a `Maybe` type, but is erroneously provided with an `UInt`:
+For example, the code below expects a `Maybe` type, but is erroneously provided with a `UInt`:
 
 ```reach
 const f = (mx) => {
@@ -1327,8 +1327,7 @@ f(Maybe(UInt).Some(1));
 This error indicates that there are multiple cases for the same variant in a `switch` statement or
 `match` expression.
 
-You can fix this error by deleting one of the branches, ensuring there are only
-one branch per variant.
+You can fix this error by deleting one of the branches, ensuring there is only one branch per variant.
 
 ## {#RE0074} RE0074
 
@@ -1357,11 +1356,8 @@ assert(2 == 2, 5);
 ```
 
 
-However, the second argument of `assert` is expected to be of type ```reach
-Bytes
-```
-. You can fix this
-issue by providing a value of the correct type:
+However, the second argument of `assert` is expected to be of type `Bytes`.
+You can fix this issue by providing a value of the correct type:
 
 ```reach
 assert(2 == 2, "5th assertion")
@@ -1405,7 +1401,7 @@ commit();
 
 ## {#RE0079} RE0079
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that a statement is being used in place of an expression.
 Refer to the documentation for the statement you are attempting to use for more
@@ -1593,11 +1589,11 @@ This error indicates that the `Type` of a value cannot exist at runtime. This er
 may be caused by a `Fun` in a participant interact interface having a return
 type of another `Fun`.
 
-For examples of this error and how to fix it, see XXX (secref "RE0012").
+For examples of this error and how to fix it, see ${seclink("RE0012")}.
 
 ## {#RE0087} RE0087
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that you are attempting to apply a non-function value as if it were a function. This
 issue is most likely caused by a typo with an identifier.
@@ -1608,7 +1604,7 @@ This error indicates that there is a mismatch between the actual `Type` of a val
 `Type` of a value.
 
 For example, the code below erroneously returns a `Bool` when the type annotation states that
-the function should return an `UInt`.
+the function should return a `UInt`.
 
 ```reach
 export const f =
@@ -1617,10 +1613,10 @@ export const f =
 ```
 
 
-You can fix this code by returning an `UInt` from the function or changing the return type of the function.
+You can fix this code by returning a `UInt` from the function or changing the return type of the function.
 
 This error may be caused by using a value of the incorrect type in an operation. The code below erroneously uses
-a `Maybe` value in an `+` expression:
+a `Maybe` value in a `+` expression:
 
 ```reach
 A.only(() => {
@@ -1988,7 +1984,7 @@ transfer([ balance(), ...nonNetPayAmt ]).to(Who);
 ## {#RE0105} RE0105
 
 This error indicates that the incorrect arguments were supplied to `withBill`.
-`withBill` either expects zero arguments, when only receiving network tokens
+`withBill` either expects zero arguments, when only receiving network tokens,
 or a `Tuple` of `Token`s when receiving non-network tokens.
 
 For example, the code below erroneously provides multiple non-network tokens to
@@ -2017,7 +2013,7 @@ You can fix this error by renaming the duplicate `View`s, ensuring that every na
 
 ## {#RE0107} RE0107
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that the value of a `View` cannot be exposed. This would
 only occur if the value cannot be represented at runtime.
@@ -2099,7 +2095,7 @@ const Person = Object({
 ```
 
 
-This code is incorrect because `Bytes` is not a type; it is a function that accepts an `UInt` and returns
+This code is incorrect because `Bytes` is not a type; it is a function that accepts a `UInt` and returns
 a `Type`. This code can be fixed by providing an argument to `Bytes` that represents the length:
 
 ```reach
@@ -2109,7 +2105,7 @@ const Person = Object({
 ```
 
 
-For more information about data types, visit XXX (secref "ref-programs-types").
+For more information about data types, visit ${seclink("ref-programs-types")}.
 
 ## {#RE0115} RE0115
 
@@ -2146,7 +2142,7 @@ The third `return` can never be reached, so the way to correct the program is to
 
 ## {#RE0117} RE0117
 
-This error means that only one branch of a conditional (`if` or `switch`) contains `return` statement.
+This error means that only one branch of a conditional (`if` or `switch`) contains a `return` statement.
 
 For example, this function would have this error:
 
@@ -2229,8 +2225,7 @@ while (true) {
 ```
 
 
-Note that the body a `while` starts in a consensus step so you must first
-`commit` before making a publication.
+Note that the body of a `while` starts in a consensus step so you must first `commit` before making a publication.
 
 ## {#RI0000} RI0000
 
@@ -2281,7 +2276,7 @@ You can fix this by refactoring your code to remove the cyclic imports.
 
 ## {#RP0001} RP0001
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that you have specified a function without an argument list.
 
@@ -2289,7 +2284,7 @@ You can fix this by adding an argument list.
 
 ## {#RP0002} RP0002
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that an identifier was expected during parsing, but an expression
 was received.
@@ -2299,7 +2294,7 @@ was received.
 This error indicates that a key or a key/value pair was expected in a
 destructuring assignment, but an object method was received.
 
-For example, the code below creates a method within an destructuring assignment:
+For example, the code below creates a method within a destructuring assignment:
 
 ```reach
 const {x() { return 1 }} = {x: 2};
@@ -2324,7 +2319,7 @@ on the logic of your program.
 
 ## {#RP0005} RP0005
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that an unsupported literal was encountered.
 Reach is a subset of JavaScript and does not support all of the literals that
@@ -2372,7 +2367,7 @@ import "./a.rsh";
 
 ## {#RP0009} RP0009
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that the Reach file could not be parsed as a module.
 
@@ -2398,7 +2393,7 @@ unknowable(A, B(_x));
 
 ## {#RP0011} RP0011
 
-XXX (error-version #:to "v0.1")
+${errver("v0.1")}
 
 This error indicates that Reach expected to parse an identifier, but none was given.
 

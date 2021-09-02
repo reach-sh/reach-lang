@@ -100,4 +100,4 @@ backend.Alice(
 ```
 
 
-The Reach development repository contains an example of this pattern: [log/index.rsh](@github/examples/log/index.rsh) and [log/index.mjs](@github/examples/log/index.mjs).
+The Reach development repository contains an example of this pattern: [log/index.rsh](${repo}}/examples/log/index.rsh) and [log/index.mjs](${repo}}/examples/log/index.mjs).

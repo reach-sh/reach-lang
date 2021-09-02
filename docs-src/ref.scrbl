@@ -289,7 +289,7 @@ It uses a @envvar{REACH_RPC_KEY} value of @litchar{opensesame} (the standard
 development API key), and sets @envvar{REACH_RPC_TLS_REJECT_UNVERIFIED} to
 @litchar{0}.
 
-Consider this example from the @seclink{tut-7-rpc} tutorial:
+Consider this example from the @secref{tut-7-rpc} tutorial:
 @cmd{reach rpc-run python3 -u ./index.py}
 
 @subsection[#:tag "ref-usage-docker-reset"]{@tt{reach docker-reset}}

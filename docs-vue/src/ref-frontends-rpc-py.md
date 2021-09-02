@@ -16,7 +16,7 @@ $ pip install --upgrade reach-rpc-client
 
 
 Once installed, add the following import line to your Python file which will
-connect to the XXX (seclink "ref-backends-rpc"):
+connect to the [RPC server](##ref-backends-rpc):
 ```py
 from reach_rpc import mk_rpc
 ```
@@ -25,15 +25,15 @@ from reach_rpc import mk_rpc
 The library provides the following bindings:
 
 ---
-<Ref :name="(quote py):mk_rpc" />
+${ref((quote py), "mk_rpc")}
 ```py
 rpc, rpc_callbacks = mk_rpc(opts)
 ```
 
 
-`mk_rpc` accepts the XXX (secref "ref-backends-rpc-opts") as a dictionary and returns two functions, traditionally called `rpc` and `rpc_callbacks`.
+`mk_rpc` accepts the ${seclink("ref-backends-rpc-opts")} as a dictionary and returns two functions, traditionally called `rpc` and `rpc_callbacks`.
 
-<Ref :name="(quote py):rpc" />
+${ref((quote py), "rpc")}
 `rpc` is a function that invokes a synchronous value RPC method.
 It takes a string, naming the RPC method, and some JSON values to provide as arguments.
 It returns a single JSON value as the result.
@@ -47,7 +47,7 @@ rpc('/stdlib/formatCurrency', i, 4)
 
 calls `formatCurrency` with some value `i` and `4`.
 
-<Ref :name="(quote py):rpc_callbacks" />
+${ref((quote py), "rpc_callbacks")}
 `rpc_callbacks` is a function that invokes an interactive RPC method, such as for a backend.
 It takes a string, naming the RPC method, a JSON value as an argument,
 and dictionary from strings to JSON values or functions.

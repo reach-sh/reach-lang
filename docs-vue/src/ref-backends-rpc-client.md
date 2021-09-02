@@ -13,29 +13,29 @@ The entire library is 80 lines of code.
 The library uses a few standard Python libraries for interacting with JSON,
 HTTP servers, and networking:
 
-@[code{1-9}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 1, 9)}
 
-@[code{11-27}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 11, 27)}
 
-The library provides a single function, `mk_rpc`, that accepts the XXX (secref "ref-backends-rpc-opts").
+The library provides a single function, `mk_rpc`, that accepts the ${seclink("ref-backends-rpc-opts")}.
 
-@[code{28-34}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 28, 34)}
 
 It starts by observing the `verify` option and informing the Python library it uses for HTTPS interaction to turn off warnings.
 It displays a warning to users that they should be nervous about using this setting.
 
-@[code{35-47}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 35, 47)}
 
 Next, it attempts to connect to the Reach RPC Server and throws an error if it does not respond quickly enough.
 
-@[code{52-62}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 52, 62)}
 
 It defines a function, `rpc`, which will be returned later on, that
 implements the protocol for synchronous value RPC methods.
 It formats a given request, posts it, and then returns the deserialized result.
 It prints debugging information for convenience.
 
-@[code{63-79}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 63, 79)}
 
 It defines a function, `rpc_callbacks`, which will be returned later on, that
 implements the protocol for interactive RPC methods.
@@ -51,6 +51,6 @@ name of the method, `p['m']`, and invokes it in the original third
 argument, `cbacks`, with the provided arguments.
 It replaces the `p` value with the result of that continuation invocation and continues.
 
-@[code{80-80}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)
+${code("/rpc-client/py/src/reach_rpc/__init__.py", 80, 80)}
 
 Finally, it returns `rpc` and `rpc_callbacks` to the user.

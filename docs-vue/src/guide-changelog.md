@@ -6,9 +6,36 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.3: 2021/07 - present
+## 0.1.4: 2021/09 - present
 
-Version 0.1.3 is the current Reach release candidate version.
+Version 0.1.4 is the current Reach release candidate version.
++ 2021/08/31: Removed `getSignStrategy` and `setSignStrategy` in favor of `setWalletFallBack` and `walletFallback`.
++ 2021/08/31: Algorand devnet updated to versions 2.9.1 and 2.6.1
++ 2021/08/31: The `reach` command-line has changed:
++ All subcommands now support `-h`/`--help` switches, e.g. `reach compile --help`.
++ The `APP` argument to ${seclink("ref-usage-init")} has been removed.
++ The `reach` script now permits the use of subdirectories as arguments to certain subcommands, e.g. `reach compile dir/index.rsh`, but disallows parent directories (`..`) for reasons pertaining to Docker.
++ Devnets have been consolidated into a single Dockerized network and container topology.
++ The `--use-existing-devnet` flag has been deprecated and no longer has any effect.
++ ${seclink("ref-usage-run")} will now automatically connect to a given connector's devnet when already present.
+Devnets which are not yet running will be launched as needed.
++ ${seclink("ref-usage-down")} now halts _ALL_ Dockerized Reach containers and devnets (i.e. it's no longer specific to a single project).
+Non-Reach Docker services are unaffected (see ${seclink("ref-usage-docker-reset")}).
++ ${seclink("ref-usage-docker-reset")} now prompts the user for confirmation before continuing since it kills and removes _ALL_ containers (not just those related to Reach).
+The `-y` or `--even-non-reach` flags may be appended for non-interactive execution.
++ An `--await-background` flag has been introduced to the ${seclink("ref-usage-devnet")} subcommand.
++ The `reach` script has been simplified such that `Makefile` and `docker-compose.yml` files are no longer integral to its function.
+Accordingly, these files have been removed from ${seclink("ref-usage-scaffold")}'s output.
+Authors of existing projects which contain unmodified `Makefile` or `docker-compose.yml` files are encouraged to remove them.
+
+
+
+## 0.1.3: 2021/07 - 2021/08
+
+Version 0.1.3 is the current Reach release version.
+
++ 2021/08/31: Added `acc.setStorageLimit` to JavaScript standard library for Conflux.
++ 2021/08/16: Allow `continue` in step in some cases.
 + 2021/07/31: Added `newTestAccounts`, `waitUntilSecs`, and `getNetworkSecs` to JavaScript standard library.
 + 2021/07/31: Updated `onProgress` type in JavaScript standard library.
 + 2021/07/31: Added `relativeTime`, `absoluteTime`, `relativeSecs`, `absoluteSecs`, `baseWaitTime`, `baseWaitSecs`, and `lastConsensusSecs` to Reach, with support in `wait` and `.timeout`.

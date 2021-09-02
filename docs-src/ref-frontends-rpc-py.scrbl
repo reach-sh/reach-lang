@@ -13,7 +13,7 @@ A @link["https://www.python.org"]{Python} client library for the
 }
 
 Once installed, add the following import line to your Python file which will
-connect to the @seclink{ref-backends-rpc}:
+connect to the @seclink["ref-backends-rpc"]{RPC server}:
 @py{
   from reach_rpc import mk_rpc
 }

@@ -59,7 +59,7 @@ So, for this program, we should decide:
 
 XXX (drstep-dd-datatype-mn)
 
-After deciding those things, you should think about how the program will be provided this values.
+After deciding those things, you should think about how the program will be provided these values.
 In other words:
 
 + What participant interact interface will each participant use?
@@ -181,7 +181,7 @@ As programs become more complex, this theory becomes more and more difficult to 
 Furthermore, when another programmer reads our code (such as a version of ourselves from the future trying to modify the program), it can be very difficult to understand this theory for ourselves.
 Assertions are ways of encoding this theory directly into the text of the program in a way that will be checked by Reach and available to all future readers and editors of the code.
 
-Look at your application, what are assumptions that you have about the values in the program?
+Look at your application. What are the assumptions you have about the values in the program?
 
 XXX (drstep-ai-stop1)
 
@@ -192,7 +192,7 @@ There are three main assumptions we came up with for this program:
 
 
 We expect that the third of these is the least controversial and the most obvious property, but the others are important too.
-The first property essentially guarantees that the errorneous version of the application we contemplated, where Alice directly sent her password over the network is disallowed.
+The first property essentially guarantees that the erroneous version of the application we contemplated, where Alice directly sent her password over the network, is disallowed.
 The second property encodes Bob's assumption of good will and integrity when he submits his value: an honest version of the Bob participant would not willingly send a password that wasn't the correct one.
 Furthermore, it is possible for any participant to check, without going through consensus, if they know what the password is.
 
@@ -230,9 +230,9 @@ We'll handle that next.
 
 XXX (drstep-ii TAG)
 
-A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized applications.
+A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized application.
 Frontends are responsible for all other aspects of the program.
-Thus, eventually a Reach programs needs to insert calls into their code to send data to and from the frontend via the participant interact interfaces that they defined during the _Data Definition_ step.
+Thus, eventually a Reach programmer needs to insert calls into their code to send data to and from the frontend via the participant interact interfaces that they defined during the _Data Definition_ step.
 
 In our program, that means defining `amt` and `passDigest` by Alice and `pass` by Bob.
 Do that now.
@@ -241,7 +241,7 @@ XXX (drstep-ii-stop)
 
 Here's what we did:
 
-@[code](@reach-lang/examples/workshop-hash-lock/index.rsh)
+${code("/examples/workshop-hash-lock/index.rsh")}
 
 + Lines 11-14 have Alice declassify some of her values.
 + Line 21 has Bob provide his password.
@@ -268,12 +268,12 @@ XXX (drstep-de TAG)
 At this point, we need to decide how we're going to deploy this program and really use it in the world.
 We need to decide how to deploy the contract, as well as what kind of user interaction modality we'll implement inside of our frontend.
 
-XXX (drstep-de-stop)
+**Decide how you will deploy and use this application.**
 
 In this case, it is a very simple program, so we'll use a simple and efficient contract [deployment mode](##guide-deploymode): `'firstMsg'`.
 This means that the contract won't exist on the consensus network until Alice sends her first message.
 This is a good choice for most contracts, if it is allowed.
-(As [the guide discusses](##guide-deploymode), some applications cannot be deployed like this.}
+(As [the guide discusses](##guide-deploymode), some applications cannot be deployed like this.)
 
 ::: note
 Unfortunately, on many consensus networks, like Ethereum and Algorand, this application is dangerous to run.
@@ -287,10 +287,10 @@ If you want to do something _like this_, then continue to the [next workshop ](#
 If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.
 :::
 
-Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
+Next, we'll settle for a simple testing program for now to show the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript frontend we wrote:
 
-@[code](@reach-lang/examples/workshop-hash-lock/index.mjs)
+${code("/examples/workshop-hash-lock/index.mjs")}
 
 In this case, Bob learns the password outside of the Reach program by directly sharing memory with Alice.
 In a real deployment, she might give Bob the password through some other channel, like an encrypted email message, or a calligraphic scroll delivered by raven or intoned from Himalayan cliffs.
@@ -324,7 +324,7 @@ In contrast, in [the tutorial](##tut), we demonstrated a "bottom-up" style where
 There's no right way to program and in our own Reach development, we use a combination of the two tactics.
 Try both and keep them both in mind during your own development.
 
-If you found this workshop rewarding, please let us know on <CommunityLink />!
+If you found this workshop rewarding, please let us know on [the Discord community](${discord})!
 
 If you want to know what to do next, a natural extension of the concepts in this workshop is a [relay account](##workshop-relay).
 Why don't you check it out?

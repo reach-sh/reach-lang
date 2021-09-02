@@ -13,7 +13,7 @@ In this version, the Funder will have the advantage that, if there are less than
 if the auction is set to have 5 winners, yet only 3 Buyers bid, the first three Buyers
 will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
 
-XXX (workshop-deps "workshop-fomo")
+${workshopDeps("workshop-fomo")}
 XXX (workshop-init TAG)
 
 XXX (drstep-pr TAG)
@@ -51,9 +51,9 @@ However, we can still write a program that is generic in the size of the array, 
 specialize it when we compile.
 :::
 
-@[code{5-23}](@reach-lang/examples/workshop-fomo-generalized/index.rsh)
+${code("/examples/workshop-fomo-generalized/index.rsh", 5, 23)}
 
-At this point, you can modify your JavaScript file (`index.mjs`) to contain defintions of these values, although you may want to use a placeholders for the actual value.
+At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
 
 
@@ -164,7 +164,7 @@ XXX (drstep-ii-stop)
 
 Let's look at our whole program now:
 
-@[code](@reach-lang/examples/workshop-fomo-generalized/index.rsh)
+${code("/examples/workshop-fomo-generalized/index.rsh")}
 
 XXX (drstep-de TAG)
 
@@ -175,11 +175,11 @@ The program is fairly straightfoward to test. We just create test accounts for
 the Funder and any number of Buyers. The decision to purchase a ticket by
 a Buyer will rely simply on generating a random boolean.
 
-XXX (drstep-de-stop)
+**Decide how you will deploy and use this application.**
 
 Here's the JavaScript frontend we wrote:
 
-@[code](@reach-lang/examples/workshop-fomo-generalized/index.mjs)
+${code("/examples/workshop-fomo-generalized/index.mjs")}
 
 Let's see what it looks like when we run the program:
 
@@ -219,5 +219,5 @@ this application with additional features such as:
 e.g. every time the ring buffer is filled.
 
 
-If you found this workshop rewarding, please let us know on <CommunityLink />!
+If you found this workshop rewarding, please let us know on [the Discord community](${discord})!
 

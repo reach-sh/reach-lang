@@ -26,7 +26,10 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 @secref["ref-programs-only-step"] are allowed in @tech{consensus steps} and are executed by @tech{backends} once they observe the completion of the @tech{consensus step} (i.e., after the associated @tech{commit statement}.)
 
 @subsection[#:tag "ref-programs-consensus-view"]{View Objects}
-@(note-view-xref)
+
+@margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} in Reach.
+They are @seclink["ref-frontends-js-view"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.
+This section is about defining the value of a view in your Reach program.}
 
 @reach{
   vNFT.owner.set(creator);
@@ -164,7 +167,7 @@ const [ keepGoing, as, bs ] =
     return [ false, as, bs ]; });
 }
 
-@(note-ctransfer)
+@margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.}
 
 A @deftech{parallel reduce statement} is written:
 
@@ -327,7 +330,8 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
   @secref["ref-networks"] discusses how Reach supports @tech{token minting} on specific consensus networks.
 }
 
-A @tech{non-network token} may be @deftech[#:key "token minting"]{minted} with the expression @reachin{new Token(PARAMS)}, where @reachin{PARAMS} is an object with the following keys:
+We refer to creation of a new @tech{non-network token} as @deftech{token minting}.
+It is written with the expression @reachin{new Token(PARAMS)}, where @reachin{PARAMS} is an object with the following keys:
 @itemlist[
 @item{@litchar{name}: A value of type @reachin{Bytes(32)}; defaults to empty.}
 @item{@litchar{symbol}: A value of type @reachin{Bytes(8)}; defaults to empty.}

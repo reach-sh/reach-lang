@@ -7,7 +7,7 @@ The Reach RPC Protocol (hereafter, "the protocol" or "it") is an instance of [JS
 
 It should be transported over [HTTPS](https://en.wikipedia.org/wiki/HTTPS) (i.e. HTTP over TLS).
 
-Requests must include an `X-API-Key` header whose value is a shared secret between a server instance and an RPC client, referred to as the <Defn :name="API key">API key</Defn>.
+Requests must include an `X-API-Key` header whose value is a shared secret between a server instance and an RPC client, referred to as the ${defn("API key")}.
 Typically this value comes from the environment variable `REACH_RPC_KEY` and is the [Base64](https://en.wikipedia.org/wiki/Base64) encoding of 24 random bytes.
 
 Requests must use the `POST` HTTP method.
@@ -21,13 +21,13 @@ This array is interpreted as the arguments to the RPC method.
 Responses must include a [JSON](https://en.wikipedia.org/wiki/JSON)-encoded value in their body.
 Responses should indicate this by setting the `Content-Type` header to `application/json; charset=utf-8`.
 
-Responses may include <Defn :name="RPC handles">RPC handles</Defn>, which are strings that represent intermediate resources held on the RPC server that cannot be serialized to JSON.
+Responses may include ${defn("RPC handles")}, which are strings that represent intermediate resources held on the RPC server that cannot be serialized to JSON.
 
 RPC methods are either synchronous value RPC methods or interactive RPC methods.
 
 ---
 
-<Defn :name="Synchronous value RPC methods">Synchronous value RPC methods</Defn> consume arguments and produce a single result without further interaction with the client.
+${defn("Synchronous value RPC methods")} consume arguments and produce a single result without further interaction with the client.
 The result is the body of the response.
 
 For example, `formatCurrency` is a synchronous value RPC method.
@@ -49,11 +49,11 @@ A call to `formatCurrency("19283.1035819471", 4)` would be represented by the fo
 
 ---
 
-<Defn :name="Interactive RPC methods">Interactive RPC methods</Defn> consume arguments, including a specification of interactive RPC callbacks, and produce an interactive RPC continuation.
+${defn("Interactive RPC methods")} consume arguments, including a specification of interactive RPC callbacks, and produce an interactive RPC continuation.
 
-An <Defn :name="interactive RPC callback">interactive RPC callback</Defn> is a key of a JSON object, bound to `true`, that indicates that the initiator of an interactive RPC method responds to requests for further data during the execution of this call.
+An ${defn("interactive RPC callback")} is a key of a JSON object, bound to `true`, that indicates that the initiator of an interactive RPC method responds to requests for further data during the execution of this call.
 
-An <Defn :name="interactive RPC continuation">interactive RPC continuation</Defn> is a JSON object that matches either:
+An ${defn("interactive RPC continuation")} is a JSON object that matches either:
 + `{t: "Done", ans}`, where `ans` is the final result of the original interactive RPC method.
 + `{t: "Kont", kid, m, args}`, where `kid` is an RPC handle, `m` is a string naming one of the interactive RPC callback methods, and `args` is an array of the arguments to that method.
 

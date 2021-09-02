@@ -50,21 +50,23 @@
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
     [`(reachexlink ,f #:dir ,e)
-      (d (format "[~a](@github/~a/~a)" f e f))]
+      (d (format "[~a](${repo}}/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "[~a](@github/examples/~a)" f f))]
+      (d (format "[~a](${repo}}/examples/~a)" f f))]
     [`(reachexlink ,f ,c #:dir ,e)
       (d "[")
       (ego c)
-      (d (format "](@github/~a/~a)" e f))]
+      (d (format "](${repo}}/~a/~a)" e f))]
     [`(reachexlink ,f ,c)
       (d "[")
       (ego c)
-      (d (format "](@github/examples/~a)" f))]
+      (d (format "](${repo}}/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
     [`(subsubsection ,@o) (header 4 o)]
+    [`(secref ,t)
+      (d (format "${seclink(~s)}" t))]
     [`(seclink ,t ,l)
       (d (format "[~a](##~a)" l t))]
     [`(reachin ,@c) (code c 'reach)]
@@ -94,10 +96,9 @@
     [`(filepath ,@c) (code c)]
     [`(litchar ,@c) (code c)]
     [`(the-community-link)
-      ;; XXX
-      (d "<CommunityLink />")]
-    [`(local-table-of-contents . ,_) (d "[[toc]]")]
-    [`(table-of-contents . ,_) (d "[[toc]]")]
+      (ego '(link "${discord}" "the Discord community"))]
+    [`(local-table-of-contents . ,_) (d "${toc}")]
+    [`(table-of-contents . ,_) (d "${toc}")]
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
@@ -106,8 +107,7 @@
       (void)]
     [`(define . ,_) (void)]
     [`(deftech ,c)
-      ;; XXX
-      (d (format "<Defn :name=\"~a\">~a</Defn>" c c))]
+      (d (format "${defn(~s)}" c))]
     [`(error ,x) (ego `(section #:tag ,x ,x))]
     [`(mint-define! ,@ts)
       (define s (unbox mint-scope))
@@ -119,8 +119,7 @@
           (for ([ts (in-list ts)])
             (match-define `'(,@tsl) ts)
             (define t (apply string-append tsl))
-            ;; XXX
-            (d (format "<Ref :name=\"~a:~a\" />" s t)))])]
+            (d (format "${ref(~s, ~s)}" s t)))])]
     [`(include-section . ,_) (void)]
     [`(index-section . ,_) (void)]
     [`(index . ,_) (void)]
@@ -146,19 +145,58 @@
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
-     ;; XXX link
-      (d (format "@[code{~a-~a}](@reach-lang/examples/~a)" from to f))]
+      (d (format "${code(\"/examples/~a\", ~a, ~a)}" f from to))]
     [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
-      ;; XXX link
-      (d (format "@[code{~a-~a}](@reach-lang/rpc-client/py/src/reach_rpc/__init__.py)" from to))]
+      (d (format "${code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
-     ;; XXX link
-      (d (format "@[code](@reach-lang/examples/~a)" f))]
-    ['reach-vers
-     ;; XXX
-     (d "{{ VERSION }}")]
+      (d (format "${code(\"/examples/~a\")}" f))]
+    [`reach-vers
+     (d "${VERSION}")]
+    [`(error-version #:to ,t)
+     (d (format "${errver(~s)}" t))]
+    [`(workshop-deps ,t)
+      (d (format "${workshopDeps(~s)}" t))]
+    [`(WIP/XXX)
+      (d (format "${workshopWIP()}"))]
+    [`(WIP/XXX ,x)
+      (d (format "${workshopWIP(~s)}" x))]
+    [`(drstep-de-stop)
+      (d "**Decide how you will deploy and use this application.**")]
+    [`(pkg-fmts)
+      (ego `(verbatim "
+@account/repo
+@account/repo:
+@account/repo:a/b/file.rsh
+@account/repo:a/b/
+@account/repo:file.rsh
+@account/repo#
+@account/repo#:
+@account/repo#:a/b/file.rsh
+@account/repo#:a/b/
+@account/repo#:file.rsh
+@account/repo#ref
+@account/repo#ref:
+@account/repo#ref:a/b/file.rsh
+@account/repo#ref:a/b/
+@account/repo#ref:file.rsh
+@server:account/repo
+@server:account/repo:
+@server:account/repo:a/b/file.rsh
+@server:account/repo:a/b/
+@server:account/repo:file.rsh
+@server:account/repo#
+@server:account/repo#:
+@server:account/repo#:a/b/file.rsh
+@server:account/repo#:a/b/
+@server:account/repo#:file.rsh
+@server:account/repo#ref
+@server:account/repo#ref:
+@server:account/repo#ref:a/b/file.rsh
+@server:account/repo#ref:a/b/
+@server:account/repo#ref:file.rsh
+"))]
     [x
       (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))

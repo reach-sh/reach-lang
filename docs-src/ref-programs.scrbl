@@ -10,25 +10,25 @@ their syntactic forms,
 the standard library,
 and the standards of @tech{valid} programs.
 
-@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
+@margin-note{Get language support for Reach in your editor by visiting @secref["guide-editor-support"].}
 
 The rest of this section is structured according to the contexts of the different parts of a Reach program, as follows:
 
 @itemlist[
 
-@item{@Secref["ref-programs-valid"] describes what is meant by the term @tech{valid} in Reach.}
+@item{@secref["ref-programs-valid"] describes what is meant by the term @tech{valid} in Reach.}
 
-@item{@Secref["ref-programs-module"] describes the top-level structure of a Reach @tech{module}.}
+@item{@secref["ref-programs-module"] describes the top-level structure of a Reach @tech{module}.}
 
-@item{@Secref["ref-programs-appinit"] describes the structure of Reach @tech{application initialization}.}
+@item{@secref["ref-programs-appinit"] describes the structure of Reach @tech{application initialization}.}
 
-@item{@Secref["ref-programs-step"] describes the structure of Reach @tech{steps}.}
+@item{@secref["ref-programs-step"] describes the structure of Reach @tech{steps}.}
 
-@item{@Secref["ref-programs-local"] describes the structure of Reach @tech{local steps}.}
+@item{@secref["ref-programs-local"] describes the structure of Reach @tech{local steps}.}
 
-@item{@Secref["ref-programs-consensus"] describes the structure of Reach @tech{consensus steps}.}
+@item{@secref["ref-programs-consensus"] describes the structure of Reach @tech{consensus steps}.}
 
-@item{@Secref["ref-programs-compute"] describes the common structure of Reach computations shared by all contexts.}
+@item{@secref["ref-programs-compute"] describes the common structure of Reach computations shared by all contexts.}
 
 ]
 

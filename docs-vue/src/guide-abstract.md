@@ -12,6 +12,5 @@ When building such abstractions, the most difficult part is correctly capturing 
 Often, this means the abstraction must set up a protocol to communicate with its user, such as by receiving an invariant captured by an arrow expression.
 
 ::: note
-See [the abstraction workshop](##workshop-abstract-simul) for a walthrough of building such an abstraction.
+See [the abstraction workshop](##workshop-abstract-simul) for a walkthrough of building such an abstraction.
 :::
-

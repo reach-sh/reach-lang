@@ -14,33 +14,38 @@ However, some additional statements are allowed.
 
 ### `commit`
 
-<Ref :name="(quote rsh):commit" />
+${ref((quote rsh), "commit")}
 ```reach
 commit(); 
 ```
 
 
-A <Defn :name="commit statement">commit statement</Defn>, written `commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
+A ${defn("commit statement")}, written `commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
 
 ### {#ref-programs-only-consensus} `only` and `each`
 
-XXX (secref "ref-programs-only-step") are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)
+${seclink("ref-programs-only-step")} are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)
 
 ### {#ref-programs-consensus-view} View Objects
-XXX (note-view-xref)
+
+::: note
+Views are [defined in application initialization](##ref-programs-appinit-view) in Reach.
+They are [accessed by frontends](##ref-frontends-js-view) by using the Reach standard library of the frontend language, such as JavaScript.
+This section is about defining the value of a view in your Reach program.
+:::
 
 ```reach
 vNFT.owner.set(creator);
 ```
 
 
-If `VIEW` is a <Defn :name="view object">view object</Defn>, then its fields are the elements of the associated view.
-Each of these fields are bound to an object with an `set` method that accepts the function or value to be bound to that view at the current step, and all steps dominated by the current step (unless otherwise overridden.)
+If `VIEW` is a ${defn("view object")}, then its fields are the elements of the associated view.
+Each of these fields are bound to an object with a `set` method that accepts the function or value to be bound to that view at the current step, and all steps dominated by the current step (unless otherwise overridden).
 If this function is not provided with an argument, then the corresponding view is unset.
 
 For example, consider the following program:
 
-@[code](@reach-lang/examples/view-steps/index.rsh)
+${code("/examples/view-steps/index.rsh")}
 
 In this program, the Reach backend calls the frontend `interact` function, `checkView` with the expected value of the views at each point in the program.
 The frontend compares that value with what is returned by
@@ -54,7 +59,7 @@ When a view is bound to a function, it may inspect any values in its scope, incl
 
 ### `Participant.set` and `.set`
 
-<Ref :name="(quote rsh):Participant.set" />
+${ref((quote rsh), "Participant.set")}
 ```reach
 Participant.set(PART, ADDR);
 PART.set(ADDR); 
@@ -67,12 +72,12 @@ If a backend is running for this participant and its address does not match the 
 This may only occur within a consensus step.
 
 ::: note
-XXX (secref "workshop-relay") is a good introductory project that demonstrates how to use this feature of Reach.
+${seclink("workshop-relay")} is a good introductory project that demonstrates how to use this feature of Reach.
 :::
 
 ### `while`
 
-<Ref :name="(quote rsh):while" /><Ref :name="(quote rsh):var" /><Ref :name="(quote rsh):invariant" />
+${ref((quote rsh), "while")}${ref((quote rsh), "var")}${ref((quote rsh), "invariant")}
 ```reach
 var [ heap1, heap2 ] = [ 21, 21 ];
 { const sum = () => heap1 + heap2; }
@@ -84,7 +89,7 @@ while ( sum() > 0 ) {
 ```
 
 
-A <Defn :name="while statement">while statement</Defn> may occur within a consensus step and is written:
+A ${defn("while statement")} may occur within a consensus step and is written:
 
 ```reach
 var LHS = INIT_EXPR;
@@ -96,7 +101,7 @@ while( COND_EXPR ) BLOCK
 
 where `LHS` is a valid left-hand side of an identifier definition where the expression `INIT_EXPR` is the right-hand side, and
 `DEFINE_BLOCK` is an optional block that may define bindings that use the `LHS` values which are bound inside the rest of the `while` and its tail, and
-`INVARIANT_EXPR` is an expression, called the <Defn :name="loop invariant">loop invariant</Defn>, that must be true before and after every execution of the block `BLOCK`, and
+`INVARIANT_EXPR` is an expression, called the ${defn("loop invariant")}, that must be true before and after every execution of the block `BLOCK`, and
 if `COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `LHS` are bound within `DEFINE_BLOCK`, `INVARIANT_EXPR`, `COND_EXPR`, `BLOCK`, and the tail of the while statement.
@@ -107,14 +112,14 @@ Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 
 ### `continue`
 
-<Ref :name="(quote rsh):continue" />
+${ref((quote rsh), "continue")}
 ```reach
 [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
 continue; 
 ```
 
 
-A <Defn :name="continue statement">continue statement</Defn> may occur within a while statement's block and is written:
+A ${defn("continue statement")} may occur within a while statement's block and is written:
 
 ```reach
 LHS = UPDATE_EXPR;
@@ -137,9 +142,29 @@ continue;
 A continue statement must be dominated by a consensus transfer, which means that the body of a while statement must always `commit();` before calling `continue;`.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
+---
+
+As a special case, a continue statement may occur in a step, if the `UPDATE_EXPR` transitions to a consensus step.
+In other words, this is a valid program:
+```reach
+const f = () => {
+ commit();
+ A.publish();
+ return 1;
+};
+
+var x = 0;
+invariant(balance() == 0);
+while ( x == 0 ) {
+ x = f();
+ continue;
+}
+```
+
+
 ### `parallelReduce`
 
-<Ref :name="(quote rsh):parallelReduce" />
+${ref((quote rsh), "parallelReduce")}
 ```reach
 const [ keepGoing, as, bs ] =
   parallelReduce([ true, 0, 0 ])
@@ -164,11 +189,13 @@ const [ keepGoing, as, bs ] =
 ```
 
 
-XXX (note-ctransfer)
+::: note
+If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
+:::
 
-A <Defn :name="parallel reduce statement">parallel reduce statement</Defn> is written:
+A ${defn("parallel reduce statement")} is written:
 
-<Ref :name="(quote rsh):paySpec" /><Ref :name="(quote rsh):define" />
+${ref((quote rsh), "paySpec")}${ref((quote rsh), "define")}
 ```reach
 const LHS =
   parallelReduce(INIT_EXPR)
@@ -201,7 +228,7 @@ When dealing with absolute deadlines in `parallelReduce`, there is a common patt
 `TIMEOUT_BLOCK` to have participants `race` to `publish` and return the accumulator.
 There is a shorthand, `.timeRemaining`, available for this situation:
 
-<Ref :name="(quote rsh):timeRemaining" />
+${ref((quote rsh), "timeRemaining")}
 ```reach
 const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
 const [ x, y, z ] =
@@ -226,7 +253,7 @@ which will expand to:
 `.throwTimeout` is a shorthand that will throw the accumulator as an exception when a timeout occurs.
 Therefore, a `parallelReduce` that uses this branch must be inside of a try statement. For example,
 
-<Ref :name="(quote rsh):throwTimeout" />
+${ref((quote rsh), "throwTimeout")}
 ```reach
 try {
   const [ x, y, z ] =
@@ -282,14 +309,14 @@ This is useful when the consensus transfer was initiated by a `race` expression.
 
 ### `transfer`
 
-<Ref :name="(quote rsh):transfer" />
+${ref((quote rsh), "transfer")}
 ```reach
 transfer(10).to(Alice);
 transfer(2, gil).to(Alice); 
 ```
 
 
-A <Defn :name="transfer expression">transfer expression</Defn>,
+A ${defn("transfer expression")},
 written `transfer(AMOUNT_EXPR).to(ADDR_EXPR)`,
 where `AMOUNT_EXPR` is an expression that evaluates to an unsigned integer, and
 `ADDR_EXPR` evaluates to an address,
@@ -304,7 +331,7 @@ A transfer expression may only occur within a consensus step.
 
 ### `require`
 
-<Ref :name="(quote rsh):require" />
+${ref((quote rsh), "require")}
 ```reach
 require( claim, [msg] ) 
 ```
@@ -316,7 +343,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ### `checkCommitment`
 
-<Ref :name="(quote rsh):checkCommitment" />
+${ref((quote rsh), "checkCommitment")}
 ```reach
 checkCommitment( commitment, salt, x ) 
 ```
@@ -327,7 +354,7 @@ This is used in a consensus step after `makeCommitment` was used in a local step
 
 ### Token minting
 
-<Ref :name="(quote rsh):burn" /><Ref :name="(quote rsh):destroy" /><Ref :name="(quote rsh):supply" /><Ref :name="(quote rsh):destroyed" />
+${ref((quote rsh), "burn")}${ref((quote rsh), "destroy")}${ref((quote rsh), "supply")}${ref((quote rsh), "destroyed")}
 ```reach
 require(supply >= 2 * amt);
 const tok = new Token({name, symbol, url, metadata, supply});
@@ -341,10 +368,11 @@ tok.destroy();
 
 
 ::: note
-XXX (secref "ref-networks") discusses how Reach supports token minting on specific consensus networks.
+${seclink("ref-networks")} discusses how Reach supports token minting on specific consensus networks.
 :::
 
-A non-network token may be XXX (deftech #:key "token minting" "minted") with the expression `new Token(PARAMS)`, where `PARAMS` is an object with the following keys:
+We refer to creation of a new non-network token as ${defn("token minting")}.
+It is written with the expression `new Token(PARAMS)`, where `PARAMS` is an object with the following keys:
 + `name`: A value of type `Bytes(32)`; defaults to empty.
 + `symbol`: A value of type `Bytes(8)`; defaults to empty.
 + `url`: A value of type `Bytes(96)`; defaults to empty.
@@ -358,7 +386,7 @@ These tokens must be destroyed by the end of the DApp.
 
 ---
 
-`Token.burn(tok, amt)`, or `tok.burn(amt)`, where `tok` is a `Token` value and `amt` is a `UInt` value, may be used to <Defn :name="burn">burn</Defn> tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
+`Token.burn(tok, amt)`, or `tok.burn(amt)`, where `tok` is a `Token` value and `amt` is a `UInt` value, may be used to ${defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
 
 ---
 
@@ -376,7 +404,7 @@ has been called on `tok` yet.
 
 ### Remote objects
 
-<Ref :name="(quote rsh):remote" />
+${ref((quote rsh), "remote")}
 ```reach
 const randomOracle =
   remote( randomOracleAddr, {
@@ -387,10 +415,10 @@ const randomVal = randomOracle.getRandom.pay(randomFee)();
 
 
 ::: note
-XXX (secref "ref-networks") discusses how Reach supports remote objects on specific consensus networks.
+${seclink("ref-networks")} discusses how Reach supports remote objects on specific consensus networks.
 :::
 
-A <Defn :name="remote object">remote object</Defn> is representation of a foreign contract in a Reach application.
+A ${defn("remote object")} represents a foreign contract in a Reach application.
 During a consensus step, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
 A remote object is constructed by calling the `remote` function with an address and an interface---an object where each key is bound to a function type. For example:
@@ -407,15 +435,15 @@ const token =
 ```
 
 
-Once constructed, the fields of a remote object represent those remote contract interactions, referred to as <Defn :name="remote functions">remote functions</Defn>.
+Once constructed, the fields of a remote object represent those remote contract interactions, referred to as ${defn("remote functions")}.
 For example, `randomOracle.getRandom`, `token.balanceOf`, and `token.transferTo` are remote functions in the example.
 
 A remote function may be invoked by calling it with the appropriate arguments, whereupon it returns the specified output.
 In addition, a remote function may be augmented with one of the following operations:
 
 + `REMOTE_FUN.pay(AMT)` --- Returns a remote function that receives a pay amount, `AMT`, _from_ the caller when it is called.
-+ <Ref :name="(quote rsh):bill" /> `REMOTE_FUN.bill(AMT)` --- Returns a remote function that provides a pay amount, `AMT`, _to_ the caller when it returns.
-+ <Ref :name="(quote rsh):withBill" /> `REMOTE_FUN.withBill()` --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
++ ${ref((quote rsh), "bill")} `REMOTE_FUN.bill(AMT)` --- Returns a remote function that provides a pay amount, `AMT`, _to_ the caller when it returns.
++ ${ref((quote rsh), "withBill")} `REMOTE_FUN.withBill()` --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
 The exact amount is returned from the invocation by wrapping the original result in a tuple.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
@@ -438,7 +466,7 @@ This operation may not be used with `REMOTE_FUN.bill`.
 
 ### Mappings: creation and modification
 
-<Ref :name="(quote rsh):Map" />
+${ref((quote rsh), "Map")}
 ```reach
 const bidsM = new Map(UInt);
 bidsM[this] = 17;
@@ -456,7 +484,7 @@ Such modifications may only occur in a consensus step.
 
 ### Sets: creation and modification
 
-<Ref :name="(quote rsh):Set" /><Ref :name="(quote rsh):insert" /><Ref :name="(quote rsh):remove" /><Ref :name="(quote rsh):member" />
+${ref((quote rsh), "Set")}${ref((quote rsh), "insert")}${ref((quote rsh), "remove")}${ref((quote rsh), "member")}
 ```reach
 const bidders = new Set();
 bidders.insert(Alice);
@@ -474,4 +502,3 @@ set, `s`, or `s.remove(ADDRESS)` to remove the `ADDRESS` from the set.
 Such modifications may only occur in a consensus step.
 
 `s.member(ADDRESS)` will return a `Bool` representing whether the address is in the set.
-

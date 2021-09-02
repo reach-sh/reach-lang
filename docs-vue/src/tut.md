@@ -10,7 +10,7 @@ On the other hand, if this is too simple, then you may want to start [the worksh
 
 If you're ready, click through to the [first step](##tut-1)!
 
-[[toc]]
+${toc}
 
 ## {#tut-1} Install and Initialize
 
@@ -81,7 +81,7 @@ $ ./reach compile --help
 ---
 
 ::: note
-Get language support for Reach in your editor by visiting XXX (secref "guide-editor-support").
+Get language support for Reach in your editor by visiting ${seclink("guide-editor-support")}.
 :::
 
 Now that your Reach installation is in order, you should open a text editor and get ready to [write your first Reach application](##tut-2)!
@@ -99,7 +99,7 @@ It doesn't matter where you put this file, but we recommend putting it in the cu
 In all the subsequent code samples, we'll label the files based on the chapter of the tutorial you're reading.
 For example, start off by typing the following into `index.rsh`:
 
-@[code](@reach-lang/examples/tut-2/index.rsh)
+${code("/examples/tut-2/index.rsh")}
 
 ::: note
 Did you notice that `export`, `const`, `exit`, and so on are links?
@@ -107,7 +107,7 @@ In Reach code samples, you can click on the names of keywords and standard libra
 :::
 
 ::: note
-Did you notice that [tut-2/index.rsh](@github/examples/tut-2/index.rsh) was a link in the box above the code sample?
+Did you notice that [tut-2/index.rsh](${repo}}/examples/tut-2/index.rsh) was a link in the box above the code sample?
 You can always click on these links to see the entire file in our [GitHub](https://github.com/reach-sh/reach-lang) repository.
 :::
 
@@ -118,7 +118,7 @@ You can click on it and the content of the code box will be copied onto your cli
 
 ::: note
 Did your text editor recognize `index.rsh` as a Reach program and give you proper syntax hightlighting?
-If not, check if there's a plugin available for your editor by visiting XXX (secref "guide-editor-support") or manually
+If not, check if there's a plugin available for your editor by visiting ${seclink("guide-editor-support")} or manually
 configure it to treat Reach (`.rsh`) files as JavaScript and things will be mostly correct.
 :::
 
@@ -135,7 +135,7 @@ When you compile, this is what the compiler will look at.
 Before we go too much further, let's create a similar shell for our JavaScript frontend code.
 Open a new file named `index.mjs` and fill it with this:
 
-@[code](@reach-lang/examples/tut-2/index.mjs)
+${code("/examples/tut-2/index.mjs")}
 
 ::: note
 Did you notice that `parseCurrency`, `newTestAccount`, `deploy`, and so on are links?
@@ -153,7 +153,7 @@ This JavaScript code is similarly schematic and will be consistent across all of
 This will only work on the Reach-provided developer testing network.
 + Line 10 has Alice deploy the application.
 ::: note
-The program defined in [tut-2/index.rsh](@github/examples/tut-2/index.rsh) will only begin to run after it has been deployed via [tut-2/index.mjs](@github/examples/tut-2/index.mjs).
+The program defined in [tut-2/index.rsh](${repo}}/examples/tut-2/index.rsh) will only begin to run after it has been deployed via [tut-2/index.mjs](${repo}}/examples/tut-2/index.mjs).
 :::
 + Line 11 has Bob attach to it.
 + Lines 14 through 16 initialize a backend for Alice.
@@ -199,7 +199,7 @@ We'll use a similar strategy for representing the three outcomes of the game: `B
 
 The first step is to change the Reach program to specify that Alice and Bob's frontends can be interacted with to get the move that they will play, and later informed of the outcome of the game.
 
-@[code{1-17}](@reach-lang/examples/tut-3/index.rsh)
+${code("/examples/tut-3/index.rsh", 1, 17)}
 
 + Lines 3 through 6 define a participant interact interface that will be shared between the two players.
 In this case, it provides two methods: `getHand`, which returns a number; and `seeOutcome`, which receives a number.
@@ -209,7 +209,7 @@ Because of this line, `interact` in the rest of the program will be bound to an 
 
 Before continuing with the Reach application, let's move over to the JavaScript interface and implement these methods in our frontend.
 
-@[code{13-33}](@reach-lang/examples/tut-3/index.mjs)
+${code("/examples/tut-3/index.mjs", 13, 33)}
 
 + Lines 13 and 14 define arrays to hold the meaning of the hands and outcomes.
 + Line 15 defines a constructor for the `Player` implementation.
@@ -244,7 +244,7 @@ The game proceeds in three steps.
 
 First, the backend for Alice interacts with its frontend, gets Alice's hand, and publishes it.
 
-@[code{17-21}](@reach-lang/examples/tut-3/index.rsh)
+${code("/examples/tut-3/index.rsh", 17, 21)}
 
 + Line 17 states that this block of code is something that _only_ `Alice` performs.
 + That means that the variable, `handA`, bound on line 13 is known only to Alice.
@@ -257,7 +257,7 @@ Once this happens, the code is in a "consensus step" where all participants act 
 
 The next step is similar, in that Bob publishes his hand; however, we don't immediately commit the state, instead we compute the outcome of the game.
 
-@[code{23-29}](@reach-lang/examples/tut-3/index.rsh)
+${code("/examples/tut-3/index.rsh", 23, 29)}
 
 + Lines 23 through 26 match Alice's similar local step and joining of the application through a consensus transfer publication.
 + But, line 28 computes the outcome of the game before committing.
@@ -269,7 +269,7 @@ which is the last outcome, that is `Alice wins`, as we expect it to be.)
 
 Finally, we use the each form to have each of the participants send the final outcome to their frontends.
 
-@[code{31-33}](@reach-lang/examples/tut-3/index.rsh)
+${code("/examples/tut-3/index.rsh", 31, 33)}
 
 + Line 31 states that this is a local step that each of the participants performs.
 
@@ -312,7 +312,7 @@ Indeed, this is where the name consensus network comes from, as they enable thes
 That's why every time you run `./reach run`, both Alice and Bob will see the same outcome!
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-3/index.rsh](@github/examples/tut-3/index.rsh) and [tut-3/index.mjs](@github/examples/tut-3/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [tut-3/index.rsh](${repo}}/examples/tut-3/index.rsh) and [tut-3/index.mjs](${repo}}/examples/tut-3/index.mjs) to make sure you copied everything down correctly!
 :::
 
 In [the next step](##tut-4), we'll add some stakes to the game, because Alice needs to take her skills to the bank!
@@ -350,7 +350,7 @@ This time, let's start with changes to the JavaScript frontend and then we'll go
 Since we're going to be having funds get transfered, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
 We'll add this code in between account creation and contract deployment.
 
-@[code{6-13}](@reach-lang/examples/tut-4/index.mjs)
+${code("/examples/tut-4/index.mjs", 6, 13)}
 
 + Line 10 shows a helpful function for displaying currency amounts with up to 4 decimal places.
 + Line 11 shows a helpful function for getting the balance of a participant and displaying it with up to 4 decimal places.
@@ -359,7 +359,7 @@ We'll add this code in between account creation and contract deployment.
 
 Next, we'll update Alice's interface object to include her wager.
 
-@[code{32-35}](@reach-lang/examples/tut-4/index.mjs)
+${code("/examples/tut-4/index.mjs", 32, 35)}
 
 + Line 33 splices the common `Player` interface into Alice's interface.
 + Line 34 defines her wager as `5` units of the network token.
@@ -368,14 +368,14 @@ This is an example of using a concrete value, rather than a function, in a parti
 
 For Bob, we'll modify his interface to show the wager and immediately accept it by returning.
 
-@[code{36-41}](@reach-lang/examples/tut-4/index.mjs)
+${code("/examples/tut-4/index.mjs", 36, 41)}
 
 + Lines 38 through 40 define the `acceptWager` function.
 
 
 Finally, after the computation is over, we'll get the balance again and show a message summarizing the effect.
 
-@[code{44-48}](@reach-lang/examples/tut-4/index.mjs)
+${code("/examples/tut-4/index.mjs", 44, 48)}
 
 + Lines 44 and 45 get the balances afterwards.
 + Lines 47 and 48 print out the effect.
@@ -388,7 +388,7 @@ Let's look at that now.
 
 First, we need to update the participant interact interface.
 
-@[code{1-19}](@reach-lang/examples/tut-4/index.rsh)
+${code("/examples/tut-4/index.rsh", 1, 19)}
 
 + Lines 9 through 12 define Alice's interface as the `Player` interface, plus an integer value called `wager`.
 + Lines 13 through 16 do the same for Bob, where he has a method called `acceptWager` that can look at the wager value.
@@ -397,7 +397,7 @@ First, we need to update the participant interact interface.
 Each of the three parts of the application have to be updated to deal with the wager.
 Let's look at Alice's first step first.
 
-@[code{19-25}](@reach-lang/examples/tut-4/index.rsh)
+${code("/examples/tut-4/index.rsh", 19, 25)}
 
 + Line 20 has Alice declassify the wager for transmission.
 + Line 23 is updated so that Alice shares the wager amount with Bob.
@@ -409,7 +409,7 @@ This is because the consensus network needs to be able to verify that the amount
 
 Next, Bob needs to be shown the wager and given the opportunity to accept it and transfer his funds.
 
-@[code{27-32}](@reach-lang/examples/tut-4/index.rsh)
+${code("/examples/tut-4/index.rsh", 27, 32)}
 
 + Line 28 has Bob accept the wager.
 If he doesn't like the terms, his frontend can just not respond to this method and the DApp will stall.
@@ -420,7 +420,7 @@ The DApp is now running in a consensus step and
 the contract itself now holds twice the wager amount.
 Before, it would compute the outcome and then commit the state; but now, it needs to look at the outcome and use it to balance the account.
 
-@[code{34-41}](@reach-lang/examples/tut-4/index.rsh)
+${code("/examples/tut-4/index.rsh", 34, 41)}
 
 + Lines 35 through 38 compute the amounts given to each participant depending on the outcome by determining how many `wager` amounts each party gets.
 If the outcome is `2`, `Alice wins`, then she gets two portions; while if it is `0`, `Bob wins`, then he gets two portions; otherwise they each get one portion.
@@ -470,8 +470,8 @@ Bob went from 10 to 4.9999.
 
 
 ::: note
-How come Alice and Bob's balance goes back to `10` each time?
-It's because every time we run `./reach run`, it starts a completely fresh instance of the testing network and creates new accounts for each player.
+How come Alice and Bob's balances go back to `10` every time?
+It's because each time we run `./reach run`, it creates fresh accounts for both players.
 :::
 
 ::: note
@@ -498,10 +498,10 @@ She has to pay to deploy the contract, because she calls `acc.deploy` in her fro
 The [guide section on deployment](##guide-deploymode) discusses how to avoid this difference.
 :::
 
-Alice is doing okay, if she keeps this up, she'll make a fortune on _Rock, Paper, Scissors!_!
+Alice is doing okay - if she keeps this up, she'll make a fortune on _Rock, Paper, Scissors!_!
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-4/index.rsh](@github/examples/tut-4/index.rsh) and [tut-4/index.mjs](@github/examples/tut-4/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [tut-4/index.rsh](${repo}}/examples/tut-4/index.rsh) and [tut-4/index.mjs](${repo}}/examples/tut-4/index.mjs) to make sure you copied everything down correctly!
 :::
 
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
@@ -550,7 +550,7 @@ It is possible for a deviant and dishonest version of a Bob backend to execute d
 
 If we change Bob's code to the following:
 
-@[code{27-32}](@reach-lang/examples/tut-5-attack/index.rsh)
+${code("/examples/tut-5-attack/index.rsh", 27, 32)}
 
 then he will ignore the frontend and just compute the correct value.
 
@@ -577,7 +577,7 @@ How would we know?
 Reach comes with an    [automatic verification](##guide-assert) engine that we can use to mathematically prove that this version will always result in the `outcome` variable equalling `0`, which means Bob wins.
 We can instruct Reach to prove this theorem by adding these lines after computing the `outcome`:
 
-@[code{34-37}](@reach-lang/examples/tut-5-attack/index.rsh)
+${code("/examples/tut-5-attack/index.rsh", 34, 37)}
 
 + Line 35 requires that the dishonest version of Bob be used for the proof.
 + Line 36 conducts the proof by including an assert statement in the program.
@@ -585,11 +585,11 @@ We can instruct Reach to prove this theorem by adding these lines after computin
 
 Before we had this line in the file, when we ran `./reach run`, it would print out the message:
 
-@[code{2-7}](@reach-lang/examples/tut-4/index.txt)
+${code("/examples/tut-4/index.txt", 2, 7)}
 
 But now, it prints out
 
-@[code{2-7}](@reach-lang/examples/tut-5-attack/index.txt)
+${code("/examples/tut-5-attack/index.txt", 2, 7)}
 
 + Line 7 is different and shows that more theorems have been proven about our program.
 It prints out five more, rather than one more, because the theorem is proved differently in the different verification modes.
@@ -610,14 +610,14 @@ We can see what these theorems do by deliberately inserting an error into the pr
 
 Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
-@[code{34-41}](@reach-lang/examples/tut-5-attack/index-bad.rsh)
+${code("/examples/tut-5-attack/index-bad.rsh", 34, 41)}
 
 + Line 36 has `[1, 0]`, but should have `[2, 0]`.
 
 
 When we run `./reach compile (reachexlink tut-5-attack/index-bad.rsh)`, it gives details about the error:
 
-@[code{4-31}](@reach-lang/examples/tut-5-attack/index-bad.txt)
+${code("/examples/tut-5-attack/index-bad.txt", 4, 31)}
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
 
@@ -632,12 +632,12 @@ These kinds of [automatic verifications](##guide-assert) are helpful for Reach p
 
 However, now let's add an assertion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
-We'll go back to the version of [tut-4/index.rsh](@github/examples/tut-4/index.rsh) from the last section, which has an honest version of Bob.
+We'll go back to the version of [tut-4/index.rsh](${repo}}/examples/tut-4/index.rsh) from the last section, which has an honest version of Bob.
 (Click on the preceeding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a local step:
 
-@[code{23-31}](@reach-lang/examples/tut-5-attack/index-fails.rsh)
+${code("/examples/tut-5-attack/index-fails.rsh", 23, 31)}
 
 + Line 27 contains a knowledge assertion that Bob cannot know Alice's value `handAlice` at this point in the program.
 In this case, it is obvious that this is not true, because Alice shares `handAlice` at line 23.
@@ -646,7 +646,7 @@ In many cases, this is not obvious and Reach's [automatic verification](##guide-
 
 When we run `./reach run`, it reports that this assertion is false:
 
-@[code{2-6}](@reach-lang/examples/tut-5-attack/index-fails.txt)
+${code("/examples/tut-5-attack/index-fails.txt", 2, 6)}
 
 It is not enough to correct failures and attacks when you discover them.
 You must **always** add an assertion to your program that would fail to hold if the attack or failure were present.
@@ -660,7 +660,7 @@ Since we've been making lots of changes to the code, let's start fresh with a ne
 
 First, we'll define the rules of _Rock, Paper, Scissors!_ a little bit more abstractly, so we can separate the logic of the game from the details of the application:
 
-@[code{1-7}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 1, 7)}
 
 + Line 1 is the usual Reach version header.
 + Lines 3 and 4 define enumerations for the hands that may be played, as well as the outcomes of the game.
@@ -672,7 +672,7 @@ One way to check would be to implement a JavaScript frontend that didn't interac
 That's a typical way to debug and is possible with Reach.
 However, Reach allows us to write such test cases directly into the Reach program as verification assertions.
 
-@[code{9-11}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 9, 11)}
 
 + Line 9 makes an assertion that when Alice plays Rock and Bob plays Paper, then Bob wins as expected.
 
@@ -680,26 +680,26 @@ However, Reach allows us to write such test cases directly into the Reach progra
 But, Reach's [automatic verification](##guide-assert) allows us to express even more powerful statements about our program's behavior.
 For example, we can state that no matter what values are provided for `handA` and `handB`, `winner` will always provide a valid outcome:
 
-@[code{13-15}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 13, 15)}
 
 And we can specify that whenever the same value is provided for both hands, no matter what it is, `winner` always returns `DRAW`:
 
-@[code{17-18}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 17, 18)}
 
 These examples both use `forall`, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
 You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of `handA` (twice!) and `handB`.
-In fact, on the author's MacBook Pro from early 2015, it takes less than half a second.
+In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced [symbolic execution engine](##guide-reach) to reason about this theorem abstractly without considering individual values.
 
 Let's continue the program by specifying the participant interact interfaces for Alice and Bob.
 These will be mostly the same as before, except that we will also expect that each frontend can provide access to random numbers.
 We'll use these later on to protect Alice's hand.
 
-@[code{20-24}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 20, 24)}
 
 The only line that is different is line 21, which includes `hasRandom`, from the Reach standard library, in the interface.
 
-@[code{20-30}](@reach-lang/examples/tut-5/index.mjs)
+${code("/examples/tut-5/index.mjs", 20, 30)}
 
 Similarly, we only need to modify one line of our JavaScript frontend.
 Line 21 allows each participant's Reach code to generate random numbers as necessary.
@@ -714,7 +714,7 @@ We need Alice to be able to publish her hand, but also keep it secret.
 This is a job for a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme).
 Reach's standard library comes with `makeCommitment` to make this easier for you.
 
-@[code{37-45}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 37, 45)}
 
 + Line 39 has Alice compute her hand, but _not_ declassify it.
 + Line 40 has her compute a commitment to the hand.
@@ -730,7 +730,7 @@ It is important to include the salt in the commitment, so that multiple commitme
 Similarly, it is important not to share the salt until later, because if an attacker knows the set of possible values, they can enumerate them and compare with the result of the commitment and learn the value.
 :::
 
-@[code{47-54}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 47, 54)}
 
 + Line 47 states the knowledge assertion.
 + Lines 48 through 53 are unchanged from the original version.
@@ -739,7 +739,7 @@ Similarly, it is important not to share the salt until later, because if an atta
 
 We now return to Alice who can reveal her secrets.
 
-@[code{56-61}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 56, 61)}
 
 + Lines 57 and 58 have Alice declassify the secret information.
 + Line 60 has her publish it.
@@ -749,7 +749,7 @@ This will always be the case with honest participants, but dishonest participant
 
 The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes:
 
-@[code{63-74}](@reach-lang/examples/tut-5/index.rsh)
+${code("/examples/tut-5/index.rsh", 63, 74)}
 
 Since we didn't have to change the frontend in any meaningful way, the output of running `./reach run` is still the same as it ever was:
 
@@ -789,7 +789,7 @@ When we compile this version of the application, Reach's [automatic formal verif
 Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-5/index.rsh](@github/examples/tut-5/index.rsh) and [tut-5/index.mjs](@github/examples/tut-5/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [tut-5/index.rsh](${repo}}/examples/tut-5/index.rsh) and [tut-5/index.mjs](${repo}}/examples/tut-5/index.mjs) to make sure you copied everything down correctly!
 :::
 
 Now our implementation of _Rock, Paper, Scissors!_ is secure and doesn't contain any exploits for either Alice or Bob to guarantee a win.
@@ -846,7 +846,7 @@ We'll integrate this mechanism into our version of _Rock, Paper, Scissors!_ and 
 
 First, we'll modify the participant interact interface to allow the frontend to be informed that a timeout occurred.
 
-@[code{20-25}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 20, 25)}
 
 + Line 24 introduces a new method, `informTimeout`, that receives no arguments and returns no information.
 We'll call this function when a timeout occurs.
@@ -854,12 +854,12 @@ We'll call this function when a timeout occurs.
 
 We'll make a slight tweak to our JavaScript frontend to be able to receive this message and display it on the console.
 
-@[code{20-33}](@reach-lang/examples/tut-6/index.mjs)
+${code("/examples/tut-6/index.mjs", 20, 33)}
 
 Back in the Reach program, we'll declare a value to use as a standard deadline throughout the program.
 Similar to how she provides the wager, we will have Alice also provide the deadline.
 
-@[code{28-32}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 28, 32)}
 
 + Line 31 adds the `deadline` field to Alice's participant interact interface.
 It is defined as some number of time delta units,
@@ -869,7 +869,7 @@ In many networks, like Ethereum, this number is a number of blocks.
 
 Next, at the start of the Reach application, we'll define a helper function to inform each of the participants of the timeout by calling this new method.
 
-@[code{39-43}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 39, 43)}
 
 + Line 39 defines the function as an arrow expression.
 + Line 40 has each of the participants perform a local step.
@@ -881,7 +881,7 @@ We will have Alice declassify and publish the `deadline` for later timeout claus
 We won't add a timeout clause to Alice's first message, because there is no consequence to her non-participation:
 if she doesn't start the game, then no one is any worse off.
 
-@[code{45-54}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 45, 54)}
 
 + Line 50 has Alice declassify the `deadline` time delta.
 + Line 51 now has Alice publish the `deadline`.
@@ -889,7 +889,7 @@ if she doesn't start the game, then no one is any worse off.
 
 However, we will adjust Bob's first message, because if he fails to participate, then Alice's initial wager will be lost to her.
 
-@[code{61-64}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 61, 64)}
 
 + Line 63 adds a timeout handler to Bob's publication.
 
@@ -900,7 +900,7 @@ This means that if Bob fails to publish his hand, then Alice will take her netwo
 
 We will add a similar timeout handler to Alice's second message.
 
-@[code{70-71}](@reach-lang/examples/tut-6/index.rsh)
+${code("/examples/tut-6/index.rsh", 70, 71)}
 
 But in this case, Bob will be able to claim all of the funds if Alice doesn't participate.
 You might think that it would be "fair" for Alice's funds to be returned to Alice and Bob's to Bob.
@@ -914,7 +914,7 @@ These are the only changes we need to make to the Reach program to make it robus
 
 Let's modify the JavaScript frontend to deliberately cause a timeout sometimes when Bob is supposed to accept the wager.
 
-@[code{35-54}](@reach-lang/examples/tut-6/index.mjs)
+${code("/examples/tut-6/index.mjs", 35, 54)}
 
 + Line 39 has Alice specify a `deadline` of ten blocks.
 + Lines 43 through 52 redefine Bob's `acceptWager` method as an asynchronous function,
@@ -977,7 +977,7 @@ Bob went from 10 to 9.9999.
 Of course, when you run, you may not get two of the three times ending in a timeout.
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-6/index.rsh](@github/examples/tut-6/index.rsh) and [tut-6/index.mjs](@github/examples/tut-6/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [tut-6/index.rsh](${repo}}/examples/tut-6/index.rsh) and [tut-6/index.mjs](${repo}}/examples/tut-6/index.mjs) to make sure you copied everything down correctly!
 :::
 
 Now our implementation of _Rock, Paper, Scissors!_ is robust against either participant dropping from the game.
@@ -1003,7 +1003,7 @@ Let's do that to get it out of the way and not distract from the main task of re
 
 We'll modify the `Player` interact object so that it will have a different `getHand` method.
 
-@[code{20-39}](@reach-lang/examples/tut-7/index.mjs)
+${code("/examples/tut-7/index.mjs", 20, 39)}
 
 + Lines 25 through 30 moves the forced timeout code that we wrote for Bob's `acceptWager` function into this method.
 We also change the threshold so that timeouts only happen 1% of the time.
@@ -1013,7 +1013,7 @@ This isn't a very interesting behavior, so we'll make it much less frequent.
 We also adjust Bob's `acceptWager` function to remove the timeout code, since we're testing that differently now.
 It's just a matter of reverting to the simpler version from before.
 
-@[code{41-53}](@reach-lang/examples/tut-7/index.mjs)
+${code("/examples/tut-7/index.mjs", 41, 53)}
 
 + Lines 49 through 51 have the simpler `acceptWager` method for Bob.
 
@@ -1044,13 +1044,13 @@ But, now because the players may submit many hands, but should only  have a sing
 
 Let's make these changes now.
 
-@[code{45-51}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 45, 51)}
 
 + Line 49 has Alice publish the wager and deadline.
 + Line 50 has Alice pay the wager.
 
 
-@[code{53-58}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 53, 58)}
 
 + Line 56 has Bob pay the wager.
 + Line 58 does **not** have this consensus step commit.
@@ -1073,7 +1073,7 @@ This is because all of the participants must agree on the direction of control f
 
 Here's what the structure looks like:
 
-@[code{59-61}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 59, 61)}
 
 + Line 59 defines the loop variable, `outcome`.
 + Line 60 states the invariant that the body of the loop does not change the balance in the contract account and that  `outcome` is a valid outcome.
@@ -1082,23 +1082,23 @@ Here's what the structure looks like:
 
 Now, let's look at the body of the loop for the remaining steps, starting with Alice's commitment to her hand.
 
-@[code{62-71}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 62, 71)}
 
 + Line 62 commits the last transaction, which at the start of the loop is Bob's acceptance of the wager, and at subsequent runs of the loop is Alice's publication of her hand.
 + Lines 64 through 71 are almost identical to the older version, except the wager is already known and paid.
 
 
-@[code{73-79}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 73, 79)}
 
 Similarly, Bob's code is almost identical to the prior version, except that he's already accepted and paid the wager.
 
-@[code{81-87}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 81, 87)}
 
 Alice's next step is actually identical, because she is still revealing her hand in exactly the same way.
 
 Next is the end of the loop.
 
-@[code{89-91}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 89, 91)}
 
 + Line 89 updates the `outcome` loop variable with the new value.
 + Line 90 continues the loop.
@@ -1107,7 +1107,7 @@ Unlike most programming languages, Reach **requires** that `continue` be explici
 
 The rest of the program could be exactly the same as it was before, except now it occurs outside of the loop, but we will simplify it, because we know that the outcome can never be a draw.
 
-@[code{93-95}](@reach-lang/examples/tut-7/index.rsh)
+${code("/examples/tut-7/index.rsh", 93, 95)}
 
 + Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `while` loop would not have exitted.
 + Line 94 transfers the funds to the winner.
@@ -1152,7 +1152,7 @@ Bob went from 10 to 14.9999.
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-7/index.rsh](@github/examples/tut-7/index.rsh) and [tut-7/index.mjs](@github/examples/tut-7/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [tut-7/index.rsh](${repo}}/examples/tut-7/index.rsh) and [tut-7/index.mjs](${repo}}/examples/tut-7/index.mjs) to make sure you copied everything down correctly!
 :::
 
 Now our implementation of _Rock, Paper, Scissors!_ will always result in a pay-out, which is much more fun for everyone.
@@ -1184,116 +1184,62 @@ XXX (check:many
 
 In the last section, we made our _Rock, Paper, Scissors!_ run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
-Instead, we'll go under the covers of `reach run`, as well as build a version of our game that is interactive and can be played away from a private developer test network.
-
----
-
-In the past, when we've run `./reach run`, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript frontend to the Reach standard library and a fresh instance of a private developer test network.
-In this section we'll introduce customizations in support of a non-automated version of _Rock, Paper, Scissors!_ and provide the option to connect to a real Ethereum network.
-
-We'll start by running
-
-```
-$ ./reach scaffold
-```
-
-
-which will automatically generate the following files for us:
-
-+ `package.json` --- A Node.js package file that connects our `index.mjs` to the Reach standard library.
-+ `Dockerfile` --- A Docker image script that builds our package efficiently and runs it.
-+ `docker-compose.yml` --- A Docker Compose script that connects our Docker image to a fresh instance of the Reach private developer test network.
-+ `Makefile` --- A `Makefile` that easily rebuilds and runs the Docker image.
-
-
-We're going to leave the first two files unchanged.
-You can look at them at [tut-8/package.json](@github/examples/tut-8/package.json) and [tut-8/Dockerfile](@github/examples/tut-8/Dockerfile), but the details aren't especially important.
-However, we'll customize the other two files.
-
-First, let's look at the [tut-8/docker-compose.yml](@github/examples/tut-8/docker-compose.yml) file:
-
-@[code](@reach-lang/examples/tut-8/docker-compose.yml)
-
-+ Lines 2 and 3 define a service for starting our application.
-Your line 3 will say `tut`, rather than `tut-8`, if you've stayed in the same directory throughout the tutorial.
-+ Lines 5 and 6 define the Reach private developer test network service for Conflux.
-+ Lines 7 and 8 define the Reach private developer test network service for Ethereum.
-+ Lines 9 through 26 define the Reach private developer test network service for Algorand.
-+ Lines 27 through 82 define services that allow the application to be run with different networks; including line 27, which defines `reach-app-tut-8-ETH-live` for connecting to a live network.
-+ We'll also add lines 85 through 90 to define a `player` service that is our application with an open standard input, as well as two instances named `alice` and `bob`.
-
-
-With these in place, we can run
-
-```
-$ docker-compose run WHICH
-```
-
-
-where `WHICH` is `reach-app-tut-8-ETH-live` for a live instance, or `alice` or `bob` for a test instance.
-If we use the live version, then we have to define the environment variable `ETH_NODE_URI` as the URI of our Ethereum node.
-
-We'll modify the [tut-8/Makefile](@github/examples/tut-8/Makefile) to have commands to run each of these variants:
-
-@[code{37-44}](@reach-lang/examples/tut-8/Makefile)
-
-However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
-Let's modify the JavaScript frontend and make them interactive.
+Instead, we'll introduce customizations to the JavaScript frontend which facilitate interactivity and provide the option to connect to a real consensus network.
 
 ---
 
 We'll start from scratch and show every line of the program again.
 You'll see a lot of similarity between this and the last version, but for completeness, we'll show every line.
 
-@[code{1-6}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 1, 6)}
 
 + Lines 1, 2, and 4 are the same as before: importing the standard library and the backend.
 + Line 3 is new and imports a helpful library for simple console applications called `ask.mjs` from the Reach standard library.
 We'll see how these three functions are used below.
 
 
-@[code{7-12}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 7, 12)}
 
 + Lines 7 through 10 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
 `ask` presents a prompt and collects a line of input until its argument does not error.
 `yesno` errors if it is not given "y" or "n".
 
 
-@[code{13-29}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 13, 29)}
 
 + Lines 16 through 19 present the user with the choice of creating a test account if they can or inputting a secret to load an existing account.
 + Line 21 creates the test account as before.
 + Line 27 loads the existing account.
 
 
-@[code{30-46}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 30, 46)}
 
 + Lines 31 through 34 ask if the participant will deploy the contract.
 + Lines 36 through 38 deploy it and print out public information (`ctc.getInfo`) that can be given to the other player.
 + Lines 40 through 44 request, parse, and process this information.
 
 
-@[code{47-54}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 47, 54)}
 
 Next we define a few helper functions and start the participant interaction interface.
 
-@[code{55-59}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 55, 59)}
 
-First we define a timeout handler.
+Then we define a timeout handler.
 
-@[code{60-78}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 60, 78)}
 
 Next, we request the wager amount or define the `acceptWager` method, depending on if we are Alice or not.
 
-@[code{79-97}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 79, 97)}
 
 Next, we define the shared `getHand` method.
 
-@[code{98-102}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 98, 102)}
 
 Finally, the `seeOutcome` method.
 
-@[code{103-111}](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs", 103, 111)}
 
 Lastly, we choose the appropriate backend function and await its completion.
 
@@ -1302,30 +1248,23 @@ Lastly, we choose the appropriate backend function and await its completion.
 We can now run
 
 ```
-$ make build
+$ ./reach run
 ```
 
 
-to rebuild the images, then
+in one terminal in this directory to play as Alice and
 
 ```
-$ make run-alice
-```
-
-
-in one terminal in this directory and
-
-```
-$ make run-bob
+$ ./reach run
 ```
 
 
-in another terminal in this directory.
+in another terminal in this directory to play as Bob.
 
 Here's an example run:
 
 ```
-$ make run-alice
+$ ./reach run
 Are you Alice?
 y
 Starting Rock, Paper, Scissors as Alice
@@ -1348,7 +1287,7 @@ Your balance is now 989.9999
 and
 
 ```
-$ make run-bob
+$ ./reach run
 Are you Alice?
 n
 Starting Rock, Paper, Scissors as Bob
@@ -1357,7 +1296,7 @@ y
 Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
-"0xc2a875afbdFb39b1341029A7deceC03750519Db6"
+"0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"
 Your balance is 1000
 Do you accept the wager of 10?
 y
@@ -1372,12 +1311,21 @@ Your balance is now 1009.9999
 Of course, when you run the exact amounts and addresses may be different.
 
 ::: note
-If your version isn't working, look at the complete versions of [tut-8/index.rsh](@github/examples/tut-8/index.rsh), [tut-8/index.mjs](@github/examples/tut-8/index.mjs), [tut-8/package.json](@github/examples/tut-8/package.json), [tut-8/Dockerfile](@github/examples/tut-8/Dockerfile), [tut-8/docker-compose.yml](@github/examples/tut-8/docker-compose.yml), and [tut-8/Makefile](@github/examples/tut-8/Makefile) to make sure you copied everything down correctly!
+If your version isn't working, compare with [tut-8/index.rsh](${repo}}/examples/tut-8/index.rsh) and [tut-8/index.mjs](${repo}}/examples/tut-8/index.mjs) to ensure you've copied everything down correctly!
 :::
 
----
+If we were to instead run
+```
+$ REACH_CONNECTOR_MODE=ALGO-devnet ./reach run
+```
 
-If we were to edit [tut-8/docker-compose.yml](@github/examples/tut-8/docker-compose.yml), and move the `&default-app` on line 34 to line 54, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+in two terminals we'd see equivalent output from running our application on a private Algorand devnet.
+
+Connecting to live consensus networks is similarly easy:
+```
+$ REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI="http://some.node.fqdn:8545" ./reach run
+```
+
 
 ---
 
@@ -1416,30 +1364,10 @@ On Ethereum, the standard wallet is [MetaMask](https://metamask.io).
 If you want to test this code, you'll need to install it and set it up.
 Furthermore, MetaMask does not support multiple active accounts, so if you want to test _Rock, Paper, Scissors!_ locally, you'll need to have two separate browser instances: one to act as Alice and another to act as Bob.
 
----
+To complete this section we'll use the `index.rsh` you've already written and create an `index.js` file from scratch which replaces `index.mjs`.
 
-The code in this section does not use the scaffolding from the previous section.
-Reach comes with a convenience command for deleting scaffolded files:
-
-```
-$ ./reach unscaffold
-```
-
-
-Similarly, you do not need the previous `index.mjs` file, because we'll be writing it completely from scratch to use React.
-You can run the following command to delete it:
-
-```
-$ rm index.mjs
-```
-
-
-Or, you can copy the `index.rsh` file into a new directory and work from there.
-
----
-
-This code is supplemented with [index.css](@github/examples/tut-9/index.css)
-and some [views](@github/examples/tut-9/views).
+This code is also supplemented with [index.css](${repo}}/examples/tut-9/index.css)
+and some [views](${repo}}/examples/tut-9/views).
 These details are not specific to Reach, and are fairly trivial,
 so we will not explain the specifics of those files.
 If you run this locally, you'll want to download those files.
@@ -1461,10 +1389,10 @@ Your directory should look like:
 
 ---
 
-We will focus on [tut-9/index.js](@github/examples/tut-9/index.js),
-because [tut-9/index.rsh](@github/examples/tut-9/index.rsh) is the same as previous sections.
+We will focus on [tut-9/index.js](${repo}}/examples/tut-9/index.js),
+because [tut-9/index.rsh](${repo}}/examples/tut-9/index.rsh) is the same as previous sections.
 
-@[code{1-9}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 1, 9)}
 
 On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled `backend`.
@@ -1476,7 +1404,7 @@ which are used to select the desired standard library.
 This is why you need to pass `process.env` as an argument
 to achieve the desired effect.
 
-@[code{10-14}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 10, 14)}
 
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
@@ -1487,9 +1415,9 @@ and tell it what to do once it mounts, which is the React term for starting.
 
 XXX (exviewfigs "tut-9" "AppViews" '("ConnectAccount" 19 28))
 
-@[code{15-31}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 15, 31)}
 
-@[code{39-41}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 39, 41)}
 
 + On line 18, we initialize the component state to display XXX (exviewref "tut-9" "ConnectAccount").
 + On lines 20 thru 31, we hook into React's `componentDidMount` lifecycle event, which is called when the component starts.
@@ -1498,14 +1426,14 @@ For example, when used with Ethereum, it can discover the currently-selected Met
 + On line 26, we use `getFaucet` to try and access the Reach developer testing network faucet.
 + On line 27, if `getFaucet` was successful, we set the component state to display XXX (exviewref "tut-9" "FundAccount").
 + On line 29, if `getFaucet` was unsuccessful, we set the component state to skip to XXX (exviewref "tut-9" "DeployerOrAttacher").
-+ On line 39, we render the appropriate view from [tut-9/views/AppViews.js](@github/examples/tut-9/views/AppViews.js).
++ On line 39, we render the appropriate view from [tut-9/views/AppViews.js](${repo}}/examples/tut-9/views/AppViews.js).
 
 
 XXX (exviewfigs "tut-9" "AppViews" '("FundAccount" 30 54))
 
 Next, we define callbacks on `App` for what to do when the user clicks certain buttons.
 
-@[code{32-36}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 32, 36)}
 
 + On lines 32 thru 35, we define what happens when the user clicks the `Fund Account` button.
 + On line 33, we transfer funds from the faucet to the user's account.
@@ -1516,7 +1444,7 @@ which is to set the component state to display XXX (exviewref "tut-9" "DeployerO
 
 XXX (exviewfigs "tut-9" "AppViews" '("DeployerOrAttacher" 56 78))
 
-@[code{37-38}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 37, 38)}
 
 On lines 37 and 38, we set a sub-component
 based on whether the user clicks `Deployer` or `Attacher`.
@@ -1529,11 +1457,11 @@ XXX (exviewfigs "tut-9" "PlayerViews" '("GetHand" 8 32))
 
 Our Web frontend needs to implement the participant interact interface for players, which we defined as:
 
-@[code{20-25}](@reach-lang/examples/tut-9/index.rsh)
+${code("/examples/tut-9/index.rsh", 20, 25)}
 
 We will provide these callbacks via the React component directly.
 
-@[code{42-55}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 42, 55)}
 
 + On line 43, we provide the `random` callback
 + On lines 44 thru 50, we provide the `getHand` callback.
@@ -1562,12 +1490,12 @@ XXX (exviewfigs "tut-9" "DeployerViews" '("SetWager" 20 38) '("Deploy" 40 53))
 
 Our Web frontend needs to implement the participant interact interface for Alice, which we defined as:
 
-@[code{28-32}](@reach-lang/examples/tut-9/index.rsh)
+${code("/examples/tut-9/index.rsh", 28, 32)}
 
 We will provide the `wager` and `deadline` values,
 and define some button handlers in order to trigger the deployment of the contract.
 
-@[code{56-72}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 56, 72)}
 
 + On line 59, we set the component state to display XXX (exviewref "tut-9" "SetWager").
 + On line 61, we define what to do when the user clicks the `Set Wager` button,
@@ -1581,7 +1509,7 @@ which is to set the component state to display XXX (exviewref "tut-9" "Deploy").
 as the participant interact interface object.
 + On lines 68 and 69, we set the component state to display XXX (exviewref "tut-9" "WaitingForAttacher"),
 which displays the deployed contract info as JSON.
-+ On line 71, we render the appropriate view from [tut-9/views/DeployerViews.js](@github/examples/tut-9/views/DeployerViews.js).
++ On line 71, we render the appropriate view from [tut-9/views/DeployerViews.js](${repo}}/examples/tut-9/views/DeployerViews.js).
 
 
 XXX (exviewfigs
@@ -1595,12 +1523,12 @@ XXX (exviewfigs "tut-9" "AttacherViews" '("Attach" 18 39) '("Attaching" 41 49))
 
 Our Web frontend needs to implement the participant interact interface for Bob, which we defined as:
 
-@[code{33-36}](@reach-lang/examples/tut-9/index.rsh)
+${code("/examples/tut-9/index.rsh", 33, 36)}
 
 We will provide the `acceptWager` callback,
 and define some button handlers in order to attach to the deployed contract.
 
-@[code{73-95}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 73, 95)}
 
 + On line 76, we initialize the component state to display XXX (exviewref "tut-9" "Attach").
 + On lines 78 thru 82, we define what happens when the user clicks the `Attach` button.
@@ -1613,7 +1541,7 @@ as the participant interact interface object.
 and wait for a `Promise` which can be resolved via user interaction.
 + On lines 89 thru 92, we define what happens when the user clicks the `Accept Terms and Pay Wager` button:
 the `Promise` from line 90 is resolved, and we set the component state to display XXX (exviewref "tut-9" "WaitingForTurn").
-+ On line 93, we render the approprite view from [tut-9/views/AttacherViews.js](@github/examples/tut-9/views/AttacherViews.js)
++ On line 93, we render the approprite view from [tut-9/views/AttacherViews.js](${repo}}/examples/tut-9/views/AttacherViews.js)
 
 
 XXX (exviewfigs
@@ -1623,9 +1551,9 @@ XXX (exviewfigs
  '("WaitingForTurn" 72 81))
 
 --- 
-@[code{96-96}](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js", 96, 96)}
 
-Finally, we call a small helper function from [tut-9/views/render.js](@github/examples/tut-9/views/render.js)
+Finally, we call a small helper function from [tut-9/views/render.js](${repo}}/examples/tut-9/views/render.js)
 to render our App component.
 
 --- 
@@ -1646,6 +1574,28 @@ you can call:
 $ REACH_CONNECTOR_MODE=ALGO ./reach react
 ```
 
+
+::: note
+If you expect that your Algorand users do not have access to an [ARC-0011](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0011.md) browser wallet, you want to provide a fallback.
+
+If you add the following to your program, then you can provide a simple wallet where the user copies and pastes their mnemonic for each interaction.
+```js
+reach.setWalletFallback(reach.walletFallback({}));
+```
+
+
+Instead, if you would like to allow your users to use [My Algo](https://wallet.myalgo.com/home), then you can add the following:
+```js
+import MyAlgoConnect from '@reach-sh/stdlib/ALGO_MyAlgoConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', MyAlgoConnect }));
+```
+
+Of course, you may want to replace ```js
+'TestNet'
+```
+ with a different network name.
+:::
 
 Similarly, to run with Conflux:
 
@@ -1701,7 +1651,7 @@ Let's review what we've done through this tutorial:
 + In [part two](##tut-2), we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen consensus network into a couple lines and three key API calls.
 + In [part three](##tut-3), we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.
 + In [part four](##tut-4), we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.
-+ In [part five](##tut-5), we introduce you to the Reach [automatic formal verification](##guide-assert) engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.
++ In [part five](##tut-5), we introduced you to the Reach [automatic formal verification](##guide-assert) engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.
 + In [part six](##tut-6), we saw how Reach allows you to specify how to deal with [non-participation](##guide-timeout) and protect against funds being locked in contracts.
 + In [part seven](##tut-7), we saw how Reach can express arbitrary length interactions and how flexible the Reach frontends are to variations in the backend.
 + In [part eight](##tut-8), we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.
@@ -1715,21 +1665,20 @@ Let's look at the final versions of our programs.
 
 First, let's look at the Reach program:
 
-@[code](@reach-lang/examples/tut-8/index.rsh)
+${code("/examples/tut-8/index.rsh")}
 
 Next, the JavaScript command-line frontend:
 
-@[code](@reach-lang/examples/tut-8/index.mjs)
+${code("/examples/tut-8/index.mjs")}
 
 And finally, the Web frontend:
 
-@[code](@reach-lang/examples/tut-9/index.js)
+${code("/examples/tut-9/index.js")}
 
 We wrote about a hundred lines of Reach and two different frontends.
-Our command-line version about a hundred lines of JavaScript.
-While our Web version is about the same length, but has a lot of presentation code as well.
+Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but has a lot of presentation code as well.
 
-Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: [tut-8/build/index.main.sol](@github/examples/tut-8/build/index.main.sol)), almost two thousand lines of TEAL (which you can look at here: [tut-8/build/index.main.appApproval.teal](@github/examples/tut-8/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (which you can look at here: [tut-8/build/index.main.mjs](@github/examples/tut-8/build/index.main.mjs)).
+Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: [tut-8/build/index.main.sol](${repo}}/examples/tut-8/build/index.main.sol)), almost two thousand lines of TEAL (which you can look at here: [tut-8/build/index.main.appApproval.teal](${repo}}/examples/tut-8/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (which you can look at here: [tut-8/build/index.main.mjs](${repo}}/examples/tut-8/build/index.main.mjs)).
 If we weren't using Reach, then we'd have to write all this code ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!
@@ -1740,7 +1689,7 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 + Finally, you may like to repeat a portion of this tutorial, but using [a language other than JavaScript](##tut-7-rpc), like Python or Go!
 
 
-No matter what you decide to read or work on next, we hope you'll join us on <CommunityLink />.
+No matter what you decide to read or work on next, we hope you'll join us on [the Discord community](${discord}).
 Once you join, message `@team, I just completed the tutorial!` and we'll give you the `tutorial veteran` role, so you can more easily help others work through it!
 
 Thanks for spending your afternoon with us!

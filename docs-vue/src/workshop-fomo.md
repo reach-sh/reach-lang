@@ -8,7 +8,7 @@
 In this workshop, we'll design an application that allows a Funder
 to create an auction where participants may purchase tickets.
 The Funder sets a ticket price and a relative deadline. When
-a Buyer purchases a ticket, the deadline is reset. Whomever is the
+a Buyer purchases a ticket, the deadline is reset. Whoever is the
 last person to buy a ticket—when the deadline finally hits—wins
 the entire balance. This program is based off of the crypto game,
 [FOMO3DGame](https://fomo3d.hostedwiki.co/).
@@ -80,18 +80,18 @@ XXX (drstep-dd-stop)
 
 Let's compare your answers with ours:
 
-+ The deadline will be represented with an `UInt`, as it is
++ The deadline will be represented with a `UInt`, as it is
 a relative time delta signifying a change in block numbers.
-+ The `ticketPrice` will be represented with an `UInt`
++ The `ticketPrice` will be represented with a `UInt`
 + The decision to buy a ticket will be represented by a function `Fun([UInt], Bool)`
 
 
 Our participant interact interface, with the addition of some handy logging functions, looks like this so far:
 
-@[code{4-22}](@reach-lang/examples/workshop-fomo/index.rsh)
+${code("/examples/workshop-fomo/index.rsh", 4, 22)}
 
 
-At this point, you can modify your JavaScript file (`index.mjs`) to contain defintions of these values, although you may want to use a placeholders for the actual value.
+At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
 
 XXX (drstep-cc TAG)
@@ -188,7 +188,7 @@ XXX (drstep-ii-stop)
 
 Let's look at our whole program now:
 
-@[code](@reach-lang/examples/workshop-fomo/index.rsh)
+${code("/examples/workshop-fomo/index.rsh")}
 
 XXX (drstep-de TAG)
 
@@ -199,11 +199,11 @@ The program is fairly straightfoward to test. We just create test accounts for
 the Funder and any number of Buyers. The decision to purchase a ticket by
 a Buyer will rely simply on generating a random boolean.
 
-XXX (drstep-de-stop)
+**Decide how you will deploy and use this application.**
 
 Here's the JavaScript frontend we wrote:
 
-@[code](@reach-lang/examples/workshop-fomo/index.mjs)
+${code("/examples/workshop-fomo/index.mjs")}
 
 Let's see what it looks like when we run the program:
 
@@ -233,7 +233,7 @@ Buyer 9 saw they lost.
 
 Great job!
 
-If you found this workshop rewarding, please let us know on <CommunityLink />!
+If you found this workshop rewarding, please let us know on [the Discord community](${discord})!
 
 If you'd like to make this application a little more interesting, maybe you'd like
 to extend this program to make the last `N` buyers split the winnings. Check out

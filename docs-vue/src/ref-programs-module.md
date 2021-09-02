@@ -4,11 +4,11 @@
 
 # {#ref-programs-module} Modules
 
-A Reach <Defn :name="source file">source file</Defn> is a textual file which specifies a Reach module.
+A Reach ${defn("source file")} is a textual file which specifies a Reach module.
 It is traditionally given the file extension `rsh`,
 e.g. `dao.rsh`.
 
-A <Defn :name="module">module</Defn> starts with `'reach reach-short-vers';`
+A ${defn("module")} starts with `'reach reach-short-vers';`
 followed by a sequence of imports and identifier definitions.
 ::: note
 See [the guide section on versions](##guide-versions) to understand how Reach uses version numbers like this.
@@ -21,8 +21,8 @@ However, some additional statements are allowed.
 
 ### {#ref-programs-export} `export`
 
-Module-level identifier definitions may be <Defn :name="export">export</Defn>ed
-by writing <Ref :name="(quote rsh):export" /> `export` in front of them.
+Module-level identifier definitions may be ${defn("export")}ed
+by writing ${ref((quote rsh), "export")} `export` in front of them.
 For example,
 ```reach
 export const x = 1;
@@ -58,12 +58,11 @@ if they are typed, that is, if they are constructed with `is`.
 
 ### {#ref-programs-import} `import`
 
-<Ref :name="(quote rsh):import" />
-
-Reach supports two types of module <Defn :name="imports">imports</Defn>: local imports,
+${ref((quote rsh), "import")}
+Reach supports two types of module ${defn("imports")}: local imports,
 which refer to modules that exist within your project, and
 package imports, which refer to remote libraries that may be fetched
-from external sources such as XXX link-github.
+from external sources such as [GitHub](https://github.com).
 ::: note
 Read [the guide section on packages](##guide-packages) for more details.
 :::
@@ -77,12 +76,12 @@ import 'games-of-chance.rsh';
 ```
 
 
-When a module, `X`, contains a <Defn :name="local import">local import</Defn>,
+When a module, `X`, contains a ${defn("local import")},
 written `import "LIB.rsh";`,
 then the path `LIB.rsh` must resolve to another Reach source file.
 The exports from the module defined by `LIB.rsh` are included in the set of bound identifiers in `X`.
 
-<Ref :name="(quote rsh):from" />
+${ref((quote rsh), "from")}
 ```reach
 import {flipCoin, rollDice as d6} from 'games-of-chance.rsh';
 ```
@@ -115,7 +114,7 @@ import * as func from
 ```
 
 
-<Defn :name="Package imports">Package imports</Defn> obey the same rules as local imports but
+${defn("Package imports")} obey the same rules as local imports but
 support an extended path syntax which allows Reach programmers to seamlessly
 plug into third-party libraries hosted on the internet.
 
@@ -126,7 +125,7 @@ Package import paths are comprised of the following components:
 
 This component must be followed by a `:` character.
 
-This component defaults to XXX link-github (i.e. `github.com`) if no site is specified.
+This component defaults to [GitHub](https://github.com) (i.e. `github.com`) if no site is specified.
 
 Examples: `github.com:`, `bitbucket.org:`.
 + **The account registered with the host site.**
@@ -184,7 +183,41 @@ Example: `@reach-sh/example#v1.02:pkg.rsh`.
 The following forms are all syntactically valid package import
 expressions:
 
-XXX (pkg-fmts)
+```
+
+@account/repo
+@account/repo:
+@account/repo:a/b/file.rsh
+@account/repo:a/b/
+@account/repo:file.rsh
+@account/repo#
+@account/repo#:
+@account/repo#:a/b/file.rsh
+@account/repo#:a/b/
+@account/repo#:file.rsh
+@account/repo#ref
+@account/repo#ref:
+@account/repo#ref:a/b/file.rsh
+@account/repo#ref:a/b/
+@account/repo#ref:file.rsh
+@server:account/repo
+@server:account/repo:
+@server:account/repo:a/b/file.rsh
+@server:account/repo:a/b/
+@server:account/repo:file.rsh
+@server:account/repo#
+@server:account/repo#:
+@server:account/repo#:a/b/file.rsh
+@server:account/repo#:a/b/
+@server:account/repo#:file.rsh
+@server:account/repo#ref
+@server:account/repo#ref:
+@server:account/repo#ref:a/b/file.rsh
+@server:account/repo#ref:a/b/
+@server:account/repo#ref:file.rsh
+
+```
+
 
 ---
 
@@ -199,7 +232,7 @@ However, some additional expressions are allowed.
 
 ### {#ref-programs-reach.app} `Reach.App`
 
-<Ref :name="(quote rsh):Reach" /><Ref :name="(quote rsh):App" />
+${ref((quote rsh), "Reach")}${ref((quote rsh), "App")}
 ```reach
 export const main = Reach.App(() => {
  const A = Participant("A", {
@@ -215,7 +248,7 @@ export const main = Reach.App(() => {
 ```
 
 
-<Defn :name="Reach.App">Reach.App</Defn> accepts a no-argument function that specifies a DApp.
+${defn("Reach.App")} accepts a no-argument function that specifies a DApp.
 This function is applied during compilation as an application initialization.
 It specifies the entire DApp in its body.
 

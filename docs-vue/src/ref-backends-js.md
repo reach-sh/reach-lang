@@ -7,7 +7,7 @@
 The Reach JavaScript backend produces a compilation output named `input.APP.mjs`.
 This will normally be imported by writing:
 
-<Ref :name="(quote js):backend" />
+${ref((quote js), "backend")}
 ```js
 import * as backend from './build/index.main.mjs';
 ```
@@ -29,7 +29,7 @@ Each function may return a `Promise`, which the backend will `await`, if it need
 The backend provides a value, `_version`, which is a string representation of the Reach version used to compile the program.
 For example, the version of Reach used to produce this documentation would contain the string `'reach-vers'`.
 
-The backend provides a function, <Ref :name="(quote js):getExports" /> `getExports`, which exposes the exports of a Reach program.
+The backend provides a function, ${ref((quote js), "getExports")} `getExports`, which exposes the exports of a Reach program.
 This function receives the standard library as an argument and returns an object with all the exports.
 For example, if a Reach program
 exported a variable `x`, i.e. `export const x = 5`, the frontend could access the value in the following manner:

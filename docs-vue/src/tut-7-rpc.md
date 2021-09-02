@@ -15,11 +15,11 @@ But, Reach supports using any programming language through the
 
 This tutorial walks through using this technique to implement a _Rock, Paper, Scissors!_ frontend
 in Python.
-It is based on the frontend from XXX (secref "tut-7"), so it does not include a
+It is based on the frontend from ${seclink("tut-7")}, so it does not include a
 text-based interface, or a Web interface, but uses the final version of the
 Reach code.
 
-Below we will compare the XXX (secref "tut-7") JavaScript frontend with the
+Below we will compare the ${seclink("tut-7")} JavaScript frontend with the
 equivalent Python code communicating via RPC, section by section.
 Follow along by typing the Python code into a file called `index.py`.
 
@@ -27,8 +27,8 @@ Follow along by typing the Python code into a file called `index.py`.
 
 We begin by comparing the necessary imports and program body:
 
-@[code{1-5}](@reach-lang/examples/js-impl)
-@[code{1-10}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 1, 5)}
+${code("/examples/py-impl", 1, 10)}
 
 Rather than importing `loadStdlib` and `backend` as with the
 JavaScript version, the Python frontend instead plucks `mk_rpc` from its
@@ -45,7 +45,7 @@ On line 9 the Python program binds `rpc` and `rpc_callbacks` out of
 `mk_rpc`.
 These two functions are the only tools we will need to communicate with the
 RPC server.
-See XXX (secref "ref-frontends-rpc-py") for more details on how they work.
+See ${seclink("ref-frontends-rpc-py")} for more details on how they work.
 
 
 ---
@@ -53,8 +53,8 @@ See XXX (secref "ref-frontends-rpc-py") for more details on how they work.
 Next, we define our Alice and Bob accounts and pre-fund them each with a
 starting balance of `10`.
 
-@[code{6-9}](@reach-lang/examples/js-impl)
-@[code{11-14}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 6, 9)}
+${code("/examples/py-impl", 11, 14)}
 
 Translating code which uses the
 [JavaScript frontend support library](##ref-frontends-js) to its
@@ -66,15 +66,15 @@ specifying the corresponding RPC method (e.g.
 Now we define two helper functions and use them to query Alice and Bob's
 beginning balances:
 
-@[code{10-14}](@reach-lang/examples/js-impl)
-@[code{15-23}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 10, 14)}
+${code("/examples/py-impl", 15, 23)}
 
 ---
 
 Deploying and attaching to contracts works slightly differently over RPC:
 
-@[code{15-17}](@reach-lang/examples/js-impl)
-@[code{24-26}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 15, 17)}
+${code("/examples/py-impl", 24, 26)}
 
 As previously mentioned, it is the responsibility of the
 [RPC Server](##ref-backends-rpc) (rather than that of the frontend
@@ -89,15 +89,15 @@ contract RPC handle are necessary for Bob to attach.
 `HAND` and `OUTCOME` only differ syntactically from their JavaScript
 equivalents:
 
-@[code{18-19}](@reach-lang/examples/js-impl)
-@[code{27-29}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 18, 19)}
+${code("/examples/py-impl", 27, 29)}
 
 ---
 
 Even participant interact interface definitions remain largely the same:
 
-@[code{20-32}](@reach-lang/examples/js-impl)
-@[code{30-35}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 20, 32)}
+${code("/examples/py-impl", 30, 35)}
 
 Here, both the JavaScript and Python frontends begin declaring a
 reusable "player constructor".
@@ -122,16 +122,16 @@ although it easily could with a few extra lines of code.
 `informTimeout` requires no subsequent backend interaction and is
 accordingly easily to implement in either language:
 
-@[code{36-38}](@reach-lang/examples/js-impl)
-@[code{36-38}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 36, 38)}
+${code("/examples/py-impl", 36, 38)}
 
 ---
 
 <a name="py-return"></a>
 The same is true of `seeOutcome`:
 
-@[code{33-35}](@reach-lang/examples/js-impl)
-@[code{39-48}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 33, 35)}
+${code("/examples/py-impl", 39, 48)}
 
 At the end of the Python code we return a `dict` that represents those
 fields which are common to both Alice and Bob's
@@ -146,8 +146,8 @@ receiving end.
 Finally, we proceed to the most interesting part of the program and use the
 code we have built up thus far to actually play a game of _Rock, Paper, Scissors!_:
 
-@[code{41-60}](@reach-lang/examples/js-impl)
-@[code{49-84}](@reach-lang/examples/py-impl)
+${code("/examples/js-impl", 41, 60)}
+${code("/examples/py-impl", 49, 84)}
 
 In the Python version we create a function called `play_alice` and spawn
 it as a concurrent thread, which begins running in the background on line 56.
@@ -249,5 +249,5 @@ Well done! You have just reimplemented [the tutorial](##tut-7) in Python.
 
 This tutorial uses Python to demonstrate how RPC frontends are
 built in Reach, but it is similarly easy to write RPC frontends in other
-languages, such as with the XXX (secref "ref-frontends-rpc-js") and
-XXX (secref "ref-frontends-rpc-go") libraries.
+languages, such as with the ${seclink("ref-frontends-rpc-js")} and
+${seclink("ref-frontends-rpc-go")} libraries.

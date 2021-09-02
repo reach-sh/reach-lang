@@ -13,7 +13,7 @@ A @link["https://www.javascript.com"]{JavaScript} client library for the
 }
 
 Once installed, add the following import line to your JavaScript file which will
-connect to the @seclink{ref-backends-rpc}:
+connect to the @seclink["ref-backends-rpc"]{RPC server}:
 @js{
   import { mkRPC } from '@"@"reach-sh/rpc-client';
 }

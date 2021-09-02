@@ -13,7 +13,7 @@ A @link["https://golang.org"]{Go} client library for the
 }
 
 Once installed, add the following import line to your Go file which will connect
-to the @seclink{ref-backends-rpc}:
+to the @seclink["ref-backends-rpc"]{RPC server}:
 @go{
   import reachrpc "github.com/reach-sh/reach-lang/rpc-client/go"
 }

@@ -16,5 +16,5 @@ The [tutorial section on RPC-based frontends](##tut-7-rpc) provides a walkthroug
 
 If your language of choice isn't available yet, it is very simple to [implement one yourself](##ref-backends-rpc-proto) if you've ever used a JSON-based RPC protocol before.
 Most implementations are less than 100 lines of code!
-Or, you could submit a request for Reach to build one on the Reach [GitHub issue tracker](https://github.com/reach-sh/reach-lang/issues) or on <CommunityLink />.
+Or, you could submit a request for Reach to build one on the Reach [GitHub issue tracker](https://github.com/reach-sh/reach-lang/issues) or on [the Discord community](${discord}).
 

@@ -18,7 +18,6 @@ Last updated: 2021/09/01
 @item{Language - @reachin{interact} continuations}
 @item{Networks - Explicit state compilation option}
 @item{Networks - Participant fast catch-up}
-@item{Networks - @link["https://confluxnetwork.org/"]{Conflux}}
 @item{Networks - Algorand - Post-AVM limitation removal - remote objects, token minting, arbitrary contract length, etc}
 @item{Optimization - Unify @tech{view} functions with identical bodies}
 @item{Language - State linear in the number of transactions, rather than only participants}

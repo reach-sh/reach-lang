@@ -1,6 +1,5 @@
 #lang scribble/manual
-@(require scribble/bnf
-          "lib.rkt")
+@(require "lib.rkt")
 @(mint-scope 'rsh)
 
 @title[#:version reach-vers #:tag "ref-programs-compute"]{Computations}
@@ -74,35 +73,30 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;}.
 
 @reachin{LHS} must obey the grammar:
 
-@BNF[
-(list
- @nonterm{LHS}
- @nonterm{id}
- @BNF-seq[@litchar["["] @nonterm{LHS-tuple-seq} @litchar["]"]]
- @BNF-seq[@litchar["{"] @nonterm{LHS-obj-seq} @litchar["}"]])
-(list
- @nonterm{LHS-tuple-seq}
- @BNF-seq[]
- @BNF-seq[@litchar["..."] @nonterm{LHS}]
- @BNF-seq[@nonterm{LHS}]
- @BNF-seq[@nonterm{LHS} @litchar[","] @nonterm{LHS-tuple-seq}])
-(list
- @nonterm{LHS-obj-seq}
- @BNF-seq[]
- @BNF-seq[@litchar["..."] @nonterm{LHS}]
- @BNF-seq[@nonterm{LHS-obj-elem}]
- @BNF-seq[@nonterm{LHS-obj-elem} @litchar[","] @nonterm{LHS-obj-seq}])
-(list
- @nonterm{LHS-obj-elem}
- @BNF-seq[@nonterm{id}]
- @BNF-seq[@nonterm{propertyName} @litchar[":"] @nonterm{LHS}])
-(list
- @nonterm{propertyName}
- @nonterm{id}
- @nonterm{string}
- @nonterm{number}
- @BNF-seq[@litchar["["] @nonterm{expr} @litchar["]"]])
-]
+@verbatim{
+  LHS =
+    | id
+    | "[" LHS-tuple-seq "]"
+    | "{" LHS-obj-seq "}"
+  LHS-tuple-seq =
+    |
+    | "..." LHS
+    | LHS
+    | LHS "," LHS-tuple-seq
+  LHS-obj-seq =
+    |
+    | "..." LHS
+    | LHS-obj-elem
+    | LHS-obj-elem "," LHS-obj-seq
+  LHS-obj-elem =
+    | id
+    | propertyName ":" LHS
+  propertyName =
+    | id
+    | string
+    | number
+    | "[" expr "]"
+}
 
 @reachin{RHS} must be compatible with the given @reachin{LHS}.
 That is, if a @reachin{LHS} is an @nonterm{LHS-tuple-seq}, then the corresponding @reachin{RHS} must be a tuple with the correct number of elements.

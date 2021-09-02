@@ -6,7 +6,7 @@
 Reach uses [semantic versioning](https://semver.org/), which means that given Reach version number `MAJOR.MINOR.PATCH`,
 
 + `MAJOR` versions are incompatible.
-+ `MINOR` versions are compatible, but have additional features relative to earlier version.
++ `MINOR` versions are compatible, but have additional features relative to earlier versions.
 + `PATCH` versions are entirely compatible.
 
 

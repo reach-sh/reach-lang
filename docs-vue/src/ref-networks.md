@@ -4,9 +4,92 @@
 # {#ref-networks} Consensus Network Connectors
 
 This section describes the consensus network connectors
-supported by Reach version {{ VERSION }}.
+supported by Reach version ${VERSION}.
 
-[[toc]]
+${toc}
+
+## {#ref-network-algo} Algorand
+
+The [Algorand](https://www.algorand.com/) Reach connector generates a set of
+contracts that manage one instance of the DApp's
+execution.
+
+It uses finite on-chain state.
+The DApp consists of one application and one contract-controlled escrow account.
+
+It relies on versions of `algod` that support TEAL version 4, such as Algorand 2.7.1 from July 2021.
+It uses the Algorand `indexer` version 2 to lookup and monitor publications; in other words, it does _not_ rely on any communication network other than Algorand itself.
+
+Algorand uses the SHA256 algorithm to perform digests.
+Its bit width is 64-bits.
+
+Non-network tokens are compiled to [Algorand Standard Assets](https://developer.algorand.org/docs/features/asa/) (ASAs).
+Specifically, the `Token` type refers to the id of the ASA.
+
+Token minting creates an ASA owned and managed by the contract account.
+Freezing, clawback, reserves, and separate managers are not supported.
+
+Algorand's ASAs have some inherent design flaws that inhibit reasoning about them.
+First, the "freezing" "feature" disables the ability of contracts (and users) from transfering their assets, without prior notification that the asset is frozen (i.e., in one moment, a contract may transfer an asset, but then in the next moment, without any change to the contract state, it ceases to be able to transfer it, because elsewhere in the network, an asset was frozen.)
+Second, the "clawback" "feature" extracts assets from an account without approval by or notification of the account holder.
+Third, the "opt-in" "feature" prevents accounts from transfering assets without prior approval by the receiver.
+Fourth, the "opt-out" "feature" allows accounts to take-back the permission to transfer assets to them after having previously given it.
+Each of these issues mean that rely-guarantee reasoning is not appropriate for analyzing consensus steps on Algorand: in other words, it is not possible to guarantee from the structure of a program that consensus steps which are dominated by honest interactions will succeed, because external agents can arbitrarily change the semantics of consensus operations.
+This essentially amounts to all Algorand DApps that use non-network tokens being inherently vulnerable to denial-of-service attacks when these "features" are used.
+For example, if a DApp has a consensus step where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
+(An "opt-out" is performed by sending an [Asset Transfer Transaction](https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction) (`axfer`) with a non-zero `AssetCloseTo` field.)
+You can alleviate this problem by ensuring that any non-network token transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
+Similarly, if a DApp accepts a non-network token that has enabled clawback, then it can be prevented from progressing if the manager takes the contract's tokens behind its back.
+Unfortunately, there is no way to alleviate this, other than refusing to accept tokens that have the possibility of clawback, but on Algorand, tokens default to allowing clawback, so that is not feasible.
+Rather than simplying rejecting all programs that use non-network tokens on Algorand, Reach allows them, with these caveats about the reliability of the generated contracts.
+We hope that future versions of Algorand will provide a facility for preventing these attacks, such as by removing these "features".
+
+Views are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the DApp.
+This means they are sensitive to the particular compilation details of the particular Reach program.
+We hope to work with the Algorand community to define a standard for views.
+Views expand the on-chain state to include the free variables of all values bound to a view.
+
+Linear state is compiled into Application Local State.
+This means that participants must explicitly "opt-in" to storing this state on their account (which increases their minimum balance).
+The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to do this.
+This "opt-in" requirement means that DApps with linear state deployed on Algorand can deadlock and be held hostage:
+Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two, the consensus must store a value associated with Bob, and then she can receive her 10 ALGO back, then the program terminates.
+On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
+However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
+We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
+
+In Algorand, network time corresponds to round numbers and network seconds correspond to the Unix timestamp of the previous round.
+(This is because the current round's timestamp is not determined until after it is finalized.
+This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
+
+This connector does not support different `deployMode`s and treats them all as `'constructor'`.
+
+The connector provides a binding named `ALGO` to
+backends.
+
+Backends must respect the following environment variables:
+
++ `ALGO_TOKEN` is used as the API token for your `algod`.
++ `ALGO_SERVER` is used as the address of your `algod`.
++ `ALGO_PORT` is used as the port of your `algod`.
++ `ALGO_INDEXER_TOKEN` is used as the API token for your `indexer`.
++ `ALGO_INDEXER_SERVER` is used as the address of your `indexer`.
++ `ALGO_INDEXER_PORT` is used as the port of your `indexer`.
++ `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
+This is useful if you are running your own testing network.
+
+
+## {#ref-network-cfx} Conflux
+
+The [Conflux](https://confluxnetwork.org/) Reach connector works almost identically to the [Ethereum connector](##ref-network-eth), except that it behaves differently at runtime: using, for example, [Conflux Portal](https://portal.confluxnetwork.org/) rather than [MetaMask](https://metamask.io/), and connecting to Conflux nodes.
+
+Backends must respect the following environment variables:
+
++ `CFX_NODE_URI` is used to contact the Conflux node.
+It defaults to `http://localhost:12537`.
++ `CFX_NETWORK_ID` is used to determine the Conflux network id.
+It defaults to `999`.
+
 
 ## {#ref-network-eth} Ethereum
 
@@ -44,65 +127,4 @@ Backends must respect the following environment variables:
 It defaults to `http://localhost:8545`.
 + `ETH_NODE_NETWORK` is used to name the Ethereum network.
 It defaults to `unspecified`.
-
-
-## {#ref-network-algo} Algorand
-
-The [Algorand](https://www.algorand.com/) Reach connector generates a set of
-contracts that manage one instance of the DApp's
-execution.
-
-It uses finite on-chain state.
-The DApp consists of one application and one contract-controlled escrow account.
-
-It relies on versions of `algod` that support TEAL version 4, such as Algorand 2.7.1 from July 2021.
-It uses the Algorand `indexer` version 2 to lookup and monitor publications; in other words, it does _not_ rely on any communication network other than Algorand itself.
-
-Algorand uses the SHA256 algorithm to perform digests.
-Its bit width is 64-bits.
-
-Non-network tokens are compiled to [Algorand Standard Assets](https://developer.algorand.org/docs/features/asa/) (ASAs).
-Specifically, the `Token` type refers to the id of the ASA.
-Reach programs that use non-network tokens deployed on Algorand are inherently vulnerable to a denial-of-service attack due to the ability of Algorand accounts to "opt-out" of a token.
-For example, if a program has a consensus step where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
-(An "opt-out" is performed by sending an [Asset Transfer Transaction](https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction) (`axfer`) with a non-zero `AssetCloseTo` field.)
-You can alleviate this problem by ensuring that any non-network token transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
-We hope that future versions of Algorand will provide a facility for preventing these denial-of-service attacks.
-
-Token minting creates an ASA owned and managed by the contract account.
-Freezing, clawback, reserves, and separate managers are not supported.
-
-Views are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the DApp.
-This means they are sensitive to the particular compilation details of the particular Reach program.
-We hope to work with the Algorand community to define a standard for views.
-Views expand the on-chain state to include the free variables of all values bound to a view.
-
-Linear state is compiled into Application Local State.
-This means that participants must explicitly "opt-in" to storing this state on their account (which increases their minimum balance).
-The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to do this.
-This "opt-in" requirement means that DApps with linear state deployed on Algorand can deadlock and be held hostage:
-Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two, the consensus must store a value associated with Bob, and then she can receive her 10 ALGO back, then the program terminates.
-On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
-However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
-We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
-
-In Algorand, network time corresponds to round numbers and network seconds correspond to the Unix timestamp of the previous round.
-(This is because the current round's timestamp is not determined until after it is finalized.
-This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
-
-This connector does not support different `deployMode`s and treats them all as `'constructor'`.
-
-The connector provides a binding named `ALGO` to
-backends.
-
-Backends must respect the following environment variables:
-
-+ `ALGO_TOKEN` is used as the API token for your `algod`.
-+ `ALGO_SERVER` is used as the address of your `algod`.
-+ `ALGO_PORT` is used as the port of your `algod`.
-+ `ALGO_INDEXER_TOKEN` is used as the API token for your `indexer`.
-+ `ALGO_INDEXER_SERVER` is used as the address of your `indexer`.
-+ `ALGO_INDEXER_PORT` is used as the port of your `indexer`.
-+ `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
-This is useful if you are running your own testing network.
 

@@ -37,20 +37,19 @@ The Reach compiler automatically derives a contract for the consensus network vi
 Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this DApp, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
 ::: note
-You can look at the entire example program by visiting [overview/index.rsh](@github/examples/overview/index.rsh).
+You can look at the entire example program by visiting [overview/index.rsh](${repo}}/examples/overview/index.rsh).
 :::
-
 ::: note
 Get language support for Reach in your editor by visiting [the guide on editor support](##guide-editor-support).
 :::
 
 The main part of the program looks like this:
 
-@[code{1-15}](@reach-lang/examples/overview/index.rsh)
+${code("/examples/overview/index.rsh", 1, 15)}
 
 + Line 1 specifies that this is a Reach program.
 + Line 2 specifies that this program will be compiled with strict mode, which enables unused variable checks.
-+ Line 4 defines the main export from program. `main` is the default used by Reach.
++ Line 4 defines the main export from this program. `main` is the default used by Reach.
 + Line 4 also specifies that it is an application.
 + Line 5 specifies that the program identifier `A` will represent the Alice participant.
 + Lines 6 and 7 specify the interface between Alice's participant and frontend. In this case, Alice's frontend must provide a number called `request` and a string called `info`.
@@ -61,7 +60,7 @@ The main part of the program looks like this:
 
 The elided lines, 14 through 34, contain the body of the application, which we can divide into four parts.
 
-@[code{15-18}](@reach-lang/examples/overview/index.rsh)
+${code("/examples/overview/index.rsh", 15, 18)}
 
 + Lines 15 and 16 specify that Alice takes a local step where she declassifies the amount of tokens requested.
 In Reach, all values from the frontend are secret until explicitly made public with declassify.
@@ -71,7 +70,7 @@ In Reach, all values from the frontend are secret until explicitly made public w
 
 At this point, Bob's backend has learned the value of `request` and can deliver it to Bob's frontend for his approval. This happens next.
 
-@[code{20-23}](@reach-lang/examples/overview/index.rsh)
+${code("/examples/overview/index.rsh", 20, 23)}
 
 + Lines 20 and 21 have Bob perform that delivery.
 `interact.want` doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
@@ -79,9 +78,9 @@ A better version of this program might return `false` and have that communicated
 + Lines 22 and 23 have Bob join the application and submit a payment matching the appropriate amount, and then the contract commits.
 
 
-It's now Alice's turn again,
+It's now Alice's turn again:
 
-@[code{25-29}](@reach-lang/examples/overview/index.rsh)
+${code("/examples/overview/index.rsh", 25, 29)}
 
 + Lines 25 and 26 specify that Alice declassifies the information.
 + Line 27 has her publish it.
@@ -91,7 +90,7 @@ It's now Alice's turn again,
 
 The only thing left is for Bob's backend to deliver the information to his frontend.
 
-@[code{31-33}](@reach-lang/examples/overview/index.rsh)
+${code("/examples/overview/index.rsh", 31, 33)}
 
 + Line 31 and 32 do this.
 + Line 33 exits the program.
@@ -103,24 +102,24 @@ Reach programmers don't need to think about details like _contract storage_, _pr
 
 ## {#over-compile} Compile
 
-After a Reach programmer writes this application in a file like [`overview/index.rsh`](@github/examples/overview/index.rsh), they could run
+After a Reach programmer writes this application in a file like [`overview/index.rsh`](${repo}}/examples/overview/index.rsh), they could run
 
 ```
-$ reach compile [overview/index.rsh](@github/examples/overview/index.rsh)
+$ reach compile [overview/index.rsh](${repo}}/examples/overview/index.rsh)
 ```
 
 
-and the `build` directory will contain a new file named [`index.main.mjs`](@github/examples/overview/build/index.main.mjs), which contains a JavaScript implementation of a backend for each participant, as well as the Ethereum bytecode for the contract.
+and the `build` directory will contain a new file named [`index.main.mjs`](${repo}}/examples/overview/build/index.main.mjs), which contains a JavaScript implementation of a backend for each participant, as well as the Ethereum bytecode for the contract.
 
 ::: note
-If you are curious, you can take a look at this file by going to [overview/build/index.main.mjs](@github/examples/overview/build/index.main.mjs).
-The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at [overview/build/index.main.sol](@github/examples/overview/build/index.main.sol) to see the original Solidity source that it is compiled from.
+If you are curious, you can take a look at this file by going to [overview/build/index.main.mjs](${repo}}/examples/overview/build/index.main.mjs).
+The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at [overview/build/index.main.sol](${repo}}/examples/overview/build/index.main.sol) to see the original Solidity source that it is compiled from.
 Reach can leave files like these in place when run with `--intermediate-files`.
 :::
 
 For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
-Separately, it generated over hundreds of lines of Solidity code to implement the contract.
-If a programmer wasn't using Reach, they would have to write all this code in these three modules separately and keep them synchronized at every step of the development process.
+Separately, it generated hundreds more lines of Solidity code to implement the contract.
+If a programmer wasn't using Reach, they would have to write all this code in these three modules individually and keep them synchronized at every step of the development process.
 
 Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different consensus network, like Algorand.
 Nor is Reach tied to JavaScript: it can be configured to target other backend languages, like Go.
@@ -136,18 +135,18 @@ We could make a small tweak, however, to demonstrate things going wrong.
 
 Let's change the third step to leave a single unit in the balance:
 
-@[code{25-29}](@reach-lang/examples/overview/index-error.rsh)
+${code("/examples/overview/index-error.rsh", 25, 29)}
 
 And then run the compiler:
 
 ```
-$ reach compile [overview/index-error.rsh](@github/examples/overview/index-error.rsh)
+$ reach compile [overview/index-error.rsh](${repo}}/examples/overview/index-error.rsh)
 ```
 
 
 It will print out a detailed error message showing the violation.
 
-@[code{2-28}](@reach-lang/examples/overview/index-error.txt)
+${code("/examples/overview/index-error.txt", 2, 28)}
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.
 In this case, it reports that if Alice were to pass an `interact.request` over `1` at the start of the program on line 5, then the balance of the contract would not be provably `0` at the end of the program.
@@ -165,12 +164,12 @@ In a real deployment, this interfacing code would be tied to a GUI, like a Web o
 Let's look at a simple command-line version that demonstrates how it would work for testing on a private devnet.
 
 ::: note
-You can look at the entire example interface program by visiting [overview/index.mjs](@github/examples/overview/index.mjs).
+You can look at the entire example interface program by visiting [overview/index.mjs](${repo}}/examples/overview/index.mjs).
 :::
 
 The program is just a few dozen lines long and the shell of it is quite simple:
 
-@[code](@reach-lang/examples/overview/index.mjs)
+${code("/examples/overview/index.mjs")}
 
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
 + Line 5 dynamically loads the appropriate network-specific Reach standard library,
@@ -188,7 +187,7 @@ This code, similar for all test programs, demonstrates how straightforward it is
 
 Let's look at initializing and interfacing each participant, starting with Alice.
 
-@[code{14-17}](@reach-lang/examples/overview/index.mjs)
+${code("/examples/overview/index.mjs", 14, 17)}
 
 + Line 14 invokes Alice, passing a contract object which includes the standard library used by the backend to interface with the consensus network. 
 + Line 15 provides the `request` value.
@@ -197,7 +196,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 Let's look at Bob next.
 
-@[code{18-21}](@reach-lang/examples/overview/index.mjs)
+${code("/examples/overview/index.mjs", 18, 21)}
 
 + Line 18 initializes Bob just like Alice.
 + Line 19 provides his `want` function, which produces a log message and always accepts.
@@ -223,7 +222,7 @@ $ reach run
 
 And then Reach
 
-+ compiles [overview/index.rsh](@github/examples/overview/index.rsh);
++ compiles [overview/index.rsh](${repo}}/examples/overview/index.rsh);
 + creates a temporary Node.js package;
 + builds a Docker image based on Reach's standard image for the package; and,
 + runs the application connected to Reach's standard private Ethereum devnet image.
@@ -241,7 +240,7 @@ $ REACH_CONNECTOR_MODE=ALGO reach run
 ```
 
 
-Then Reach will instead start up a private Algorand devnet image and use the Algorand connector.
+then Reach will start up a private Algorand devnet and use the Algorand connector.
 The developer does not need to change anything about their program because Reach is entirely agnostic to the consensus network choice during deployment.
 
 The same goes for Conflux:
@@ -259,19 +258,19 @@ which demonstrates this section's code in action
 and provides a brief explanation of how it works.
 :::
 
-The previous execution uses Node.js to perform a test run at the command line.
+The previous section uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
 
-A Web deployment uses the exact same [index.rsh](@github/examples/overview-react/index.rsh) file connected, this time, to a React-based [index.js](@github/examples/overview-react/index.js) file.
-(It also uses some simple React [views](@github/examples/overview-react/views)
- and [`css`](@github/examples/overview-react/index.css) to go with it.)
-Let's take a look at some snippets from the React [index.js](@github/examples/overview-react/index.js) and compare with the Node.js [index.mjs](@github/examples/overview/index.mjs) from before:
+A Web deployment uses the exact same [index.rsh](${repo}}/examples/overview-react/index.rsh) file connected, this time, to a React-based [index.js](${repo}}/examples/overview-react/index.js) file.
+(It also uses some simple React [views](${repo}}/examples/overview-react/views)
+ and [`css`](${repo}}/examples/overview-react/index.css) to go with it.)
+Let's take a look at some snippets from the React [index.js](${repo}}/examples/overview-react/index.js) and compare with the Node.js [index.mjs](${repo}}/examples/overview/index.mjs) from before:
 
-@[code{7-9}](@reach-lang/examples/overview-react/index.js)
+${code("/examples/overview-react/index.js", 7, 9)}
 
 At the top of the file, we import the Reach-generated backend as `backend` and we load the standard library as `reach`.
 
-@[code{27-28}](@reach-lang/examples/overview-react/index.js)
+${code("/examples/overview-react/index.js", 27, 28)}
 
 We hook into the App [component](https://reactjs.org/docs/react-component.html)'s [lifecycle event](https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/) `componentDidMount`
 in order to fetch the user's account.
@@ -280,18 +279,18 @@ currently-selected account.
 Reach is able to deploy contracts and send transactions to the consensus network by prompting the user directly through the extension's API, without additional assistance from the React frontend.
 This is just like how in the Node.js deployment, the Reach programmer does not need to decode the details of the underlying consensus network's interaction API.
 
-@[code{71-76}](@reach-lang/examples/overview-react/index.js)
+${code("/examples/overview-react/index.js", 71, 76)}
 
 Our React component has a method called `deploy` that actually deploys the contract on the network, using the same calls as in the test deployment:
 on line 72 we call the `acc.deploy` function,
 and on line 74, we call the `ctc.getInfo` function;
 exactly as we did for the Node.js program.
 
-@[code{79-85}](@reach-lang/examples/overview-react/index.js)
+${code("/examples/overview-react/index.js", 79, 85)}
 
 Similarly, we implement a `runBackend` method that executes the Reach program as Alice using information gathered from the React UI.
 
-@[code{112-121}](@reach-lang/examples/overview-react/index.js)
+${code("/examples/overview-react/index.js", 112, 121)}
 
 We implement a similar method in the `Bob` component that runs the backend as Bob.
 
@@ -350,7 +349,7 @@ However, unless you're ready to dive deep now, the next steps for you are to:
 
 + [Install Reach](##install);
 + Work through the [tutorial](##tut);
-+ Join <CommunityLink />.
++ Join [the Discord community](${discord}).
 
 
 Thanks for being part of Reach!

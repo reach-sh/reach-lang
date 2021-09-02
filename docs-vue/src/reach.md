@@ -23,8 +23,8 @@ Each project contains a completed solution, so it is also a collection of recipe
 
 If you are looking for something specific, here are some places to look:
 
-+ Try consulting the XXX (secref "doc-index") or the [Table of Contents](#toc).
-+ Start a discussion on <CommunityLink />.
++ Try consulting the ${seclink("doc-index")} or the [Table of Contents](#toc).
++ Start a discussion on [the Discord community](${discord}).
 + Report issues with the [GitHub issue tracker](https://github.com/reach-sh/reach-lang/issues).
 
 
@@ -34,7 +34,7 @@ we welcome [Pull Requests](https://github.com/reach-sh/reach-lang/pulls) for imp
 :::
 
 <a name="toc"></a>
-[[toc]]
+${toc}
 
 
 

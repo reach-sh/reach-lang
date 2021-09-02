@@ -337,7 +337,8 @@ This @jsin{bin} argument is the @filepath{input.mjs} module produced by the Java
 @(hrule)
 
 @subsection[#:tag "ref-frontends-js-view"]{View Access}
-@(note-view-xref)
+
+@margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
 
 @(mint-define! '("getViews"))
 @js{

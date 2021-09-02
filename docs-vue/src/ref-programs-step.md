@@ -14,7 +14,7 @@ However, some additional statements are allowed.
 
 ### {#ref-programs-only-step} `only` and `each`
 
-<Ref :name="(quote rsh):only" />
+${ref((quote rsh), "only")}
 ```reach
 Alice.only(() => {
   const pretzel = interact.random(); }); 
@@ -46,7 +46,7 @@ Bob.only(() => {
 
 is an invalid program, because `Bob` does not know `x`.
 
-The <Defn :name="interact shorthand">interact shorthand</Defn>, written `PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `interact` function
+The ${defn("interact shorthand")}, written `PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `interact` function
 from outside of an `only` block. Such functions must return `Null`; therefore, they are only useful
 if they produce side-effects, such as logging on the frontend. For example, the
 function `log` in the participant interact interface of `Alice` may be called via:
@@ -58,24 +58,24 @@ Alice.interact.log(x);
 
 ---
 
-<Ref :name="(quote rsh):each" />
+${ref((quote rsh), "each")}
 ```reach
 each([Alice, Bob], () => {
   const pretzel = interact.random(); }); 
 ```
 
 
-An <Defn :name="each">each</Defn> local step statement can be written as `each(PART_TUPLE () => BLOCK)`, where `PART_TUPLE` is a tuple of participants and `BLOCK` is a block.
+An ${defn("each")} local step statement can be written as `each(PART_TUPLE () => BLOCK)`, where `PART_TUPLE` is a tuple of participants and `BLOCK` is a block.
 It is an abbreviation of many local step statements that could have been written with `only`.
 
 ### Pay Amounts
 
-A <Defn :name="pay amount">pay amount</Defn> is either:
+A ${defn("pay amount")} is either:
 + An integer, denoting an amount of network tokens; or,
 + A tuple of token amounts.
 
 
-A <Defn :name="token amount">token amount</Defn> is either:
+A ${defn("token amount")} is either:
 + An integer, denoting an amount of network tokens; or,
 + A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is `Token`, specifying a particular non-network token.
 
@@ -116,7 +116,7 @@ will indicate that `fork` payments should be of the format:
 
 ### `publish`, `pay`, `when`, and `timeout`
 
-<Ref :name="(quote rsh):publish" /><Ref :name="(quote rsh):pay" /><Ref :name="(quote rsh):when" /><Ref :name="(quote rsh):timeout" />
+${ref((quote rsh), "publish")}${ref((quote rsh), "pay")}${ref((quote rsh), "when")}${ref((quote rsh), "timeout")}
 ```reach
 Alice.publish(wagerAmount)
      .pay(wagerAmount)
@@ -139,9 +139,11 @@ Alice.publish(wagerAmount)
 ```
 
 
-XXX (note-ctransfer)
+::: note
+If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
+:::
 
-A consensus transfer is written `PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)`,
+A consensus transfer is written `PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR).when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)`,
 where `PART_EXPR` is an expression that evaluates to a participant or race expression,
 `ID_0` through `ID_n` are identifiers for `PART`'s public local state,
 `PAY_EXPR` is a public expression evaluating to a pay amount,
@@ -149,7 +151,7 @@ where `PART_EXPR` is an expression that evaluates to a participant or race expre
 `DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
 `TIMEOUT_BLOCK` is a timeout block, which will be executed after the `DELAY_EXPR` time argument passes without `PART` executing this consensus transfer.
 
-All of the expressions within a consensus transfer are evaluated in a <Defn :name="pure">pure</Defn> context, which may not alter the state of the
+All of the expressions within a consensus transfer are evaluated in a ${defn("pure")} context, which may not alter the state of the
 application.
 The `PAY_EXPR`, `WHEN_EXPR`, and `DELAY_EXPR` expressions must refer only to the consensus state, including the new data published via the `.publish` component.
 
@@ -220,7 +222,7 @@ This overwriting applies even if `Alice` wins and `Alice` is a participant class
 
 ### `fork`
 
-<Ref :name="(quote rsh):fork" /><Ref :name="(quote rsh):paySpec" />
+${ref((quote rsh), "fork")}${ref((quote rsh), "paySpec")}
 ```reach
 fork()
 .case(Alice, (() => ({
@@ -254,9 +256,11 @@ fork()
 ```
 
 
-XXX (note-ctransfer)
+::: note
+If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
+:::
 
-A <Defn :name="fork statement">fork statement</Defn> is written:
+A ${defn("fork statement")} is written:
 
 ```reach
 fork()
@@ -271,7 +275,7 @@ fork()
 
 
 where:
-`TOKENS_EXPR` is an expression that evalues to a tuple of `Token`s.
+`TOKENS_EXPR` is an expression that evaluates to a tuple of `Token`s.
 `PART_EXPR` is an expression that evaluates to a participant;
 `PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
 `PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount;
@@ -362,25 +366,25 @@ variant signifying what case was chosen.
 
 ### `wait`
 
-<Ref :name="(quote rsh):wait" />
+${ref((quote rsh), "wait")}
 ```reach
 wait(TIME); 
 ```
 
 
-A <Defn :name="wait statement">wait statement</Defn>, written `wait(TIME);`, delays the computation until the `TIME` time argument passes.
+A ${defn("wait statement")}, written `wait(TIME);`, delays the computation until the `TIME` time argument passes.
 `TIME` must be pure and only reference values known by the consensus state.
 It may only occur in a step.
 
 ### `exit`
 
-<Ref :name="(quote rsh):exit" />
+${ref((quote rsh), "exit")}
 ```reach
 exit(); 
 ```
 
 
-An <Defn :name="exit statement">exit statement</Defn>, written `exit();`, halts the computation.
+An ${defn("exit statement")}, written `exit();`, halts the computation.
 It is a terminator statement, so it must have an empty tail.
 It may only occur in a step.
 
@@ -391,15 +395,17 @@ However, some additional expressions are allowed.
 
 ### `race`
 
-<Ref :name="(quote rsh):race" />
+${ref((quote rsh), "race")}
 ```reach
 race(Alice, Bob).publish(bet); 
 ```
 
 
-XXX (note-ctransfer)
+::: note
+If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
+:::
 
-A <Defn :name="race expression">race expression</Defn>, written `race(PARTICIPANT_0, ..., PARTICIPANT_n);`, constructs a participant that may be used in a consensus transfer statement, such as `publish` or `pay`, where the various participants race to be the first one to perform the consensus transfer.
+A ${defn("race expression")}, written `race(PARTICIPANT_0, ..., PARTICIPANT_n);`, constructs a participant that may be used in a consensus transfer statement, such as `publish` or `pay`, where the various participants race to be the first one to perform the consensus transfer.
 
 Reach provides a shorthand, `Anybody`, which serves as a `race` between all the participants.
 
@@ -409,7 +415,7 @@ See [the guide section on races](##guide-race) to understand the benefits and da
 
 ### `unknowable`
 
-<Ref :name="(quote rsh):unknowable" />
+${ref((quote rsh), "unknowable")}
 ```reach
 unknowable( Notter, Knower(var_0, ..., var_N), [msg] ) 
 ```
@@ -420,7 +426,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ### `closeTo`
 
-<Ref :name="(quote rsh):closeTo" />
+${ref((quote rsh), "closeTo")}
 ```reach
 closeTo( Who, after, nonNetPayAmt ) 
 ```
@@ -428,6 +434,4 @@ closeTo( Who, after, nonNetPayAmt )
 
  Has participant `Who` make a publication, then transfer the `balance()` and the non-network pay amount to `Who` and end the DApp after executing the function `after` in a step.
 The `nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `Token` `token`, the argument would be `[ [balance(tok), tok] ]`.
-The `after` and `nonNetPayAmt` argument are optional.
-
-
+The `after` and `nonNetPayAmt` arguments are optional.

@@ -17,8 +17,8 @@ This section describes the common features available in all Reach contexts.
 
 
 Comments are text that is ignored by the compiler.
-Text starting with `//` up until the end of the line forms a <Defn :name="single-line comment">single-line comment</Defn>.
-Text enclosed with `/*` and `*/` forms a <Defn :name="multi-line comment">multi-line comment</Defn>.
+Text starting with `//` up until the end of the line forms a ${defn("single-line comment")}.
+Text enclosed with `/*` and `*/` forms a ${defn("multi-line comment")}.
 It is invalid to nest a multi-line comment within a multi-line comment.
 
 ## Blocks
@@ -34,32 +34,32 @@ It is invalid to nest a multi-line comment within a multi-line comment.
 ```
 
 
-A <Defn :name="block">block</Defn> is a sequence of statements surrounded by braces, i.e. `{` and `}`.
+A ${defn("block")} is a sequence of statements surrounded by braces, i.e. `{` and `}`.
 
 ## {#ref-programs-compute-stmts} Statements
 
-This section describes the <Defn :name="statements">statements</Defn> which are allowed in any Reach context.
+This section describes the ${defn("statements")} which are allowed in any Reach context.
 
-Each statement affects the meaning of the subsequent statements, which is called its <Defn :name="tail">tail</Defn>. For example, if `{X; Y; Z;}` is a block, then `X`'s tail is `{Y; Z;}` and `Y`'s tail is `{Z;}`.
+Each statement affects the meaning of the subsequent statements, which is called its ${defn("tail")}. For example, if `{X; Y; Z;}` is a block, then `X`'s tail is `{Y; Z;}` and `Y`'s tail is `{Z;}`.
 
-Distinct from tails are <Defn :name="continuations">continuations</Defn> which include everything after the statement. For example, in `{ {X; Y;}; Z;}`, `X`'s tail is just `Y`, but its continuation is `{Y;}; Z;`.
+Distinct from tails are ${defn("continuations")} which include everything after the statement. For example, in `{ {X; Y;}; Z;}`, `X`'s tail is just `Y`, but its continuation is `{Y;}; Z;`.
 
 Tails are statically apparent from the structure of the program source code, while continuations are influenced by function calls.
 
-A sequence of statements that does not end in a <Defn :name="terminator statement">terminator statement</Defn> (a statement with no tail), such as a return statement, continue statement, or exit statement is treated as if it ended with `return null;`.
+A sequence of statements that does not end in a ${defn("terminator statement")} (a statement with no tail), such as a return statement, continue statement, or exit statement is treated as if it ended with `return null;`.
 
 The remainder of this section enumerates each kind of statement.
 
 ### `const` and `function`
 
-An <Defn :name="identifier definition">identifier definition</Defn> is either
+An ${defn("identifier definition")} is either
 a value definition
 or a function definition.
-Each of these introduces one or more <Defn :name="bound identifier">bound identifier</Defn>s.
+Each of these introduces one or more ${defn("bound identifier")}s.
 
 ---
 
-<Ref :name="(quote rsh):const" />
+${ref((quote rsh), "const")}
 ```reach
 const DELAY = 10;
 const [ Good, Bad ] = [ 42, 43 ];
@@ -70,44 +70,41 @@ const { x: [ a, b ] } = { x: [ 1, 2 ] };
 ```
 
 ::: note
-Valid <Defn :name="identifiers">identifiers</Defn> follow the same rules as JavaScript identifiers:
+Valid ${defn("identifiers")} follow the same rules as JavaScript identifiers:
 they may consist of Unicode alphanumeric characters,
 or `_` or `$`,
 but may not begin with a digit.
 :::
 
-A <Defn :name="value definition">value definition</Defn> is written `const LHS = RHS;`.
+A ${defn("value definition")} is written `const LHS = RHS;`.
 
 `LHS` must obey the grammar:
 
-XXX (BNF
- (list
-  (nonterm "LHS")
-  (nonterm "id")
-  (BNF-seq (litchar "[") (nonterm "LHS-tuple-seq") (litchar "]"))
-  (BNF-seq (litchar "{") (nonterm "LHS-obj-seq") (litchar "}")))
- (list
-  (nonterm "LHS-tuple-seq")
-  (BNF-seq)
-  (BNF-seq (litchar "...") (nonterm "LHS"))
-  (BNF-seq (nonterm "LHS"))
-  (BNF-seq (nonterm "LHS") (litchar ",") (nonterm "LHS-tuple-seq")))
- (list
-  (nonterm "LHS-obj-seq")
-  (BNF-seq)
-  (BNF-seq (litchar "...") (nonterm "LHS"))
-  (BNF-seq (nonterm "LHS-obj-elem"))
-  (BNF-seq (nonterm "LHS-obj-elem") (litchar ",") (nonterm "LHS-obj-seq")))
- (list
-  (nonterm "LHS-obj-elem")
-  (BNF-seq (nonterm "id"))
-  (BNF-seq (nonterm "propertyName") (litchar ":") (nonterm "LHS")))
- (list
-  (nonterm "propertyName")
-  (nonterm "id")
-  (nonterm "string")
-  (nonterm "number")
-  (BNF-seq (litchar "[") (nonterm "expr") (litchar "]"))))
+```
+LHS =
+  | id
+  | "[" LHS-tuple-seq "]"
+  | "{" LHS-obj-seq "}"
+LHS-tuple-seq =
+  |
+  | "..." LHS
+  | LHS
+  | LHS "," LHS-tuple-seq
+LHS-obj-seq =
+  |
+  | "..." LHS
+  | LHS-obj-elem
+  | LHS-obj-elem "," LHS-obj-seq
+LHS-obj-elem =
+  | id
+  | propertyName ":" LHS
+propertyName =
+  | id
+  | string
+  | number
+  | "[" expr "]"
+```
+
 
 `RHS` must be compatible with the given `LHS`.
 That is, if a `LHS` is an `LHS-tuple-seq`, then the corresponding `RHS` must be a tuple with the correct number of elements.
@@ -117,14 +114,14 @@ Those values are available as their corresponding bound identifiers in the state
 
 ---
 
-<Ref :name="(quote rsh):function" />
+${ref((quote rsh), "function")}
 ```reach
 function randomBool() {
   return (interact.random() % 2) == 0; }; 
 ```
 
 
-A <Defn :name="function definition">function definition</Defn>, written `function FUN(LHS_0, ..., LHS_n) BLOCK;`, defines `FUN` as a function which abstracts its <Defn :name="function body">function body</Defn>, the block `BLOCK`, over the left-hand sides `LHS_0` through `LHS_n`.
+A ${defn("function definition")}, written `function FUN(LHS_0, ..., LHS_n) BLOCK;`, defines `FUN` as a function which abstracts its ${defn("function body")}, the block `BLOCK`, over the left-hand sides `LHS_0` through `LHS_n`.
 
 Function parameters may specify default arguments. The expressions used to instantiate these parameters
 have access to any variables in the scope of which the function was defined. Additionally, these expressions
@@ -137,13 +134,13 @@ function f(a, b, c = a + 1, d = b + c) =>
 ```
 
 
-The last parameter of a function may be a <Defn :name="rest parameter">rest parameter</Defn>, which allows the function to be called
+The last parameter of a function may be a ${defn("rest parameter")}, which allows the function to be called
 with an arbitrary number of arguments. A rest parameter is specified via `...IDENT`, where
 `IDENT` is bound to a `Tuple` containing all the remaining arguments.
 
 ---
 
-All identifiers in Reach programs must be <Defn :name="unbound">unbound</Defn>
+All identifiers in Reach programs must be ${defn("unbound")}
 at the position of the program where they are bound,
 i.e., it is invalid to shadow identifiers with new definitions.
 For example,
@@ -182,7 +179,7 @@ const [_, x, _] = [1, 2, 3];
 
 ### `return`
 
-<Ref :name="(quote rsh):return" />
+${ref((quote rsh), "return")}
 ```reach
 return 17;
 return 3 + 4;
@@ -191,7 +188,7 @@ return;
 ```
 
 
-A <Defn :name="return statement">return statement</Defn>, written `return EXPR;`, where `EXPR` is an expression, evaluates to the same value as `EXPR`.
+A ${defn("return statement")}, written `return EXPR;`, where `EXPR` is an expression, evaluates to the same value as `EXPR`.
 As a special case, `return;` is interpreted the same as `return null;`.
 
 A return statement returns its value to the surrounding function application.
@@ -207,11 +204,11 @@ For example,
 
 is invalid, because the first `return`'s tail is not empty.
 
-Furthermore, a `return` must have an empty continuation (i.e. it must be in <Defn :name="tail position">tail position</Defn>.)
+Furthermore, a `return` must have an empty continuation (i.e. it must be in ${defn("tail position")}.)
 
 ### `if`
 
-<Ref :name="(quote rsh):if" /><Ref :name="(quote rsh):else" />
+${ref((quote rsh), "if")}${ref((quote rsh), "else")}
 ```reach
 if ( 1 + 2 < 3 ) {
   return "Yes!";
@@ -220,7 +217,7 @@ if ( 1 + 2 < 3 ) {
 ```
 
 
-A <Defn :name="conditional statement">conditional statement</Defn>,
+A ${defn("conditional statement")},
 written `if (COND) NOT_FALSE else FALSE`,
 where `COND` is an expression
 and `NOT_FALSE` and `FALSE` as statements
@@ -246,7 +243,7 @@ If one branch of a conditional contains a `return`, then both must.
 
 ### `switch`
 
-<Ref :name="(quote rsh):switch" /><Ref :name="(quote rsh):case" /><Ref :name="(quote rsh):default" />
+${ref((quote rsh), "switch")}${ref((quote rsh), "case")}${ref((quote rsh), "default")}
 ```reach
 const mi = Maybe(UInt).Some(42);
 switch ( mi ) {
@@ -258,7 +255,7 @@ switch ( mi ) {
 ```
 
 
-A <Defn :name="switch statement">switch statement</Defn>,
+A ${defn("switch statement")},
 written `switch (VAR) { CASE ... }`,
 where `VAR` is a variable bound to a data instance
 and `CASE` is either `case VARIANT: STMT ...`, where `VARIANT` is a variant, or `default: STMT ...`, and `STMT` is a sequence of statements,
@@ -275,7 +272,7 @@ If one case of a `switch` contains a `return`, then all must.
 
 ### Block statements
 
-A <Defn :name="block statement">block statement</Defn> is when a block occurs in a statement position, then it establishes a local, separate scope for the definitions of identifiers within that block. In other words, the block is evaluated for effect, but the tail of the statements within the block are isolated from the surrounding tail. For example,
+A ${defn("block statement")} is when a block occurs in a statement position, then it establishes a local, separate scope for the definitions of identifiers within that block. In other words, the block is evaluated for effect, but the tail of the statements within the block are isolated from the surrounding tail. For example,
 
 ```reach
 const x = 4;
@@ -303,10 +300,10 @@ try {
 ```
 
 
-A <Defn :name="try statement">try statement</Defn>, written `try BLOCK catch (VAR) BLOCK`, allows a block
+A ${defn("try statement")}, written `try BLOCK catch (VAR) BLOCK`, allows a block
 of code to execute with a specified handler should an exception be thrown.
 
-A <Defn :name="throw statement">throw statement</Defn>,
+A ${defn("throw statement")},
 written `throw EXPR`, will transfer control flow to the exception handler, binding `EXPR`
 to `VAR`.
 Any value that is able to exist at runtime may be thrown.
@@ -327,13 +324,13 @@ An expression, `E`, in a statement position is equivalent to the block statement
 ## {#ref-programs-compute-exprs} Expressions
 
 This section describes the expressions which are allowed in any Reach context.
-There are a large variety of different <Defn :name="expressions">expressions</Defn> in Reach programs.
+There are a large variety of different ${defn("expressions")} in Reach programs.
 
 The remainder of this section enumerates each kind of expression.
 
 ### 'use strict'
 
-<Ref :name="(quote rsh):'use strict'" />
+${ref((quote rsh), "'use strict'")}
 ```reach
 'use strict'; 
 ```
@@ -343,7 +340,7 @@ The remainder of this section enumerates each kind of expression.
 declarations within the current scope. If a variable is declared, but never used, there will
 be an error emitted at compile time.
 
-<Defn :name="strict mode">strict mode</Defn> will reject some code that is normally valid and limit how dynamic Reach's type system is.
+${defn("strict mode")} will reject some code that is normally valid and limit how dynamic Reach's type system is.
 For example, normally Reach will permit expressions like the following to be evaluated:
 
 ```reach
@@ -394,8 +391,8 @@ Z
 
 An identifier, written `ID`, is an expression that evaluates to the value of the bound identifier.
 
-<Ref :name="(quote rsh):this" />
-The identifier `this` has a special meaning inside of a local step (i.e. the body of an `only` or `each` expression), as well as in a consensus step (i.e. the tail of `publish` or `pay` statement and before a `commit` statement). For details, see XXX (secref "ref-programs-local-this") and XXX (secref "ref-programs-consensus-this").
+${ref((quote rsh), "this")}
+The identifier `this` has a special meaning inside of a local step (i.e. the body of an `only` or `each` expression), as well as in a consensus step (i.e. the tail of `publish` or `pay` statement and before a `commit` statement). For details, see ${seclink("ref-programs-local-this")} and ${seclink("ref-programs-consensus-this")}.
 
 ### Function application
 
@@ -408,45 +405,45 @@ declassify( _coinFlip )
 ```
 
 
-A <Defn :name="function application">function application</Defn>, written `EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)`, is an expression where `EXPR_rator` and `EXPR_rand_0` through `EXPR_rand_n` are expressions that evaluate to one value.
+A ${defn("function application")}, written `EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)`, is an expression where `EXPR_rator` and `EXPR_rand_0` through `EXPR_rand_n` are expressions that evaluate to one value.
 `EXPR_rator` must evaluate to an abstraction over `n` values or a primitive of arity `n`.
 A spread expression (`...expr`) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
 
-<Ref :name="(quote rsh):new" />
+${ref((quote rsh), "new")}
 `new f(a)` is equivalent to `f.new(a)` and is a convenient short-hand for writing class-oriented programs.
 
 ### {#ref-programs-types} Types
 
-Reach's <Defn :name="type">type</Defn>s are represented in programs by the following identifiers and constructors:
+Reach's ${defn("type")}s are represented in programs by the following identifiers and constructors:
 
-+ <Ref :name="(quote rsh):Null" /> `Null`.
-+ <Ref :name="(quote rsh):Bool" /> `Bool`, which denotes a boolean.
-+ <Ref :name="(quote rsh):UInt" /> `UInt`, which denotes an unsigned integer.
++ ${ref((quote rsh), "Null")} `Null`.
++ ${ref((quote rsh), "Bool")} `Bool`, which denotes a boolean.
++ ${ref((quote rsh), "UInt")} `UInt`, which denotes an unsigned integer.
 `UInt.max` is the largest value that may be assigned to a `UInt`.
-+ <Ref :name="(quote rsh):Bytes" /> `Bytes(length)`, which denotes a string of bytes of length at most `length`.
++ ${ref((quote rsh), "Bytes")} `Bytes(length)`, which denotes a string of bytes of length at most `length`.
 Bytes of different lengths are not compatible; however the shorter bytes may be padded.
-+ <Ref :name="(quote rsh):Digest" /> `Digest`, which denotes a digest.
-+ <Ref :name="(quote rsh):Address" /> `Address`, which denotes an account address.
-+ <Ref :name="(quote rsh):Token" /> `Token`, which denotes a non-network token. XXX (secref "ref-networks") discusses how `Token`s are represented on specific networks.
-+ <Ref :name="(quote rsh):Fun" /> `Fun([Domain_0, ..., Domain_N], Range)`, which denotes a <Defn :name="function type">function type</Defn>, when `Domain_i` and `Range` are types.
++ ${ref((quote rsh), "Digest")} `Digest`, which denotes a digest.
++ ${ref((quote rsh), "Address")} `Address`, which denotes an account address.
++ ${ref((quote rsh), "Token")} `Token`, which denotes a non-network token. ${seclink("ref-networks")} discusses how `Token`s are represented on specific networks.
++ ${ref((quote rsh), "Fun")} `Fun([Domain_0, ..., Domain_N], Range)`, which denotes a ${defn("function type")}, when `Domain_i` and `Range` are types.
 The domain of a function is negative position.
 The range of a function is positive position.
-+ `Fun(true, Range)`, which denotes an <Defn :name="unconstrained domain function type">unconstrained domain function type</Defn>, when `Range` is a type.
++ `Fun(true, Range)`, which denotes an ${defn("unconstrained domain function type")}, when `Range` is a type.
 These functions may only appear in participant interact interfaces.
-+ <Ref :name="(quote rsh):Tuple" /> `Tuple(Field_0, ..., FieldN)`, which denotes a tuple.
-(Refer to XXX (secref "ref-programs-tuples") for constructing tuples.)
-+ <Ref :name="(quote rsh):Object" /> `Object({key_0: Type_0, ..., key_N: Type_N})`, which denotes an object.
-(Refer to XXX (secref "ref-programs-objects") for constructing objects.)
-+ <Ref :name="(quote rsh):Struct" /> `Struct([[key_0, Type_0], ..., [key_N, Type_N]])`, which denotes a struct.
-(Refer to XXX (secref "ref-programs-structs") for constructing structs.)
-+ <Ref :name="(quote rsh):Array" /> `Array(Type_0, size)`, which denotes a statically-sized array.
++ ${ref((quote rsh), "Tuple")} `Tuple(Field_0, ..., FieldN)`, which denotes a tuple.
+(Refer to ${seclink("ref-programs-tuples")} for constructing tuples.)
++ ${ref((quote rsh), "Object")} `Object({key_0: Type_0, ..., key_N: Type_N})`, which denotes an object.
+(Refer to ${seclink("ref-programs-objects")} for constructing objects.)
++ ${ref((quote rsh), "Struct")} `Struct([[key_0, Type_0], ..., [key_N, Type_N]])`, which denotes a struct.
+(Refer to ${seclink("ref-programs-structs")} for constructing structs.)
++ ${ref((quote rsh), "Array")} `Array(Type_0, size)`, which denotes a statically-sized array.
 `Type_0` must be a type that can exist at runtime (i.e., not a function type.)
-(Refer to XXX (secref "ref-programs-arrays") for constructing arrays.)
-+ <Ref :name="(quote rsh):Data" /> `Data({variant_0: Type_0, ..., variant_N: Type_N})`, which denotes a [tagged union](https://en.wikipedia.org/wiki/Tagged_union) (or _sum type_).
-(Refer to XXX (secref "ref-programs-data") for constructing data instances.)
-+ <Ref :name="(quote rsh):Refine" /> `Refine(Type_0, Predicate, ?Message)`, where `Predicate` is a unary function returning a boolean, which denotes a [refinement type](https://en.wikipedia.org/wiki/Refinement_type), that is instances of `Type_0` that satisfy `Predicate`.
-When a refinement type appears in a <Defn :name="negative position">negative position</Defn> (such as in an `is` or in the domain of a `Fun` of a participant interact interface), it introduces an `assert`;
-while when it is in a <Defn :name="positive position">positive position</Defn>, it introduces an `assume`.
+(Refer to ${seclink("ref-programs-arrays")} for constructing arrays.)
++ ${ref((quote rsh), "Data")} `Data({variant_0: Type_0, ..., variant_N: Type_N})`, which denotes a [tagged union](https://en.wikipedia.org/wiki/Tagged_union) (or _sum type_).
+(Refer to ${seclink("ref-programs-data")} for constructing data instances.)
++ ${ref((quote rsh), "Refine")} `Refine(Type_0, Predicate, ?Message)`, where `Predicate` is a unary function returning a boolean, which denotes a [refinement type](https://en.wikipedia.org/wiki/Refinement_type), that is instances of `Type_0` that satisfy `Predicate`.
+When a refinement type appears in a ${defn("negative position")} (such as in an `is` or in the domain of a `Fun` of a participant interact interface), it introduces an `assert`;
+while when it is in a ${defn("positive position")}, it introduces an `assume`.
 `Message` is an optional string to display if the predicate fails verification.
 
 For example, if `f` had type ```reach
@@ -472,7 +469,7 @@ For example, `Refine(Fun([UInt, UInt], UInt), ([x, y] => x < y), (([x, y], z) =>
 
 `Object` and `Data` are commonly used to implemented [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type) in Reach.
 
-<Ref :name="(quote rsh):typeOf" /><Ref :name="(quote rsh):isType" /><Ref :name="(quote rsh):is" />
+${ref((quote rsh), "typeOf")}${ref((quote rsh), "isType")}${ref((quote rsh), "is")}
 ```reach
 typeOf(x) // type
 isType(t) // Bool
@@ -494,7 +491,7 @@ These applications are considered negative positions for `Refine`.
 
 ### Literal values
 
-<Ref :name="(quote rsh):true" /><Ref :name="(quote rsh):false" /><Ref :name="(quote rsh):null" />
+${ref((quote rsh), "true")}${ref((quote rsh), "false")}${ref((quote rsh), "null")}
 ```reach
 10
 0xdeadbeef
@@ -509,21 +506,21 @@ null
 ```
 
 
-A <Defn :name="literal value">literal value</Defn>,
+A ${defn("literal value")},
 written `VALUE`,
 is an expression that evaluates to the given value.
 
-The <Defn :name="null literal">null literal</Defn> may be written as `null`.
+The ${defn("null literal")} may be written as `null`.
 
-<Defn :name="Numeric literal">Numeric literal</Defn>s may be written in decimal, hexadecimal, or octal.
-Numeric literals must obey the <Defn :name="bit width">bit width</Defn> of `UInt` if they are used as `UInt` values at runtime, but if they only appear at compile-time, then they may be any positive number.
+${defn("Numeric literal")}s may be written in decimal, hexadecimal, or octal.
+Numeric literals must obey the ${defn("bit width")} of `UInt` if they are used as `UInt` values at runtime, but if they only appear at compile-time, then they may be any positive number.
 Reach provides abstractions for working with `Int`s and signed `FixedPoint` numbers.
 `Int`s may be defined by applying the unary `+` and `-` operators to values of type `UInt`.
 Reach provides syntactic sugar for defining signed `FixedPoint` numbers, in base 10, with decimal syntax.
 
-<Defn :name="Boolean literal">Boolean literal</Defn>s may be written as `true` or `false`.
+${defn("Boolean literal")}s may be written as `true` or `false`.
 
-<Defn :name="String literal">String literal</Defn>s (aka byte strings)
+${defn("String literal")}s (aka byte strings)
 may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
@@ -531,12 +528,12 @@ Since `Bytes` types are specialized in their length, literals typically need to 
 
 ### Operator expression
 
-An <Defn :name="operator">operator</Defn> is a special identifier,
+An ${defn("operator")} is a special identifier,
 which is either a unary operator, or a binary operator.
 
 ---
 
-<Ref :name="(quote rsh):!" /><Ref :name="(quote rsh):-" /><Ref :name="(quote rsh):+" /><Ref :name="(quote rsh):typeof" /><Ref :name="(quote rsh):not" /><Ref :name="(quote rsh):minus" /><Ref :name="(quote rsh):plus" /><Ref :name="(quote rsh):void" />
+${ref((quote rsh), "!")}${ref((quote rsh), "-")}${ref((quote rsh), "+")}${ref((quote rsh), "typeof")}${ref((quote rsh), "not")}${ref((quote rsh), "minus")}${ref((quote rsh), "plus")}${ref((quote rsh), "void")}
 ```reach
 ! a  // not
 - a  // minus
@@ -546,7 +543,7 @@ void a
 ```
 
 
-A <Defn :name="unary expression">unary expression</Defn>, written `UNAOP EXPR_rhs`, where `EXPR_rhs` is an expression and `UNAOP` is one of the <Defn :name="unary operator">unary operator</Defn>s: `! - + typeof void`. All the unary operators, besides `typeof`, have a
+A ${defn("unary expression")}, written `UNAOP EXPR_rhs`, where `EXPR_rhs` is an expression and `UNAOP` is one of the ${defn("unary operator")}s: `! - + typeof void`. All the unary operators, besides `typeof`, have a
 corresponding named version in the standard library.
 
 It is invalid to use unary operations on the wrong types of values.
@@ -559,7 +556,7 @@ values of type: `Int`, and `FixedPoint`.
 
 ---
 
-<Ref :name="(quote rsh):&&" /><Ref :name="(quote rsh):||" /><Ref :name="(quote rsh):+" /><Ref :name="(quote rsh):-" /><Ref :name="(quote rsh):*" /><Ref :name="(quote rsh):/" /><Ref :name="(quote rsh):%" /><Ref :name="(quote rsh):|" /><Ref :name="(quote rsh):&" /><Ref :name="(quote rsh):^" /><Ref :name="(quote rsh):<<" /><Ref :name="(quote rsh):>>" /><Ref :name="(quote rsh):==" /><Ref :name="(quote rsh):!=" /><Ref :name="(quote rsh):===" /><Ref :name="(quote rsh):!==" /><Ref :name="(quote rsh):>" /><Ref :name="(quote rsh):>=" /><Ref :name="(quote rsh):<=" /><Ref :name="(quote rsh):<" />
+${ref((quote rsh), "&&")}${ref((quote rsh), "||")}${ref((quote rsh), "+")}${ref((quote rsh), "-")}${ref((quote rsh), "*")}${ref((quote rsh), "/")}${ref((quote rsh), "%")}${ref((quote rsh), "|")}${ref((quote rsh), "&")}${ref((quote rsh), "^")}${ref((quote rsh), "<<")}${ref((quote rsh), ">>")}${ref((quote rsh), "==")}${ref((quote rsh), "!=")}${ref((quote rsh), "===")}${ref((quote rsh), "!==")}${ref((quote rsh), ">")}${ref((quote rsh), ">=")}${ref((quote rsh), "<=")}${ref((quote rsh), "<")}
 ```reach
 a && b
 a || b
@@ -588,13 +585,13 @@ a < b
 Bitwise operations are not supported by all consensus networks and greatly decrease the efficiency of verification.
 :::
 
-A <Defn :name="binary expression">binary expression</Defn> is written `EXPR_lhs BINOP EXPR_rhs`, where `EXPR_lhs` and `EXPR_rhs` are expressions and `BINOP` is one of the <Defn :name="binary operator">binary operator</Defn>s: `&& || + - * / % | & ^ << >> == != === !== > >= <= <`.
+A ${defn("binary expression")} is written `EXPR_lhs BINOP EXPR_rhs`, where `EXPR_lhs` and `EXPR_rhs` are expressions and `BINOP` is one of the ${defn("binary operator")}s: `&& || + - * / % | & ^ << >> == != === !== > >= <= <`.
 Numeric operations, like `+` and `>`, only operate on numbers.
 Since all numbers in Reach are integers, operations like `/` truncate their result.
 Boolean operations, like `&&`, only operate on booleans.
 It is invalid to use binary operations on the wrong types of values.
 
-<Ref :name="(quote rsh):and" /><Ref :name="(quote rsh):or" /><Ref :name="(quote rsh):add" /><Ref :name="(quote rsh):sub" /><Ref :name="(quote rsh):mul" /><Ref :name="(quote rsh):div" /><Ref :name="(quote rsh):mod" /><Ref :name="(quote rsh):lt" /><Ref :name="(quote rsh):le" /><Ref :name="(quote rsh):ge" /><Ref :name="(quote rsh):gt" /><Ref :name="(quote rsh):lsh" /><Ref :name="(quote rsh):rsh" /><Ref :name="(quote rsh):band" /><Ref :name="(quote rsh):bior" /><Ref :name="(quote rsh):band" /><Ref :name="(quote rsh):bxor" /><Ref :name="(quote rsh):polyEq" /><Ref :name="(quote rsh):polyNeq" />
+${ref((quote rsh), "and")}${ref((quote rsh), "or")}${ref((quote rsh), "add")}${ref((quote rsh), "sub")}${ref((quote rsh), "mul")}${ref((quote rsh), "div")}${ref((quote rsh), "mod")}${ref((quote rsh), "lt")}${ref((quote rsh), "le")}${ref((quote rsh), "ge")}${ref((quote rsh), "gt")}${ref((quote rsh), "lsh")}${ref((quote rsh), "rsh")}${ref((quote rsh), "band")}${ref((quote rsh), "bior")}${ref((quote rsh), "band")}${ref((quote rsh), "bxor")}${ref((quote rsh), "polyEq")}${ref((quote rsh), "polyNeq")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
@@ -621,7 +618,7 @@ All binary expression operators have a corresponding named function in the stand
 While `&&` and `||` may not evaluate their second argument,
 their corresponding named functions `and` and `or`, always do.
 
-<Ref :name="(quote rsh):boolEq" /><Ref :name="(quote rsh):typeEq" /><Ref :name="(quote rsh):intEq" /><Ref :name="(quote rsh):digestEq" /><Ref :name="(quote rsh):addressEq" /><Ref :name="(quote rsh):fxeq" /><Ref :name="(quote rsh):ieq" />
+${ref((quote rsh), "boolEq")}${ref((quote rsh), "typeEq")}${ref((quote rsh), "intEq")}${ref((quote rsh), "digestEq")}${ref((quote rsh), "addressEq")}${ref((quote rsh), "fxeq")}${ref((quote rsh), "ieq")}
 ```reach
 polyEq(a, b)    // eq on all types
 boolEq(a, b)    // eq on Bool
@@ -658,7 +655,7 @@ xor(true, true);   // false
 
 ### Padding
 
-<Ref :name="(quote rsh):pad" />
+${ref((quote rsh), "pad")}
 ```reach
 Bytes(16).pad('abc');
 ```
@@ -672,7 +669,7 @@ Most of the time this is good, because it is a signal that you should use a `Dat
 
 But, sometimes it is necessary and useful to extend one byte string into a larger size.
 Each `Bytes` type has a `pad` field that is bound to a function that extends its argument to the needed size.
-A byte string extended in this way is called <Defn :name="padded">padded</Defn>, because it is extended with additional `NUL` bytes.
+A byte string extended in this way is called ${defn("padded")}, because it is extended with additional `NUL` bytes.
 
 ### Parenthesized expression
 
@@ -691,19 +688,19 @@ An expression may be parenthesized, as in `(EXPR)`.
 ```
 
 
-A <Defn :name="tuple">tuple</Defn> literal, written `[ EXPR_0, ..., EXPR_n ]`, is an expression which evaluates to a tuple of `n` values, where `EXPR_0` through `EXPR_n` are expressions.
+A ${defn("tuple")} literal, written `[ EXPR_0, ..., EXPR_n ]`, is an expression which evaluates to a tuple of `n` values, where `EXPR_0` through `EXPR_n` are expressions.
 
 `...expr` may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.
 
 ### {#ref-programs-arrays} `array`
 
-<Ref :name="(quote rsh):array" />
+${ref((quote rsh), "array")}
 ```reach
 const x = array(UInt, [1, 2, 3]); 
 ```
 
 
-Converts a tuple of homogeneous values of the specific type into an <Defn :name="array">array</Defn>.
+Converts a tuple of homogeneous values of the specific type into an ${defn("array")}.
 
 ### Element reference
 
@@ -712,7 +709,7 @@ arr[3]
 ```
 
 
-A <Defn :name="reference">reference</Defn>, written `REF_EXPR[IDX_EXPR]`,
+A ${defn("reference")}, written `REF_EXPR[IDX_EXPR]`,
 where `REF_EXPR` is an expression that evaluates to an array, a tuple, or a struct
 and `IDX_EXPR` is an expression that evaluates to a natural number which is less than the size of the array,
 selects the element at the given index of the array.
@@ -724,7 +721,7 @@ If `REF_EXPR` is a mapping and `IDX_EXPR` evaluates to an address, then this ref
 
 ### Array & tuple length: `Tuple.length`, `Array.length`, and `.length`
 
-<Ref :name="(quote rsh):length" />
+${ref((quote rsh), "length")}
 ```reach
 Tuple.length(tup);
 tup.length;
@@ -741,7 +738,7 @@ Both may be abbreviated as `expr.length` where `expr` evaluates to a tuple or an
 
 ### Array & tuple update: `Tuple.set`, `Array.set`, and `.set`
 
-<Ref :name="(quote rsh):set" />
+${ref((quote rsh), "set")}
 ```reach
 Tuple.set(tup, idx, val);
 tup.set(idx, val);
@@ -760,7 +757,7 @@ Both may be abbreviated as `expr.set(idx, val)` where `expr` evaluates to a tupl
 
 ### Array element type: `Array.elemType` and `.elemType`
 
-<Ref :name="(quote rsh):elemType" />
+${ref((quote rsh), "elemType")}
 ```reach
 Array.elemType(arr)
 arr.elemType 
@@ -771,11 +768,11 @@ arr.elemType
 
 ### Foldable operations
 
-The following methods are available on any <Ref :name="(quote rsh):Foldable" />`Foldable` containers, such as: `Array`s and `Map`s.
+The following methods are available on any ${ref((quote rsh), "Foldable")}`Foldable` containers, such as: `Array`s and `Map`s.
 
 ####  `Foldable.forEach` && `.forEach`
 
-<Ref :name="(quote rsh):forEach" />
+${ref((quote rsh), "forEach")}
 ```reach
 c.forEach(f)
 Foldable.forEach(c, f)
@@ -789,7 +786,7 @@ This may be abbreviated as `c.forEach(f)`.
 
 #### `Foldable.all` && `.all`
 
-<Ref :name="(quote rsh):all" />
+${ref((quote rsh), "all")}
 ```reach
 Foldable.all(c, f)
 Array.all(c, f)
@@ -803,7 +800,7 @@ by every element of the container, `c`.
 
 #### `Foldable.any` && `.any`
 
-<Ref :name="(quote rsh):any" />
+${ref((quote rsh), "any")}
 ```reach
 Foldable.any(c, f)
 Array.any(c, f)
@@ -817,7 +814,7 @@ by at least one element of the container, `c`.
 
 #### `Foldable.or` && `.or`
 
-<Ref :name="(quote rsh):or" />
+${ref((quote rsh), "or")}
 ```reach
 Foldable.or(c)
 Array.or(c)
@@ -830,7 +827,7 @@ c.or()
 
 #### `Foldable.and` && `.and`
 
-<Ref :name="(quote rsh):and" />
+${ref((quote rsh), "and")}
 ```reach
 Foldable.and(c)
 Array.and(c)
@@ -843,7 +840,7 @@ c.and()
 
 #### `Foldable.includes` && `.includes`
 
-<Ref :name="(quote rsh):includes" />
+${ref((quote rsh), "includes")}
 ```reach
 Foldable.includes(c, x)
 Array.includes(c, x)
@@ -857,7 +854,7 @@ the element, `x`.
 
 #### `Foldable.count` && `.count`
 
-<Ref :name="(quote rsh):count" />
+${ref((quote rsh), "count")}
 ```reach
 Foldable.count(c, f)
 Array.count(c, f)
@@ -871,7 +868,7 @@ satisfy the predicate, `f`.
 
 #### `Foldable.size` && `.size`
 
-<Ref :name="(quote rsh):size" />
+${ref((quote rsh), "size")}
 ```reach
 Foldable.size(c)
 Array.size(c)
@@ -884,7 +881,7 @@ c.size()
 
 #### `Foldable.min` && `.min`
 
-<Ref :name="(quote rsh):min" />
+${ref((quote rsh), "min")}
 ```reach
 Foldable.min(c)
 Array.min(c)
@@ -897,7 +894,7 @@ c.min()
 
 #### `Foldable.max` && `.max`
 
-<Ref :name="(quote rsh):max" />
+${ref((quote rsh), "max")}
 ```reach
 Foldable.max(c)
 Array.max(c)
@@ -910,7 +907,7 @@ c.max()
 
 #### `Foldable.sum` && `.sum`
 
-<Ref :name="(quote rsh):sum" />
+${ref((quote rsh), "sum")}
 ```reach
 Foldable.sum(c)
 Array.sum(c)
@@ -923,7 +920,7 @@ c.sum()
 
 #### `Foldable.product` && `.product`
 
-<Ref :name="(quote rsh):product" />
+${ref((quote rsh), "product")}
 ```reach
 Foldable.product(c)
 Array.product(c)
@@ -936,7 +933,7 @@ c.product()
 
 #### `Foldable.average` && `.average`
 
-<Ref :name="(quote rsh):average" />
+${ref((quote rsh), "average")}
 ```reach
 Foldable.average(c)
 Array.average(c)
@@ -954,7 +951,7 @@ following methods may be used with `Array`s.
 
 #### `Array.iota`
 
-<Ref :name="(quote rsh):iota" />
+${ref((quote rsh), "iota")}
 ```reach
 Array.iota(5) 
 ```
@@ -966,7 +963,7 @@ The given `len` must evaluate to an integer at compile-time.
 
 #### `Array.replicate` && `.replicate`
 
-<Ref :name="(quote rsh):Array_replicate" /><Ref :name="(quote rsh):replicate" />
+${ref((quote rsh), "Array_replicate")}${ref((quote rsh), "replicate")}
 ```reach
 Array.replicate(5, "five")
 Array_replicate(5, "five") 
@@ -979,7 +976,7 @@ The given `len` must evaluate to an integer at compile-time.
 
 #### `Array.concat` && `.concat`
 
-<Ref :name="(quote rsh):concat" />
+${ref((quote rsh), "concat")}
 ```reach
 Array.concat(x, y)
 x.concat(y) 
@@ -991,7 +988,7 @@ This may be abbreviated as `x.concat(y)`.
 
 #### `Array.empty`
 
-<Ref :name="(quote rsh):Array_empty" /><Ref :name="(quote rsh):empty" />
+${ref((quote rsh), "Array_empty")}${ref((quote rsh), "empty")}
 ```reach
 Array_empty
 Array.empty 
@@ -1004,7 +1001,7 @@ It may also be written `Array_empty`.
 
 #### `Array.zip` && `.zip`
 
-<Ref :name="(quote rsh):zip" />
+${ref((quote rsh), "zip")}
 ```reach
 Array.zip(x, y)
 x.zip(y) 
@@ -1016,7 +1013,7 @@ This may be abbreviated as `x.zip(y)`.
 
 #### `Array.map` && `.map`
 
-<Ref :name="(quote rsh):map" />
+${ref((quote rsh), "map")}
 ```reach
 Array.map(arr, f)
 arr.map(f) 
@@ -1032,7 +1029,7 @@ For example, `Array.iota(4).map(Array.iota(4), add)` returns `[0, 2, 4, 6]`.
 
 #### `Array.mapWithIndex` && `.mapWithIndex`
 
-<Ref :name="(quote rsh):mapWithIndex" />
+${ref((quote rsh), "mapWithIndex")}
 ```reach
 Array.mapWithIndex(arr, f)
 arr.mapWithIndex(f) 
@@ -1045,7 +1042,7 @@ Unlike `Array.map`, this function is not generalized to an arbitrary number of a
 
 #### `Array.reduce` && `.reduce`
 
-<Ref :name="(quote rsh):reduce" />
+${ref((quote rsh), "reduce")}
 ```reach
 Array.reduce(arr, z, f)
 arr.reduce(z, f) 
@@ -1061,7 +1058,7 @@ For example, `Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))` 
 
 #### `Array.reduceWithIndex` && `.reduceWithIndex`
 
-<Ref :name="(quote rsh):reduceWithIndex" />
+${ref((quote rsh), "reduceWithIndex")}
 ```reach
 Array.reduceWithIndex(arr, z, f)
 arr.reduceWithIndex(z, f) 
@@ -1074,7 +1071,7 @@ Unlike `Array.reduce`, this function is not generalized to an arbitrary number o
 
 #### `Array.indexOf` && `.indexOf`
 
-<Ref :name="(quote rsh):indexOf" />
+${ref((quote rsh), "indexOf")}
 ```reach
 Array.indexOf(arr, x)
 arr.indexOf(x) 
@@ -1087,7 +1084,7 @@ the value is not present in the array, `None` is returned.
 
 #### `Array.findIndex` && `.findIndex`
 
-<Ref :name="(quote rsh):findIndex" />
+${ref((quote rsh), "findIndex")}
 ```reach
 Array.findIndex(arr, f)
 arr.findIndex(f) 
@@ -1100,7 +1097,7 @@ no value in the array satisfies the predicate, `None` is returned.
 
 #### `Array.find` && `.find`
 
-<Ref :name="(quote rsh):find" />
+${ref((quote rsh), "find")}
 ```reach
 Array.find(arr, f)
 arr.find(f) 
@@ -1113,7 +1110,7 @@ array satisfies the predicate, `None` is returned.
 
 #### `Array.withIndex` && `.withIndex`
 
-<Ref :name="(quote rsh):withIndex" />
+${ref((quote rsh), "withIndex")}
 ```reach
 Array.withIndex(arr)
 arr.withIndex() 
@@ -1126,7 +1123,7 @@ is paired with its index. For example, `array(Bool, [false, true]).withIndex()` 
 
 #### `Array.slice` && `.slice`
 
-<Ref :name="(quote rsh):slice" />
+${ref((quote rsh), "slice")}
 ```reach
 Array.slice(arr, start, length)
 arr.slice(start, length)
@@ -1164,7 +1161,7 @@ The function `f` must satisfy the property, for all `z`, `a`, `b`, `f(f(z, b), a
 ```
 
 
-An <Defn :name="object">object</Defn>,
+An ${defn("object")},
 typically written `{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }`,
 where `KEY_0` through `KEY_n` are identifiers or string literals
 and `EXPR_0` through `EXPR_n` are expressions,
@@ -1178,7 +1175,7 @@ Additional object literal syntax exists for convenience, such as:
 ```
 
 
-An <Defn :name="object splice">object splice</Defn>,
+An ${defn("object splice")},
 where all fields from `obj` are copied into the object;
 these fields may be accompanied by additional fields specified afterwards.
 
@@ -1198,7 +1195,7 @@ const p2 = Posn.fromTuple([1, 2]);
 ```
 
 
-A <Defn :name="struct">struct</Defn> is a combination of a tuple and an object.
+A ${defn("struct")} is a combination of a tuple and an object.
 It has named elements, like an object, but is ordered like a tuple, so its elements may be accessed by either name or position.
 Structs exist for interfacing with non-Reach remote objects, where both parties must agree to the runtime representation of the values.
 
@@ -1227,15 +1224,15 @@ obj.x
 ```
 
 
-An <Defn :name="object reference">object reference</Defn>,
+An ${defn("object reference")},
 written `OBJ.FIELD`,
 where `OBJ` is an expression that evaluates to an object or a struct,
 and `FIELD` is a valid identifier,
-accesses the `FIELD` <Defn :name="field">field</Defn> of object OBJ.
+accesses the `FIELD` ${defn("field")} of object OBJ.
 
 ### `Object.set`
 
-<Ref :name="(quote rsh):Object_set" />
+${ref((quote rsh), "Object_set")}
 ```reach
 Object.set(obj, fld, val);
 Object_set(obj, fld, val);
@@ -1248,7 +1245,7 @@ except that field `fld` is replaced with `val`.
 
 ### `Object.setIfUnset`
 
-<Ref :name="(quote rsh):Object_setIfUnset" />
+${ref((quote rsh), "Object_setIfUnset")}
 ```reach
 Object.setIfUnset(obj, fld, val);
 Object_setIfUnset(obj, fld, val);
@@ -1284,14 +1281,14 @@ const nice = Shape.Circle({r: 5});
 ```
 
 
-A <Defn :name="data instance">data instance</Defn> is written `DATA.VARIANT(VALUE)`, where `DATA` is `Data` type, `VARIANT` is the name of one of `DATA`'s variants, and `VALUE` is a value matching the type of the variant.
+A ${defn("data instance")} is written `DATA.VARIANT(VALUE)`, where `DATA` is `Data` type, `VARIANT` is the name of one of `DATA`'s variants, and `VALUE` is a value matching the type of the variant.
 As a special case, when the type of a variant is `Null`, the `VALUE` may be omitted, as shown in the definition of `burger` in the same above.
 
 Data instances are consumed by `switch` statements and `match` expressions.
 
 ### `Maybe`
 
-<Ref :name="(quote rsh):Maybe" /><Ref :name="(quote rsh):Some" /><Ref :name="(quote rsh):None" /><Ref :name="(quote rsh):fromMaybe" />
+${ref((quote rsh), "Maybe")}${ref((quote rsh), "Some")}${ref((quote rsh), "None")}${ref((quote rsh), "fromMaybe")}
 ```reach
 const MayInt = Maybe(UInt);
 const bidA = MayInt.Some(42);
@@ -1315,7 +1312,7 @@ This means it is a function that returns a `Data` type specialized to a particul
 
 `Maybe` instances can be conveniently consumed by `fromMaybe(mValue, onNone, onSome)`, where `onNone` is a function of no arguments which is called when `mValue` is `None`, `onSome` is a function of one argument which is called with the value when `mValue` is `Some`, and `mValue` is a data instance of `Maybe`.
 
-<Ref :name="(quote rsh):isNone" /><Ref :name="(quote rsh):isSome" />
+${ref((quote rsh), "isNone")}${ref((quote rsh), "isSome")}
 ```reach
 const m = Maybe(UInt).Some(5);
 isNone(m); // false
@@ -1328,7 +1325,7 @@ isSome(m); // true
  `isSome` is a convenience method that determines whether the variant is `Some`.
 
 
-<Ref :name="(quote rsh):fromSome" />
+${ref((quote rsh), "fromSome")}
 ```reach
 fromSome(Maybe(UInt).Some(1), 0); // 1
 fromSome(Maybe(UInt).None(), 0);  // 0
@@ -1338,7 +1335,7 @@ fromSome(Maybe(UInt).None(), 0);  // 0
  `fromSome` receives a `Maybe` value and a default value as arguments and will return the value inside
 of the `Some` variant or the default value otherwise.
 
-<Ref :name="(quote rsh):maybe" />
+${ref((quote rsh), "maybe")}
 ```reach
 const add1 = (x) => x + 1;
 maybe(Maybe(UInt).Some(1), 0, add1); // 2
@@ -1363,7 +1360,7 @@ Similar to `Maybe`, `Either` may be used to represent values that are correct or
 A successful result is stored, by convention, in `Right`. Unlike `None`, `Left` may
 carry additional information about the error.
 
-<Ref :name="(quote rsh):either" />
+${ref((quote rsh), "either")}
 ```reach
 either(e, onLeft, onRight) 
 ```
@@ -1371,7 +1368,7 @@ either(e, onLeft, onRight)
 
  `either(e, onLeft, onRight)` will either apply the function `onLeft` or `onRight` depending on `e`.
 
-<Ref :name="(quote rsh):isLeft" /><Ref :name="(quote rsh):isRight" /><Ref :name="(quote rsh):fromLeft" /><Ref :name="(quote rsh):fromRight" />
+${ref((quote rsh), "isLeft")}${ref((quote rsh), "isRight")}${ref((quote rsh), "fromLeft")}${ref((quote rsh), "fromRight")}
 ```reach
 const e = Either(UInt, Bool);
 const l = e.Left(1);
@@ -1395,7 +1392,7 @@ or `default` if the variant is `Left`.
 
 ### `match`
 
-<Ref :name="(quote rsh):match" />
+${ref((quote rsh), "match")}
 ```reach
 const Value = Data({
    EBool: Bool,
@@ -1416,7 +1413,7 @@ const Value = Data({
 ```
 
 
-A <Defn :name="match expression">match expression</Defn>, written `VAR.match({ CASE ... })`, where `VAR` is a variable
+A ${defn("match expression")}, written `VAR.match({ CASE ... })`, where `VAR` is a variable
 bound to a data instance and `CASE` is `VARIANT: FUNCTION`, where `VARIANT` is a
 variant or `default`, and `FUNCTION` is a function that takes the same arguments as the
 variant constructor.
@@ -1432,15 +1429,15 @@ its cases if it is within a consensus step.
 
 ### Conditional expression
 
-<Ref :name="(quote rsh):?" />
+${ref((quote rsh), "?")}
 ```reach
 choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ] 
 ```
 
 
-A <Defn :name="conditional expression">conditional expression</Defn>, written `COND_E ? NOT_FALSE_E : FALSE_E`, where `COND_E`, `NOT_FALSE_E`, and `FALSE_E` are expressions, selects between the values which `NOT_FALSE_E` and `FALSE_E` evaluate to based on whether `COND_E` evaluates to `false`.
+A ${defn("conditional expression")}, written `COND_E ? NOT_FALSE_E : FALSE_E`, where `COND_E`, `NOT_FALSE_E`, and `FALSE_E` are expressions, selects between the values which `NOT_FALSE_E` and `FALSE_E` evaluate to based on whether `COND_E` evaluates to `false`.
 
-<Ref :name="(quote rsh):ite" />
+${ref((quote rsh), "ite")}
 ```reach
 ite(choosesFirst, [heap1 - amount, heap2], [heap1, heap2 - amount])
 ```
@@ -1452,7 +1449,7 @@ while the regular conditional expression only evaluates one branch.
 
 ### Arrow expression
 
-<Ref :name="(quote rsh):=>" />
+${ref((quote rsh), "=>")}
 ```reach
 (() => 4)
 ((x) => x + 1)
@@ -1470,18 +1467,18 @@ while the regular conditional expression only evaluates one branch.
 ```
 
 
-An <Defn :name="arrow expression">arrow expression</Defn>, written `(LHS_0, ..., LHS_n) => EXPR`, where `LHS_0` through `LHS_n` are left-hand sides and `EXPR` is an expression, evaluates to a function which is an abstraction of `EXPR` over `n` values compatible with the respective left-hand side.
+An ${defn("arrow expression")}, written `(LHS_0, ..., LHS_n) => EXPR`, where `LHS_0` through `LHS_n` are left-hand sides and `EXPR` is an expression, evaluates to a function which is an abstraction of `EXPR` over `n` values compatible with the respective left-hand side.
 Like function definitions, arrow expressions may use default argument notation and rest parameters.
 
 ### `makeEnum`
 
-<Ref :name="(quote rsh):makeEnum" />
+${ref((quote rsh), "makeEnum")}
 ```reach
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); 
 ```
 
 
-An <Defn :name="enumeration">enumeration</Defn> (or <Defn :name="enum">enum</Defn>, for short),
+An ${defn("enumeration")} (or ${defn("enum")}, for short),
 can be created by calling the `makeEnum` function, as in `makeEnum(N)`,
 where `N` is the number of distinct values in the enum.
 This produces a tuple of `N+1` values,
@@ -1491,7 +1488,7 @@ and the next N values are distinct `UInt`s.
 
 ### `assert`
 
-<Ref :name="(quote rsh):assert" />
+${ref((quote rsh), "assert")}
 ```reach
 assert( claim, [msg] ) 
 ```
@@ -1511,7 +1508,7 @@ See [the guide section on verification](##guide-assert) to better understand how
 
 ### `forall`
 
-<Ref :name="(quote rsh):forall" />
+${ref((quote rsh), "forall")}
 ```reach
 forall( Type )
 forall( Type, (var) => BLOCK ) 
@@ -1531,7 +1528,7 @@ forall(UInt, (x) => assert(x == x));
 
 ### `possible`
 
-<Ref :name="(quote rsh):possible" />
+${ref((quote rsh), "possible")}
 ```reach
 possible( claim, [msg] ) 
 ```
@@ -1542,7 +1539,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ### `digest`
 
-<Ref :name="(quote rsh):digest" />
+${ref((quote rsh), "digest")}
 ```reach
 digest( arg_0, ..., arg_n ) 
 ```
@@ -1554,25 +1551,25 @@ The exact algorithm used depends on the connector.
 
 ### `balance`
 
-<Ref :name="(quote rsh):balance" />
+${ref((quote rsh), "balance")}
 ```reach
 balance();
 balance(gil); 
 ```
 
 
-The <Defn :name="balance">balance</Defn> primitive returns the balance of the contract account for the DApp.
+The ${defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
 ### `lastConsensusTime` and `lastConsensusSecs`
 
-<Ref :name="(quote rsh):lastConsensusTime" />
+${ref((quote rsh), "lastConsensusTime")}
 ```reach
 lastConsensusTime() 
 ```
 
 
-The <Defn :name="lastConsensusTime">lastConsensusTime</Defn> primitive returns the network time of the last publication of the DApp.
+The ${defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
 This may not be available if there was no such previous publication, such as at the beginning of an application where `deployMode` is `'firstMsg'`.
 
 ::: note
@@ -1583,17 +1580,17 @@ This aides scalability, because it increases the number of times when an operati
 
 ---
 
-<Ref :name="(quote rsh):lastConsensusSecs" />
+${ref((quote rsh), "lastConsensusSecs")}
 ```reach
 lastConsensusSecs() 
 ```
 
 
-<Defn :name="lastConsensusSecs">lastConsensusSecs</Defn> is like lastConsensusTime, except it returns the network seconds.
+${defn("lastConsensusSecs")} is like lastConsensusTime, except it returns the network seconds.
 
 ### `baseWaitTime` and `baseWaitSecs`
 
-<Ref :name="(quote rsh):baseWaitTime" /><Ref :name="(quote rsh):baseWaitSecs" />
+${ref((quote rsh), "baseWaitTime")}${ref((quote rsh), "baseWaitSecs")}
 ```reach
 baseWaitTime()
 baseWaitSecs() 
@@ -1605,7 +1602,7 @@ This is either the same as `lastConsensusTime` (`lastConsensusSecs`) or the dead
 
 ### Time arguments - `relativeTime`, `absoluteTime`, `relativeSecs`, `absoluteSecs`
 
-<Ref :name="(quote rsh):relativeTime" /><Ref :name="(quote rsh):absoluteTime" /><Ref :name="(quote rsh):relativeSecs" /><Ref :name="(quote rsh):absoluteSecs" />
+${ref((quote rsh), "relativeTime")}${ref((quote rsh), "absoluteTime")}${ref((quote rsh), "relativeSecs")}${ref((quote rsh), "absoluteSecs")}
 ```reach
 relativeTime(amt)
 absoluteTime(time)
@@ -1614,7 +1611,7 @@ absoluteSecs(secs)
 ```
 
 
-These functions return <Defn :name="time arguments">time arguments</Defn>, which are instances of the type `Either(UInt, UInt)`, where `Left` variants refer to absolute network time and `Right` variants refer to absolute network seconds.
+These functions return ${defn("time arguments")}, which are instances of the type `Either(UInt, UInt)`, where `Left` variants refer to absolute network time and `Right` variants refer to absolute network seconds.
 
 The `absoluteTime` and `absoluteSecs` are equivalent to `Left` and `Right` variant tags.
 
@@ -1624,7 +1621,7 @@ If a time argument is required, an integer value is allowed and is interpreted a
 
 ### `makeDeadline`
 
-<Ref :name="(quote rsh):makeDeadline" />
+${ref((quote rsh), "makeDeadline")}
 ```reach
 const [ timeRemaining, keepGoing ] = makeDeadline(10); 
 ```
@@ -1652,7 +1649,7 @@ This pattern is so common that it can be abbreviated as `.timeRemaining`.
 
 ### `implies`
 
-<Ref :name="(quote rsh):implies" />
+${ref((quote rsh), "implies")}
 ```reach
 implies( x, y ) 
 ```
@@ -1662,7 +1659,7 @@ implies( x, y )
 
 ### `ensure`
 
-<Ref :name="(quote rsh):ensure" />
+${ref((quote rsh), "ensure")}
 ```reach
 ensure( pred, x ) 
 ```
@@ -1672,7 +1669,7 @@ ensure( pred, x )
 
 ### `hasRandom`
 
-<Ref :name="(quote rsh):hasRandom" />
+${ref((quote rsh), "hasRandom")}
 ```reach
 hasRandom 
 ```
@@ -1682,7 +1679,7 @@ hasRandom
 
 ### `hasConsoleLogger`
 
-<Ref :name="(quote rsh):hasConsoleLogger" />
+${ref((quote rsh), "hasConsoleLogger")}
 ```reach
 hasConsoleLogger 
 ```
@@ -1692,7 +1689,7 @@ hasConsoleLogger
 
 ### `compose`
 
-<Ref :name="(quote rsh):compose" />
+${ref((quote rsh), "compose")}
 ```reach
 compose(f, g) 
 ```
@@ -1704,7 +1701,7 @@ The argument type of `f` must be the return type of `g`.
 
 ### `sqrt`
 
-<Ref :name="(quote rsh):sqrt" />
+${ref((quote rsh), "sqrt")}
 ```reach
 sqrt(81, 10) 
 ```
@@ -1721,7 +1718,7 @@ square root up to `580` squared, or `336,400`.
 
 ### `pow`
 
-<Ref :name="(quote rsh):pow" />
+${ref((quote rsh), "pow")}
 ```reach
 pow (2, 40, 10) // => 1,099,511,627,776 
 ```
@@ -1742,7 +1739,7 @@ are used to represent `Int`s:
 that Reach targets do not provide native support for signed integers. 
 :::
 
-<Ref :name="(quote rsh):Int" /><Ref :name="(quote rsh):Pos" /><Ref :name="(quote rsh):Neg" />
+${ref((quote rsh), "Int")}${ref((quote rsh), "Pos")}${ref((quote rsh), "Neg")}
 ```reach
 const Int = { sign: Bool, i: UInt };
 const Pos = true;
@@ -1753,7 +1750,7 @@ const Neg = false;
  `int(Bool, UInt)` is shorthand for defining an `Int` record. You may also
 use the `+` and `-` unary operators to declare integers instead of `UInt`s.
 
-<Ref :name="(quote rsh):int" />
+${ref((quote rsh), "int")}
 ```reach
 int(Pos, 4); // represents 4
 int(Neg, 4); // represents -4
@@ -1793,7 +1790,7 @@ int(Neg, 4); // represents -4
 
 `FixedPoint` is defined by
 
-<Ref :name="(quote rsh):FixedPoint" />
+${ref((quote rsh), "FixedPoint")}
 ```reach
 export const FixedPoint = Object({ sign: bool, i: Object({ scale: UInt, i: UInt }) }); 
 ```
@@ -1807,7 +1804,7 @@ Alternatively, Reach provides syntactic sugar for defining `FixedPoint` numbers.
 `1.234`, which will assume the value is in base 10. A scale factor of `1000` correlates to 3 decimal
 places of precision. Similarly, a scale factor of `100` would have 2 decimal places of precision.
 
-<Ref :name="(quote rsh):fx" />
+${ref((quote rsh), "fx")}
 ```reach
 const scale = 10;
 const i = 56;
@@ -1818,7 +1815,7 @@ fx(scale)(Neg, i); // represents - 5.6
  `fx(scale)(i)` will return a function that can be used to
 instantiate fixed point numbers with a particular scale factor.
 
-<Ref :name="(quote rsh):fxint" />
+${ref((quote rsh), "fxint")}
 ```reach
 const i = 4;
 fxint(-i); // represents - 4.0 
@@ -1828,7 +1825,7 @@ fxint(-i); // represents - 4.0
  `fxint(Int)` will cast the `Int` arg as a `FixedPoint`
 number with a `scale` of 1.
 
-<Ref :name="(quote rsh):fxrescale" />
+${ref((quote rsh), "fxrescale")}
 ```reach
 const x = fx(1000)(Pos, 1234); // x = 1.234
 fxrescale(x, 100);    // => 1.23 
@@ -1838,7 +1835,7 @@ fxrescale(x, 100);    // => 1.23
  `fxrescale(x, scale)` will convert a fixed point number from using
 one scale to another. This operation can result in loss of precision, as demonstrated in the above example.
 
-<Ref :name="(quote rsh):fxunify" />
+${ref((quote rsh), "fxunify")}
 ```reach
 const x = fx(1000)(Pos, 824345); // x = 824.345
 const y = 45.67;
@@ -1856,7 +1853,7 @@ of the common scale and the newly scaled values.
 
  `fxmul(x, y)` multiplies two fixed point numbers.
 
-<Ref :name="(quote rsh):fxdiv" />
+${ref((quote rsh), "fxdiv")}
 ```reach
 fxdiv(34.56, 1.234, 10)     // => 28
 fxdiv(34.56, 1.234, 100000) // => 28.0064 
@@ -1873,7 +1870,7 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
  `fxsqrt(x, k)` approximates the sqrt of the fixed number, `x`, using
 `k` iterations of the `sqrt` algorithm.
 
-<Ref :name="(quote rsh):fxpow" />
+${ref((quote rsh), "fxpow")}
 `const base  = 2.0;
 const power = 0.33;
 fxpow(base, power, 10, 1000);    // 1.260
@@ -1891,7 +1888,7 @@ raised to the `Int`, `power`. The third argument must be a `UInt` whose value is
 at compile time, which represents the number of iterations the algorithm should perform. For reference, `6` iterations
 provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is `63`.
 
-<Ref :name="(quote rsh):fxpowui" />
+${ref((quote rsh), "fxpowui")}
 `fxpowui(5.8, 3, 10); // 195.112 `
 
  `fxpowui(base, power, precision)` approximates the power of
@@ -1917,7 +1914,7 @@ There are convenience methods defined for comparing fixed point numbers:
 
 ### Anybody
 
-<Ref :name="(quote rsh):Anybody" />
+${ref((quote rsh), "Anybody")}
 ```reach
 Anybody.publish(); // race(...Participants).publish()
 ```
@@ -1936,7 +1933,7 @@ In an application without any participant classes, `Anybody` instead would mean 
 
 An `Interval` is defined by
 
-<Ref :name="(quote rsh):Interval" />
+${ref((quote rsh), "Interval")}
 ```reach
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType); 
 ```
@@ -1944,7 +1941,7 @@ export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 
 where `IntervalType` is defined by
 
-<Ref :name="(quote rsh):IntervalType" />
+${ref((quote rsh), "IntervalType")}
 ```reach
 export const [ isIntervalType, Closed, Open ] = mkEnum(2);
 export const IntervalType = Refine(UInt, isIntervalType);  
@@ -2010,7 +2007,7 @@ Intervals may be compared with the following functions:
 
 #### Other Operations
 
-<Ref :name="(quote rsh):intervalIntersection" />
+${ref((quote rsh), "intervalIntersection")}
 ```reach
 const i1 = intervalOO(+3, +11); // (+3, +11)
 const i2 = intervalCC(+7, +9);  // [+7, +9]
@@ -2020,7 +2017,7 @@ intervalIntersection(i1, i2);   // [+7, +11)
 
  `intervalIntersection(x, y)` returns the intersection of two intervals.
 
-<Ref :name="(quote rsh):intervalUnion" />
+${ref((quote rsh), "intervalUnion")}
 ```reach
 const i1 = intervalOO(+3, +9);  // (+3, +9)
 const i2 = intervalCC(+7, +11); // [+7, +11]
@@ -2030,7 +2027,7 @@ intervalUnion(i1, i2);          // (+3, +11]
 
  `intervalUnion(x, y)` returns the union of two intervals.
 
-<Ref :name="(quote rsh):intervalWidth" />
+${ref((quote rsh), "intervalWidth")}
 ```reach
 intervalWidth(intervalCC(+4, +45)); // +41 
 ```
@@ -2038,7 +2035,7 @@ intervalWidth(intervalCC(+4, +45)); // +41
 
  `intervalWidth(i)` returns the width of an interval.
 
-<Ref :name="(quote rsh):intervalAbs" />
+${ref((quote rsh), "intervalAbs")}
 ```reach
 intervalAbs(intervalCC(+1, +10)); // +10 
 ```
