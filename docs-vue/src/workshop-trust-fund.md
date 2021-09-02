@@ -2,15 +2,15 @@
 
 
 
-# {#TAG} Workshop: Trust Fund
+# {#workshop-trust-fund} Workshop: Trust Fund
 
 In this workshop, we'll look at yet another strategy for transferring funds, but in this version, we'll think about it as establishing a "trust fund": a funder will establish an account for the receiver, which they must wait a certain amount of time to access, and if they do not, then it reverts to the funder, and if the funder does not claim it, then it is dormant and any third party can remove the funds.
 You could think of this as a variant of the [relay account](##workshop-relay), with a mandatory waiting period and two fallbacks on [non-participation](##guide-timeout).
 
 ${workshopDeps("workshop-relay")}
-XXX (workshop-init TAG)
+XXX (workshop-init "workshop-trust-fund")
 
-XXX (drstep-pr TAG)
+## {#workshop-trust-fund-pr} Problem Analysis
 
 For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.
 
@@ -27,7 +27,7 @@ With this in mind, let's answer the questions:
 + What funds change ownership during the application and how?
 
 
-XXX (drstep-pr-stop)
+**Write down the problem analysis of this program as a comment.**
 
 Let's see how your answers compare to our answers:
 
@@ -37,7 +37,7 @@ Let's see how your answers compare to our answers:
 + The funds start with the Funder and then move to either the Receiver, the Funder, or the Bystander, depending on when they are claimed.
 
 
-XXX (drstep-dd TAG)
+## {#workshop-trust-fund-dd} Data Definition
 
 The next step of designing our program is representing this information in our program and deciding the participant interact interface for each participant.
 In this application, we'll be using a new concept of Reach: the time delta.
@@ -50,7 +50,7 @@ Reach abstracts the details of particular consensus networks away into the conce
 
 With that knowledge in hand,
 
-XXX (drstep-dd-stop)
+**Write down the data definitions for this program as definitions.**
 
 Let's compare notes again.
 Here's what we wrote in our program:
@@ -59,12 +59,12 @@ ${code("/examples/workshop-trust-fund/index.rsh", 1, 21)}
 
 We've represented most values as `UInt` fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is `funded`, one for when the particular participant is `ready` to extract the funds, and finally one for when they have successfuly `recvd` (received) them.
 
-XXX (drstep-cc TAG)
+## {#workshop-trust-fund-cc} Communication Construction
 
 Now, we can write down the structure of communication and action in our application.
 Try this on your own based on your experience with ${seclink("workshop-relay")}.
 
-XXX (drstep-cc-stop1)
+**Write down the communication pattern for this program as comments.**
 
 Here's what we wrote:
 ```reach
@@ -93,7 +93,7 @@ The syntax looks like: `publish().timeout(deadline, () => alternative)`, which u
 Finally, we hope you notice that steps four, five, and six are extremely similar.
 Consider trying to write a function that is used three times to implement all of them!
 
-XXX (drstep-cc-stop2)
+**Write down the communication pattern for this program as code.**
 
 The body of your application should look something like:
 ```reach
@@ -134,18 +134,18 @@ exit();
 If you'd like to see how you might contain the repetition into a function, keep reading!
 :::
 
-XXX (drstep-ai TAG)
+## {#workshop-trust-fund-ai} Assertion Insertion
 
 As usual, we should consider what assertions we can add to our program, but this program doesn't have any interesting properties to prove, so we'll move on.
 Or rather, all of its interesting properties are the ones automatically included in all Reach programs, like that the funds are used linearly and nothing is left over in the account at the end, or that the protocol steps must be received before the corresponding deadlines.
 
-XXX (drstep-ii TAG)
+## {#workshop-trust-fund-ii} Interaction Introduction
 
 Next, we need to insert the appropriate calls to `interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 However, if you want to simplify things, you might like to use `each` to signal to all the parties that the account is funded, rather than duplicating the interaction code over and over.
 
-XXX (drstep-ii-stop)
+**Insert `interact` calls to the frontend into the program.**
 
 Let's look at our whole program now:
 
@@ -159,7 +159,7 @@ ${code("/examples/workshop-trust-fund/index.rsh")}
 This program demonstrates some of the remarkable features of Reach: we were able to abstract away a pattern of communication into a function and use it repeatedly and in different ways.
 Behind the scenes, when Reach compiles this program into a contract, it will derive a four step protocol with implicit state to check that the appropriate participant takes their action only when allowed.
 
-XXX (drstep-de TAG)
+## {#workshop-trust-fund-de} Deployment Decisions
 
 Next, it is time to test our program.
 As usual, we'll present a completely automated test deployment, rather than an interactive one.
@@ -221,7 +221,7 @@ Bystander has a balance of 109.999956956
 ```
 
 
-## {#(format ~a-dns TAG)} Discussion and Next Steps
+## {#workshop-trust-fund-dns} Discussion and Next Steps
 
 Great job!
 You could use this application today and start putting your child's college funds away for safe keeping!

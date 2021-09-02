@@ -1,8 +1,7 @@
 
 
 
-
-# {#TAG} Workshop: Fear of Missing Out Generalized
+# {#workshop-fomo-generalized} Workshop: Fear of Missing Out Generalized
 
 
 In this workshop, we will extend our [Fear of Missing Out application](##workshop-fomo)
@@ -14,9 +13,9 @@ if the auction is set to have 5 winners, yet only 3 Buyers bid, the first three 
 will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
 
 ${workshopDeps("workshop-fomo")}
-XXX (workshop-init TAG)
+XXX (workshop-init "workshop-fomo-generalized")
 
-XXX (drstep-pr TAG)
+## {#workshop-fomo-generalized-pr} Problem Analysis
 
 Our problem analysis is practically the same as the original Fear of Missing Out application,
 except for one difference:
@@ -24,23 +23,25 @@ except for one difference:
 + What funds change ownership during the application and how?
 
 
-XXX (drstep-pr-stop)
+**Write down the problem analysis of this program as a comment.**
 
 Let's compare answers for how funds should change ownership in this generalized version:
 
 + Buyers continually add funds to the balance during execution until the last `N` Buyers, and potentially the Funder, split the balance.
 
 
-XXX (drstep-dd TAG)
+## {#workshop-fomo-generalized-dd} Data Definition
 
 The data type representation of this program will basically be the same as the
 regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
 `Address`, we will track the last `N` Buyers as an `Array(Address, N)`.
-XXX (drstep-dd-datatype-mn)
+::: note
+Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+:::
 
 You should take the time now to fill out the interaction interface for the participants.
 
-XXX (drstep-dd-stop)
+**Write down the data definitions for this program as definitions.**
 
 Our participant interact interface, with the addition of some handy logging functions, looks like this so far:
 
@@ -57,7 +58,7 @@ At this point, you can modify your JavaScript file (`index.mjs`) to contain defi
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
 
 
-XXX (drstep-cc TAG)
+## {#workshop-fomo-generalized-cc} Communication Construction
 
 A fundamental aspect of a decentralized application is the pattern of communication
 and transfer among the participants. We should write down this structure as comments
@@ -74,7 +75,7 @@ in our program to serve as an outline and guide us in implementation. In our ori
 
 This outline will need to be updated for our generalized version. You should do this now, in your Reach program (`index.rsh`).
 
-XXX (drstep-cc-stop1)
+**Write down the communication pattern for this program as comments.**
 
 Here's what we wrote for our outline:
 ```reach
@@ -89,7 +90,7 @@ Here's what we wrote for our outline:
 
 Now, this outline needs to be converted to a real program.
 
-XXX (drstep-cc-stop2)
+**Write down the communication pattern for this program as code.**
 
 The body of your application should look something like this:
 
@@ -147,7 +148,7 @@ and there are 10 tickets purchased by Buyers, then the total balance will be `40
 application is set to select 3 winners, then 40 cannot be evenly distributed to 3 participants. So, we
 will transfer `1 ETH` to the Funder, and split the remaining `39 ETH` between the 3 Buyers.
 
-XXX (drstep-ai TAG)
+## {#workshop-fomo-generalized-ai} Assertion Insertion
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the token linearity property. The
@@ -155,18 +156,18 @@ only property of interest is the `parallelReduce` invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
-XXX (drstep-ii TAG)
+## {#workshop-fomo-generalized-ii} Interaction Introduction
 
 Next, we need to insert the appropriate calls to `interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 
-XXX (drstep-ii-stop)
+**Insert `interact` calls to the frontend into the program.**
 
 Let's look at our whole program now:
 
 ${code("/examples/workshop-fomo-generalized/index.rsh")}
 
-XXX (drstep-de TAG)
+## {#workshop-fomo-generalized-de} Deployment Decisions
 
 Next, it is time to test our program. As usual, we'll present a completely
 automated test deployment, rather than an interactive one.
@@ -207,7 +208,7 @@ Buyer #4 saw they lost
 ```
 
 
-## {#(format ~a-dns TAG)} Discussion and Next Steps
+## {#workshop-fomo-generalized-dns} Discussion and Next Steps
 
 Great job!
 

@@ -1,16 +1,15 @@
 
 
 
-
-# {#TAG} Workshop: Hash Lock
+# {#workshop-hash-lock} Workshop: Hash Lock
 
 In this workshop, we'll design an application that allows a payer to lock funds with a secret password, independent from their consensus network identity, which can be drawn by anyone possessing the secret password.
 This is a useful way for a payer to show that they have funds and have committed to disbursing them, without deciding beforehand who they are paying.
 
-XXX (workshop-deps)
-XXX (workshop-init TAG)
+${workshopDeps()}
+XXX (workshop-init "workshop-hash-lock")
 
-XXX (drstep-pr TAG)
+## {#workshop-hash-lock-pr} Problem Analysis
 
 The first step in any program design is to perform problem analysis and determine what information is relevant to the problem.
 When writing decentralized applications in Reach, this information analysis includes an analysis of the set of participants involved in a computation.
@@ -25,7 +24,7 @@ In this case, let's ask the questions:
 You should write your answers in your Reach program (`index.rsh`) using a comment.
 `/* Remember comments are written like this. */`
 
-XXX (drstep-pr-stop)
+**Write down the problem analysis of this program as a comment.**
 
 Let's see how your answers compare to our answers:
 
@@ -48,7 +47,7 @@ Compared to normal languages, Reach does do a bit automatically for you: it auto
 You still have to solve them yourself though!
 But, at least you know about them because of Reach.
 
-XXX (drstep-dd TAG)
+## {#workshop-hash-lock-dd} Data Definition
 
 Humans and their social systems deal with information, but computers can only interact with data, which is merely a representation of information using particular structures, like numbers, arrays, and so on.
 After problem analysis, we know what information our program will deal with, but next we need to decide how to translate that information into concrete data.
@@ -57,7 +56,9 @@ So, for this program, we should decide:
 + What data type will represent the amount Alice transfers?
 + What data type will represent Alice's password?
 
-XXX (drstep-dd-datatype-mn)
+::: note
+Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+:::
 
 After deciding those things, you should think about how the program will be provided these values.
 In other words:
@@ -72,7 +73,7 @@ If they provide something later, then it will be the result of a function.
 
 You should write your answers in your Reach file (`index.rsh`) as the participant interact interface for each of the participants.
 
-XXX (drstep-dd-stop)
+**Write down the data definitions for this program as definitions.**
 
 Let's compare notes again.
 + We're going to represent the amount Alice transfers as an unsigned integer (`UInt`) named `amt`.
@@ -96,7 +97,7 @@ There's nothing necessarily wrong with this option, but we did not choose it bec
 At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use a placeholder like `42` or something for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
 
-XXX (drstep-cc TAG)
+## {#workshop-hash-lock-cc} Communication Construction
 
 A fundamental aspect of a decentralized application is the pattern of communication and transfer among the participants, including the consensus network.
 For example, who initiates the application?
@@ -118,7 +119,7 @@ For example, for the [tutorial](##tut) version of _Rock, Paper, Scissors!_, we m
 
 You should do this now, in your Reach program (`index.rsh`).
 
-XXX (drstep-cc-stop1)
+**Write down the communication pattern for this program as comments.**
 
 This is a simple application, so we should all share the same communication pattern.
 Here's what we wrote:
@@ -154,7 +155,7 @@ It is cheaper to go through this iteration process in the human-centered design 
 
 Next, we need to convert this pattern into actual program code using `publish`, `pay`, and `commit`.
 
-XXX (drstep-cc-stop2)
+**Write down the communication pattern for this program as code.**
 
 The body of your application should look something like:
 ```reach
@@ -174,7 +175,7 @@ commit();
 
 We can now move on to the next part of designing a decentralized application: verification.
 
-XXX (drstep-ai TAG)
+## {#workshop-hash-lock-ai} Assertion Insertion
 
 When we are programming, we hold a complex theory of the behavior of the program inside of our minds that helps us know what should happen next in the program based on what has happened before and what is true at every point in the program.
 As programs become more complex, this theory becomes more and more difficult to grasp, so we might make mistakes.
@@ -183,7 +184,7 @@ Assertions are ways of encoding this theory directly into the text of the progra
 
 Look at your application. What are the assumptions you have about the values in the program?
 
-XXX (drstep-ai-stop1)
+**Write down the properties you know are true about the various values in the program.**
 
 There are three main assumptions we came up with for this program:
 + Before Bob publishes the password, it is unknowable by him and everyone else except Alice.
@@ -199,7 +200,7 @@ Furthermore, it is possible for any participant to check, without going through 
 Now that we know what the properties are, we need to encode them into our program via calls to Reach functions like `unknowable`, `assume`, and `require`.
 Let's do that now.
 
-XXX (drstep-ai-stop2)
+**Insert assertions into the program corresponding to facts that should be true.**
 
 Here's what we did:
 
@@ -228,7 +229,7 @@ At this point, we are almost ready to complete our program and make it so that w
 You've probably noticed that in our samples, the variables `pass`, `amt`, and `passDigest` are undefined.
 We'll handle that next.
 
-XXX (drstep-ii TAG)
+## {#workshop-hash-lock-ii} Interaction Introduction
 
 A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized application.
 Frontends are responsible for all other aspects of the program.
@@ -237,7 +238,7 @@ Thus, eventually a Reach programmer needs to insert calls into their code to sen
 In our program, that means defining `amt` and `passDigest` by Alice and `pass` by Bob.
 Do that now.
 
-XXX (drstep-ii-stop)
+**Insert `interact` calls to the frontend into the program.**
 
 Here's what we did:
 
@@ -263,7 +264,7 @@ We'll get a happy message that all our theorems are true.
 Great job!
 But we still need to run our program!
 
-XXX (drstep-de TAG)
+## {#workshop-hash-lock-de} Deployment Decisions
 
 At this point, we need to decide how we're going to deploy this program and really use it in the world.
 We need to decide how to deploy the contract, as well as what kind of user interaction modality we'll implement inside of our frontend.
@@ -313,7 +314,7 @@ Bob went from 100.0 to 124.999999999999978599.
 ```
 
 
-## {#(format ~a-dns TAG)} Discussion
+## {#workshop-hash-lock-dns} Discussion
 
 You did it!
 

@@ -1,17 +1,16 @@
 
 
 
-
-# {#TAG} Workshop: Relay Account
+# {#workshop-relay} Workshop: Relay Account
 
 In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
 However, unlike in ${seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
 One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
 
 ${workshopDeps("workshop-hash-lock")}
-XXX (workshop-init TAG)
+XXX (workshop-init "workshop-relay")
 
-XXX (drstep-pr TAG)
+## {#workshop-relay-pr} Problem Analysis
 
 For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.
 
@@ -28,8 +27,7 @@ This approach was flawed, because when Bob used the secret to gain access, it wa
 In today's workshop, we'll use a crucial insight about decentralized applications: account ownership is fluid and account credentials are a form of secret knowledge that every consensus network builds in to their foundation.
 With that in mind, let's use the following design:
 
-XXX (centered
- "Alice will represent her secret as an account that is authorized to withdraw the funds.")
+**Alice will represent her secret as an account that is authorized to withdraw the funds.**
 
 This is called a ${defn("relay account")}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.
 
@@ -41,7 +39,7 @@ With this in mind, let's answer the questions:
 + What funds change ownership during the application and how?
 
 
-XXX (drstep-pr-stop)
+**Write down the problem analysis of this program as a comment.**
 
 Let's see how your answers compare to our answers:
 
@@ -55,16 +53,18 @@ Let's see how your answers compare to our answers:
 The most surprising thing about this application is that Bob is not one of the participants in the application!
 Of course, the Relay will actually run under the auspices of Bob, after Alice shares the account credentials with him, but there is a distinction in the program between Bob's identity and the Relay's.
 
-XXX (drstep-dd TAG)
+## {#workshop-relay-dd} Data Definition
 
 The next step of designing our program is representing this information in our program and deciding the participant interact interface for each participant.
 Which pieces of information go with which participants?
 Which are functions and which are values?
 Finally, how should the Relay account information and Bob's identity be represented?
 (Hint: Reach has a type named `Address` that represents an account address!)
-XXX (drstep-dd-datatype-mn)
+::: note
+Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+:::
 
-XXX (drstep-dd-stop)
+**Write down the data definitions for this program as definitions.**
 
 Let's compare notes again.
 Here's what we wrote in our program:
@@ -75,12 +75,12 @@ We chose to represent the amount as a `UInt` field, which should be unsurprising
 We then have two functions that take no arguments and return an `Address` which respectively return the Relay identity and the Bob identity.
 The idea here is that Alice will create the Relay account in the midst of the program and Bob will provide his own identity when he's acting as Relay.
 
-XXX (drstep-cc TAG)
+## {#workshop-relay-cc} Communication Construction
 
 Now, we can write down the structure of communication and action in our application.
 Try this on your own based on your experience with ${seclink("workshop-hash-lock")}.
 
-XXX (drstep-cc-stop1)
+**Write down the communication pattern for this program as comments.**
 
 Here's what we wrote:
 ```reach
@@ -102,7 +102,7 @@ Reach has a special operation, available only in consensus steps, for asserting 
 You can write `Relay.set(someAddr)` to assert that the address of the Relay is `someAddr`.
 With that in mind...
 
-XXX (drstep-cc-stop2)
+**Write down the communication pattern for this program as code.**
 
 The body of your application should look something like:
 ```reach
@@ -134,7 +134,7 @@ You can correct this by adding `Bob.set(bob)` after the Relay publishes Bob's ad
 There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
 :::
 
-XXX (drstep-ai TAG)
+## {#workshop-relay-ai} Assertion Insertion
 
 As usual, we should consider what assertions we can add to our program.
 In some ways this is what we just did with the `Relay.set(relay)` line above, but that is unlike a normal assertion in that it is added primarily to direct the runtime activities on the consensus contract, rather than as a statement about the logical properties of our program variables.
@@ -145,18 +145,18 @@ If you're interested in this topic, you might like to spend time reading about [
 
 Now, if we were devious, we might send you on a SNARK hunt after some more assertions to add to our program, but we're not mean, so we'll just tell you that there's nothing else to assert about this program.
 
-XXX (drstep-ii TAG)
+## {#workshop-relay-ii} Interaction Introduction
 
 Next, we need to insert the appropriate calls to `interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 
-XXX (drstep-ii-stop)
+**Insert `interact` calls to the frontend into the program.**
 
 Let's look at our whole program now:
 
 ${code("/examples/workshop-relay/index.rsh")}
 
-XXX (drstep-de TAG)
+## {#workshop-relay-de} Deployment Decisions
 
 This program is a bit odd to test, because it relies on Alice creating a temporary account and then sharing its information with Bob.
 We don't know of any beautiful way to derive this program from first principles, and instead must appeal to your JavaScript programming skills.
@@ -197,7 +197,7 @@ Bob went from 100.0 to 123.999999999999979.
 ```
 
 
-## {#(format ~a-dns TAG)} Discussion and Next Steps
+## {#workshop-relay-dns} Discussion and Next Steps
 
 Great job!
 You could use this application today and start minting gift cards of tokens for your friends on their birthdays!

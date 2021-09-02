@@ -1,8 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define TAG "workshop-fomo-generalized")
-@title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out Generalized}
+@title[#:version reach-vers #:tag "workshop-fomo-generalized"]{Workshop: Fear of Missing Out Generalized}
 @author[(author+email "Chris Nevers" "cnevers@reach.sh")]
 
 In this workshop, we will extend our @seclink["workshop-fomo"]{Fear of Missing Out application}
@@ -14,9 +13,9 @@ if the auction is set to have 5 winners, yet only 3 Buyers bid, the first three 
 will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
 
 @(workshop-deps "workshop-fomo")
-@(workshop-init TAG)
+@(workshop-init "workshop-fomo-generalized")
 
-@(drstep-pr TAG)
+@(drstep-pr "workshop-fomo-generalized")
 
 Our problem analysis is practically the same as the original Fear of Missing Out application,
 except for one difference:
@@ -33,7 +32,7 @@ Let's compare answers for how funds should change ownership in this generalized 
   @item{Buyers continually add funds to the balance during execution until the last @tt{N} Buyers, and potentially the Funder, split the balance.}
 ]
 
-@(drstep-dd TAG)
+@(drstep-dd "workshop-fomo-generalized")
 
 The data type representation of this program will basically be the same as the
 regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
@@ -59,7 +58,7 @@ At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain d
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
 
-@(drstep-cc TAG)
+@(drstep-cc "workshop-fomo-generalized")
 
 A fundamental aspect of a decentralized application is the pattern of communication
 and transfer among the participants. We should write down this structure as comments
@@ -146,7 +145,7 @@ and there are 10 tickets purchased by Buyers, then the total balance will be @tt
 application is set to select 3 winners, then 40 cannot be evenly distributed to 3 participants. So, we
 will transfer @tt{1 ETH} to the Funder, and split the remaining @tt{39 ETH} between the 3 Buyers.
 
-@(drstep-ai TAG)
+@(drstep-ai "workshop-fomo-generalized")
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the @tech{token linearity property}. The
@@ -154,7 +153,7 @@ only property of interest is the @reachin{parallelReduce} invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
-@(drstep-ii TAG)
+@(drstep-ii "workshop-fomo-generalized")
 
 Next, we need to insert the appropriate calls to @reachin{interact}.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
@@ -166,7 +165,7 @@ Let's look at our whole program now:
 @reachex["workshop-fomo-generalized/index.rsh"
          ]
 
-@(drstep-de TAG)
+@(drstep-de "workshop-fomo-generalized")
 
 Next, it is time to test our program. As usual, we'll present a completely
 automated test deployment, rather than an interactive one.
@@ -207,7 +206,7 @@ Buyer #3 saw they won
 Buyer #4 saw they lost
 }
 
-@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
+@section[#:tag "workshop-fomo-generalized-dns"]{Discussion and Next Steps}
 
 Great job!
 

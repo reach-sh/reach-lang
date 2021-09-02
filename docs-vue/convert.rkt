@@ -156,12 +156,42 @@
      (d "${VERSION}")]
     [`(error-version #:to ,t)
      (d (format "${errver(~s)}" t))]
+    [`(workshop-deps)
+      (d (format "${workshopDeps()}"))]
     [`(workshop-deps ,t)
       (d (format "${workshopDeps(~s)}" t))]
     [`(WIP/XXX)
       (d (format "${workshopWIP()}"))]
     [`(WIP/XXX ,x)
       (d (format "${workshopWIP(~s)}" x))]
+    [`(drstep-pr ,t)
+      (ego `(section #:tag ,(format "~a-pr" t) "Problem Analysis"))]
+    [`(drstep-dd ,t)
+      (ego `(section #:tag ,(format "~a-dd" t) "Data Definition"))]
+    [`(drstep-cc ,t)
+      (ego `(section #:tag ,(format "~a-cc" t) "Communication Construction"))]
+    [`(drstep-ai ,t)
+      (ego `(section #:tag ,(format "~a-ai" t) "Assertion Insertion"))]
+    [`(drstep-ii ,t)
+      (ego `(section #:tag ,(format "~a-ii" t) "Interaction Introduction"))]
+    [`(drstep-de ,t)
+      (ego `(section #:tag ,(format "~a-de" t) "Deployment Decisions"))]
+    [`(drstep-dd-datatype-mn)
+      (ego `(margin-note "Refer to " (secref "ref-programs-types") "for a reminder of what data types are available in Reach."))]
+    [`(drstep-pr-stop)
+      (d "**Write down the problem analysis of this program as a comment.**")]
+    [`(drstep-dd-stop)
+      (d "**Write down the data definitions for this program as definitions.**")]
+    [`(drstep-cc-stop1)
+      (d "**Write down the communication pattern for this program as comments.**")]
+    [`(drstep-cc-stop2)
+      (d "**Write down the communication pattern for this program as code.**")]
+    [`(drstep-ai-stop1)
+      (d "**Write down the properties you know are true about the various values in the program.**")]
+    [`(drstep-ai-stop2)
+      (d "**Insert assertions into the program corresponding to facts that should be true.**")]
+    [`(drstep-ii-stop)
+      (d "**Insert `interact` calls to the frontend into the program.**")]
     [`(drstep-de-stop)
       (d "**Decide how you will deploy and use this application.**")]
     [`(pkg-fmts)

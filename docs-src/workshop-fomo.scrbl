@@ -1,8 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define TAG "workshop-fomo")
-@title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out}
+@title[#:version reach-vers #:tag "workshop-fomo"]{Workshop: Fear of Missing Out}
 @author[(author+email "Chris Nevers" "cnevers@reach.sh")]
 
 In this workshop, we'll design an application that allows a Funder
@@ -16,9 +15,9 @@ the entire balance. This program is based off of the crypto game,
 This workshop utilizes @tech{participant class}es to represent Buyers, which allows us to handle multiple participants in a generic way.
 
 @(workshop-deps)
-@(workshop-init TAG)
+@(workshop-init "workshop-fomo")
 
-@(drstep-pr TAG)
+@(drstep-pr "workshop-fomo")
 
 First, we should think over the details of the application and
 answer some questions to help reason about the implementation of
@@ -54,7 +53,7 @@ Let's see how your answers compare to ours:
 
 It's okay if some of your answers differ from ours!
 
-@(drstep-dd TAG)
+@(drstep-dd "workshop-fomo")
 
 After problem analysis, we need to decide how we will represent the information
 in the program:
@@ -100,7 +99,7 @@ Our @tech{participant interact interface}, with the addition of some handy loggi
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
-@(drstep-cc TAG)
+@(drstep-cc "workshop-fomo")
 
 A fundamental aspect of a decentralized application is the pattern of communication
 and transfer among the participants. We should write down this structure as comments
@@ -173,7 +172,7 @@ the deadline passes and accumulate the current winner. We maintain the invariant
 that the balance must be equal to the number of tickets sold multiplied by the
 ticket price.
 
-@(drstep-ai TAG)
+@(drstep-ai "workshop-fomo")
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the @tech{token linearity property}. The
@@ -182,7 +181,7 @@ which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
 
-@(drstep-ii TAG)
+@(drstep-ii "workshop-fomo")
 
 Next, we need to insert the appropriate calls to @reachin{interact}.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
@@ -194,7 +193,7 @@ Let's look at our whole program now:
 @reachex["workshop-fomo/index.rsh"
          ]
 
-@(drstep-de TAG)
+@(drstep-de "workshop-fomo")
 
 Next, it is time to test our program. As usual, we'll present a completely
 automated test deployment, rather than an interactive one.
@@ -233,7 +232,7 @@ Buyer 3 saw they lost.
 Buyer 9 saw they lost.
 }
 
-@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
+@section[#:tag "workshop-fomo-dns"]{Discussion and Next Steps}
 
 Great job!
 

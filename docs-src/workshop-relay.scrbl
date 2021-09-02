@@ -1,17 +1,16 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define TAG "workshop-relay")
-@title[#:version reach-vers #:tag TAG]{Workshop: Relay Account}
+@title[#:version reach-vers #:tag "workshop-relay"]{Workshop: Relay Account}
 
 In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
 However, unlike in @secref["workshop-hash-lock"], we will use a technique that is safe against malicious miners.
 One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
 
 @(workshop-deps "workshop-hash-lock")
-@(workshop-init TAG)
+@(workshop-init "workshop-relay")
 
-@(drstep-pr TAG)
+@(drstep-pr "workshop-relay")
 
 For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.
 
@@ -29,7 +28,7 @@ This approach was flawed, because when Bob used the secret to gain access, it wa
 In today's workshop, we'll use a crucial insight about decentralized applications: account ownership is fluid and account credentials are a form of secret knowledge that every @tech{consensus network} builds in to their foundation.
 With that in mind, let's use the following design:
 
-@centered{Alice will represent her secret as an account that is authorized to withdraw the funds.}
+@bold{Alice will represent her secret as an account that is authorized to withdraw the funds.}
 
 This is called a @deftech{relay account}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.
 
@@ -57,7 +56,7 @@ Let's see how your answers compare to our answers:
 The most surprising thing about this application is that Bob is not one of the participants in the application!
 Of course, the Relay will actually run under the auspices of Bob, after Alice shares the account credentials with him, but there is a distinction in the program between Bob's identity and the Relay's.
 
-@(drstep-dd TAG)
+@(drstep-dd "workshop-relay")
 
 The next step of designing our program is representing this information in our program and deciding the @tech{participant interact interface} for each participant.
 Which pieces of information go with which participants?
@@ -79,7 +78,7 @@ We chose to represent the amount as a @reachin{UInt} field, which should be unsu
 We then have two functions that take no arguments and return an @reachin{Address} which respectively return the Relay identity and the Bob identity.
 The idea here is that Alice will create the Relay account in the midst of the program and Bob will provide his own identity when he's acting as Relay.
 
-@(drstep-cc TAG)
+@(drstep-cc "workshop-relay")
 
 Now, we can write down the structure of communication and action in our application.
 Try this on your own based on your experience with @secref["workshop-hash-lock"].
@@ -134,7 +133,7 @@ You'll find that Reach rejects this program because Bob is not bound.
 You can correct this by adding @reachin{Bob.set(bob)} after the Relay publishes Bob's address.
 There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.}
 
-@(drstep-ai TAG)
+@(drstep-ai "workshop-relay")
 
 As usual, we should consider what assertions we can add to our program.
 In some ways this is what we just did with the @reachin{Relay.set(relay)} line above, but that is unlike a normal assertion in that it is added primarily to direct the runtime activities on the consensus @tech{contract}, rather than as a statement about the logical properties of our program variables.
@@ -145,7 +144,7 @@ If you're interested in this topic, you might like to spend time reading about @
 
 Now, if we were devious, we might send you on a SNARK hunt after some more assertions to add to our program, but we're not mean, so we'll just tell you that there's nothing else to assert about this program.
 
-@(drstep-ii TAG)
+@(drstep-ii "workshop-relay")
 
 Next, we need to insert the appropriate calls to @reachin{interact}.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
@@ -157,7 +156,7 @@ Let's look at our whole program now:
 @reachex["workshop-relay/index.rsh"
          ]
 
-@(drstep-de TAG)
+@(drstep-de "workshop-relay")
 
 This program is a bit odd to test, because it relies on Alice creating a temporary account and then sharing its information with Bob.
 We don't know of any beautiful way to derive this program from first principles, and instead must appeal to your JavaScript programming skills.
@@ -199,7 +198,7 @@ Alice went from 100.0 to 74.999999999999804065.
 Bob went from 100.0 to 123.999999999999979.
 }
 
-@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
+@section[#:tag "workshop-relay-dns"]{Discussion and Next Steps}
 
 Great job!
 You could use this application today and start minting gift cards of tokens for your friends on their birthdays!

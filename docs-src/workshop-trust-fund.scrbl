@@ -1,16 +1,16 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define TAG "workshop-trust-fund")
-@title[#:version reach-vers #:tag TAG]{Workshop: Trust Fund}
+@(define "workshop-trust-fund" "workshop-trust-fund")
+@title[#:version reach-vers #:tag "workshop-trust-fund"]{Workshop: Trust Fund}
 
 In this workshop, we'll look at yet another strategy for transferring funds, but in this version, we'll think about it as establishing a "trust fund": a funder will establish an account for the receiver, which they must wait a certain amount of time to access, and if they do not, then it reverts to the funder, and if the funder does not claim it, then it is dormant and any third party can remove the funds.
 You could think of this as a variant of the @seclink["workshop-relay"]{relay account}, with a mandatory waiting period and two fallbacks on @seclink["guide-timeout"]{non-participation}.
 
 @(workshop-deps "workshop-relay")
-@(workshop-init TAG)
+@(workshop-init "workshop-trust-fund")
 
-@(drstep-pr TAG)
+@(drstep-pr "workshop-trust-fund")
 
 For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.
 
@@ -40,7 +40,7 @@ Let's see how your answers compare to our answers:
  @item{The funds start with the Funder and then move to either the Receiver, the Funder, or the Bystander, depending on when they are claimed.}
 ]
 
-@(drstep-dd TAG)
+@(drstep-dd "workshop-trust-fund")
 
 The next step of designing our program is representing this information in our program and deciding the @tech{participant interact interface} for each participant.
 In this application, we'll be using a new concept of Reach: the @tech{time delta}.
@@ -64,7 +64,7 @@ Here's what we wrote in our program:
 
 We've represented most values as @reachin{UInt} fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is @reachin{funded}, one for when the particular participant is @reachin{ready} to extract the funds, and finally one for when they have successfuly @reachin{recvd} (received) them.
 
-@(drstep-cc TAG)
+@(drstep-cc "workshop-trust-fund")
 
 Now, we can write down the structure of communication and action in our application.
 Try this on your own based on your experience with @secref["workshop-relay"].
@@ -135,12 +135,12 @@ The body of your application should look something like:
 
 @margin-note{If you'd like to see how you might contain the repetition into a function, keep reading!}
 
-@(drstep-ai TAG)
+@(drstep-ai "workshop-trust-fund")
 
 As usual, we should consider what assertions we can add to our program, but this program doesn't have any interesting properties to prove, so we'll move on.
 Or rather, all of its interesting properties are the ones automatically included in all Reach programs, like that the funds are used linearly and nothing is left over in the account at the end, or that the protocol steps must be received before the corresponding deadlines.
 
-@(drstep-ii TAG)
+@(drstep-ii "workshop-trust-fund")
 
 Next, we need to insert the appropriate calls to @reachin{interact}.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
@@ -162,7 +162,7 @@ Let's look at our whole program now:
 This program demonstrates some of the remarkable features of Reach: we were able to abstract away a pattern of communication into a function and use it repeatedly and in different ways.
 Behind the scenes, when Reach compiles this program into a @tech{contract}, it will derive a four step protocol with implicit state to check that the appropriate participant takes their action only when allowed.
 
-@(drstep-de TAG)
+@(drstep-de "workshop-trust-fund")
 
 Next, it is time to test our program.
 As usual, we'll present a completely automated test deployment, rather than an interactive one.
@@ -224,7 +224,7 @@ Receiver has a balance of 100.0
 Bystander has a balance of 109.999956956
 }
 
-@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
+@section[#:tag "workshop-trust-fund-dns"]{Discussion and Next Steps}
 
 Great job!
 You could use this application today and start putting your child's college funds away for safe keeping!
