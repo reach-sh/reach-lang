@@ -737,7 +737,7 @@ And we can specify that whenever the same value is provided for both hands, no m
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
 You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
-In fact, on the author's MacBook Pro from early 2015, it takes less than half a second.
+In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 
 Let's continue the program by specifying the @tech{participant interact interface}s for Alice and Bob.
