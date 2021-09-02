@@ -103,6 +103,7 @@ export const mkStdlibNetworkCommon = async lib => {
     createAccount,
     fundFromFaucet,
     newTestAccount,
+    minimumBalance,
 
     balanceOf,
     getNetworkTime,
@@ -273,7 +274,7 @@ export const mkStdlibNetworkCommon = async lib => {
 
 
   await describe('exposes a `newTestAccount` function which', async () => {
-    const balance = Math.floor(Math.random() * 10000000);
+    const balance = minimumBalance + Math.floor(Math.random() * 10000000);
 
     await describe('accepts numeric arguments of type', async () => {
       await it('`BigNumber`', async () => {
