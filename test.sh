@@ -125,20 +125,16 @@ tealcount () {
 
 # GAVE UP
 # ci ETH atomic-swap-auction
-# ci ALGO duoswap
 # BAD
 # ci ALGO rent-seeking
 # ci CFX atomic-swap-auction
 # ci CFX cache-events
 # ci ETH tut-6
 # ci CFX tut-6
-ci ETH duoswap
 exit 0
 ci CFX raffle
 ci CFX tut-7-array
 ci CFX workshop-relay
-
-# c examples/duoswap/index.rsh
 
 # (cd examples/abstract-simul && make build)
 
