@@ -327,17 +327,12 @@ workflows:
   docs:
     jobs:
     - "docs-render"
-    # XXX docs-deploy is disabled. This is because we are about to BREAK
-    # EVERYTHING and users download Reach via the documentation site, so if we
-    # don't deploy docs, then they won't get the new Docker-based reach script
-    # until we're really really ready.
-    #
-    #- "docs-deploy":
-    #    filters:
-    #      branches:
-    #        only: master
-    #    requires:
-    #    - "docs-render"
+    - "docs-deploy":
+       filters:
+         branches:
+           only: master
+       requires:
+       - "docs-render"
   buildless:
     jobs:
     - "sh-check"
