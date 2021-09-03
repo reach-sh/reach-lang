@@ -422,11 +422,18 @@ export class Wallet implements IWallet {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
-    txn = {from, ...txn, value: (txn.value || '0').toString()};
+    txn = {from, ...txn, value: (txn.value|| '0').toString()};
+    const gasFee = await this.provider.conflux.getGasPrice();
+    const balance = await this.provider.conflux.getBalance(from);
+    if (gasFee > balance) {
+      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee}`)
+      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
+    } 
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
+
     return _retryingSendTxn(this.provider, txn);
   }
 
@@ -480,6 +487,10 @@ const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string
   let current: number;
   // XXX fail after waiting too long?
   while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
+    const epoch = await provider.conflux.getEpochNumber();
+    if (current > epoch) {
+      throw Error(`${current} >  ${epoch}`)
+    }
     await Timeout.set(waitMs);
   }
   updateSentAt(addr, current);
@@ -526,7 +537,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
       }
     } catch (e) {
       err = e;
-      const es = e.toString();
+      const es = JSON.stringify(e);
       if ( es.includes("stale nonce") || es.includes("same nonce") ) {
         debug(`_retryingSendTxn: nonce error, giving more tries`);
         tries--;
@@ -545,7 +556,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
 async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
   // XXX is 20s enough time on testnet/mainnet?
   // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
-  const maxTries = 400;
+  const maxTries = 800; // * 25ms = 20s
   for (let tries = 1; tries <= maxTries; tries++) {
     const r: any = await provider.getTransactionReceipt(txnHash);
     if (r) {
