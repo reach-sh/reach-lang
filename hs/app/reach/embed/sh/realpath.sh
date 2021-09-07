@@ -3,7 +3,10 @@
 # if we can't find realpath
 
 command -v realpath >/dev/null 2>&1 || realpath() {
-  canonicalize_path "$(resolve_symlinks "$1")"
+  set +e
+  r="$(canonicalize_path "$(resolve_symlinks "$1")")"
+  set -e
+  echo "$r"
 }
 
 resolve_symlinks() {
