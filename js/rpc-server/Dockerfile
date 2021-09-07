@@ -1,7 +1,7 @@
 ARG        RUNNER_VERSION
 
 # hadolint ignore=DL3006
-FROM       reachsh/runner:vmazzi
+FROM       $RUNNER_VERSION
 #$RUNNER_VERSION
 
 COPY       package.json index.mjs /app/
