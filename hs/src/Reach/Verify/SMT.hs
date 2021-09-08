@@ -1051,11 +1051,11 @@ smt_e at_dv mdv de = do
       let check_m = verify1 at f (TClaim ct) ca' mmsg
       let assert_m = smtAssertCtxt ca'
       case ct of
-        CT_Assert -> check_m
+        CT_Assert -> check_m >> assert_m
         CT_Assume _ -> assert_m
         CT_Require ->
           ctxt_mode >>= \case
-            VM_Honest -> check_m
+            VM_Honest -> check_m >> assert_m
             VM_Dishonest {} -> assert_m
         CT_Possible -> check_m
         CT_Unknowable {} -> mempty
