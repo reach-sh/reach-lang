@@ -150,8 +150,8 @@ updateLookup up = do
           F_Ctor ->
             case f of
               F_Ctor -> True
-              F_All -> False
-              F_Consensus -> False
+              F_All -> True -- False
+              F_Consensus -> True -- False
               F_One _ -> True
           F_All -> True
           F_Consensus -> True
@@ -165,7 +165,7 @@ mkEnv0 eCounter eParts = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
-          map (\x -> (x, mempty)) $ F_All : F_Consensus : map F_One eParts
+          map (\x -> (x, mempty)) $ F_Ctor : F_All : F_Consensus : map F_One eParts
   eEnvsR <- liftIO $ newIORef eEnvs
   return $ Env {..}
 
@@ -456,6 +456,19 @@ instance Optimize LLConsensus where
       LLC_FromConsensus at1 at2 <$> (focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
+
+_opt_dbg :: Show a => App a -> App a
+_opt_dbg m = do
+  e <- ask
+  let f = eFocus e
+  liftIO $ putStrLn $ show $ f
+  fm <- liftIO $ readIORef $ eEnvsR e
+  let mce = M.lookup f fm
+  let ced = fmap ceReplaced mce
+  liftIO $ putStrLn $ show $ ced
+  x <- m
+  liftIO $ putStrLn $ "got " <> show x
+  return x
 
 opt_mtime :: AppT (Maybe (DLTimeArg, LLStep))
 opt_mtime = \case

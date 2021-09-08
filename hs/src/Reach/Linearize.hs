@@ -357,6 +357,8 @@ fluidSet fv fvv m = fluidSet_ fv fvv $ more m
       case fv of
         FV_thisConsensusTime -> fluidSet_ FV_baseWaitTime fvv
         FV_thisConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
+        -- XXX FV_lastConsensusTime -> fluidSet_ FV_baseWaitTime fvv
+        -- XXX FV_lastConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
         _ -> id
 
 withWhileFVMap :: FVMap -> DFApp a -> DFApp a
