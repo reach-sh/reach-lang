@@ -18,6 +18,8 @@ verify :: VerifyOpts -> LLProg -> IO ExitCode
 verify vst_vo lp@(LLProg _ llo _ _ _ _ _) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
+  vst_res_time <- newCounter 0
+  vst_res_reps <- newCounter 0
   let vst = VerifySt {..}
   verify_knowledge vst lp
   --- The verifier should not be choosable by the user, but we may
@@ -43,11 +45,19 @@ verify vst_vo lp@(LLProg _ llo _ _ _ _ _) = do
   ss0 <- readCounter vst_res_succ
   let ss = ss0 + (llo_droppedAsserts llo)
   fs <- readCounter vst_res_fail
-  putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
-  case fs == 0 of
+  ts <- readCounter vst_res_time
+  rs <- readCounter vst_res_reps
+  putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems"
+  case fs == 0 && ts == 0 of
     True -> do
-      putStrLn $ " No failures!"
+      putStrLn $ "; No failures!"
       return ExitSuccess
     False -> do
-      putStrLn $ " " ++ show fs ++ " failures. :'("
+      when (fs > 0) $ do
+        putStr $ "; " ++ show fs ++ " failures"
+      when (ts > 0) $ do
+        putStr $ "; " ++ show ts ++ " timeouts"
+      when (rs > 0) $ do
+        putStr $ " (and " ++ show rs ++ " omitted repeats)"
+      putStrLn $ " :'("
       return $ ExitFailure 1

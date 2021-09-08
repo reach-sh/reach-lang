@@ -512,14 +512,19 @@ recoverBindingInfo = \case
       _ -> return ow
   ow -> return ow
 
-display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> Maybe DLVar -> App ()
-display_fail tat f tk mmsg repeated mrd mdv = do
+display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Maybe ResultDesc -> Maybe DLVar -> Bool -> App ()
+display_fail tat f tk mmsg mrd mdv timeout = do
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
   let hasColor = unsafeTermSupportsColor
   let color c = if hasColor then TC.color c else id
   let style s = if hasColor then TC.style s else id
-  iputStrLn $ color TC.Red $ style TC.Bold "Verification failed:"
+  VerifyOpts {..} <- (vst_vo . ctxt_vst) <$> ask
+  let lab =
+        case timeout of
+          True -> "timed out after " <> show vo_timeout <> " ms"
+          False -> "failed"
+  iputStrLn $ color TC.Red $ style TC.Bold $ "Verification " <> lab <> ":"
   mode <- ctxt_mode
   iputStrLn $ "  when " ++ (show $ pretty mode)
   iputStrLn $ "  of theorem: " ++ (show $ pretty tk)
@@ -530,34 +535,25 @@ display_fail tat f tk mmsg repeated mrd mdv = do
   iputStrLn $ redactAbsStr cwd $ "  at " ++ show tat
   mapM_ (iputStrLn . ("  " ++) . show) f
   iputStrLn $ ""
-  case repeated of
-    True -> do
-      --- FIXME have an option to force these to display
-      iputStrLn $ "  (details omitted on repeat)"
-    False -> do
-      --- FIXME Another way to think about this is to take `tse` and fully
-      --- substitute everything that came from the program (the "context"
-      --- below) and then just show the remaining variables found by the
-      --- model.
-      case mdv of
-        Nothing -> do
-          iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
-        Just dv -> do
-          let pm = case mrd of
-                Nothing -> mempty
-                --- FIXME Do something useful here
-                Just (RD_UnsatCore _uc) -> mempty
-                Just (RD_Model m) -> parseModel m
-          pm_str_val <- parseModel2 pm
-          lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-          lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
-          smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
-          pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
-                sv2dv k <&> \case
-                  Just dv'' -> (dv'', v) : acc
-                  Nothing -> acc
-                ) [] (M.toList pm_str_val)
-          iputStrLn $ show $ showTrace pm_dv_val smtTrace
+  case mdv of
+    Nothing -> do
+      iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
+    Just dv -> do
+      let pm = case mrd of
+            Nothing -> mempty
+            --- FIXME Do something useful here
+            Just (RD_UnsatCore _uc) -> mempty
+            Just (RD_Model m) -> parseModel m
+      pm_str_val <- parseModel2 pm
+      lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
+      lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
+      smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
+      pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
+            sv2dv k <&> \case
+              Just dv'' -> (dv'', v) : acc
+              Nothing -> acc
+            ) [] (M.toList pm_str_val)
+      iputStrLn $ show $ showTrace pm_dv_val smtTrace
 
 dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
 dropConstants pm = \case
@@ -621,29 +617,35 @@ checkUsing = do
 verify1 :: HasCallStack => SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
-  smtAssert $ if isPossible then se else smtNot se
+  smtAssert $ if isPossible tk then se else smtNot se
   r <- checkUsing
+  verify1r at mf tk se mmsg r
+
+verify1r :: HasCallStack => SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Result -> App ()
+verify1r at mf tk se mmsg r = do
   smt <- ctxt_smt <$> ask
-  case isPossible of
+  case isPossible tk of
     True ->
       case r of
-        Unknown -> bad $ return Nothing
+        Unknown -> bady $ return Nothing
         Unsat ->
-          bad $
+          badn $
             liftM (Just . RD_UnsatCore) $
               liftIO $ SMT.getUnsatCore smt
         Sat -> good
     False ->
       case r of
-        Unknown -> bad $ return Nothing
+        Unknown -> bady $ return Nothing
         Unsat -> good
         Sat ->
-          bad $
+          badn $
             liftM (Just . RD_Model) $
               liftIO $ SMT.command smt $ List [Atom "get-model"]
   where
     good = void $ (liftIO . incCounter . vst_res_succ) =<< (ctxt_vst <$> ask)
-    bad mgetm = do
+    badn = bad_ False
+    bady = bad_ True
+    bad_ timeout mgetm = do
       mm <- mgetm
       dr <- ctxt_displayed <$> ask
       dspd <- liftIO $ readIORef dr
@@ -651,14 +653,20 @@ verify1 at mf tk se mmsg = smtNewScope $ do
                 Atom id' -> id'
                 x -> impossible $ "verify1: expected atom, got: " <> show x
       mdv <- sv2dv sv
-      display_fail at mf tk mmsg (elem se dspd) mm mdv
+      let repeated = elem se dspd
+      case repeated of
+        True ->
+          void $ (liftIO . incCounter . vst_res_reps) =<< (ctxt_vst <$> ask)
+        False ->
+          display_fail at mf tk mmsg mm mdv timeout
       liftIO $ modifyIORef dr $ S.insert se
-      void $ (liftIO . incCounter . vst_res_fail) =<< (ctxt_vst <$> ask)
-    isPossible =
-      case tk of
-        TClaim CT_Possible -> True
-        _ -> False
+      let which = if timeout then vst_res_time else vst_res_fail
+      void $ (liftIO . incCounter . which) =<< (ctxt_vst <$> ask)
 
+isPossible :: TheoremKind -> Bool
+isPossible = \case
+  TClaim CT_Possible -> True
+  _ -> False
 
 pathAddUnbound_v :: String -> DLType -> Maybe SMTLet -> App ()
 pathAddUnbound_v v t ml = do
@@ -1318,7 +1326,7 @@ smt_s = \case
                 -- all subsequent theorems
                 Unsat -> return ()
                 Unknown ->
-                  verify1 at [] TWhenNotUnknown (Atom $ "false") Nothing
+                  verify1r at [] TWhen when' Nothing Unknown
             False -> this_case
     mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 

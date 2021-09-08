@@ -17,4 +17,6 @@ data VerifySt = VerifySt
   { vst_vo :: VerifyOpts
   , vst_res_succ :: Counter
   , vst_res_fail :: Counter
+  , vst_res_time :: Counter
+  , vst_res_reps :: Counter
   }

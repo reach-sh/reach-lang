@@ -63,7 +63,7 @@ instance IsPure BindingOrigin where
 data TheoremKind
   = TClaim ClaimType
   | TInvariant Bool
-  | TWhenNotUnknown
+  | TWhen
   deriving (Eq, Show)
 
 instance Pretty TheoremKind where
@@ -71,7 +71,7 @@ instance Pretty TheoremKind where
     TClaim c -> pretty c
     TInvariant False -> "while invariant before loop"
     TInvariant True -> "while invariant after loop"
-    TWhenNotUnknown -> "when is not unknown"
+    TWhen -> "when is analyzable"
 
 data SMTCat
   = Witness
@@ -225,10 +225,14 @@ instance PrettySubst SMTTrace where
     let env' = foldr M.delete env witnessVars
     let c_lets' = prettySubstWith env' c_lets
     return $
-      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <> hardline <>
+      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <>
       "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
-      "  " <> pretty tk <> parens (pretty dv) <> ";" <> hardline
+      "  " <> tk' <> parens (pretty dv) <> ";" <> hardline
     where
+      tk' = case tk of
+              TClaim c -> pretty c
+              TInvariant _ -> "assert"
+              TWhen -> "analyze"
       isWitness = \case
         SMTLet _ _ _ Witness _ -> True
         SMTCon {} -> True
