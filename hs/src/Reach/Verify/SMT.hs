@@ -12,7 +12,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import qualified Data.Text as T
-import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -614,14 +613,14 @@ checkUsing = do
           , "  Result: " ++ SMT.showsSExpr res ""
           ]
 
-verify1 :: HasCallStack => SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
+verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
   smtAssert $ if isPossible tk then se else smtNot se
   r <- checkUsing
   verify1r at mf tk se mmsg r
 
-verify1r :: HasCallStack => SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Result -> App ()
+verify1r :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Result -> App ()
 verify1r at mf tk se mmsg r = do
   smt <- ctxt_smt <$> ask
   case isPossible tk of
@@ -649,10 +648,10 @@ verify1r at mf tk se mmsg r = do
       mm <- mgetm
       dr <- ctxt_displayed <$> ask
       dspd <- liftIO $ readIORef dr
-      let sv = case se of
-                Atom id' -> id'
-                x -> impossible $ "verify1: expected atom, got: " <> show x
-      mdv <- sv2dv sv
+      mdv <-
+        case se of
+          Atom id' -> sv2dv id'
+          _ -> return Nothing
       let repeated = elem se dspd
       case repeated of
         True ->
