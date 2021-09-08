@@ -600,18 +600,10 @@ smtAssert se = do
 checkUsing :: App SMT.Result
 checkUsing = do
   smt <- ctxt_smt <$> ask
-  let t_smt = Atom "smt"
-  let t_simplify = Atom "simplify"
-  let t_def = Atom "auflia"
-  let ms_micro = Atom "10"
-  let ms_short = Atom "100"
-  let ms_too_long = Atom $ show $ (1000 * 60 * 2 :: Integer)
-  let t_bin op x y = List [ Atom op, x, y ]
-  let t_then = t_bin "then"
-  let t_or = t_bin "or-else"
-  -- let t_par_or = t_bin "par-or"
+  VerifyOpts {..} <- (vst_vo . ctxt_vst) <$> ask
+  let ms_too_long = Atom $ show $ vo_timeout
+  let t_bin o x y = List [ Atom o, x, y ]
   let t_timeout = t_bin "try-for"
-  let _our_tactic = t_timeout (t_then t_simplify (t_or (t_or (t_timeout t_def ms_micro) (t_timeout t_smt ms_short)) t_def)) ms_too_long
   let our_tactic = t_timeout (Atom "default") ms_too_long
   res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
@@ -1591,8 +1583,10 @@ newFileLogger p = do
         hClose logh_xio
   return (close, Logger {..})
 
-verify_smt :: Maybe FilePath -> Maybe [Connector] -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
-verify_smt logpMay mvcs vst lp prog args = do
+verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
+verify_smt vst lp prog args = do
+  let VerifyOpts {..} = vst_vo vst
+  let logpMay = ($ "smt") <$> vo_out
   ulp <- unrollLoops lp
   case logpMay of
     Nothing -> return ()
@@ -1608,7 +1602,7 @@ verify_smt logpMay mvcs vst lp prog args = do
     impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
   let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
-  case mvcs of
+  case vo_mvcs of
     Nothing -> go Nothing
     Just cs -> mapM_ (go . Just) cs
   zec <- SMT.stop smt

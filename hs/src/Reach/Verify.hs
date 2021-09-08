@@ -1,9 +1,10 @@
-module Reach.Verify (verify) where
+module Reach.Verify
+  ( verify
+  , VerifyOpts(..)
+  ) where
 
 import Control.Monad
-import qualified Data.Text as T
 import Reach.AST.LL
-import Reach.Connector
 import Reach.Counter
 import Reach.Verify.Knowledge
 import Reach.Verify.SMT
@@ -13,17 +14,17 @@ import System.Exit
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
-verify :: Maybe (T.Text -> String) -> Maybe [Connector] -> LLProg -> IO ExitCode
-verify outnMay mvcs lp@(LLProg _ llo _ _ _ _ _) = do
+verify :: VerifyOpts -> LLProg -> IO ExitCode
+verify vst_vo lp@(LLProg _ llo _ _ _ _ _) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
   let vst = VerifySt {..}
-  verify_knowledge (($ "know") <$> outnMay) vst lp
+  verify_knowledge vst lp
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes
   --- of the program.
   let smt :: String -> [String] -> IO ()
-      smt s a = void $ verify_smt (($ "smt") <$> outnMay) mvcs vst lp s a
+      smt s a = void $ verify_smt vst lp s a
   case Z3 of
     Z3 ->
       smt "z3" ["-smt2", "-in"]

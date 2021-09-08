@@ -3,12 +3,11 @@ module Main (main) where
 import Control.Exception
 import Control.Monad
 import Reach.CommandLine
-import Reach.CompilerTool
+import Reach.Compiler
 import Reach.Report
 import Reach.Version
 import System.Environment
 import System.Exit
-import System.FilePath
 
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
@@ -17,20 +16,6 @@ data CompilerToolEnv = CompilerToolEnv
   , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
   , cte_TF_BUILD :: Maybe String -- Azure Pipelines
   }
-
-makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
-makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
-  CompilerToolOpts
-    { cto_outputDir = maybe defaultOutputDir id cta_outputDir
-    , cto_dirDotReach = maybe defaultDirDotReach id cta_dirDotReach
-    , cto_source = cta_source
-    , cto_tops = cta_tops
-    , cto_intermediateFiles = cta_intermediateFiles
-    , cto_installPkgs = cta_installPkgs
-    }
-  where
-    defaultOutputDir = takeDirectory cta_source </> "build"
-    defaultDirDotReach = takeDirectory cta_source </> ".reach"
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
@@ -71,9 +56,8 @@ main = do
     case shouldReport args env of
       False -> return $ const $ return ()
       True -> startReport (cte_REACHC_ID env)
-  let ctool_opts = makeCompilerToolOpts args env
   (e :: Either SomeException ()) <-
-    try $ compilerToolMain ctool_opts
+    try $ compile $ cta_co args
   report e
   case e of
     Left exn -> throwIO exn

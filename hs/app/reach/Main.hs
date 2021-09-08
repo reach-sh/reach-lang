@@ -8,7 +8,7 @@ import Control.Monad.Reader
 import Data.Bits
 import Data.Char
 import Data.IORef
-import Data.Text hiding (any, filter, length, map, toLower)
+import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import Safe
@@ -639,12 +639,25 @@ compile :: Subcommand
 compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
-  go CompilerToolArgs {..} = do
+  go (CompilerToolArgs {..}) = do
+    rawArgs <- liftIO $ getArgs
+    let rawArgs' = dropWhile (/= "compile") rawArgs
+    let argsl = case rawArgs' of
+                 "compile" : x -> x
+                 _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
+    let args = intercalate " " $ map pack argsl
+    let CompilerOpts {..} = cta_co
     Var {..} <- asks e_var
     liftIO $ do
-      diePathContainsParentDir cta_source
-      maybe (pure ()) diePathContainsParentDir cta_dirDotReach
-      maybe (pure ()) diePathContainsParentDir cta_outputDir
+      diePathContainsParentDir co_source
+      maybe (pure ()) diePathContainsParentDir co_mdirDotReach
+      maybe (pure ()) diePathContainsParentDir co_moutputDir
+    let reachc_release = [N.text| stack build && stack exec -- reachc $args |]
+    let reachc_dev = [N.text| stack build --fast && stack exec -- reachc $args |]
+    let reachc_prof = [N.text|
+        stack build --profile --fast \
+          && stack exec --profile -- reachc $args +RTS -p
+      |]
     script $ do
       realpath
       write [N.text|
@@ -677,7 +690,6 @@ compile = command "compile" $ info f d where
           else
             $reachc_dev
           fi
-
         else
           docker run \
             --rm \
@@ -687,28 +699,6 @@ compile = command "compile" $ info f d where
             reachsh/reach:$version'' \
             $args
         fi
-      |]
-     where
-      if' b t = if b then pack t else ""
-      opt x a = case x of
-        Nothing -> ""
-        Just t -> pack $ a <> "=" <> t
-      args = intercalate " " $
-        [ if' cta_disableReporting "--disable-reporting"
-        , if' cta_errorFormatJson "--error-format-json"
-        , if' cta_intermediateFiles "--intermediate-files"
-        , if' cta_installPkgs "--install-pkgs"
-        , opt cta_dirDotReach "--dir-dot-reach"
-        , opt cta_outputDir "--output"
-        , pack cta_source
-        ] <> (pack <$> cta_tops)
-      drp' = if' (not cta_disableReporting) "--disable-reporting"
-      ifs' = if' (not cta_intermediateFiles) "--intermediate-files"
-      reachc_release = [N.text| stack build && stack exec -- reachc $args |]
-      reachc_dev = [N.text| stack build --fast && stack exec -- reachc $drp' $ifs' $args |]
-      reachc_prof = [N.text|
-        stack build --profile --fast \
-          && stack exec --profile -- reachc $drp' $ifs' $args +RTS -p
       |]
 
 init' :: Subcommand

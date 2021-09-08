@@ -73,6 +73,12 @@ named @tt{default}.
   It is recommended that you commit the @tt{.reach} directory to source control.
   Deleting this directory is also safe; it can easily be rebuilt by using the @DFlag{install-pkgs} flag again; in fact, this is the best way to upgrade your packages.
   }
+
+  @item{@DFlag{stop-after-eval} --- Stops the compilation process before verification and producing output files.
+  This might be useful for performing syntax and type checking quickly.}
+
+  @item{@DFlag{verify-timeout} @nonterm{TIMEOUT-MS} --- Sets the timeout of individual verification theorems, in milliseconds.
+  The default value is 2 minutes.}
 ]
 
 @subsection[#:tag "ref-usage-init"]{@tt{reach init}}

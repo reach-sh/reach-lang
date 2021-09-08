@@ -378,10 +378,11 @@ kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts psm) _dli _ _ s) = do
   mapM_ (uncurry (kgq_pie ctxt)) $ M.toList psm
   kgq_s ctxt s
 
-verify_knowledge :: Maybe FilePath -> VerifySt -> LLProg -> IO ()
-verify_knowledge mout vst lp =
+verify_knowledge :: VerifySt -> LLProg -> IO ()
+verify_knowledge vst lp =
   case mout of
     Nothing -> go Nothing
     Just p -> withFile p WriteMode (go . Just)
   where
     go mh = kgq_lp mh vst lp
+    mout = ($ "know") <$> (vo_out $ vst_vo vst)
