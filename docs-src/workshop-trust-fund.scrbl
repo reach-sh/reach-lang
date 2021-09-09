@@ -1,7 +1,6 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@(define "workshop-trust-fund" "workshop-trust-fund")
 @title[#:version reach-vers #:tag "workshop-trust-fund"]{Workshop: Trust Fund}
 
 In this workshop, we'll look at yet another strategy for transferring funds, but in this version, we'll think about it as establishing a "trust fund": a funder will establish an account for the receiver, which they must wait a certain amount of time to access, and if they do not, then it reverts to the funder, and if the funder does not claim it, then it is dormant and any third party can remove the funds.

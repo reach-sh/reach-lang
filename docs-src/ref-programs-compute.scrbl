@@ -99,8 +99,8 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;}.
 }
 
 @reachin{RHS} must be compatible with the given @reachin{LHS}.
-That is, if a @reachin{LHS} is an @nonterm{LHS-tuple-seq}, then the corresponding @reachin{RHS} must be a tuple with the correct number of elements.
-If a @reachin{LHS} is an @nonterm{LHS-obj-seq}, then the corresponding @reachin{RHS} must be an object with the correct fields.
+That is, if a @reachin{LHS} is an @tt{LHS-tuple-seq}, then the corresponding @reachin{RHS} must be a tuple with the correct number of elements.
+If a @reachin{LHS} is an @tt{LHS-obj-seq}, then the corresponding @reachin{RHS} must be an object with the correct fields.
 
 Those @tech{values} are available as their corresponding @tech{bound identifier}s in the statement's @tech{tail}.
 
