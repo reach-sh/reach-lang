@@ -4,13 +4,24 @@ module Reach.Version
   , compatibleVersion
   , compatibleVersionStr
   , versionHeader
-  )
-where
+  , major
+  , minor
+  , patch
+  ) where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 
+major :: Int
+major = 0
+
+minor :: Int
+minor = 1
+
+patch :: Int
+patch = 4
+
 version :: Version
-version = makeVersion [0, 1, 4]
+version = makeVersion [major, minor, patch]
 
 versionStr :: String
 versionStr = showVersion version

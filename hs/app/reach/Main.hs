@@ -7,17 +7,20 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Bits
 import Data.Char
+import Data.Functor.Identity
 import Data.IORef
 import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
-import Safe
 import System.Directory.Extra
 import System.Environment
 import System.Exit
 import System.FilePath
 import System.Posix.Files
-import Text.Parsec (ParsecT, runParserT, char, string, eof, try)
+import Text.Parsec (ParsecT, runParserT, eof, try)
+import Text.Parsec.Char
+import Text.Parsec.Language
+import Text.ParserCombinators.Parsec.Token
 
 import Reach.CommandLine
 import Reach.Util
@@ -55,6 +58,73 @@ instance Show Mode where
 instance Show ConnectorMode where
   show (ConnectorMode c m) = show c <> "-" <> show m
 
+data RVEnvNumeric = RVEnvNumeric
+  { rvEnvNumericMajor :: Maybe Integer
+  , rvEnvNumericMinor :: Maybe Integer
+  , rvEnvNumericPatch :: Maybe Integer
+  }
+
+data ReachVersionOf
+  = RVDefault
+  | RVStable
+  | RVNumeric
+    { rvEnvNumeric :: RVEnvNumeric
+    , rvMajor :: Integer
+    , rvMinor :: Integer
+    , rvPatch :: Integer
+    }
+
+data ReachVersion = ReachVersion
+  { rvEnvRaw :: Maybe Text
+  , rv :: ReachVersionOf
+  }
+
+mkReachVersion :: Maybe String -> IO ReachVersion
+mkReachVersion mt = do
+  let rvEnvRaw = pack <$> mt
+  rv <- case mt of
+    Nothing -> pure RVDefault
+    Just "" -> pure RVDefault
+    Just "stable" -> pure RVStable
+    Just m -> do
+      let TokenParser {..} = makeTokenParser emptyDef
+      let xx = eof *> pure Nothing
+      let iv = const . die $ "Invalid `REACH_VERSION`: " <> m
+      let ti = toInteger
+
+      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure . runIdentity $ runParserT
+        (RVEnvNumeric
+          <$> (Just <$> (optional (string "v") *> decimal))
+          <*> ((Just <$> (dot *> decimal)) <|> xx)
+          <*> ((Just <$> (dot *> decimal <* eof)) <|> xx))
+        () "" m
+
+      let rvMajor = maybe (ti major) id rvEnvNumericMajor
+      let rvMinor = maybe (if rvMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
+      let rvPatch = maybe (if rvMinor /= ti minor then 0 else ti patch) id rvEnvNumericPatch
+
+      pure $ RVNumeric {..}
+
+  pure $ ReachVersion {..}
+
+versionMajMinPat :: ReachVersion -> Text
+versionMajMinPat ReachVersion {..} = case rv of
+  RVDefault -> pack versionStr
+  RVStable -> pack versionStr
+  RVNumeric {..} -> T.intercalate "." $ map packs [ rvMajor, rvMinor, rvPatch ]
+
+versionMajMin :: ReachVersion -> Text
+versionMajMin ReachVersion {..} = case rv of
+  RVDefault -> pack compatibleVersionStr
+  RVStable -> pack compatibleVersionStr
+  RVNumeric {..} -> T.intercalate "." $ map packs [ rvMajor, rvMinor ]
+
+versionMaj :: ReachVersion -> Text
+versionMaj ReachVersion {..} = case rv of
+  RVDefault -> packs major
+  RVStable -> packs major
+  RVNumeric {..} -> packs rvMajor
+
 data Var = Var
   { reachEx :: Text
   , connectorMode :: ConnectorMode
@@ -66,8 +136,7 @@ data Var = Var
   , rpcTLSKey :: Text
   , rpcTLSPassphrase :: Text
   , rpcTLSRejectUnverified :: Bool
-  , version'' :: Text
-  , versionShort :: Text
+  , version'' :: ReachVersion
   }
 
 data Env = Env
@@ -162,7 +231,7 @@ mkVar = do
   rpcTLSPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure defRPCTLSPassphrase)
   rpcTLSKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
   rpcTLSCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
-  version'' <- q "REACH_VERSION" (packed versionStr)
+  version'' <- lookupEnv "REACH_VERSION" >>= mkReachVersion
   debug <- truthyEnv <$> lookupEnv "REACH_DEBUG"
   rpcTLSRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
     >>= maybe (pure True) (pure . (/= "0"))
@@ -172,14 +241,6 @@ mkVar = do
     rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
     runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
       >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
-  let versionShort = case version'' of
-        "stable" -> pack compatibleVersionStr
-        v -> a <> "." <> b where
-          f ('v':s) = s
-          f s = s
-          v' = splitOn "." . pack . f $ unpack v
-          a = maybe "0" id $ atMay v' 0
-          b = maybe "0" id $ atMay v' 1
   pure $ Var {..}
 
 script :: App -> App
@@ -191,6 +252,13 @@ script wrapped = do
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
   let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
   let connectorMode' = packs connectorMode
+
+  -- Recursive invocation of script should base version on what user specified
+  -- (or didn't) via REACH_VERSION rather than what we've parsed/inferred;
+  -- subcommands that actually use the version should instead rely on what
+  -- we've computed and stuffed in `e_var`
+  let v = maybe "" id $ rvEnvRaw version''
+
   asks e_effect >>= liftIO . flip writeIORef (Script
      $ [N.text|
           #!/bin/sh
@@ -208,7 +276,7 @@ script wrapped = do
           REACH_RPC_SERVER=$rpcServer''
           REACH_RPC_TLS_CRT=$rpcTLSCrt
           REACH_RPC_TLS_KEY=$rpcTLSKey
-          REACH_VERSION=$version''
+          REACH_VERSION=$v
 
           export REACH_CONNECTOR_MODE
           export REACH_DEBUG
@@ -259,7 +327,7 @@ reachImages =
   ]
 
 serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO Text
-serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
+serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
   let ports' = case ports of
         [] -> "[]"
         ps -> intercalate "\n    " $ map ("- " <>) ps
@@ -268,7 +336,7 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' version'' = do
   fmt <- T.readFile $ e_dirEmbed </> "docker" </> "service-" <> n <> ".yml"
   let labels = [N.text| - "sh.reach.devnet-for=$d" |]
   pure
-    . swap "REACH_VERSION" version''
+    . swap "REACH_VERSION" v
     . swap "PORTS" ports'
     . swap "NETWORK" "reach-devnet"
     . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
@@ -375,7 +443,7 @@ mkDockerMetaRPC Env {..} p@Project {..} = DockerMeta {..} where
   appProj = appProj' projDirHost
   appService = "reach-app-" <> appProj
   appImage = "reachsh/rpc-server"
-  appImageTag = appImage <> ":" <> versionShort e_var
+  appImageTag = appImage <> ":" <> (versionMajMin $ version'' e_var)
   compose = WithProject RPC p
 
 mkDockerMetaStandaloneDevnet :: DockerMeta
@@ -502,8 +570,8 @@ withCompose DockerMeta {..} wrapped = do
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
     (_, StandaloneDevnet) -> mkConnSvs "latest"
-    (_, WithProject Console _) -> mkConnSvs version''
-    (_, WithProject React _) -> mkConnSvs version''
+    (_, WithProject Console _) -> mkConnSvs $ versionMajMinPat version''
+    (_, WithProject React _) -> mkConnSvs $ versionMajMinPat version''
     (_, WithProject RPC _) -> mkConnSvs "latest"
   let build = case compose of
         WithProject Console _ -> [N.text|
@@ -582,7 +650,7 @@ scaffold' i quiet proj@Project {..} = do
           swap "APP" projName
         . swap "MJS" (projName <> ".mjs")
         . swap "PROJ" appProj
-        . swap "REACH_VERSION" (version'' e_var)
+        . swap "REACH_VERSION" (versionMajMinPat $ version'' e_var)
        <$> readScaff p
   -- TODO: s/lint/preapp. It's disabled because sometimes our
   -- generated code trips the linter
@@ -648,6 +716,7 @@ compile = command "compile" $ info f d where
     let args = intercalate " " $ map pack argsl
     let CompilerOpts {..} = cta_co
     Var {..} <- asks e_var
+    let v = versionMajMinPat version''
     liftIO $ do
       diePathContainsParentDir co_source
       maybe (pure ()) diePathContainsParentDir co_mdirDotReach
@@ -696,7 +765,7 @@ compile = command "compile" $ info f d where
             --volume "$$PWD:/app" \
             -u "$(id -ru):$(id -rg)" \
             -e "REACHC_ID=$${ID}" \
-            reachsh/reach:$version'' \
+            reachsh/reach:$v \
             $args
         fi
       |]
@@ -724,7 +793,7 @@ init' = command "init" . info f $ d <> foot where
       abortIf rsh
       abortIf mjs
       T.putStrLn $ "Writing " <> app <> ".rsh..."
-      T.writeFile rsh $ swap "REACH_VERSION_SHORT" (versionShort e_var) fmtInitRsh
+      T.writeFile rsh $ swap "REACH_VERSION_SHORT" (versionMajMin $ version'' e_var) fmtInitRsh
       T.putStrLn $ "Writing " <> app <> ".mjs..."
       T.writeFile mjs $ swap "APP" app fmtInitMjs
       putStrLn "Done."
@@ -1017,9 +1086,13 @@ upgrade = command "upgrade" $ info f d where
 update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
-  f = script . forM_ reachImages $ \i -> do
-    write $ "docker pull reachsh/" <> i <> ":" <> pack compatibleVersionStr
-    write $ "docker pull reachsh/" <> i <> ":" <> pack versionStr
+  f = do
+    v <- asks (version'' . e_var)
+    script . forM_ reachImages $ \i -> do
+      write $ "docker pull reachsh/" <> i <> ":latest"
+      write $ "docker pull reachsh/" <> i <> ":" <> versionMaj v
+      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMin v
+      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMinPat v
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
@@ -1071,9 +1144,9 @@ hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ do
-    Var {..} <- asks e_var
+    v <- versionMajMinPat . version'' <$> asks e_var
     script . forM_ reachImages $ \i -> write [N.text|
-      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$version''" -c 'echo $$REACH_GIT_HASH')"
+      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
     |]
 
 whoami' :: Text
