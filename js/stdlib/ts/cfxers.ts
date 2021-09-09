@@ -422,18 +422,11 @@ export class Wallet implements IWallet {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
-    txn = {from, ...txn, value: (txn.value|| '0').toString()};
-    const gasFee = await this.provider.conflux.getGasPrice();
-    const balance = await this.provider.conflux.getBalance(from);
-    if (gasFee > balance) {
-      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee}`)
-      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-    } 
+    txn = {from, ...txn, value: (txn.value || '0').toString()};
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
-
     return _retryingSendTxn(this.provider, txn);
   }
 
@@ -487,10 +480,6 @@ const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string
   let current: number;
   // XXX fail after waiting too long?
   while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
-    const epoch = await provider.conflux.getEpochNumber();
-    if (current > epoch) {
-      throw Error(`${current} >  ${epoch}`)
-    }
     await Timeout.set(waitMs);
   }
   updateSentAt(addr, current);
