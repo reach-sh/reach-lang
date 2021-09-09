@@ -19,7 +19,6 @@ Verification failed:
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
-
   // Theorem Formalization
 
   const v93 = (v74 + (4 - v84)) % 3;
@@ -31,27 +30,6 @@ Verification failed:
   assert(v114);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-bad.rsh:compileDApp
-
-  (details omitted on repeat)
   Verifying when ONLY "Alice" is honest
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-bad.rsh:compileDApp
-
-  (details omitted on repeat)
   Verifying when ONLY "Bob" is honest
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-bad.rsh:compileDApp
-
-  (details omitted on repeat)
-Checked 18 theorems; 4 failures. :'(
+Checked 18 theorems; 4 failures (and 3 omitted repeats) :'(

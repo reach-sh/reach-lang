@@ -9,43 +9,21 @@ Verification failed:
 
   // Violation Witness
 
-  const UInt.max = 30880;
+  const UInt.max = 35424;
 
   const v178 = "Alice".interact.getParams();
-  //    ^ could = {amt: 7720, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 30880, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //    ^ could = {amt: 8856, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 35424, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail2.rsh:24:104:application
-
 
   // Theorem Formalization
 
   const v219 = 2 * v178.amt;
-  //    ^ would be 15440
+  //    ^ would be 17712
   const v297 = 0 == (UInt.max - ((UInt.max - v219) - v219));
   //    ^ would be false
   assert(v297);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail2.rsh:77:15:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Alice" is honest
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail2.rsh:77:15:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Bob" is honest
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail2.rsh:77:15:application
-
-  (details omitted on repeat)
-Checked 66 theorems; 4 failures. :'(
+Checked 66 theorems; 4 failures (and 3 omitted repeats) :'(

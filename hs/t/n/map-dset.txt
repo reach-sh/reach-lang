@@ -10,12 +10,11 @@ Verification failed:
   // Violation Witness
 
   const v66 = "Alice".interact.get();
-  //    ^ could = 1
+  //    ^ could = 38
   //      from: ./map-dset.rsh:16:51:application
   const v75 = "Bob".interact.get();
   //    ^ could = 0
   //      from: ./map-dset.rsh:21:51:application
-
 
   // Theorem Formalization
 
@@ -30,4 +29,4 @@ Verification failed:
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 17 theorems; 1 failures. :'(
+Checked 17 theorems; 1 failures :'(

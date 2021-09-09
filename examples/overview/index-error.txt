@@ -13,7 +13,6 @@ Verification failed:
   //    ^ could = 1
   //      from: ./index-error.rsh:5:24:application
 
-
   // Theorem Formalization
 
   const v86 = 0 == (v57 - (v57 - 1));
@@ -21,27 +20,6 @@ Verification failed:
   assert(v86);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-error.rsh:33:7:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Alice" is honest
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-error.rsh:33:7:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Bob" is honest
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./index-error.rsh:33:7:application
-
-  (details omitted on repeat)
-Checked 17 theorems; 4 failures. :'(
+Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(

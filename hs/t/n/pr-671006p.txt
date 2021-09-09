@@ -18,32 +18,13 @@ Verification failed:
   //    ^ could = 1
   //      from: reach standard library:146:18:application
 
-
   // Theorem Formalization
 
   const v236 = (balance(0)/180 == sum/173) ? (sum/173 == v228) : false;
   //    ^ would be false
-  while invariant before loop(v236);
+  assert(v236);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
-
-  (details omitted on repeat)
   Verifying when ONLY "Contributor" is honest
-Verification failed:
-  when ONLY "Contributor" is honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
-
-  (details omitted on repeat)
   Verifying when ONLY "Fundraiser" is honest
-Verification failed:
-  when ONLY "Fundraiser" is honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
-
-  (details omitted on repeat)
-Checked 53 theorems; 4 failures. :'(
+Checked 53 theorems; 4 failures (and 3 omitted repeats) :'(

@@ -1499,7 +1499,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_idx = llo_counter
   let ctxt_pay_amt = Nothing
   ctxt_smt_trace <- newIORef mempty
-  flip runReaderT (SMTCtxt {..}) $ smtNewScope $ do
+  flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
           smtMapDeclare at mpv mi $ SMTMapNew
@@ -1652,7 +1652,7 @@ verify_smt vst lp prog args = do
   unlessM (SMT.produceUnsatCores smt) $
     impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
-  let go mc = _verify_smt mc vst smt ulp
+  let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
   case vo_mvcs of
     Nothing -> go Nothing
     Just cs -> mapM_ (go . Just) cs

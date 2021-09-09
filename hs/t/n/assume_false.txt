@@ -11,11 +11,4 @@ Verification failed:
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Verification failed:
-  when ONLY "A" is honest
-  of theorem: assert
-  at ./assume_false.rsh:7:13:application
-  at ./assume_false.rsh:5:11:application call to [unknown function] (defined at: ./assume_false.rsh:5:15:function exp)
-
-  (details omitted on repeat)
-Checked 5 theorems; 2 failures. :'(
+Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(

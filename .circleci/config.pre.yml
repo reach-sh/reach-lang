@@ -201,13 +201,13 @@ jobs:
         ln -sf /tmp/workspace/bin ~/.local/bin
         # Install mo
         curl -sSLo ~/.local/bin/mo https://git.io/get-mo
-        # Install solc
+        # Install solc # XXX get version from hs/Dockerfile.reachc
         curl -sSLo ~/.local/bin/solc \
           https://github.com/ethereum/solidity/releases/download/v0.8.5/solc-static-linux
-        # Install Z3
+        # Install Z3 # XXX get version from hs/Dockerfile.reachc
         curl -sSLo /tmp/z3.zip \
-              https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip \
-          && unzip -p /tmp/z3.zip z3-4.8.10-x64-ubuntu-18.04/bin/z3 \
+              https://github.com/Z3Prover/z3/releases/download/z3-4.8.12/z3-4.8.12-x64-ubuntu-18.04.zip \
+          && unzip -p /tmp/z3.zip z3-4.8.12-x64-ubuntu-18.04/bin/z3 \
             | cat > ~/.local/bin/z3
         chmod +x ~/.local/bin/*
     - stack_deps

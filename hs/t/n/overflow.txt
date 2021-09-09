@@ -15,7 +15,6 @@ Verification failed:
   //    ^ could = 1
   //      from: ./overflow.rsh:9:40:application
 
-
   // Theorem Formalization
 
   const v46 = v38 <= (UInt.max - 1);
@@ -23,19 +22,5 @@ Verification failed:
   assert(v46);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "add overflow"
-  at ./overflow.rsh:12:17:application
-
-  (details omitted on repeat)
   Verifying when ONLY "A" is honest
-Verification failed:
-  when ONLY "A" is honest
-  of theorem: assert
-  msg: "add overflow"
-  at ./overflow.rsh:12:17:application
-
-  (details omitted on repeat)
-Checked 9 theorems; 3 failures. :'(
+Checked 9 theorems; 3 failures (and 2 omitted repeats) :'(

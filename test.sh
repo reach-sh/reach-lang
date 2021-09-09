@@ -6,8 +6,8 @@ export REACH_DOCKER=0
 ${REACH} -h
 
 c () {
-  echo "c $1"
-  ${REACH} compile "$1"
+  echo "c $@"
+  ${REACH} compile "$@"
 }
 
 fc () {
@@ -112,6 +112,12 @@ tealcount () {
 
 # jb
 
+c hs/t/y/overflow_con.rsh --intermediate-files
+c users/duoswap-core/index.rsh --intermediate-files --verify-timeout=1000
+exit 0
+c hs/t/y/pr265.rsh
+exit 0
+
 # c hs/t/n/Err_IllegalEffPosition.rsh
 # c hs/t/y/timeout_calc.rsh
 # c examples/workshop-trust-fund/index.rsh
@@ -131,6 +137,7 @@ tealcount () {
 # ci CFX cache-events
 # ci ETH tut-6
 # ci CFX tut-6
+ci ALGO tut-6
 exit 0
 ci CFX raffle
 ci CFX tut-7-array

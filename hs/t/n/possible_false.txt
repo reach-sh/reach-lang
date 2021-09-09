@@ -8,23 +8,5 @@ Verification failed:
 
   possible(false);
 
-Verification failed:
-  when ALL participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:6:13:application
-
-  (details omitted on repeat)
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:5:13:application
-
-  (details omitted on repeat)
-Verification failed:
-  when NO participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:6:13:application
-
-  (details omitted on repeat)
-Checked 6 theorems; 4 failures. :'(
+Checked 6 theorems; 4 failures (and 3 omitted repeats) :'(

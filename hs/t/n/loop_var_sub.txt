@@ -9,18 +9,17 @@ Verification failed:
   // Violation Witness
 
   const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
+  //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/63 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
-
 
   // Theorem Formalization
 
   const v101 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  while invariant after loop(v101);
+  assert(v101);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -31,18 +30,17 @@ Verification failed:
   // Violation Witness
 
   const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
+  //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/63 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
-
 
   // Theorem Formalization
 
   const v124 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  while invariant after loop(v124);
+  assert(v124);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -53,18 +51,17 @@ Verification failed:
   // Violation Witness
 
   const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
+  //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/63 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
-
 
   // Theorem Formalization
 
   const v147 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  while invariant after loop(v147);
+  assert(v147);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -75,17 +72,16 @@ Verification failed:
   // Violation Witness
 
   const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
+  //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/63 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
-
 
   // Theorem Formalization
 
   const v170 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  while invariant after loop(v170);
+  assert(v170);
 
-Checked 18 theorems; 4 failures. :'(
+Checked 18 theorems; 4 failures :'(

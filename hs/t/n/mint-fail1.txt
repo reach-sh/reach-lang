@@ -13,33 +13,11 @@ Verification failed:
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
-
   // Theorem Formalization
 
   const v245 = 0 == v168.supply;
   //    ^ would be false
   assert(v245);
-
-Verification failed:
-  when ALL participants are honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  // Violation Witness
-
-  const v168 = "Alice".interact.getParams();
-  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
-  //      from: ./mint-fail1.rsh:24:104:application
-
-
-  // Theorem Formalization
-
-  const v209 = 2 * v168.amt;
-  //    ^ would be 0
-  const v281 = 0 == ((((v168.supply - v209) - v209) + v209) + v209);
-  //    ^ would be false
-  assert(v281);
 
 Verification failed:
   when ALL participants are honest
@@ -50,69 +28,6 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail1.rsh:65:15:application
-
-  (details omitted on repeat)
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "token destroyed at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Alice" is honest
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail1.rsh:65:15:application
-
-  (details omitted on repeat)
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  msg: "token destroyed at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Bob" is honest
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "token supply zero at Token.destroy"
-  at ./mint-fail1.rsh:65:15:application
-
-  (details omitted on repeat)
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
-Verification failed:
-  when ONLY "Bob" is honest
-  of theorem: assert
-  msg: "token destroyed at application exit"
-  at ./mint-fail1.rsh:78:7:application
-
-  (details omitted on repeat)
-Checked 62 theorems; 12 failures. :'(
+Checked 62 theorems; 8 failures (and 6 omitted repeats) :'(
