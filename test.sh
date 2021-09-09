@@ -112,8 +112,7 @@ tealcount () {
 
 # jb
 
-c hs/t/y/overflow_con.rsh --intermediate-files
-c users/duoswap-core/index.rsh --intermediate-files --verify-timeout=1000
+c users/duoswap-core/index.rsh --intermediate-files
 exit 0
 c hs/t/y/pr265.rsh
 exit 0
