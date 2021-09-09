@@ -4,6 +4,7 @@ module Reach.Verify
   ) where
 
 import Control.Monad
+import GHC.Conc (numCapabilities)
 import Reach.AST.LL
 import Reach.Counter
 import Reach.Verify.Knowledge
@@ -27,9 +28,10 @@ verify vst_vo lp@(LLProg _ llo _ _ _ _ _) = do
   --- of the program.
   let smt :: String -> [String] -> IO ()
       smt s a = void $ verify_smt vst lp s a
+  let cpus = show numCapabilities
   case Z3 of
     Z3 ->
-      smt "z3" ["-smt2", "-in"]
+      smt "z3" [("smt.threads=" <> cpus), ("sat.threads=" <> cpus), "-smt2", "-in"]
   -- XXX "pattern match is redundant"
   -- Yices ->
   --   -- known not to work.
