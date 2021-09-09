@@ -11,6 +11,7 @@ import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
+import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -595,12 +596,7 @@ smtAssert se = do
 checkUsing :: App SMT.Result
 checkUsing = do
   smt <- ctxt_smt <$> ask
-  VerifyOpts {..} <- (vst_vo . ctxt_vst) <$> ask
-  let ms_too_long = Atom $ show $ vo_timeout
-  let t_bin o x y = List [ Atom o, x, y ]
-  let t_timeout = t_bin "try-for"
-  let our_tactic = t_timeout (Atom "default") ms_too_long
-  res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
+  res <- liftIO $ SMT.command smt $ Atom "reachCheckUsing"
   case res of
     Atom "unsat" -> return Unsat
     Atom "unknown" -> return Unknown
@@ -1382,7 +1378,7 @@ _smtDefineTypes smt ts = do
             tni <- type_name et
             let tn = fst tni
             let tinv = snd tni
-            void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
+            SMT.ackCommand smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
@@ -1585,15 +1581,58 @@ newFileLogger p = do
         hClose logh
   return (close, Logger {..})
 
-newSolverSet :: String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
-newSolverSet p a mkl = do
-  (close, lm) <- mkl ""
-  Solver tc te <- SMT.newSolver p a lm
-  let c = tc
-  let e = do
-       x <- te
-       close
+ribPush :: a -> Seq.Seq (Seq.Seq a) -> Seq.Seq (Seq.Seq a)
+ribPush v = \case
+  (Seq.:|>) l r -> (Seq.|>) l $ seqPush v r
+  _ -> impossible $ "empty rib"
+
+seqPush :: a -> Seq.Seq a -> Seq.Seq a
+seqPush v = flip (Seq.|>) v
+
+seqPop :: Seq.Seq a -> Seq.Seq a
+seqPop = \case
+  (Seq.:|>) x _ -> x
+  _ -> impossible $ "empty seq"
+
+newSolverSet :: Integer -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
+newSolverSet long_i p a mkl = do
+  let short_a = Atom $ "10"
+  let long_a = Atom $ show $ long_i
+  let t_bin o x y = List [ Atom o, x, y ]
+  let t_timeout = t_bin "try-for"
+  let our_tactic = t_timeout (Atom "default")
+  let reachCheckUsing t = List [Atom "check-sat-using", our_tactic t]
+  subc <- newCounter 0
+  rib <- newIORef (return mempty :: Seq.Seq (Seq.Seq SExpr))
+  let doClose :: IO () -> IO a -> IO a
+      doClose l e = do
+       x <- e
+       l
        return x
+  (tlc, tl) <- mkl ""
+  Solver tc te <- SMT.newSolver p a tl
+  let c = \case
+        Atom "reachCheckUsing" -> do
+          tc (reachCheckUsing short_a) >>= \case
+            Atom "unknown" -> do
+              sn <- incCounter subc
+              (slc, sl) <- mkl $ show sn
+              Solver sc se <- SMT.newSolver p a sl
+              readIORef rib >>= traverse_ (traverse_ sc)
+              r <- sc (reachCheckUsing long_a)
+              void $ doClose slc se
+              return r
+            r -> return r
+        s@(List [ Atom "push", Atom "1" ]) -> do
+          modifyIORef rib $ seqPush mempty
+          tc s
+        s@(List [ Atom "pop", Atom "1" ]) -> do
+          modifyIORef rib $ seqPop
+          tc s
+        s -> do
+          modifyIORef rib $ ribPush s
+          tc s
+  let e = doClose tlc te
   return $ Solver c e
 
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
@@ -1609,7 +1648,7 @@ verify_smt vst lp prog args = do
           (close, logpl) <- newFileLogger logp
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
-  smt <- newSolverSet prog args mkLogger
+  smt <- newSolverSet vo_timeout prog args mkLogger
   unlessM (SMT.produceUnsatCores smt) $
     impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
