@@ -6,7 +6,7 @@ export REACH_DOCKER=0
 ${REACH} -h
 
 c () {
-  echo "c $@"
+  echo c "$@"
   ${REACH} compile "$@"
 }
 
