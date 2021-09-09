@@ -79,7 +79,7 @@ interface IContract {
 export class Contract implements IContract {
   [k: string]: any
   _abi: any[]
-  _wallet: Wallet
+  _wallet: IWallet
   _receiptP?: Promise<any>
   _contract: cfxsdk.Contract
   address?: string
@@ -100,8 +100,7 @@ export class Contract implements IContract {
   //   getEvent: (name: string) => {inputs: {name: string}[]},
   //   parseLog: (log: Log) => {args: {[k: string]: any}},
   // }
-
-  constructor(address: string|null|undefined, abi: string|any[], wallet: Wallet,  receiptP?: Promise<any>, hash?: string) {
+  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
@@ -150,10 +149,6 @@ export class Contract implements IContract {
     // XXX this should always be safe but maybe error handling around it just in case?
     // XXX handle the case where the same method name can have multiple input sizes/types?
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
-    _wallet._requireConnected();
-    if (!_wallet.provider) throw Error(`Impossible: provider is undefined`);
-    const {conflux} = _wallet.provider;
-
     return async (...args: any) => {
       debug(`cfxers:handler`, fname, 'call', {args});
       let txn: any = {from, value: '0'};
@@ -177,25 +172,27 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        const epoch_number = 'latest_state';
-        const {to, data} = cfc; // ('to' is just ctc address)
-        const txnDat = {...txn, to, data};
-
-        //const bal = await conflux.getBalance(from);
-        //const bala = await conflux.getBalance(txnDat.to);
-        const toStorage = await conflux.getCollateralForStorage(txnDat.to)
-        const collat = await conflux.estimateGasAndCollateral({...txnDat}, epoch_number)
-        debug(`cfxers:handler`, fname, collat, toStorage, {collat});
-        if ( collat ) {
+        let est = undefined;
+        let est_err = undefined;
+        try {
+          est = await cfc.estimateGasAndCollateral();
+        } catch (e) {
+          est_err = e;
+        }
+        debug(`cfxers:handler`, fname, {est, est_err});
+        if ( est ) {
           if ( txn.gas === undefined ) {
-            //@ts-ignore
-            txn.gas = collat.gasLimit;
+            txn.gas = est.gasLimit;
           }
           if ( txn.storageLimit === undefined ) {
-            //@ts-ignore
-            txn.storageLimit = collat.storageCollateralized
+            txn.storageLimit = est.storageCollateralized;
           }
         }
+        if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
+          txn.storageLimit = 2048;
+        }
+        const {to, data} = cfc; // ('to' is just ctc address)
+        const txnDat = {...txn, to, data};
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
         const res = await _wallet.sendTransaction({...txnDat});
         const {transactionHash} = await res.wait();
@@ -426,29 +423,16 @@ export class Wallet implements IWallet {
 
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    const epoch_number = 'latest_state';
-    const collat = await conflux.estimateGasAndCollateral({...txn}, epoch_number)
     const gasFee = await conflux.getGasPrice();
     const balance = await conflux.getBalance(from);
-    if ( collat ) {
-      if ( txn.gas === undefined ) {
-        //@ts-ignore
-        txn.gas = collat.gasLimit;
-      }
-      if ( txn.storageLimit === undefined ) {
-        //@ts-ignore
-        txn.storageLimit = collat.storageCollateralized
-      }
-    }
-    const baseGas = txn.gas
-    if (baseGas > balance ) {
-      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee} `)
-      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee}, ${txn.gas}, ${baseGas} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-    } 
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
+    if (gasFee > balance ) {
+      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee} `)
+      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} , TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
+    } 
     return _retryingSendTxn(this.provider, txn);
   }
 
