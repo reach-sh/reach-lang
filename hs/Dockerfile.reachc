@@ -1,5 +1,7 @@
-FROM reachsh/haskell-build-artifacts:latest as build
-FROM ethereum/solc:0.8.7         as solc
+FROM haskell-build-artifacts-new AS build
+FROM ethereum/solc:0.8.7         AS solc
+
+FROM alpine
 
 run apk update && apk add libgmpxx ca-certificates git z3 z3-dev
 
