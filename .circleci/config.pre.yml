@@ -12,7 +12,7 @@ executors:
         default: "small"
         type: string
     docker:
-    - image: "cimg/base:stable-18.04"
+    - image: "cimg/base:stable"
       auth:
         username: $DOCKER_LOGIN
         password: $DOCKER_PASSWORD
