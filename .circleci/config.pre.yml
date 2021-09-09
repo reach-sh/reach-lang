@@ -129,7 +129,7 @@ jobs:
               libcairo2 \
               libfontconfig1 \
               libjpeg62 \
-              libpangocairo-1.0 \
+              libpangocairo-1.0-0 \
               racket \
               python3-setuptools
         (cd pygments && sudo make install)
