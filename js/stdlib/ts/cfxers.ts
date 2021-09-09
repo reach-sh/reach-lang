@@ -79,7 +79,7 @@ interface IContract {
 export class Contract implements IContract {
   [k: string]: any
   _abi: any[]
-  _wallet: IWallet
+  _wallet: Wallet
   _receiptP?: Promise<any>
   _contract: cfxsdk.Contract
   address?: string
@@ -101,7 +101,7 @@ export class Contract implements IContract {
   //   parseLog: (log: Log) => {args: {[k: string]: any}},
   // }
 
-  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
+  constructor(address: string|null|undefined, abi: string|any[], wallet: Wallet,  receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
@@ -150,6 +150,10 @@ export class Contract implements IContract {
     // XXX this should always be safe but maybe error handling around it just in case?
     // XXX handle the case where the same method name can have multiple input sizes/types?
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
+    _wallet._requireConnected();
+    if (!_wallet.provider) throw Error(`Impossible: provider is undefined`);
+    const {conflux} = _wallet.provider;
+
     return async (...args: any) => {
       debug(`cfxers:handler`, fname, 'call', {args});
       let txn: any = {from, value: '0'};
@@ -167,37 +171,34 @@ export class Contract implements IContract {
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
 
       if (mut !== 'view' && mut !== 'pure') {
-        debug(`cfsers:handler`, fname, `waitable`);
+        debug(`cfxers:handler`, fname, `waitable`);
         // Note: this usage of `.call` here is because javascript is insane.
         // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        let est = undefined;
-        let est_err = undefined;
-        try {
-          est = await cfc.estimateGasAndCollateral();
-        } catch (e) {
-          est_err = e;
-        }
-        debug(`cfxers:handler`, fname, {est, est_err});
-        if ( est ) {
-          if ( txn.gas === undefined ) {
-            txn.gas = est.gasLimit;
-          }
-          if ( txn.storageLimit === undefined ) {
-            txn.storageLimit = est.storageCollateralized;
-          }
-        }
-        if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
-          txn.storageLimit = 2048;
-        }
+        const epoch_number = 'latest_state';
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
+
+        //const bal = await conflux.getBalance(from);
+        //const bala = await conflux.getBalance(txnDat.to);
+        const toStorage = await conflux.getCollateralForStorage(txnDat.to)
+        const collat = await conflux.estimateGasAndCollateral({...txnDat}, epoch_number)
+        debug(`cfxers:handler`, fname, collat, toStorage, {collat});
+        if ( collat ) {
+          if ( txn.gas === undefined ) {
+            //@ts-ignore
+            txn.gas = collat.gasLimit;
+          }
+          if ( txn.storageLimit === undefined ) {
+            //@ts-ignore
+            txn.storageLimit = collat.storageCollateralized
+          }
+        }
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
         const res = await _wallet.sendTransaction({...txnDat});
         const {transactionHash} = await res.wait();
-
         // debug(`cfxers:handler`, fname, 'receipt');
         // debug(transactionReceipt);
         // const { transactionHash } = transactionReceipt;
@@ -421,13 +422,28 @@ export class Wallet implements IWallet {
   }> {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
+    const {conflux} = this.provider;
+
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    const gasFee = await this.provider.conflux.getGasPrice();
-    const balance = await this.provider.conflux.getBalance(from);
-    if (gasFee > balance) {
-      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee}`)
-      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
+    const epoch_number = 'latest_state';
+    const collat = await conflux.estimateGasAndCollateral({...txn}, epoch_number)
+    const gasFee = await conflux.getGasPrice();
+    const balance = await conflux.getBalance(from);
+    if ( collat ) {
+      if ( txn.gas === undefined ) {
+        //@ts-ignore
+        txn.gas = collat.gasLimit;
+      }
+      if ( txn.storageLimit === undefined ) {
+        //@ts-ignore
+        txn.storageLimit = collat.storageCollateralized
+      }
+    }
+    const baseGas = txn.gas
+    if (baseGas > balance ) {
+      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee} `)
+      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee}, ${txn.gas}, ${baseGas} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
     } 
     // This is weird but whatever
     if (txn.to instanceof Promise) {
