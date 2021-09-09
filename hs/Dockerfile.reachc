@@ -1,4 +1,4 @@
-FROM haskell-build-artifacts-new AS build
+FROM reachsh/haskell-build-artifacts AS build
 FROM ethereum/solc:0.8.7         AS solc
 
 FROM alpine
