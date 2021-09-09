@@ -3,8 +3,8 @@ FROM ethereum/solc:0.8.5             as solc
 
 FROM alpine:3.12 as z3
 RUN apk add wget unzip --no-cache
-ENV Z3_VER 4.8.10
-ENV Z3_SYS x64-ubuntu-18.04
+ENV Z3_VER 4.8.12
+ENV Z3_SYS x64-glibc-2.13
 RUN wget -O /tmp/z3.zip \
      https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
   && unzip -p /tmp/z3.zip z3-${Z3_VER}-${Z3_SYS}/bin/z3 | cat > /usr/bin/z3 \
