@@ -26,8 +26,8 @@ import Reach.UnrollLoops
 import Reach.Util
 import Reach.Verify.SMTParser
 import Reach.Verify.Shared
-import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
+import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver(..))
 import System.Directory
 import System.Exit
 import System.IO
@@ -1503,7 +1503,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_idx = llo_counter
   let ctxt_pay_amt = Nothing
   ctxt_smt_trace <- newIORef mempty
-  flip runReaderT (SMTCtxt {..}) $ do
+  flip runReaderT (SMTCtxt {..}) $ smtNewScope $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
           smtMapDeclare at mpv mi $ SMTMapNew
@@ -1552,7 +1552,6 @@ hPutStrLn' h s = do
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do
-  logh_xio <- openFile (p <> ".xio.smt") WriteMode
   logh <- openFile p WriteMode
   tabr <- newIORef 0
   let logLevel = return 0
@@ -1561,34 +1560,41 @@ newFileLogger p = do
       logUntab = modifyIORef tabr $ \x -> x - 1
       printTab = do
         tab <- readIORef tabr
-        mapM_ (\_ -> hPutStr logh " ") $ take tab $ repeat ()
-      send_tag = "[send->]"
-      recv_tag = "[<-recv]"
+        mapM_ (\_ -> hPutStr logh "  ") $ take tab $ repeat ()
+      send_tag = "[send->] "
+      -- recv_tag = "[<-recv]"
       logMessage m' = do
-        hPutStrLn' logh_xio m'
         let (which, m) = splitAt (length send_tag) m'
-        let short_which = if which == send_tag then "+" else "-"
-        if (which == recv_tag && m == " success")
-          then return ()
-          else
-            if (m == " (push 1 )")
-              then do
-                printTab
-                hPutStrLn' logh $ "(push"
-                logTab
-              else
-                if (m == " (pop 1 )")
-                  then do
-                    logUntab
-                    printTab
-                    hPutStrLn' logh $ ")"
-                  else do
-                    printTab
-                    hPutStrLn' logh $ "(" ++ short_which ++ m ++ ")"
+        let isSend = which == send_tag
+        let isRecv = not isSend
+        unless (isRecv && m == "success") $ do
+          printTab
+          when isRecv $ do
+            hPutStr logh ";; "
+          hPutStr logh $ m
+          let f = hPutStrLn' logh
+          case m of
+            "(push 1 )" -> do
+              logTab
+              f " ;; {"
+            "(pop 1 )" -> do
+              logUntab
+              f " ;; }"
+            _ -> f ""
       close = do
         hClose logh
-        hClose logh_xio
   return (close, Logger {..})
+
+newSolverSet :: String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
+newSolverSet p a mkl = do
+  (close, lm) <- mkl ""
+  Solver tc te <- SMT.newSolver p a lm
+  let c = tc
+  let e = do
+       x <- te
+       close
+       return x
+  return $ Solver c e
 
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
@@ -1598,20 +1604,18 @@ verify_smt vst lp prog args = do
   case logpMay of
     Nothing -> return ()
     Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
-  let mkLogger = case logpMay of
+  let mkLogger t = case fmap (<> t) logpMay of
         Just logp -> do
           (close, logpl) <- newFileLogger logp
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
-  (close, logplMay) <- mkLogger
-  smt <- SMT.newSolver prog args logplMay
+  smt <- newSolverSet prog args mkLogger
   unlessM (SMT.produceUnsatCores smt) $
     impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
-  let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
+  let go mc = _verify_smt mc vst smt ulp
   case vo_mvcs of
     Nothing -> go Nothing
     Just cs -> mapM_ (go . Just) cs
   zec <- SMT.stop smt
-  close
   return $ zec

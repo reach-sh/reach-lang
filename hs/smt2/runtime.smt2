@@ -1,8 +1,9 @@
 ;; These options just make it easier to use the file independently
 ;; in a way that is consistent with how it is used via Haskell
-(set-option :print-success true)
-(set-option :produce-models true)
-(set-option :produce-unsat-cores true)
+
+;(set-option :print-success true)
+;(set-option :produce-models true)
+;(set-option :produce-unsat-cores true)
 
 (set-logic ALL)
 
