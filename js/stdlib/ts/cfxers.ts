@@ -423,6 +423,12 @@ export class Wallet implements IWallet {
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
+    const gasFee = await this.provider.conflux.getGasPrice();
+    const balance = await this.provider.conflux.getBalance(from);
+    if (gasFee > balance) {
+      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee}`)
+      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
+    } 
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
