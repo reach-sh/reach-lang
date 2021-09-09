@@ -113,9 +113,7 @@ tealcount () {
 # jb
 
 # c users/duoswap-core/index.rsh --intermediate-files
-
-c examples/atomic-swap/index.rsh --intermediate-files
-exit 0
+ci ETH tut-6
 c hs/t/y/pr265.rsh
 exit 0
 

@@ -203,7 +203,7 @@ jobs:
         curl -sSLo ~/.local/bin/mo https://git.io/get-mo
         # Install solc # XXX get version from hs/Dockerfile.reachc
         curl -sSLo ~/.local/bin/solc \
-          https://github.com/ethereum/solidity/releases/download/v0.8.5/solc-static-linux
+          https://github.com/ethereum/solidity/releases/download/v0.8.7/solc-static-linux
         # Install Z3 # XXX get version from hs/Dockerfile.reachc
         Z3_VER=4.8.12
         Z3_SYS=x64-glibc-2.31
