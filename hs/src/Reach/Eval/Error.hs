@@ -389,7 +389,7 @@ getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expecte
 getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
-      (SLM_Module, _) -> Just "create a `React.App`"
+      (SLM_Module, _) -> Just "create a `Reach.App`"
       (SLM_AppInit, _) -> Just "`deploy`"
       (_, SLM_AppInit) -> Nothing
       (s, SLM_Step)
