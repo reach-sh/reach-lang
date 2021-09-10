@@ -248,7 +248,7 @@ jobs:
         path: "hs/test-reports"
     - slack_fail
   "hs-check":
-    executor: fake
+    executor: real
     steps:
     - checkout
     - restore_bin
