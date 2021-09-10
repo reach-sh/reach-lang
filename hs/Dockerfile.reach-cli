@@ -1,6 +1,10 @@
 FROM reachsh/haskell-build-artifacts:latest as build
 FROM alpine
 
+RUN apk update && apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
+RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+RUN ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
+
 COPY --from=build /build/bin/reach /usr/bin/reach
 COPY app/reach/embed/ /app/embed/
 
