@@ -8,6 +8,8 @@ FROM $STDLIB_IMAGE AS stdlib
 FROM node:$NODE_VERSION as stage
 COPY --from=stdlib /stdlib /stdlib
 
+RUN apk update && apk add git
+
 WORKDIR /stdlib
 RUN npm link
 
