@@ -12,6 +12,7 @@ import Data.IORef
 import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
+import Safe
 import System.Directory.Extra
 import System.Environment
 import System.Exit
@@ -26,6 +27,7 @@ import Reach.CommandLine
 import Reach.Util
 import Reach.Version
 
+import qualified Data.List.Extra as L
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified NeatInterpolation as N
@@ -812,10 +814,17 @@ run' = command "run" . info f $ d <> noIntersperse where
          <*> argAppOrDir
          <*> manyArgs "APP"
   go i appOrDir args = do
+    (appOrDir', args') <- liftIO $ do
+      "run" : as <- dropWhile (/= "run") <$> getArgs
+      pure $ case L.split (== "--") as of
+        []:[cs] -> ("", map pack cs)
+        bs:[cs] -> (headDef "" (dropWhile (== "--isolate") bs), map pack cs)
+        _ -> (appOrDir, args)
+
     warnDeprecatedFlagIsolate i
     dieConnectorModeBrowser
     Env {..} <- ask
-    proj@Project {..} <- projectFrom appOrDir
+    proj@Project {..} <- projectFrom appOrDir'
     dd <- devnetDeps
     let Var {..} = e_var
     let Scaffold {..} = mkScaffold proj
@@ -826,7 +835,6 @@ run' = command "run" . info f $ d <> noIntersperse where
       , (containerDockerIgnore, hostDockerIgnore)
       ]
     cleanup <- intercalate "\n" <$> forM toClean (pure . pack . ("rm " <>) . snd)
-    scaffold' False True proj
     let rsh = projDirContainer </> unpack projName <> ".rsh"
     let mjs = projDirContainer </> unpack projName <> ".mjs"
     let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
@@ -834,6 +842,7 @@ run' = command "run" . info f $ d <> noIntersperse where
           . die $ takeFileName p <> " doesn't exist."
     abortIfAbsent rsh
     abortIfAbsent mjs
+    scaffold' False True proj
     let recompile' = reachEx <> " compile " <> pack (projDirRel </> unpack projName <> ".rsh\n")
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
@@ -844,7 +853,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let dm@DockerMeta {..} = mkDockerMetaConsole proj
     let dockerfile' = pack hostDockerfile
     let projDirHost' = pack projDirHost
-    let args' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args
+    let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
     withCompose dm . script $ do
       maybe (pure ()) write recompile
       write [N.text|
@@ -854,7 +863,7 @@ run' = command "run" . info f $ d <> noIntersperse where
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
-            --name "$$CNAME" $dd --rm $appService $args'
+            --name "$$CNAME" $dd --rm $appService $args''
         RES="$?"
         set -e
 
