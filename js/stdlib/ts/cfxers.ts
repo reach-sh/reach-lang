@@ -157,10 +157,6 @@ export class Contract implements IContract {
         txn = {from, ...txn, value: (txn.value || '0').toString()};
       }
       args = unbn(args);
-      if ( txn.gasLimit !== undefined ) {
-        txn.gas = txn.gasLimit;
-      }
-      delete txn.gasLimit;
       debug(`cfxers:handler`, fname, 'txn', { txn, args});
       const argsConformed = conform(args, inputs);
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
@@ -181,15 +177,12 @@ export class Contract implements IContract {
         }
         debug(`cfxers:handler`, fname, {est, est_err});
         if ( est ) {
-          if ( txn.gas === undefined ) {
-            txn.gas = est.gasLimit;
+          if ( txn.gasLimit === undefined ) {
+            txn.gasLimit = est.gasLimit;
           }
           if ( txn.storageLimit === undefined ) {
             txn.storageLimit = est.storageCollateralized;
           }
-        }
-        if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
-          txn.storageLimit = 2048;
         }
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
@@ -419,20 +412,12 @@ export class Wallet implements IWallet {
   }> {
     this._requireConnected();
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
-    const {conflux} = this.provider;
-
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    const gasFee = await conflux.getGasPrice();
-    const balance = await conflux.getBalance(from);
     // This is weird but whatever
     if (txn.to instanceof Promise) {
       txn.to = await txn.to;
     }
-    if (gasFee > balance ) {
-      debug(`Checking: Account balanace of ${from} is ${balance} and gasFee is: ${gasFee} `)
-      throw Error(`INSUFFICIENT FUNDS GAS PRICE IS ${gasFee} , TXN VALUE IS ${txn.value}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-    } 
     return _retryingSendTxn(this.provider, txn);
   }
 
@@ -520,7 +505,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
           try {
             // @ts-ignore
-            const r = await transactionHashP.executed(1000, 60 * 1000);
+            let r = await transactionHashP.confirmed();
             debug(`_retryingSendTxn receipt good`, r);
             return { transactionHash };
           } catch (e) {
