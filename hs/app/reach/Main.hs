@@ -843,13 +843,27 @@ run' = command "run" . info f $ d <> noIntersperse where
     abortIfAbsent rsh
     abortIfAbsent mjs
     scaffold' False True proj
-    let recompile' = reachEx <> " compile " <> pack (projDirRel </> unpack projName <> ".rsh\n")
+
+    let target = pack $ projDirRel </> unpack projName <> ".rsh"
+    let recompile' = [N.text|
+      set +e
+      $reachEx compile $target
+      RES="$?"
+      set -e
+
+      if [ ! "$$RES" -eq 0 ]; then
+        $cleanup
+        exit "$$RES"
+      fi
+    |]
+
     recompile <- liftIO $ ifM (not <$> doesFileExist bjs)
       (pure $ Just recompile')
       $ do
         b <- modificationTime <$> getFileStatus bjs
         r <- modificationTime <$> getFileStatus rsh
         pure $ if r > b then Just recompile' else Nothing
+
     let dm@DockerMeta {..} = mkDockerMetaConsole proj
     let dockerfile' = pack hostDockerfile
     let projDirHost' = pack projDirHost
