@@ -2522,7 +2522,7 @@ evalPrim p sargs =
       case ct of
         CT_Assume False -> some_good [SLM_LocalStep, SLM_Export]
         CT_Assume True -> good
-        CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure]
+        CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure, SLM_Export]
         CT_Assert -> good
         CT_Possible -> good
         CT_Unknowable {} -> impossible "unknowable"
