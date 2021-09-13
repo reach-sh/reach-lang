@@ -1,4 +1,11 @@
 /.stack-work
+/reach.cabal
+*~
+/test.out/
+*.actual
+/.hie
+/stan.html
+/test-reports/
 /.dockerignore
 /Dockerfile
 /Dockerfile.circleci
@@ -6,4 +13,3 @@
 /reach
 /Makefile
 /.package.mo.yaml
-/reach.cabal
