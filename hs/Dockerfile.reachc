@@ -3,7 +3,18 @@ FROM ethereum/solc:0.8.7         AS solc
 
 FROM alpine
 
-run apk update && apk add libgmpxx ca-certificates git z3 z3-dev
+RUN apk update && apk add libgmpxx ca-certificates git
+# z3 z3-dev
+
+ARG Z3_VER
+ENV Z3_VER="${Z3_VER}"
+ENV Z3_SYS=x64-glibc-2.31
+RUN \
+  (wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip -O /tmp/z3.zip \
+  && unzip -p /tmp/z3.zip z3-${Z3_VER}-${Z3_SYS}/bin/z3 \
+     | cat > /usr/bin/z3 ) \
+  && chmod +x /usr/bin/z3 \
+  && rm /tmp/z3.zip
 
 COPY --from=solc  /usr/bin/solc     /usr/bin/solc
 COPY --from=build /build/bin/reachc /usr/bin/reachc

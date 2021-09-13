@@ -2,6 +2,9 @@ IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
 
+ROOT=..
+include $(ROOT)/hs/Z3_VER
+
 .PHONY: install-mo
 install-mo:
 	curl -sSL https://git.io/get-mo -o mo
@@ -48,6 +51,7 @@ build: stack
 	  -f Dockerfile.haskell-build-artifacts .
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --build-arg Z3_VER=$(Z3_VER) \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
 	docker build \
