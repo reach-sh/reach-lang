@@ -28,6 +28,8 @@ data SLMode
   | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
     SLM_ConsensusStep
   | SLM_ConsensusPure
+  | --- A top-level exported function
+    SLM_Export
   deriving (Bounded, Enum, Eq, Generic)
 
 instance Show SLMode where
@@ -39,6 +41,7 @@ instance Show SLMode where
     SLM_LocalPure -> "local pure"
     SLM_ConsensusStep -> "consensus step"
     SLM_ConsensusPure -> "consensus pure"
+    SLM_Export -> "export"
 
 isConsensusStep :: SLMode -> Bool
 isConsensusStep = \case

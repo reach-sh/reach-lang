@@ -865,6 +865,7 @@ sco_update_and_mod imode addl_env env_mod =
     c :: SLScope -> App SLScope
     c = h $ \case
       SLM_Module -> c_mod
+      SLM_Export -> c_mod
       SLM_AppInit -> c_mod
       SLM_Step -> c_mod
       SLM_LocalStep -> return
@@ -874,6 +875,7 @@ sco_update_and_mod imode addl_env env_mod =
     ps :: SLScope -> App SLScope
     ps = h $ \case
       SLM_Module -> return
+      SLM_Export -> return
       SLM_AppInit -> ps_all_mod
       SLM_Step -> ps_all_mod
       SLM_LocalStep -> ps_one_mod
@@ -1883,7 +1885,7 @@ explodeTupleLike lab = \case
 doFluidRef_dv :: FluidVar -> App DLVar
 doFluidRef_dv fv = do
   at <- withAt id
-  ensure_modes (all_slm_modes \\ [SLM_Module]) "fluid ref"
+  ensure_modes (all_slm_modes \\ [SLM_Module, SLM_Export]) "fluid ref"
   let fvt = fluidVarType fv
   dv <- ctxt_mkvar (DLVar at Nothing fvt)
   saveLift $ DLS_FluidRef at dv fv
@@ -2518,7 +2520,7 @@ evalPrim p sargs =
       let good = return $ public $ SLV_Null at "claim"
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
-        CT_Assume False -> some_good [SLM_LocalStep]
+        CT_Assume False -> some_good [SLM_LocalStep, SLM_Export]
         CT_Assume True -> good
         CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure]
         CT_Assert -> good
@@ -3274,6 +3276,7 @@ evalId_ lab x = do
   m <- readSt st_mode
   let (elab, env) = case m of
         SLM_Module -> s
+        SLM_Export -> s
         SLM_AppInit -> s
         SLM_Step -> s
         SLM_LocalStep -> l
@@ -4514,7 +4517,7 @@ evalExportClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> Ap
 evalExportClosureToBlock clo sargs mtf rest = do
   at <- withAt id
   let sv = SLV_Clo at mtf clo
-  evalModeToBlock SLM_Module rest $ do
+  evalModeToBlock SLM_Export rest $ do
     SLAppRes _ val <- evalApplyValsAux True sv sargs
     return val
 
