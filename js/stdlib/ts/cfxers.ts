@@ -1,4 +1,5 @@
 import cfxsdk from 'js-conflux-sdk';
+import { format } from 'js-conflux-sdk';
 import { ethers } from 'ethers';
 import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
@@ -157,6 +158,9 @@ export class Contract implements IContract {
         txn = {from, ...txn, value: (txn.value || '0').toString()};
       }
       args = unbn(args);
+      if ( txn.gasLimit === undefined ) {
+        txn.gasLimit = BigInt(800000);
+      }
       debug(`cfxers:handler`, fname, 'txn', { txn, args});
       const argsConformed = conform(args, inputs);
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
@@ -168,22 +172,29 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        let est = undefined;
+        let est = await cfc.estimateGasAndCollateral(txn);
         let est_err = undefined;
+        if (est.storageCollateralized == 0) {
+             est.storageCollateralized = BigInt(2048);
+        }  
+        txn.storageLimit = est.storageCollateralized;
+        txn.gas = est.gasUsed; 
+
         try {
-          est = await cfc.estimateGasAndCollateral();
+         est = await cfc.estimateGasAndCollateral();    
         } catch (e) {
           est_err = e;
         }
         debug(`cfxers:handler`, fname, {est, est_err});
-        if ( est ) {
-          if ( txn.gasLimit === undefined ) {
-            txn.gasLimit = est.gasLimit;
+         if (txn.gasLimit == BigInt(800000)) {
+              txn.gasLimit = est.gasLimit;
           }
-          if ( txn.storageLimit === undefined ) {
-            txn.storageLimit = est.storageCollateralized;
+          if (txn.gas === undefined) {
+               txn.gas = est.gasUsed
           }
-        }
+          if (txn.storageLimit == 0) {
+               txn.storageLimit = est.storageCollateralized;
+          }   
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
@@ -414,13 +425,40 @@ export class Wallet implements IWallet {
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    // This is weird but whatever
-    if (txn.to instanceof Promise) {
-      txn.to = await txn.to;
+    const estimate = await this.provider.conflux.estimateGasAndCollateral(txn);
+    let ratioo = this.provider.conflux.defaultStorageRatio;
+    let ratiooo = this.provider.conflux.defaultGasRatio;
+    const balance = await this.provider.conflux.getBalance(from);
+      //@ts-ignore
+    if ( estimate.storageCollateralized == 0 ) {
+      //@ts-ignore
+      estimate.storageCollateralized = BigInt(2048);
+    }
+    //@ts-ignore
+    let newGasCost = format.big(estimate.gasUsed).times(ratiooo).toFixed(0);
+    //@ts-ignore
+    let newStorageCost = format.big(estimate.storageCollateralized).times(ratioo).toFixed(0);
+    //@ts-ignore
+    txn.gasLimit = estimate.gasLimit;
+    txn.gas = BigInt(newGasCost);
+    txn.storageLimit = BigInt(newStorageCost);
+    
+    // Note: balace needs to cover value +  (gas + storageLimit)
+    let gasXstorage = format.big(newGasCost).plus(newStorageCost).toFixed(0);
+    let finalCost = format.big(txn.value).plus(gasXstorage).toFixed(0);
+    const final = BigInt(finalCost);
+    
+    debug(`SendTxn attempt, Final Cost of Tx is `, finalCost,  'estimation', estimate,  'TX', txn, 'Balance', balance);
+    if ( final > balance ) {
+      debug(`Checking: Account balanace of  ${from} is ${balance} and gasFee is, ${newGasCost}: Total TxValue is ${final}`)
+      throw Error(` INSUFFICIENT FUNDS GAS COST IS ${newGasCost},  TXN VALUE IS  ${final}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
+  } 
+   // This is weird but whatever
+   if (txn.to instanceof Promise) {
+       txn.to = await txn.to;
     }
     return _retryingSendTxn(this.provider, txn);
   }
-
   static createRandom(): Wallet {
     return new Wallet();
   }
@@ -505,7 +543,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
           try {
             // @ts-ignore
-            let r = await transactionHashP.confirmed();
+            const r = await transactionHashP.executed(1000, 60 * 1000);
             debug(`_retryingSendTxn receipt good`, r);
             return { transactionHash };
           } catch (e) {
