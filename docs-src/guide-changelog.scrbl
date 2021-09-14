@@ -10,6 +10,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.4 is the current Reach release candidate version.
 @itemlist[
+@item{2021/09/16: Algorand supports @litchar{firstMsg} deployment mode.}
+@item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 @item{2021/09/15: @reachin{muldiv} added.}
 @item{2021/09/08: Add @DFlag{stop-after-eval} and @DFlag{verify-timeout} options to @exec{reach compile}.}
 @item{2021/08/31: Removed @jsin{getSignStrategy} and @jsin{setSignStrategy} in favor of @jsin{setWalletFallBack} and @jsin{walletFallback}.}

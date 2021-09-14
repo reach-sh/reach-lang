@@ -24,13 +24,59 @@ int 3
 assert
 txna ApplicationArgs 0
 btoi
+// Handler 0
 dup
-bz ctor
+int 0
+==
+bz l0
+pop
+txna ApplicationArgs 1
+dup
+len
+int 0
+==
+assert
+pop
+txna ApplicationArgs 2
+dup
+len
+int 32
+==
+assert
+dup
+store 255
+pop
+txn Sender
+global CreatorAddress
+==
+assert
+load 255
+store 2
+// compute state in HM_Check 0
+int 8
+bzero
+sha256
+load 1
+==
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:37:11:after expr stmt semicolon"
+// "[]"
+// compute state in HM_Set 1
+byte base64(AAAAAAAAAAE=)
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l0:
 // Handler 1
 dup
 int 1
 ==
-bz l0
+bz l1
 pop
 txna ApplicationArgs 1
 dup
@@ -54,19 +100,18 @@ substring 8 16
 btoi
 store 254
 pop
-// compute state in HM_Check 0
-int 8
-bzero
+// compute state in HM_Check 1
+byte base64(AAAAAAAAAAE=)
 sha256
 load 1
 ==
 assert
 // "CheckPay"
-// "./index.rsh:49:9:dot"
+// "./examples/tut-8/index.rsh:49:9:dot"
 // "[]"
 load 255
 dup
-bz l1
+bz l2
 load 0
 dup
 int 1
@@ -102,14 +147,14 @@ dig 1
 gtxns Receiver
 ==
 assert
-l1:
+l2:
 pop
 global Round
 load 254
 +
 store 253
-// compute state in HM_Set 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Set 2
+byte base64(AAAAAAAAAAI=)
 txn Sender
 concat
 load 255
@@ -128,12 +173,12 @@ int NoOp
 ==
 assert
 b updateState
-l0:
+l1:
 // Handler 2
 dup
 int 2
 ==
-bz l2
+bz l3
 pop
 txna ApplicationArgs 1
 dup
@@ -164,8 +209,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Check 2
+byte base64(AAAAAAAAAAI=)
 load 255
 concat
 load 254
@@ -186,11 +231,11 @@ load 252
 <
 assert
 // "CheckPay"
-// "./index.rsh:56:7:dot"
+// "./examples/tut-8/index.rsh:56:7:dot"
 // "[]"
 load 254
 dup
-bz l3
+bz l4
 load 0
 dup
 int 1
@@ -226,7 +271,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l3:
+l4:
 pop
 load 255
 load 254
@@ -247,12 +292,12 @@ dup
 itob
 concat
 b loop4
-l2:
+l3:
 // Handler 3
 dup
 int 3
 ==
-bz l4
+bz l5
 pop
 txna ApplicationArgs 1
 dup
@@ -283,8 +328,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Check 2
+byte base64(AAAAAAAAAAI=)
 load 255
 concat
 load 254
@@ -306,17 +351,17 @@ load 252
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
 load 254
 dup
-bz l5
+bz l6
 load 0
 dup
 int 1
@@ -357,7 +402,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l5:
+l6:
 pop
 int 0
 load 0
@@ -400,7 +445,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l6:
+l7:
 pop
 global ZeroAddress
 store 1
@@ -409,14 +454,14 @@ int DeleteApplication
 ==
 assert
 b updateState
-l4:
-l7:
+l5:
 l8:
+l9:
 // Handler 6
 dup
 int 6
 ==
-bz l9
+bz l10
 pop
 txna ApplicationArgs 1
 dup
@@ -456,8 +501,8 @@ assert
 dup
 store 249
 pop
-// compute state in HM_Check 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Check 7
+byte base64(AAAAAAAAAAc=)
 load 255
 concat
 load 254
@@ -479,14 +524,14 @@ load 1
 ==
 assert
 global Round
-load 251
+load 250
 <
 assert
 // "CheckPay"
-// "./index.rsh:69:11:dot"
+// "./examples/tut-8/index.rsh:69:11:dot"
 // "[]"
 // Just "sender correct"
-// "./index.rsh:69:11:dot"
+// "./examples/tut-8/index.rsh:69:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -496,8 +541,8 @@ global Round
 load 253
 +
 store 248
-// compute state in HM_Set 8
-byte base64(AAAAAAAAAAg=)
+// compute state in HM_Set 9
+byte base64(AAAAAAAAAAk=)
 load 255
 concat
 load 254
@@ -508,12 +553,12 @@ itob
 concat
 load 252
 concat
+load 251
+itob
+concat
 load 249
 concat
 load 248
-itob
-concat
-load 250
 itob
 concat
 sha256
@@ -523,12 +568,12 @@ int NoOp
 ==
 assert
 b updateState
-l9:
+l10:
 // Handler 7
 dup
 int 7
 ==
-bz l10
+bz l11
 pop
 txna ApplicationArgs 1
 dup
@@ -566,8 +611,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Check 7
+byte base64(AAAAAAAAAAc=)
 load 255
 concat
 load 254
@@ -589,22 +634,22 @@ load 1
 ==
 assert
 global Round
-load 251
+load 250
 >=
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
-load 250
+load 251
 dup
-bz l11
+bz l12
 load 0
 dup
 int 1
@@ -645,7 +690,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l11:
+l12:
 pop
 int 0
 load 0
@@ -688,7 +733,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l12:
+l13:
 pop
 global ZeroAddress
 store 1
@@ -697,131 +742,10 @@ int DeleteApplication
 ==
 assert
 b updateState
-l10:
+l11:
 // Handler 8
 dup
 int 8
-==
-bz l13
-pop
-txna ApplicationArgs 1
-dup
-len
-int 128
-==
-assert
-dup
-substring 0 32
-store 255
-dup
-substring 32 40
-btoi
-store 254
-dup
-substring 40 48
-btoi
-store 253
-dup
-substring 48 80
-store 252
-dup
-substring 80 112
-store 251
-dup
-substring 112 120
-btoi
-store 250
-dup
-substring 120 128
-btoi
-store 249
-pop
-txna ApplicationArgs 2
-dup
-len
-int 8
-==
-assert
-dup
-btoi
-store 248
-pop
-// compute state in HM_Check 8
-byte base64(AAAAAAAAAAg=)
-load 255
-concat
-load 254
-itob
-concat
-load 253
-itob
-concat
-load 252
-concat
-load 251
-concat
-load 250
-itob
-concat
-load 249
-itob
-concat
-sha256
-load 1
-==
-assert
-global Round
-load 250
-<
-assert
-// "CheckPay"
-// "./index.rsh:77:9:dot"
-// "[]"
-// Just "sender correct"
-// "./index.rsh:77:9:dot"
-// "[]"
-load 252
-txn Sender
-==
-assert
-global Round
-load 253
-+
-store 247
-// compute state in HM_Set 10
-byte base64(AAAAAAAAAAo=)
-load 255
-concat
-load 254
-itob
-concat
-load 253
-itob
-concat
-load 252
-concat
-load 251
-concat
-load 248
-itob
-concat
-load 247
-itob
-concat
-load 249
-itob
-concat
-sha256
-store 1
-txn OnCompletion
-int NoOp
-==
-assert
-b updateState
-l13:
-// Handler 9
-dup
-int 9
 ==
 bz l14
 pop
@@ -846,11 +770,132 @@ dup
 substring 48 80
 store 252
 dup
-substring 80 112
+substring 80 88
+btoi
 store 251
 dup
-substring 112 120
+substring 88 120
+store 250
+dup
+substring 120 128
 btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
+int 8
+==
+assert
+dup
+btoi
+store 248
+pop
+// compute state in HM_Check 9
+byte base64(AAAAAAAAAAk=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+concat
+load 249
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 249
+<
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:77:9:dot"
+// "[]"
+// Just "sender correct"
+// "./examples/tut-8/index.rsh:77:9:dot"
+// "[]"
+load 252
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 247
+// compute state in HM_Set 11
+byte base64(AAAAAAAAAAs=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+concat
+load 248
+itob
+concat
+load 247
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l14:
+// Handler 9
+dup
+int 9
+==
+bz l15
+pop
+txna ApplicationArgs 1
+dup
+len
+int 128
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
 store 250
 dup
 substring 120 128
@@ -864,8 +909,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 8
-byte base64(AAAAAAAAAAg=)
+// compute state in HM_Check 9
+byte base64(AAAAAAAAAAk=)
 load 255
 concat
 load 254
@@ -877,9 +922,9 @@ concat
 load 252
 concat
 load 251
+itob
 concat
 load 250
-itob
 concat
 load 249
 itob
@@ -889,22 +934,22 @@ load 1
 ==
 assert
 global Round
-load 250
+load 249
 >=
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
-load 249
+load 251
 dup
-bz l15
+bz l16
 load 0
 dup
 int 1
@@ -945,7 +990,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l15:
+l16:
 pop
 int 0
 load 0
@@ -988,7 +1033,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l16:
+l17:
 pop
 global ZeroAddress
 store 1
@@ -997,12 +1042,12 @@ int DeleteApplication
 ==
 assert
 b updateState
-l14:
+l15:
 // Handler 10
 dup
 int 10
 ==
-bz l17
+bz l18
 pop
 txna ApplicationArgs 1
 dup
@@ -1025,11 +1070,11 @@ dup
 substring 48 80
 store 252
 dup
-substring 80 112
+substring 80 88
+btoi
 store 251
 dup
-substring 112 120
-btoi
+substring 88 120
 store 250
 dup
 substring 120 128
@@ -1055,8 +1100,8 @@ substring 8 16
 btoi
 store 246
 pop
-// compute state in HM_Check 10
-byte base64(AAAAAAAAAAo=)
+// compute state in HM_Check 11
+byte base64(AAAAAAAAAAs=)
 load 255
 concat
 load 254
@@ -1068,9 +1113,9 @@ concat
 load 252
 concat
 load 251
+itob
 concat
 load 250
-itob
 concat
 load 249
 itob
@@ -1083,14 +1128,14 @@ load 1
 ==
 assert
 global Round
-load 249
+load 248
 <
 assert
 // "CheckPay"
-// "./index.rsh:85:11:dot"
+// "./examples/tut-8/index.rsh:85:11:dot"
 // "[]"
 // Just "sender correct"
-// "./index.rsh:85:11:dot"
+// "./examples/tut-8/index.rsh:85:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -1098,8 +1143,8 @@ txn Sender
 assert
 // Nothing
 // "reach standard library:65:17:application"
-// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
-load 251
+// "[at ./examples/tut-8/index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+load 250
 load 247
 itob
 load 246
@@ -1119,7 +1164,7 @@ load 252
 concat
 load 246
 int 4
-load 250
+load 249
 -
 +
 int 3
@@ -1128,16 +1173,16 @@ itob
 global Round
 itob
 concat
-load 248
+load 251
 itob
 concat
 b loop4
-l17:
+l18:
 // Handler 11
 dup
 int 11
 ==
-bz l18
+bz l19
 pop
 txna ApplicationArgs 1
 dup
@@ -1160,11 +1205,11 @@ dup
 substring 48 80
 store 252
 dup
-substring 80 112
+substring 80 88
+btoi
 store 251
 dup
-substring 112 120
-btoi
+substring 88 120
 store 250
 dup
 substring 120 128
@@ -1182,8 +1227,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 10
-byte base64(AAAAAAAAAAo=)
+// compute state in HM_Check 11
+byte base64(AAAAAAAAAAs=)
 load 255
 concat
 load 254
@@ -1195,9 +1240,9 @@ concat
 load 252
 concat
 load 251
+itob
 concat
 load 250
-itob
 concat
 load 249
 itob
@@ -1210,22 +1255,22 @@ load 1
 ==
 assert
 global Round
-load 249
+load 248
 >=
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
-load 248
+load 251
 dup
-bz l19
+bz l20
 load 0
 dup
 int 1
@@ -1266,7 +1311,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l19:
+l20:
 pop
 int 0
 load 0
@@ -1309,7 +1354,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l20:
+l21:
 pop
 global ZeroAddress
 store 1
@@ -1318,7 +1363,7 @@ int DeleteApplication
 ==
 assert
 b updateState
-l18:
+l19:
 int 0
 assert
 loop4:
@@ -1353,13 +1398,13 @@ pop
 load 255
 int 1
 ==
-bz l21
+bz l22
 load 254
 load 250
 +
 store 248
-// compute state in HM_Set 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Set 7
+byte base64(AAAAAAAAAAc=)
 load 252
 concat
 load 251
@@ -1370,10 +1415,10 @@ itob
 concat
 load 249
 concat
-load 248
+load 253
 itob
 concat
-load 253
+load 248
 itob
 concat
 sha256
@@ -1383,7 +1428,7 @@ int NoOp
 ==
 assert
 b updateState
-l21:
+l22:
 load 252
 load 251
 itob
@@ -1415,7 +1460,7 @@ int 2
 load 254
 *
 dup
-bz l22
+bz l23
 load 0
 dup
 int 1
@@ -1461,7 +1506,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l22:
+l23:
 pop
 int 0
 load 0
@@ -1504,7 +1549,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l23:
+l24:
 pop
 global ZeroAddress
 store 1
@@ -1543,25 +1588,11 @@ txn OnCompletion
 int NoOp
 ==
 assert
-byte base64()
-int 64
-bzero
-app_global_put
-b checkSize
-ctor:
-txn Sender
-global CreatorAddress
-==
-assert
-txna ApplicationArgs 1
-store 2
 // compute state in HM_Set 0
 int 8
 bzero
 sha256
 store 1
-txn OnCompletion
-int NoOp
-==
-assert
+global ZeroAddress
+store 2
 b updateState

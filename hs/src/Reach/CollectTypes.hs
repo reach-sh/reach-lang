@@ -127,7 +127,7 @@ instance CollectsTypes DLMapInfo where
   cts = cts . dlmi_tym
 
 instance CollectsTypes DLInit where
-  cts (DLInit {..}) = cts dli_ctimem <> cts dli_maps
+  cts (DLInit {..}) = cts dli_maps
 
 instance CollectsTypes DLStmt where
   cts (DL_Nop _) = mempty

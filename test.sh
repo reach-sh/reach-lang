@@ -7,7 +7,7 @@ ${REACH} -h
 
 c () {
   echo c "$@"
-  ${REACH} compile "$@"
+  ${REACH} compile --intermediate-files "$@"
 }
 
 fc () {
@@ -30,7 +30,7 @@ jb () {
   (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  # (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -53,7 +53,7 @@ ci () {
   (cd "examples/$WHICH"
 
   ${REACH} clean
-  ${REACH} compile
+  ${REACH} compile --intermediate-files
   make build
   REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
@@ -66,7 +66,7 @@ r () {
   ${REACH} clean
   rm -f build/*.teal*
   ${REACH} compile --install-pkgs
-  ${REACH} compile
+  ${REACH} compile --intermediate-files
 
   # tealcount1 .
 
@@ -110,11 +110,17 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
-# c users/duoswap-core/index.rsh --intermediate-files
-ci ETH tut-6
-c hs/t/y/pr265.rsh
+# c users/duoswap-core/index.rsh
+# c examples/race/index.rsh
+# c hs/t/y/pr265.rsh
+# c examples/overview/index.rsh
+# ci ETH overview
+# ci ETH race
+# ci ALGO overview
+# exit 0
+ci ALGO race
 exit 0
 
 # c hs/t/n/Err_IllegalEffPosition.rsh

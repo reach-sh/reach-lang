@@ -1460,7 +1460,7 @@ cstate hm svs = do
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 2
+reachAlgoBackendVersion = 3
 
 -- State:
 keyState :: B.ByteString
@@ -1525,9 +1525,13 @@ bindTime dv = store_let dv True (code "global" ["Round"])
 bindSecs :: DLVar -> App a -> App a
 bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
+allocDLVar :: SrcLoc -> DLType -> App DLVar
+allocDLVar at t =
+  DLVar at Nothing t <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
+
 bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
 bindFromTuple at vs m = do
-  let mkArgVar l = DLVar at Nothing (T_Tuple $ map varType l) <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
+  let mkArgVar l = allocDLVar at $ T_Tuple $ map varType l
   av <- mkArgVar vs
   let go = \case
         [] -> op "pop" >> m
@@ -1548,7 +1552,32 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
 
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
-ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
+ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recordWhich which $ do
+  let isCtor = which == 0
+  (extraCtorDo, extraCtorMsg) <-
+    case isCtor of
+      False -> return (return (), [])
+      True -> do
+        ctcAddrV <- allocDLVar at T_Address
+        let ctorInit = do
+              -- NOTE We are trusting the creator to tell us the correct
+              -- contractAddr. If they don't, this whole app is screwed. It
+              -- would technically be possible to figure this out by keccak-ing
+              -- (or something) the source of escrow with our own appid. We're
+              -- not going to do that because we know
+              -- applications-with-transactions are coming and the escrow
+              -- account is almost dead.
+              --
+              -- Since we can't check it anyways, we're not even going to
+              -- bother ensuring that there's a pay with it,
+              code "txn" ["Sender"]
+              cDeployer
+              asserteq
+              cv ctcAddrV
+              gvStore GV_contractAddr
+              return ()
+        return (ctorInit, [ ctcAddrV ])
+  let msg = extraCtorMsg <> msg_
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
@@ -1572,6 +1601,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
         . (bindFromArg ArgSvs svs)
         . (bindFromArg ArgMsg msg)
   bindVars $ do
+    extraCtorDo
     cstate (HM_Check prev) $ map DLA_Var svs
     let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
         checkTime1 cmp clhs rhsa = do
@@ -1637,7 +1667,7 @@ cStateSlice at size iw = do
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at csvs vi (CHandlers hm) = cpp
+  let CPProg at vi (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -1721,8 +1751,6 @@ compile_algo disp pl = do
     asserteq
     code "txna" [ "ApplicationArgs", etexty ArgMethod ]
     cfrombs T_UInt
-    op "dup"
-    code "bz" [ "ctor" ]
     -- NOTE This could be compiled to a jump table if that were possible or to
     -- a tree to be O(log n) rather than O(n)
     forM_ (M.toAscList hm) $ \(hi, hh) -> do
@@ -1763,32 +1791,10 @@ compile_algo disp pl = do
     code "txn" ["OnCompletion"]
     code "int" ["NoOp"]
     asserteq
-    cl $ DLL_Bytes keyState
-    padding $ typeSizeOf keyState_ty
-    op "app_global_put"
-    code "b" [ "checkSize" ]
-    label "ctor"
-    -- NOTE We are trusting the creator to tell us the correct contractAddr. If
-    -- they don't, this whole app is screwed. It would technically be possible
-    -- to figure this out by keccak-ing (or something) the source of escrow
-    -- with our own appid. We're not going to do that because we know
-    -- applications-with-transactions are coming and the escrow account is
-    -- almost dead.
-    --
-    -- Since we can't check it anyways, we're not even going to bother ensuring
-    -- that there's a pay with it,
-    code "txn" ["Sender"]
-    cDeployer
-    asserteq
-    code "txna" [ "ApplicationArgs", etexty ArgSvs ]
-    -- NOTE We could/should check this is address-length
+    cstate (HM_Set 0) []
+    padding $ typeSizeOf T_Address
     gvStore GV_contractAddr
-    -- NOTE firstMsg => do handler 1
-    let bind_csvs =
-          case dli_ctimem dli of
-            Nothing -> id
-            Just (tv, sv) -> bindTime tv . bindSecs sv
-    bind_csvs $ ct $ CT_From at 0 $ FI_Continue (ViewSave 0 mempty) $ asnLike csvs
+    code "b" [ "updateState" ]
   -- Clear state is never allowed
   addProg "appClear" $ do
     cl $ DLL_Bool False

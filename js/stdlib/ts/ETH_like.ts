@@ -67,8 +67,8 @@ type Log = real_ethers.providers.Log;
 // node --unhandled-rejections=strict
 
 type DeployMode = 'DM_firstMsg' | 'DM_constructor';
-const reachBackendVersion = 1;
-const reachEthBackendVersion = 1;
+const reachBackendVersion = 2;
+const reachEthBackendVersion = 2;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -99,20 +99,13 @@ export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, 
 
 // For when you init the contract with the 1st message
 type ContractInitInfo = {
-  args: Array<any>,
-  value: BigNumber,
-};
-
-// For either deployment case
-type ContractInitInfo2 = {
-  argsMay: Maybe<Array<any>>,
+  arg: any,
   value: BigNumber,
 };
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
-}
-
+};
 
 // ****************************************************************************
 // Helpers
@@ -223,8 +216,16 @@ const getNetworkTimeNumber = async (): Promise<number> => {
   return ans;
 };
 
-const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
-  argsMay: init ? Some(init.args) : None,
+const sendRecv_prepArg = (args:Array<any>, tys:Array<any>, evt_cnt:number) => {
+  const [ args_svs, args_msg ] = argsSplit(args, evt_cnt);
+  const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
+  // @ts-ignore XXX
+  const arg_ty = T_Tuple([T_Tuple(tys_svs), T_Tuple(tys_msg)]);
+  return arg_ty.munge([args_svs, args_msg]);
+};
+
+const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo => ({
+  arg: init ? init.arg : sendRecv_prepArg([], [], 0),
   value: init ? init.value : bigNumberify(0),
 });
 
@@ -528,7 +529,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       init?: ContractInitInfo
     ): Contract => {
       debug(shad, ': performDeploy with', init);
-      const { argsMay, value } = initOrDefaultArgs(init);
+      const { arg, value } = initOrDefaultArgs(init);
+      debug(shad, {arg});
 
       const { ABI, Bytecode } = bin._Connectors.ETH;
       debug(shad, ': making contract factory');
@@ -536,7 +538,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       (async () => {
         debug(shad, `: deploying factory`);
-        const contract = await factory.deploy(...argsMay, { value, gasLimit });
+        const contract = await factory.deploy(arg, { value, gasLimit });
         debug(shad, `: deploying factory; done:`, contract.address);
         debug(shad, `: waiting for receipt:`, contract.deployTransaction.hash);
         const deploy_r = await contract.deployTransaction.wait();
@@ -557,23 +559,23 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const implNow = {
         stdlib,
         sendrecv: async (srargs:SendRecvArgs): Promise<Recv> => {
-          const { funcNum, evt_cnt, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
+          const { funcNum, evt_cnt, tys, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
           debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
           const [ value, toks ] = pay;
 
           // The following must be true for the first sendrecv.
           try {
-            assert(onlyIf, `verifyContract: onlyIf must be true`);
-            assert(soloSend, `verifyContract: soloSend must be true`);
-            assert(eq(funcNum, 1), `verifyContract: funcNum must be 1`);
-            assert(!timeoutAt, `verifyContract: no timeout`);
-            assert(toks.length == 0, `verifyContract: no tokens`);
+            assert(onlyIf, `firstMsg: onlyIf must be true`);
+            assert(soloSend, `firstMsg: soloSend must be true`);
+            assert(eq(funcNum, 0), `firstMsg: funcNum must be 1`);
+            assert(!timeoutAt, `firstMsg: no timeout`);
+            assert(toks.length == 0, `firstMsg: no tokens`);
           } catch (e) {
             throw Error(`impossible: Deferred deploy sendrecv assumptions violated.\n${e}`);
           }
 
           // shim impl is replaced with real impl
-          setImpl(performDeploy({args: [[0], args], value}));
+          setImpl(performDeploy({arg: sendRecv_prepArg(args, tys, evt_cnt), value}));
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
@@ -630,14 +632,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       setLastBlock(o.blockNumber);
     };
 
-    let theCreationTime: number|undefined = undefined;
     const getC = (() => {
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
         const { creation_block } = await verifyContract_(info, bin, eventCache, label);
-        theCreationTime = creation_block;
         setLastBlock(creation_block);
         const address = info;
         debug(shad, `: contract verified`);
@@ -716,11 +716,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const dhead = [shad, label, 'send', funcName, timeoutAt, 'SEND'];
       debug(...dhead, 'ARGS', args);
-      const [ args_svs, args_msg ] = argsSplit(args, evt_cnt );
-      const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
-      // @ts-ignore XXX
-      const arg_ty = T_Tuple([T_Tuple(tys_svs), T_Tuple(tys_msg)]);
-      const arg = arg_ty.munge([args_svs, args_msg]);
+      const arg = sendRecv_prepArg(args, tys, evt_cnt);
 
       // Make sure the ctc is available and verified (before we get into try/catch)
       // https://github.com/reach-sh/reach-lang/issues/134
@@ -779,7 +775,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
       const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
-      const isFirstMsgDeploy = (funcNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
+      const isFirstMsgDeploy = (funcNum == 0)
       const lastBlock = await getLastBlock();
       const ok_evt = `e${funcNum}`;
       const dhead = { t: 'recv', label, ok_evt };
@@ -872,14 +868,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       }
     };
 
-    const creationTime = async () => {
-      await getC();
-      // @ts-ignore
-      return bigNumberify(theCreationTime);
-    };
-    const creationSecs = async () =>
-      await getTimeSecs(await creationTime());
-
     const viewlib: IViewLib = {
       viewMapRef: async (...args: any): Promise<any> => {
         void(args);
@@ -905,7 +893,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, creationSecs, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
+    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -1055,7 +1043,7 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
   return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
 const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache, label: string): Promise<VerifyResult> => {
-  const { ABI, Bytecode, deployMode } = backend._Connectors.ETH;
+  const { ABI, Bytecode } = backend._Connectors.ETH;
   const address = ctcInfo;
   const iface = new real_ethers.utils.Interface(ABI);
   const dhead = [ 'verifyContract', label ];
@@ -1090,25 +1078,15 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const dt = await provider.getTransaction( e0log.transactionHash );
   debug(dhead, 'dt', dt);
 
-  const ctorArgs = await (async (): Promise<any> => {
-    switch ( deployMode ) {
-      case 'DM_firstMsg': {
-        const e1log = await lookupLog('e1');
-        const e1p = iface.parseLog(e1log);
-        debug(`e1p`, e1p);
-        return e1p.args;
-      }
-      case 'DM_constructor':
-        return [];
-      default:
-        throw Error(`Unrecognized deployMode: ${deployMode}`);
-    }
-  })();
+  const e0p = iface.parseLog(e0log);
+  debug(dhead, {e0p});
+  const ctorArg = e0p.args;
+  debug(dhead, {ctorArg});
 
   // We don't actually check the live contract code, but instead compare what
   // we would have done to deploy it with how it was actually deployed.
   const actual = dt.data;
-  const expected = Bytecode + iface.encodeDeploy(ctorArgs).slice(2);
+  const expected = Bytecode + iface.encodeDeploy(ctorArg).slice(2);
   chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
 
   // We are not checking the balance or the contract storage, because we know

@@ -63,8 +63,6 @@ In Algorand, @tech{network time} corresponds to round numbers and @tech{network 
 (This is because the current round's timestamp is not determined until after it is finalized.
 This means that a @tech{network second}-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
 
-This connector does not support different @reachin{deployMode}s and treats them all as @reachin{'constructor'}.
-
 The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.
 

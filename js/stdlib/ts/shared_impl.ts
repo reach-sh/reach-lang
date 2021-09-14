@@ -133,8 +133,6 @@ export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
-  creationTime: () => Promise<BigNumber>,
-  creationSecs: () => Promise<BigNumber>,
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   waitTime: (v:BigNumber) => Promise<BigNumber>,
@@ -145,7 +143,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   stdlib: Object,
 };
 
-type ContractIndex = 'getInfo' | 'creationTime' | 'creationSecs' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
+type ContractIndex = 'getInfo' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
 
 export const deferContract =
   <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
@@ -169,10 +167,6 @@ export const deferContract =
   // then replaces itself with the real impl once deployed.
   let impl: IContract<ContractInfo, RawAddress, Token, ConnectorTy> = {
     getInfo: delay('getInfo'),
-    // @ts-ignore
-    creationTime: delay('creationTime'),
-    // @ts-ignore
-    creationSecs: delay('creationSecs'),
     // @ts-ignore
     sendrecv: mnow('sendrecv'),
     // @ts-ignore
@@ -207,8 +201,6 @@ export const deferContract =
     waitTime: wrap('waitTime'),
     waitSecs: wrap('waitSecs'),
     getInfo: wrap('getInfo'),
-    creationTime: wrap('creationTime'),
-    creationSecs: wrap('creationSecs'),
     iam: wrap('iam'),
     selfAddress: wrap('selfAddress'),
     getViews: wrap('getViews'),

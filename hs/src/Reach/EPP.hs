@@ -682,7 +682,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
-  be_handlerc <- newCounter 1
+  be_handlerc <- newCounter 0
   be_handlers <- newIORef mempty
   be_flowr <- newIORef mempty
   be_more <- newIORef False
@@ -714,8 +714,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   dex' <-
     flip runReaderT (BEnv {..}) $
       mapM mk_eb dex
-  csvs <- mkh $ ce_readSave 0
-  cp <- (CPProg at csvs mvm . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at mvm . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

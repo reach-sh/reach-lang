@@ -1,7 +1,7 @@
 // Automatically generated with Reach 0.1.4
 /* eslint-disable */
 export const _version = '0.1.4';
-export const _backendVersion = 1;
+export const _backendVersion = 2;
 
 
 export function getExports(s) {
@@ -43,33 +43,42 @@ export async function Alice(ctc, interact) {
   const ctc4 = stdlib.T_Address;
   
   
-  const v42 = await ctc.creationTime();
-  const v43 = await ctc.creationSecs();
+  const v257 = stdlib.protect(ctc0, interact.deadline, 'for Alice\'s interact field deadline');
+  const v258 = stdlib.protect(ctc0, interact.wager, 'for Alice\'s interact field wager');
   
-  const v255 = stdlib.protect(ctc0, interact.deadline, 'for Alice\'s interact field deadline');
-  const v256 = stdlib.protect(ctc0, interact.wager, 'for Alice\'s interact field wager');
-  
-  const txn1 = await (ctc.sendrecv({
-    args: [v256, v255],
+  const txn1 = await (ctc.recv({
+    evt_cnt: 0,
+    funcNum: 0,
+    out_tys: [],
+    timeoutAt: undefined,
+    waitIfNotPresent: false
+    }));
+  const [] = txn1.data;
+  const v260 = txn1.time;
+  const v261 = txn1.secs;
+  const v259 = txn1.from;
+  ;
+  const txn2 = await (ctc.sendrecv({
+    args: [v258, v257],
     evt_cnt: 2,
     funcNum: 1,
     onlyIf: true,
     out_tys: [ctc0, ctc0],
-    pay: [v256, []],
-    sim_p: (async (txn1) => {
+    pay: [v258, []],
+    sim_p: (async (txn2) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [v260, v261] = txn1.data;
-      const v262 = txn1.time;
-      const v263 = txn1.secs;
-      const v259 = txn1.from;
+      const [v266, v267] = txn2.data;
+      const v268 = txn2.time;
+      const v269 = txn2.secs;
+      const v265 = txn2.from;
       
       sim_r.txns.push({
-        amt: v260,
+        amt: v266,
         kind: 'to',
         tok: undefined
         });
-      const v267 = stdlib.add(v262, v261);
+      const v273 = stdlib.add(v268, v267);
       sim_r.isHalt = false;
       
       return sim_r;
@@ -79,51 +88,51 @@ export async function Alice(ctc, interact) {
     tys: [ctc0, ctc0],
     waitIfNotPresent: false
     }));
-  const [v260, v261] = txn1.data;
-  const v262 = txn1.time;
-  const v263 = txn1.secs;
-  const v259 = txn1.from;
+  const [v266, v267] = txn2.data;
+  const v268 = txn2.time;
+  const v269 = txn2.secs;
+  const v265 = txn2.from;
   ;
-  const v267 = stdlib.add(v262, v261);
-  const txn2 = await (ctc.recv({
+  const v273 = stdlib.add(v268, v267);
+  const txn3 = await (ctc.recv({
     evt_cnt: 0,
     funcNum: 2,
     out_tys: [],
-    timeoutAt: ['time', v267],
+    timeoutAt: ['time', v273],
     waitIfNotPresent: false
     }));
-  if (txn2.didTimeout) {
-    const txn3 = await (ctc.sendrecv({
-      args: [v259, v260, v261, v267],
+  if (txn3.didTimeout) {
+    const txn4 = await (ctc.sendrecv({
+      args: [v265, v266, v267, v273],
       evt_cnt: 0,
       funcNum: 3,
       onlyIf: true,
       out_tys: [],
       pay: [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []],
-      sim_p: (async (txn3) => {
+      sim_p: (async (txn4) => {
         const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
         
-        const [] = txn3.data;
-        const v404 = txn3.time;
-        const v405 = txn3.secs;
-        const v403 = txn3.from;
+        const [] = txn4.data;
+        const v410 = txn4.time;
+        const v411 = txn4.secs;
+        const v409 = txn4.from;
         
         sim_r.txns.push({
           amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
           kind: 'to',
           tok: undefined
           });
-        const v407 = stdlib.addressEq(v259, v403);
-        stdlib.assert(v407, {
+        const v413 = stdlib.addressEq(v265, v409);
+        stdlib.assert(v413, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Alice'
           });
         sim_r.txns.push({
-          amt: v260,
+          amt: v266,
           kind: 'from',
-          to: v259,
+          to: v265,
           tok: undefined
           });
         sim_r.txns.push({
@@ -139,22 +148,22 @@ export async function Alice(ctc, interact) {
       tys: [ctc4, ctc0, ctc0, ctc0],
       waitIfNotPresent: false
       }));
-    const [] = txn3.data;
-    const v404 = txn3.time;
-    const v405 = txn3.secs;
-    const v403 = txn3.from;
+    const [] = txn4.data;
+    const v410 = txn4.time;
+    const v411 = txn4.secs;
+    const v409 = txn4.from;
     ;
-    const v407 = stdlib.addressEq(v259, v403);
-    stdlib.assert(v407, {
+    const v413 = stdlib.addressEq(v265, v409);
+    stdlib.assert(v413, {
       at: 'reach standard library:209:7:dot',
-      fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'sender correct',
       who: 'Alice'
       });
     ;
     stdlib.protect(ctc3, await interact.informTimeout(), {
-      at: './index.rsh:41:29:application',
-      fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      at: './examples/tut-8/index.rsh:41:29:application',
+      fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'informTimeout',
       who: 'Alice'
       });
@@ -162,96 +171,96 @@ export async function Alice(ctc, interact) {
     return;
     }
   else {
-    const [] = txn2.data;
-    const v272 = txn2.time;
-    const v273 = txn2.secs;
-    const v271 = txn2.from;
-    const v275 = stdlib.add(v260, v260);
+    const [] = txn3.data;
+    const v278 = txn3.time;
+    const v279 = txn3.secs;
+    const v277 = txn3.from;
+    const v281 = stdlib.add(v266, v266);
     ;
-    let v276 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
-    let v277 = v272;
-    let v283 = v275;
+    let v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+    let v283 = v278;
+    let v289 = v281;
     
     while ((() => {
-      const v291 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
+      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
       
-      return v291;})()) {
-      const v293 = stdlib.add(v277, v261);
-      const v297 = stdlib.protect(ctc0, await interact.getHand(), {
-        at: './index.rsh:65:42:application',
-        fs: ['at ./index.rsh:64:15:application call to [unknown function] (defined at: ./index.rsh:64:19:function exp)'],
+      return v297;})()) {
+      const v299 = stdlib.add(v283, v267);
+      const v303 = stdlib.protect(ctc0, await interact.getHand(), {
+        at: './examples/tut-8/index.rsh:65:42:application',
+        fs: ['at ./examples/tut-8/index.rsh:64:15:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:64:19:function exp)'],
         msg: 'getHand',
         who: 'Alice'
         });
-      const v298 = stdlib.protect(ctc0, await interact.random(), {
+      const v304 = stdlib.protect(ctc0, await interact.random(), {
         at: 'reach standard library:60:31:application',
-        fs: ['at ./index.rsh:66:56:application call to "makeCommitment" (defined at: reach standard library:59:8:function exp)', 'at ./index.rsh:64:15:application call to [unknown function] (defined at: ./index.rsh:64:19:function exp)'],
+        fs: ['at ./examples/tut-8/index.rsh:66:56:application call to "makeCommitment" (defined at: reach standard library:59:8:function exp)', 'at ./examples/tut-8/index.rsh:64:15:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:64:19:function exp)'],
         msg: 'random',
         who: 'Alice'
         });
-      const v299 = stdlib.digest(ctc1, [v298, v297]);
+      const v305 = stdlib.digest(ctc1, [v304, v303]);
       
-      const txn3 = await (ctc.sendrecv({
-        args: [v259, v260, v261, v271, v283, v293, v299],
+      const txn4 = await (ctc.sendrecv({
+        args: [v265, v266, v267, v277, v289, v299, v305],
         evt_cnt: 1,
         funcNum: 6,
         onlyIf: true,
         out_tys: [ctc2],
-        pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
-        sim_p: (async (txn3) => {
+        pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+        sim_p: (async (txn4) => {
           const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
           
-          const [v302] = txn3.data;
-          const v303 = txn3.time;
-          const v304 = txn3.secs;
-          const v301 = txn3.from;
+          const [v308] = txn4.data;
+          const v309 = txn4.time;
+          const v310 = txn4.secs;
+          const v307 = txn4.from;
           
           sim_r.txns.push({
-            amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
+            amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
             kind: 'to',
             tok: undefined
             });
-          const v306 = stdlib.addressEq(v259, v301);
-          stdlib.assert(v306, {
-            at: './index.rsh:69:11:dot',
+          const v312 = stdlib.addressEq(v265, v307);
+          stdlib.assert(v312, {
+            at: './examples/tut-8/index.rsh:69:11:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Alice'
             });
-          const v308 = stdlib.add(v303, v261);
+          const v314 = stdlib.add(v309, v267);
           sim_r.isHalt = false;
           
           return sim_r;
           }),
         soloSend: true,
-        timeoutAt: ['time', v293],
+        timeoutAt: ['time', v299],
         tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc0, ctc2],
         waitIfNotPresent: false
         }));
-      if (txn3.didTimeout) {
-        const txn4 = await (ctc.recv({
+      if (txn4.didTimeout) {
+        const txn5 = await (ctc.recv({
           evt_cnt: 0,
           funcNum: 7,
           out_tys: [],
           timeoutAt: undefined,
           waitIfNotPresent: false
           }));
-        const [] = txn4.data;
-        const v371 = txn4.time;
-        const v372 = txn4.secs;
-        const v370 = txn4.from;
+        const [] = txn5.data;
+        const v377 = txn5.time;
+        const v378 = txn5.secs;
+        const v376 = txn5.from;
         ;
-        const v374 = stdlib.addressEq(v271, v370);
-        stdlib.assert(v374, {
+        const v380 = stdlib.addressEq(v277, v376);
+        stdlib.assert(v380, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Alice'
           });
         ;
         stdlib.protect(ctc3, await interact.informTimeout(), {
-          at: './index.rsh:41:29:application',
-          fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          at: './examples/tut-8/index.rsh:41:29:application',
+          fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'informTimeout',
           who: 'Alice'
           });
@@ -259,58 +268,58 @@ export async function Alice(ctc, interact) {
         return;
         }
       else {
-        const [v302] = txn3.data;
-        const v303 = txn3.time;
-        const v304 = txn3.secs;
-        const v301 = txn3.from;
+        const [v308] = txn4.data;
+        const v309 = txn4.time;
+        const v310 = txn4.secs;
+        const v307 = txn4.from;
         ;
-        const v306 = stdlib.addressEq(v259, v301);
-        stdlib.assert(v306, {
-          at: './index.rsh:69:11:dot',
+        const v312 = stdlib.addressEq(v265, v307);
+        stdlib.assert(v312, {
+          at: './examples/tut-8/index.rsh:69:11:dot',
           fs: [],
           msg: 'sender correct',
           who: 'Alice'
           });
-        const v308 = stdlib.add(v303, v261);
-        const txn4 = await (ctc.recv({
+        const v314 = stdlib.add(v309, v267);
+        const txn5 = await (ctc.recv({
           evt_cnt: 1,
           funcNum: 8,
           out_tys: [ctc0],
-          timeoutAt: ['time', v308],
+          timeoutAt: ['time', v314],
           waitIfNotPresent: false
           }));
-        if (txn4.didTimeout) {
-          const txn5 = await (ctc.sendrecv({
-            args: [v259, v260, v261, v271, v283, v302, v308],
+        if (txn5.didTimeout) {
+          const txn6 = await (ctc.sendrecv({
+            args: [v265, v266, v267, v277, v289, v308, v314],
             evt_cnt: 0,
             funcNum: 9,
             onlyIf: true,
             out_tys: [],
             pay: [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []],
-            sim_p: (async (txn5) => {
+            sim_p: (async (txn6) => {
               const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
               
-              const [] = txn5.data;
-              const v354 = txn5.time;
-              const v355 = txn5.secs;
-              const v353 = txn5.from;
+              const [] = txn6.data;
+              const v360 = txn6.time;
+              const v361 = txn6.secs;
+              const v359 = txn6.from;
               
               sim_r.txns.push({
                 amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
                 kind: 'to',
                 tok: undefined
                 });
-              const v357 = stdlib.addressEq(v259, v353);
-              stdlib.assert(v357, {
+              const v363 = stdlib.addressEq(v265, v359);
+              stdlib.assert(v363, {
                 at: 'reach standard library:209:7:dot',
-                fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+                fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
                 msg: 'sender correct',
                 who: 'Alice'
                 });
               sim_r.txns.push({
-                amt: v283,
+                amt: v289,
                 kind: 'from',
-                to: v259,
+                to: v265,
                 tok: undefined
                 });
               sim_r.txns.push({
@@ -326,22 +335,22 @@ export async function Alice(ctc, interact) {
             tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc2, ctc0],
             waitIfNotPresent: false
             }));
-          const [] = txn5.data;
-          const v354 = txn5.time;
-          const v355 = txn5.secs;
-          const v353 = txn5.from;
+          const [] = txn6.data;
+          const v360 = txn6.time;
+          const v361 = txn6.secs;
+          const v359 = txn6.from;
           ;
-          const v357 = stdlib.addressEq(v259, v353);
-          stdlib.assert(v357, {
+          const v363 = stdlib.addressEq(v265, v359);
+          stdlib.assert(v363, {
             at: 'reach standard library:209:7:dot',
-            fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'sender correct',
             who: 'Alice'
             });
           ;
           stdlib.protect(ctc3, await interact.informTimeout(), {
-            at: './index.rsh:41:29:application',
-            fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            at: './examples/tut-8/index.rsh:41:29:application',
+            fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'informTimeout',
             who: 'Alice'
             });
@@ -349,81 +358,81 @@ export async function Alice(ctc, interact) {
           return;
           }
         else {
-          const [v314] = txn4.data;
-          const v315 = txn4.time;
-          const v316 = txn4.secs;
-          const v313 = txn4.from;
+          const [v320] = txn5.data;
+          const v321 = txn5.time;
+          const v322 = txn5.secs;
+          const v319 = txn5.from;
           ;
-          const v318 = stdlib.addressEq(v271, v313);
-          stdlib.assert(v318, {
-            at: './index.rsh:77:9:dot',
+          const v324 = stdlib.addressEq(v277, v319);
+          stdlib.assert(v324, {
+            at: './examples/tut-8/index.rsh:77:9:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Alice'
             });
-          const v320 = stdlib.add(v315, v261);
-          const txn5 = await (ctc.sendrecv({
-            args: [v259, v260, v261, v271, v283, v302, v314, v320, v298, v297],
+          const v326 = stdlib.add(v321, v267);
+          const txn6 = await (ctc.sendrecv({
+            args: [v265, v266, v267, v277, v289, v308, v320, v326, v304, v303],
             evt_cnt: 2,
             funcNum: 10,
             onlyIf: true,
             out_tys: [ctc0, ctc0],
-            pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
-            sim_p: (async (txn5) => {
+            pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+            sim_p: (async (txn6) => {
               const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
               
-              const [v325, v326] = txn5.data;
-              const v327 = txn5.time;
-              const v328 = txn5.secs;
-              const v324 = txn5.from;
+              const [v331, v332] = txn6.data;
+              const v333 = txn6.time;
+              const v334 = txn6.secs;
+              const v330 = txn6.from;
               
               sim_r.txns.push({
-                amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
+                amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
                 kind: 'to',
                 tok: undefined
                 });
-              const v330 = stdlib.addressEq(v259, v324);
-              stdlib.assert(v330, {
-                at: './index.rsh:85:11:dot',
+              const v336 = stdlib.addressEq(v265, v330);
+              stdlib.assert(v336, {
+                at: './examples/tut-8/index.rsh:85:11:dot',
                 fs: [],
                 msg: 'sender correct',
                 who: 'Alice'
                 });
-              const v331 = stdlib.digest(ctc1, [v325, v326]);
-              const v332 = stdlib.digestEq(v302, v331);
-              stdlib.assert(v332, {
+              const v337 = stdlib.digest(ctc1, [v331, v332]);
+              const v338 = stdlib.digestEq(v308, v337);
+              stdlib.assert(v338, {
                 at: 'reach standard library:65:17:application',
-                fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+                fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
                 msg: null,
                 who: 'Alice'
                 });
-              const v333 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v314);
-              const v334 = stdlib.add(v326, v333);
-              const v335 = stdlib.mod(v334, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
-              const cv276 = v335;
-              const cv277 = v327;
-              const cv283 = v283;
+              const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+              const v340 = stdlib.add(v332, v339);
+              const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+              const cv282 = v341;
+              const cv283 = v333;
+              const cv289 = v289;
               
               (() => {
-                const v276 = cv276;
-                const v277 = cv277;
+                const v282 = cv282;
                 const v283 = cv283;
+                const v289 = cv289;
                 
                 if ((() => {
-                  const v291 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
+                  const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
                   
-                  return v291;})()) {
-                  const v293 = stdlib.add(v277, v261);
+                  return v297;})()) {
+                  const v299 = stdlib.add(v283, v267);
                   sim_r.isHalt = false;
                   }
                 else {
-                  const v387 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-                  const v390 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v260);
-                  const v392 = v387 ? v259 : v271;
+                  const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
+                  const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+                  const v398 = v393 ? v265 : v277;
                   sim_r.txns.push({
-                    amt: v390,
+                    amt: v396,
                     kind: 'from',
-                    to: v392,
+                    to: v398,
                     tok: undefined
                     });
                   sim_r.txns.push({
@@ -435,34 +444,34 @@ export async function Alice(ctc, interact) {
               return sim_r;
               }),
             soloSend: true,
-            timeoutAt: ['time', v320],
+            timeoutAt: ['time', v326],
             tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc2, ctc0, ctc0, ctc0, ctc0],
             waitIfNotPresent: false
             }));
-          if (txn5.didTimeout) {
-            const txn6 = await (ctc.recv({
+          if (txn6.didTimeout) {
+            const txn7 = await (ctc.recv({
               evt_cnt: 0,
               funcNum: 11,
               out_tys: [],
               timeoutAt: undefined,
               waitIfNotPresent: false
               }));
-            const [] = txn6.data;
-            const v337 = txn6.time;
-            const v338 = txn6.secs;
-            const v336 = txn6.from;
+            const [] = txn7.data;
+            const v343 = txn7.time;
+            const v344 = txn7.secs;
+            const v342 = txn7.from;
             ;
-            const v340 = stdlib.addressEq(v271, v336);
-            stdlib.assert(v340, {
+            const v346 = stdlib.addressEq(v277, v342);
+            stdlib.assert(v346, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Alice'
               });
             ;
             stdlib.protect(ctc3, await interact.informTimeout(), {
-              at: './index.rsh:41:29:application',
-              fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              at: './examples/tut-8/index.rsh:41:29:application',
+              fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'informTimeout',
               who: 'Alice'
               });
@@ -470,53 +479,54 @@ export async function Alice(ctc, interact) {
             return;
             }
           else {
-            const [v325, v326] = txn5.data;
-            const v327 = txn5.time;
-            const v328 = txn5.secs;
-            const v324 = txn5.from;
+            const [v331, v332] = txn6.data;
+            const v333 = txn6.time;
+            const v334 = txn6.secs;
+            const v330 = txn6.from;
             ;
-            const v330 = stdlib.addressEq(v259, v324);
-            stdlib.assert(v330, {
-              at: './index.rsh:85:11:dot',
+            const v336 = stdlib.addressEq(v265, v330);
+            stdlib.assert(v336, {
+              at: './examples/tut-8/index.rsh:85:11:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Alice'
               });
-            const v331 = stdlib.digest(ctc1, [v325, v326]);
-            const v332 = stdlib.digestEq(v302, v331);
-            stdlib.assert(v332, {
+            const v337 = stdlib.digest(ctc1, [v331, v332]);
+            const v338 = stdlib.digestEq(v308, v337);
+            stdlib.assert(v338, {
               at: 'reach standard library:65:17:application',
-              fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+              fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
               msg: null,
               who: 'Alice'
               });
-            const v333 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v314);
-            const v334 = stdlib.add(v326, v333);
-            const v335 = stdlib.mod(v334, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
-            const cv276 = v335;
-            const cv277 = v327;
-            const cv283 = v283;
+            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+            const v340 = stdlib.add(v332, v339);
+            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+            const cv282 = v341;
+            const cv283 = v333;
+            const cv289 = v289;
             
-            v276 = cv276;
-            v277 = cv277;
+            v282 = cv282;
             v283 = cv283;
+            v289 = cv289;
             
             continue;}
           }
         }
       }
-    const v387 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v390 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v260);
-    const v392 = v387 ? v259 : v271;
+    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
+    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+    const v398 = v393 ? v265 : v277;
     ;
-    stdlib.protect(ctc3, await interact.seeOutcome(v276), {
-      at: './index.rsh:98:24:application',
-      fs: ['at ./index.rsh:97:7:application call to [unknown function] (defined at: ./index.rsh:97:25:function exp)'],
+    stdlib.protect(ctc3, await interact.seeOutcome(v282), {
+      at: './examples/tut-8/index.rsh:98:24:application',
+      fs: ['at ./examples/tut-8/index.rsh:97:7:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:97:25:function exp)'],
       msg: 'seeOutcome',
       who: 'Alice'
       });
     
     return;}
+  
   
   
   };
@@ -533,69 +543,78 @@ export async function Bob(ctc, interact) {
   const ctc4 = stdlib.T_Address;
   
   
-  const v42 = await ctc.creationTime();
-  const v43 = await ctc.creationSecs();
-  
   const txn1 = await (ctc.recv({
+    evt_cnt: 0,
+    funcNum: 0,
+    out_tys: [],
+    timeoutAt: undefined,
+    waitIfNotPresent: false
+    }));
+  const [] = txn1.data;
+  const v260 = txn1.time;
+  const v261 = txn1.secs;
+  const v259 = txn1.from;
+  ;
+  const txn2 = await (ctc.recv({
     evt_cnt: 2,
     funcNum: 1,
     out_tys: [ctc0, ctc0],
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [v260, v261] = txn1.data;
-  const v262 = txn1.time;
-  const v263 = txn1.secs;
-  const v259 = txn1.from;
+  const [v266, v267] = txn2.data;
+  const v268 = txn2.time;
+  const v269 = txn2.secs;
+  const v265 = txn2.from;
   ;
-  const v267 = stdlib.add(v262, v261);
-  stdlib.protect(ctc1, await interact.acceptWager(v260), {
-    at: './index.rsh:54:25:application',
-    fs: ['at ./index.rsh:53:11:application call to [unknown function] (defined at: ./index.rsh:53:15:function exp)'],
+  const v273 = stdlib.add(v268, v267);
+  stdlib.protect(ctc1, await interact.acceptWager(v266), {
+    at: './examples/tut-8/index.rsh:54:25:application',
+    fs: ['at ./examples/tut-8/index.rsh:53:11:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:53:15:function exp)'],
     msg: 'acceptWager',
     who: 'Bob'
     });
   
-  const txn2 = await (ctc.sendrecv({
-    args: [v259, v260, v261, v267],
+  const txn3 = await (ctc.sendrecv({
+    args: [v265, v266, v267, v273],
     evt_cnt: 0,
     funcNum: 2,
     onlyIf: true,
     out_tys: [],
-    pay: [v260, []],
-    sim_p: (async (txn2) => {
+    pay: [v266, []],
+    sim_p: (async (txn3) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [] = txn2.data;
-      const v272 = txn2.time;
-      const v273 = txn2.secs;
-      const v271 = txn2.from;
+      const [] = txn3.data;
+      const v278 = txn3.time;
+      const v279 = txn3.secs;
+      const v277 = txn3.from;
       
-      const v275 = stdlib.add(v260, v260);
+      const v281 = stdlib.add(v266, v266);
       sim_r.txns.push({
-        amt: v260,
+        amt: v266,
         kind: 'to',
         tok: undefined
         });
-      const v276 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
-      const v277 = v272;
-      const v283 = v275;
+      const v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+      const v283 = v278;
+      const v289 = v281;
       
       if ((() => {
-        const v291 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
+        const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
         
-        return v291;})()) {
-        const v293 = stdlib.add(v277, v261);
+        return v297;})()) {
+        const v299 = stdlib.add(v283, v267);
         sim_r.isHalt = false;
         }
       else {
-        const v387 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-        const v390 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v260);
-        const v392 = v387 ? v259 : v271;
+        const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
+        const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+        const v398 = v393 ? v265 : v277;
         sim_r.txns.push({
-          amt: v390,
+          amt: v396,
           kind: 'from',
-          to: v392,
+          to: v398,
           tok: undefined
           });
         sim_r.txns.push({
@@ -607,34 +626,34 @@ export async function Bob(ctc, interact) {
       return sim_r;
       }),
     soloSend: true,
-    timeoutAt: ['time', v267],
+    timeoutAt: ['time', v273],
     tys: [ctc4, ctc0, ctc0, ctc0],
     waitIfNotPresent: false
     }));
-  if (txn2.didTimeout) {
-    const txn3 = await (ctc.recv({
+  if (txn3.didTimeout) {
+    const txn4 = await (ctc.recv({
       evt_cnt: 0,
       funcNum: 3,
       out_tys: [],
       timeoutAt: undefined,
       waitIfNotPresent: false
       }));
-    const [] = txn3.data;
-    const v404 = txn3.time;
-    const v405 = txn3.secs;
-    const v403 = txn3.from;
+    const [] = txn4.data;
+    const v410 = txn4.time;
+    const v411 = txn4.secs;
+    const v409 = txn4.from;
     ;
-    const v407 = stdlib.addressEq(v259, v403);
-    stdlib.assert(v407, {
+    const v413 = stdlib.addressEq(v265, v409);
+    stdlib.assert(v413, {
       at: 'reach standard library:209:7:dot',
-      fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'sender correct',
       who: 'Bob'
       });
     ;
     stdlib.protect(ctc1, await interact.informTimeout(), {
-      at: './index.rsh:41:29:application',
-      fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      at: './examples/tut-8/index.rsh:41:29:application',
+      fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'informTimeout',
       who: 'Bob'
       });
@@ -642,60 +661,60 @@ export async function Bob(ctc, interact) {
     return;
     }
   else {
-    const [] = txn2.data;
-    const v272 = txn2.time;
-    const v273 = txn2.secs;
-    const v271 = txn2.from;
-    const v275 = stdlib.add(v260, v260);
+    const [] = txn3.data;
+    const v278 = txn3.time;
+    const v279 = txn3.secs;
+    const v277 = txn3.from;
+    const v281 = stdlib.add(v266, v266);
     ;
-    let v276 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
-    let v277 = v272;
-    let v283 = v275;
+    let v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+    let v283 = v278;
+    let v289 = v281;
     
     while ((() => {
-      const v291 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
+      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
       
-      return v291;})()) {
-      const v293 = stdlib.add(v277, v261);
-      const txn3 = await (ctc.recv({
+      return v297;})()) {
+      const v299 = stdlib.add(v283, v267);
+      const txn4 = await (ctc.recv({
         evt_cnt: 1,
         funcNum: 6,
         out_tys: [ctc2],
-        timeoutAt: ['time', v293],
+        timeoutAt: ['time', v299],
         waitIfNotPresent: false
         }));
-      if (txn3.didTimeout) {
-        const txn4 = await (ctc.sendrecv({
-          args: [v259, v260, v261, v271, v283, v293],
+      if (txn4.didTimeout) {
+        const txn5 = await (ctc.sendrecv({
+          args: [v265, v266, v267, v277, v289, v299],
           evt_cnt: 0,
           funcNum: 7,
           onlyIf: true,
           out_tys: [],
           pay: [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []],
-          sim_p: (async (txn4) => {
+          sim_p: (async (txn5) => {
             const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
             
-            const [] = txn4.data;
-            const v371 = txn4.time;
-            const v372 = txn4.secs;
-            const v370 = txn4.from;
+            const [] = txn5.data;
+            const v377 = txn5.time;
+            const v378 = txn5.secs;
+            const v376 = txn5.from;
             
             sim_r.txns.push({
               amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
               kind: 'to',
               tok: undefined
               });
-            const v374 = stdlib.addressEq(v271, v370);
-            stdlib.assert(v374, {
+            const v380 = stdlib.addressEq(v277, v376);
+            stdlib.assert(v380, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Bob'
               });
             sim_r.txns.push({
-              amt: v283,
+              amt: v289,
               kind: 'from',
-              to: v271,
+              to: v277,
               tok: undefined
               });
             sim_r.txns.push({
@@ -711,22 +730,22 @@ export async function Bob(ctc, interact) {
           tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc0],
           waitIfNotPresent: false
           }));
-        const [] = txn4.data;
-        const v371 = txn4.time;
-        const v372 = txn4.secs;
-        const v370 = txn4.from;
+        const [] = txn5.data;
+        const v377 = txn5.time;
+        const v378 = txn5.secs;
+        const v376 = txn5.from;
         ;
-        const v374 = stdlib.addressEq(v271, v370);
-        stdlib.assert(v374, {
+        const v380 = stdlib.addressEq(v277, v376);
+        stdlib.assert(v380, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Bob'
           });
         ;
         stdlib.protect(ctc1, await interact.informTimeout(), {
-          at: './index.rsh:41:29:application',
-          fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          at: './examples/tut-8/index.rsh:41:29:application',
+          fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'informTimeout',
           who: 'Bob'
           });
@@ -734,87 +753,87 @@ export async function Bob(ctc, interact) {
         return;
         }
       else {
-        const [v302] = txn3.data;
-        const v303 = txn3.time;
-        const v304 = txn3.secs;
-        const v301 = txn3.from;
+        const [v308] = txn4.data;
+        const v309 = txn4.time;
+        const v310 = txn4.secs;
+        const v307 = txn4.from;
         ;
-        const v306 = stdlib.addressEq(v259, v301);
-        stdlib.assert(v306, {
-          at: './index.rsh:69:11:dot',
+        const v312 = stdlib.addressEq(v265, v307);
+        stdlib.assert(v312, {
+          at: './examples/tut-8/index.rsh:69:11:dot',
           fs: [],
           msg: 'sender correct',
           who: 'Bob'
           });
-        const v308 = stdlib.add(v303, v261);
-        const v312 = stdlib.protect(ctc0, await interact.getHand(), {
-          at: './index.rsh:75:50:application',
-          fs: ['at ./index.rsh:74:13:application call to [unknown function] (defined at: ./index.rsh:74:17:function exp)'],
+        const v314 = stdlib.add(v309, v267);
+        const v318 = stdlib.protect(ctc0, await interact.getHand(), {
+          at: './examples/tut-8/index.rsh:75:50:application',
+          fs: ['at ./examples/tut-8/index.rsh:74:13:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:74:17:function exp)'],
           msg: 'getHand',
           who: 'Bob'
           });
         
-        const txn4 = await (ctc.sendrecv({
-          args: [v259, v260, v261, v271, v283, v302, v308, v312],
+        const txn5 = await (ctc.sendrecv({
+          args: [v265, v266, v267, v277, v289, v308, v314, v318],
           evt_cnt: 1,
           funcNum: 8,
           onlyIf: true,
           out_tys: [ctc0],
-          pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
-          sim_p: (async (txn4) => {
+          pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+          sim_p: (async (txn5) => {
             const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
             
-            const [v314] = txn4.data;
-            const v315 = txn4.time;
-            const v316 = txn4.secs;
-            const v313 = txn4.from;
+            const [v320] = txn5.data;
+            const v321 = txn5.time;
+            const v322 = txn5.secs;
+            const v319 = txn5.from;
             
             sim_r.txns.push({
-              amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
+              amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
               kind: 'to',
               tok: undefined
               });
-            const v318 = stdlib.addressEq(v271, v313);
-            stdlib.assert(v318, {
-              at: './index.rsh:77:9:dot',
+            const v324 = stdlib.addressEq(v277, v319);
+            stdlib.assert(v324, {
+              at: './examples/tut-8/index.rsh:77:9:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Bob'
               });
-            const v320 = stdlib.add(v315, v261);
+            const v326 = stdlib.add(v321, v267);
             sim_r.isHalt = false;
             
             return sim_r;
             }),
           soloSend: true,
-          timeoutAt: ['time', v308],
+          timeoutAt: ['time', v314],
           tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc2, ctc0, ctc0],
           waitIfNotPresent: false
           }));
-        if (txn4.didTimeout) {
-          const txn5 = await (ctc.recv({
+        if (txn5.didTimeout) {
+          const txn6 = await (ctc.recv({
             evt_cnt: 0,
             funcNum: 9,
             out_tys: [],
             timeoutAt: undefined,
             waitIfNotPresent: false
             }));
-          const [] = txn5.data;
-          const v354 = txn5.time;
-          const v355 = txn5.secs;
-          const v353 = txn5.from;
+          const [] = txn6.data;
+          const v360 = txn6.time;
+          const v361 = txn6.secs;
+          const v359 = txn6.from;
           ;
-          const v357 = stdlib.addressEq(v259, v353);
-          stdlib.assert(v357, {
+          const v363 = stdlib.addressEq(v265, v359);
+          stdlib.assert(v363, {
             at: 'reach standard library:209:7:dot',
-            fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'sender correct',
             who: 'Bob'
             });
           ;
           stdlib.protect(ctc1, await interact.informTimeout(), {
-            at: './index.rsh:41:29:application',
-            fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            at: './examples/tut-8/index.rsh:41:29:application',
+            fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'informTimeout',
             who: 'Bob'
             });
@@ -822,58 +841,58 @@ export async function Bob(ctc, interact) {
           return;
           }
         else {
-          const [v314] = txn4.data;
-          const v315 = txn4.time;
-          const v316 = txn4.secs;
-          const v313 = txn4.from;
+          const [v320] = txn5.data;
+          const v321 = txn5.time;
+          const v322 = txn5.secs;
+          const v319 = txn5.from;
           ;
-          const v318 = stdlib.addressEq(v271, v313);
-          stdlib.assert(v318, {
-            at: './index.rsh:77:9:dot',
+          const v324 = stdlib.addressEq(v277, v319);
+          stdlib.assert(v324, {
+            at: './examples/tut-8/index.rsh:77:9:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Bob'
             });
-          const v320 = stdlib.add(v315, v261);
-          const txn5 = await (ctc.recv({
+          const v326 = stdlib.add(v321, v267);
+          const txn6 = await (ctc.recv({
             evt_cnt: 2,
             funcNum: 10,
             out_tys: [ctc0, ctc0],
-            timeoutAt: ['time', v320],
+            timeoutAt: ['time', v326],
             waitIfNotPresent: false
             }));
-          if (txn5.didTimeout) {
-            const txn6 = await (ctc.sendrecv({
-              args: [v259, v260, v261, v271, v283, v302, v314, v320],
+          if (txn6.didTimeout) {
+            const txn7 = await (ctc.sendrecv({
+              args: [v265, v266, v267, v277, v289, v308, v320, v326],
               evt_cnt: 0,
               funcNum: 11,
               onlyIf: true,
               out_tys: [],
               pay: [stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0), []],
-              sim_p: (async (txn6) => {
+              sim_p: (async (txn7) => {
                 const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
                 
-                const [] = txn6.data;
-                const v337 = txn6.time;
-                const v338 = txn6.secs;
-                const v336 = txn6.from;
+                const [] = txn7.data;
+                const v343 = txn7.time;
+                const v344 = txn7.secs;
+                const v342 = txn7.from;
                 
                 sim_r.txns.push({
                   amt: stdlib.checkedBigNumberify('reach standard library:decimal', stdlib.UInt_max, 0),
                   kind: 'to',
                   tok: undefined
                   });
-                const v340 = stdlib.addressEq(v271, v336);
-                stdlib.assert(v340, {
+                const v346 = stdlib.addressEq(v277, v342);
+                stdlib.assert(v346, {
                   at: 'reach standard library:209:7:dot',
-                  fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+                  fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
                   msg: 'sender correct',
                   who: 'Bob'
                   });
                 sim_r.txns.push({
-                  amt: v283,
+                  amt: v289,
                   kind: 'from',
-                  to: v271,
+                  to: v277,
                   tok: undefined
                   });
                 sim_r.txns.push({
@@ -889,22 +908,22 @@ export async function Bob(ctc, interact) {
               tys: [ctc4, ctc0, ctc0, ctc4, ctc0, ctc2, ctc0, ctc0],
               waitIfNotPresent: false
               }));
-            const [] = txn6.data;
-            const v337 = txn6.time;
-            const v338 = txn6.secs;
-            const v336 = txn6.from;
+            const [] = txn7.data;
+            const v343 = txn7.time;
+            const v344 = txn7.secs;
+            const v342 = txn7.from;
             ;
-            const v340 = stdlib.addressEq(v271, v336);
-            stdlib.assert(v340, {
+            const v346 = stdlib.addressEq(v277, v342);
+            stdlib.assert(v346, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Bob'
               });
             ;
             stdlib.protect(ctc1, await interact.informTimeout(), {
-              at: './index.rsh:41:29:application',
-              fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              at: './examples/tut-8/index.rsh:41:29:application',
+              fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'informTimeout',
               who: 'Bob'
               });
@@ -912,53 +931,54 @@ export async function Bob(ctc, interact) {
             return;
             }
           else {
-            const [v325, v326] = txn5.data;
-            const v327 = txn5.time;
-            const v328 = txn5.secs;
-            const v324 = txn5.from;
+            const [v331, v332] = txn6.data;
+            const v333 = txn6.time;
+            const v334 = txn6.secs;
+            const v330 = txn6.from;
             ;
-            const v330 = stdlib.addressEq(v259, v324);
-            stdlib.assert(v330, {
-              at: './index.rsh:85:11:dot',
+            const v336 = stdlib.addressEq(v265, v330);
+            stdlib.assert(v336, {
+              at: './examples/tut-8/index.rsh:85:11:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Bob'
               });
-            const v331 = stdlib.digest(ctc3, [v325, v326]);
-            const v332 = stdlib.digestEq(v302, v331);
-            stdlib.assert(v332, {
+            const v337 = stdlib.digest(ctc3, [v331, v332]);
+            const v338 = stdlib.digestEq(v308, v337);
+            stdlib.assert(v338, {
               at: 'reach standard library:65:17:application',
-              fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+              fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
               msg: null,
               who: 'Bob'
               });
-            const v333 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v314);
-            const v334 = stdlib.add(v326, v333);
-            const v335 = stdlib.mod(v334, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
-            const cv276 = v335;
-            const cv277 = v327;
-            const cv283 = v283;
+            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+            const v340 = stdlib.add(v332, v339);
+            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+            const cv282 = v341;
+            const cv283 = v333;
+            const cv289 = v289;
             
-            v276 = cv276;
-            v277 = cv277;
+            v282 = cv282;
             v283 = cv283;
+            v289 = cv289;
             
             continue;}
           }
         }
       }
-    const v387 = stdlib.eq(v276, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v390 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v260);
-    const v392 = v387 ? v259 : v271;
+    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
+    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+    const v398 = v393 ? v265 : v277;
     ;
-    stdlib.protect(ctc1, await interact.seeOutcome(v276), {
-      at: './index.rsh:98:24:application',
-      fs: ['at ./index.rsh:97:7:application call to [unknown function] (defined at: ./index.rsh:97:25:function exp)'],
+    stdlib.protect(ctc1, await interact.seeOutcome(v282), {
+      at: './examples/tut-8/index.rsh:98:24:application',
+      fs: ['at ./examples/tut-8/index.rsh:97:7:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:97:25:function exp)'],
       msg: 'seeOutcome',
       who: 'Bob'
       });
     
     return;}
+  
   
   
   };
@@ -990,13 +1010,59 @@ int 3
 assert
 txna ApplicationArgs 0
 btoi
+// Handler 0
 dup
-bz ctor
+int 0
+==
+bz l0
+pop
+txna ApplicationArgs 1
+dup
+len
+int 0
+==
+assert
+pop
+txna ApplicationArgs 2
+dup
+len
+int 32
+==
+assert
+dup
+store 255
+pop
+txn Sender
+global CreatorAddress
+==
+assert
+load 255
+store 2
+// compute state in HM_Check 0
+int 8
+bzero
+sha256
+load 1
+==
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:37:11:after expr stmt semicolon"
+// "[]"
+// compute state in HM_Set 1
+byte base64(AAAAAAAAAAE=)
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l0:
 // Handler 1
 dup
 int 1
 ==
-bz l0
+bz l1
 pop
 txna ApplicationArgs 1
 dup
@@ -1020,19 +1086,18 @@ substring 8 16
 btoi
 store 254
 pop
-// compute state in HM_Check 0
-int 8
-bzero
+// compute state in HM_Check 1
+byte base64(AAAAAAAAAAE=)
 sha256
 load 1
 ==
 assert
 // "CheckPay"
-// "./index.rsh:49:9:dot"
+// "./examples/tut-8/index.rsh:49:9:dot"
 // "[]"
 load 255
 dup
-bz l1
+bz l2
 load 0
 dup
 int 1
@@ -1068,14 +1133,14 @@ dig 1
 gtxns Receiver
 ==
 assert
-l1:
+l2:
 pop
 global Round
 load 254
 +
 store 253
-// compute state in HM_Set 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Set 2
+byte base64(AAAAAAAAAAI=)
 txn Sender
 concat
 load 255
@@ -1094,12 +1159,12 @@ int NoOp
 ==
 assert
 b updateState
-l0:
+l1:
 // Handler 2
 dup
 int 2
 ==
-bz l2
+bz l3
 pop
 txna ApplicationArgs 1
 dup
@@ -1130,8 +1195,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Check 2
+byte base64(AAAAAAAAAAI=)
 load 255
 concat
 load 254
@@ -1152,11 +1217,11 @@ load 252
 <
 assert
 // "CheckPay"
-// "./index.rsh:56:7:dot"
+// "./examples/tut-8/index.rsh:56:7:dot"
 // "[]"
 load 254
 dup
-bz l3
+bz l4
 load 0
 dup
 int 1
@@ -1192,7 +1257,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l3:
+l4:
 pop
 load 255
 load 254
@@ -1213,12 +1278,12 @@ dup
 itob
 concat
 b loop4
-l2:
+l3:
 // Handler 3
 dup
 int 3
 ==
-bz l4
+bz l5
 pop
 txna ApplicationArgs 1
 dup
@@ -1249,8 +1314,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
+// compute state in HM_Check 2
+byte base64(AAAAAAAAAAI=)
 load 255
 concat
 load 254
@@ -1272,17 +1337,17 @@ load 252
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
 load 254
 dup
-bz l5
+bz l6
 load 0
 dup
 int 1
@@ -1323,7 +1388,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l5:
+l6:
 pop
 int 0
 load 0
@@ -1366,7 +1431,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l6:
+l7:
 pop
 global ZeroAddress
 store 1
@@ -1375,14 +1440,14 @@ int DeleteApplication
 ==
 assert
 b updateState
-l4:
-l7:
+l5:
 l8:
+l9:
 // Handler 6
 dup
 int 6
 ==
-bz l9
+bz l10
 pop
 txna ApplicationArgs 1
 dup
@@ -1422,8 +1487,8 @@ assert
 dup
 store 249
 pop
-// compute state in HM_Check 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Check 7
+byte base64(AAAAAAAAAAc=)
 load 255
 concat
 load 254
@@ -1449,10 +1514,10 @@ load 250
 <
 assert
 // "CheckPay"
-// "./index.rsh:69:11:dot"
+// "./examples/tut-8/index.rsh:69:11:dot"
 // "[]"
 // Just "sender correct"
-// "./index.rsh:69:11:dot"
+// "./examples/tut-8/index.rsh:69:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -1462,8 +1527,8 @@ global Round
 load 253
 +
 store 248
-// compute state in HM_Set 8
-byte base64(AAAAAAAAAAg=)
+// compute state in HM_Set 9
+byte base64(AAAAAAAAAAk=)
 load 255
 concat
 load 254
@@ -1489,12 +1554,12 @@ int NoOp
 ==
 assert
 b updateState
-l9:
+l10:
 // Handler 7
 dup
 int 7
 ==
-bz l10
+bz l11
 pop
 txna ApplicationArgs 1
 dup
@@ -1532,8 +1597,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Check 7
+byte base64(AAAAAAAAAAc=)
 load 255
 concat
 load 254
@@ -1560,17 +1625,17 @@ load 250
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
 load 251
 dup
-bz l11
+bz l12
 load 0
 dup
 int 1
@@ -1611,7 +1676,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l11:
+l12:
 pop
 int 0
 load 0
@@ -1654,7 +1719,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l12:
+l13:
 pop
 global ZeroAddress
 store 1
@@ -1663,131 +1728,10 @@ int DeleteApplication
 ==
 assert
 b updateState
-l10:
+l11:
 // Handler 8
 dup
 int 8
-==
-bz l13
-pop
-txna ApplicationArgs 1
-dup
-len
-int 128
-==
-assert
-dup
-substring 0 32
-store 255
-dup
-substring 32 40
-btoi
-store 254
-dup
-substring 40 48
-btoi
-store 253
-dup
-substring 48 80
-store 252
-dup
-substring 80 88
-btoi
-store 251
-dup
-substring 88 120
-store 250
-dup
-substring 120 128
-btoi
-store 249
-pop
-txna ApplicationArgs 2
-dup
-len
-int 8
-==
-assert
-dup
-btoi
-store 248
-pop
-// compute state in HM_Check 8
-byte base64(AAAAAAAAAAg=)
-load 255
-concat
-load 254
-itob
-concat
-load 253
-itob
-concat
-load 252
-concat
-load 251
-itob
-concat
-load 250
-concat
-load 249
-itob
-concat
-sha256
-load 1
-==
-assert
-global Round
-load 249
-<
-assert
-// "CheckPay"
-// "./index.rsh:77:9:dot"
-// "[]"
-// Just "sender correct"
-// "./index.rsh:77:9:dot"
-// "[]"
-load 252
-txn Sender
-==
-assert
-global Round
-load 253
-+
-store 247
-// compute state in HM_Set 10
-byte base64(AAAAAAAAAAo=)
-load 255
-concat
-load 254
-itob
-concat
-load 253
-itob
-concat
-load 252
-concat
-load 251
-itob
-concat
-load 250
-concat
-load 248
-itob
-concat
-load 247
-itob
-concat
-sha256
-store 1
-txn OnCompletion
-int NoOp
-==
-assert
-b updateState
-l13:
-// Handler 9
-dup
-int 9
 ==
 bz l14
 pop
@@ -1826,12 +1770,133 @@ pop
 txna ApplicationArgs 2
 dup
 len
+int 8
+==
+assert
+dup
+btoi
+store 248
+pop
+// compute state in HM_Check 9
+byte base64(AAAAAAAAAAk=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+concat
+load 249
+itob
+concat
+sha256
+load 1
+==
+assert
+global Round
+load 249
+<
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:77:9:dot"
+// "[]"
+// Just "sender correct"
+// "./examples/tut-8/index.rsh:77:9:dot"
+// "[]"
+load 252
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 247
+// compute state in HM_Set 11
+byte base64(AAAAAAAAAAs=)
+load 255
+concat
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+concat
+load 248
+itob
+concat
+load 247
+itob
+concat
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l14:
+// Handler 9
+dup
+int 9
+==
+bz l15
+pop
+txna ApplicationArgs 1
+dup
+len
+int 128
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
+store 250
+dup
+substring 120 128
+btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
 int 0
 ==
 assert
 pop
-// compute state in HM_Check 8
-byte base64(AAAAAAAAAAg=)
+// compute state in HM_Check 9
+byte base64(AAAAAAAAAAk=)
 load 255
 concat
 load 254
@@ -1860,17 +1925,17 @@ load 249
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
 load 251
 dup
-bz l15
+bz l16
 load 0
 dup
 int 1
@@ -1911,7 +1976,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l15:
+l16:
 pop
 int 0
 load 0
@@ -1954,7 +2019,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l16:
+l17:
 pop
 global ZeroAddress
 store 1
@@ -1963,12 +2028,12 @@ int DeleteApplication
 ==
 assert
 b updateState
-l14:
+l15:
 // Handler 10
 dup
 int 10
 ==
-bz l17
+bz l18
 pop
 txna ApplicationArgs 1
 dup
@@ -2021,8 +2086,8 @@ substring 8 16
 btoi
 store 246
 pop
-// compute state in HM_Check 10
-byte base64(AAAAAAAAAAo=)
+// compute state in HM_Check 11
+byte base64(AAAAAAAAAAs=)
 load 255
 concat
 load 254
@@ -2053,10 +2118,10 @@ load 248
 <
 assert
 // "CheckPay"
-// "./index.rsh:85:11:dot"
+// "./examples/tut-8/index.rsh:85:11:dot"
 // "[]"
 // Just "sender correct"
-// "./index.rsh:85:11:dot"
+// "./examples/tut-8/index.rsh:85:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -2064,7 +2129,7 @@ txn Sender
 assert
 // Nothing
 // "reach standard library:65:17:application"
-// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
 load 250
 load 247
 itob
@@ -2098,12 +2163,12 @@ load 251
 itob
 concat
 b loop4
-l17:
+l18:
 // Handler 11
 dup
 int 11
 ==
-bz l18
+bz l19
 pop
 txna ApplicationArgs 1
 dup
@@ -2148,8 +2213,8 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 10
-byte base64(AAAAAAAAAAo=)
+// compute state in HM_Check 11
+byte base64(AAAAAAAAAAs=)
 load 255
 concat
 load 254
@@ -2181,17 +2246,17 @@ load 248
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
 load 251
 dup
-bz l19
+bz l20
 load 0
 dup
 int 1
@@ -2232,7 +2297,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l19:
+l20:
 pop
 int 0
 load 0
@@ -2275,7 +2340,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l20:
+l21:
 pop
 global ZeroAddress
 store 1
@@ -2284,7 +2349,7 @@ int DeleteApplication
 ==
 assert
 b updateState
-l18:
+l19:
 int 0
 assert
 loop4:
@@ -2319,13 +2384,13 @@ pop
 load 255
 int 1
 ==
-bz l21
+bz l22
 load 254
 load 250
 +
 store 248
-// compute state in HM_Set 6
-byte base64(AAAAAAAAAAY=)
+// compute state in HM_Set 7
+byte base64(AAAAAAAAAAc=)
 load 252
 concat
 load 251
@@ -2349,7 +2414,7 @@ int NoOp
 ==
 assert
 b updateState
-l21:
+l22:
 load 252
 load 251
 itob
@@ -2381,7 +2446,7 @@ int 2
 load 254
 *
 dup
-bz l22
+bz l23
 load 0
 dup
 int 1
@@ -2427,7 +2492,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l22:
+l23:
 pop
 int 0
 load 0
@@ -2470,7 +2535,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l23:
+l24:
 pop
 global ZeroAddress
 store 1
@@ -2509,27 +2574,13 @@ txn OnCompletion
 int NoOp
 ==
 assert
-byte base64()
-int 64
-bzero
-app_global_put
-b checkSize
-ctor:
-txn Sender
-global CreatorAddress
-==
-assert
-txna ApplicationArgs 1
-store 2
 // compute state in HM_Set 0
 int 8
 bzero
 sha256
 store 1
-txn OnCompletion
-int NoOp
-==
-assert
+global ZeroAddress
+store 2
 b updateState
 `,
   appClear: `#pragma version 4
@@ -2554,14 +2605,32 @@ int 1
   mapDataKeys: 0,
   mapDataSize: 0,
   unsupported: [],
-  version: 2,
+  version: 3,
   viewKeys: 0,
   viewSize: 0
   };
 const _ETH = {
   ABI: `[
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "svs",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "msg",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct T1",
+        "name": "_a",
+        "type": "tuple"
+      }
+    ],
     "stateMutability": "payable",
     "type": "constructor"
   },
@@ -2578,7 +2647,26 @@ const _ETH = {
   },
   {
     "anonymous": false,
-    "inputs": [],
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "svs",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "msg",
+            "type": "bool"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct T1",
+        "name": "_a",
+        "type": "tuple"
+      }
+    ],
     "name": "e0",
     "type": "event"
   },
@@ -2596,22 +2684,22 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T2",
+            "internalType": "struct T3",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct T3",
+        "internalType": "struct T4",
         "name": "_a",
         "type": "tuple"
       }
@@ -2628,54 +2716,37 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v302",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v314",
+                "name": "v308",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v320",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T15",
-            "name": "svs",
-            "type": "tuple"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "v325",
                 "type": "uint256"
               },
               {
@@ -2684,13 +2755,30 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T19",
+            "internalType": "struct T16",
+            "name": "svs",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "v331",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v332",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct T20",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct T20",
+        "internalType": "struct T21",
         "name": "_a",
         "type": "tuple"
       }
@@ -2707,46 +2795,46 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v302",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v314",
+                "name": "v308",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v320",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v326",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T15",
+            "internalType": "struct T16",
             "name": "svs",
             "type": "tuple"
           },
@@ -2757,7 +2845,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct T21",
+        "internalType": "struct T22",
         "name": "_a",
         "type": "tuple"
       }
@@ -2774,26 +2862,26 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v261",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v267",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v273",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T1",
+            "internalType": "struct T2",
             "name": "svs",
             "type": "tuple"
           },
@@ -2804,7 +2892,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct T7",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -2821,26 +2909,26 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v261",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v267",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v273",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T1",
+            "internalType": "struct T2",
             "name": "svs",
             "type": "tuple"
           },
@@ -2851,7 +2939,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct T7",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -2868,36 +2956,36 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v293",
+                "name": "v299",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T8",
+            "internalType": "struct T9",
             "name": "svs",
             "type": "tuple"
           },
@@ -2905,17 +2993,17 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v302",
+                "name": "v308",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T12",
+            "internalType": "struct T13",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct T13",
+        "internalType": "struct T14",
         "name": "_a",
         "type": "tuple"
       }
@@ -2932,36 +3020,36 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v293",
+                "name": "v299",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T8",
+            "internalType": "struct T9",
             "name": "svs",
             "type": "tuple"
           },
@@ -2972,7 +3060,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct T14",
+        "internalType": "struct T15",
         "name": "_a",
         "type": "tuple"
       }
@@ -2989,41 +3077,41 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v302",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v308",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v314",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T11",
+            "internalType": "struct T12",
             "name": "svs",
             "type": "tuple"
           },
@@ -3031,17 +3119,17 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v314",
+                "name": "v320",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T16",
+            "internalType": "struct T17",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct T17",
+        "internalType": "struct T18",
         "name": "_a",
         "type": "tuple"
       }
@@ -3058,41 +3146,41 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v302",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v308",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v314",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T11",
+            "internalType": "struct T12",
             "name": "svs",
             "type": "tuple"
           },
@@ -3103,7 +3191,7 @@ const _ETH = {
           }
         ],
         "indexed": false,
-        "internalType": "struct T18",
+        "internalType": "struct T19",
         "name": "_a",
         "type": "tuple"
       }
@@ -3124,21 +3212,21 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T2",
+            "internalType": "struct T3",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct T3",
+        "internalType": "struct T4",
         "name": "_a",
         "type": "tuple"
       }
@@ -3156,54 +3244,37 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v302",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v314",
+                "name": "v308",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v320",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T15",
-            "name": "svs",
-            "type": "tuple"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "v325",
                 "type": "uint256"
               },
               {
@@ -3212,12 +3283,29 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T19",
+            "internalType": "struct T16",
+            "name": "svs",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "v331",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v332",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct T20",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct T20",
+        "internalType": "struct T21",
         "name": "_a",
         "type": "tuple"
       }
@@ -3235,46 +3323,46 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v302",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v314",
+                "name": "v308",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v320",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v326",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T15",
+            "internalType": "struct T16",
             "name": "svs",
             "type": "tuple"
           },
@@ -3284,7 +3372,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct T21",
+        "internalType": "struct T22",
         "name": "_a",
         "type": "tuple"
       }
@@ -3302,26 +3390,26 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v261",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v267",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v273",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T1",
+            "internalType": "struct T2",
             "name": "svs",
             "type": "tuple"
           },
@@ -3331,7 +3419,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct T7",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -3349,26 +3437,26 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v261",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v267",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v273",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T1",
+            "internalType": "struct T2",
             "name": "svs",
             "type": "tuple"
           },
@@ -3378,7 +3466,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct T7",
+        "internalType": "struct T8",
         "name": "_a",
         "type": "tuple"
       }
@@ -3396,36 +3484,36 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v293",
+                "name": "v299",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T8",
+            "internalType": "struct T9",
             "name": "svs",
             "type": "tuple"
           },
@@ -3433,16 +3521,16 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v302",
+                "name": "v308",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T12",
+            "internalType": "struct T13",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct T13",
+        "internalType": "struct T14",
         "name": "_a",
         "type": "tuple"
       }
@@ -3460,36 +3548,36 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v293",
+                "name": "v299",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T8",
+            "internalType": "struct T9",
             "name": "svs",
             "type": "tuple"
           },
@@ -3499,7 +3587,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct T14",
+        "internalType": "struct T15",
         "name": "_a",
         "type": "tuple"
       }
@@ -3517,41 +3605,41 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v302",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v308",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v314",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T11",
+            "internalType": "struct T12",
             "name": "svs",
             "type": "tuple"
           },
@@ -3559,16 +3647,16 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v314",
+                "name": "v320",
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T16",
+            "internalType": "struct T17",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct T17",
+        "internalType": "struct T18",
         "name": "_a",
         "type": "tuple"
       }
@@ -3586,41 +3674,41 @@ const _ETH = {
             "components": [
               {
                 "internalType": "address payable",
-                "name": "v259",
+                "name": "v265",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v260",
+                "name": "v266",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "v261",
+                "name": "v267",
                 "type": "uint256"
               },
               {
                 "internalType": "address payable",
-                "name": "v271",
+                "name": "v277",
                 "type": "address"
               },
               {
                 "internalType": "uint256",
-                "name": "v283",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v302",
+                "name": "v289",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
                 "name": "v308",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "v314",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct T11",
+            "internalType": "struct T12",
             "name": "svs",
             "type": "tuple"
           },
@@ -3630,7 +3718,7 @@ const _ETH = {
             "type": "bool"
           }
         ],
-        "internalType": "struct T18",
+        "internalType": "struct T19",
         "name": "_a",
         "type": "tuple"
       }
@@ -3645,11 +3733,11 @@ const _ETH = {
     "type": "receive"
   }
 ]`,
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a1604080518082018252438152426020918201528151600081830181905281840181905283518083038501815260609092019093528051910120905561138b806100766000396000f3fe60806040526004361061008a5760003560e01c806360bafff71161005957806360bafff7146100e457806361ff86f7146100f7578063aa8594ca1461010a578063e4f83a8f1461011d578063ebc5780c1461013057600080fd5b8063108acff51461009657806338015b16146100ab5780633df7a789146100be578063497ccc6a146100d157600080fd5b3661009157005b600080fd5b6100a96100a4366004610fe5565b610143565b005b6100a96100b9366004610fc0565b61024a565b6100a96100cc366004610f90565b61034f565b6100a96100df366004610f90565b610571565b6100a96100f2366004610fad565b610635565b6100a9610105366004610f74565b6107e4565b6100a9610118366004610fd3565b61089e565b6100a961012b366004610fe5565b6109c8565b6100a961013e366004610f74565b610ad1565b60405161017f9061015b9060019084906020016112a7565b6040516020818303038152906040528051906020012060001c60005414600e610ca4565b600080556101956060820135431015600f610ca4565b7f613b30050768160fb8fb1fedba26a4639c7df8d370861f403061c2d46f9802e5816040516101c49190611256565b60405180910390a16101d83415600c610ca4565b6101fa336101e96020840184610f37565b6001600160a01b031614600d610ca4565b6102076020820182610f37565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610242573d6000803e3d6000fd5b506000805533ff5b6040516102869061026290600a908490602001611292565b6040516020818303038152906040528051906020012060001c600054146027610ca4565b6000805561029c60e08201354310156028610ca4565b7fb9d135d4afaa7938b4616c3637968c0e71f66413b54043da6188989930963f89816040516102cb91906111fb565b60405180910390a16102df34156025610ca4565b610304336102f36080840160608501610f37565b6001600160a01b0316146026610ca4565b6103146080820160608301610f37565b6040516001600160a01b039190911690608083013580156108fc02916000818181858888f19350505050158015610242573d6000803e3d6000fd5b60405161038b9061036790600890849060200161127d565b6040516020818303038152906040528051906020012060001c60005414601a610ca4565b600080805560408051602081019091529081526103af60c08301354310601b610ca4565b7f6739bb4acbb3812eea51c48895245b154776bf02dd61571666f6abba93266fec826040516103de919061118a565b60405180910390a16103f234156018610ca4565b610417336104066080850160608601610f37565b6001600160a01b0316146019610ca4565b6104256040830135436112cf565b8152604080516101008101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c0820181905260e08201529061047390840184610f37565b6001600160a01b0316815260208084013590820152604080840135908201526104a26080840160608501610f37565b6001600160a01b031660608201526080808401359082015260a0808401359082015260e08084013560c083015282519082015260405161055190600a90839060200160006101208201905083825260018060a01b03808451166020840152602084015160408401526040840151606084015280606085015116608084015250608083015160a083015260a083015160c083015260c083015160e083015260e08301516101008301529392505050565b60408051601f198184030181529190528051602090910120600055505050565b6040516105ad9061058990600890849060200161127d565b6040516020818303038152906040528051906020012060001c60005414601e610ca4565b600080556105c360c0820135431015601f610ca4565b7fcdae4cbd433f8c4039f23f2632824e3ab0089e9b8c2050e8e87e4d6e0a3df09b816040516105f291906111a7565b60405180910390a16106063415601c610ca4565b610628336106176020840184610f37565b6001600160a01b031614601d610ca4565b6103146020820182610f37565b6040516106719061064d90600a908490602001611292565b6040516020818303038152906040528051906020012060001c600054146023610ca4565b6000805561068660e082013543106024610ca4565b7f58822179cfd9cab18ada288d4f94f3d5babb851e53b3ed667629d3cbbbb0cb72816040516106b591906111cf565b60405180910390a16106c934156020610ca4565b6106eb336106da6020840184610f37565b6001600160a01b0316146021610ca4565b604080516101008301356020820152610120830135918101919091526107339060600160408051601f19818403018152919052805160209091012060a0830135146022610ca4565b61073b610e87565b6107486020830183610f37565b81516001600160a01b0390911690528051602080840135910152805160408084013591015261077d6080830160608401610f37565b81516001600160a01b0390911660609091015260036107a160c08401356004611306565b6107b0906101208501356112cf565b6107ba919061131d565b60208083018051929092528151439101525160808301356040909101526107e081610cc9565b5050565b604051610820906107fc9060069084906020016112bb565b6040516020818303038152906040528051906020012060001c600054146016610ca4565b6000805561083660a08201354310156017610ca4565b7fcc997a9af4abe95cf593cbeb34368171b4d5923d8562b1e54e51006451978b7c816040516108659190611163565b60405180910390a161087934156014610ca4565b6103043361088d6080840160608501610f37565b6001600160a01b0316146015610ca4565b6108f060006108b06020840184610f59565b6040516020016108cc9291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c600054146008610ca4565b600080805560408051602081018252918252517f3c669845d6bbc6fc367c9fa11ea5c8ec9bfd3d70eae7b34375b93f114f74036590610930908490611225565b60405180910390a1610949346020840135146007610ca4565b6109576040830135436112cf565b81526040805160808082018352600060608084019182523384526020878101358186019081528887013586880190815288518552875160019381019390935286516001600160a01b03169783019790975251918101919091529351918401919091525160a08301529060c001610551565b604051610a04906109e09060019084906020016112a7565b6040516020818303038152906040528051906020012060001c60005414600a610ca4565b60008055610a1960608201354310600b610ca4565b7fe2fcb5361608dd42d825c4e917fd4fca89057bb8eb0b7e34b8c2813a114cc15281604051610a489190611256565b60405180910390a1610a61346020830135146009610ca4565b610a69610e87565b610a766020830183610f37565b81516001600160a01b039091169052805160208084013591810182905282516040808601359101528251336060909101528083018051600190525143910152610abf90806112cf565b6020820151604001526107e081610cc9565b604051610b0d90610ae99060069084906020016112bb565b6040516020818303038152906040528051906020012060001c600054146012610ca4565b60008080556040805160208101909152908152610b3160a083013543106013610ca4565b7fee6496cc7d28a7c9121e0eebf62951277792d31c40832817d1a4c372e06eb46182604051610b609190611147565b60405180910390a1610b7434156010610ca4565b610b9633610b856020850185610f37565b6001600160a01b0316146011610ca4565b610ba46040830135436112cf565b81526040805160e08101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c082015290610bea90840184610f37565b6001600160a01b031681526020808401359082015260408084013590820152610c196080840160608501610f37565b6001600160a01b03908116606083810191825260808681013581860190815260c08089013560a08089019182528951838a019081526040805160086020808301919091528c518c16828401528c0151988101989098528a0151958701959095529551909616948401949094525192820192909252915160e08301525161010082015261012001610551565b816107e05760405163100960cb60e01b81526004810182905260240160405180910390fd5b60408051602081019091526000815260208201515160011415610db4578151604001516020808401510151610cfe91906112cf565b81526040805160c08082018352600080835260208084018281528486018381526060808701858152608080890187815260a0808b019889528d51516001600160a01b039081168c528e5189015188528e518d015187528e51860151811685528e8901518d015183528d518a528c516006998101999099528b5181169c89019c909c529551938701939093529251928501929092529051909616908201529351918401919091525160e08301529061010001610551565b6040805160c081018252600091810182815260608083018481526080840185815260a085018681528486526020808701979097528851516001600160a01b03908116909552885187015190925287519092015190921690529184015151909152610e1d81610e22565b505050565b805160600151600214610e3a57805160400151610e3e565b8051515b6001600160a01b03166108fc8260000151602001516002610e5f91906112e7565b6040518115909202916000818181858888f19350505050158015610242573d6000803e3d6000fd5b6040805160c0810182526000918101828152606082018390526080820183905260a08201929092529081908152602001610edb60405180606001604052806000815260200160008152602001600081525090565b905290565b80356001600160a01b0381168114610ef757600080fd5b919050565b80358015158114610ef757600080fd5b600060e08284031215610f1e57600080fd5b50919050565b60006101008284031215610f1e57600080fd5b600060208284031215610f4957600080fd5b610f5282610ee0565b9392505050565b600060208284031215610f6b57600080fd5b610f5282610efc565b600060e08284031215610f8657600080fd5b610f528383610f0c565b60006101008284031215610fa357600080fd5b610f528383610f24565b60006101408284031215610f1e57600080fd5b60006101208284031215610f1e57600080fd5b600060608284031215610f1e57600080fd5b600060a08284031215610f1e57600080fd5b6001600160a01b038061100983610ee0565b16835260208201356020840152604082013560408401528061102d60608401610ee0565b166060840152506080810135608083015260a081013560a083015260c081013560c08301525050565b6001600160a01b038061106883610ee0565b16835260208201356020840152604082013560408401528061108c60608401610ee0565b166060840152506080810135608083015260a081013560a083015260c081013560c083015260e081013560e08301525050565b6001600160a01b036110d082610ee0565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061110783610ee0565b16835260208201356020840152604082013560408401528061112b60608401610ee0565b166060840152506080818101359083015260a090810135910152565b60e0810161115582846110f5565b60c092830135919092015290565b60e0810161117182846110f5565b61117d60c08401610efc565b151560c083015292915050565b61010081016111998284610ff7565b60e092830135919092015290565b61010081016111b68284610ff7565b6111c260e08401610efc565b151560e083015292915050565b61014081016111de8284611056565b610100838101358382015261012080850135908401525092915050565b610120810161120a8284611056565b610100611218818501610efc565b1515818401525092915050565b6060810161123283610efc565b15158252611250602083016020850180358252602090810135910152565b92915050565b60a0810161126482846110bf565b61127060808401610efc565b1515608083015292915050565b8281526101008101610f526020830184610ff7565b8281526101208101610f526020830184611056565b82815260a08101610f5260208301846110bf565b82815260e08101610f5260208301846110f5565b600082198211156112e2576112e261133f565b500190565b60008160001904831182151516156113015761130161133f565b500290565b6000828210156113185761131861133f565b500390565b60008261133a57634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052601160045260246000fdfea264697066735822122076a2570954cffbf91ed45bb0762ab72e80b3ee36c99ddcdc966885ef0769596f64736f6c63430008060033`,
-  BytecodeLen: 5121,
+  Bytecode: `0x60806040526040516200151a3803806200151a833981016040819052620000269162000105565b6000546200003790156008620000c5565b6001600055604080518251151581526020808401511515908201527fee65f2dcf8be6cdab3bac48c73b8a6524225820fd17a0a77f34c81e47ebe406e910160405180910390a16200008b34156007620000c5565b6040805160016020820152600091810182905260600160408051601f19818403018152919052805160209091012060005550620001739050565b81620000eb5760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b805180151581146200010057600080fd5b919050565b6000604082840312156200011857600080fd5b604080519081016001600160401b03811182821017156200014957634e487b7160e01b600052604160045260246000fd5b6040526200015783620000ef565b81526200016760208401620000ef565b60208201529392505050565b61139780620001836000396000f3fe60806040526004361061008a5760003560e01c806360bafff71161005957806360bafff7146100e457806361ff86f7146100f7578063aa8594ca1461010a578063e4f83a8f1461011d578063ebc5780c1461013057600080fd5b8063108acff51461009657806338015b16146100ab5780633df7a789146100be578063497ccc6a146100d157600080fd5b3661009157005b600080fd5b6100a96100a4366004610ff1565b610143565b005b6100a96100b9366004610fcc565b61024b565b6100a96100cc366004610f9c565b610351565b6100a96100df366004610f9c565b610575565b6100a96100f2366004610fb9565b61063a565b6100a9610105366004610f80565b6107ea565b6100a9610118366004610fdf565b6108a5565b6100a961012b366004610ff1565b6109d1565b6100a961013e366004610f80565b610adb565b60405161017f9061015b9060029084906020016112b3565b6040516020818303038152906040528051906020012060001c600054146010610cb0565b600160005561019660608201354310156011610cb0565b7f613b30050768160fb8fb1fedba26a4639c7df8d370861f403061c2d46f9802e5816040516101c59190611262565b60405180910390a16101d93415600e610cb0565b6101fb336101ea6020840184610f43565b6001600160a01b031614600f610cb0565b6102086020820182610f43565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b506000805533ff5b6040516102879061026390600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146029610cb0565b600160005561029e60e0820135431015602a610cb0565b7fb9d135d4afaa7938b4616c3637968c0e71f66413b54043da6188989930963f89816040516102cd9190611207565b60405180910390a16102e134156027610cb0565b610306336102f56080840160608501610f43565b6001600160a01b0316146028610cb0565b6103166080820160608301610f43565b6040516001600160a01b039190911690608083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b60405161038d90610369906009908490602001611289565b6040516020818303038152906040528051906020012060001c60005414601c610cb0565b6001600090815560408051602081019091529081526103b360c08301354310601d610cb0565b7f6739bb4acbb3812eea51c48895245b154776bf02dd61571666f6abba93266fec826040516103e29190611196565b60405180910390a16103f63415601a610cb0565b61041b3361040a6080850160608601610f43565b6001600160a01b031614601b610cb0565b6104296040830135436112db565b8152604080516101008101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c0820181905260e08201529061047790840184610f43565b6001600160a01b0316815260208084013590820152604080840135908201526104a66080840160608501610f43565b6001600160a01b031660608201526080808401359082015260a0808401359082015260e08084013560c083015282519082015260405161055590600b90839060200160006101208201905083825260018060a01b03808451166020840152602084015160408401526040840151606084015280606085015116608084015250608083015160a083015260a083015160c083015260c083015160e083015260e08301516101008301529392505050565b60408051601f198184030181529190528051602090910120600055505050565b6040516105b19061058d906009908490602001611289565b6040516020818303038152906040528051906020012060001c600054146020610cb0565b60016000556105c860c08201354310156021610cb0565b7fcdae4cbd433f8c4039f23f2632824e3ab0089e9b8c2050e8e87e4d6e0a3df09b816040516105f791906111b3565b60405180910390a161060b3415601e610cb0565b61062d3361061c6020840184610f43565b6001600160a01b031614601f610cb0565b6103166020820182610f43565b6040516106769061065290600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146025610cb0565b600160005561068c60e082013543106026610cb0565b7f58822179cfd9cab18ada288d4f94f3d5babb851e53b3ed667629d3cbbbb0cb72816040516106bb91906111db565b60405180910390a16106cf34156022610cb0565b6106f1336106e06020840184610f43565b6001600160a01b0316146023610cb0565b604080516101008301356020820152610120830135918101919091526107399060600160408051601f19818403018152919052805160209091012060a0830135146024610cb0565b610741610e93565b61074e6020830183610f43565b81516001600160a01b039091169052805160208084013591015280516040808401359101526107836080830160608401610f43565b81516001600160a01b0390911660609091015260036107a760c08401356004611312565b6107b6906101208501356112db565b6107c09190611329565b60208083018051929092528151439101525160808301356040909101526107e681610cd5565b5050565b604051610826906108029060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146018610cb0565b600160005561083d60a08201354310156019610cb0565b7fcc997a9af4abe95cf593cbeb34368171b4d5923d8562b1e54e51006451978b7c8160405161086c919061116f565b60405180910390a161088034156016610cb0565b610306336108946080840160608501610f43565b6001600160a01b0316146017610cb0565b6108f760016108b76020840184610f65565b6040516020016108d39291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600a610cb0565b6001600090815560408051602081018252918252517f3c669845d6bbc6fc367c9fa11ea5c8ec9bfd3d70eae7b34375b93f114f74036590610939908490611231565b60405180910390a1610952346020840135146009610cb0565b6109606040830135436112db565b81526040805160808082018352600060608084019182523384526020878101358186019081528887013586880190815288518552875160029381019390935286516001600160a01b03169783019790975251918101919091529351918401919091525160a08301529060c001610555565b604051610a0d906109e99060029084906020016112b3565b6040516020818303038152906040528051906020012060001c60005414600c610cb0565b6001600055610a2360608201354310600d610cb0565b7fe2fcb5361608dd42d825c4e917fd4fca89057bb8eb0b7e34b8c2813a114cc15281604051610a529190611262565b60405180910390a1610a6b34602083013514600b610cb0565b610a73610e93565b610a806020830183610f43565b81516001600160a01b039091169052805160208084013591810182905282516040808601359101528251336060909101528083018051600190525143910152610ac990806112db565b6020820151604001526107e681610cd5565b604051610b1790610af39060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146014610cb0565b600160009081556040805160208101909152908152610b3d60a083013543106015610cb0565b7fee6496cc7d28a7c9121e0eebf62951277792d31c40832817d1a4c372e06eb46182604051610b6c9190611153565b60405180910390a1610b8034156012610cb0565b610ba233610b916020850185610f43565b6001600160a01b0316146013610cb0565b610bb06040830135436112db565b81526040805160e08101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c082015290610bf690840184610f43565b6001600160a01b031681526020808401359082015260408084013590820152610c256080840160608501610f43565b6001600160a01b03908116606083810191825260808681013581860190815260c08089013560a08089019182528951838a019081526040805160096020808301919091528c518c16828401528c0151988101989098528a0151958701959095529551909616948401949094525192820192909252915160e08301525161010082015261012001610555565b816107e65760405163100960cb60e01b81526004810182905260240160405180910390fd5b60408051602081019091526000815260208201515160011415610dc0578151604001516020808401510151610d0a91906112db565b81526040805160c08082018352600080835260208084018281528486018381526060808701858152608080890187815260a0808b019889528d51516001600160a01b039081168c528e5189015188528e518d015187528e51860151811685528e8901518d015183528d518a528c516007998101999099528b5181169c89019c909c529551938701939093529251928501929092529051909616908201529351918401919091525160e08301529061010001610555565b6040805160c081018252600091810182815260608083018481526080840185815260a085018681528486526020808701979097528851516001600160a01b03908116909552885187015190925287519092015190921690529184015151909152610e2981610e2e565b505050565b805160600151600214610e4657805160400151610e4a565b8051515b6001600160a01b03166108fc8260000151602001516002610e6b91906112f3565b6040518115909202916000818181858888f19350505050158015610243573d6000803e3d6000fd5b6040805160c0810182526000918101828152606082018390526080820183905260a08201929092529081908152602001610ee760405180606001604052806000815260200160008152602001600081525090565b905290565b80356001600160a01b0381168114610f0357600080fd5b919050565b80358015158114610f0357600080fd5b600060e08284031215610f2a57600080fd5b50919050565b60006101008284031215610f2a57600080fd5b600060208284031215610f5557600080fd5b610f5e82610eec565b9392505050565b600060208284031215610f7757600080fd5b610f5e82610f08565b600060e08284031215610f9257600080fd5b610f5e8383610f18565b60006101008284031215610faf57600080fd5b610f5e8383610f30565b60006101408284031215610f2a57600080fd5b60006101208284031215610f2a57600080fd5b600060608284031215610f2a57600080fd5b600060a08284031215610f2a57600080fd5b6001600160a01b038061101583610eec565b16835260208201356020840152604082013560408401528061103960608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c08301525050565b6001600160a01b038061107483610eec565b16835260208201356020840152604082013560408401528061109860608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c083015260e081013560e08301525050565b6001600160a01b036110dc82610eec565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061111383610eec565b16835260208201356020840152604082013560408401528061113760608401610eec565b166060840152506080818101359083015260a090810135910152565b60e081016111618284611101565b60c092830135919092015290565b60e0810161117d8284611101565b61118960c08401610f08565b151560c083015292915050565b61010081016111a58284611003565b60e092830135919092015290565b61010081016111c28284611003565b6111ce60e08401610f08565b151560e083015292915050565b61014081016111ea8284611062565b610100838101358382015261012080850135908401525092915050565b61012081016112168284611062565b610100611224818501610f08565b1515818401525092915050565b6060810161123e83610f08565b1515825261125c602083016020850180358252602090810135910152565b92915050565b60a0810161127082846110cb565b61127c60808401610f08565b1515608083015292915050565b8281526101008101610f5e6020830184611003565b8281526101208101610f5e6020830184611062565b82815260a08101610f5e60208301846110cb565b82815260e08101610f5e6020830184611101565b600082198211156112ee576112ee61134b565b500190565b600081600019048311821515161561130d5761130d61134b565b500290565b6000828210156113245761132461134b565b500390565b60008261134657634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052601160045260246000fdfea2646970667358221220a404989a8f3dd98bfde192067c9812fa5ff84b84608c3dfc70b46c770c5ac71964736f6c63430008070033`,
+  BytecodeLen: 5402,
   Which: `oD`,
   deployMode: `DM_constructor`,
-  version: 1,
+  version: 2,
   views: {
     }
   };

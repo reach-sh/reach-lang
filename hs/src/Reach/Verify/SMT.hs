@@ -1513,12 +1513,6 @@ _verify_smt mc ctxt_vst smt lp = do
           let se = List [smtApply "as" [Atom "const", t], na']
           smtAssert $ smtEq (Atom mv) se
     mapM_ defineMap $ M.toList ctxt_maps
-    case dli_ctimem of
-      Nothing -> mempty
-      Just (ctimev, csecsv) -> do
-        let go v = pathAddUnbound at (Just v) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var v)
-        go ctimev
-        go csecsv
     case mc of
       Just _ -> mempty
       Nothing -> do
