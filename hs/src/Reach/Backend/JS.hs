@@ -782,16 +782,6 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_mode = JM_Backend
   let ctxt_maps = dli_maps dli
   local (const JSCtxt {..}) $ do
-    let DLInit {..} = dli
-    ctimem' <-
-      case dli_ctimem of
-        Nothing -> mempty
-        Just (tv, sv) -> do
-          tv' <- jsVar tv
-          sv' <- jsVar sv
-          return $ vsep $
-            [ "const" <+> tv' <+> "=" <+> "await ctc.creationTime();"
-            , "const" <+> sv' <+> "=" <+> "await ctc.creationSecs();" ]
     maps_defn <- jsMapDefns True
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
@@ -809,7 +799,6 @@ jsPart dli p (EPProg _ _ et) = do
             , "const stdlib = ctc.stdlib;"
             , ctcs
             , maps_defn
-            , ctimem'
             , et'
             ]
     return $ "export" <+> jsFunction who ["ctc", "interact"] bodyp'
@@ -944,10 +933,10 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 1
+reachBackendVersion = 2
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ _ vi _)) = do
+jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep

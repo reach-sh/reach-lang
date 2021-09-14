@@ -148,8 +148,7 @@ instance Pretty SLParts where
 type DLMapInfos = M.Map DLMVar DLMapInfo
 
 data DLInit = DLInit
-  { dli_ctimem :: Maybe (DLVar, DLVar)
-  , dli_maps :: DLMapInfos
+  { dli_maps :: DLMapInfos
   }
   deriving (Eq, Generic)
 
@@ -160,14 +159,6 @@ instance Pretty DLInit where
       <> hardline
       <> "// initialization"
       <> hardline
-      <> ctimem'
-    where
-      ctimem' = case dli_ctimem of
-        Nothing -> "// no ctime" <> hardline
-        Just (t, s) -> mconcat $
-          [ "const" <+> pretty t <+> "=" <+> "creationTime();" <> hardline
-          , "const" <+> pretty s <+> "=" <+> "creationSecs();" <> hardline
-          ]
 
 data DLConstant
   = DLC_UInt_max

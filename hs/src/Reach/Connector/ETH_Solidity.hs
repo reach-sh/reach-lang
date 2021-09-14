@@ -1054,24 +1054,24 @@ solHandler which h = freshVarMap $
       (frameDefn, frameDecl, ctp) <- solCTail_top which svs msg (Just msg) ct
       evtDefn <- solEvent which svs msg
       let ret = "payable"
-      plo <- ctxt_plo <$> ask
-      (hashCheck, am, sfl) <-
-        case (which, plo_deployMode plo) of
-          (1, DM_firstMsg) ->
-            return (evt0Emit, AM_Memory, SFL_Constructor)
-          _ -> do
-            eq' <- solEq ("current_state") (solHashStateCheck prev)
-            req <- solRequire (checkMsg "state") eq'
-            let hcp =
-                  vsep
-                    [ req <> semi
-                    , -- This is a re-entrancy lock, because we know that
-                      -- all methods start by checking the current state.
-                      -- When we implement on-chain state, we need to do
-                      -- this differently
-                      solSet "current_state" "0x0"
-                    ]
-            return (hcp, AM_Call, SFL_Function True (solMsg_fun which))
+      (hc_rhs, am, sfl) <-
+        case which == 0 of
+          True -> do
+            let csv = "0x0"
+            return (csv, AM_Memory, SFL_Constructor)
+          False -> do
+            let csv = solHashStateCheck prev
+            return (csv, AM_Call, SFL_Function True (solMsg_fun which))
+      hc_eq' <- solEq ("current_state") hc_rhs
+      hc_req <- solRequire (checkMsg "state") hc_eq'
+      let hashCheck =
+            vsep
+              [ hc_req <> semi
+              , -- This is a re-entrancy lock, because we know that
+                -- all methods start by checking the current state.  When we
+                -- implement on-chain state, we need to do this differently
+                solSet "current_state" "0x1"
+              ]
       argDefn <- solArgDefn am svs msg
       let req x = flip (<>) semi <$> solRequire (checkMsg "timeout") x
       let checkTime1 op ta = do
@@ -1201,13 +1201,8 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
-evt0Body, evt0Emit, evt0Defn :: Doc
-evt0Body = solApply (solMsg_evt (0 :: Int)) []
-evt0Emit = "emit" <+> evt0Body <> semi
-evt0Defn = "event" <+> evt0Body <> semi
-
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at csvs mvi hs)) = do
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1235,30 +1230,6 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at csvs mvi hs)) = do
   let ctxt_plo = plo
   let ctxt_hasViews = isJust mvi
   flip runReaderT (SolCtxt {..}) $ do
-    consp <-
-      case plo_deployMode of
-        DM_constructor -> do
-          let (ctimem', cvs, withC) =
-                case dli_ctimem of
-                  Nothing -> (mempty, mempty, id)
-                  Just (tv, sv) ->
-                    ( [ solSet (solMemVar tv) solBlockTime
-                      , solSet (solMemVar sv) solBlockSecs ]
-                    , [ tv, sv ]
-                    , (\m -> do
-                         extendVarMap $ M.fromList $
-                           [ (tv, solMemVar tv)
-                           , (sv, solMemVar sv) ]
-                         m)
-                    )
-          let dli' = vsep $ ctimem'
-          (cfDefn, cfDecl) <- withC $ solFrame 0 (S.fromList cvs)
-          consbody <- withC $ solCTail (CT_From at 0 (FI_Continue (ViewSave 0 []) $ asnLike csvs))
-          let consbody' = vsep [evt0Emit, cfDecl, dli', consbody]
-          let cDefn = solFunctionLike SFL_Constructor [] "payable" consbody'
-          return $ vsep [cfDefn, cDefn]
-        DM_firstMsg ->
-          return $ emptyDoc
     let map_defn (mpv, mi) = do
           keyTy <- solType_ T_Address
           let mt = dlmi_tym mi
@@ -1341,7 +1312,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at csvs mvi hs)) = do
     tlfunsp <- getm ctxt_tlfuns
     -- XXX expose this to Reach? only include if bills?
     let defp = "receive () external payable {}"
-    let ctcbody = vsep $ [state_defn, evt0Defn, consp, typefsp, outputsp, tlfunsp, hs', defp]
+    let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
           HM.fromList $
@@ -1406,7 +1377,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 1
+reachEthBackendVersion = 2
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do

@@ -510,11 +510,9 @@ instance Optimize LLStep where
 
 instance Optimize DLInit where
   opt (DLInit {..}) = do
-    dli_ctimem' <- opt dli_ctimem
     return $
       DLInit
-        { dli_ctimem = dli_ctimem'
-        , dli_maps = dli_maps
+        { dli_maps = dli_maps
         }
 
 instance Optimize LLProg where
@@ -568,8 +566,8 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
 
 instance Optimize CPProg where
-  opt (CPProg at csvs vi (CHandlers hs)) =
-    CPProg at csvs <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
+  opt (CPProg at vi (CHandlers hs)) =
+    CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
 
 instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =

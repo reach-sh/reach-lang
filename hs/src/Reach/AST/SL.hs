@@ -472,6 +472,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
+  , slptc_ctor :: Bool
   }
   deriving (Eq, Generic)
 
@@ -667,6 +668,7 @@ data SLPrimitive
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc SLPart SLVar SLType
   | SLPrim_deploy
+  | SLPrim_deployed
   | SLPrim_setOptions
   | SLPrim_adaptReachAppTupleArgs
   | SLPrim_padTo Integer

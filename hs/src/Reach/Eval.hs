@@ -44,7 +44,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           }
   init_dlo <- readDlo id
   envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty
-  resr <- liftIO $ newIORef $ AppRes mempty mempty Nothing
+  resr <- liftIO $ newIORef $ AppRes mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
@@ -70,7 +70,6 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
         }
   AppRes {..} <- liftIO $ readIORef resr
   dli_maps <- liftIO $ readIORef $ me_ms mape
-  let dli_ctimem = ar_ctimem
   let dli = DLInit {..}
   return $ DLProg at final_dlo' (SLParts ar_pie) dli exports ar_views final
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"

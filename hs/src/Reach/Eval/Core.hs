@@ -61,7 +61,6 @@ data AppEnv = AppEnv
 data AppRes = AppRes
   { ar_pie :: M.Map SLPart InteractEnv
   , ar_views :: DLViews
-  , ar_ctimem :: Maybe (DLVar, DLVar)
   }
 
 data AppInitSt
@@ -1052,7 +1051,7 @@ evalAsEnv obj = case obj of
         , ("interact", makeInteractField)
         ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False False)
       whos = S.singleton who
   SLV_Anybody -> do
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
@@ -1063,7 +1062,7 @@ evalAsEnv obj = case obj of
         [ ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay) ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False False)
   SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
@@ -2891,41 +2890,9 @@ evalPrim p sargs =
       saveLift $ DLS_ViewIs at vn vk mva
       return $ public $ SLV_Null at "viewis"
     SLPrim_deploy -> do
-      at <- withAt id
-      ensure_mode SLM_AppInit "deploy"
-      e_appR <- fromRight (impossible "deploy") . e_appr <$> ask
-      dlo <- readDlo id
-      ctimem <- do
-        let no = return $ Nothing
-        let yes = do
-              time_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
-              doFluidSet FV_lastConsensusTime $ public $ SLV_DLVar time_dv
-              secs_dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
-              doFluidSet FV_lastConsensusSecs $ public $ SLV_DLVar secs_dv
-              return $ Just (time_dv, secs_dv)
-        case dlo_deployMode dlo of
-          DM_constructor -> yes
-          DM_firstMsg -> no
-      env <-
-        (liftIO $ readIORef e_appR) >>= \case
-          AIS_Init {..} -> do
-            liftIO $ modifyIORef aisi_res $ \r -> r {ar_ctimem = ctimem}
-            liftIO $ readIORef aisi_env
-          _ -> impossible "deploy"
-      liftIO $ writeIORef e_appR $ AIS_Deployed env
-      st <- readSt id
-      let after_ctor =
-            case dlo_deployMode dlo of
-              DM_constructor -> True
-              DM_firstMsg -> False
-      setSt $
-        st
-          { st_mode = SLM_Step
-          , st_live = True
-          , st_after_ctor = after_ctor
-          }
-      doBalanceInit Nothing
-      return $ public $ SLV_Null at "deploy"
+      zero_args
+      retV $ public $ SLV_Prim SLPrim_deployed
+    SLPrim_deployed -> illegal_args
     SLPrim_setOptions -> do
       ensure_mode SLM_AppInit "setOptions"
       at <- withAt id
@@ -3979,7 +3946,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         _ -> True
   let not_all_true_send =
         getAny $ mconcat $ map (Any . not_true_send) (M.elems $ M.map ds_when tc_send)
-  let mustHaveTimeout = S.null whos || not_all_true_send
+  let mustHaveTimeout = not slptc_ctor && (S.null whos || not_all_true_send)
   let timeout_ignore_okay1 (DLSend {..}) =
         case (ds_isClass, ds_when) of
           (_, DLA_Literal (DLL_Bool True)) -> True
@@ -4463,6 +4430,48 @@ findStmtTrampoline = \case
         locSco sco' $ evalStmt ks
     saveLift $ DLS_FromConsensus at steplifts
     return $ cr
+  SLV_Prim SLPrim_deployed -> Just $ \sp ks -> do
+    at <- withAt id
+    ensure_mode SLM_AppInit "deploy"
+    e_appR <- fromRight (impossible "deploy") . e_appr <$> ask
+    dlo <- readDlo id
+    env <-
+      (liftIO $ readIORef e_appR) >>= \case
+        AIS_Init {..} -> do
+          liftIO $ readIORef aisi_env
+        _ -> impossible "deploy"
+    liftIO $ writeIORef e_appR $ AIS_Deployed env
+    st <- readSt id
+    let after_ctor =
+          case dlo_deployMode dlo of
+            DM_constructor -> True
+            DM_firstMsg -> False
+    setSt $
+      st
+        { st_mode = SLM_Step
+        , st_live = True
+        , st_after_ctor = after_ctor
+        }
+    doBalanceInit Nothing
+    case dlo_deployMode dlo of
+      DM_firstMsg ->
+        evalStmt ks
+      DM_constructor -> do
+        let slptc_at = at
+        let slptc_whos = mempty
+        let slptc_mv = Nothing
+        let slptc_mode = Nothing
+        let slptc_msg = Nothing
+        let slptc_amte = Nothing
+        let slptc_whene = Nothing
+        let slptc_timeout = Nothing
+        let slptc_fork = False
+        let slptc_ctor = True
+        let tcr = ToConsensusRec {..}
+        let a = at2a at
+        let e = jsCall a (JSIdentifier a "commit") []
+        let ks' = JSExpressionStatement e sp : ks
+        doToConsensus ks' tcr
   _ -> Nothing
 
 doExit :: App ()

@@ -98,8 +98,8 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 1;
-const reachAlgoBackendVersion = 2;
+const reachBackendVersion = 2;
+const reachAlgoBackendVersion = 3;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
@@ -1150,6 +1150,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt } = rargs;
       const indexer = await getIndexer();
+      const isCtor = (funcNum == 0);
+      const fromBlock_summand = isCtor ? 0 : 1;
 
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeoutAt}`;
@@ -1157,7 +1159,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       while ( true ) {
         const correctStep = makeIsMethod(funcNum);
-        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + 1, timeoutAt }, correctStep);
+        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + fromBlock_summand, timeoutAt }, correctStep);
         debug(`EventCache res: `, res);
         if ( ! res.succ ) {
           const currentRound = res.round;
@@ -1248,11 +1250,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
-    const creationTime = async () =>
-      bigNumberify(ctorRound);
-    const creationSecs = async () =>
-      await getTimeSecs(await creationTime());
-
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
       const bs = new Uint8Array(size);
       let offset = 0;
@@ -1327,7 +1324,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, creationSecs, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {
@@ -1370,8 +1367,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const params = await getTxnParams();
     const ctor_args =
       [ new Uint8Array([0]),
+        T_Tuple([]).toNet([]),
         T_Address.toNet( T_Address.canonicalize(escrowAddr) ),
-        T_Tuple([]).toNet([]) ];
+      ];
     debug({ctor_args});
     const txnCtor =
       toWTxn(algosdk.makeApplicationNoOpTxn(
@@ -1741,7 +1739,7 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   const ctorRound = ict['confirmed-round']
   const ictat = ict['application-transaction'];
   debug({ictat});
-  const aescrow_b64 = ictat['application-args'][1];
+  const aescrow_b64 = ictat['application-args'][2];
   const aescrow_ui8 = reNetify(aescrow_b64);
   const aescrow_cbr = T_Address.fromNet(aescrow_ui8);
   const aescrow_algo = cbr2algo_addr(aescrow_cbr);
