@@ -17,16 +17,19 @@ COPY package.json \
 # because react-scripts requires webpack 4
 # but we've got webpack 5 installed
 RUN npm install
-RUN npm link @reach-sh/stdlib
 
 COPY public/ /app/public/
 
 FROM node:14.17.0-alpine3.13 
 
-COPY --from=stdlib /app /app
 COPY --from=stdlib /stdlib /stdlib
+WORKDIR /stdlib
+RUN npm link
 
+COPY --from=stdlib /app /app
 WORKDIR /app
+RUN npm link @reach-sh/stdlib
+
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["start"]
 
