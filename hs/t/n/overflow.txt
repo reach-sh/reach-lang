@@ -11,16 +11,16 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const v38 = "A".interact.get();
+  const v44 = "A".interact.get();
   //    ^ could = 1
   //      from: ./overflow.rsh:9:40:application
 
   // Theorem Formalization
 
-  const v46 = v38 <= (UInt.max - 1);
+  const v52 = v44 <= (UInt.max - 1);
   //    ^ would be false
-  assert(v46);
+  assert(v52);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 9 theorems; 3 failures (and 2 omitted repeats) :'(
+Checked 12 theorems; 3 failures (and 2 omitted repeats) :'(

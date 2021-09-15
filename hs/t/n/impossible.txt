@@ -9,13 +9,13 @@ Verification failed:
 
   // Violation Witness
 
-  const v28 = "A".interact.getX();
+  const v36 = "A".interact.getX();
 
   // Theorem Formalization
 
-  const v29 = v28 < 0;
-  possible(v29);
+  const v37 = v36 < 0;
+  possible(v37);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 8 theorems; 2 failures (and 1 omitted repeats) :'(

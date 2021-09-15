@@ -109,6 +109,9 @@ tealcount () {
 # tealcount
 
 #######
+fc hs/t/n/loop_var_sub.rsh
+fc hs/t/n/unknowable2.rsh
+exit 0
 
 jb
 

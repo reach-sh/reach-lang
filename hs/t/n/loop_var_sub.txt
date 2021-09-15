@@ -8,18 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/56 = <loop variable>;
-  //    ^ could = [38, false ]
+  const x/62 = <loop variable>;
+  //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/63 = <loop variable>;
-  //    ^ could = 38
+  const balance(0)/69 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v101 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v116 = (balance(0)/69 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v101);
+  assert(v116);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -29,18 +29,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/56 = <loop variable>;
-  //    ^ could = [38, false ]
+  const x/62 = <loop variable>;
+  //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/63 = <loop variable>;
-  //    ^ could = 38
+  const balance(0)/69 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v124 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v148 = (balance(0)/69 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v124);
+  assert(v148);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -50,18 +50,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/56 = <loop variable>;
-  //    ^ could = [38, false ]
+  const x/62 = <loop variable>;
+  //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/63 = <loop variable>;
-  //    ^ could = 38
+  const balance(0)/69 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v147 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v180 = (balance(0)/69 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v147);
+  assert(v180);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -71,17 +71,17 @@ Verification failed:
 
   // Violation Witness
 
-  const x/56 = <loop variable>;
-  //    ^ could = [38, false ]
+  const x/62 = <loop variable>;
+  //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/63 = <loop variable>;
-  //    ^ could = 38
+  const balance(0)/69 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v170 = (balance(0)/63 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v212 = (balance(0)/69 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v170);
+  assert(v212);
 
-Checked 18 theorems; 4 failures :'(
+Checked 21 theorems; 4 failures :'(

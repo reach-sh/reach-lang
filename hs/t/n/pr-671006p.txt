@@ -8,23 +8,23 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/173 = <loop variable>;
+  const sum/179 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/180 = <loop variable>;
+  const balance(0)/186 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const v228 = <map reduction>;
+  const v234 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:146:18:application
 
   // Theorem Formalization
 
-  const v236 = (balance(0)/180 == sum/173) ? (sum/173 == v228) : false;
+  const v242 = (balance(0)/186 == sum/179) ? (sum/179 == v234) : false;
   //    ^ would be false
-  assert(v236);
+  assert(v242);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Contributor" is honest
   Verifying when ONLY "Fundraiser" is honest
-Checked 53 theorems; 4 failures (and 3 omitted repeats) :'(
+Checked 56 theorems; 4 failures (and 3 omitted repeats) :'(
