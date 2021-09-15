@@ -2,24 +2,28 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    ...hasConsoleLogger,
+    check: Fun(true, Null),
     x: UInt,
+    y: UInt,
+    z: UInt,
   });
   deploy();
 
   A.only(() => {
     const x = declassify(interact.x);
-    const z = muldiv(x, 4, 5);
+    const y = declassify(interact.y);
+    const z = declassify(interact.z);
+    const r1 = muldiv(x, y, z);
   });
-  A.publish(x, z);
+  A.publish(x, y, z, r1);
 
-  const y = muldiv(x, 4, 5);
+  const r2 = muldiv(x, y, z);
 
-  require(y == z);
+  require(r1 == r2);
 
   commit();
 
-  const a = muldiv(x, 4, 5);
-  A.interact.log("a", a);
+  const a = muldiv(x, y, z);
+  A.interact.check(a);
 
 });
