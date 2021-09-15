@@ -26,6 +26,7 @@ FROM node:14.17.0-alpine3.13
 COPY --from=stdlib /app /app
 COPY --from=stdlib /stdlib /stdlib
 
+WORKDIR /app
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["start"]
 
