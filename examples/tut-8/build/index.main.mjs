@@ -125,7 +125,7 @@ export async function Alice(ctc, interact) {
         const v413 = stdlib.addressEq(v265, v409);
         stdlib.assert(v413, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Alice'
           });
@@ -156,14 +156,14 @@ export async function Alice(ctc, interact) {
     const v413 = stdlib.addressEq(v265, v409);
     stdlib.assert(v413, {
       at: 'reach standard library:209:7:dot',
-      fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'sender correct',
       who: 'Alice'
       });
     ;
     stdlib.protect(ctc3, await interact.informTimeout(), {
-      at: './examples/tut-8/index.rsh:41:29:application',
-      fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      at: './index.rsh:41:29:application',
+      fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'informTimeout',
       who: 'Alice'
       });
@@ -177,24 +177,24 @@ export async function Alice(ctc, interact) {
     const v277 = txn3.from;
     const v281 = stdlib.add(v266, v266);
     ;
-    let v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+    let v282 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     let v283 = v278;
     let v289 = v281;
     
     while ((() => {
-      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
+      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
       
       return v297;})()) {
       const v299 = stdlib.add(v283, v267);
       const v303 = stdlib.protect(ctc0, await interact.getHand(), {
-        at: './examples/tut-8/index.rsh:65:42:application',
-        fs: ['at ./examples/tut-8/index.rsh:64:15:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:64:19:function exp)'],
+        at: './index.rsh:65:42:application',
+        fs: ['at ./index.rsh:64:15:application call to [unknown function] (defined at: ./index.rsh:64:19:function exp)'],
         msg: 'getHand',
         who: 'Alice'
         });
       const v304 = stdlib.protect(ctc0, await interact.random(), {
         at: 'reach standard library:60:31:application',
-        fs: ['at ./examples/tut-8/index.rsh:66:56:application call to "makeCommitment" (defined at: reach standard library:59:8:function exp)', 'at ./examples/tut-8/index.rsh:64:15:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:64:19:function exp)'],
+        fs: ['at ./index.rsh:66:56:application call to "makeCommitment" (defined at: reach standard library:59:8:function exp)', 'at ./index.rsh:64:15:application call to [unknown function] (defined at: ./index.rsh:64:19:function exp)'],
         msg: 'random',
         who: 'Alice'
         });
@@ -206,7 +206,7 @@ export async function Alice(ctc, interact) {
         funcNum: 6,
         onlyIf: true,
         out_tys: [ctc2],
-        pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+        pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
         sim_p: (async (txn4) => {
           const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
           
@@ -216,13 +216,13 @@ export async function Alice(ctc, interact) {
           const v307 = txn4.from;
           
           sim_r.txns.push({
-            amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
+            amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
             kind: 'to',
             tok: undefined
             });
           const v312 = stdlib.addressEq(v265, v307);
           stdlib.assert(v312, {
-            at: './examples/tut-8/index.rsh:69:11:dot',
+            at: './index.rsh:69:11:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Alice'
@@ -253,14 +253,14 @@ export async function Alice(ctc, interact) {
         const v380 = stdlib.addressEq(v277, v376);
         stdlib.assert(v380, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Alice'
           });
         ;
         stdlib.protect(ctc3, await interact.informTimeout(), {
-          at: './examples/tut-8/index.rsh:41:29:application',
-          fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          at: './index.rsh:41:29:application',
+          fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'informTimeout',
           who: 'Alice'
           });
@@ -275,7 +275,7 @@ export async function Alice(ctc, interact) {
         ;
         const v312 = stdlib.addressEq(v265, v307);
         stdlib.assert(v312, {
-          at: './examples/tut-8/index.rsh:69:11:dot',
+          at: './index.rsh:69:11:dot',
           fs: [],
           msg: 'sender correct',
           who: 'Alice'
@@ -312,7 +312,7 @@ export async function Alice(ctc, interact) {
               const v363 = stdlib.addressEq(v265, v359);
               stdlib.assert(v363, {
                 at: 'reach standard library:209:7:dot',
-                fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+                fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
                 msg: 'sender correct',
                 who: 'Alice'
                 });
@@ -343,14 +343,14 @@ export async function Alice(ctc, interact) {
           const v363 = stdlib.addressEq(v265, v359);
           stdlib.assert(v363, {
             at: 'reach standard library:209:7:dot',
-            fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'sender correct',
             who: 'Alice'
             });
           ;
           stdlib.protect(ctc3, await interact.informTimeout(), {
-            at: './examples/tut-8/index.rsh:41:29:application',
-            fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            at: './index.rsh:41:29:application',
+            fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'informTimeout',
             who: 'Alice'
             });
@@ -365,7 +365,7 @@ export async function Alice(ctc, interact) {
           ;
           const v324 = stdlib.addressEq(v277, v319);
           stdlib.assert(v324, {
-            at: './examples/tut-8/index.rsh:77:9:dot',
+            at: './index.rsh:77:9:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Alice'
@@ -377,7 +377,7 @@ export async function Alice(ctc, interact) {
             funcNum: 10,
             onlyIf: true,
             out_tys: [ctc0, ctc0],
-            pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+            pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
             sim_p: (async (txn6) => {
               const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
               
@@ -387,13 +387,13 @@ export async function Alice(ctc, interact) {
               const v330 = txn6.from;
               
               sim_r.txns.push({
-                amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
+                amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
                 kind: 'to',
                 tok: undefined
                 });
               const v336 = stdlib.addressEq(v265, v330);
               stdlib.assert(v336, {
-                at: './examples/tut-8/index.rsh:85:11:dot',
+                at: './index.rsh:85:11:dot',
                 fs: [],
                 msg: 'sender correct',
                 who: 'Alice'
@@ -402,13 +402,13 @@ export async function Alice(ctc, interact) {
               const v338 = stdlib.digestEq(v308, v337);
               stdlib.assert(v338, {
                 at: 'reach standard library:65:17:application',
-                fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+                fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
                 msg: null,
                 who: 'Alice'
                 });
-              const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+              const v339 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
               const v340 = stdlib.add(v332, v339);
-              const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+              const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
               const cv282 = v341;
               const cv283 = v333;
               const cv289 = v289;
@@ -419,15 +419,15 @@ export async function Alice(ctc, interact) {
                 const v289 = cv289;
                 
                 if ((() => {
-                  const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
+                  const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
                   
                   return v297;})()) {
                   const v299 = stdlib.add(v283, v267);
                   sim_r.isHalt = false;
                   }
                 else {
-                  const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
-                  const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+                  const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
+                  const v396 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
                   const v398 = v393 ? v265 : v277;
                   sim_r.txns.push({
                     amt: v396,
@@ -464,14 +464,14 @@ export async function Alice(ctc, interact) {
             const v346 = stdlib.addressEq(v277, v342);
             stdlib.assert(v346, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Alice'
               });
             ;
             stdlib.protect(ctc3, await interact.informTimeout(), {
-              at: './examples/tut-8/index.rsh:41:29:application',
-              fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              at: './index.rsh:41:29:application',
+              fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'informTimeout',
               who: 'Alice'
               });
@@ -486,7 +486,7 @@ export async function Alice(ctc, interact) {
             ;
             const v336 = stdlib.addressEq(v265, v330);
             stdlib.assert(v336, {
-              at: './examples/tut-8/index.rsh:85:11:dot',
+              at: './index.rsh:85:11:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Alice'
@@ -495,13 +495,13 @@ export async function Alice(ctc, interact) {
             const v338 = stdlib.digestEq(v308, v337);
             stdlib.assert(v338, {
               at: 'reach standard library:65:17:application',
-              fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+              fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
               msg: null,
               who: 'Alice'
               });
-            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
             const v340 = stdlib.add(v332, v339);
-            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
             const cv282 = v341;
             const cv283 = v333;
             const cv289 = v289;
@@ -514,13 +514,13 @@ export async function Alice(ctc, interact) {
           }
         }
       }
-    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
+    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
     const v398 = v393 ? v265 : v277;
     ;
     stdlib.protect(ctc3, await interact.seeOutcome(v282), {
-      at: './examples/tut-8/index.rsh:98:24:application',
-      fs: ['at ./examples/tut-8/index.rsh:97:7:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:97:25:function exp)'],
+      at: './index.rsh:98:24:application',
+      fs: ['at ./index.rsh:97:7:application call to [unknown function] (defined at: ./index.rsh:97:25:function exp)'],
       msg: 'seeOutcome',
       who: 'Alice'
       });
@@ -569,8 +569,8 @@ export async function Bob(ctc, interact) {
   ;
   const v273 = stdlib.add(v268, v267);
   stdlib.protect(ctc1, await interact.acceptWager(v266), {
-    at: './examples/tut-8/index.rsh:54:25:application',
-    fs: ['at ./examples/tut-8/index.rsh:53:11:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:53:15:function exp)'],
+    at: './index.rsh:54:25:application',
+    fs: ['at ./index.rsh:53:11:application call to [unknown function] (defined at: ./index.rsh:53:15:function exp)'],
     msg: 'acceptWager',
     who: 'Bob'
     });
@@ -596,20 +596,20 @@ export async function Bob(ctc, interact) {
         kind: 'to',
         tok: undefined
         });
-      const v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+      const v282 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
       const v283 = v278;
       const v289 = v281;
       
       if ((() => {
-        const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
+        const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
         
         return v297;})()) {
         const v299 = stdlib.add(v283, v267);
         sim_r.isHalt = false;
         }
       else {
-        const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
-        const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+        const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
+        const v396 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
         const v398 = v393 ? v265 : v277;
         sim_r.txns.push({
           amt: v396,
@@ -646,14 +646,14 @@ export async function Bob(ctc, interact) {
     const v413 = stdlib.addressEq(v265, v409);
     stdlib.assert(v413, {
       at: 'reach standard library:209:7:dot',
-      fs: ['at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      fs: ['at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'sender correct',
       who: 'Bob'
       });
     ;
     stdlib.protect(ctc1, await interact.informTimeout(), {
-      at: './examples/tut-8/index.rsh:41:29:application',
-      fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+      at: './index.rsh:41:29:application',
+      fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
       msg: 'informTimeout',
       who: 'Bob'
       });
@@ -667,12 +667,12 @@ export async function Bob(ctc, interact) {
     const v277 = txn3.from;
     const v281 = stdlib.add(v266, v266);
     ;
-    let v282 = stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1);
+    let v282 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     let v283 = v278;
     let v289 = v281;
     
     while ((() => {
-      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 1));
+      const v297 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
       
       return v297;})()) {
       const v299 = stdlib.add(v283, v267);
@@ -707,7 +707,7 @@ export async function Bob(ctc, interact) {
             const v380 = stdlib.addressEq(v277, v376);
             stdlib.assert(v380, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Bob'
               });
@@ -738,14 +738,14 @@ export async function Bob(ctc, interact) {
         const v380 = stdlib.addressEq(v277, v376);
         stdlib.assert(v380, {
           at: 'reach standard library:209:7:dot',
-          fs: ['at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          fs: ['at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'sender correct',
           who: 'Bob'
           });
         ;
         stdlib.protect(ctc1, await interact.informTimeout(), {
-          at: './examples/tut-8/index.rsh:41:29:application',
-          fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+          at: './index.rsh:41:29:application',
+          fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
           msg: 'informTimeout',
           who: 'Bob'
           });
@@ -760,15 +760,15 @@ export async function Bob(ctc, interact) {
         ;
         const v312 = stdlib.addressEq(v265, v307);
         stdlib.assert(v312, {
-          at: './examples/tut-8/index.rsh:69:11:dot',
+          at: './index.rsh:69:11:dot',
           fs: [],
           msg: 'sender correct',
           who: 'Bob'
           });
         const v314 = stdlib.add(v309, v267);
         const v318 = stdlib.protect(ctc0, await interact.getHand(), {
-          at: './examples/tut-8/index.rsh:75:50:application',
-          fs: ['at ./examples/tut-8/index.rsh:74:13:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:74:17:function exp)'],
+          at: './index.rsh:75:50:application',
+          fs: ['at ./index.rsh:74:13:application call to [unknown function] (defined at: ./index.rsh:74:17:function exp)'],
           msg: 'getHand',
           who: 'Bob'
           });
@@ -779,7 +779,7 @@ export async function Bob(ctc, interact) {
           funcNum: 8,
           onlyIf: true,
           out_tys: [ctc0],
-          pay: [stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0), []],
+          pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
           sim_p: (async (txn5) => {
             const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
             
@@ -789,13 +789,13 @@ export async function Bob(ctc, interact) {
             const v319 = txn5.from;
             
             sim_r.txns.push({
-              amt: stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:decimal', stdlib.UInt_max, 0),
+              amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
               kind: 'to',
               tok: undefined
               });
             const v324 = stdlib.addressEq(v277, v319);
             stdlib.assert(v324, {
-              at: './examples/tut-8/index.rsh:77:9:dot',
+              at: './index.rsh:77:9:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Bob'
@@ -826,14 +826,14 @@ export async function Bob(ctc, interact) {
           const v363 = stdlib.addressEq(v265, v359);
           stdlib.assert(v363, {
             at: 'reach standard library:209:7:dot',
-            fs: ['at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            fs: ['at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'sender correct',
             who: 'Bob'
             });
           ;
           stdlib.protect(ctc1, await interact.informTimeout(), {
-            at: './examples/tut-8/index.rsh:41:29:application',
-            fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+            at: './index.rsh:41:29:application',
+            fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
             msg: 'informTimeout',
             who: 'Bob'
             });
@@ -848,7 +848,7 @@ export async function Bob(ctc, interact) {
           ;
           const v324 = stdlib.addressEq(v277, v319);
           stdlib.assert(v324, {
-            at: './examples/tut-8/index.rsh:77:9:dot',
+            at: './index.rsh:77:9:dot',
             fs: [],
             msg: 'sender correct',
             who: 'Bob'
@@ -885,7 +885,7 @@ export async function Bob(ctc, interact) {
                 const v346 = stdlib.addressEq(v277, v342);
                 stdlib.assert(v346, {
                   at: 'reach standard library:209:7:dot',
-                  fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+                  fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
                   msg: 'sender correct',
                   who: 'Bob'
                   });
@@ -916,14 +916,14 @@ export async function Bob(ctc, interact) {
             const v346 = stdlib.addressEq(v277, v342);
             stdlib.assert(v346, {
               at: 'reach standard library:209:7:dot',
-              fs: ['at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              fs: ['at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'sender correct',
               who: 'Bob'
               });
             ;
             stdlib.protect(ctc1, await interact.informTimeout(), {
-              at: './examples/tut-8/index.rsh:41:29:application',
-              fs: ['at ./examples/tut-8/index.rsh:40:9:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./examples/tut-8/index.rsh:39:28:function exp)', 'at ./examples/tut-8/index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
+              at: './index.rsh:41:29:application',
+              fs: ['at ./index.rsh:40:9:application call to [unknown function] (defined at: ./index.rsh:40:27:function exp)', 'at reach standard library:212:8:application call to "after" (defined at: ./index.rsh:39:28:function exp)', 'at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)'],
               msg: 'informTimeout',
               who: 'Bob'
               });
@@ -938,7 +938,7 @@ export async function Bob(ctc, interact) {
             ;
             const v336 = stdlib.addressEq(v265, v330);
             stdlib.assert(v336, {
-              at: './examples/tut-8/index.rsh:85:11:dot',
+              at: './index.rsh:85:11:dot',
               fs: [],
               msg: 'sender correct',
               who: 'Bob'
@@ -947,13 +947,13 @@ export async function Bob(ctc, interact) {
             const v338 = stdlib.digestEq(v308, v337);
             stdlib.assert(v338, {
               at: 'reach standard library:65:17:application',
-              fs: ['at ./examples/tut-8/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
+              fs: ['at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)'],
               msg: null,
               who: 'Bob'
               });
-            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
+            const v339 = stdlib.sub(stdlib.checkedBigNumberify('./index.rsh:7:14:decimal', stdlib.UInt_max, 4), v320);
             const v340 = stdlib.add(v332, v339);
-            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:7:28:decimal', stdlib.UInt_max, 3));
+            const v341 = stdlib.mod(v340, stdlib.checkedBigNumberify('./index.rsh:7:28:decimal', stdlib.UInt_max, 3));
             const cv282 = v341;
             const cv283 = v333;
             const cv289 = v289;
@@ -966,13 +966,13 @@ export async function Bob(ctc, interact) {
           }
         }
       }
-    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./examples/tut-8/index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
+    const v393 = stdlib.eq(v282, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
+    const v396 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:94:12:decimal', stdlib.UInt_max, 2), v266);
     const v398 = v393 ? v265 : v277;
     ;
     stdlib.protect(ctc1, await interact.seeOutcome(v282), {
-      at: './examples/tut-8/index.rsh:98:24:application',
-      fs: ['at ./examples/tut-8/index.rsh:97:7:application call to [unknown function] (defined at: ./examples/tut-8/index.rsh:97:25:function exp)'],
+      at: './index.rsh:98:24:application',
+      fs: ['at ./index.rsh:97:7:application call to [unknown function] (defined at: ./index.rsh:97:25:function exp)'],
       msg: 'seeOutcome',
       who: 'Bob'
       });
@@ -1046,7 +1046,7 @@ load 1
 ==
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:37:11:after expr stmt semicolon"
+// "./index.rsh:37:11:after expr stmt semicolon"
 // "[]"
 // compute state in HM_Set 1
 byte base64(AAAAAAAAAAE=)
@@ -1093,7 +1093,7 @@ load 1
 ==
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:49:9:dot"
+// "./index.rsh:49:9:dot"
 // "[]"
 load 255
 dup
@@ -1217,7 +1217,7 @@ load 252
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:56:7:dot"
+// "./index.rsh:56:7:dot"
 // "[]"
 load 254
 dup
@@ -1337,10 +1337,10 @@ load 252
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:57:37:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
@@ -1514,10 +1514,10 @@ load 250
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:69:11:dot"
+// "./index.rsh:69:11:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:69:11:dot"
+// "./index.rsh:69:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -1625,10 +1625,10 @@ load 250
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:70:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
@@ -1806,10 +1806,10 @@ load 249
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:77:9:dot"
+// "./index.rsh:77:9:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:77:9:dot"
+// "./index.rsh:77:9:dot"
 // "[]"
 load 252
 txn Sender
@@ -1925,10 +1925,10 @@ load 249
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:78:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
@@ -2118,10 +2118,10 @@ load 248
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:85:11:dot"
+// "./index.rsh:85:11:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:85:11:dot"
+// "./index.rsh:85:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -2129,7 +2129,7 @@ txn Sender
 assert
 // Nothing
 // "reach standard library:65:17:application"
-// "[at ./examples/tut-8/index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
 load 250
 load 247
 itob
@@ -2246,10 +2246,10 @@ load 248
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:86:39:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
@@ -3733,7 +3733,7 @@ const _ETH = {
     "type": "receive"
   }
 ]`,
-  Bytecode: `0x60806040526040516200151a3803806200151a833981016040819052620000269162000105565b6000546200003790156008620000c5565b6001600055604080518251151581526020808401511515908201527fee65f2dcf8be6cdab3bac48c73b8a6524225820fd17a0a77f34c81e47ebe406e910160405180910390a16200008b34156007620000c5565b6040805160016020820152600091810182905260600160408051601f19818403018152919052805160209091012060005550620001739050565b81620000eb5760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b805180151581146200010057600080fd5b919050565b6000604082840312156200011857600080fd5b604080519081016001600160401b03811182821017156200014957634e487b7160e01b600052604160045260246000fd5b6040526200015783620000ef565b81526200016760208401620000ef565b60208201529392505050565b61139780620001836000396000f3fe60806040526004361061008a5760003560e01c806360bafff71161005957806360bafff7146100e457806361ff86f7146100f7578063aa8594ca1461010a578063e4f83a8f1461011d578063ebc5780c1461013057600080fd5b8063108acff51461009657806338015b16146100ab5780633df7a789146100be578063497ccc6a146100d157600080fd5b3661009157005b600080fd5b6100a96100a4366004610ff1565b610143565b005b6100a96100b9366004610fcc565b61024b565b6100a96100cc366004610f9c565b610351565b6100a96100df366004610f9c565b610575565b6100a96100f2366004610fb9565b61063a565b6100a9610105366004610f80565b6107ea565b6100a9610118366004610fdf565b6108a5565b6100a961012b366004610ff1565b6109d1565b6100a961013e366004610f80565b610adb565b60405161017f9061015b9060029084906020016112b3565b6040516020818303038152906040528051906020012060001c600054146010610cb0565b600160005561019660608201354310156011610cb0565b7f613b30050768160fb8fb1fedba26a4639c7df8d370861f403061c2d46f9802e5816040516101c59190611262565b60405180910390a16101d93415600e610cb0565b6101fb336101ea6020840184610f43565b6001600160a01b031614600f610cb0565b6102086020820182610f43565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b506000805533ff5b6040516102879061026390600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146029610cb0565b600160005561029e60e0820135431015602a610cb0565b7fb9d135d4afaa7938b4616c3637968c0e71f66413b54043da6188989930963f89816040516102cd9190611207565b60405180910390a16102e134156027610cb0565b610306336102f56080840160608501610f43565b6001600160a01b0316146028610cb0565b6103166080820160608301610f43565b6040516001600160a01b039190911690608083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b60405161038d90610369906009908490602001611289565b6040516020818303038152906040528051906020012060001c60005414601c610cb0565b6001600090815560408051602081019091529081526103b360c08301354310601d610cb0565b7f6739bb4acbb3812eea51c48895245b154776bf02dd61571666f6abba93266fec826040516103e29190611196565b60405180910390a16103f63415601a610cb0565b61041b3361040a6080850160608601610f43565b6001600160a01b031614601b610cb0565b6104296040830135436112db565b8152604080516101008101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c0820181905260e08201529061047790840184610f43565b6001600160a01b0316815260208084013590820152604080840135908201526104a66080840160608501610f43565b6001600160a01b031660608201526080808401359082015260a0808401359082015260e08084013560c083015282519082015260405161055590600b90839060200160006101208201905083825260018060a01b03808451166020840152602084015160408401526040840151606084015280606085015116608084015250608083015160a083015260a083015160c083015260c083015160e083015260e08301516101008301529392505050565b60408051601f198184030181529190528051602090910120600055505050565b6040516105b19061058d906009908490602001611289565b6040516020818303038152906040528051906020012060001c600054146020610cb0565b60016000556105c860c08201354310156021610cb0565b7fcdae4cbd433f8c4039f23f2632824e3ab0089e9b8c2050e8e87e4d6e0a3df09b816040516105f791906111b3565b60405180910390a161060b3415601e610cb0565b61062d3361061c6020840184610f43565b6001600160a01b031614601f610cb0565b6103166020820182610f43565b6040516106769061065290600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146025610cb0565b600160005561068c60e082013543106026610cb0565b7f58822179cfd9cab18ada288d4f94f3d5babb851e53b3ed667629d3cbbbb0cb72816040516106bb91906111db565b60405180910390a16106cf34156022610cb0565b6106f1336106e06020840184610f43565b6001600160a01b0316146023610cb0565b604080516101008301356020820152610120830135918101919091526107399060600160408051601f19818403018152919052805160209091012060a0830135146024610cb0565b610741610e93565b61074e6020830183610f43565b81516001600160a01b039091169052805160208084013591015280516040808401359101526107836080830160608401610f43565b81516001600160a01b0390911660609091015260036107a760c08401356004611312565b6107b6906101208501356112db565b6107c09190611329565b60208083018051929092528151439101525160808301356040909101526107e681610cd5565b5050565b604051610826906108029060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146018610cb0565b600160005561083d60a08201354310156019610cb0565b7fcc997a9af4abe95cf593cbeb34368171b4d5923d8562b1e54e51006451978b7c8160405161086c919061116f565b60405180910390a161088034156016610cb0565b610306336108946080840160608501610f43565b6001600160a01b0316146017610cb0565b6108f760016108b76020840184610f65565b6040516020016108d39291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600a610cb0565b6001600090815560408051602081018252918252517f3c669845d6bbc6fc367c9fa11ea5c8ec9bfd3d70eae7b34375b93f114f74036590610939908490611231565b60405180910390a1610952346020840135146009610cb0565b6109606040830135436112db565b81526040805160808082018352600060608084019182523384526020878101358186019081528887013586880190815288518552875160029381019390935286516001600160a01b03169783019790975251918101919091529351918401919091525160a08301529060c001610555565b604051610a0d906109e99060029084906020016112b3565b6040516020818303038152906040528051906020012060001c60005414600c610cb0565b6001600055610a2360608201354310600d610cb0565b7fe2fcb5361608dd42d825c4e917fd4fca89057bb8eb0b7e34b8c2813a114cc15281604051610a529190611262565b60405180910390a1610a6b34602083013514600b610cb0565b610a73610e93565b610a806020830183610f43565b81516001600160a01b039091169052805160208084013591810182905282516040808601359101528251336060909101528083018051600190525143910152610ac990806112db565b6020820151604001526107e681610cd5565b604051610b1790610af39060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146014610cb0565b600160009081556040805160208101909152908152610b3d60a083013543106015610cb0565b7fee6496cc7d28a7c9121e0eebf62951277792d31c40832817d1a4c372e06eb46182604051610b6c9190611153565b60405180910390a1610b8034156012610cb0565b610ba233610b916020850185610f43565b6001600160a01b0316146013610cb0565b610bb06040830135436112db565b81526040805160e08101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c082015290610bf690840184610f43565b6001600160a01b031681526020808401359082015260408084013590820152610c256080840160608501610f43565b6001600160a01b03908116606083810191825260808681013581860190815260c08089013560a08089019182528951838a019081526040805160096020808301919091528c518c16828401528c0151988101989098528a0151958701959095529551909616948401949094525192820192909252915160e08301525161010082015261012001610555565b816107e65760405163100960cb60e01b81526004810182905260240160405180910390fd5b60408051602081019091526000815260208201515160011415610dc0578151604001516020808401510151610d0a91906112db565b81526040805160c08082018352600080835260208084018281528486018381526060808701858152608080890187815260a0808b019889528d51516001600160a01b039081168c528e5189015188528e518d015187528e51860151811685528e8901518d015183528d518a528c516007998101999099528b5181169c89019c909c529551938701939093529251928501929092529051909616908201529351918401919091525160e08301529061010001610555565b6040805160c081018252600091810182815260608083018481526080840185815260a085018681528486526020808701979097528851516001600160a01b03908116909552885187015190925287519092015190921690529184015151909152610e2981610e2e565b505050565b805160600151600214610e4657805160400151610e4a565b8051515b6001600160a01b03166108fc8260000151602001516002610e6b91906112f3565b6040518115909202916000818181858888f19350505050158015610243573d6000803e3d6000fd5b6040805160c0810182526000918101828152606082018390526080820183905260a08201929092529081908152602001610ee760405180606001604052806000815260200160008152602001600081525090565b905290565b80356001600160a01b0381168114610f0357600080fd5b919050565b80358015158114610f0357600080fd5b600060e08284031215610f2a57600080fd5b50919050565b60006101008284031215610f2a57600080fd5b600060208284031215610f5557600080fd5b610f5e82610eec565b9392505050565b600060208284031215610f7757600080fd5b610f5e82610f08565b600060e08284031215610f9257600080fd5b610f5e8383610f18565b60006101008284031215610faf57600080fd5b610f5e8383610f30565b60006101408284031215610f2a57600080fd5b60006101208284031215610f2a57600080fd5b600060608284031215610f2a57600080fd5b600060a08284031215610f2a57600080fd5b6001600160a01b038061101583610eec565b16835260208201356020840152604082013560408401528061103960608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c08301525050565b6001600160a01b038061107483610eec565b16835260208201356020840152604082013560408401528061109860608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c083015260e081013560e08301525050565b6001600160a01b036110dc82610eec565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061111383610eec565b16835260208201356020840152604082013560408401528061113760608401610eec565b166060840152506080818101359083015260a090810135910152565b60e081016111618284611101565b60c092830135919092015290565b60e0810161117d8284611101565b61118960c08401610f08565b151560c083015292915050565b61010081016111a58284611003565b60e092830135919092015290565b61010081016111c28284611003565b6111ce60e08401610f08565b151560e083015292915050565b61014081016111ea8284611062565b610100838101358382015261012080850135908401525092915050565b61012081016112168284611062565b610100611224818501610f08565b1515818401525092915050565b6060810161123e83610f08565b1515825261125c602083016020850180358252602090810135910152565b92915050565b60a0810161127082846110cb565b61127c60808401610f08565b1515608083015292915050565b8281526101008101610f5e6020830184611003565b8281526101208101610f5e6020830184611062565b82815260a08101610f5e60208301846110cb565b82815260e08101610f5e6020830184611101565b600082198211156112ee576112ee61134b565b500190565b600081600019048311821515161561130d5761130d61134b565b500290565b6000828210156113245761132461134b565b500390565b60008261134657634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052601160045260246000fdfea2646970667358221220a404989a8f3dd98bfde192067c9812fa5ff84b84608c3dfc70b46c770c5ac71964736f6c63430008070033`,
+  Bytecode: `0x60806040526040516200151a3803806200151a833981016040819052620000269162000105565b6000546200003790156008620000c5565b6001600055604080518251151581526020808401511515908201527fee65f2dcf8be6cdab3bac48c73b8a6524225820fd17a0a77f34c81e47ebe406e910160405180910390a16200008b34156007620000c5565b6040805160016020820152600091810182905260600160408051601f19818403018152919052805160209091012060005550620001739050565b81620000eb5760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b805180151581146200010057600080fd5b919050565b6000604082840312156200011857600080fd5b604080519081016001600160401b03811182821017156200014957634e487b7160e01b600052604160045260246000fd5b6040526200015783620000ef565b81526200016760208401620000ef565b60208201529392505050565b61139780620001836000396000f3fe60806040526004361061008a5760003560e01c806360bafff71161005957806360bafff7146100e457806361ff86f7146100f7578063aa8594ca1461010a578063e4f83a8f1461011d578063ebc5780c1461013057600080fd5b8063108acff51461009657806338015b16146100ab5780633df7a789146100be578063497ccc6a146100d157600080fd5b3661009157005b600080fd5b6100a96100a4366004610ff1565b610143565b005b6100a96100b9366004610fcc565b61024b565b6100a96100cc366004610f9c565b610351565b6100a96100df366004610f9c565b610575565b6100a96100f2366004610fb9565b61063a565b6100a9610105366004610f80565b6107ea565b6100a9610118366004610fdf565b6108a5565b6100a961012b366004610ff1565b6109d1565b6100a961013e366004610f80565b610adb565b60405161017f9061015b9060029084906020016112b3565b6040516020818303038152906040528051906020012060001c600054146010610cb0565b600160005561019660608201354310156011610cb0565b7f613b30050768160fb8fb1fedba26a4639c7df8d370861f403061c2d46f9802e5816040516101c59190611262565b60405180910390a16101d93415600e610cb0565b6101fb336101ea6020840184610f43565b6001600160a01b031614600f610cb0565b6102086020820182610f43565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b506000805533ff5b6040516102879061026390600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146029610cb0565b600160005561029e60e0820135431015602a610cb0565b7fb9d135d4afaa7938b4616c3637968c0e71f66413b54043da6188989930963f89816040516102cd9190611207565b60405180910390a16102e134156027610cb0565b610306336102f56080840160608501610f43565b6001600160a01b0316146028610cb0565b6103166080820160608301610f43565b6040516001600160a01b039190911690608083013580156108fc02916000818181858888f19350505050158015610243573d6000803e3d6000fd5b60405161038d90610369906009908490602001611289565b6040516020818303038152906040528051906020012060001c60005414601c610cb0565b6001600090815560408051602081019091529081526103b360c08301354310601d610cb0565b7f6739bb4acbb3812eea51c48895245b154776bf02dd61571666f6abba93266fec826040516103e29190611196565b60405180910390a16103f63415601a610cb0565b61041b3361040a6080850160608601610f43565b6001600160a01b031614601b610cb0565b6104296040830135436112db565b8152604080516101008101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c0820181905260e08201529061047790840184610f43565b6001600160a01b0316815260208084013590820152604080840135908201526104a66080840160608501610f43565b6001600160a01b031660608201526080808401359082015260a0808401359082015260e08084013560c083015282519082015260405161055590600b90839060200160006101208201905083825260018060a01b03808451166020840152602084015160408401526040840151606084015280606085015116608084015250608083015160a083015260a083015160c083015260c083015160e083015260e08301516101008301529392505050565b60408051601f198184030181529190528051602090910120600055505050565b6040516105b19061058d906009908490602001611289565b6040516020818303038152906040528051906020012060001c600054146020610cb0565b60016000556105c860c08201354310156021610cb0565b7fcdae4cbd433f8c4039f23f2632824e3ab0089e9b8c2050e8e87e4d6e0a3df09b816040516105f791906111b3565b60405180910390a161060b3415601e610cb0565b61062d3361061c6020840184610f43565b6001600160a01b031614601f610cb0565b6103166020820182610f43565b6040516106769061065290600b90849060200161129e565b6040516020818303038152906040528051906020012060001c600054146025610cb0565b600160005561068c60e082013543106026610cb0565b7f58822179cfd9cab18ada288d4f94f3d5babb851e53b3ed667629d3cbbbb0cb72816040516106bb91906111db565b60405180910390a16106cf34156022610cb0565b6106f1336106e06020840184610f43565b6001600160a01b0316146023610cb0565b604080516101008301356020820152610120830135918101919091526107399060600160408051601f19818403018152919052805160209091012060a0830135146024610cb0565b610741610e93565b61074e6020830183610f43565b81516001600160a01b039091169052805160208084013591015280516040808401359101526107836080830160608401610f43565b81516001600160a01b0390911660609091015260036107a760c08401356004611312565b6107b6906101208501356112db565b6107c09190611329565b60208083018051929092528151439101525160808301356040909101526107e681610cd5565b5050565b604051610826906108029060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146018610cb0565b600160005561083d60a08201354310156019610cb0565b7fcc997a9af4abe95cf593cbeb34368171b4d5923d8562b1e54e51006451978b7c8160405161086c919061116f565b60405180910390a161088034156016610cb0565b610306336108946080840160608501610f43565b6001600160a01b0316146017610cb0565b6108f760016108b76020840184610f65565b6040516020016108d39291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600a610cb0565b6001600090815560408051602081018252918252517f3c669845d6bbc6fc367c9fa11ea5c8ec9bfd3d70eae7b34375b93f114f74036590610939908490611231565b60405180910390a1610952346020840135146009610cb0565b6109606040830135436112db565b81526040805160808082018352600060608084019182523384526020878101358186019081528887013586880190815288518552875160029381019390935286516001600160a01b03169783019790975251918101919091529351918401919091525160a08301529060c001610555565b604051610a0d906109e99060029084906020016112b3565b6040516020818303038152906040528051906020012060001c60005414600c610cb0565b6001600055610a2360608201354310600d610cb0565b7fe2fcb5361608dd42d825c4e917fd4fca89057bb8eb0b7e34b8c2813a114cc15281604051610a529190611262565b60405180910390a1610a6b34602083013514600b610cb0565b610a73610e93565b610a806020830183610f43565b81516001600160a01b039091169052805160208084013591810182905282516040808601359101528251336060909101528083018051600190525143910152610ac990806112db565b6020820151604001526107e681610cd5565b604051610b1790610af39060079084906020016112c7565b6040516020818303038152906040528051906020012060001c600054146014610cb0565b600160009081556040805160208101909152908152610b3d60a083013543106015610cb0565b7fee6496cc7d28a7c9121e0eebf62951277792d31c40832817d1a4c372e06eb46182604051610b6c9190611153565b60405180910390a1610b8034156012610cb0565b610ba233610b916020850185610f43565b6001600160a01b0316146013610cb0565b610bb06040830135436112db565b81526040805160e08101825260008082526020808301829052928201819052606082018190526080820181905260a0820181905260c082015290610bf690840184610f43565b6001600160a01b031681526020808401359082015260408084013590820152610c256080840160608501610f43565b6001600160a01b03908116606083810191825260808681013581860190815260c08089013560a08089019182528951838a019081526040805160096020808301919091528c518c16828401528c0151988101989098528a0151958701959095529551909616948401949094525192820192909252915160e08301525161010082015261012001610555565b816107e65760405163100960cb60e01b81526004810182905260240160405180910390fd5b60408051602081019091526000815260208201515160011415610dc0578151604001516020808401510151610d0a91906112db565b81526040805160c08082018352600080835260208084018281528486018381526060808701858152608080890187815260a0808b019889528d51516001600160a01b039081168c528e5189015188528e518d015187528e51860151811685528e8901518d015183528d518a528c516007998101999099528b5181169c89019c909c529551938701939093529251928501929092529051909616908201529351918401919091525160e08301529061010001610555565b6040805160c081018252600091810182815260608083018481526080840185815260a085018681528486526020808701979097528851516001600160a01b03908116909552885187015190925287519092015190921690529184015151909152610e2981610e2e565b505050565b805160600151600214610e4657805160400151610e4a565b8051515b6001600160a01b03166108fc8260000151602001516002610e6b91906112f3565b6040518115909202916000818181858888f19350505050158015610243573d6000803e3d6000fd5b6040805160c0810182526000918101828152606082018390526080820183905260a08201929092529081908152602001610ee760405180606001604052806000815260200160008152602001600081525090565b905290565b80356001600160a01b0381168114610f0357600080fd5b919050565b80358015158114610f0357600080fd5b600060e08284031215610f2a57600080fd5b50919050565b60006101008284031215610f2a57600080fd5b600060208284031215610f5557600080fd5b610f5e82610eec565b9392505050565b600060208284031215610f7757600080fd5b610f5e82610f08565b600060e08284031215610f9257600080fd5b610f5e8383610f18565b60006101008284031215610faf57600080fd5b610f5e8383610f30565b60006101408284031215610f2a57600080fd5b60006101208284031215610f2a57600080fd5b600060608284031215610f2a57600080fd5b600060a08284031215610f2a57600080fd5b6001600160a01b038061101583610eec565b16835260208201356020840152604082013560408401528061103960608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c08301525050565b6001600160a01b038061107483610eec565b16835260208201356020840152604082013560408401528061109860608401610eec565b166060840152506080810135608083015260a081013560a083015260c081013560c083015260e081013560e08301525050565b6001600160a01b036110dc82610eec565b1682526020810135602083015260408101356040830152606081013560608301525050565b6001600160a01b038061111383610eec565b16835260208201356020840152604082013560408401528061113760608401610eec565b166060840152506080818101359083015260a090810135910152565b60e081016111618284611101565b60c092830135919092015290565b60e0810161117d8284611101565b61118960c08401610f08565b151560c083015292915050565b61010081016111a58284611003565b60e092830135919092015290565b61010081016111c28284611003565b6111ce60e08401610f08565b151560e083015292915050565b61014081016111ea8284611062565b610100838101358382015261012080850135908401525092915050565b61012081016112168284611062565b610100611224818501610f08565b1515818401525092915050565b6060810161123e83610f08565b1515825261125c602083016020850180358252602090810135910152565b92915050565b60a0810161127082846110cb565b61127c60808401610f08565b1515608083015292915050565b8281526101008101610f5e6020830184611003565b8281526101208101610f5e6020830184611062565b82815260a08101610f5e60208301846110cb565b82815260e08101610f5e6020830184611101565b600082198211156112ee576112ee61134b565b500190565b600081600019048311821515161561130d5761130d61134b565b500290565b6000828210156113245761132461134b565b500390565b60008261134657634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052601160045260246000fdfea26469706673582212207fa3d429624927984f543a07692f65c430a2b15ead4da94aac5018c01c8f198564736f6c63430008070033`,
   BytecodeLen: 5402,
   Which: `oD`,
   deployMode: `DM_constructor`,

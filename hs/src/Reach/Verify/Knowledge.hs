@@ -332,11 +332,24 @@ kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
   LLS_Stop {} -> mempty
-  LLS_ToConsensus _ send recv mtime ->
+  LLS_ToConsensus at send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
-      >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
+      >> mapM_ (ctxtNewScope ctxt . go) sends'
     where
       DLRecv whov msgvs timev secsv next_n = recv
+      sends = M.toList send
+      sends' =
+        case null sends of
+          False -> sends
+          True ->
+            -- sends is only allowed to be empty on the ctor, so we specially
+            -- handle that case here
+            [ (ctorPart, DLSend True [] amta whena) ]
+            where
+              pa_net = DLA_Literal $ DLL_Int at 0
+              pa_ks = []
+              amta = DLPayAmt {..}
+              whena = DLA_Literal $ DLL_Bool True
       common =
         kgq_a_all ctxt (DLA_Var whov)
           >> kgq_a_all ctxt (DLA_Var timev)
@@ -351,6 +364,9 @@ kgq_s ctxt = \case
           -- might be dishonest
           >> kgq_a_all ctxt whena
           >> common
+
+ctorPart :: SLPart
+ctorPart = "_ctor"
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()
 kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who what

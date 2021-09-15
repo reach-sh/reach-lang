@@ -8,18 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v34 = "A".interact.x;
-  //    ^ could = 4
+  const v36 = "A".interact.x;
+  //    ^ could = 7
   //      from: ./multiple_binding_locations.rsh:6:17:application
 
   // Theorem Formalization
 
-  const v37 = v34 - 4;
-  //    ^ would be 0
-  const v45 = (v37 + v37) == 4;
+  const v43 = v36 - 4;
+  //    ^ would be 3
+  const v51 = (v43 + v43) == 4;
   //    ^ would be false
-  assert(v45);
+  assert(v51);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 9 theorems; 3 failures (and 2 omitted repeats) :'(
+Checked 12 theorems; 3 failures (and 2 omitted repeats) :'(

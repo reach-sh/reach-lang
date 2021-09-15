@@ -8,16 +8,16 @@ Verification failed:
 
   // Violation Witness
 
-  const v23 = <function return>;
+  const v29 = <function return>;
   //    ^ could = 1
   //      from: ./pr175.rsh:5:22:block
 
   // Theorem Formalization
 
-  const v24 = v23 == 0;
+  const v30 = v29 == 0;
   //    ^ would be false
-  assert(v24);
+  assert(v30);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
-Checked 6 theorems; 3 failures (and 2 omitted repeats) :'(
+Checked 9 theorems; 3 failures (and 2 omitted repeats) :'(

@@ -838,7 +838,6 @@ data DLPayAmt = DLPayAmt
   }
   deriving (Eq, Generic, Ord)
 
-
 instance PrettySubst DLPayAmt where
   prettySubst (DLPayAmt {..}) = do
     pa_net' <- prettySubst pa_net

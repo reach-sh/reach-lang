@@ -9,24 +9,24 @@ Verification failed:
 
   // Violation Witness
 
-  const v66 = "Alice".interact.get();
-  //    ^ could = 38
+  const v72 = "Alice".interact.get();
+  //    ^ could = 7719
   //      from: ./map-dset.rsh:16:51:application
-  const v75 = "Bob".interact.get();
+  const v81 = "Bob".interact.get();
   //    ^ could = 0
   //      from: ./map-dset.rsh:21:51:application
 
   // Theorem Formalization
 
-  const map0_1/110 = new Map()[<abstract address 0> <- Just v66];
+  const map0_1/125 = new Map()[<abstract address 0> <- Just v72];
   //    ^ would be <map>
-  const map0_2/116 = map0_1/110[<abstract address 0> <- Just v75];
+  const map0_2/132 = map0_1/125[<abstract address 0> <- Just v81];
   //    ^ would be <map>
-  const v94 = digest(map0_2/116[<abstract address 0>] ) == digest(<Some v66> );
+  const v100 = digest(map0_2/132[<abstract address 0>] ) == digest(<Some v72> );
   //    ^ would be false
-  require(v94);
+  require(v100);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 17 theorems; 1 failures :'(
+Checked 20 theorems; 1 failures :'(

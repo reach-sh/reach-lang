@@ -1,18 +1,18 @@
 Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable("Bob", v33)
+  of theorem unknowable("Bob", v35)
   at ./unknowable2.rsh:22:17:application
 
-  Bob could learn of v33 via z/40.
+  Bob could learn of v35 via z/46.
 
-  z/40 was published at ./unknowable2.rsh:19:9:dot
-  ^ which contains info about v38 (defined at ./unknowable2.rsh:16:22:application)
-  ^ which contains info about v37 (defined at ./unknowable2.rsh:15:21:application)
-  ^ which contains info about v33 (defined at ./unknowable2.rsh:11:17:application)
+  z/46 was published at ./unknowable2.rsh:19:9:dot
+  ^ which contains info about v44 (defined at ./unknowable2.rsh:16:22:application)
+  ^ which contains info about v43 (defined at ./unknowable2.rsh:15:21:application)
+  ^ which contains info about v35 (defined at ./unknowable2.rsh:11:17:application)
 
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 8 theorems; 1 failures :'(
+Checked 11 theorems; 1 failures :'(
