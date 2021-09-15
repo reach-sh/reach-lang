@@ -1848,6 +1848,9 @@ evalPrimOp p sargs = do
       let chkDiv denom = do
             ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
             dopClaim ca "div by zero"
+      let chkMul = do
+            ca <- doCmp PLE [da, lim_maxUInt_a]
+            dopClaim ca "mul overflow"
       whenVerifyArithmetic $
         case p of
           ADD -> do
@@ -1864,13 +1867,12 @@ evalPrimOp p sargs = do
             chkDiv $ case dargs of
                   [_, b] -> b
                   _ -> impossible "div args"
-          MUL -> do
-            ca <- doCmp PLE [da, lim_maxUInt_a]
-            dopClaim ca "mul overflow"
+          MUL -> chkMul
           MUL_DIV -> do
             chkDiv $ case dargs of
                   [_, _, b] -> b
                   _ -> impossible "muldiv args"
+            chkMul
           _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 

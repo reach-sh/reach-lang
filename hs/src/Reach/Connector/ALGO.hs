@@ -633,13 +633,14 @@ cprim = \case
       ca x
       ca y
       op "mulw"
-      ca $ DLA_Literal $ DLL_Int srcloc_builtin 0
+      cl $ DLL_Int sb 0
       ca z
       op "divmodw"
       op "pop"
       op "pop"
       op "swap"
-      op "pop"
+      cl $ DLL_Int sb 0
+      asserteq
     _ -> impossible "cprim: MUL_DIV args"
   MOD -> call "%"
   PLT -> call "<"
