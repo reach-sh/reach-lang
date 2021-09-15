@@ -1495,6 +1495,17 @@ This pattern is so common that it can be abbreviated as @reachin{.timeRemaining}
 @index{compose} Creates a new function that applies its argument to @tt{g}, then pipes the result to the function @tt{f}.
 The argument type of @tt{f} must be the return type of @tt{g}.
 
+@subsection{@tt{muldiv}}
+
+@margin-note{Currently, wide arithmetic operations are only suported on Algorand.}
+
+@(mint-define! '("muldiv"))
+@reach{
+  muldiv(a, b, c) }
+
+@index{muldiv(a, b, c)} Multiplies @reachin{a} by @reachin{b}, then immediately divides the product by @reachin{c}.
+The intermediate value may be larger than @reachin{UInt.max} if the connector supports wide arithmetic operations.
+The resulting quotient must be less than @reachin{UInt.max}.
 
 @subsection{@tt{sqrt}}
 
