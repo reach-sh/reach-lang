@@ -95,7 +95,7 @@ export const main =
             require(randomMatches(player, ticket));
             ticketsM[player] = howManyReturned;
             delete randomsM[player];
-            return [ (hwinner + (ticket % howMany)) % howMany,
+            return [ hwinner +  howMany,
                      howManyReturned + 1 ];
           })
         )
@@ -122,8 +122,9 @@ export const main =
         const sponsort = declassify(_sponsort); });
       Sponsor.publish(sponsort);
       require(sponsortc == digest(sponsort));
-
-      const winningNo = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
+      // CFX does like doing division with UInts );
+      // shared_impl.ts ln 356, Players bigNumber division is throwing it off
+      const winningNo = hwinner + sponsort;
       commit();
 
       each([Sponsor, Player], () => {
