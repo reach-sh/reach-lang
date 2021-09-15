@@ -268,6 +268,7 @@ jsPrimApply = \case
   SUB -> jsApply "stdlib.sub"
   MUL -> jsApply "stdlib.mul"
   DIV -> jsApply "stdlib.div"
+  MUL_DIV -> jsApply "stdlib.muldiv"
   MOD -> jsApply "stdlib.mod"
   PLT -> jsApply "stdlib.lt"
   PLE -> jsApply "stdlib.le"

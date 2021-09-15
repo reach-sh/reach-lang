@@ -247,6 +247,7 @@ data PrimOp
   | BIOR
   | BXOR
   | BYTES_CONCAT
+  | MUL_DIV
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -272,6 +273,7 @@ instance Pretty PrimOp where
     BIOR -> "|"
     BXOR -> "^"
     BYTES_CONCAT -> "concat"
+    MUL_DIV -> "muldiv"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

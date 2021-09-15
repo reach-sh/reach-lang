@@ -628,6 +628,19 @@ cprim = \case
   SUB -> call "-"
   MUL -> call "*"
   DIV -> call "/"
+  MUL_DIV -> \case
+    [x, y, z] -> do
+      ca x
+      ca y
+      op "mulw"
+      ca $ DLA_Literal $ DLL_Int srcloc_builtin 0
+      ca z
+      op "divmodw"
+      op "pop"
+      op "pop"
+      op "swap"
+      op "pop"
+    _ -> impossible "cprim: MUL_DIV args"
   MOD -> call "%"
   PLT -> call "<"
   PLE -> call "<="

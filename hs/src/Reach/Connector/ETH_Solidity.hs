@@ -486,6 +486,11 @@ solPrimApply = \case
   SUB -> safeOp "unsafeSub" "-"
   MUL -> safeOp "unsafeMul" "*"
   DIV -> binOp "/"
+  MUL_DIV -> \case
+    [x, y, den] -> do
+      mul <- safeOp "unsafeMul" "*" [x, y]
+      binOp "/" [mul, den]
+    _ -> impossible "solPrimApply: MUL_DIV args"
   MOD -> binOp "%"
   PLT -> binOp "<"
   PLE -> binOp "<="

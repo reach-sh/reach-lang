@@ -563,6 +563,7 @@ base_env =
     , ("deploy", SLV_Prim SLPrim_deploy)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
+    , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -1802,6 +1803,15 @@ evalPrimOp p sargs = do
     BIOR -> nn2n (.|.)
     BXOR -> nn2n (xor)
     SELF_ADDRESS -> impossible "self address"
+    MUL_DIV -> case args of
+        [SLV_Int _ 1, rhs, den] -> evalPrimOp DIV $ map (lvl,) [rhs, den]
+        [lhs, SLV_Int _ 1, den] -> evalPrimOp DIV $ map (lvl,) [lhs, den]
+        [SLV_Int _ 0, _, _] -> static zero
+        [_, SLV_Int _ 0, _] -> static zero
+        [x, y, z]
+          | x == z -> static y
+          | y == z -> static x
+        _ -> make_var args
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs
@@ -1835,6 +1845,9 @@ evalPrimOp p sargs = do
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
+      let chkDiv denom = do
+            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
+            dopClaim ca "div by zero"
       whenVerifyArithmetic $
         case p of
           ADD -> do
@@ -1848,14 +1861,16 @@ evalPrimOp p sargs = do
             ca <- doCmp PGE dargs
             dopClaim ca "sub wraparound"
           DIV -> do
-            let denom = case dargs of
+            chkDiv $ case dargs of
                   [_, b] -> b
                   _ -> impossible "div args"
-            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
-            dopClaim ca "div by zero"
           MUL -> do
             ca <- doCmp PLE [da, lim_maxUInt_a]
             dopClaim ca "mul overflow"
+          MUL_DIV -> do
+            chkDiv $ case dargs of
+                  [_, _, b] -> b
+                  _ -> impossible "muldiv args"
           _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 
@@ -2939,6 +2954,9 @@ evalPrim p sargs =
             x -> return x
       tvs' <- mapM go tvs
       return (lvl, SLV_Tuple tat tvs')
+    SLPrim_muldiv -> do
+      (x, y, z) <- three_args
+      evalPrimOp MUL_DIV $ map (lvl, ) [x, y, z]
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs

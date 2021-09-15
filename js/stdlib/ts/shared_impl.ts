@@ -368,7 +368,11 @@ export const makeArith = (m:BigNumber) => {
   const mod = (a: num, b: num): BigNumber => check(bigNumberify(a).mod(bigNumberify(b)));
   const mul = (a: num, b: num): BigNumber => check(bigNumberify(a).mul(bigNumberify(b)));
   const div = (a: num, b: num): BigNumber => check(bigNumberify(a).div(bigNumberify(b)));
-  return { add, sub, mod, mul, div };
+  const muldiv = (a: num, b: num, c: num): BigNumber => {
+    const prod = bigNumberify(a).mul(bigNumberify(b));
+    return check( prod.div(bigNumberify(c)) );
+  };
+  return { add, sub, mod, mul, div, muldiv };
 };
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
