@@ -936,14 +936,16 @@ reachBackendVersion :: Int
 reachBackendVersion = 2
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ (PLOpts {}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ (PLOpts {..}) dli dexports (EPPs pm) (CPProg _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionStr
           , "/* eslint-disable */"
+          -- XXX make these a `_metadata` object (cleaner on TS side)
           , "export const _version =" <+> jsString versionStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
+          , "export const _deployMode =" <+> jsString (show plo_deployMode) <> semi
           ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr

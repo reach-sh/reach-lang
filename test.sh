@@ -109,9 +109,6 @@ tealcount () {
 # tealcount
 
 #######
-fc hs/t/n/loop_var_sub.rsh
-fc hs/t/n/unknowable2.rsh
-exit 0
 
 jb
 
@@ -123,7 +120,9 @@ jb
 # ci ETH race
 # ci ALGO overview
 # exit 0
-ci ALGO race
+# ci ALGO race
+c examples/tut-8/index.rsh
+ci ALGO tut-6
 exit 0
 
 # c hs/t/n/Err_IllegalEffPosition.rsh

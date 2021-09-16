@@ -52,66 +52,12 @@ global CreatorAddress
 assert
 load 255
 store 2
-// compute state in HM_Check 0
-int 8
-bzero
-sha256
-load 1
-==
-assert
 // "CheckPay"
 // "./examples/tut-8/index.rsh:37:11:after expr stmt semicolon"
 // "[]"
-// compute state in HM_Set 1
-byte base64(AAAAAAAAAAE=)
-sha256
-store 1
-txn OnCompletion
-int NoOp
-==
-assert
-b updateState
-l0:
-// Handler 1
+int 100000
 dup
-int 1
-==
 bz l1
-pop
-txna ApplicationArgs 1
-dup
-len
-int 0
-==
-assert
-pop
-txna ApplicationArgs 2
-dup
-len
-int 16
-==
-assert
-dup
-substring 0 8
-btoi
-store 255
-dup
-substring 8 16
-btoi
-store 254
-pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
-sha256
-load 1
-==
-assert
-// "CheckPay"
-// "./examples/tut-8/index.rsh:49:9:dot"
-// "[]"
-load 255
-dup
-bz l2
 load 0
 dup
 int 1
@@ -147,7 +93,104 @@ dig 1
 gtxns Receiver
 ==
 assert
-l2:
+l1:
+pop
+// compute state in HM_Check 0
+int 8
+bzero
+sha256
+load 1
+==
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:37:11:after expr stmt semicolon"
+// "[]"
+// compute state in HM_Set 1
+byte base64(AAAAAAAAAAE=)
+sha256
+store 1
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l0:
+// Handler 1
+dup
+int 1
+==
+bz l2
+pop
+txna ApplicationArgs 1
+dup
+len
+int 0
+==
+assert
+pop
+txna ApplicationArgs 2
+dup
+len
+int 16
+==
+assert
+dup
+substring 0 8
+btoi
+store 255
+dup
+substring 8 16
+btoi
+store 254
+pop
+// compute state in HM_Check 1
+byte base64(AAAAAAAAAAE=)
+sha256
+load 1
+==
+assert
+// "CheckPay"
+// "./examples/tut-8/index.rsh:49:9:dot"
+// "[]"
+load 255
+dup
+bz l3
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 2
+dig 1
+gtxns Receiver
+==
+assert
+l3:
 pop
 global Round
 load 254
@@ -173,12 +216,12 @@ int NoOp
 ==
 assert
 b updateState
-l1:
+l2:
 // Handler 2
 dup
 int 2
 ==
-bz l3
+bz l4
 pop
 txna ApplicationArgs 1
 dup
@@ -235,7 +278,7 @@ assert
 // "[]"
 load 254
 dup
-bz l4
+bz l5
 load 0
 dup
 int 1
@@ -271,7 +314,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l4:
+l5:
 pop
 load 255
 load 254
@@ -292,12 +335,12 @@ dup
 itob
 concat
 b loop4
-l3:
+l4:
 // Handler 3
 dup
 int 3
 ==
-bz l5
+bz l6
 pop
 txna ApplicationArgs 1
 dup
@@ -361,7 +404,7 @@ txn Sender
 assert
 load 254
 dup
-bz l6
+bz l7
 load 0
 dup
 int 1
@@ -402,7 +445,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l6:
+l7:
 pop
 int 0
 load 0
@@ -445,7 +488,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l7:
+l8:
 pop
 global ZeroAddress
 store 1
@@ -454,14 +497,14 @@ int DeleteApplication
 ==
 assert
 b updateState
-l5:
-l8:
+l6:
 l9:
+l10:
 // Handler 6
 dup
 int 6
 ==
-bz l10
+bz l11
 pop
 txna ApplicationArgs 1
 dup
@@ -568,12 +611,12 @@ int NoOp
 ==
 assert
 b updateState
-l10:
+l11:
 // Handler 7
 dup
 int 7
 ==
-bz l11
+bz l12
 pop
 txna ApplicationArgs 1
 dup
@@ -649,7 +692,7 @@ txn Sender
 assert
 load 251
 dup
-bz l12
+bz l13
 load 0
 dup
 int 1
@@ -690,7 +733,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l12:
+l13:
 pop
 int 0
 load 0
@@ -733,7 +776,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l13:
+l14:
 pop
 global ZeroAddress
 store 1
@@ -742,12 +785,12 @@ int DeleteApplication
 ==
 assert
 b updateState
-l11:
+l12:
 // Handler 8
 dup
 int 8
 ==
-bz l14
+bz l15
 pop
 txna ApplicationArgs 1
 dup
@@ -863,12 +906,12 @@ int NoOp
 ==
 assert
 b updateState
-l14:
+l15:
 // Handler 9
 dup
 int 9
 ==
-bz l15
+bz l16
 pop
 txna ApplicationArgs 1
 dup
@@ -949,7 +992,7 @@ txn Sender
 assert
 load 251
 dup
-bz l16
+bz l17
 load 0
 dup
 int 1
@@ -990,7 +1033,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l16:
+l17:
 pop
 int 0
 load 0
@@ -1033,7 +1076,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l17:
+l18:
 pop
 global ZeroAddress
 store 1
@@ -1042,12 +1085,12 @@ int DeleteApplication
 ==
 assert
 b updateState
-l15:
+l16:
 // Handler 10
 dup
 int 10
 ==
-bz l18
+bz l19
 pop
 txna ApplicationArgs 1
 dup
@@ -1177,12 +1220,12 @@ load 251
 itob
 concat
 b loop4
-l18:
+l19:
 // Handler 11
 dup
 int 11
 ==
-bz l19
+bz l20
 pop
 txna ApplicationArgs 1
 dup
@@ -1270,7 +1313,7 @@ txn Sender
 assert
 load 251
 dup
-bz l20
+bz l21
 load 0
 dup
 int 1
@@ -1311,7 +1354,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l20:
+l21:
 pop
 int 0
 load 0
@@ -1354,7 +1397,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l21:
+l22:
 pop
 global ZeroAddress
 store 1
@@ -1363,7 +1406,7 @@ int DeleteApplication
 ==
 assert
 b updateState
-l19:
+l20:
 int 0
 assert
 loop4:
@@ -1398,7 +1441,7 @@ pop
 load 255
 int 1
 ==
-bz l22
+bz l23
 load 254
 load 250
 +
@@ -1428,7 +1471,7 @@ int NoOp
 ==
 assert
 b updateState
-l22:
+l23:
 load 252
 load 251
 itob
@@ -1460,7 +1503,7 @@ int 2
 load 254
 *
 dup
-bz l23
+bz l24
 load 0
 dup
 int 1
@@ -1506,7 +1549,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l23:
+l24:
 pop
 int 0
 load 0
@@ -1549,7 +1592,7 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l24:
+l25:
 pop
 global ZeroAddress
 store 1

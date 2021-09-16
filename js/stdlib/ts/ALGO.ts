@@ -17,12 +17,12 @@ import {
   IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
-  // ISimRes,
+  ISimRes,
   TimeArg,
   ISimTxn,
   deferContract,
   debug, envDefault,
-  argsSlice, argsSplit,
+  argsSplit,
   makeRandom,
   replaceableThunk,
   ensureConnectorAvailable,
@@ -33,6 +33,7 @@ import {
   make_waitUntilX,
   checkTimeout,
   truthyEnv,
+  Signal,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -868,13 +869,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
   };
 
-  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache()): Promise<Contract> => {
+  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache(), vr?: VerifyResult|undefined): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
-    const getInfo = async () => ctcInfo;
-    const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
-      await verifyContract_(ctcInfo, bin, eventCache);
-    debug(shad, 'attach', {ApplicationID, allocRound, ctorRound} );
-    let realLastRound = ctorRound;
+    const ctorRan = new Signal();
+    const getInfo = async () => {
+      await ctorRan.wait();
+      return ctcInfo;
+    };
+    const { compiled, ApplicationID, startRound, Deployer } =
+      vr || (await verifyContract_(ctcInfo, bin, eventCache));
+    debug(shad, 'attach', {ApplicationID, startRound} );
+    let realLastRound = startRound;
 
     const escrowAddr = compiled.escrow.hash;
     const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
@@ -925,6 +930,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
+      const isCtor = (funcNum === 0);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
@@ -956,6 +962,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       const sim_r = await sim_p( fake_res );
       debug(dhead , '--- SIMULATE', sim_r);
+      if ( isCtor ) {
+        msg.unshift( T_Address.canonicalize(escrowAddr) );
+        msg_tys.unshift( T_Address );
+        sim_r.txns.unshift({
+          kind: 'to',
+          amt: minimumBalance,
+          tok: undefined,
+        });
+      }
       const { isHalt } = sim_r;
 
       // Maps
@@ -1148,7 +1163,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt } = rargs;
+      const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
       const indexer = await getIndexer();
       const isCtor = (funcNum == 0);
       const fromBlock_summand = isCtor ? 0 : 1;
@@ -1205,12 +1220,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const ctc_args_s: string = ctc_args_all[argMsg];
 
         debug(dhead, '--- out_tys =', out_tys);
+        if ( isCtor ) {
+          out_tys.unshift(T_Address);
+          debug(dhead, 'ctor, adding address', {out_tys});
+        }
         const msgTy = T_Tuple(out_tys);
         const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
         debug(dhead, {ctc_args});
-
-        const args_un = argsSlice(ctc_args, evt_cnt);
-        debug(dhead, '--- args_un =', args_un);
+        if ( isCtor ) {
+          const shouldBeEscrow = ctc_args.shift();
+          debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
+        }
 
         const fromAddr = txn['sender'];
         const from =
@@ -1240,9 +1260,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         };
 
+        if ( isCtor ) {
+          ctorRan.notify();
+        }
+
         return {
           didTimeout: false,
-          data: args_un,
+          data: ctc_args,
           time: bigNumberify(realLastRound),
           secs: bigNumberify(theSecs),
           from, getOutput,
@@ -1337,12 +1361,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
     debug(`deploy`, {extraPages});
+    const Deployer = thisAcc.addr;
     const createRes =
       await sign_and_send_sync(
         'ApplicationCreate',
         thisAcc,
         toWTxn(algosdk.makeApplicationCreateTxn(
-          thisAcc.addr, await getTxnParams(),
+          Deployer, await getTxnParams(),
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval.result,
           appClear.result,
@@ -1351,41 +1376,47 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           undefined, undefined, undefined, undefined,
           NOTE_Reach, undefined, undefined, extraPages)));
 
+    const allocRound = createRes['confirmed-round'];
     const ApplicationID = createRes['application-index'];
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     debug(`created`, {ApplicationID});
     const ctcInfo = ApplicationID;
-    const { escrow } = await compileFor(bin, ctcInfo);
-    const escrowAddr = escrow.hash;
-
-    debug(`funding escrow`);
-    // @ts-ignore
-    await transfer({ networkAccount: thisAcc }, { networkAccount: { addr: escrow.hash } }, minimumBalance );
-    debug(`call ctor`);
-    const params = await getTxnParams();
-    const ctor_args =
-      [ new Uint8Array([0]),
-        T_Tuple([]).toNet([]),
-        T_Address.toNet( T_Address.canonicalize(escrowAddr) ),
-      ];
-    debug({ctor_args});
-    const txnCtor =
-      toWTxn(algosdk.makeApplicationNoOpTxn(
-        thisAcc.addr, params, ApplicationID, ctor_args,
-        undefined, undefined, undefined, NOTE_Reach));
-    debug({txnCtor});
-    try {
-      await signSendAndConfirm( thisAcc, [txnCtor] );
-    } catch (e) {
-      throw Error(`deploy: ${JSON.stringify(e)}`);
-    }
-    const getInfo = async (): Promise<ContractInfo> => ctcInfo;
     const eventCache = new EventCache();
-    await waitCtorTxn(shad, ctcInfo, eventCache);
-    debug(shad, 'application created');
-    return await attachP(bin, getInfo(), eventCache);
+
+    const compiled = await compileFor(bin, ctcInfo);
+    const vr = { compiled, ApplicationID, startRound: allocRound, Deployer };
+    const ctc = await attachP(bin, (async () => ctcInfo)(), eventCache, vr);
+
+    const shouldConstruct = (bin._deployMode === 'DM_constructor');
+    if ( shouldConstruct ) {
+      debug(`constructing`);
+      await ctc.sendrecv({
+        funcNum: 0,
+        evt_cnt: 0,
+        tys: [],
+        args: [],
+        pay: [ bigNumberify(0), [] ],
+        out_tys: [],
+        onlyIf: true,
+        soloSend: true,
+        timeoutAt: undefined,
+        sim_p: (async (txn:Recv): Promise<ISimRes<BigNumber>> => {
+          void(txn);
+          return {
+            txns: [],
+            mapRefs: [],
+            isHalt: false
+          };
+        }),
+      });
+      debug(shad, 'application constructed');
+    } else {
+      debug(shad, 'application NOT constructed');
+    }
+
+    return ctc;
   };
 
   const implNow = { stdlib: compiledStdlib };
@@ -1619,8 +1650,7 @@ const appGlobalStateNumBytes = 1;
 type VerifyResult = {
   compiled: CompiledBackend,
   ApplicationID: number,
-  allocRound: number,
-  ctorRound: number,
+  startRound: number,
   Deployer: Address,
 };
 
@@ -1629,24 +1659,6 @@ async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: Ev
   const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
   debug({icr});
   return icr;
-}
-
-async function waitCtorTxn(shad: string, ApplicationID: number, eventCache: EventCache): Promise<void> {
-  // Note(Dan): Yes, doQuery_ offers retrying, but doQuery has the filtering,
-  // and finding the right design point for refactoring is hard,
-  // so, I'm just doing some more retrying here.
-  // Let's try exponential backoff for a change.
-  const maxTries = 14; // SUM(2^n)[1 <= n <= 14] = wait up to 32766 ms
-  let icr: any = null;
-  for (let tries = 1; tries <= maxTries; tries++) {
-    const waitMs = 2 ** tries;
-    debug(shad, 'waitCtorTxn waiting (ms)', waitMs);
-    await Timeout.set(waitMs);
-    debug(shad, 'waitCtorTxn trying attempt #', tries, 'of', maxTries);
-    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID, eventCache);
-    if (icr && icr.txn) return;
-  }
-  throw Error(`Indexer could not find application ${ApplicationID}.`);
 }
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
@@ -1741,15 +1753,12 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   debug({ictat});
   const aescrow_b64 = ictat['application-args'][2];
   const aescrow_ui8 = reNetify(aescrow_b64);
-  const aescrow_cbr = T_Address.fromNet(aescrow_ui8);
-  const aescrow_algo = cbr2algo_addr(aescrow_cbr);
+  const aescrow_cbr = T_Tuple([T_Address]).fromNet(aescrow_ui8);
+  // @ts-ignore
+  const aescrow_algo = cbr2algo_addr(aescrow_cbr[0]);
   chkeq( aescrow_algo, compiled.escrow.hash, `Must be constructed with proper escrow account address` );
 
-  // Note: (after deployMode:firstMsg is implemented)
-  // 1. (above) attach initial args to ContractInfo
-  // 2. verify contract storage matches expectations based on initial args
-
-  return { compiled, ApplicationID, allocRound, ctorRound, Deployer };
+  return { compiled, ApplicationID, startRound: ctorRound, Deployer };
 };
 
 /**
