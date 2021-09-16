@@ -9,17 +9,17 @@ Verification failed:
 
   // Violation Witness
 
-  const v59 = "Alice".interact.request;
+  const v55 = "Alice".interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:5:24:application
 
   // Theorem Formalization
 
-  const v92 = 0 == (v59 - (v59 - 1));
+  const v84 = 0 == (v55 - (v55 - 1));
   //    ^ would be false
-  assert(v92);
+  assert(v84);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 20 theorems; 4 failures (and 3 omitted repeats) :'(
+Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(
