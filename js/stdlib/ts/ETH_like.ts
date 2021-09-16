@@ -66,14 +66,12 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 const reachBackendVersion = 2;
 const reachEthBackendVersion = 2;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
-  deployMode: DeployMode,
   views: {[viewn: string]: {[keyn: string]: string}},
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
@@ -586,7 +584,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return impl;
     }
 
-    const { deployMode } = bin._Connectors.ETH;
+    const deployMode = bin._deployMode;
     switch (deployMode) {
       case 'DM_firstMsg':
         return attachDeferDeploy();
@@ -775,7 +773,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
       const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
-      const isFirstMsgDeploy = (funcNum == 0)
+      const isCtor = (funcNum == 0)
       const lastBlock = await getLastBlock();
       const ok_evt = `e${funcNum}`;
       const dhead = { t: 'recv', label, ok_evt };
@@ -783,7 +781,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       // look after the last block
       const fromBlock: number =
-        lastBlock + (isFirstMsgDeploy ? 0 : 1);
+        lastBlock + (isCtor ? 0 : 1);
       while ( true ) {
         const res = await eventCache.query(dhead, getC, fromBlock, timeoutAt, ok_evt);
         if ( ! res.succ ) {

@@ -1202,7 +1202,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at mvi hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1316,8 +1316,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ _ (CPProg at mvi hs)) = do
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
           HM.fromList $
-            [ ("deployMode", Aeson.String $ T.pack $ show plo_deployMode)
-            , ("views", Aeson.object view_json)
+            [ ("views", Aeson.object view_json)
             ]
     let preamble =
           vsep

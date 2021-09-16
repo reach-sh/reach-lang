@@ -72,8 +72,10 @@ export type IViewLib = {
   viewMapRef: any,
 };
 
+type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _backendVersion: number,
+  _deployMode: DeployMode,
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
 };
@@ -122,7 +124,7 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> =
   onlyIf: boolean,
   soloSend: boolean,
   timeoutAt: TimeArg | undefined,
-  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ConnectorTy>>,
+  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token>>,
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
@@ -223,12 +225,9 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Token, ConnectorTy> = {
+export type ISimRes<Token> = {
   txns: Array<ISimTxn<Token>>,
   mapRefs: Array<string>,
-  mapsPrev: any,
-  mapsNext: any,
-  view: [ ConnectorTy, any ],
   isHalt : boolean,
 };
 
@@ -450,3 +449,15 @@ export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigN
   }
 };
 
+export class Signal {
+  p: Promise<boolean>;
+  r: (a:boolean) => void;
+
+  constructor() {
+    this.r = (a) => { void(a); throw new Error(`signal never initialized`); };
+    const me = this;
+    this.p = new Promise((resolve) => { me.r = resolve; });
+  }
+  wait() { return this.p; }
+  notify() { this.r(true); }
+};

@@ -1575,6 +1575,7 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
               asserteq
               cv ctcAddrV
               gvStore GV_contractAddr
+              ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
               return ()
         return (ctorInit, [ ctcAddrV ])
   let msg = extraCtorMsg <> msg_
