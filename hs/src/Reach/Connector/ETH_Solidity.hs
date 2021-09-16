@@ -1462,7 +1462,7 @@ compile_sol cinfo solf = do
 connect_eth :: Connector
 connect_eth = Connector {..}
   where
-    conName = "ETH"
+    conName = ETH
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
     conGen moutn pl = case moutn of
       Just outn -> go (outn "sol")

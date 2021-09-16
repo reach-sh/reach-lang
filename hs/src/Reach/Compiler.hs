@@ -31,7 +31,7 @@ all_connectors :: Connectors
 all_connectors =
   M.fromList $
     map
-      (\x -> (conName x, x))
+      (\x -> (T.pack . show $ conName x, x))
       [ connect_eth
       , connect_algo
       ]
@@ -76,7 +76,7 @@ compile (CompilerOpts {..}) = do
         pil <- epp eol
         showp "pil" pil
         pl <- bigopt (showp, "pl") pil
-        let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
+        let runConnector c = (,) (T.pack . show $ conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js woutn crs pl
         return ()

@@ -3,15 +3,18 @@ module Reach.Connector
   , ConnectorInfo
   , ConnectorResult
   , Connector (..)
+  , ConnectorName(..)
   , Connectors
   , checkIntLiteralC
   , conWrite
   , conShowP
+  , pConnectorName
   , ConnectorError(..)
   )
 where
 
-import Data.Aeson (Object, Value)
+import Data.Aeson (ToJSON, FromJSON, Object, Value)
+import Text.Parsec
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -29,8 +32,21 @@ type ConnectorResult = Object
 
 type ConnectorInfo = Value
 
+data ConnectorName
+  = ALGO
+  | CFX
+  | ETH
+  deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+pConnectorName :: ParsecT String () IO ConnectorName
+pConnectorName =
+      f ALGO "ALGO"
+  <|> f CFX "CFX"
+  <|> f ETH "ETH"
+ where f a b = const a <$> string b
+
 data Connector = Connector
-  { conName :: T.Text
+  { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   }
@@ -39,7 +55,7 @@ instance Eq Connector where
   l == r = conName l == conName r
 
 instance Show Connector where
-  show = T.unpack . conName
+  show = show . conName
 
 data ConnectorError
   = Err_IntLiteralRange Connector Integer Integer Integer

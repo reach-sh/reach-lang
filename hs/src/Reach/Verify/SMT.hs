@@ -12,7 +12,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import qualified Data.Sequence as Seq
-import qualified Data.Text as T
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -1476,8 +1475,8 @@ _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
   let mcs = case mc of
         Nothing -> "generic connector"
-        Just c -> conName c <> " connector"
-  putStrLn $ "Verifying for " <> T.unpack mcs
+        Just c -> show (conName c) <> " connector"
+  putStrLn $ "Verifying for " <> show mcs
   ctxt_displayed <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)

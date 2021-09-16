@@ -9,7 +9,9 @@ import Data.Bits
 import Data.Char
 import Data.Functor.Identity
 import Data.IORef
-import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
+import Data.Text hiding (any, filter, length, map, toLower, dropWhile, maximum, replicate, zip)
+import Data.Text.Encoding
+import Data.Yaml (encode)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import Safe
@@ -17,6 +19,7 @@ import System.Directory.Extra
 import System.Environment
 import System.Exit
 import System.FilePath
+import System.IO
 import System.Posix.Files
 import Text.Parsec (ParsecT, runParserT, eof, try)
 import Text.Parsec.Char
@@ -24,6 +27,8 @@ import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Token
 
 import Reach.CommandLine
+import Reach.Config
+import Reach.Connector
 import Reach.Util
 import Reach.Version
 
@@ -36,19 +41,13 @@ data Effect
   = Script Text
   | InProcess
 
-data Connector
-  = ALGO
-  | CFX
-  | ETH
-  deriving (Eq, Show)
-
 data Mode
   = Devnet
   | Live
   | Browser
   deriving (Eq)
 
-data ConnectorMode = ConnectorMode Connector Mode
+data ConnectorMode = ConnectorMode ConnectorName Mode
   deriving (Eq)
 
 instance Show Mode where
@@ -129,6 +128,7 @@ versionMaj ReachVersion {..} = case rv of
 
 data Var = Var
   { reachEx :: Text
+  , configSkip :: Bool
   , connectorMode :: ConnectorMode
   , debug :: Bool
   , rpcKey :: Text
@@ -148,6 +148,8 @@ data Env = Env
   , e_dirTmpContainer :: FilePath
   , e_dirTmpHost :: FilePath
   , e_emitRaw :: Bool
+  , e_config :: Maybe FilePath
+  , e_configParsed :: Maybe RCParsed
   , e_effect :: IORef Effect
   , e_var :: Var
   }
@@ -239,9 +241,12 @@ mkVar = do
     >>= maybe (pure True) (pure . (/= "0"))
   reachEx <- lookupEnv "REACH_EX"
     >>= maybe (die "Unset `REACH_EX` environment variable") packed
+  configSkip <- lookupEnv "REACH_CONFIG_SKIP" >>= \case
+    Just "1" -> pure True
+    _ -> pure False
   connectorMode <- do
     rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
-    runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
+    runParserT ((ConnectorMode <$> pConnectorName <*> pMode) <* eof) () "" rcm
       >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
   pure $ Var {..}
 
@@ -350,18 +355,11 @@ connectorEnv Env {..} (ConnectorMode c m) = do
   let c' = toLower <$> show c
   T.readFile $ e_dirEmbed </> "docker" </> "service-" <> show m <> "-" <> c' <> "-env.yml"
 
-devnetFor :: Connector -> Text
+devnetFor :: ConnectorName -> Text
 devnetFor = \case
   ALGO -> "devnet-algo"
   CFX -> "devnet-cfx"
   ETH -> "devnet-eth"
-
-pConnector :: ParsecT String () IO Connector
-pConnector =
-      f ALGO "ALGO"
-  <|> f CFX "CFX"
-  <|> f ETH "ETH"
- where f a b = const a <$> string b
 
 pMode :: ParsecT String () IO Mode
 pMode =
@@ -680,6 +678,46 @@ unscaffold = command "unscaffold" $ info f fullDesc where
           when (not quiet) . putStrLn $ "Deleting " <> takeFileName n <> "..."
           removeFile n
       when (not quiet) $ putStrLn "Done."
+
+configCreate :: Subcommand
+configCreate = command "config-create" $ info f mempty where
+  nets = zip [0..] $ Nothing : (Just <$> [ ALGO, CFX, ETH])
+  maxNet = length . show . maximum . fmap fst $ nets
+  lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
+  f = pure $ asks e_config >>= \case
+    Nothing -> liftIO $ die "Unset `--config` argument"
+    Just c' -> do
+      let c = pack c'
+      asks e_configParsed >>= \case
+        Just (RCParsed _ _r) -> undefined -- TODO Prompt for overwrite then override `r`
+        Just _ -> undefined -- TODO
+        Nothing -> do
+          r <- liftIO $ do
+            putStrLn $ "Reach didn't detect a configuration file at " <> c' <> "."
+            putStr "Would you like to create one? (Type 'y' if so): "
+            hFlush stdout >> getLine >>= \case
+              z | L.upper z /= "Y" -> do
+                putStrLn "Configuration checks may be skipped by setting the `REACH_CONFIG_SKIP` environment variable to `1`."
+                exitWith $ ExitFailure 1
+              _ -> do
+                let nope i = putStrLn $ show i <> " is not a valid selection."
+                let promptNetSet = do
+                      putStrLn "Would you like to set a default network?"
+                      forM_ nets $ \case
+                        (0, _) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
+                        (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
+                        _ -> impossible "ConnectorName must be `Just n`"
+                      putStr " Select from the numbers above: "
+                      hFlush stdout
+                let netSet = getLine >>= \n -> maybe (nope n >> promptNetSet >> netSet) pure
+                      $ L.find ((==) n . show . fst) nets
+                (_, net) <- promptNetSet >> netSet
+                pure . decodeUtf8 . encode $ RC net
+          script $ write [N.text|
+            mkdir -p "$(dirname $c)"
+            echo "$r" > $c
+            echo "Configuration saved."
+          |]
 
 clean :: Subcommand
 clean = command "clean" . info f $ fullDesc <> desc <> fdoc where
@@ -1193,6 +1231,7 @@ main :: IO ()
 main = do
   eff <- newIORef InProcess
   var <- mkVar
+  dcd <- getXdgDirectory XdgConfig ("reach" </> "config.yaml") -- Must match `$CF` in script
   let env = Env
         <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
         <*> strOption (long "dir-project-container" <> value "/app/src" <> internal)
@@ -1200,6 +1239,9 @@ main = do
         <*> strOption (long "dir-tmp-container" <> value "/app/tmp" <> internal)
         <*> strOption (long "dir-tmp-host" <> internal)
         <*> switch (long "emit-raw" <> internal)
+        <*> optional (strOption (long "config" <> short 'c' <> metavar "CONFIG_YAML" <> value dcd
+                              <> help ("Override configuration file path (XDG-based default: " <> dcd <> ")")))
+        <*> rcOption
         <*> pure eff
         <*> pure var
   hashStr <- lookupEnv "REACH_GIT_HASH" >>= \case
@@ -1240,6 +1282,7 @@ main = do
     <> help'
   hs = internal
     <> commandGroup "hidden subcommands"
+    <> configCreate
     <> numericVersion
     <> reactDown
     <> rpcServerAwait

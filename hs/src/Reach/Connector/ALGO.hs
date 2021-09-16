@@ -1823,7 +1823,7 @@ compile_algo disp pl = do
 connect_algo :: Connector
 connect_algo = Connector {..}
   where
-    conName = "ALGO"
+    conName = ALGO
     conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
     conGen moutn = compile_algo (disp . T.pack)
       where disp which = conWrite moutn (which <> ".teal")
