@@ -220,20 +220,14 @@ ctxtNewScope m = do
            })
       $ m
 
-ctorPart :: SLPart
-ctorPart = "_ctor"
-
 shouldSimulate :: SLPart -> App Bool
 shouldSimulate p =
-  case p == ctorPart of
-    True -> return $ True
-    _ ->
-      ctxt_mode >>= \case
-        VM_Honest -> return $ True
-        VM_Dishonest which ->
-          case which of
-            RoleContract -> return $ False
-            RolePart me -> return $ me == p
+  ctxt_mode >>= \case
+    VM_Honest -> return $ True
+    VM_Dishonest which ->
+      case which of
+        RoleContract -> return $ False
+        RolePart me -> return $ me == p
 
 smtInteract :: SLPart -> String -> String
 smtInteract who m = "interact_" ++ (bunpack who) ++ "_" ++ m
@@ -1333,20 +1327,7 @@ smt_s = \case
                 Unknown ->
                   verify1r at [] TWhen when' Nothing Unknown
             False -> this_case
-    let sends = map go (M.toList send)
-    let sends' =
-          case null sends of
-            False -> sends
-            True ->
-              -- sends is only allowed to be empty on the ctor, so we specially
-              -- handle that case here
-              [ go (ctorPart, DLSend True [] amta whena) ]
-              where
-                pa_net = DLA_Literal $ DLL_Int at 0
-                pa_ks = []
-                amta = DLPayAmt {..}
-                whena = DLA_Literal $ DLL_Bool True
-    mapM_ ctxtNewScope $ timeout : sends'
+    mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do
@@ -1513,7 +1494,7 @@ _verify_smt mc ctxt_vst smt lp = do
         sm_us <- liftIO $ newIORef SMR_New
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
-  let ctxt_addrs = M.fromSet (\p -> DLVar at (Just (at, bunpack p)) T_Address 0) $ S.insert ctorPart $ M.keysSet pies_m
+  let ctxt_addrs = M.fromSet (\p -> DLVar at (Just (at, bunpack p)) T_Address 0) $ M.keysSet pies_m
   let ctxt_while_invariant = Nothing
   let ctxt_inv_mode = B_None
   let ctxt_path_constraint = []

@@ -37,11 +37,6 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (Either a b) where
     Right x -> f "Right" x
     where f l x = (l <+>) <$> prettySubst x
 
-data DeployMode
-  = DM_constructor
-  | DM_firstMsg
-  deriving (Eq, Generic, Show)
-
 -- DL types only describe data, and explicitly do not describe functions
 data DLType
   = T_Null
