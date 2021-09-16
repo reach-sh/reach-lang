@@ -56,7 +56,7 @@ data EvalError
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLValTy [String] String
   | Err_Eval_ContinueNotInWhile
-  | Err_Eval_IllegalWait DeployMode
+  | Err_Eval_IllegalWait
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Class SLPart
   | Err_Eval_PartSet_Bound SLPart
@@ -470,8 +470,8 @@ instance Show EvalError where
       bunpack who <> " is a class and cannot be bound"
     Err_Eval_PartSet_Bound who ->
       bunpack who <> " is bound and cannot be rebound"
-    Err_Eval_IllegalWait dm ->
-      "Cannot wait or timeout until after first message in deployMode " <> show dm
+    Err_Eval_IllegalWait ->
+      "Cannot inspect consensus time until after first publication"
     Err_Decls_IllegalJS _ ->
       "Invalid Reach declaration; expected exactly one declaration"
     Err_Decl_IllegalJS e ->

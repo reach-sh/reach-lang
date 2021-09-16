@@ -250,8 +250,7 @@ instance Pretty DLSBlock where
   pretty (DLSBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
 data DLOpts = DLOpts
-  { dlo_deployMode :: DeployMode
-  , dlo_verifyArithmetic :: Bool
+  { dlo_verifyArithmetic :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
@@ -265,8 +264,7 @@ instance Pretty DLOpts where
     DLOpts {..} ->
       braces $
         vsep
-          [ "deployMode: " <> viaShow dlo_deployMode
-          , "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
+          [ "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
           , "verifyPerConnector: " <> viaShow dlo_verifyPerConnector
           , "connectors: " <> viaShow dlo_connectors
           ]

@@ -472,7 +472,6 @@ data ToConsensusRec = ToConsensusRec
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
-  , slptc_ctor :: Bool
   }
   deriving (Eq, Generic)
 

@@ -256,8 +256,7 @@ instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 data PLOpts = PLOpts
-  { plo_deployMode :: DeployMode
-  , plo_verifyArithmetic :: Bool
+  { plo_verifyArithmetic :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

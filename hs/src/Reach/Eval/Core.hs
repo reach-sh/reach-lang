@@ -301,8 +301,7 @@ defaultApp =
 app_default_opts :: Counter -> [T.Text] -> DLOpts
 app_default_opts idxr cns =
   DLOpts
-    { dlo_deployMode = DM_constructor
-    , dlo_verifyArithmetic = False
+    { dlo_verifyArithmetic = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
     , dlo_counter = idxr
@@ -313,8 +312,7 @@ app_default_opts idxr cns =
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options =
   M.fromList
-    [ ("deployMode", opt_deployMode)
-    , ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
+    [ ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
     , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
     , ("connectors", opt_connectors)
     ]
@@ -333,16 +331,6 @@ app_options =
             f (SLV_Connector cn) = Right $ cn
             f _ = Left $ "expected connector"
         _ -> Left $ "expected tuple"
-    opt_deployMode opts v =
-      case v of
-        SLV_Bytes _ "firstMsg" -> up DM_firstMsg
-        SLV_Bytes _ "constructor" -> up DM_constructor
-        SLV_Bytes _ bs -> Left $ bss <> " is not a deployMode" <> didYouMean bss ["firstMsg", "constructor"] 2
-          where
-            bss = bunpack bs
-        _ -> Left $ "expected bytes"
-      where
-        up m = Right $ opts {dlo_deployMode = m}
 
 --- Utilities
 expect_ :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
@@ -821,10 +809,9 @@ ensure_while_invariant msg =
 
 ensure_can_wait :: App ()
 ensure_can_wait = do
-  dm <- readDlo dlo_deployMode
   readSt st_after_ctor >>= \case
     True -> return ()
-    False -> expect_ $ Err_Eval_IllegalWait dm
+    False -> expect_ $ Err_Eval_IllegalWait
 
 sco_to_cloenv :: SLScope -> App SLCloEnv
 sco_to_cloenv SLScope {..} = do
@@ -1051,7 +1038,7 @@ evalAsEnv obj = case obj of
         , ("interact", makeInteractField)
         ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
       whos = S.singleton who
   SLV_Anybody -> do
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
@@ -1062,7 +1049,7 @@ evalAsEnv obj = case obj of
         [ ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay) ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
   SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
@@ -1391,7 +1378,7 @@ compileTimeArg = \case
     expect_ Err_TimeArg_NotStatic
   v -> do
     f <- lookStdlib "relativeTime"
-    -- liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
+    liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
@@ -1607,7 +1594,6 @@ evalForm f args = do
       doClaim ct whats_da mmsg
       return $ public $ SLV_Null at "unknowable"
     SLForm_wait -> do
-      ensure_can_wait
       ensure_mode SLM_Step "wait"
       amt_e <- one_arg
       amt_sv <- locStMode SLM_ConsensusPure $ evalExpr amt_e
@@ -3946,7 +3932,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         _ -> True
   let not_all_true_send =
         getAny $ mconcat $ map (Any . not_true_send) (M.elems $ M.map ds_when tc_send)
-  let mustHaveTimeout = not slptc_ctor && (S.null whos || not_all_true_send)
+  let mustHaveTimeout = S.null whos || not_all_true_send
   let timeout_ignore_okay1 (DLSend {..}) =
         case (ds_isClass, ds_when) of
           (_, DLA_Literal (DLL_Bool True)) -> True
@@ -3965,7 +3951,6 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         setSt k_st
         return $ (Nothing, k_cr)
       Just (time_at, delay_e, mtimeb) -> locAt time_at $ do
-        ensure_can_wait
         delay_sv <- locSt st_pure $ evalExpr delay_e >>= ensure_public
         case delay_sv of
           SLV_Bool _ False -> do
@@ -4430,11 +4415,9 @@ findStmtTrampoline = \case
         locSco sco' $ evalStmt ks
     saveLift $ DLS_FromConsensus at steplifts
     return $ cr
-  SLV_Prim SLPrim_deployed -> Just $ \sp ks -> do
-    at <- withAt id
+  SLV_Prim SLPrim_deployed -> Just $ \_ ks -> do
     ensure_mode SLM_AppInit "deploy"
     e_appR <- fromRight (impossible "deploy") . e_appr <$> ask
-    dlo <- readDlo id
     env <-
       (liftIO $ readIORef e_appR) >>= \case
         AIS_Init {..} -> do
@@ -4442,36 +4425,14 @@ findStmtTrampoline = \case
         _ -> impossible "deploy"
     liftIO $ writeIORef e_appR $ AIS_Deployed env
     st <- readSt id
-    let after_ctor =
-          case dlo_deployMode dlo of
-            DM_constructor -> True
-            DM_firstMsg -> False
     setSt $
       st
         { st_mode = SLM_Step
         , st_live = True
-        , st_after_ctor = after_ctor
+        , st_after_ctor = False
         }
     doBalanceInit Nothing
-    case dlo_deployMode dlo of
-      DM_firstMsg ->
-        evalStmt ks
-      DM_constructor -> do
-        let slptc_at = at
-        let slptc_whos = mempty
-        let slptc_mv = Nothing
-        let slptc_mode = Nothing
-        let slptc_msg = Nothing
-        let slptc_amte = Nothing
-        let slptc_whene = Nothing
-        let slptc_timeout = Nothing
-        let slptc_fork = False
-        let slptc_ctor = True
-        let tcr = ToConsensusRec {..}
-        let a = at2a at
-        let e = jsCall a (JSIdentifier a "commit") []
-        let ks' = JSExpressionStatement e sp : ks
-        doToConsensus ks' tcr
+    evalStmt ks
   _ -> Nothing
 
 doExit :: App ()

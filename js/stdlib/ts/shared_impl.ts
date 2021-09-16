@@ -72,10 +72,8 @@ export type IViewLib = {
   viewMapRef: any,
 };
 
-type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _backendVersion: number,
-  _deployMode: DeployMode,
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
 };

@@ -499,7 +499,6 @@ df_eb (DLinExportBlock at vs b) =
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
-  let llo_deployMode = dlo_deployMode
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
   let llo_droppedAsserts = dlo_droppedAsserts
