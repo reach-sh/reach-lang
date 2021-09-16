@@ -1770,6 +1770,26 @@ Similarly, to run with Conflux:
 
 @cmd{REACH_CONNECTOR_MODE=CFX ./reach react}
 
+@margin-note{
+  To adapt this example for Conflux TestNet or MainNet,
+  you can add this after the imports:
+
+  @js{
+    reach.setProviderByName('TestNet'); // or 'MainNet'
+  }
+
+  And add something like this at the start of of @jsin{componentDidMount}:
+  @js{
+    async componentDidMount() {
+      const now = await reach.getNetworkTime();
+      reach.setQueryLowerBound(reach.sub(now, 2000));
+      // ...
+    }
+  }
+
+  For details, see @seclink["cfx-faq-mainnet"]{the Conflux FAQ}.
+}
+
 @(hrule) @;; explain npm install
 
 If you'd like to instead use Reach in your own JavaScript project,

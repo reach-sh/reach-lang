@@ -396,7 +396,7 @@ Like @jsin{waitUntilSecs}, but waits for a certain @tech{network seconds} deadli
 @(hrule)
 @(mint-define! '("wait"))
 @js{
- wait(timedelta, onProgress?) => Promise<time>
+ wait(timedelta, onProgress?) => Promise<networkTime>
 }
 
 Returns a Promise that will only be resolved after the specified @tech{time delta} has elapsed.
@@ -410,6 +410,23 @@ As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
  connector : Connector }
 
 Represents the @jsin{Connector} the @jsin{stdlib} uses.
+
+@(hrule)
+
+@(mint-define! '("setQueryLowerBound"))
+@js{
+  setQueryLowerBound(networkTime) => void
+}
+
+Sets the lower bound on querying the network for events.
+The argument to this function is a @tech{network time}.
+By default, Reach will query for events from time 0.
+This default is usually fine, but on certain networks like Conflux,
+it can be very slow.
+You can use this function to tell Reach to only query from a given network time onwards,
+which can speed up event log querying significantly on Conflux.
+If you use the reach stdlib to @jsin{deploy} or @jsin{attach} to a contract,
+the specified lower bound must be no later than the time at which the contract was deployed.
 
 @section[#:tag "ref-frontends-js-provider"]{Provider Selection}
 

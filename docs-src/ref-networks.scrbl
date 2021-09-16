@@ -101,6 +101,64 @@ It defaults to @litchar{999}.}
 
 ]
 
+@subsection[#:tag "cfx-faq"]{FAQ}
+
+@subsubsection[#:tag "cfx-faq-mainnet"]{How do I run my Reach DApp on CFX TestNet or MainNet?}
+
+You can add the following JavaScript near the beginning of your index.js or index.mjs file
+in order to run on Conflux TestNet:
+
+@js{
+reach.setProviderByName('TestNet');
+}
+
+Or this to run on Conflux MainNet:
+
+@js{
+reach.setProviderByName('MainNet');
+}
+
+It is strongly recommended that you also use @jsin{setQueryLowerBound}
+to avoid waiting for unnecessary queries.
+For example, this code snippet sets the lower bound at 2000 blocks ago:
+
+@js{
+const now = await reach.getNetworkTime();
+reach.setQueryLowerBound(reach.sub(now, 2000));
+}
+
+@subsubsection[#:tag "cfx-faq-query"]{Why is DApp startup very slow? Why do I need to use @tt{setQueryLowerBound}?}
+
+DApp startup doesn't have to be slow.
+Reach relies on querying Conflux event logs in order to run the DApp.
+The Conflux network does not yet provide fast APIs for querying event logs for a given contract across all time,
+so instead, Reach incrementally queries across chunks of 1000 blocks at a time.
+You can use @jsin{setQueryLowerBound} to help Reach know at what block number to start querying,
+so that it does not have to start querying at the beginning of time, which can take quite a while.
+
+@subsubsection[#:tag "cfx-faq-cplocal"]{How can I use ConfluxPortal with the Reach devnet?}
+
+If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
+you can try configuring ConfluxPortal to use a custom RPC endpoint:
+
+@itemlist[
+  @item{Click the network dropdown in Conflux Portal}
+  @item{Select: Custom RPC}
+  @item{Use RPC url: http://127.0.0.1:12537}
+]
+
+If your locally-running Conflux devnet restarts,
+you may find that you need to reset ConfluxPortal's account history,
+which you can do like so:
+
+@itemlist[
+  @item{Select the desired account}
+  @item{Click the profile image of the account (top-right)}
+  @item{Click Settings > Advanced > Reset Account > (confirm) Reset}
+  @item{Switch to a different network and back}
+  @item{CTRL+SHIFT+R to hard-reset the webpage.}
+]
+
 @section[#:tag "ref-network-eth"]{Ethereum}
 
 The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
