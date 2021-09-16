@@ -6,12 +6,24 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-@section[#:style 'hidden-number]{0.1.4: 2021/09 - present}
+@section[#:style 'hidden-number]{0.1.5: 2021/09 - present}
 
-Version 0.1.4 is the current Reach release candidate version.
+Version 0.1.5 is the current Reach release candidate version.
+
 @itemlist[
-@item{2021/09/16: Algorand supports @litchar{firstMsg} deployment mode.}
-@item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
+@item{2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use @reachin{relativeTime} instead.}
+@item{2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the @litchar{firstMsg} deployment mode.
+
+If you would like the old behavior, then you'll want to create a new participant class, perhaps called @litchar{Constructor}, that exists simply to run @reachin{Constructor.publish(); commit();}, but we expect that almost no one actually wants the old behavior exactly.
+}
+@item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release and older, deployed contracts will not work with this version.}
+]
+
+@section[#:style 'hidden-number]{0.1.4: 2021/09 - 2021/09}
+
+Version 0.1.4 is the current Reach release version.
+
+@itemlist[
 @item{2021/09/15: @reachin{muldiv} added.}
 @item{2021/09/08: Add @DFlag{stop-after-eval} and @DFlag{verify-timeout} options to @exec{reach compile}.}
 @item{2021/08/31: Removed @jsin{getSignStrategy} and @jsin{setSignStrategy} in favor of @jsin{setWalletFallBack} and @jsin{walletFallback}.}
@@ -38,7 +50,7 @@ Version 0.1.4 is the current Reach release candidate version.
 
 @section[#:style 'hidden-number]{0.1.3: 2021/07 - 2021/08}
 
-Version 0.1.3 is the current Reach release version.
+Version 0.1.3 is an old Reach release version.
 
 @itemlist[
 @item{2021/08/31: Added @jsin{acc.setStorageLimit} to JavaScript standard library for Conflux.}
@@ -66,7 +78,7 @@ Version 0.1.3 is the current Reach release version.
 
 @section[#:style 'hidden-number]{0.1.2: 2020/09 - 2021/07}
 
-Version 0.1.2 is the current Reach release version.
+Version 0.1.2 is an old Reach release version.
 
 It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 
