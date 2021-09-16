@@ -19,7 +19,6 @@ The following guides are available:
 @include-section["guide-ctransfers.scrbl"]
 @include-section["guide-assert.scrbl"]
 @include-section["guide-loop-invs.scrbl"]
-@include-section["guide-deploymode.scrbl"]
 @include-section["guide-timeout.scrbl"]
 @include-section["guide-determ.scrbl"]
 @include-section["guide-race.scrbl"]

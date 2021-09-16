@@ -518,8 +518,8 @@ Bob went from 10 to 14.999999999999978246.
 @(hrule)
 
 Why does Alice win slightly less than Bob when she wins?
-She has to pay to @tech{deploy} the contract, because she calls @jsin{acc.deploy} in her @tech{frontend}.
-The @seclink["guide-deploymode"]{guide section on deployment} discusses how to avoid this difference.}
+She has to pay to @tech{deploy} the contract, because she publishes the first message in her @tech{frontend}.
+}
 
 Alice is doing okay - if she keeps this up, she'll make a fortune on @|RPS|!
 

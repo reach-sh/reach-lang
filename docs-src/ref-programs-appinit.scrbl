@@ -37,16 +37,6 @@ The @deftech{compilation options} for the @|DApp| may be set by calling @reachin
 @itemlist[
 
 @item{
-  @(mint-define! '("deployMode")) @reachin{deployMode}
-
-  @reachin{'constructor'} (default) or @reachin{'firstMsg'}
-
-  Determines whether @tech{contract} should be @tech{deploy}ed independently (@reachin{'constructor'}) or as part of the first @tech{publication} (@reachin{'firstMsg'}).
-  If deployed as part of the first publication, then the first publication must precede all uses of @reachin{wait} and @reachin{.timeout}.
-  See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.
-}
-
-@item{
   @(mint-define! '("verifyArithmetic")) @reachin{verifyArithmetic}
 
   @reachin{true} or @reachin{false} (default)

@@ -557,16 +557,14 @@ or move it to the end of your @reachin{while} loop.
 
 @error{RE0027}
 
-This error indicates that there is an attempt to @reachin{wait} or @reachin{timeout} before the first publication
-in the @reachin{firstMsg} deploy mode. This situation is not allowed because the @reachin{firstMsg} deploy mode,
-waits to deploy the contract along with the first publication.
+This error indicates that there is an attempt to consult the consensus time before the first publication.
+This situation is not allowed, because before the first publication, there is no consensual agreement on time in the decentralized computation.
 
 @reach{
   export const main = Reach.App(() => {
-    setOptions({ deployMode: 'firstMsg' });
     const A = Participant('Alice', {});
     deploy();
-    wait(1);
+    wait(relativeTime(1));
   });
 }
 
@@ -574,11 +572,10 @@ You can fix this by having a @reachin{Participant} @reachin{publish} first:
 
 @reach{
   export const main = Reach.App(() => {
-    setOptions({ deployMode: 'firstMsg' });
     const A = Participant('Alice', {});
     deploy();
     A.publish();
-    wait(1);
+    wait(relativeTime(1));
   });
 }
 
@@ -1797,12 +1794,11 @@ or wrapping the necessary code into a @reachin{try/catch} block.
 
 @error{RE0102}
 
-This error indicates that you are attempting to @reachin{pay} on the first publication of
-a program that uses @reachin{setOptions({ deployMode: 'firstMsg' })}. This is not possible
-because the contract will not yet exist. Therefore, it cannot receive tokens.
+This error indicates that you are attempting to @reachin{pay} on the first publication.
+This is not possible on networks like Ethereum, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
+On other networks, like Algorand, this would be possible, but Reach does not allow it yet.
 
-You can fix this by either using a different @reachin{deployMode} or paying into the
-contract after the first publication.
+You can fix this by paying into the contract after the first publication.
 
 @error{RE0103}
 
