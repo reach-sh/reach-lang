@@ -595,6 +595,7 @@ primOpType RSH = ([T_UInt, T_UInt], T_UInt)
 primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
+primOpType MUL_DIV = ([T_UInt, T_UInt, T_UInt], T_UInt)
 
 data RemoteFunMode
   = RFM_Pay
@@ -673,6 +674,7 @@ data SLPrimitive
   | SLPrim_Token_burn
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
+  | SLPrim_muldiv
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

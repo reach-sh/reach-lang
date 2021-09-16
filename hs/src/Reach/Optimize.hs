@@ -263,6 +263,19 @@ instance Optimize DLExpr where
           return $ DLE_Arg at zero
         (DIV, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
           return $ DLE_Arg at lhs
+        (MUL_DIV, [l, r, d])
+          | l == d -> return $ DLE_Arg at r
+          | r == d -> return $ DLE_Arg at l
+        (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ 1)]) ->
+            opt $ DLE_PrimOp at MUL [l, r]
+        (MUL_DIV, [DLA_Literal (DLL_Int _ 1), r, d]) ->
+            opt $ DLE_PrimOp at DIV [r, d]
+        (MUL_DIV, [l, DLA_Literal (DLL_Int _ 1), d]) ->
+            opt $ DLE_PrimOp at DIV [l, d]
+        (MUL_DIV, [DLA_Literal (DLL_Int _ 0), _, _]) ->
+          return $ DLE_Arg at zero
+        (MUL_DIV, [_, DLA_Literal (DLL_Int _ 0), _, _]) ->
+          return $ DLE_Arg at zero
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->

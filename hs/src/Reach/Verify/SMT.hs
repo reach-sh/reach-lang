@@ -299,6 +299,10 @@ smtPrimOp at p dargs =
     ADDRESS_EQ -> app "="
     TOKEN_EQ -> app "="
     BYTES_CONCAT -> app "bytesAppend"
+    MUL_DIV ->
+      \case
+        [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
+        _ -> impossible "smtPrimOp: MUL_DIV args"
     SELF_ADDRESS ->
       case dargs of
         [ DLA_Literal (DLL_Bytes pn)
