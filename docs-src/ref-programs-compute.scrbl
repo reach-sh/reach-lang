@@ -1388,7 +1388,7 @@ It takes an optional @tech{non-network token} value, in which case it returns th
  lastConsensusTime() }
 
 The @deftech{lastConsensusTime} primitive returns the @tech{network time} of the last @tech{publication} of the @|DApp|.
-This may not be available if there was no such previous publication, such as at the beginning of an application where @reachin{deployMode} is @reachin{'firstMsg'}.
+This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
 @margin-note{Why is there no @tt{thisConsensusTime}?
 Some networks do not support observing the time of a consensus operation until after it has finalized.
@@ -1428,7 +1428,7 @@ The @reachin{absoluteTime} and @reachin{absoluteSecs} are equivalent to @reachin
 
 The @reachin{relativeTime} and @reachin{relativeSecs} functions add @reachin{baseWaitTime} and @reachin{baseWaitSecs} to their arguments before tagging with the appropriate variant.
 
-If a time argument is required, an integer value is allowed and is interpreted as a @reachin{relativeTime}.
+If a time argument is required, an integer value is allowed and is interpreted as a @reachin{relativeTime}, but this behavior is deprecated and you will see a warning.
 
 @subsection{@tt{makeDeadline}}
 

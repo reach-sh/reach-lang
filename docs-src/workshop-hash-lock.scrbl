@@ -266,11 +266,6 @@ We need to decide how to deploy the contract, as well as what kind of user inter
 
 @(drstep-de-stop)
 
-In this case, it is a very simple program, so we'll use a simple and efficient contract @seclink["guide-deploymode"]{deployment mode}: @reachin{'firstMsg'}.
-This means that the @tech{contract} won't exist on the @tech{consensus network} until Alice sends her first message.
-This is a good choice for most contracts, if it is allowed.
-(As @seclink["guide-deploymode"]{the guide discusses}, some applications cannot be deployed like this.)
-
 @margin-note{Unfortunately, on many @tech{consensus networks}, like Ethereum and Algorand, this application is dangerous to run.
 The problem is that a malicious miner, like Eve, can intercept Bob's message that provides him the funds, refuse to forward it through to the consensus network, take the password from it, and submit it for her own account.
 There is not a good general solution to this problem, meaning a theorem that we could insert into our program to make sure this attack isn't possible, because the whole point of this application is that Bob's identity is not known at the time that Alice sends the first message.
