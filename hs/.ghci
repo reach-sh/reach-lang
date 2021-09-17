@@ -1,4 +1,4 @@
 :set -isrc
 :set -itest
 :set -iapp
-:load Main Reach.Compiler
+:load Main Reach.Compiler Reach.Report
