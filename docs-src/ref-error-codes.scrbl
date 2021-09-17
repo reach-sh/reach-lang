@@ -1795,8 +1795,7 @@ or wrapping the necessary code into a @reachin{try/catch} block.
 @error{RE0102}
 
 This error indicates that you are attempting to @reachin{pay} on the first publication.
-This is not possible on networks like Ethereum, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
-On other networks, like Algorand, this would be possible, but Reach does not allow it yet.
+This is not possible, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
 
 You can fix this by paying into the contract after the first publication.
 

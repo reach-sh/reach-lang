@@ -916,6 +916,14 @@ sco_update_ imode addl_env = sco_update_and_mod imode addl_env return
 sco_update :: SLEnv -> App SLScope
 sco_update = sco_update_ DisallowShadowing
 
+stMeet :: SLState -> SLState -> SLState
+stMeet x y =
+  x { st_live = f st_live
+    , st_after_ctor = f st_after_ctor
+    , st_after_first = f st_after_first }
+  where
+    f g = g x && g y
+
 stMerge :: SLState -> SLState -> App SLState
 stMerge old new =
   -- This is a little bit suspicious. What's going on?
@@ -928,10 +936,28 @@ stMerge old new =
   case (st_live old, st_live new) of
     (_, False) -> return old
     (False, _) -> return new
-    (True, True) ->
-      case old == new of
-        True -> return new
-        False -> expect_ $ Err_Eval_IncompatibleStates new old
+    (True, True) -> do
+      -- Next, if they are both alive, then we take the "meet" of them and
+      -- compare those. The idea of the meet is that the boolean flags get
+      -- reduced to False if either side is false, so the continuation of this
+      -- can't rely on it being set. This probably will not matter, but it
+      -- might. This is mainly here so that
+      --
+      -- deploy();
+      -- A.publish();
+      -- while (c) {
+      --  f();
+      -- }
+      -- g();
+      --
+      -- is allowed, but that g cannot rely on being after the constructor
+      -- (because it could BE the constructor if c is false)
+      --
+      let old' = stMeet old new
+      let new' = stMeet new old
+      case old' == new' of
+        True -> return new'
+        False -> expect_ $ Err_Eval_IncompatibleStates new' old'
 
 stEnsureMode :: SLMode -> App ()
 stEnsureMode slm = do
