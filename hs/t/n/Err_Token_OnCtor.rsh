@@ -3,7 +3,7 @@
 
 export const main =
   Reach.App(
-    { deployMode: 'firstMsg' },
+    {},
     [ Participant('A', {
         get: Fun([], Tuple(Token, UInt)),
       }),

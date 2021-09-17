@@ -27,7 +27,7 @@ const simultaneousLoop =
         B.only(() => {
           interact.acceptTerms(terms); });
         B.pay(terms)
-          .timeout(DEADLINE, () => closeTo(A, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
 
         var outcome = outcome0;
         invariant(balance() == 2 * terms && isOutcome(outcome));
@@ -39,14 +39,14 @@ const simultaneousLoop =
             const [_commitA, _saltA] = makeCommitment(interact, _moveA);
             const commitA = declassify(_commitA); });
           A.publish(commitA)
-            .timeout(DEADLINE, () => closeTo(B, informTimeout));
+            .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
           commit();
 
           unknowable(B, A(_moveA, _saltA));
           B.only(() => {
             const moveB = declassify(interact.getMove()); });
           B.publish(moveB)
-            .timeout(DEADLINE, () => closeTo(A, informTimeout));
+            .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
           commit();
 
           A.only(() => {

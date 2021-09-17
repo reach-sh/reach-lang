@@ -26,6 +26,8 @@ export const main =
       }),
     ],
     (Sponsor, Player) => {
+      Sponsor.publish();
+      commit();
       Sponsor.only(() => {
         const { ticketPrice, deadline } =
           declassify(interact.getParams());
@@ -150,7 +152,7 @@ export const main =
           });
           transfer(howMany * ticketPrice).to(winner);
         }))
-      .timeout(deadline, () => closeTo(Sponsor, () => {}));
+      .timeout(relativeTime(deadline), () => closeTo(Sponsor, () => {}));
       commit();
     });
     

@@ -8,7 +8,7 @@ const Common = {
 
 export const main =
   Reach.App(
-    { 'deployMode': 'firstMsg' },
+    {},
     [Participant('Alice', Common),
      Participant('Bob', Common),
     ],

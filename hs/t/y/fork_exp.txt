@@ -5,3 +5,5 @@ Verifying for generic connector
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
 Checked 85 theorems; No failures!
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./fork_exp.rsh:70:19:application
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./fork_exp.rsh:38:17:application

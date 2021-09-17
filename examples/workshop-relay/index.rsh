@@ -2,7 +2,7 @@
 'use strict';
 
 export const main = Reach.App(
-  { deployMode: 'firstMsg' },
+  {},
   [Participant('Alice', { amt : UInt,
                getRelay: Fun([], Address) }),
    Participant('Relay', { getBob: Fun([], Address) }) ],

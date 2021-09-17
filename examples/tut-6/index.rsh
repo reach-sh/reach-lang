@@ -60,7 +60,7 @@ export const main = Reach.App(() => {
   });
   Bob.publish(handBob)
     .pay(wager)
-    .timeout(deadline, () => closeTo(Alice, informTimeout));
+    .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
   commit();
 
   Alice.only(() => {
@@ -68,7 +68,7 @@ export const main = Reach.App(() => {
     const handAlice = declassify(_handAlice);
   });
   Alice.publish(saltAlice, handAlice)
-    .timeout(deadline, () => closeTo(Bob, informTimeout));
+    .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
   checkCommitment(commitAlice, saltAlice, handAlice);
 
   const outcome = winner(handAlice, handBob);

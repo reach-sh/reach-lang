@@ -2,7 +2,7 @@
 'use strict';
 
 export const main = Reach.App(
-  { deployMode: 'firstMsg' },
+  { },
   [Participant('Alice', { amt : UInt,
                pass: UInt }),
    Participant('Bob', { getPass: Fun([], UInt) }) ],

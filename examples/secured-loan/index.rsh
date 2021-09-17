@@ -40,18 +40,19 @@ export const main = Reach.App(() => {
     const params = declassify(interact.getParams());
     const tok = params.tok;
     assume(params.pre < params.post); });
-  Borrower.publish(params, tok)
-    .pay([ [params.collateral, tok] ]);
+  Borrower.publish(params, tok);
   const { collateral, pre, post, maturation, maxLenderDelay }
         = params;
   require(pre < post);
+  commit();
+  Borrower.pay([ [params.collateral, tok] ]);
   commit();
 
   Lender.only(() => {
     interact.acceptParams(params);
   });
   Lender.pay(pre)
-    .timeout(maxLenderDelay, () =>
+    .timeout(relativeTime(maxLenderDelay), () =>
       closeTo(Borrower,
         sendOutcome(LENDER_TIMEOUT),
         [[balance(tok), tok]]));
@@ -62,7 +63,7 @@ export const main = Reach.App(() => {
     interact.waitForPayback();
   });
   Borrower.pay(post)
-    .timeout(maturation, () =>
+    .timeout(relativeTime(maturation), () =>
       closeTo(Lender,
         sendOutcome(BORROWER_TIMEOUT),
         [[balance(tok), tok]]));

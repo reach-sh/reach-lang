@@ -1,46 +1,8 @@
-Verifying knowledge assertions
-Verifying for generic connector
-  Verifying when ALL participants are honest
-Verification failed:
-  when ALL participants are honest
-  of theorem: assert
-  msg: "balance zero at application exit"
-  at ./pr204.rsh:77:7:application
+reachc: error[RE0102]: Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens.
 
-  // Violation Witness
+ ./pr204.rsh:33:9:dot
 
-  const balance(0)/124 = <loop variable>;
-  //    ^ could = 1
-  //      from: ./pr204.rsh:40:3:while
+ 33|   Owner.publish(sale, token).pay([[sale.quantity, token]]);
 
-  // Theorem Formalization
+For further explanation of this error, see: https://docs.reach.sh/RE0102.html
 
-  const v162 = 0 == balance(0)/124;
-  //    ^ would be false
-  assert(v162);
-
-  Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  msg: "balance sufficient for transfer"
-  at ./pr204.rsh:59:28:application
-
-  // Violation Witness
-
-  const balance(1)/125 = <loop variable>;
-  //    ^ could = 1
-  //      from: ./pr204.rsh:40:3:while
-  const qty/139 = v132;
-  //    ^ could = 2
-  //      from: ./pr204.rsh:53:11:dot
-
-  // Theorem Formalization
-
-  const v146 = qty/139 <= balance(1)/125;
-  //    ^ would be false
-  assert(v146);
-
-  Verifying when ONLY "Buyer" is honest
-  Verifying when ONLY "Owner" is honest
-Checked 37 theorems; 6 failures (and 4 omitted repeats) :'(

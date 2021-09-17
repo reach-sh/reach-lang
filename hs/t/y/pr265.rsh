@@ -3,9 +3,10 @@
 export const main = Reach.App(() => {
   const A = Participant('Alice', {});
   deploy();
-
+  A.publish();
+  commit();
   A.publish()
-    .timeout(5, () => {
+    .timeout(relativeTime(5), () => {
       exit();
     });
   commit();

@@ -3,4 +3,5 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 43 theorems; No failures!
+Checked 40 theorems; No failures!
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./def_pay_spec.rsh:17:19:application

@@ -4,4 +4,8 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 96 theorems; No failures!
+Checked 93 theorems; No failures!
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./index.rsh:76:19:application
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./index.rsh:70:19:application
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./index.rsh:63:19:application
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./index.rsh:51:17:application

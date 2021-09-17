@@ -6,4 +6,5 @@ Verifying for generic connector
   Verifying when ONLY "HandcraftedTaxAcct" is honest
   Verifying when ONLY "Merchant" is honest
   Verifying when ONLY "PotentialBuyer" is honest
-Checked 159 theorems; No failures!
+Checked 156 theorems; No failures!
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./pr206.rsh:170:31:application
