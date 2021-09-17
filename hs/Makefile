@@ -2,7 +2,6 @@ IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
 ALPINE_VERSION="3.14.2"
-HOST_IPADDR=$$(../scripts/get-ipaddress.sh)
 
 .PHONY: install-mo
 install-mo:
