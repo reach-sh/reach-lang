@@ -79,7 +79,7 @@ r () {
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
-  REACH_CONNECTOR_MODE=CFX ${REACH} run
+  #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
   # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
@@ -110,6 +110,14 @@ tealcount () {
 
 #######
 
+c hs/t/y/big-d8cff.rsh
+c hs/t/y/pr265.rsh
+exit 0
+r examples/realtime
+exit 0
+ci ALGO log
+exit 0
+
 jb
 
 # c users/duoswap-core/index.rsh
@@ -119,7 +127,6 @@ jb
 # ci ETH overview
 # ci ETH race
 # ci ALGO overview
-# exit 0
 # ci ALGO race
 c examples/tut-8/index.rsh
 ci ALGO tut-6

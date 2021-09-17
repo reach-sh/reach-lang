@@ -10,7 +10,7 @@ const Common = {
 
 export const main =
   Reach.App(
-    { 'deployMode': 'firstMsg' },
+    {},
     [Participant('Alice',
       { ...Common,
         getParams: Fun([], Object({ wager: UInt,

@@ -1,10 +1,11 @@
-reachc: error[RE0066]: Incompatible states:
-The expected state of the program varies between branches because:
-  * The active participants vary between states:  vs "A". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./Err_Eval_IncompatibleStates.rsh:6:15:application
+reachc: error[RE0027]: Cannot inspect consensus time until after first publication
 
- ./Err_Eval_IncompatibleStates.rsh:6:15:application
+ reach standard library:589:31:application
 
- 6|       .timeout(1, () => {});
 
-For further explanation of this error, see: https://docs.reach.sh/RE0066.html
+Trace:
+  in "relativeTime" from (reach standard library:585:52:function exp) at (./Err_Eval_IncompatibleStates.rsh:6:15:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0027.html
 

@@ -275,7 +275,7 @@ instance Equiv ClaimType where
 
 instance Equiv Deprecation where
   equiv a b = case (a,b) of
-    (D_ParticipantTuples _, D_ParticipantTuples _) -> True
+    (D_ParticipantTuples, D_ParticipantTuples) -> True
     (D_SnakeToCamelCase _, D_SnakeToCamelCase _ ) -> True
     (D_ReachAppArgs, D_ReachAppArgs) -> True
     (D_UntypedTimeArg, D_UntypedTimeArg) -> True

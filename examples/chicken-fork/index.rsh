@@ -10,7 +10,6 @@ const Common = {
 };
 
 export const main = Reach.App(() => {
-  setOptions({ 'deployMode': 'firstMsg' });
   const Alice = Participant('Alice', {
     ...Common,
     getParams: Fun([], Object({
@@ -39,7 +38,7 @@ export const main = Reach.App(() => {
   Bob.only(() => {
     interact.confirmWager(wager); });
   Bob.pay(wager)
-    .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
+    .timeout(relativeTime(deadline), () => closeTo(Alice, showOutcome(TIMEOUT)));
 
   var [ keepGoing, as, bs ] = [ true, 0, 0 ];
   invariant(balance() == 2 * wager);
@@ -61,7 +60,7 @@ export const main = Reach.App(() => {
             interact.roundWinnerWas(false); });
           [ keepGoing, as, bs ] = [ true, as, bs + 1 ];
           continue; })
-      .timeout(deadline, () => {
+      .timeout(relativeTime(deadline), () => {
         showOutcome(TIMEOUT)();
         Anybody.publish();
         keepGoing = false;

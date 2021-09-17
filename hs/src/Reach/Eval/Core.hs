@@ -478,7 +478,8 @@ env_lookup ctx x env =
       markVarUsed (sss_at sv, x)
       case sv of
         SLSSVal {sss_val = SLV_Deprecated d v} -> do
-          liftIO $ emitWarning $ W_Deprecated d
+          at <- withAt id
+          liftIO $ emitWarning $ W_Deprecated at d
           return $ sv {sss_val = v}
         v -> return $ v
     Nothing ->
@@ -1404,7 +1405,8 @@ compileTimeArg = \case
     expect_ Err_TimeArg_NotStatic
   v -> do
     f <- lookStdlib "relativeTime"
-    liftIO $ emitWarning $ W_Deprecated D_UntypedTimeArg
+    at <- withAt id
+    liftIO $ emitWarning $ W_Deprecated at D_UntypedTimeArg
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
@@ -1419,7 +1421,7 @@ evalForm f args = do
         case args of
           [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ top_s
           [opte, partse, JSArrowExpression top_formals a top_s] -> do
-            -- liftIO $ emitWarning $ W_Deprecated D_ReachAppArgs
+            -- liftIO $ emitWarning $ W_Deprecated at D_ReachAppArgs
             let at' = srcloc_jsa "app arrow" a at
             return $ convertTernaryReachApp at' a opte top_formals partse top_s
           _ -> expect_ $ Err_App_InvalidArgs args
@@ -2925,7 +2927,7 @@ evalPrim p sargs =
       tat <- withAt id
       tvs <- mustBeTuple =<< one_arg
       let adapt_tuple at p' who int = do
-            liftIO $ emitWarning $ W_Deprecated $ D_ParticipantTuples at
+            liftIO $ emitWarning $ W_Deprecated at $ D_ParticipantTuples
             snd <$> evalPrim p' (map public $ [who, int])
       let go = \case
             SLV_Tuple at [who, int] ->

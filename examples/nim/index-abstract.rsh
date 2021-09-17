@@ -39,13 +39,13 @@ export const main =
         const coinFlipB = declassify(interact.random()); });
       B.publish(coinFlipB)
         .pay(wagerAmount)
-        .timeout(DELAY, () => closeTo(A, sendOutcome(B_TIMEOUT)));
+        .timeout(relativeTime(DELAY), () => closeTo(A, sendOutcome(B_TIMEOUT)));
       commit();
 
       A.only(() => {
         const coinFlipA = declassify(_coinFlipA); });
       A.publish(coinFlipA)
-        .timeout(DELAY, () => {
+        .timeout(relativeTime(DELAY), () => {
           closeTo(B, sendOutcome(A_TIMEOUT));
         });
       require(commitA == digest(coinFlipA));
@@ -62,7 +62,7 @@ export const main =
             assume(choice < howMany);
             assume(amount <= heaps[choice]); });
           now.publish(choice, amount)
-            .timeout(DELAY, () =>
+            .timeout(relativeTime(DELAY), () =>
               closeTo(next, sendOutcome(who_timeout)));
 
           require(choice < howMany);

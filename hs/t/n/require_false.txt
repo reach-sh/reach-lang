@@ -10,4 +10,4 @@ Verification failed:
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-Checked 11 theorems; 1 failures :'(
+Checked 8 theorems; 1 failures :'(

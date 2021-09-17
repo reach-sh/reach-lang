@@ -14,7 +14,7 @@ function go(who, k) {
   });
   who.publish(amt)
     .pay(amt)
-    .timeout(DELAY, () => k());
+    .timeout(relativeTime(DELAY), () => k());
   commit();
 }
 

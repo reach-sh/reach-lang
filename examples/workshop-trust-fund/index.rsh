@@ -7,7 +7,7 @@ const common = {
 
 export const main =
   Reach.App(
-    { deployMode: 'firstMsg' },
+    {},
     [ Participant('Funder', {
       ...common,
       getParams: Fun([], Object({
@@ -32,14 +32,14 @@ export const main =
 
       each([Funder, Receiver, Bystander], () => {
         interact.funded(); });
-      wait(maturity);
+      wait(relativeTime(maturity));
 
       const giveChance = (Who, then) => {
         Who.only(() => interact.ready());
 
         if ( then ) {
           Who.publish()
-            .timeout(then.deadline, () => then.after()); }
+            .timeout(relativeTime(then.deadline), () => then.after()); }
         else {
           Who.publish(); }
 

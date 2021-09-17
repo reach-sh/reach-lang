@@ -35,6 +35,8 @@ export const main =
       each([Pollster, Voter], () =>
         interact.showOutcome(which, forA, forB)); };
 
+    Pollster.publish();
+    commit();
     Pollster.only(() => {
       const { ticketPrice, deadline, aliceAddr, bobAddr } =
         declassify(interact.getParams());

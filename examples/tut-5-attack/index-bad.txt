@@ -7,29 +7,4 @@ Verification failed:
   msg: "balance zero at application exit"
   at ./index-bad.rsh:compileDApp
 
-  // Violation Witness
-
-  const v73 = "Alice".interact.wager;
-  //    ^ could = 1
-  //      from: ./index-bad.rsh:9:28:application
-  const v80 = "Alice".interact.getHand();
-  //    ^ could = 0
-  //      from: ./index-bad.rsh:21:50:application
-  const v90 = "Bob".interact.getHand();
-  //    ^ could = 2
-  //      from: ./index-bad.rsh:29:48:application
-
-  // Theorem Formalization
-
-  const v99 = (v80 + (4 - v90)) % 3;
-  //    ^ would be 2
-  const v106 = (v99 == 2) ? [1, 0 ] : (v99 == 0) ? [0, 2 ] : [1, 1 ];
-  //    ^ would be [1, 0 ]
-  const v120 = 0 == (((v73 + v73) - (v106[0] * v73)) - (v106[1] * v73));
-  //    ^ would be false
-  assert(v120);
-
-  Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
-  Verifying when ONLY "Bob" is honest
-Checked 21 theorems; 4 failures (and 3 omitted repeats) :'(
+reachc: invalid define-fun Atom "error"

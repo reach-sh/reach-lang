@@ -25,8 +25,9 @@ export const main = Reach.App(() => {
     assume(tokA != tokB);
   });
   Auctioneer
-    .publish(tokA, amtA, tokB, reservePrice, timeout)
-    .pay([ [amtA, tokA ]]);
+    .publish(tokA, amtA, tokB, reservePrice, timeout);
+  commit();
+  Auctioneer.pay([ [amtA, tokA ]]);
 
   var [ dealMade, tries ] = [ false, 0 ];
   invariant(balance(tokA) == (dealMade ? 0 : amtA) && balance(tokB) == 0);

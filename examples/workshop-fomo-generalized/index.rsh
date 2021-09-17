@@ -54,7 +54,7 @@ export const main = Reach.App(
             const newWinners =
               Array.set(winners, idx, buyer);
             return [ true, newWinners, ticketsSold + 1 ]; }))
-        .timeout(deadline, () => {
+        .timeout(relativeTime(deadline), () => {
           Anybody.publish();
           return [ false, winners, ticketsSold ]; });
 

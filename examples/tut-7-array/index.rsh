@@ -73,7 +73,7 @@ export const main =
       B.only(() => {
         interact.acceptWager(wager); });
       B.pay(wager)
-        .timeout(DEADLINE, () => closeTo(A, informTimeout));
+        .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
 
       var outcome = DRAW;
       invariant(balance() == 2 * wager && isOutcome(outcome) );
@@ -85,20 +85,20 @@ export const main =
           const [_commitA, _saltA] = makeCommitment(interact, _handsA);
           const commitA = declassify(_commitA); });
         A.publish(commitA)
-          .timeout(DEADLINE, () => closeTo(B, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
         commit();
 
         unknowable(B, A(_handsA, _saltA));
         B.only(() => {
           const handsB = declassify(getBatch(interact.getHand)); });
         B.publish(handsB)
-          .timeout(DEADLINE, () => closeTo(A, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
         commit();
 
         A.only(() => {
           const [saltA, handsA] = declassify([_saltA, _handsA]); });
         A.publish(saltA, handsA)
-          .timeout(DEADLINE, () => closeTo(B, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
         checkCommitment(commitA, saltA, handsA);
 
         outcome = batchWinner(handsA, handsB);

@@ -43,7 +43,7 @@ export const main =
           (() => ({ when: declassify(interact.doCase(4)) })),
           (() => payment * 4),
           () => { return [ keepGoing ]; })
-        .timeout(timeout, () => {
+        .timeout(relativeTime(timeout), () => {
           Anybody.publish();
           return [ false ];
         });

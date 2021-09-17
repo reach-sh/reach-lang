@@ -23,13 +23,13 @@ export const lFirst = Reach.App(
     T.only(() => {
       interact.acceptTerms(terms); });
     T.pay(terms)
-      .timeout(DEADLINE, () => closeTo(L, () => null));
+      .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
     commit();
 
     L.only(() => {
       const leaveL = declassify(interact.leave()); });
     L.publish(leaveL)
-      .timeout(DEADLINE, () => closeTo(T, () => null));
+      .timeout(relativeTime(DEADLINE), () => closeTo(T, () => null));
 
     if ( leaveL ) {
       transfer(2 * terms).to(T);
@@ -41,7 +41,7 @@ export const lFirst = Reach.App(
       T.only(() => {
         const leaveT = declassify(interact.leave()); });
       T.publish(leaveT)
-        .timeout(DEADLINE, () => closeTo(L, () => null));
+        .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
 
       if ( leaveT ) {
         transfer(2 * terms).to(L);
@@ -68,13 +68,13 @@ export const tFirst = Reach.App(
     T.only(() => {
       interact.acceptTerms(terms); });
     T.pay(terms)
-      .timeout(DEADLINE, () => closeTo(L, () => null));
+      .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
     commit();
 
     T.only(() => {
       const leaveT = declassify(interact.leave()); });
     T.publish(leaveT)
-      .timeout(DEADLINE, () => closeTo(L, () => null));
+      .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
 
     if ( leaveT ) {
       transfer(2 * terms).to(L);
@@ -86,7 +86,7 @@ export const tFirst = Reach.App(
       L.only(() => {
         const leaveL = declassify(interact.leave()); });
       L.publish(leaveL)
-        .timeout(DEADLINE, () => closeTo(T, () => null));
+        .timeout(relativeTime(DEADLINE), () => closeTo(T, () => null));
 
       if ( leaveL ) {
         transfer(2 * terms).to(T);
@@ -113,7 +113,7 @@ export const fair = Reach.App(
     T.only(() => {
       interact.acceptTerms(terms); });
     T.pay(terms)
-      .timeout(DEADLINE, () => closeTo(L, () => null));
+      .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
 
     var [ gleaveT, gleaveL ] = [ false, false ];
     invariant(balance() == 2 * terms);
@@ -125,14 +125,14 @@ export const fair = Reach.App(
         const [_commitT, _saltT] = makeCommitment(interact, _leaveT);
         const commitT = declassify(_commitT); });
       T.publish(commitT)
-        .timeout(DEADLINE, () => closeTo(L, () => null));
+        .timeout(relativeTime(DEADLINE), () => closeTo(L, () => null));
       commit();
 
       unknowable(L, T(_leaveT, _saltT));
       L.only(() => {
         const leaveL = declassify(interact.leave()); });
       L.publish(leaveL)
-        .timeout(DEADLINE, () => closeTo(T, () => null));
+        .timeout(relativeTime(DEADLINE), () => closeTo(T, () => null));
       commit();
 
       T.only(() => {
