@@ -258,15 +258,6 @@ jobs:
     - store_artifacts:
         path: hs/stan.html
     - slack_fail
-  "js-test":
-    executor: real
-    steps:
-    - checkout
-    - restore_bin
-    - and_restore_docker
-    - run: |
-        (cd js/dockerized-tests && make clean-test && sbin/test.sh)
-    - slack_fail
   "examples":
     parameters:
       connector:
@@ -344,9 +335,6 @@ workflows:
         requires:
           - "build"
     - "hs-check":
-        requires:
-          - "build"
-    - "js-test":
         requires:
           - "build"
     # Sink and examples follow

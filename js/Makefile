@@ -22,7 +22,6 @@ build:
 .PHONY: test
 test: build
 	(cd stdlib && $(MAKE) check)
-	(cd dockerized-tests && $(MAKE) clean-test && sbin/test.sh)
 
 # No need to push js-deps or stdlib
 .PHONY: push
