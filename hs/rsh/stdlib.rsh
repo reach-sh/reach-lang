@@ -436,15 +436,6 @@ export const pow = (base, power, precision) =>
       [ (p % 2 == 1) ? r * b : r, p / 2, b * b ])
   [0];
 
-export const makeDeadline = (deadline) => {
-  const endTime = lastConsensusTime() + deadline;
-  const timeRemaining = () =>
-    endTime - lastConsensusTime();
-  const keepGoing = () =>
-    endTime > lastConsensusTime();
-  return [ timeRemaining, keepGoing ];
-}
-
 export const Set = {
   new: () => {
     const s = new Map(Null);
@@ -602,4 +593,13 @@ export const relativeTime = makeTimeHelper(true, true);
 export const absoluteTime = makeTimeHelper(true, false);
 export const relativeSecs = makeTimeHelper(false, true);
 export const absoluteSecs = makeTimeHelper(false, false);
+
+export const makeDeadline = (deadline) => {
+  const endTime = lastConsensusTime() + deadline;
+  const timeRemaining = () =>
+    absoluteTime(endTime);
+  const keepGoing = () =>
+    endTime > lastConsensusTime();
+  return [ timeRemaining, keepGoing ];
+};
 

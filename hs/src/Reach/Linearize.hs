@@ -259,12 +259,12 @@ doLift m mk = do
       mk
     _ -> DK_Com m <$> mk
 
-captureLifts :: LCApp DKTail -> LCApp DKTail
-captureLifts mc = do
+captureLifts :: SrcLoc -> LCApp DKTail -> LCApp DKTail
+captureLifts at mc = do
   lr <- liftIO $ newIORef mempty
   c <- local (\e -> e {eLifts = Just lr}) mc
   ls <- liftIO $ readIORef lr
-  return $ foldr DK_Com c ls
+  return $ DK_LiftBoundary at $ foldr DK_Com c ls
 
 class LiftCon a where
   lc :: LCAppT a
@@ -303,7 +303,7 @@ instance LiftCon DKTail where
     DK_If at c t f -> DK_If at c <$> lc t <*> lc f
     DK_Switch at v csm -> DK_Switch at v <$> lc csm
     DK_FromConsensus at1 at2 k ->
-      captureLifts $ DK_FromConsensus at1 at2 <$> lc k
+      captureLifts at1 $ DK_FromConsensus at1 at2 <$> lc k
     DK_While at asn inv cond body k ->
       DK_While at asn inv cond <$> lc body <*> lc k
     DK_Continue at asn -> return $ DK_Continue at asn
@@ -311,6 +311,8 @@ instance LiftCon DKTail where
       DK_ViewIs at vn vk a <$> lc k
     DK_Unreachable at fs m ->
       expect_throw (Just fs) at $ Err_Unreachable m
+    DK_LiftBoundary {} ->
+      impossible "lift boundary before liftcon"
 
 liftcon :: DKProg -> IO DKProg
 liftcon (DKProg at opts sps dli dex dvs k) = do
@@ -347,17 +349,8 @@ fluidRef at fv = do
     Nothing -> impossible $ "fluid ref unbound: " <> show fv <> " at: " <> show at
     Just x -> return x
 
-fluidSet_ :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
-fluidSet_ fv fvv = local (\e@DFEnv {..} -> e {eFVE = M.insert fv fvv eFVE})
-
 fluidSet :: FluidVar -> (SrcLoc, DLArg) -> DFApp a -> DFApp a
-fluidSet fv fvv m = fluidSet_ fv fvv $ more m
-  where
-    more =
-      case fv of
-        FV_thisConsensusTime -> fluidSet_ FV_baseWaitTime fvv
-        FV_thisConsensusSecs -> fluidSet_ FV_baseWaitSecs fvv
-        _ -> id
+fluidSet fv fvv = local (\e@DFEnv {..} -> e {eFVE = M.insert fv fvv eFVE})
 
 withWhileFVMap :: FVMap -> DFApp a -> DFApp a
 withWhileFVMap fvm' = local (\e -> e {eFVMm = Just fvm'})
@@ -456,16 +449,20 @@ df_con = \case
     makeWhile <$> df_con k'
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap at asn
-  DK_FromConsensus at1 at2 t -> do
+  DK_LiftBoundary at t -> do
     -- This was formerly done inside of Eval.hs, but that meant that these refs
     -- and sets would dominate the lifted ones in the step body, which defeats
     -- the purpose of lifting fluid variable interactions, so we instead build
     -- it into this pass
-    tct <- fluidRef at1 FV_thisConsensusTime
-    tcs <- fluidRef at1 FV_thisConsensusSecs
+    tct <- fluidRef at FV_thisConsensusTime
+    tcs <- fluidRef at FV_thisConsensusSecs
     fluidSet FV_lastConsensusTime tct $
       fluidSet FV_lastConsensusSecs tcs $
-        LLC_FromConsensus at1 at2 <$> df_step t
+        fluidSet FV_baseWaitTime tct $
+          fluidSet FV_baseWaitSecs tcs $
+            df_con t
+  DK_FromConsensus at1 at2 t -> do
+    LLC_FromConsensus at1 at2 <$> df_step t
   DK_ViewIs at vn vk mva k -> do
     mva' <- maybe (return $ Nothing) (\eb -> Just <$> df_eb eb) mva
     k' <- df_con k

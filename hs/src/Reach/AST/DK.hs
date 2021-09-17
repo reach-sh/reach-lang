@@ -63,6 +63,7 @@ data DKTail
   | DK_Continue SrcLoc DLAssignment
   | DK_ViewIs SrcLoc SLPart SLVar (Maybe DKExportBlock) DKTail
   | DK_Unreachable SrcLoc [SLCtxtFrame] String
+  | DK_LiftBoundary SrcLoc DKTail
   deriving (Eq, Generic)
 
 instance Pretty DKTail where
@@ -81,6 +82,8 @@ instance Pretty DKTail where
     DK_ViewIs _ vn vk a k ->
       prettyViewIs vn vk a <> hardline <> pretty k
     DK_Unreachable {} -> "unreachable;"
+    DK_LiftBoundary _ k ->
+      "liftBoundary();" <> hardline <> pretty k
 
 data DKBlock = DKBlock SrcLoc [SLCtxtFrame] DKTail DLArg
   deriving (Eq)
