@@ -33,6 +33,7 @@ run_d () {
       -e "REACH_RPC_TLS_PASSPHRASE" \
       -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
       -e "REACH_VERSION" \
+      -e "CI" \
       -u "$(id -ru):$(id -rg)" \
       -v "$TMP:/app/tmp" \
       -v "$(pwd):/app/src" \

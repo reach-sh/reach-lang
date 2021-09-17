@@ -139,6 +139,7 @@ data Var = Var
   , rpcTLSPassphrase :: Text
   , rpcTLSRejectUnverified :: Bool
   , version'' :: ReachVersion
+  , ci :: Bool
   }
 
 data Env = Env
@@ -243,6 +244,7 @@ mkVar = do
     rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
     runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
       >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+  ci <- truthyEnv <$> lookupEnv "CI"
   pure $ Var {..}
 
 script :: App -> App
@@ -719,6 +721,7 @@ compile = command "compile" $ info f d where
     let CompilerOpts {..} = cta_co
     Var {..} <- asks e_var
     let v = versionMajMinPat version''
+    let ci' = if ci then "true" else ""
     liftIO $ do
       diePathContainsParentDir co_source
       maybe (pure ()) diePathContainsParentDir co_mdirDotReach
@@ -767,6 +770,7 @@ compile = command "compile" $ info f d where
             --volume "$$PWD:/app" \
             -u "$(id -ru):$(id -rg)" \
             -e "REACHC_ID=$${ID}" \
+            -e "CI=$ci'" \
             reachsh/reach:$v \
             $args
         fi
