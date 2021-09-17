@@ -45,7 +45,7 @@ clean: hs-clean
 
 .PHONY: build
 build: stack
-	docker run --rm --name repo -p 30000:80 -d reachsh/repository:0.1.4
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  -f Dockerfile.haskell-build-artifacts .
