@@ -1,6 +1,7 @@
 IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
+ALPINE_VERSION="3.14.2"
 
 .PHONY: install-mo
 install-mo:
@@ -43,11 +44,14 @@ clean: hs-clean
 
 .PHONY: build
 build: stack
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  -f Dockerfile.haskell-build-artifacts .
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
+	  --add-host host.docker.internal:172.17.0.1 \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
 	docker build \
@@ -56,6 +60,7 @@ build: stack
 	  -f Dockerfile.reach-cli .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
+	docker container rm -f repo
 
 .PHONY: push
 push:
