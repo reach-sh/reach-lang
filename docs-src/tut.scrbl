@@ -1366,7 +1366,7 @@ We'll see how these three functions are used below.}
 
 @item{Lines 31 through 34 ask if the participant will deploy the contract.}
 
-@item{Lines 36 through 38 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player.}
+@item{Lines 36 through 38 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player when it becomes available.}
 
 @item{Lines 40 through 44 request, parse, and process this information.}
 

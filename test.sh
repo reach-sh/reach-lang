@@ -111,16 +111,6 @@ tealcount () {
 #######
 
 jb
-ci ETH overview
-exit 0
-ci ETH tut-6
-ci ETH tut-8
-ci ALGO overview
-ci ALGO tut-6
-ci ALGO log
-ci ALGO init
-ci ALGO tut-8
-exit 0
 # XXX test tut-9 react
 
 # (cd hs && mk hs-test)

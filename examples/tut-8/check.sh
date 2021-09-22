@@ -54,10 +54,10 @@ to_Alice y
 get_Alice
 to_Alice y
 get_Alice
-INFO=$(echo "$REPLY" | awk -F= '{print $2}')
-get_Alice
 get_Alice
 to_Alice 10
+get_Alice
+INFO=$(echo "$REPLY" | awk -F= '{print $2}')
 
 while [ "x$REPLY" != "xAre you Alice?" ] ; do
   get_Bob

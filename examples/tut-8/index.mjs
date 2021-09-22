@@ -34,8 +34,8 @@ const stdlib = loadStdlib(process.env);
   );
   if (deployCtc) {
     ctc = acc.deploy(backend);
-    const info = await ctc.getInfo();
-    console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
+    ctc.getInfo().then((info) => {
+      console.log(`The contract is deployed as = ${JSON.stringify(info)}`); });
   } else {
     const info = await ask(
       `Please paste the contract information:`,
