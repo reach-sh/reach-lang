@@ -17,7 +17,7 @@ import {
   IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
-  ISimRes,
+  // ISimRes,
   TimeArg,
   ISimTxn,
   deferContract,
@@ -1387,36 +1387,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const compiled = await compileFor(bin, ctcInfo);
     const vr = { compiled, ApplicationID, startRound: allocRound, Deployer };
-    const ctc = await attachP(bin, (async () => ctcInfo)(), eventCache, vr);
-
-    const shouldConstruct = (bin._deployMode === 'DM_constructor');
-    if ( shouldConstruct ) {
-      debug(`constructing`);
-      await ctc.sendrecv({
-        funcNum: 0,
-        evt_cnt: 0,
-        tys: [],
-        args: [],
-        pay: [ bigNumberify(0), [] ],
-        out_tys: [],
-        onlyIf: true,
-        soloSend: true,
-        timeoutAt: undefined,
-        sim_p: (async (txn:Recv): Promise<ISimRes<BigNumber>> => {
-          void(txn);
-          return {
-            txns: [],
-            mapRefs: [],
-            isHalt: false
-          };
-        }),
-      });
-      debug(shad, 'application constructed');
-    } else {
-      debug(shad, 'application NOT constructed');
-    }
-
-    return ctc;
+    return await attachP(bin, (async () => ctcInfo)(), eventCache, vr);
   };
 
   const implNow = { stdlib: compiledStdlib };
