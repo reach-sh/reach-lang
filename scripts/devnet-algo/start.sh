@@ -16,6 +16,10 @@ else
   echo Starting debugger
   mkdir -p /dbg
   export TEAL_DEBUGGER_DIR=/dbg
+  (while true; do
+    sleep 30;
+    /rotate_dbg.sh
+  done) &
 fi
 
 # Disable telemetry
