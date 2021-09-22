@@ -366,8 +366,7 @@ ctc.getInfo() => Promise<ctcInfo>
  Returns a Promise for an object that may be given to `attach` to construct a Reach contract abstraction representing this contract.
 This object may be stringified with `JSON.stringify` for printing and parsed again with `JSON.parse` without any loss of information.
 The Promise will only be resolved after the contract is actually deployed on the network.
-If you are using `{deployMode: 'firstMsg'}`,
-avoid blocking on this Promise with `await` until after the first `publish` has occurred.
+You cannot block on this Promise with `await` until after the first `publish` has occurred.
 Awaiting `getInfo` too early may cause your program to enter a state of deadlock.
 
 ---
@@ -451,7 +450,7 @@ Like `waitUntilSecs`, but waits for a certain network seconds deadline.
 ---
 ${ref((quote js), "wait")}
 ```js
-wait(timedelta, onProgress?) => Promise<time>
+wait(timedelta, onProgress?) => Promise<networkTime>
 ```
 
 
@@ -468,6 +467,24 @@ connector : Connector
 
 
 Represents the `Connector` the `stdlib` uses.
+
+---
+
+${ref((quote js), "setQueryLowerBound")}
+```js
+setQueryLowerBound(networkTime) => void
+```
+
+
+Sets the lower bound on querying the network for events.
+The argument to this function is a network time.
+By default, Reach will query for events from time 0.
+This default is usually fine, but on certain networks like Conflux,
+it can be very slow.
+You can use this function to tell Reach to only query from a given network time onwards,
+which can speed up event log querying significantly on Conflux.
+If you use the reach stdlib to `deploy` or `attach` to a contract,
+the specified lower bound must be no later than the time at which the contract was deployed.
 
 ## {#ref-frontends-js-provider} Provider Selection
 

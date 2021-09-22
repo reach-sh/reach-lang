@@ -6,9 +6,24 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.4: 2021/09 - present
+## 0.1.5: 2021/09 - present
 
-Version 0.1.4 is the current Reach release candidate version.
+Version 0.1.5 is the current Reach release candidate version.
+
++ 2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use `relativeTime` instead.
++ 2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the `firstMsg` deployment mode.
+
+If you would like the old behavior, then you'll want to create a new participant class, perhaps called `Constructor`, that exists simply to run `Constructor.publish(); commit();`, but we expect that almost no one actually wants the old behavior exactly.
+Instead, you probably want to select one of your existing participants and assign the first publication to them.
++ 2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release and older, deployed contracts will not work with this version.
+
+
+## 0.1.4: 2021/09 - 2021/09
+
+Version 0.1.4 is the current Reach release version.
+
++ 2021/09/15: `muldiv` added.
++ 2021/09/08: Add `--stop-after-eval` and `--verify-timeout` options to `reach compile`.
 + 2021/08/31: Removed `getSignStrategy` and `setSignStrategy` in favor of `setWalletFallBack` and `walletFallback`.
 + 2021/08/31: Algorand devnet updated to versions 2.9.1 and 2.6.1
 + 2021/08/31: The `reach` command-line has changed:
@@ -32,7 +47,7 @@ Authors of existing projects which contain unmodified `Makefile` or `docker-comp
 
 ## 0.1.3: 2021/07 - 2021/08
 
-Version 0.1.3 is the current Reach release version.
+Version 0.1.3 is an old Reach release version.
 
 + 2021/08/31: Added `acc.setStorageLimit` to JavaScript standard library for Conflux.
 + 2021/08/16: Allow `continue` in step in some cases.
@@ -59,7 +74,7 @@ Version 0.1.3 is the current Reach release version.
 
 ## 0.1.2: 2020/09 - 2021/07
 
-Version 0.1.2 is the current Reach release version.
+Version 0.1.2 is an old Reach release version.
 
 It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 

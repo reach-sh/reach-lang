@@ -271,11 +271,6 @@ We need to decide how to deploy the contract, as well as what kind of user inter
 
 **Decide how you will deploy and use this application.**
 
-In this case, it is a very simple program, so we'll use a simple and efficient contract [deployment mode](##guide-deploymode): `'firstMsg'`.
-This means that the contract won't exist on the consensus network until Alice sends her first message.
-This is a good choice for most contracts, if it is allowed.
-(As [the guide discusses](##guide-deploymode), some applications cannot be deployed like this.)
-
 ::: note
 Unfortunately, on many consensus networks, like Ethereum and Algorand, this application is dangerous to run.
 The problem is that a malicious miner, like Eve, can intercept Bob's message that provides him the funds, refuse to forward it through to the consensus network, take the password from it, and submit it for her own account.

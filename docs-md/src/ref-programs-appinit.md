@@ -37,13 +37,6 @@ setOptions({});
 
 The ${defn("compilation options")} for the DApp may be set by calling `setOptions(OBJ_EXPR);` where `OBJ_EXPR` is an object with the following keys and values:
 
-+ ${ref((quote rsh), "deployMode")} `deployMode`
-
-`'constructor'` (default) or `'firstMsg'`
-
-Determines whether contract should be deployed independently (`'constructor'`) or as part of the first publication (`'firstMsg'`).
-If deployed as part of the first publication, then the first publication must precede all uses of `wait` and `.timeout`.
-See [the guide on deployment modes](##guide-deploymode) for a discussion of why to choose a particular mode.
 + ${ref((quote rsh), "verifyArithmetic")} `verifyArithmetic`
 
 `true` or `false` (default)

@@ -62,8 +62,6 @@ In Algorand, network time corresponds to round numbers and network seconds corre
 (This is because the current round's timestamp is not determined until after it is finalized.
 This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
 
-This connector does not support different `deployMode`s and treats them all as `'constructor'`.
-
 The connector provides a binding named `ALGO` to
 backends.
 
@@ -89,6 +87,65 @@ Backends must respect the following environment variables:
 It defaults to `http://localhost:12537`.
 + `CFX_NETWORK_ID` is used to determine the Conflux network id.
 It defaults to `999`.
+
+
+### {#cfx-faq} FAQ
+
+#### {#cfx-faq-mainnet} How do I run my Reach DApp on CFX TestNet or MainNet?
+
+You can add the following JavaScript near the beginning of your index.js or index.mjs file
+in order to run on Conflux TestNet:
+
+```js
+reach.setProviderByName('TestNet');
+```
+
+
+Or this to run on Conflux MainNet:
+
+```js
+reach.setProviderByName('MainNet');
+```
+
+
+It is strongly recommended that you also use `setQueryLowerBound`
+to avoid waiting for unnecessary queries.
+For example, this code snippet sets the lower bound at 2000 blocks ago:
+
+```js
+const now = await reach.getNetworkTime();
+reach.setQueryLowerBound(reach.sub(now, 2000));
+```
+
+
+#### {#cfx-faq-query} Why is DApp startup very slow? Why do I need to use `setQueryLowerBound`?
+
+DApp startup doesn't have to be slow.
+Reach relies on querying Conflux event logs in order to run the DApp.
+The Conflux network does not yet provide fast APIs for querying event logs for a given contract across all time,
+so instead, Reach incrementally queries across chunks of 1000 blocks at a time.
+You can use `setQueryLowerBound` to help Reach know at what block number to start querying,
+so that it does not have to start querying at the beginning of time, which can take quite a while.
+
+#### {#cfx-faq-cplocal} How can I use ConfluxPortal with the Reach devnet?
+
+If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
+you can try configuring ConfluxPortal to use a custom RPC endpoint:
+
++ Click the network dropdown in Conflux Portal
++ Select: Custom RPC
++ Use RPC url: http://127.0.0.1:12537
+
+
+If your locally-running Conflux devnet restarts,
+you may find that you need to reset ConfluxPortal's account history,
+which you can do like so:
+
++ Select the desired account
++ Click the profile image of the account (top-right)
++ Click Settings > Advanced > Reset Account > (confirm) Reset
++ Switch to a different network and back
++ CTRL+SHIFT+R to hard-reset the webpage.
 
 
 ## {#ref-network-eth} Ethereum

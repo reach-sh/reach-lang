@@ -596,16 +596,14 @@ or move it to the end of your `while` loop.
 
 ## {#RE0027} RE0027
 
-This error indicates that there is an attempt to `wait` or `timeout` before the first publication
-in the `firstMsg` deploy mode. This situation is not allowed because the `firstMsg` deploy mode,
-waits to deploy the contract along with the first publication.
+This error indicates that there is an attempt to consult the consensus time before the first publication.
+This situation is not allowed, because before the first publication, there is no consensual agreement on time in the decentralized computation.
 
 ```reach
 export const main = Reach.App(() => {
-  setOptions({ deployMode: 'firstMsg' });
   const A = Participant('Alice', {});
   deploy();
-  wait(1);
+  wait(relativeTime(1));
 });
 ```
 
@@ -614,11 +612,10 @@ You can fix this by having a `Participant` `publish` first:
 
 ```reach
 export const main = Reach.App(() => {
-  setOptions({ deployMode: 'firstMsg' });
   const A = Participant('Alice', {});
   deploy();
   A.publish();
-  wait(1);
+  wait(relativeTime(1));
 });
 ```
 
@@ -1910,12 +1907,10 @@ or wrapping the necessary code into a `try/catch` block.
 
 ## {#RE0102} RE0102
 
-This error indicates that you are attempting to `pay` on the first publication of
-a program that uses `setOptions({ deployMode: 'firstMsg' })`. This is not possible
-because the contract will not yet exist. Therefore, it cannot receive tokens.
+This error indicates that you are attempting to `pay` on the first publication.
+This is not possible, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
 
-You can fix this by either using a different `deployMode` or paying into the
-contract after the first publication.
+You can fix this by paying into the contract after the first publication.
 
 ## {#RE0103} RE0103
 

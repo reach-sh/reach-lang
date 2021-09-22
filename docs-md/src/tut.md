@@ -494,8 +494,7 @@ Bob went from 10 to 14.999999999999978246.
 ---
 
 Why does Alice win slightly less than Bob when she wins?
-She has to pay to deploy the contract, because she calls `acc.deploy` in her frontend.
-The [guide section on deployment](##guide-deploymode) discusses how to avoid this difference.
+She has to pay to deploy the contract, because she publishes the first message in her frontend.
 :::
 
 Alice is doing okay - if she keeps this up, she'll make a fortune on _Rock, Paper, Scissors!_!
@@ -1215,7 +1214,7 @@ ${code("/examples/tut-8/index.mjs", 13, 29)}
 ${code("/examples/tut-8/index.mjs", 30, 46)}
 
 + Lines 31 through 34 ask if the participant will deploy the contract.
-+ Lines 36 through 38 deploy it and print out public information (`ctc.getInfo`) that can be given to the other player.
++ Lines 36 through 38 deploy it and print out public information (`ctc.getInfo`) that can be given to the other player when it becomes available.
 + Lines 40 through 44 request, parse, and process this information.
 
 
@@ -1603,6 +1602,28 @@ Similarly, to run with Conflux:
 $ REACH_CONNECTOR_MODE=CFX ./reach react
 ```
 
+
+::: note
+To adapt this example for Conflux TestNet or MainNet,
+you can add this after the imports:
+
+```js
+reach.setProviderByName('TestNet'); // or 'MainNet'
+```
+
+
+And add something like this at the start of of `componentDidMount`:
+```js
+async componentDidMount() {
+  const now = await reach.getNetworkTime();
+  reach.setQueryLowerBound(reach.sub(now, 2000));
+  // ...
+}
+```
+
+
+For details, see [the Conflux FAQ](##cfx-faq-mainnet).
+:::
 
 --- 
 If you'd like to instead use Reach in your own JavaScript project,

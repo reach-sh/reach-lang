@@ -73,6 +73,10 @@ Using this flag will create a `.reach` directory for your project.
 This directory stores your project's ${defn("lockfile")}, which is how Reach pins remote packages to specific versions.
 It is recommended that you commit the `.reach` directory to source control.
 Deleting this directory is also safe; it can easily be rebuilt by using the `--install-pkgs` flag again; in fact, this is the best way to upgrade your packages.
++ `--stop-after-eval` --- Stops the compilation process before verification and producing output files.
+This might be useful for performing syntax and type checking quickly.
++ `--verify-timeout` `TIMEOUT-MS` --- Sets the timeout of individual verification theorems, in milliseconds.
+The default value is 2 minutes.
 
 
 ### {#ref-usage-init} `reach init`

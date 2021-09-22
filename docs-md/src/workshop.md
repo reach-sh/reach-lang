@@ -207,7 +207,7 @@ ${workshopDeps("workshop-race")}
 
 In this workshop, we implement a trivial [non-fungible token](https://en.wikipedia.org/wiki/Non-fungible_token) (NFT) where a single creator creates a unique item and initial owns it.
 The creator and all subsequent owners may transfer ownership of the unique item to a different owner and so on.
-This workshop uses a participant class to represent owners and is a kind of trial temple before we explore more interesting and in-depth variants of the NFT concept.
+This workshop uses a participant class to represent owners and is a kind of trivial template before we explore more interesting and in-depth variants of the NFT concept.
 
 ${workshopWIP("nft-dumb")}
 

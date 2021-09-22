@@ -1570,7 +1570,7 @@ lastConsensusTime()
 
 
 The ${defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
-This may not be available if there was no such previous publication, such as at the beginning of an application where `deployMode` is `'firstMsg'`.
+This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
 ::: note
 Why is there no `thisConsensusTime`?
@@ -1617,7 +1617,7 @@ The `absoluteTime` and `absoluteSecs` are equivalent to `Left` and `Right` varia
 
 The `relativeTime` and `relativeSecs` functions add `baseWaitTime` and `baseWaitSecs` to their arguments before tagging with the appropriate variant.
 
-If a time argument is required, an integer value is allowed and is interpreted as a `relativeTime`.
+If a time argument is required, an integer value is allowed and is interpreted as a `relativeTime`, but this behavior is deprecated and you will see a warning.
 
 ### `makeDeadline`
 
@@ -1698,6 +1698,21 @@ compose(f, g)
  Creates a new function that applies its argument to `g`, then pipes the result to the function `f`.
 The argument type of `f` must be the return type of `g`.
 
+### `muldiv`
+
+::: note
+Currently, wide arithmetic operations are only suported on Algorand.
+:::
+
+${ref((quote rsh), "muldiv")}
+```reach
+muldiv(a, b, c) 
+```
+
+
+ Multiplies `a` by `b`, then immediately divides the product by `c`.
+The intermediate value may be larger than `UInt.max` if the connector supports wide arithmetic operations.
+The resulting quotient must be less than `UInt.max`.
 
 ### `sqrt`
 
