@@ -584,15 +584,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return impl;
     }
 
-    const deployMode = bin._deployMode;
-    switch (deployMode) {
-      case 'DM_firstMsg':
-        return attachDeferDeploy();
-      case 'DM_constructor':
-        return performDeploy();
-      default:
-        throw Error(`Unrecognized deployMode: ${deployMode}`);
-    };
+    return attachDeferDeploy();
   };
 
   const attach = (
