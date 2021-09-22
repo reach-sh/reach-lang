@@ -110,53 +110,17 @@ tealcount () {
 
 #######
 
-c hs/t/y/big-d8cff.rsh
-c hs/t/y/pr265.rsh
-exit 0
-r examples/realtime
-exit 0
-ci ALGO log
-exit 0
-
 jb
-
-# c users/duoswap-core/index.rsh
-# c examples/race/index.rsh
-# c hs/t/y/pr265.rsh
-# c examples/overview/index.rsh
-# ci ETH overview
-# ci ETH race
-# ci ALGO overview
-# ci ALGO race
-c examples/tut-8/index.rsh
-ci ALGO tut-6
+ci ETH overview
 exit 0
-
-# c hs/t/n/Err_IllegalEffPosition.rsh
-# c hs/t/y/timeout_calc.rsh
-# c examples/workshop-trust-fund/index.rsh
-# err Err_Token_NotCreated
-
-# c hs/t/y/big-d8cff.rsh
-# tealcount1 hs/t/y big-d8cff
-
-#r examples/overview # XXX test debigger
-#r examples/tut-7 # XXX test debigger
-
-# GAVE UP
-# ci ETH atomic-swap-auction
-# BAD
-# ci ALGO rent-seeking
-# ci CFX atomic-swap-auction
-# ci CFX cache-events
-# ci ETH tut-6
-# ci CFX tut-6
+ci ETH tut-6
+ci ETH tut-8
+ci ALGO overview
 ci ALGO tut-6
+ci ALGO log
+ci ALGO init
+ci ALGO tut-8
 exit 0
-ci CFX raffle
-ci CFX tut-7-array
-ci CFX workshop-relay
-
-# (cd examples/abstract-simul && make build)
+# XXX test tut-9 react
 
 # (cd hs && mk hs-test)
