@@ -66,6 +66,7 @@ COPY prime-algod.sh /
 RUN /prime-algod.sh
 
 ### Our stuff
+COPY rotate_dbg.sh /
 COPY start.sh /
 
 EXPOSE 4180
