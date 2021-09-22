@@ -62,6 +62,13 @@ build: stack
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 	docker container rm -f repo
 
+.PHONY: build-m1
+build-m1:
+	docker build \
+	  --platform linux/arm64 \
+	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS)-m1:latest \
+	  -f Dockerfile.haskell-build-artifacts .
+
 .PHONY: push
 push:
 	../scripts/docker-push.sh $(IMG_REACHC)
