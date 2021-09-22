@@ -2,26 +2,26 @@ pragma abicoder v2;
 
 pragma solidity ^0.8.0;
 
-struct T2 {
-  address payable v56;
-  }
-struct T5 {
-  uint256 v71;
+struct T0 {
+  address payable v54;
   }
 struct T6 {
-  T2 svs;
-  T5 msg;
+  uint256 v79;
+  }
+struct T7 {
+  T0 svs;
+  T6 msg;
   }
 
 contract LogAttack2  {
   constructor () payable {
   }
 
-  event e2(T6 _a);
+  event e2(T7 _a);
   function m2() external payable {
-    T6 memory a;
-    a.svs.v56 = payable(msg.sender);
-    a.msg.v71 = 1337;
+    T7 memory a;
+    a.svs.v54 = payable(msg.sender);
+    a.msg.v79 = 1337;
     emit e2(a);
   }
 }

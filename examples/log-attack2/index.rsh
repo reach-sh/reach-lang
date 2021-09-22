@@ -9,16 +9,18 @@ export const main = Reach.App(() => {
   const Bob = Participant('Bob', {
     check: Fun([UInt], Null),
   });
-    deploy();
-    Alice.only(() => {
-      const [acct, val] = declassify(interact.get()); 
-    });
-    Alice.publish(acct);
-    const log2 = remote(acct, LogAttack2);
-    log2.m2();
-    commit();
-    Alice.publish(val);
-    commit();
-    Bob.interact.check(val);
-    exit();
+  deploy();
+  Alice.publish();
+  commit();
+  Alice.only(() => {
+    const [acct, val] = declassify(interact.get()); 
   });
+  Alice.publish(acct);
+  const log2 = remote(acct, LogAttack2);
+  log2.m2();
+  commit();
+  Alice.publish(val);
+  commit();
+  Bob.interact.check(val);
+  exit();
+});

@@ -11,6 +11,8 @@ export const main = Reach.App(() => {
     check: Fun([Address, UInt], Null),
   });
   deploy();
+    Alice.publish();
+    commit();
     Alice.only(() => {
       const [acct, amt] = declassify(interact.get());
     });
