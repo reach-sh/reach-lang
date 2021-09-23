@@ -11,6 +11,7 @@ export const main =
     View('Main', { last: Address, i: UInt }),
   ],
   (A, B, vMain) => {
+    A.publish(); commit();
     const checkView = (x) =>
       A.only(() => interact.checkView(x));
 

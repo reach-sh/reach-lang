@@ -12,6 +12,7 @@ export const main = Reach.App(
     }),
   ],
   (A, vMain) => {
+    A.publish(); commit();
     A.only(() => interact.checkView(MUInt.None()));
     A.publish();
     vMain.i.set(1);
