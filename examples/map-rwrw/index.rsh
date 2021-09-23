@@ -23,7 +23,7 @@ export const main = Reach.App(() => {
 
   m[A] = a + 1;
   require(read() == a + 1);
-  
+
   m[A] = a + 2;
   require(read() == a + 2);
 
