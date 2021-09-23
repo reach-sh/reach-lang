@@ -852,10 +852,9 @@ const reNetify = (x: string): NV => {
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
-  const shad = thisAcc.addr.substring(2, 6);
-  let label = shad;
+  let label = thisAcc.addr.substring(2, 6);
   const pks = T_Address.canonicalize(thisAcc);
-  debug(shad, ': connectAccount');
+  debug(label, ': connectAccount');
 
   const selfAddress = (): CBR_Address => {
     return pks;
@@ -877,8 +876,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return ctcInfo;
     };
     const { compiled, ApplicationID, startRound, Deployer } =
-      vr || (await verifyContract_(ctcInfo, bin, eventCache));
-    debug(shad, 'attach', {ApplicationID, startRound} );
+      vr || (await verifyContract_(label, ctcInfo, bin, eventCache));
+    debug(label, 'attach', {ApplicationID, startRound} );
     let realLastRound = startRound;
 
     const escrowAddr = compiled.escrow.hash;
@@ -908,6 +907,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const didOptIn = async (): Promise<boolean> =>
       ((await getLocalState(thisAcc.addr)) !== undefined);
     const doOptIn = async (): Promise<void> => {
+      debug(`doOptIn`);
       await sign_and_send_sync(
         'ApplicationOptIn',
         thisAcc,
@@ -941,7 +941,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       void(toks); // <-- rely on simulation because of ordering
 
       const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeoutAt}`;
+      const dhead = `${label}: ${label} sendrecv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
       const [ svs, msg ] = argsSplit(args, evt_cnt);
@@ -1169,7 +1169,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const fromBlock_summand = isCtor ? 0 : 1;
 
       const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} recv ${funcName} ${timeoutAt}`;
+      const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
       while ( true ) {
@@ -1353,7 +1353,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
   const deployP = async (bin: Backend): Promise<Contract> => {
     must_be_supported(bin);
-    debug(shad, 'deploy');
+    debug(label, 'deploy');
     const algob = bin._Connectors.ALGO;
     const { viewKeys, mapDataKeys } = algob;
     const { appApproval, appClear } = await compileFor(bin, 0);
@@ -1633,19 +1633,19 @@ async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: Ev
 }
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
-  return verifyContract_(info, bin, new EventCache());
+  return verifyContract_('', info, bin, new EventCache());
 }
 
-const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
+const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
   const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
 
-  let dhead = `verifyContract`;
+  let dhead = `${label}: verifyContract`;
 
   const chk = (p: boolean, msg: string) => {
     if ( !p ) {
-      throw Error(`verifyContract failed: ${msg}`);
+      throw Error(`${dhead} failed: ${msg}`);
     }
   };
   const chkeq = (a: any, e:any, msg:string) => {
@@ -1655,26 +1655,16 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   };
   const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
-  // XXX it should be okay to wait in this function
-  /*
-  while ( ! ctxn ) {
-    const cres = await doQuery(dhead, cquery);
-    if ( ! cres.succ ) {
-      if ( cres.round < creationRound ) {
-        debug(dhead, `-- waiting for`, {creationRound});
-        await indexer_statusAfterBlock(creationRound);
-        continue;
-      } else {
-        chk(false, `Not created in stated round: ${creationRound}`);
-      }
-    } else {
-      ctxn = cres.txn;
-    }
-  }
-  */
-
   const client = await getAlgodClient();
-  const appInfo = await client.getApplicationByID(ApplicationID).do();
+  let appInfo; let err;
+  try {
+    appInfo = await client.getApplicationByID(ApplicationID).do();
+  } catch (e) {
+    err = e;
+  }
+  if ( appInfo === undefined ) {
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(err)}`);
+  }
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p, `Cannot lookup ApplicationId`);
