@@ -1,8 +1,9 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.Verify.SMT (verify_smt) where
 
 import qualified Control.Exception as Exn
 import Control.Monad
-import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
@@ -355,9 +356,10 @@ smtDigestCombine at args =
 
 --- Verifier
 data ResultDesc
-  = RD_UnsatCore [String]
-  | RD_Model SExpr
-
+  -- = RD_UnsatCore [String]
+  = RD_Model SExpr
+  deriving (Show, Read)
+type SResult = (SMT.Result, Maybe ResultDesc)
 
 -- A computation is first stored into an unamed var, then `const`
 -- assigned to a variable. So, choose the second variable inserted
@@ -545,8 +547,8 @@ display_fail tat f tk mmsg mrd mdv timeout = do
     Just dv -> do
       let pm = case mrd of
             Nothing -> mempty
-            --- FIXME Do something useful here
-            Just (RD_UnsatCore _uc) -> mempty
+            --- XXX Gather these and use them
+            -- Just (RD_UnsatCore _uc) -> mempty
             Just (RD_Model m) -> parseModel m
       pm_str_val <- parseModel2 pm
       lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
@@ -597,55 +599,50 @@ smtAssert se = do
       \(e :: Exn.SomeException) ->
         impossible $ safeInit $ drop 12 $ show e
 
-checkUsing :: App SMT.Result
-checkUsing = do
+fromSExpr :: Read a => SExpr -> a
+fromSExpr = \case
+  Atom s ->
+    case readMaybe s of
+      Just x -> x
+      Nothing -> impossible $ "fromSExpr: " <> show s
+  List _ -> impossible "fromSExpr"
+
+toSExpr :: Show a => a -> SExpr
+toSExpr = Atom . show
+
+deriving instance Read Result
+deriving instance Read SExpr
+
+checkUsing :: TheoremKind -> App SResult
+checkUsing tk = do
   smt <- ctxt_smt <$> ask
-  res <- liftIO $ SMT.command smt $ Atom "reachCheckUsing"
-  case res of
-    Atom "unsat" -> return Unsat
-    Atom "unknown" -> return Unknown
-    Atom "sat" -> return Sat
-    _ ->
-      impossible $
-        unlines
-          [ "Unexpected result from the SMT solver:"
-          , "  Expected: unsat, unknown, or sat"
-          , "  Result: " ++ SMT.showsSExpr res ""
-          ]
+  fromSExpr <$> (liftIO $ SMT.command smt $ List [ Atom "reachCheckUsing", toSExpr $ isPossible tk ])
 
 verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
   smtAssert $ if isPossible tk then se else smtNot se
-  r <- checkUsing
+  r <- checkUsing tk
   verify1r at mf tk se mmsg r
 
-verify1r :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Result -> App ()
+verify1r :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SResult -> App ()
 verify1r at mf tk se mmsg r = do
-  smt <- ctxt_smt <$> ask
   case isPossible tk of
     True ->
       case r of
-        Unknown -> bady $ return Nothing
-        Unsat ->
-          badn $
-            liftM (Just . RD_UnsatCore) $
-              liftIO $ SMT.getUnsatCore smt
-        Sat -> good
+        (Unknown, _) -> bady Nothing
+        (Unsat, mrd) -> badn mrd
+        (Sat, _) -> good
     False ->
       case r of
-        Unknown -> bady $ return Nothing
-        Unsat -> good
-        Sat ->
-          badn $
-            liftM (Just . RD_Model) $
-              liftIO $ SMT.command smt $ List [Atom "get-model"]
+        (Unknown, _) -> bady Nothing
+        (Unsat, _) -> good
+        (Sat, mrd) -> badn mrd
   where
     good = void $ (liftIO . incCounter . vst_res_succ) =<< (ctxt_vst <$> ask)
     badn = bad_ False
     bady = bad_ True
-    bad_ timeout mgetm = do
-      mm <- mgetm
+    bad_ timeout mm = do
       dr <- ctxt_displayed <$> ask
       dspd <- liftIO $ readIORef dr
       mdv <-
@@ -1313,10 +1310,10 @@ smt_s = \case
                 case when' of
                   -- It is possible that this is bad, because maybe there's
                   -- something wrong with the whole context
-                  Atom "true" -> return Sat
-                  Atom "false" -> return Unsat
-                  _ -> smtAssert when' >> checkUsing
-              case r of
+                  Atom "true" -> return (Sat, Nothing)
+                  Atom "false" -> return (Unsat, Nothing)
+                  _ -> smtAssert when' >> (checkUsing TWhen)
+              case fst r of
                 -- If this context is satisfiable, then whena can be true, so
                 -- we need to evaluate it
                 Sat -> this_case
@@ -1324,8 +1321,7 @@ smt_s = \case
                 -- be true, so if we go try to evaluate it, then we will fail
                 -- all subsequent theorems
                 Unsat -> return ()
-                Unknown ->
-                  verify1r at [] TWhen when' Nothing Unknown
+                Unknown -> verify1r at [] TWhen when' Nothing r
             False -> this_case
     mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 
@@ -1610,7 +1606,22 @@ newSolverSet long_i p a mkl = do
   (tlc, tl) <- mkl ""
   Solver tc te <- SMT.newSolver p a tl
   let c = \case
-        Atom "reachCheckUsing" -> do
+        List [ Atom "reachCheckUsing", iptks ] -> do
+          let iptk :: Bool = fromSExpr iptks
+          let after ac rs = do
+                let r =
+                      case rs of
+                        Atom "sat" -> Sat
+                        Atom "unsat" -> Unsat
+                        Atom "unknown" -> Unknown
+                        _ -> impossible $ "reachCheckUsing " <> show rs
+                let f x y = (Just . x) <$> (ac $ List [ Atom y ])
+                mrd <-
+                  case (iptk, r) of
+                    -- (True, Unsat) -> f RD_UnsatCore "get-unsat-core"
+                    (False, Sat) -> f RD_Model "get-model"
+                    _ -> return Nothing
+                return $ toSExpr (r, mrd)
           tc (reachCheckUsing short_a) >>= \case
             Atom "unknown" -> do
               sn <- incCounter subc
@@ -1618,9 +1629,10 @@ newSolverSet long_i p a mkl = do
               Solver sc se <- SMT.newSolver p a sl
               readIORef rib >>= traverse_ (traverse_ sc)
               r <- sc (reachCheckUsing long_a)
+              x <- after sc r
               void $ doClose slc se
-              return r
-            r -> return r
+              return x
+            r -> after tc r
         s@(List [ Atom "push", Atom "1" ]) -> do
           modifyIORef rib $ seqPush mempty
           tc s
@@ -1632,6 +1644,24 @@ newSolverSet long_i p a mkl = do
           tc s
   let e = doClose tlc te
   return $ Solver c e
+
+--  res <- liftIO $ SMT.command smt $ Atom "reachCheckUsing"
+--  case res of
+--    Atom "unsat" -> return Unsat
+--            liftM (Just . RD_UnsatCore) $
+--              liftIO $ SMT.getUnsatCore smt
+--    Atom "unknown" -> return Unknown
+--    Atom "sat" -> return Sat
+--          badn $
+--            liftM (Just . RD_Model) $
+--              liftIO $ SMT.command smt $ List [Atom "get-model"]
+--    _ ->
+--      impossible $
+--        unlines
+--          [ "Unexpected result from the SMT solver:"
+--          , "  Expected: unsat, unknown, or sat"
+--          , "  Result: " ++ SMT.showsSExpr res ""
+--          ]
 
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
@@ -1647,8 +1677,8 @@ verify_smt vst lp prog args = do
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
   smt <- newSolverSet vo_timeout prog args mkLogger
-  unlessM (SMT.produceUnsatCores smt) $
-    impossible "Prover doesn't support possible?"
+  --unlessM (SMT.produceUnsatCores smt) $
+  --  impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
   let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
   case vo_mvcs of
