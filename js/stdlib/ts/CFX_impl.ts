@@ -401,4 +401,7 @@ export const providerLib = {
 export const _warnTxNoBlockNumber = false; // XXX ?
 export const standardUnit = 'CFX';
 export const atomicUnit = 'Drip';
-export const validQueryWindow = 1000;
+
+// This can probably be 999, but Dan is superstitious,
+// and wants to avoid off-by-ones by a larger margin
+export const validQueryWindow = 990;
