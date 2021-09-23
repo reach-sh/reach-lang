@@ -2,6 +2,7 @@
 
 IMG='reachsh/reach-cli:latest'
 TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
+CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
 export TMP
 
 run_d () {
@@ -19,6 +20,8 @@ run_d () {
       --dir-project-host="$(pwd)" \
       --dir-tmp-container="$TMP" \
       --dir-tmp-host="$TMP" \
+      --dir-config-container="$CNF" \
+      --dir-config-host="$CNF" \
       "$@"
   else
     docker run -t --rm \
@@ -35,9 +38,10 @@ run_d () {
       -e "REACH_VERSION" \
       -e "CI" \
       -u "$(id -ru):$(id -rg)" \
-      -v "$TMP:/app/tmp" \
       -v "$(pwd):/app/src" \
-      "$IMG" --dir-project-host="$(pwd)" --dir-tmp-host="$TMP" "$@"
+      -v "$TMP:/app/tmp" \
+      -v "$CNF:/app/config" \
+      "$IMG" --dir-project-host="$(pwd)" --dir-tmp-host="$TMP" --dir-config-host="$CNF" "$@"
   fi
 }
 

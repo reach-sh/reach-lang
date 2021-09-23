@@ -9,7 +9,7 @@ import Data.Bits
 import Data.Char
 import Data.Functor.Identity
 import Data.IORef
-import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
+import Data.Text (Text, intercalate, pack, unpack, stripEnd)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import Safe
@@ -148,6 +148,8 @@ data Env = Env
   , e_dirPwdHost :: FilePath
   , e_dirTmpContainer :: FilePath
   , e_dirTmpHost :: FilePath
+  , e_dirConfigContainer :: FilePath
+  , e_dirConfigHost :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
@@ -223,11 +225,18 @@ truthyEnv = \case
   Nothing -> False
   Just s -> not $ elem (map toLower s) [ "", "0", "false", "f", "#f", "no", "off", "n" ]
 
-mkVar :: IO Var
-mkVar = do
+mkVar :: FilePath -> IO Var
+mkVar cnf = do
   let packed = pure . pack
   let q e n = lookupEnv e >>= maybe n packed
   let m e n f = lookupEnv e >>= maybe n (\case "" -> n; j -> f j)
+  let def' p d = ifM (not <$> doesFileExist cnf) (pure d)
+        $ (filter (p' `L.isPrefixOf`) . lines <$> readFile cnf) >>= \case
+            [] -> pure d
+            cs -> pure $ case L.stripPrefix p' (last cs) of
+              Just c | length c > 0 -> c
+              _ -> d
+        where p' = p <> "="
   rpcPort <- q "REACH_RPC_PORT" (pure "3000")
   rpcServer'' <- q "REACH_RPC_SERVER" (pure "127.0.0.1")
   rpcKey <- q "REACH_RPC_KEY" (pure defRPCKey)
@@ -241,9 +250,11 @@ mkVar = do
   reachEx <- lookupEnv "REACH_EX"
     >>= maybe (die "Unset `REACH_EX` environment variable") packed
   connectorMode <- do
-    rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
+    let p = "REACH_CONNECTOR_MODE"
+    let d = "ETH-devnet"
+    rcm <- m p (def' p d) (pure . id)
     runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
-      >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+      >>= either (const . die $ "Invalid `" <> p <> "`: " <> rcm) pure
   ci <- truthyEnv <$> lookupEnv "CI"
   pure $ Var {..}
 
@@ -643,6 +654,37 @@ switchQuiet = switch
   $ long "quiet"
  <> help "Withhold progress messages"
 
+mkEnv :: IORef Effect -> Maybe FilePath -> Maybe Var -> IO (Parser Env)
+mkEnv eff mf mv = do
+  let strConfC = strOption (long "dir-config-container" <> value "/app/config" <> internal)
+  let confC = fmap (\(c, a) -> (c </> "config", a)) . execParser . flip info forwardOptions $ (,)
+        <$> strConfC
+        <*> manyArgs "the void"
+  (cnf, _) <- maybe confC (pure . (, [""])) mf
+  var <- maybe (mkVar cnf) pure mv
+  pure $ Env
+    <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
+    <*> strOption (long "dir-project-container" <> value "/app/src" <> internal)
+    <*> strOption (long "dir-project-host" <> internal)
+    <*> strOption (long "dir-tmp-container" <> value "/app/tmp" <> internal)
+    <*> strOption (long "dir-tmp-host" <> internal)
+    <*> (strConfC *> pure cnf)
+    <*> strOption (long "dir-config-host" <> internal)
+    <*> switch (long "emit-raw" <> internal)
+    <*> pure eff
+    <*> pure var
+
+forwardedCli :: Text -> AppT Text
+forwardedCli n = do
+  Env {..} <- ask
+  env <- liftIO $ mkEnv e_effect (Just e_dirConfigContainer) (Just e_var)
+  (_, _, _, f) <- liftIO . execParser . flip info forwardOptions $ (,,,)
+    <$> env
+    <*> subparser (command (unpack n) (info (pure ()) mempty))
+    <*> switchUseExistingDevnet
+    <*> manyArgs "a recursive invocation of `reachEx`"
+  pure $ intercalate " " f
+
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
   warnDeprecatedFlagIsolate i
@@ -957,14 +999,7 @@ react = command "react" $ info f d where
     local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
       dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
       dd <- devnetDeps
-      -- TODO generalize this pattern for other subcommands?
-      cargs <- liftIO $ do
-        let x "react" = False
-            x "--use-existing-devnet" = False
-            x a | "--dir-project-host" `isPrefixOf` a = False
-            x a | "--dir-tmp-host" `isPrefixOf` a = False
-                | otherwise = True
-        intercalate " " . filter x . fmap pack <$> getArgs
+      cargs <- forwardedCli "react"
       withCompose dm . script $ write [N.text|
         $reachEx compile $cargs
         docker-compose -f "$$TMP/docker-compose.yml" run \
@@ -1191,21 +1226,14 @@ failNonAbsPaths Env {..} =
     , e_dirPwdHost
     , e_dirTmpContainer
     , e_dirTmpHost
+    , e_dirConfigContainer
+    , e_dirConfigHost
     ]
 
 main :: IO ()
 main = do
   eff <- newIORef InProcess
-  var <- mkVar
-  let env = Env
-        <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
-        <*> strOption (long "dir-project-container" <> value "/app/src" <> internal)
-        <*> strOption (long "dir-project-host" <> internal)
-        <*> strOption (long "dir-tmp-container" <> value "/app/tmp" <> internal)
-        <*> strOption (long "dir-tmp-host" <> internal)
-        <*> switch (long "emit-raw" <> internal)
-        <*> pure eff
-        <*> pure var
+  env <- mkEnv eff Nothing Nothing
   hashStr <- lookupEnv "REACH_GIT_HASH" >>= \case
     Just hash -> return $ " (" <> hash <> ")"
     Nothing -> return $ ""
