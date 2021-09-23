@@ -30,7 +30,7 @@ jb () {
   (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  # (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -112,11 +112,10 @@ tealcount () {
 
 jb
 
-one ETH own-addr
-one ALGO own-addr
+ci ALGO map-rwrw
 
-# - ETH 12: multisig own-addr raffle timeoutception tut-8
-# - ALGO 12: map-rwrw own-addr raffle timeoutception ttt
-# - CFX 13: init interact-this map-rwrw multisig own-addr timeoutception
+# - ETH 12: multisig tut-8
+# - ALGO 12: map-rwrw ttt
+# - CFX 13: init interact-this map-rwrw multisig
 
 # (cd hs && mk hs-test)
