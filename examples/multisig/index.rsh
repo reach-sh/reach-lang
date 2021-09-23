@@ -25,6 +25,9 @@ export const main =
      Participant('Parent', { allowance: Fun([], UInt),
                   approve: Fun([UInt, UInt], Bool) } )],
     (Child, Parent) => {
+      Parent.publish();
+      commit();
+
       Child.publish();
       commit();
 

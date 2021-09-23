@@ -76,15 +76,17 @@ beginning balances:
 Deploying and attaching to contracts works slightly differently over RPC:
 
 @reachex[js-impl 'only 15 17 "// ..."]
-@reachex[py-impl 'only 24 26  "# ..."]
+@reachex[py-impl 'only 24 25  "# ..."]
 
 As previously mentioned, it is the responsibility of the
 @seclink["ref-backends-rpc"]{RPC Server} (rather than that of the @tech{frontend}
 communicating over RPC) to interface with the @|DApp|'s @tech{backend}, so that
 argument is absent in the Python version shown above.
 Instead, Alice's @tech{account} @tech{RPC handle} alone is sufficient for her to
-deploy, and only Bob's @tech{account} @tech{RPC handle} and Alice's
-@tech{contract} @tech{RPC handle} are necessary for Bob to attach.
+deploy.
+We also need to delay Bob's attach until later, because Python lacks Promises that work like JavaScript's.
+When we do attach Bob, only Bob's @tech{account} @tech{RPC handle} and Alice's
+@tech{contract} @tech{RPC handle} are necessary for him to attach.
 
 @(hrule)
 
@@ -92,14 +94,14 @@ deploy, and only Bob's @tech{account} @tech{RPC handle} and Alice's
 equivalents:
 
 @reachex[js-impl  'only 18 19 "// ..."]
-@reachex[py-impl  'only 27 29  "# ..."]
+@reachex[py-impl  'only 26 28  "# ..."]
 
 @(hrule)
 
 Even @tech{participant interact interface} definitions remain largely the same:
 
 @reachex[js-impl  'only 20 32 "// ..."]
-@reachex[py-impl  'only 30 35  "# ..."]
+@reachex[py-impl  'only 29 34  "# ..."]
 
 Here, both the JavaScript and Python @tech{frontends} begin declaring a
 reusable "player constructor".
@@ -125,7 +127,7 @@ although it easily could with a few extra lines of code.
 accordingly easily to implement in either language:
 
 @reachex[js-impl  'only 36 38 "// ..."]
-@reachex[py-impl  'only 36 38  "# ..."]
+@reachex[py-impl  'only 35 37  "# ..."]
 
 @(hrule)
 
@@ -133,7 +135,7 @@ accordingly easily to implement in either language:
 The same is true of @pyin{seeOutcome}:
 
 @reachex[js-impl  'only 33 35 "// ..."]
-@reachex[py-impl  'only 39 48  "# ..."]
+@reachex[py-impl  'only 38 47  "# ..."]
 
 At the end of the Python code we return a @pyin{dict} that represents those
 fields which are common to both Alice and Bob's
@@ -149,7 +151,7 @@ Finally, we proceed to the most interesting part of the program and use the
 code we have built up thus far to actually play a game of @|RPS|:
 
 @reachex[js-impl  'only 41 60 "// ..."]
-@reachex[py-impl  'only 49 84  "# ..."]
+@reachex[py-impl  'only 48 85  "# ..."]
 
 In the Python version we create a function called @pyin{play_alice} and spawn
 it as a concurrent thread, which begins running in the background on line 56.
@@ -162,9 +164,11 @@ and adds an additional @pyin{wager} value which is set to the result of
 as well as setting a @pyin{deadline} of @pyin{10}.
 
 Bob's interface is likewise defined and spawned as another thread, which also
-begins running concurrently on line 68.
+begins running concurrently on line 69.
 In Bob's case we add an @pyin{acceptWager} method instead of another value to
 his @tech{participant interact interface}.
+Furthermore, his function is more complex, because we delay creating his contract handle until this time, so that the main thread does not block waiting for Alice's contract information to resolve.
+This separation is not necessary in JavaScript, because of how JavaScript Promises work.
 
 Calling @pyin{.join()} on @pyin{alice} and @pyin{bob} instructs the main thread
 to wait until both child threads have run to completion, signifying the end of
@@ -176,7 +180,7 @@ result to the screen prior to reaching this step, because that is how we encoded
 their @pyin{seeOutcome} methods.
 
 All that remains is to release Alice and Bob's @tech{RPC handles} from the
-server's memory on lines 79 and 80 with the @tt{/forget/acc} and
+server's memory on lines 80 and 81 with the @tt{/forget/acc} and
 @tt{/forget/ctc} methods, then instruct the Python process' interpreter to
 invoke our @pyin{main} function.
 
