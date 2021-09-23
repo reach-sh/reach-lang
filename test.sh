@@ -110,7 +110,13 @@ tealcount () {
 
 #######
 
-jb
-# XXX test tut-9 react
+# jb
+
+c users/pr279.rsh
+
+# XXX hs-test-accept
+# - ETH 12: cache-events (t) multisig own-addr raffle timeoutception tut-7-rpc (t) tut-8 view-bytes view-fun view-map (+ 2 more not shown)
+# - ALGO 12: map-rwrw multisig (t) own-addr raffle timeoutception ttt tut-7-rpc (t) view-bytes view-fun view-map (+ 2 more not shown)
+# - CFX 13: init interact-this map-rwrw multisig own-addr raffle (t) timeoutception tut-7-rpc (t) view-bytes view-fun (+ 3 more not shown)
 
 # (cd hs && mk hs-test)
