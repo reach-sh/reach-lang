@@ -43,7 +43,7 @@ WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
-FROM alpine:latest
+FROM alpine:latest as prepare
 
 RUN apk add --no-cache \
   bash
@@ -64,6 +64,16 @@ RUN chmod -R 700 ${ALGORAND_DATA}/kmd*
 # pre-run some stuff so that it starts up faster
 COPY prime-algod.sh /
 RUN /prime-algod.sh
+
+FROM alpine
+
+RUN apk add bash
+
+ENV ALGORAND_NETWORK=/var/lib/algorand_network
+ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
+
+COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /bin/
+COPY --from=prepare /var/lib/algorand_network/ /var/lib/algorand_network/
 
 ### Our stuff
 COPY rotate_dbg.sh /
