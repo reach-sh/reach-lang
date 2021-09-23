@@ -15,7 +15,7 @@ index 2ce7c7dd..4b4be279 100644
    }
    async componentDidMount() {
 +    const now = await reach.getNetworkTime();
-+    reach.setQueryLowerBound(reach.sub(now, 500));
++    reach.setQueryLowerBound(reach.sub(now, 2000));
      const acc = await reach.getDefaultAccount();
      const balAtomic = await reach.balanceOf(acc);
      const bal = reach.formatCurrency(balAtomic, 4);
