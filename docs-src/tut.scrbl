@@ -1782,7 +1782,7 @@ Similarly, to run with Conflux:
   @js{
     async componentDidMount() {
       const now = await reach.getNetworkTime();
-      reach.setQueryLowerBound(reach.sub(now, 2000));
+      reach.setQueryLowerBound(reach.sub(now, 500));
       // ...
     }
   }
