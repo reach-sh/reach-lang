@@ -162,6 +162,8 @@ export const deferContract =
   const thenow = shouldError ? not_yet : delay;
   const mnow = (which:ContractIndex) =>
     implNow[which] === undefined ? thenow(which) : implNow[which];
+  const must = (which:ContractIndex) =>
+    implNow[which];
 
   // impl starts with a shim that deploys on first sendrecv,
   // then replaces itself with the real impl once deployed.
@@ -176,9 +178,9 @@ export const deferContract =
     // @ts-ignore
     waitSecs: not_yet('waitSecs'),
     // @ts-ignore
-    iam: mnow('iam'),
+    iam: must('iam'),
     // @ts-ignore
-    selfAddress: mnow('selfAddress'),
+    selfAddress: must('selfAddress'),
     // @ts-ignore
     getViews: mnow('getViews'),
     stdlib: (() => {

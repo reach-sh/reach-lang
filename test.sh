@@ -110,13 +110,13 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
-c users/pr279.rsh
+one ETH own-addr
+one ALGO own-addr
 
-# XXX hs-test-accept
-# - ETH 12: cache-events (t) multisig own-addr raffle timeoutception tut-7-rpc (t) tut-8 view-bytes view-fun view-map (+ 2 more not shown)
-# - ALGO 12: map-rwrw multisig (t) own-addr raffle timeoutception ttt tut-7-rpc (t) view-bytes view-fun view-map (+ 2 more not shown)
-# - CFX 13: init interact-this map-rwrw multisig own-addr raffle (t) timeoutception tut-7-rpc (t) view-bytes view-fun (+ 3 more not shown)
+# - ETH 12: multisig own-addr raffle timeoutception tut-8
+# - ALGO 12: map-rwrw own-addr raffle timeoutception ttt
+# - CFX 13: init interact-this map-rwrw multisig own-addr timeoutception
 
 # (cd hs && mk hs-test)

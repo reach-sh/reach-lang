@@ -1390,7 +1390,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return await attachP(bin, (async () => ctcInfo)(), eventCache, vr);
   };
 
-  const implNow = { stdlib: compiledStdlib };
+  const implNow = { stdlib: compiledStdlib, iam, selfAddress };
 
   const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
     ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
