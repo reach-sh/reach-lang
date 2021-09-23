@@ -7,7 +7,6 @@ export const main = Reach.App(() => {
     check: Fun([MUInt, MUInt], Null),
   };
   const A = Participant('Alice', common);
-  const B = Participant('Bob', common);
   deploy();
 
   A.only(() => {

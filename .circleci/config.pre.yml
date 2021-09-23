@@ -107,12 +107,12 @@ commands:
           (cd hs && make package.yaml)
       - restore_cache:
          keys:
-          - "hs-4-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+          - "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
       - run: |
           # Install deps
           (cd hs && make hs-deps)
       - save_cache:
-          key: "hs-4-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
+          key: "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
           paths:
           - ~/.stack
           - "hs/.stack-work"
