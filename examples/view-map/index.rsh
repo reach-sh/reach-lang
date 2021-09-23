@@ -11,6 +11,7 @@ export const main = Reach.App(() => {
     f: Fun([Address], Maybe(UInt)),
   });
   deploy();
+  A.publish(); commit();
 
   A.only(() => interact.checkView(this, MMUInt.None()));
 

@@ -16,6 +16,7 @@ export const main = Reach.App(
     }),
   ],
   (A, vMain) => {
+    A.publish(); commit();
     A.only(() => interact.checkView([MA.None(), MBS.None()]));
 
     A.only(() => {
