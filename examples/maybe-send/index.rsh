@@ -18,6 +18,8 @@ export const main = Reach.App(
     const [_, mx0] = [0, Maybe(UInt).None()];
     commit();
 
+    Bob.publish();
+    commit();
     Bob.only(() => {
       interact.showMx(mx0);
     });

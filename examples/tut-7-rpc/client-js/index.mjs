@@ -17,7 +17,6 @@ import { mkRPC } from '@reach-sh/rpc-client';
   const beforeBob   = await getBalance(accBob);
 
   const ctcAlice    = await rpc(`/acc/deploy`, accAlice);
-  const ctcBob      = await rpc(`/acc/attach`, accBob, await rpc(`/ctc/getInfo`, ctcAlice));
 
   const HAND        = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME     = ['Bob wins', 'Draw', 'Alice wins'];
@@ -45,11 +44,15 @@ import { mkRPC } from '@reach-sh/rpc-client';
       deadline: 10,
     }),
 
-    rpcCallbacks(`/backend/Bob`, ctcBob, {
-      ...Player('Bob'),
-      acceptWager: async (amt) => {
-        console.log(`Bob accepts the wager of ${await fmt(amt)}.`);
-      },
+    rpc(`/ctc/getInfo`, ctcAlice).then(async (info) => {
+      const ctcBob = await rpc(`/acc/attach`, accBob, info);
+      rpcCallbacks(`/backend/Bob`, ctcBob, {
+        ...Player('Bob'),
+        acceptWager: async (amt) => {
+          console.log(`Bob accepts the wager of ${await fmt(amt)}.`);
+        },
+      });
+    return await rpc(`/forget/ctc`, ctcBob);
     }),
   ]);
 
@@ -61,6 +64,6 @@ import { mkRPC } from '@reach-sh/rpc-client';
 
   await Promise.all([
     rpc(`/forget/acc`, accAlice, accBob),
-    rpc(`/forget/ctc`, ctcAlice, ctcBob),
+    rpc(`/forget/ctc`, ctcAlice),
   ]);
 })();
