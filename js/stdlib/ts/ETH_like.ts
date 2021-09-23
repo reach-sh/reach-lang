@@ -555,7 +555,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const implP: Promise<Contract> =
         new Promise((resolve) => { setImpl = resolve; });
       const implNow = {
-        stdlib,
+        stdlib, iam, selfAddress,
         sendrecv: async (srargs:SendRecvArgs): Promise<Recv> => {
           const { funcNum, evt_cnt, tys, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
           debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
