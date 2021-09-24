@@ -536,12 +536,8 @@ opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
 
 instance Optimize FromInfo where
   opt = \case
-    FI_Continue vis svs -> FI_Continue <$> opt vis <*> opt_svs svs
+    FI_Continue svs -> FI_Continue <$> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
-
-instance Optimize ViewSave where
-  opt = \case
-    ViewSave i svs -> ViewSave i <$> opt_svs svs
 
 instance Optimize CTail where
   opt = \case

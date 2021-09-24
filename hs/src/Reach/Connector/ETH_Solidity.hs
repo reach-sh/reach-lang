@@ -17,7 +17,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
@@ -229,7 +229,6 @@ data SolCtxt = SolCtxt
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map DLVar Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
-  , ctxt_hasViews :: Bool
   , ctxt_requireMsg :: Counter
   }
 
@@ -981,38 +980,16 @@ solCTail = \case
       <> svs'
       <> asn'
       <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ which (FI_Continue (ViewSave vi vvs) svs) -> do
-    setl <- solStateSet which svs
-    viewl <-
-      (ctxt_hasViews <$> ask) >>= \case
-        False -> return []
-        True -> do
-          let vi' = solNum vi
-          let asnv = "vvs"
-          setv <- solAsnSet asnv vvs
-          return $
-            setv
-              <> [ solSet "current_view_i" vi'
-                 , solSet "current_view_bs" $ solEncode [asnv]
-                 ]
-    return $ vsep $ viewl <> setl
+  CT_From _ which (FI_Continue svs) -> do
+    vsep <$> solStateSet which svs
   CT_From _ _ (FI_Halt _toks) -> do
     -- XXX we could "selfdestruct" our token holdings, based on _toks
-    hv <- ctxt_hasViews <$> ask
-    let mviewl =
-          case hv of
-            False -> []
-            True ->
-              [ solSet "current_view_i" "0x0"
-              , "delete current_view_bs;"
-              ]
     return $ vsep $
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
         , "delete current_svbs;"
+        , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
         ]
-        <> mviewl
-        <> [solApply "selfdestruct" ["payable(msg.sender)"] <> semi]
 
 solFrame :: Int -> S.Set DLVar -> App (Doc, Doc)
 solFrame i sim = do
@@ -1214,7 +1191,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at mvi hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1240,7 +1217,6 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at mvi hs)) = do
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
   let ctxt_plo = plo
-  let ctxt_hasViews = isJust mvi
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
           keyTy <- solType_ T_Address
@@ -1260,58 +1236,52 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at mvi hs)) = do
               , ref_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    (view_json, view_defns) <-
-      case mvi of
-        Nothing -> return (mempty, [])
-        Just (vs, vi) -> do
-          let vst = ["uint256 current_view_i;", "bytes current_view_bs;"]
-          let tgo :: SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
-              tgo v (k, t) = do
-                let vk_ = bunpack v <> "_" <> k
-                let vk = pretty $ vk_
-                let (dom, rng) = itype2arr t
-                let mkarg domt = DLVar at Nothing domt <$> allocVarIdx
-                args <- mapM mkarg dom
-                let mkargvm arg = (arg, solRawVar arg)
-                extendVarMap $ M.fromList $ map mkargvm args
-                let solType_p am ty = do
-                      ty' <- solType_ ty
-                      let loc = solArgLoc $ if mustBeMem ty then am else AM_Event
-                      return $ ty' <> loc
-                let mkdom arg argt = do
-                      argt' <- solType_p AM_Call argt
-                      return $ solDecl (solRawVar arg) argt'
-                dom' <- zipWithM mkdom args dom
-                rng' <- solType_p AM_Memory rng
-                let ret = "external view returns" <+> parens rng'
-                illegal <- flip (<>) semi <$> solRequire "invalid view_i" "false"
-                let igo (i, ViewInfo vvs vim) = freshVarMap $ do
-                      c' <- solEq "current_view_i" $ solNum i
-                      let asnv = "vvs"
-                      vvs_ty' <- solAsnType vvs
-                      let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" ["current_view_bs", parens vvs_ty']
-                      extendVarMap $ M.fromList $ map (\vv -> (vv, asnv <> "." <> solRawVar vv)) $ vvs
-                      (defn, ret') <-
-                        case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
-                          Just eb -> do
-                            eb' <- solEB args eb
-                            mvars <- readMemVars
-                            which <- allocVarIdx
-                            (frameDefn, frameDecl) <- solFrame which mvars
-                            return (frameDefn, vsep [frameDecl, eb'])
-                          Nothing ->
-                            return $ (emptyDoc, illegal)
-                      return $ (defn, solWhen c' $ vsep [de', ret'])
-                (defns, body') <- unzip <$> (mapM igo $ M.toAscList vi)
-                let body'' = vsep $ body' <> [illegal]
-                return $
-                  (,) (s2t k, Aeson.String $ s2t vk_) $
-                    vsep $ defns <> [solFunction vk dom' ret body'']
-          let vgo (v, tm) = do
-                (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
-                return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs
-          (o_vs, vfns) <- unzip <$> (mapM vgo $ M.toAscList vs)
-          return $ (,) o_vs $ "" : vst <> vfns
+    let tgo :: SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
+        tgo v (k, t) = do
+          let vk_ = bunpack v <> "_" <> k
+          let vk = pretty $ vk_
+          let (dom, rng) = itype2arr t
+          let mkarg domt = DLVar at Nothing domt <$> allocVarIdx
+          args <- mapM mkarg dom
+          let mkargvm arg = (arg, solRawVar arg)
+          extendVarMap $ M.fromList $ map mkargvm args
+          let solType_p am ty = do
+                ty' <- solType_ ty
+                let loc = solArgLoc $ if mustBeMem ty then am else AM_Event
+                return $ ty' <> loc
+          let mkdom arg argt = do
+                argt' <- solType_p AM_Call argt
+                return $ solDecl (solRawVar arg) argt'
+          dom' <- zipWithM mkdom args dom
+          rng' <- solType_p AM_Memory rng
+          let ret = "external view returns" <+> parens rng'
+          illegal <- flip (<>) semi <$> solRequire "invalid view_i" "false"
+          let igo (i, ViewInfo vvs vim) = freshVarMap $ do
+                c' <- solEq "current_step" $ solNum i
+                let asnv = "vvs"
+                vvs_ty' <- solAsnType vvs
+                let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" ["current_svbs", parens vvs_ty']
+                extendVarMap $ M.fromList $ map (\vv -> (vv, asnv <> "." <> solRawVar vv)) $ vvs
+                (defn, ret') <-
+                  case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
+                    Just eb -> do
+                      eb' <- solEB args eb
+                      mvars <- readMemVars
+                      which <- allocVarIdx
+                      (frameDefn, frameDecl) <- solFrame which mvars
+                      return (frameDefn, vsep [frameDecl, eb'])
+                    Nothing ->
+                      return $ (emptyDoc, illegal)
+                return $ (defn, solWhen c' $ vsep [de', ret'])
+          (defns, body') <- unzip <$> (mapM igo $ M.toAscList vi)
+          let body'' = vsep $ body' <> [illegal]
+          return $
+            (,) (s2t k, Aeson.String $ s2t vk_) $
+              vsep $ defns <> [solFunction vk dom' ret body'']
+    let vgo (v, tm) = do
+          (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
+          return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs
+    (view_json, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)
     let state_defn =
           vsep $
             [ "uint256 current_step;"

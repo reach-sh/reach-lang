@@ -42,11 +42,7 @@ djs_asnLike = mapM $ \(v, a) -> (,) v <$> djs a
 djs_fi :: AppT FromInfo
 djs_fi = \case
   FI_Halt toks -> FI_Halt <$> mapM djs toks
-  FI_Continue vs svs -> FI_Continue <$> djs_vs vs <*> djs_asnLike svs
-
-djs_vs :: AppT ViewSave
-djs_vs = \case
-  ViewSave i svs -> ViewSave i <$> djs_asnLike svs
+  FI_Continue svs -> FI_Continue <$> djs_asnLike svs
 
 class DeJump a where
   dj :: AppT a

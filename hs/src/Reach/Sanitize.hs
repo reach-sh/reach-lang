@@ -144,12 +144,8 @@ instance Sanitize LLStep where
 
 instance Sanitize FromInfo where
   sani = \case
-    FI_Continue vis svs -> FI_Continue (sani vis) (sani svs)
+    FI_Continue svs -> FI_Continue $ sani svs
     FI_Halt toks -> FI_Halt $ sani toks
-
-instance Sanitize ViewSave where
-  sani = \case
-    ViewSave i svs -> ViewSave i $ sani svs
 
 instance Sanitize CTail where
   sani = \case

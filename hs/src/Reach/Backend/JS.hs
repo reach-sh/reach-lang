@@ -635,7 +635,7 @@ jsETail = \case
             let close_asset = close . Just
             closes <- (<>) <$> forM toks close_asset <*> ((\x -> [x]) <$> close_escrow)
             common closes <$> (jsCon $ DLL_Bool True)
-          FI_Continue _vis _svs -> do
+          FI_Continue _svs -> do
             common [] <$> (jsCon $ DLL_Bool False)
   ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
@@ -870,12 +870,10 @@ jsExports exports =
     exportM <- mapM (jsExportBlock False) exports
     return $ jsReturn $ jsObject exportM
 
-jsViews :: Maybe (CPViews, ViewInfos) -> App Doc
-jsViews mcv = do
+jsViews :: (CPViews, ViewInfos) -> App Doc
+jsViews (cvs, vis) = do
   let menv e = e { ctxt_mode = JM_View }
   jsFunctionWStdlib "_getViews" ["viewlib"] $ local menv $ do
-    let cvs = fromMaybe mempty $ fmap fst mcv
-    let vis = fromMaybe mempty $ fmap snd mcv
     let toObj fv o = jsObject <$> mapWithKeyM fv o
     let enView _ (ViewInfo vs _) =
           jsArray <$> (mapM jsContract $ map varType vs)

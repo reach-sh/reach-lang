@@ -331,9 +331,7 @@ checkCost ts = do
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
   , sCounter :: Counter
-  , sStateKeys :: IORef Integer
-  , sViewSize :: Integer
-  , sViewKeysl :: [Word8]
+  , sStateSizeR :: IORef Integer
   , sMaps :: DLMapInfos
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
@@ -356,11 +354,6 @@ data Env = Env
   }
 
 type App = ReaderT Env IO
-
-updateStateKeys :: Integer -> App ()
-updateStateKeys n = do
-  Shared {..} <- asks eShared
-  liftIO $ modifyIORef sStateKeys $ max n
 
 recordWhich :: Int -> App a -> App a
 recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
@@ -565,6 +558,13 @@ cfrombs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
+
+ctzero :: DLType -> App ()
+ctzero = \case
+  T_UInt -> cint 0
+  t -> do
+    padding $ typeSizeOf t
+    cfrombs t
 
 tint :: SrcLoc -> Integer -> LT.Text
 tint at i = texty $ checkIntLiteralC at connect_algo i
@@ -1051,8 +1051,9 @@ cSvsSave at svs = do
   let size = typeSizeOf lat
   cla la
   ctobs lat
-  (keys, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  updateStateKeys keys
+  (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
+  ssr <- asks $ sStateSizeR . eShared
+  liftIO $ modifyIORef ssr $ max size
   -- [ SvsData ]
   forM_ keysl $ \vi -> do
     -- [ SvsData ]
@@ -1466,8 +1467,7 @@ ct = \case
               where ct_mtok = Just tok
             close_escrow = checkTxn $ CheckTxn {..}
               where ct_mtok = Nothing
-        FI_Continue vis svs -> do
-          cViewSave at vis
+        FI_Continue svs -> do
           cSvsSave at $ map snd svs
           cint $ fromIntegral which
           gvStore GV_currentStep
@@ -1481,35 +1481,6 @@ ct = \case
     addTxnCount
   where
     nct = dupeTxnCount . ct
-
-cViewSave :: SrcLoc -> ViewSave -> App ()
-cViewSave at (ViewSave vwhich vvs) = do
-  let vconcat x y = DLA_Literal (DLL_Int at $ fromIntegral x) : (map snd y)
-  let la = DLLA_Tuple $ vconcat vwhich vvs
-  let lat = largeArgTypeOf la
-  let sz = typeSizeOf lat
-  Shared {..} <- eShared <$> ask
-  when (sViewSize > 0) $ do
-    cla la
-    ctobs lat
-    padding $ sViewSize - sz
-    op "concat"
-    -- [ ViewData ]
-    forM_ sViewKeysl $ \vi -> do
-      -- [ ViewData ]
-      cl $ DLL_Bytes $ keyVary vi
-      -- [ ViewData, Key ]
-      code "dig" [ "1" ]
-      -- [ ViewData, Key, ViewData ]
-      cStateSlice at sViewSize vi
-      -- [ ViewData, Key, ViewData' ]
-      op "app_global_put"
-      -- [ ViewData ]
-      return ()
-    -- [ ViewData ]
-    op "pop"
-    -- [ ]
-    return ()
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
@@ -1708,16 +1679,6 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
           (_, _) -> checkFrom x >> checkFrom y
     ct body
 
-computeViewSize :: Maybe (CPViews, ViewInfos) -> Integer
-computeViewSize = h1
-  where
-    h1 = \case
-      Nothing -> 0
-      Just (_, vi) -> h2 vi
-    h2 = maximum . map h3 . M.elems
-    h3 (ViewInfo vs _) = typeSizeOf $ T_Tuple $ T_UInt : h4 vs
-    h4 = map varType
-
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
   ms <- ((sMaps . eShared) <$> ask)
@@ -1743,12 +1704,11 @@ cStateSlice at size iw = do
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at vi (CHandlers hm) = cpp
+  let CPProg at _ (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
   sTxnCounts <- newIORef mempty
-  let sViewSize = computeViewSize vi
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
   let PLOpts {..} = plo
@@ -1766,9 +1726,8 @@ compile_algo disp pl = do
           M.insert (prefix <> "Keys") $
             Aeson.Number $ fromIntegral keys
         return $ keysl
-  sViewKeysl <- recordSizeAndKeys "view" sViewSize algoMaxGlobalSchemaEntries_usable
   sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
-  sStateKeys <- newIORef 0
+  sStateSizeR <- newIORef 0
   let eShared = Shared {..}
   let run :: App () -> IO TEALs
       run m = do
@@ -1868,9 +1827,7 @@ compile_algo disp pl = do
     code "int" ["NoOp"]
     asserteq
     forM_ keyState_gvs $ \gv -> do
-      let gvt = gvType gv
-      padding $ typeSizeOf gvt
-      cfrombs gvt
+      ctzero $ gvType gv
       gvStore gv
     code "b" [ "updateState" ]
   -- Clear state is never allowed
@@ -1891,6 +1848,8 @@ compile_algo disp pl = do
     code "b" ["done"]
     defn_done
   checkTxnCount bad' =<< readIORef sTxnCounts
+  stateSize <- readIORef sStateSizeR
+  void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $
@@ -1901,10 +1860,6 @@ compile_algo disp pl = do
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
-  stateKeys <- readIORef sStateKeys
-  modifyIORef resr $
-    M.insert "stateKeys" $
-      Aeson.Number $ fromIntegral stateKeys
   res <- readIORef resr
   return $ Aeson.Object $ HM.fromList $ M.toList res
 

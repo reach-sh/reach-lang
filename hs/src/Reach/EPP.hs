@@ -177,8 +177,7 @@ data BEnv = BEnv
   , be_loop :: Maybe (Int, Int)
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
-  , be_viewmc :: Maybe Counter
-  , be_viewr :: IORef ViewInfos
+  , be_viewr :: IORef (M.Map Int ([DLVar] -> ViewInfo))
   , be_views :: ViewsInfo
   , be_inConsensus :: Bool
   , be_counter :: Counter
@@ -261,19 +260,6 @@ fg_edge (DLV_Let _ v) use = fg_record $ \f -> f {fid_edges = M.singleton v (coun
 fg_saves :: Int -> BApp ()
 fg_saves sp = do
   fg_record $ \f -> f {fid_saves = S.insert sp $ fid_saves f}
-
--- Views
-assignView :: BApp ViewSave
-assignView = do
-  BEnv {..} <- ask
-  let vs = countsl be_views
-  let vi = ViewInfo vs be_views
-  i <- case be_viewmc of
-    Nothing -> return $ 0
-    Just c -> liftIO $ incCounter c
-  let vis = ViewSave i $ asnLike vs
-  liftIO $ modifyIORef be_viewr $ M.insert i vi
-  return $ vis
 
 -- Read flow
 data CEnv = CEnv
@@ -523,20 +509,18 @@ be_c = \case
                        , be_prevs = S.singleton this }) $ do
           be_s s
     toks <- be_toks <$> ask
-    mvis <-
-      case more of
-        True -> do
-          vis <- assignView
-          fg_use vis
-          return $ Just vis
-        False -> do
-          fg_use toks
-          return $ Nothing
+    case more of
+      True -> do
+        BEnv {..} <- ask
+        fg_use be_views
+        liftIO $ modifyIORef be_viewr $ M.insert this $ flip ViewInfo be_views
+      False -> do
+        fg_use toks
     let mkfrom_info do_read = do
           svs <- do_read this
-          return $ case mvis of
-            Just vis -> FI_Continue vis $ asnLike svs
-            Nothing -> FI_Halt toks
+          return $ case more of
+            True -> FI_Continue $ asnLike svs
+            False -> FI_Halt toks
     fg_saves this
     let cm = CT_From at1 this <$> mkfrom_info ce_readSave
     let lm = ET_FromConsensus at1 this <$> mkfrom_info ee_readSave <*> s'l
@@ -692,15 +676,12 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
-  be_viewc <- newCounter 1
-  let be_viewmc = if M.null dvs then Nothing else Just be_viewc
   be_viewr <- newIORef mempty
   let be_views = mempty
   let be_inConsensus = False
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
-  vm <- readIORef be_viewr
   hs <- readIORef be_handlers
-  let mvm = if M.null dvs then Nothing else Just (dvs, vm)
+  mkvm <- readIORef be_viewr
   -- Step 2: Solve the flow graph
   flowi <- readIORef be_flowr
   last_save <- readCounter be_savec
@@ -714,7 +695,9 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   dex' <-
     flip runReaderT (BEnv {..}) $
       mapM mk_eb dex
-  cp <- (CPProg at mvm . CHandlers) <$> mapM mkh hs
+  vm <- flip mapWithKeyM mkvm $ \which mk ->
+    mkh $ mk <$> ce_readSave which
+  cp <- (CPProg at (dvs, vm) . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts p_to_ie = ps
   let mkep ee_who ie = do

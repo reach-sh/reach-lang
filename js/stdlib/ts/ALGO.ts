@@ -106,8 +106,7 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   appApproval: string,
   appClear: string,
   escrow: string,
-  viewSize: number,
-  viewKeys: number,
+  stateSize: number,
   stateKeys: number,
   mapDataSize: number,
   mapDataKeys: number,
@@ -884,7 +883,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const escrowAddr = compiled.escrow.hash;
     const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
 
-    const { viewSize, viewKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
+    const { stateSize, stateKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
     const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
@@ -1276,17 +1275,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
+    const readStateBytes = (prefix:string, key:number[], src:any): any => {
+      debug({prefix, key});
+      const ik = base64ify(new Uint8Array(key));
+      debug({ik});
+      const st = (src.find((x:any) => x.key === ik)).value;
+      debug({st});
+      const bsi = base64ToUI8A(st.bytes);
+      debug({bsi});
+      return bsi;
+    };
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
-        debug({prefix, i});
-        const ik = base64ify(new Uint8Array([i]));
-        debug({ik});
-        const st = (src.find((x:any) => x.key === ik)).value;
-        debug({st});
-        const bsi = base64ToUI8A(st.bytes);
-        debug({bsi});
+        const bsi = readStateBytes(prefix, [i], src);
         if ( bsi.length == 0 ) {
           return undefined;
         }
@@ -1324,18 +1327,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return ['None', null];
         }
         const appSt = appInfo['params']['global-state'];
-        const vvn = recoverSplitBytes('v', viewSize, viewKeys, appSt);
-        if ( vvn === undefined ) {
-            return ['None', null];
+        const gsbs = readStateBytes('', [], appSt);
+        if ( gsbs === undefined ) {
+          return ['None', null];
         }
-        const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
-        const vi = bigNumberToNumber(vin);
+        // `map gvType keyState_gvs` in Haskell
+        const gty = T_Tuple([T_UInt, T_UInt, T_Address]);
+        const gs = gty.fromNet(gsbs);
+        const vi = bigNumberToNumber(gs[0]);
         debug({vi});
         const vtys = vs[vi];
         debug({vtys});
         if ( ! vtys ) {
-          return ['None', null]; }
-        const vty = T_Tuple([T_UInt, ...vtys]);
+          return ['None', null];
+        }
+        const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
+        if ( vvn === undefined ) {
+          return ['None', null];
+        }
+        const vty = T_Tuple(vtys);
         debug({vty});
         const vvs = vty.fromNet(vvn);
         debug({vvs});

@@ -13,13 +13,13 @@ import Reach.Texty
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
 data FromInfo
-  = FI_Continue ViewSave [(DLVar, DLArg)]
+  = FI_Continue [(DLVar, DLArg)]
   | FI_Halt [DLArg]
   deriving (Eq)
 
 instance Pretty FromInfo where
   pretty = \case
-    FI_Continue vis svs -> pform "continue" (pretty vis <> "," <+> pretty svs)
+    FI_Continue svs -> pform "continue" (pretty svs)
     FI_Halt toks -> pform "halt" (pretty toks)
 
 data ETail
@@ -122,14 +122,6 @@ data EPProg
 instance Pretty EPProg where
   pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
-
-data ViewSave
-  = ViewSave Int [(DLVar, DLArg)]
-  deriving (Eq)
-
-instance Pretty ViewSave where
-  pretty (ViewSave vi svs) =
-    pform "viewsave" (pretty vi <> "," <+> pretty svs)
 
 data CTail
   = CT_Com DLStmt CTail
@@ -242,7 +234,7 @@ type ViewInfos = M.Map Int ViewInfo
 type CPViews = DLViews
 
 data CPProg
-  = CPProg SrcLoc (Maybe (CPViews, ViewInfos)) CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where

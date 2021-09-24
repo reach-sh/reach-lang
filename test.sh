@@ -113,9 +113,8 @@ tealcount () {
 
 jb
 
-#ci ETH tut-7
-#exit 0
-ci ALGO tut-7
+ci ALGO view-fun
+ci ALGO view-map
 exit 0
 # XXX hs-test-accept
 # XXX log-attack must be updated

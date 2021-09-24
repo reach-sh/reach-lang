@@ -127,12 +127,8 @@ instance Subst DLAssignment where
 
 instance Subst FromInfo where
   subst = \case
-    FI_Continue vis svs -> FI_Continue <$> subst vis <*> subst svs
+    FI_Continue svs -> FI_Continue <$> subst svs
     FI_Halt toks -> FI_Halt <$> subst toks
-
-instance Subst ViewSave where
-  subst = \case
-    ViewSave i svs -> ViewSave i <$> subst svs
 
 instance Subst CTail where
   subst = \case
