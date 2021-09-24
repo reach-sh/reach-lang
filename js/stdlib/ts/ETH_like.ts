@@ -215,9 +215,9 @@ const getNetworkTimeNumber = async (): Promise<number> => {
 };
 
 const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cnt:number) => {
-  const [ args_svs, args_msg ] = argsSplit(args, evt_cnt);
-  const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
-  void(args_svs); void(tys_svs);
+  const [ _args_svs, args_msg ] = argsSplit(args, evt_cnt);
+  const [ _tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
+  void(_args_svs); void(_tys_svs);
   // @ts-ignore XXX
   const arg_ty = T_Tuple([T_UInt, T_Tuple(tys_msg)]);
   return arg_ty.munge([lct, args_msg]);

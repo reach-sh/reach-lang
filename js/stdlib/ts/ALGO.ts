@@ -99,8 +99,8 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 2;
-const reachAlgoBackendVersion = 3;
+const reachBackendVersion = 3;
+const reachAlgoBackendVersion = 4;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
@@ -108,6 +108,7 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   escrow: string,
   viewSize: number,
   viewKeys: number,
+  stateKeys: number,
   mapDataSize: number,
   mapDataKeys: number,
   unsupported: Array<string>,
@@ -929,7 +930,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
+      const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
       const isCtor = (funcNum === 0);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
@@ -944,8 +945,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const dhead = `${label}: ${label} sendrecv ${funcName} ${timeoutAt}`;
       debug(dhead, '--- START');
 
-      const [ svs, msg ] = argsSplit(args, evt_cnt);
-      const [ svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
+      const [ _svs, msg ] = argsSplit(args, evt_cnt);
+      const [ _svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
+      void(_svs); void(_svs_tys);
       const fake_res = {
         didTimeout: false,
         data: msg,
@@ -1084,8 +1086,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, 'txnExtraTxns', txnExtraTxns);
         debug(dhead, '--- extraFee =', extraFees);
 
-        const actual_args = [ svs, msg ];
-        const actual_tys = [ T_Tuple(svs_tys), T_Tuple(msg_tys) ];
+        const actual_args = [ lct, msg ];
+        const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
         debug(dhead, '--- ARGS =', actual_args);
 
         const safe_args: Array<NV> = actual_args.map(
@@ -1355,7 +1357,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     must_be_supported(bin);
     debug(label, 'deploy');
     const algob = bin._Connectors.ALGO;
-    const { viewKeys, mapDataKeys } = algob;
+    const { stateKeys, mapDataKeys } = algob;
     const { appApproval, appClear } = await compileFor(bin, 0);
     const extraPages =
       Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
@@ -1372,7 +1374,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           appApproval.result,
           appClear.result,
           appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
-          appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
+          appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
           undefined, undefined, undefined, undefined,
           NOTE_Reach, undefined, undefined, extraPages)));
 
@@ -1639,7 +1641,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
-  const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
+  const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;
 
@@ -1677,7 +1679,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
 
   const appInfo_GlobalState = appInfo_p['global-state-schema'];
-  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
+  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
   const indexer = await getIndexer();

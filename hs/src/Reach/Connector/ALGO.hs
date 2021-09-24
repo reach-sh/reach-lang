@@ -331,6 +331,7 @@ checkCost ts = do
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
   , sCounter :: Counter
+  , sStateKeys :: IORef Integer
   , sViewSize :: Integer
   , sViewKeysl :: [Word8]
   , sMaps :: DLMapInfos
@@ -355,6 +356,11 @@ data Env = Env
   }
 
 type App = ReaderT Env IO
+
+updateStateKeys :: Integer -> App ()
+updateStateKeys n = do
+  Shared {..} <- asks eShared
+  liftIO $ modifyIORef sStateKeys $ max n
 
 recordWhich :: Int -> App a -> App a
 recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
@@ -583,11 +589,17 @@ isBase64 = LT.isPrefixOf "base64("
 isBase64_zeros :: LT.Text -> Bool
 isBase64_zeros t = isBase64 t && B.all (== '\0') (base64u t)
 
+cint_ :: SrcLoc -> Integer -> App ()
+cint_ at i = code "int" [tint at i]
+
+cint :: Integer -> App ()
+cint = cint_ sb
+
 cl :: DLLiteral -> App ()
 cl = \case
   DLL_Null -> cl $ DLL_Bytes ""
-  DLL_Bool b -> cl $ DLL_Int sb $ if b then 1 else 0
-  DLL_Int at i -> code "int" [tint at i]
+  DLL_Bool b -> cint $ if b then 1 else 0
+  DLL_Int at i -> cint_ at i
   DLL_Bytes bs -> code "byte" [base64d bs]
 
 ca_boolb :: DLArg -> Maybe B.ByteString
@@ -633,13 +645,13 @@ cprim = \case
       ca x
       ca y
       op "mulw"
-      cl $ DLL_Int sb 0
+      cint 0
       ca z
       op "divmodw"
       op "pop"
       op "pop"
       op "swap"
-      cl $ DLL_Int sb 0
+      cint 0
       asserteq
     _ -> impossible "cprim: MUL_DIV args"
   MOD -> call "%"
@@ -732,8 +744,8 @@ csubstring at b c =
     True -> do
       code "substring" [tint at b, tint at c]
     False -> do
-      cl $ DLL_Int sb b
-      cl $ DLL_Int sb c
+      cint b
+      cint c
       op "substring3"
 
 computeSplice :: SrcLoc -> Integer -> Integer -> Integer -> (App (), App ())
@@ -749,7 +761,7 @@ csplice at b c e = do
   case len == 1 of
     True -> do
       -- [ Bytes, NewByte ]
-      cl $ DLL_Int at b
+      cint b
       -- [ Bytes, NewByte, Offset ]
       op "swap"
       -- [ Bytes, Offset, NewByte ]
@@ -804,18 +816,18 @@ cArraySet at (t, alen) mcbig eidx cnew = do
           Right cidx -> (b, a)
             where
               b = do
-                cl $ DLL_Int sb 0
-                cl $ DLL_Int sb tsz
+                cint 0
+                cint tsz
                 cidx
                 op "*"
                 op "substring3"
               a = do
-                cl $ DLL_Int sb tsz
+                cint tsz
                 op "dup"
                 cidx
                 op "*"
                 op "+"
-                cl $ DLL_Int sb (alen * tsz)
+                cint $ alen * tsz
                 op "substring3"
   csplice3 mcbig cbefore cafter cnew
 
@@ -837,17 +849,17 @@ cfor maxi body = do
   top_lab <- freshLabel
   end_lab <- freshLabel
   salloc_ $ \store_idx load_idx -> do
-    cl $ DLL_Int sb 0
+    cint 0
     store_idx
     comment $ "<for>"
     label top_lab
     load_idx
-    cl $ DLL_Int sb maxi
+    cint maxi
     op "<"
     code "bz" [end_lab]
     body load_idx
     load_idx
-    cl $ DLL_Int sb 1
+    cint 1
     op "+"
     store_idx
     code "b" [top_lab]
@@ -881,11 +893,11 @@ cArrayRef at t frombs ie = do
           let end = start + tsz
           csubstring at start end
         _ -> do
-          cl $ DLL_Int sb tsz
+          cint tsz
           ie'
           op "*"
           op "dup"
-          cl $ DLL_Int sb tsz
+          cint tsz
           op "+"
           op "substring3"
       case frombs of
@@ -995,6 +1007,65 @@ cMapStore at = do
     return ()
   -- [ Address, MapData' ]
   op "pop"
+  op "pop"
+  -- [ ]
+  return ()
+
+divup :: Integer -> Integer -> Integer
+divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
+
+computeStateSizeAndKeys :: Monad m => (LT.Text -> m ()) -> LT.Text -> Integer -> Integer -> m (Integer, [Word8])
+computeStateSizeAndKeys badx prefix size limit = do
+  let keys = size `divup` algoMaxAppBytesValueLen_usable
+  when (keys > limit) $ do
+    badx $ "Too many " <> prefix <> " keys, " <> texty keys <> ", but limit is " <> texty limit
+  let keysl = take (fromIntegral keys) [0 ..]
+  return (keys, keysl)
+
+cSvsLoad :: Integer -> App ()
+cSvsLoad size = do
+  (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
+  case null keysl of
+    True -> do
+      padding 0
+    False -> do
+      -- [ SvsData_0? ]
+      forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
+        -- [ SvsData_N? ]
+        cl $ DLL_Bytes $ keyVary mi
+        -- [ SvsData_N?, Key ]
+        op "app_global_get"
+        -- [ SvsData_N?, NewPiece ]
+        case doConcat of
+          True -> op "concat"
+          False -> nop
+        -- [ SvsData_N+1 ]
+        return ()
+      -- [ SvsData_k ]
+      return ()
+
+cSvsSave :: SrcLoc -> [DLArg] -> App ()
+cSvsSave at svs = do
+  let la = DLLA_Tuple svs
+  let lat = largeArgTypeOf la
+  let size = typeSizeOf lat
+  cla la
+  ctobs lat
+  (keys, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
+  updateStateKeys keys
+  -- [ SvsData ]
+  forM_ keysl $ \vi -> do
+    -- [ SvsData ]
+    cl $ DLL_Bytes $ keyVary vi
+    -- [ SvsData, Key ]
+    code "dig" [ "1" ]
+    -- [ SvsData, Key, SvsData ]
+    cStateSlice at size vi
+    -- [ SvsData, Key, ViewData' ]
+    op "app_global_put"
+    -- [ SvsData ]
+    return ()
+  -- [ SvsData ]
   op "pop"
   -- [ ]
   return ()
@@ -1131,7 +1202,7 @@ ce = \case
     checkTxnAlloc
     let vTypeEnum = "acfg"
     checkTxnInit vTypeEnum $ Just cContractAddr
-    let i = cl . DLL_Int at
+    let i = cint_ at
     let za = czaddr
     i 0 >> checkTxn1 "ConfigAsset"
     ca dtn_supply >> checkTxn1 "ConfigAssetTotal"
@@ -1155,7 +1226,7 @@ ce = \case
     let vTypeEnum = "acfg"
     let ct_mcsend = Just cContractAddr
     checkTxnInit vTypeEnum ct_mcsend
-    let i0 = cl $ DLL_Int at 0
+    let i0 = cint_ at 0
     let b0 = padding 0
     ca aida >> checkTxn1 "ConfigAsset"
     i0 >> checkTxn1 "ConfigAssetTotal"
@@ -1203,7 +1274,7 @@ checkTxnAlloc = do
   incTxnCount
   gvLoad GV_txnCounter
   op "dup"
-  cl $ DLL_Int sb 1
+  cint 1
   op "+"
   gvStore GV_txnCounter
 
@@ -1212,7 +1283,7 @@ checkTxnInit vTypeEnum ct_mcsend = do
   -- [ txn ]
   code "int" [vTypeEnum]
   checkTxn1 "TypeEnum"
-  cl $ DLL_Int sb 0
+  cint 0
   checkTxn1 "Fee"
   -- XXX We could move this into the escrow, since it will always be happening.
   -- The problem, though, is that we use this ALSO for when the user pays us...
@@ -1267,9 +1338,9 @@ doSwitch ck at dv csm = do
   let cm1 ((_vn, (vv, vu, k)), vi) = do
         next_lab <- freshLabel
         ca $ DLA_Var dv
-        cl $ DLL_Int sb 0
+        cint 0
         op "getbyte"
-        cl $ DLL_Int sb vi
+        cint vi
         op "=="
         code "bz" [next_lab]
         case vu of
@@ -1383,8 +1454,6 @@ ct = \case
         FI_Halt toks -> do
           forM_ toks close_asset
           close_escrow
-          czaddr
-          gvStore GV_stateHash
           return True
           where
             ct_at = at
@@ -1399,7 +1468,11 @@ ct = \case
               where ct_mtok = Nothing
         FI_Continue vis svs -> do
           cViewSave at vis
-          cstate (HM_Set which) $ map snd svs
+          cSvsSave at $ map snd svs
+          cint $ fromIntegral which
+          gvStore GV_currentStep
+          cRound
+          gvStore GV_currentTime
           return False
     code "txn" ["OnCompletion"]
     code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
@@ -1438,26 +1511,6 @@ cViewSave at (ViewSave vwhich vvs) = do
     -- [ ]
     return ()
 
-data HashMode
-  = HM_Set Int
-  | HM_Check Int
-  deriving (Eq, Show)
-
-cstate :: HashMode -> [DLArg] -> App ()
-cstate hm svs = do
-  comment ("compute state in " <> texty hm)
-  let go a = (argTypeOf a, ca a)
-  let wa w = DLA_Literal $ DLL_Int sb $ fromIntegral w
-  let compute w = cdigest $ map go $ wa w : svs
-  case hm of
-    HM_Set w -> do
-      compute w
-      gvStore GV_stateHash
-    HM_Check p -> do
-      compute p
-      gvLoad GV_stateHash
-      asserteq
-
 -- Reach Constants
 reachAlgoBackendVersion :: Int
 reachAlgoBackendVersion = 4
@@ -1480,9 +1533,12 @@ etexty = texty . fromEnum
 
 data ArgId
   = ArgMethod
-  | ArgSvs
+  | ArgTime
   | ArgMsg
   deriving (Eq, Ord, Show, Enum, Bounded)
+
+argLoad :: ArgId -> App ()
+argLoad ai = code "txna" [ "ApplicationArgs", etexty ai ]
 
 boundedCount :: forall a . (Enum a, Bounded a) => a -> Integer
 boundedCount _ = 1 + (fromIntegral $ fromEnum $ (maxBound :: a))
@@ -1492,7 +1548,8 @@ argCount = boundedCount ArgMethod
 
 data GlobalVar
   = GV_txnCounter
-  | GV_stateHash
+  | GV_currentStep
+  | GV_currentTime
   | GV_contractAddr
   deriving (Eq, Ord, Show, Enum, Bounded)
 
@@ -1508,20 +1565,27 @@ gvLoad gv = code "load" [texty $ gvSlot gv ]
 gvType :: GlobalVar -> DLType
 gvType = \case
   GV_txnCounter -> T_UInt
-  GV_stateHash -> T_Digest
+  GV_currentStep -> T_UInt
+  GV_currentTime -> T_UInt
   GV_contractAddr -> T_Address
 
+keyState_gvs :: [GlobalVar]
+keyState_gvs = [GV_currentStep, GV_currentTime, GV_contractAddr]
+
 keyState_ty :: DLType
-keyState_ty = T_Tuple [gvType GV_stateHash, gvType GV_contractAddr]
+keyState_ty = T_Tuple $ map gvType keyState_gvs
 
 defn_done :: App ()
 defn_done = do
   label "done"
-  cl $ DLL_Int sb 1
+  cint 1
   op "return"
 
+cRound :: App ()
+cRound = code "global" ["Round"]
+
 bindTime :: DLVar -> App a -> App a
-bindTime dv = store_let dv True (code "global" ["Round"])
+bindTime dv = store_let dv True cRound
 bindSecs :: DLVar -> App a -> App a
 bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
@@ -1583,27 +1647,38 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
   let bindFromArg ai vs m = do
-        code "txna" [ "ApplicationArgs", etexty ai ]
+        argLoad ai
         op "dup"
         op "len"
-        cl $ DLL_Int sb $ typeSizeOf $ (T_Tuple $ map varType vs)
+        cint $ typeSizeOf $ (T_Tuple $ map varType vs)
         asserteq
         bindFromTuple at vs m
+  let bindFromSvs m = do
+        cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
+        bindFromTuple at svs m
   comment ("Handler " <> texty which)
   op "dup" -- We assume the method id is on the stack
-  cl $ DLL_Int sb $ fromIntegral $ which
+  cint $ fromIntegral $ which
   op "=="
   code "bz" [ afterLab ]
   op "pop" -- Get rid of the method id since it's us
+  comment "check step"
+  cint $ fromIntegral prev
+  gvLoad GV_currentStep
+  asserteq
+  comment "check time"
+  argLoad ArgTime
+  cfrombs T_UInt
+  gvLoad GV_currentTime
+  asserteq
   let bindVars = id
         . (store_let from True (code "txn" [ "Sender" ]))
         . (bindTime timev)
         . (bindSecs secsv)
-        . (bindFromArg ArgSvs svs)
+        . bindFromSvs
         . (bindFromArg ArgMsg msg)
   bindVars $ do
     extraCtorDo
-    cstate (HM_Check prev) $ map DLA_Var svs
     let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
         checkTime1 cmp clhs rhsa = do
           clhs
@@ -1678,24 +1753,22 @@ compile_algo disp pl = do
   let sMapDataSize = typeSizeOf sMapDataTy
   let PLOpts {..} = plo
   let sCounter = plo_counter
-  let divup :: Integer -> Integer -> Integer
-      divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
             Aeson.Number $ fromIntegral size
   let recordSizeAndKeys :: T.Text -> Integer -> Integer -> IO [Word8]
       recordSizeAndKeys prefix size limit = do
+        let badx = bad_io sFailuresR
+        (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
         recordSize prefix size
-        let keys = size `divup` algoMaxAppBytesValueLen_usable
-        when (keys > limit) $ do
-          bad_io sFailuresR $ "Too many " <> (LT.fromStrict prefix) <> " keys, " <> texty keys <> ", but limit is " <> texty limit
         modifyIORef resr $
           M.insert (prefix <> "Keys") $
             Aeson.Number $ fromIntegral keys
-        return $ take (fromIntegral keys) [0 ..]
+        return $ keysl
   sViewKeysl <- recordSizeAndKeys "view" sViewSize algoMaxGlobalSchemaEntries_usable
   sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
+  sStateKeys <- newIORef 0
   let eShared = Shared {..}
   let run :: App () -> IO TEALs
       run m = do
@@ -1724,17 +1797,18 @@ compile_algo disp pl = do
   addProg "appApproval" $ do
     checkRekeyTo
     checkLease
-    cl $ DLL_Int sb 0
+    cint 0
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
     code "bz" ["alloc"]
     cl $ DLL_Bytes keyState
     op "app_global_get"
-    op "dup"
-    cTupleRef at keyState_ty 0
-    gvStore GV_stateHash
-    cTupleRef at keyState_ty 1
-    gvStore GV_contractAddr
+    let nats = [0..]
+    let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
+    forM_ (zip (zip keyState_gvs shouldDups) nats) $ \((gv, shouldDup), i) -> do
+      when shouldDup $ op "dup"
+      cTupleRef at keyState_ty i
+      gvStore gv
     unless (null sMapKeysl) $ do
       -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
@@ -1748,9 +1822,9 @@ compile_algo disp pl = do
       -- The NON-OptIn case:
       label "normal"
     code "txn" ["NumAppArgs"]
-    cl $ DLL_Int sb $ argCount
+    cint argCount
     asserteq
-    code "txna" [ "ApplicationArgs", etexty ArgMethod ]
+    argLoad ArgMethod
     cfrombs T_UInt
     -- NOTE This could be compiled to a jump table if that were possible or to
     -- a tree to be O(log n) rather than O(n)
@@ -1764,9 +1838,10 @@ compile_algo disp pl = do
       cloop hi hh
     label "updateState"
     cl $ DLL_Bytes keyState
-    gvLoad GV_stateHash
-    gvLoad GV_contractAddr
-    op "concat"
+    forM_ keyState_gvs $ \gv -> do
+      gvLoad gv
+      ctobs $ gvType gv
+    forM_ (tail keyState_gvs) $ const $ op "concat"
     op "app_global_put"
     code "b" [ "checkSize" ]
     label "checkSize"
@@ -1774,14 +1849,14 @@ compile_algo disp pl = do
     op "dup"
     op "dup"
     -- The size is correct
-    cl $ DLL_Int sb $ 1
+    cint 1
     op "+"
     code "global" [ "GroupSize" ]
     asserteq
     -- We're last
     code "txn" ["GroupIndex"]
     asserteq
-    cl $ DLL_Int sb $ algoMinTxnFee
+    cint algoMinTxnFee
     op "*"
     code "txn" ["Fee"]
     op "<="
@@ -1792,9 +1867,11 @@ compile_algo disp pl = do
     code "txn" ["OnCompletion"]
     code "int" ["NoOp"]
     asserteq
-    cstate (HM_Set 0) []
-    padding $ typeSizeOf T_Address
-    gvStore GV_contractAddr
+    forM_ keyState_gvs $ \gv -> do
+      let gvt = gvType gv
+      padding $ typeSizeOf gvt
+      cfrombs gvt
+      gvStore gv
     code "b" [ "updateState" ]
   -- Clear state is never allowed
   addProg "appClear" $ do
@@ -1802,7 +1879,7 @@ compile_algo disp pl = do
   -- The escrow account defers to the application
   addProg "escrow" $ do
     code "global" ["GroupSize"]
-    cl $ DLL_Int sb 1
+    cint 1
     op "-"
     op "dup"
     code "gtxns" ["TypeEnum"]
@@ -1824,6 +1901,10 @@ compile_algo disp pl = do
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
+  stateKeys <- readIORef sStateKeys
+  modifyIORef resr $
+    M.insert "stateKeys" $
+      Aeson.Number $ fromIntegral stateKeys
   res <- readIORef resr
   return $ Aeson.Object $ HM.fromList $ M.toList res
 
