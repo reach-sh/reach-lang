@@ -170,13 +170,14 @@ instance Erase LLStep where
       m' <- el m
       return $ mkCom LLS_Com m' k'
     LLS_Stop at -> return $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime -> do
+    LLS_ToConsensus at lct send recv mtime -> do
       k' <- el $ dr_k recv
       let recv' = recv {dr_k = k'}
       let mel (d, s) = (,) <$> el d <*> el s
       mtime' <- traverse mel mtime
       send' <- traverse viaCount send
-      return $ LLS_ToConsensus at send' recv' mtime'
+      lct' <- el lct
+      return $ LLS_ToConsensus at lct' send' recv' mtime'
 
 instance {-# OVERLAPS #-} Erase a => Erase (DLinExportBlock a) where
   el (DLinExportBlock at vs b) =

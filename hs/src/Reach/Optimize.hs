@@ -500,8 +500,8 @@ instance Optimize LLStep where
   opt = \case
     LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime ->
-      LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
+    LLS_ToConsensus at lct send recv mtime ->
+      LLS_ToConsensus at <$> opt lct <*> send' <*> recv' <*> mtime'
       where
         send' = M.fromList <$> mapM opt_send (M.toList send)
         k' = newScope $ focus_con $ opt $ dr_k recv

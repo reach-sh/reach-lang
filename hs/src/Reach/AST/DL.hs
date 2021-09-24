@@ -140,7 +140,7 @@ instance Pretty DLSStmt where
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
-        prettyToConsensus__ dls_tc_send dls_tc_recv dls_tc_mtime
+        prettyToConsensus__ ("?"::String) dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->

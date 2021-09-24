@@ -140,7 +140,7 @@ instance Sanitize LLStep where
   sani = \case
     LLS_Com m k -> LLS_Com (sani m) (sani k)
     LLS_Stop _ -> LLS_Stop sb
-    LLS_ToConsensus _ send recv mtime -> LLS_ToConsensus sb (sani send) (sani recv) (sani mtime)
+    LLS_ToConsensus _ lct send recv mtime -> LLS_ToConsensus sb (sani lct) (sani send) (sani recv) (sani mtime)
 
 instance Sanitize FromInfo where
   sani = \case

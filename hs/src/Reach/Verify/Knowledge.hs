@@ -332,7 +332,7 @@ kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
   LLS_Stop {} -> mempty
-  LLS_ToConsensus _ send recv mtime ->
+  LLS_ToConsensus _ _ send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) sends
     where

@@ -122,6 +122,7 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> =
   onlyIf: boolean,
   soloSend: boolean,
   timeoutAt: TimeArg | undefined,
+  lct: BigNumber,
   sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token>>,
 };
 

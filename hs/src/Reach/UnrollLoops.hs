@@ -186,8 +186,8 @@ instance Unroll LLStep where
   ul = \case
     LLS_Com m k -> ul_m LLS_Com m k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime ->
-      LLS_ToConsensus at send <$> ul recv <*> ul mtime
+    LLS_ToConsensus at lct send recv mtime ->
+      LLS_ToConsensus at lct send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
   ul (LLProg at opts ps dli dex dvs s) =

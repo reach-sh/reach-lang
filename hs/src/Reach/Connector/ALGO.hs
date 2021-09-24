@@ -1460,7 +1460,7 @@ cstate hm svs = do
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 3
+reachAlgoBackendVersion = 4
 
 -- State:
 keyState :: B.ByteString

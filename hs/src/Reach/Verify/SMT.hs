@@ -1249,7 +1249,7 @@ smt_s :: LLStep -> App ()
 smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
-  LLS_ToConsensus at send recv mtime -> do
+  LLS_ToConsensus at _ send recv mtime -> do
     let DLRecv whov msgvs timev secsv next_n = recv
     let timeout = case mtime of
           Nothing -> mempty

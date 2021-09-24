@@ -220,8 +220,8 @@ instance Freshen LLStep where
   fu = \case
     LLS_Com s k -> LLS_Com <$> fu s <*> fu k
     LLS_Stop at -> return $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime ->
-      LLS_ToConsensus at <$> fu send <*> fu recv <*> fu mtime
+    LLS_ToConsensus at lct send recv mtime ->
+      LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> fu mtime
 
 instance Freshen LLProg where
   fu (LLProg at opts sps dli dex dvs s) =

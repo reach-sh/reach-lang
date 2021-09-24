@@ -32,6 +32,7 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
+      , et_tc_lct :: DLArg
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -67,7 +68,7 @@ instance Pretty ETail where
           <> pretty k
         where
           whichp = viaShow which
-      ET_ToConsensus _ fs prev which msend msg out timev secsv mtime k ->
+      ET_ToConsensus _ fs prev lct which msend msg out timev secsv mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -77,6 +78,7 @@ instance Pretty ETail where
                    M.fromList $
                      [ ("from" :: String, pretty fs)
                      , ("prev", pretty prev)
+                     , ("lct", pretty lct)
                      , ("which", pretty which)
                      , ("msg", (cm $ map pretty msg))
                      , ("out", (cm $ map pretty out))

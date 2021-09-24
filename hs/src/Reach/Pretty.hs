@@ -63,9 +63,9 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest $ hardline <> pretty f)
 
-prettyToConsensus__ :: (Pretty a, Pretty b, Pretty s, Pretty d, Pretty k2) => M.Map s a -> b -> Maybe (d, k2) -> Doc
-prettyToConsensus__ send recv mtime =
-  "publish" <> parens emptyDoc <> nest (hardline <> mtime' <> send' <> recv')
+prettyToConsensus__ :: (Pretty a, Pretty b, Pretty c, Pretty s, Pretty d, Pretty k2) => c -> M.Map s a -> b -> Maybe (d, k2) -> Doc
+prettyToConsensus__ lct send recv mtime =
+  "publish" <> parens ("@" <> pretty lct) <> nest (hardline <> mtime' <> send' <> recv')
   where
     mtime' = prettyTimeout mtime
     send' = prettySends send <> hardline

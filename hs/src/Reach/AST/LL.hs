@@ -45,6 +45,7 @@ data LLStep
   | LLS_Stop SrcLoc
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
+      , lls_tc_lct :: DLArg
       , lls_tc_send :: M.Map SLPart DLSend
       , lls_tc_recv :: DLRecv LLConsensus
       , lls_tc_mtime :: Maybe (DLTimeArg, LLStep)
@@ -56,7 +57,7 @@ instance Pretty LLStep where
     LLS_Com x k -> prettyCom x k
     LLS_Stop _at -> prettyStop
     LLS_ToConsensus {..} ->
-      prettyToConsensus__ lls_tc_send lls_tc_recv lls_tc_mtime
+      prettyToConsensus__ lls_tc_lct lls_tc_send lls_tc_recv lls_tc_mtime
 
 data LLOpts = LLOpts
   { llo_verifyArithmetic :: Bool

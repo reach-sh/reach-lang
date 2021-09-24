@@ -637,7 +637,7 @@ jsETail = \case
             common closes <$> (jsCon $ DLL_Bool True)
           FI_Continue _vis _svs -> do
             common [] <$> (jsCon $ DLL_Bool False)
-  ET_ToConsensus _at fs_ok _prev which from_me msg_vs _out timev secsv mto k_ok -> do
+  ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
     let withCtxt = local (\e -> e { ctxt_txn = (ctxt_txn e) + 1 })
@@ -694,12 +694,14 @@ jsETail = \case
                     , "return sim_r;"
                     ]
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
+            lct_v' <- jsArg lct_v
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
             let a_sim_p = parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
             let sendp = jsApplyKws "ctc.sendrecv" $ M.fromList $
                   [ ("funcNum", a_funcNum)
+                  , ("lct", lct_v')
                   , ("evt_cnt", a_evt_cnt)
                   , ("tys", jsArray msgts)
                   , ("args", vs)
@@ -933,7 +935,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 2
+reachBackendVersion = 3
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do

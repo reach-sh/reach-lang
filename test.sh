@@ -111,12 +111,13 @@ tealcount () {
 
 #######
 
-# jb
+jb
 
-one ALGO tut-6
+#ci ETH tut-7
+#exit 0
+ci ALGO tut-7
 exit 0
-
-one ALGO maybe-send
-one ALGO workshop-fomo
+# XXX hs-test-accept
+# XXX log-attack must be updated
 
 # (cd hs && mk hs-test)

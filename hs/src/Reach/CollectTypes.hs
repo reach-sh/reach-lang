@@ -170,7 +170,7 @@ instance CollectsTypes a => CollectsTypes (DLRecv a) where
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
   cts (LLS_Stop _) = mempty
-  cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
+  cts (LLS_ToConsensus _ lct send recv mtime) = cts lct <> cts send <> cts recv <> cts mtime
 
 instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
   cts (DLinExportBlock _ vs r) = cts vs <> cts r

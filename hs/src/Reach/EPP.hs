@@ -620,7 +620,7 @@ be_s = \case
     return $ mkCom ET_Com <$> c'e <*> k'
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
-  LLS_ToConsensus at send recv mtime -> do
+  LLS_ToConsensus at lct_v send recv mtime -> do
     let DLRecv from_v msg_vs time_v secs_v ok_c = recv
     prev <- be_prev <$> ask
     signalMore
@@ -669,7 +669,7 @@ be_s = \case
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev this_h mfrom msg_vs out_vs time_v secs_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev lct_v this_h mfrom msg_vs out_vs time_v secs_v mtime' ok_l'
     return $ ok_l''m
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock

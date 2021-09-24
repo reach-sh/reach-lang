@@ -487,7 +487,8 @@ df_step = \case
         Just (ta, tk) -> do
           tk' <- df_step tk
           return $ Just (ta, tk')
-    return $ LLS_ToConsensus at send recv' mtime'
+    let lt' = fromMaybe (DLA_Literal $ DLL_Int at 0) lt
+    return $ LLS_ToConsensus at lt' send recv' mtime'
   x -> df_com (mkCom LLS_Com) df_step x
 
 df_eb :: DKExportBlock -> DFApp DLExportBlock

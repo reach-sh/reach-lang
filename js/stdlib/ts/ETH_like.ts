@@ -66,8 +66,8 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 2;
-const reachEthBackendVersion = 2;
+const reachBackendVersion = 3;
+const reachEthBackendVersion = 3;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -214,16 +214,17 @@ const getNetworkTimeNumber = async (): Promise<number> => {
   return ans;
 };
 
-const sendRecv_prepArg = (args:Array<any>, tys:Array<any>, evt_cnt:number) => {
+const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cnt:number) => {
   const [ args_svs, args_msg ] = argsSplit(args, evt_cnt);
   const [ tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
+  void(args_svs); void(tys_svs);
   // @ts-ignore XXX
-  const arg_ty = T_Tuple([T_Tuple(tys_svs), T_Tuple(tys_msg)]);
-  return arg_ty.munge([args_svs, args_msg]);
+  const arg_ty = T_Tuple([T_UInt, T_Tuple(tys_msg)]);
+  return arg_ty.munge([lct, args_msg]);
 };
 
 const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo => ({
-  arg: init ? init.arg : sendRecv_prepArg([], [], 0),
+  arg: init ? init.arg : sendRecv_prepArg(bigNumberify(0), [], [], 0),
   value: init ? init.value : bigNumberify(0),
 });
 
@@ -557,7 +558,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const implNow = {
         stdlib, iam, selfAddress,
         sendrecv: async (srargs:SendRecvArgs): Promise<Recv> => {
-          const { funcNum, evt_cnt, tys, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
+          const { funcNum, evt_cnt, lct, tys, out_tys, args, pay, onlyIf, soloSend, timeoutAt } = srargs;
           debug(shad, `:`, label, 'sendrecv m', funcNum, `(deferred deploy)`);
           const [ value, toks ] = pay;
 
@@ -573,7 +574,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           }
 
           // shim impl is replaced with real impl
-          setImpl(performDeploy({arg: sendRecv_prepArg(args, tys, evt_cnt), value}));
+          setImpl(performDeploy({arg: sendRecv_prepArg(lct, args, tys, evt_cnt), value}));
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
@@ -692,7 +693,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const getInfo = async () => await infoP;
 
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
+      const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
@@ -706,7 +707,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const dhead = [shad, label, 'send', funcName, timeoutAt, 'SEND'];
       debug(...dhead, 'ARGS', args);
-      const arg = sendRecv_prepArg(args, tys, evt_cnt);
+      const arg = sendRecv_prepArg(lct, args, tys, evt_cnt);
 
       // Make sure the ctc is available and verified (before we get into try/catch)
       // https://github.com/reach-sh/reach-lang/issues/134

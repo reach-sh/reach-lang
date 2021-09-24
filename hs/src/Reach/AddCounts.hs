@@ -166,7 +166,8 @@ instance AC ETail where
       et_tc_cons' <- ac et_tc_cons
       et_tc_from_mtime' <- ac et_tc_from_mtime
       ac_visit et_tc_from_me
-      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_mtime' et_tc_cons'
+      ac_visit et_tc_lct
+      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_lct et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_mtime' et_tc_cons'
     ET_While {..} -> do
       et_w_k' <- ac et_w_k
       et_w_body' <- ac et_w_body
@@ -290,7 +291,8 @@ instance AC LLStep where
       mtime' <- ac lls_tc_mtime
       recv' <- ac lls_tc_recv
       send' <- ac lls_tc_send
-      return $ LLS_ToConsensus lls_tc_at send' recv' mtime'
+      lct' <- ac lls_tc_lct
+      return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
   ac (LLProg at llo ps dli dex vs s) =

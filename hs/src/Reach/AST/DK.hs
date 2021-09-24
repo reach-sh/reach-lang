@@ -71,7 +71,7 @@ instance Pretty DKTail where
     DK_Com m k -> prettyCom m k
     DK_Stop _ -> prettyStop
     DK_ToConsensus {..} ->
-      prettyToConsensus__ dk_tc_send dk_tc_recv dk_tc_mtime
+      prettyToConsensus__ ("?"::String) dk_tc_send dk_tc_recv dk_tc_mtime
     DK_If _at ca t f -> prettyIfp ca t f
     DK_Switch _at ov csm -> prettySwitch ov csm
     DK_FromConsensus _at _ret_at k ->
