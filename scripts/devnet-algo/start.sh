@@ -10,16 +10,16 @@ while ! <"/dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT"; do
   sleep 1
 done
 
-if [ "$REACH_ALGO_DEBUG" = "" ] ; then
-  echo Not starting debugger. To start, use REACH_ALGO_DEBUG=1.
+if [ "$REACH_DEBUG" = "" ] ; then
+  echo Not starting debugger. To start, use REACH_DEBUG=1.
 else
   echo Starting debugger
   mkdir -p /dbg
   export TEAL_DEBUGGER_DIR=/dbg
-  (while true; do
-    sleep 30;
-    /rotate_dbg.sh
-  done) &
+  (cd /dbg || exit 1;
+   while sleep 90; do
+      /rotate_dbg.sh 16
+   done) &
 fi
 
 # Disable telemetry

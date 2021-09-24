@@ -24,7 +24,7 @@ devnet-algo:
   depends_on:
     - devnet-algo-pg
   environment:
-    - REACH_ALGO_DEBUG
+    - REACH_DEBUG
     - POSTGRES_HOST=reach-devnet-algo-pg
     - POSTGRES_USER=algogrand
     - POSTGRES_PASSWORD=indexer
