@@ -54,18 +54,12 @@ const numOfPlayers = 2;
           console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
           return true;
         }),
-        buyerWas: (async (addr) => {
-          const bought_n = bought || stdlib.addressEq(addr, accPlayer);
-          if ( bought == false && bought_n == true ) {
-            console.log(`Player ${i} bought a ticket`);
-          }
-          bought = bought_n;
+        didBuy: (async () => {
+          console.log(`Player ${i} bought a ticket`);
+          bought = true;
         }),
-        returnerWas: (async (addr, ticket) => {
-          void(addr);
-          if ( stdlib.addressEq(addr, accPlayer) ) {
-            console.log(`Player ${i} returned and revealed ticket #${ticket}`);
-          }
+        didReturn: (async (ticket) => {
+          console.log(`Player ${i} returned and revealed ticket #${ticket}`);
         }),
       });
     })

@@ -21,8 +21,8 @@ export const main =
       ParticipantClass('Player',
       { ...Common,
         shouldBuy: Fun([UInt], Bool),
-        buyerWas: Fun([Address], Null),
-        returnerWas: Fun([Address, UInt], Null),
+        didBuy: Fun([], Null),
+        didReturn: Fun([UInt], Null),
       }),
     ],
     (Sponsor, Player) => {
@@ -61,7 +61,7 @@ export const main =
           ((ticketCommit) => {
             const player = this;
             require(isNone(randomsM[player]));
-            Player.only(() => interact.buyerWas(player));
+            Player.only(() => { if ( didPublish() ) { interact.didBuy(); } });
             randomsM[player] = ticketCommit;
             return [ howMany + 1 ];
           })
@@ -92,7 +92,7 @@ export const main =
           }),
           ((ticket) => {
             const player = this;
-            Player.only(() => interact.returnerWas(player, howManyReturned));
+            Player.only(() => { if ( didPublish() ) { interact.didReturn(howManyReturned); } });
             require(isNone(ticketsM[player]));
             require(randomMatches(player, ticket));
             ticketsM[player] = howManyReturned;

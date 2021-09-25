@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -112,9 +112,7 @@ tealcount () {
 #######
 
 # jb
-ci ETH log-attack1
-ci ETH log-attack1j
-ci ETH log-attack2
+ci ALGO raffle
 exit 0
 
 # (cd hs && mk hs-test)
