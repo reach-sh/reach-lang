@@ -11,6 +11,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.5 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/09/25: Reach clients will detect that they are attempting to publish in a race that they cannot win and switch to listening for the publication of another.
+This has the impact of frontends not being asked to sign transactions that cannot possibly succeed.}
 @item{2021/09/25: Added @reachin{didPublish()}.}
 @item{2021/09/24: Contracts do not store the Merkleization of the state, but store the state itself; this changes the interface to contracts, so this release cannot communicate with DApps compiled by older versions of Reach.}
 @item{2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use @reachin{relativeTime} instead.}

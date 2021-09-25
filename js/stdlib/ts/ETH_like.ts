@@ -686,6 +686,20 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     const getInfo = async () => await infoP;
 
+    const canIWin = async (lct:BigNumber): Promise<boolean> => {
+      const ethersC = await getC();
+      let ret = true;
+      try {
+        const val = await ethersC["_reachCurrentTime"]();
+        ret = lct.eq(val);
+        debug(`canIWin`, {lct, val});
+      } catch (e) {
+        debug(`canIWin`, {e});
+      }
+      debug(`canIWin`, {ret});
+      return ret;
+    };
+
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
       const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> =>
@@ -713,6 +727,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       let block_repeat_count = 0;
       while ( ! await checkTimeout(getTimeSecs, timeoutAt, block_send_attempt) ) {
         debug(...dhead, 'TRY');
+        if ( ! soloSend && ! await canIWin(lct) ) {
+          debug(...dhead, `CANNOT WIN`);
+          return await doRecv(false, false);
+        }
         try {
           debug(...dhead, 'ARG', arg, pay);
           await callC(dhead, funcName, arg, pay);

@@ -928,6 +928,38 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
+    const getAppState = async (): Promise<any> => {
+      const lab = `getAppState`;
+      const client = await getAlgodClient();
+      let appInfo;
+      try {
+        appInfo = await client.getApplicationByID(ApplicationID).do();
+      } catch (e) {
+        debug(lab, {e});
+        return undefined;
+      }
+      const appSt = appInfo['params']['global-state'];
+      debug(lab, {appSt});
+      return appSt;
+    };
+    type GlobalState = [BigNumber, BigNumber, Address];
+    const getGlobalState = async (appSt_g?:any): Promise<GlobalState|undefined> => {
+      const appSt = appSt_g || await getAppState();
+      if ( !appSt ) { return undefined; }
+      const gsbs = readStateBytes('', [], appSt);
+      if ( !gsbs ) { return undefined; }
+      // `map gvType keyState_gvs` in Haskell
+      const gty = T_Tuple([T_UInt, T_UInt, T_Address]);
+      // @ts-ignore
+      return gty.fromNet(gsbs);
+    };
+    const canIWin = async (lct:BigNumber): Promise<boolean> => {
+      const gs = await getGlobalState();
+      const r = !gs || lct.eq(gs[1]);
+      debug(`canIWin`, { lct, gs, r });
+      return r;
+    };
+
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
       const isCtor = (funcNum === 0);
@@ -1003,6 +1035,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
           debug(dhead, '--- FAIL/TIMEOUT');
           return {didTimeout: true};
+        }
+        if ( ! soloSend && ! await canIWin(lct) ) {
+          debug(dhead, `CANNOT WIN`);
+          return await doRecv(false, false);
         }
 
         debug(dhead, '--- ASSEMBLE w/', params);
@@ -1326,23 +1362,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       async (...args: any[]): Promise<any> => {
         debug('getView1', v, k, args);
         const { decode } = vim;
-        const client = await getAlgodClient();
-        let appInfo;
-        try {
-          appInfo = await client.getApplicationByID(ApplicationID).do();
-        } catch (e) {
-          debug('getApplicationById', e);
-          return ['None', null];
-        }
-        const appSt = appInfo['params']['global-state'];
-        debug({appSt});
-        const gsbs = readStateBytes('', [], appSt);
-        if ( gsbs === undefined ) {
-          return ['None', null];
-        }
-        // `map gvType keyState_gvs` in Haskell
-        const gty = T_Tuple([T_UInt, T_UInt, T_Address]);
-        const gs = gty.fromNet(gsbs);
+        const appSt = await getAppState();
+        if ( !appSt ) { return ['None', null]; }
+        const gs = await getGlobalState(appSt);
+        if ( !gs ) { return ['None', null]; }
         const vi = bigNumberToNumber(gs[0]);
         debug({vi});
         const vtys = vs[vi];
