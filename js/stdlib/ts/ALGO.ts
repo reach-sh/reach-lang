@@ -1279,8 +1279,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       debug({prefix, key});
       const ik = base64ify(new Uint8Array(key));
       debug({ik});
-      const st = (src.find((x:any) => x.key === ik)).value;
+      const ste = src.find((x:any) => x.key === ik);
+      debug({ste});
+      if ( ste === undefined ) { return []; };
+      const st = ste.value;
       debug({st});
+      if ( st.bytes === undefined ) { return []; };
       const bsi = base64ToUI8A(st.bytes);
       debug({bsi});
       return bsi;
@@ -1303,6 +1307,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug('viewMapRef', { mapi, a });
         const ls = await getLocalState(cbr2algo_addr(a));
         assert(ls !== undefined, 'viewMapRef ls undefined');
+        debug('viewMapRef', { ls });
         const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
         debug('viewMapRef', { mbs });
         const md = mapDataTy.fromNet(mbs);
@@ -1327,6 +1332,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return ['None', null];
         }
         const appSt = appInfo['params']['global-state'];
+        debug({appSt});
         const gsbs = readStateBytes('', [], appSt);
         if ( gsbs === undefined ) {
           return ['None', null];
@@ -1350,7 +1356,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const vvs = vty.fromNet(vvn);
         debug({vvs});
         try {
-          const vres = await decode(vi, vvs.slice(1), args);
+          const vres = await decode(vi, vvs, args);
           debug({vres});
           return ['Some', vres];
         } catch (e) {

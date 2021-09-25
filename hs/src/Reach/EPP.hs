@@ -502,18 +502,19 @@ be_c = \case
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     this <- newSavePoint "fromConsensus"
+    views <- asks be_views
     (more, s'l) <-
       captureMore $
         local (\e -> e { be_interval = default_interval
                        , be_prev = this
                        , be_prevs = S.singleton this }) $ do
+          fg_use views
           be_s s
-    toks <- be_toks <$> ask
+    toks <- asks be_toks
     case more of
       True -> do
-        BEnv {..} <- ask
-        fg_use be_views
-        liftIO $ modifyIORef be_viewr $ M.insert this $ flip ViewInfo be_views
+        viewr <- asks be_viewr
+        liftIO $ modifyIORef viewr $ M.insert this $ flip ViewInfo views
       False -> do
         fg_use toks
     let mkfrom_info do_read = do

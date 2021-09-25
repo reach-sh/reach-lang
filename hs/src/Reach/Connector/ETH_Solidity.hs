@@ -1287,6 +1287,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             [ "uint256 current_step;"
             , "uint256 current_time;"
             , "  bytes current_svbs;"
+            , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
             ] <> map_defns <> view_defns
     hs' <- solHandlers hs
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)

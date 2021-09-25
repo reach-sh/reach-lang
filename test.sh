@@ -112,9 +112,13 @@ tealcount () {
 #######
 
 jb
+ci ALGO view-bytes
+exit 0
+ci ALGO view-steps
+jb
 
-ci ALGO view-fun
-ci ALGO view-map
+ci ETH workshop-fomo
+ci ALGO workshop-fomo
 exit 0
 # XXX hs-test-accept
 # XXX log-attack must be updated

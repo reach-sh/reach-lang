@@ -31,7 +31,7 @@ export const main = Reach.App(
     vMain.who.set();
     commit();
     A.only(() => interact.checkView([MA.None(), MBS.Some(meta)]));
-    
+
     A.publish();
     vMain.who.set(A);
     vMain.meta.set();

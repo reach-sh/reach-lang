@@ -1,7 +1,7 @@
 // Automatically generated with Reach 0.1.5
 /* eslint-disable */
 export const _version = '0.1.5';
-export const _backendVersion = 2;
+export const _backendVersion = 3;
 
 
 export function getExports(s) {
@@ -12,11 +12,15 @@ export function getExports(s) {
 
 export function _getViews(s, viewlib) {
   const stdlib = s.reachStdlib;
+  const ctc0 = stdlib.T_Address;
+  const ctc1 = stdlib.T_UInt;
   
   return {
     infos: {
       },
     views: {
+      1: [ctc0, ctc1],
+      2: [ctc0, ctc1]
       }
     };
   
@@ -48,6 +52,7 @@ export async function Alice(ctc, interact) {
     args: [v54],
     evt_cnt: 1,
     funcNum: 0,
+    lct: stdlib.checkedBigNumberify('./index.rsh:17:5:dot', stdlib.UInt_max, 0),
     onlyIf: true,
     out_tys: [ctc1],
     pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
@@ -94,6 +99,7 @@ export async function Alice(ctc, interact) {
     args: [v57, v58, v53],
     evt_cnt: 1,
     funcNum: 2,
+    lct: v65,
     onlyIf: true,
     out_tys: [ctc0],
     pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
@@ -189,6 +195,7 @@ export async function Bob(ctc, interact) {
     args: [v57, v58],
     evt_cnt: 0,
     funcNum: 1,
+    lct: v59,
     onlyIf: true,
     out_tys: [],
     pay: [v58, []],
@@ -269,10 +276,15 @@ bz alloc
 byte base64()
 app_global_get
 dup
-substring 0 32
+substring 0 8
+btoi
 store 1
-substring 32 64
+dup
+substring 8 16
+btoi
 store 2
+substring 16 48
+store 3
 txn NumAppArgs
 int 3
 ==
@@ -285,12 +297,18 @@ int 0
 ==
 bz l0
 pop
-txna ApplicationArgs 1
-dup
-len
+// check step
 int 0
+load 1
 ==
 assert
+// check time
+txna ApplicationArgs 1
+btoi
+load 2
+==
+assert
+byte base64()
 pop
 txna ApplicationArgs 2
 dup
@@ -311,7 +329,7 @@ global CreatorAddress
 ==
 assert
 load 255
-store 2
+store 3
 // "CheckPay"
 // "./index.rsh:17:5:dot"
 // "[]"
@@ -348,32 +366,30 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Receiver
 ==
 assert
 l1:
 pop
-// compute state in HM_Check 0
-int 8
-bzero
-sha256
-load 1
-==
-assert
 // "CheckPay"
 // "./index.rsh:17:5:dot"
 // "[]"
-// compute state in HM_Set 1
-byte base64(AAAAAAAAAAE=)
 txn Sender
-concat
 load 254
 itob
 concat
-sha256
+int 1
+bzero
+dig 1
+substring 0 40
+app_global_put
+pop
+int 1
 store 1
+global Round
+store 2
 txn OnCompletion
 int NoOp
 ==
@@ -386,12 +402,20 @@ int 1
 ==
 bz l2
 pop
-txna ApplicationArgs 1
-dup
-len
-int 40
+// check step
+int 1
+load 1
 ==
 assert
+// check time
+txna ApplicationArgs 1
+btoi
+load 2
+==
+assert
+int 1
+bzero
+app_global_get
 dup
 substring 0 32
 store 255
@@ -407,17 +431,6 @@ int 0
 ==
 assert
 pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
-load 255
-concat
-load 254
-itob
-concat
-sha256
-load 1
-==
-assert
 // "CheckPay"
 // "./index.rsh:22:5:dot"
 // "[]"
@@ -454,22 +467,27 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Receiver
 ==
 assert
 l3:
 pop
-// compute state in HM_Set 2
-byte base64(AAAAAAAAAAI=)
 load 255
-concat
 load 254
 itob
 concat
-sha256
+int 1
+bzero
+dig 1
+substring 0 40
+app_global_put
+pop
+int 2
 store 1
+global Round
+store 2
 txn OnCompletion
 int NoOp
 ==
@@ -482,12 +500,20 @@ int 2
 ==
 bz l4
 pop
-txna ApplicationArgs 1
-dup
-len
-int 40
+// check step
+int 2
+load 1
 ==
 assert
+// check time
+txna ApplicationArgs 1
+btoi
+load 2
+==
+assert
+int 1
+bzero
+app_global_get
 dup
 substring 0 32
 store 255
@@ -505,17 +531,6 @@ assert
 dup
 store 253
 pop
-// compute state in HM_Check 2
-byte base64(AAAAAAAAAAI=)
-load 255
-concat
-load 254
-itob
-concat
-sha256
-load 1
-==
-assert
 // "CheckPay"
 // "./index.rsh:27:5:dot"
 // "[]"
@@ -559,7 +574,7 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Sender
 ==
@@ -602,7 +617,7 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Sender
 ==
@@ -614,8 +629,6 @@ gtxns CloseRemainderTo
 assert
 l6:
 pop
-global ZeroAddress
-store 1
 txn OnCompletion
 int DeleteApplication
 ==
@@ -627,7 +640,11 @@ assert
 updateState:
 byte base64()
 load 1
+itob
 load 2
+itob
+load 3
+concat
 concat
 app_global_put
 checkSize:
@@ -655,13 +672,12 @@ txn OnCompletion
 int NoOp
 ==
 assert
-// compute state in HM_Set 0
-int 8
-bzero
-sha256
+int 0
 store 1
-global ZeroAddress
+int 0
 store 2
+global ZeroAddress
+store 3
 b updateState
 `,
   appClear: `#pragma version 4
@@ -685,10 +701,10 @@ int 1
 `,
   mapDataKeys: 0,
   mapDataSize: 0,
+  stateKeys: 1,
+  stateSize: 40,
   unsupported: [],
-  version: 3,
-  viewKeys: 0,
-  viewSize: 0
+  version: 4
   };
 const _ETH = {
   ABI: `[
@@ -697,9 +713,9 @@ const _ETH = {
       {
         "components": [
           {
-            "internalType": "bool",
-            "name": "svs",
-            "type": "bool"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
@@ -709,12 +725,12 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T2",
+            "internalType": "struct T1",
             "name": "msg",
             "type": "tuple"
           }
         ],
-        "internalType": "struct T3",
+        "internalType": "struct T2",
         "name": "_a",
         "type": "tuple"
       }
@@ -739,9 +755,9 @@ const _ETH = {
       {
         "components": [
           {
-            "internalType": "bool",
-            "name": "svs",
-            "type": "bool"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
@@ -751,13 +767,13 @@ const _ETH = {
                 "type": "uint256"
               }
             ],
-            "internalType": "struct T2",
+            "internalType": "struct T1",
             "name": "msg",
             "type": "tuple"
           }
         ],
         "indexed": false,
-        "internalType": "struct T3",
+        "internalType": "struct T2",
         "name": "_a",
         "type": "tuple"
       }
@@ -771,21 +787,9 @@ const _ETH = {
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v57",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v58",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T0",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "internalType": "bool",
@@ -808,21 +812,9 @@ const _ETH = {
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v57",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v58",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T0",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
@@ -847,25 +839,26 @@ const _ETH = {
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "_reachCurrentTime",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v57",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v58",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T0",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "internalType": "bool",
@@ -888,21 +881,9 @@ const _ETH = {
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v57",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v58",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T0",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
@@ -932,10 +913,10 @@ const _ETH = {
     "type": "receive"
   }
 ]`,
-  Bytecode: `0x60806040526040516105b03803806105b08339810160408190526100229161010b565b600054610031901560086100e2565b60016000556040805182511515815260208084015151908201527faff782b1924a183a27e241c932e6b8714f423aa173223de3f7e3e2cb89682676910160405180910390a1610082341560076100e2565b6040805180820182526000602080830182815233845294810151518552835160018183015292516001600160a01b0316838501529351606080840191909152835180840390910181526080909201909252805192019190912090556101b9565b816101075760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b600081830360408082121561011f57600080fd5b80518082016001600160401b03808211838310171561014e57634e487b7160e01b600052604160045260246000fd5b908352855190811515821461016257600080fd5b8183526020601f198601121561017757600080fd5b8351945060208501915084821081831117156101a357634e487b7160e01b600052604160045260246000fd5b5090915260209384015182529283015250919050565b6103e8806101c86000396000f3fe60806040526004361061002d5760003560e01c80631c1ba5ee146100395780637f6e0eb71461004e57600080fd5b3661003457005b600080fd5b61004c6100473660046102cf565b610061565b005b61004c61005c3660046102e7565b610171565b60405161009d9061007990600190849060200161039e565b6040516020818303038152906040528051906020012060001c60005414600a610268565b60016000556040517f5dbde784174da6839951446f0cdb4600662ac319bb541eb52c458586ef0f9dfb906100d2908390610319565b60405180910390a16100eb346020830135146009610268565b604080518082019091526000808252602082015261010c60208301836102ad565b6001600160a01b03168152602080830135818301526040516101529160029184910191825280516001600160a01b03166020808401919091520151604082015260600190565b60408051601f1981840301815291905280516020909101206000555050565b6040516101ad9061018990600290849060200161039e565b6040516020818303038152906040528051906020012060001c60005414600d610268565b60016000556040517fed56411bf8f63ffdf329be2a88a3331a1f05fb01aeaf4dccefabc6809f0aa044906101e2908390610349565b60405180910390a16101f63415600b610268565b6102183361020760208401846102ad565b6001600160a01b031614600c610268565b61022560208201826102ad565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610260573d6000803e3d6000fd5b506000805533ff5b8161028d5760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b80356001600160a01b03811681146102a857600080fd5b919050565b6000602082840312156102bf57600080fd5b6102c882610291565b9392505050565b6000606082840312156102e157600080fd5b50919050565b600061104082840312156102e157600080fd5b6001600160a01b0361030b82610291565b168252602090810135910152565b6060810161032782846102fa565b604083013580151580821461033b57600080fd5b806040850152505092915050565b611040810161035882846102fa565b60408201604084016000805b608081101561039457823560ff811680821461037e578384fd5b8552506020938401939290920191600101610364565b5050505092915050565b828152606081016102c860208301846102fa56fea2646970667358221220534f3a6353c76aedac6237cd49f9ca68dd9086deed140b2f58e32e07357d95e264736f6c63430008070033`,
-  BytecodeLen: 1456,
+  Bytecode: `0x608060405260405161087938038061087983398101604081905261002291610195565b60008055604080518251815260208084015151908201527fcbe8b01c100825cba852556e4d2f014b5e636208419a4c3d83f7ef63111ab885910160405180910390a1610070341560076100d3565b6040805180820182526000602080830182815233808552868301515182526001938490554390935584518083019390935251828501528351808303850181526060909201909352805191926100cb92600292909101906100fc565b50505061026e565b816100f85760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b82805461010890610233565b90600052602060002090601f01602090048101928261012a5760008555610170565b82601f1061014357805160ff1916838001178555610170565b82800160010185558215610170579182015b82811115610170578251825591602001919060010190610155565b5061017c929150610180565b5090565b5b8082111561017c5760008155600101610181565b60008183036040808212156101a957600080fd5b80518082016001600160401b0380821183831017156101d857634e487b7160e01b600052604160045260246000fd5b818452865183526020601f19860112156101f157600080fd5b83519450602085019150848210818311171561021d57634e487b7160e01b600052604160045260246000fd5b5090915260209384015182529283015250919050565b600181811c9082168061024757607f821691505b6020821081141561026857634e487b7160e01b600052602260045260246000fd5b50919050565b6105fc8061027d6000396000f3fe6080604052600436106100385760003560e01c80633029bd57146100445780637963168e14610059578063832307571461006c57600080fd5b3661003f57005b600080fd5b610057610052366004610507565b61008e565b005b6100576100673660046104ef565b610206565b34801561007857600080fd5b5060015460405190815260200160405180910390f35b61009e600260005414600d61037e565b6001546100af90823514600e61037e565b6000808055600280546100c190610591565b80601f01602080910402602001604051908101604052809291908181526020018280546100ed90610591565b801561013a5780601f1061010f5761010080835404028352916020019161013a565b820191906000526020600020905b81548152906001019060200180831161011d57829003601f168201915b5050505050806020019051810190610152919061047d565b90507f6684f814e2616a68bb64e11e05af1bab6e72e48d2a71fad84c56974257f0d420826040516101839190610544565b60405180910390a16101973415600b61037e565b80516101af906001600160a01b03163314600c61037e565b805160208201516040516001600160a01b039092169181156108fc0291906000818181858888f193505050501580156101ec573d6000803e3d6000fd5b5060008080556001819055610203906002906103a7565b33ff5b610216600160005414600961037e565b60015461022790823514600a61037e565b60008080556002805461023990610591565b80601f016020809104026020016040519081016040528092919081815260200182805461026590610591565b80156102b25780601f10610287576101008083540402835291602001916102b2565b820191906000526020600020905b81548152906001019060200180831161029557829003601f168201915b50505050508060200190518101906102ca919061047d565b90507f9f41c6cf17ede288cbb2cfbbafdd05b2b2025dea3b047cdb79dbc892d7a9286d826040516102fb919061051a565b60405180910390a161031481602001513414600861037e565b6040805180820182526000808252602080830182815285516001600160a01b031680855286830151825260029384905543600155855180840191909152905181860152845180820386018152606090910190945283519293610378939101906103e4565b50505050565b816103a35760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b5080546103b390610591565b6000825580601f106103c3575050565b601f0160209004906000526020600020908101906103e19190610468565b50565b8280546103f090610591565b90600052602060002090601f0160209004810192826104125760008555610458565b82601f1061042b57805160ff1916838001178555610458565b82800160010185558215610458579182015b8281111561045857825182559160200191906001019061043d565b50610464929150610468565b5090565b5b808211156104645760008155600101610469565b60006040828403121561048f57600080fd5b6040516040810181811067ffffffffffffffff821117156104c057634e487b7160e01b600052604160045260246000fd5b60405282516001600160a01b03811681146104da57600080fd5b81526020928301519281019290925250919050565b60006040828403121561050157600080fd5b50919050565b6000611020828403121561050157600080fd5b8135815260408101602083013580151580821461053657600080fd5b806020850152505092915050565b81358152611020810160208083018185016000805b608081101561058657823560ff8116808214610573578384fd5b8552509284019291840191600101610559565b505050505092915050565b600181811c908216806105a557607f821691505b6020821081141561050157634e487b7160e01b600052602260045260246000fdfea26469706673582212200dd956334212a28b559587a0d09bd43b613ca92f46abb1aa5ee028581a38e39164736f6c63430008070033`,
+  BytecodeLen: 2169,
   Which: `oD`,
-  version: 2,
+  version: 3,
   views: {
     }
   };
