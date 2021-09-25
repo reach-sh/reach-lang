@@ -931,10 +931,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
       const isCtor = (funcNum === 0);
-      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
+      const doRecv = async (didSend:boolean, waitIfNotPresent: boolean): Promise<Recv> =>
+        await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
-        return await doRecv(true);
+        return await doRecv(false, true);
       }
 
       const [ value, toks ] = pay;
@@ -948,6 +948,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const [ _svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
       void(_svs); void(_svs_tys);
       const fake_res = {
+        didSend: true,
         didTimeout: false,
         data: msg,
         time: bigNumberify(0), // This should not be read.
@@ -1147,7 +1148,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           if ( ! soloSend ) {
             // If there is no soloSend, then someone else "won", so let's
             // listen for their message
-            return await doRecv(false);
+            debug(dhead, 'LOST');
+            return await doRecv(false, false);
           }
 
           if ( timeoutAt ) {
@@ -1159,12 +1161,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         }
 
-        return await doRecv(false);
+        return await doRecv(true, false);
       }
     };
 
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
+      const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
       const indexer = await getIndexer();
       const isCtor = (funcNum == 0);
       const fromBlock_summand = isCtor ? 0 : 1;
@@ -1266,6 +1268,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
 
         return {
+          didSend,
           didTimeout: false,
           data: ctc_args,
           time: bigNumberify(realLastRound),

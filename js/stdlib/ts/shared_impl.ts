@@ -99,6 +99,7 @@ export type MkPayAmt<Token> =
 
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
+  didSend: boolean,
   data: Array<unknown>,
   from: RawAddress,
   time: BigNumber,
@@ -127,7 +128,10 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> =
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
-  funcNum: number, evt_cnt: number, out_tys: Array<ConnectorTy>,
+  funcNum: number,
+  evt_cnt: number,
+  out_tys: Array<ConnectorTy>,
+  didSend: boolean,
   waitIfNotPresent: boolean,
   timeoutAt: TimeArg | undefined,
 };

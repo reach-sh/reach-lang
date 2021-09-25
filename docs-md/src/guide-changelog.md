@@ -10,6 +10,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.5 is the current Reach release candidate version.
 
++ 2021/09/25: Added `didPublish()`.
++ 2021/09/24: Contracts do not store the Merkleization of the state, but store the state itself; this changes the interface to contracts, so this release cannot communicate with DApps compiled by older versions of Reach.
 + 2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use `relativeTime` instead.
 + 2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the `firstMsg` deployment mode.
 

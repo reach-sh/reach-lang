@@ -676,6 +676,7 @@ data SLPrimitive
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
   | SLPrim_muldiv
+  | SLPrim_didPublish
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

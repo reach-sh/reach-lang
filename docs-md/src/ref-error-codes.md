@@ -2166,8 +2166,8 @@ const f = (x) => {
 
 ## {#RE0118} RE0118
 
-This error indicates that a switch case is unreachable. This issue will occur when a `case` is listed
-after `default`.
+This error indicates that a switch case is unreachable.
+This issue will occur when a `case` is listed after `default`.
 
 For example, the code below erroneously puts a `case` after `default`:
 
@@ -2187,6 +2187,12 @@ Maybe(UInt).Some(5).match({
   default: (() => 0),
 });
 ```
+
+
+## {#RE0119} RE0119
+
+This error indicates that you have inspected the details about a publication, such as via `didPublish()`, before there has been a publication.
+This is impossible, so the expression must be moved after the first publication.
 
 
 ## {#REP0000} REP0000

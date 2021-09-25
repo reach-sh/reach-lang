@@ -572,7 +572,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          return await impl.recv({funcNum, evt_cnt, out_tys, waitIfNotPresent: false, timeoutAt});
+          return await impl.recv({funcNum, evt_cnt, out_tys, didSend: true, waitIfNotPresent: false, timeoutAt});
         },
       };
       const impl: Contract = deferContract(true, implP, implNow);
@@ -688,10 +688,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
       const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
-      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
+      const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> =>
+        await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
       if ( ! onlyIf ) {
-        return await doRecv(true);
+        return await doRecv(false, true);
       }
 
       const funcName = `m${funcNum}`;
@@ -718,7 +718,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           await callC(dhead, funcName, arg, pay);
         } catch (e) {
           if ( ! soloSend ) {
-            debug(...dhead, `SKIPPING`, e);
+            debug(...dhead, `LOST`, e);
+            return await doRecv(false, false);
           } else {
             debug(...dhead, `ERROR`, { stack: e.stack });
 
@@ -746,7 +747,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         }
 
         debug(...dhead, 'SUCC');
-        return await doRecv(false);
+        return await doRecv(true, false);
       }
 
       // XXX If we were trying to join, but we got sniped, then we'll
@@ -759,7 +760,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, out_tys, waitIfNotPresent, timeoutAt } = rargs;
+      const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
       const isCtor = (funcNum == 0)
       const lastBlock = await getLastBlock();
       const ok_evt = `e${funcNum}`;
@@ -844,7 +845,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const { from } = ok_t;
           const theSecsBN = await getTimeSecs(theBlockBN);
           return {
-            data, getOutput, from,
+            data, getOutput, from, didSend,
             didTimeout: false,
             time: theBlockBN,
             secs: theSecsBN,

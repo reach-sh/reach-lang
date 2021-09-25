@@ -134,7 +134,7 @@ instance Sanitize DLSend where
   sani (DLSend {..}) = DLSend ds_isClass (sani ds_msg) (sani ds_pay) (sani ds_when)
 
 instance {-# OVERLAPPING #-} Sanitize a => Sanitize (DLRecv a) where
-  sani (DLRecv {..}) = DLRecv dr_from dr_msg dr_time dr_secs (sani dr_k)
+  sani (DLRecv {..}) = DLRecv dr_from dr_msg dr_time dr_secs dr_didSend (sani dr_k)
 
 instance Sanitize LLStep where
   sani = \case

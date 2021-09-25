@@ -147,6 +147,7 @@ data EvalError
   | Err_Return_MustBeTail
   | Err_Return_BothSidesMust
   | Err_Switch_UnreachableCase SrcLoc SLVar SrcLoc
+  | Err_NotAfterFirst
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -275,6 +276,7 @@ instance HasErrorCode EvalError where
     Err_Return_MustBeTail -> 116
     Err_Return_BothSidesMust -> 117
     Err_Switch_UnreachableCase {} -> 118
+    Err_NotAfterFirst -> 119
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -696,5 +698,7 @@ instance Show EvalError where
       "If one side of a branch `return`s, the other side must as well"
     Err_Switch_UnreachableCase cat cs dat ->
       "The switch case `" <> cs <> "` defined at " <> show cat <> " is unreachable because `default` was used at " <> show dat
+    Err_NotAfterFirst ->
+      "Cannot inspect publication details until after first publication"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

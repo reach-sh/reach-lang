@@ -72,4 +72,10 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 This is used in a @tech{local step} before @reachin{checkCommitment} is used in a @tech{consensus step}.
 
+@subsection{@tt{didPublish}}
 
+@(mint-define! '("didPublish"))
+@reach{
+ didPublish() }
+
+@index{didPublish} Returns a boolean that indicates whether the last publication was made by this principal.

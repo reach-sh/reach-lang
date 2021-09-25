@@ -131,9 +131,6 @@ instance Monoid a => Monoid (App a) where
 jsTxn :: App Doc
 jsTxn = ("txn" <>) . pretty . ctxt_txn <$> ask
 
-jsTimeoutFlag :: App Doc
-jsTimeoutFlag = (<> ".didTimeout") <$> jsTxn
-
 jsContract_ :: DLType -> App Doc
 jsContract_ = \case
   T_Null -> return "stdlib.T_Null"
@@ -577,12 +574,6 @@ jsAsn mode asn =
     cv (v_, _) = jsContinueVar v_
     a (_, a_) = jsArg a_
 
-jsFromSpec :: AppT DLVar
-jsFromSpec v = do
-  v' <- jsVar v
-  txn <- jsTxn
-  return $ "const" <+> v' <+> "=" <+> txn <> ".from" <> semi <> hardline
-
 jsPayAmt :: AppT DLPayAmt
 jsPayAmt (DLPayAmt {..}) = do
   net' <- jsArg pa_net
@@ -637,18 +628,23 @@ jsETail = \case
             common closes <$> (jsCon $ DLL_Bool True)
           FI_Continue _svs -> do
             common [] <$> (jsCon $ DLL_Bool False)
-  ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv mto k_ok -> do
+  ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv didSendv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
     let withCtxt = local (\e -> e { ctxt_txn = (ctxt_txn e) + 1 })
     txn <- withCtxt jsTxn
-    let msg_vs_defp = "const" <+> jsArray msg_vs' <+> "=" <+> txn <> ".data" <> semi <> hardline
     timev' <- jsVar timev
-    let time_defp = "const" <+> timev' <+> "=" <+> txn <> ".time" <> semi <> hardline
     secsv' <- jsVar secsv
-    let secs_defp = "const" <+> secsv' <+> "=" <+> txn <> ".secs" <> semi <> hardline
-    fs_ok' <- withCtxt $ jsFromSpec fs_ok
-    let k_defp = msg_vs_defp <> time_defp <> secs_defp <> fs_ok'
+    didSendv' <- jsVar didSendv
+    fromv' <- jsVar fs_ok
+    let txn_defs =
+          [ "data:" <+> jsArray msg_vs'
+          , "secs:" <+> secsv'
+          , "time:" <+> timev'
+          , "didSend:" <+> didSendv'
+          , "from:" <+> fromv'
+          ]
+    let k_defp = "const" <+> braces (hsep $ punctuate comma txn_defs) <+> "=" <+> txn <> semi <> hardline
     k_ok' <- withCtxt $ jsETail k_ok
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-
@@ -659,7 +655,7 @@ jsETail = \case
           delays' <- case delays of
                       Nothing -> return "undefined"
                       Just x -> jsTimeArg x
-          timef <- withCtxt $ jsTimeoutFlag
+          timef <- withCtxt $ (<> ".didTimeout") <$> jsTxn
           return (delays', jsIf timef k_top k_okp)
     let a_funcNum = pretty which
     let a_evt_cnt = pretty $ length msg_vs
@@ -669,6 +665,7 @@ jsETail = \case
           [ ("funcNum", a_funcNum)
           , ("evt_cnt", a_evt_cnt)
           , ("out_tys", a_out_tys)
+          , ("didSend", "false")
           , ("waitIfNotPresent", "false")
           , ("timeoutAt", a_timeout_delay) ]
     callp <-

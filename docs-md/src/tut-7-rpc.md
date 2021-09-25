@@ -74,15 +74,17 @@ ${code("/examples/py-impl", 15, 23)}
 Deploying and attaching to contracts works slightly differently over RPC:
 
 ${code("/examples/js-impl", 15, 17)}
-${code("/examples/py-impl", 24, 26)}
+${code("/examples/py-impl", 24, 25)}
 
 As previously mentioned, it is the responsibility of the
 [RPC Server](##ref-backends-rpc) (rather than that of the frontend
 communicating over RPC) to interface with the DApp's backend, so that
 argument is absent in the Python version shown above.
 Instead, Alice's account RPC handle alone is sufficient for her to
-deploy, and only Bob's account RPC handle and Alice's
-contract RPC handle are necessary for Bob to attach.
+deploy.
+We also need to delay Bob's attach until later, because Python lacks Promises that work like JavaScript's.
+When we do attach Bob, only Bob's account RPC handle and Alice's
+contract RPC handle are necessary for him to attach.
 
 ---
 
@@ -90,14 +92,14 @@ contract RPC handle are necessary for Bob to attach.
 equivalents:
 
 ${code("/examples/js-impl", 18, 19)}
-${code("/examples/py-impl", 27, 29)}
+${code("/examples/py-impl", 26, 28)}
 
 ---
 
 Even participant interact interface definitions remain largely the same:
 
 ${code("/examples/js-impl", 20, 32)}
-${code("/examples/py-impl", 30, 35)}
+${code("/examples/py-impl", 29, 34)}
 
 Here, both the JavaScript and Python frontends begin declaring a
 reusable "player constructor".
@@ -123,7 +125,7 @@ although it easily could with a few extra lines of code.
 accordingly easily to implement in either language:
 
 ${code("/examples/js-impl", 36, 38)}
-${code("/examples/py-impl", 36, 38)}
+${code("/examples/py-impl", 35, 37)}
 
 ---
 
@@ -131,7 +133,7 @@ ${code("/examples/py-impl", 36, 38)}
 The same is true of `seeOutcome`:
 
 ${code("/examples/js-impl", 33, 35)}
-${code("/examples/py-impl", 39, 48)}
+${code("/examples/py-impl", 38, 47)}
 
 At the end of the Python code we return a `dict` that represents those
 fields which are common to both Alice and Bob's
@@ -147,7 +149,7 @@ Finally, we proceed to the most interesting part of the program and use the
 code we have built up thus far to actually play a game of _Rock, Paper, Scissors!_:
 
 ${code("/examples/js-impl", 41, 60)}
-${code("/examples/py-impl", 49, 84)}
+${code("/examples/py-impl", 48, 85)}
 
 In the Python version we create a function called `play_alice` and spawn
 it as a concurrent thread, which begins running in the background on line 56.
@@ -160,9 +162,11 @@ and adds an additional `wager` value which is set to the result of
 as well as setting a `deadline` of `10`.
 
 Bob's interface is likewise defined and spawned as another thread, which also
-begins running concurrently on line 68.
+begins running concurrently on line 69.
 In Bob's case we add an `acceptWager` method instead of another value to
 his participant interact interface.
+Furthermore, his function is more complex, because we delay creating his contract handle until this time, so that the main thread does not block waiting for Alice's contract information to resolve.
+This separation is not necessary in JavaScript, because of how JavaScript Promises work.
 
 Calling `.join()` on `alice` and `bob` instructs the main thread
 to wait until both child threads have run to completion, signifying the end of
@@ -174,7 +178,7 @@ result to the screen prior to reaching this step, because that is how we encoded
 their `seeOutcome` methods.
 
 All that remains is to release Alice and Bob's RPC handles from the
-server's memory on lines 79 and 80 with the `/forget/acc` and
+server's memory on lines 80 and 81 with the `/forget/acc` and
 `/forget/ctc` methods, then instruct the Python process' interpreter to
 invoke our `main` function.
 

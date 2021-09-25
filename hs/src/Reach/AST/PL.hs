@@ -42,6 +42,7 @@ data ETail
       , et_tc_from_out :: [DLVar]
       , et_tc_from_timev :: DLVar
       , et_tc_from_secsv :: DLVar
+      , et_tc_from_didSendv :: DLVar
       , et_tc_from_mtime :: (Maybe (Maybe DLTimeArg, ETail))
       , et_tc_cons :: ETail
       }
@@ -68,7 +69,7 @@ instance Pretty ETail where
           <> pretty k
         where
           whichp = viaShow which
-      ET_ToConsensus _ fs prev lct which msend msg out timev secsv mtime k ->
+      ET_ToConsensus _ fs prev lct which msend msg out timev secsv didSendv mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -84,6 +85,7 @@ instance Pretty ETail where
                      , ("out", (cm $ map pretty out))
                      , ("timev", pretty timev)
                      , ("secsv", pretty secsv)
+                     , ("didSendv", pretty didSendv)
                      ])
               <> hardline
           kp = ns $ pretty k

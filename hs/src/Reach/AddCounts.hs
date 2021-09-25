@@ -167,7 +167,7 @@ instance AC ETail where
       et_tc_from_mtime' <- ac et_tc_from_mtime
       ac_visit et_tc_from_me
       ac_visit et_tc_lct
-      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_lct et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_mtime' et_tc_cons'
+      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_lct et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_didSendv et_tc_from_mtime' et_tc_cons'
     ET_While {..} -> do
       et_w_k' <- ac et_w_k
       et_w_body' <- ac et_w_body
@@ -246,7 +246,7 @@ instance AC DLSend where
 instance {-# OVERLAPS #-} AC a => AC (DLRecv a) where
   ac (DLRecv {..}) = do
     dr_k' <- ac dr_k
-    return $ DLRecv dr_from dr_msg dr_time dr_secs dr_k'
+    return $ DLRecv dr_from dr_msg dr_time dr_secs dr_didSend dr_k'
 
 instance AC LLConsensus where
   ac = \case

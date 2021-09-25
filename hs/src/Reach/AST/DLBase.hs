@@ -864,6 +864,7 @@ data DLRecv a = DLRecv
   , dr_msg :: [DLVar]
   , dr_time :: DLVar
   , dr_secs :: DLVar
+  , dr_didSend :: DLVar
   , dr_k :: a
   }
   deriving (Eq, Generic)
@@ -878,6 +879,7 @@ instance Pretty a => Pretty (DLRecv a) where
              , ("msg", pretty dr_msg)
              , ("time", pretty dr_time)
              , ("secs", pretty dr_secs)
+             , ("didSend", pretty dr_didSend)
              ])
       <> render_nest (pretty dr_k)
 
@@ -891,6 +893,7 @@ data FluidVar
   | FV_thisConsensusSecs
   | FV_lastConsensusSecs
   | FV_baseWaitSecs
+  | FV_didSend
   deriving (Eq, Generic, Ord, Show)
 
 instance Pretty FluidVar where
@@ -904,6 +907,7 @@ instance Pretty FluidVar where
     FV_thisConsensusSecs -> "thisConsensusSecs"
     FV_lastConsensusSecs -> "lastConsensusSecs"
     FV_baseWaitSecs -> "baseWaitSecs"
+    FV_didSend -> "didSend"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
@@ -916,6 +920,7 @@ fluidVarType = \case
   FV_thisConsensusSecs -> T_UInt
   FV_lastConsensusSecs -> T_UInt
   FV_baseWaitSecs -> T_UInt
+  FV_didSend -> T_Bool
 
 allFluidVars :: Int -> [FluidVar]
 allFluidVars bals =
@@ -925,6 +930,7 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
+  , FV_didSend
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks

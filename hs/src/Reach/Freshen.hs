@@ -214,7 +214,7 @@ instance Freshen DLSend where
 
 instance Freshen a => Freshen (DLRecv a) where
   fu (DLRecv {..}) =
-    DLRecv <$> fu_v dr_from <*> fu_v dr_msg <*> fu_v dr_time <*> fu_v dr_secs <*> fu dr_k
+    DLRecv <$> fu_v dr_from <*> fu_v dr_msg <*> fu_v dr_time <*> fu_v dr_secs <*> fu dr_didSend <*> fu dr_k
 
 instance Freshen LLStep where
   fu = \case

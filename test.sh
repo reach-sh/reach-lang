@@ -111,7 +111,11 @@ tealcount () {
 
 #######
 
-jb
+# jb
+fc hs/t/n/j610.rsh
+c examples/overview/index.rsh
+c examples/tut-8/index.rsh
 exit 0
+# XXX log-attack must be updated
 
 # (cd hs && mk hs-test)

@@ -1250,13 +1250,16 @@ smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
   LLS_ToConsensus at _ send recv mtime -> do
-    let DLRecv whov msgvs timev secsv next_n = recv
+    let DLRecv whov msgvs timev secsv didSendv next_n = recv
     let timeout = case mtime of
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
     let bind_time = do
           pathAddUnbound at (Just timev) Nothing
           pathAddUnbound at (Just secsv) Nothing
+          -- XXX technically, didSend is guaranteed to be true if send has one
+          -- thing in it
+          pathAddUnbound at (Just didSendv) Nothing
     let after = freshAddrs $ bind_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from

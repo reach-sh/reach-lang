@@ -2039,8 +2039,8 @@ It should be corrected by moving the tail of the @reachin{if} into the @reachin{
 
 @error{RE0118}
 
-This error indicates that a switch case is unreachable. This issue will occur when a @reachin{case} is listed
-after @reachin{default}.
+This error indicates that a switch case is unreachable.
+This issue will occur when a @reachin{case} is listed after @reachin{default}.
 
 For example, the code below erroneously puts a @reachin{case} after @reachin{default}:
 
@@ -2059,6 +2059,12 @@ This error can be corrected by either removing the @reachin{Some} case or placin
     default: (() => 0),
   });
 }
+
+@error{RE0119}
+
+This error indicates that you have inspected the details about a publication, such as via @reachin{didPublish()}, before there has been a publication.
+This is impossible, so the expression must be moved after the first publication.
+
 
 @error{REP0000}
 

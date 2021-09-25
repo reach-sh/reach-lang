@@ -336,12 +336,13 @@ kgq_s ctxt = \case
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) sends
     where
-      DLRecv whov msgvs timev secsv next_n = recv
+      DLRecv whov msgvs timev secsv didSendv next_n = recv
       sends = M.toList send
       common =
         kgq_a_all ctxt (DLA_Var whov)
           >> kgq_a_all ctxt (DLA_Var timev)
           >> kgq_a_all ctxt (DLA_Var secsv)
+          >> kgq_a_all ctxt (DLA_Var didSendv)
           >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
           >> kgq_n ctxt next_n
       go (_, DLSend _ msgas amta whena) = do

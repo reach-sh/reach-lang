@@ -9,15 +9,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v55 = "Alice".interact.request;
+  const v58 = "Alice".interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:5:24:application
 
   // Theorem Formalization
 
-  const v84 = 0 == (v55 - (v55 - 1));
+  const v87 = 0 == (v58 - (v58 - 1));
   //    ^ would be false
-  assert(v84);
+  assert(v87);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

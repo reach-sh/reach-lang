@@ -81,4 +81,12 @@ makeCommitment( interact, x )
 `commitment` is the digest of `salt` and `x`.
 This is used in a local step before `checkCommitment` is used in a consensus step.
 
+### `didPublish`
 
+${ref((quote rsh), "didPublish")}
+```reach
+didPublish() 
+```
+
+
+ Returns a boolean that indicates whether the last publication was made by this principal.

@@ -493,49 +493,52 @@ contract Stdlib {
 }
 
 struct T0 {
-  address payable v57;
-  uint256 v58;
+  address payable v60;
+  uint256 v61;
+  }
+struct T1 {
+  uint256 v61;
   }
 struct T2 {
-  uint256 v58;
-  }
-struct T3 {
-  bool svs;
-  T2 msg;
+  uint256 time;
+  T1 msg;
   }
 struct T4 {
-  T0 svs;
+  uint256 time;
   bool msg;
   }
 struct T5 {
-  uint8[128] v72;
+  uint8[128] v75;
   }
 struct T6 {
-  T0 svs;
+  uint256 time;
   T5 msg;
   }
 
 
 contract ReachContract is Stdlib {
-  uint256 current_state;
+  uint256 current_step;
+  uint256 current_time;
+    bytes current_svbs;
+  function _reachCurrentTime() external view returns (uint256) { return current_time; }
   
   
   
   
-  event e0(T3 _a);
+  event e0(T2 _a);
   
-  constructor(T3 memory _a) payable {
-    reachRequire(current_state == 0x0, uint256(8) /*'state check at ./index.rsh:17:5:dot'*/);
-    current_state = 0x1;
-    
+  constructor(T2 memory _a) payable {
+    current_step = 0x0;
     
     
     emit e0(_a);
-    reachRequire(msg.value == uint256(0), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(msg.value == uint256(0), uint256(7) /*'(./examples/overview/index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
-    nsvs.v57 = payable(msg.sender);
-    nsvs.v58 = _a.msg.v58;
-    current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
+    nsvs.v60 = payable(msg.sender);
+    nsvs.v61 = _a.msg.v61;
+    current_step = uint256(1);
+    current_time = uint256(block.number);
+    current_svbs = abi.encode(nsvs);
     
     
     }
@@ -543,17 +546,20 @@ contract ReachContract is Stdlib {
   event e1(T4 _a);
   
   function m1(T4 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))), uint256(10) /*'state check at ./index.rsh:22:5:dot'*/);
-    current_state = 0x1;
-    
+    reachRequire(current_step == uint256(1), uint256(9) /*'state step check at ./examples/overview/index.rsh:22:5:dot'*/);
+    reachRequire(current_time == _a.time, uint256(10) /*'state time check at ./examples/overview/index.rsh:22:5:dot'*/);
+    current_step = 0x0;
+    (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e1(_a);
-    reachRequire(msg.value == _a.svs.v58, uint256(9) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(msg.value == _svs.v61, uint256(8) /*'(./examples/overview/index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
-    nsvs.v57 = _a.svs.v57;
-    nsvs.v58 = _a.svs.v58;
-    current_state = uint256(keccak256(abi.encode(uint256(2), nsvs)));
+    nsvs.v60 = _svs.v60;
+    nsvs.v61 = _svs.v61;
+    current_step = uint256(2);
+    current_time = uint256(block.number);
+    current_svbs = abi.encode(nsvs);
     
     
     }
@@ -561,16 +567,19 @@ contract ReachContract is Stdlib {
   event e2(T6 _a);
   
   function m2(T6 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))), uint256(13) /*'state check at ./index.rsh:27:5:dot'*/);
-    current_state = 0x1;
-    
+    reachRequire(current_step == uint256(2), uint256(13) /*'state step check at ./examples/overview/index.rsh:27:5:dot'*/);
+    reachRequire(current_time == _a.time, uint256(14) /*'state time check at ./examples/overview/index.rsh:27:5:dot'*/);
+    current_step = 0x0;
+    (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e2(_a);
-    reachRequire(msg.value == uint256(0), uint256(11) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v57 == payable(msg.sender)), uint256(12) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
-    _a.svs.v57.transfer(_a.svs.v58);
-    current_state = 0x0;
+    reachRequire(msg.value == uint256(0), uint256(11) /*'(./examples/overview/index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((_svs.v60 == payable(msg.sender)), uint256(12) /*'(./examples/overview/index.rsh:27:5:dot,[],Just "sender correct")'*/);
+    _svs.v60.transfer(_svs.v61);
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
     selfdestruct(payable(msg.sender));
     
     

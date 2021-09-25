@@ -1616,7 +1616,7 @@ And add something like this at the start of of `componentDidMount`:
 ```js
 async componentDidMount() {
   const now = await reach.getNetworkTime();
-  reach.setQueryLowerBound(reach.sub(now, 2000));
+  reach.setQueryLowerBound(reach.sub(now, 500));
   // ...
 }
 ```

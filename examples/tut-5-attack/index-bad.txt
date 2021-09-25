@@ -9,25 +9,25 @@ Verification failed:
 
   // Violation Witness
 
-  const v69 = "Alice".interact.wager;
+  const v71 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:9:28:application
-  const v72 = "Alice".interact.getHand();
+  const v74 = "Alice".interact.getHand();
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const v82 = "Bob".interact.getHand();
+  const v84 = "Bob".interact.getHand();
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization
 
-  const v91 = (v72 + (4 - v82)) % 3;
+  const v93 = (v74 + (4 - v84)) % 3;
   //    ^ would be 2
-  const v98 = (v91 == 2) ? [1, 0 ] : (v91 == 0) ? [0, 2 ] : [1, 1 ];
+  const v100 = (v93 == 2) ? [1, 0 ] : (v93 == 0) ? [0, 2 ] : [1, 1 ];
   //    ^ would be [1, 0 ]
-  const v112 = 0 == (((v69 + v69) - (v98[0] * v69)) - (v98[1] * v69));
+  const v114 = 0 == (((v71 + v71) - (v100[0] * v71)) - (v100[1] * v71));
   //    ^ would be false
-  assert(v112);
+  assert(v114);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

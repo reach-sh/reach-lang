@@ -510,6 +510,7 @@ base_env =
     , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
     , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
     , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
+    , ("didPublish", SLV_Prim $ SLPrim_didPublish)
     , ("Digest", SLV_Type ST_Digest)
     , ("Null", SLV_Type ST_Null)
     , ("Bool", SLV_Type ST_Bool)
@@ -813,6 +814,12 @@ ensure_can_wait = do
   readSt st_after_ctor >>= \case
     True -> return ()
     False -> expect_ $ Err_Eval_IllegalWait
+
+ensure_after_first :: App ()
+ensure_after_first = do
+  readSt st_after_first >>= \case
+    True -> return ()
+    False -> expect_ $ Err_NotAfterFirst
 
 sco_to_cloenv :: SLScope -> App SLCloEnv
 sco_to_cloenv SLScope {..} = do
@@ -2175,11 +2182,13 @@ evalPrim p sargs =
       ensureCreatedToken "Token.destroyed" da
       dr <- lookupBalanceFV FV_destroyed $ Just da
       doFluidRef dr
-    SLPrim_fluid_read fv -> doFluidRef fv
+    SLPrim_fluid_read fv -> do
+      zero_args
+      doFluidRef fv
     SLPrim_fluid_read_canWait fv -> do
       ensure_can_wait
       zero_args
-      evalPrim (SLPrim_fluid_read $ fv) []
+      evalPrim (SLPrim_fluid_read fv) []
     SLPrim_op op -> evalPrimOp op sargs
     SLPrim_Fun ->
       case map snd sargs of
@@ -2940,6 +2949,11 @@ evalPrim p sargs =
     SLPrim_muldiv -> do
       (x, y, z) <- three_args
       evalPrimOp MUL_DIV $ map (lvl, ) [x, y, z]
+    SLPrim_didPublish -> do
+      ensure_mode SLM_LocalStep "local"
+      ensure_after_first
+      zero_args
+      evalPrim (SLPrim_fluid_read FV_didSend) []
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3945,11 +3959,12 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                 [whoc_v, public $ SLV_Bytes at $ "sender correct"]
           return ()
         let go fv = do
-              v <- ctxt_mkvar $ DLVar at Nothing T_UInt
+              v <- ctxt_mkvar $ DLVar at Nothing $ fluidVarType fv
               doFluidSet fv $ public $ SLV_DLVar v
               return v
         dr_time <- go FV_thisConsensusTime
         dr_secs <- go FV_thisConsensusSecs
+        dr_didSend <- go FV_didSend
         k_cr <- evalStmt ks
         let mktc_recv dr_k = DLRecv {..}
         return $ (mktc_recv, k_cr)
