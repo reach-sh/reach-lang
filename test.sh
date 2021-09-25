@@ -111,8 +111,7 @@ tealcount () {
 
 #######
 
-ci ETH log-attack2
+jb
 exit 0
-# XXX log-attack must be updated
 
 # (cd hs && mk hs-test)

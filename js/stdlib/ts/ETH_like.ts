@@ -163,17 +163,11 @@ const {
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
 
 const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk(() => 0);
-
 function getQueryLowerBound() {
   return bigNumberify(_getQueryLowerBound());
 }
-
-function setQueryLowerBound(networkTime: BigNumber|number) {
-  networkTime = typeof networkTime === 'number' ? networkTime
-    : networkTime._isBigNumber ? networkTime.toNumber()
-    : networkTime;
-  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
-  _setQueryLowerBound(networkTime);
+function setQueryLowerBound(x: BigNumber|number) {
+  _setQueryLowerBound(bigNumberToNumber(x));
 }
 
 /** @description convenience function for drilling down to the actual address */
