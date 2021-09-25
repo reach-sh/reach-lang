@@ -111,16 +111,8 @@ tealcount () {
 
 #######
 
-jb
-ci ALGO view-bytes
+ci ETH log-attack2
 exit 0
-ci ALGO view-steps
-jb
-
-ci ETH workshop-fomo
-ci ALGO workshop-fomo
-exit 0
-# XXX hs-test-accept
 # XXX log-attack must be updated
 
 # (cd hs && mk hs-test)
