@@ -1887,6 +1887,10 @@ evalPrimOp p sargs = do
             chkDiv $ case dargs of
                   [_, b] -> b
                   _ -> impossible "div args"
+          MOD -> do
+            chkDiv $ case dargs of
+                  [_, b] -> b
+                  _ -> impossible "mod args"
           MUL -> chkMul
           MUL_DIV -> do
             chkDiv $ case dargs of
