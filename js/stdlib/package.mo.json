@@ -35,6 +35,8 @@
     "@msgpack/msgpack": "^2.5.1",
     "algosdk": "^1.11.1",
     "@randlabs/myalgo-connect": "^1.1.0",
+    "@walletconnect/client": "^1.6.5",
+    "algorand-walletconnect-qrcode-modal": "^1.6.1",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.32",
     "express": "^4.17.1",

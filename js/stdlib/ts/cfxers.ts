@@ -541,7 +541,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
           }
         },
       }
-    } catch (e) {
+    } catch (e:any) {
       err = e;
       const es = JSON.stringify(e);
       if ( es.includes("stale nonce") || es.includes("same nonce") ) {

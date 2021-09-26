@@ -139,7 +139,7 @@ async function waitCaughtUp(provider: Provider, env: ProviderEnv): Promise<void>
         const t = await defaultFaucetWallet.sendTransaction(txn);
         await t.wait();
         return;
-      } catch (e) {
+      } catch (e:any) {
         // TODO: only loop again if we detect that it's the "not caught up yet" error
         //   err: RPCError: Request rejected due to still in the catch up mode.
         //   { code: -32077 }

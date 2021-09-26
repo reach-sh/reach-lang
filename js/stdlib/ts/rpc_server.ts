@@ -170,7 +170,7 @@ export const serveRpc = async (backend: any) => {
       debug(`Attempting to process request by ${client}`);
       await f(req, res);
 
-    } catch (e) {
+    } catch (e:any) {
       debug(`!! Witnessed exception triggered by ${client}:\n  ${e.stack}`);
 
       const [ s, message ]

@@ -267,8 +267,8 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   try {
     r = await (await getAlgodClient()).compile(code).do();
     s = 200;
-  } catch (e) {
-    s = typeof e === 'object' ? e.statusCode : 'not object';
+  } catch (e:any) {
+    s = (e && typeof e === 'object') ? e.statusCode : 'not object';
     r = e;
   }
 
@@ -402,7 +402,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
     try {
       res = await query.do();
       break;
-    } catch (e) {
+    } catch (e:any) {
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
@@ -673,11 +673,20 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_W
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
+const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_Wallet => {
+  debug(`using WalletConnect wallet fallback`);
+  const wc = new WalletConnect();
+  return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
+};
 export const walletFallback = (opts:any) => {
   debug(`using wallet fallback with`, opts);
   const mac = opts.MyAlgoConnect;
   if ( mac ) {
     return walletFallback_MyAlgoWallet(mac, opts);
+  }
+  const wc = opts.WalletConnect;
+  if ( wc ) {
+    return walletFallback_WalletConnect(wc, opts);
   }
   // This could be implemented with walletFallback_signOnly and the residue
   // from the old version.
@@ -1174,9 +1183,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
           debug(dhead, '--- SUCCESS:', res);
-        } catch (e) {
-          if ( e.type == 'sendRawTransaction' ) {
-            debug(dhead, '--- FAIL:', format_failed_request(e.e));
+        } catch (e:any) {
+          if ( e.type === 'sendRawTransaction' ) {
+            debug(dhead, '--- FAIL:', format_failed_request(e?.e));
           } else {
             debug(dhead, '--- FAIL:', e);
           }

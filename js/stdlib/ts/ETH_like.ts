@@ -734,7 +734,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         try {
           debug(...dhead, 'ARG', arg, pay);
           await callC(dhead, funcName, arg, pay);
-        } catch (e) {
+        } catch (e:any) {
           if ( ! soloSend ) {
             debug(...dhead, `LOST`, e);
             return await doRecv(false, false);
