@@ -963,6 +963,9 @@ react = command "react" $ info f d where
             x "--use-existing-devnet" = False
             x a | "--dir-project-host" `isPrefixOf` a = False
             x a | "--dir-tmp-host" `isPrefixOf` a = False
+            x a | "--dir-embed" `isPrefixOf` a = False
+            x a | "--dir-project-container" `isPrefixOf` a = False
+            x a | "--dir-tmp-container" `isPrefixOf` a = False
                 | otherwise = True
         intercalate " " . filter x . fmap pack <$> getArgs
       withCompose dm . script $ write [N.text|
