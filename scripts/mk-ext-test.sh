@@ -16,19 +16,16 @@ touch Makefile
 cat >>Makefile <<END
 all: build
 
-REACH = ../../reach
-
 .PHONY: clean
 clean:
-	rm -f index.rsh index.mjs
-	rm -rf ${NAME}
+	rm -rf ../ext-${NAME}
 
 checkout:
-	if test -d ${NAME}; then echo "Repo already cloned"; else git clone ${REPO} ${NAME}; fi
+	if test -d ../ext-${NAME}; then echo "Repo already cloned"; else git clone ${REPO} ../ext-${NAME}; fi
 
 .PHONY: build
 build: checkout
-	cd ${NAME} && make build
+	cd ../ext-${NAME} && ../one.sh build
 
 .PHONY: run
 run:

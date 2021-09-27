@@ -1,18 +1,15 @@
 all: build
 
-REACH = ../../reach
-
 .PHONY: clean
 clean:
-	rm -f index.rsh index.mjs
-	rm -rf duoswap-core
+	rm -rf ../ext-duoswap-core
 
 checkout:
-	if test -d duoswap-core; then echo "Repo already cloned"; else git clone https://github.com/reach-sh/duoswap-core duoswap-core; fi
+	if test -d ../ext-duoswap-core; then echo "Repo already cloned"; else git clone https://github.com/reach-sh/duoswap-core ../ext-duoswap-core; fi
 
 .PHONY: build
 build: checkout
-	cd duoswap-core && make build
+	cd ../ext-duoswap-core && ../one.sh build
 
 .PHONY: run
 run:
