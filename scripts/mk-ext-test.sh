@@ -8,8 +8,8 @@ NAME="$1"
 REPO="$2"
 
 cd ../examples  || exit 1
-mkdir $NAME     || exit 2
-cd $NAME        || exit 3
+mkdir "$NAME"   || exit 2
+cd "$NAME"      || exit 3
 
 touch Makefile
 
