@@ -10,6 +10,7 @@ import Data.Char
 import Data.Functor.Identity
 import Data.IORef
 import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
+import Data.Tuple.Extra (first)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
 import Safe
@@ -520,14 +521,19 @@ withCompose DockerMeta {..} wrapped = do
         - CFX_NODE_URI=http://reach-devnet-cfx:12537
         - CFX_NETWORK_ID=999
       |]
-  let (deps, extraEnv) = case (c, m) of
-        (_, Live) -> ("", "")
-        (ALGO, Devnet) -> (devnetFor c, devnetALGO)
-        (ALGO, Browser) -> (devnetFor c, devnetALGO)
-        (ETH, Devnet) -> (devnetFor c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
-        (ETH, Browser) -> (devnetFor c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
-        (CFX, Devnet) -> (devnetFor c, devnetCFX)
-        (CFX, Browser) -> (devnetFor c, devnetCFX)
+  let deps'' d = [N.text|
+    depends_on:
+      - $d
+  |]
+  let deps' = maybe "" (deps'' . devnetFor)
+  let (deps, extraEnv) = first deps' $ case (c, m) of
+        (_, Live) -> (Nothing, "")
+        (ALGO, Devnet) -> (Just c, devnetALGO)
+        (ALGO, Browser) -> (Just c, devnetALGO)
+        (ETH, Devnet) -> (Just c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
+        (ETH, Browser) -> (Just c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
+        (CFX, Devnet) -> (Just c, devnetCFX)
+        (CFX, Browser) -> (Just c, devnetCFX)
   connEnv <- case compose of
     StandaloneDevnet -> liftIO $ connectorEnv env cm
     WithProject Console _ -> liftIO $ connectorEnv env cm
@@ -538,8 +544,6 @@ withCompose DockerMeta {..} wrapped = do
         - "3000:3000"
       stdin_open: true
       tty: true
-      depends_on:
-        - $deps
       environment:
         - REACH_DEBUG
         - REACH_CONNECTOR_MODE
@@ -548,6 +552,7 @@ withCompose DockerMeta {..} wrapped = do
         - REACT_APP_REACH_CONNECTOR_MODE=$reachConnectorMode
         - REACT_APP_REACH_ISOLATED_NETWORK=$${REACH_ISOLATED_NETWORK}
         $extraEnv
+      $deps
     |]
     WithProject RPC _ -> pure [N.text|
       volumes:
@@ -557,8 +562,6 @@ withCompose DockerMeta {..} wrapped = do
         - "$rpcPort:$rpcPort"
       stdin_open: true
       tty: true
-      depends_on:
-        - $deps
       environment:
         - REACH_DEBUG
         - REACH_CONNECTOR_MODE=$reachConnectorMode
@@ -569,6 +572,7 @@ withCompose DockerMeta {..} wrapped = do
         - REACH_RPC_TLS_CRT
         - REACH_RPC_TLS_PASSPHRASE
         $extraEnv
+      $deps
     |]
   let mkConnSvs = liftIO . serviceConnector env cm connPorts appService
   connSvs <- case (m, compose) of
