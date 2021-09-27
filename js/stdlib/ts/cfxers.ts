@@ -8,7 +8,6 @@ export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
 import Timeout from 'await-timeout';
 import { debug } from './shared_impl';
-import { window } from './shim';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
@@ -63,6 +62,23 @@ function conform(args: any[], tys: ParamType[]): any[] {
     }
   }
   return args;
+}
+
+function prepForConfluxPortal(txnOrig: any): any {
+  const hexStringify = (n: any) => '0x' + BigInt(n || '0').toString(16);
+  const txn = {...txnOrig};
+
+  // value should always be present
+  txn.value = hexStringify(txnOrig.value);
+
+  // These fields are transformed if present
+  // TODO: is it safe just to turn all number fields into hex strings?
+  // Where is the "real" Conflux Portal source code to check this?
+  for (const field of ['storageLimit', 'gas']) {
+    if (txn[field] !== undefined) txn[field] = hexStringify(txnOrig[field]);
+  }
+
+  return txn;
 }
 
 export class Signer {
@@ -343,12 +359,8 @@ export class BrowserWallet implements IWallet {
     this._requireConnected();
     const {provider, address: from} = this;
     if (!provider) throw Error(`Impossible: provider is undefined`);
-    const txn = {...txnOrig, from};
-    // @ts-ignore // leaning on window.BigInt for the num -> hexnum conversion
-    const hexStringify = (n) => '0x' + window.BigInt(n || '0').toString(16);
-    const value = hexStringify(txnOrig.value);
-    txn.value = value;
-    if (txn.storageLimit !== undefined) txn.storageLimit = hexStringify(txn.storageLimit);
+    const txn = prepForConfluxPortal({...txnOrig, from});
+    const {value} = txn;
     return await new Promise((resolve, reject) => {
       this.cp.sendAsync({
         method: 'cfx_sendTransaction',
