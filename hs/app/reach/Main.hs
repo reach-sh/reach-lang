@@ -9,7 +9,7 @@ import Data.Bits
 import Data.Char
 import Data.Functor.Identity
 import Data.IORef
-import Data.Text hiding (any, filter, length, map, toLower, dropWhile)
+import Data.Text (Text, intercalate, pack, unpack, stripEnd)
 import Data.Tuple.Extra (first)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
@@ -647,6 +647,30 @@ switchQuiet = switch
   $ long "quiet"
  <> help "Withhold progress messages"
 
+mkEnv :: IORef Effect -> Maybe Var -> IO (Parser Env)
+mkEnv eff mv = do
+  var <- maybe mkVar pure mv
+  pure $ Env
+    <$> strOption (long "dir-embed" <> internal <> value "/app/embed")
+    <*> strOption (long "dir-project-container" <> internal <> value "/app/src")
+    <*> strOption (long "dir-project-host" <> internal)
+    <*> strOption (long "dir-tmp-container" <> internal <> value "/app/tmp")
+    <*> strOption (long "dir-tmp-host" <> internal)
+    <*> switch (long "emit-raw" <> internal)
+    <*> pure eff
+    <*> pure var
+
+forwardedCli :: Text -> AppT Text
+forwardedCli n = do
+  Env {..} <- ask
+  env <- liftIO $ mkEnv e_effect (Just e_var)
+  (_, _, _, f) <- liftIO . execParser . flip info forwardOptions $ (,,,)
+    <$> env
+    <*> subparser (command (unpack n) (info (pure ()) mempty))
+    <*> switchUseExistingDevnet
+    <*> manyArgs "a recursive invocation of `reachEx`"
+  pure $ intercalate " " f
+
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
   warnDeprecatedFlagIsolate i
@@ -961,17 +985,7 @@ react = command "react" $ info f d where
     local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
       dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
       dd <- devnetDeps
-      -- TODO generalize this pattern for other subcommands?
-      cargs <- liftIO $ do
-        let x "react" = False
-            x "--use-existing-devnet" = False
-            x a | "--dir-project-host" `isPrefixOf` a = False
-            x a | "--dir-tmp-host" `isPrefixOf` a = False
-            x a | "--dir-embed" `isPrefixOf` a = False
-            x a | "--dir-project-container" `isPrefixOf` a = False
-            x a | "--dir-tmp-container" `isPrefixOf` a = False
-                | otherwise = True
-        intercalate " " . filter x . fmap pack <$> getArgs
+      cargs <- forwardedCli "react"
       withCompose dm . script $ write [N.text|
         $reachEx compile $cargs
         docker-compose -f "$$TMP/docker-compose.yml" run \
@@ -1203,16 +1217,7 @@ failNonAbsPaths Env {..} =
 main :: IO ()
 main = do
   eff <- newIORef InProcess
-  var <- mkVar
-  let env = Env
-        <$> strOption (long "dir-embed" <> value "/app/embed" <> internal)
-        <*> strOption (long "dir-project-container" <> value "/app/src" <> internal)
-        <*> strOption (long "dir-project-host" <> internal)
-        <*> strOption (long "dir-tmp-container" <> value "/app/tmp" <> internal)
-        <*> strOption (long "dir-tmp-host" <> internal)
-        <*> switch (long "emit-raw" <> internal)
-        <*> pure eff
-        <*> pure var
+  env <- mkEnv eff Nothing
   hashStr <- lookupEnv "REACH_GIT_HASH" >>= \case
     Just hash -> return $ " (" <> hash <> ")"
     Nothing -> return $ ""
