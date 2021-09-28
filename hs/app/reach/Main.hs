@@ -768,7 +768,7 @@ compile = command "compile" $ info f d where
         stack build --profile --fast \
           && stack exec --profile -- reachc $args +RTS -p
       |]
-    scriptWithConnectorMode $ do
+    script $ do
       realpath
       write [N.text|
         REACH="$$(realpath "$reachEx")"
