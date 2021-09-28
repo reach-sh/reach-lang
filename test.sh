@@ -111,7 +111,11 @@ tealcount () {
 
 #######
 
-jb
+#jb
+
+one ETH api-basic
+exit 0
+one ALGO api-basic
 
 ci ETH atomic-swap
 ci ALGO atomic-swap
