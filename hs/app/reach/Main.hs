@@ -130,7 +130,7 @@ versionMaj ReachVersion {..} = case rv of
 
 data Var = Var
   { reachEx :: Text
-  , connectorMode :: ConnectorMode
+  , connectorMode :: Maybe ConnectorMode
   , debug :: Bool
   , rpcKey :: Text
   , rpcPort :: Text
@@ -185,10 +185,15 @@ warnDeprecatedFlagIsolate i = when i . liftIO . putStrLn
 
 dieConnectorModeBrowser :: App
 dieConnectorModeBrowser = connectorMode <$> asks e_var >>= \case
-  ConnectorMode _ Browser -> liftIO . die
+  Just (ConnectorMode _ Browser) -> liftIO . die
     $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
    <> " is only available via the Reach standard library."
   _ -> pure ()
+
+dieConnectorModeNotSpecified :: AppT ConnectorMode
+dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
+  Nothing -> liftIO . die $ "Unset `REACH_CONNECTOR_MODE` environment variable"
+  Just cm -> pure cm
 
 diePathContainsParentDir :: FilePath -> IO ()
 diePathContainsParentDir x = when (any (== "..") $ splitDirectories x) . die
@@ -242,21 +247,24 @@ mkVar = do
   reachEx <- lookupEnv "REACH_EX"
     >>= maybe (die "Unset `REACH_EX` environment variable") packed
   connectorMode <- do
-    rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
-    runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
-      >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+    let e = "REACH_CONNECTOR_MODE"
+    m e (pure Nothing) (pure . Just) >>= \case
+      Nothing -> pure Nothing
+      Just rcm -> runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
+        >>= either (const . die $ "Invalid `" <> e <> "`: " <> rcm) (pure . Just)
   ci <- truthyEnv <$> lookupEnv "CI"
   pure $ Var {..}
 
 script :: App -> App
 script wrapped = do
+  rcm <- dieConnectorModeNotSpecified
   Var {..} <- asks e_var
   let debug' = if debug then "REACH_DEBUG=1\n" else ""
   let rpcTLSRejectUnverified' = case rpcTLSRejectUnverified of
         True -> ""
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
   let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
-  let connectorMode' = packs connectorMode
+  let connectorMode' = packs rcm
 
   -- Recursive invocation of script should base version on what user specified
   -- (or didn't) via REACH_VERSION rather than what we've parsed/inferred;
@@ -487,8 +495,8 @@ readScaff p = do
 withCompose :: DockerMeta -> App -> App
 withCompose DockerMeta {..} wrapped = do
   env@Env {..} <- ask
+  cm@(ConnectorMode c m) <- dieConnectorModeNotSpecified
   let Var {..} = e_var
-  let cm@(ConnectorMode c m) = connectorMode
   let connPorts = case (compose, c, m) of
         (_, _, Live) -> []
         (WithProject Console _, ALGO, Devnet) -> [ "9392" ]
@@ -791,6 +799,7 @@ compile = command "compile" $ info f d where
             --rm \
             --volume "$$PWD:/app" \
             -u "$(id -ru):$(id -rg)" \
+            -e REACH_CONNECTOR_MODE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
             reachsh/reach:$v \
@@ -829,7 +838,7 @@ init' = command "init" . info f $ d <> foot where
 -- Tell `docker-compose` to skip connector containers if they're already running
 devnetDeps :: AppT Text
 devnetDeps = do
-  ConnectorMode c' _ <- asks $ connectorMode . e_var
+  ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
   pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
 
@@ -975,8 +984,9 @@ react = command "react" $ info f d where
   -- sub-shell
   go ued _ = do
     warnDeprecatedFlagUseExistingDevnet ued
-    v@Var { connectorMode = ConnectorMode c _, ..} <- asks e_var
-    local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
+    ConnectorMode c _ <- dieConnectorModeNotSpecified
+    v@Var {..} <- asks e_var
+    local (\e -> e { e_var = v { connectorMode = Just (ConnectorMode c Browser) }}) $ do
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
       dd <- devnetDeps
       cargs <- forwardedCli "react"
@@ -1095,10 +1105,9 @@ devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = go <$> switch (long "await-background" <> help "Run in background and await availability")
   go abg = do
-    Env {..} <- ask
+    ConnectorMode c m <- dieConnectorModeNotSpecified
+    dieConnectorModeBrowser
     dd <- devnetDeps
-    let Var {..} = e_var
-    let ConnectorMode c m = connectorMode
     let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
