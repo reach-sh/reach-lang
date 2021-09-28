@@ -255,16 +255,14 @@ mkVar = do
   ci <- truthyEnv <$> lookupEnv "CI"
   pure $ Var {..}
 
-script :: App -> App
-script wrapped = do
-  rcm <- dieConnectorModeNotSpecified
+mkScript :: Text -> App -> App
+mkScript connectorMode' wrapped = do
   Var {..} <- asks e_var
   let debug' = if debug then "REACH_DEBUG=1\n" else ""
   let rpcTLSRejectUnverified' = case rpcTLSRejectUnverified of
         True -> ""
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
   let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
-  let connectorMode' = packs rcm
 
   -- Recursive invocation of script should base version on what user specified
   -- (or didn't) via REACH_VERSION rather than what we've parsed/inferred;
@@ -305,6 +303,14 @@ script wrapped = do
       |]
     <> "\n\n")
   wrapped
+
+scriptWithConnectorMode :: App -> App
+scriptWithConnectorMode wrapped = do
+  rcm <- dieConnectorModeNotSpecified
+  mkScript (packs rcm) wrapped
+
+script :: App -> App
+script = mkScript ""
 
 write :: Text -> App
 write t = asks e_effect >>= liftIO . flip modifyIORef w where
@@ -762,7 +768,7 @@ compile = command "compile" $ info f d where
         stack build --profile --fast \
           && stack exec --profile -- reachc $args +RTS -p
       |]
-    script $ do
+    scriptWithConnectorMode $ do
       realpath
       write [N.text|
         REACH="$$(realpath "$reachEx")"
@@ -903,7 +909,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let dockerfile' = pack hostDockerfile
     let projDirHost' = pack projDirHost
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
-    withCompose dm . script $ do
+    withCompose dm . scriptWithConnectorMode $ do
       maybe (pure ()) write recompile
       write [N.text|
         cd $projDirHost'
@@ -990,7 +996,7 @@ react = command "react" $ info f d where
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
       dd <- devnetDeps
       cargs <- forwardedCli "react"
-      withCompose dm . script $ write [N.text|
+      withCompose dm . scriptWithConnectorMode $ write [N.text|
         $reachEx compile $cargs
         docker-compose -f "$$TMP/docker-compose.yml" run \
           --name $appService $dd --service-ports --rm $appService
@@ -1017,7 +1023,7 @@ rpcServer = command "rpc-server" $ info f d where
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
-    withCompose dm . script $ rpcServer' appService >>= write
+    withCompose dm . scriptWithConnectorMode $ rpcServer' appService >>= write
 
 rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
@@ -1078,7 +1084,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     warnScaffoldDefRPCTLSPair prj
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
-    withCompose dm . script $ write [N.text|
+    withCompose dm . scriptWithConnectorMode $ write [N.text|
       [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
       export REACH_RPC_TLS_REJECT_UNVERIFIED
 
@@ -1116,7 +1122,7 @@ devnet = command "devnet" $ info f d where
     dieConnectorModeBrowser
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
-    withCompose mkDockerMetaStandaloneDevnet . script $ do
+    withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
       write [N.text|
         docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
       |]
