@@ -2065,6 +2065,22 @@ This error can be corrected by either removing the @reachin{Some} case or placin
 This error indicates that you have inspected the details about a publication, such as via @reachin{didPublish()}, before there has been a publication.
 This is impossible, so the expression must be moved after the first publication.
 
+@error{RE0120}
+
+This error indicates that an actor who is not a @reachin{Participant}, e.g. a @reachin{ParticipantClass}, is
+attempting to make the first publication of a Reach program.
+
+You can fix this error by assigning the first publication to one of your @reachin{Participant}s.
+Additionally, you can create a new @reachin{Participant} to specifically perform this action.
+
+@reach{
+  const Constructor = Participant('Constructor', {});
+  // ...
+  deploy();
+  Constructor.publish();
+  commit();
+  // ...
+}
 
 @error{REP0000}
 
