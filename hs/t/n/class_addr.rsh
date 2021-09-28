@@ -3,8 +3,12 @@
 export const main =
   Reach.App(
     {},
-    [ParticipantClass('C', {})],
-    (C) => {
+    [Participant('Constructor', {}),
+     ParticipantClass('C', {})],
+    (Constructor, C) => {
+      Constructor.publish();
+      commit();
+
       C.only(() => {
         const addr1 = this; });
       C.publish(addr1);

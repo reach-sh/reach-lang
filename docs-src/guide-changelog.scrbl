@@ -18,7 +18,7 @@ This has the impact of frontends not being asked to sign transactions that canno
 @item{2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use @reachin{relativeTime} instead.}
 @item{2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the @litchar{firstMsg} deployment mode.
 
-If you would like the old behavior, then you'll want to create a new participant class, perhaps called @litchar{Constructor}, that exists simply to run @reachin{Constructor.publish(); commit();}, but we expect that almost no one actually wants the old behavior exactly.
+If you would like the old behavior, then you'll want to create a new participant, perhaps called @litchar{Constructor}, that exists simply to run @reachin{Constructor.publish(); commit();}, but we expect that almost no one actually wants the old behavior exactly.
 Instead, you probably want to select one of your existing participants and assign the first publication to them.
 }
 @item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release and older, deployed contracts will not work with this version.}

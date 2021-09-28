@@ -3853,6 +3853,9 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   ensure_live "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
   let pdvs = st_pdvs st
+  allClasses <- and <$> traverse is_class (S.toList whos)
+  when (not (st_after_first st) && allClasses) $ do
+        expect_thrown at Err_UniqueFirstPublish
   let ctepee t e = compileCheckType t =<< ensure_public =<< evalExpr e
   -- We go back to the original env from before the to-consensus step
   -- Handle sending

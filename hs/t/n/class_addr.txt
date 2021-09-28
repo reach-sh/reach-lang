@@ -4,23 +4,24 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: require
-  at ./class_addr.rsh:16:14:application
+  at ./class_addr.rsh:20:14:application
 
   // Violation Witness
 
-  const v38 = selfAddress(""C"", true, 15 );
+  const v47 = selfAddress(""C"", true, 20 );
   //    ^ could = <abstract address 0>
-  //      from: ./class_addr.rsh:8:13:application
-  const v45 = selfAddress(""C"", true, 24 );
+  //      from: ./class_addr.rsh:12:13:application
+  const v54 = selfAddress(""C"", true, 29 );
   //    ^ could = <abstract address 1>
-  //      from: ./class_addr.rsh:13:13:application
+  //      from: ./class_addr.rsh:17:13:application
 
   // Theorem Formalization
 
-  const v52 = v38 == v45;
+  const v61 = v47 == v54;
   //    ^ would be false
-  require(v52);
+  require(v61);
 
   Verifying when NO participants are honest
   Verifying when ONLY "C" is honest
-Checked 10 theorems; 1 failures :'(
+  Verifying when ONLY "Constructor" is honest
+Checked 14 theorems; 1 failures :'(
