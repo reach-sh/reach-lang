@@ -27,7 +27,9 @@ checkout:
 build: checkout
 	cd ../ext-${NAME} && ../one.sh build
 
+# TODO: Check that it makes sense to run the code. If not, echo instead.
 .PHONY: run
 run:
-	echo "external code will not be ran"
+	cd ../ext-${NAME} && ../one.sh run
+# echo "external code will not be ran"
 END
