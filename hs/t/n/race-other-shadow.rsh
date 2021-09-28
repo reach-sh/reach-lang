@@ -6,8 +6,11 @@ export const main =
     [Participant('Alice', {}),
      Participant('Bob', {}),
      Participant('Claire', {}),
+     Participant('Constructor', {}),
     ],
-    (Alice, Bob, Claire) => {
+    (Alice, Bob, Claire, Constructor) => {
+      Constructor.publish();
+      commit();
       Alice.only(() => {
         const x = 1; });
       Bob.only(() => {

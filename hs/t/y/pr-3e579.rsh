@@ -11,7 +11,7 @@ export const main = Reach.App(() => {
   deploy();
   const arr = array(UInt, [0, 1, 2, 3, 4]);
 
-  Anybody.publish();
+  Alice.publish();
 
   const i = 8;
   const temp = i < 5 ? arr[i] : i;
