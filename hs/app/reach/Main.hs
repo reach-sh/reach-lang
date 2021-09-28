@@ -41,13 +41,13 @@ data Connector
   = ALGO
   | CFX
   | ETH
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
 
 data Mode
   = Devnet
   | Live
   | Browser
-  deriving (Eq)
+  deriving (Eq, Enum, Bounded)
 
 data ConnectorMode = ConnectorMode Connector Mode
   deriving (Eq)
@@ -192,8 +192,14 @@ dieConnectorModeBrowser = connectorMode <$> asks e_var >>= \case
 
 dieConnectorModeNotSpecified :: AppT ConnectorMode
 dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
-  Nothing -> liftIO . die $ "Unset `REACH_CONNECTOR_MODE` environment variable"
   Just cm -> pure cm
+  Nothing -> liftIO . die . unpack . intercalate "\n"
+    $ "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:"
+    : [ " * " <> packs c <> "-" <> packs m
+      | c <- [ minBound .. maxBound :: Connector ]
+      , m <- [ minBound .. maxBound :: Mode ]
+      ]
+   <> [ "https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29" ]
 
 diePathContainsParentDir :: FilePath -> IO ()
 diePathContainsParentDir x = when (any (== "..") $ splitDirectories x) . die
