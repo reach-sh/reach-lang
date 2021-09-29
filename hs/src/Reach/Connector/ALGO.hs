@@ -34,8 +34,25 @@ import Reach.Util
 import Reach.Warning
 import Safe (atMay)
 import Text.Read
+import Generics.Deriving ( Generic )
 
 -- import Debug.Trace
+
+-- Errors for ALGO
+
+data AlgoError =
+  Err_TransferNewToken
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode AlgoError where
+  errPrefix = const "RA"
+  errIndex = \case
+    Err_TransferNewToken {} -> 0
+
+instance Show AlgoError where
+  show = \case
+    Err_TransferNewToken ->
+      "Token cannot be transferred within the same consensus step it was created in on Algorand"
 
 -- General tools that could be elsewhere
 
@@ -357,7 +374,7 @@ data Env = Env
 type App = ReaderT Env IO
 
 recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
+recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount . resetNewToks
 
 type CostGraph a = M.Map a (CostRecord a)
 data CostRecord a = CostRecord
@@ -403,10 +420,10 @@ checkTxnCount bad' tcs = do
     when (fromIntegral amt > algoMaxTxGroupSize) $ do
       bad' $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
 
-resetNewToks :: App ()
-resetNewToks = do
-  Env {..} <- ask
-  liftIO $ writeIORef eNewToks mempty
+resetNewToks :: App a -> App a
+resetNewToks m = do
+  toks <- liftIO $ newIORef mempty
+  local (\e -> e { eNewToks = toks }) m
 
 addNewTok :: DLArg -> App ()
 addNewTok tok = do
@@ -1317,12 +1334,12 @@ checkTxnUsage (CheckTxn {..}) = do
     Just tok -> do
       newToks <- (liftIO . readIORef) =<< asks eNewToks
       when (tok `S.member` newToks) $ do
-            bad $ LT.pack $ "Token cannot be transferred within the same consensus step it was created in (at: " <> show ct_at <> ")"
+            expect_thrown ct_at Err_TransferNewToken
     Nothing -> return ()
 
 
 checkTxn :: CheckTxn -> App ()
-checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
+checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   let check1 = checkTxn1
   let (vTypeEnum, fReceiver, fAmount, fCloseTo, extra) =
         case ct_mtok of
@@ -1331,7 +1348,7 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
           Just tok ->
             ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
             where textra = ca tok >> check1 "XferAsset"
-  checkTxnUsage $ CheckTxn {..}
+  checkTxnUsage ctok
   after_lab <- freshLabel
   ca ct_amt
   unless ct_always $ do
@@ -1615,7 +1632,6 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
 ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recordWhich which $ do
-  resetNewToks
   let isCtor = which == 0
   (extraCtorDo, extraCtorMsg) <-
     case isCtor of
