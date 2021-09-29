@@ -351,6 +351,7 @@ data Env = Env
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
   , eTxnCount :: Counter
+  , eNewToks :: IORef (S.Set DLArg)
   }
 
 type App = ReaderT Env IO
@@ -401,6 +402,16 @@ checkTxnCount bad' tcs = do
     let amt = chase which
     when (fromIntegral amt > algoMaxTxGroupSize) $ do
       bad' $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
+
+resetNewToks :: App ()
+resetNewToks = do
+  Env {..} <- ask
+  liftIO $ writeIORef eNewToks mempty
+
+addNewTok :: DLArg -> App ()
+addNewTok tok = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eNewToks (S.insert tok)
 
 output :: TEAL -> App ()
 output t = do
@@ -1300,6 +1311,16 @@ checkTxnInit vTypeEnum ct_mcsend = do
   -- [ txn ]
   return ()
 
+checkTxnUsage :: CheckTxn -> App ()
+checkTxnUsage (CheckTxn {..}) = do
+  case ct_mtok of
+    Just tok -> do
+      newToks <- (liftIO . readIORef) =<< asks eNewToks
+      when (tok `S.member` newToks) $ do
+            bad $ LT.pack $ "Token cannot be transferred within the same consensus step it was created in (at: " <> show ct_at <> ")"
+    Nothing -> return ()
+
+
 checkTxn :: CheckTxn -> App ()
 checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   let check1 = checkTxn1
@@ -1310,6 +1331,7 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
           Just tok ->
             ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
             where textra = ca tok >> check1 "XferAsset"
+  checkTxnUsage $ CheckTxn {..}
   after_lab <- freshLabel
   ca ct_amt
   unless ct_always $ do
@@ -1365,6 +1387,11 @@ cm km = \case
     store_let dv sm (ce de) km
   DL_Let _ (DLV_Let DVC_Many dv) de -> do
     sm <- exprSmall de
+    let creatingToken = case de of
+          DLE_TokenNew {} -> True
+          _ -> False
+    when creatingToken $
+      addNewTok (DLA_Var dv)
     case sm of
       True ->
         store_let dv True (ce de) km
@@ -1588,6 +1615,7 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
 ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recordWhich which $ do
+  resetNewToks
   let isCtor = which == 0
   (extraCtorDo, extraCtorMsg) <-
     case isCtor of
@@ -1739,6 +1767,7 @@ compile_algo disp pl = do
         let eLets = mempty
         let eLetSmalls = mempty
         let eWhich = 0
+        eNewToks <- newIORef mempty
         eTxnCount <- newCounter 1
         flip runReaderT (Env {..}) m
         readIORef eOutputR
