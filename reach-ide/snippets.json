@@ -61,7 +61,7 @@
 			"   });"
 		],
 		"description": "parallelReduce"
-	}
+	},
 	"While Loop": {
 		"prefix": "while",
 		"body": [
