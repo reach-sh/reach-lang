@@ -1,5 +1,6 @@
 module Reach.Texty
   ( Doc (..)
+  , TApp
   , render
   , Pretty
   , pretty
@@ -51,9 +52,9 @@ instance Show Doc where
 
 type Env = Integer
 
-type App = ReaderT Env Identity
+type TApp = ReaderT Env Identity
 
-render_ :: Doc -> App LT.Text
+render_ :: Doc -> TApp LT.Text
 render_ = \case
   DText x -> return x
   DCat x y -> (<>) <$> render_ x <*> render_ y

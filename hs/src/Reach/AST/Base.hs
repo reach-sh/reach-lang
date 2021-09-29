@@ -21,6 +21,9 @@ import qualified System.Console.Pretty as TC
 import Safe (atMay)
 import Data.Maybe (fromMaybe)
 import Reach.Util (makeErrCode)
+import Data.Functor.Identity (Identity (runIdentity))
+import Control.Monad.Reader
+import qualified Reach.Texty as Texty
 
 --- Source Information
 data ReachSource
@@ -109,6 +112,34 @@ errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
   "https://docs.reach.sh/" <> errCode e <> ".html"
 
+
+getErrorMessage :: (HasErrorCode a, Show a, Foldable t) => t [SLCtxtFrame] -> SrcLoc -> Bool -> a -> Texty.TApp String
+getErrorMessage mCtx src isWarning ce = do
+  n <- ask
+  let spaces = replicate (fromIntegral n) ' '
+  let indented = ' ' : spaces
+  let hasColor = unsafeTermSupportsColor
+  let color c = if hasColor then TC.color c else id
+  let style s = if hasColor then TC.style s else id
+  let fileLines = srcloc_file src >>= Just . unsafeReadFile
+  let rowNum = case srcloc_line_col src of
+              [l, _] -> Just l
+              _ -> Nothing
+  let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
+  let fileLine = maybe "" (\ l -> indented <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
+                  $ getSrcLine rowNum (fromMaybe [] fileLines)
+  let errType = if isWarning then "warning" else "error"
+  let errColor = if isWarning then color TC.Yellow else color TC.Red
+  return $ T.unpack . unsafeRedactAbs . T.pack $
+    style TC.Bold (errColor errType) <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
+      indented <> style TC.Bold (show src) ++ "\n\n"
+      <> fileLine
+      <> case concat mCtx of
+        [] -> ""
+        ctx -> "\n" <> spaces <> style TC.Bold "Trace" <> ":\n" <> List.intercalate ("\n" <> spaces) (topOfStackTrace ctx) <> "\n"
+      <> "\n" <> spaces <> "For further explanation of this " <> errType <> ", see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
+
+
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
@@ -124,25 +155,7 @@ expect_throw mCtx src ce =
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
                       })
-    False -> do
-      let hasColor = unsafeTermSupportsColor
-      let color c = if hasColor then TC.color c else id
-      let style s = if hasColor then TC.style s else id
-      let fileLines = srcloc_file src >>= Just . unsafeReadFile
-      let rowNum = case srcloc_line_col src of
-                  [l, _] -> Just l
-                  _ -> Nothing
-      let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
-      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
-                      $ getSrcLine rowNum (fromMaybe [] fileLines)
-      error . T.unpack . unsafeRedactAbs . T.pack $
-        style TC.Bold (color TC.Red "error") <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
-          " " <> style TC.Bold (show src) ++ "\n\n"
-          <> fileLine
-          <> case concat mCtx of
-            [] -> ""
-            ctx -> "\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx) <> "\n"
-          <> "\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
+    False -> error $ runIdentity . flip runReaderT 0 $ getErrorMessage mCtx src False ce
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
