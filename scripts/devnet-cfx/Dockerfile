@@ -1,14 +1,25 @@
-FROM confluxchain/conflux-rust:1.1.5-testnet as builder
+FROM debian:buster-slim as build
+ARG CONFLUX_VERSION
+ENV CONFLUX_VERSION="${CONFLUX_VERSION}}"
+
+RUN apt-get update; apt-get install clang libsqlite3-dev pkg-config libssl-dev cmake curl git openssl -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /rustup.sh
+RUN chmod +x /rustup.sh
+RUN /rustup.sh -y
+RUN /root/.cargo/bin/rustup install 1.47.0
+RUN git clone https://github.com/Conflux-Chain/conflux-rust
+WORKDIR conflux-rust
+RUN git checkout $CONFLUX_VERSION
+COPY patch/ ./patch
+RUN diff ./core/src/spec/genesis.rs ./patch/genesis.rs > ./patch/genesis_diff; exit 0
+RUN patch ./core/src/spec/genesis.rs ./patch/genesis_diff
+RUN /root/.cargo/bin/cargo build --release
+
 
 FROM debian:buster-slim
 
-RUN  apt-get update \
-  && apt-get install -y --no-install-recommends \
-    curl \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /root/run/conflux /
+RUN apt-get update; apt-get install curl -y; apt-get clean
+COPY --from=build /conflux-rust/target/release/conflux /
 COPY log.yaml default.toml genesis_secret.txt run.sh /
 
 ENTRYPOINT ["/run.sh"]
