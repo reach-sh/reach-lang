@@ -30,20 +30,25 @@ Specifically, the @reachin{Token} type refers to the id of the ASA.
 @tech{Token minting} creates an ASA owned and managed by the contract account.
 Freezing, clawback, reserves, and separate managers are not supported.
 
-Algorand's ASAs have some inherent design flaws that inhibit reasoning about them.
-First, the "freezing" "feature" disables the ability of contracts (and users) from transfering their assets, without prior notification that the asset is frozen (i.e., in one moment, a contract may transfer an asset, but then in the next moment, without any change to the contract state, it ceases to be able to transfer it, because elsewhere in the network, an asset was frozen.)
-Second, the "clawback" "feature" extracts assets from an account without approval by or notification of the account holder.
-Third, the "opt-in" "feature" prevents accounts from transfering assets without prior approval by the receiver.
-Fourth, the "opt-out" "feature" allows accounts to take-back the permission to transfer assets to them after having previously given it.
-Each of these issues mean that rely-guarantee reasoning is not appropriate for analyzing consensus steps on Algorand: in other words, it is not possible to guarantee from the structure of a program that consensus steps which are dominated by honest interactions will succeed, because external agents can arbitrarily change the semantics of consensus operations.
-This essentially amounts to all Algorand DApps that use @tech{non-network tokens} being inherently vulnerable to denial-of-service attacks when these "features" are used.
+Algorand's ASAs are extremely powerful and Reach's static reasoning about them makes some unsound assumptions about how they will behave in practice.
+First, it is possible to "freeze" an asset, which disables the ability of contracts (and users) from transfering their assets, without prior notification that the asset is frozen (i.e., in one moment, a contract may transfer an asset, but then in the next moment, without any change to the contract state, it ceases to be able to transfer it, because elsewhere in the network, an asset was frozen.)
+Second, the assets support "clawback", which extracts assets from an account without approval by or notification of the account holder.
+Third, the assets require that receivers "opt-in" (or give prior approval) before an account can transfer assets to them.
+Fourth, this prior approval may be removed, or rather accounts can "opt-out" and take-back the permission to transfer assets to them after having previously given it.
+Each of these issues mean that rely-guarantee reasoning is not appropriate for analyzing consensus steps on Algorand: in other words, it is not possible to guarantee from the structure of a program that consensus steps which are dominated by honest interactions will succeed, because external agents can arbitrarily influence the outcomes of consensus operations, without informing the contract.
+This essentially amounts to all Algorand DApps that use @tech{non-network tokens} being inherently vulnerable to denial-of-service attacks when assets use these features.
+
 For example, if a DApp has a @tech{consensus step} where Alice will receive 1 gil and Bob will receive 2 zorkmids, either Alice or Bob can prevent this step from executing by opting out of (respectively) gil or zorkmids.
 (An "opt-out" is performed by sending an @link["https://developer.algorand.org/docs/reference/transactions/#asset-transfer-transaction"]{Asset Transfer Transaction} (@litchar{axfer}) with a non-zero @litchar{AssetCloseTo} field.)
 You can alleviate this problem by ensuring that any @tech{non-network token} transfers occur as the last consensus steps of the program and may be executed in any order by the recipient of the funds.
 Similarly, if a DApp accepts a @tech{non-network token} that has enabled clawback, then it can be prevented from progressing if the manager takes the contract's tokens behind its back.
-Unfortunately, there is no way to alleviate this, other than refusing to accept tokens that have the possibility of clawback, but on Algorand, tokens default to allowing clawback, so that is not feasible.
-Rather than simplying rejecting all programs that use @tech{non-network tokens} on Algorand, Reach allows them, with these caveats about the reliability of the generated contracts.
-We hope that future versions of Algorand will provide a facility for preventing these attacks, such as by removing these "features".
+
+There are three options for dealing with these issues.
+First, refuse to accept assets that have the possibility of clawback or freezing; but this is not practical, because tokens default to allowing these features and many of the popular assets use them as well.
+Second, incorporate the possibility that all @tech{non-network token} functions might fail into the verification engine; but this is not practical, because there is no way to dynamically check if the operation will succeed and it is not feasible to have an alternative path if it won't.
+Third, pretend that assets don't actually support these features and warn developers about the risks.
+Reach goes with the third option.
+We hope that future versions of Algorand will provide a facility making other options practical.
 
 @tech{Views} are compiled to client-side functions that can interpret the global and local state of the Algorand Application associated with the @|DApp|.
 This means they are sensitive to the particular compilation details of the particular Reach program.
