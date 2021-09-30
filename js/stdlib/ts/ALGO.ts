@@ -625,7 +625,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     });
     debug(`fallBack: signAndPostTxns`, {to_sign});
-    const signed: string[] = await signTxns(to_sign);
+    const signed: string[] = to_sign.length == 0 ? [] : await signTxns(to_sign);
     debug(`fallBack: signAndPostTxns`, {signed});
     const stxns: string[] = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
