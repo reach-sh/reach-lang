@@ -109,6 +109,40 @@ errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
   "https://docs.reach.sh/" <> errCode e <> ".html"
 
+
+getErrorMessage :: (HasErrorCode a, Show a, Foldable t) => t [SLCtxtFrame] -> SrcLoc -> Bool -> a -> String
+getErrorMessage mCtx src isWarning ce = do
+  let hasColor = unsafeTermSupportsColor
+  let color :: TC.Color -> [Char] -> [Char]
+      color c = if hasColor then TC.color c else id
+  let style :: TC.Style -> [Char] -> [Char]
+      style s = if hasColor then TC.style s else id
+  let fileLines = srcloc_file src >>= Just . unsafeReadFile
+  let rowNum = case srcloc_line_col src of
+                [l, _] -> Just l
+                _ -> Nothing
+  let rowNumStr = pretty $ maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
+  let fileLine = maybe "" (\ l -> rowNumStr <> "|" <+> (pretty $ style TC.Faint l))
+                    $ getSrcLine rowNum (fromMaybe [] fileLines)
+  let errType  = if isWarning then "warning" else "error"
+  let errColor = if isWarning then color TC.Yellow else color TC.Red
+  let errDesc = pretty (style TC.Bold $ errColor errType) <> brackets (pretty $ style TC.Bold $ errCode ce) <> ":" <+> (pretty $ take 512 $ show ce)
+  let srcCodeAt = nest $ hardline <> pretty (style TC.Bold (show src))
+  let srcCodeLine = nest $ hardline <> pretty fileLine
+  let stackTrace =
+        case concat mCtx of
+          [] -> ""
+          ctx -> hardline <> (pretty $ style TC.Bold "Trace") <> ":" <> hardline <>
+                  concatWith (surround hardline) (map pretty $ topOfStackTrace ctx) <> hardline
+  let docsUrl = "For further explanation of this " <> pretty errType <> ", see: " <> pretty (style TC.Underline $ errorCodeDocUrl ce) <> hardline
+  T.unpack . unsafeRedactAbs . T.pack . show $
+    errDesc <> hardline <>
+    srcCodeAt <> hardline <>
+    srcCodeLine <> hardline <>
+    stackTrace <> hardline <>
+    docsUrl
+
+
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
@@ -124,25 +158,7 @@ expect_throw mCtx src ce =
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
                       })
-    False -> do
-      let hasColor = unsafeTermSupportsColor
-      let color c = if hasColor then TC.color c else id
-      let style s = if hasColor then TC.style s else id
-      let fileLines = srcloc_file src >>= Just . unsafeReadFile
-      let rowNum = case srcloc_line_col src of
-                  [l, _] -> Just l
-                  _ -> Nothing
-      let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
-      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
-                      $ getSrcLine rowNum (fromMaybe [] fileLines)
-      error . T.unpack . unsafeRedactAbs . T.pack $
-        style TC.Bold (color TC.Red "error") <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
-          " " <> style TC.Bold (show src) ++ "\n\n"
-          <> fileLine
-          <> case concat mCtx of
-            [] -> ""
-            ctx -> "\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx) <> "\n"
-          <> "\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
+    False -> error $ getErrorMessage mCtx src False ce
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing

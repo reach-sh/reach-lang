@@ -18,6 +18,38 @@ the Reach compiler.
   * Any other advice
 }
 
+@error{RA0000}
+
+This error indicates that a program, targeting the Algorand connector, is attempting to
+transfer a @reachin{Token} in the same @tech{consensus step} it was created in. It is impossible
+to perform this action because one must opt-in to receive a token on Algorand. To opt-in, one must
+know the id, however the id of the token cannot be known until after the transaction that created it.
+
+The following code erroneously tries to transfer a newly created @reachin{Token}:
+
+@reach{
+  Alice.publish();
+  const tok = new Token({ supply: 5 });
+  transfer(5, tok).to(Alice);
+  commit();
+}
+
+This can be fixed by performing a @reachin{commit} after creating the token and transferring the
+token in the next consensus step:
+
+@reach{
+  Alice.publish();
+  const tok = new Token({ supply: 5 });
+  commit();
+  Alice.interact.informOfTokenId(tok);
+  Alice.publish();
+  transfer(5, tok).to(Alice);
+  commit();
+}
+
+The frontend can have @reachin{Alice} opt-in to the token in @reachin{informOfTokenId} by utilizing
+@jsin{acc.tokenAccept()}.
+
 @error{RC0000}
 
 This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given

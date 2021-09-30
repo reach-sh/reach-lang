@@ -1,8 +1,8 @@
 reachc: error[RE0013]: verifyAruthmetic is not a valid app option. Did you mean: ["verifyArithmetic","verifyPerConnector","connectors"]
 
- ./Err_App_InvalidOption.rsh:4:21:property binding
+  ./Err_App_InvalidOption.rsh:4:21:property binding
 
- 4|   { verifyAruthmetic: true },
+  4|   { verifyAruthmetic: true },
 
 For further explanation of this error, see: https://docs.reach.sh/RE0013.html
 

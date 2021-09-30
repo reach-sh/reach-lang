@@ -1,8 +1,8 @@
 reachc: error[RE0049]: Invalid computed field name. It must be computable at compile time.
 
- ./Err_Obj_IllegalComputedField__interact.rsh:9:20:computed field name
+  ./Err_Obj_IllegalComputedField__interact.rsh:9:20:computed field name
 
- 9|       const obj = {[key]: 1}
+  9|       const obj = {[key]: 1}
 
 Trace:
   in [unknown function] from (./Err_Obj_IllegalComputedField__interact.rsh:7:15:function exp) at (./Err_Obj_IllegalComputedField__interact.rsh:7:11:application)

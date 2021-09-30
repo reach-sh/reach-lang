@@ -1,4 +1,4 @@
-module Reach.Connector.ALGO (connect_algo) where
+module Reach.Connector.ALGO (connect_algo, AlgoError(..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -34,8 +34,25 @@ import Reach.Util
 import Reach.Warning
 import Safe (atMay)
 import Text.Read
+import Generics.Deriving ( Generic )
 
 -- import Debug.Trace
+
+-- Errors for ALGO
+
+data AlgoError
+  = Err_TransferNewToken
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode AlgoError where
+  errPrefix = const "RA"
+  errIndex = \case
+    Err_TransferNewToken {} -> 0
+
+instance Show AlgoError where
+  show = \case
+    Err_TransferNewToken ->
+      "Token cannot be transferred within the same consensus step it was created in on Algorand"
 
 -- General tools that could be elsewhere
 
@@ -351,12 +368,13 @@ data Env = Env
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
   , eTxnCount :: Counter
+  , eNewToks :: IORef (S.Set DLArg)
   }
 
 type App = ReaderT Env IO
 
 recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount
+recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount . resetNewToks
 
 type CostGraph a = M.Map a (CostRecord a)
 data CostRecord a = CostRecord
@@ -401,6 +419,16 @@ checkTxnCount bad' tcs = do
     let amt = chase which
     when (fromIntegral amt > algoMaxTxGroupSize) $ do
       bad' $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
+
+resetNewToks :: App a -> App a
+resetNewToks m = do
+  toks <- liftIO $ newIORef mempty
+  local (\e -> e { eNewToks = toks }) m
+
+addNewTok :: DLArg -> App ()
+addNewTok tok = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eNewToks (S.insert tok)
 
 output :: TEAL -> App ()
 output t = do
@@ -1300,8 +1328,18 @@ checkTxnInit vTypeEnum ct_mcsend = do
   -- [ txn ]
   return ()
 
+checkTxnUsage :: CheckTxn -> App ()
+checkTxnUsage (CheckTxn {..}) = do
+  case ct_mtok of
+    Just tok -> do
+      newToks <- (liftIO . readIORef) =<< asks eNewToks
+      when (tok `S.member` newToks) $ do
+            bad $ LT.pack $ getErrorMessage [] ct_at True Err_TransferNewToken
+    Nothing -> return ()
+
+
 checkTxn :: CheckTxn -> App ()
-checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
+checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
   let check1 = checkTxn1
   let (vTypeEnum, fReceiver, fAmount, fCloseTo, extra) =
         case ct_mtok of
@@ -1310,6 +1348,7 @@ checkTxn (CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
           Just tok ->
             ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
             where textra = ca tok >> check1 "XferAsset"
+  checkTxnUsage ctok
   after_lab <- freshLabel
   ca ct_amt
   unless ct_always $ do
@@ -1365,6 +1404,11 @@ cm km = \case
     store_let dv sm (ce de) km
   DL_Let _ (DLV_Let DVC_Many dv) de -> do
     sm <- exprSmall de
+    let creatingToken = case de of
+          DLE_TokenNew {} -> True
+          _ -> False
+    when creatingToken $
+      addNewTok (DLA_Var dv)
     case sm of
       True ->
         store_let dv True (ce de) km
@@ -1739,6 +1783,7 @@ compile_algo disp pl = do
         let eLets = mempty
         let eLetSmalls = mempty
         let eWhich = 0
+        eNewToks <- newIORef mempty
         eTxnCount <- newCounter 1
         flip runReaderT (Env {..}) m
         readIORef eOutputR

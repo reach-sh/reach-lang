@@ -1,8 +1,8 @@
 reachc: error[RE0041]: Invalid array index. Expected an index between 0 and 3, but got: 9
 
- ./Err_Eval_RefOutOfBounds.rsh:6:15:array ref
+  ./Err_Eval_RefOutOfBounds.rsh:6:15:array ref
 
- 6|     return arr[9];
+  6|     return arr[9];
 
 For further explanation of this error, see: https://docs.reach.sh/RE0041.html
 

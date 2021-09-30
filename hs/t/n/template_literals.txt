@@ -1,8 +1,8 @@
 reachc: error[RE0033]: Invalid Reach expression syntax: JSTemplateLiteral
 
- ./template_literals.rsh:9:9:const
+  ./template_literals.rsh:9:9:const
 
- 9|         const template = `I will gladly pay you ${DAY} for a hamburger today`;
+  9|         const template = `I will gladly pay you ${DAY} for a hamburger today`;
 
 Trace:
   in [unknown function] from (./template_literals.rsh:7:17:function exp) at (./template_literals.rsh:7:13:application)

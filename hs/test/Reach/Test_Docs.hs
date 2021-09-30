@@ -13,6 +13,7 @@ import           Reach.Util
 import           Test.Hspec
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import           Reach.Connector.ALGO         (AlgoError(..))
 
 docName :: String
 docName = "../docs-src/ref-error-codes.scrbl"
@@ -29,6 +30,7 @@ allErrorCodes =
   , (errPrefix Err_Unauthorized, gconNum @PkgError)
   , (errPrefix Err_Parse_JSIdentNone, gconNum @ParserError)
   , (errPrefix Err_Impossible_InspectForall, gconNum @ImpossibleError)
+  , (errPrefix Err_TransferNewToken, gconNum @AlgoError)
   ]
 
 getCodes :: String -> Int -> [T.Text]
