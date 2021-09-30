@@ -315,6 +315,11 @@ scriptWithConnectorMode wrapped = do
   rcm <- dieConnectorModeNotSpecified
   mkScript (packs rcm) wrapped
 
+scriptWithConnectorModeOptional :: App -> App
+scriptWithConnectorModeOptional wrapped = do
+  rcm <- asks (connectorMode . e_var) >>= pure . maybe "" packs
+  mkScript rcm wrapped
+
 script :: App -> App
 script = mkScript ""
 
@@ -774,7 +779,7 @@ compile = command "compile" $ info f d where
         stack build --profile --fast \
           && stack exec --profile -- reachc $args +RTS -p
       |]
-    script $ do
+    scriptWithConnectorModeOptional $ do
       realpath
       write [N.text|
         REACH="$$(realpath "$reachEx")"
