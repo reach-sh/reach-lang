@@ -12,7 +12,7 @@ const makeTreeItem = (label, command, icon = reach_icon) => {
 	return makeLabeledTreeItem(label, label, command, icon);
 };
 
-const makeLabeledTreeItem = (label, title, command, icon = reach_icon) => {
+const makeLabeledTreeItem = (label: string, title: string, command: string, icon = reach_icon) => {
 	const t : TreeItem = new TreeItem(title, 0);
 	t.command = {
 		command: command,
