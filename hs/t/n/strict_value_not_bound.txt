@@ -1,8 +1,8 @@
 reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 
- ./strict_value_not_bound.rsh:10:21:application
+  ./strict_value_not_bound.rsh:10:21:application
 
- 10|         interact.get();
+  10|         interact.get();
 
 Trace:
   in [unknown function] from (./strict_value_not_bound.rsh:9:17:function exp) at (./strict_value_not_bound.rsh:9:13:application)

@@ -1,8 +1,8 @@
 reachc: error[RE0102]: Token paid on constructor, which is not possible, because contract does not yet exist and therefore cannot receive tokens.
 
- ./pr204.rsh:33:9:dot
+  ./pr204.rsh:33:9:dot
 
- 33|   Owner.publish(sale, token).pay([[sale.quantity, token]]);
+  33|   Owner.publish(sale, token).pay([[sale.quantity, token]]);
 
 For further explanation of this error, see: https://docs.reach.sh/RE0102.html
 

@@ -1,8 +1,8 @@
 reachc: error[RE0043]: Invalid declassify. Expected to declassify something private
 
- ./Err_ExpectedLevel.rsh:8:27:application
+  ./Err_ExpectedLevel.rsh:8:27:application
 
- 8|       const y = declassify(x);
+  8|       const y = declassify(x);
 
 Trace:
   in [unknown function] from (./Err_ExpectedLevel.rsh:7:15:function exp) at (./Err_ExpectedLevel.rsh:7:11:application)

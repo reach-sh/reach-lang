@@ -1,8 +1,8 @@
 reachc: error[RE0037]: Invalid field access. Expected object, got: UInt
 
- ./Err_Decl_NotType.rsh:3:7:object
+  ./Err_Decl_NotType.rsh:3:7:object
 
- 3| const { x, y } = 5;
+  3| const { x, y } = 5;
 
 For further explanation of this error, see: https://docs.reach.sh/RE0037.html
 

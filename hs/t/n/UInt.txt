@@ -1,8 +1,8 @@
 reachc: error[RE0056]: Invalid name shadowing. Identifier 'UInt' is already bound at <builtin>. It cannot be bound again at ./UInt.rsh:9:15:id
 
- ./UInt.rsh:9:9:const
+  ./UInt.rsh:9:9:const
 
- 9|         const UInt = 5;
+  9|         const UInt = 5;
 
 Trace:
   in [unknown function] from (./UInt.rsh:8:17:function exp) at (./UInt.rsh:8:13:application)

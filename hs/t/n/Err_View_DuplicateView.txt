@@ -1,8 +1,8 @@
 reachc: error[RE0106]: Duplicated view name: "NFT"
 
- ./Err_View_DuplicateView.rsh:9:11:application
+  ./Err_View_DuplicateView.rsh:9:11:application
 
- 9|       View('NFT', { owner: Address }),
+  9|       View('NFT', { owner: Address }),
 
 For further explanation of this error, see: https://docs.reach.sh/RE0106.html
 

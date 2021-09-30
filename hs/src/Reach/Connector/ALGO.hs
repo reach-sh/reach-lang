@@ -35,7 +35,6 @@ import Reach.Warning
 import Safe (atMay)
 import Text.Read
 import Generics.Deriving ( Generic )
-import Control.Monad.Identity
 
 -- import Debug.Trace
 
@@ -1335,7 +1334,7 @@ checkTxnUsage (CheckTxn {..}) = do
     Just tok -> do
       newToks <- (liftIO . readIORef) =<< asks eNewToks
       when (tok `S.member` newToks) $ do
-            bad $ LT.pack $ runIdentity . flip runReaderT 3 $ getErrorMessage [] ct_at True Err_TransferNewToken
+            bad $ LT.pack $ getErrorMessage [] ct_at True Err_TransferNewToken
     Nothing -> return ()
 
 

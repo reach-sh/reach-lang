@@ -1,8 +1,8 @@
 reachc: error[RE0072]: Switch expects data instance, but got UInt
 
- ./Err_Switch_NotData.rsh:8:5:switch
+  ./Err_Switch_NotData.rsh:8:5:switch
 
- 8|     switch ( x ) {
+  8|     switch ( x ) {
 
 For further explanation of this error, see: https://docs.reach.sh/RE0072.html
 

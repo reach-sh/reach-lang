@@ -1,8 +1,8 @@
 reachc: error[RE0074]: Switch missing cases: ["None"]
 
- ./Err_Switch_MissingCases.rsh:12:9:switch
+  ./Err_Switch_MissingCases.rsh:12:9:switch
 
- 12|         switch ( mi ) {
+  12|         switch ( mi ) {
 
 Trace:
   in [unknown function] from (./Err_Switch_MissingCases.rsh:11:21:function exp) at (./Err_Switch_MissingCases.rsh:13:35:application)

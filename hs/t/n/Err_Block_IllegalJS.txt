@@ -1,8 +1,8 @@
 reachc: error[RE0002]: Invalid statement
 
- ./Err_Block_IllegalJS.rsh:4:3:with
+  ./Err_Block_IllegalJS.rsh:4:3:with
 
- 4|   with (o) {
+  4|   with (o) {
 
 Trace:
   in "f" from (./Err_Block_IllegalJS.rsh:3:18:function exp) at (./Err_Block_IllegalJS.rsh:10:27:application)

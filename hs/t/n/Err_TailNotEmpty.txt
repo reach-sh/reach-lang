@@ -1,8 +1,8 @@
 reachc: error[RE0057]: Invalid statement block. Expected empty tail, but found 1 more statements
 
- ./Err_TailNotEmpty.rsh:5:11:after exit semicolon
+  ./Err_TailNotEmpty.rsh:5:11:after exit semicolon
 
- 5|     exit();
+  5|     exit();
 
 For further explanation of this error, see: https://docs.reach.sh/RE0057.html
 

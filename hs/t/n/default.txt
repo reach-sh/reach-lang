@@ -1,8 +1,8 @@
 reachc: error[RE0088]: These types are mismatched: Data({"None": Null, "Some": UInt}) vs UInt
 
- ./default.rsh:15:27:application
+  ./default.rsh:15:27:application
 
- 15|         default: return mi+1; } })(); });
+  15|         default: return mi+1; } })(); });
 
 Trace:
   in [unknown function] from (./default.rsh:12:21:function exp) at (./default.rsh:15:35:application)

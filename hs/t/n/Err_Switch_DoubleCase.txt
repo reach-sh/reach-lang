@@ -1,8 +1,8 @@
 reachc: error[RE0073]: Switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case
 
- ./Err_Switch_DoubleCase.rsh:14:9:case
+  ./Err_Switch_DoubleCase.rsh:14:9:case
 
- 14|         case None: return 1;
+  14|         case None: return 1;
 
 Trace:
   in [unknown function] from (./Err_Switch_DoubleCase.rsh:11:21:function exp) at (./Err_Switch_DoubleCase.rsh:15:35:application)

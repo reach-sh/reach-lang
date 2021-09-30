@@ -1,8 +1,8 @@
 reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 
- ./lifted_interact_non_null_fun.rsh:8:19:application
+  ./lifted_interact_non_null_fun.rsh:8:19:application
 
- 8|       A.interact.f();
+  8|       A.interact.f();
 
 Trace:
   in [unknown function] from (./lifted_interact_non_null_fun.rsh:8:19:function exp) at (./lifted_interact_non_null_fun.rsh:8:19:application)
