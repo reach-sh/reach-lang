@@ -1,4 +1,4 @@
-module Reach.Connector.ALGO (connect_algo) where
+module Reach.Connector.ALGO (connect_algo, AlgoError(..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
