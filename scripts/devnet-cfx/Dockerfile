@@ -1,6 +1,6 @@
 FROM debian:buster-slim as build
 ARG CONFLUX_VERSION
-ENV CONFLUX_VERSION="${CONFLUX_VERSION}}"
+ENV CONFLUX_VERSION="${CONFLUX_VERSION}"
 
 RUN apt-get update; apt-get install clang libsqlite3-dev pkg-config libssl-dev cmake curl git openssl -y
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /rustup.sh
@@ -10,9 +10,8 @@ RUN /root/.cargo/bin/rustup install 1.47.0
 RUN git clone https://github.com/Conflux-Chain/conflux-rust
 WORKDIR conflux-rust
 RUN git checkout $CONFLUX_VERSION
-COPY patch/ ./patch
-RUN diff ./core/src/spec/genesis.rs ./patch/genesis.rs > ./patch/genesis_diff; exit 0
-RUN patch ./core/src/spec/genesis.rs ./patch/genesis_diff
+COPY patch ./patch
+RUN patch -d /conflux-rust/core/src/spec/ < patch/genesis-v1.1.5.patch
 RUN /root/.cargo/bin/cargo build --release
 
 
