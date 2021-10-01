@@ -4,7 +4,7 @@ CONFLUX_VERSION="v1.1.5-testnet"
 .PHONY: build
 build:
 	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --build-arg CONFLUX_VERSION=$(CONFLUX_VERSION) --tag=$(IMAGE):latest .
-	#TAG_ONLY=1 ../docker-push.sh $(IMAGE)
+	TAG_ONLY=1 ../docker-push.sh $(IMAGE)
 
 .PHONY: push
 push: build
