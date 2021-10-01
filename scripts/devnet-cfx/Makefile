@@ -1,5 +1,5 @@
 IMAGE="reachsh/devnet-cfx"
-CONFLUX_VERSION="v1.1.5"
+CONFLUX_VERSION="v1.1.5-testnet"
 
 .PHONY: build
 build:
