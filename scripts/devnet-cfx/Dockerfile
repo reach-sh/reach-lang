@@ -11,7 +11,7 @@ RUN git clone https://github.com/Conflux-Chain/conflux-rust
 WORKDIR conflux-rust
 RUN git checkout $CONFLUX_VERSION
 COPY patch ./patch
-RUN patch -d /conflux-rust/core/src/spec/ < patch/genesis-v1.1.5.patch
+RUN patch -d /conflux-rust/core/src/spec/ < patch/genesis-$CONFLUX_VERSION.patch
 RUN /root/.cargo/bin/cargo build --release
 
 
