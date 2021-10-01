@@ -23,15 +23,14 @@ class App extends React.Component {
     const balAtomic = await reach.balanceOf(acc);
     const bal = reach.formatCurrency(balAtomic, 4);
     this.setState({acc, bal});
-    try {
-      const faucet = await reach.getFaucet();
-      this.setState({view: 'FundAccount', faucet});
-    } catch (e) {
+    if (await reach.canFundFromFaucet()) {
+      this.setState({view: 'FundAccount'});
+    } else {
       this.setState({view: 'DeployerOrAttacher'});
     }
   }
   async fundAccount(fundAmount) {
-    await reach.transfer(this.state.faucet, this.state.acc, reach.parseCurrency(fundAmount));
+    await reach.fundFromFaucet(this.state.acc, reach.parseCurrency(fundAmount));
     this.setState({view: 'DeployerOrAttacher'});
   }
   async skipFundAccount() { this.setState({view: 'DeployerOrAttacher'}); }
