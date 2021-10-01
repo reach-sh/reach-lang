@@ -28,6 +28,7 @@
 	},
 	"activationEvents": [
 		"workspaceContains:**/*.rsh",
+		"workspaceContains:reach",
 		"onCommand:reach.compile",
 		"onCommand:reach.run",
 		"onCommand:reach.docs",
