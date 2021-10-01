@@ -1573,13 +1573,13 @@ and tell it what to do once it mounts, which is the React term for starting.
          'only 39 41 "// ..."]
 
 @itemlist[
- @item{On line 18, we initialize the component state to display @exviewref["tut-9" "ConnectAccount"].}
- @item{On lines 20 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
- @item{On line 21, we use @jsin{getDefaultAccount}, which accesses the default browser account.
+ @item{On line 19, we initialize the component state to display @exviewref["tut-9" "ConnectAccount"].}
+ @item{On lines 21 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
+ @item{On line 22, we use @jsin{getDefaultAccount}, which accesses the default browser account.
   For example, when used with Ethereum, it can discover the currently-selected MetaMask account.}
- @item{On line 26, we use @jsin{getFaucet} to try and access the Reach developer testing network faucet.}
- @item{On line 27, if @jsin{getFaucet} was successful, we set the component state to display @exviewref["tut-9" "FundAccount"].}
- @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to @exviewref["tut-9" "DeployerOrAttacher"].}
+ @item{On line 26, we use @jsin{canFundFromFaucet} to see if we can access the Reach developer testing network faucet.}
+ @item{On line 27, if @jsin{canFundFromFaucet} was @jsin{true}, we set the component state to display @exviewref["tut-9" "FundAccount"].}
+ @item{On line 29, if @jsin{canFundFromFaucet} was @jsin{false}, we set the component state to skip to @exviewref["tut-9" "DeployerOrAttacher"].}
  @item{On line 39, we render the appropriate view from @reachexlink{tut-9/views/AppViews.js}.}
 ]
 
