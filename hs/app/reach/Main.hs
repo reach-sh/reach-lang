@@ -7,6 +7,7 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Bits
 import Data.Char
+import Data.Either
 import Data.Functor.Identity
 import Data.IORef
 import Data.Text (Text, intercalate, pack, unpack, stripEnd)
@@ -344,17 +345,26 @@ swap a b src = T.replace ("${" <> a <> "}") b src
 packs :: Show a => a -> Text
 packs = pack . show
 
-reachImages :: [Text]
-reachImages =
-  [ "reach"
-  , "reach-cli"
-  , "react-runner"
-  , "rpc-server"
-  , "runner"
-  , "devnet-algo"
-  , "devnet-cfx"
-  , "devnet-eth"
+-- Left: 3rd party; Right: Reach
+type Image = Either Text Text
+
+imagesCommon :: [Image]
+imagesCommon =
+  [ Right "reach"
+  , Right "reach-cli"
+  , Right "react-runner"
+  , Right "rpc-server"
+  , Right "runner"
   ]
+
+imagesFor :: Connector -> [Image]
+imagesFor = \case
+  ALGO -> [ Right $ devnetFor ALGO, Left "postgres:11-alpine" ]
+  CFX -> [ Right $ devnetFor CFX ]
+  ETH -> [ Right $ devnetFor ETH ]
+
+imagesForAllConnectors :: [Image]
+imagesForAllConnectors = L.foldl' (<>) [] $ imagesFor <$> [ minBound .. maxBound ]
 
 serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO Text
 serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
@@ -1130,7 +1140,6 @@ devnet = command "devnet" $ info f d where
     let n = "reach-" <> s
     let a = if abg then " >/dev/null 2>&1 &" else ""
     let max_wait_s = "120";
-    dieConnectorModeBrowser
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
     withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
@@ -1160,11 +1169,26 @@ update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = do
     v <- asks (version'' . e_var)
-    script . forM_ reachImages $ \i -> do
-      write $ "docker pull reachsh/" <> i <> ":" <> "latest"
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMaj v
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMin v
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMinPat v
+    let ts = [ "latest", versionMaj v, versionMajMin v, versionMajMinPat v ]
+    let ps = either (\i -> [ "docker pull " <> i ])
+                   $ \i -> [ "docker pull reachsh/" <> i <> ":" <> t | t <- ts ]
+    let w = write . intercalate "\n" . ps
+    scriptWithConnectorModeOptional $ do
+      mapM_ w imagesCommon
+      connectorMode <$> asks e_var >>= \case
+        Nothing -> mapM_ w imagesForAllConnectors
+        Just (ConnectorMode c _) -> do
+          let is = imagesFor c
+          let is' = filter ((==) Nothing . flip L.elemIndex is) imagesForAllConnectors
+          mapM_ w is
+          forM_ is' $ \i' -> do
+            let i = either id ("reachsh/" <>) i'
+            let ps' = intercalate "\n" $ ps i'
+            write [N.text|
+              if [ ! "$(docker image ls -q "$i")" = '' ]; then
+                $ps'
+              fi
+            |]
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
@@ -1217,8 +1241,11 @@ hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ do
     v <- versionMajMinPat . version'' <$> asks e_var
-    script . forM_ reachImages $ \i -> write [N.text|
-      echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+    let is = rights $ imagesCommon <> imagesForAllConnectors
+    script . forM_ is $ \i -> write [N.text|
+      if [ ! "$(docker image ls -q "reachsh/$i:$v")" = '' ]; then
+        echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+      fi
     |]
 
 whoami' :: Text
