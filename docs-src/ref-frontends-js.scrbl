@@ -102,21 +102,25 @@ Returns the first piece of @jsin{getConnectorMode()}.
   loadStdlib(env) => Promise<stdlib>
 }
 
-@index{loadStdlib} Returns a Promise for a stdlib based on the provided @jsin{env} string or map.
-In environments where the reach stdlib has implicit access to @jsin{process.env},
+@index{loadStdlib} Returns a Promise for a standard library based on the provided @jsin{env} string or map.
+In environments where the Reach standard library has implicit access to @jsin{process.env},
 you may omit the @jsin{env} argument, in which case @jsin{process.env} will be used.
 
-If the reach stdlib is being used with JavaScript bundlers like webpack
--- as it is with React, for example --
-then the reach stdlib does not have implicit access to @jsin{process.env}.
+If the standard library is being used with JavaScript bundlers like Webpack
+---as it is with React, for example---
+then Reach does @bold{not} have implicit access to @jsin{process.env}.
 In such scenarios, we recommend that you call this function like so:
 
 @js{
   const reach = await loadStdlib(process.env);
 }
 
-You may instead pass in the string @litchar{'ETH'} or the string @litchar{'ALGO'}
-to select the desired stdlib directly.
+Or construct a custom object that has all of the environment keys and fields you need.
+
+As a special case, you may instead pass in the string @litchar{'ETH'} or the string @litchar{'ALGO'}
+to select the desired connector directly.
+
+@(hrule)
 
 By default, this method allows a user to load a standard library for a single connector.
 That is, this method may not be called multiple times with varying @tech{connectors}.
