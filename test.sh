@@ -113,4 +113,7 @@ tealcount () {
 
 jb
 
+ci ALGO simple-nft-auction
+exit 0
+
 # (cd hs && mk hs-test)

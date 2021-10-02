@@ -1,82 +1,65 @@
 'reach 0.1';
-'use strict';
 
+const MUInt = Maybe(UInt);
 const common = {
   showOutcome: Fun([Address], Null)
 };
+const Params = Tuple(Token, UInt, UInt);
 
 export const main = Reach.App(() => {
-  const Auctioneer =  Participant('Auctioneer', {
+  const Creator = Participant('Creator', {
     ...common,
-    getSwap: Fun([], Tuple(Token, UInt, Token, UInt, UInt)),
-    showAuctionStart: Fun([], Null),
+    getSale: Fun([], Params),
+    seeBid: Fun([Address, UInt], Null),
+    timeout: Fun([], Null),
   });
-
-  const Bidder =  ParticipantClass('Bidder', {
+  const Bidder = ParticipantClass('Bidder', {
     ...common,
-    getBid: Fun([UInt], Maybe(UInt)),
-    showBid: Fun([Bool, Maybe(UInt)], Null),
+    seeParams: Fun([Params], Null),
+    getBid: Fun([UInt], MUInt),
   });
-
   deploy();
 
-  Auctioneer.only(() => {
-    const [ tokA, amtA, tokB, reservePrice, timeout ] = declassify(interact.getSwap());
-    assume(tokA != tokB);
+  Creator.only(() => {
+    const [ nftId, reservePrice, lenInBlocks ] = declassify(interact.getSale());
   });
-  Auctioneer
-    .publish(tokA, amtA, tokB, reservePrice, timeout);
+  Creator.publish(nftId, reservePrice, lenInBlocks);
+  const amt = 1;
   commit();
-  Auctioneer.pay([ [amtA, tokA ]]);
+  Creator.pay([[amt, nftId]]);
+  const end = lastConsensusTime() + lenInBlocks;
+  Bidder.interact.seeParams([nftId, reservePrice, end]);
 
-  var [ dealMade, tries ] = [ false, 0 ];
-  invariant(balance(tokA) == (dealMade ? 0 : amtA) && balance(tokB) == 0);
-  while (!dealMade && tries < 3) {
-
-    commit();
-    Anybody.publish();
-
-    const [ timeRemaining, keepGoing ] = makeDeadline(timeout);
-
-    const [ highestBidder, isFirstBid, currentPrice ] =
-      parallelReduce([ Auctioneer, true, reservePrice ])
-        .invariant(balance(tokA) == amtA && balance(tokB) == (isFirstBid ? 0 : currentPrice))
-        .while(keepGoing())
-        .paySpec([ tokB ])
-        .case(Bidder,
-          (() => {
-            const mbid = highestBidder != this
-              ? declassify(interact.getBid(currentPrice))
-              : Maybe(UInt).None();
-            return ({
-              when: maybe(mbid, false, ((b) => b > currentPrice)),
-              msg : fromSome(mbid, 0)
-            });
-          }),
-          ((bid) => [ 0, [bid, tokB] ]),
-          ((bid) => {
-            require(bid > currentPrice);
-            transfer(isFirstBid ? 0 : currentPrice, tokB).to(highestBidder);
-            return [ this, false, bid ];
-          }))
-        .timeRemaining(timeRemaining());
-    commit();
-
-    Auctioneer.publish();
-    transfer(isFirstBid ? 0 : amtA, tokA).to(highestBidder);
-    transfer(isFirstBid ? 0 : currentPrice, tokB).to(Auctioneer);
-
-    each([Auctioneer, Bidder], () => interact.showOutcome(highestBidder));
-
-    [ dealMade, tries ] = [ !isFirstBid, tries + 1 ];
-    continue;
-  }
+  const [ highestBidder, lastPrice, currentPrice ] =
+    parallelReduce([ Creator, 0, reservePrice ])
+      .invariant(balance(nftId) == amt && balance() == lastPrice)
+      .while(lastConsensusTime() <= end)
+      .case(Bidder,
+        (() => {
+          const mbid = highestBidder != this
+            ? declassify(interact.getBid(currentPrice))
+            : MUInt.None();
+          return ({
+            when: maybe(mbid, false, ((b) => b > currentPrice)),
+            msg : fromSome(mbid, 0)
+          });
+        }),
+        ((bid) => bid),
+        ((bid) => {
+          require(bid > currentPrice);
+          transfer(lastPrice).to(highestBidder);
+          Creator.interact.seeBid(this, bid);
+          return [ this, bid, bid ];
+        }))
+      .timeout(absoluteTime(end), () => {
+        Creator.interact.timeout();
+        Creator.publish();
+        return [ highestBidder, lastPrice, currentPrice ];
+      });
+  transfer(lastPrice).to(Creator);
+  transfer(amt, nftId).to(highestBidder);
   commit();
 
-  Auctioneer.publish();
-  transfer(balance()).to(Auctioneer);
-  transfer(balance(tokA), tokA).to(Auctioneer);
-  commit();
-
+  each([Creator, Bidder], () => interact.showOutcome(highestBidder));
   exit();
 });

@@ -1784,8 +1784,8 @@ export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
-export async function launchToken (accCreator:Account, name:string, sym:string) {
-  console.log(`Launching token, ${name} (${sym})`);
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:any) {
+  debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;
   const caddr = addr(accCreator);
   const zaddr = caddr;
@@ -1803,18 +1803,19 @@ export async function launchToken (accCreator:Account, name:string, sym:string) 
     await waitForConfirmation(r.txId);
     return await algod.pendingTransactionInformation(r.txId).do();
   };
+  const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
     algosdk.makeAssetCreateTxnWithSuggestedParams(
-      caddr, undefined, Math.pow(2,48), 6,
+      caddr, undefined, bigNumberToBigInt(supply), 6,
       false, zaddr, zaddr, zaddr, zaddr,
       sym, name, '', '', params,
     ));
   const id = ctxn_p["asset-index"];
-  console.log(`${sym}: asset is ${id}`);
+  debug(`${sym}: asset is ${id}`);
 
   const mint = async (accTo:Account, amt:any) => {
-    console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
     await transfer(accCreator, accTo, amt, id);
   };
   const optOut = async (accFrom:Account, accTo:Account = accCreator) => {

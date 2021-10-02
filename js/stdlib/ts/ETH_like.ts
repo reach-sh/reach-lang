@@ -907,7 +907,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   };
 
   async function tokenAccept(token:Token): Promise<void> {
-    debug(`tokenAccept: Unnecessary on ETH`, token);
+    debug(`tokenAccept: Unnecessary on ETHlike`, token);
     return;
   };
   const tokenMetadata = async (token: Token): Promise<any> => {
@@ -1151,26 +1151,29 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
   return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
-async function launchToken (accCreator:Account, name:string, sym:string) {
-  console.log(`Launching token, ${name} (${sym})`);
+async function launchToken (accCreator:Account, name:string, sym:string, opts:any) {
+  debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
   const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
-  console.log(`${sym}: deploy`);
-  const supply = bigNumberify(2).pow(256).sub(1);
+  debug(`${sym}: deploy`);
+  const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(256).sub(1);
   const contract = await factory.deploy(name, sym, '', '', supply);
-  console.log(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
+  debug(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
   const deploy_r = await contract.deployTransaction.wait();
-  console.log(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
+  debug(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
   const id = contract.address;
-  console.log(`${sym}: deployed: ${id}`);
+  debug(`${sym}: deployed: ${id}`);
   const mint = async (accTo:Account, amt:any) => {
-    console.log(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
     await transfer(accCreator, accTo, amt, id);
   };
-  return { name, sym, id, mint };
+  const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
+    debug(`${sym}: optOut unnecessary on ETHlike`, accFrom, accTo);
+  };
+  return { name, sym, id, mint, optOut };
 };
 
 // TODO: restore type ann once types are in place
