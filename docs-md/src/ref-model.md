@@ -49,6 +49,10 @@ Finally, Reach's definition of consensus network does not require any particular
 In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
 :::
 
+::: note
+Reach assumes that network tokens and non-network tokens behavior identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
+:::
+
 ${defn("Contracts")} are accounts with three extra capacities: they persistently store values (called the ${defn("consensus state")}), they may receive publications, and when they receive publications, they systematically process them and may modify their consensus state, make publications, and may transfer network tokens and non-network tokens in response to the reception.
 In addition to values, consensus state may contain a fixed number of ${defn("mappings")} between an address and a value.
 These mappings are referred to as "${defn("linear state")}" because their size is linear in the number of participants in the contract.

@@ -12,6 +12,40 @@ ${toc}
 
 
 
+## {#RA0000} RA0000
+
+This error indicates that a program, targeting the Algorand connector, is attempting to
+transfer a `Token` in the same consensus step it was created in. It is impossible
+to perform this action because one must opt-in to receive a token on Algorand. To opt-in, one must
+know the id, however the id of the token cannot be known until after the transaction that created it.
+
+The following code erroneously tries to transfer a newly created `Token`:
+
+```reach
+Alice.publish();
+const tok = new Token({ supply: 5 });
+transfer(5, tok).to(Alice);
+commit();
+```
+
+
+This can be fixed by performing a `commit` after creating the token and transferring the
+token in the next consensus step:
+
+```reach
+Alice.publish();
+const tok = new Token({ supply: 5 });
+commit();
+Alice.interact.informOfTokenId(tok);
+Alice.publish();
+transfer(5, tok).to(Alice);
+commit();
+```
+
+
+The frontend can have `Alice` opt-in to the token in `informOfTokenId` by utilizing
+`acc.tokenAccept()`.
+
 ## {#RC0000} RC0000
 
 This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
@@ -2193,6 +2227,23 @@ Maybe(UInt).Some(5).match({
 
 This error indicates that you have inspected the details about a publication, such as via `didPublish()`, before there has been a publication.
 This is impossible, so the expression must be moved after the first publication.
+
+## {#RE0120} RE0120
+
+This error indicates that an actor who is not a `Participant`, e.g. a `ParticipantClass`, is
+attempting to make the first publication of a Reach program.
+
+You can fix this error by assigning the first publication to one of your `Participant`s.
+Additionally, you can create a new `Participant` to specifically perform this action.
+
+```reach
+const Constructor = Participant('Constructor', {});
+// ...
+deploy();
+Constructor.publish();
+commit();
+// ...
+```
 
 
 ## {#REP0000} REP0000

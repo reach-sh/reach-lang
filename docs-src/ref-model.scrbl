@@ -44,6 +44,8 @@ Finally, Reach's definition of @tech{consensus network} does not require any par
 In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
 }
 
+@margin-note{Reach assumes that @tech{network tokens} and @tech{non-network tokens} behavior identically, but often they do not; @seclink["guide-nntoks"]{this article} discusses the causes and consequences of this.}
+
 @deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} and @tech{non-network tokens} in response to the reception.
 In addition to @tech{values}, @tech{consensus state} may contain a fixed number of @deftech{mappings} between an @tech{address} and a @tech{value}.
 These @tech{mappings} are referred to as "@deftech{linear state}" because their size is linear in the number of @tech{participants} in the @tech{contract}.

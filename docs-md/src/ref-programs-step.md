@@ -113,6 +113,9 @@ will indicate that `fork` payments should be of the format:
 ```
 
 
+::: note
+Reach assumes that network tokens and non-network tokens behavior identically, but often they do not; [the article](##guide-nntoks) discusses the causes and consequences of this.
+:::
 
 ### `publish`, `pay`, `when`, and `timeout`
 

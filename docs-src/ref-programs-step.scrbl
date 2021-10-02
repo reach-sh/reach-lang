@@ -102,6 +102,7 @@ will indicate that @reachin{fork} payments should be of the format:
 @reach{
   [ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]}
 
+@margin-note{Reach assumes that @tech{network tokens} and @tech{non-network tokens} behavior identically, but often they do not; @seclink["guide-nntoks"]{the article} discusses the causes and consequences of this.}
 
 @subsection{@tt{publish}, @tt{pay}, @tt{when}, and @tt{timeout}}
 

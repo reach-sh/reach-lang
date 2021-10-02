@@ -384,6 +384,10 @@ This value is intended to be a digest of a larger metadata document.
 This returns a `Token` value and deposits a `supply` amount of the new non-network tokens into the contract account associated with the DApp.
 These tokens must be destroyed by the end of the DApp.
 
+::: note
+Reach assumes that network tokens and non-network tokens behavior identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
+:::
+
 ---
 
 `Token.burn(tok, amt)`, or `tok.burn(amt)`, where `tok` is a `Token` value and `amt` is a `UInt` value, may be used to ${defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
