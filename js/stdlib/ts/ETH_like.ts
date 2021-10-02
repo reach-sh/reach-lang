@@ -1151,7 +1151,7 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
   return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
-async function launchToken (accCreator:Account, name:string, sym:string, opts:any) {
+async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
   const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];

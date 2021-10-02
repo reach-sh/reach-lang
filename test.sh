@@ -113,7 +113,8 @@ tealcount () {
 
 jb
 
-ci ALGO simple-nft-auction
+ci ETH atomic-swap
+ci ALGO atomic-swap
 exit 0
 
 # (cd hs && mk hs-test)

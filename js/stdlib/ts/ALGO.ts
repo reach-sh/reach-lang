@@ -1784,7 +1784,7 @@ export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
-export async function launchToken (accCreator:Account, name:string, sym:string, opts:any) {
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;
   const caddr = addr(accCreator);
