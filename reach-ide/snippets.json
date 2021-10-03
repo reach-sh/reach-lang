@@ -69,7 +69,7 @@
 			"invariant(${3:INVARIANT_EXPR});",
 			"while(${4:COND_EXPR}) {",
 			"    ${5:BLOCK}",
-			"}",
+			"}"
 		],
 		"description": "while"
 	},
