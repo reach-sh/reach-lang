@@ -340,6 +340,7 @@ The correct way to write a program like this in @tech{strict mode} is to use @re
 
 @subsection{@tt{unstrict}}
 
+@(mint-define! '("unstrict"))
 @reach{
   assert(unstrict(() => {
     'use strict';
