@@ -2985,9 +2985,8 @@ evalPrim p sargs =
       zero_args
       evalPrim (SLPrim_fluid_read FV_didSend) []
     SLPrim_unstrict -> do
-      one_arg >>= \case
-        clo@SLV_Clo {} -> locUseUnstrict True $ evalApply clo []
-        ow -> expect_t ow Err_Eval_NotApplicable
+      x <- one_arg
+      locUseUnstrict True $ evalApply x []
     SLPrim_polyNeq -> do
       (x, y) <- two_args
       notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
