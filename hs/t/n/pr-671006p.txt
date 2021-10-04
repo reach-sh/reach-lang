@@ -16,7 +16,7 @@ Verification failed:
   //      from: ./pr-671006p.rsh:31:37:while
   const v218 = <map reduction>;
   //    ^ could = 1
-  //      from: reach standard library:146:18:application
+  //      from: reach standard library:143:18:application
 
   // Theorem Formalization
 

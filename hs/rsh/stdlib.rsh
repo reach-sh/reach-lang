@@ -6,9 +6,6 @@ export function not (x) {
   return (x ? false : true); }
 export const boolEq = (x, y) => (x ? y : !y);
 
-export function polyNeq (x, y) {
-  return not(x == y); }
-
 // Operator aliases
 export const add = (x, y) => x + y;
 export const sub = (x, y) => x - y;
