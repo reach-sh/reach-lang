@@ -565,7 +565,7 @@ base_env =
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
-    , ("unstrict", SLV_Prim $ SLPrim_Unstrict)
+    , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -2984,14 +2984,9 @@ evalPrim p sargs =
       ensure_after_first
       zero_args
       evalPrim (SLPrim_fluid_read FV_didSend) []
-    SLPrim_Unstrict -> do
+    SLPrim_unstrict -> do
       one_arg >>= \case
-        SLV_Clo clo_at Nothing clo@(SLClo _ clo_args _ _) -> do
-          at <- withAt id
-          unless (null clo_args) $
-            expect_thrown clo_at $
-              Err_Apply_ArgCount at 0 (length clo_args)
-          locUseUnstrict True $ evalApply (SLV_Clo clo_at Nothing clo) []
+        clo@SLV_Clo {} -> locUseUnstrict True $ evalApply clo []
         ow -> expect_t ow Err_Eval_NotApplicable
     SLPrim_polyNeq -> do
       (x, y) <- two_args

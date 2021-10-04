@@ -677,7 +677,7 @@ data SLPrimitive
   | SLPrim_Token_destroyed
   | SLPrim_muldiv
   | SLPrim_didPublish
-  | SLPrim_Unstrict
+  | SLPrim_unstrict
   | SLPrim_polyNeq
   deriving (Eq, Generic)
 
