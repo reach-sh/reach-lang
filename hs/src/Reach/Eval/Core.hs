@@ -166,6 +166,11 @@ locUseStrict v m = do
   old_sco <- asks e_sco
   local (\e -> e {e_sco = old_sco {sco_use_strict = v}}) m
 
+locUseUnstrict :: Bool -> App a -> App a
+locUseUnstrict v m = do
+  old_sco <- asks e_sco
+  local (\e -> e { e_sco = old_sco { sco_use_unstrict = v } }) m
+
 saveLifts :: DLStmts -> App ()
 saveLifts ss = do
   Env {..} <- ask
@@ -275,6 +280,9 @@ data SLScope = SLScope
   , -- One for the consensus
     sco_cenv :: SLEnv
   , sco_use_strict :: Bool
+  -- Deliberately ignore strict mode when evaluating code
+  -- declared in strict mode
+  , sco_use_unstrict :: Bool
   }
 
 data EnvInsertMode
@@ -447,7 +455,10 @@ env_merge = env_merge_ DisallowShadowing
 -- Any `e_unused_vars` with Bool `True` is unused.
 
 useStrict :: App Bool
-useStrict = asks (sco_use_strict . e_sco)
+useStrict = do
+  usingStrict <- asks (sco_use_strict . e_sco)
+  usingUnstrict <- asks (sco_use_unstrict . e_sco)
+  return $ usingStrict && not usingUnstrict
 
 whenUsingStrict :: App () -> App ()
 whenUsingStrict e = useStrict >>= flip when e
@@ -532,6 +543,7 @@ base_env =
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
     , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
+    , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
     , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
     , ("isType", SLV_Prim SLPrim_is_type)
@@ -553,6 +565,7 @@ base_env =
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
+    , ("unstrict", SLV_Prim $ SLPrim_Unstrict)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -824,6 +837,11 @@ ensure_after_first = do
 sco_to_cloenv :: SLScope -> App SLCloEnv
 sco_to_cloenv SLScope {..} = do
   return $ SLCloEnv sco_penvs sco_cenv sco_use_strict
+
+sco_lookup_unstrict :: App Bool
+sco_lookup_unstrict = do
+  Env {..} <- ask
+  return $ sco_use_unstrict e_sco
 
 sco_lookup_penv :: SLPart -> App SLEnv
 sco_lookup_penv who = do
@@ -1803,7 +1821,15 @@ evalPrimOp p sargs = do
     PLE -> nn2b (<=)
     PEQ ->
       case args of
-        [x, y] -> evalPolyEq lvl x y
+        [x, y] -> do
+          useStrict >>= \case
+            True ->
+              (,) <$> typeOfM x <*> typeOfM y >>= \case
+                (Just (x_ty, _), Just (y_ty, _)) -> typeEq x_ty y_ty >> chkEq
+                _ -> return (lvl, SLV_Bool at $ x == y)
+            False -> chkEq
+            where
+              chkEq = evalPolyEq lvl x y
         _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
     PGE -> nn2b (>=)
     PGT -> nn2b (>)
@@ -2958,6 +2984,20 @@ evalPrim p sargs =
       ensure_after_first
       zero_args
       evalPrim (SLPrim_fluid_read FV_didSend) []
+    SLPrim_Unstrict -> do
+      one_arg >>= \case
+        SLV_Clo clo_at Nothing clo@(SLClo _ clo_args _ _) -> do
+          at <- withAt id
+          unless (null clo_args) $
+            expect_thrown clo_at $
+              Err_Apply_ArgCount at 0 (length clo_args)
+          locUseUnstrict True $ evalApply (SLV_Clo clo_at Nothing clo) []
+        ow -> expect_t ow Err_Eval_NotApplicable
+    SLPrim_polyNeq -> do
+      (x, y) <- two_args
+      notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
+      eqFn <- evalPrimOp PEQ $ map (lvl,) [x, y]
+      evalApplyVals' notFn [eqFn]
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3097,6 +3137,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
   ret <- ctxt_alloc
   let body_at = srcloc_jsa "block" body_a clo_at
   let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
+  using_unstrict <- sco_lookup_unstrict
   let clo_sco =
         (SLScope
            { sco_ret = Just ret
@@ -3105,6 +3146,7 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
            , sco_penvs = clo_penvs
            , sco_cenv = clo_cenv
            , sco_use_strict = clo_use_strict
+           , sco_use_unstrict = using_unstrict
            })
   m <- readSt st_mode
   let arg_lvl = mconcat $ map fst randvs

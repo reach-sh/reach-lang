@@ -338,6 +338,20 @@ The correct way to write a program like this in @tech{strict mode} is to use @re
   void foo(MObj.Some({ b : true }));
   void foo(MObj.None()); }
 
+@subsection{@tt{unstrict}}
+
+@reach{
+  assert(unstrict(() => {
+    'use strict';
+    // the following fails in strict mode due to a type mismatch
+    return 1 != true;
+  }));
+}
+
+@index{unstrict} @reachin{unstrict} applies a thunk, ignoring any usage of @tech{strict mode}. This
+can be useful when dealing with libraries that are written in @tech{strict mode}.
+
+
 @subsection{Identifier reference}
 
 @reach{

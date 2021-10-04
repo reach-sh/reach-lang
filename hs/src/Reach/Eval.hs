@@ -41,6 +41,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , sco_penvs = mempty
           , sco_cenv = top_env
           , sco_use_strict = top_use_strict
+          , sco_use_unstrict = False
           }
   init_dlo <- readDlo id
   envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty
@@ -110,6 +111,7 @@ makeEnv cns = do
             sco_penvs = mempty
           , sco_cenv = mempty
           , sco_use_strict = False
+          , sco_use_unstrict = False
           }
   let e_depth = recursionDepthLimit
   let e_while_invariant = False

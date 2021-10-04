@@ -114,6 +114,7 @@ evalTopBody libm env exenv = \case
                  , sco_penvs = mempty
                  , sco_cenv = env
                  , sco_use_strict = use_strict
+                 , sco_use_unstrict = False
                  })
         smr <- locSco sco $ evalStmt [sm]
         case smr of
