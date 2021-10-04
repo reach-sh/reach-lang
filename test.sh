@@ -114,11 +114,7 @@ tealcount () {
 #jb
 
 one ETH api-basic
-exit 0
 one ALGO api-basic
-
-ci ETH atomic-swap
-ci ALGO atomic-swap
 exit 0
 
 # (cd hs && mk hs-test)
