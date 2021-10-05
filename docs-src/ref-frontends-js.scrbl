@@ -25,6 +25,7 @@ These libraries provide a standard interface that support developing @tech{front
 @section[#:tag "ref-frontends-js-types"]{Types}
 
 The table below shows the JavaScript representation of each of the Reach types:
+@(mint-define! '("Contract"))
 @js{
  // Reach  => JavaScript
  Null      => null
@@ -33,6 +34,7 @@ The table below shows the JavaScript representation of each of the Reach types:
  Bytes     => 'string'
  Digest    => 'BigNumber'
  Address   => NetworkAccount
+ Contract  => Address on ETH; UInt on ALGO
  Token     => Address on ETH; UInt on ALGO
  Array     => array
  Tuple     => array
@@ -46,7 +48,7 @@ For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt})} inha
 @(hrule)
 @(mint-define! '("Connector"))
 @js{
-  type Connector = 'ETH' | 'ALGO'
+  type Connector = 'ETH' | 'ALGO' | 'CFX'
 }
 
 A @reachin{Connector} is the abbreviated name of the network
@@ -333,7 +335,7 @@ To wait for deployment, see @reachin{ctc.getInfo}.
 @js{
  ctc.getInfo() => Promise<ctcInfo> }
 
-@index{ctc.getInfo} Returns a Promise for a @reachin{Contract} that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
+@index{ctc.getInfo} Returns a Promise for a @jsin{Contract} that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
 The Promise will only be resolved after the contract is actually deployed on the network.
 You cannot block on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
