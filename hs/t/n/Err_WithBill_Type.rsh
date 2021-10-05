@@ -3,13 +3,13 @@
 export const main =
   Reach.App(
     {},
-    [Participant('A', { getCtc: Fun([], Address) })],
+    [Participant('A', { getCtc: Fun([], Contract) })],
     (A) => {
       A.only(() => {
-        const addr = declassify(interact.getCtc());
+        const ctcInfo = declassify(interact.getCtc());
       });
-      A.publish(addr);
-      const ctc = remote(addr,  { f: Fun([], Null), });
+      A.publish(ctcInfo);
+      const ctc = remote(ctcInfo,  { f: Fun([], Null), });
       ctc.f.withBill(1)();
       commit();
 

@@ -1,14 +1,14 @@
 'reach 0.1';
 
 const Log1 = {
-    m1: Fun([Address, UInt], Null),
-}; 
+    m1: Fun([Contract, UInt], Null),
+};
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {
-    get: Fun([], Tuple(Address, UInt)),
+    get: Fun([], Tuple(Contract, UInt)),
   });
   const Bob = Participant('Bob', {
-    check: Fun([Address, UInt], Null),
+    check: Fun([Contract, UInt], Null),
   });
   deploy();
     Alice.publish();

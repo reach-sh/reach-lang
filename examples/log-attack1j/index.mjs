@@ -53,7 +53,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasConsoleLogger,
-      get: (() => ({ addr: remoteAddr, x: 5 })),
+      get: (() => ({ ctcInfo: remoteAddr, x: 5 })),
     }),
   ]);
 })();

@@ -1,10 +1,10 @@
 'reach 0.1';
 const LogAttack2 = {
     m2: Fun([], Null),
-}; 
+};
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {
-    get: Fun([], Tuple(Address, UInt)),
+    get: Fun([], Tuple(Contract, UInt)),
   });
   const Bob = Participant('Bob', {
     check: Fun([UInt], Null),
@@ -13,7 +13,7 @@ export const main = Reach.App(() => {
   Alice.publish();
   commit();
   Alice.only(() => {
-    const [acct, val] = declassify(interact.get()); 
+    const [acct, val] = declassify(interact.get());
   });
   Alice.publish(acct);
   const log2 = remote(acct, LogAttack2);

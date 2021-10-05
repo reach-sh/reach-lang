@@ -4,16 +4,16 @@ export const main = Reach.App(() => {
   const A = Participant('Alice', {
     ...hasConsoleLogger,
     get: Fun([], Object({
-      addr: Address,
+      ctcInfo: Contract,
       x: UInt,
     })),
   });
   deploy();
 
   A.only(() => {
-    const { addr, x } = declassify(interact.get()); });
-  A.publish(addr, x);
-  const ctc = remote(addr, {
+    const { ctcInfo, x } = declassify(interact.get()); });
+  A.publish(ctcInfo, x);
+  const ctc = remote(ctcInfo, {
     f: Fun([UInt], Null),
   });
   ctc.f(x);
