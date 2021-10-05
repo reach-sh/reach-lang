@@ -1689,8 +1689,14 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
   comment "check time"
   argLoad ArgTime
   cfrombs T_UInt
+  op "dup"
+  cint 0
+  op "=="
+  op "swap"
   gvLoad GV_currentTime
-  asserteq
+  op "=="
+  op "||"
+  assert
   let bindVars = id
         . (store_let from True (code "txn" [ "Sender" ]))
         . (bindTime timev)

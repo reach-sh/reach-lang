@@ -113,8 +113,12 @@ tealcount () {
 
 #jb
 
-one ETH api-basic
-one ALGO api-basic
+ci ETH overview
+ci ETH tut-8
+exit 0
+
+ci ETH api-basic
+ci ALGO api-basic
 exit 0
 
 # (cd hs && mk hs-test)

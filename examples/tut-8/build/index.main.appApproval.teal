@@ -43,8 +43,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 byte base64()
 pop
@@ -73,7 +78,7 @@ assert
 load 255
 store 3
 // "CheckPay"
-// "./examples/tut-8/index.rsh:49:9:dot"
+// "./index.rsh:49:9:dot"
 // "[]"
 int 100000
 dup
@@ -116,7 +121,7 @@ assert
 l1:
 pop
 // "CheckPay"
-// "./examples/tut-8/index.rsh:49:9:dot"
+// "./index.rsh:49:9:dot"
 // "[]"
 load 254
 dup
@@ -202,8 +207,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -236,7 +246,7 @@ load 252
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:56:7:dot"
+// "./index.rsh:56:7:dot"
 // "[]"
 load 254
 dup
@@ -312,8 +322,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -347,10 +362,10 @@ load 252
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
@@ -465,8 +480,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -508,10 +528,10 @@ load 250
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:69:11:dot"
+// "./index.rsh:69:11:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:69:11:dot"
+// "./index.rsh:69:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -572,8 +592,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -614,10 +639,10 @@ load 250
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==
@@ -730,8 +755,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -780,10 +810,10 @@ load 249
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:77:9:dot"
+// "./index.rsh:77:9:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:77:9:dot"
+// "./index.rsh:77:9:dot"
 // "[]"
 load 252
 txn Sender
@@ -847,8 +877,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -895,10 +930,10 @@ load 249
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 255
 txn Sender
 ==
@@ -1011,8 +1046,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -1070,10 +1110,10 @@ load 248
 <
 assert
 // "CheckPay"
-// "./examples/tut-8/index.rsh:85:11:dot"
+// "./index.rsh:85:11:dot"
 // "[]"
 // Just "sender correct"
-// "./examples/tut-8/index.rsh:85:11:dot"
+// "./index.rsh:85:11:dot"
 // "[]"
 load 255
 txn Sender
@@ -1081,7 +1121,7 @@ txn Sender
 assert
 // Nothing
 // "reach standard library:65:17:application"
-// "[at ./examples/tut-8/index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
 load 250
 load 247
 itob
@@ -1130,8 +1170,13 @@ assert
 // check time
 txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
 load 2
 ==
+||
 assert
 int 1
 bzero
@@ -1182,10 +1227,10 @@ load 248
 assert
 // "CheckPay"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 // Just "sender correct"
 // "reach standard library:209:7:dot"
-// "[at ./examples/tut-8/index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
 load 252
 txn Sender
 ==

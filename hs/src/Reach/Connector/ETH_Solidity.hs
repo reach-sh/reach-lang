@@ -114,7 +114,7 @@ solRequireMsg umsg = do
 solRequire :: String -> Doc -> App Doc
 solRequire umsg a = do
   mmsg <- solRequireMsg umsg
-  return $ solApply "reachRequire" $ [a, mmsg ]
+  return $ solApply "reachRequire" $ [parens a, mmsg ]
 
 solBinOp :: String -> Doc -> Doc -> Doc
 solBinOp o l r = l <+> pretty o <+> r
@@ -681,7 +681,9 @@ solStateSet which svs = do
 solStateCheck :: Int -> App [(String, Doc)]
 solStateCheck prev = do
   s <- solEq "current_step" (solNum prev)
-  t <- solEq "current_time" "_a.time"
+  zeq <- solEq "_a.time" $ solNum (0 :: Int)
+  teq <- solEq "current_time" "_a.time"
+  let t = solBinOp "||" (parens zeq) (parens teq)
   return [ ("step", s), ("time", t) ]
 
 arraySize :: DLArg -> Integer
