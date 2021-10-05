@@ -337,8 +337,8 @@ const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  debug(`compileFor`, info, typeof(info), Number.isInteger(Number(info)));
-  if ( ! Number.isInteger(Number(info)) ) {
+  debug(`compileFor`, info, typeof(info), Number.isInteger(info));
+  if ( ! Number.isInteger(info) ) {
     throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an earlier version of Reach.`); }
   const ApplicationID = info;
   must_be_supported(bin);
@@ -1691,8 +1691,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
-  const { appApproval, appClear } = compiled;
-  const ApplicationID = Number(compiled.ApplicationID);
+  const { ApplicationID, appApproval, appClear } = compiled;
   const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;

@@ -142,7 +142,6 @@ export const BV_Address = (val: string): CBR_Address => {
   return BT_Address.canonicalize(val);
 }
 
-
 export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_Array> => {
   // TODO: check ctc, sz for sanity
   return {
