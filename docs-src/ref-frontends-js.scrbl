@@ -333,7 +333,7 @@ To wait for deployment, see @reachin{ctc.getInfo}.
 @js{
  ctc.getInfo() => Promise<ctcInfo> }
 
-@index{ctc.getInfo} Returns a Promise for an object that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
+@index{ctc.getInfo} Returns a Promise for a @reachin{Contract} that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
 The Promise will only be resolved after the contract is actually deployed on the network.
 You cannot block on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
