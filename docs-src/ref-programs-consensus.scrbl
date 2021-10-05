@@ -369,7 +369,7 @@ has been called on @reachin{tok} yet.
 @(mint-define! '("remote"))
 @reach{
   const randomOracle =
-    remote( randomOracleAddr, {
+    remote( randomOracleCtcInfo, {
       getRandom: Fun([], UInt),
     });
   const randomVal = randomOracle.getRandom.pay(randomFee)();
@@ -382,16 +382,16 @@ has been called on @reachin{tok} yet.
 A @deftech{remote object} represents a foreign @tech{contract} in a Reach application.
 During a @tech{consensus step}, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
-A @tech{remote object} is constructed by calling the @reachin{remote} function with an @tech{address} and an interface---an object where each key is bound to a @tech{function type}. For example:
+A @tech{remote object} is constructed by calling the @reachin{remote} function with a @reachin{Contract} and an interface---an object where each key is bound to a @tech{function type}. For example:
 @reach{
   const randomOracle =
-    remote( randomOracleAddr, {
+    remote( randomOracleCtcInfo, {
       getRandom: Fun([], UInt),
     });
   const token =
-    remote( tokenAddr, {
+    remote( tokenCtcInfo, {
       balanceOf: Fun([Address], UInt),
-      transferTo: Fun([UInt, Addres], Null),
+      transferTo: Fun([UInt, Address], Null),
     });
 }
 

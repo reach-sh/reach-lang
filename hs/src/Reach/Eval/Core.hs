@@ -527,6 +527,7 @@ base_env =
     , ("Bool", SLV_Type ST_Bool)
     , ("UInt", SLV_Type ST_UInt)
     , ("Bytes", SLV_Prim SLPrim_Bytes)
+    , ("Contract", SLV_Type ST_Contract)
     , ("Address", SLV_Type ST_Address)
     , ("Token", SLV_Type ST_Token)
     , ("forall", SLV_Prim SLPrim_forall)
@@ -2832,7 +2833,7 @@ evalPrim p sargs =
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       (av, ri) <- two_args
-      aa <- compileCheckType T_Address av
+      aa <- compileCheckType T_Contract av
       rm_ <- mustBeObject ri
       rm <- mapWithKeyM (\ k v -> do
         locAt (sss_at v) $
@@ -4079,6 +4080,7 @@ typeToExpr = \case
   T_Bytes i -> call "Bytes" [ie i]
   T_Digest -> var "Digest"
   T_Address -> var "Address"
+  T_Contract -> var "Contract"
   T_Token -> var "Token"
   T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts

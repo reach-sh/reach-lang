@@ -153,6 +153,7 @@ typeSizeOf = \case
   T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
+  T_Contract -> typeSizeOf $ T_UInt
   T_Token -> typeSizeOf $ T_UInt
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
@@ -565,6 +566,7 @@ ctobs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
+  T_Contract -> ctobs T_UInt
   T_Token -> ctobs T_UInt
   T_Array {} -> nop
   T_Tuple {} -> nop
@@ -580,6 +582,7 @@ cfrombs = \case
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
+  T_Contract -> cfrombs T_UInt
   T_Token -> cfrombs T_UInt
   T_Array {} -> nop
   T_Tuple {} -> nop

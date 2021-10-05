@@ -53,6 +53,7 @@ instance CollectsTypes DLType where
         T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty
+        T_Contract -> mempty
         T_Token -> mempty
         T_Array e _ -> cts e
         T_Tuple elems -> cts elems

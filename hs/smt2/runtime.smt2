@@ -69,3 +69,6 @@
 ;;  (forall ((x Token) (y Token))
 ;;          (=> (not (= x y))
 ;;              (not (= (Token_toBytes x) (Token_toBytes y))))))
+
+(declare-sort Contract 0)
+(declare-fun Contract_toBytes (Contract) Bytes)

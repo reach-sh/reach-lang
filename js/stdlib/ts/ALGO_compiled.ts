@@ -144,6 +144,11 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
   }
 };
 
+export const T_Contract: ALGO_Ty<Contract> = {
+  ...T_UInt,
+  name: 'Contract',
+};
+
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
   size: number,
@@ -285,7 +290,11 @@ export const T_Data = (
 export const addressEq = mkAddressEq(T_Address);
 
 const T_Token = T_UInt;
+
 export type Token = CBR_UInt;
+
+export type Contract = CBR_UInt;
+
 export const tokenEq = (x: unknown, y: unknown): boolean =>
   T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
 export type PayAmt = MkPayAmt<Token>;
@@ -296,13 +305,14 @@ export const typeDefs = {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,
   T_Data,
   T_Array,
   T_Tuple,
-  T_Struct
+  T_Struct,
 };
 
 const arith = makeArith(UInt_max);

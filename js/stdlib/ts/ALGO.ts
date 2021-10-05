@@ -536,7 +536,7 @@ class EventCache {
 
 export const { addressEq, tokenEq, digest } = compiledStdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
@@ -880,7 +880,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache(), vr?: VerifyResult|undefined): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const ctorRan = new Signal();
-    const getInfo = async () => {
+    const getInfo = async (): Promise<ContractInfo> => {
       await ctorRan.wait();
       return ctcInfo;
     };

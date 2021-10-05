@@ -436,6 +436,7 @@ mustBeMem = \case
   T_Bytes _ -> True
   T_Digest -> False
   T_Address -> False
+  T_Contract -> False
   T_Token -> False
   T_Array {} -> True
   T_Tuple {} -> True
@@ -1102,6 +1103,7 @@ solDefineType t = case t of
     addMap $ "uint8[" <> pretty sz <> "]"
   T_Digest -> base
   T_Address -> base
+  T_Contract -> base
   T_Token -> base
   T_Array _ 0 -> do
     addMap "bool"
@@ -1205,6 +1207,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
           , (T_UInt, "uint256")
           , (T_Digest, "uint256")
           , (T_Address, "address")
+          , (T_Contract, "address")
           , (T_Token, "address")
           ]
   ctxt_typem <- newIORef base_typem

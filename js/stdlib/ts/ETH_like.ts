@@ -684,7 +684,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return res.evt;
     }
 
-    const getInfo = async () => await infoP;
+    const getInfo = async (): Promise<ContractInfo> => await infoP;
 
     const canIWin = async (lct:BigNumber): Promise<boolean> => {
       const ethersC = await getC();
