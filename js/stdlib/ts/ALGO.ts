@@ -41,7 +41,7 @@ import {
   bigNumberToNumber,
 } from './shared_user';
 import {
-  CBR_Address, CBR_Contract, CBR_Val,
+  CBR_Address, CBR_Val,
 } from './CBR';
 import waitPort from './waitPort';
 import {
@@ -116,13 +116,13 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 type CompiledBackend = {
-  ApplicationID: CBR_Contract,
+  ApplicationID: number,
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
   escrow: CompileResultBytes,
 };
 
-type ContractInfo = CBR_Contract;
+type ContractInfo = number;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
@@ -880,7 +880,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache(), vr?: VerifyResult|undefined): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const ctorRan = new Signal();
-    const getInfo = async (): Promise<CBR_Contract> => {
+    const getInfo = async (): Promise<ContractInfo> => {
       await ctorRan.wait();
       return ctcInfo;
     };
@@ -1409,7 +1409,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(label, 'deploy');
     const algob = bin._Connectors.ALGO;
     const { stateKeys, mapDataKeys } = algob;
-    const { appApproval, appClear } = await compileFor(bin, T_Contract.canonicalize(0));
+    const { appApproval, appClear } = await compileFor(bin, 0);
     const extraPages =
       Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
@@ -1435,7 +1435,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     debug(`created`, {ApplicationID});
-    const ctcInfo = T_Contract.canonicalize(ApplicationID);
+    const ctcInfo = ApplicationID;
     const eventCache = new EventCache();
 
     const compiled = await compileFor(bin, ctcInfo);

@@ -397,7 +397,7 @@ Reach's @deftech{type}s are represented in programs by the following identifiers
   @item{
     @margin-note{Reach has different representations of @tech{contract}s across @tech{connector}s.
       For example, on Algorand a @reachin{Contract} is an Application ID, but on Ethereum it is an Address.}
-    @(mint-define! '("Contract")) @reachin{Contract}, which denotes the connection information for a @tech{contract}.}
+    @(mint-define! '("Contract")) @reachin{Contract}, which denotes the identifying information of a @tech{contract}.}
   @item{@(mint-define! '("Token")) @reachin{Token}, which denotes a @tech{non-network token}. @secref["ref-networks"]{} discusses how @reachin{Token}s are represented on specific networks.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a @deftech{function type}, when @reachin{Domain_i} and @reachin{Range} are types.
   The domain of a function is @tech{negative position}.

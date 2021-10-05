@@ -20,7 +20,6 @@ import {
   CBR_UInt,
   CBR_Bytes,
   CBR_Address,
-  CBR_Contract,
   CBR_Digest,
   CBR_Object,
   CBR_Data,
@@ -145,19 +144,9 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
   }
 };
 
-export const T_Contract: ALGO_Ty<CBR_Contract> = {
-  ...CBR.BT_Contract,
-  netSize: 8,
-  toNet: (bv: CBR_Contract): NV => {
-    try {
-      return ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
-    } catch (e) {
-      throw new Error(`toNet: ${bv} is out of range [0, ${UInt_max}]`);
-    }
-  },
-  fromNet: (nv: NV): CBR_Contract => {
-    return ethers.BigNumber.from(nv).toString();
-  },
+export const T_Contract: ALGO_Ty<Contract> = {
+  ...T_UInt,
+  name: 'Contract',
 };
 
 export const T_Array = (
@@ -301,7 +290,11 @@ export const T_Data = (
 export const addressEq = mkAddressEq(T_Address);
 
 const T_Token = T_UInt;
+
 export type Token = CBR_UInt;
+
+export type Contract = CBR_UInt;
+
 export const tokenEq = (x: unknown, y: unknown): boolean =>
   T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
 export type PayAmt = MkPayAmt<Token>;
