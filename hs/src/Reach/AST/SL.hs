@@ -28,6 +28,7 @@ data SLType
   | ST_Bytes Integer
   | ST_Digest
   | ST_Address
+  | ST_Contract
   | ST_Token
   | ST_Array SLType Integer
   | ST_Tuple [SLType]
@@ -58,6 +59,7 @@ instance Show SLType where
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
+    ST_Contract -> "Contract"
     ST_Token -> "Token"
     ST_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
@@ -84,6 +86,7 @@ st2dt = \case
   ST_Bytes i -> pure $ T_Bytes i
   ST_Digest -> pure T_Digest
   ST_Address -> pure T_Address
+  ST_Contract -> pure T_Contract
   ST_Token -> pure T_Token
   ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
@@ -103,6 +106,7 @@ dt2st = \case
   T_Bytes i -> ST_Bytes i
   T_Digest -> ST_Digest
   T_Address -> ST_Address
+  T_Contract -> ST_Contract
   T_Token -> ST_Token
   T_Array ty i -> ST_Array (dt2st ty) i
   T_Tuple tys -> ST_Tuple $ map dt2st tys
@@ -302,6 +306,7 @@ instance Equiv SLType where
     (ST_UInt, ST_UInt) -> True
     (ST_Digest, ST_Digest) -> True
     (ST_Address, ST_Address) -> True
+    (ST_Contract, ST_Contract) -> True
     (ST_Token, ST_Token) -> True
     ((ST_Bytes i), (ST_Bytes i2)) -> equiv i i2
     ((ST_Array s1 _len1), (ST_Array s2 _len2)) -> equiv s1 s2

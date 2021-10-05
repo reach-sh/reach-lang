@@ -253,6 +253,7 @@ data SMTVal
   | SMV_Object (M.Map String SMTVal)
   | SMV_Data String [SMTVal]
   | SMV_Token String
+  | SMV_Contract String
   | SMV_Map
   deriving (Eq, Show)
 
@@ -261,6 +262,7 @@ instance Pretty SMTVal where
     SMV_Bool b -> pretty $ DLL_Bool b
     SMV_Int i -> pretty i
     SMV_Address p -> "<abstract address" <+> pretty p <> ">"
+    SMV_Contract p -> pretty p
     SMV_Digest p -> pretty p
     SMV_Token p -> pretty p
     SMV_Null -> "null"

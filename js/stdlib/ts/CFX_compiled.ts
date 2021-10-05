@@ -24,6 +24,7 @@ export const {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,

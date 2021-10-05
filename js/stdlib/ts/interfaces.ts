@@ -10,6 +10,7 @@ export interface TypeDefs {
   T_UInt: Ty
   T_Bytes: Ty
   T_Address: Ty
+  T_Contract: Ty
   T_Digest: Ty
   T_Token: Ty
   T_Object: (tyMap: {[key: string]: Ty}) => Ty

@@ -346,6 +346,11 @@ const V_Data = <T>(
   return T_Data(co).canonicalize(val);
 };
 
+const T_Contract = {
+  ...T_Address,
+  name: 'Contract'
+};
+
 const addressEq = mkAddressEq(T_Address);
 
 const T_Token = T_Address;
@@ -357,6 +362,7 @@ const typeDefs: TypeDefs = {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,

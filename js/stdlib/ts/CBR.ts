@@ -17,6 +17,7 @@ export type CBR_Bool = boolean;
 export type CBR_UInt = BigNumber;
 export type CBR_Bytes = string;
 export type CBR_Address = string;
+export type CBR_Contract = string;
 export type CBR_Digest = string;
 export type CBR_Object = {[key: string]: CBR_Val};
 export type CBR_Data = [string, CBR_Val];
@@ -30,6 +31,7 @@ export type CBR_Val =
   CBR_UInt |
   CBR_Bytes |
   CBR_Address |
+  CBR_Contract |
   CBR_Digest |
   CBR_Object |
   CBR_Data |
@@ -140,6 +142,27 @@ export const BT_Address: BackendTy<CBR_Address> = ({
 // XXX: don't use this. Use net-specific ones
 export const BV_Address = (val: string): CBR_Address => {
   return BT_Address.canonicalize(val);
+}
+
+export const BT_Contract: BackendTy<CBR_Contract> = ({
+  name: 'Contract',
+  canonicalize: (val: unknown): CBR_Contract => {
+    if (typeof val === 'string') {
+      if (val.slice(0, 2) !== '0x') {
+        throw Error(`Contract must start with 0x, but got: ${JSON.stringify(val)}`);
+      } else if (!ethers.utils.isHexString(val)) {
+        throw Error(`Contract must be a valid hex string, but got: ${JSON.stringify(val)}`);
+      }
+      return val;
+    }
+    if (typeof val === 'number' || typeof val == 'bigint' || val instanceof BigNumber) {
+      return val.toString();
+    }
+    throw Error(`Contract must be a 'string', 'number', 'bigint', or BigNumber, but got: ${typeof val}`);
+  },
+});
+export const BV_Contract = (val: string): CBR_Contract => {
+  return BT_Contract.canonicalize(val);
 }
 
 export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_Array> => {

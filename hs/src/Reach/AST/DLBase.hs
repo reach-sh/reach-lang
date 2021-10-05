@@ -45,6 +45,7 @@ data DLType
   | T_Bytes Integer
   | T_Digest
   | T_Address
+  | T_Contract
   | T_Token
   | T_Array DLType Integer
   | T_Tuple [DLType]
@@ -92,18 +93,20 @@ showTyList = List.intercalate ", " . map showPair
     showPair (name, ty) = "['" <> show name <> "', " <> show ty <> "]"
 
 instance Show DLType where
-  show T_Null = "Null"
-  show T_Bool = "Bool"
-  show T_UInt = "UInt"
-  show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
-  show T_Digest = "Digest"
-  show T_Address = "Address"
-  show T_Token = "Token"
-  show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
-  show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (T_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
-  show (T_Struct tys) = "Struct([" <> showTyList tys <> "])"
+  show = \case
+    T_Null -> "Null"
+    T_Bool -> "Bool"
+    T_UInt -> "UInt"
+    (T_Bytes sz) -> "Bytes(" <> show sz <> ")"
+    T_Digest -> "Digest"
+    T_Address -> "Address"
+    T_Contract -> "Contract"
+    T_Token -> "Token"
+    (T_Array ty i) -> "Array(" <> show ty <> ", " <> show i <> ")"
+    (T_Tuple tys) -> "Tuple(" <> showTys tys <> ")"
+    (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
+    (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
+    (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
 
 instance Pretty DLType where
   pretty = viaShow

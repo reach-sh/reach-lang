@@ -425,7 +425,11 @@ parseVal env t v = do
         T_Token -> do
           case v of
             Atom i -> return $ SMV_Token i
-            _ -> impossible $ "parseVal: Digest: " <> show v
+            _ -> impossible $ "parseVal: Token: " <> show v
+        T_Contract -> do
+          case v of
+            Atom i -> return $ SMV_Contract i
+            _ -> impossible $ "parseVal: Contract: " <> show v
         T_Address -> do
           let err = impossible $ "parseVal: Address: " <> show v
           case v of
@@ -1364,6 +1368,7 @@ _smtDefineTypes smt ts = do
          , (T_UInt, ("UInt", uint256_inv))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
+         , (T_Contract, ("Contract", none))
          , (T_Token, ("Token", none))
          ])
   let base = impossible "default"
@@ -1376,6 +1381,7 @@ _smtDefineTypes smt ts = do
           T_Bytes {} -> base
           T_Digest -> base
           T_Address -> base
+          T_Contract -> base
           T_Token -> base
           T_Array et sz -> do
             tni <- type_name et

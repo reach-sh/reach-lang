@@ -53,6 +53,7 @@ import type { // =>
 import type { // =>
   Stdlib_Backend
 } from './interfaces';
+import { CBR_Contract } from './CBR';
 
 // ****************************************************************************
 // Type Definitions
@@ -87,7 +88,7 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
-type ContractInfo = Address;
+type ContractInfo = CBR_Contract;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
@@ -684,7 +685,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return res.evt;
     }
 
-    const getInfo = async () => await infoP;
+    const getInfo = async (): Promise<CBR_Contract> => await infoP;
 
     const canIWin = async (lct:BigNumber): Promise<boolean> => {
       const ethersC = await getC();

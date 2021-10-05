@@ -50,8 +50,8 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
   await Promise.all([
     backend.Alice(ctcAlice, {
-      getAddr: (() => remoteAddr),
-      getCT: (() => [ amt, remoteAddr ]),
+      getCTX: (() => remoteAddr),
+      getCTY: (() => [ amt, remoteAddr ]),
       getGIL: (() => gil.id),
       getZMD: (() => zorkmid.id),
     }),

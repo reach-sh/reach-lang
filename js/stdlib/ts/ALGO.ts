@@ -41,7 +41,7 @@ import {
   bigNumberToNumber,
 } from './shared_user';
 import {
-  CBR_Address, CBR_Val,
+  CBR_Address, CBR_Contract, CBR_Val,
 } from './CBR';
 import waitPort from './waitPort';
 import {
@@ -116,13 +116,13 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 type CompiledBackend = {
-  ApplicationID: number,
+  ApplicationID: CBR_Contract,
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
   escrow: CompileResultBytes,
 };
 
-type ContractInfo = number;
+type ContractInfo = CBR_Contract;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
@@ -337,8 +337,8 @@ const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  debug(`compileFor`, info, typeof(info), Number.isInteger(info));
-  if ( ! Number.isInteger(info) ) {
+  debug(`compileFor`, info, typeof(info), Number.isInteger(Number(info)));
+  if ( ! Number.isInteger(Number(info)) ) {
     throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an earlier version of Reach.`); }
   const ApplicationID = info;
   must_be_supported(bin);
@@ -536,7 +536,7 @@ class EventCache {
 
 export const { addressEq, tokenEq, digest } = compiledStdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
@@ -880,7 +880,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache(), vr?: VerifyResult|undefined): Promise<Contract> => {
     const ctcInfo = await ctcInfoP;
     const ctorRan = new Signal();
-    const getInfo = async () => {
+    const getInfo = async (): Promise<CBR_Contract> => {
       await ctorRan.wait();
       return ctcInfo;
     };
@@ -1409,7 +1409,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug(label, 'deploy');
     const algob = bin._Connectors.ALGO;
     const { stateKeys, mapDataKeys } = algob;
-    const { appApproval, appClear } = await compileFor(bin, 0);
+    const { appApproval, appClear } = await compileFor(bin, T_Contract.canonicalize(0));
     const extraPages =
       Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
@@ -1435,7 +1435,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
     debug(`created`, {ApplicationID});
-    const ctcInfo = ApplicationID;
+    const ctcInfo = T_Contract.canonicalize(ApplicationID);
     const eventCache = new EventCache();
 
     const compiled = await compileFor(bin, ctcInfo);
@@ -1691,7 +1691,8 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
-  const { ApplicationID, appApproval, appClear } = compiled;
+  const { appApproval, appClear } = compiled;
+  const ApplicationID = Number(compiled.ApplicationID);
   const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;

@@ -20,6 +20,7 @@ import {
   CBR_UInt,
   CBR_Bytes,
   CBR_Address,
+  CBR_Contract,
   CBR_Digest,
   CBR_Object,
   CBR_Data,
@@ -142,6 +143,21 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
     // We are filling up with zeros if the address is less than 32 bytes
     return hs.padEnd(32*2+2, '0');
   }
+};
+
+export const T_Contract: ALGO_Ty<CBR_Contract> = {
+  ...CBR.BT_Contract,
+  netSize: 8,
+  toNet: (bv: CBR_Contract): NV => {
+    try {
+      return ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
+    } catch (e) {
+      throw new Error(`toNet: ${bv} is out of range [0, ${UInt_max}]`);
+    }
+  },
+  fromNet: (nv: NV): CBR_Contract => {
+    return ethers.BigNumber.from(nv).toString();
+  },
 };
 
 export const T_Array = (
@@ -296,13 +312,14 @@ export const typeDefs = {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,
   T_Data,
   T_Array,
   T_Tuple,
-  T_Struct
+  T_Struct,
 };
 
 const arith = makeArith(UInt_max);

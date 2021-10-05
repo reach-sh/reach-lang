@@ -141,6 +141,7 @@ jsContract_ = \case
     return $ jsApply "stdlib.T_Bytes" [sz']
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
+  T_Contract -> return $ "stdlib.T_Contract"
   T_Token -> return $ "stdlib.T_Token"
   T_Array t sz -> do
     t' <- jsContract t
