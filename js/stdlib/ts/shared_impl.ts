@@ -324,6 +324,11 @@ export function truthyEnv(v: string|undefined|null): v is string {
 export const envDefault = <T>(v: string|undefined|null, d: T): string|T =>
   (v === undefined || v === null) ? d : v;
 
+export const envDefaultNoEmpty = <T>(v: string|undefined|null, d: T): string|T => {
+  const v2 = envDefault(v, d);
+  return v2 === '' ? d : v2;
+}
+
 type DigestMode = 'keccak256' | 'sha256';
 export const makeDigest = (mode: DigestMode, prep: any) => (t:any, v:any) => {
   void(hexlify);

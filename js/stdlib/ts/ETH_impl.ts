@@ -5,10 +5,10 @@ import { canonicalizeConnectorMode } from './ConnectorMode';
 import * as ethLikeCompiled from './ETH_compiled';
 import {
   debug,
-  envDefault,
+  envDefaultNoEmpty,
   getDEBUG,
   truthyEnv,
-  replaceableThunk
+  replaceableThunk,
 } from './shared_impl';
 import { process, window } from './shim';
 import waitPort from './waitPort';
@@ -72,8 +72,8 @@ export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount>
 }
 
 export async function canFundFromFaucet(): Promise<boolean> {
-  debug('canFundFromFaucet');
-  return isIsolatedNetwork();
+  debug('ETH:canFundFromFaucet');
+  return isIsolatedNetwork() || windowLooksIsolated();
 }
 
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
@@ -219,17 +219,17 @@ function guessConnectorMode(env: Partial<ProviderByName & ProviderByURI>): strin
 
 function envDefaultsETH(env: Partial<ProviderByName & ProviderByURI>): ProviderEnv {
   const { ETH_NET, ETH_NODE_URI } = env;
-  const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
-  const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
+  const cm = envDefaultNoEmpty(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
+  const REACH_CONNECTOR_MODE = envDefaultNoEmpty(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
   const isolatedDefault
     = ETH_NET && ETH_NET !== 'window' ? 'no'
     : ETH_NET === 'window' || window.ethereum ? (windowLooksIsolated() ? 'yes' : 'no')
     : connectorModeIsolatedNetwork(REACH_CONNECTOR_MODE);
-  const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
+  const REACH_ISOLATED_NETWORK = envDefaultNoEmpty(env.REACH_ISOLATED_NETWORK, isolatedDefault);
   if (truthyEnv(ETH_NET)) {
     return { ETH_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(ETH_NODE_URI)) {
-    const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'yes');
+    const REACH_DO_WAIT_PORT = envDefaultNoEmpty(env.REACH_DO_WAIT_PORT, 'yes');
     return { ETH_NODE_URI, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.ethereum) {
