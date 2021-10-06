@@ -84,6 +84,32 @@ commands:
           done
 
 jobs:
+  "deploy-stdlib":
+    executor: real
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "stdlib"
+    - run: |
+        git clone https://github.com/reach-sh/js-reach-stdlib.git /tmp/workspace/stdlib
+        cd /tmp/workspace/stdlib
+        make refresh
+        make bump-version-and-publish
+  "deploy-images":
+    executor: real
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+    - run: |
+        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+        for IMG in runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+          ./scripts/docker-push.sh reachsh/${IMG}
+        done 
   "docs-render":
     executor: fake
     steps:
@@ -140,7 +166,21 @@ jobs:
               }
             }]
           }
-
+  "install-mo":
+    executor: fake
+    steps:
+    - checkout
+    - workattach
+    - run: |
+        mkdir -p /tmp/workspace/bin
+        curl -sSL https://git.io/get-mo -o mo
+        chmod +x mo
+        mv mo /tmp/workspace/bin/
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - bin
+    - slack_fail
   "sh-check":
     executor: fake
     steps:
@@ -165,7 +205,9 @@ jobs:
         path: "hs/test-reports"
     - slack_fail
   "hs-check":
-    executor: fake
+    executor:
+      name: fake
+      class: "medium"
     steps:
     - checkout
     - srd_no
@@ -275,11 +317,13 @@ jobs:
     steps:
     - run: |
         echo Go team!
-
 workflows:
   docs:
     jobs:
-    - "docs-render"
+    - "docs-render":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "docs-deploy":
        filters:
          branches:
@@ -288,13 +332,42 @@ workflows:
        - "docs-render"
   buildless:
     jobs:
-    - "sh-check"
+    - "sh-check":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
     - "hs-test":
         requires:
           - "build-haskell-build-artifacts"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-check":
         requires:
           - "build-haskell-build-artifacts"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+    - "deploy-images":
+        context:
+        - reachdevbot-on-dockerhub
+        requires:
+          - "hold"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
+    - "deploy-stdlib":
+        context:
+        - release-test
+        requires:
+          - "hold"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
     # Sink and examples follow

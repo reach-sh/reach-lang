@@ -2,19 +2,37 @@
 TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
 TOTAL=$((TOTALP1 - 1))
 
+
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
 IEND=config.iend.yml
+DEND=config.dend.yml
 cat >"${MID}" </dev/null
 cat >"${END}" </dev/null
 cat >"${IEND}" </dev/null
+cat >"${DEND}" </dev/null
 
 cat >>"${IEND}" <<END
     - "build-sink":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         requires:
           - "hs-test"
 END
+
+cat >>"${DEND}" <<END
+    - "hold":
+        type: approval
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
+        requires:
+END
+          - "hs-test"
 
 deps () {
   DEPS="$*"
@@ -40,11 +58,17 @@ image () {
   NAME="build-${IMAGE}"
   cat >>"${MID}" <<END
     - "build-image":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
 END
   deps "$@"
+  cat >>"${DEND}" <<END
+          - "${NAME}"
+END
   cat >>"${IEND}" <<END
           - "${NAME}"
 END
@@ -61,6 +85,9 @@ image "fake" "rpc-server" "runner"
 
 cat >>"${END}" <<END
     - "examples-sink":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         requires:
 END
 
@@ -78,6 +105,9 @@ for CONN in ETH ALGO CFX ; do
     NAME="examples.${CONN}.${RANK}"
     cat >>"${MID}" <<END
     - "examples":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         name: "${NAME}"
         connector: "${CONN}"
         size: "${SIZE}"
@@ -90,4 +120,4 @@ END
   done
 done
 
-cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
+cat "${PRE}" "${MID}" "${END}" "${DEND}" "${IEND}" > config.gen.yml

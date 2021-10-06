@@ -22,8 +22,11 @@ build:
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
+	  --build-arg SOLC_IMAGE=${SOLC_IMAGE} \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
 push:
