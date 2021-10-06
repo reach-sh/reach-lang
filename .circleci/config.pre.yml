@@ -70,53 +70,12 @@ commands:
       - run: |
           source ./VERSION
 
-          for IMG in runner rpc-server reach reach-cli ; do
+          for IMG in haskell-build-artifacts runner rpc-server reach reach-cli; do
             zcat /tmp/workspace/docker/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
-  stack_deps:
-    description: "Install stack dependencies"
-    steps:
-      - run: |
-          # Install stack deps
-          sudo apt update && sudo apt install \
-            g++ \
-            gcc \
-            git \
-            gnupg \
-            libc6-dev \
-            libffi-dev \
-            libgmp-dev \
-            libtinfo-dev \
-            make \
-            netbase \
-            xz-utils \
-            zlib1g-dev
-          # Install stack
-          if ! [ -f ~/.local/bin/stack ] ; then
-            curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
-          fi
-          # Reset locale
-          sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
-                   && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
-                   && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
-                   && locale-gen en_US.UTF-8'
-          # Setup package
-          (cd hs && make package.yaml)
-      - restore_cache:
-         keys:
-          - "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-      - run: |
-          # Install deps
-          (cd hs && make hs-deps)
-      - save_cache:
-          key: "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-          paths:
-          - ~/.stack
-          - "hs/.stack-work"
-
 jobs:
   "docs-render":
     executor: fake
@@ -196,34 +155,12 @@ jobs:
       class: "medium"
     steps:
     - checkout
-    - run: |
-        mkdir -p ~/.local /tmp/workspace/bin
-        ln -sf /tmp/workspace/bin ~/.local/bin
-        # Install mo
-        curl -sSLo ~/.local/bin/mo https://git.io/get-mo
-        # Install solc # XXX get version from hs/Dockerfile.reachc
-        curl -sSLo ~/.local/bin/solc \
-          https://github.com/ethereum/solidity/releases/download/v0.8.9/solc-static-linux
-        # Install Z3 # XXX get version from hs/Dockerfile.reachc
-        Z3_VER=4.8.12
-        Z3_SYS=x64-glibc-2.31
-        curl -sSLo /tmp/z3.zip \
-              https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
-          && unzip -p /tmp/z3.zip z3-${Z3_VER}-${Z3_SYS}/bin/z3 \
-            | cat > ~/.local/bin/z3
-        chmod +x ~/.local/bin/*
-    - stack_deps
     - srd_yes
     - run: |
-        (cd hs && make hs-clean)
-        (cd hs && make hs-build)
-        (cd hs && make build)
-        (cd hs && stack install)
-        (cd js && make build)
-        (cd js/stdlib && make check)
         mkdir -p /tmp/workspace/docker
-
-        for IMG in runner rpc-server reach reach-cli ; do
+        (cd hs && make build)
+        (cd js && make build)
+        for IMG in runner rpc-server reach reach-cli haskell-build-artifacts; do
           echo "docker save reachsh/${IMG}:latest..."
           docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
         done
@@ -234,27 +171,30 @@ jobs:
           - docker
     - slack_fail
   "hs-test":
+    executor: real
+    steps:
+    - attach_workspace:
+        at: /tmp/workspace/
+    - checkout
+    - and_restore_docker
+    - run: |
+        mkdir -p hs/test-reports
+        docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts stack test --fast --test-arguments --xml=/test-reports/junit.xml
+    - store_test_results:
+        path: "hs/test-reports"
+    - slack_fail
+  "hs-check":
     executor:
       name: fake
       class: "medium"
     steps:
     - checkout
-    - restore_bin
-    - stack_deps
-    - run:
-        command: (cd hs && make hs-test-xml)
-        no_output_timeout: 30m
-    - store_test_results:
-        path: "hs/test-reports"
-    - slack_fail
-  "hs-check":
-    executor: fake
-    steps:
-    - checkout
-    - restore_bin
-    - stack_deps
+    - attach_workspace:
+        at: /tmp/workspace
+    - srd_yes
+    - and_restore_docker
     - run: |
-        (cd hs && make hs-check)
+        docker run -ti reachsh/haskell-build-artifacts /bin/sh -c 'stack build stan ; stack exec stan report'
     - store_artifacts:
         path: hs/stan.html
     - slack_fail
@@ -272,7 +212,8 @@ jobs:
     executor: real
     steps:
     - checkout
-    - restore_bin
+    - attach_workspace:
+        at: /tmp/workspace/
     - and_restore_docker
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
