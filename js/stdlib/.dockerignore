@@ -1,7 +1,5 @@
 node_modules
 Makefile
 .dockerignore
-/package.mo.json
-/runner_package.mo.json
 Dockerfile
 /Dockerfile.runner

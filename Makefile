@@ -36,6 +36,10 @@ push-all:
 	cd scripts/devnet-eth && $(MAKE) push
 	cd js && $(MAKE) push
 
+.PHONY: routine-push
+routine-push:
+	scripts/routine.sh push
+
 .PHONY: routine-build-push
 routine-build-push:
 	scripts/routine.sh build-push
@@ -78,3 +82,26 @@ sh-lint:
 .PHONY: docker-lint
 docker-lint:
 	find . -not \( -path '*/node_modules/*' -prune \) -name 'Dockerfile*' | xargs hadolint
+
+.PHONY: mo
+mo:
+	mkdir .bin
+	curl -sSL https://git.io/get-mo -o mo
+	chmod +x mo
+	mv mo .bin
+	export PATH=$PATH:$(pwd)/node_modules/.bin
+
+.PHONY: translate-mo-templates-stdlib
+translate-mo-templates-stdlib: mo
+	(cd js/stdlib && make package.json ts/version.ts)
+
+.PHONY: translate-mo-templates-rpc-server
+translate-mo-templates-rpc-server: mo
+	(cd js/rpc-server && make package.json)
+
+.PHONY: translate-mo-templates-rpc-server
+translate-mo-templates-haskell: mo
+	(cd hs && make package.yaml src/Reach/Version.hs)
+
+.PHONY: translate-templates
+translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell

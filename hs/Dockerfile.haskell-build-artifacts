@@ -1,14 +1,45 @@
-FROM alpine AS build
+ARG SOLC_VERSION
+FROM ethereum/solc:${SOLC_VERSION} AS solc
+
+FROM alpine:3.14.2 AS build
+ARG VERSION 
+ARG MAJOR 
+ARG MINOR
+ARG PATCH
+ENV VERSION=${VERSION}
+ENV MAJOR=${MAJOR}
+ENV MINOR=${MINOR}
+ENV PATCH=${PATCH}
 RUN apk update
-RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
+RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev curl bash
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
 RUN ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
+RUN ln -s /usr/lib/libtinfo.so.6 /usr/lib/libtinfo.so
 RUN wget -qO- https://get.haskellstack.org/ | sh
 
 WORKDIR /build
-COPY stack.yaml package.yaml stack.yaml.lock ./
-RUN stack build --dependencies-only
-COPY . /build/
 
-RUN stack build 2>&1 | tee build-log.txt
+COPY . /build/
+COPY --from=solc /usr/local/bin/solc /usr/local/bin/solc
+RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
+RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
+RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3=4.8.12-r0 z3-dev=4.8.12-r0
+
+ENV OPENZEP=4.1.0
+ENV OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$OPENZEP.tar.gz
+RUN	cd sol && wget $OPENZEP_URL
+
+ENV ERC20="sol/openzeppelin-contracts-${OPENZEP}/contracts/token/ERC20"
+RUN cd sol && tar xzvf v$OPENZEP.tar.gz
+RUN touch $ERC20/ERC20.sol
+
+RUN ERC20=$ERC20 sol/stdlib_openzep.sol.sh > sol/stdlib_openzep.sol
+
+RUN cat sol/stdlib_openzep.sol sol/stdlib_reach.sol > sol/stdlib.sol
+
+COPY stack.yaml stack.yaml.lock ./
+RUN stack build --dependencies-only
+
+RUN stack build 2>&1
+
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/

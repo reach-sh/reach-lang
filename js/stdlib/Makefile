@@ -1,5 +1,6 @@
 ROOT=../..
 include $(ROOT)/js/JS_IMAGES
+include $(ROOT)/DEPS
 
 IMAGE=$(STDLIB_IMAGE)
 
@@ -30,13 +31,16 @@ ts/stdlib_sol.ts: $(ROOT)/hs/sol/stdlib.sol
 	(echo "export default" ; cd $(ROOT)/hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
 
 .PHONY: build
-build: package.json ts/version.ts ts/stdlib_sol.ts
+build:
 	docker build --tag=$(IMAGE) \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
+	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: format
 format: package.json
