@@ -1,7 +1,6 @@
 /node_modules
 /.dockerignore
 /Dockerfile
-/package.json
 /ts/version.ts
 /ts/stdlib_sol.ts
 /stdlib_sol.json

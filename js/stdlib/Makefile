@@ -1,9 +1,11 @@
 ROOT=../..
+include $(ROOT)/VERSION
 include $(ROOT)/js/JS_IMAGES
 include $(ROOT)/DEPS
 include Makefile.docker
 
 IMAGE=$(STDLIB_IMAGE)
+JS-PACKAGE='@reach-sh/stdlib'
 
 $(ROOT)/hs/sol/stdlib.json:
 	cd $(ROOT)/hs && $(MAKE) sol/stdlib.json
@@ -47,3 +49,32 @@ js-build: expand
 .PHONY: js-mjs
 js-mjs: expand
 	sbin/fix.sh
+
+.PHONY: clone-js-stdlib
+clone-js-stdlib:
+	rm -rf js-reach-stdlib
+	git clone -b CORE-171 https://github.com/reach-sh/js-reach-stdlib.git
+	cp -r sbin js-reach-stdlib/sbin
+
+.PHONY: refresh-js-stdlib
+refresh-js-stdlib: clone-js-stdlib
+	cd js-reach-stdlib && ./sbin/refresh.sh
+
+.PHONY: bump-version-and-publish-js-stdlib
+bump-version-and-publish-js-stdlib: 
+	cd js-reach-stdlib ; \
+	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc; \
+	npm publish --access=public --tag=rc; \
+	git tag $(VERSION); \
+	git push; \
+	git push --tags
+
+.PHONY: finalize-patch-js-stdlib
+finalize-patch-js-stdlib:
+	cd js-reach-stdlib
+	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+	npm version patch
+	npm publish --access=public --tag=stable
+	npm dist-tag add $(JS-PACKAGE)"@$$(npm view $(JS-PACKAGE)@stable version)" latest
+	git push
+	git push --tags

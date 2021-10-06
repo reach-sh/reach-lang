@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := routine-build
 
+include ./VERSION
+
 .PHONY: check
 check:
 	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.0' || exit 0
@@ -44,3 +46,21 @@ sh-lint:
 .PHONY: docker-lint
 docker-lint:
 	find . -not \( -path '*/node_modules/*' -prune \) -name 'Dockerfile*' | xargs hadolint
+
+.PHONY: mo
+mo:
+	@if [ ! -d ./.bin ]; then\
+		mkdir ./.bin;\
+	fi
+	@if [ ! -f ./.bin/mo ]; then\
+		curl -sSL https://git.io/get-mo -o mo;\
+		chmod +x mo;\
+		mv mo .bin;\
+	fi
+
+.PHONY: prepare-rc-tag-and-push
+prepare-rc-tag-and-push:
+	git config user.name "reachdevbot"
+	git config user.email "reachdevbot@reach.com"
+	git tag $(VERSION)
+	git push --tags
