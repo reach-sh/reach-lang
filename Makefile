@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := routine-build
 
+include ./VERSION
+
 .PHONY: check
 check:
 	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.0' || exit 0
@@ -44,3 +46,44 @@ sh-lint:
 .PHONY: docker-lint
 docker-lint:
 	find . -not \( -path '*/node_modules/*' -prune \) -name 'Dockerfile*' | xargs hadolint
+
+.PHONY: mo
+mo:
+	@if [ ! -d ./.bin ]; then\
+		mkdir ./.bin;\
+	fi
+	@if [ ! -f ./.bin/mo ]; then\
+		curl -sSL https://git.io/get-mo -o mo;\
+		chmod +x mo;\
+		mv mo .bin;\
+	fi
+
+.PHONY: translate-mo-templates-stdlib
+translate-mo-templates-stdlib: mo
+	(cd js/stdlib && make package.json ts/version.ts)
+
+.PHONY: translate-mo-templates-rpc-server
+translate-mo-templates-rpc-server: mo
+	(cd js/rpc-server && make package.json)
+
+.PHONY: translate-mo-templates-rpc-server
+translate-mo-templates-haskell: mo
+	(cd hs && make package.yaml src/Reach/Version.hs)
+
+.PHONY: translate-templates
+translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell
+
+.PHONY: prepare-version
+prepare-version: mo
+	echo $$(git tag)
+	(cd scripts && bash prepare-reach-version.sh)
+	echo $$(cat VERSION)
+
+.PHONY: prepare-rc-tag-and-push
+prepare-rc-tag-and-push: prepare-version
+	git config user.name "reachdevbot"
+	git config user.email "reachdevbot@reach.com"
+	git add VERSION
+	git commit -m "Create tag $(VERSION)"
+	git tag $(VERSION)
+	git push --tags

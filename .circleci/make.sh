@@ -2,34 +2,55 @@
 TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
 TOTAL=$((TOTALP1 - 1))
 
+
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
 IEND=config.iend.yml
+RCEND=config.rcend.yml
 cat >"${MID}" </dev/null
 cat >"${END}" </dev/null
 cat >"${IEND}" </dev/null
+cat >"${RCEND}" </dev/null
+
+cat >>"${RCEND}" <<END
+    - "build-sink-rc":
+        requires:
+END
 
 cat >>"${IEND}" <<END
     - "build-sink":
         requires:
-          - "hs-test"
 END
+#          - "hs-test"
 
 deps () {
-  DEPS="$*"
+  IS_RC=$1
+  shift 1
+  DEPS="$@"
   cat >>"${MID}" <<END
         deps: "$DEPS"
 END
-  if [ "x${DEPS}" != "x" ] ; then
+  if [ "x${DEPS}" != "x" ] || [ "x${IS_RC}" != "x1" ]; then
   cat >>"${MID}" <<END
         requires:
 END
-  for DEP in "$@"; do
+    if [ "x${IS_RC}" != "x1" ]; then
+    cat >>"${MID}" <<END
+          - "RC-release"
+END
+    fi
+    for DEP in "$@"; do
+      if [ "x${IS_RC}" != "x1" ] ; then
+    cat >>"${MID}" <<END
+          - "build-${DEP}-rc"
+END
+       else
     cat >>"${MID}" <<END
           - "build-${DEP}"
 END
-  done
+      fi
+    done
   fi
 }
 
@@ -38,16 +59,27 @@ image () {
   IMAGE="$2"
   shift 2
   NAME="build-${IMAGE}"
+  IS_RC="1"
+  for i in $(seq 0 1); do
+    if [ $i -eq 1 ]; then
+      NAME=${NAME}-rc
+      IS_RC="0"
+  cat >>"${RCEND}" <<END
+          - "${NAME}"
+END
+    else
+  cat >>"${IEND}" <<END
+          - "${NAME}"
+END
+    fi
   cat >>"${MID}" <<END
     - "build-image":
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
 END
-  deps "$@"
-  cat >>"${IEND}" <<END
-          - "${NAME}"
-END
+    deps $IS_RC "$@"
+  done
 }
 
 image "real" "haskell-build-artifacts"
@@ -83,11 +115,11 @@ for CONN in ETH ALGO CFX ; do
         size: "${SIZE}"
         rank: "${RANK}"
 END
-    deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
+    deps "1" "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
     cat >>"${END}" <<END
           - "${NAME}"
 END
   done
 done
 
-cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
+cat "${PRE}" "${MID}" "${END}" "${IEND}" "${RCEND}" > config.gen.yml
