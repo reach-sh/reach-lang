@@ -179,6 +179,16 @@ saveLifts ss = do
 saveLift :: DLSStmt -> App ()
 saveLift = saveLifts . return
 
+isContractAddress :: DLVar -> App Bool
+isContractAddress dv = do
+  liftsRef <- asks e_lifts
+  lifts <- liftIO $ readIORef liftsRef
+  return $ (Seq.findIndexL (\case
+    DLS_Let _ (DLV_Let _ mdv) (DLE_GetAddress {})
+      | mdv == dv -> True
+    _ -> False
+    ) lifts) /= Nothing
+
 readDlo :: (DLOpts -> b) -> App b
 readDlo f =
   (e_appr <$> ask) >>= \case
@@ -2627,8 +2637,11 @@ evalPrim p sargs =
       let staticallyZero = \case
             DLA_Literal (DLL_Int _ 0) -> True
             _ -> False
+      isCtc <-  case part of
+            SLV_DLVar dv -> isContractAddress dv
+            _ -> return False
       DLPayAmt {..} <- compilePayAmt TT_Pay pay_sv
-      let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
+      let one amt_a mtok_a = unless (staticallyZero amt_a || isCtc) $ do
             tokenPay mtok_a amt_a "balance sufficient for transfer"
             ctxt_lift_eff $ DLE_Transfer at who_a amt_a mtok_a
       one pa_net Nothing
@@ -3008,6 +3021,7 @@ evalPrim p sargs =
       let de = DLE_GetAddress at
       let mdv = DLVar at Nothing T_Address
       dv <- ctxt_lift_expr mdv de
+      liftIO $ putStrLn $ "Made dv: " <> show (pretty dv)
       return $ (lvl, SLV_DLVar dv)
   where
     lvl = mconcatMap fst sargs

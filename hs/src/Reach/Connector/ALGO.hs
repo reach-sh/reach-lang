@@ -1284,11 +1284,7 @@ ce = \case
     -- when (which == 0) $ do
     --       bad $ LT.pack $ getErrorMessage [] at True Err_GetContract
     code "txn" ["ApplicationID"]
-  DLE_GetAddress _ -> do
-    -- which <- asks eWhich
-    -- when (which == 0) $ do
-    --       bad $ LT.pack $ getErrorMessage [] at True Err_GetContract
-    code "global" ["CurrentApplicationAddress"]
+  DLE_GetAddress _ -> cContractAddr
   where
     show_stack msg at fs = do
       comment $ texty msg
