@@ -9,7 +9,7 @@
 	"icon": "images/reach-logo-dark.png",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/reach-sh/reach-ide"
+		"url": "https://github.com/reach-sh/reach-lang"
 	},
 	"publisher": "reachsh",
 	"categories": [

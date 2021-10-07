@@ -7,7 +7,7 @@
 	"publisher": "reachsh",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/reach-sh/reach-ide"
+		"url": "https://github.com/reach-sh/reach-lang"
 	},
 	"engines": {
 		"vscode": "^1.43.0"
