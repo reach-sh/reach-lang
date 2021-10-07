@@ -72,8 +72,10 @@ export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount>
 }
 
 export async function canFundFromFaucet(): Promise<boolean> {
+  const provider = await getProvider();
   debug('ETH:canFundFromFaucet');
-  return isIsolatedNetwork() || windowLooksIsolated();
+  // @ts-ignore
+  return provider._network && provider._network.chainId === 1337;
 }
 
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
@@ -196,7 +198,7 @@ export function canGetDefaultAccount(): boolean {
 function windowLooksIsolated() {
   if (!window.ethereum) return false;
   // XXX this is a hacky way of checking if we're on a devnet
-  // @ts-ignore // 0x539 = 1337
+  // 0x539 = 1337
   return (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539');
 }
 

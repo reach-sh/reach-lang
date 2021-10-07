@@ -1514,8 +1514,16 @@ export const createAccount = async (): Promise<Account> => {
 
 export const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
-  debug('canFundFromFaucet');
+  const algodClient = await getAlgodClient();
+  debug('canFundFromFaucet: check genesis');
+  const gen = await algodClient.genesis().do();
+  if (gen.network !== 'devnet') {
+    debug(`canFundFromFaucet: '${gen.network}' !== 'devnet'`)
+    return false;
+  }
+  debug('canFundFromFaucet: check balance');
   const fbal = await balanceOf(faucet);
+  debug(`canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
   return gt(fbal, 0);
 };
 
