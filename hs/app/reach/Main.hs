@@ -8,9 +8,10 @@ import Control.Monad.Reader
 import Data.Bits
 import Data.Char
 import Data.Either
-import Data.Functor.Identity
 import Data.IORef
 import Data.Text (Text, intercalate, pack, unpack, stripEnd)
+import Data.Time.Clock
+import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
@@ -19,8 +20,9 @@ import System.Directory.Extra
 import System.Environment
 import System.Exit
 import System.FilePath
+import System.IO
 import System.Posix.Files
-import Text.Parsec (ParsecT, runParserT, eof, try)
+import Text.Parsec (ParsecT, parse, runParserT, eof, try)
 import Text.Parsec.Char
 import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Token
@@ -83,8 +85,9 @@ data ReachVersion = ReachVersion
   , rv :: ReachVersionOf
   }
 
-mkReachVersion :: Maybe String -> IO ReachVersion
-mkReachVersion mt = do
+mkReachVersion :: IO ReachVersion
+mkReachVersion = do
+  mt <- lookupEnv "REACH_VERSION"
   let rvEnvRaw = pack <$> mt
   rv <- case mt of
     Nothing -> pure RVDefault
@@ -96,12 +99,12 @@ mkReachVersion mt = do
       let iv = const . die $ "Invalid `REACH_VERSION`: " <> m
       let ti = toInteger
 
-      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure . runIdentity $ runParserT
+      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure $ parse
         (RVEnvNumeric
           <$> (Just <$> (optional (string "v") *> decimal))
           <*> ((Just <$> (dot *> decimal)) <|> xx)
           <*> ((Just <$> (dot *> decimal <* eof)) <|> xx))
-        () "" m
+        "" m
 
       let rvMajor = maybe (ti major) id rvEnvNumericMajor
       let rvMinor = maybe (if rvMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
@@ -129,6 +132,27 @@ versionMaj ReachVersion {..} = case rv of
   RVStable -> packs major
   RVNumeric {..} -> packs rvMajor
 
+data Shell
+  = ShellUnknown
+  | Bash
+  | Zsh
+
+instance Show Shell where
+  show = \case
+    ShellUnknown -> "unknown"
+    Bash -> "bash"
+    Zsh -> "zsh"
+
+mkShell :: IO (Shell, Text)
+mkShell = lookupEnv "SHELL" >>= \case
+  Nothing -> pure (ShellUnknown, "")
+  Just "" -> pure (ShellUnknown, "")
+  Just s -> do
+    let p a b = try $ optional (string "/" *> many (try $ many alphaNum *> string "/"))
+             *> string a *> eof *> pure b
+    either (const $ pure (ShellUnknown, pack s)) (pure . (, pack s)) $ parse
+       (p "bash" Bash <|> p "zsh" Zsh) "" s
+
 data Var = Var
   { reachEx :: Text
   , connectorMode :: Maybe ConnectorMode
@@ -142,6 +166,8 @@ data Var = Var
   , rpcTLSRejectUnverified :: Bool
   , version'' :: ReachVersion
   , ci :: Bool
+  , shell :: Shell
+  , shellRaw :: Text
   }
 
 data Env = Env
@@ -150,6 +176,8 @@ data Env = Env
   , e_dirPwdHost :: FilePath
   , e_dirTmpContainer :: FilePath
   , e_dirTmpHost :: FilePath
+  , e_dirConfigContainer :: FilePath
+  , e_dirConfigHost :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
@@ -200,7 +228,10 @@ dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
       | c <- [ minBound .. maxBound :: Connector ]
       , m <- [ minBound .. maxBound :: Mode ]
       ]
-   <> [ "https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29" ]
+   <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
+      , " - TODO `reach config` docs"
+      , " - https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+      ]
 
 diePathContainsParentDir :: FilePath -> IO ()
 diePathContainsParentDir x = when (any (== "..") $ splitDirectories x) . die
@@ -247,7 +278,7 @@ mkVar = do
   rpcTLSPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure defRPCTLSPassphrase)
   rpcTLSKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
   rpcTLSCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
-  version'' <- lookupEnv "REACH_VERSION" >>= mkReachVersion
+  version'' <- mkReachVersion
   debug <- truthyEnv <$> lookupEnv "REACH_DEBUG"
   rpcTLSRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
     >>= maybe (pure True) (pure . (/= "0"))
@@ -260,6 +291,7 @@ mkVar = do
       Just rcm -> runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
         >>= either (const . die $ "Invalid `" <> e <> "`: " <> rcm) (pure . Just)
   ci <- truthyEnv <$> lookupEnv "CI"
+  (shell, shellRaw) <- mkShell
   pure $ Var {..}
 
 mkScript :: Text -> App -> App
@@ -685,9 +717,17 @@ mkEnv eff mv = do
     <*> strOption (long "dir-project-host" <> internal)
     <*> strOption (long "dir-tmp-container" <> internal <> value "/app/tmp")
     <*> strOption (long "dir-tmp-host" <> internal)
+    <*> strOption (long "dir-config-container" <> internal <> value "/app/config")
+    <*> strOption (long "dir-config-host" <> internal)
     <*> switch (long "emit-raw" <> internal)
     <*> pure eff
     <*> pure var
+
+envFileContainer :: AppT FilePath
+envFileContainer = (</> "env") <$> asks e_dirConfigContainer
+
+envFileHost :: AppT FilePath
+envFileHost = (</> "env") <$> asks e_dirConfigHost
 
 forwardedCli :: Text -> AppT Text
 forwardedCli n = do
@@ -1248,6 +1288,144 @@ hashes = command "hashes" $ info f d where
       fi
     |]
 
+config :: Subcommand
+config = command "config" $ info f d where
+  d = progDesc "Configure default Reach settings"
+  f = go <$> switch (short 'v' <> long "verbose" <> help "Print additional config info to `stdout`")
+  nets = zip [0..] $ Nothing : (Just <$> [ ALGO, CFX, ETH ])
+  maxNet = length . show . maximum . fmap fst $ nets
+  lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
+  go v' = do
+    Var {..} <- asks e_var
+    efc <- envFileContainer
+    efh <- envFileHost
+    dcc <- asks e_dirConfigContainer
+    now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
+
+    let nope i = putStrLn $ show i <> " is not a valid selection."
+    let snet n = case connectorMode of
+          Nothing -> False
+          Just (ConnectorMode c _) -> c == n
+
+    let mkGetY n y p = do
+          putStr $ p <> " (Type 'y' if so): "
+          hFlush stdout >> getLine >>= \case
+            z | L.upper z /= "Y" -> n
+            _ -> y
+    let getY = mkGetY (exitWith ExitSuccess) (pure ())
+    let getY' = mkGetY (pure False) (pure True)
+
+    envExists <- (liftIO $ doesFileExist efc) >>= \case
+      True -> liftIO $ do
+        putStrLn $ "Reach detected an existing configuration file at " <> efh <> "."
+        getY' "Would you like to back it up before creating a new one?" >>= \case
+          False -> putStrLn "Skipped backup - use ctrl+c to abort overwriting!"
+          True -> do
+            let b = dcc </> "_backup"
+            let n = "env-" <> unpack now
+            createDirectoryIfMissing True b
+            copyFile efc (b </> n)
+            putStrLn $ "Backed up " <> efh <> " to " <> b </> n <> "."
+        pure True
+
+      False -> liftIO $ do
+        putStrLn $ "Reach didn't detect a configuration file at " <> efh <> "."
+        getY "Would you like to create one?"
+        pure False
+
+    dnet <- liftIO $ do
+      let promptNetSet = do
+            putStrLn "\nWould you like to set a default network?"
+            forM_ nets $ \case
+              (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
+              (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
+                <> if snet n then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
+            putStr " Select from the numbers above: "
+            hFlush stdout
+      let netSet = getLine >>= \n -> maybe (nope n >> promptNetSet >> netSet) pure
+            $ L.find ((==) n . show . fst) nets
+      (_, net) <- promptNetSet >> netSet
+      pure $ maybe "" packs net
+
+    let e = [N.text|
+      # Automatically generated with `reach config` at $now
+      export REACH_CONNECTOR_MODE=$dnet
+    |]
+
+    liftIO $ do
+      createDirectoryIfMissing True dcc
+      putStrLn ""
+
+      when v' $ do
+        putStrLn $ "Writing " <> efh <> "..."
+        T.putStrLn e
+        putStrLn ""
+
+      T.writeFile efc e
+      putStrLn $ "Configuration has been saved in " <> efh <> ".\n"
+
+    let efh' = pack efh
+    let sourceMe = do
+          let shell' = packs shell
+          let s = case envExists of
+                True -> [N.text|
+                  echo "Run the following command to activate your new configuration:"
+                  echo
+                  echo " $ . $$P"
+                  echo
+                |]
+                False -> [N.text|
+                  echo "Run the following command to activate your new configuration and make it permanent:"
+                  echo
+                  printf ' $ printf '\''\\nif [ -f $efh' ]; then . $efh'; fi\\n'\'' >> %s && . %s\n\n' "$$P" "$$P"
+                |]
+          write [N.text|
+            if [ -f "$$P" ]; then
+              echo "You appear to be using the \`$shell'\` shell, with environment configuration stored in $$P."
+              $s
+            else
+              echo "Reach didn't detect a suitable $$P"
+              cat << 'EOF'
+            and cannot recommend steps to make this configuration permanent.
+            Please consult the `$shell'` documentation for tips on how to set
+            up your environment correctly or file an issue at:
+
+            https://github.com/reach-sh/reach-lang/issues
+            EOF
+            fi
+          |]
+
+    case shell of
+      ShellUnknown -> liftIO $ T.putStrLn [N.text|
+        Reach didn't recognize shell "$shellRaw" and cannot recommend steps
+        to make this configuration permanent. Please consult your shell's
+        documentation in order to complete configuration manually.
+
+        If you believe this is a bug or would like to request support for
+        a new shell, please file an issue at:
+
+        https://github.com/reach-sh/reach-lang/issues
+      |]
+
+      Bash -> script $ do
+        write [N.text|
+          if [ -f ~/.bash_profile ]; then
+            P=~/.bash_profile
+          elif [ -f ~/.bash_login ]; then
+            P=~/.bash_login
+          else
+            P=~/.profile
+          fi
+        |]
+        sourceMe
+
+      Zsh -> script $ do
+        write [N.text|
+          P=${ZDOTDIR:-$${HOME}}/.zshenv
+          touch "$$P"
+        |]
+        sourceMe
+
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
 
@@ -1286,7 +1464,8 @@ main = do
           T.writeFile (e_dirTmpContainer c_env </> "out.sh") t
           exitWith $ ExitFailure 42
  where
-  cs = compile
+  cs = config
+    <> compile
     <> clean
     <> init'
     <> run'
