@@ -1515,15 +1515,17 @@ export const createAccount = async (): Promise<Account> => {
 export const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
   const algodClient = await getAlgodClient();
-  debug('canFundFromFaucet: check genesis');
-  const gen = await algodClient.genesis().do();
-  if (gen.network !== 'devnet') {
-    debug(`canFundFromFaucet: '${gen.network}' !== 'devnet'`)
+  debug('ALGO:canFundFromFaucet: check genesis');
+  const txnParams = await algodClient.getTransactionParams().do();
+  const act = txnParams.genesisID;
+  const exp = 'devnet-v1';
+  if (act !== exp) {
+    debug(`ALGO:canFundFromFaucet: expected '${exp}' !== actual '${act}'`);
     return false;
   }
-  debug('canFundFromFaucet: check balance');
+  debug('ALGO:canFundFromFaucet: check balance');
   const fbal = await balanceOf(faucet);
-  debug(`canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
+  debug(`ALGO:canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
   return gt(fbal, 0);
 };
 
