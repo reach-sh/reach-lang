@@ -21,7 +21,8 @@
 		"reach",
 		"ethereum",
 		"algorand",
-		"blockchain"
+		"blockchain",
+		"conflux"
 	],
 	"engines": {
 		"vscode": "^1.43.0"
