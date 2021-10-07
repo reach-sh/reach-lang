@@ -1401,7 +1401,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    const getCtcAddress = async () => { return escrowAddr; };
+
+    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib, getCtcAddress };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {

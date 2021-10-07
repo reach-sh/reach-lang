@@ -567,6 +567,8 @@ base_env =
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
+    , ("getContract", SLV_Prim $ SLPrim_getContract)
+    , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -2993,6 +2995,20 @@ evalPrim p sargs =
       notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
       eqFn <- evalPrimOp PEQ $ map (lvl,) [x, y]
       evalApplyVals' notFn [eqFn]
+    SLPrim_getContract -> do
+      ensure_after_first
+      at <- withAt id
+      let de = DLE_GetContract at
+      let mdv = DLVar at Nothing T_Contract
+      dv <- ctxt_lift_expr mdv de
+      return $ (lvl, SLV_DLVar dv)
+    SLPrim_getAddress -> do
+      ensure_after_first
+      at <- withAt id
+      let de = DLE_GetAddress at
+      let mdv = DLVar at Nothing T_Address
+      dv <- ctxt_lift_expr mdv de
+      return $ (lvl, SLV_DLVar dv)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs

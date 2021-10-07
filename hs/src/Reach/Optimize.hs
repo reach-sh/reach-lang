@@ -326,6 +326,8 @@ instance Optimize DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
+    DLE_GetContract at -> return $ DLE_GetContract at
+    DLE_GetAddress at -> return $ DLE_GetAddress at
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

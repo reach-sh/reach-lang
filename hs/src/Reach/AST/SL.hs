@@ -684,6 +684,8 @@ data SLPrimitive
   | SLPrim_didPublish
   | SLPrim_unstrict
   | SLPrim_polyNeq
+  | SLPrim_getContract
+  | SLPrim_getAddress
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

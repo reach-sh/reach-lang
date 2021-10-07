@@ -502,6 +502,8 @@ data DLExpr
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
+  | DLE_GetContract SrcLoc
+  | DLE_GetAddress SrcLoc
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -616,6 +618,9 @@ instance PrettySubst DLExpr where
     DLE_TimeOrder _ tos -> do
       tos' <- render_dasM $ map (\(x, y) -> (x, DLA_Var y)) tos
       return $ "timeOrder" <> parens tos'
+    DLE_GetContract {} -> return $ "getContract()"
+    DLE_GetAddress {} -> return $ "getAddress()"
+
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -635,6 +640,8 @@ instance IsPure DLExpr where
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
+    DLE_GetContract {} -> True
+    DLE_GetAddress {} -> True
     DLE_Claim {} ->
       -- These are all false, because we use purity to determine if we can
       -- reorder things and an assert can not be ordered outside of an IF to
@@ -680,6 +687,8 @@ instance IsLocal DLExpr where
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
     DLE_TimeOrder {} -> True
+    DLE_GetContract {} -> True
+    DLE_GetAddress {} -> True
 
 instance CanDupe DLExpr where
   canDupe e =

@@ -116,6 +116,7 @@ data JSCtxt = JSCtxt
   , ctxt_while :: JSCtxtWhile
   , ctxt_ctcs :: Maybe JSContracts
   , ctxt_maps :: M.Map DLMVar DLMapInfo
+  , ctxt_which :: Int
   }
 
 type App = ReaderT JSCtxt IO
@@ -434,6 +435,13 @@ jsExpr = \case
       JM_Backend -> return "undefined"
       JM_View -> impossible "token.burn"
   DLE_TimeOrder {} -> impossible "timeorder"
+  DLE_GetContract {} -> do
+    isInitial <- (==) 0 <$> asks ctxt_which
+    asks ctxt_mode >>= \case
+      JM_Simulate
+        | isInitial -> return $ "'<contract>'"
+      _ -> return $ "await" <+> jsApply "ctc.getInfo" []
+  DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getCtcAddress" []
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -675,7 +683,7 @@ jsETail = \case
           Just (args, amt, whena, svs, soloSend) -> do
             let svs_as = map DLA_Var svs
             amtp <- jsPayAmt amt
-            let withSim = local (\e -> e {ctxt_mode = JM_Simulate})
+            let withSim = local (\e -> e {ctxt_mode = JM_Simulate, ctxt_which = which })
             sim_body_core <- withSim $ jsETail k_ok
             let dupeMap (mpv, _) = do
                   return $
@@ -781,6 +789,7 @@ jsPart dli p (EPProg _ _ et) = do
   let ctxt_while = JWhile_None
   let ctxt_mode = JM_Backend
   let ctxt_maps = dli_maps dli
+  let ctxt_which = 0
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
     et' <- jsETail et
@@ -963,6 +972,7 @@ backend_js outn crs pl = do
   let ctxt_while = JWhile_None
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty
+  let ctxt_which = 0
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsPIProg crs pl

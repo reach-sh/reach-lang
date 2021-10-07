@@ -146,9 +146,10 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   selfAddress: () => CBR_Address, // Not RawAddress!
   getViews: () => {[key: string]: {[key: string]: (() => Promise<any>)}},
   stdlib: Object,
+  getCtcAddress: () => Promise<CBR_Address>,
 };
 
-type ContractIndex = 'getInfo' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib';
+type ContractIndex = 'getInfo' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib' | 'getCtcAddress';
 
 export const deferContract =
   <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
@@ -192,6 +193,7 @@ export const deferContract =
       if ( implNow.stdlib === undefined ) {
         throw Error(`stdlib not defined`); }
       return implNow.stdlib; })(),
+    getCtcAddress: delay('getCtcAddress'),
   };
 
   implP.then((x) => { impl = x; });
@@ -212,6 +214,7 @@ export const deferContract =
     selfAddress: wrap('selfAddress'),
     getViews: wrap('getViews'),
     stdlib: impl.stdlib,
+    getCtcAddress: wrap('getCtcAddress'),
   };
 };
 

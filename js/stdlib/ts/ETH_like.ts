@@ -897,7 +897,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib };
+    const getCtcAddress = getInfo;
+
+    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib, getCtcAddress };
   };
 
   function setDebugLabel(newLabel: string): Account {

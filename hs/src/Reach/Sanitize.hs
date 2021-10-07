@@ -80,6 +80,8 @@ instance Sanitize DLExpr where
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)
     DLE_TimeOrder _ tos -> DLE_TimeOrder sb (sani tos)
+    DLE_GetContract _ -> DLE_GetContract sb
+    DLE_GetAddress _ -> DLE_GetAddress sb
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
