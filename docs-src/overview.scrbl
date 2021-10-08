@@ -124,7 +124,7 @@ The only thing left is for Bob's @tech{backend} to deliver the information to hi
 
 @itemlist[
 
-@item{Line 31 and 32 do this.}
+@item{Line 31 and 32 use an interaction expression to transfer the information to the frontend.}
 
 @item{Line 33 exits the program.}
 
