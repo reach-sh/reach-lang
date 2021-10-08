@@ -1094,7 +1094,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             let closeTo: Address|undefined = undefined;
             if ( t.kind === 'from' ) {
               from = escrowAddr;
-              // @ts-ignore
               to = cbr2algo_addr(t.to);
               amt = t.amt;
             } else if ( t.kind === 'init' ) {
@@ -1401,7 +1400,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
+    // Returns address of a Reach contract
+    const getContractAddress = async () => { return T_Address.canonicalize(escrowAddr); };
+
+    return { getInfo, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib, getContractAddress };
   };
 
   const deployP = async (bin: Backend): Promise<Contract> => {

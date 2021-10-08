@@ -1275,6 +1275,8 @@ ce = \case
     op "pop"
     -- XXX We could get the minimum balance back
   DLE_TimeOrder {} -> impossible "timeorder"
+  DLE_GetContract _ -> code "txn" ["ApplicationID"]
+  DLE_GetAddress _ -> cContractAddr
   where
     show_stack msg at fs = do
       comment $ texty msg

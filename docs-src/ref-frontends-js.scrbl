@@ -341,6 +341,14 @@ The Promise will only be resolved after the contract is actually deployed on the
 You cannot block on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
 Awaiting @reachin{getInfo} too early may cause your program to enter a state of deadlock.
 
+
+@(hrule)
+@(mint-define! '("getContractAddress"))
+@js{
+ ctc.getContractAddress() => Promise<Address> }
+
+@index{ctc.getContractAddress} Returns a Promise for the @jsin{Address} of the connected Reach @tech{contract}.
+
 @(hrule)
 
 @(mint-define! '("attach"))

@@ -567,6 +567,8 @@ base_env =
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
+    , ("getContract", SLV_Prim $ SLPrim_getContract)
+    , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -2993,6 +2995,8 @@ evalPrim p sargs =
       notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
       eqFn <- evalPrimOp PEQ $ map (lvl,) [x, y]
       evalApplyVals' notFn [eqFn]
+    SLPrim_getContract -> getContractInfo T_Contract
+    SLPrim_getAddress -> getContractInfo T_Address
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3063,6 +3067,16 @@ evalPrim p sargs =
         aisiPut aisi_env $ \ae ->
           ae {ae_classes = S.insert n $ ae_classes ae}
       return (lvl, SLV_Participant at n Nothing Nothing)
+    getContractInfo t = do
+      ensure_after_first
+      at <- withAt id
+      let de = case t of
+                T_Address -> DLE_GetAddress at
+                T_Contract -> DLE_GetContract at
+                _ -> impossible "getContractInfo"
+      let mdv = DLVar at Nothing t
+      dv <- ctxt_lift_expr mdv de
+      return $ (lvl, SLV_DLVar dv)
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat estf mode lab ct mkexpr = do

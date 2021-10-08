@@ -60,6 +60,7 @@ export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared, Arith, T
   addressEq: (addr1: unknown, addr2: unknown) => boolean
   tokenEq: (x: unknown, y: unknown) => boolean
   digest: (t: Ty, a: unknown) => string // TODO typing
+  emptyContractInfo: (number | string),
 };
 
 // XXX
