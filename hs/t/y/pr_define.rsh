@@ -18,7 +18,7 @@ export const main = Reach.App(() => {
       .case(
         Alice,
         (() => ({ when: sum() < 15 })),
-        (() => {
+        ((_) => {
           Alice.interact.show(x);
           Alice.interact.show(y);
           Alice.interact.show(sum());

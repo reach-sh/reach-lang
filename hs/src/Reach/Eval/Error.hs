@@ -124,6 +124,7 @@ data EvalError
   | Err_IllegalEffPosition SLValTy
   | Err_Unused_Variables [(SrcLoc, SLVar)]
   | Err_Remote_NotFun SLVar SLType
+  | Err_API_NotFun SLVar SLType
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidNameExport String String
@@ -279,6 +280,7 @@ instance HasErrorCode EvalError where
     Err_Switch_UnreachableCase {} -> 118
     Err_NotAfterFirst -> 119
     Err_UniqueFirstPublish -> 120
+    Err_API_NotFun {} -> 121
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -626,14 +628,15 @@ instance Show EvalError where
         False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
       "Fork local result must be object with fields `msg` or `when`, but got " <> show t
-    Err_Fork_ConsensusBadArrow _ ->
+    Err_Fork_ConsensusBadArrow _ow ->
       "Fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_ParallelReduceIncomplete lab ->
       "Parallel reduce incomplete: " <> lab
     Err_ParallelReduceBranchArgs b n args ->
-      let numArgs = length args
-       in let arguments = if n == 1 then "argument" else "arguments"
-           in "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
+      "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
+      where
+        numArgs = length args
+        arguments = if n == 1 then "argument" else "arguments"
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->
@@ -654,6 +657,8 @@ instance Show EvalError where
       intercalate "\n    " $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
+    Err_API_NotFun k t ->
+      "API type not a function, " <> show k <> " has type " <> show t
     Err_Struct_Key_Invalid s ->
       "Struct key `" <> s <> "` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*"
     Err_Struct_Key_Not_Unique sk k ->

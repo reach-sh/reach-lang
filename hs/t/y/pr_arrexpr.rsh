@@ -17,12 +17,8 @@ export const main = Reach.App(() => {
     .invariant(balance() == 0)
     .case(A,
       (() => ({ when: declassify(interact.go()) })),
-      ((_) => {
-        A.interact.ok();
-        return x + 1;
-      }))
+      ((_) => x + 1))
     .timeout(false);
 
   commit();
-
-})
+});

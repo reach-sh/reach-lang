@@ -44,13 +44,13 @@ export const main =
         .while(keepGoing)
         .case(Alice, (() => ({
           when: declassify(interact.keepGoing()) })),
-          () => {
+          (_) => {
             each([Alice, Bob], () => {
               interact.roundWinnerWas(true); });
             return [ true, 1 + as, bs ]; })
         .case(Bob, (() => ({
           when: declassify(interact.keepGoing()) })),
-          () => {
+          (_) => {
             each([Alice, Bob], () => {
               interact.roundWinnerWas(false); });
             return [ true, as, 1 + bs ]; })

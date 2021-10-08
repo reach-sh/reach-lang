@@ -28,13 +28,13 @@ export const main = Reach.App(
           .while(keepGoing() || (!aliceGone && !bobGone))
           .case(Alice,
             (() => ({ when: declassify(interact.go())  })),
-            (() => aWager),
-            (() => { return [ true, bobGone, x + 1 ]; })
+            ((_) => aWager),
+            ((_) => { return [ true, bobGone, x + 1 ]; })
           )
           .case(Bob,
             (() => ({ when: declassify(interact.go()) })),
-            (() => bWager),
-            (() => { return [ aliceGone, true, x + 1 ]; })
+            ((_) => bWager),
+            ((_) => { return [ aliceGone, true, x + 1 ]; })
           )
           // equivalent to, .timeout(timeRemaining(), () => { throw <lhs>; });
           .throwTimeout(timeRemaining())

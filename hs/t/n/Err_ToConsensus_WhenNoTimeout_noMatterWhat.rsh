@@ -17,7 +17,7 @@ export const main = Reach.App(() => {
     .invariant(balance() == 0)
     .case(A,
       (() => ({ when: false })),
-      (() => {
+      ((_) => {
         A.interact.ok();
         return x + 1;
       }))

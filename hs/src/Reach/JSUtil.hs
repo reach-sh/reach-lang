@@ -30,26 +30,21 @@ jso_flatten = \case
   JSCTLNone jscl -> jscl_flatten jscl
 
 jscl_flatten :: JSCommaList a -> [a]
-jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
-jscl_flatten (JSLOne a) = [a]
-jscl_flatten (JSLNil) = []
+jscl_flatten = \case
+  JSLNil -> []
+  JSLOne a -> [a]
+  JSLCons a _ b -> (jscl_flatten a) ++ [b]
 
 toJSCL :: [a] -> JSCommaList a
-toJSCL l = helper l' JSLNil
-  where
-    -- XXX This makes no sense to me
-    sanity = False
-    l' =
-      case sanity of
-        True -> reverse l
-        False -> l
-    helper [] acc = acc
-    helper (x : ys) acc =
-      helper ys (JSLCons acc JSNoAnnot x)
+toJSCL = \case
+  [] -> JSLNil
+  [a] -> JSLOne a
+  x : ys -> foldl (flip JSLCons JSNoAnnot) (JSLOne x) ys
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
-jsctl_flatten (JSCTLComma a _) = jscl_flatten a
-jsctl_flatten (JSCTLNone a) = jscl_flatten a
+jsctl_flatten = \case
+  JSCTLComma a _ -> jscl_flatten a
+  JSCTLNone a -> jscl_flatten a
 
 jsa_flatten :: [JSArrayElement] -> [JSExpression]
 jsa_flatten a = concatMap f a

@@ -1,11 +1,11 @@
 reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 
-  ./lifted_interact_non_null_fun.rsh:8:19:application
+  ./lifted_interact_non_null_fun.rsh:1:39:application
 
-  8|       A.interact.f();
+  1| 'reach 0.1';
 
 Trace:
-  in [unknown function] from (./lifted_interact_non_null_fun.rsh:8:19:function exp) at (./lifted_interact_non_null_fun.rsh:8:19:application)
+  in "liftedInteract" from (./lifted_interact_non_null_fun.rsh:8:19:application) at (./lifted_interact_non_null_fun.rsh:8:19:application)
 
 For further explanation of this error, see: https://docs.reach.sh/RE0003.html
 

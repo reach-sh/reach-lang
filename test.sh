@@ -113,10 +113,16 @@ tealcount () {
 
 #jb
 
-ci ETH overview
-ci ETH tut-8
+c hs/t/y/throw_timeout.rsh
+fc hs/t/n/Err_API_NotFun.rsh
+c hs/t/y/pr206.rsh
+c examples/simple-nft-auction/index.rsh
+c hs/t/y/api-refine.rsh
+c hs/t/y/pr_spread.rsh
+c hs/t/y/pr_arrexpr2.rsh
+c hs/t/y/pr_arrexpr.rsh
+c non-examples/api-full/index.rsh
 exit 0
-
 ci ETH api-basic
 ci ALGO api-basic
 exit 0

@@ -11,9 +11,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.5 is the current Reach release candidate version.
 
 @itemlist[
-@item{2021/10/8: Added @jsin{ctc.getContractAddress}.}
-@item{2021/10/5: Added @reachin{Contract}. Updated @jsin{ctc.getInfo} to return a @reachin{Contract}.}
-@item{2021/10/4: Added @reachin{unstrict}.}
+@item{2021/10/08: @reachin{parallelReduce} is more strict in checking that the @litchar{msg} argument is present in the parameter list of @reachin{case} components, even when it is is bound to a @reachin{null}.}
+@item{2021/10/08: Added @jsin{ctc.getContractAddress}.}
+@item{2021/10/05: Added @reachin{Contract}. Updated @jsin{ctc.getInfo} to return a @reachin{Contract}.}
+@item{2021/10/04: Added @reachin{unstrict}.}
 @item{2021/09/25: Reach clients will detect that they are attempting to publish in a race that they cannot win and switch to listening for the publication of another.
 This has the impact of frontends not being asked to sign transactions that cannot possibly succeed.}
 @item{2021/09/25: Added @reachin{didPublish()}.}

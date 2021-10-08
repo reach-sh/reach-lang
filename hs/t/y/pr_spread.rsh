@@ -16,13 +16,15 @@ export const main = Reach.App(() => {
     .while(x < 5)
     .invariant(balance() == 0)
     .case(A,
-      (() => ({ when: declassify(interact.go()) })),
-      ((_) => {
+      (() => ({ msg: 1, when: declassify(interact.go()) })),
+      ((...args) => {
+        const [ y ] = args;
         A.interact.ok();
-        return x + 1;
+        return x + y;
       }))
     .timeout(false);
 
   commit();
 
 })
+

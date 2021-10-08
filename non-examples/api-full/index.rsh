@@ -7,9 +7,10 @@ export const main = Reach.App(() => {
   const A = Participant('Admin', {
     ...hasConsoleLogger,
     tok: Token,
+    amt: UInt,
   });
   const V = View('Reader', {
-    read: Fun([], State),
+    read: State,
   });
   const U = API('Writer', {
     touch: Fun([UInt], State),
@@ -19,11 +20,12 @@ export const main = Reach.App(() => {
     end: Fun([], State),
   });
   deploy();
-
+  A.publish();
+  commit();
   A.only(() => {
-    const [ tok, amt ] = declassify([ A.tok, A.amt ]);
+    const [ tok, amt ] = declassify([ interact.tok, interact.amt ]);
   });
-  A.publish(tok).pay([amt, tok]);
+  A.publish(tok, amt).pay([[amt, tok]]);
 
   const [ done, x, an, at ] =
     parallelReduce([ false, 0, 0, amt ])
@@ -53,14 +55,14 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
-    .api(U.end, ((_) => [ 0, [ 0, tok ] ]), ((i, k) => {
+    .api(U.end, ((_) => [ 0, [ 0, tok ] ]), ((k) => {
         const stp = [ true, x, an, at ];
         k(stp);
         return stp;
     }));
 
-  transfer(an).to(Admin);
-  transfer(at, tok).to(Admin);
+  transfer(an).to(A);
+  transfer(at, tok).to(A);
   commit();
 
   exit();

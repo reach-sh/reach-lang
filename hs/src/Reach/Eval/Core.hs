@@ -12,12 +12,12 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, transpose, unzip5, (\\), intersperse, intercalate)
+import Data.List (elemIndex, groupBy, transpose, unzip6, (\\), intersperse, intercalate)
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import Data.Sequence (fromList, mapWithIndex)
+import Data.Sequence (mapWithIndex)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -562,6 +562,7 @@ base_env =
     , ("Participant", SLV_Prim SLPrim_Participant)
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ("View", SLV_Prim SLPrim_View)
+    , ("API", SLV_Prim SLPrim_API)
     , ("deploy", SLV_Prim SLPrim_deploy)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
@@ -1074,16 +1075,12 @@ evalAsEnv obj = case obj of
     -- Wrap each field of the participant's interface in a form, which will expand as described.
     let makeInteractField = do
           ios <- ae_ios <$> aisd
-          case M.lookup who ios of
-            Just sv@(SLSSVal _ _ (SLV_Object oa ol env)) -> do
-              let object =
-                    SLV_Object oa ol $
-                      M.mapWithKey
-                        (\k _ ->
-                           sv {sss_val = SLV_Form $ SLForm_liftInteract who vas k})
-                        env
-              return (Secret, object)
-            _ -> impossible "participant has no interact interface"
+          return $
+            case M.lookup who ios of
+              Just sv@(SLSSVal _ _ (SLV_Object oa ol env)) ->
+                secret $ SLV_Object oa ol $ flip M.mapWithKey env $ \k _ ->
+                  sv { sss_val = SLV_Form $ SLForm_liftInteract who vas k }
+              _ -> impossible "participant has no interact interface"
     return $
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
@@ -1127,6 +1124,7 @@ evalAsEnv obj = case obj of
     return $
       M.fromList $
         go "case" FM_Case
+          <> go "api" FM_API
           <> gom "timeout" FM_Timeout slf_mtime
           <> gom "throwTimeout" FM_ThrowTimeout slf_mtime
           <> gom "paySpec" FM_PaySpec Nothing
@@ -1143,6 +1141,7 @@ evalAsEnv obj = case obj of
         gom "invariant" PRM_Invariant slpr_minv
           <> gom "while" PRM_While slpr_mwhile
           <> go "case" PRM_Case
+          <> go "api" PRM_API
           <> gom "timeout" PRM_Timeout slpr_mtime
           <> gom "timeRemaining" PRM_TimeRemaining slpr_mtime
           <> gom "throwTimeout" PRM_ThrowTimeout slpr_mtime
@@ -1459,22 +1458,13 @@ evalForm f args = do
       x <- one_arg
       env <- ask >>= sco_to_cloenv . e_sco
       return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at env x
-    SLForm_liftInteract _ msv field -> do
-      let who = fromMaybe (impossible "lifted interact: participant unbound") msv
-      annot <- at2a <$> withAt id
+    SLForm_liftInteract who mv k -> do
+      at <- withAt id
+      let whoOnly = SLV_Form $ SLForm_Part_Only who mv
       -- Enclose the generated `only` with a closure that binds all the arguments to the interact call,
       -- which allows `this` to point to the originator of the consensus transfer instead of `who`.
-      let param_ids = toList $ mapWithIndex (\i _ -> JSIdentifier annot $ "liftedInteractArg" <> show i) $ fromList args
-      let no_params = JSParenthesizedArrowParameterList annot JSLNil annot
-      let dot = JSMemberDot (JSIdentifier annot "interact") annot (JSIdentifier annot field)
-      let call = JSCallExpression dot annot (toJSCL param_ids) annot
-      let stmt = JSExpressionStatement call JSSemiAuto
-      let only_thunk = JSArrowExpression no_params annot stmt
-      let only_mem = JSMemberDot (JSIdentifier annot who) annot (JSIdentifier annot "only")
-      let only_stmt = JSExpressionStatement (JSCallExpression only_mem annot (toJSCL [only_thunk]) annot) JSSemiAuto
-      let params = JSParenthesizedArrowParameterList annot (toJSCL param_ids) annot
-      let fun = JSArrowExpression params annot only_stmt
-      evalExpr $ JSCallExpression fun annot (toJSCL args) annot
+      let rator' = jsClo at "liftedInteract" "(...args) => whoOnly(() => interact[k](...args))" $ M.fromList [ ("whoOnly", whoOnly), ("k", SLV_Bytes at $ bpack k) ]
+      evalApply rator' args
     SLForm_fork -> do
       zero_args
       slf_at <- withAt id
@@ -1485,27 +1475,8 @@ evalForm f args = do
       retV $ public $ SLV_Form $ SLForm_fork_partial $ ForkRec {..}
     SLForm_fork_partial p@(ForkRec {..}) ->
       case slf_mode of
-        Just FM_Case -> do
-          at <- withAt id
-          let a = srcloc2annot at
-          let def_pay =
-                case slf_mnntpay of
-                  Just (JSArrayLiteral aa ts ae) -> do
-                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
-                    let tok_pays = JSDecimal a "0" : map (\ i ->
-                          JSArrayLiteral aa [
-                            JSArrayElement (JSDecimal aa "0"), JSArrayComma aa, JSArrayElement (JSIdentifier aa i)
-                          ] ae) tok_ids
-                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
-                  _ -> JSDecimal a "0"
-          let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
-          (w', x', y', z') <-
-            case args of
-              [w, x, y, z] -> return $ (w, x, y, z)
-              [w, x, z] -> return $ (w, x, default_pay, z)
-              _ -> illegal_args 4
-          let fc = ForkCase at w' x' y' z'
-          go $ p { slf_cases = slf_cases <> [fc] }
+        Just FM_Case -> doFM_Case_args args
+        Just FM_API -> doForkAPI2Case args >>= doFM_Case_args
         Just FM_Timeout -> do
           at <- withAt id
           go $ p { slf_mtime = Just (at, args) }
@@ -1524,6 +1495,28 @@ evalForm f args = do
         Nothing -> expect_t rator $ Err_Eval_NotApplicable
       where
         go p' = retV $ public $ SLV_Form $ SLForm_fork_partial $ p' { slf_mode = Nothing }
+        doFM_Case_args = \case
+          [w, x, y, z] -> doFM_Case w x (Just y) z
+          [w, x, z] -> doFM_Case w x Nothing z
+          _ -> illegal_args 4
+        doFM_Case we x my z = do
+          at <- withAt id
+          let a = srcloc2annot at
+          let def_pay =
+                case slf_mnntpay of
+                  Just (JSArrayLiteral aa ts ae) -> do
+                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
+                    let tok_pays = JSDecimal a "0" : map (\ i ->
+                          JSArrayLiteral aa [
+                            JSArrayElement (JSDecimal aa "0"), JSArrayComma aa, JSArrayElement (JSIdentifier aa i)
+                          ] ae) tok_ids
+                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  _ -> JSDecimal a "0"
+          let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
+          let y = fromMaybe default_pay my
+          w <- slvParticipant_part =<< (snd <$> evalExpr we)
+          let fc = ForkCase at we (bunpack w) x y z
+          go $ p { slf_cases = slf_cases <> [fc] }
     SLForm_parallel_reduce -> do
       slpr_at <- withAt id
       let slpr_mode = Nothing
@@ -1531,6 +1524,7 @@ evalForm f args = do
       let slpr_minv = Nothing
       let slpr_mwhile = Nothing
       let slpr_cases = []
+      let slpr_apis = []
       let slpr_mtime = Nothing
       let slpr_mdef = Nothing
       let slpr_mpay = Nothing
@@ -1546,6 +1540,8 @@ evalForm f args = do
           go $ p { slpr_mwhile = Just x }
         Just PRM_Case ->
           go $ p { slpr_cases = slpr_cases <> [aa] }
+        Just PRM_API ->
+          go $ p { slpr_apis = slpr_apis <> [aa] }
         Just PRM_PaySpec -> do
           x <- one_arg
           go $ p { slpr_mpay = Just x }
@@ -1578,12 +1574,16 @@ evalForm f args = do
           go $ p { slptc_fork = True }
         Just TCM_Timeout -> do
           at <- withAt id
+          let proc = \case
+                JSExpressionParen _ e _ -> proc e
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s -> return $ jsStmtToBlock dt_s
+                _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
               [de] -> return $ (at, de, Nothing)
-              [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] -> return $ (at, de, Just (jsStmtToBlock dt_s))
-              [de, JSExpressionParen _ (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s) _] ->
-                return $ (at, de, Just (jsStmtToBlock dt_s))
+              [de, te] -> do
+                te' <- proc te
+                return $ (at, de, Just te')
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           go $ p { slptc_timeout = Just x }
         Just TCM_ThrowTimeout -> do
@@ -2725,6 +2725,31 @@ evalPrim p sargs =
       evalApplyVals' fn [public obj, public cases]
     SLPrim_Participant -> makeParticipant False
     SLPrim_ParticipantClass -> makeParticipant True
+    SLPrim_API -> do
+      ensure_mode SLM_AppInit "API"
+      at <- withAt id
+      (nv, intv) <- two_args
+      n <- mustBeBytes nv
+      SLInterface im <- mustBeInterface intv
+      let ns = bunpack n
+      verifyName "API" ns
+      io <- flip mapWithKeyM im $ \k -> \case
+        ST_Fun (SLTypeFun {..}) -> do
+          let nk = ns <> "_" <> k
+          let nv' = SLV_Bytes at $ bpack nk
+          let stf_dom' = ST_Tuple stf_dom
+          let mkpre o = jsClo at (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [ ("o", o) ]
+          let stf_pre' = fmap mkpre stf_pre
+          let mkpost o = jsClo at (nk <> "post") "([dom,rng]) => o(dom,rng)" $ M.fromList [ ("o", o) ]
+          let stf_post' = fmap mkpost stf_post
+          let in_t = SLTypeFun [] stf_dom' Nothing stf_pre' Nothing stf_pre_msg
+          let out_t = SLTypeFun [stf_dom', stf_rng] ST_Null stf_post' Nothing stf_post_msg Nothing
+          let fake tf = SLSSVal at Public $ SLV_Type $ ST_Fun tf
+          let nkm = M.fromList $ [ ("in", fake in_t), ("out", fake out_t) ]
+          let intv' = SLV_Object at (Just $ nk <> " interact") nkm
+          sls_sss at <$> makeParticipant_ True nv' intv'
+        t -> expect_ $ Err_API_NotFun k t
+      retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
       at <- withAt id
@@ -2739,7 +2764,7 @@ evalPrim p sargs =
       let go k t = do
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
-            let vo = SLV_Object at (Just $ ns <> " view, " <> k) vom
+            let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
             let io = SLSSVal at Public vo
             di <-
               case t of
@@ -2754,7 +2779,7 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_views = M.insert n i' $ ar_views ar}
-      retV $ (lvl, SLV_Object at (Just $ ns <> " view") io)
+      retV $ (lvl, SLV_Object at (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
       t <- expect_ty "Map.new" =<< one_arg
@@ -3048,9 +3073,12 @@ evalPrim p sargs =
       SLInterface <$> mapM checkint objEnv
     makeParticipant :: Bool -> App SLSVal
     makeParticipant isClass = do
+      (nv, intv) <- two_args
+      makeParticipant_ isClass nv intv
+    makeParticipant_ :: Bool -> SLVal -> SLVal -> App SLSVal
+    makeParticipant_ isClass nv intv = do
       ensure_mode SLM_AppInit "Participant Constructor"
       at <- withAt id
-      (nv, intv) <- two_args
       n <- mustBeBytes nv
       let ns = bunpack n
       verifyName "Participant" ns
@@ -3637,6 +3665,8 @@ doArrRef_ arrv idxv = do
         T_Array elem_ty sz ->
           retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
         _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
+    SLV_Bytes _ bs ->
+      snd <$> (evalDot arrv $ bunpack bs)
     _ -> expect_t idxv $ Err_Eval_RefNotInt
 
 doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
@@ -4114,7 +4144,7 @@ typeToExpr = \case
     rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [r t]
 
 data CompiledForkCase = CompiledForkCase
-  { cfc_part :: JSExpression
+  { cfc_part_e :: JSExpression
   , cfc_data_def :: [JSObjectProperty]
   , cfc_pay_prop :: [JSObjectProperty]
   , cfc_switch_case :: [JSSwitchParts]
@@ -4122,9 +4152,24 @@ data CompiledForkCase = CompiledForkCase
   }
 
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
-forkCaseSameParticipant l r = getWho l == getWho r
-  where
-    getWho e = jse_expect_id (fc_at e) (fc_who e)
+forkCaseSameParticipant l r = fc_who l == fc_who r
+
+doForkAPI2Case :: [JSExpression] -> App [JSExpression]
+doForkAPI2Case args = do
+  at <- withAt id
+  let a = at2a at
+  let x = readJsExpr "() => ({ msg: declassify(interact.in()) })"
+  let jid = JSIdentifier a
+  idx <- ctxt_alloc
+  let jidg xi = jid $ ".api" <> show idx <> "." <> xi
+  let dom = jidg "dom"
+  let dotdom = JSSpreadExpression a dom
+  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowExpr a [jidg "rng"] $ jsCall a (JSMemberDot (JSMemberDot w a (jid "interact")) a (jid "out")) [ dom, jidg "rng" ] ]
+  case args of
+    [w, y, z] -> return [w, x, y, mkz w z]
+    [w, z] -> return [w, x, mkz w z]
+    --- Delay error to next level
+    ow -> return ow
 
 doFork :: [JSStatement] -> ForkRec -> App SLStmtRes
 doFork ks (ForkRec {..}) = locAt slf_at $ do
@@ -4169,17 +4214,24 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
   let getAfter (a_at, after_e) = locAt a_at $
         case after_e of
-          JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> return [s]
-          JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> return [defcon ae msg_e, s]
+          JSArrowExpression args _ s -> do
+            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let awrap x = JSArrayLiteral a [JSArrayElement x] a
+            mdefmsg <-
+              case parseJSArrowFormals a_at args of
+                [] -> return []
+                [ae] -> return [defcon (awrap ae) (awrap msg_e)]
+                _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
+            return $ mdefmsg <> ss
           JSExpressionParen _ e _ -> getAfter (a_at, e)
-          ow -> expect_ $ Err_Fork_ConsensusBadArrow ow
+          _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
   let go pcases = do
-        let (ats, who_es, before_es, pay_es, after_es) =
-              unzip5 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_before, fc_pay, fc_after)) pcases
+        let (ats, whos, who_es, before_es, pay_es, after_es) =
+              unzip6 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_who_e, fc_before, fc_pay, fc_after)) pcases
+        let who = hdDie whos
         let who_e = hdDie who_es
         let c_at = hdDie ats
-        let cfc_part = who_e
-        let who = jse_expect_id c_at who_e
+        let cfc_part_e = who_e
         let partCase n = who <> show n
         -- Generate:
         -- const runAlice<N> = () => {
@@ -4253,23 +4305,23 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   (isFork, before_tc_ss, pay_e, tc_head_e, after_tc_ss) <-
     case cases of
       [ForkCase {..}] -> do
-        (_, only_body) <- forkOnlyHelp fc_who fc_at fc_before msg_e when_e
-        let tc_head_e = fc_who
-        let before_tc_ss = [makeOnly fc_who only_body]
+        (_, only_body) <- forkOnlyHelp fc_who_e fc_at fc_before msg_e when_e
+        let tc_head_e = fc_who_e
+        let before_tc_ss = [makeOnly fc_who_e only_body]
         let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
         after_tc_ss <- getAfter (fc_at, fc_after)
         return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
         let cases_data_def = concatMap cfc_data_def casel
-        let cases_parts = map cfc_part casel
+        let cases_part_es = map cfc_part_e casel
         let cases_pay_props = concatMap cfc_pay_prop casel
         let cases_switch_cases = concatMap cfc_switch_case casel
         let cases_onlys = map cfc_only casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
         let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
         let data_ss = [JSConstant a data_decls sp]
-        let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
+        let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_part_es) a
         let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = data_ss <> cases_onlys
@@ -4336,6 +4388,14 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   -- liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
+modifyLastM :: Monad m => (a -> m a) -> [a] -> m [a]
+modifyLastM f l =
+  case reverse l of
+    [] -> return []
+    x : l' -> do
+      x' <- f x
+      return $ reverse (x' : l')
+
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let pr_at = slpr_at
@@ -4344,6 +4404,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let pr_minv = slpr_minv
   let pr_mwhile = slpr_mwhile
   let pr_cases = slpr_cases
+  let pr_apis = slpr_apis
   let pr_mtime = slpr_mtime
   let pr_mdef = slpr_mdef
   idx <- ctxt_alloc
@@ -4364,50 +4425,44 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = jsCall a (jid "fork") []
-  let makeContinue ss = do
+  let injectContinueIntoBody addArgs e = do
         let def_e = jid $ prid "res"
-        let call_og = jsCallThunk a (jsThunkStmts a [ss])
+        let dotargs = JSSpreadExpression a (jid $ prid "args")
+        let argsl = if addArgs then [ dotargs ] else []
+        let call_og = jsCall a e argsl
         let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_og) sp
         let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
         let continue_s = JSContinue a JSIdentNone sp
-        [def_s, asn_s, continue_s]
-  let injectContinueIntoBody = \case
-        JSExpressionParen _ e _ -> injectContinueIntoBody e
-        JSArrowExpression args annt ss -> do
-          return $ JSExpressionParen a (JSArrowExpression args annt $ JSStatementBlock annt (makeContinue ss) annt (a2sp annt)) a
-        ow -> evalExpr ow >>= \v -> (expect_t (snd v) $ Err_Expected "function")
+        return $ jsArrowStmts a argsl [ def_s, asn_s, continue_s ]
   fork_e1 <-
     case pr_mtime of
       Nothing -> return fork_e0
-      Just (mode, t_at, args) ->
+      Just (mode, t_at, args) -> locAt t_at $
         case (mode, args) of
           (PRM_ThrowTimeout, [t_e]) ->
-            callTimeout [t_e, jsThunkStmts ta [JSThrow ta lhs semi]]
+            callTimeout [ t_e, jsThunkStmts ta [JSThrow ta lhs semi] ]
           (PRM_TimeRemaining, [t_e]) -> do
             let dot o f = JSCallExpressionDot o ta f
             let publish = dot (jid "Anybody") $ jid "publish"
-            let pubApp = jsCallThunk ta publish
-            let bodyStmts =
-                  JSStatementBlock
-                    ta
-                    [ JSExpressionStatement pubApp semi
-                    , JSReturn ta (Just lhs) semi
-                    ]
-                    ta
-                    sp
-            callTimeout [t_e, jsThunkStmts ta $ makeContinue bodyStmts]
-          (PRM_Timeout, t_d : t_fn : _) -> do
-            locAt t_at $ do
-              t_fn' <- injectContinueIntoBody t_fn
-              callTimeout [t_d, t_fn']
+            doTimeout t_e $ jsThunkStmts ta $
+              [ JSExpressionStatement (jsCallThunk ta publish) semi
+              , JSReturn ta (Just lhs) semi
+              ]
+          (PRM_Timeout, [t_e, t_fn]) -> doTimeout t_e t_fn
           (PRM_Timeout, [t_e]) -> callTimeout [t_e]
-          (PRM_Timeout, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
-          (PRM_ThrowTimeout, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
-          (PRM_TimeRemaining, _) -> locAt t_at $ expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
+          (PRM_Timeout, _) ->
+            expect_ $ Err_ParallelReduceBranchArgs "timeout" 2 args
+          (PRM_ThrowTimeout, _) ->
+            expect_ $ Err_ParallelReduceBranchArgs "throwTimeout" 1 args
+          (PRM_TimeRemaining, _) ->
+            expect_ $ Err_ParallelReduceBranchArgs "timeRemaining" 1 args
           _ -> impossible "pr_mtime must be PRM_TimeRemaining or PRM_Timeout"
         where
           semi = JSSemiAuto
           timeOutId = jid "timeout"
+          doTimeout t_e t_fn = do
+            t_fn' <- injectContinueIntoBody False t_fn
+            callTimeout [t_e, t_fn']
           callTimeout = return . jsCall ta (JSMemberDot fork_e0 ta timeOutId)
           ta = ao t_at
   fork_e2 <-
@@ -4415,18 +4470,15 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
       Nothing -> return fork_e1
       Just toks ->
         return $ jsCall a (JSMemberDot fork_e1 a $ jid "paySpec") [toks]
+  let api2case (api_at, api_es) = locAt api_at $ do
+        (api_at,) <$> doForkAPI2Case api_es
+  pr_cases' <- (pr_cases <>) <$> mapM api2case pr_apis
   let forkcase fork_eN (case_at, case_es) = do
-        let aux ccomps cbody = locAt case_at $ do
-              cbody' <- injectContinueIntoBody cbody
-              return $ ccomps <> [cbody']
-        let injectContinue cs = case reverse cs of
-              [] -> return []
-              cbody : rst -> aux (reverse rst) cbody
-        cases' <- injectContinue case_es
-        return $ JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL cases') ca
-        where
-          ca = ao case_at
-  fork_e <- foldM forkcase fork_e2 pr_cases
+        let ca = ao case_at
+        jsCall ca (JSMemberDot fork_eN ca (jid "case")) <$>
+          modifyLastM (injectContinueIntoBody True) case_es
+  fork_e3 <- foldM forkcase fork_e2 pr_cases'
+  let fork_e = fork_e3
   let fork_s = JSExpressionStatement fork_e sp
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let while_body = [commit_s, fork_s]

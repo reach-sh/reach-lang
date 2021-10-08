@@ -451,6 +451,7 @@ data ToConsensusMode
 
 data ForkMode
   = FM_Case
+  | FM_API
   | FM_Timeout
   | FM_ThrowTimeout
   | FM_PaySpec
@@ -460,6 +461,7 @@ data ParallelReduceMode
   = PRM_Invariant
   | PRM_While
   | PRM_Case
+  | PRM_API
   | PRM_Timeout
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
@@ -482,7 +484,8 @@ data ToConsensusRec = ToConsensusRec
 
 data ForkCase = ForkCase
   { fc_at :: SrcLoc
-  , fc_who :: JSExpression
+  , fc_who_e :: JSExpression
+  , fc_who :: String
   , fc_before :: JSExpression
   , fc_pay :: JSExpression
   , fc_after :: JSExpression
@@ -505,6 +508,7 @@ data ParallelReduceRec = ParallelReduceRec
   , slpr_minv :: Maybe JSExpression
   , slpr_mwhile :: Maybe JSExpression
   , slpr_cases :: [(SrcLoc, [JSExpression])]
+  , slpr_apis :: [(SrcLoc, [JSExpression])]
   , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
   , slpr_mpay :: Maybe JSExpression
   , slpr_mdef :: Maybe JSExpression
@@ -664,6 +668,7 @@ data SLPrimitive
   | SLPrim_Participant
   | SLPrim_ParticipantClass
   | SLPrim_View
+  | SLPrim_API
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
