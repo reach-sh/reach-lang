@@ -21,7 +21,7 @@ You should start here if you've never used Reach before and want to start at the
 It assumes no prior experience in @|DApp|/blockchain development.}
 
 @item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach.
-You will often want to visit the guide to learn the background and "why" of some topic after you get started using it.}
+You may want to revisit the guide often to reinforce background knowledge and to understand the "why" of newly learned topics.}
 
 @item{@seclink["workshop"]{The workshop} continues @seclink["tut"]{the tutorial} with a set of self-study projects to help you gain mastery in decentralized application design through practice with Reach.
 Each project contains a completed solution, so it is also a collection of recipes for building specific things in Reach and demonstrates effective use of Reach, as well as some of the design decisions that Reach programmers face.}
