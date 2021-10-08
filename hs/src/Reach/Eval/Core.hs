@@ -179,16 +179,6 @@ saveLifts ss = do
 saveLift :: DLSStmt -> App ()
 saveLift = saveLifts . return
 
-isContractAddress :: DLVar -> App Bool
-isContractAddress dv = do
-  liftsRef <- asks e_lifts
-  lifts <- liftIO $ readIORef liftsRef
-  return $ (Seq.findIndexL (\case
-    DLS_Let _ (DLV_Let _ mdv) (DLE_GetAddress {})
-      | mdv == dv -> True
-    _ -> False
-    ) lifts) /= Nothing
-
 readDlo :: (DLOpts -> b) -> App b
 readDlo f =
   (e_appr <$> ask) >>= \case
@@ -2637,11 +2627,8 @@ evalPrim p sargs =
       let staticallyZero = \case
             DLA_Literal (DLL_Int _ 0) -> True
             _ -> False
-      isCtc <-  case part of
-            SLV_DLVar dv -> isContractAddress dv
-            _ -> return False
       DLPayAmt {..} <- compilePayAmt TT_Pay pay_sv
-      let one amt_a mtok_a = unless (staticallyZero amt_a || isCtc) $ do
+      let one amt_a mtok_a = unless (staticallyZero amt_a) $ do
             tokenPay mtok_a amt_a "balance sufficient for transfer"
             ctxt_lift_eff $ DLE_Transfer at who_a amt_a mtok_a
       one pa_net Nothing
@@ -3008,21 +2995,8 @@ evalPrim p sargs =
       notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
       eqFn <- evalPrimOp PEQ $ map (lvl,) [x, y]
       evalApplyVals' notFn [eqFn]
-    SLPrim_getContract -> do
-      ensure_after_first
-      at <- withAt id
-      let de = DLE_GetContract at
-      let mdv = DLVar at Nothing T_Contract
-      dv <- ctxt_lift_expr mdv de
-      return $ (lvl, SLV_DLVar dv)
-    SLPrim_getAddress -> do
-      ensure_after_first
-      at <- withAt id
-      let de = DLE_GetAddress at
-      let mdv = DLVar at Nothing T_Address
-      dv <- ctxt_lift_expr mdv de
-      liftIO $ putStrLn $ "Made dv: " <> show (pretty dv)
-      return $ (lvl, SLV_DLVar dv)
+    SLPrim_getContract -> getContractInfo T_Contract
+    SLPrim_getAddress -> getContractInfo T_Address
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3093,6 +3067,16 @@ evalPrim p sargs =
         aisiPut aisi_env $ \ae ->
           ae {ae_classes = S.insert n $ ae_classes ae}
       return (lvl, SLV_Participant at n Nothing Nothing)
+    getContractInfo t = do
+      ensure_after_first
+      at <- withAt id
+      let de = case t of
+                T_Address -> DLE_GetAddress at
+                T_Contract -> DLE_GetContract at
+                _ -> impossible "getContractInfo"
+      let mdv = DLVar at Nothing t
+      dv <- ctxt_lift_expr mdv de
+      return $ (lvl, SLV_DLVar dv)
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
 doInteractiveCall sargs iat estf mode lab ct mkexpr = do

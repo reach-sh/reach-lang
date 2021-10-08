@@ -10,7 +10,7 @@ const stdlib = loadStdlib(process.env);
 
   const ctcAlice = accAlice.deploy(backend);
   const ctcInfo = ctcAlice.getInfo();
-  const ctcAddr = ctcAlice.getCtcAddress();
+  const ctcAddr = ctcAlice.getContractAddress();
   const ctcBob = accBob.attach(backend, ctcInfo);
 
   const common = {
@@ -22,8 +22,8 @@ const stdlib = loadStdlib(process.env);
     },
     showAddress: async (addr) => {
       const ctcAddress = await ctcAddr;
-      console.log(`Contract Info From Reach      : ${addr}`);
-      console.log(`Contract Info From ctc.getAddress: ${ctcAddress}`);
+      console.log(`Address Info From Reach         : ${addr}`);
+      console.log(`Address Info From ctc.getAddress: ${ctcAddress}`);
       console.assert(addr == ctcAddress);
     },
     getCT: async () => { return await ctcInfo; },

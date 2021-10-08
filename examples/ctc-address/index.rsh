@@ -11,13 +11,12 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', common);
   deploy();
 
-  A.publish().pay(10);
+  A.publish();
   commit();
   A.publish();
 
   const info = getContract();
   const addr = getAddress();
-  transfer(5).to(addr);
 
   A.only(() => {
     interact.showCtcInfo(info);
@@ -30,14 +29,13 @@ export const main = Reach.App(() => {
     const ctcInfo = declassify(interact.getCT());
     assume(ctcInfo == info, "getContract() == ctc.getInfo()");
     const address = declassify(interact.getAddr());
-    assume(addr == address, "getAddress() == ctc.getCtcAddress()");
+    assume(addr == address, "getAddress() == ctc.getContractAddress()");
   });
   B.publish(address, ctcInfo);
 
   require(info == ctcInfo, "getContract() == ctc.getInfo()");
-  require(addr == address, "getAddress() == ctc.getCtcAddress()");
+  require(addr == address, "getAddress() == ctc.getContractAddress()");
 
-  transfer(10).to(address);
   commit();
 
 });

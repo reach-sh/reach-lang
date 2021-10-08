@@ -42,21 +42,17 @@ import Generics.Deriving ( Generic )
 
 data AlgoError
   = Err_TransferNewToken
-  | Err_GetContract
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode AlgoError where
   errPrefix = const "RA"
   errIndex = \case
     Err_TransferNewToken {} -> 0
-    Err_GetContract {} -> 1
 
 instance Show AlgoError where
   show = \case
     Err_TransferNewToken ->
       "Token cannot be transferred within the same consensus step it was created in on Algorand"
-    Err_GetContract ->
-      "`getContract` cannot be used in the first consensus step on Algorand."
 
 -- General tools that could be elsewhere
 
@@ -1279,11 +1275,7 @@ ce = \case
     op "pop"
     -- XXX We could get the minimum balance back
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract _ -> do
-    -- which <- asks eWhich
-    -- when (which == 0) $ do
-    --       bad $ LT.pack $ getErrorMessage [] at True Err_GetContract
-    code "txn" ["ApplicationID"]
+  DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
   where
     show_stack msg at fs = do

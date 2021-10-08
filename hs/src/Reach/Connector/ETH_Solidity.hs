@@ -397,8 +397,8 @@ instance DepthOf DLExpr where
     DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
     DLE_TokenDestroy _ t -> add1 $ depthOf t
     DLE_TimeOrder {} -> impossible "timeorder"
-    DLE_GetContract {} -> return 0
-    DLE_GetAddress {} -> return 0
+    DLE_GetContract {} -> return 1
+    DLE_GetAddress {} -> return 1
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])

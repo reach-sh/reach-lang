@@ -315,6 +315,8 @@ export const typeDefs = {
   T_Struct,
 };
 
+export const emptyContractInfo = 0;
+
 const arith = makeArith(UInt_max);
 
 export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
@@ -325,4 +327,5 @@ export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
   tokenEq,
   digest,
   UInt_max,
+  emptyContractInfo,
 };

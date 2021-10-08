@@ -374,6 +374,8 @@ const typeDefs: TypeDefs = {
 
 const arith: Arith = makeArith(UInt_max);
 
+const emptyContractInfo = "0x00000000000000000000000000000000";
+
 const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   ...shared_backend,
   ...arith,
@@ -382,6 +384,7 @@ const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   tokenEq,
   digest,
   UInt_max,
+  emptyContractInfo,
 };
 
 // ...............................................
