@@ -4164,7 +4164,7 @@ doForkAPI2Case args = do
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let dom = jidg "dom"
   let dotdom = JSSpreadExpression a dom
-  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowExpr a [jidg "rng"] $ jsCall a (JSMemberDot (JSMemberDot w a (jid "interact")) a (jid "out")) [ dom, jidg "rng" ] ]
+  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowExpr a [jidg "rng"] $ jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rng" ]) (a2sp a) ] ] ]
   case args of
     [w, y, z] -> return [w, x, y, mkz w z]
     [w, z] -> return [w, x, mkz w z]

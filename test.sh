@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -113,18 +113,9 @@ tealcount () {
 
 #jb
 
-c hs/t/y/throw_timeout.rsh
-fc hs/t/n/Err_API_NotFun.rsh
-c hs/t/y/pr206.rsh
-c examples/simple-nft-auction/index.rsh
-c hs/t/y/api-refine.rsh
-c hs/t/y/pr_spread.rsh
-c hs/t/y/pr_arrexpr2.rsh
-c hs/t/y/pr_arrexpr.rsh
-c non-examples/api-full/index.rsh
+ci ALGO api-full
 exit 0
-ci ETH api-basic
-ci ALGO api-basic
+ci ETH api-full
 exit 0
 
 # (cd hs && mk hs-test)
