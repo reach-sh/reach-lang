@@ -19,8 +19,8 @@ import * as backend from './build/index.main.mjs';
     const checkView = async (expected) => {
       console.log('checkView', expected);
       assertEq(expected, [
-        await ctcAlice.getViews().Main.last(),
-        await ctcAlice.getViews().Main.i(),
+        await ctcAlice.v.Main.last(),
+        await ctcAlice.v.Main.i(),
       ]) };
 
     await Promise.all([

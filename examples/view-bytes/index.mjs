@@ -15,8 +15,8 @@ import * as backend from './build/index.main.mjs';
   const checkView = async (expected) => {
     console.log('checkView', expected);
     assertEq(expected, [
-      await ctcAlice.getViews().Main.who(),
-      await ctcAlice.getViews().Main.meta(),
+      await ctcAlice.v.Main.who(),
+      await ctcAlice.v.Main.meta(),
     ])};
 
   const meta = `This is a test string`;

@@ -111,14 +111,10 @@ tealcount () {
 
 #######
 
-c examples/overview/index.rsh
-
 jb
 # ci ETH overview
 # ci ALGO overview
-ci ETH api-full
-exit 0
-
+# ci ETH api-full
 ci ALGO api-full
 exit 0
 

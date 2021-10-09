@@ -55,8 +55,7 @@ const makeAPI = (uid, backend, ctc, pre, as) => {
     await gil.mint(acc, bal);
     return async () => {
       const ctc = acc.attach(backend, ctcAdmin.getInfo());
-      const vs = await ctc.getViews();
-      const get = vs.Reader;
+      const get = ctc.v.Reader;
       // const put = ctc.getAPIs().Writer;
       const put = makeAPI(uid, backend, ctc, "Writer", ["touch", "writeN", "writeT", "writeB", "end"]);
       const showUserBal = showBal(uid, acc);
