@@ -532,7 +532,7 @@ contract ReachContract is Stdlib {
     
     
     emit e0(_a);
-    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./examples/overview/index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = payable(msg.sender);
     nsvs.v61 = _a.msg.v61;
@@ -546,14 +546,14 @@ contract ReachContract is Stdlib {
   event e1(T4 _a);
   
   function m1(T4 calldata _a) external payable {
-    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./index.rsh:22:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./index.rsh:22:5:dot'*/);
+    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./examples/overview/index.rsh:22:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./examples/overview/index.rsh:22:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e1(_a);
-    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./examples/overview/index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = _svs.v60;
     nsvs.v61 = _svs.v61;
@@ -567,15 +567,15 @@ contract ReachContract is Stdlib {
   event e2(T6 _a);
   
   function m2(T6 calldata _a) external payable {
-    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./index.rsh:27:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./index.rsh:27:5:dot'*/);
+    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./examples/overview/index.rsh:27:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./examples/overview/index.rsh:27:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e2(_a);
-    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
-    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./examples/overview/index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./examples/overview/index.rsh:27:5:dot,[],Just "sender correct")'*/);
     _svs.v60.transfer(_svs.v61);
     current_step = 0x0;
     current_time = 0x0;

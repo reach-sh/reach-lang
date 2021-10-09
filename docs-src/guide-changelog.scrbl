@@ -11,6 +11,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.5 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 @item{2021/10/08: @reachin{parallelReduce} is more strict in checking that the @litchar{msg} argument is present in the parameter list of @reachin{case} components, even when it is is bound to a @reachin{null}.}
 @item{2021/10/08: Added @jsin{ctc.getContractAddress}.}
 @item{2021/10/05: Added @reachin{Contract}. Updated @jsin{ctc.getInfo} to return a @reachin{Contract}.}
@@ -25,7 +26,8 @@ This has the impact of frontends not being asked to sign transactions that canno
 If you would like the old behavior, then you'll want to create a new participant, perhaps called @litchar{Constructor}, that exists simply to run @reachin{Constructor.publish(); commit();}, but we expect that almost no one actually wants the old behavior exactly.
 Instead, you probably want to select one of your existing participants and assign the first publication to them.
 }
-@item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release and older, deployed contracts will not work with this version.}
+@item{2021/09/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
+@item{2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 ]
 
 @section[#:style 'hidden-number]{0.1.4: 2021/09 - 2021/09}

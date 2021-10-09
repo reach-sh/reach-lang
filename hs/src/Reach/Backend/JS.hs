@@ -29,9 +29,6 @@ import Reach.Version
 sb :: SrcLoc
 sb = srcloc_builtin
 
-vsep_with_blank :: [Doc] -> Doc
-vsep_with_blank l = vsep $ punctuate emptyDoc l
-
 --- JS Helpers
 
 jsMapIdx :: DLMVar -> Doc
@@ -381,8 +378,8 @@ jsExpr = \case
             ]
   DLE_Wait _ amtt -> do
     let (which, amt) = case amtt of
-                         Left t -> ("waitTime", t)
-                         Right t -> ("waitSecs", t)
+                         Left t -> ("waitUntilTime", t)
+                         Right t -> ("waitUntilSecs", t)
     amt' <- jsArg amt
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> return $ jsApply "void" [amt']
@@ -794,21 +791,21 @@ jsPart dli p (EPProg _ _ et) = do
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let who = pretty $ bunpack p
-    let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+>
-                            "as its" <+> nth <+> "argument.`"
+    let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
     let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
-    let ctcChk = rejectIf "typeof(ctc) !== 'object' || ctc.sendrecv === undefined" $ iExpect "a contract" "first"
+    let ctcTopChk = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect "a contract" "first"
     let interactChk = rejectIf "typeof(interact) !== 'object'" $ iExpect "an interact object" "second"
     let bodyp' =
           vsep
-            [ ctcChk
+            [ ctcTopChk
             , interactChk
+            , "const ctc = ctcTop._initialize();"
             , "const stdlib = ctc.stdlib;"
             , ctcs
             , maps_defn
             , et'
             ]
-    return $ "export" <+> jsFunction who ["ctc", "interact"] bodyp'
+    return $ "export" <+> jsFunction who ["ctcTop", "interact"] bodyp'
 
 jsConnInfo :: ConnectorInfo -> App Doc
 jsConnInfo = \case
@@ -827,10 +824,8 @@ jsCnp name cnp = do
   cnp' <- jsConnInfo cnp
   return $ "const" <+> "_" <> pretty name <+> "=" <+> cnp' <> semi
 
-jsConnsExp :: [T.Text] -> Doc
-jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi
-  where
-    connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
+jsObjectDef :: Pretty k => Doc -> M.Map k Doc -> Doc
+jsObjectDef v m = "export const" <+> v <+> "=" <+> jsObject m <> semi
 
 jsExportBlock :: Bool -> DLExportBlock -> App Doc
 jsExportBlock isAsync (DLinExportBlock _ margs b) = do
@@ -938,7 +933,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 3
+reachBackendVersion = 4
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do
@@ -953,13 +948,15 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do
           ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
-  let connsExp = jsConnsExp $ HM.keys cr
+  let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
   exportsp <- jsExports dexports
   viewsp <-
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews vi
   mapsp <- jsMaps dli_maps
-  return $ vsep_with_blank $ preamble : emptyDoc : exportsp : emptyDoc : viewsp : emptyDoc : mapsp : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
+  let partMap = flip M.mapWithKey pm $ \p _ -> pretty $ bunpack p
+  let apiMap :: M.Map String Doc = mempty -- XXX
+  return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do

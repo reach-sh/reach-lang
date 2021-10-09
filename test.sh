@@ -27,11 +27,11 @@ err () {
 }
 
 jb () {
-  (cd "$ROOT"/js/js-deps && make build)
+  # (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   # (cd "$ROOT"/js/rpc-server && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  # (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -111,11 +111,15 @@ tealcount () {
 
 #######
 
-#jb
+c examples/overview/index.rsh
+
+jb
+# ci ETH overview
+# ci ALGO overview
+ci ETH api-full
+exit 0
 
 ci ALGO api-full
-exit 0
-ci ETH api-full
 exit 0
 
 # (cd hs && mk hs-test)

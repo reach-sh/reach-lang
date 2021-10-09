@@ -76,14 +76,9 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _backendVersion: number,
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
+  _Participants: {[n: string]: any},
+  _APIs: {[n: string]: {[n: string]: any}},
 };
-
-export const getViewsHelper =
-  <ConnectorTy extends AnyBackendTy, B>(views:IBackendViews<ConnectorTy>, getView1:((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string, vi:IBackendViewInfo<ConnectorTy>) => B)) =>
-    () =>
-      objectMap(views.infos, ((v:string, vm:{[keyn:string]: IBackendViewInfo<ConnectorTy>}) =>
-        objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
-            getView1(views.views, v, k, vi)))));
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
 
@@ -136,85 +131,124 @@ export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
   timeoutAt: TimeArg | undefined,
 };
 
-export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type ParticipantVal = (io:any) => Promise<any>;
+export type ParticipantMap = {[key: string]: ParticipantVal};
+export type ViewVal = (...args:any) => Promise<any>;
+export type ViewFunMap = {[key: string]: ViewVal};
+export type ViewMap = {[key: string]: ViewFunMap};
+export type APIMap = ViewMap;
+
+export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
+  getContractAddress: () => Promise<CBR_Address>,
+  waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
+  waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
+  selfAddress: () => CBR_Address, // Not RawAddress!
+  iam: (some_addr: RawAddress) => RawAddress,
+  stdlib: Object,
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
-  waitTime: (v:BigNumber) => Promise<BigNumber>,
-  waitSecs: (v:BigNumber) => Promise<BigNumber>,
-  iam: (some_addr: RawAddress) => RawAddress,
-  selfAddress: () => CBR_Address, // Not RawAddress!
-  getViews: () => {[key: string]: {[key: string]: (() => Promise<any>)}},
-  stdlib: Object,
-  getContractAddress: () => Promise<CBR_Address>,
 };
 
-type ContractIndex = 'getInfo' | 'sendrecv' | 'recv' | 'waitTime' | 'waitSecs' | 'iam' | 'selfAddress' | 'getViews' | 'stdlib' | 'getContractAddress';
+export type ISetupArgs<ContractInfo> = {
+  setInfo: (info: ContractInfo) => void,
+  getInfo: () => Promise<ContractInfo>,
+};
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv")>;
 
-export const deferContract =
+export type IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+  bin: IBackend<ConnectorTy>,
+  setupView: ISetupView<ContractInfo, ConnectorTy>,
+  givenInfoP: (Promise<ContractInfo>|undefined)
+  _setup: (args: ISetupArgs<ContractInfo>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv")>;
+
+export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+  getInfo: () => Promise<ContractInfo>,
+  getViews: () => ViewMap,
+  getContractAddress: () => Promise<CBR_Address>,
+  // backend-specific
+  participants: ParticipantMap,
+  p: ParticipantMap
+  views: ViewMap,
+  v: ViewMap,
+  apis: APIMap,
+  a: APIMap,
+  // for compiled output
+  _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
+};
+
+export type ISetupView<ContractInfo, ConnectorTy extends AnyBackendTy> = (getInfo:(() => Promise<ContractInfo>)) => {
+  viewLib: IViewLib,
+  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
+};
+
+export const stdContract =
   <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
-    shouldError: boolean,
-    implP:Promise<IContract<ContractInfo, RawAddress, Token, ConnectorTy>>,
-    implNow: Partial<IContract<ContractInfo, RawAddress, Token, ConnectorTy>>):
+    stdContractArgs: IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
+  const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP } = stdContractArgs;
 
-  const not_yet = (which:ContractIndex) => (...args: any[]): any => {
-    void(args);
-    throw Error(`Cannot ${which} yet; contract is not actually deployed`);
+  const { setInfo, getInfo }: ISetupArgs<ContractInfo> = (() => {
+    let _setInfo = (info:ContractInfo) => {
+      throw Error(`Cannot set info(${JSON.stringify(info)}) when acc.contract called with contract info`);
+      return;
+    };
+    if ( givenInfoP !== undefined ) {
+      return {
+        setInfo: _setInfo,
+        getInfo: (() => givenInfoP),
+      };
+    } else {
+      const _infoP: Promise<ContractInfo> = new Promise((resolve) => {
+        _setInfo = resolve;
+      });
+      return {
+        setInfo: _setInfo,
+        getInfo: (() => _infoP),
+      };
+    }
+  })();
+
+  const _initialize = () => {
+    const { getContractAddress, sendrecv, recv } = _setup({ setInfo, getInfo });
+    return {
+      selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
+      getInfo,
+      getContractAddress, sendrecv, recv,
+    };
   };
-  const delay = (which:ContractIndex) => async (...args: any[]): Promise<any> =>
-    // @ts-ignore
-    (await implP)[which](...args);
-  const thenow = shouldError ? not_yet : delay;
-  const mnow = (which:ContractIndex) =>
-    implNow[which] === undefined ? thenow(which) : implNow[which];
-  const must = (which:ContractIndex) =>
-    implNow[which];
+  const ctcC = { _initialize };
 
-  // impl starts with a shim that deploys on first sendrecv,
-  // then replaces itself with the real impl once deployed.
-  let impl: IContract<ContractInfo, RawAddress, Token, ConnectorTy> = {
-    getInfo: delay('getInfo'),
-    // @ts-ignore
-    sendrecv: mnow('sendrecv'),
-    // @ts-ignore
-    recv: mnow('recv'),
-    // @ts-ignore
-    waitTime: not_yet('waitTime'),
-    // @ts-ignore
-    waitSecs: not_yet('waitSecs'),
-    // @ts-ignore
-    iam: must('iam'),
-    // @ts-ignore
-    selfAddress: must('selfAddress'),
-    // @ts-ignore
-    getViews: mnow('getViews'),
-    stdlib: (() => {
-      if ( implNow.stdlib === undefined ) {
-        throw Error(`stdlib not defined`); }
-      return implNow.stdlib; })(),
-    getContractAddress: delay('getContractAddress'),
-  };
+  const { viewLib, getView1 } = setupView(getInfo);
+  const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
+  const views =
+    objectMap(views_bin.infos, ((v:string, vm:{[keyn:string]: IBackendViewInfo<ConnectorTy>}) =>
+      objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
+        getView1(views_bin.views, v, k, vi)))));
 
-  implP.then((x) => { impl = x; });
+  const participants =
+    objectMap(bin._Participants, ((pn:string, p:any) => {
+      void(pn);
+      return ((io:any) => {
+        return p(ctcC, io);
+      });
+  }));
 
-  const wrap = (which:ContractIndex) => (...args: any[]): any =>
-    // @ts-ignore
-    impl[which](...args);
+  // XXX APIs
+  const apis = {};
 
-  // Return a wrapper around the impl. This obj and its fields do not mutate,
-  // but the fields are closures around a mutating ref to impl.
   return {
-    sendrecv: wrap('sendrecv'),
-    recv: wrap('recv'),
-    waitTime: wrap('waitTime'),
-    waitSecs: wrap('waitSecs'),
-    getInfo: wrap('getInfo'),
-    iam: wrap('iam'),
-    selfAddress: wrap('selfAddress'),
-    getViews: wrap('getViews'),
-    stdlib: impl.stdlib,
-    getContractAddress: wrap('getContractAddress'),
+    ...ctcC,
+    getInfo,
+    getContractAddress: (() => _initialize().getContractAddress()),
+    participants, p: participants,
+    views, v: views,
+    getViews: () => {
+      console.log(`WARNING: ctc.getViews() is deprecated; use ctc.views or ctc.v instead.`);
+      return views;
+    },
+    apis, a: apis,
   };
 };
 
@@ -222,12 +256,30 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
   attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => Contract,
+  contract: (bin: Backend, ctcInfoP?: Promise<ContractInfo>) => Contract,
   stdlib: Object,
   getAddress: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
   tokenMetadata: (token: Token) => Promise<any>,
-}
+};
+
+export const stdAccount =
+  <NetworkAccount, Backend, Contract, ContractInfo, Token>(
+    orig:Omit<IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>, ("deploy"|"attach")>):
+  IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> => {
+  return {
+    ...orig,
+    deploy: (bin: Backend) => {
+      console.log(`WARNING: acc.deploy(bin) is deprecated; use acc.contract(bin) instead. Deployment is implied by the first publication.`);
+      return orig.contract(bin, undefined);
+    },
+    attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => {
+      console.log(`WARNING: acc.attach(bin, info) is deprecated; use acc.contract(bin, info) instead. Attachment is implied by reception of the first publication.`);
+      return orig.contract(bin, ctcInfoP);
+    },
+  };
+};
 
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any, any> | {
   networkAccount: NetworkAccount,
@@ -474,3 +526,21 @@ export class Signal {
   wait() { return this.p; }
   notify() { this.r(true); }
 };
+
+// Given a func that takes an optional arg, and a Maybe arg:
+// f: (arg?: X) => Y
+// arg: Maybe<X>
+//
+// You can apply the function like this:
+// f(...argMay)
+export type Some<T> = [T];
+export type None = [];
+export type Maybe<T> = None | Some<T>;
+export function isNone<T>(m: Maybe<T>): m is None {
+  return m.length === 0;
+}
+export function isSome<T>(m: Maybe<T>): m is Some<T> {
+  return !isNone(m);
+}
+export const Some = <T>(m: T): Some<T> => [m];
+export const None: None = [];
