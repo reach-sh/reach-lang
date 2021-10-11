@@ -41,9 +41,11 @@ go() {
     else
       echo "$WHICH failed."
     fi
-    gzip "${THIS_ART}"
-    rm -f "${THIS_ART}"
+  else
+    echo "$WHICH failed to build."
   fi
+  gzip "${THIS_ART}"
+  rm -f "${THIS_ART}"
   echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
 }
 
