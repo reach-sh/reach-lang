@@ -135,7 +135,7 @@ const {
 } = ethLikeCompiled;
 const {
   T_Address, T_Tuple,
-  T_UInt,
+  T_UInt, T_Contract,
   addressEq,
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;

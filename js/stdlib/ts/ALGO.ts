@@ -342,10 +342,9 @@ const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   debug(`compileFor`, info, typeof(info), Number.isInteger(info));
-  const ApplicationID = T_Contract.canonicalize(info);
+  const ApplicationID = bigNumberToNumber(T_Contract.canonicalize(info));
   must_be_supported(bin);
-  const algob = bin._Connectors.ALGO;
-  const { appApproval, appClear, escrow } = algob;
+  const { appApproval, appClear, escrow } = bin._Connectors.ALGO;
 
   const subst_appid = (x: string) =>
     replaceAll(x, '{{ApplicationID}}', `${ApplicationID}`);
