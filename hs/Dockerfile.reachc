@@ -1,6 +1,6 @@
 ARG ALPINE_VERSION
 FROM reachsh/haskell-build-artifacts AS build
-FROM ethereum/solc:0.8.7         AS solc
+FROM ethereum/solc:0.8.9         AS solc
 
 FROM alpine:$ALPINE_VERSION
 

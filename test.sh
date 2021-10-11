@@ -114,6 +114,8 @@ tealcount () {
 jb
 # ci ETH overview
 # ci ALGO overview
+ci CFX overview
+exit 0
 # ci ETH api-full
 ci ALGO api-full
 exit 0
