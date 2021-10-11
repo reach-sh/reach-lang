@@ -342,9 +342,7 @@ const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
   debug(`compileFor`, info, typeof(info), Number.isInteger(info));
-  if ( ! Number.isInteger(info) ) {
-    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an earlier version of Reach.`); }
-  const ApplicationID = info;
+  const ApplicationID = T_Contract.canonicalize(info);
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
   const { appApproval, appClear, escrow } = algob;

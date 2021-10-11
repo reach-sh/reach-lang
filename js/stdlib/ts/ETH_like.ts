@@ -968,7 +968,7 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
 }
 const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache, label: string): Promise<VerifyResult> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const address = ctcInfo;
+  const address = T_Contract.canonicalize(ctcInfo);
   const iface = new real_ethers.utils.Interface(ABI);
   const dhead = [ 'verifyContract', label ];
   debug(dhead, {address});
