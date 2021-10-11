@@ -1657,24 +1657,6 @@ newSolverSet long_i p a mkl = do
   let e = doClose tlc te
   return $ Solver c e
 
---  res <- liftIO $ SMT.command smt $ Atom "reachCheckUsing"
---  case res of
---    Atom "unsat" -> return Unsat
---            liftM (Just . RD_UnsatCore) $
---              liftIO $ SMT.getUnsatCore smt
---    Atom "unknown" -> return Unknown
---    Atom "sat" -> return Sat
---          badn $
---            liftM (Just . RD_Model) $
---              liftIO $ SMT.command smt $ List [Atom "get-model"]
---    _ ->
---      impossible $
---        unlines
---          [ "Unexpected result from the SMT solver:"
---          , "  Expected: unsat, unknown, or sat"
---          , "  Result: " ++ SMT.showsSExpr res ""
---          ]
-
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
   let VerifyOpts {..} = vst_vo vst
