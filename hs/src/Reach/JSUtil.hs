@@ -39,7 +39,7 @@ toJSCL :: [a] -> JSCommaList a
 toJSCL = \case
   [] -> JSLNil
   [a] -> JSLOne a
-  x : ys -> foldl (flip JSLCons JSNoAnnot) (JSLOne x) ys
+  x : ys -> foldl' (flip JSLCons JSNoAnnot) (JSLOne x) ys
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
 jsctl_flatten = \case
