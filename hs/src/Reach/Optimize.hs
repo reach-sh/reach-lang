@@ -518,13 +518,13 @@ instance Optimize DLInit where
         }
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex dvs s) = do
-    let SLParts m = ps
-    let psl = M.keys m
+  opt (LLProg at opts ps dli dex dvs das s) = do
+    let SLParts {..} = ps
+    let psl = M.keys sps_ies
     env0 <- liftIO $ mkEnv0 (getCounter opts) psl
     local (\_ -> env0) $
       focus_ctor $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> opt s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> opt s
 
 -- This is a bit of a hack...
 

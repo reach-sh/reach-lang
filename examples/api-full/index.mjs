@@ -3,37 +3,6 @@ import Timeout from 'await-timeout';
 import * as backend from './build/index.main.mjs';
 const thread = async (f) => await f();
 
-const makeAPI = (uid, backend, ctc, pre, as) => {
-  const obj = {};
-  for ( const a of as ) {
-    console.log(`${uid}: ${a}: make`);
-    obj[a] = (...args) => {
-      const bl = `${pre}_${a}`;
-      const b = backend[bl];
-      let theResolve;
-      const p = new Promise((resolve) => {
-        theResolve = resolve;
-      });
-      console.log(`${uid}: ${bl}: invoke`);
-      b(ctc, {
-        "in": (() => {
-          console.log(`${uid}: ${bl}: in`, args);
-          return args
-        }),
-        "out": ((oargs, res) => {
-          console.log(`${uid}: ${bl}: out`, oargs, res);
-          theResolve(res);
-          return new Promise((res, rej) => rej('fail'));
-        }),
-      }).catch(err => {
-        console.log(`${uid}: ${bl}: done`);
-      });
-      return p;
-    };
-  }
-  return obj;
-};
-
 (async () => {
   const stdlib = await loadStdlib();
   const amt_ = stdlib.parseCurrency(2);
@@ -56,8 +25,7 @@ const makeAPI = (uid, backend, ctc, pre, as) => {
     return async () => {
       const ctc = acc.attach(backend, ctcAdmin.getInfo());
       const get = ctc.v.Reader;
-      // const put = ctc.getAPIs().Writer;
-      const put = makeAPI(uid, backend, ctc, "Writer", ["touch", "writeN", "writeT", "writeB", "end"]);
+      const put = ctc.a.Writer;
       const showUserBal = showBal(uid, acc);
 
       await showUserBal('start');

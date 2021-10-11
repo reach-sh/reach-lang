@@ -227,16 +227,38 @@ export const stdContract =
       objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
         getView1(views_bin.views, v, k, vi)))));
 
-  const participants =
-    objectMap(bin._Participants, ((pn:string, p:any) => {
+  const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
       return ((io:any) => {
         return p(ctcC, io);
       });
   }));
 
-  // XXX APIs
-  const apis = {};
+  const apis = objectMap(bin._APIs, ((an:string, am:any) => {
+    return objectMap(am, ((afn:string, ab:any) => {
+      const bl = `${an}_${afn}`;
+      return (...args:any[]) => {
+        let theResolve: (x:any) => void;
+        const p = new Promise((resolve) => {
+          theResolve = resolve;
+        });
+        ab(ctcC, {
+          "in": (() => {
+            debug(`${bl}: in`, args);
+            return args
+          }),
+          "out": ((oargs:any[], res:any) => {
+            console.log(`${bl}: out`, oargs, res);
+            theResolve(res);
+            return new Promise((res, rej) => (void(res), rej('fail')));
+          }),
+        }).catch((err:any) => {
+          console.log(`${bl}: done`, err);
+        });
+        return p;
+      };
+    }));
+  }));
 
   return {
     ...ctcC,

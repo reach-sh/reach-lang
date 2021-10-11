@@ -244,12 +244,25 @@ instance Pretty CPProg where
     "views:" <+> pretty vis <> hardline
     <> pretty chs
 
-newtype EPPs = EPPs (M.Map SLPart EPProg)
+data EPPs = EPPs
+  { epps_apis :: DLAPIs
+  , epps_m :: M.Map SLPart EPProg
+  }
   deriving (Eq)
-  deriving newtype (Monoid, Semigroup)
+
+instance Monoid EPPs where
+  mempty = EPPs mempty mempty
+
+instance Semigroup EPPs where
+  (EPPs x0 x1) <> (EPPs y0 y1) = EPPs (x0 <> y0) (x1 <> y1)
 
 instance Pretty EPPs where
-  pretty (EPPs m) = render_obj m
+  pretty (EPPs {..}) =
+    "APIs:"
+    <> pretty epps_apis
+    <> hardline
+    <> render_obj epps_m
+    <> hardline
 
 data PLOpts = PLOpts
   { plo_verifyArithmetic :: Bool

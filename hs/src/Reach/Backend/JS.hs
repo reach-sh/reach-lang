@@ -936,7 +936,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 4
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
@@ -946,7 +946,7 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do
           , "export const _version =" <+> jsString versionStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
-  partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList pm
+  partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
   exportsp <- jsExports dexports
@@ -954,8 +954,8 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs pm) (CPProg _ vi _)) = do
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews vi
   mapsp <- jsMaps dli_maps
-  let partMap = flip M.mapWithKey pm $ \p _ -> pretty $ bunpack p
-  let apiMap :: M.Map String Doc = mempty -- XXX
+  let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
+  let apiMap = flip M.map epps_apis $ jsObject . (M.map $ \(p,_) -> pretty $ bunpack p)
   return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend

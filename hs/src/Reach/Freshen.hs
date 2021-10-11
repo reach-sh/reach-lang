@@ -226,8 +226,8 @@ instance Freshen LLStep where
       LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> fu mtime
 
 instance Freshen LLProg where
-  fu (LLProg at opts sps dli dex dvs s) =
-    LLProg at opts sps dli dex dvs <$> fu s
+  fu (LLProg at opts sps dli dex dvs das s) =
+    LLProg at opts sps dli dex dvs das <$> fu s
 
 freshen_ :: Freshen a => Counter -> a -> [DLVar] -> IO (a, [DLVar])
 freshen_ fCounter x vs = do

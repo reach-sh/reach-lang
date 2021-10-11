@@ -59,7 +59,7 @@ compile (CompilerOpts {..}) = do
       let showp :: Pretty a => T.Text -> a -> IO ()
           showp l = interOut woutn l . render . pretty
       dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ = dl
+      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       unless co_stopAfterEval $ do

@@ -195,12 +195,12 @@ resetDK :: DKApp a -> DKApp a
 resetDK = local (\e -> e { eRet = Nothing, eExnHandler = Nothing })
 
 dekont :: DLProg -> IO DKProg
-dekont (DLProg at opts sps dli dex dvs ss) = do
+dekont (DLProg at opts sps dli dex dvs das ss) = do
   let eRet = Nothing
   let eExnHandler = Nothing
   flip runReaderT (DKEnv {..}) $ do
     dex' <- mapM dk_eb dex
-    DKProg at opts sps dli dex' dvs <$> dk_top at ss
+    DKProg at opts sps dli dex' dvs das <$> dk_top at ss
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -315,10 +315,10 @@ instance LiftCon DKTail where
       impossible "lift boundary before liftcon"
 
 liftcon :: DKProg -> IO DKProg
-liftcon (DKProg at opts sps dli dex dvs k) = do
+liftcon (DKProg at opts sps dli dex dvs das k) = do
   let eLifts = Nothing
   flip runReaderT (LCEnv {..}) $
-    DKProg at opts sps dli <$> lc dex <*> pure dvs <*> lc k
+    DKProg at opts sps dli <$> lc dex <*> pure dvs <*> pure das <*> lc k
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -496,7 +496,7 @@ df_eb (DLinExportBlock at vs b) =
   DLinExportBlock at vs <$> df_bl b
 
 defluid :: DKProg -> IO LLProg
-defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
+defluid (DKProg at (DLOpts {..}) sps dli dex dvs das k) = do
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_counter = dlo_counter
   let llo_droppedAsserts = dlo_droppedAsserts
@@ -508,7 +508,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs k) = do
   flip runReaderT (DFEnv {..}) $ do
     dex' <- mapM df_eb dex
     k' <- df_step k
-    return $ LLProg at opts' sps dli dex' dvs k'
+    return $ LLProg at opts' sps dli dex' dvs das k'
 
 -- Stich it all together
 linearize :: (forall a. Pretty a => T.Text -> a -> IO ()) -> DLProg -> IO LLProg

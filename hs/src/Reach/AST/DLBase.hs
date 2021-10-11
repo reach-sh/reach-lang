@@ -10,6 +10,7 @@ import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Set as S
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
@@ -135,13 +136,20 @@ newtype InteractEnv
 instance Pretty InteractEnv where
   pretty (InteractEnv m) = "interact" <+> render_obj m
 
-newtype SLParts
-  = SLParts (M.Map SLPart InteractEnv)
+data SLParts = SLParts
+  { sps_ies :: M.Map SLPart InteractEnv
+  , sps_apis :: S.Set SLPart
+  }
   deriving (Eq, Generic, Show)
-  deriving newtype (Monoid, Semigroup)
+
+instance Semigroup SLParts where
+  (SLParts xi xa) <> (SLParts yi ya) = SLParts (xi <> yi) (xa <> ya)
+
+instance Monoid SLParts where
+  mempty = SLParts mempty mempty
 
 instance Pretty SLParts where
-  pretty (SLParts m) = "parts" <+> render_obj m <> semi
+  pretty (SLParts {..}) = "parts" <+> render_obj sps_ies <> semi
 
 type DLMapInfos = M.Map DLMVar DLMapInfo
 
@@ -954,3 +962,5 @@ class HasCounter a where
   getCounter :: a -> Counter
 
 type DLViews = M.Map SLPart (M.Map SLVar IType)
+
+type DLAPIs = M.Map SLPart (M.Map SLVar (SLPart, IType))

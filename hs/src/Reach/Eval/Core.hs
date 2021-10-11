@@ -60,7 +60,9 @@ data AppEnv = AppEnv
 
 data AppRes = AppRes
   { ar_pie :: M.Map SLPart InteractEnv
+  , ar_isAPI :: S.Set SLPart
   , ar_views :: DLViews
+  , ar_apis :: DLAPIs
   }
 
 data AppInitSt
@@ -2723,8 +2725,8 @@ evalPrim p sargs =
       -- Apply the object and cases to the newly created function
       let fn = snd fnv
       evalApplyVals' fn [public obj, public cases]
-    SLPrim_Participant -> makeParticipant False
-    SLPrim_ParticipantClass -> makeParticipant True
+    SLPrim_Participant -> makeParticipant False False
+    SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
       at <- withAt id
@@ -2733,10 +2735,11 @@ evalPrim p sargs =
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
       verifyName "API" ns
-      io <- flip mapWithKeyM im $ \k -> \case
+      ix <- flip mapWithKeyM im $ \k -> \case
         ST_Fun (SLTypeFun {..}) -> do
           let nk = ns <> "_" <> k
-          let nv' = SLV_Bytes at $ bpack nk
+          let nkb = bpack nk
+          let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
           let mkpre o = jsClo at (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [ ("o", o) ]
           let stf_pre' = fmap mkpre stf_pre
@@ -2747,8 +2750,13 @@ evalPrim p sargs =
           let fake tf = SLSSVal at Public $ SLV_Type $ ST_Fun tf
           let nkm = M.fromList $ [ ("in", fake in_t), ("out", fake out_t) ]
           let intv' = SLV_Object at (Just $ nk <> " interact") nkm
-          sls_sss at <$> makeParticipant_ True nv' intv'
+          it <- IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
+          (,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
         t -> expect_ $ Err_API_NotFun k t
+      let i' = M.map fst ix
+      let io = M.map snd ix
+      aisiPut aisi_res $ \ar ->
+        ar {ar_apis = M.insert n i' $ ar_apis ar}
       retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
@@ -3071,12 +3079,12 @@ evalPrim p sargs =
             SLSSVal _ _ (SLV_Type t) -> return $ t
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
-    makeParticipant :: Bool -> App SLSVal
-    makeParticipant isClass = do
+    makeParticipant :: Bool -> Bool -> App SLSVal
+    makeParticipant isAPI isClass = do
       (nv, intv) <- two_args
-      makeParticipant_ isClass nv intv
-    makeParticipant_ :: Bool -> SLVal -> SLVal -> App SLSVal
-    makeParticipant_ isClass nv intv = do
+      makeParticipant_ isAPI isClass nv intv
+    makeParticipant_ :: Bool -> Bool -> SLVal -> SLVal -> App SLSVal
+    makeParticipant_ isAPI isClass nv intv = do
       ensure_mode SLM_AppInit "Participant Constructor"
       at <- withAt id
       n <- mustBeBytes nv
@@ -3088,12 +3096,15 @@ evalPrim p sargs =
       int <- mustBeInterface intv
       (io, ienv) <- makeInteract n int
       aisiPut aisi_env $ \ae ->
-        ae {ae_ios = M.insert n io $ ae_ios ae}
+        ae { ae_ios = M.insert n io $ ae_ios ae }
       aisiPut aisi_res $ \ar ->
-        ar {ar_pie = M.insert n ienv $ ar_pie ar}
+        ar { ar_pie = M.insert n ienv $ ar_pie ar }
+      when isAPI $ do
+        aisiPut aisi_res $ \ar ->
+          ar { ar_isAPI = S.insert n $ ar_isAPI ar }
       when isClass $ do
         aisiPut aisi_env $ \ae ->
-          ae {ae_classes = S.insert n $ ae_classes ae}
+          ae { ae_classes = S.insert n $ ae_classes ae }
       return (lvl, SLV_Participant at n Nothing Nothing)
     getContractInfo t = do
       ensure_after_first

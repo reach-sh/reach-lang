@@ -1,5 +1,6 @@
 module Reach.CollectTypes (cts) where
 
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Reach.AST.DLBase
@@ -10,6 +11,9 @@ class CollectsTypes a where
   cts :: a -> S.Set DLType
 
 instance CollectsTypes Bool where
+  cts _ = mempty
+
+instance CollectsTypes B.ByteString where
   cts _ = mempty
 
 instance CollectsTypes a => CollectsTypes [a] where
@@ -71,7 +75,7 @@ instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m
 
 instance CollectsTypes SLParts where
-  cts (SLParts m) = cts m
+  cts (SLParts {..}) = cts sps_ies
 
 instance CollectsTypes DLVar where
   cts (DLVar _ _ t _) = cts t
@@ -179,8 +183,8 @@ instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
   cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts s
+  cts (LLProg _ _ ps dli dex dvs das s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts s
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty

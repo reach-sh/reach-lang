@@ -663,7 +663,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -700,14 +700,14 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
     mkh $ mk <$> ce_readSave which
   cp <- (CPProg at (dvs, vm) . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
-  let SLParts p_to_ie = ps
+  let SLParts {..} = ps
   let mkep ee_who ie = do
         let ee_flow = flow
         et <-
           flip runReaderT (EEnv {..}) $
             mkep_
         return $ EPProg at ie et
-  pps <- EPPs <$> mapWithKeyM mkep p_to_ie
+  pps <- EPPs das <$> mapWithKeyM mkep sps_ies
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter

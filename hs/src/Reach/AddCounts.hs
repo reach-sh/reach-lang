@@ -220,7 +220,7 @@ instance AC EPProg where
       EPProg at ie <$> ac et
 
 instance AC EPPs where
-  ac (EPPs m) = EPPs <$> ac m
+  ac (EPPs {..}) = EPPs epps_apis <$> ac epps_m
 
 instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
@@ -295,8 +295,8 @@ instance AC LLStep where
       return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg at llo ps dli dex vs s) =
-    LLProg at llo ps dli <$> ac dex <*> pure vs <*> ac s
+  ac (LLProg at llo ps dli dex vs das s) =
+    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> ac s
 
 add_counts :: AC a => a -> IO a
 add_counts x = do
