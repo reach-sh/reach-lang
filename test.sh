@@ -116,8 +116,7 @@ jb
 # ci ALGO overview
 
 # ci ETH api-full
-ci ALGO api-full
-exit 0
+# ci ALGO api-full
 
 ci CFX overview
 exit 0

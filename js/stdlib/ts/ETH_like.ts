@@ -619,10 +619,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             overrides.storageLimit = storageLimit;
           }
           const contract = await factory.deploy(arg, overrides);
-          const info: ContractInfo = contract.address;
-          debug(label, `deploying factory; done:`, info);
           debug(label, `waiting for receipt:`, contract.deployTransaction.hash);
           const deploy_r = await contract.deployTransaction.wait();
+          const info: ContractInfo = contract.address;
+          debug(label, `deploying factory; done:`, info);
           const creation_block = deploy_r.blockNumber;
           debug(label, `got receipt;`, creation_block);
           trustedVerifyResult = { creation_block };
@@ -967,10 +967,11 @@ const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<
   return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
 const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache, label: string): Promise<VerifyResult> => {
+  const dhead = [ 'verifyContract', label ];
+  debug(dhead, {ctcInfo});
   const { ABI, Bytecode } = backend._Connectors.ETH;
   const address = T_Contract.canonicalize(ctcInfo);
   const iface = new real_ethers.utils.Interface(ABI);
-  const dhead = [ 'verifyContract', label ];
   debug(dhead, {address});
 
   const chk = (p: boolean, msg: string) => {
