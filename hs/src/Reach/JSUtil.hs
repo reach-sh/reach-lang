@@ -20,6 +20,7 @@ module Reach.JSUtil
   )
 where
 
+import Data.Foldable (foldl')
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST.Base
