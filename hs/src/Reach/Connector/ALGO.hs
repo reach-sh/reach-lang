@@ -35,6 +35,7 @@ import Reach.Warning
 import Safe (atMay)
 import Text.Read
 import Generics.Deriving ( Generic )
+import Reach.CommandLine
 
 -- import Debug.Trace
 
@@ -96,6 +97,12 @@ typeObjectTypes a =
     _ -> impossible $ "should be obj"
 
 -- Algorand constants
+
+conName' :: T.Text
+conName' = "ALGO"
+
+conCons' :: DLConstant -> DLLiteral
+conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -272,8 +279,8 @@ opt_b1 = \case
       let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
       return $ base64d x_bs
 
-checkCost :: [TEAL] -> IO ()
-checkCost ts = do
+checkCost :: Bool -> [TEAL] -> IO ()
+checkCost alwaysShow ts = do
   (cgr :: IORef (M.Map String (M.Map String Int))) <- newIORef $ mempty
   let lTop = "TOP"
   let lBot = "BOT"
@@ -338,13 +345,18 @@ checkCost ts = do
         case x of
           True -> [ e ]
           False -> []
+  let showCost = "This program could take " <> show c <> " units of cost"
+  let exceedsCost = fromIntegral c > algoMaxAppProgramCost
   let cs = []
         <> (whenl hasFor $
               "This program contains a loop, which cannot be tracked accurately for cost.")
-        <> (whenl (fromIntegral c > algoMaxAppProgramCost) $
-              "This program could take " <> show c <> " units of cost, but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p)
+        <> (whenl exceedsCost $
+              showCost <> ", but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p)
   unless (null cs) $
     emitWarning $ W_ALGOConservative cs
+  -- If we always want to see the cost and not already shown the cost in a warning
+  when (alwaysShow && not exceedsCost) $
+    putStrLn $ "Conservative analysis found: " <> showCost <> " on Algorand."
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -598,7 +610,7 @@ ctzero = \case
     cfrombs t
 
 tint :: SrcLoc -> Integer -> LT.Text
-tint at i = texty $ checkIntLiteralC at connect_algo i
+tint at i = texty $ checkIntLiteralC at conName' conCons' i
 
 base64d :: B.ByteString -> LT.Text
 base64d bs = "base64(" <> encodeBase64 bs <> ")"
@@ -648,7 +660,7 @@ cv = lookup_let
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> cv v
-  DLA_Constant c -> cl $ conCons connect_algo c
+  DLA_Constant c -> cl $ conCons' c
   DLA_Literal c -> cl c
   DLA_Interact {} -> impossible "consensus interact"
 
@@ -1756,8 +1768,8 @@ cStateSlice at size iw = do
   let k = algoMaxAppBytesValueLen_usable
   csubstring at (k * i) (min size $ k * (i + 1))
 
-compile_algo :: Disp -> PLProg -> IO ConnectorInfo
-compile_algo disp pl = do
+compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
+compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
   let CPProg at _ (CHandlers hm) = cpp
   let sMaps = dli_maps dli
@@ -1799,17 +1811,17 @@ compile_algo disp pl = do
         flip runReaderT (Env {..}) m
         readIORef eOutputR
   let bad' = bad_io sFailuresR
-  let addProg lab m = do
+  let addProg lab showCost m = do
         ts <- run m
         let tsl = DL.toList ts
         let tsl' = optimize tsl
-        checkCost tsl'
+        checkCost showCost tsl'
         let lts = tealVersionPragma : (map LT.unwords tsl')
         let lt = LT.unlines lts
         let t = LT.toStrict lt
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
         disp lab t
-  addProg "appApproval" $ do
+  addProg "appApproval" (cte_REACH_DEBUG env) $ do
     checkRekeyTo
     checkLease
     cint 0
@@ -1887,10 +1899,10 @@ compile_algo disp pl = do
       gvStore gv
     code "b" [ "updateState" ]
   -- Clear state is never allowed
-  addProg "appClear" $ do
+  addProg "appClear" False $ do
     cl $ DLL_Bool False
   -- The escrow account defers to the application
-  addProg "escrow" $ do
+  addProg "escrow" False $ do
     code "global" ["GroupSize"]
     cint 1
     op "-"
@@ -1919,10 +1931,10 @@ compile_algo disp pl = do
   res <- readIORef resr
   return $ Aeson.Object $ HM.fromList $ M.toList res
 
-connect_algo :: Connector
-connect_algo = Connector {..}
+connect_algo :: CompilerToolEnv -> Connector
+connect_algo env = Connector {..}
   where
-    conName = "ALGO"
-    conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
-    conGen moutn = compile_algo (disp . T.pack)
+    conName = conName'
+    conCons = conCons'
+    conGen moutn = compile_algo env (disp . T.pack)
       where disp which = conWrite moutn (which <> ".teal")

@@ -1,11 +1,15 @@
 module Reach.CommandLine
   ( CompilerToolArgs (..)
   , CompilerOpts (..)
+  , CompilerToolEnv (..)
   , compiler
   , getCompilerArgs
+  , getCompilerEnv
   ) where
 
 import Options.Applicative
+import System.Environment
+import Data.Maybe (isJust)
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_disableReporting :: Bool
@@ -70,3 +74,23 @@ getCompilerArgs versionCliDisp = do
              <> progDesc "verify and compile an Reach program"
              <> header versionCliDisp)
   execParser opts
+
+
+data CompilerToolEnv = CompilerToolEnv
+  { cte_REACHC_ID :: Maybe String
+  , cte_REACHC_HASH :: Maybe String
+  , cte_CI :: Maybe String -- most CI services
+  , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
+  , cte_TF_BUILD :: Maybe String -- Azure Pipelines
+  , cte_REACH_DEBUG :: Bool
+  }
+
+getCompilerEnv :: IO CompilerToolEnv
+getCompilerEnv = do
+  cte_REACHC_ID <- lookupEnv "REACHC_ID"
+  cte_REACHC_HASH <- lookupEnv "REACHC_HASH"
+  cte_CI <- lookupEnv "CI"
+  cte_GITHUB_ACTIONS <- lookupEnv "GITHUB_ACTIONS"
+  cte_TF_BUILD <- lookupEnv "TF_BUILD"
+  cte_REACH_DEBUG <- fmap isJust $ lookupEnv "REACH_DEBUG"
+  return CompilerToolEnv {..}
