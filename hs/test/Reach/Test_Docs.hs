@@ -3,7 +3,6 @@ module Reach.Test_Docs ( spec_errorCodes ) where
 import           Generic.Data
 import           Reach.AST.Base               (ImpossibleError (..), errPrefix)
 import           Reach.Connector              (ConnectorError (..))
-import           Reach.Connector.ETH_Solidity (connect_eth)
 import           Reach.EPP                    (EPPError (..))
 import           Reach.Eval.Error             (EvalError (..))
 import qualified Reach.Linearize              as Linearize
@@ -24,7 +23,7 @@ docName = "../docs-src/ref-error-codes.scrbl"
 allErrorCodes :: [(String, Int)]
 allErrorCodes =
   [ (errPrefix Err_Block_Variable, gconNum @EvalError)
-  , (errPrefix (Err_IntLiteralRange connect_eth 0 0 0), gconNum @ConnectorError)
+  , (errPrefix (Err_IntLiteralRange "" 0 0 0), gconNum @ConnectorError)
   , (errPrefix Err_ContinueDomination, gconNum @EPPError)
   , (errPrefix (Linearize.Err_Unreachable ""), gconNum @Linearize.Error)
   , (errPrefix Err_Unauthorized, gconNum @PkgError)
