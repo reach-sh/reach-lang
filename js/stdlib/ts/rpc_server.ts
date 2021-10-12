@@ -142,6 +142,9 @@ export const serveRpc = async (backend: any) => {
   const route_backend           = express.Router();
 
   const rpc_acc = {
+    contract: async (id: string, ...args: any[]) =>
+      contract.track(await account.id(id).contract(backend, ...args)),
+
     attach: async (id: string, ...args: any[]) =>
       contract.track(await account.id(id).attach(backend, ...args)),
 

@@ -200,8 +200,15 @@ export const stdContract =
         getInfo: (() => givenInfoP),
       };
     } else {
+      let beenSet = false;
       const _infoP: Promise<ContractInfo> = new Promise((resolve) => {
-        _setInfo = resolve;
+        _setInfo = (info:ContractInfo) => {
+          if ( beenSet ) {
+            throw Error(`Cannot set info(${JSON.stringify(info)}) twice`);
+          }
+          resolve(info);
+          beenSet = true;
+        };
       });
       return {
         setInfo: _setInfo,

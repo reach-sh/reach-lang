@@ -137,7 +137,7 @@ To bypass this restriction, use @jsin{unsafeAllowMultipleStdlibs}.
 @index{unsafeAllowMultipleStdlibs} Calling this function will lift the restriction that
 @jsin{loadStdlib} imposes on loading multiple standard libraries.
 
-@section[#:tag "ref-frontends-js-acc"]{Accounts}
+@section[#:tag "ref-frontends-js-acc"]{Account Handles}
 
 These functions create and interact with @tech{account} representations.
 
@@ -316,31 +316,54 @@ On the Conflux consensus networks, the Reach standard library will automatically
 Storage fees are refunded once the storage space is no longer used by the contract.
 The @jsin{setStorageLimit} function allows you to choose a different storage limit, as you see fit.
 
-@section[#:tag "ref-frontends-js-ctc"]{Contracts}
+@section[#:tag "ref-frontends-js-ctc"]{Contract Handles}
 
-These functions create and interact with @tech{contract} representations.
+In order to interact with a deployed contract, you must construct a @tech{contract} handle from an account.
+
+@(hrule)
+@(mint-define! '("contract"))
+@js{
+ acc.contract(bin, ?info) => ctc }
+
+@index{acc.contract} Returns a Reach @tech{contract} handle based on the @jsin{bin} argument provided with access to the account @jsin{acc}.
+This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+
+If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
+Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
+In an automated, single instance program, @reachin{ctc.getInfo()} is typically used to acquire @jsin{info};
+while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the @jsin{info} argument.
+
+The first publishing participant will attempt deploy a contract for application.
+If @jsin{info} was provided, an error will be thrown.
+This deployment can only happen one time, so subsequent attempts will fail with an error.
+
+This function does not block.
 
 @(hrule)
 @(mint-define! '("deploy"))
-@js{
- acc.deploy(bin) => ctc }
+@js{acc.deploy(bin) => ctc}
 
-@index{acc.deploy} Returns a Reach @tech{contract} abstraction after starting the deployment of a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided.
-This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
-This function does not block on the completion of deployment.
-To wait for deployment, see @reachin{ctc.getInfo}.
+@index{acc.deploy}
+This deprecated function is an abbreviation of @jsin{acc.contract(bin)}.
+
+@(mint-define! '("attach"))
+@js{acc.attach(bin, info) => ctc }
+
+@index{acc.attach}
+This deprecated function is an abbreviation of @jsin{acc.contract(bin, info)}.
 
 @(hrule)
 @(mint-define! '("getInfo"))
 @js{
  ctc.getInfo() => Promise<ctcInfo> }
 
-@index{ctc.getInfo} Returns a Promise for a @jsin{Contract} that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
+@index{ctc.getInfo} Returns a Promise for a @reachin{Contract} value that may be given to @jsin{contract} to construct a Reach @tech{contract} handle for this contract.
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
-The Promise will only be resolved after the contract is actually deployed on the network.
-You cannot block on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
-Awaiting @reachin{getInfo} too early may cause your program to enter a state of deadlock.
 
+If @jsin{ctc} will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
+thus you cannot block on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
+Awaiting @reachin{getInfo} too early may cause your program to enter a state of deadlock.
+It is safer to make an @reachin{interact} function that receives @reachin{getContract()} from the Reach program.
 
 @(hrule)
 @(mint-define! '("getContractAddress"))
@@ -351,27 +374,42 @@ Awaiting @reachin{getInfo} too early may cause your program to enter a state of 
 
 @(hrule)
 
-@(mint-define! '("attach"))
+Contract handles provide access to the interface of the compiled backend, @jsin{bin}, that they were constructed with.
+
 @js{
- acc.attach(bin, ctcInfoP) => ctc }
+ ctc.participants // {[name: string]: (interact:Object) => Promise}
+ ctc.p
 
-@index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument (or a Promise for ctcInfo) and the @jsin{bin} argument.
-This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+ ctc.p.Alice(interact)
+}
 
-@(hrule)
+@index{ctc.participants}
+@index{ctc.p}
+An object where the keys are the participant names and the values are function that accept an interact object and return a Promise that completes when the participant ends.
 
-@subsection[#:tag "ref-frontends-js-view"]{View Access}
+@jsin{acc.contract(backend).p.Alice(io)} is equivalent to @jsin{backend.Alice(acc.contract(backend), io)}, but does not require duplication of the @jsin{backend} component.
 
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
+
+@js{
+ ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ ctc.v
+
+ ctc.v.NFT.owner()
+}
+
+@index{ctc.views}
+@index{ctc.v}
+An object that mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.views.X.Y} is a @deftech{view function}.
+A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
+For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.v.NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
 
 @(mint-define! '("getViews"))
 @js{
  ctc.getViews() => Object }
 
-@index{ctc.getViews} Returns an object representing the @tech{views} of the @tech{contract}.
-This object mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.getViews().X.Y} is a @deftech{view function}.
-A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
-For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.getViews().NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
+@index{ctc.getViews}
+This deprecated function is an abbreviation of @jsin{ctc.views}.
 
 @section[#:tag "ref-frontends-js-network"]{Network Utilities}
 

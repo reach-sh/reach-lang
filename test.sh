@@ -112,14 +112,10 @@ tealcount () {
 #######
 
 jb
-# ci ETH overview
-# ci ALGO overview
 
+ci ETH overview
 # ci ETH api-full
 # ci ALGO api-full
-
-ci CFX overview
 exit 0
-
 
 # (cd hs && mk hs-test)

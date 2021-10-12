@@ -14,6 +14,7 @@ Version 0.1.5 is the current Reach release candidate version.
 @item{2021/10/11: The Solidity compiler has been upgraded to 0.8.9.}
 @item{2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 @item{2021/10/08: @reachin{parallelReduce} is more strict in checking that the @litchar{msg} argument is present in the parameter list of @reachin{case} components, even when it is is bound to a @reachin{null}.}
+@item{2021/10/08: Added @reachin{getContract} and @reachin{getAddress}.}
 @item{2021/10/08: Added @jsin{ctc.getContractAddress}.}
 @item{2021/10/05: Added @reachin{Contract}. Updated @jsin{ctc.getInfo} to return a @reachin{Contract}.}
 @item{2021/10/04: Added @reachin{unstrict}.}

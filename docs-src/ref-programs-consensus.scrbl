@@ -28,7 +28,7 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 @subsection[#:tag "ref-programs-consensus-view"]{View Objects}
 
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} in Reach.
-They are @seclink["ref-frontends-js-view"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.
+They are @seclink["ref-frontends-js-ctc"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.
 This section is about defining the value of a view in your Reach program.}
 
 @reach{

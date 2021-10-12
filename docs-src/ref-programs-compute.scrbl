@@ -1400,6 +1400,24 @@ The exact algorithm used depends on the @tech{connector}.
 The @deftech{balance} primitive returns the balance of the @tech{contract} @tech{account} for the @|DApp|.
 It takes an optional @tech{non-network token} value, in which case it returns the balance of the given token.
 
+@subsection{@tt{getContract}}
+
+@(mint-define! '("getContract"))
+@reach{
+ getContract() }
+
+The @deftech{getContract} primitive returns the @reachin{Contract} value for the deployed @tech{contract}.
+This function may not be called until after the first publication (which creates the contract).
+
+@subsection{@tt{getAddress}}
+
+@(mint-define! '("getAddress"))
+@reach{
+ getAddress() }
+
+The @deftech{getAddress} primitive returns the @reachin{Address} value of the deployed @tech{contract}'s @tech{account}.
+This function may not be called until after the first publication (which creates the contract).
+
 @subsection{@tt{lastConsensusTime} and @tt{lastConsensusSecs}}
 
 @(mint-define! '("lastConsensusTime"))

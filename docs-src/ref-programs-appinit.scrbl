@@ -96,7 +96,7 @@ Each @reachin{participantName} must be unique.
 
 @subsection[#:tag "ref-programs-appinit-view"]{View Definition}
 
-@margin-note{This section is about defining @tech{views} during in application initialization. Views are @seclink["ref-programs-consensus-view"]{set in consensus steps}, in your Reach program. But, they are @seclink["ref-frontends-js-view"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.}
+@margin-note{This section is about defining @tech{views} during in application initialization. Views are @seclink["ref-programs-consensus-view"]{set in consensus steps}, in your Reach program. But, they are @seclink["ref-frontends-js-ctc"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.}
 
 @(mint-define! '("View"))
 @reach{
