@@ -9,23 +9,6 @@ import Reach.Version
 import System.Environment
 import System.Exit
 
-data CompilerToolEnv = CompilerToolEnv
-  { cte_REACHC_ID :: Maybe String
-  , cte_REACHC_HASH :: Maybe String
-  , cte_CI :: Maybe String -- most CI services
-  , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
-  , cte_TF_BUILD :: Maybe String -- Azure Pipelines
-  }
-
-getCompilerEnv :: IO CompilerToolEnv
-getCompilerEnv = do
-  cte_REACHC_ID <- lookupEnv "REACHC_ID"
-  cte_REACHC_HASH <- lookupEnv "REACHC_HASH"
-  cte_CI <- lookupEnv "CI"
-  cte_GITHUB_ACTIONS <- lookupEnv "GITHUB_ACTIONS"
-  cte_TF_BUILD <- lookupEnv "TF_BUILD"
-  return CompilerToolEnv {..}
-
 shouldReport :: CompilerToolArgs -> CompilerToolEnv -> Bool
 shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
   not cta_disableReporting
@@ -57,7 +40,7 @@ main = do
       False -> return $ const $ return ()
       True -> startReport (cte_REACHC_ID env)
   (e :: Either SomeException ()) <-
-    try $ compile $ cta_co args
+    try $ compile env $ cta_co args
   report e
   case e of
     Left exn -> throwIO exn

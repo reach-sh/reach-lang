@@ -1,4 +1,4 @@
-module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
+module Reach.Compiler (CompilerOpts (..), compile, make_connectors) where
 
 import Control.Monad
 import qualified Data.HashMap.Strict as HM
@@ -27,23 +27,23 @@ import Reach.Verify
 import System.Directory
 import System.FilePath
 
-all_connectors :: Connectors
-all_connectors =
+make_connectors :: CompilerToolEnv -> Connectors
+make_connectors env =
   M.fromList $
     map
       (\x -> (conName x, x))
-      [ connect_eth
-      , connect_algo
+      [ connect_eth env
+      , connect_algo env
       ]
 
-compile :: CompilerOpts -> IO ()
-compile (CompilerOpts {..}) = do
+compile :: CompilerToolEnv -> CompilerOpts -> IO ()
+compile env (CompilerOpts {..}) = do
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
   let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
   createDirectoryIfMissing True outd
   let co_tops = if null co_topl then Nothing else Just (S.fromList co_topl)
-  let outnMay = flip doIf co_intermediateFiles
+  let outnMay = flip doIf (co_intermediateFiles || cte_REACH_DEBUG env)
   let interOut outn_ = case outnMay outn_ of
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
@@ -51,6 +51,7 @@ compile (CompilerOpts {..}) = do
   djp <- gatherDeps_top co_source co_installPkgs dirDotReach'
   -- interOut outn "bundle.js" $ render $ pretty djp
   unless co_installPkgs $ do
+    let all_connectors = make_connectors env
     (avail, compileDApp) <- evalBundle all_connectors djp
     let chosen = S.toAscList $ fromMaybe avail co_tops
     forM_ chosen $ \which -> do

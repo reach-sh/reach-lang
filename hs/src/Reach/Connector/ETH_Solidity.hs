@@ -40,6 +40,7 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Reach.CommandLine
 
 --- Debugging tools
 
@@ -54,6 +55,12 @@ maxContractLen :: Int
 maxContractLen = 24576
 
 --- Solidity helpers
+
+conName' :: T.Text
+conName' = "ETH"
+
+conCons' :: DLConstant -> DLLiteral
+conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
 
 sb :: SrcLoc
 sb = srcloc_builtin
@@ -472,7 +479,7 @@ solLit = \case
   DLL_Null -> "true"
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
-  DLL_Int at i -> solNum $ checkIntLiteralC at connect_eth i
+  DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
   DLL_Bytes s -> brackets $ solCommas $ map h $ B.unpack s
   where
     h x = solApply "uint8" [pretty $ show $ BI.c2w x]
@@ -480,7 +487,7 @@ solLit = \case
 solArg :: AppT DLArg
 solArg = \case
   DLA_Var v -> solVar v
-  DLA_Constant c -> return $ solLit $ conCons connect_eth c
+  DLA_Constant c -> return $ solLit $ conCons' c
   DLA_Literal c -> return $ solLit c
   DLA_Interact {} -> impossible "consensus interact"
 
@@ -1422,11 +1429,11 @@ compile_sol cinfo solf = do
       , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
       ]
 
-connect_eth :: Connector
-connect_eth = Connector {..}
+connect_eth :: CompilerToolEnv -> Connector
+connect_eth _ = Connector {..}
   where
-    conName = "ETH"
-    conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
+    conName = conName'
+    conCons = conCons'
     conGen moutn pl = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->

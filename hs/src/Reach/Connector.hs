@@ -29,8 +29,10 @@ type ConnectorResult = Object
 
 type ConnectorInfo = Value
 
+type ConnectorName = T.Text
+
 data Connector = Connector
-  { conName :: T.Text
+  { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   }
@@ -42,7 +44,7 @@ instance Show Connector where
   show = T.unpack . conName
 
 data ConnectorError
-  = Err_IntLiteralRange Connector Integer Integer Integer
+  = Err_IntLiteralRange ConnectorName Integer Integer Integer
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ConnectorError where
@@ -56,7 +58,7 @@ instance HasErrorCode ConnectorError where
 
 instance Show ConnectorError where
   show (Err_IntLiteralRange con rmin x rmax) =
-    "integer literal out of range for " <> show con <> ": " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
+    "integer literal out of range for " <> T.unpack con <> ": " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conWriteH doWrite moutn which c =
@@ -71,14 +73,14 @@ conShowP :: Pretty a => Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conShowP moutn which v =
   conWriteH LTIO.writeFile moutn which (render $ pretty v)
 
-checkIntLiteralC :: SrcLoc -> Connector -> Integer -> Integer
-checkIntLiteralC at c x =
+checkIntLiteralC :: SrcLoc -> ConnectorName -> (DLConstant -> DLLiteral) -> Integer -> Integer
+checkIntLiteralC at conName conCons x =
   case rmin <= x && x <= rmax of
     True -> x
-    False -> expect_thrown at $ Err_IntLiteralRange c rmin x rmax
+    False -> expect_thrown at $ Err_IntLiteralRange conName rmin x rmax
   where
     rmin = 0
-    rmax = case conCons c DLC_UInt_max of
+    rmax = case conCons DLC_UInt_max of
       DLL_Int _ uim -> uim
       _ -> impossible "uint_max not int"
 
