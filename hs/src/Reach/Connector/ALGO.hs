@@ -1289,6 +1289,9 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
+  DLE_EmitLog _ _ v -> do
+    -- XXX emit
+    cv v
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -1415,7 +1418,9 @@ doSwitch ck at dv csm = do
 cm :: App () -> DLStmt -> App ()
 cm km = \case
   DL_Nop _ -> km
-  DL_Let _ DLV_Eff de -> ce de >> km
+  DL_Let _ DLV_Eff de ->
+    -- XXX this could leave something on the stack
+    ce de >> km
   DL_Let _ (DLV_Let DVC_Once dv) de -> do
     sm <- exprSmall de
     store_let dv sm (ce de) km

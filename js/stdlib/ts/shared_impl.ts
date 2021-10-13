@@ -99,7 +99,7 @@ export type IRecvNoTimeout<RawAddress> =  {
   from: RawAddress,
   time: BigNumber,
   secs: BigNumber,
-  getOutput: (o_mode:string, o_lab:string, o_ctc:any) => Promise<any>,
+  getOutput: (o_mode:string, o_lab:string, o_ctc:any, o_val:any) => Promise<any>,
 };
 
 export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {

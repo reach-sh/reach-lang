@@ -753,6 +753,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(dhead, `MSG`, ok_vals);
             const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[]; // TODO: typing
 
+            // XXX this function should be rewritten to NOT be async by reusing
+            // the logs that we already know about
             const _getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
               let dheadl = [ dhead, 'getLog', l_evt, l_ctc];
               debug(dheadl);
@@ -767,8 +769,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               debug(dheadl);
               return l_edu;
             };
-            const getOutput = (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+            const getOutput = (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
               void(o_mode);
+              void(o_val);
               return _getLog(`oe_${o_lab}`, o_ctc);
             };
 

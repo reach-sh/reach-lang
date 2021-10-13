@@ -311,16 +311,6 @@ readDepth v = do
   mvars <- readCtxtIO ctxt_depths
   return $ fromMaybe 0 $ M.lookup v mvars
 
-addOutputEvent :: DLVar -> Doc -> App ()
-addOutputEvent v d = modifyCtxtIO ctxt_outputs $ M.insert v d
-
-doOutputEvent :: DLVar -> App [Doc]
-doOutputEvent dv = do
-  dv_ty' <- solType $ varType dv
-  let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
-  addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
-  return $ ["emit" <+> go solMemVar ""]
-
 addUint8ArrayToString :: Integer -> App Doc
 addUint8ArrayToString len = do
   let f = "uint8ArrayToString_" <> show len
@@ -406,6 +396,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
+    DLE_EmitLog _ _ a -> add1 $ depthOf a
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -631,7 +622,16 @@ solExpr sp = \case
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
-  DLE_TokenNew {} -> impossible "tokennew"
+  DLE_TokenNew _ (DLTokenNew {..}) -> do
+    let go a = do
+          a' <- solArg a
+          uint8ArrayToString (bytesTypeLen $ argTypeOf a) a'
+    n' <- go dtn_name
+    s' <- go dtn_sym
+    u' <- go dtn_url
+    m' <- go dtn_metadata
+    p' <- solArg dtn_supply
+    return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p' ] ] ]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta
     aa' <- solArg aa
@@ -642,6 +642,7 @@ solExpr sp = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
+  DLE_EmitLog {} -> impossible "emitLog"
   where
     spa m = (<> sp) <$> m
 
@@ -746,6 +747,7 @@ solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
+    -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
@@ -824,7 +826,6 @@ solCom = \case
     sub' <- solPrimApply SUB [meBalance, v_before]
     let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
     -- Non-network tokens received from remote call
-    logl <- doOutputEvent dv
     let pv' =
           case rng_ty of
             T_Null -> []
@@ -851,21 +852,19 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-          <> logl
-  DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
-  DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ (DLTokenNew {..})) -> do
-    let go a = do
-          a' <- solArg a
-          uint8ArrayToString (bytesTypeLen $ argTypeOf a) a'
-    n' <- go dtn_name
-    s' <- go dtn_sym
-    u' <- go dtn_url
-    m' <- go dtn_metadata
-    p' <- solArg dtn_supply
-    let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p' ] ] ]
-    addMemVar dv
-    logl <- doOutputEvent dv
-    return $ vsep $ [ solSet (solMemVar dv) rhs ] <> logl
+  DL_Let _ pv (DLE_EmitLog _ _ lv) -> do
+    lv' <- solVar lv
+    lv_ty' <- solType $ varType lv
+    let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
+    let ed = "event" <+> go solRawVar lv_ty'
+    modifyCtxtIO ctxt_outputs $ M.insert lv ed
+    let emitl = "emit" <+> go solMemVar ""
+    case pv of
+      DLV_Eff -> do
+        return emitl
+      DLV_Let _ dv -> do
+        addMemVar dv
+        return $ vsep [ solSet (solMemVar dv) lv', emitl ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la

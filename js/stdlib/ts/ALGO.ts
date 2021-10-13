@@ -1091,11 +1091,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           secs: bigNumberify(0), // This should not be read.
           value: value,
           from: pks,
-          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
             void(o_mode);
             void(o_lab);
             void(o_ctc);
-            throw Error(`Algorand does not support remote calls, and Reach should not have generated a call to this function`);
+            return o_val;
           }),
         };
         const sim_r = await sim_p( fake_res );
@@ -1386,7 +1386,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', getLastRound());
 
           let tokenNews = 0;
-          const getOutput = async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+          const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
             if ( o_mode === 'tokenNew' ) {
               await get_all_txns();
               // NOTE: I'm making a dangerous assumption that the created tokens
@@ -1397,10 +1397,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               const tn_txn = all_txns[tokenNews++];
               debug(dhead, "tn_txn", tn_txn);
               return tn_txn['created-asset-index'];
+            } else if ( o_mode === 'remote' ) {
+              void(o_lab);
+              void(o_ctc);
+              void(o_val);
+              throw Error(`Algorand does not support remote calls`);
+            } else if ( o_mode === 'api' ) {
+              void(o_lab);
+              void(o_ctc);
+              return o_val;
             } else {
               void(o_lab);
               void(o_ctc);
-              throw Error(`Algorand does not support remote calls`);
+              void(o_val);
+              throw Error(`impossible: unknown output mode ${o_mode}`);
             }
           };
 

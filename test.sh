@@ -113,9 +113,14 @@ tealcount () {
 
 jb
 
-ci ETH overview
+# ci ETH remote
+# ci ETH mint-basic
 # ci ETH api-full
-# ci ALGO api-full
+# ci ALGO mint-basic
+
+ci ALGO api-full
+
+# ci ETH overview
 exit 0
 
 # (cd hs && mk hs-test)

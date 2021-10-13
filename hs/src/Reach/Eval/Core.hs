@@ -572,6 +572,7 @@ base_env =
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
+    , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -803,6 +804,15 @@ compileTypeOfs vs = unzip <$> mapM compileTypeOf vs
 
 compileCheckType :: DLType -> SLVal -> App DLArg
 compileCheckType et v = compileArgExpr =<< typeCheck_d et v
+
+compileToVar :: SLVal -> App DLVar
+compileToVar v = do
+  (t, a) <- compileTypeOf v
+  case a of
+    DLA_Var dv -> return dv
+    _ -> do
+      at <- withAt id
+      ctxt_lift_expr (DLVar at Nothing t) (DLE_Arg at a)
 
 -- Modes
 
@@ -2177,8 +2187,9 @@ evalPrim p sargs =
       tns <- foldM go defaultTokenNew (M.toAscList metam')
       let supplya = dtn_supply tns
       ensure_mode SLM_ConsensusStep "new Token"
-      tokdv <- ctxt_lift_expr (DLVar at Nothing T_Token) $
+      tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
+      tokdv <- doEmitLog_ "tokenNew" tokdv_
       st <- readSt id
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
@@ -2922,7 +2933,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nnToksBilledRecv
       let withBill = DLWithBill (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
-      res' <-
+      res'' <-
         doInteractiveCall
           sargs
           rat
@@ -2931,6 +2942,7 @@ evalPrim p sargs =
           "remote"
           (CT_Assume True)
           (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
+      res' <- doEmitLog "remote" res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
             case shouldRetNNToks of
@@ -3030,6 +3042,9 @@ evalPrim p sargs =
       evalApplyVals' notFn [eqFn]
     SLPrim_getContract -> getContractInfo T_Contract
     SLPrim_getAddress -> getContractInfo T_Address
+    SLPrim_EmitLog -> do
+      x <- one_arg
+      public <$> doEmitLog "api" x
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3140,6 +3155,16 @@ doInteractiveCall sargs iat estf mode lab ct mkexpr = do
     mkexpr at fs drng dargs
   check_post rng_v
   return rng_v
+
+doEmitLog :: String -> SLVal -> App SLVal
+doEmitLog m v = SLV_DLVar <$> (doEmitLog_ m =<< compileToVar v)
+
+doEmitLog_ :: String -> DLVar -> App DLVar
+doEmitLog_ m dv = do
+  ensure_mode SLM_ConsensusStep "emitLog"
+  at <- withAt id
+  let t = varType dv
+  ctxt_lift_expr (DLVar at Nothing t) (DLE_EmitLog at m dv)
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
@@ -4175,7 +4200,10 @@ doForkAPI2Case args = do
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let dom = jidg "dom"
   let dotdom = JSSpreadExpression a dom
-  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowExpr a [jidg "rng"] $ jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rng" ]) (a2sp a) ] ] ]
+  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) (a2sp a) ] ]
+  let e2s = flip JSExpressionStatement (a2sp a)
+  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
   case args of
     [w, y, z] -> return [w, x, y, mkz w z]
     [w, z] -> return [w, x, mkz w z]
@@ -4199,7 +4227,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tv = jid $ ".t" <> show idx
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
-  let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
+  let defcon = jsConst a
   let indexed = zip [0 ..] :: [a] -> [(Int, a)]
   let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
         let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
@@ -4522,6 +4550,9 @@ jsCallThunk a e = jsCall a e []
 
 jsCall :: JSAnnot -> JSExpression -> [JSExpression] -> JSExpression
 jsCall a f as = JSCallExpression f a (toJSCL as) a
+
+jsConst :: JSAnnot -> JSExpression -> JSExpression -> JSStatement
+jsConst a l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) (a2sp a)
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =

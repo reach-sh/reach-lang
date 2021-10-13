@@ -113,7 +113,7 @@ export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any): any =
   sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p});
   // XXX This 0 is a hack... on Algorand we can't know at simulation time what
   // this is going to be... so this will cause a runtime exception from
-  // something if it gets looked at (i.e. if you try to create an immediately
+  // something if it gets looked at (i.e. if you try to create and immediately
   // use it)
   return 0;
 };
