@@ -369,7 +369,7 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 
 @reachex[#:mode js
          "tut-4/index.mjs"
-         'only 36 41 "    // ..."]
+         'only 36 42 "    // ..."]
 
 @itemlist[
 
@@ -735,6 +735,8 @@ And we can specify that whenever the same value is provided for both hands, no m
 @reachex["tut-5/index.rsh"
          'only 17 18 "// ..."]
 
+(The text editor may show an error in line 18. Assuming perfect transposition, the error can be ignored as it will be resolved in the next step).
+
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
 You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
 In fact, on rudimentary laptops, it takes less than half a second.
@@ -963,7 +965,7 @@ if she doesn't start the game, then no one is any worse off.
 @itemlist[
 
 @item{Line 50 has Alice declassify the @reachin{deadline} @tech{time delta}.}
-@item{Line 51 now has Alice publish the @reachin{deadline}.}
+@item{Line 52 now has Alice publish the @reachin{deadline}.}
 
 ]
 
@@ -1209,7 +1211,7 @@ Here's what the structure looks like:
 Now, let's look at the body of the loop for the remaining steps, starting with Alice's commitment to her hand.
 
 @reachex["tut-7/index.rsh"
-         'only 62 71 "    // ..."]
+         'only 62 72 "    // ..."]
 
 @itemlist[
 
