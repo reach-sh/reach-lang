@@ -141,6 +141,7 @@ export type APIMap = ViewMap;
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
+  getBalance: (tok: Token|false) => Promise<BigNumber>,
   waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
   waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
   selfAddress: () => CBR_Address, // Not RawAddress!
@@ -154,14 +155,14 @@ export type ISetupArgs<ContractInfo> = {
   setInfo: (info: ContractInfo) => void,
   getInfo: () => Promise<ContractInfo>,
 };
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"getBalance"|"sendrecv"|"recv")>;
 
 export type IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getBalance"|"getContractAddress"|"sendrecv"|"recv")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -211,11 +212,11 @@ export const stdContract =
   })();
 
   const _initialize = () => {
-    const { getContractAddress, sendrecv, recv } = _setup({ setInfo, getInfo });
+    const { getContractAddress, sendrecv, recv, getBalance } = _setup({ setInfo, getInfo });
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getInfo,
-      getContractAddress, sendrecv, recv,
+      getContractAddress, sendrecv, recv, getBalance
     };
   };
   const ctcC = { _initialize };

@@ -399,6 +399,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
+    DLE_GetActualBalance _ mtok -> max 1 <$> depthOf mtok
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -635,6 +636,11 @@ solExpr sp = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
+  DLE_GetActualBalance _ mtok -> case mtok of
+    Nothing  -> return "address(this).balance"
+    Just tok -> do
+      tok' <- solArg tok
+      return $ solApply "tokenBalanceOf" [tok', "address(this)"]
   where
     spa m = (<> sp) <$> m
 
@@ -995,6 +1001,7 @@ solCTail = \case
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
         , "delete current_svbs;"
+        -- CORE-347: Control who gets the dough here
         , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
         ]
 

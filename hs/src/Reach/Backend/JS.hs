@@ -438,6 +438,9 @@ jsExpr = \case
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
       _ -> return $ "await" <+> jsApply "ctc.getInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
+  DLE_GetActualBalance _ tok -> do
+    tok' <- maybe (return "") jsArg tok
+    return $ "await" <+> jsApply "ctc.getBalance" [tok'];
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

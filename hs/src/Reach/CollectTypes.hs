@@ -126,6 +126,7 @@ instance CollectsTypes DLExpr where
     DLE_TimeOrder _ tos -> cts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
+    DLE_GetActualBalance _ mtok -> cts mtok
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

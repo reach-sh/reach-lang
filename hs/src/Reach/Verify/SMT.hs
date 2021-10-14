@@ -1047,6 +1047,7 @@ smt_e at_dv mdv de = do
           go n =<< smtPrimOp at ADD [o, w] [o', w']
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
+    DLE_GetActualBalance at _ -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

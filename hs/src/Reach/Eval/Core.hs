@@ -572,6 +572,7 @@ base_env =
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
+    , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -3030,6 +3031,23 @@ evalPrim p sargs =
       evalApplyVals' notFn [eqFn]
     SLPrim_getContract -> getContractInfo T_Contract
     SLPrim_getAddress -> getContractInfo T_Address
+    SLPrim_getUntrackedFunds -> do
+      marg <- mone_arg
+      mtok <- case marg of
+        Just arg -> do
+          (ty, da) <- compileTypeOf arg
+          void $ mustBeToken ty
+          return $ Just da
+        Nothing -> return Nothing
+      at <- withAt id
+      let mdv = DLVar at Nothing T_UInt
+      actualBal  <- ctxt_lift_expr mdv $ DLE_GetActualBalance at mtok
+      fvBal <- lookupBalanceFV FV_balance mtok
+      trackedBal <- doFluidRef_da fvBal
+      dv <- ctxt_lift_expr mdv (DLE_PrimOp at SUB ([DLA_Var actualBal, trackedBal]))
+      let sv = SLV_DLVar dv
+      doFluidSet fvBal $ public $ SLV_DLVar actualBal
+      return $ (lvl, sv)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3053,6 +3071,10 @@ evalPrim p sargs =
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args
+    mone_arg = case args of
+      [] -> return Nothing
+      [x] -> return $ Just x
+      _ -> illegal_args
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args
@@ -3069,6 +3091,9 @@ evalPrim p sargs =
       _ -> illegal_args
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
+      _ -> illegal_args
+    mustBeToken = \case
+      T_Token -> return $ T_Token
       _ -> illegal_args
     make_dlvar at' ty = do
       dv <- ctxt_mkvar $ DLVar at' Nothing ty

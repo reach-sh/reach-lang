@@ -328,6 +328,7 @@ instance Optimize DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
+    DLE_GetActualBalance at mtok -> DLE_GetActualBalance at <$> opt mtok
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

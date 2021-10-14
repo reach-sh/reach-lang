@@ -691,6 +691,7 @@ data SLPrimitive
   | SLPrim_polyNeq
   | SLPrim_getContract
   | SLPrim_getAddress
+  | SLPrim_getUntrackedFunds
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

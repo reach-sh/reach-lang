@@ -512,6 +512,7 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
+  | DLE_GetActualBalance SrcLoc (Maybe DLArg)
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -628,6 +629,9 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
+    DLE_GetActualBalance _ mtok -> do
+      mtok' <- prettySubst mtok
+      return $ "getActualBalance" <> parens mtok'
 
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
@@ -667,6 +671,7 @@ instance IsPure DLExpr where
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
     DLE_TimeOrder {} -> False
+    DLE_GetActualBalance {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -697,6 +702,7 @@ instance IsLocal DLExpr where
     DLE_TimeOrder {} -> True
     DLE_GetContract {} -> True
     DLE_GetAddress {} -> True
+    DLE_GetActualBalance {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =

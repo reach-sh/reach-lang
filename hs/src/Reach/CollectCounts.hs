@@ -152,6 +152,7 @@ instance Countable DLExpr where
     DLE_TimeOrder _ tos -> counts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
+    DLE_GetActualBalance _ mtok -> counts mtok
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

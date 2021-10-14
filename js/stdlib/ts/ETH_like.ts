@@ -357,10 +357,14 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   if (!networkAccount) {
     throw Error(`acc.networkAccount missing. Got: ${acc}`);
   }
+  return balanceOfNetworkAccount(networkAccount, token);
+};
+
+const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
   if ( ! token && networkAccount.getBalance ) {
     return bigNumberify(await networkAccount.getBalance());
   }
-  const addr = await getAddr(acc);
+  const addr = await getAddr({networkAccount});
   if (! addr) {
     throw Error(`address missing. Got: ${networkAccount}`);
   }
@@ -371,7 +375,7 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   } else {
     return await balanceOf_token(networkAccount, addr, token);
   }
-};
+}
 
 const ReachToken_ABI = ETHstdlib["contracts"]["stdlib.sol:ReachToken"]["abi"];
 const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
@@ -786,7 +790,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // Returns address of a Reach contract
       const getContractAddress = getInfo;
 
-      return { getContractAddress, sendrecv, recv };
+      const getBalance = (token: Token|false = false) => balanceOfNetworkAccount(networkAccount, token);
+
+      return { getContractAddress, getBalance, sendrecv, recv };
     };
 
     const setupView = (getInfo:(() => Promise<ContractInfo>)) => {

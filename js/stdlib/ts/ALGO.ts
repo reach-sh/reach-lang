@@ -81,6 +81,7 @@ type TxnParams = {
   lastRound: number,
   genesisID: string,
   genesisHash: string,
+  appAccounts?: string[],
 }
 type TxnInfo = {
   'confirmed-round': number,
@@ -137,7 +138,7 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 // Helpers
 
 // Parse CBR into Public Key
-const cbr2algo_addr = (x:string): Address =>
+export const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
@@ -1118,7 +1119,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         debug(dhead, 'MAP', { mapAccts });
         if ( hasMaps ) { await ensureOptIn(); }
-        const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
+        const appAccounts = [escrowAddr].concat(mapAccts);
 
         while ( true ) {
           const params = await getTxnParams();
@@ -1240,7 +1241,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnAppl =
             whichAppl(
               thisAcc.addr, params, ApplicationID, safe_args,
-              mapAcctsReal, undefined, undefined, NOTE_Reach);
+              appAccounts, undefined, undefined, NOTE_Reach);
           txnAppl.fee += extraFees;
           const rtxns = [ ...txnExtraTxns, { txn: txnAppl, escrow: false } ];
           debug(dhead, `assigning`, { rtxns });
@@ -1409,7 +1410,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractAddress, sendrecv, recv };
+      const getBalance = async (mtok: Token| false = false) => {
+        const { escrowAddr } = await getC();
+        const bal = await balanceOfNetworkAccount({ addr: escrowAddr }, mtok);
+        const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
+        debug(`Balance of contract:`, result);
+        return result;
+      }
+
+
+      return { getContractAddress, getBalance, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1535,6 +1545,10 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
   if (!networkAccount) {
     throw Error(`acc.networkAccount missing. Got: ${acc}`);
   }
+  return balanceOfNetworkAccount(networkAccount, token);
+};
+
+const balanceOfNetworkAccount = async (networkAccount: NetworkAccount, token: Token|false = false): Promise<BigNumber> => {
   const client = await getAlgodClient();
   const info = await client.accountInformation(networkAccount.addr).do();
   if ( ! token ) {
@@ -1547,8 +1561,7 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
     }
     return bigNumberify(0);
   }
-};
-
+}
 
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();

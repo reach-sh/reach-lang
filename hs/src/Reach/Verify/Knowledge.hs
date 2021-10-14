@@ -245,6 +245,7 @@ kgq_e ctxt mv = \case
   DLE_TimeOrder {} -> mempty
   DLE_GetContract {} -> mempty
   DLE_GetAddress {} -> mempty
+  DLE_GetActualBalance {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
