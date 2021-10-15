@@ -43,7 +43,12 @@ function address_cfxToEth(addrC: string): string {
   debug(`address_cfxToEth`, `call`, addrC);
   const addrObj = decodeCfxAddress(addrC);
   const addrE = '0x' + addrObj.hexAddress.toString('hex');
-  if (netId !== addrObj.netId) throw Error(`Expected netId=${netId}, got netId=${addrObj.netId}`);
+  if (netId !== addrObj.netId) {
+    debug(
+      `Expected netId=${netId}, got netId=${addrObj.netId}.`,
+      `You might want to select ${netId} in Conflux Portal.`,
+    );
+  }
   return addrE;
 }
 
