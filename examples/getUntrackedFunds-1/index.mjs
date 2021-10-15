@@ -1,5 +1,4 @@
 import {loadStdlib} from '@reach-sh/stdlib';
-// import * as ask from '@reach-sh/stdlib/ask.mjs';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
@@ -11,11 +10,11 @@ const stdlib = loadStdlib(process.env);
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
-  const logBalances = async (addrObj) => {
+  const logBalances = async (address) => {
     console.log(`   Alice balance:`, await getBalance(accAlice));
     console.log(`   Bobby balance:`, await getBalance(accBob));
-    if (addrObj) {
-      console.log(`Contract balance:`, await getBalance({ networkAccount: addrObj}));
+    if (address) {
+      console.log(`Contract balance:`, await getBalance(address));
     }
   }
 
@@ -29,14 +28,11 @@ const stdlib = loadStdlib(process.env);
     backend.Alice(ctcAlice, {
     }),
     backend.Bob(ctcBob, {
-      gimmeSomeDough: async (address) => {
-        // const _ = await ask.ask('Continue? (y/n)', ask.yesno);
-        const addrObj = (stdlib.connector === 'ALGO')
-                          ? { addr: stdlib.cbr2algo_addr(address) }
-                          : { address };
-        await stdlib.transfer(accAlice, { networkAccount: addrObj }, stdlib.parseCurrency(50));
-        console.log(`Sent some dough to:`, address, addrObj);
-        await logBalances(addrObj);
+      gimmeSomeDough: async (addr) => {
+        const address = stdlib.formatAddress(addr);
+        await stdlib.transfer(accAlice, address, stdlib.parseCurrency(50));
+        console.log(`Sent some dough to:`, address);
+        await logBalances(address);
       }
     }),
   ]);

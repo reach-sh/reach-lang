@@ -1001,7 +1001,6 @@ solCTail = \case
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
         , "delete current_svbs;"
-        -- CORE-347: Control who gets the dough here
         , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
         ]
 

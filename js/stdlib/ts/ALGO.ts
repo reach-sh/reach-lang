@@ -138,7 +138,7 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 // Helpers
 
 // Parse CBR into Public Key
-export const cbr2algo_addr = (x:string): Address =>
+const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
@@ -835,13 +835,13 @@ const makeTransferTxn = (
 
 export const transfer = async (
   from: Account,
-  to: Account,
+  to: Account | Address,
   value: any,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
 ): Promise<TxnInfo> => {
   const sender = from.networkAccount;
-  const receiver = to.networkAccount.addr;
+  const receiver = (typeof to === 'string') ? to : to.networkAccount.addr;
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
@@ -1412,7 +1412,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       const getBalance = async (mtok: Token| false = false) => {
         const { escrowAddr } = await getC();
-        const bal = await balanceOfNetworkAccount({ addr: escrowAddr }, mtok);
+        const bal = await balanceOfNetworkAccount(escrowAddr, mtok);
         const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
         debug(`Balance of contract:`, result);
         return result;
@@ -1540,17 +1540,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const { networkAccount } = acc;
-  if (!networkAccount) {
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+export const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
+  let addressable = typeof acc == 'string' ? acc : acc.networkAccount.addr;
+  if (!addressable) {
+    throw Error(`Cannot get the address of: ${acc}`);
   }
-  return balanceOfNetworkAccount(networkAccount, token);
+  return balanceOfNetworkAccount(addressable, token);
 };
 
-const balanceOfNetworkAccount = async (networkAccount: NetworkAccount, token: Token|false = false): Promise<BigNumber> => {
+const balanceOfNetworkAccount = async (networkAccountAddr: Address, token: Token|false = false): Promise<BigNumber> => {
   const client = await getAlgodClient();
-  const info = await client.accountInformation(networkAccount.addr).do();
+  const info = await client.accountInformation(networkAccountAddr).do();
   if ( ! token ) {
     return bigNumberify(info.amount);
   } else {

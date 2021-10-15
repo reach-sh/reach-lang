@@ -1536,7 +1536,6 @@ ct = \case
             ct_mcsend = Just $ cContractAddr
             ct_always = True
             ct_amt = DLA_Literal $ DLL_Int sb 0
-            -- CORE-347: Control who gets the dough here
             ct_mcclose = Just $ cDeployer
             close_asset tok = checkTxn $ CheckTxn {..}
               where ct_mtok = Just tok

@@ -352,19 +352,21 @@ class EventCache {
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
-const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const { networkAccount } = acc;
-  if (!networkAccount) {
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
+  let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
+  if (!addressable) {
+    throw Error(`Cannot get the adddress of: ${acc}`);
   }
-  return balanceOfNetworkAccount(networkAccount, token);
+  return balanceOfNetworkAccount(addressable, token);
 };
 
 const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
   if ( ! token && networkAccount.getBalance ) {
     return bigNumberify(await networkAccount.getBalance());
   }
-  const addr = await getAddr({networkAccount});
+  const addr = (typeof networkAccount == 'string')
+                ? networkAccount
+                : await getAddr({networkAccount});
   if (! addr) {
     throw Error(`address missing. Got: ${networkAccount}`);
   }
@@ -428,7 +430,7 @@ const transfer = async (
   token: Token|false = false,
 ): Promise<any> => {
   const sender = from.networkAccount;
-  const receiver = await getAddr(to);
+  const receiver = (typeof to == 'string') ? to : await getAddr(to);
   const valueb = bigNumberify(value);
 
   const dhead = {kind:'transfer'};
