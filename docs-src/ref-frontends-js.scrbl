@@ -490,6 +490,18 @@ which can speed up event log querying significantly on Conflux.
 If you use the reach stdlib to @jsin{deploy} or @jsin{attach} to a contract,
 the specified lower bound must be no later than the time at which the contract was deployed.
 
+@(hrule)
+
+@(mint-define! '("setValidQueryWindow"))
+
+@js{
+  setValidQueryWindow(width: number|true) => void
+}
+
+Sets the max width of the query windows used to query the network for event logs.
+The value @jsin{true} indicates that no window size should be used, and queries may span arbitrarily large window sizes.
+While each connector has a default value that works for most common cases, tweaking this setting may be useful when dealing with L2s or custom endpoints that are more restrictive than normal nodes on the network.
+
 @section[#:tag "ref-frontends-js-provider"]{Provider Selection}
 
 These functions allow you to choose which particular @tech{consensus network} API provider to connect to.
