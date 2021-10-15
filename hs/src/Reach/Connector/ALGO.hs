@@ -57,20 +57,29 @@ instance Show AlgoError where
 
 -- General tools that could be elsewhere
 
-longestPathBetween :: forall a . Ord a => M.Map a (M.Map a Int) -> a -> a -> ([(a, Int)], Int)
-longestPathBetween g f _d = r f (fixedPoint h)
-  where
-    r x y = fromMaybe ([], 0) $ M.lookup x y
-    h :: M.Map a ([(a, Int)], Int) -> M.Map a ([(a, Int)], Int)
-    h m =
-      flip M.mapWithKey g $ \n cs ->
-        List.maximumBy (compare `on` snd) $
-          flip map (M.toAscList cs) $ \(t, c) ->
-            let (p, pc) = r t m
-                p' = (t, c) : p
-                c' = pc + c
-                c'' = if n `elem` map fst p' then 0 else c'
-            in (p', c'')
+type LPGraph a = M.Map a (M.Map a Int)
+type LPPath a = ([(a, Int)], Int)
+type LPInt a = M.Map a ([(a, Int)], Int)
+longestPathBetween :: forall a . (Ord a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
+longestPathBetween g f _d = do
+  when False $ do
+    putStrLn $ "digraph {"
+    forM_ (M.toAscList g) $ \(from, cs) -> do
+      forM_ (M.toAscList cs) $ \(to, c) -> do
+        putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
+    putStrLn $ "}"
+  let r x y = fromMaybe ([], 0) $ M.lookup x y
+  ps <- fixedPoint $ \(m::LPInt a) -> do
+    flip mapWithKeyM g $ \n cs -> do
+      cs' <- flip mapM (M.toAscList cs) $ \(t, c) -> do
+        let (p, pc) = r t m
+        let p' = (t, c) : p
+        let c' = pc + c
+        case n `elem` map fst p' of
+          True -> return (p, -1)
+          False -> return (p', c')
+      return $ List.maximumBy (compare `on` snd) cs'
+  return $ r f ps
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -138,11 +147,15 @@ algoMaxTxGroupSize = 16
 algoMaxAppProgramCost :: Integer
 algoMaxAppProgramCost = 700
 
+-- We're making up this name. It is not in consensus.go, but only in the docs
+algoMaxLogLen :: Integer
+algoMaxLogLen = 1024
+
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
 
 tealVersionPragma :: LT.Text
-tealVersionPragma = "#pragma version 4"
+tealVersionPragma = "#pragma version 5"
 
 -- Algo specific stuff
 
@@ -281,44 +294,57 @@ opt_b1 = \case
 
 checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
-  (cgr :: IORef (M.Map String (M.Map String Int))) <- newIORef $ mempty
+  let mkg :: IO (IORef (LPGraph String))
+      mkg = newIORef mempty
+  cost_gr <- mkg
+  logLen_gr <- mkg
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
-  (cr :: IORef Int) <- newIORef $ 0
+  (cost_r :: IORef Int) <- newIORef $ 0
+  (logLen_r :: IORef Int) <- newIORef $ 0
   hasForR <- newIORef $ False
   let l2s = LT.unpack
-  let rec c = modifyIORef cr (c +)
+  let rec_ r c = modifyIORef r (c +)
+  let recCost = rec_ cost_r
+  let recLogLen = rec_ logLen_r
   let jump_ t = do
         lab <- readIORef labr
-        c <- readIORef cr
-        let ff = max c
-        let fg = Just . ff . fromMaybe 0
-        let f = M.alter fg t
-        let g = Just . f . fromMaybe mempty
-        modifyIORef cgr $ M.alter g lab
+        let updateGraph cr cgr = do
+              c <- readIORef cr
+              let ff = max c
+              let fg = Just . ff . fromMaybe 0
+              let f = M.alter fg t
+              let g = Just . f . fromMaybe mempty
+              modifyIORef cgr $ M.alter g lab
+        updateGraph cost_r cost_gr
+        updateGraph logLen_r logLen_gr
   let switch t = do
         writeIORef labr t
-        writeIORef cr 0
-  let jump t = rec 1 >> jump_ (l2s t ++ ":")
+        writeIORef cost_r 0
+        writeIORef logLen_r 0
+  let jump t = recCost 1 >> jump_ (l2s t ++ ":")
   forM_ ts $ \case
-    ["sha256"] -> rec 35
-    ["keccak256"] -> rec 130
-    ["sha512_256"] -> rec 45
-    ["ed25519verify"] -> rec 1900
-    ["divmodw"] -> rec 20
-    ["sqrt"] -> rec 4
-    ["expw"] -> rec 10
-    ["b+"] -> rec 10
-    ["b-"] -> rec 10
-    ["b/"] -> rec 20
-    ["b*"] -> rec 20
-    ["b%"] -> rec 20
-    ["b|"] -> rec 6
-    ["b&"] -> rec 6
-    ["b^"] -> rec 6
-    ["b~"] -> rec 4
-    ["b|"] -> rec 6
+    ["sha256"] -> recCost 35
+    ["keccak256"] -> recCost 130
+    ["sha512_256"] -> recCost 45
+    ["ed25519verify"] -> recCost 1900
+    ["ecdsa_verify", _] -> recCost 1700
+    ["ecdsa_pk_decompress",_] -> recCost 650
+    ["ecdsa_pk_recover", _] -> recCost 2000
+    ["divmodw"] -> recCost 20
+    ["sqrt"] -> recCost 4
+    ["expw"] -> recCost 10
+    ["b+"] -> recCost 10
+    ["b-"] -> recCost 10
+    ["b/"] -> recCost 20
+    ["b*"] -> recCost 20
+    ["b%"] -> recCost 20
+    ["b|"] -> recCost 6
+    ["b&"] -> recCost 6
+    ["b^"] -> recCost 6
+    ["b~"] -> recCost 4
+    ["b|"] -> recCost 6
     ["bnz", lab'] -> jump lab'
     ["bz", lab'] -> jump lab'
     ["b", lab'] -> do
@@ -329,6 +355,10 @@ checkCost alwaysShow ts = do
       switch ""
     ["callsub", _lab'] ->
       impossible "callsub"
+    ["log", "//", len'] -> do
+      -- Note: We don't check MaxLogCalls, because it is not actually checked
+      recLogLen (read $ LT.unpack len')
+      recCost 1
     [ "//", com ] -> do
       when (com == "<for>") $ do
         writeIORef hasForR True
@@ -337,26 +367,33 @@ checkCost alwaysShow ts = do
       let lab'' = l2s lab'
       jump_ lab''
       switch lab''
-    _ -> rec 1
-  cg <- readIORef cgr
-  let (p, c) = longestPathBetween cg lTop (l2s lBot)
-  hasFor <- readIORef hasForR
+    _ -> recCost 1
   let whenl x e =
         case x of
           True -> [ e ]
           False -> []
-  let showCost = "This program could take " <> show c <> " units of cost"
-  let exceedsCost = fromIntegral c > algoMaxAppProgramCost
+  let analyze cgr units algoMax = do
+        cg <- readIORef cgr
+        (p, c) <- longestPathBetween cg lTop (l2s lBot)
+        let msg = "This program could use " <> show c <> " " <> units
+        let tooMuch = fromIntegral c > algoMax
+        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> show p <> "\n")
+        return (msg, tooMuch, cs)
+  hasFor <- readIORef hasForR
+  (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
+  (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
   let cs = []
         <> (whenl hasFor $
-              "This program contains a loop, which cannot be tracked accurately for cost.")
-        <> (whenl exceedsCost $
-              showCost <> ", but the limit is " <> show algoMaxAppProgramCost <> ": " <> show p)
+              "This program contains a loop, which cannot be tracked accurately for cost or log bytes.\n")
+        <> csCost
+        <> csLogLen
   unless (null cs) $
     emitWarning $ W_ALGOConservative cs
-  -- If we always want to see the cost and not already shown the cost in a warning
-  when (alwaysShow && not exceedsCost) $
-    putStrLn $ "Conservative analysis found: " <> showCost <> " on Algorand."
+  let exceeds = exceedsCost || exceedsLogLen
+  when (alwaysShow && not exceeds) $ do
+    putStrLn $ "Conservative analysis on Algorand found:"
+    putStrLn $ " * " <> showCost <> "."
+    putStrLn $ " * " <> showLogLen <> "."
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -1289,14 +1326,23 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog _ _ v -> do
-    -- XXX emit
+  DLE_EmitLog at _ v@(DLVar _ _ _ n)  -> do
+    clog $
+      [ DLA_Literal (DLL_Int at $ fromIntegral n)
+      , DLA_Var v
+      ]
     cv v
   where
     show_stack msg at fs = do
       comment $ texty msg
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
+
+clog :: [DLArg] -> App ()
+clog as = do
+  let la = DLLA_Tuple as
+  cla la
+  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf la ]
 
 staticZero :: DLArg -> Bool
 staticZero = \case
@@ -1550,7 +1596,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 4
+reachAlgoBackendVersion = 5
 
 -- State:
 keyState :: B.ByteString
@@ -1699,6 +1745,10 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
   op "=="
   code "bz" [ afterLab ]
   op "pop" -- Get rid of the method id since it's us
+  -- NOTE: To implement ABIs we'll need to do something like this
+  -- clog $ [ DLA_Literal $ DLL_Int at $ fromIntegral which
+  --        , ArgMsg
+  --        ]
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep

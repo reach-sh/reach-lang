@@ -858,7 +858,7 @@ solCom = \case
     let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
     let ed = "event" <+> go solRawVar lv_ty'
     modifyCtxtIO ctxt_outputs $ M.insert lv ed
-    let emitl = "emit" <+> go solMemVar ""
+    let emitl = "emit" <+> go (const lv') ""
     case pv of
       DLV_Eff -> do
         return emitl

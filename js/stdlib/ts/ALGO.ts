@@ -101,8 +101,8 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 4;
-const reachAlgoBackendVersion = 4;
+const reachBackendVersion = 5;
+const reachAlgoBackendVersion = 5;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
@@ -245,9 +245,10 @@ const signSendAndConfirm = async (
   } catch (e) {
     throw { type: 'signAndPost', e };
   }
-  const t0 = decodeB64Txn(txns[0].txn);
+  const N = txns.length - 1;
+  const tN = decodeB64Txn(txns[N].txn);
   try {
-    return await waitForConfirmation(t0.txID(), t0.lastRound);
+    return await waitForConfirmation(tN.txID(), tN.lastRound);
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
@@ -416,7 +417,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
     }
   }
   if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, '--- RESULT =', res);
+  debug(dhead, 'RESULT', res);
   return res;
 };
 
@@ -807,7 +808,7 @@ export function setProviderByName(providerName: string): void {
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
+const rawFaucetDefaultMnemonic = 'frown slush talent visual weather bounce evil teach tower view fossil trip sauce express moment sea garbage pave monkey exercise soap lawn army above dynamic';
 export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
@@ -861,6 +862,7 @@ export const transfer = async (
     txn);
 };
 
+// XXX need to make this a log
 const makeIsMethod = (i:number) => (txn:any): boolean =>
   txn['application-transaction']['application-args'][0] === base64ify([i]);
 
@@ -1138,7 +1140,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(dhead, '--- TIMECHECK', { params, timeoutAt });
           if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
             debug(dhead, '--- FAIL/TIMEOUT');
-            return {didTimeout: true};
+            return await doRecv(false, false);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
             debug(dhead, `CANNOT WIN`);
@@ -1275,8 +1277,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
 
-            // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-            debug(dhead, '--- SUCCESS:', res);
+            debug(dhead, 'SUCCESS', res);
           } catch (e:any) {
             if ( e.type === 'sendRawTransaction' ) {
               debug(dhead, '--- FAIL:', format_failed_request(e?.e));
@@ -1300,13 +1301,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
           }
 
+          // XXX res has what we care about: confirmed-round and logs if it
+          // came from the node; if it came from the indexer, the info is still
+          // there but in a different place(?)
           return await doRecv(true, false);
         }
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
         const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
-        const indexer = await getIndexer();
         const isCtor = (funcNum == 0);
         const fromBlock_summand = isCtor ? 0 : 1;
 
@@ -1341,22 +1344,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // time of the PREVIOUS round.
           const theSecs = await getTimeSecs(bigNumberify(theRound - 1));
 
-          let all_txns: Array<any>|undefined = undefined;
-          const get_all_txns = async () => {
-            if ( all_txns ) { return; }
-            const all_query = indexer.searchForTransactions()
-              .txType('acfg')
-              .assetID(0)
-              .round(theRound);
-            const all_res = await doQuery_(dhead, all_query);
-            // NOTE: Move this filter into the query when the indexer supports it
-            const same_group = ((x:any) => x.group === txn.group && x['asset-config-transaction']['asset-id'] === 0);
-            const all_txns_raw = all_res.transactions.filter(same_group);
-            const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
-            all_txns = all_txns_raw.sort(group_order);
-            debug(dhead, 'all_txns', all_txns);
-          };
-
+          // XXX need to move this to a log
           const ctc_args_all: Array<string> =
             txn['application-transaction']['application-args'];
           debug(dhead, {ctc_args_all});
@@ -1377,41 +1365,29 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
 
           const fromAddr = txn['sender'];
-          const from =
-            T_Address.canonicalize({addr: fromAddr});
+          const from = T_Address.canonicalize({addr: fromAddr});
           debug(dhead, '--- from =', from, '=', fromAddr);
 
           const oldLastRound = getLastRound();
           setLastRound(theRound);
           debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', getLastRound());
 
-          let tokenNews = 0;
           const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
-            if ( o_mode === 'tokenNew' ) {
-              await get_all_txns();
-              // NOTE: I'm making a dangerous assumption that the created tokens
-              // are viewed in the order they were created. It would be better to
-              // be able to have the JS simulator determine where they are
-              // exactly, but it is not available for receives. :'(
-              // @ts-ignore
-              const tn_txn = all_txns[tokenNews++];
-              debug(dhead, "tn_txn", tn_txn);
-              return tn_txn['created-asset-index'];
-            } else if ( o_mode === 'remote' ) {
-              void(o_lab);
-              void(o_ctc);
-              void(o_val);
-              throw Error(`Algorand does not support remote calls`);
-            } else if ( o_mode === 'api' ) {
-              void(o_lab);
-              void(o_ctc);
-              return o_val;
-            } else {
-              void(o_lab);
-              void(o_ctc);
-              void(o_val);
-              throw Error(`impossible: unknown output mode ${o_mode}`);
+            debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
+            const f_ctc = T_Tuple([T_UInt, o_ctc]);
+            for ( const l of txn['logs'] ) {
+              const lb = reNetify(l);
+              const ln = T_UInt.fromNet(lb);
+              const ls = `v${ln}`;
+              debug(`getOutput`, {l, lb, ln, ls});
+              if ( ls === o_lab ) {
+                const ld = f_ctc.fromNet(lb);
+                const o = ld[1];
+                debug(`getOutput`, {ld, o});
+                return o;
+              }
             }
+            throw Error(`no log for ${o_lab}`);
           };
 
           if ( isCtor ) {
@@ -1751,13 +1727,6 @@ type VerifyResult = {
   Deployer: Address,
 };
 
-async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: EventCache) {
-  const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
-  debug({icr});
-  return icr;
-}
-
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
   return verifyContract_('', info, bin, new EventCache());
 }
@@ -1830,7 +1799,9 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   // Next, we check that the constructor was called with the actual escrow
   // address and not something else
-  const icr = await queryCtorTxn(dhead, ApplicationID, eventCache);
+  const isCtor = makeIsMethod(0);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
+  debug({icr});
   // @ts-ignore
   const ict = icr.txn;
   chk(ict, `Cannot query for constructor transaction`);

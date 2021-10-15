@@ -1,4 +1,4 @@
-// Automatically generated with Reach 0.1.5
+// Automatically generated with Reach 0.1.6
 pragma abicoder v2;
 
 pragma solidity ^0.8.9;

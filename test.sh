@@ -111,16 +111,20 @@ tealcount () {
 
 #######
 
+c hs/t/y/api-twice.rsh
+c hs/t/y/api-twice2.rsh
+exit 0
+
 jb
 
-# ci ETH remote
-# ci ETH mint-basic
-# ci ETH api-full
+#ci ETH remote
+#ci ETH overview
+ci ETH mint-basic
+#ci ETH api-full
+
 # ci ALGO mint-basic
+# ci ALGO api-full
 
-ci ALGO api-full
-
-# ci ETH overview
 exit 0
 
 # (cd hs && mk hs-test)

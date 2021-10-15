@@ -66,7 +66,7 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 4;
+const reachBackendVersion = 5;
 const reachEthBackendVersion = 3;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -564,23 +564,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         await maybePayTok(0);
       };
 
-      const getEventData = async (
-        ok_evt: string, ok_e: Log
-      ): Promise<Array<any>> => {
-        const ethersC = await getC();
-        const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
-        const { args } = ethersC.interface.parseLog(ok_e);
-        return ok_args_abi.map(a => args[a.name]);
-      };
-
-      const getLog = async (
-        fromBlock: number, toBlock: number, ok_evt: string,
-      ): Promise<Log|undefined> => {
-        const res = await eventCache.query('getLog', getC, fromBlock, ['time', bigNumberify(toBlock)], ok_evt);
-        if ( ! res.succ ) { return undefined; }
-        return res.evt;
-      }
-
       const canIWin = async (lct:BigNumber): Promise<boolean> => {
         const ethersC = await getC();
         let ret = true;
@@ -687,7 +670,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         }
 
         debug(...dhead, `FAIL/TIMEOUT`);
-        return {didTimeout: true};
+        return await doRecv(false, false);
       };
 
       // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
@@ -726,9 +709,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const ok_t = await (await getProvider()).getTransaction(ok_e.transactionHash);
             debug(dhead, 'ok_t', ok_t);
 
-            // The .gas field doesn't exist on this anymore, apparently?
-            // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
-
             if (ok_t.blockNumber) {
               assert(ok_t.blockNumber == ok_r.blockNumber,
                 'recept & transaction block numbers should match');
@@ -747,32 +727,35 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const theBlock = ok_r.blockNumber;
             debug(dhead, `AT`, theBlock);
             updateLast(ok_r);
-            const ok_ed = await getEventData(ok_evt, ok_e);
+            const ethersC = await getC();
+            const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
+            const { args: ok_args } = ethersC.interface.parseLog(ok_e);
+            const ok_ed = ok_args_abi.map(a => ok_args[a.name]);
             debug(dhead, `DATA`, ok_ed);
             const ok_vals = ok_ed[0][1];
             debug(dhead, `MSG`, ok_vals);
-            const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[]; // TODO: typing
+            const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[];
 
-            // XXX this function should be rewritten to NOT be async by reusing
-            // the logs that we already know about
-            const _getLog = async (l_evt:string, l_ctc:any): Promise<any> => {
-              let dheadl = [ dhead, 'getLog', l_evt, l_ctc];
-              debug(dheadl);
-              const l_e = (await getLog(theBlock, theBlock, l_evt))!;
-              dheadl = [...dheadl, 'log', l_e];
-              debug(dheadl);
-              const l_ed = (await getEventData(l_evt, l_e))[0];
-              dheadl = [...dheadl, 'data', l_ed];
-              debug(dheadl);
-              const l_edu = l_ctc.unmunge(l_ed);
-              dheadl = [...dheadl, 'unmunge', l_edu];
-              debug(dheadl);
-              return l_edu;
-            };
-            const getOutput = (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+            const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
               void(o_mode);
               void(o_val);
-              return _getLog(`oe_${o_lab}`, o_ctc);
+              const l_evt = `oe_${o_lab}`;
+              debug(dhead, `getOutput`, { l_evt, l_ctc });
+              const l_args_abi = ethersC.interface.getEvent(l_evt).inputs;
+              for ( const l of ok_r.logs ) {
+                if ( l.address !== ethersC.address ) { continue; }
+                const { name, args } = ethersC.interface.parseLog(l);
+                debug(dhead, `getOutput`, { name });
+                if ( name === l_evt ) {
+                  const l_edl = l_args_abi.map(a => args[a.name]);
+                  const l_ed = l_edl[0];
+                  debug(dhead, `getOutput`, { l_edl, l_ed });
+                  const l_edu = l_ctc.unmunge(l_ed);
+                  debug(dhead, `getOutput`, { l_edu });
+                  return l_edu;
+                }
+              }
+              throw Error(`no log for ${o_lab}`);
             };
 
             debug(dhead, `OKAY`, ok_vals);

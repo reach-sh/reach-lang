@@ -96,55 +96,35 @@ instance Pretty FlowOutputData where
 fod_savel :: FlowOutputData -> [DLVar]
 fod_savel = S.toAscList . fod_save
 
-solve :: FlowInput -> FlowOutput
-solve fi' = fixedPoint go
-  where
-    mtrace m v =
-      case shouldTrace of
-        True -> trace m v
-        False -> v
-    fi = mtrace imsg fi'
-    imsg = "\nflow input:" <> show (pretty fi') <> "\n"
-    omsg fo = "\nflow output:" <> show (pretty fo) <> "\n"
-    go fo = mtrace (omsg fo) $ go' fo
-    go' fo = M.mapWithKey (go1 fo) fi
-    go1 fo me (FlowInputData {..}) = fod
-      where
-        fod =
-          FlowOutputData
-            { fod_save = need
-            }
-        foread n = fromMaybe mempty $ M.lookup n fo
-        unionmap f s = S.unions $ map f $ S.toList s
-        saves =
-          -- We need to save the saves we create
-          unionmap (fod_save . foread) fid_saves
-        (use, defs) =
-          -- We use what our saves need and what we actually use
-          closeEdges saves
-        need =
-          -- We need what we save & use, minus what we define
-          S.difference use defs
-        closeEdges extra =
-          fixedPoint_ (S.union fid_uses extra, fid_defns) closeEdges1
-        closeEdges1 in0 = mtrace msg $ out1
-          where
-            msg = "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
-            (use0, defs0) = in0
-            out1 = (use1, defs1)
-            used_edge =
-              flip $ const $ flip S.member use0
-            edges =
-              M.filterWithKey used_edge fid_edges
-            edge_use =
-              S.unions $ M.elems edges
-            edge_defs =
-              -- We define the edges that remain
-              M.keysSet edges
-            use1 =
-              S.union use0 edge_use
-            defs1 =
-              S.union defs0 edge_defs
+solve :: FlowInput -> IO FlowOutput
+solve fi = do
+  let mtrace m = when shouldTrace $ putStrLn m
+  mtrace $ "\nflow input:" <> show (pretty fi) <> "\n"
+  fixedPoint $ \fo -> do
+    mtrace $ "\nflow output:" <> show (pretty fo) <> "\n"
+    flip mapWithKeyM fi $ \me (FlowInputData {..}) -> do
+      let foread n = fromMaybe mempty $ M.lookup n fo
+      let unionmap f s = S.unions $ map f $ S.toList s
+      -- We need to save the saves we create
+      let saves = unionmap (fod_save . foread) fid_saves
+      -- We use what our saves need and what we actually use
+      let use_ = S.union fid_uses saves
+      (use, defs) <- fixedPoint_ (use_, fid_defns) $ \in0 -> do
+        let (use0, defs0) = in0
+        let used_edge = flip $ const $ flip S.member use0
+        let edges = M.filterWithKey used_edge fid_edges
+        let edge_use = S.unions $ M.elems edges
+        -- We define the edges that remain
+        let edge_defs = M.keysSet edges
+        let use1 = S.union use0 edge_use
+        let defs1 = S.union defs0 edge_defs
+        let out1 = (use1, defs1)
+        mtrace $ "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
+        return out1
+      -- We need what we save & use, minus what we define
+      let need = S.difference use defs
+      let fod_save = need
+      return $ FlowOutputData {..}
 
 -- Build flow
 data EPPError
@@ -687,7 +667,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   flowi <- readIORef be_flowr
   last_save <- readCounter be_savec
   let flowi' = M.fromList $ zip [0..last_save] $ repeat mempty
-  let flow = solve $ flowi <> flowi'
+  flow <- solve $ flowi <> flowi'
   -- Step 3: Turn the blocks into handlers
   let mkh m = do
         let ce_flow = flow

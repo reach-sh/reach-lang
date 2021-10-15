@@ -920,7 +920,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 4
+reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
