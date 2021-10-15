@@ -189,7 +189,6 @@ export type ProviderName
 
 export interface ProviderByWindow {
   CFX_NET: 'window'
-  CFX_LOG: string
   REACH_CONNECTOR_MODE: string
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
@@ -197,7 +196,6 @@ export interface ProviderByWindow {
 type ProviderByURI = {
   CFX_NODE_URI: string
   CFX_NETWORK_ID: string // XXX just query the URI for its net id?
-  CFX_LOG: string
   REACH_CONNECTOR_MODE: string
   REACH_DO_WAIT_PORT: string // preferably: 'yes' | 'no'
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
@@ -231,13 +229,12 @@ function envDefaultsCFX(env: Env): ProviderEnv {
     // XXX
     // CFX_NET === 'window' || window.conflux ? (windowLooksIsolated() ? 'yes' : 'no')
   const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
-  const CFX_LOG = envDefault(env.CFX_LOG, 'no');
   if (truthyEnv(CFX_NET) && CFX_NET === 'window') {
-    return { CFX_NET, CFX_LOG, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
+    return { CFX_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(CFX_NODE_URI)) {
     const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'yes');
     const cni = envDefault(CFX_NETWORK_ID, localhostProviderEnv.CFX_NETWORK_ID);
-    return { CFX_NODE_URI, CFX_NETWORK_ID: cni, CFX_LOG, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
+    return { CFX_NODE_URI, CFX_NETWORK_ID: cni, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.conflux) {
       return localhostProviderEnv;
@@ -279,7 +276,7 @@ function setProviderEnv(env: ProviderEnv): void {
 // XXX less copy/pasta from ETH_impl
 async function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI) {
-    const {CFX_NODE_URI, CFX_NETWORK_ID, CFX_LOG, REACH_DO_WAIT_PORT} = env;
+    const {CFX_NODE_URI, CFX_NETWORK_ID, REACH_DO_WAIT_PORT} = env;
     return (async () => {
       if (truthyEnv(REACH_DO_WAIT_PORT)) await waitPort(CFX_NODE_URI);
       // await doHealthcheck(CFX_NODE_URI);
@@ -288,9 +285,9 @@ async function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
       debug(`waitProviderFromEnv`, `new Conflux`, {url: CFX_NODE_URI, networkId});
       const provider = new cfxers.providers.Provider(new Conflux({
         url: CFX_NODE_URI,
-        // XXX pass CFX_LOG around correctly; this isn't working
-        logger: truthyEnv(CFX_LOG) ? console : undefined,
         networkId,
+        // Uncomment if you want CFX logs on every API call
+        // logger: console,
       }));
       // XXX: make some sort of configurable polling interval?
       // provider.pollingInterval = 500; // ms
@@ -336,7 +333,6 @@ function setProviderByName(providerName: ProviderName): void {
 const localhostProviderEnv: ProviderByURI = {
   CFX_NODE_URI: DEFAULT_CFX_NODE_URI,
   CFX_NETWORK_ID: DEFAULT_CFX_NETWORK_ID,
-  CFX_LOG: 'no',
   REACH_CONNECTOR_MODE: 'CFX-devnet', // browser?
   REACH_DO_WAIT_PORT: 'yes',
   REACH_ISOLATED_NETWORK: 'yes',
@@ -363,7 +359,6 @@ function cfxProviderEnv(network: WhichNetExternal): ProviderByURI {
   return {
     CFX_NODE_URI,
     CFX_NETWORK_ID,
-    CFX_LOG: 'no',
     REACH_DO_WAIT_PORT: 'yes',
     REACH_CONNECTOR_MODE: 'CFX-live',
     REACH_ISOLATED_NETWORK: 'no',
