@@ -124,8 +124,10 @@ const {
   canFundFromFaucet,
   standardUnit,
   atomicUnit,
-  validQueryWindow,
+  validQueryWindow: validQueryWindowDefault,
 } = ethLikeArgs;
+
+const [getValidQueryWindow, setValidQueryWindow] = replaceableThunk(() => validQueryWindowDefault);
 
 const {
   getProvider
@@ -307,6 +309,7 @@ class EventCache {
       return failed();
     }
 
+    const validQueryWindow = getValidQueryWindow();
     const toBlock =
       validQueryWindow === true
       ? currentTime
@@ -1104,6 +1107,8 @@ const ethLike = {
   ...providerLib,
   getQueryLowerBound,
   setQueryLowerBound,
+  getValidQueryWindow,
+  setValidQueryWindow,
   getFaucet,
   setFaucet,
   randomUInt,

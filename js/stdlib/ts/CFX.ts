@@ -9,6 +9,8 @@ const ethLike = makeEthLike(cfxImpl);
 export const {
   getQueryLowerBound,
   setQueryLowerBound,
+  getValidQueryWindow,
+  setValidQueryWindow,
   getProvider,
   setProvider,
   randomUInt,

@@ -441,6 +441,16 @@ type RoundInfo = {
 }
 
 const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
+const [getValidQueryWindow, _setValidQueryWindow] = replaceableThunk<number|true>(() => true);
+
+export {getValidQueryWindow};
+export function setValidQueryWindow(n: number|true): void {
+  if (typeof n === 'number') {
+    // TODO?
+    throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
+  }
+  _setValidQueryWindow(n);
+}
 
 export function getQueryLowerBound(): BigNumber {
   return bigNumberify(_getQueryLowerBound());
