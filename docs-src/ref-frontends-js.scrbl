@@ -498,9 +498,9 @@ the specified lower bound must be no later than the time at which the contract w
   setValidQueryWindow(width: number|true) => void
 }
 
-Sets the max width of the query windows used to query the network for event logs.
+Sets the maximum width of the query windows used to query the network for event logs.
 The value @jsin{true} indicates that no window size should be used, and queries may span arbitrarily large window sizes.
-While each connector has a default value that works for most common cases, tweaking this setting may be useful when dealing with L2s or custom endpoints that are more restrictive than normal nodes on the network.
+While each connector has a default value that works for most common cases, tweaking this setting may be useful when dealing with layer two networks or custom endpoints that are more restrictive than normal nodes on the network.
 
 @section[#:tag "ref-frontends-js-provider"]{Provider Selection}
 
