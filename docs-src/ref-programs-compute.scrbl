@@ -1836,3 +1836,19 @@ Intervals may be compared with the following functions:
 
 @index{intervalAbs} @reachin{intervalAbs(i)} returns the absolute value of an interval.
 
+@subsection{getUntrackedFunds}
+
+@(mint-define! '("getUntrackedFunds"))
+@reach{
+  Alice.pay(5);
+  // ... An external account sends 50 currency units to the contract
+  const amt = getUntrackedFunds();
+  // amt = 50
+  transfer(amt).to(Alice);
+}
+
+@index{getUntrackedFunds} @reachin{getUntrackedFunds()} returns the difference between the actual
+balance of a contract and Reach's expectation of the balance. For example, if funds were externally sent
+to the contract or rewards were earned, this function gives you access to them. Once this function
+is called, the amount returned is incorporated into Reach's expectation of the balance. So, the amount
+returned must eventually be transferred out of the contract to satisfy the @tech{token linearity property}.

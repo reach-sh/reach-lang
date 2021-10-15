@@ -81,7 +81,6 @@ type TxnParams = {
   lastRound: number,
   genesisID: string,
   genesisHash: string,
-  appAccounts?: string[],
 }
 type TxnInfo = {
   'confirmed-round': number,
@@ -1119,7 +1118,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         debug(dhead, 'MAP', { mapAccts });
         if ( hasMaps ) { await ensureOptIn(); }
-        const appAccounts = [escrowAddr].concat(mapAccts);
+        const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
 
         while ( true ) {
           const params = await getTxnParams();
@@ -1241,7 +1240,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnAppl =
             whichAppl(
               thisAcc.addr, params, ApplicationID, safe_args,
-              appAccounts, undefined, undefined, NOTE_Reach);
+              mapAcctsReal, undefined, undefined, NOTE_Reach);
           txnAppl.fee += extraFees;
           const rtxns = [ ...txnExtraTxns, { txn: txnAppl, escrow: false } ];
           debug(dhead, `assigning`, { rtxns });

@@ -8,6 +8,9 @@ export const main = Reach.App(() => {
   deploy();
 
   A.publish();
+  const x1 = getUntrackedFunds();
+
+  transfer(x1).to(A);
   commit();
 
   B.only(() => {

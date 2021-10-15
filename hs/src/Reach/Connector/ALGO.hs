@@ -1277,31 +1277,7 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_GetActualBalance _ mtok -> do
-    after_lab <- freshLabel
-    case mtok of
-      Nothing -> cContractAddr
-      Just t -> ca t
-    -- [Addr]
-    op "balance"
-    -- [Int]
-    op "dup"
-    -- [Int, Int]
-    code "bz" [after_lab]
-    -- [Int]
-    case mtok of
-      Nothing -> cContractAddr
-      Just t -> ca t
-    -- [Int, Addr]
-    op "min_balance"
-    -- [Int, Int]
-    op "-"
-    -- [Int]
-    label after_lab
-    code "gtxn" ["0", "Amount"]
-    op "+"
-    code "gtxn" ["0", "Fee"]
-    op "+"
+  DLE_GetActualBalance {} -> xxx $ "getUntrackedFunds()"
   where
     show_stack msg at fs = do
       comment $ texty msg

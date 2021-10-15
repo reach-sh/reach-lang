@@ -25,10 +25,5 @@ export const main = Reach.App(() => {
   transfer(cost).to(A);
   commit();
 
-  // A.publish();
-  // transfer(cost).to(A);
-
-  // commit();
-
   exit();
 });
