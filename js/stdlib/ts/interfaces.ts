@@ -123,6 +123,10 @@ type Backend = any
 
 // The real thing
 export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
+  getValidQueryWindow: () => number|true
+  setValidQueryWindow: (n: number|true) => void
+  getQueryLowerBound: () => BigNumber
+  setQueryLowerBound: (n: number|BigNumber) => void
   connector: string
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }

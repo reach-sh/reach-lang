@@ -9,6 +9,8 @@ const ethLike = makeEthLike(ethImpl);
 export const {
   getQueryLowerBound,
   setQueryLowerBound,
+  getValidQueryWindow,
+  setValidQueryWindow,
   getProvider,
   setProvider,
   randomUInt,
