@@ -36,8 +36,7 @@ export function isIsolatedNetwork(): boolean {
 }
 
 export function isWindowProvider(): boolean {
-  const env = getProviderEnv();
-  return 'CFX_NET' in env && env.CFX_NET === 'window' && !!window.conflux;
+  return !!window.conflux;
 }
 
 export function canGetDefaultAccount(): boolean {
@@ -166,8 +165,6 @@ export function setProvider(provider: Provider|Promise<Provider>): void {
     // this circumstance is weird and maybe we should handle it better
     // process.env isn't available in browser so we try to avoid relying on it here.
     setProviderEnv({
-      // @ts-ignore
-      CFX_NET: '__custom_unspecified__',
       REACH_CONNECTOR_MODE: 'CFX-unspecified',
       REACH_ISOLATED_NETWORK: 'no',
     });
@@ -188,7 +185,6 @@ export type ProviderName
   | 'window'
 
 export interface ProviderByWindow {
-  CFX_NET: 'window'
   REACH_CONNECTOR_MODE: string
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
@@ -221,17 +217,13 @@ function guessConnectorMode(env: Env): ConnectorMode|undefined {
 
 // XXX less copy/paste from ETH_impl
 function envDefaultsCFX(env: Env): ProviderEnv {
-  const { CFX_NET, CFX_NODE_URI, CFX_NETWORK_ID } = env;
+  const { CFX_NODE_URI, CFX_NETWORK_ID } = env;
   const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
   const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'CFX'));
   const isolatedDefault
     = connectorModeIsolatedNetwork(REACH_CONNECTOR_MODE);
-    // XXX
-    // CFX_NET === 'window' || window.conflux ? (windowLooksIsolated() ? 'yes' : 'no')
   const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
-  if (truthyEnv(CFX_NET) && CFX_NET === 'window') {
-    return { CFX_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
-  } else if (truthyEnv(CFX_NODE_URI)) {
+  if (truthyEnv(CFX_NODE_URI)) {
     const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'yes');
     const cni = envDefault(CFX_NETWORK_ID, localhostProviderEnv.CFX_NETWORK_ID);
     return { CFX_NODE_URI, CFX_NETWORK_ID: cni, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
@@ -293,29 +285,21 @@ async function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
       // provider.pollingInterval = 500; // ms
       return provider;
     })();
-  } else if ('CFX_NET' in env && env.CFX_NET) {
-    const {CFX_NET} = env;
-    if (CFX_NET === 'window') {
-      const {conflux} = window;
-      if (conflux) {
-        return (async () => {
-          return notYetSupported(`using window.conflux`);
-          // TODO
-          // const provider = new ethers.providers.Web3Provider(ethereum);
-          // // The proper way to ask MetaMask to enable itself is eth_requestAccounts
-          // // https://eips.ethereum.org/EIPS/eip-1102
-          // await provider.send('eth_requestAccounts', []);
-          // return provider;
-        })();
-      } else {
-        throw Error(`window.conflux is not defined`);
-      }
-    } else {
-      throw Error(`CFX_NET not recognized: '${CFX_NET}'`);
-    }
   } else {
-    // This branch should be impossible, but just in case...
-    throw Error(`non-empty CFX_NET or CFX_NODE_URI is required, got: ${Object.keys(env)}`);
+    const {conflux} = window;
+    if (conflux) {
+      return (async () => {
+        return notYetSupported(`using window.conflux as provider.`);
+        // TODO
+        // const provider = new ethers.providers.Web3Provider(ethereum);
+        // // The proper way to ask MetaMask to enable itself is eth_requestAccounts
+        // // https://eips.ethereum.org/EIPS/eip-1102
+        // await provider.send('eth_requestAccounts', []);
+        // return provider;
+      })();
+    } else {
+      throw Error(`window.conflux is not defined`);
+    }
   }
 }
 
