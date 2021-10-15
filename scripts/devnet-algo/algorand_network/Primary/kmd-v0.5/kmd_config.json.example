@@ -8,6 +8,9 @@
 				"scrypt_r": 1,
 				"scrypt_p": 32
 			}
+		},
+		"ledger": {
+			"disable": false
 		}
 	},
 	"session_lifetime_secs": 60,

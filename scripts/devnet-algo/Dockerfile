@@ -20,7 +20,7 @@ ENV SRC_PARENT ${GOPATH}/src/github.com/algorand
 ### ALGOD
 WORKDIR ${SRC_PARENT}
 # algod release
-ARG ALGO_VERSION=2.9.1-stable
+ARG ALGO_VERSION=3.0.1-stable
 RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
@@ -34,7 +34,7 @@ RUN make install
 ### INDEXER
 WORKDIR ${SRC_PARENT}
 # indexer release
-ARG INDEXER_VERSION=2.6.1
+ARG INDEXER_VERSION=2.6.4
 RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 # indexer develop branch as of 2021-03-19
@@ -64,6 +64,15 @@ RUN chmod -R 700 ${ALGORAND_DATA}/kmd*
 # pre-run some stuff so that it starts up faster
 COPY prime-algod.sh /
 RUN /prime-algod.sh
+
+FROM alpine:latest as generate
+COPY --from=builder /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
+COPY network_template.json .
+COPY generate.sh .
+RUN ./generate.sh
+
+FROM scratch as generate-out
+COPY --from=generate /algorand_network /
 
 FROM alpine
 

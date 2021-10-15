@@ -1,0 +1,26 @@
+diff --git a/idb/postgres/internal/encoding/encode.go b/idb/postgres/internal/encoding/encode.go
+index 690e2f2..59c00d8 100644
+--- a/idb/postgres/internal/encoding/encode.go
++++ b/idb/postgres/internal/encoding/encode.go
+@@ -81,9 +81,21 @@ func convertLocalDeltas(deltas map[uint64]types.StateDelta) map[uint64]types.Sta
+ 	return res
+ }
+ 
++func convertLogs(logs []string) []string {
++  if logs == nil {
++    return nil
++  }
++  res := make([]string, len(logs))
++  for i, log := range logs {
++    res[i] = Base64([]byte(log))
++  }
++  return res
++}
++
+ func convertEvalDelta(evalDelta types.EvalDelta) types.EvalDelta {
+ 	evalDelta.GlobalDelta = convertStateDelta(evalDelta.GlobalDelta)
+ 	evalDelta.LocalDeltas = convertLocalDeltas(evalDelta.LocalDeltas)
++        evalDelta.Logs = convertLogs(evalDelta.Logs)
+ 	return evalDelta
+ }
+ 
