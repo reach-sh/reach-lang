@@ -480,6 +480,11 @@ addNewTok tok = do
   Env {..} <- ask
   liftIO $ modifyIORef eNewToks (S.insert tok)
 
+isNewTok :: DLArg -> App Bool
+isNewTok tok = do
+  newToks <- (liftIO . readIORef) =<< asks eNewToks
+  return $ tok `S.member` newToks
+
 output :: TEAL -> App ()
 output t = do
   Env {..} <- ask
@@ -1398,11 +1403,10 @@ checkTxnUsage :: CheckTxn -> App ()
 checkTxnUsage (CheckTxn {..}) = do
   case ct_mtok of
     Just tok -> do
-      newToks <- (liftIO . readIORef) =<< asks eNewToks
-      when (tok `S.member` newToks) $ do
-            bad $ LT.pack $ getErrorMessage [] ct_at True Err_TransferNewToken
+      x <- isNewTok tok
+      when x $ do
+        bad $ LT.pack $ getErrorMessage [] ct_at True Err_TransferNewToken
     Nothing -> return ()
-
 
 checkTxn :: CheckTxn -> App ()
 checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
@@ -1472,11 +1476,16 @@ cm km = \case
     store_let dv sm (ce de) km
   DL_Let _ (DLV_Let DVC_Many dv) de -> do
     sm <- exprSmall de
-    let creatingToken = case de of
-          DLE_TokenNew {} -> True
-          _ -> False
-    when creatingToken $
-      addNewTok (DLA_Var dv)
+    recordNew <-
+      case de of
+        DLE_TokenNew {} -> do
+          return True
+        DLE_EmitLog _ _ dv' -> do
+          isNewTok $ DLA_Var dv'
+        _ -> do
+          return False
+    when recordNew $
+      addNewTok $ DLA_Var dv
     case sm of
       True ->
         store_let dv True (ce de) km

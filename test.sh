@@ -111,8 +111,7 @@ tealcount () {
 
 #######
 
-c hs/t/y/api-twice.rsh
-c hs/t/y/api-twice2.rsh
+c hs/t/y/immediate_token_transfer.rsh
 exit 0
 
 jb
