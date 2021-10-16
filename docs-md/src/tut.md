@@ -582,7 +582,7 @@ ${code("/examples/tut-5-attack/index.rsh", 34, 37)}
 + Line 36 conducts the proof by including an assert statement in the program.
 
 
-Before we had this line in the file, when we ran `./reach run`, it would print out the message:
+Before we had this line in the file, when we ran `./reach compile`, it would print out the message:
 
 ${code("/examples/tut-4/index.txt", 2, 7)}
 

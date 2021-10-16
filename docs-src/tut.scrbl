@@ -596,7 +596,7 @@ We can instruct Reach to prove this theorem by adding these lines after computin
 
 ]
 
-Before we had this line in the file, when we ran @exec{./reach run}, it would print out the message:
+Before we had this line in the file, when we ran @exec{./reach compile}, it would print out the message:
 
 @reachex[#:mode verbatim
          "tut-4/index.txt"
