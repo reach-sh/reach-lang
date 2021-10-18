@@ -631,7 +631,7 @@ We can see what these theorems do by deliberately inserting an error into the pr
 Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
 @reachex["tut-5-attack/index-bad.rsh"
-         'only 34 41 "      // ..."]
+         'only 27 41 "      // ..."]
 
 @itemlist[
 
