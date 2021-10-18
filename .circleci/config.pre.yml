@@ -283,14 +283,14 @@ workflows:
         requires:
           - "build"
     - hold:
-      requires:
-        - "hs-test"
-      type: approval
-      filters:
-        tags:
-          only: /test-[0-9]*\.[0-9]*\.[0-9]*/
-        branches:
-          ignore: /.*/
+        requires:
+          - "hs-test"
+        type: approval
+        filters:
+          tags:
+            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
     - "deploy":
         requires:
           - "hold"
