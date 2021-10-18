@@ -273,7 +273,7 @@ workflows:
   buildless:
     jobs:
     - "sh-check"
-  build-deploy:
+  build:
     jobs:
     - "build"
     - "hs-test":
