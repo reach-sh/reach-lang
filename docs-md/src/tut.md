@@ -609,6 +609,20 @@ We can see what these theorems do by deliberately inserting an error into the pr
 
 Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
+Let's also undo the changes we made earlier by changing
+
+${code("/examples/tut-5-attack/index.rsh", 29)}
+
+back to
+
+${code("/examples/tut-5-attack/index-bad.rsh", 29)}
+
+and removing
+
+${code("/examples/tut-5-attack/index.rsh", 35, 36)}
+
+We should now have something that looks like
+
 ${code("/examples/tut-5-attack/index-bad.rsh", 27, 41)}
 
 + Line 36 has `[1, 0]`, but should have `[2, 0]`.
