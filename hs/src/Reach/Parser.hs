@@ -160,6 +160,8 @@ readJsExpr :: HasCallStack => String -> JSExpression
 readJsExpr s =
   case readJs s of
     JSAstProgram [JSExpressionStatement e _] _ -> e
+    JSAstProgram [JSMethodCall e a args ra _] _ ->
+      JSCallExpression e a args ra
     v -> impossible $ "readJsExpr " <> show v
 
 --- Dependency Gatherer

@@ -1303,6 +1303,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             , "uint256 current_time;"
             , "  bytes current_svbs;"
             , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
+            , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
             ] <> map_defns <> view_defns
     hs' <- solHandlers hs
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
@@ -1377,7 +1378,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 3
+reachEthBackendVersion = 4
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do

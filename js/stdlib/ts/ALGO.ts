@@ -986,6 +986,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return gty.fromNet(gsbs);
         };
         const canIWin = async (lct:BigNumber): Promise<boolean> => {
+          if ( lct.eq(0) ) { return true; }
           const gs = await getGlobalState();
           const r = !gs || lct.eq(gs[1]);
           debug(`canIWin`, { lct, gs, r });
@@ -994,6 +995,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin });
       };
+    };
+
+    const getState_ = async (getC:any, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+      const { getAppState, getGlobalState } = await getC();
+      const appSt = await getAppState();
+      if ( !appSt ) { throw Error(`getState: no appSt`); }
+      const gs = await getGlobalState(appSt);
+      if ( !gs ) { throw Error(`getState: no gs`); }
+      const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
+      if ( vvn === undefined ) { throw Error(`getState: no vvn`); }
+      const vi = gs[0];
+      const vtys = lookup(vi);
+      const vty = T_Tuple(vtys);
+      const vvs = vty.fromNet(vvn);
+      return vvs;
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
@@ -1031,11 +1047,22 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return T_Address.canonicalize(escrowAddr);
       };
 
+      const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        return await getState_(getC, (vibna:BigNumber) => {
+          if ( vibne.eq(vibna) ) { return vtys; }
+          throw Error(`Expected state ${vibne}, got ${vibna}`);
+        });
+      };
+
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
         const isCtor = (funcNum === 0);
-        const doRecv = async (didSend:boolean, waitIfNotPresent: boolean): Promise<Recv> =>
-          await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+          if ( ! didSend && lct.eq(0) ) {
+            throw new Error(`API call failed`);
+          }
+          return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        };
         if ( ! onlyIf ) {
           return await doRecv(false, true);
         }
@@ -1405,7 +1432,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractAddress, sendrecv, recv };
+      return { getContractAddress, getState, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1459,27 +1486,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         async (...args: any[]): Promise<any> => {
           debug('getView1', v, k, args);
           const { decode } = vim;
-          const { getAppState, getGlobalState } = await getC();
-          const appSt = await getAppState();
-          if ( !appSt ) { return ['None', null]; }
-          const gs = await getGlobalState(appSt);
-          if ( !gs ) { return ['None', null]; }
-          const vi = bigNumberToNumber(gs[0]);
-          debug({vi});
-          const vtys = vs[vi];
-          debug({vtys});
-          if ( ! vtys ) {
-            return ['None', null];
-          }
-          const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
-          if ( vvn === undefined ) {
-            return ['None', null];
-          }
-          const vty = T_Tuple(vtys);
-          debug({vty});
-          const vvs = vty.fromNet(vvn);
-          debug({vvs});
           try {
+            let vi = 0;
+            const vvs = await getState_(getC, (vibna:BigNumber) => {
+              vi = bigNumberToNumber(vibna);
+              const vtys = vs[vi];
+              if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }
+              return vtys;
+            });
             const vres = await decode(vi, vvs, args);
             debug({vres});
             return ['Some', vres];

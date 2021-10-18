@@ -21,6 +21,9 @@ instance (Functor f, Sanitize a) => Sanitize (f a) where
 instance Sanitize DLVar where
   sani = id
 
+instance Sanitize Bool where
+  sani = id
+
 instance Sanitize DLLiteral where
   sani l =
     case l of
@@ -149,6 +152,21 @@ instance Sanitize FromInfo where
   sani = \case
     FI_Continue svs -> FI_Continue $ sani svs
     FI_Halt toks -> FI_Halt $ sani toks
+
+instance {-# OVERLAPPING #-} (Sanitize a, Sanitize b, Sanitize c, Sanitize d, Sanitize e) => Sanitize (a, b, c, d, e) where
+  sani (a, b, c, d, e) = (sani a, sani b, sani c, sani d, sani e)
+
+instance Sanitize ETail where
+  sani = \case
+    ET_Com m k -> ET_Com (sani m) (sani k)
+    ET_Stop _ -> ET_Stop sb
+    ET_If _ c t f -> ET_If sb (sani c) (sani t) (sani f)
+    ET_Switch _ x b -> ET_Switch sb x (sani b)
+    ET_FromConsensus _ x y z -> ET_FromConsensus sb x (sani y) (sani z)
+    ET_ToConsensus _ from prev lct which me msg out timev secsv didSendv mtime cons ->
+      ET_ToConsensus sb from prev (sani lct) which (sani me) msg out timev secsv didSendv (sani mtime) (sani cons)
+    ET_While _ asn cond body k -> ET_While sb (sani asn) (sani cond) (sani body) (sani k)
+    ET_Continue _ asn -> ET_Continue sb (sani asn)
 
 instance Sanitize CTail where
   sani = \case

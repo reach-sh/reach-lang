@@ -634,7 +634,7 @@ be_s = \case
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev lct_v this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev (Just lct_v) this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
     return $ ok_l''m
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock
@@ -682,11 +682,12 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
   let mkep ee_who ie = do
+        let isAPI = S.member ee_who sps_apis
         let ee_flow = flow
         et <-
           flip runReaderT (EEnv {..}) $
             mkep_
-        return $ EPProg at ie et
+        return $ EPProg at isAPI ie et
   pps <- EPPs das <$> mapWithKeyM mkep sps_ies
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic

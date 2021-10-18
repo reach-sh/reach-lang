@@ -12,6 +12,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.AST.PL
 import Reach.Counter
 
 type App = ReaderT Env IO
@@ -225,6 +226,26 @@ instance Freshen LLStep where
     LLS_Stop at -> return $ LLS_Stop at
     LLS_ToConsensus at lct send recv mtime ->
       LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> fu mtime
+
+instance Freshen FromInfo where
+  fu = \case
+    FI_Continue vs -> FI_Continue <$> (forM vs $ \(v, a) -> (,) v <$> fu a)
+    FI_Halt toks -> FI_Halt <$> mapM fu toks
+
+instance Freshen ([DLArg], DLPayAmt, DLArg, [DLVar], Bool) where
+  fu (a, b, c, d, e) = (,,,,) <$> fu a <*> fu b <*> fu c <*> fu d <*> pure e
+
+instance Freshen ETail where
+  fu = \case
+    ET_Com c k -> ET_Com <$> fu c <*> fu k
+    ET_Stop at -> return $ ET_Stop at
+    ET_If a c t f -> ET_If a <$> fu c <*> fu t <*> fu f
+    ET_Switch a x csm -> ET_Switch a <$> fu x <*> fu csm
+    ET_FromConsensus a w f k -> ET_FromConsensus a w <$> fu f <*> fu k
+    ET_ToConsensus at from prev lct w me msg out timev secsv didSendv mtime cons ->
+      ET_ToConsensus at <$> fu_v from <*> pure prev <*> fu lct <*> pure w <*> fu me <*> fu_v msg <*> fu_v out <*> fu_v timev <*> fu_v secsv <*> fu_v didSendv <*> fu mtime <*> fu cons
+    ET_While at asn cond body k -> ET_While at <$> fu_v asn <*> fu cond <*> fu body <*> fu k
+    ET_Continue at asn -> ET_Continue at <$> fu asn
 
 instance Freshen LLProg where
   fu (LLProg at opts sps dli dex dvs das s) =

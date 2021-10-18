@@ -67,7 +67,7 @@ type Log = real_ethers.providers.Log;
 // node --unhandled-rejections=strict
 
 const reachBackendVersion = 5;
-const reachEthBackendVersion = 3;
+const reachEthBackendVersion = 4;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -564,7 +564,21 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         await maybePayTok(0);
       };
 
+      const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
+        const ethersC = await getC();
+        const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
+        debug(`getState`, { vibne, vibna, vsbs });
+        if ( ! vibne.eq(vibna) ) {
+          throw Error(`expected state ${vibne}, got ${vibna}`);
+        }
+        const codec = real_ethers.utils.defaultAbiCoder;
+        const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        // @ts-ignore
+        return res;
+      };
+
       const canIWin = async (lct:BigNumber): Promise<boolean> => {
+        if ( lct.eq(0) ) { return true; }
         const ethersC = await getC();
         let ret = true;
         try {
@@ -580,8 +594,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
-        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> =>
-          await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+          if ( ! didSend && lct.eq(0) ) {
+            throw new Error(`API call failed`);
+          }
+          return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        };
         if ( ! onlyIf ) {
           return await doRecv(false, true);
         }
@@ -775,7 +793,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // Returns address of a Reach contract
       const getContractAddress = getInfo;
 
-      return { getContractAddress, sendrecv, recv };
+      return { getContractAddress, sendrecv, recv, getState };
     };
 
     const setupView = (getInfo:(() => Promise<ContractInfo>)) => {

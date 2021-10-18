@@ -512,6 +512,10 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
+  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
+  -- * the either is whether it is a generated one or a prescribed one
+  -- * the type is the type
+  -- * the dlarg is the value being logged
   | DLE_EmitLog SrcLoc String DLVar
   deriving (Eq, Ord, Generic)
 

@@ -32,7 +32,7 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
-      , et_tc_lct :: DLArg
+      , et_tc_lct :: Maybe DLArg
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -55,6 +55,17 @@ data ETail
       }
   | ET_Continue SrcLoc DLAssignment
   deriving (Eq)
+
+instance SrcLocOf ETail where
+  srclocOf = \case
+    ET_Com c _ -> srclocOf c
+    ET_Stop at -> at
+    ET_If at _ _ _ -> at
+    ET_Switch at _ _ -> at
+    ET_FromConsensus at _ _ _ -> at
+    ET_ToConsensus {..} -> et_tc_at
+    ET_While {..} -> et_w_at
+    ET_Continue at _ -> at
 
 instance Pretty ETail where
   pretty e =
@@ -118,11 +129,11 @@ instance Pretty ETail where
       cm l = parens (hsep $ punctuate comma $ l)
 
 data EPProg
-  = EPProg SrcLoc InteractEnv ETail
+  = EPProg SrcLoc Bool InteractEnv ETail
   deriving (Eq)
 
 instance Pretty EPProg where
-  pretty (EPProg _ ie et) =
+  pretty (EPProg _ _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
 
 data CTail

@@ -148,20 +148,21 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   stdlib: Object,
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
+  getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
 };
 
 export type ISetupArgs<ContractInfo> = {
   setInfo: (info: ContractInfo) => void,
   getInfo: () => Promise<ContractInfo>,
 };
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -218,11 +219,12 @@ export const stdContract =
   })();
 
   const _initialize = () => {
-    const { getContractAddress, sendrecv, recv } = _setup({ setInfo, getInfo });
+    const { getContractAddress, sendrecv, recv, getState } =
+      _setup({ setInfo, getInfo });
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getInfo,
-      getContractAddress, sendrecv, recv,
+      getContractAddress, sendrecv, recv, getState,
     };
   };
   const ctcC = { _initialize };
@@ -243,11 +245,14 @@ export const stdContract =
 
   const apis = objectMap(bin._APIs, ((an:string, am:any) => {
     return objectMap(am, ((afn:string, ab:any) => {
-      const bl = `${an}_${afn}`;
+      const bl = `${an}.${afn}`;
       return (...args:any[]) => {
+        const terminal = { terminated: bl };
         let theResolve: (x:any) => void;
-        const p = new Promise((resolve) => {
+        let theReject: (x:any) => void;
+        const p = new Promise((resolve, reject) => {
           theResolve = resolve;
+          theReject = reject;
         });
         ab(ctcC, {
           "in": (() => {
@@ -255,12 +260,18 @@ export const stdContract =
             return args
           }),
           "out": ((oargs:any[], res:any) => {
-            console.log(`${bl}: out`, oargs, res);
+            debug(`${bl}: out`, oargs, res);
             theResolve(res);
-            return new Promise((res, rej) => (void(res), rej('fail')));
+            throw terminal;
           }),
         }).catch((err:any) => {
-          console.log(`${bl}: done`, err);
+          if ( Object.is(err, terminal) ) {
+            debug(`${bl}: done`);
+          } else {
+            theReject(new Error(`${bl} errored with ${err}`));
+          }
+        }).then((res:any) => {
+          theReject(new Error(`${bl} returned with ${JSON.stringify(res)}`));
         });
         return p;
       };

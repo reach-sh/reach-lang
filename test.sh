@@ -111,18 +111,23 @@ tealcount () {
 
 #######
 
-c hs/t/y/immediate_token_transfer.rsh
+fc hs/t/y/api-noret.rsh
+fc hs/t/y/api-twice2.rsh
+fc hs/t/y/api-twice.rsh
+
 exit 0
+c examples/api-full/index.rsh
+#exit 0
 
 jb
 
 #ci ETH remote
 #ci ETH overview
-ci ETH mint-basic
-#ci ETH api-full
+#ci ETH mint-basic
+ci ETH api-full
 
-# ci ALGO mint-basic
-# ci ALGO api-full
+#ci ALGO mint-basic
+#ci ALGO api-full
 
 exit 0
 

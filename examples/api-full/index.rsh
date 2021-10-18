@@ -26,6 +26,7 @@ export const main = Reach.App(() => {
     const [ tok, amt ] = declassify([ interact.tok, interact.amt ]);
   });
   A.publish(tok, amt).pay([[amt, tok]]);
+  A.interact.log("Ready!");
 
   const [ done, x, an, at ] =
     parallelReduce([ false, 0, 0, amt ])
@@ -45,7 +46,8 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
-    .api(U.writeT, ((_) => [ 0, [ amt, tok ] ]), ((i, k) => {
+    .api(U.writeT, ((i) => { assume(i > x); }), ((_) => [ 0, [ amt, tok ] ]), ((i, k) => {
+        require(i > x);
         const stp = [ done, x + i, an, at + amt ];
         k(stp);
         return stp;

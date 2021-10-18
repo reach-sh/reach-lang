@@ -108,6 +108,7 @@ data JSMode
 
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
+  , ctxt_isAPI :: Bool
   , ctxt_txn :: Int
   , ctxt_mode :: JSMode
   , ctxt_while :: JSCtxtWhile
@@ -598,9 +599,24 @@ jsETail = \case
       _ -> return $ "return" <> semi
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus _at _which msvs k ->
+  ET_FromConsensus _at which msvs k ->
     (ctxt_mode <$> ask) >>= \case
-      JM_Backend -> jsETail k
+      JM_Backend -> do
+        more <-
+          (ctxt_isAPI <$> ask) >>= \case
+            False -> return []
+            True ->
+              case msvs of
+                FI_Halt _ -> return []
+                FI_Continue svs -> do
+                  let vs = map fst svs
+                  vs' <- mapM jsVar vs
+                  ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
+                  w' <- jsCon $ DLL_Int sb $ fromIntegral which
+                  let getState = jsApply ("await ctc.getState") [ w', ctcs ]
+                  return [ "const" <+> jsArray vs' <+> "=" <+> getState <> semi ]
+        k' <- local (\e -> e { ctxt_isAPI = False }) $ jsETail k
+        return $ vsep $ more <> [ k' ]
       JM_View -> impossible "view from"
       JM_Simulate -> do
         let common extra isHalt' =
@@ -683,7 +699,9 @@ jsETail = \case
                     , "return sim_r;"
                     ]
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
-            lct_v' <- jsArg lct_v
+            lct_v' <- case lct_v of
+                        Just x -> jsArg x
+                        Nothing -> jsCon $ DLL_Int sb 0
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
@@ -764,7 +782,7 @@ jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
 jsPart :: DLInit -> SLPart -> EPProg -> App Doc
-jsPart dli p (EPProg _ _ et) = do
+jsPart dli p (EPProg _ ctxt_isAPI _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -949,6 +967,7 @@ backend_js :: Backend
 backend_js outn crs pl = do
   let jsf = outn "mjs"
   let ctxt_who = "Module"
+  let ctxt_isAPI = False
   let ctxt_txn = 0
   let ctxt_mode = JM_Backend
   let ctxt_while = JWhile_None

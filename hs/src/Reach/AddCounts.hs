@@ -215,9 +215,9 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
-  ac (EPProg at ie et) =
+  ac (EPProg at x ie et) =
     fresh $
-      EPProg at ie <$> ac et
+      EPProg at x ie <$> ac et
 
 instance AC EPPs where
   ac (EPPs {..}) = EPPs epps_apis <$> ac epps_m

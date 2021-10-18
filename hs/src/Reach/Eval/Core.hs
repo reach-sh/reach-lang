@@ -4171,13 +4171,12 @@ typeToExpr = \case
     str x = JSStringLiteral a x
     arr l = JSArrayLiteral a (map JSArrayElement l) a
     sg (k, t) = arr [(str k), r t]
-    call f es = JSCallExpression (var f) a (toJSCL es) a
+    call f = jsCall a (var f)
     var = JSIdentifier a
     r = typeToExpr
     a = JSNoAnnot
     ie = JSDecimal a . show
-    rm m = JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toList m) a
-    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [r t]
+    rm = jsObjectLiteral a . M.map r
 
 data CompiledForkCase = CompiledForkCase
   { cfc_part_e :: JSExpression
@@ -4194,17 +4193,22 @@ doForkAPI2Case :: [JSExpression] -> App [JSExpression]
 doForkAPI2Case args = do
   at <- withAt id
   let a = at2a at
-  let x = readJsExpr "() => ({ msg: declassify(interact.in()) })"
   let jid = JSIdentifier a
   idx <- ctxt_alloc
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let dom = jidg "dom"
   let dotdom = JSSpreadExpression a dom
+  let dom2 = jidg "dom2"
+  let dotdom2 = JSSpreadExpression a $ dom2
+  let sp = a2sp a
+  let e2s = flip JSExpressionStatement sp
+  let mkx xp = jsThunkStmts a [ jsConst a dom (readJsExpr "declassify(interact.in())"), e2s (jsCall a xp [ dotdom ]), JSReturn a (Just $ jsObjectLiteral a $ M.fromList [ ("msg", dom) ] ) sp ]
+  let x = mkx $ jsArrowStmts a [ dotdom2 ] [ e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2 ]
   let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
-  let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) (a2sp a) ] ]
-  let e2s = flip JSExpressionStatement (a2sp a)
+  let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) sp ] ]
   let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
   case args of
+    [w, xp, y, z] -> return [w, mkx xp, y, mkz w z]
     [w, y, z] -> return [w, x, y, mkz w z]
     [w, z] -> return [w, x, mkz w z]
     --- Delay error to next level
@@ -4553,6 +4557,12 @@ jsCall a f as = JSCallExpression f a (toJSCL as) a
 
 jsConst :: JSAnnot -> JSExpression -> JSExpression -> JSStatement
 jsConst a l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) (a2sp a)
+
+jsObjectLiteral :: JSAnnot -> M.Map String JSExpression -> JSExpression
+jsObjectLiteral a m =
+  JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toAscList m) a
+  where
+    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [t]
 
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =

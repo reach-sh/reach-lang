@@ -456,6 +456,10 @@ parseVal env t v = do
               elems' <- parseArray env ty (List vs)
               return $ SMV_Array ty $ reverse elems'
             _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+        T_Tuple [] ->
+          case v of
+            Atom _ -> return $ SMV_Tuple []
+            _ -> impossible $ "parseVal: Tuple mt " <> show v
         T_Tuple ts ->
           case v of
             List (_:vs) -> do
