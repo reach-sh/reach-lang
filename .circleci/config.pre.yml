@@ -283,6 +283,10 @@ workflows:
         requires:
           - "build"
     - "hold":
+      requires:
+        - "build"
+        - "hs-test"
+        - "hs-check"
       type: approval
       filters:
         tags:
