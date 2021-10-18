@@ -284,9 +284,7 @@ workflows:
           - "build"
     - hold:
       requires:
-        - "build"
         - "hs-test"
-        - "hs-check"
       type: approval
       filters:
         tags:
@@ -295,9 +293,6 @@ workflows:
           ignore: /.*/
     - "deploy":
         requires:
-          - "build"
-          - "hs-test"
-          - "hs-check"
           - "hold"
         filters:
           tags:
