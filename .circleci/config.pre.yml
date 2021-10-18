@@ -77,6 +77,11 @@ commands:
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
 jobs:
+  "deploy":
+    executor: real
+    steps:
+    - run: |
+        echo "Deploying"
   "docs-render":
     executor: fake
     steps:
@@ -255,7 +260,6 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
-
 workflows:
   docs:
     jobs:
@@ -279,3 +283,20 @@ workflows:
         requires:
           - "build"
     # Sink and examples follow
+  deploy:
+    jobs:
+    - hold:
+      type: approval
+      filters:
+        tags:
+          only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+        branches:
+          ignore: /.*/
+    - deploy:
+        requires:
+          - "hold"
+        filters:
+          tags:
+            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
