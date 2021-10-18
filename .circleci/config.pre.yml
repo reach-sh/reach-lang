@@ -282,7 +282,7 @@ workflows:
     - "hs-check":
         requires:
           - "build"
-    - "hold":
+    - hold:
       requires:
         - "build"
         - "hs-test"
