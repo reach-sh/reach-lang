@@ -11,6 +11,7 @@ import Reach.AST.LL
 -- import Data.Either
 
 type ConsensusEnv = M.Map DLVar DLVal
+type Store = ConsensusEnv
 
 type Balance = Integer
 
@@ -82,85 +83,88 @@ type Params = String -- JSON.Value
 
 -- ## interpreter ## --
 
-interpExpr :: DLExpr -> App DLArg
-interpExpr = \case
-  (DLE_Arg _loc _dlarg) -> undefined
-  (DLE_LArg _loc _dllargearg) -> undefined
-  (DLE_Impossible _loc _impossibleerror) -> undefined
-  (DLE_PrimOp _loc _primop _dlargs) -> undefined
-  (DLE_ArrayRef _loc _dlarg1 _dlarg2) -> undefined
-  (DLE_ArraySet _loc _dlarg1 _dlarg2 _dlarg3) -> undefined
-  (DLE_ArrayConcat _loc _dlarg1 _dlarg2) -> undefined
-  (DLE_ArrayZip _loc _dlarg1 _dlarg2) -> undefined
-  (DLE_TupleRef _loc _dlarg _integer) -> undefined
-  (DLE_ObjectRef _loc _dlarg _string) -> undefined
-  (DLE_Interact _loc _slcxtframes _slpart _string _dltype _dlargs) -> undefined
-  (DLE_Digest _loc _dlargs) -> undefined
-  (DLE_Claim _loc _slcxtframes _claimtype _dlarg _maybe_bytestring) -> undefined
-  (DLE_Transfer _loc _dlarg1 _dlarg2 _maybe_dlarg) -> undefined
-  (DLE_TokenInit _loc _dlarg) -> undefined
-  (DLE_CheckPay _loc _slcxtframes _dlarg _maybe_dlarg) -> undefined
-  (DLE_Wait _loc _dltimearg) -> undefined
-  (DLE_PartSet _loc _slpart _dlarg) -> undefined
-  (DLE_MapRef _loc _dlm_var _dlarg) -> undefined
-  (DLE_MapSet _loc _dlm_var _dlarg _maybe_dlarg) -> undefined
-  (DLE_Remote _loc _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill) -> undefined
-  (DLE_TokenNew _loc _dltokennew) -> undefined
-  (DLE_TokenBurn _loc _dlarg1 _dlarg2) -> undefined
-  (DLE_TokenDestroy _loc _dlarg) -> undefined
+interpExpr :: Store -> DLExpr -> App DLVal
+interpExpr st = \case
+  (DLE_Arg _at _dlarg) -> undefined
+  (DLE_LArg _at _dllargearg) -> undefined
+  (DLE_Impossible _at _impossibleerror) -> undefined
+  (DLE_PrimOp _at _primop _dlargs) -> undefined
+  (DLE_ArrayRef _at _dlarg1 _dlarg2) -> undefined
+  (DLE_ArraySet _at _dlarg1 _dlarg2 _dlarg3) -> undefined
+  (DLE_ArrayConcat _at _dlarg1 _dlarg2) -> undefined
+  (DLE_ArrayZip _at _dlarg1 _dlarg2) -> undefined
+  (DLE_TupleRef _at _dlarg _integer) -> undefined
+  (DLE_ObjectRef _at _dlarg _string) -> undefined
+  (DLE_Interact _at _slcxtframes _slpart _string _dltype _dlargs) -> undefined
+  (DLE_Digest _at _dlargs) -> undefined
+  (DLE_Claim _at _slcxtframes _claimtype _dlarg _maybe_bytestring) -> undefined
+  (DLE_Transfer _at _dlarg1 _dlarg2 _maybe_dlarg) -> undefined
+  (DLE_TokenInit _at _dlarg) -> undefined
+  (DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg) -> undefined
+  (DLE_Wait _at _dltimearg) -> undefined
+  (DLE_PartSet _at _slpart _dlarg) -> undefined
+  (DLE_MapRef _at _dlm_var _dlarg) -> undefined
+  (DLE_MapSet _at _dlm_var _dlarg _maybe_dlarg) -> undefined
+  (DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill) -> undefined
+  (DLE_TokenNew _at _dltokennew) -> undefined
+  (DLE_TokenBurn _at _dlarg1 _dlarg2) -> undefined
+  (DLE_TokenDestroy _at _dlarg) -> undefined
 
-interpStmt :: DLStmt -> App ()
-interpStmt = \case
-  (DL_Nop _loc) -> return ()
-  (DL_Let _loc _let_var _expr) -> undefined
-  (DL_ArrayMap _loc _var1 _arg _var2 _block) -> undefined
-  (DL_ArrayReduce _loc _var1 _arg1 _arg2 _var2 _var3 _block) -> undefined
-  (DL_Var _loc _var) -> undefined
-  (DL_Set _loc _var _arg) -> undefined
-  (DL_LocalDo _loc _tail) -> undefined
-  (DL_LocalIf _loc _arg _tail1 _tail2) -> undefined
-  (DL_LocalSwitch _loc _var _switch_cases) -> undefined
-  (DL_Only _loc _either_part _tail) -> undefined
-  (DL_MapReduce _loc _int _var1 _dlm_var _arg _var2 _var3 _block) -> undefined
+interpStmt :: Store -> DLStmt -> App Store
+interpStmt st = \case
+  (DL_Nop _at) -> return st
+  (DL_Let _at _let_var _expr) -> undefined
+  (DL_ArrayMap _at _var1 _arg _var2 _block) -> undefined
+  (DL_ArrayReduce _at _var1 _arg1 _arg2 _var2 _var3 _block) -> undefined
+  (DL_Var _at _var) -> undefined
+  (DL_Set _at _var _arg) -> undefined
+  (DL_LocalDo _at _tail) -> undefined
+  (DL_LocalIf _at _arg _tail1 _tail2) -> undefined
+  (DL_LocalSwitch _at _var _switch_cases) -> undefined
+  (DL_Only _at _either_part _tail) -> undefined
+  (DL_MapReduce _at _int _var1 _dlm_var _arg _var2 _var3 _block) -> undefined
 
-interpTailStmt :: DLTail -> App ()
-interpTailStmt = \case
-  (DT_Return _loc) -> return ()
+interpTailStmt :: Store -> DLTail -> App Store
+interpTailStmt st = \case
+  (DT_Return _at) -> return st
   (DT_Com stmt dltail) -> do
-    _ <- interpStmt stmt
-    interpTailStmt dltail
+    st' <- interpStmt st stmt
+    interpTailStmt st' dltail
 
 interpCons :: LLConsensus -> App ()
 interpCons = \case
   (LLC_Com _stmt _cons) -> undefined
-  (LLC_If _loc _arg _cons1 _cons2) -> undefined
-  (LLC_Switch _loc _var _switch_cases) -> undefined
-  (LLC_FromConsensus _loc1 _loc2 _step) -> undefined
-  (LLC_While _loc _asn _inv _cond _body _k) -> undefined
-  (LLC_Continue _loc _asn) -> undefined
-  (LLC_ViewIs _loc _part _var _export _cons) -> undefined
+  (LLC_If _at _arg _cons1 _cons2) -> undefined
+  (LLC_Switch _at _var _switch_cases) -> undefined
+  (LLC_FromConsensus _at1 _at2 _step) -> undefined
+  (LLC_While _at _asn _inv _cond _body _k) -> undefined
+  (LLC_Continue _at _asn) -> undefined
+  (LLC_ViewIs _at _part _var _export _cons) -> undefined
 
-interpStep :: (LLStep -> LLProg) -> LLStep -> App LLProg
-interpStep pmeta = \case
-  (LLS_Com stmt st') -> do
-    _ <- interpStmt stmt
-    interpStep pmeta st'
-  (LLS_Stop loc) -> return $ pmeta (LLS_Stop loc)
-  (LLS_ToConsensus _loc _tc_send _tc_recv _tc_mtime) -> undefined
+interpStep :: Store -> (LLStep -> LLProg) -> LLStep -> App (Store)
+interpStep st pmeta = \case
+  (LLS_Com stmt step) -> do
+    st' <- interpStmt st stmt
+    interpStep st' pmeta step
+  (LLS_Stop loc) -> return st
+  (LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime) -> undefined
 
 -- evaluate a linear Reach program
-interp :: LLProg -> App LLProg
-interp (LLProg at llo ps dli dex dvs st) = interpStep (LLProg at llo ps dli dex dvs) st
+interp :: Store -> LLProg -> App (Store)
+interp st (LLProg at llo ps dli dex dvs step) = interpStep st (LLProg at llo ps dli dex dvs) step
 
-interpM :: App LLProg -> App LLProg
-interpM mprog = do
-  prog <- mprog
-  interp prog
+-- interpM :: Store -> LLProg -> App (Store)
+-- interpM st mprog = do
+--   prog <- mprog
+--   interp st prog
 
 -- evaluate the next N steps
-interpN :: Integer -> LLProg -> App LLProg
-interpN n prog = foldr (.) id (replicate (fromInteger n) interpM) $ return prog
-
+-- interpN :: Store -> Integer -> LLProg -> App (Store)
+-- interpN st 0 prog = return st
+-- interpN st n prog = do
+--   st' <- interp st prog
+--   interpN st' (n-1) ???
+ 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
 init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
