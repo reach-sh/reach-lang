@@ -573,6 +573,7 @@ base_env =
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
+    , ("lock", SLV_Prim $ SLPrim_lock)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -3045,6 +3046,25 @@ evalPrim p sargs =
     SLPrim_EmitLog -> do
       x <- one_arg
       public <$> doEmitLog "api" x
+    SLPrim_lock -> do
+      ensure_mode SLM_ConsensusStep "lock"
+      (samt, mstok) <- one_mtwo_args
+      (amt_ty, amt) <- compileTypeOf samt
+      void $ mustBeInt amt_ty
+      mtok <-
+        case mstok of
+          Just arg -> do
+            (ty, da) <- compileTypeOf arg
+            void $ mustBeToken ty
+            return $ Just da
+          Nothing -> return Nothing
+      at <- withAt id
+      fvBal <- lookupBalanceFV FV_balance mtok
+      trackedBal <- doFluidRef_da fvBal
+      dv <- ctxt_lift_expr (DLVar at Nothing T_UInt)
+              $ DLE_PrimOp at SUB ([trackedBal, amt])
+      doFluidSet fvBal $ public $ SLV_DLVar dv
+      return $ (lvl, SLV_Null at "lock")
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3068,6 +3088,10 @@ evalPrim p sargs =
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args
+    one_mtwo_args = case args of
+      [x] -> return (x, Nothing)
+      [x, y] -> return (x, Just y)
+      _ -> illegal_args
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args
@@ -3084,6 +3108,12 @@ evalPrim p sargs =
       _ -> illegal_args
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
+      _ -> illegal_args
+    mustBeToken = \case
+      T_Token -> return $ T_Token
+      _ -> illegal_args
+    mustBeInt = \case
+      T_UInt -> return $ T_UInt
       _ -> illegal_args
     make_dlvar at' ty = do
       dv <- ctxt_mkvar $ DLVar at' Nothing ty

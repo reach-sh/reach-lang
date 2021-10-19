@@ -369,6 +369,18 @@ has been called on @reachin{tok} yet.
 
 @reachin{Token.supply(tok)}, or @reachin{tok.supply()}, where @reachin{tok} is a @reachin{Token} value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been @tech{burn}t.
 
+@subsection{@tt{lock}}
+
+@(mint-define! '("lock"))
+@reach{
+  lock(5);
+  lock(5, zmd);
+}
+
+@index{lock} @reachin{lock(amt)} or @reachin{lock(amt, tok)} locks the @reachin{amt} of the @reachin{Token}
+@reachin{tok}, or the network token if unspecified, into the @tech{contract}. The amount specified will
+be permanently inaccessible and deducted from Reach's expectation of the @reachin{balance}.
+
 @subsection{Remote objects}
 
 @(mint-define! '("remote"))

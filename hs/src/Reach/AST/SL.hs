@@ -692,6 +692,7 @@ data SLPrimitive
   | SLPrim_getContract
   | SLPrim_getAddress
   | SLPrim_EmitLog
+  | SLPrim_lock
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

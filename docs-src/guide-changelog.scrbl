@@ -11,6 +11,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.6 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/10/19: Added @reachin{lock}.}
 @item{2021/10/18: Added @tech{API}s via the @reachin{API} form.}
 @item{2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
 @item{2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
