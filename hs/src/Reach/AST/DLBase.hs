@@ -578,9 +578,9 @@ instance PrettySubst DLExpr where
     DLE_ObjectRef _ a f -> do
       a' <- prettySubst a
       return $ a' <> "." <> pretty f
-    DLE_Interact _ _ who m _ as -> do
+    DLE_Interact _ _ who m t as -> do
       as' <- render_dasM as
-      return $ pretty who <> ".interact." <> pretty m <> parens as'
+      return $ "protect" <> angles (pretty t) <> parens (pretty who <> ".interact." <> pretty m <> parens as')
     DLE_Digest _ as -> do
       as' <- render_dasM as
       return $ "digest" <> parens as'

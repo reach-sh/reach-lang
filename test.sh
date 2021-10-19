@@ -111,28 +111,18 @@ tealcount () {
 
 #######
 
-ci ETH ttt
-ci ALGO ttt
-exit 0
-
-fc hs/t/n/API_NoIn.rsh
-fc hs/t/n/API_OutBeforeIn.rsh
-fc hs/t/n/API_Twice.rsh
-fc hs/t/n/API_Twice2.rsh
-fc hs/t/n/API_NoOut.rsh
-
-c examples/api-full/index.rsh
+c users/YeahRoy/index.rsh
 #exit 0
 
 jb
 
-#ci ETH remote
-#ci ETH overview
-#ci ETH mint-basic
-ci ETH api-full
+MODE=ETH
+cd users/YeahRoy
+${REACH} clean
+${REACH} compile --intermediate-files
+make build
+REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 
-#ci ALGO mint-basic
-ci ALGO api-full
 
 exit 0
 

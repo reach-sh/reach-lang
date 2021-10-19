@@ -20,6 +20,7 @@ module Reach.Texty
   , parens
   , braces
   , brackets
+  , angles
   , hardline
   , semi
   , comma
@@ -202,6 +203,9 @@ braces = enclose "{" "}"
 
 brackets :: Doc -> Doc
 brackets = enclose "[" "]"
+
+angles :: Doc -> Doc
+angles = enclose "<" ">"
 
 hardline :: Doc
 hardline = DNewline

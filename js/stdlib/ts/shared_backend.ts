@@ -33,6 +33,7 @@ export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber 
 
 // .canonicalize turns stuff into the "canonical backend representation"
 export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
+  debug(`protect`, ctc.name, v);
   try {
     return ctc.canonicalize(v);
   } catch (e) {
