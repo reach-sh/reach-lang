@@ -1,0 +1,14 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "A" is honest
+Checked 15 theorems; No failures!
+reachc: error[REP0001]: Cannot set the view "V".iV because it does not dominate any `commit`s
+
+  ./Err_ViewSetDomination.rsh:20:13:application
+
+  20|     V.iV.set(i);
+
+For further explanation of this error, see: https://docs.reach.sh/REP0001.html
+

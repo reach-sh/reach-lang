@@ -20,6 +20,8 @@ import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
+import Data.Bifunctor
+import Data.Bool
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -129,6 +131,7 @@ solve fi = do
 -- Build flow
 data EPPError
   = Err_ContinueDomination
+  | Err_ViewSetDomination SLPart SLVar
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
@@ -139,11 +142,14 @@ instance HasErrorCode EPPError where
   -- Add new error codes at the end.
   errIndex = \case
     Err_ContinueDomination {} -> 0
+    Err_ViewSetDomination {} -> 1
 
 instance Show EPPError where
   show = \case
     Err_ContinueDomination ->
       "`continue` must be dominated by communication"
+    Err_ViewSetDomination v f ->
+      "Cannot set the view " <> show (pretty v) <> "." <> show (pretty f) <> " because it does not dominate any `commit`s"
 
 data BEnv = BEnv
   { be_prev :: Int
@@ -159,6 +165,7 @@ data BEnv = BEnv
   , be_toks :: [DLArg]
   , be_viewr :: IORef (M.Map Int ([DLVar] -> ViewInfo))
   , be_views :: ViewsInfo
+  , be_view_setsr :: IORef (M.Map (SLPart, SLVar) (Bool, SrcLoc))
   , be_inConsensus :: Bool
   , be_counter :: Counter
   }
@@ -218,6 +225,25 @@ captureOutputVars m = do
   x <- local (\e -> e {be_output_vs = vsr}) m
   a <- liftIO $ readIORef vsr
   return (a, x)
+
+captureViewSets :: M.Map (SLPart, SLVar) (Bool, SrcLoc) -> BApp a -> BApp (M.Map (SLPart, SLVar) (Bool, SrcLoc), a)
+captureViewSets extra m = do
+  vsr <- asks be_view_setsr
+  vs <- liftIO $ readIORef vsr
+  tmpr <- liftIO $ newIORef
+            $ M.unionWith view_set_combine extra
+              $ M.filter fst vs
+  x <- local (\ e -> e { be_view_setsr = tmpr }) m
+  a <- liftIO $ readIORef tmpr
+  return (a, x)
+
+withViewSets :: M.Map (SLPart, SLVar) (Bool, SrcLoc) -> BApp b -> BApp b
+withViewSets extra m = do
+  vsr <- asks be_view_setsr
+  (tmp, x) <- captureViewSets extra m
+  liftIO $ modifyIORef vsr $
+      M.unionWith view_set_combine tmp
+  return x
 
 fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
@@ -441,9 +467,29 @@ instance OnlyHalts LLStep where
     LLS_Stop _ -> True
     LLS_ToConsensus {} -> False
 
+check_view_sets :: Monad m => M.Map (SLPart, SLVar) (Bool, SrcLoc) -> m ()
+check_view_sets vs = do
+  case find (not . fst . snd) (M.toList vs) of
+    Nothing -> return ()
+    Just ((v, f), (_, at)) ->
+      expect_thrown at $ Err_ViewSetDomination v f
+
+mark_view_sets :: BApp ()
+mark_view_sets = do
+  vsr <- asks be_view_setsr
+  liftIO $ modifyIORef vsr $
+    M.map $ bimap (const True) id
+
+view_set_combine :: (Bool, b) -> (Bool, b) -> (Bool, b)
+view_set_combine (l, l_at) (r, r_at) =
+  (l || r, bool l_at r_at l)
+
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
-  LLC_ViewIs _ v f ma k ->
+  LLC_ViewIs at v f ma k -> do
+    vsr <- asks be_view_setsr
+    liftIO $ modifyIORef vsr
+        $ M.insertWith view_set_combine (v, f) (False, at)
     local (\e -> e {be_views = modv $ be_views e}) $
       be_c k
     where
@@ -484,12 +530,14 @@ be_c = \case
     this <- newSavePoint "fromConsensus"
     views <- asks be_views
     (more, s'l) <-
-      captureMore $
-        local (\e -> e { be_interval = default_interval
-                       , be_prev = this
-                       , be_prevs = S.singleton this }) $ do
-          fg_use views
-          be_s s
+      withViewSets mempty $
+        captureMore $
+          local (\e -> e { be_interval = default_interval
+                        , be_prev = this
+                        , be_prevs = S.singleton this }) $ do
+            fg_use views
+            be_s s
+    when more $ mark_view_sets
     toks <- asks be_toks
     case more of
       True -> do
@@ -515,7 +563,8 @@ be_c = \case
                          , be_prevs = S.union (be_prevs e) the_prevs })
     let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
     -- <Kont>
-    (goto_kont, k'l) <-
+    (k_vs, (goto_kont, k'l)) <-
+      captureViewSets mempty $
       -- XXX This is a convoluted hack because Solidity does not allow empty
       -- structs and if the computation immediately halts, then we won't have
       -- any saved variables and therefore we'll crash solc. Even this isn't
@@ -544,9 +593,10 @@ be_c = \case
       fg_use cond_a
       be_t cond_l
     (body'c, body'l) <-
-      inLoop $
-        local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
-          be_c body
+      withViewSets k_vs $
+        inLoop $
+          local (\e -> e {be_loop = Just (this_loopj, this_loopsp) }) $
+            be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     cnt <- asks be_counter
@@ -568,6 +618,7 @@ be_c = \case
     when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
+    check_view_sets =<< (liftIO . readIORef) =<< asks be_view_setsr
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
@@ -659,8 +710,10 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   let be_toks = mempty
   be_viewr <- newIORef mempty
   let be_views = mempty
+  be_view_setsr <- newIORef mempty
   let be_inConsensus = False
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  check_view_sets =<< readIORef be_view_setsr
   hs <- readIORef be_handlers
   mkvm <- readIORef be_viewr
   -- Step 2: Solve the flow graph

@@ -2145,6 +2145,83 @@ You can fix this code by making a publication within the @reachin{loop}:
 
 Note that the body of a @reachin{while} starts in a @tech{consensus step} so you must first @reachin{commit} before making a publication.
 
+@error{REP0001}
+
+This error indicates that a @reachin{View} is set, but never @link["https://en.wikipedia.org/wiki/Dominator_(graph_theory)"]{dominates} any @reachin{commit}s.
+This means the value the @reachin{View} is set to will never be observable.
+
+For example, the code below attempts to set a loop variable as the value of a @reachin{View}:
+
+@reach{
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  { }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    I.i.set(i);
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+}
+
+The effect of @reachin{I.i.set(i)} is only observable after the next @reachin{commit} in it's scope.
+Since, there are no @reachin{commit}s between @reachin{I.i.set(i)} and @reachin{continue}, which is the end of the lexical scope, there is no
+way to observe the effect of setting @reachin{I.i}.
+
+You can generally fix this error by inserting a @reachin{commit} in the area where you'd like
+the effect of setting a @reachin{View} to be observable. In the case of a @reachin{while} loop, like the
+program above, it can be fixed the following way:
+
+@reach{
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  {
+    I.i.set(i);
+  }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+}
+
+This change will ensure the @reachin{View} @reachin{I.i} is set to @reachin{i} on every iteration of the
+loop. Additionally, the continuation of the loop will have @reachin{I.i} set to the last value of
+the loop variable @reachin{i}.
+
 @error{RI0000}
 
 This error indicates that @tt{git clone} has failed when trying to download the dependencies
