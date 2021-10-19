@@ -1119,10 +1119,12 @@ devnet = command "devnet" $ info f d where
       |]
       when abg $ write [N.text|
         printf 'Bringing up devnet...'
-        for ((i=0; i<$max_wait_s; i++)); do
+        i=0
+        while [ $$i -lt $max_wait_s ]; do
           if [ "$(docker ps -qf "label=sh.reach.devnet-for=$c'" | wc -l)" -gt 0 ]; then break; fi
           printf '.'
           sleep 1
+          i=$$(( i + 1 ))
         done
         if [ $$i -eq $max_wait_s ]; then printf '\nSomething may have gone wrong.\n'; exit 1; fi
         printf ' Done.\n'
