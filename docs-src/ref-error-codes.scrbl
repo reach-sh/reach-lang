@@ -2332,3 +2332,19 @@ at runtime. You can fix this code by verifying the claim via an @reachin{assert}
   assert(x >= 0);
 }
 
+@error{RAPI0000}
+
+This error means that you defined an @tech{API} but did not actually use it in your prorgam.
+
+@error{RAPI0001}
+
+This error means that you returned the result to an @tech{API} without calling it.
+This is generally not possible unless you directly use the internal representation of APIs.
+
+@error{RAPI0002}
+
+The error means that you use an @tech{API} in two places in your program, which is not allowed.
+
+@error{RAPI0003}
+
+This error means that you did not return a result from an @tech{API} call.

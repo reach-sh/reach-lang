@@ -2,6 +2,7 @@ module Reach.Test_Docs ( spec_errorCodes ) where
 
 import           Generic.Data
 import           Reach.AST.Base               (ImpossibleError (..), errPrefix)
+import           Reach.APICut                 (APICutError (..))
 import           Reach.Connector              (ConnectorError (..))
 import           Reach.EPP                    (EPPError (..))
 import           Reach.Eval.Error             (EvalError (..))
@@ -30,6 +31,7 @@ allErrorCodes =
   , (errPrefix Err_Parse_JSIdentNone, gconNum @ParserError)
   , (errPrefix Err_Impossible_InspectForall, gconNum @ImpossibleError)
   , (errPrefix Err_TransferNewToken, gconNum @AlgoError)
+  , (errPrefix (API_NoIn ""), gconNum @APICutError)
   ]
 
 getCodes :: String -> Int -> [T.Text]

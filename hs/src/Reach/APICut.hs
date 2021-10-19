@@ -1,10 +1,14 @@
-module Reach.APICut (apicut) where
+module Reach.APICut
+  ( apicut
+  , APICutError(..)
+  ) where
 
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
+import Generics.Deriving ( Generic )
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -45,10 +49,34 @@ import Reach.Util
 -- But, also, we deal with the whiles, switches, continues, and all that stuff
 -- too.
 
+data APICutError
+  = API_NoIn String
+  | API_OutBeforeIn String
+  | API_Twice String
+  | API_NoOut String
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode APICutError where
+  errPrefix = const "RAPI"
+  errIndex = \case
+    API_NoIn {} -> 0
+    API_OutBeforeIn {} -> 1
+    API_Twice {} -> 2
+    API_NoOut {} -> 3
+
+instance Show APICutError where
+  show = \case
+    API_NoIn p -> p <> "does not occur in program"
+    API_OutBeforeIn p -> p <> "calls interact.out() before interact.in()"
+    API_Twice p -> p <> "occurs multiple times in program"
+    API_NoOut p -> p <> "does not return result"
+
 type App = ReaderT Env IO
 data Env = Env
-  { eSeenOut :: Bool
-  , eSeenIn :: IORef Bool
+  { eWho :: SLPart
+  , eSeenOut :: Bool
+  , eSeenOutR :: IORef Bool
+  , eSeenInR :: IORef Bool
   , eWhile :: Maybe (DLBlock, ETail, ETail)
   , eCounter :: Counter
   }
@@ -95,20 +123,27 @@ interactIn = interactX "in"
 interactOut :: DLExpr -> Bool
 interactOut = interactX "out"
 
+err :: SrcLoc -> (String -> APICutError) -> App a
+err at mk = do
+  w <- asks eWho
+  let msg = "API " <> show w <> " "
+  expect_thrown at $ mk msg
+
 seek :: ETail -> App (Maybe ETail)
 seek = \case
   ET_Com c k -> do
+    let at = srclocOf c
     when (has interactOut c) $
-      impossible "XXX should not contain out"
+      err at API_OutBeforeIn
     case has interactIn c of
       False -> seek k
       True -> do
         Env {..} <- ask
-        (liftIO $ readIORef eSeenIn) >>= \case
-          False -> liftIO $ writeIORef eSeenIn True
-          True -> impossible "XXX expected in once"
+        (liftIO $ readIORef eSeenInR) >>= \case
+          False -> liftIO $ writeIORef eSeenInR True
+          True -> err at API_Twice
         slurp k >>= \case
-          Nothing -> impossible $ "XXX expected out " <> show (srclocOf c)
+          Nothing -> err at API_NoOut
           Just k' -> return $ Just $ ET_Com c k'
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
@@ -174,10 +209,16 @@ clipAtFrom = \case
 slurp :: ETail -> App (Maybe ETail)
 slurp = \case
   ET_Com c k -> do
+    let at = srclocOf c
     let m = fmap (ET_Com c) <$> slurp k
     case has interactOut c of
       False -> m
-      True -> local (\e -> e { eSeenOut = True }) m
+      True -> do
+        Env {..} <- ask
+        (liftIO $ readIORef eSeenOutR) >>= \case
+          False -> liftIO $ writeIORef eSeenOutR True
+          True -> err at API_Twice
+        local (\e -> e { eSeenOut = True }) m
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
     t' <- slurp t
@@ -236,25 +277,25 @@ many_ = getFirst . mconcat . map First
 many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
 many f l = many_ <$> mapM f l
 
-apc :: HasCounter a => a -> EPProg -> IO EPProg
-apc hc = \case
+apc :: HasCounter a => a -> SLPart -> EPProg -> IO EPProg
+apc hc eWho = \case
   EPProg at True ie et -> do
     let eSeenOut = False
-    eSeenIn <- newIORef False
+    eSeenInR <- newIORef False
+    eSeenOutR <- newIORef False
     let eWhile = Nothing
     let eCounter = getCounter hc
     let env0 = Env {..}
-    met' <- flip runReaderT env0 $ seek et
-    case met' of
-      Just et' -> do
-        return $ EPProg at True ie et'
-      Nothing ->
-        impossible $ "XXX api must occur in one place"
+    et' <- flip runReaderT env0 $ do
+      seek et >>= \case
+        Just x -> return x
+        Nothing -> err at API_NoIn
+    return $ EPProg at True ie et'
   p -> return p
 
 apicut :: PLProg -> IO PLProg
 apicut (PLProg at plo dli dex epps cp) = do
   let EPPs apis em = epps
-  em' <- mapM (apc plo) em
+  em' <- mapWithKeyM (apc plo) em
   let epps' = EPPs apis em'
   return $ PLProg at plo dli dex epps' cp

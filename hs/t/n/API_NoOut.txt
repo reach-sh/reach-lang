@@ -7,7 +7,7 @@ Verifying for generic connector
 Checked 18 theorems; No failures!
 reachc: error[RAPI0003]: API "Writer_f" does not return result
 
-  ./api-noret.rsh:13:19:application
+  ./API_NoOut.rsh:13:19:application
 
   13|     parallelReduce(0)
 

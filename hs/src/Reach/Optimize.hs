@@ -380,7 +380,7 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
 optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
 optWhile mk asn cond body k = do
   asn' <- opt asn
-  cond'@(DLBlock _ _ _ ca) <- opt cond
+  cond'@(DLBlock _ _ _ ca) <- newScope $ opt cond
   let mca b m = case ca of
                   DLA_Var dv -> do
                     rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
@@ -489,7 +489,7 @@ instance Optimize LLConsensus where
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
-      inv' <- opt inv
+      inv' <- newScope $ opt inv
       optWhile (\asn' cond' body' k' -> LLC_While at asn' inv' cond' body' k') asn cond body k
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn

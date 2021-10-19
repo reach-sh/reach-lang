@@ -8,4 +8,4 @@ Verifying for generic connector
   Verifying when ONLY "Writer_writeB" is honest
   Verifying when ONLY "Writer_writeN" is honest
   Verifying when ONLY "Writer_writeT" is honest
-Checked 508 theorems; No failures!
+Checked 513 theorems; No failures!

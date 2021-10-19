@@ -1,6 +1,7 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
+  , spec_examples_cover_APICutError
   )
 where
 
@@ -9,6 +10,7 @@ import Data.Proxy
 import Generics.Deriving
 import Reach.Eval.Error
 import Reach.Parser
+import Reach.APICut
 import System.Directory
 import System.FilePath
 import Test.Hspec
@@ -75,3 +77,10 @@ spec_examples_cover_ParserError =
       , "Err_Parse_NotModule"
       , "Err_Parse_JSIdentNone"
       ]
+
+spec_examples_cover_APICutError :: Spec
+spec_examples_cover_APICutError =
+  mkSpecExamplesCoverCtors p exceptions ".rsh" "n"
+  where
+    p = Proxy @APICutError
+    exceptions = []

@@ -111,11 +111,16 @@ tealcount () {
 
 #######
 
-fc hs/t/y/api-noret.rsh
-fc hs/t/y/api-twice2.rsh
-fc hs/t/y/api-twice.rsh
-
+ci ETH ttt
+ci ALGO ttt
 exit 0
+
+fc hs/t/n/API_NoIn.rsh
+fc hs/t/n/API_OutBeforeIn.rsh
+fc hs/t/n/API_Twice.rsh
+fc hs/t/n/API_Twice2.rsh
+fc hs/t/n/API_NoOut.rsh
+
 c examples/api-full/index.rsh
 #exit 0
 
@@ -127,7 +132,7 @@ jb
 ci ETH api-full
 
 #ci ALGO mint-basic
-#ci ALGO api-full
+ci ALGO api-full
 
 exit 0
 
