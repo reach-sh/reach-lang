@@ -183,6 +183,10 @@ const LHS =
     PUBLISH_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
+  .api(API_EXPR,
+    ASSUME_EXPR,
+    PAY_EXPR,
+    CONSENSUS_EXPR)
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
 }
@@ -190,9 +194,9 @@ const LHS =
 The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component of a @reachin{while} loop; and,
 the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
 the @reachin{DEFINE_BLOCK} is like the @reachin{DEFINE_BLOCK} of a @reachin{while} loop;
-while the @reachin{.case}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
+while the @reachin{.case}, @reachin{.api}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
 
-The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
+The @reachin{.case} component may be repeated many times, just like in a @reachin{fork} statement.
 
 The @reachin{.define} component may define bindings that reference the @reachin{LHS} values. These bindings are accessible
 from every component of the @reachin{parallelReduce} statement, except for the @reachin{INIT_EXPR}.
@@ -249,7 +253,8 @@ The idea is that there are some values (the @reachin{LHS}) which after intializa
 
 @reach{
 var LHS = INIT_EXPR;
-invariant(INVARIANT_EXPR)
+DEFINE_BLOCK;
+invariant(INVARIANT_EXPR);
 while(COND_EXPR) {
   fork()
   .case(PART_EXPR,

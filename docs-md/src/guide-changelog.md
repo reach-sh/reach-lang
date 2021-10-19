@@ -6,10 +6,27 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.5: 2021/09 - present
+## 0.1.6: 2021/10 - present
 
-Version 0.1.5 is the current Reach release candidate version.
+Version 0.1.6 is the current Reach release candidate version.
 
++ 2021/10/18: Added APIs via the `API` form.
++ 2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2021/10/15: Algorand devnet updated to versions 3.0.1 and 2.6.4
+
+
+## 0.1.5: 2021/09 - 2021/10
+
+Version 0.1.5 is the current Reach release version.
+
++ 2021/10/11: The Solidity compiler has been upgraded to 0.8.9.
++ 2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2021/10/08: `parallelReduce` is more strict in checking that the `msg` argument is present in the parameter list of `case` components, even when it is is bound to a `null`.
++ 2021/10/08: Added `getContract` and `getAddress`.
++ 2021/10/08: Added `ctc.getContractAddress`.
++ 2021/10/05: Added `Contract`. Updated `ctc.getInfo` to return a `Contract`.
++ 2021/10/04: Added `unstrict`.
 + 2021/09/25: Reach clients will detect that they are attempting to publish in a race that they cannot win and switch to listening for the publication of another.
 This has the impact of frontends not being asked to sign transactions that cannot possibly succeed.
 + 2021/09/25: Added `didPublish()`.
@@ -19,12 +36,13 @@ This has the impact of frontends not being asked to sign transactions that canno
 
 If you would like the old behavior, then you'll want to create a new participant, perhaps called `Constructor`, that exists simply to run `Constructor.publish(); commit();`, but we expect that almost no one actually wants the old behavior exactly.
 Instead, you probably want to select one of your existing participants and assign the first publication to them.
-+ 2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release and older, deployed contracts will not work with this version.
++ 2021/09/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
 
 ## 0.1.4: 2021/09 - 2021/09
 
-Version 0.1.4 is the current Reach release version.
+Version 0.1.4 is is an old Reach release version.
 
 + 2021/09/15: `muldiv` added.
 + 2021/09/08: Add `--stop-after-eval` and `--verify-timeout` options to `reach compile`.

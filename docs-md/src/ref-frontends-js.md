@@ -25,6 +25,7 @@ ${toc}
 ## {#ref-frontends-js-types} Types
 
 The table below shows the JavaScript representation of each of the Reach types:
+${ref((quote js), "Contract")}
 ```js
 // Reach  => JavaScript
 Null      => null
@@ -33,6 +34,7 @@ UInt      => 'BigNumber' or 'number'
 Bytes     => 'string'
 Digest    => 'BigNumber'
 Address   => NetworkAccount
+Contract  => Address on ETH; UInt on ALGO
 Token     => Address on ETH; UInt on ALGO
 Array     => array
 Tuple     => array
@@ -47,7 +49,7 @@ For example, the Reach type `MInt = Data({None: Null, Some: UInt})` inhabitant `
 ---
 ${ref((quote js), "Connector")}
 ```js
-type Connector = 'ETH' | 'ALGO'
+type Connector = 'ETH' | 'ALGO' | 'CFX'
 ```
 
 
@@ -140,7 +142,7 @@ unsafeAllowMultipleStdlibs() => null
  Calling this function will lift the restriction that
 `loadStdlib` imposes on loading multiple standard libraries.
 
-## {#ref-frontends-js-acc} Accounts
+## {#ref-frontends-js-acc} Account Handles
 
 These functions create and interact with account representations.
 
@@ -357,21 +359,49 @@ On the Conflux consensus networks, the Reach standard library will automatically
 Storage fees are refunded once the storage space is no longer used by the contract.
 The `setStorageLimit` function allows you to choose a different storage limit, as you see fit.
 
-## {#ref-frontends-js-ctc} Contracts
+## {#ref-frontends-js-ctc} Contract Handles
 
-These functions create and interact with contract representations.
+In order to interact with a deployed contract, you must construct a contract handle from an account.
+
+---
+${ref((quote js), "contract")}
+```js
+acc.contract(bin, ?info) => ctc 
+```
+
+
+ Returns a Reach contract handle based on the `bin` argument provided with access to the account `acc`.
+This `bin` argument is the `input.mjs` module produced by the JavaScript backend.
+
+If `info` is provided, it must be a `Contract` value, or a `Promise` that eventually yields a `Contract` value.
+Typically, the deployer of a contract with not provide `info`, while users of a contract will.
+In an automated, single instance program, `ctc.getInfo()` is typically used to acquire `info`;
+while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the `info` argument.
+
+The first publishing participant will attempt deploy a contract for application.
+If `info` was provided, an error will be thrown.
+This deployment can only happen one time, so subsequent attempts will fail with an error.
+
+This function does not block.
 
 ---
 ${ref((quote js), "deploy")}
 ```js
-acc.deploy(bin) => ctc 
+acc.deploy(bin) => ctc
 ```
 
 
- Returns a Reach contract abstraction after starting the deployment of a Reach DApp contract based on the `bin` argument provided.
-This `bin` argument is the `input.mjs` module produced by the JavaScript backend.
-This function does not block on the completion of deployment.
-To wait for deployment, see `ctc.getInfo`.
+
+This deprecated function is an abbreviation of `acc.contract(bin)`.
+
+${ref((quote js), "attach")}
+```js
+acc.attach(bin, info) => ctc 
+```
+
+
+
+This deprecated function is an abbreviation of `acc.contract(bin, info)`.
 
 ---
 ${ref((quote js), "getInfo")}
@@ -380,30 +410,73 @@ ctc.getInfo() => Promise<ctcInfo>
 ```
 
 
- Returns a Promise for an object that may be given to `attach` to construct a Reach contract abstraction representing this contract.
+ Returns a Promise for a `Contract` value that may be given to `contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `JSON.stringify` for printing and parsed again with `JSON.parse` without any loss of information.
-The Promise will only be resolved after the contract is actually deployed on the network.
-You cannot block on this Promise with `await` until after the first `publish` has occurred.
+
+If `ctc` will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
+thus you cannot block on this Promise with `await` until after the first `publish` has occurred.
 Awaiting `getInfo` too early may cause your program to enter a state of deadlock.
+It is safer to make an `interact` function that receives `getContract()` from the Reach program.
 
 ---
-
-${ref((quote js), "attach")}
+${ref((quote js), "getContractAddress")}
 ```js
-acc.attach(bin, ctcInfoP) => ctc 
+ctc.getContractAddress() => Promise<Address> 
 ```
 
 
- Returns a Reach contract abstraction based on a deployed Reach DApp contract provided in the `ctcInfo` argument (or a Promise for ctcInfo) and the `bin` argument.
-This `bin` argument is the `input.mjs` module produced by the JavaScript backend.
+ Returns a Promise for the `Address` of the connected Reach contract.
 
 ---
 
-### {#ref-frontends-js-view} View Access
+Contract handles provide access to the interface of the compiled backend, `bin`, that they were constructed with.
+
+```js
+ctc.participants // {[name: string]: (interact:Object) => Promise}
+ctc.p
+
+ctc.p.Alice(interact)
+```
+
+
+
+
+An object where the keys are the participant names and the values are function that accept an interact object and return a Promise that completes when the participant ends.
+
+`acc.contract(backend).p.Alice(io)` is equivalent to `backend.Alice(acc.contract(backend), io)`, but does not require duplication of the `backend` component.
+
+```js
+ctc.apis // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ctc.apis // {[name: string]: (...args) => Promise<result>}
+ctc.a
+
+ctc.a.Voter.cast("Pedro")
+```
+
+
+
+
+An object that mirrors the API hierarchy, so if `X.Y` is an API, then `ctc.apis.X.Y` is an ${defn("API function")}.
+An API function accepts the arguments of the API and returns a `Promise` that results in the value of the API.
+This function may throw an error if the API is not available.
 
 ::: note
 Views are [defined in application initialization](##ref-programs-appinit-view) and then they are [set in consensus steps](##ref-programs-consensus-view). Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.
 :::
+
+```js
+ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ctc.v
+
+ctc.v.NFT.owner()
+```
+
+
+
+
+An object that mirrors the view hierarchy, so if `X.Y` is a view, then `ctc.views.X.Y` is a ${defn("view function")}.
+A view function accepts the arguments of the view and returns a `Promise` that results in the value of the view wrapped in a `Maybe` type (because the view may not be bound.)
+For example, if `NFT.owner` is a view with no arguments that represents the `Address` that owns an NFT, then `await ctc.v.NFT.owner()` is either `['Some', Owner]` or `['None', null]`.
 
 ${ref((quote js), "getViews")}
 ```js
@@ -411,10 +484,8 @@ ctc.getViews() => Object
 ```
 
 
- Returns an object representing the views of the contract.
-This object mirrors the view hierarchy, so if `X.Y` is a view, then `ctc.getViews().X.Y` is a ${defn("view function")}.
-A view function accepts the arguments of the view and returns a `Promise` that results in the value of the view wrapped in a `Maybe` type (because the view may not be bound.)
-For example, if `NFT.owner` is a view with no arguments that represents the `Address` that owns an NFT, then `await ctc.getViews().NFT.owner()` is either `['Some', Owner]` or `['None', null]`.
+
+This deprecated function is an abbreviation of `ctc.views`.
 
 ## {#ref-frontends-js-network} Network Utilities
 

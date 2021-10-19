@@ -50,6 +50,7 @@ In particular, it does not only refer to so-called "layer-1" protocols, nor does
 In addition to @tech{values}, @tech{consensus state} may contain a fixed number of @deftech{mappings} between an @tech{address} and a @tech{value}.
 These @tech{mappings} are referred to as "@deftech{linear state}" because their size is linear in the number of @tech{participants} in the @tech{contract}.
 Furthermore, a @tech{contract} may provide @deftech{views} of its @tech{consensus state}, which are hierarchically organized labeled functions and values, such as @litchar{NFT.owner} or @litchar{Game.scoreOfPlayer}.
+These @tech{views} are visible in sub-trees of the computation graph.
 The creation of a @tech{contract} is called @deftech{deploy}ment.
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.
@@ -61,6 +62,10 @@ A @deftech{participant class} is a category of @tech{participant} that may occur
 Members of a @tech{participant class} are referred to as @deftech{participant instances} when their status as a member of a class is important, but just "@tech{participants}" otherwise.
 @tech{Participant instances} are independent @tech{participants} like any other; for example, with their own @tech{local state}, @tech{frontend}, and so on.
 The main distinction is that when a member of a @tech{participant class} @tech{join}s an application, it is not @tech{fixed} like other @tech{participants}, because a @tech{participant instance} does not exclusively represent the @tech{participant class}.
+
+An @deftech{API} is a source of @tech{publications} that do not correspond to any @tech{participant} and are therefore like asynchronous events that impinge on the computation.
+The @tech{contract} returns a value to an @tech{API} call.
+@tech{API}s are organized into a labeled hierarchy, like @litchar{Contest.vote} and @litchar{User.write}.
 
 Since @DApps have an associated @tech{contract}, they have an associated @tech{account}. @margin-note{The @tech{contract} account must be distinct from all @tech{participant} @tech{accounts}.} This @tech{account} is assumed to be empty when the computation starts.@margin-note{On some @tech{consensus networks}, it is possible for @tech{transfers} to a @tech{contract} @tech{account} to occur outside of the purview of Reach. If this occurs, then those @tech{network tokens} are remitted to the @tech{originator} of the final @tech{consensus transfer}.} Any @tech{network token}s transferred into the @tech{account} must be removed by the @|DApp|'s completion. This is called the @deftech{token linearity property}.
 

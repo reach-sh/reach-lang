@@ -77,6 +77,8 @@ Deleting this directory is also safe; it can easily be rebuilt by using the `--i
 This might be useful for performing syntax and type checking quickly.
 + `--verify-timeout` `TIMEOUT-MS` --- Sets the timeout of individual verification theorems, in milliseconds.
 The default value is 2 minutes.
++ The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
+This debug information includes: the estimated cost of the contract on Algorand.
 
 
 ### {#ref-usage-init} `reach init`

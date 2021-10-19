@@ -380,6 +380,22 @@ void foo(MObj.None());
 ```
 
 
+### `unstrict`
+
+${ref((quote rsh), "unstrict")}
+```reach
+assert(unstrict(() => {
+  'use strict';
+  // the following fails in strict mode due to a type mismatch
+  return 1 != true;
+}));
+```
+
+
+ `unstrict` applies a thunk, ignoring any usage of strict mode. This
+can be useful when dealing with libraries that are written in strict mode.
+
+
 ### Identifier reference
 
 ```reach
@@ -424,6 +440,11 @@ Reach's ${defn("type")}s are represented in programs by the following identifier
 Bytes of different lengths are not compatible; however the shorter bytes may be padded.
 + ${ref((quote rsh), "Digest")} `Digest`, which denotes a digest.
 + ${ref((quote rsh), "Address")} `Address`, which denotes an account address.
++ ::: note
+Reach has different representations of contracts across connectors.
+For example, on Algorand a `Contract` is an Application ID, but on Ethereum it is an Address.
+:::
+${ref((quote rsh), "Contract")} `Contract`, which denotes the identifying information of a contract.
 + ${ref((quote rsh), "Token")} `Token`, which denotes a non-network token. ${seclink("ref-networks")} discusses how `Token`s are represented on specific networks.
 + ${ref((quote rsh), "Fun")} `Fun([Domain_0, ..., Domain_N], Range)`, which denotes a ${defn("function type")}, when `Domain_i` and `Range` are types.
 The domain of a function is negative position.
@@ -1560,6 +1581,28 @@ balance(gil);
 
 The ${defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
+
+### `getContract`
+
+${ref((quote rsh), "getContract")}
+```reach
+getContract() 
+```
+
+
+The ${defn("getContract")} primitive returns the `Contract` value for the deployed contract.
+This function may not be called until after the first publication (which creates the contract).
+
+### `getAddress`
+
+${ref((quote rsh), "getAddress")}
+```reach
+getAddress() 
+```
+
+
+The ${defn("getAddress")} primitive returns the `Address` value of the deployed contract's account.
+This function may not be called until after the first publication (which creates the contract).
 
 ### `lastConsensusTime` and `lastConsensusSecs`
 

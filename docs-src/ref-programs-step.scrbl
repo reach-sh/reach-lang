@@ -125,7 +125,16 @@ will indicate that @reachin{fork} payments should be of the format:
 
 @margin-note{If you're unsure of what kind of @tech{consensus transfer} to use, you may want to read the @seclink["guide-ctransfers"]{explanation of the differences} in the Guide.}
 
-A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR).when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
+A @tech{consensus transfer} is written
+@reach{
+PART_EXPR.publish(ID_0, ..., ID_n)
+ .pay(PAY_EXPR)
+ .when(WHEN_EXPR)
+ .timeout(DELAY_EXPR, () =>
+   TIMEOUT_BLOCK)
+ // or
+ .throwTimeout(DELAY_EXPR, THROWN_EXPR)
+}
 where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
 @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
 @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to a @tech{pay amount},
@@ -244,17 +253,40 @@ fork()
   PUBLISH_EXPR,
   PAY_EXPR,
   CONSENSUS_EXPR)
+.api(API_EXPR,
+  API_ASSUME_EXPR,
+  API_PAY_EXPR,
+  API_CONSENSUS_EXPR)
 .timeout(DELAY_EXPR, () =>
   TIMEOUT_BLOCK);
+// or
+.throwTimeout(DELAY_EXPR, THROW_EXPR)
 }
 
 where:
-@reachin{TOKENS_EXPR} is an expression that evaluates to a tuple of @reachin{Token}s.
-@reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
-@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;
-@reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns a @tech{pay amount};
-@reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
-the @reachin{timeout} and @reachin{throwTimeout} parameter are as in an @tech{consensus transfer}.
+@itemlist[
+
+@item{@reachin{TOKENS_EXPR} is an expression that evaluates to a tuple of @reachin{Token}s;}
+
+@item{@reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};}
+
+@item{@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any type, and a @litchar{when} field, which must be a boolean;}
+
+@item{(optional) @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns a @tech{pay amount}; if this component is left-out, it is synthesized to zero;}
+
+@item{@reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step};}
+
+@item{@reachin{API_EXPR} is an expression that evaluates to an @tech{API member function};}
+
+@item{(optional) @reachin{API_ASSUME_EXPR} is a function parameterized over the input to the @tech{API member function} which is evaluated for effect in a @tech{local step}; thus it may be used to add @reachin{assume} constraints on the values given by the @tech{API}; if this is absent, then it is synthesized to an empty function; if it is present, then @reachin{API_PAY_EXPR} must be included;}
+
+@item{(optional) @reachin{API_PAY_EXPR} is a function parameterized over the input to the @tech{API member function} which is evaluated to determine the @tech{pay amount}, like @reachin{PAY_EXPR};}
+
+@item{@reachin{API_CONSENSUS_EXPR} is a function parameterized over the input to the @tech{API member function} and a function that returns a value to the @tech{API} call; this function must be called;}
+
+@item{the @reachin{timeout} and @reachin{throwTimeout} parameter are as in an @tech{consensus transfer}.}
+
+]
 
 If the @litchar{msg} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{null}.
 
@@ -264,9 +296,10 @@ If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{(
 
 The @reachin{TOKENS_EXPR} and @reachin{PAY_EXPR} have the same restrictions as the @reachin{.pay} component of a @tech{consensus transfer}: i.e., they must be @tech{pure} and can only refer to @tech{consensus state}.
 
-The @reachin{.case} component may be repeated many times.
+The @reachin{.case} and @reachin{.api} components may be repeated many times.
 
-The same @tech{participant} may specify multiple cases. In this situation, the order of the cases is significant.
+The same @tech{participant} may specify multiple cases.
+In this situation, the order of the cases is significant.
 That is, a subsequent case will only be evaluated if the prior case's @tt{when} field is @reachin{false}.
 
 If the @tech{participant} specified by @reachin{PART_EXPR} is not already @tech{fixed} (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is @tech{fixed}, provided it is not a @tech{participant class}.

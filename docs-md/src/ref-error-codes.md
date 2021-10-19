@@ -2474,3 +2474,19 @@ assert(x >= 0);
 ```
 
 
+## {#RAPI0000} RAPI0000
+
+This error means that you defined an API but did not actually use it in your prorgam.
+
+## {#RAPI0001} RAPI0001
+
+This error means that you returned the result to an API without calling it.
+This is generally not possible unless you directly use the internal representation of APIs.
+
+## {#RAPI0002} RAPI0002
+
+The error means that you use an API in two places in your program, which is not allowed.
+
+## {#RAPI0003} RAPI0003
+
+This error means that you did not return a result from an API call.
