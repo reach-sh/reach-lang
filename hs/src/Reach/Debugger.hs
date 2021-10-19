@@ -80,10 +80,38 @@ type Session = M.Map Id State
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
 
--- interpreter
+-- ## interpreter ## --
+
+interpExpr :: DLExpr -> App DLArg
+interpExpr = \case
+  (DLE_Arg _loc _dlarg) -> undefined
+  (DLE_LArg _loc _dllargearg) -> undefined
+  (DLE_Impossible _loc _impossibleerror) -> undefined
+  (DLE_PrimOp _loc _primop _dlargs) -> undefined
+  (DLE_ArrayRef _loc _dlarg1 _dlarg2) -> undefined
+  (DLE_ArraySet _loc _dlarg1 _dlarg2 _dlarg3) -> undefined
+  (DLE_ArrayConcat _loc _dlarg1 _dlarg2) -> undefined
+  (DLE_ArrayZip _loc _dlarg1 _dlarg2) -> undefined
+  (DLE_TupleRef _loc _dlarg _integer) -> undefined
+  (DLE_ObjectRef _loc _dlarg _string) -> undefined
+  (DLE_Interact _loc _slcxtframes _slpart _string _dltype _dlargs) -> undefined
+  (DLE_Digest _loc _dlargs) -> undefined
+  (DLE_Claim _loc _slcxtframes _claimtype _dlarg _maybe_bytestring) -> undefined
+  (DLE_Transfer _loc _dlarg1 _dlarg2 _maybe_dlarg) -> undefined
+  (DLE_TokenInit _loc _dlarg) -> undefined
+  (DLE_CheckPay _loc _slcxtframes _dlarg _maybe_dlarg) -> undefined
+  (DLE_Wait _loc _dltimearg) -> undefined
+  (DLE_PartSet _loc _slpart _dlarg) -> undefined
+  (DLE_MapRef _loc _dlm_var _dlarg) -> undefined
+  (DLE_MapSet _loc _dlm_var _dlarg _maybe_dlarg) -> undefined
+  (DLE_Remote _loc _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill) -> undefined
+  (DLE_TokenNew _loc _dltokennew) -> undefined
+  (DLE_TokenBurn _loc _dlarg1 _dlarg2) -> undefined
+  (DLE_TokenDestroy _loc _dlarg) -> undefined
+
 interpStmt :: DLStmt -> App ()
 interpStmt = \case
-  (DL_Nop _loc) -> undefined
+  (DL_Nop _loc) -> return ()
   (DL_Let _loc _let_var _expr) -> undefined
   (DL_ArrayMap _loc _var1 _arg _var2 _block) -> undefined
   (DL_ArrayReduce _loc _var1 _arg1 _arg2 _var2 _var3 _block) -> undefined
@@ -95,14 +123,32 @@ interpStmt = \case
   (DL_Only _loc _either_part _tail) -> undefined
   (DL_MapReduce _loc _int _var1 _dlm_var _arg _var2 _var3 _block) -> undefined
 
+interpTailStmt :: DLTail -> App ()
+interpTailStmt = \case
+  (DT_Return _loc) -> return ()
+  (DT_Com stmt dltail) -> do
+    _ <- interpStmt stmt
+    interpTailStmt dltail
+
+interpCons :: LLConsensus -> App ()
+interpCons = \case
+  (LLC_Com _stmt _cons) -> undefined
+  (LLC_If _loc _arg _cons1 _cons2) -> undefined
+  (LLC_Switch _loc _var _switch_cases) -> undefined
+  (LLC_FromConsensus _loc1 _loc2 _step) -> undefined
+  (LLC_While _loc _asn _inv _cond _body _k) -> undefined
+  (LLC_Continue _loc _asn) -> undefined
+  (LLC_ViewIs _loc _part _var _export _cons) -> undefined
+
 interpStep :: (LLStep -> LLProg) -> LLStep -> App LLProg
 interpStep pmeta = \case
   (LLS_Com stmt st') -> do
     _ <- interpStmt stmt
     interpStep pmeta st'
   (LLS_Stop loc) -> return $ pmeta (LLS_Stop loc)
-  (LLS_ToConsensus _tc_at _tc_send _tc_recv _tc_mtime) -> undefined
+  (LLS_ToConsensus _loc _tc_send _tc_recv _tc_mtime) -> undefined
 
+-- evaluate a linear Reach program
 interp :: LLProg -> App LLProg
 interp (LLProg at llo ps dli dex dvs st) = interpStep (LLProg at llo ps dli dex dvs) st
 
@@ -111,6 +157,7 @@ interpM mprog = do
   prog <- mprog
   interp prog
 
+-- evaluate the next N steps
 interpN :: Integer -> LLProg -> App LLProg
 interpN n prog = foldr (.) id (replicate (fromInteger n) interpM) $ return prog
 
