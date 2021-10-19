@@ -1109,6 +1109,7 @@ devnet = command "devnet" $ info f d where
     let s = devnetFor c
     let n = "reach-" <> s
     let a = if abg then " >/dev/null 2>&1 &" else ""
+    let max_wait_s = "120";
     dieConnectorModeBrowser
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
@@ -1118,11 +1119,12 @@ devnet = command "devnet" $ info f d where
       |]
       when abg $ write [N.text|
         printf 'Bringing up devnet...'
-        while true; do
+        for ((i=0; i<$max_wait_s; i++)); do
           if [ "$(docker ps -qf "label=sh.reach.devnet-for=$c'" | wc -l)" -gt 0 ]; then break; fi
           printf '.'
           sleep 1
         done
+        if [ $$i -eq $max_wait_s ]; then printf '\nSomething may have gone wrong.\n'; exit 1; fi
         printf ' Done.\n'
       |]
 
