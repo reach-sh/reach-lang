@@ -628,8 +628,6 @@ Reach includes some such assertions automatically in every program.
 That's why every version of @|RPS| has said that a number of theorems were checked.
 We can see what these theorems do by deliberately inserting an error into the program.
 
-Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
-
 Let's also undo the changes we made earlier by changing
 
 @reachex["tut-5-attack/index.rsh"
@@ -644,6 +642,8 @@ and removing
 
 @reachex["tut-5-attack/index.rsh"
          'only 35 36 "      // ..."]
+
+Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
 We should now have something that looks like
 
