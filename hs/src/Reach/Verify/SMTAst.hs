@@ -32,6 +32,7 @@ data BindingOrigin
   | O_ReduceVar
   | O_ExportArg
   | O_SwitchCase DLArg
+  | O_Publish
   deriving (Eq)
 
 instance PrettySubst BindingOrigin where
@@ -47,6 +48,7 @@ instance PrettySubst BindingOrigin where
     O_SwitchCase c -> do
       c' <- prettySubst c
       return $ "switch case binding for " <> c'
+    O_Publish -> return $ "a publication"
 
 instance IsPure BindingOrigin where
   isPure = \case
@@ -59,6 +61,7 @@ instance IsPure BindingOrigin where
     O_BuiltIn -> False
     O_Var -> False
     O_Assignment -> False
+    O_Publish -> False
 
 data TheoremKind
   = TClaim ClaimType
@@ -227,7 +230,7 @@ instance PrettySubst SMTTrace where
     return $
       "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <>
       "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
-      "  " <> tk' <> parens (pretty dv) <> ";" <> hardline
+      "  " <> tk' <> parens (viaShow dv) <> ";" <> hardline
     where
       tk' = case tk of
               TClaim c -> pretty c

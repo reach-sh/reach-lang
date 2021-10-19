@@ -1266,11 +1266,10 @@ smt_s = \case
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
     let bind_time = do
-          pathAddUnbound at (Just timev) Nothing
-          pathAddUnbound at (Just secsv) Nothing
+          let publishOrig = Just $ SMTModel O_Publish
           -- XXX technically, didSend is guaranteed to be true if send has one
           -- thing in it
-          pathAddUnbound at (Just didSendv) Nothing
+          void $ traverse (flip (pathAddUnbound at) publishOrig . Just) [timev, secsv, didSendv]
     let after = freshAddrs $ bind_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
