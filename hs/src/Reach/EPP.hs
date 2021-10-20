@@ -488,8 +488,8 @@ be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_ViewIs at v f ma k -> do
     vsr <- asks be_view_setsr
-    liftIO $ modifyIORef vsr
-        $ M.insertWith view_set_combine (v, f) (False, at)
+    liftIO $ modifyIORef vsr $
+      M.insertWith view_set_combine (v, f) (False, at)
     local (\e -> e {be_views = modv $ be_views e}) $
       be_c k
     where
@@ -533,8 +533,8 @@ be_c = \case
       withViewSets mempty $
         captureMore $
           local (\e -> e { be_interval = default_interval
-                        , be_prev = this
-                        , be_prevs = S.singleton this }) $ do
+                         , be_prev = this
+                         , be_prevs = S.singleton this }) $ do
             fg_use views
             be_s s
     when more $ mark_view_sets

@@ -2181,7 +2181,7 @@ export const main = Reach.App(() => {
 });
 }
 
-The effect of @reachin{I.i.set(i)} is only observable after the next @reachin{commit} in it's scope.
+The effect of @reachin{I.i.set(i)} is only observable after the next @reachin{commit} in its scope.
 Since, there are no @reachin{commit}s between @reachin{I.i.set(i)} and @reachin{continue}, which is the end of the lexical scope, there is no
 way to observe the effect of setting @reachin{I.i}.
 
