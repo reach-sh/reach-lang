@@ -858,6 +858,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     await go(false, 'url');
     await go(false, 'metadata');
     await go(T_UInt, 'supply', 'totalSupply');
+    await go(T_UInt, 'decimals');
     debug(`tokenMetadata`, token, md);
     return md;
   };

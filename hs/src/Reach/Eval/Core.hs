@@ -2178,6 +2178,9 @@ evalPrim p sargs =
             "symbol" -> bytes (\x -> tns { dtn_sym = x}) tokenSymLen
             "url" -> bytes (\x -> tns { dtn_url = x}) tokenURLLen
             "metadata" -> bytes (\x -> tns { dtn_metadata = x}) tokenMetadataLen
+            "decimals" -> do
+              a <- compileCheckType T_UInt v
+              return $ tns { dtn_decimals = Just a }
             "supply" -> do
               a <- compileCheckType T_UInt v
               return $ tns { dtn_supply = a }

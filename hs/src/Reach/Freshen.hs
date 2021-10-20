@@ -94,6 +94,7 @@ instance Freshen DLTokenNew where
     <*> fu dtn_url
     <*> fu dtn_metadata
     <*> fu dtn_supply
+    <*> fu dtn_decimals
 
 instance Freshen ClaimType where
   fu = \case

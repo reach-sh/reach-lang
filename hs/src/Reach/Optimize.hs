@@ -231,6 +231,7 @@ instance Optimize DLTokenNew where
     <*> opt dtn_url
     <*> opt dtn_metadata
     <*> opt dtn_supply
+    <*> opt dtn_decimals
 
 instance Optimize DLWithBill where
   opt (DLWithBill y z) =

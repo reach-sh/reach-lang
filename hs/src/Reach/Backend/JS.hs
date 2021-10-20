@@ -427,7 +427,8 @@ jsExpr = \case
         u' <- jsArg dtn_url
         m' <- jsArg dtn_metadata
         p' <- jsArg dtn_supply
-        return $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p' ]
+        d' <- maybe (return "undefined") jsArg dtn_decimals
+        return $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p', d' ]
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do

@@ -64,6 +64,7 @@ instance Subst DLTokenNew where
     <*> subst dtn_url
     <*> subst dtn_metadata
     <*> subst dtn_supply
+    <*> subst dtn_decimals
 
 instance Subst DLWithBill where
   subst (DLWithBill y z) =

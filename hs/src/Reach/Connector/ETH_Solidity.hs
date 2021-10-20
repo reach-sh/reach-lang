@@ -631,7 +631,8 @@ solExpr sp = \case
     u' <- go dtn_url
     m' <- go dtn_metadata
     p' <- solArg dtn_supply
-    return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p' ] ] ]
+    d' <- maybe (return $ solLit $ DLL_Int srcloc_builtin 18) solArg dtn_decimals
+    return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p', d' ] ] ]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta
     aa' <- solArg aa

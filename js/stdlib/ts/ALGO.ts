@@ -1195,8 +1195,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               const zaddr = undefined;
               const ap = bigNumberToBigInt(t.p);
               debug(`tokenNew`, t.p, ap);
+              const decimals = t.d?.toNumber() || 6;
               txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
-                escrowAddr, NOTE_Reach_tag(sim_i++), ap, 6,
+                escrowAddr, NOTE_Reach_tag(sim_i++), ap, decimals,
                 false, escrowAddr, zaddr, zaddr, zaddr,
                 t.s, t.n, t.u, t.m, params,
               );
@@ -1534,7 +1535,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const url = p(96, tokenInfo['url-b64']);
     const metadata = p(32, tokenInfo['metadata-hash']);
     const supply = bigNumberify(tokenInfo['total']);
-    return { name, symbol, url, metadata, supply };
+    const decimals = bigNumberify(tokenInfo['decimals']);
+    return { name, symbol, url, metadata, supply, decimals };
   };
 
   return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });

@@ -51,7 +51,7 @@ instance Sanitize DLLargeArg where
         go (k, v) = (,) k (sani v)
 
 instance Sanitize DLTokenNew where
-  sani (DLTokenNew {..}) = DLTokenNew (sani dtn_name) (sani dtn_sym) (sani dtn_url) (sani dtn_metadata) (sani dtn_supply)
+  sani (DLTokenNew {..}) = DLTokenNew (sani dtn_name) (sani dtn_sym) (sani dtn_url) (sani dtn_metadata) (sani dtn_supply) (sani dtn_decimals)
 
 instance Sanitize DLWithBill where
   sani (DLWithBill y z) = DLWithBill (sani y) (sani z)
