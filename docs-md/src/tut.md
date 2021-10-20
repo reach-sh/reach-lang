@@ -247,7 +247,7 @@ First, the backend for Alice interacts with its frontend, gets Alice's hand, and
 ${code("/examples/tut-3/index.rsh", 17, 21)}
 
 + Line 17 states that this block of code is something that _only_ `Alice` performs.
-+ That means that the variable, `handA`, bound on line 13 is known only to Alice.
++ That means that the variable, `handAlice`, bound on line 18 is known only to Alice.
 + Line 18 binds that value to the result of interacting with Alice through the `getHand` method, which we wrote in JavaScript.
 + Line 18 also declassifies the value, because in Reach, all information from frontends is secret until it is explicitly made public.
 + Line 20 has Alice join the application by publishing the value to the consensus network, so it can be used to evaluate the outcome of the game.
@@ -261,9 +261,9 @@ ${code("/examples/tut-3/index.rsh", 23, 29)}
 
 + Lines 23 through 26 match Alice's similar local step and joining of the application through a consensus transfer publication.
 + But, line 28 computes the outcome of the game before committing.
-(`(handA + (4 - handB)) % 3` is a clever equation to compute the winner of a game of _Rock, Paper, Scissors!_ using modular arithmetic.
-Consider when `handA` is `0` (i.e., `Rock`) and `handB` is `2` (i.e., `Scissors`),
-then this equation is `((handA + (4 - handB)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2`,
+(`(handAlice + (4 - handBob)) % 3` is a clever equation to compute the winner of a game of _Rock, Paper, Scissors!_ using modular arithmetic.
+Consider when `handAlice` is `0` (i.e., `Rock`) and `handBob` is `2` (i.e., `Scissors`),
+then this equation is `((handAlice + (4 - handBob)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2`,
 which is the last outcome, that is `Alice wins`, as we expect it to be.)
 
 
@@ -545,7 +545,7 @@ Bob went from 10 to 4.9999.
 
 
 The problem is that this version of the game only executed an honest version of Bob, that is, one that followed the Reach program exactly, including in his private local steps.
-It is possible for a deviant and dishonest version of a Bob backend to execute different code and always win by computing the appropriate guess based on what value Alice provided for `handA`.
+It is possible for a deviant and dishonest version of a Bob backend to execute different code and always win by computing the appropriate guess based on what value Alice provided for `handAlice`.
 
 If we change Bob's code to the following:
 
@@ -677,7 +677,7 @@ ${code("/examples/tut-5/index.rsh", 9, 11)}
 
 
 But, Reach's [automatic verification](##guide-assert) allows us to express even more powerful statements about our program's behavior.
-For example, we can state that no matter what values are provided for `handA` and `handB`, `winner` will always provide a valid outcome:
+For example, we can state that no matter what values are provided for `handAlice` and `handBob`, `winner` will always provide a valid outcome:
 
 ${code("/examples/tut-5/index.rsh", 13, 15)}
 
@@ -686,7 +686,7 @@ And we can specify that whenever the same value is provided for both hands, no m
 ${code("/examples/tut-5/index.rsh", 17, 18)}
 
 These examples both use `forall`, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of `handA` (twice!) and `handB`.
+You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of `handAlice` (twice!) and `handBob`.
 In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced [symbolic execution engine](##guide-reach) to reason about this theorem abstractly without considering individual values.
 

@@ -234,7 +234,7 @@ First, the backend for Alice interacts with its frontend, gets Alice's hand, and
 
 @item{Line 17 states that this block of code is something that @emph{only} @reachin{Alice} performs.}
 
-@item{That means that the variable, @reachin{handA}, bound on line 13 is known only to Alice.}
+@item{That means that the variable, @reachin{handAlice}, bound on line 18 is known only to Alice.}
 
 @item{Line 18 binds that value to the result of interacting with Alice through the @reachin{getHand} method, which we wrote in JavaScript.}
 
@@ -257,9 +257,9 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 @item{Lines 23 through 26 match Alice's similar @tech{local step} and @tech{join}ing of the application through a @tech{consensus transfer} @tech{publication}.}
 
 @item{But, line 28 computes the outcome of the game before committing.
-(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.
-Consider when @reachin{handA} is @reachin{0} (i.e., @litchar{Rock}) and @reachin{handB} is @reachin{2} (i.e., @litchar{Scissors}),
-then this equation is @reachin{((handA + (4 - handB)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2},
+(@reachin{(handAlice + (4 - handBob)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.
+Consider when @reachin{handAlice} is @reachin{0} (i.e., @litchar{Rock}) and @reachin{handBob} is @reachin{2} (i.e., @litchar{Scissors}),
+then this equation is @reachin{((handAlice + (4 - handBob)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2},
 which is the last outcome, that is @litchar{Alice wins}, as we expect it to be.)}
 
 ]
@@ -554,7 +554,7 @@ Bob went from 10 to 4.9999.
 }
 
 The problem is that this version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
-It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handA}.
+It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handAlice}.
 
 If we change Bob's code to the following:
 
@@ -725,7 +725,7 @@ However, Reach allows us to write such test cases directly into the Reach progra
 ]
 
 But, Reach's @seclink["guide-assert"]{automatic verification} allows us to express even more powerful statements about our program's behavior.
-For example, we can state that no matter what values are provided for @reachin{handA} and @reachin{handB}, @reachin{winner} will always provide a valid outcome:
+For example, we can state that no matter what values are provided for @reachin{handAlice} and @reachin{handBob}, @reachin{winner} will always provide a valid outcome:
 
 @reachex["tut-5/index.rsh"
          'only 13 15 "// ..."]
@@ -736,7 +736,7 @@ And we can specify that whenever the same value is provided for both hands, no m
          'only 17 18 "// ..."]
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
+You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handAlice} (twice!) and @reachin{handBob}.
 In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 

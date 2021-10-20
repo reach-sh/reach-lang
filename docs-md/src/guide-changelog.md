@@ -20,6 +20,7 @@ Version 0.1.6 is the current Reach release candidate version.
 
 Version 0.1.5 is the current Reach release version.
 
++ 2021/10/15: Added `setValidQueryWindow`.
 + 2021/10/11: The Solidity compiler has been upgraded to 0.8.9.
 + 2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2021/10/08: `parallelReduce` is more strict in checking that the `msg` argument is present in the parameter list of `case` components, even when it is is bound to a `null`.
