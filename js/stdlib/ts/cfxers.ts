@@ -136,10 +136,11 @@ export class Contract implements IContract {
         }
         const receipt = await self._receiptP;
         debug(`cfxers:Contract.wait`, `got receipt`, receipt);
-        if (self.address && self.address !== receipt.contractCreated) {
-          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${receipt.contractCreated}`);
+        const rcc = address_cfxStandardize(receipt.contractCreated);
+        if (self.address && self.address !== rcc) {
+          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${rcc}`);
         }
-        self.address = self.address || receipt.contractCreated;
+        self.address = self.address || rcc;
         if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
           throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
         }
