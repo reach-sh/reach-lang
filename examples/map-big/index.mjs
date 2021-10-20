@@ -7,7 +7,7 @@ import * as backend from './build/index.main.mjs';
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);
     console.log('assertEq', {expected, actual}, {exps, acts});
-    stdlib.assert(exps === acts) };
+    stdlib.assert(exps === acts); };
   const startingBalance = stdlib.parseCurrency(10);
   const [ accAlice, accBob ] = await Promise.all([
     stdlib.newTestAccount(startingBalance),
