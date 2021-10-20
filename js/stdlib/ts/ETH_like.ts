@@ -640,11 +640,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         await getC();
 
         debug(...dhead, 'START', arg);
-        const lastBlock = await getLastBlock();
-        let block_send_attempt = lastBlock;
-        let block_repeat_count = 0;
-        while ( ! await checkTimeout(getTimeSecs, timeoutAt, block_send_attempt) ) {
-          debug(...dhead, 'TRY');
+        while ( true ) {
+          debug(dhead, 'TIMECHECK', { timeoutAt });
+          if ( await checkTimeout(getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
+            debug(dhead, 'FAIL/TIMEOUT');
+            return await doRecv(false, false);
+          }
           if ( ! soloSend && ! await canIWin(lct) ) {
             debug(...dhead, `CANNOT WIN`);
             return await doRecv(false, false);
@@ -653,32 +654,20 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(...dhead, 'ARG', arg, pay);
             await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
-            if ( ! soloSend ) {
-              debug(...dhead, `LOST`, e);
-              return await doRecv(false, false);
-            } else {
-              debug(...dhead, `ERROR`, { stack: e.stack });
+            debug(...dhead, `ERROR`, { stack: e.stack }, e);
 
-              // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
-              await Timeout.set(1);
-              const current_block = await getNetworkTimeNumber();
-              if (current_block == block_send_attempt) {
-                block_repeat_count++;
-              }
-              block_send_attempt = current_block;
-              if ( block_repeat_count > 32) {
-                if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
-                  let error = e;
-                  while (error.error) { error = error.error; }
-                  console.log(`impossible: The message you are trying to send appears to be invalid.`);
-                  console.log(error);
-                }
-                console.log(`args:`);
-                console.log(arg);
-                throw Error(`${dhead} REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
-              }
-              debug(...dhead, `TRY FAIL`, lastBlock, current_block, block_repeat_count, block_send_attempt);
+            if ( ! soloSend ) {
+              debug(...dhead, `LOST`);
+              return await doRecv(false, false);
+            }
+
+            if ( timeoutAt ) {
+              // If there can be a timeout, then keep waiting for it
+              debug(...dhead, `CONTINUE`);
               continue;
+            } else {
+              // Otherwise, something bad is happening
+              throw Error(`${dhead} --- ABORT`);
             }
           }
 
@@ -686,9 +675,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           // XXX trusted recv
           return await doRecv(true, false);
         }
-
-        debug(...dhead, `FAIL/TIMEOUT`);
-        return await doRecv(false, false);
       };
 
       // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
@@ -707,8 +693,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const res = await eventCache.query(dhead, getC, fromBlock, timeoutAt, ok_evt);
           if ( ! res.succ ) {
             const currentTime = res.block;
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime) ) {
-              debug(dhead, '--- RECVD timeout', {timeoutAt, currentTime});
+            debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
+            if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime + 1) ) {
+              debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }
             if ( waitIfNotPresent ) {

@@ -1322,6 +1322,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
             if ( timeoutAt ) {
               // If there can be a timeout, then keep waiting for it
+              debug(dhead, `CONTINUE`);
               continue;
             } else {
               // Otherwise, something bad is happening
@@ -1353,8 +1354,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`EventCache res: `, res);
           if ( ! res.succ ) {
             const currentRound = res.round;
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound) ) {
-              debug(dhead, '--- RECVD timeout', {timeoutAt, currentRound});
+            debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
+            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound + 1) ) {
+              debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }
             if ( waitIfNotPresent ) {
