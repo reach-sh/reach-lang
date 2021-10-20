@@ -81,14 +81,62 @@ type Session = M.Map Id State
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
 
--- ## interpreter ## --
+
+-- ## INTERPRETER ## --
+
+interpPrimOp :: [DLArg] -> PrimOp -> App DLVal
+interpPrimOp dlargs = \case
+  (ADD ) -> undefined
+  (SUB ) -> undefined
+  (MUL ) -> undefined
+  (DIV ) -> undefined
+  (MOD ) -> undefined
+  (PLT ) -> undefined
+  (PLE ) -> undefined
+  (PEQ ) -> undefined
+  (PGE ) -> undefined
+  (PGT ) -> undefined
+  (IF_THEN_ELSE ) -> undefined
+  (DIGEST_EQ ) -> undefined
+  (ADDRESS_EQ ) -> undefined
+  (TOKEN_EQ ) -> undefined
+  (SELF_ADDRESS ) -> undefined
+  (LSH ) -> undefined
+  (RSH ) -> undefined
+  (BAND ) -> undefined
+  (BIOR ) -> undefined
+  (BXOR ) -> undefined
+  (BYTES_CONCAT ) -> undefined
 
 interpExpr :: Store -> DLExpr -> App DLVal
 interpExpr st = \case
-  (DLE_Arg _at _dlarg) -> undefined
-  (DLE_LArg _at _dllargearg) -> undefined
-  (DLE_Impossible _at _impossibleerror) -> undefined
-  (DLE_PrimOp _at _primop _dlargs) -> undefined
+  (DLE_Arg _at dlarg) -> case dlarg of
+    (DLA_Var dlvar) -> return $ st M.! dlvar
+    (DLA_Constant _dlconst) -> return $ V_UInt $ toInteger (maxBound :: Int)
+    (DLA_Literal dllit) -> case dllit of
+      (DLL_Null) -> return $ V_Null
+      (DLL_Bool bool) -> return $ V_Bool bool
+      (DLL_Int _at int) -> return $ V_UInt int
+      (DLL_Bytes bytes) -> return $ V_Bytes $ show bytes
+    -- TODO: handle interact case
+    (DLA_Interact _slpart _string _dltype) -> undefined
+  (DLE_LArg at dllargearg) -> case dllargearg of
+    (DLLA_Array _dltype dlargs) -> do
+      evd_args <- mapM (\arg -> interpExpr st $ DLE_Arg at arg) dlargs
+      return $ V_Array evd_args
+    (DLLA_Tuple dlargs) -> do
+      evd_args <- mapM (\arg -> interpExpr st $ DLE_Arg at arg) dlargs
+      return $ V_Tuple evd_args
+    (DLLA_Obj map_strs_to_dlargs) -> do
+      evd_args <- mapM (\arg -> interpExpr st $ DLE_Arg at arg) map_strs_to_dlargs
+      return $ V_Object evd_args
+    -- QUESTION: why are there types instead of dlargs?
+    (DLLA_Data _map_slvars_to_dltypes _string _dlarg) -> undefined
+    (DLLA_Struct assoc_slvars_dlargs) -> do
+      evd_args <- mapM (\arg -> interpExpr st $ DLE_Arg at arg) $ M.fromList assoc_slvars_dlargs
+      return $ V_Struct $ M.toList evd_args
+  (DLE_Impossible _at _impossible_error) -> error "ImpossibleError"
+  (DLE_PrimOp _at primop dlargs) -> interpPrimOp dlargs primop
   (DLE_ArrayRef _at _dlarg1 _dlarg2) -> undefined
   (DLE_ArraySet _at _dlarg1 _dlarg2 _dlarg3) -> undefined
   (DLE_ArrayConcat _at _dlarg1 _dlarg2) -> undefined
@@ -146,7 +194,7 @@ interpStep st pmeta = \case
   (LLS_Com stmt step) -> do
     st' <- interpStmt st stmt
     interpStep st' pmeta step
-  (LLS_Stop loc) -> return st
+  (LLS_Stop _loc) -> return st
   (LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime) -> undefined
 
 -- evaluate a linear Reach program
@@ -164,7 +212,7 @@ interp st (LLProg at llo ps dli dex dvs step) = interpStep st (LLProg at llo ps 
 -- interpN st n prog = do
 --   st' <- interp st prog
 --   interpN st' (n-1) ???
- 
+
 -- creates the first state and returns its id
 init :: LLProg -> App Id
 init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
