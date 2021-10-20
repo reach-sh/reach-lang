@@ -1133,6 +1133,7 @@ update = command "update" $ info (pure f) d where
   f = do
     v <- asks (version'' . e_var)
     script . forM_ reachImages $ \i -> do
+      write $ "docker pull reachsh/" <> i <> ":" <> "latest"
       write $ "docker pull reachsh/" <> i <> ":" <> versionMaj v
       write $ "docker pull reachsh/" <> i <> ":" <> versionMajMin v
       write $ "docker pull reachsh/" <> i <> ":" <> versionMajMinPat v
