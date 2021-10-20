@@ -11,7 +11,7 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const v39 = "A".interact.get();
+  const v39 = protect<UInt>("A".interact.get());
   //    ^ could = 1
   //      from: ./overflow_con.rsh:9:40:application
 

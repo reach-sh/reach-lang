@@ -12,10 +12,10 @@ Verification failed:
   const v71 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:9:28:application
-  const v74 = "Alice".interact.getHand();
+  const v74 = protect<UInt>("Alice".interact.getHand());
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const v84 = "Bob".interact.getHand();
+  const v84 = protect<UInt>("Bob".interact.getHand());
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 

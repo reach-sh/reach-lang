@@ -9,7 +9,7 @@ Verification failed:
 
   // Violation Witness
 
-  const v26 = "A".interact.getX();
+  const v26 = protect<UInt>("A".interact.getX());
 
   // Theorem Formalization
 

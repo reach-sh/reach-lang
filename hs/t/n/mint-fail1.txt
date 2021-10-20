@@ -9,7 +9,7 @@ Verification failed:
 
   // Violation Witness
 
-  const v174 = "Alice".interact.getParams();
+  const v174 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
