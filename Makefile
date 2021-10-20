@@ -36,6 +36,10 @@ push-all:
 	cd scripts/devnet-eth && $(MAKE) push
 	cd js && $(MAKE) push
 
+.PHONY: routine-push
+routine-push:
+	scripts/routine.sh push
+
 .PHONY: routine-build-push
 routine-build-push:
 	scripts/routine.sh build-push

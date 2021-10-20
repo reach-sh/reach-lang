@@ -11,11 +11,12 @@ DATE="$(date '+%Y-%m-%d')"
 tagpush() {
     docker tag "${LATEST_TAG}" "${IMAGE}:$1"
     if ! [ "${TAG_ONLY}" = "1" ] ; then
-      docker push "${IMAGE}:$1"
+      #docker push "${IMAGE}:$1"
+      I will push: "${IMAGE}:$1"
     fi
 }
 
-tagpush "latest"
+#tagpush "latest" Commented to not overwrite the latest version
 tagpush "${MAJOR}.${MINOR}.${PATCH}"
 tagpush "${MAJOR}.${MINOR}"
 tagpush "${MAJOR}"

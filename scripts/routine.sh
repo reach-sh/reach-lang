@@ -3,6 +3,8 @@ set -ex
 
 if [ "$1" = "build" ]; then
   alias go='make build'
+elif [ "$1" = "push" ]; then
+  alias go='make push'
 elif [ "$1" = "build-push" ]; then
   alias go='make build push'
 else
