@@ -319,10 +319,10 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 
 @subsection{Token minting}
 
-@(mint-define! '("burn") '("destroy") '("supply") '("destroyed"))
+@(mint-define! '("burn") '("destroy") '("supply") '("destroyed") '("decimals"))
 @reach{
   require(supply >= 2 * amt);
-  const tok = new Token({name, symbol, url, metadata, supply});
+  const tok = new Token({ name, symbol, url, metadata, supply, decimals });
   transfer(amt, tok).to(who);
   tok.burn(amt);
   assert(tok.supply() == supply - amt);
@@ -344,6 +344,7 @@ It is written with the expression @reachin{new Token(PARAMS)}, where @reachin{PA
 @item{@litchar{metadata}: A value of type @reachin{Bytes(32)}; defaults to empty.
 This value is intended to be a @tech{digest} of a larger metadata document.}
 @item{@litchar{supply}: A value of type @reachin{UInt}; defaults to @reachin{UInt.max}.}
+@item{@litchar{decimals}: A value of type @reachin{UInt}; defaults to @reachin{6} on Algorand, and @reachin{18} on Ethereum and Conflux.}
 ]
 
 This returns a @reachin{Token} value and deposits a @reachin{supply} amount of the new @tech{non-network tokens} into the @tech{contract} account associated with the @|DApp|.
