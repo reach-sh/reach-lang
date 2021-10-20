@@ -2457,8 +2457,8 @@ evalPrim p sargs =
                   case idxi' < length arrvs of
                     True -> do
                       at <- withAt id
-                      let valv_checked = typeCheck_d elem_ty valv `seq` valv
-                      let arrvs' = (take idxi' arrvs) ++ [valv_checked] ++ (drop (idxi' + 1) arrvs)
+                      void $ typeCheck_d elem_ty valv
+                      let arrvs' = (take idxi' arrvs) ++ [valv] ++ (drop (idxi' + 1) arrvs)
                       let arrv' = SLV_Array at elem_ty arrvs'
                       retV $ (lvl, arrv')
                     False ->

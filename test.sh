@@ -111,18 +111,11 @@ tealcount () {
 
 #######
 
-c users/YeahRoy/index.rsh
 #exit 0
 
-jb
+c hs/t/n/pr325.rsh
 
-MODE=ETH
-cd users/YeahRoy
-${REACH} clean
-${REACH} compile --intermediate-files
-make build
-REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
-
+# jb
 
 exit 0
 
