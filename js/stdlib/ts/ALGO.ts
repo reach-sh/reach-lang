@@ -1195,7 +1195,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               const zaddr = undefined;
               const ap = bigNumberToBigInt(t.p);
               debug(`tokenNew`, t.p, ap);
-              const decimals = t.d?.toNumber() || 6;
+              const decimals = t.d !== undefined ? t.d.toNumber() : 6;
               txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
                 escrowAddr, NOTE_Reach_tag(sim_i++), ap, decimals,
                 false, escrowAddr, zaddr, zaddr, zaddr,
@@ -1866,10 +1866,11 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     return await algod.pendingTransactionInformation(r.txId).do();
   };
   const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
+  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
     algosdk.makeAssetCreateTxnWithSuggestedParams(
-      caddr, undefined, bigNumberToBigInt(supply), 6,
+      caddr, undefined, bigNumberToBigInt(supply), decimals,
       false, zaddr, zaddr, zaddr, zaddr,
       sym, name, '', '', params,
     ));

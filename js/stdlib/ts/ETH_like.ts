@@ -1076,7 +1076,8 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:an
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
   debug(`${sym}: deploy`);
   const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(256).sub(1);
-  const contract = await factory.deploy(name, sym, '', '', supply);
+  const decimals = opts.decimals !== undefined ? opts.decimals : standardDigits;
+  const contract = await factory.deploy(name, sym, '', '', supply, decimals);
   debug(`${sym}: wait for deploy: ${contract.deployTransaction.hash}`);
   const deploy_r = await contract.deployTransaction.wait();
   debug(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
