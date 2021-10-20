@@ -263,7 +263,10 @@ jobs:
 workflows:
   docs:
     jobs:
-    - "docs-render"
+    - "docs-render":
+        filters:
+          tags:
+            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
     - "docs-deploy":
        filters:
          branches:
@@ -272,7 +275,10 @@ workflows:
        - "docs-render"
   buildless:
     jobs:
-    - "sh-check"
+    - "sh-check":
+        filters:
+          tags:
+            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
     - "build":
