@@ -1969,7 +1969,7 @@ doFluidRef_dv fv = do
   at <- withAt id
   ensure_modes (all_slm_modes \\ [SLM_Module, SLM_Export]) "fluid ref"
   let fvt = fluidVarType fv
-  dv <- ctxt_mkvar (DLVar at Nothing fvt)
+  dv <- ctxt_mkvar (DLVar at (Just (at, show $ pretty fv)) fvt)
   saveLift $ DLS_FluidRef at dv fv
   return dv
 
@@ -4085,7 +4085,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                 [whoc_v, public $ SLV_Bytes at $ "sender correct"]
           return ()
         let go fv = do
-              v <- ctxt_mkvar $ DLVar at Nothing $ fluidVarType fv
+              v <- ctxt_mkvar $ DLVar at (Just (at, show $ pretty fv)) $ fluidVarType fv
               doFluidSet fv $ public $ SLV_DLVar v
               return v
         dr_time <- go FV_thisConsensusTime

@@ -937,7 +937,7 @@ instance Pretty FluidVar where
     FV_thisConsensusSecs -> "thisConsensusSecs"
     FV_lastConsensusSecs -> "lastConsensusSecs"
     FV_baseWaitSecs -> "baseWaitSecs"
-    FV_didSend -> "didSend"
+    FV_didSend -> "didPublish"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case

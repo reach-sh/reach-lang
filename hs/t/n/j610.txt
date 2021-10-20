@@ -9,10 +9,13 @@ Verification failed:
 
   // Violation Witness
 
+  const didPublish/19 = <a publication>;
+  //    ^ could = false
+  //      from: ./j610.rsh:6:5:dot
 
   // Theorem Formalization
 
-  assert(v19);
+  assert(didPublish/19);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
