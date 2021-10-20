@@ -1292,7 +1292,7 @@ ce = \case
     let za = czaddr
     i 0 >> checkTxn1 "ConfigAsset"
     ca dtn_supply >> checkTxn1 "ConfigAssetTotal"
-    i 6 >> checkTxn1 "ConfigAssetDecimals"
+    maybe (i 6) ca dtn_decimals >> checkTxn1 "ConfigAssetDecimals"
     i 0 >> checkTxn1 "ConfigAssetDefaultFrozen"
     ca dtn_sym >> checkTxn1 "ConfigAssetUnitName"
     ca dtn_name >> checkTxn1 "ConfigAssetName"

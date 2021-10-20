@@ -460,7 +460,8 @@ data DLTokenNew = DLTokenNew
   , dtn_sym :: DLArg
   , dtn_url :: DLArg
   , dtn_metadata :: DLArg
-  , dtn_supply :: DLArg }
+  , dtn_supply :: DLArg
+  , dtn_decimals :: Maybe DLArg }
   deriving (Eq, Ord, Show)
 
 defaultTokenNew :: DLTokenNew
@@ -471,6 +472,8 @@ defaultTokenNew = DLTokenNew {..}
     dtn_url = b tokenURLLen
     dtn_metadata = b tokenMetadataLen
     dtn_supply = DLA_Constant $ DLC_UInt_max
+    -- Nothing gets compiled to connector default
+    dtn_decimals = Nothing
     b = DLA_Literal . bytesZeroLit
 
 instance PrettySubst DLTokenNew where
@@ -480,7 +483,8 @@ instance PrettySubst DLTokenNew where
       , ("sym", dtn_sym)
       , ("url", dtn_url)
       , ("metadata", dtn_metadata)
-      , ("supply", dtn_supply) ]
+      , ("supply", dtn_supply)
+      , ("decimals", fromMaybe (DLA_Literal DLL_Null) dtn_decimals) ]
 
 type DLTimeArg = Either DLArg DLArg
 

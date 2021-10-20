@@ -350,6 +350,7 @@ export type ISimTxn<Token> = {
   u: any
   m: any,
   p: BigNumber,
+  d: BigNumber|undefined,
 } | {
   kind: 'tokenBurn',
   tok: Token,
