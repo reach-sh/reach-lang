@@ -90,6 +90,9 @@ export const main = Reach.App(() => {
       interact.notifyInProgress();
     });
 
+    commit();
+    Anybody.publish();
+
     status = progress;
     continue;
   }
