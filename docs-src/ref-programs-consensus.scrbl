@@ -319,7 +319,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 
 @subsection{Token minting}
 
-@(mint-define! '("burn") '("destroy") '("supply") '("destroyed") '("decimals"))
+@(mint-define! '("burn") '("destroy") '("supply") '("destroyed"))
 @reach{
   require(supply >= 2 * amt);
   const tok = new Token({ name, symbol, url, metadata, supply, decimals });
