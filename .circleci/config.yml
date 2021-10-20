@@ -17,4 +17,7 @@ setup: true
 workflows:
   setup:
     jobs:
-      - setup
+      - setup:
+          filters:
+            tags:
+              only: /test-[0-9]*\.[0-9]*\.[0-9]*/
