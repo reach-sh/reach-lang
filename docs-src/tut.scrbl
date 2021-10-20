@@ -628,7 +628,7 @@ Reach includes some such assertions automatically in every program.
 That's why every version of @|RPS| has said that a number of theorems were checked.
 We can see what these theorems do by deliberately inserting an error into the program.
 
-Let's also undo the changes we made earlier by changing
+Let's start by undoing the changes we made earlier by changing
 
 @reachex["tut-5-attack/index.rsh"
          'only 29 29 "      // ..."]

@@ -607,19 +607,19 @@ Reach includes some such assertions automatically in every program.
 That's why every version of _Rock, Paper, Scissors!_ has said that a number of theorems were checked.
 We can see what these theorems do by deliberately inserting an error into the program.
 
-Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
+Let's start by undoing the changes we made earlier by changing
 
-Let's also undo the changes we made earlier by changing
-
-${code("/examples/tut-5-attack/index.rsh", 29)}
+${code("/examples/tut-5-attack/index.rsh", 29, 29)}
 
 back to
 
-${code("/examples/tut-5-attack/index-bad.rsh", 29)}
+${code("/examples/tut-5-attack/index-bad.rsh", 29, 29)}
 
 and removing
 
 ${code("/examples/tut-5-attack/index.rsh", 35, 36)}
+
+Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
 
 We should now have something that looks like
 
