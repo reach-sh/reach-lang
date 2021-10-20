@@ -113,8 +113,6 @@ tealcount () {
 
 #exit 0
 
-ci ETH log-attack2
-
 # jb
 
 exit 0

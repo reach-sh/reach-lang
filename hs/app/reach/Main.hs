@@ -427,29 +427,19 @@ mkScaffold Project {..} = Scaffold
 appProj' :: FilePath -> Text
 appProj' = T.toLower . pack . takeBaseName . dropTrailingPathSeparator
 
-mkDockerMetaConsole :: Project -> DockerMeta
-mkDockerMetaConsole p@Project {..} = DockerMeta {..} where
-  appProj = appProj' projDirHost
-  appService = "reach-app-" <> appProj
-  appImage = "reachsh/" <> appService
-  appImageTag = appImage <> ":latest"
-  compose = WithProject Console p
-
-mkDockerMetaReact :: Project -> DockerMeta
-mkDockerMetaReact p = DockerMeta {..} where
-  appProj = ""
-  appService = "react-runner"
-  appImage = "reachsh/" <> appService
-  appImageTag = appImage <> ":latest"
-  compose = WithProject React p
-
-mkDockerMetaRPC :: Env -> Project -> DockerMeta
-mkDockerMetaRPC Env {..} p@Project {..} = DockerMeta {..} where
-  appProj = appProj' projDirHost
-  appService = "reach-app-" <> appProj
-  appImage = "reachsh/rpc-server"
-  appImageTag = appImage <> ":" <> (versionMajMin $ version'' e_var)
-  compose = WithProject RPC p
+mkDockerMetaProj :: Env -> Project -> WP -> DockerMeta
+mkDockerMetaProj (Env {..}) (p@Project {..}) wp = DockerMeta {..} where
+  appProj = case wp of
+              React -> ""
+              _ -> appProj' projDirHost
+  appService = case wp of
+                React -> "react-runner"
+                _ -> "reach-app-" <> appProj
+  appImage = case wp of
+                RPC -> "reachsh/rpc-server"
+                _ -> "reachsh/" <> appService
+  appImageTag = appImage <> ":" <> (versionMajMinPat $ version'' e_var)
+  compose = WithProject wp p
 
 mkDockerMetaStandaloneDevnet :: DockerMeta
 mkDockerMetaStandaloneDevnet = DockerMeta {..} where
@@ -575,12 +565,14 @@ withCompose DockerMeta {..} wrapped = do
       $deps
     |]
   let mkConnSvs = liftIO . serviceConnector env cm connPorts appService
+  let thisVers = versionMajMinPat version''
+  let stdConnSvs = mkConnSvs thisVers
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
-    (_, StandaloneDevnet) -> mkConnSvs "latest"
-    (_, WithProject Console _) -> mkConnSvs $ versionMajMinPat version''
-    (_, WithProject React _) -> mkConnSvs $ versionMajMinPat version''
-    (_, WithProject RPC _) -> mkConnSvs "latest"
+    (_, StandaloneDevnet) -> stdConnSvs
+    (_, WithProject Console _) -> stdConnSvs
+    (_, WithProject React _) -> stdConnSvs
+    (_, WithProject RPC _) -> stdConnSvs
   let build = case compose of
         WithProject Console _ -> [N.text|
            build:
@@ -674,9 +666,9 @@ forwardedCli n = do
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
   warnDeprecatedFlagIsolate i
-  Env {..} <- ask
+  e@(Env {..}) <- ask
   let Scaffold {..} = mkScaffold proj
-  let DockerMeta {..} = mkDockerMetaConsole proj
+  let DockerMeta {..} = mkDockerMetaProj e proj Console
   let scaffIfAbsent' n f = liftIO $ scaffIfAbsent quiet n f
   let tmpl p =
           swap "APP" projName
@@ -855,7 +847,7 @@ run' = command "run" . info f $ d <> noIntersperse where
 
     warnDeprecatedFlagIsolate i
     dieConnectorModeBrowser
-    Env {..} <- ask
+    e@Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir'
     dd <- devnetDeps
     let Var {..} = e_var
@@ -896,7 +888,7 @@ run' = command "run" . info f $ d <> noIntersperse where
         r <- modificationTime <$> getFileStatus rsh
         pure $ if r > b then Just recompile' else Nothing
 
-    let dm@DockerMeta {..} = mkDockerMetaConsole proj
+    let dm@DockerMeta {..} = mkDockerMetaProj e proj Console
     let dockerfile' = pack hostDockerfile
     let projDirHost' = pack projDirHost
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
@@ -983,7 +975,7 @@ react = command "react" $ info f d where
     warnDeprecatedFlagUseExistingDevnet ued
     v@Var { connectorMode = ConnectorMode c _, ..} <- asks e_var
     local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
-      dm@DockerMeta {..} <- mkDockerMetaReact <$> projectPwdIndex
+      dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
       dd <- devnetDeps
       cargs <- forwardedCli "react"
       withCompose dm . script $ write [N.text|
@@ -1008,7 +1000,7 @@ rpcServer = command "rpc-server" $ info f d where
   go ued = do
     env <- ask
     prj <- projectPwdIndex
-    let dm@DockerMeta {..} = mkDockerMetaRPC env prj
+    let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
     dieConnectorModeBrowser
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
@@ -1066,7 +1058,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     env <- ask
     prj <- projectPwdIndex
     rsa <- rpcServerAwait' 30
-    let dm@DockerMeta {..} = mkDockerMetaRPC env prj
+    let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
     runServer <- rpcServer' appService
     let args' = intercalate " " args
     dieConnectorModeBrowser
@@ -1141,7 +1133,6 @@ update = command "update" $ info (pure f) d where
   f = do
     v <- asks (version'' . e_var)
     script . forM_ reachImages $ \i -> do
-      write $ "docker pull reachsh/" <> i <> ":latest"
       write $ "docker pull reachsh/" <> i <> ":" <> versionMaj v
       write $ "docker pull reachsh/" <> i <> ":" <> versionMajMin v
       write $ "docker pull reachsh/" <> i <> ":" <> versionMajMinPat v
