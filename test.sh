@@ -113,7 +113,7 @@ tealcount () {
 
 #exit 0
 
-c hs/t/n/pr325.rsh
+ci ETH log-attack2
 
 # jb
 
