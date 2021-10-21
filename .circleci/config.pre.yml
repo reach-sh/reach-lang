@@ -266,7 +266,7 @@ workflows:
     - "docs-render":
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "docs-deploy":
        filters:
          branches:
@@ -278,32 +278,32 @@ workflows:
     - "sh-check":
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
     - "build":
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-test":
         requires:
           - "build"
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-check":
         requires:
           - "build"
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - hold:
         requires:
           - "hs-test"
         type: approval
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
           branches:
             ignore: /.*/
     - "deploy":
@@ -311,7 +311,7 @@ workflows:
           - "hold"
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
           branches:
             ignore: /.*/
     # Sink and examples follow
