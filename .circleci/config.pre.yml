@@ -80,6 +80,9 @@ jobs:
   "deploy":
     executor: real
     steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
     - run: |
        ../scripts/routine.sh push
   "docs-render":
