@@ -85,11 +85,9 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker
     - run: |
-        (cd hs && make push)
-        (cd js && make push)
-        (cd scripts/devnet-algo && make push)
-        (cd scripts/devnet-eth && make push)
-        (cd scripts/devnet-cfx && make push)
+        for IMG in runner rpc-server reach reach-cli; do
+          ./script/docker-push.sh $IMG
+        done 
   "docs-render":
     executor: fake
     steps:
