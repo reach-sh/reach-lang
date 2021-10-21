@@ -85,7 +85,11 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker
     - run: |
-       ./scripts/routine.sh push
+        (cd hs && make push)
+        (cd js && make push)
+        (cd scripts/devnet-algo && make push)
+        (cd scripts/devnet-eth && make push)
+        (cd scripts/devnet-cfx && make push)
   "docs-render":
     executor: fake
     steps:
