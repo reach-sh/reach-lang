@@ -114,9 +114,11 @@ tealcount () {
 #exit 0
 
 jb
-#ci ETH prtest3
-#ci ALGO prtest3
-ci CFX prtest3
+
+#ci ETH tut-7
+ci CFX tut-7
+exit 0
+ci ALGO tut-7
 
 exit 0
 

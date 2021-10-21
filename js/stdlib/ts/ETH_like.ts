@@ -43,6 +43,7 @@ import type { // =>
   Token,
   PayAmt,
 } from './ETH_like_compiled';
+type ConnectorTy = AnyETH_Ty;
 import type { // =>
   EthersLikeContract,
   EthersLikeSigner,
@@ -58,7 +59,6 @@ import type { // =>
 // Type Definitions
 // ****************************************************************************
 
-// XXX make interfaces for these
 type TransactionReceipt = real_ethers.providers.TransactionReceipt;
 type Log = real_ethers.providers.Log;
 
@@ -119,7 +119,6 @@ const {
   // isWindowProvider,
   _getDefaultNetworkAccount,
   _getDefaultFaucetNetworkAccount,
-  _warnTxNoBlockNumber = true,
   _specialFundFromFaucet = async () => null,
   canFundFromFaucet,
   standardUnit,
@@ -192,7 +191,7 @@ const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cn
   const [ _args_svs, args_msg ] = argsSplit(args, evt_cnt);
   const [ _tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
   void(_args_svs); void(_tys_svs);
-  // @ts-ignore XXX
+  // @ts-ignore
   const arg_ty = T_Tuple([T_UInt, T_Tuple(tys_msg)]);
   return arg_ty.munge([lct, args_msg]);
 };
@@ -388,7 +387,7 @@ const balanceOf_token = async (networkAccount: NetworkAccount, address: Address,
 const doTxn = async (
   dhead: any,
   tp: Promise<any>,
-): Promise<void> => {
+): Promise<any> => {
   debug({...dhead, step: `pre call`});
   const rt = await tp;
   debug({...dhead, rt, step: `pre wait`});
@@ -397,8 +396,7 @@ const doTxn = async (
   assert(rm !== null, `receipt wait null`);
   const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
   debug({...dhead, rt, rm, ro, step: `post receipt`});
-  // ro's blockNumber might be interesting
-  void(ro);
+  return ro;
 };
 
 const doCall = async (
@@ -409,7 +407,7 @@ const doCall = async (
   value: BigNumber,
   gasLimit: BigNumber|undefined,
   storageLimit: BigNumber|undefined,
-): Promise<void> => {
+): Promise<any> => {
   const dpre = { ...dhead, funcName, args, value };
   debug({...dpre, step: `pre call`});
   let tx: any = { value, gasLimit };
@@ -450,7 +448,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     networkAccount.address = await getAddr({networkAccount});
   }
 
-  // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
   const address = await getAddr({networkAccount});
   if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
@@ -534,7 +531,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const callC = async (
         dhead: any, funcName: string, arg: any, pay: PayAmt,
-      ): Promise<void> => {
+      ): Promise<any> => {
         const [ value, toks ] = pay;
         const ethersC = await getC();
         const zero = bigNumberify(0);
@@ -547,21 +544,21 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           // @ts-ignore
           const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
           await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit, storageLimit); }
-        const maybePayTok = async (i:number) => {
+        const maybePayTok = async (i:number): Promise<any> => {
           if ( i < toks.length ) {
             const [amt, tok] = toks[i];
             await callTok(tok, amt);
             try {
-              await maybePayTok(i+1);
+              return await maybePayTok(i+1);
             } catch (e) {
               await callTok(tok, zero);
               throw e;
             }
           } else {
-            await actualCall();
+            return await actualCall();
           }
         };
-        await maybePayTok(0);
+        return await maybePayTok(0);
       };
 
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
@@ -606,6 +603,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         const funcName = `m${funcNum}`;
         const dhead = [label, 'send', funcName, timeoutAt, 'SEND'];
+        const trustedRecv = async (ok_r:any): Promise<Recv> => {
+          const didSend = true;
+          return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+        };
+
         debug(...dhead, 'ARGS', args);
         const arg = sendRecv_prepArg(lct, args, tys, evt_cnt);
 
@@ -631,8 +633,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(label, `got receipt;`, creation_block);
           trustedVerifyResult = { creation_block };
           setInfo(info);
-          // XXX trusted recv
-          return await doRecv(true, false);
+          return await trustedRecv(deploy_r);
         }
 
         // Make sure the ctc is available and verified (before we get into try/catch)
@@ -650,12 +651,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(...dhead, `CANNOT WIN`);
             return await doRecv(false, false);
           }
+          let ok_r;
           try {
             debug(...dhead, 'ARG', arg, pay);
-            await callC(dhead, funcName, arg, pay);
+            ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(...dhead, `ERROR`, { stack: e.stack }, e);
+            ok_r = undefined;
+          }
 
+          if ( ! ok_r ) {
             if ( ! soloSend ) {
               debug(...dhead, `LOST`);
               return await doRecv(false, false);
@@ -672,17 +677,69 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           }
 
           debug(...dhead, 'SUCC');
-          // XXX trusted recv
-          return await doRecv(true, false);
+          return await trustedRecv(ok_r);
         }
       };
 
-      // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
+      type RecvFromArgs = {
+        dhead: any,
+        out_tys: Array<ConnectorTy>,
+        didSend: boolean,
+        funcNum: number,
+        ok_r: any,
+      };
+      const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
+        const { dhead, out_tys, didSend, funcNum, ok_r } = rfargs;
+        const ok_evt = func2evt(funcNum);
+        const theBlock = ok_r.blockNumber;
+        debug(dhead, `AT`, theBlock);
+        updateLast(ok_r);
+        const ethersC = await getC();
+        const getLog = async (l_evt:string, l_ctc:any, fiddle: ((x:any) => any)): Promise<any> => {
+          debug(dhead, `getLog`, { l_evt, l_ctc });
+          const l_args_abi = ethersC.interface.getEvent(l_evt).inputs;
+          for ( const l of ok_r.logs ) {
+            if ( l.address !== ethersC.address ) { continue; }
+            const { name, args } = ethersC.interface.parseLog(l);
+            debug(dhead, `getLog`, { name });
+            if ( name === l_evt ) {
+              const l_edl = l_args_abi.map(a => args[a.name]);
+              const l_edp = l_edl[0];
+              const l_ed = fiddle(l_edp);
+              debug(dhead, `getLog`, { l_edl, l_edp, l_ed });
+              const l_edu = l_ctc.unmunge(l_ed);
+              debug(dhead, `getLog`, { l_edu });
+              return l_edu;
+            }
+          }
+          throw Error(`no log for ${l_evt}`);
+        };
+
+        const data = await getLog(ok_evt, T_Tuple(out_tys), ((x:any) => x[1]));
+
+        debug(dhead, `OKAY`, data);
+        const theBlockBN = bigNumberify(theBlock);
+        const { from } = ok_r;
+        const theSecsBN = await getTimeSecs(theBlockBN);
+        const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
+          void(o_mode);
+          void(o_val);
+          return await getLog(`oe_${o_lab}`, l_ctc, ((x:any) => x));
+        };
+        return {
+          data, getOutput, from, didSend,
+          didTimeout: false,
+          time: theBlockBN,
+          secs: theSecsBN,
+        };
+      };
+
+      const func2evt = (x:number): string => `e${x}`;
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
         const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
         const isCtor = (funcNum == 0)
         const lastBlock = await getLastBlock();
-        const ok_evt = `e${funcNum}`;
+        const ok_evt = func2evt(funcNum);
         const dhead = { t: 'recv', label, ok_evt };
         debug(dhead, `START`);
 
@@ -708,71 +765,18 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           } else {
             const ok_e = res.evt;
             debug(dhead, `OKAY`);
-
-            const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
+            const txnHash = ok_e.transactionHash;
+            const ok_r = await fetchAndRejectInvalidReceiptFor(txnHash);
             debug(dhead, 'ok_r', ok_r);
-            const ok_t = await (await getProvider()).getTransaction(ok_e.transactionHash);
+            const ok_t = await (await getProvider()).getTransaction(txnHash);
             debug(dhead, 'ok_t', ok_t);
 
-            if (ok_t.blockNumber) {
-              assert(ok_t.blockNumber == ok_r.blockNumber,
-                'recept & transaction block numbers should match');
-              if (ok_e.blockNumber) {
-                assert(ok_t.blockNumber == ok_e.blockNumber,
-                  'event & transaction block numbers should match');
-              }
-            } else {
-              // XXX For some reason ok_t sometimes doesn't have blockNumber
-              if (_warnTxNoBlockNumber) {
-                console.log(`WARNING: no blockNumber on transaction.`);
-                console.log(ok_t);
-              }
-            }
+            assert(ok_t.blockNumber == ok_r.blockNumber,
+              'receipt & transaction block numbers should match');
+            assert(ok_t.blockNumber == ok_e.blockNumber,
+              'event & transaction block numbers should match');
 
-            const theBlock = ok_r.blockNumber;
-            debug(dhead, `AT`, theBlock);
-            updateLast(ok_r);
-            const ethersC = await getC();
-            const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
-            const { args: ok_args } = ethersC.interface.parseLog(ok_e);
-            const ok_ed = ok_args_abi.map(a => ok_args[a.name]);
-            debug(dhead, `DATA`, ok_ed);
-            const ok_vals = ok_ed[0][1];
-            debug(dhead, `MSG`, ok_vals);
-            const data = T_Tuple(out_tys).unmunge(ok_vals) as unknown[];
-
-            const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
-              void(o_mode);
-              void(o_val);
-              const l_evt = `oe_${o_lab}`;
-              debug(dhead, `getOutput`, { l_evt, l_ctc });
-              const l_args_abi = ethersC.interface.getEvent(l_evt).inputs;
-              for ( const l of ok_r.logs ) {
-                if ( l.address !== ethersC.address ) { continue; }
-                const { name, args } = ethersC.interface.parseLog(l);
-                debug(dhead, `getOutput`, { name });
-                if ( name === l_evt ) {
-                  const l_edl = l_args_abi.map(a => args[a.name]);
-                  const l_ed = l_edl[0];
-                  debug(dhead, `getOutput`, { l_edl, l_ed });
-                  const l_edu = l_ctc.unmunge(l_ed);
-                  debug(dhead, `getOutput`, { l_edu });
-                  return l_edu;
-                }
-              }
-              throw Error(`no log for ${o_lab}`);
-            };
-
-            debug(dhead, `OKAY`, ok_vals);
-            const theBlockBN = bigNumberify(theBlock);
-            const { from } = ok_t;
-            const theSecsBN = await getTimeSecs(theBlockBN);
-            return {
-              data, getOutput, from, didSend,
-              didTimeout: false,
-              time: theBlockBN,
-              secs: theSecsBN,
-            };
+            return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
           }
         }
       };
@@ -899,7 +903,6 @@ const fundFromFaucet = async (account: AccountTransferable, value: any) => {
 
 const newTestAccount = async (startingBalance: any): Promise<Account> => {
   debug('newTestAccount(', startingBalance, ')');
-  // requireIsolatedNetwork('newTestAccount'); // XXX is it ok to just let fundFromFaucet err if it can't do it?
   const acc = await createAccount();
   const to = await getAddr(acc);
 
