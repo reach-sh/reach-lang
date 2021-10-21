@@ -83,6 +83,7 @@ jobs:
     - checkout
     - attach_workspace:
         at: /tmp/workspace
+    - and_restore_docker
     - run: |
        ./scripts/routine.sh push
   "docs-render":
