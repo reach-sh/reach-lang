@@ -84,7 +84,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - run: |
-       ../scripts/routine.sh push
+       ./scripts/routine.sh push
   "docs-render":
     executor: fake
     steps:
