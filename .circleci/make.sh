@@ -24,7 +24,7 @@ for CONN in ETH ALGO CFX ; do
         name: "examples.${CONN}.${RANK}"
         filters:
           tags:
-            only: /test-[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         connector: "${CONN}"
         size: "${SIZE}"
         rank: "${RANK}"
