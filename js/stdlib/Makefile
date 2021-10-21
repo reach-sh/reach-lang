@@ -39,6 +39,8 @@ build:
 	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: format
 format: package.json

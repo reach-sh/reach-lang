@@ -1,5 +1,7 @@
 IMAGE="reachsh/devnet-algo"
 
+ROOT=../..
+
 .PHONY: build
 build:
 	if ! [ -d algorand_network ] ; then \
@@ -11,7 +13,7 @@ build:
 
 .PHONY: push
 push:
-	../../scripts/docker-push.sh $(IMAGE)
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: run
 run: build
