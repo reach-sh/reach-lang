@@ -605,7 +605,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const dhead = [label, 'send', funcName, timeoutAt, 'SEND'];
         const trustedRecv = async (ok_r:any): Promise<Recv> => {
           const didSend = true;
-          return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+          // XXX sometimes Conflux doesn't generate logs on send txn receipts
+          if ( ok_r.logs && ok_r.logs.length > 0 ) {
+            return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+          } else {
+            return await doRecv(didSend, false);
+          }
         };
 
         debug(...dhead, 'ARGS', args);
@@ -698,8 +703,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const getLog = async (l_evt:string, l_ctc:any, fiddle: ((x:any) => any)): Promise<any> => {
           debug(dhead, `getLog`, { l_evt, l_ctc });
           const l_args_abi = ethersC.interface.getEvent(l_evt).inputs;
+          const addr_e = ethersC.address;
           for ( const l of ok_r.logs ) {
-            if ( l.address !== ethersC.address ) { continue; }
+            const addr_a = l.address;
+            if ( ! addressEq(addr_a, addr_e) ) {
+              debug(dhead, 'getLog', 'skip', { addr_a, addr_e });
+              continue;
+            }
             const { name, args } = ethersC.interface.parseLog(l);
             debug(dhead, `getLog`, { name });
             if ( name === l_evt ) {
@@ -770,11 +780,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(dhead, 'ok_r', ok_r);
             const ok_t = await (await getProvider()).getTransaction(txnHash);
             debug(dhead, 'ok_t', ok_t);
-
-            assert(ok_t.blockNumber == ok_r.blockNumber,
-              'receipt & transaction block numbers should match');
-            assert(ok_t.blockNumber == ok_e.blockNumber,
-              'event & transaction block numbers should match');
 
             return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
           }

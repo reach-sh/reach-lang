@@ -12,9 +12,9 @@ type Conflux = cfxsdk.Conflux;
 
 async function attachBlockNumbers(conflux: Conflux, xs: any[]): Promise<any[]> {
   async function actuallyLookup(blockHash: string): Promise<string> {
-    debug(`actuallyLookup`, `block by hash query`, blockHash);
+    debug(`actuallyLookup`, {blockHash});
     const block = await conflux.getBlockByHash(blockHash);
-    debug(`actuallyLookup`, `block by hash result`, blockHash, block);
+    debug(`actuallyLookup`, {blockHash}, 'res', block);
     // @ts-ignore // XXX requires an update to js-conflux-sdk types
     return parseInt(block.blockNumber);
   };
@@ -125,7 +125,9 @@ export class Provider {
     }
     const logs = await this.conflux.getLogs(opts);
     debug(`getLogs`, `result`, logs);
-    return await attachBlockNumbers(this.conflux, logs);
+    const alogs = await attachBlockNumbers(this.conflux, logs);
+    debug(`getLogs`, `aresult`, alogs);
+    return alogs;
   }
 
   async getTransaction(txnHash: string): Promise<any> {
