@@ -8,9 +8,10 @@ import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.Util
 -- import Data.Either
 import Data.Bits
-import Control.Exception
+-- import Control.Concurrent
 
 type ConsensusEnv = M.Map DLVar DLVal
 type Store = ConsensusEnv
@@ -93,47 +94,41 @@ type Params = String -- JSON.Value
 class Interp a where
   interp :: a -> App DLVal
 
-data InterpreterException = InterpreterException
-  deriving Show
-
-instance Exception InterpreterException
-
-type PrimExpr = (PrimOp, [DLVal])
-
-instance Interp PrimExpr where
-  interp = \case
-    (ADD, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
-    (SUB, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
-    (MUL, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
-    (DIV, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
-    (MOD, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
-    (PLT, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (<) lhs rhs
-    (PLE, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (<=) lhs rhs
-    (PEQ, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
-    (PGE, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (>=) lhs rhs
-    (PGT, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (>) lhs rhs
-    (IF_THEN_ELSE, [V_Bool cond, cond_val, alt]) -> do
-      return $ if cond then cond_val else alt
-    (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
-    (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
-    (TOKEN_EQ, [V_Bytes lhs,V_Bytes rhs]) -> return $ V_Bool $ (==) lhs rhs
-    -- TODO QUESTION
-    (SELF_ADDRESS, _) -> undefined
-    (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
-    (RSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftR lhs (fromIntegral rhs)
-    (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
-    (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
-    (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
-    (BYTES_CONCAT, [V_Bytes lhs,V_Bytes rhs]) -> return $ V_Bytes $ (++) lhs rhs
+interpPrim :: (PrimOp, [DLVal]) -> App DLVal
+interpPrim = \case
+  (ADD, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
+  (SUB, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
+  (MUL, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
+  (DIV, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
+  (MOD, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
+  (PLT, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (<) lhs rhs
+  (PLE, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (<=) lhs rhs
+  (PEQ, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (PGE, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (>=) lhs rhs
+  (PGT, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (>) lhs rhs
+  (IF_THEN_ELSE, [V_Bool cond, cond_val, alt]) -> do
+    return $ if cond then cond_val else alt
+  (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (TOKEN_EQ, [V_Bytes lhs,V_Bytes rhs]) -> return $ V_Bool $ (==) lhs rhs
+  -- TODO QUESTION
+  (SELF_ADDRESS, _) -> undefined
+  (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
+  (RSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftR lhs (fromIntegral rhs)
+  (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
+  (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
+  (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
+  (BYTES_CONCAT, [V_Bytes lhs,V_Bytes rhs]) -> return $ V_Bytes $ (++) lhs rhs
 
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
       stt <- asks e_store
       return $ stt M.! dlvar
+    -- TODO: fake constants per connector
     DLA_Constant _dlconst -> return $ V_UInt $ toInteger (maxBound :: Int)
     DLA_Literal dllit -> interp dllit
-    -- TODO: handle interact case
+    -- TODO: handle interact case: needs participant frontend state
     DLA_Interact _slpart _string _dltype -> undefined
 
 instance Interp DLLiteral where
@@ -143,29 +138,32 @@ instance Interp DLLiteral where
     DLL_Int _at int -> return $ V_UInt int
     DLL_Bytes bytes -> return $ V_Bytes $ show bytes
 
+instance Interp DLLargeArg where
+  interp = \case
+    DLLA_Array _dltype dlargs -> V_Array <$> mapM interp dlargs
+    DLLA_Tuple dlargs -> V_Tuple <$> mapM interp dlargs
+    DLLA_Obj map_strs_to_dlargs -> V_Object <$> mapM interp map_strs_to_dlargs
+    DLLA_Data _map_slvars_to_dltypes string dlarg -> do
+      evd_arg <- interp $ dlarg
+      return $ V_Data $ M.singleton string evd_arg
+    DLLA_Struct assoc_slvars_dlargs -> do
+      evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
+      return $ V_Struct $ M.toList evd_args
+
 instance Interp DLExpr where
   interp = \case
     DLE_Arg _at dlarg -> interp dlarg
-    DLE_LArg _at dllargearg -> case dllargearg of
-      DLLA_Array _dltype dlargs -> V_Array <$> mapM interp dlargs
-      DLLA_Tuple dlargs -> V_Tuple <$> mapM interp dlargs
-      DLLA_Obj map_strs_to_dlargs -> V_Object <$> mapM interp map_strs_to_dlargs
-      DLLA_Data _map_slvars_to_dltypes string dlarg -> do
-        evd_arg <- interp $ dlarg
-        return $ V_Data $ M.singleton string evd_arg
-      DLLA_Struct assoc_slvars_dlargs -> do
-        evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
-        return $ V_Struct $ M.toList evd_args
-    DLE_Impossible _at _impossible_error -> error "ImpossibleError"
+    DLE_LArg _at dllargearg -> interp dllargearg
+    DLE_Impossible at err -> expect_thrown at err
     DLE_PrimOp _at primop dlargs -> do
       evd_args <- mapM interp dlargs
-      interp $ (primop,evd_args)
+      interpPrim (primop,evd_args)
     DLE_ArrayRef _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
         (V_Array arr, V_UInt n) -> return $ arr !! (fromIntegral n)
-        _ -> throw InterpreterException
+        _ -> impossible "expression interpreter"
     DLE_ArraySet _at dlarg1 dlarg2 dlarg3 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
@@ -174,38 +172,61 @@ instance Interp DLExpr where
         (V_Array arr, V_UInt n) -> do
           let n' = fromIntegral n
           return $ V_Array $ take n' arr ++ [ev3] ++ drop (n' + 1) arr
-        _ -> throw InterpreterException
+        _ -> impossible "expression interpreter"
     DLE_ArrayConcat _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
         (V_Array arr1, V_Array arr2) -> return $ V_Array $ arr1 ++ arr2
-        _ -> throw InterpreterException
+        _ -> impossible "expression interpreter"
     DLE_ArrayZip _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
         (V_Array arr1, V_Array arr2) -> do
-          return $ V_Array $ map (\(l,r)-> V_Array $ [l,r]) $ zip arr1 arr2
-        _ -> throw InterpreterException
+          return $ V_Array $ map (\(l,r)-> V_Tuple $ [l,r]) $ zip arr1 arr2
+        _ -> impossible "expression interpreter"
     DLE_TupleRef _at dlarg n -> do
       ev <- interp dlarg
       case ev of
         V_Tuple arr -> return $ arr !! (fromIntegral n)
-        _ -> throw InterpreterException
+        _ -> impossible "expression interpreter"
     DLE_ObjectRef _at dlarg str -> do
       ev <- interp dlarg
       case ev of
         V_Object obj -> return $ obj M.! str
-        _ -> throw InterpreterException
+        _ -> impossible "expression interpreter"
     DLE_Interact _at _slcxtframes _slpart _string _dltype _dlargs -> undefined
-    DLE_Digest _at dlargs -> V_Digest <$> V_Array <$> mapM interp dlargs
-    DLE_Claim _at _slcxtframes _claimtype _dlarg _maybe_bytestring -> undefined
-    DLE_Transfer _at _dlarg1 _dlarg2 _maybe_dlarg -> undefined
+    DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
+    DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
+      CT_Assert -> undefined
+      CT_Assume _bool -> undefined
+      CT_Require -> interp dlarg
+      CT_Possible -> undefined
+      CT_Unknowable _slpart _dlargs -> undefined
+    DLE_Transfer _at dlarg1 dlarg2 _maybe_dlarg -> do
+      ev1 <- interp dlarg1
+      ev2 <- interp dlarg2
+      case (ev1,ev2) of
+        -- TODO: needs account state
+        (V_UInt _n, V_Address _acc) -> undefined
+        _ -> impossible "expression interpreter"
+    -- QUESTION
     DLE_TokenInit _at _dlarg -> undefined
+    -- QUESTION: checkCommitment?
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> undefined
-    DLE_Wait _at _dltimearg -> undefined
-    DLE_PartSet _at _slpart _dlarg -> undefined
+    -- TODO QUESTION requires IO monad to actually delay thread
+    DLE_Wait _at dltimearg -> case dltimearg of
+      Left _dlarg -> do
+        return $ V_Null
+      Right _dlarg -> do
+        return $ V_Null
+    DLE_PartSet _at _slpart dlarg -> do
+      ev <- interp dlarg
+      case ev of
+        -- TODO: needs participant state
+        V_Address _acc -> undefined
+        _ -> impossible "expression interpreter"
     DLE_MapRef _at _dlm_var _dlarg -> undefined
     DLE_MapSet _at _dlm_var _dlarg _maybe_dlarg -> undefined
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
@@ -227,12 +248,12 @@ instance Interp DLStmt where
     DL_Only _at _either_part _tail -> undefined
     DL_MapReduce _at _int _var1 _dlm_var _arg _var2 _var3 _block -> undefined
 
-interpTailStmt :: DLTail -> App ()
-interpTailStmt = \case
-  DT_Return _at -> return ()
-  DT_Com stmt dltail -> do
-    _ <- interp stmt
-    interpTailStmt dltail
+instance Interp DLTail where
+  interp = \case
+    DT_Return _at -> return V_Null
+    DT_Com stmt dltail -> do
+      _ <- interp stmt
+      interp dltail
 
 interpCons :: LLConsensus -> App ()
 interpCons = \case
