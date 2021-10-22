@@ -44,7 +44,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , sco_use_unstrict = False
           }
   init_dlo <- readDlo id
-  envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty
+  envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty mempty
   resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv

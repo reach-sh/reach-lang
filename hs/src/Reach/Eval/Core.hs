@@ -56,6 +56,7 @@ data AppEnv = AppEnv
   { ae_ios :: M.Map SLPart SLSSVal
   , ae_dlo :: DLOpts
   , ae_classes :: S.Set SLPart
+  , ae_apis :: S.Set SLPart
   }
 
 data AppRes = AppRes
@@ -573,6 +574,7 @@ base_env =
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
+    , ("call", SLV_Form$ SLForm_apiCall)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -735,6 +737,9 @@ typeCheck_s st val = do
 
 is_class :: SLPart -> App Bool
 is_class who = S.member who <$> (ae_classes <$> aisd)
+
+is_api :: SLPart -> App Bool
+is_api who = S.member who <$> (ae_apis <$> aisd)
 
 ctxt_alloc :: App Int
 ctxt_alloc = do
@@ -1132,6 +1137,19 @@ evalAsEnv obj = case obj of
         Just _ -> []
       go key mode =
         [(key, retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p { slptc_mode = Just mode })]
+  SLV_Form (SLForm_apiCall_partial p@(ApiCallRec {..})) | slac_mode == Nothing ->
+    return $
+      M.fromList $
+        gom "throwTimeout" AC_ThrowTimeout  slac_mtime
+        <> gom "pay" AC_PaySpec  slac_mpay
+        <> gom "assume" AC_Assume  slac_massume
+    where
+      gom key mode me =
+        case me of
+          Nothing -> go key mode
+          Just _ -> []
+      go key mode =
+        [(key, retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p { slac_mode = Just mode })]
   SLV_Form (SLForm_fork_partial p@(ForkRec {..})) | slf_mode == Nothing ->
     return $
       M.fromList $
@@ -1383,25 +1401,26 @@ makeInteract :: SLPart -> SLInterface -> App (SLSSVal, InteractEnv)
 makeInteract who (SLInterface spec) = do
   at <- withAt id
   let lab = Just $ (bunpack who) <> "'s interaction interface"
-  let wrap_ty :: SLVar -> SLType -> App (SLSSVal, IType)
-      wrap_ty k = \case
+  let wrap_ty :: SLVar -> (SrcLoc, SLType) -> App (SLSSVal, IType)
+      wrap_ty k (i_at, ty )=
+        case ty of
         ST_Fun stf@(SLTypeFun {..}) -> do
           dom' <- mapM st2dte stf_dom
           rng' <- st2dte stf_rng
           return $
-            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Left stf)
+            ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Left stf)
             , IT_Fun dom' rng'
             )
         ST_UDFun rng -> do
           rng' <- st2dte rng
           return $
-            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Right rng)
+            ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Right rng)
             , IT_UDFun rng'
             )
         t -> do
           t' <- st2dte t
-          isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg at $ DLA_Interact who k dt)
-          return $ (sls_sss at isv, IT_Val t')
+          isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg i_at $ DLA_Interact who k dt)
+          return $ (sls_sss i_at isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
   let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
   let ienv = InteractEnv $ M.map (\(_, y) -> y) spec'
@@ -1670,6 +1689,45 @@ evalForm f args = do
       at <- withAt id
       ctxt_lift_eff $ DLE_Wait at amt_ta
       return $ public $ SLV_Null at "wait"
+    SLForm_apiCall -> do
+      ensure_mode SLM_Step "call"
+      slac_who <- one_arg
+      who <- evalExpr slac_who
+      case snd who of
+        SLV_Participant _ ns _ _ ->
+              is_api ns >>= \case
+                True -> return ()
+                False -> impossible "Must be API Participant"
+        _ -> impossible "Must be API Participant"
+      slac_at <- withAt id
+      let slac_mode = Nothing
+      let slac_mtime = Nothing
+      let slac_mpay = Nothing
+      let slac_massume = Nothing
+      retV $ public $ SLV_Form $ SLForm_apiCall_partial $ ApiCallRec {..}
+    SLForm_apiCall_partial p@(ApiCallRec {..}) ->
+       case slac_mode of
+        Just AC_PaySpec -> do
+          x <- one_arg
+          go $ p { slac_mpay = Just x }
+        Just AC_ThrowTimeout -> do
+          -- Refactor with toConsensus throwtimeout
+          at <- withAt id
+          let ta = srcloc2annot at
+          (de, x) <-
+            case args of
+              [de] -> return (de, JSLiteral ta "null")
+              [de, e] -> return (de, e)
+              _ -> illegal_args 2
+          --
+          go $ p { slac_mtime = Just (de, x) }
+        Just AC_Assume -> do
+          x <- one_arg
+          go $ p { slac_massume = Just x }
+        Nothing ->
+          expect_t rator $ Err_Eval_NotApplicable
+      where
+        go p' = retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p' { slac_mode = Nothing }
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
     rator = SLV_Form f
@@ -2743,13 +2801,13 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      at <- withAt id
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
       verifyName "API" ns
-      ix <- flip mapWithKeyM im $ \k -> \case
+      ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
+        case ty of
         ST_Fun (SLTypeFun {..}) -> do
           let nk = ns <> "_" <> k
           let nkb = bpack nk
@@ -2771,10 +2829,10 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_apis = M.insert n i' $ ar_apis ar}
+      at <- withAt id
       retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
-      at <- withAt id
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
@@ -2783,7 +2841,7 @@ evalPrim p sargs =
         expect_ $ Err_View_DuplicateView n
       let ns = bunpack n
       verifyName "View" ns
-      let go k t = do
+      let go k (at, t) = do
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
@@ -2801,6 +2859,7 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_views = M.insert n i' $ ar_views ar}
+      at <- withAt id
       retV $ (lvl, SLV_Object at (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
@@ -3094,7 +3153,7 @@ evalPrim p sargs =
     mustBeInterface intv = do
       objEnv <- mustBeObject intv
       let checkint = \case
-            SLSSVal _ _ (SLV_Type t) -> return $ t
+            SLSSVal t_at _ (SLV_Type t) -> return $ (t_at, t)
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
     makeParticipant :: Bool -> Bool -> App SLSVal
@@ -3120,6 +3179,8 @@ evalPrim p sargs =
       when isAPI $ do
         aisiPut aisi_res $ \ar ->
           ar { ar_isAPI = S.insert n $ ar_isAPI ar }
+        aisiPut aisi_env $ \ae ->
+          ae { ae_apis = S.insert n $ ae_apis ae }
       when isClass $ do
         aisiPut aisi_env $ \ae ->
           ae { ae_classes = S.insert n $ ae_classes ae }
@@ -4192,6 +4253,74 @@ data CompiledForkCase = CompiledForkCase
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
 forkCaseSameParticipant l r = fc_who l == fc_who r
 
+mkDot :: JSAnnot -> [JSExpression] -> JSExpression
+mkDot a = \case
+  [] -> impossible "mkDot: empty list"
+  h:t -> foldl' (flip JSMemberDot a) h t
+
+mkIdDot :: JSAnnot -> [String] -> JSExpression
+mkIdDot a = mkDot a . map (JSIdentifier a)
+
+doApiCall :: JSExpression -> ApiCallRec -> App [JSStatement]
+doApiCall lhs (ApiCallRec{..}) = do
+  at <- withAt id
+  let a = at2a at
+  let sa = JSSemiAuto
+  let es = flip JSExpressionStatement sa
+  let jid = JSIdentifier a
+  let spread = JSSpreadExpression a
+  idx <- ctxt_alloc
+  let jidg xi = jid $ ".api" <> show idx <> "." <> xi
+  let whoOnly = mkDot a [slac_who, jid "only"]
+  let callOnly s = es $ jsCall a whoOnly s
+  -- Deconstruct args
+  (dom, ret) <- sepLHS a lhs
+  -- Construct `only`
+  let interactIn = jsCall a (jid "declassify") [jsCall a (mkIdDot a ["interact", "in"]) [] ]
+  let assumeStmts = case slac_massume of
+                      Nothing -> []
+                      Just as -> [ es $ jsCall a as [spread dom] ]
+  let onlyThunk = jsThunkStmts a $ jsConst a dom interactIn : assumeStmts
+  -- Construct publish
+  let domVars = jsFlattenLHS dom
+  let pub1 = jsCall a (mkDot a [slac_who, jid "publish"]) domVars
+  let pub2 =
+        case slac_mpay of
+          Nothing -> pub1
+          Just pe -> jsCall a (mkDot a [pub1, jid "pay"]) [jsCall a pe [spread dom]]
+  let pub3 =
+        case slac_mtime of
+          Nothing -> pub2
+          Just (to, e) -> jsCall a (mkDot a [pub2, jid "throwTimeout"]) [to, e]
+  -- Construct `k = interact.out()`
+  let returnVal = jidg "rng"
+  -- Works
+  -- let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnVal]
+  -- let apiReturn = jsArrowStmts a [returnVal]
+  --                   [ callOnly [ jsThunkStmts a [es interactOut] ] ]
+  -- Does not work
+  let returnLVal = jidg "rngl"
+  let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnLVal]
+  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let apiReturn = jsArrowStmts a [returnVal]
+                    [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
+  --
+  let assignRet = jsConst a ret apiReturn
+  let ss = [callOnly [onlyThunk], es pub3, assignRet]
+  liftIO $ putStrLn $ "ss: " <> show (pretty ss)
+  return ss
+  where
+    sepLHS a = \case
+      JSArrayLiteral _ xs _ ->
+        case jsa_flatten xs of
+          [JSIdentifier _ "_", k] -> return (mt, k)
+          [d, k] -> return (d, k)
+          [k] -> return (mt, k)
+          _ -> expect_ Err_ApiCallAssign
+      _ -> expect_ Err_ApiCallAssign
+      where
+        mt = JSArrayLiteral a [] a
+
 doForkAPI2Case :: [JSExpression] -> App [JSExpression]
 doForkAPI2Case args = do
   at <- withAt id
@@ -4800,6 +4929,9 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial prr) -> do
           pr_ss <- doParallelReduce lhs prr
           evalStmt (pr_ss <> ks)
+        SLV_Form (SLForm_apiCall_partial acr) -> do
+          ac_ss <- doApiCall lhs acr
+          evalStmt (ac_ss <> ks)
         _ -> do
           addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs
           sco' <- sco_update addl_env
