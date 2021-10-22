@@ -86,7 +86,7 @@ jobs:
     - and_restore_docker
     - run: |
         for IMG in runner rpc-server reach reach-cli; do
-          ./scripts/docker-push.sh $IMG
+          ./scripts/docker-push.sh reachsh/${IMG}
         done 
   "docs-render":
     executor: fake
