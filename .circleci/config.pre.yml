@@ -78,13 +78,14 @@ commands:
           done
 jobs:
   "deploy":
-    executor: fake
+    executor: real
     steps:
     - checkout
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker
     - run: |
+        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
         for IMG in runner rpc-server reach reach-cli; do
           ./scripts/docker-push.sh reachsh/${IMG}
         done 
@@ -313,6 +314,8 @@ workflows:
           branches:
             ignore: /.*/
     - "deploy":
+        context:
+        - reachdevbot-on-dockerhub
         requires:
           - "hold"
         filters:
