@@ -605,12 +605,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const dhead = [label, 'send', funcName, timeoutAt, 'SEND'];
         const trustedRecv = async (ok_r:any): Promise<Recv> => {
           const didSend = true;
-          // XXX sometimes Conflux doesn't generate logs on send txn receipts
-          if ( ok_r.logs && ok_r.logs.length > 0 ) {
-            return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
-          } else {
-            return await doRecv(didSend, false);
-          }
+          return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
         };
 
         debug(...dhead, 'ARGS', args);

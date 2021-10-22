@@ -1330,7 +1330,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
           }
 
-          // XXX res has what we care about: confirmed-round and logs if it
+          // XXX trustedrecv res has what we care about: confirmed-round and logs if it
           // came from the node; if it came from the indexer, the info is still
           // there but in a different place(?)
           return await doRecv(true, false);

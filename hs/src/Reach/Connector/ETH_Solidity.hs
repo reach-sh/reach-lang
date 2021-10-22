@@ -997,12 +997,21 @@ solCTail = \case
   CT_From _ which (FI_Continue svs) -> do
     vsep <$> solStateSet which svs
   CT_From _ _ (FI_Halt _toks) -> do
-    -- XXX we could "selfdestruct" our token holdings, based on _toks
     return $ vsep $
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
         , "delete current_svbs;"
-        , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
+        -- We could "selfdestruct" our token holdings, based on _toks
+        --
+        -- , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
+        --
+        -- However, we don't do either of these, because selfdestruct-ing is
+        -- dangerous, because although the contract is gone, that means the
+        -- messages sent to it are like no-ops, so they can take funds from
+        -- clients that think they are calling real contracts. Ideally, we'd be
+        -- able to get back our funds (e.g. on Conflux where there are storage
+        -- costs), we would rather not get those, than have users lose funds to
+        -- dead contracts.
         ]
 
 solFrame :: Int -> S.Set DLVar -> App (Doc, Doc)
@@ -1313,8 +1322,9 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    -- XXX expose this to Reach? only include if bills?
-    let defp = "receive () external payable {}"
+    let defp = vsep $
+          [ "receive () external payable { assert(false); }"
+          , "fallback () external payable { assert(false); }" ]
     let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
