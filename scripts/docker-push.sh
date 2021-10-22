@@ -18,13 +18,13 @@ tagpush() {
 
 #tagpush "latest" Commented to not overwrite the latest version
 tagpush "${MAJOR}.${MINOR}.${PATCH}"
-tagpush "${MAJOR}.${MINOR}"
-tagpush "${MAJOR}"
-tagpush "${DATE}"
+#tagpush "${MAJOR}.${MINOR}"
+#tagpush "${MAJOR}"
+#tagpush "${DATE}"
 if [ ${#REACH_GIT_HASH} = 8 ]; then
   tagpush "${REACH_GIT_HASH}"
 fi
 
-if [ "${MAJOR}.${MINOR}.${PATCH}" = "${STABLE}" ] ; then
-    tagpush stable
-fi
+#if [ "${MAJOR}.${MINOR}.${PATCH}" = "${STABLE}" ] ; then
+#    tagpush stable
+#fi
