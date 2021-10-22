@@ -11,8 +11,8 @@ DATE="$(date '+%Y-%m-%d')"
 tagpush() {
     docker tag "${LATEST_TAG}" "${IMAGE}:$1"
     if ! [ "${TAG_ONLY}" = "1" ] ; then
-      #docker push "${IMAGE}:$1"
-      echo "I will push: ${IMAGE}:$1"
+      docker push "${IMAGE}:$1"
+      #echo "I will push: ${IMAGE}:$1"
     fi
 }
 

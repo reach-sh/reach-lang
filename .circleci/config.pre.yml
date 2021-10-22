@@ -78,7 +78,7 @@ commands:
           done
 jobs:
   "deploy":
-    executor: real
+    executor: fake
     steps:
     - checkout
     - attach_workspace:
