@@ -150,6 +150,7 @@ data EvalError
   | Err_Switch_UnreachableCase SrcLoc SLVar SrcLoc
   | Err_NotAfterFirst
   | Err_UniqueFirstPublish
+  | Err_ApiCallAssign
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -281,6 +282,7 @@ instance HasErrorCode EvalError where
     Err_NotAfterFirst -> 119
     Err_UniqueFirstPublish -> 120
     Err_API_NotFun {} -> 121
+    Err_ApiCallAssign {} -> 122
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -709,5 +711,7 @@ instance Show EvalError where
       "Cannot inspect publication details until after first publication"
     Err_UniqueFirstPublish ->
       "A unique `Participant` must make the first publication"
+    Err_ApiCallAssign ->
+      "The left hand side of an API call must be a pair consisting of the domain and return function."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

@@ -17,6 +17,9 @@ module Reach.JSUtil
   , mkCommaTrailingList
   , jsa
   , a2sp
+  , toJSArray
+  , jsBlockToStmts
+  , jsFlattenLHS
   )
 where
 
@@ -53,6 +56,32 @@ jsa_flatten a = concatMap f a
     f (JSArrayComma _) = []
     f (JSArrayElement e) = [e]
 
+jsFlattenLHS :: JSExpression -> [JSExpression]
+jsFlattenLHS e =
+  case e of
+    JSIdentifier _ "_" -> []
+    JSIdentifier {} -> [e]
+    JSArrayLiteral _ as _ -> concatMap jsFlattenLHS $ jsa_flatten as
+    JSAssignExpression lhs _ _ -> [lhs]
+    JSObjectLiteral _ ps _ ->
+      concatMap (\case
+      JSPropertyNameandValue jpn _ _ ->
+        case jpn of
+          JSPropertyIdent ja s -> [JSIdentifier ja s]
+          _ -> []
+      JSPropertyIdentRef ja s -> [JSIdentifier ja s]
+      JSObjectMethod _ -> []
+      JSObjectSpread _ je -> jsFlattenLHS je
+      ) $ jso_flatten ps
+    _ -> []
+
+
+toJSArray :: [JSExpression] -> [JSArrayElement]
+toJSArray a = concatMap f a
+  where
+    f e = [JSArrayElement e, JSArrayComma JSNoAnnot]
+
+
 jsArrowStmtToBlock :: JSStatement -> JSBlock
 jsArrowStmtToBlock = \case
   JSExpressionStatement e sp -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) sp] JSNoAnnot
@@ -63,6 +92,10 @@ jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
   bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
+
+
+jsBlockToStmts :: JSBlock -> [JSStatement]
+jsBlockToStmts (JSBlock _ s _) = s
 
 dropEmptyJSStmts :: [JSStatement] -> [JSStatement]
 dropEmptyJSStmts [] = []
