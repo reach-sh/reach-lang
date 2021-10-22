@@ -907,8 +907,13 @@ export const transfer = async (
 };
 
 // XXX need to make this a log
-const makeIsMethod = (i:number) => (txn:any): boolean =>
-  txn['application-transaction']['application-args'][0] === base64ify([i]);
+const makeIsMethod = (i:number) => (txn:any): boolean => {
+  const act = txn['application-transaction']['application-args'][0];
+  const exp = base64ify([i]);
+  const r = act === exp;
+  debug(`makeIsMethod`, {i,act,exp,r});
+  return r;
+}
 
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
@@ -1762,6 +1767,7 @@ const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
   const client = await getAlgodClient();
   const binfo = await client.block(now).do();
+  // XXX it is possible that this will not work because the block is old
   debug(`getTimeSecs`, `block`, binfo);
   return bigNumberify(binfo.block.ts);
 };
