@@ -28,14 +28,14 @@ type Frontends = [ Frontend ]
 
 type NewPartActions = M.Map SLPart [ DLTail ]
 
-data ConsensusNetworkState = ConsensusNetworkState
-  { nw_ledger :: Ledger
-  , nw_next_acc :: Integer
-  , nw_next_token :: Integer
-  }
-  deriving (Eq)
-
-type State = (ConsensusNetworkState, ConsensusEnv, Frontends, NewPartActions, DAppCode)
+-- data ConsensusNetworkState = ConsensusNetworkState
+--   { nw_ledger :: Ledger
+--   , nw_next_acc :: Integer
+--   , nw_next_token :: Integer
+--   }
+--   deriving (Eq)
+--
+-- type State = (ConsensusNetworkState, ConsensusEnv, Frontends, NewPartActions, DAppCode)
 
 data DAppCode
   = DAppLLCons LLConsensus
@@ -54,6 +54,8 @@ data Action
   | ImitateFrontendAction
 
 type Account = Integer
+
+type LinearState = M.Map Account DLVal
 
 data DLVal
   = V_Null
@@ -75,15 +77,20 @@ type App = ReaderT Env IO
 --   { e_state :: IORef Session
 --   }
 
+-- state
 data Env = Env
-  { e_store :: Store
+  {  e_store :: Store
+   , e_ledger :: Ledger
+   , e_next_acc :: Integer
+   , e_next_token :: Integer
+   , e_linstate :: LinearState
   }
 
 -- Identify program states
 type Id = Integer
 
 -- All of the states visited
-type Session = M.Map Id State
+-- type Session = M.Map Id State
 
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
@@ -110,7 +117,7 @@ interpPrim = \case
     return $ if cond then cond_val else alt
   (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
   (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
-  (TOKEN_EQ, [V_Bytes lhs,V_Bytes rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (TOKEN_EQ, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
   -- TODO QUESTION
   (SELF_ADDRESS, _) -> undefined
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
@@ -123,8 +130,8 @@ interpPrim = \case
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
-      stt <- asks e_store
-      return $ stt M.! dlvar
+      st <- asks e_store
+      return $ st M.! dlvar
     -- TODO: fake constants per connector
     DLA_Constant _dlconst -> return $ V_UInt $ toInteger (maxBound :: Int)
     DLA_Literal dllit -> interp dllit
@@ -198,52 +205,97 @@ instance Interp DLExpr where
         _ -> impossible "expression interpreter"
     DLE_Interact _at _slcxtframes _slpart _string _dltype _dlargs -> undefined
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
+    -- TODO
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> undefined
       CT_Assume _bool -> undefined
       CT_Require -> interp dlarg
-      CT_Possible -> undefined
-      CT_Unknowable _slpart _dlargs -> undefined
+      CT_Possible -> return $ V_Null
+      CT_Unknowable _slpart _dlargs -> return $ V_Null
     DLE_Transfer _at dlarg1 dlarg2 _maybe_dlarg -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        -- TODO: needs account state
+        -- TODO: needs ledger\account state
         (V_UInt _n, V_Address _acc) -> undefined
         _ -> impossible "expression interpreter"
-    -- QUESTION
+    -- QUESTION: how is this different from DLE_TokenNew?
     DLE_TokenInit _at _dlarg -> undefined
     -- QUESTION: checkCommitment?
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> undefined
-    -- TODO QUESTION requires IO monad to actually delay thread
+    -- TODO requires Time state
     DLE_Wait _at dltimearg -> case dltimearg of
       Left _dlarg -> do
         return $ V_Null
       Right _dlarg -> do
         return $ V_Null
-    DLE_PartSet _at _slpart dlarg -> do
+    DLE_PartSet _at _slpart dlarg -> interp dlarg
+    DLE_MapRef _at (DLMVar n) _dlarg -> do
+      linstate <- asks e_linstate
+      return $ (M.!) linstate (fromIntegral n)
+    DLE_MapSet _at (DLMVar n) dlarg _maybe_dlarg -> do
+      linstate <- asks e_linstate
+      ev <- interp dlarg
+      let new_linstate = M.insert (fromIntegral n) ev linstate
+      local (\e -> e {e_linstate = new_linstate}) $ return V_Null
+    -- QUESTION: what do the DlArgs and string here represent?
+    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
+    DLE_TokenNew _at dltokennew -> do
+      token_id <- asks e_next_token
+      ledger <- asks e_ledger
+      supply <- interp $ dtn_supply dltokennew
+      case supply of
+        V_UInt supply' -> do
+        -- TODO: which account? 0 is placeholder
+        let new_ledger = M.insert 0 (M.singleton token_id supply') ledger
+        local (\e -> e {e_next_token = token_id + 1, e_ledger = new_ledger}) $ return V_Null
+    DLE_TokenBurn _at dlarg1 dlarg2 -> do
+      ev1 <- interp dlarg1
+      ev2 <- interp dlarg2
+      case (ev1,ev2) of
+        (V_UInt tok, V_UInt burn_amt) -> do
+          ledger <- asks e_ledger
+          -- TODO lookup safety
+          let prev_amt = flip (M.!) tok $ (M.!) ledger 0
+          let new_amt = prev_amt - burn_amt
+          let new_ledger = M.insert 0 (M.insert tok new_amt ((M.!) ledger 0)) ledger
+          local (\e -> e {e_ledger = new_ledger}) $ return V_Null
+        _ -> impossible "expression interpreter"
+    DLE_TokenDestroy _at dlarg -> do
       ev <- interp dlarg
       case ev of
-        -- TODO: needs participant state
-        V_Address _acc -> undefined
+        V_UInt tok -> do
+          ledger <- asks e_ledger
+          let new_ledger = M.insert 0 (M.delete tok ((M.!) ledger 0)) ledger
+          local (\e -> e {e_ledger = new_ledger}) $ return V_Null
         _ -> impossible "expression interpreter"
-    DLE_MapRef _at _dlm_var _dlarg -> undefined
-    DLE_MapSet _at _dlm_var _dlarg _maybe_dlarg -> undefined
-    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
-    DLE_TokenNew _at _dltokennew -> undefined
-    DLE_TokenBurn _at _dlarg1 _dlarg2 -> undefined
-    DLE_TokenDestroy _at _dlarg -> undefined
 
 instance Interp DLStmt where
   interp = \case
     DL_Nop _at -> return V_Null
+    -- QUESTION what are DLV_Eff and DLVarCat?
     DL_Let _at _let_var _expr -> undefined
+    -- QUESTION: assuming "block" is the function
+    -- but what are the "vars" for?
+    -- shouldn't this be a DLLargeArg instead of DLArg?
     DL_ArrayMap _at _var1 _arg _var2 _block -> undefined
     DL_ArrayReduce _at _var1 _arg1 _arg2 _var2 _var3 _block -> undefined
-    DL_Var _at _var -> undefined
-    DL_Set _at _var _arg -> undefined
-    DL_LocalDo _at _tail -> undefined
-    DL_LocalIf _at _arg _tail1 _tail2 -> undefined
+    DL_Var _at var -> do
+      st <- asks e_store
+      -- QUESTION: should this actually return a value?
+      return $ st M.! var
+    DL_Set _at var arg -> do
+      st <- asks e_store
+      ev <- interp arg
+      local (\e -> e {e_store = M.insert var ev st}) $ return V_Null
+    DL_LocalDo _at dltail -> interp dltail
+    DL_LocalIf _at arg tail1 tail2 -> do
+      ev <- interp arg
+      case ev of
+        V_Bool True -> interp tail1
+        V_Bool False -> interp tail2
+        _ -> impossible "statement interpreter"
+    -- QUESTION: what is this structure? which case is evaluated?
     DL_LocalSwitch _at _var _switch_cases -> undefined
     DL_Only _at _either_part _tail -> undefined
     DL_MapReduce _at _int _var1 _dlm_var _arg _var2 _var3 _block -> undefined
@@ -254,6 +306,11 @@ instance Interp DLTail where
     DT_Com stmt dltail -> do
       _ <- interp stmt
       interp dltail
+
+instance Interp DLBlock where
+  interp = \case
+    -- QUESTION: what is the DLArg here?
+    DLBlock _at _frame dltail _dlarg -> interp dltail
 
 interpCons :: LLConsensus -> App ()
 interpCons = \case
@@ -274,8 +331,8 @@ interpStep pmeta = \case
   LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime -> undefined
 
 -- evaluate a linear Reach program
-interp1 :: LLProg -> App ()
-interp1 (LLProg at llo ps dli dex dvs step) = interpStep (LLProg at llo ps dli dex dvs) step
+interpProgram :: LLProg -> App ()
+interpProgram (LLProg at llo ps dli dex dvs step) = interpStep (LLProg at llo ps dli dex dvs) step
 
 -- interpM :: Store -> LLProg -> App (Store)
 -- interpM st mprog = do
@@ -310,5 +367,5 @@ parent :: Id -> App Id
 parent = undefined
 
 -- returns the state
-inspect :: Id -> App State
-inspect = undefined
+-- inspect :: Id -> App State
+-- inspect = undefined
