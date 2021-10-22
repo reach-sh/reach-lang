@@ -83,9 +83,12 @@ type TxnParams = {
   genesisID: string,
   genesisHash: string,
 }
-type TxnInfo = {
+type RecvTxn = {
   'confirmed-round': number,
   'application-index'?: number,
+  'application-args': Array<string>,
+  'sender': Address,
+  'logs': Array<string>,
 };
 type TxId = string;
 type ApiCall<T> = {
@@ -141,6 +144,9 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
+const txnFromAddress = (t:Transaction): Address =>
+  algosdk.encodeAddress(t.from.publicKey);
+
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   if (!(a instanceof Uint8Array)) {
     console.log(a);
@@ -153,10 +159,36 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<TxnInfo> => {
-  const doOrDie = async (p: Promise<any>): Promise<any> => {
+type OrExn<X> = X | {exn:any};
+type IndexerTxn = any;
+type AlgodTxn = {
+  'application-index'?: number,
+  'confirmed-round'?: number,
+  'logs'?: Array<string>,
+  'txn': {
+    'sig': Uint8Array,
+    'txn': any,
+  },
+  'pool-error': string,
+};
+
+const indexerTxn2RecvTxn = (txn:any) => {
+  const ait = txn['application-transaction'] || {};
+  const aargs = ait['application-args'] || [];
+  const aidx = ait['application-id'];
+  return {
+    'confirmed-round': txn['confirmed-round'],
+    'sender': txn['sender'],
+    'logs': (txn['logs'] || []),
+    'application-args': aargs,
+    'application-index': aidx,
+  };
+};
+
+const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<RecvTxn> => {
+  const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
     try { return await p; }
-    catch (e) { return { 'exn': e }; }
+    catch (e:any) { return { 'exn': e }; }
   };
   const checkTooLate = async (lastLastRound: number): Promise<number> => {
     const [ c, msg ] = lastLastRound > 0 ?
@@ -176,17 +208,28 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
   const dhead = [ 'waitForConfirmation', txId ];
   const client = await getAlgodClient();
 
-  const checkAlgod = async (lastLastRound:number): Promise<TxnInfo> => {
+  const checkAlgod = async (lastLastRound:number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const info =
-      await doOrDie(client.pendingTransactionInformation(txId).do());
+      (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
     debug(...dhead, 'info', info);
-    if ( info['exn'] ) {
+    if ( 'exn' in info ) {
       debug(...dhead, 'switching to indexer on error');
       return await checkIndexer(lastRound);
-    } else if ( info['confirmed-round'] > 0 ) {
+    }
+    const cr = info['confirmed-round'];
+    if ( cr !== undefined && cr > 0 ) {
+      const l = info['logs'] === undefined ? [] : info['logs'];
       debug(...dhead, 'confirmed');
-      return info;
+      const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
+      debug(...dhead, 'confirmed', dtxn);
+      return {
+        'confirmed-round': cr,
+        'logs': l,
+        'application-index': info['application-index'],
+        'sender': txnFromAddress(dtxn),
+        'application-args': (dtxn.appArgs || []).map((x)=> uint8ArrayToStr(x, 'base64')),
+      };
     } else if ( info['pool-error'] === '' ) {
       debug(...dhead, 'still in pool, trying again');
       return await checkAlgod(lastRound);
@@ -195,17 +238,17 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
     }
   };
 
-  const checkIndexer = async (lastLastRound: number): Promise<TxnInfo> => {
+  const checkIndexer = async (lastLastRound: number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const indexer = await getIndexer();
     const q = indexer.lookupTransactionByID(txId);
-    const res = await doOrDie(doQuery_(JSON.stringify(dhead), q));
+    const res = (await doOrDie(doQuery_(JSON.stringify(dhead), q))) as OrExn<IndexerTxn>;
     debug(...dhead, 'indexer', res);
-    if ( res['exn'] ) {
+    if ( 'exn' in res ) {
       debug(...dhead, 'indexer failed, trying again');
       return await checkIndexer(lastRound);
     } else {
-      return res['transaction'];
+      return indexerTxn2RecvTxn(res['transaction']);
     }
   };
 
@@ -229,7 +272,7 @@ const doSignTxn = (ts:string, sk:SecretKey): string => {
 const signSendAndConfirm = async (
   acc: NetworkAccount,
   txns: Array<WalletTransaction>,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   if ( acc.sk !== undefined ) {
     txns.forEach((t:WalletTransaction): void => {
       // XXX this comparison is probably wrong, because the addresses are the
@@ -262,7 +305,7 @@ const encodeUnsignedTransaction = (t:Transaction): string => {
 const toWTxn = (t:Transaction): WalletTransaction => {
   return {
     txn: encodeUnsignedTransaction(t),
-    signers: [algosdk.encodeAddress(t.from.publicKey)],
+    signers: [ txnFromAddress(t) ],
   };
 };
 
@@ -307,7 +350,7 @@ const sign_and_send_sync = async (
   label: string,
   acc: NetworkAccount,
   txn: WalletTransaction,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   try {
     return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
@@ -661,7 +704,7 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   const signTxns = async (txns: string[]): Promise<string[]> => {
     return txns.map((ts) => {
       const t = decodeB64Txn(ts);
-      const addr = algosdk.encodeAddress(t.from.publicKey);
+      const addr = txnFromAddress(t);
       const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
       const acc = algosdk.mnemonicToSecretKey(mn);
       return doSignTxnToB64(t, acc.sk);
@@ -850,7 +893,7 @@ export const transfer = async (
   value: any,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
   const valuebn = bigNumberify(value);
@@ -1070,11 +1113,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const funcName = `m${funcNum}`;
         const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
 
-        const trustedRecv = async (res:any): Promise<Recv> => {
+        const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
-          void(res);
-          // return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
-          return await doRecv(didSend, false);
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         };
 
         if ( isCtor ) {
@@ -1346,7 +1387,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         out_tys: Array<ConnectorTy>,
         didSend: boolean,
         funcNum: number,
-        txn: any,
+        txn: RecvTxn,
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, out_tys, didSend, funcNum, txn } = rfargs;
@@ -1360,8 +1401,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
 
         // XXX need to move this to a log
-        const ctc_args_all: Array<string> =
-          txn['application-transaction']['application-args'];
+        const ctc_args_all = txn['application-args'];
         debug(dhead, {ctc_args_all});
         const argMsg = 2; // from ALGO.hs
         const ctc_args_s: string = ctc_args_all[argMsg];
@@ -1444,7 +1484,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
             continue;
           }
-          const txn = res.txn;
+          const txn = indexerTxn2RecvTxn(res.txn);
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         }
       };
@@ -1720,9 +1760,10 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
 };
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
-  const indexer = await getIndexer();
-  const info = await indexer.lookupBlock(now).do();
-  return bigNumberify(info['timestamp']);
+  const client = await getAlgodClient();
+  const binfo = await client.block(now).do();
+  debug(`getTimeSecs`, `block`, binfo);
+  return bigNumberify(binfo.block.ts);
 };
 export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
