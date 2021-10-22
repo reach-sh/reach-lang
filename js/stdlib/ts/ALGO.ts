@@ -63,6 +63,7 @@ export * from './shared_user';
 type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
+type ConnectorTy= AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -1066,6 +1067,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( ! onlyIf ) {
           return await doRecv(false, true);
         }
+        const funcName = `m${funcNum}`;
+        const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
+
+        const trustedRecv = async (res:any): Promise<Recv> => {
+          const didSend = true;
+          void(res);
+          // return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+          return await doRecv(didSend, false);
+        };
 
         if ( isCtor ) {
           debug(label, 'deploy');
@@ -1105,8 +1115,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const [ value, toks ] = pay;
         void(toks); // <-- rely on simulation because of ordering
 
-        const funcName = `m${funcNum}`;
-        const dhead = `${label}: ${label} sendrecv ${funcName} ${timeoutAt}`;
         debug(dhead, '--- START');
 
         const [ _svs, msg ] = argsSplit(args, evt_cnt);
@@ -1304,8 +1312,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let res;
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
-
-            debug(dhead, 'SUCCESS', res);
           } catch (e:any) {
             if ( e.type === 'sendRawTransaction' ) {
               debug(dhead, '--- FAIL:', format_failed_request(e?.e));
@@ -1330,11 +1336,83 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
           }
 
-          // XXX trustedrecv res has what we care about: confirmed-round and logs if it
-          // came from the node; if it came from the indexer, the info is still
-          // there but in a different place(?)
-          return await doRecv(true, false);
+          debug(dhead, 'SUCCESS', res);
+          return await trustedRecv(res);
         }
+      };
+
+      type RecvFromArgs = {
+        dhead: any,
+        out_tys: Array<ConnectorTy>,
+        didSend: boolean,
+        funcNum: number,
+        txn: any,
+      };
+      const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
+        const { dhead, out_tys, didSend, funcNum, txn } = rfargs;
+        const { escrowAddr, getLastRound, setLastRound } = await getC();
+        const isCtor = (funcNum == 0);
+        debug(dhead, '--- txn =', txn);
+        const theRound = txn['confirmed-round'];
+        // const theSecs = txn['round-time'];
+        // ^ The contract actually uses `global LatestTimestamp` which is the
+        // time of the PREVIOUS round.
+        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
+
+        // XXX need to move this to a log
+        const ctc_args_all: Array<string> =
+          txn['application-transaction']['application-args'];
+        debug(dhead, {ctc_args_all});
+        const argMsg = 2; // from ALGO.hs
+        const ctc_args_s: string = ctc_args_all[argMsg];
+
+        debug(dhead, 'out_tys', out_tys.map((x) => x.name));
+        if ( isCtor ) {
+          out_tys.unshift(T_Address);
+          debug(dhead, 'ctor, adding address', out_tys.map((x) => x.name));
+        }
+        const msgTy = T_Tuple(out_tys);
+        const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
+        debug(dhead, {ctc_args});
+        if ( isCtor ) {
+          const shouldBeEscrow = ctc_args.shift();
+          debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
+          ctorRan.notify();
+        }
+
+        const fromAddr = txn['sender'];
+        const from = T_Address.canonicalize({addr: fromAddr});
+        debug(dhead, { from, fromAddr });
+
+        const oldLastRound = getLastRound();
+        setLastRound(theRound);
+        debug(dhead, { oldLastRound, theRound });
+        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+          debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
+          const f_ctc = T_Tuple([T_UInt, o_ctc]);
+          for ( const l of txn['logs'] ) {
+            const lb = reNetify(l);
+            const ln = T_UInt.fromNet(lb);
+            const ls = `v${ln}`;
+            debug(`getOutput`, {l, lb, ln, ls});
+            if ( ls === o_lab ) {
+              const ld = f_ctc.fromNet(lb);
+              const o = ld[1];
+              debug(`getOutput`, {ld, o});
+              return o;
+            }
+          }
+          throw Error(`no log for ${o_lab}`);
+        };
+
+        return {
+          didSend,
+          didTimeout: false,
+          data: ctc_args,
+          time: bigNumberify(getLastRound()),
+          secs: bigNumberify(theSecs),
+          from, getOutput,
+        };
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
@@ -1346,7 +1424,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
         debug(dhead, '--- START');
 
-        const { ApplicationID, escrowAddr, getLastRound, setLastRound } = await getC();
+        const { ApplicationID, getLastRound } = await getC();
 
         while ( true ) {
           const correctStep = makeIsMethod(funcNum);
@@ -1367,71 +1445,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             continue;
           }
           const txn = res.txn;
-          debug(dhead, '--- txn =', txn);
-          const theRound = txn['confirmed-round'];
-          // const theSecs = txn['round-time'];
-          // ^ The contract actually uses `global LatestTimestamp` which is the
-          // time of the PREVIOUS round.
-          const theSecs = await getTimeSecs(bigNumberify(theRound - 1));
-
-          // XXX need to move this to a log
-          const ctc_args_all: Array<string> =
-            txn['application-transaction']['application-args'];
-          debug(dhead, {ctc_args_all});
-          const argMsg = 2; // from ALGO.hs
-          const ctc_args_s: string = ctc_args_all[argMsg];
-
-          debug(dhead, '--- out_tys =', out_tys);
-          if ( isCtor ) {
-            out_tys.unshift(T_Address);
-            debug(dhead, 'ctor, adding address', {out_tys});
-          }
-          const msgTy = T_Tuple(out_tys);
-          const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
-          debug(dhead, {ctc_args});
-          if ( isCtor ) {
-            const shouldBeEscrow = ctc_args.shift();
-            debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
-          }
-
-          const fromAddr = txn['sender'];
-          const from = T_Address.canonicalize({addr: fromAddr});
-          debug(dhead, '--- from =', from, '=', fromAddr);
-
-          const oldLastRound = getLastRound();
-          setLastRound(theRound);
-          debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', getLastRound());
-
-          const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
-            debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
-            const f_ctc = T_Tuple([T_UInt, o_ctc]);
-            for ( const l of txn['logs'] ) {
-              const lb = reNetify(l);
-              const ln = T_UInt.fromNet(lb);
-              const ls = `v${ln}`;
-              debug(`getOutput`, {l, lb, ln, ls});
-              if ( ls === o_lab ) {
-                const ld = f_ctc.fromNet(lb);
-                const o = ld[1];
-                debug(`getOutput`, {ld, o});
-                return o;
-              }
-            }
-            throw Error(`no log for ${o_lab}`);
-          };
-
-          if ( isCtor ) {
-            ctorRan.notify();
-          }
-
-          return {
-            didSend,
-            didTimeout: false,
-            data: ctc_args,
-            time: bigNumberify(getLastRound()),
-            secs: bigNumberify(theSecs),
-            from, getOutput,
-          };
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         }
       };
 

@@ -77,7 +77,7 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     }
   },
   fromNet: (nv: NV): CBR_UInt => {
-    // debug(`fromNet: UInt`);
+    // debug(`fromNet: UInt`, nv);
     // if (getDEBUG()) console.log(nv);
     return ethers.BigNumber.from(nv.slice(0, 8));
   },
@@ -95,12 +95,12 @@ const stringyNet = (len:number) => ({
 
 /** @description For hex strings representing bytes */
 const bytestringyNet = (len:number) => ({
-  toNet: (bv: string): NV => (
-    ethers.utils.arrayify(bv)
-  ),
-  fromNet: (nv: NV): string => (
-    ethers.utils.hexlify(nv.slice(0, len))
-  )
+  toNet: (bv: string): NV => {
+    return ethers.utils.arrayify(bv);
+  },
+  fromNet: (nv: NV): string => {
+    return ethers.utils.hexlify(nv.slice(0, len));
+  }
 });
 
 export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
@@ -185,6 +185,7 @@ export const T_Tuple = (
   },
   // TODO: share more code w/ T_Array.fromNet
   fromNet: (nv: NV): CBR_Tuple => {
+    //debug(`Tuple.fromNet`, cos.map((x) => x.name), nv);
     const chunks: Array<CBR_Val> = new Array(cos.length).fill(null);
     let rest = nv;
     for (const i in cos) {
