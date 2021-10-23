@@ -1413,7 +1413,7 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
   where
     pis = parseJSArrowFormals at top_formals
     sp = JSSemi a
-    lhs = JSArrayLiteral a (map JSArrayElement pis) a
+    lhs = jsArrayLiteral a pis
     rhs = jsCall a (JSIdentifier a ".adaptReachAppTupleArgs") [partse]
     top_ss =
       [ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) sp
@@ -4172,7 +4172,7 @@ typeToExpr = \case
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
   where
     str x = JSStringLiteral a x
-    arr l = JSArrayLiteral a (map JSArrayElement l) a
+    arr = jsArrayLiteral a
     sg (k, t) = arr [(str k), r t]
     call f = jsCall a (var f)
     var = JSIdentifier a
@@ -4209,11 +4209,25 @@ doForkAPI2Case args = do
   let x = mkx $ jsArrowStmts a [ dotdom2 ] [ e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2 ]
   let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
   let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) sp ] ]
-  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
+  let jsInlineCall _a f fargs =
+        case f of
+          JSExpressionParen _ e _ -> jsInlineCall a e fargs
+          JSArrowExpression aargs a' s -> do
+            let pargs = parseJSArrowFormals at aargs
+            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let ss' = [ jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs) ]
+            return $ ss' <> ss
+          _ -> expect_ $ Err_Fork_ConsensusBadArrow f
+  let mkz w z = do
+        z' <- jsInlineCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
+        return $ jsArrowStmts a [ dom ] z'
+  let mkz' w l z = do
+        z' <- mkz w z
+        return $ [w] <> l <> [ z' ]
   case args of
-    [w, xp, y, z] -> return [w, mkx xp, y, mkz w z]
-    [w, y, z] -> return [w, x, y, mkz w z]
-    [w, z] -> return [w, x, mkz w z]
+    [w, xp, y, z] -> mkz' w [mkx xp, y] z
+    [w, y, z] -> mkz' w [x, y] z
+    [w, z] -> mkz' w [x] z
     --- Delay error to next level
     ow -> return ow
 
@@ -4262,7 +4276,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowStmtToBlock s
-            let awrap x = JSArrayLiteral a [JSArrayElement x] a
+            let awrap x = jsArrayLiteral a [x]
             mdefmsg <-
               case parseJSArrowFormals a_at args of
                 [] -> return []
@@ -4567,6 +4581,9 @@ jsObjectLiteral a m =
   where
     rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [t]
 
+jsArrayLiteral :: JSAnnot -> [JSExpression] -> JSExpression
+jsArrayLiteral a es = JSArrayLiteral a (map JSArrayElement es) a
+
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =
   case findStmtTrampoline ev of
@@ -4790,7 +4807,7 @@ evalStmt = \case
     evalStmt $ assign : cont : cont_ks
     where
       assign = JSAssignStatement lhs op rhs sp
-      lhs = JSArrayLiteral a [] a
+      lhs = jsArrayLiteral a []
       op = JSAssign a
       rhs = lhs
   --- FIXME We could desugar all these to certain while patterns

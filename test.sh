@@ -113,7 +113,13 @@ tealcount () {
 
 #exit 0
 
-jb
+ci ALGO api-full
+exit 0
+
+# jb
+ci ETH api-full
+ci ETH remote
+exit 0
 
 #ci ETH tut-7
 #ci CFX tut-7
