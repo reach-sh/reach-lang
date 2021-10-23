@@ -1,15 +1,2 @@
 # These are allowed to fail and we still release
 
-# https://reachsh.atlassian.net/browse/CORE-462
-ETH.raffle
-
-# duoswap is out of date & is allowed to fail
-# until we figure out how to test the private repo
-# https://reachsh.atlassian.net/browse/CORE-535
-CFX.duoswap
-
-# https://reachsh.atlassian.net/browse/CORE-547
-ALGO.mint-basic
-
-# https://reachsh.atlassian.net/browse/CORE-548
-ETH.tut-8
