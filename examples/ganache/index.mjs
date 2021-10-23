@@ -16,7 +16,7 @@ import ganache from 'ganache-core';
   const faucet = ganacheProvider.getSigner();
   stdlib.setFaucet(stdlib.connectAccount(faucet));
 
-  const startingBalance = stdlib.parseCurrency(100);
+  const startingBalance = stdlib.parseCurrency(50);
   const accAlice = await stdlib.newTestAccount(startingBalance)
 
   const ctcAlice = accAlice.deploy(backend);
