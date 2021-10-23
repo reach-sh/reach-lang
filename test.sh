@@ -113,9 +113,9 @@ tealcount () {
 
 #exit 0
 
-c examples/overview/index.rsh
-c examples/ttt/index.rsh
-ci ALGO tut-7-array
+ci ALGO ttt
+exit 0
+ci ALGO map-any
 exit 0
 
 # jb

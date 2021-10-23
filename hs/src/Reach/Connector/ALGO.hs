@@ -239,7 +239,8 @@ opt_b1 = \case
   ["btoi"] : ["itob"] : l -> l
   ["itob"] : ["btoi"] : l -> l
   ["extract", x, "8"] : ["btoi"] : l -> ["int",x] : ["extract_uint64"] : l
-  ["extract", x, "1"] : l -> ["int", x] : ["getbyte"] : l
+  -- Not actually an optimization:
+  -- ["extract", x, "1"] : l -> ["int", x] : ["getbyte"] : ["itob"] : l
   a@["load", x] : ["load", y] : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -547,13 +548,13 @@ bad lab = do
 xxx :: LT.Text -> App ()
 xxx lab = bad $ "This program uses " <> lab
 
-freshLabel :: App LT.Text
-freshLabel = do
+freshLabel :: String -> App LT.Text
+freshLabel d = do
   i <- (liftIO . incCounter) =<< (eLabel <$> ask)
-  return $ "l" <> LT.pack (show i)
+  return $ "l" <> LT.pack (show i) <> "_" <> LT.pack d
 
 loopLabel :: Int -> LT.Text
-loopLabel w = "loop" <> LT.pack (show w)
+loopLabel w = "loopBody" <> LT.pack (show w)
 
 store_let :: DLVar -> Bool -> App () -> App a -> App a
 store_let dv small cgen m = do
@@ -935,8 +936,8 @@ computeExtract ts idx = (t, start, sz)
 
 cfor :: Integer -> (App () -> App ()) -> App ()
 cfor maxi body = do
-  top_lab <- freshLabel
-  end_lab <- freshLabel
+  top_lab <- freshLabel "forTop"
+  end_lab <- freshLabel "forK"
   salloc_ $ \store_idx load_idx -> do
     cint 0
     store_idx
@@ -1425,7 +1426,7 @@ checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ d
             ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
             where textra = ca tok >> check1 "XferAsset"
   checkTxnUsage ctok
-  after_lab <- freshLabel
+  after_lab <- freshLabel "checkTxnK"
   ca ct_amt
   unless ct_always $ do
     op "dup"
@@ -1450,9 +1451,9 @@ checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ d
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
-  end_lab <- freshLabel
-  let cm1 ((_vn, (vv, vu, k)), vi) = do
-        next_lab <- freshLabel
+  end_lab <- freshLabel "switchK"
+  let cm1 ((vn, (vv, vu, k)), vi) = do
+        next_lab <- freshLabel $ "switchAfter" <> vn
         ca $ DLA_Var dv
         cint 0
         op "getbyte"
@@ -1536,8 +1537,8 @@ cm km = \case
     km
   DL_LocalIf _ a tp fp -> do
     ca a
-    false_lab <- freshLabel
-    join_lab <- freshLabel
+    false_lab <- freshLabel "localIfF"
+    join_lab <- freshLabel "localIfK"
     code "bz" [false_lab]
     cp (return ()) tp
     code "b" [join_lab]
@@ -1564,7 +1565,7 @@ ct = \case
   CT_Com m k -> cm (ct k) m
   CT_If _ a tt ft -> do
     ca a
-    false_lab <- freshLabel
+    false_lab <- freshLabel "ifF"
     code "bz" [false_lab]
     nct tt
     label false_lab
@@ -1923,10 +1924,11 @@ compile_algo env disp pl = do
     asserteq
     argLoad ArgMethod
     cfrombs T_UInt
+    label "preamble"
     -- NOTE This could be compiled to a jump table if that were possible or to
     -- a tree to be O(log n) rather than O(n)
     forM_ (M.toAscList hm) $ \(hi, hh) -> do
-      afterLab <- freshLabel
+      afterLab <- freshLabel $ "afterHandler" <> show hi
       ch afterLab hi hh
       label afterLab
     cl $ DLL_Bool False

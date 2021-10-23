@@ -571,7 +571,7 @@ be_c = \case
       -- enough though, because what if we don't immediately halt, but instead
       -- transfer 0 ETH to the sender... there will be no SVS. So, that's why
       -- this is a bad hack.
-      case onlyHalts k of
+      case (True || onlyHalts k) of
         True -> inLoop $ be_c k
         False -> do
           kontsp <- newSavePoint "While Kont"

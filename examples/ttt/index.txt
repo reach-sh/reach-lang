@@ -5,6 +5,3 @@ Verifying for generic connector
   Verifying when ONLY "A" is honest
   Verifying when ONLY "B" is honest
 Checked 198 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 759 units of cost, but the limit is 700: [("l0:",34),("l3:",4),("loop3:",120),("loop4:",239),("l24:",240),("l25:",48),("l26:",42),("updateState:",5),("checkSize:",9),("done:",16),("BOT:",2)]
-

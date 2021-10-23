@@ -1,8 +1,5 @@
 # These are allowed to fail and we still release
 
-# Too big
-ALGO.ttt
-
 # https://reachsh.atlassian.net/browse/CORE-462
 ETH.raffle
 
