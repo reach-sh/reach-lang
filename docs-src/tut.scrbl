@@ -475,8 +475,8 @@ Bob accepts the wager of 5.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -484,8 +484,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Rock
@@ -493,26 +493,26 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 }
 
-@margin-note{How come Alice and Bob's balances go back to @litchar{10} every time?
+@margin-note{How come Alice and Bob's balances go back to @litchar{100} every time?
 It's because each time we run @exec{./reach run}, it creates fresh accounts for both players.}
 
-@margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
-It's because Ethereum transactions cost "gas" to run.
+@margin-note{How come the balances aren't exactly @litchar{100}, @litchar{105}, and @litchar{95}?
+It's because consensus network charge fees to run transactions.
 
 If we had shown all the decimals, they'd look like this:
 
 @(hrule)
 
 @verbatim{
-Alice went from 10 to 14.999999999999687163.
-Bob went from 10 to 4.999999999999978229.
+Alice went from 100 to 104.999999999999687163.
+Bob went from 100 to 94.999999999999978229.
 ...
-Alice went from 10 to 4.999999999999687163.
-Bob went from 10 to 14.999999999999978246.
+Alice went from 100 to 94.999999999999687163.
+Bob went from 100 to 104.999999999999978246.
 }
 
 @(hrule)
@@ -549,8 +549,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 }
 
 The problem is that this version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
@@ -571,8 +571,8 @@ Alice played Scissors
 Bob accepts the wager of 5.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 }
 
 In this version, unlike the @tech{honest} version, Bob never consults the @tech{frontend} and so it never prints out the message of what hand Bob played.
@@ -850,8 +850,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -859,8 +859,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1041,8 +1041,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1269,7 +1269,7 @@ The rest of the program could be exactly the same as it was before, except now i
 
 @item{Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exitted.}
 
-@item{Line 94 transfers the funds to the winner.}
+@item{Line 104 transfers the funds to the winner.}
 
 ]
 
@@ -1284,8 +1284,8 @@ Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1295,8 +1295,8 @@ Alice played Paper
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1304,8 +1304,8 @@ Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 }
 
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.

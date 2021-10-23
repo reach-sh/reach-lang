@@ -5,7 +5,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
   const conn = stdlib_loader.getConnector();
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accCreator = await stdlib.newTestAccount(startingBalance);
 
   const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");

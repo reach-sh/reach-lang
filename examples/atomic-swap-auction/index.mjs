@@ -24,7 +24,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
 
   const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
 
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accCreator = await stdlib.newTestAccount(startingBalance);
   const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
   const gil = await launchToken(stdlib, accCreator, "gil", "GIL");

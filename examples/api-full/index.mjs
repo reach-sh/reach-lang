@@ -15,7 +15,7 @@ export class Signal {
 (async () => {
   const stdlib = await loadStdlib();
   const amt_ = stdlib.parseCurrency(2);
-  const bal = stdlib.parseCurrency(10);
+  const bal = stdlib.parseCurrency(100);
   const accAdmin = await stdlib.newTestAccount(bal);
   accAdmin.setDebugLabel('Admin');
   const gil = await stdlib.launchToken(accAdmin, "gil", "GIL");

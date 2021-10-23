@@ -10,7 +10,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   if ( stdlib.connector === 'ALGO' ) { return; }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const [ accAlice, accBob, accCreator ] = await stdlib.newTestAccounts(3, startingBalance);
 
   const myGasLimit = 5000000;

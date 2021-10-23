@@ -3,7 +3,7 @@ import { mkRPC } from '@reach-sh/rpc-client';
 (async () => {
   const { rpc, rpcCallbacks } = await mkRPC();
 
-  const startingBalance = await rpc(`/stdlib/parseCurrency`,  10);
+  const startingBalance = await rpc(`/stdlib/parseCurrency`,  100);
   const accAlice        = await rpc(`/stdlib/newTestAccount`, startingBalance);
   const accBob          = await rpc(`/stdlib/newTestAccount`, startingBalance);
 

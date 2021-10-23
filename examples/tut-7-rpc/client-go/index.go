@@ -27,7 +27,7 @@ func main() {
     return fmtc(rpc("/stdlib/balanceOf", w).(jsono))
   }
 
-  startingBalance := rpc("/stdlib/parseCurrency", 10).(jsono)
+  startingBalance := rpc("/stdlib/parseCurrency", 100).(jsono)
   accAlice        := rpc("/stdlib/newTestAccount", startingBalance).(string)
   accBob          := rpc("/stdlib/newTestAccount", startingBalance).(string)
 
