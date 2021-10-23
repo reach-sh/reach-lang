@@ -827,8 +827,11 @@ cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "sha256"
 
 cextract :: SrcLoc -> Integer -> Integer -> App ()
+cextract _at _s 0 = do
+  op "pop"
+  padding 0
 cextract at s l =
-  case s < 256 && l < 256 of
+  case s < 256 && l < 256 && l /= 0 of
     True -> do
       code "extract" [tint at s, tint at l]
     False -> do
@@ -842,6 +845,8 @@ csubstring at s e = cextract at s (e - s)
 computeSplice :: SrcLoc -> Integer -> Integer -> Integer -> (App (), App ())
 computeSplice at start end tot = (before, after)
   where
+    -- XXX If start == 0, then we could remove before and have another version
+    -- of the callers of computeSplice
     before = cextract at 0 start
     after = cextract at end (tot - end)
 
@@ -1464,10 +1469,14 @@ doSwitch ck at dv csm = do
           False -> ck k
           True -> do
             flip (sallocLet vv) (ck k) $ do
-              ca $ DLA_Var dv
               let vt = argTypeOf $ DLA_Var vv
-              cextract at 1 (typeSizeOf vt)
-              cfrombs vt
+              let sz = typeSizeOf vt
+              case sz == 0 of
+                True -> padding 0
+                False -> do
+                  ca $ DLA_Var dv
+                  cextract at 1 sz
+                  cfrombs vt
         label next_lab
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
   label end_lab
