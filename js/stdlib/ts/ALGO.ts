@@ -911,7 +911,7 @@ const makeIsMethod = (i:number) => (txn:any): boolean => {
   const act = txn['application-transaction']['application-args'][0];
   const exp = base64ify([i]);
   const r = act === exp;
-  debug(`makeIsMethod`, {txn,i,act,exp,r});
+  //debug(`makeIsMethod`, {txn,i,act,exp,r});
   return r;
 }
 
@@ -1120,6 +1120,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
+          if ( isCtor ) {
+            // If this is the constructor, then we are going to need to notify
+            // the ctorRan signal, but we can only do that once the constructor
+            // is visible on the indexer, thus we can't rely on a trusted
+            // receive. I originally thought we could do this in the
+            // background, but the ctorRan signal is representative of what
+            // could happen in a real non-test program, so we should really
+            // double check with the indexer in a real deployment too.
+            return await doRecv(didSend, false);
+          }
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         };
 
@@ -1422,7 +1432,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( isCtor ) {
           const shouldBeEscrow = ctc_args.shift();
           debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
-          ctorRan.notify();
         }
 
         const fromAddr = txn['sender'];
@@ -1488,6 +1497,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               await indexer_statusAfterBlock(currentRound + 1);
             }
             continue;
+          }
+          if ( isCtor ) {
+            ctorRan.notify();
           }
           const txn = indexerTxn2RecvTxn(res.txn);
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
