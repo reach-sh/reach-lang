@@ -448,25 +448,6 @@ be_bl (DLBlock at fs t a) = do
       (\t' ->
          return $ DLBlock at fs t' a)
 
-class OnlyHalts a where
-  onlyHalts :: a -> Bool
-
-instance OnlyHalts LLConsensus where
-  onlyHalts = \case
-    LLC_Com {} -> False
-    LLC_If {} -> False
-    LLC_Switch {} -> False
-    LLC_FromConsensus _ _ s -> onlyHalts s
-    LLC_While {} -> False
-    LLC_Continue {} -> False
-    LLC_ViewIs {} -> False
-
-instance OnlyHalts LLStep where
-  onlyHalts = \case
-    LLS_Com _ k -> onlyHalts k
-    LLS_Stop _ -> True
-    LLS_ToConsensus {} -> False
-
 check_view_sets :: Monad m => M.Map (SLPart, SLVar) (Bool, SrcLoc) -> m ()
 check_view_sets vs = do
   case find (not . fst . snd) (M.toList vs) of
@@ -562,29 +543,9 @@ be_c = \case
           local (\e -> e { be_prev = the_prev
                          , be_prevs = S.union (be_prevs e) the_prevs })
     let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
-    -- <Kont>
     (k_vs, (goto_kont, k'l)) <-
       captureViewSets mempty $
-      -- XXX This is a convoluted hack because Solidity does not allow empty
-      -- structs and if the computation immediately halts, then we won't have
-      -- any saved variables and therefore we'll crash solc. Even this isn't
-      -- enough though, because what if we don't immediately halt, but instead
-      -- transfer 0 ETH to the sender... there will be no SVS. So, that's why
-      -- this is a bad hack.
-      case (True || onlyHalts k) of
-        True -> inLoop $ be_c k
-        False -> do
-          kontsp <- newSavePoint "While Kont"
-          kontj <- newHandler "While Kont"
-          let inKont = inBlock kontsp (S.fromList [ this_loopsp, kontsp ])
-          (k'c, k'l) <- inKont $ be_c k
-          setHandler kontj $ do
-            kont_svs <- ce_readSave kontsp
-            C_Loop at kont_svs [] <$> (addVars at =<< k'c)
-          inLoop $ fg_saves $ kontsp
-          let gk = CT_Jump at kontj <$> ce_readSave kontsp <*> pure mempty
-          return (gk, k'l)
-    -- </Kont>
+        inLoop $ be_c k
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
