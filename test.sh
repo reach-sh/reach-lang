@@ -113,7 +113,9 @@ tealcount () {
 
 #exit 0
 
-ci ALGO api-full
+c examples/overview/index.rsh
+c examples/ttt/index.rsh
+ci ALGO tut-7-array
 exit 0
 
 # jb

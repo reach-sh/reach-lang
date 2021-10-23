@@ -238,6 +238,8 @@ opt_b1 = \case
   ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> l
   ["btoi"] : ["itob"] : l -> l
   ["itob"] : ["btoi"] : l -> l
+  ["extract", x, "8"] : ["btoi"] : l -> ["int",x] : ["extract_uint64"] : l
+  ["extract", x, "1"] : l -> ["int", x] : ["getbyte"] : l
   a@["load", x] : ["load", y] : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -823,21 +825,24 @@ check_concat_len totlen =
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "sha256"
 
-csubstring :: SrcLoc -> Integer -> Integer -> App ()
-csubstring at b c =
-  case b < 256 && c < 256 of
+cextract :: SrcLoc -> Integer -> Integer -> App ()
+cextract at s l =
+  case s < 256 && l < 256 of
     True -> do
-      code "substring" [tint at b, tint at c]
+      code "extract" [tint at s, tint at l]
     False -> do
-      cint b
-      cint c
-      op "substring3"
+      cint s
+      cint l
+      op "extract3"
+
+csubstring :: SrcLoc -> Integer -> Integer -> App ()
+csubstring at s e = cextract at s (e - s)
 
 computeSplice :: SrcLoc -> Integer -> Integer -> Integer -> (App (), App ())
-computeSplice at b c e = (before, after)
+computeSplice at start end tot = (before, after)
   where
-    before = csubstring at 0 b
-    after = csubstring at c e
+    before = cextract at 0 start
+    after = cextract at end (tot - end)
 
 csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
 csplice at b c e = do
@@ -857,9 +862,9 @@ csplice at b c e = do
       store_new
       -- [ Big ]
       csplice3 Nothing cbefore cafter load_new
-
--- [ Big' ]
--- [ Bytes' = X b Y'c Z e]
+  -- [ Big' ]
+  -- [ Bytes' = X b Y'c Z e]
+  return ()
 
 csplice3 :: Maybe (App ()) -> App () -> App () -> App () -> App ()
 csplice3 Nothing cbefore cafter cnew = do
@@ -916,16 +921,15 @@ cArraySet at (t, alen) mcbig eidx cnew = do
                 op "substring3"
   csplice3 mcbig cbefore cafter cnew
 
-computeSubstring :: [DLType] -> Integer -> (DLType, Integer, Integer)
-computeSubstring ts idx = (t, start, end)
+computeExtract :: [DLType] -> Integer -> (DLType, Integer, Integer)
+computeExtract ts idx = (t, start, sz)
   where
     szs = map typeSizeOf ts
     starts = scanl (+) 0 szs
-    ends = zipWith (+) szs starts
     idx' = fromIntegral idx
-    tse = zip3 ts starts ends
-    (t, start, end) =
-      case atMay tse idx' of
+    tsz = zip3 ts starts szs
+    (t, start, sz) =
+      case atMay tsz idx' of
         Nothing -> impossible "bad idx"
         Just x -> x
 
@@ -975,16 +979,13 @@ cArrayRef at t frombs ie = do
       case ie of
         Left (DLA_Literal (DLL_Int _ ii)) -> do
           let start = ii * tsz
-          let end = start + tsz
-          csubstring at start end
+          cextract at start tsz
         _ -> do
           cint tsz
           ie'
           op "*"
-          op "dup"
           cint tsz
-          op "+"
-          op "substring3"
+          op "extract3"
       case frombs of
         True -> cfrombs t
         False -> nop
@@ -1024,16 +1025,21 @@ cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef at tt idx = do
   -- [ Tuple ]
   let ts = typeTupleTypes tt
-  let (t, start, end) = computeSubstring ts idx
+  let (t, start, sz) = computeExtract ts idx
   case (ts, idx) of
     ([ _ ], 0) ->
       return ()
     _ -> do
-      csubstring at start end
+      cextract at start sz
   -- [ ValueBs ]
   cfrombs t
   -- [ Value ]
   return ()
+
+computeSubstring :: [DLType] -> Integer -> (DLType, Integer, Integer)
+computeSubstring ts idx = (t, start, end)
+  where (t, start, sz) = computeExtract ts idx
+        end = start + sz
 
 cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
 cTupleSet at tt idx = do
@@ -1214,9 +1220,9 @@ ce = \case
   DLE_ObjectRef at oa f -> do
     let fts = typeObjectTypes oa
     let fidx = fromIntegral $ fromMaybe (impossible "field") $ List.findIndex ((== f) . fst) fts
-    let (t, start, end) = computeSubstring (map snd fts) fidx
+    let (t, start, sz) = computeExtract (map snd fts) fidx
     ca oa
-    csubstring at start end
+    cextract at start sz
     cfrombs t
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
@@ -1459,7 +1465,7 @@ doSwitch ck at dv csm = do
             flip (sallocLet vv) (ck k) $ do
               ca $ DLA_Var dv
               let vt = argTypeOf $ DLA_Var vv
-              csubstring at 1 (1 + typeSizeOf vt)
+              cextract at 1 (typeSizeOf vt)
               cfrombs vt
         label next_lab
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
