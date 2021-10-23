@@ -911,7 +911,7 @@ const makeIsMethod = (i:number) => (txn:any): boolean => {
   const act = txn['application-transaction']['application-args'][0];
   const exp = base64ify([i]);
   const r = act === exp;
-  debug(`makeIsMethod`, {i,act,exp,r});
+  debug(`makeIsMethod`, {txn,i,act,exp,r});
   return r;
 }
 
