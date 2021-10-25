@@ -4207,6 +4207,7 @@ doForkAPI2Case args = do
   let e2s = flip JSExpressionStatement sp
   let mkx xp = jsThunkStmts a [ jsConst a dom (readJsExpr "declassify(interact.in())"), e2s (jsCall a xp [ dotdom ]), JSReturn a (Just $ jsObjectLiteral a $ M.fromList [ ("msg", dom) ] ) sp ]
   let x = mkx $ jsArrowStmts a [ dotdom2 ] [ e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2 ]
+  let mky y = jsArrowExpr a [ dom ] $ jsCall a y [ dotdom ]
   let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
   let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) sp ] ]
   let jsInlineCall _a f fargs =
@@ -4225,8 +4226,8 @@ doForkAPI2Case args = do
         z' <- mkz w z
         return $ [w] <> l <> [ z' ]
   case args of
-    [w, xp, y, z] -> mkz' w [mkx xp, y] z
-    [w, y, z] -> mkz' w [x, y] z
+    [w, xp, y, z] -> mkz' w [mkx xp, mky y] z
+    [w, y, z] -> mkz' w [x, mky y] z
     [w, z] -> mkz' w [x] z
     --- Delay error to next level
     ow -> return ow

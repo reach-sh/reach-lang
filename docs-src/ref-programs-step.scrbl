@@ -288,6 +288,9 @@ where:
 
 ]
 
+If the discussion of @reachin{.api} component, the phrase "parameterized over the input" means that if an API function has two arguments, such as @reachin{Fun([UInt, UInt], Null)}, then the corresponding expression must receive two arguments.
+For example, the @reachin{API_PAY_EXPR} component would be a function that accepts two arguments, while the @reachin{API_CONSENSUS_EXPR} would be a function that acccepts three arguments---the two for the API and the function used to return a value.
+
 If the @litchar{msg} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{null}.
 
 If the @litchar{when} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{true}.

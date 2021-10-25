@@ -17,6 +17,7 @@ export const main = Reach.App(() => {
     writeN: Fun([UInt], State),
     writeT: Fun([UInt], State),
     writeB: Fun([UInt], State),
+    writeX: Fun([UInt], State),
     end: Fun([], State),
   });
   deploy();
@@ -41,6 +42,11 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
+    .api(U.writeX, ((i) => [ i, [ 0, tok ] ]), ((i, k) => {
+        const stp = [ done, x + i, an + i, at ];
+        k(stp);
+        return stp;
+    }))
     .api(U.writeN, ((_) => [ amt, [ 0, tok ] ]), ((i, k) => {
         const stp = [ done, x + i, an + amt, at ];
         k(stp);
@@ -57,7 +63,7 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
-    .api(U.end, ((_) => [ 0, [ 0, tok ] ]), ((k) => {
+    .api(U.end, (() => [ 0, [ 0, tok ] ]), ((k) => {
         const stp = [ true, x, an, at ];
         k(stp);
         return stp;
