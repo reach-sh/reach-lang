@@ -299,9 +299,18 @@ instance Interp DLStmt where
       case arr of
         V_Array arr' -> do
           res <- V_Array <$> mapM (\x -> f var2 x) arr'
-          local (\e -> e {e_store = M.insert var2 res st}) $ return V_Null
+          local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
         _ -> impossible "statement interpreter"
-    DL_ArrayReduce _at _var1 _arg1 _arg2 _var2 _var3 _block -> undefined
+    DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
+      st <- asks e_store
+      let f a x b y = local (\e -> e {e_store =  M.insert b y $ M.insert a x st}) $ interp block
+      acc <- interp arg1
+      arr <- interp arg2
+      case arr of
+        V_Array arr' -> do
+          res <- foldM (\x y -> f var2 x var3 y) acc arr'
+          local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
+        _ -> impossible "statement interpreter"
     DL_Var _at _var -> return $ V_Null
     DL_Set _at var arg -> do
       st <- asks e_store
@@ -324,9 +333,15 @@ instance Interp DLStmt where
           case switch_binding of
             Nothing -> interp dltail
             Just ident -> local (\e -> e {e_store = M.insert ident ev st}) $ interp dltail
-    -- QUESTION: what does this Either represent?
     DL_Only _at _either_part dltail -> interp dltail
-    DL_MapReduce _at _int _var1 _dlm_var _arg _var2 _var3 _block -> undefined
+    DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
+      st <- asks e_store
+      linst <- asks e_linstate
+      let f a x b y = local (\e -> e {e_store = M.insert b y $ M.insert a x st}) $ interp block
+      accu <- interp arg
+      res <- foldM (\x y -> f var2 x var3 y) accu $ (M.!) linst dlmvar
+      local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
+
 
 instance Interp DLTail where
   interp = \case
