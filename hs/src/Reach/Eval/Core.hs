@@ -1141,7 +1141,7 @@ evalAsEnv obj = case obj of
     return $
       M.fromList $
         gom "throwTimeout" AC_ThrowTimeout  slac_mtime
-        <> gom "pay" AC_PaySpec  slac_mpay
+        <> gom "pay" AC_Pay  slac_mpay
         <> gom "assume" AC_Assume  slac_massume
     where
       gom key mode me =
@@ -1620,11 +1620,7 @@ evalForm f args = do
         Just TCM_ThrowTimeout -> do
           at <- withAt id
           let ta = srcloc2annot at
-          (de, x) <-
-            case args of
-              [de] -> return (de, JSLiteral ta "null")
-              [de, e] -> return (de, e)
-              _ -> illegal_args 2
+          (de, x) <- one_two_args ta
           let throwS = JSThrow ta x JSSemiAuto
           go $ p { slptc_timeout = Just (at, de, Just (jsStmtToBlock throwS)) }
         Nothing ->
@@ -1707,19 +1703,13 @@ evalForm f args = do
       retV $ public $ SLV_Form $ SLForm_apiCall_partial $ ApiCallRec {..}
     SLForm_apiCall_partial p@(ApiCallRec {..}) ->
        case slac_mode of
-        Just AC_PaySpec -> do
+        Just AC_Pay -> do
           x <- one_arg
           go $ p { slac_mpay = Just x }
         Just AC_ThrowTimeout -> do
-          -- Refactor with toConsensus throwtimeout
           at <- withAt id
           let ta = srcloc2annot at
-          (de, x) <-
-            case args of
-              [de] -> return (de, JSLiteral ta "null")
-              [de, e] -> return (de, e)
-              _ -> illegal_args 2
-          --
+          (de, x) <- one_two_args ta
           go $ p { slac_mtime = Just (de, x) }
         Just AC_Assume -> do
           x <- one_arg
@@ -1744,6 +1734,11 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
+    one_two_args ta = case args of
+      [de] -> return (de, JSLiteral ta "null")
+      [de, e] -> return (de, e)
+      _ -> illegal_args 2
+
 
 evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
@@ -4294,11 +4289,6 @@ doApiCall lhs (ApiCallRec{..}) = do
           Just (to, e) -> jsCall a (mkDot a [pub2, jid "throwTimeout"]) [to, e]
   -- Construct `k = interact.out()`
   let returnVal = jidg "rng"
-  -- Works
-  -- let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnVal]
-  -- let apiReturn = jsArrowStmts a [returnVal]
-  --                   [ callOnly [ jsThunkStmts a [es interactOut] ] ]
-  -- Does not work
   let returnLVal = jidg "rngl"
   let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnLVal]
   let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
@@ -4307,7 +4297,6 @@ doApiCall lhs (ApiCallRec{..}) = do
   --
   let assignRet = jsConst a ret apiReturn
   let ss = [callOnly [onlyThunk], es pub3, assignRet]
-  liftIO $ putStrLn $ "ss: " <> show (pretty ss)
   return ss
   where
     sepLHS a = \case

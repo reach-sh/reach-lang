@@ -346,6 +346,7 @@ be_m = \case
   DL_Let at mdv de -> do
     case de of
       DLE_Remote {} -> recordOutputVar mdv
+      DLE_EmitLog {} -> fg_use de
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
