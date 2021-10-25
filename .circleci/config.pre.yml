@@ -387,7 +387,8 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace/
     - checkout
-    - and_restore_docker
+    - and_restore_docker:
+        images: "haskell-build-artifacts"
     - run: |
         mkdir -p hs/test-reports
         docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts stack test --fast --test-arguments --xml=/test-reports/junit.xml
